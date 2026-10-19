@@ -743,6 +743,16 @@ struct DSSpeedPill: View {
     }
 }
 
+/// Un aviso breve en una cápsula de vidrio (p. ej. el modo de zoom del reproductor al cambiarlo).
+struct DSToastPill: View {
+    let text: LocalizedStringKey
+    var body: some View {
+        Text(text).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+            .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+            .glassEffect(.regular, in: Capsule())
+    }
+}
+
 /// Los dos colores de lo que está al frente (`ArtPalette`, la misma cuenta que la TV): el oscuro tiñe el fondo y el claro es el
 /// botón principal y los acentos (`--art-tint` / `--art-accent`).
 struct ArtColors: Equatable {

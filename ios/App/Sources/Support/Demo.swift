@@ -60,7 +60,7 @@ enum Demo {
         guard let parts = value(after: "-demo-title")?.split(separator: ":"), parts.count == 2 else { return nil }
         return (String(parts[0]), String(parts[1]))
     }
-    /// `-demo-player panel|sources`: ya reproduciendo, abre el panel de audio y subtítulos o el de otra fuente.
+    /// `-demo-player panel|sources|subtitles`: ya reproduciendo, abre el panel de audio y subtítulos (o directo en Subtítulos) o el de otra fuente.
     static var player: String? { value(after: "-demo-player") }
     /// `-demo-widget sample|empty|live`: lo que enseña el widget «Lo siguiente para ti» (por omisión un snapshot de ejemplo; `empty`,
     /// sin nada pendiente; `live`, el que arma Inicio con la biblioteca de demostración).
@@ -170,6 +170,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
+        // OpenSubtitles de mentira: varias versiones por idioma (con copia, descargas, y unas SDH/forzadas que se esconden).
+        if url.host == "opensubtitles-v3.strem.io" { return HTTPResponse(status: 200, data: Self.subtitlesDemo.serialized()) }
         if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
         if url.host == "api.trakt.tv", Demo.because, let found = Self.becauseDemo(url.path) { return HTTPResponse(status: 200, data: found.serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
@@ -471,6 +473,20 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         default:
             return ok(.null)
         }
+    }
+
+    static var subtitlesDemo: JSON {
+        let rows: [(String, String, Int, Bool, Bool)] = [
+            ("eng", "Elephants.Dream.1080p.WEB-DL.DDP5.1.H264-NTb", 4210, false, false), ("eng", "Elephants.Dream.720p.BluRay.x264-SPARKS", 18_400, false, false),
+            ("eng", "Elephants.Dream.1080p.WEB-DL.H264-NTb.SDH", 3100, true, false), ("eng", "Elephants.Dream.HDTV.x264-LOL", 950, false, false),
+            ("spa", "Elephants.Dream.1080p.WEB-DL.H264-NTb", 1290, false, false), ("spa", "Elephants.Dream.DVDRip.XviD-FXG", 3400, false, false),
+            ("spa", "Elephants.Dream.Forzados", 220, false, true), ("fre", "Elephants.Dream.1080p.BluRay-AMIABLE", 610, false, false),
+            ("ger", "Elephants.Dream.WEBRip-GER", 120, false, false), ("por", "Elephants.Dream.1080p.WEB-DL-NTb", 480, false, false),
+        ]
+        return ["subtitles": .array(rows.enumerated().map { i, r in
+            ["id": .string("\(i)"), "url": .string("https://demo.orbital.invalid/sub/\(i).srt"), "lang": .string(r.0), "release": .string(r.1),
+             "downloads": .int(r.2), "hearing_impaired": .bool(r.3), "foreign_parts_only": .bool(r.4)]
+        })]
     }
 
     static let manifest: JSON = ["id": "orbital.demo", "name": "Demo (videos de prueba)", "resources": ["stream"], "types": ["movie", "series"], "idPrefixes": ["tt"]]

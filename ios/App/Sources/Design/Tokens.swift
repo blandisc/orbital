@@ -57,6 +57,8 @@ enum DS {
     static let good = role(.accent)
     /// Un interruptor prendido que tiene que leerse de lejos (los avisos de estrenos): el verde del sistema.
     static let switchOn = Color.green
+    /// Lo que confirmas que va bien («Este va bien» de los subtítulos): el mismo verde.
+    static let success = switchOn
     static let warning = role(.warning)
     static let danger = role(.danger)
     static let hairline = overlay(DesignTokens.Opacity.hairline)
@@ -287,6 +289,8 @@ enum DS {
         static let portraitCenter: CGFloat = 0.32, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
         /// El botón de reproducir, más grande que ±10 (lo que más se toca).
         static let playButton: CGFloat = 72, playGlyph: CGFloat = 30, sideButton: CGFloat = 52
+        /// La tira para probar subtítulos sobre el video: lo más ancha que se pone.
+        static let tryStripMaxWidth: CGFloat = 480
     }
 
     /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.

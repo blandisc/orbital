@@ -251,3 +251,128 @@ struct SkipButton: View {
         .accessibilityLabel(forward ? Text("Adelantar 10 segundos") : Text("Retroceder 10 segundos"))
     }
 }
+
+/// El idioma de los subtítulos en un solo renglón que abre un menú: «Español · 7 opciones ▾».
+struct PanelMenuLabel: View {
+    let title: String
+    let detail: Text
+    var body: some View {
+        HStack(spacing: DS.Space.s2) {
+            Text(verbatim: title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
+            detail.recipe(.footnote).lineLimit(1)
+            Spacer(minLength: DS.Space.s2)
+            Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+        }
+        .padding(DS.Space.s3)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+        .contentShape(Rectangle())
+    }
+}
+
+/// Una versión de subtítulos en la lista: el círculo de elegir, el nombre (de la copia o la pista) y sus marcas
+/// («Del video», «Coincide con tu copia», las descargas).
+struct SubtitleVersionRow: View {
+    let title: String
+    let selected: Bool
+    var fromVideo = false
+    var matchesCopy = false
+    var downloads: Int?
+    var loading = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: DS.Space.s3) {
+                Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                    .font(DS.TextRecipe.secondary.font).foregroundStyle(selected ? DS.text : DS.textFaint)
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text(verbatim: title).recipe(.footnote, color: DS.text).fontWeight(selected ? .semibold : .regular).lineLimit(2)
+                    HStack(spacing: DS.Space.s1) {
+                        if fromVideo { DSChip(text: "Del video") }
+                        if matchesCopy { DSChip(text: "Coincide con tu copia", tone: .good) }
+                        if let downloads, downloads > 0 {
+                            Label { Text(verbatim: downloads.formatted(.number.notation(.compactName))) } icon: { Image(systemName: "arrow.down.circle") }
+                                .recipe(.caption).labelStyle(.titleAndIcon)
+                        }
+                        if loading { ProgressView().controlSize(.mini) }
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(DS.Space.s3)
+            .background(selected ? DS.fillStrong : DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// La tira para probar subtítulos sobre el video: ‹ › cambian de versión (sin pausar), el nombre y por qué está ahí,
+/// la sincronía (−0.5 / +0.5) y ✓ «Este va bien».
+struct SubtitleTryStrip: View {
+    let title: String
+    let reason: Text
+    let delay: Double
+    let step: Double
+    let previous: () -> Void
+    let next: () -> Void
+    let nudge: (Double) -> Void
+    let confirm: () -> Void
+
+    var body: some View {
+        HStack(spacing: DS.Space.s2) {
+            arrow("chevron.left", label: Text("Versión anterior"), action: previous)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: title).recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1).contentTransition(.numericText())
+                reason.recipe(.caption).lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            arrow("chevron.right", label: Text("Versión siguiente"), action: next)
+            Button { nudge(-step) } label: { Text(verbatim: String(format: "−%g", step)).monospacedDigit() }
+                .buttonStyle(.glass).accessibilityLabel(Text("Adelantar medio segundo"))
+            Button { nudge(step) } label: { Text(verbatim: String(format: "+%g", step)).monospacedDigit() }
+                .buttonStyle(.glass).accessibilityLabel(Text("Atrasar medio segundo"))
+                .accessibilityValue(Text(verbatim: String(format: "%+.1f s", delay)))
+            Button(action: confirm) { Image(systemName: "checkmark").fontWeight(.bold).foregroundStyle(DS.onPrimary) }
+                .buttonStyle(.glassProminent).tint(DS.success)
+                .accessibilityLabel(Text("Este va bien"))
+        }
+        .font(DS.TextRecipe.footnote.font)
+        .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
+        .glassEffect(.regular, in: Capsule())
+        .frame(maxWidth: DS.PlayerPanel.tryStripMaxWidth)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func arrow(_ symbol: String, label: Text, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.bold)).foregroundStyle(DS.text)
+                .frame(width: DS.Size.touchTarget * 3 / 4, height: DS.Size.touchTarget)
+        }
+        .buttonStyle(.plain).accessibilityLabel(label)
+    }
+}
+
+/// «Más idiomas…»: todos los idiomas, con buscador.
+struct LanguageSearchList: View {
+    let codes: [String]
+    let name: (String) -> String
+    let pick: (String) -> Void
+    @State private var query = ""
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        let all = codes.map { ($0, name($0)) }.sorted { $0.1.localizedCompare($1.1) == .orderedAscending }
+        let shown = query.isEmpty ? all : all.filter { $0.1.localizedCaseInsensitiveContains(query) || $0.0.hasPrefix(query.lowercased()) }
+        NavigationStack {
+            List(shown, id: \.0) { code, title in
+                Button { pick(code); dismiss() } label: { Text(verbatim: title).foregroundStyle(DS.text) }
+            }
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Buscar idioma"))
+            .navigationTitle(Text("Más idiomas"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } } }
+        }
+    }
+}

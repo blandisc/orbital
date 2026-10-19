@@ -16,7 +16,7 @@ final class PlayerPanelUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Ajustes del video"].waitForExistence(timeout: 5), "abre el panel")
         app.buttons["panel-subtitles"].tap()
         XCTAssertTrue(app.staticTexts["Subtítulos"].waitForExistence(timeout: 5), "su página")
-        XCTAssertTrue(app.buttons["Sin subtítulos"].exists, "con sus opciones")
+        XCTAssertTrue(app.buttons["player-subtitle-language"].exists, "con su idioma arriba")
         app.buttons["panel-back"].tap()
         XCTAssertTrue(app.buttons["panel-audio"].waitForExistence(timeout: 5), "y vuelve")
         XCUIDevice.shared.orientation = .portrait

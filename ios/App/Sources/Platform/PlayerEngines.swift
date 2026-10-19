@@ -10,14 +10,35 @@ protocol VideoPlayerEngine: PlayerEngine {
     var name: String { get }
     /// Lo que se puede llevar a una ventana de PiP ahora (cambia con cada fuente; nil antes de cargar).
     @MainActor var pictureInPicture: PictureInPictureContent? { get }
-    /// Pellizcar: el video llena la pantalla (recorta los bordes) o se ve completo con franjas.
-    @MainActor func setFillsScreen(_ fill: Bool)
+    /// El zoom del video (botón y pellizco, como Infuse). «Ajustar al área segura» es ajustar: el recuadro más chico lo pone `PlayerScreen`.
+    @MainActor func setZoom(_ zoom: VideoZoom)
     /// La ventana de PiP se abrió o se cerró (el motor sigue decodificando video en segundo plano mientras tanto).
     @MainActor func setPictureInPictureActive(_ active: Bool)
     /// Los subtítulos encima del video, si el motor no los pinta solo (AVPlayer sí; AetherEngine no).
     @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView
     /// Si los subtítulos los dibuja la app (y por eso se pueden adelantar o atrasar).
     var drawsSubtitles: Bool { get }
+}
+
+extension VideoZoom {
+    /// Cómo pinta la capa del video cada modo.
+    var gravity: AVLayerVideoGravity {
+        switch self {
+        case .fit, .fitSafeArea: .resizeAspect
+        case .fill: .resizeAspectFill
+        case .stretch: .resize
+        }
+    }
+
+    /// El ícono del botón de zoom (muestra el modo actual).
+    var symbol: String {
+        switch self {
+        case .fit: "arrow.left.and.right"
+        case .fitSafeArea: "rectangle.inset.filled"
+        case .fill: "arrow.up.left.and.arrow.down.right"
+        case .stretch: "arrow.left.and.right.square"
+        }
+    }
 }
 
 /// Reparte cada «foto» del motor a quien la pida (`snapshots` entrega un flujo nuevo en cada acceso).
@@ -73,7 +94,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
 
     @MainActor var surface: AnyView { AnyView(AVPlayerSurface(view: layerView).ignoresSafeArea()) }
     @MainActor var pictureInPicture: PictureInPictureContent? { player.currentItem == nil ? nil : .playerLayer(layerView.playerLayer) }
-    @MainActor func setFillsScreen(_ fill: Bool) { layerView.playerLayer.videoGravity = fill ? .resizeAspectFill : .resizeAspect }
+    @MainActor func setZoom(_ zoom: VideoZoom) { layerView.playerLayer.videoGravity = zoom.gravity }
     @MainActor func setPictureInPictureActive(_ active: Bool) {}
     @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
     var drawsSubtitles: Bool { false }

@@ -25,6 +25,7 @@ final class PlayerHolder: ObservableObject {
                             },
                             skipSegments: { videoID in await services.introDB.segments(videoID: videoID) },   // saltar intro y resumen (IntroDB, como Infuse)
                             scareMap: { imdb, title in await services.scares(imdb: imdb, fallbackTitle: title) })   // el mapa de sustos
+        model.subtitlePicks = SubtitlePicks(services.kv)   // «Este va bien»: el subtítulo que elegiste para la serie
         model.ownSource = { videoID, preferred in await library.source(videoID, purpose: .watch, preferring: preferred) }   // Mi media: tu copia primero
         subscription = model.onChange { [weak self] in self?.objectWillChange.send() }
         // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
@@ -67,8 +68,12 @@ struct PlayerScreen: View {
     @AppStorage("player-portrait-center") private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
     @State private var portraitDrag: Double?
     @State private var portraitAtDragStart: Double = 0
-    /// Pellizcar para llenar la pantalla (recorta los bordes) o ver el cuadro completo.
-    @State private var fillsScreen = false
+    /// El zoom del video (botón de arriba y pellizco, como Infuse); se recuerda en ajustes. `zoomToast`: el aviso con su nombre.
+    @State private var zoom: VideoZoom = .fit
+    /// Cada toque en la tira de probar subtítulos reinicia su tiempo para irse.
+    @State private var tryStripTouches = 0
+    @State private var zoomToast: VideoZoom?
+    @State private var zoomToastTask: Task<Void, Never>?
 
     // MARK: gestos como Infuse (brillo, volumen, buscar arrastrando, 2×)
     @State private var dragAxis: GestureAxis = .undecided
@@ -129,7 +134,16 @@ struct PlayerScreen: View {
             SystemVolumeControl(volume: $requestedVolume)
                 .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
                 .allowsHitTesting(false).accessibilityHidden(true)
-            statusOverlays(model)
+            // Cargando o reconectando: al centro del video, no de la pantalla (en vertical los controles van bajo el video
+            // y el aviso se les encimaba). El error sí va al centro de la pantalla (trae botones y necesita espacio).
+            if case .failed = model.phase { statusOverlays(model) } else {
+                GeometryReader { geo in
+                    let rect = videoRect(in: geo.size)
+                    statusOverlays(model).position(x: rect.midX, y: rect.midY)
+                }
+                .ignoresSafeArea(edges: landscape ? .all : [])
+                .allowsHitTesting(false)
+            }
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
             if controlsVisible && !locked && !panel { controls(model).transition(.opacity) }
@@ -138,6 +152,9 @@ struct PlayerScreen: View {
             else if !locked && !panel && model.skipIntroTo != nil {
                 VStack { Spacer(); skipIntro(model) }.padding(landscape ? DS.Space.s6 : DS.Space.gutter).transition(.opacity)
             }
+            // Probando subtítulos (elegidos en el panel): la tira al pie del video (en vertical nunca tapa los controles,
+            // que van debajo del video).
+            if let language = model.tryingSubtitles, !locked { subtitleTryStrip(model, language: language) }
             if panel && landscape {
                 // Tocar fuera del panel lo cierra; el video sigue a la vista (el cambio de subtítulos se ve al momento).
                 Color.clear.contentShape(Rectangle()).onTapGesture { panel = false }
@@ -161,7 +178,9 @@ struct PlayerScreen: View {
         .animation(DS.Motion.base(reduceMotion), value: panel)
         .animation(DS.Motion.base(reduceMotion), value: dragAxis)
         .task {
-            if request.startPortrait { rotate(allowed: .allButUpsideDown, to: .portrait) } else { lockLandscape() }
+            // Abre como tienes el teléfono (Los Simpson, siempre vertical); boca arriba o sin saberlo, horizontal.
+            if request.startPortrait { rotate(allowed: .allButUpsideDown, to: .portrait) } else { rotate(allowed: .allButUpsideDown, to: Self.openingOrientation) }
+            UIDevice.current.beginGeneratingDeviceOrientationNotifications()
             // Después, girar el teléfono gira el video como el resto de iOS: UIKit gira solo dentro de `allButUpsideDown`
             // y respeta el candado de rotación del teléfono (con el candado puesto, el video se queda como está).
             // La sesión de video, siempre (la voz del control la deja en otro modo y con el volumen bajado).
@@ -171,6 +190,8 @@ struct PlayerScreen: View {
             originalBrightness = Double(UIScreen.main.brightness)
             // `begin` va aparte: el plazo de arranque (45 s) tiene que seguir corriendo mientras carga.
             let engine = holder.engine
+            zoom = VideoZoom(stored: env.services.appSettings.videoZoom)
+            engine.setZoom(zoom)
             pip.onActiveChange = { engine.setPictureInPictureActive($0) }
             nowPlaying.start(model: model)
             Task {
@@ -178,7 +199,7 @@ struct PlayerScreen: View {
                 #if DEBUG
                 if Demo.isOn, let open = Demo.player {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
-                    if open == "panel" || open == "sources" { panel = true } else if open == "close" { await close() }
+                    if open == "panel" || open == "sources" || open == "subtitles" { panel = true } else if open == "close" { await close() }
                 }
                 if Demo.isOn, let gesture = Demo.gesture {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
@@ -213,9 +234,15 @@ struct PlayerScreen: View {
         // En vertical, el panel es una hoja ajustada a lo que tiene (sin espacio muerto); en horizontal va a la derecha (arriba).
         .onChange(of: panel) { _, open in holder.model.panelOpen = open }   // la cuenta de «Siguiente» se detiene con el panel abierto
         .sheet(isPresented: Binding(get: { panel && !landscape }, set: { if !$0 { panel = false } })) {
-            settingsPanel(model).fittedSheet().presentationDragIndicator(.visible)
+            settingsPanel(model)
+        }
+        // Girar el teléfono gira el video: el aviso de giro del sistema no llega con el candado de rotación puesto,
+        // así que con el candado el video se queda como abrió. Con «Bloquear» se ignora.
+        .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+            followDevice()
         }
         .onDisappear {
+            UIDevice.current.endGeneratingDeviceOrientationNotifications()
             UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait()
             UIScreen.main.brightness = CGFloat(originalBrightness)   // el brillo es del sistema: no se queda en lo que dejó el gesto
         }
@@ -293,12 +320,11 @@ struct PlayerScreen: View {
             .onTapGesture { controlsVisible.toggle(); if controlsVisible { scheduleHide() } }
             .gesture(MagnifyGesture().onEnded { value in
                 // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
-                let fill = value.magnification > 1
-                guard fill != fillsScreen else { return }
-                fillsScreen = fill
-                holder.engine.setFillsScreen(fill)
+                let target = VideoZoom.pinched(magnification: Double(value.magnification))
+                guard target != zoom else { return }
+                setZoom(target)
             })
-            .sensoryFeedback(.impact, trigger: fillsScreen)
+            .sensoryFeedback(.impact, trigger: zoom)
             .simultaneousGesture(dragGesture(model, size: geo.size))
             .onLongPressGesture(minimumDuration: DS.Timing.longPressDelay, maximumDistance: DS.Gesture.axisThreshold,
                                  perform: { startFastForward(model) }, onPressingChanged: { pressing in if !pressing { endFastForward(model) } })
@@ -374,6 +400,10 @@ struct PlayerScreen: View {
         if isFastForwarding {
             VStack { DSSpeedPill(); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
         }
+        if let zoomToast {
+            VStack { DSToastPill(text: LocalizedStringKey(zoomToast.title)); Spacer() }.padding(.top, DS.Space.s14)
+                .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
+        }
         if let flashSymbol, !controlsVisible {
             Image(systemName: flashSymbol).font(DS.TextRecipe.display.font).foregroundStyle(DS.text)
                 .frame(width: DS.Size.touchTarget * 2, height: DS.Size.touchTarget * 2)
@@ -432,6 +462,19 @@ struct PlayerScreen: View {
     #endif
 
     private func pulse() { controlsVisible = true; scheduleHide() }
+
+    /// Cambia el zoom (botón o pellizco), lo recuerda para la próxima vez y avisa un momento cuál quedó.
+    private func setZoom(_ target: VideoZoom) {
+        withAnimation(DS.Motion.base(reduceMotion)) { zoom = target; zoomToast = target }
+        holder.engine.setZoom(target)
+        env.services.settings.update { $0.videoZoom = target.rawValue }
+        zoomToastTask?.cancel()
+        zoomToastTask = Task {
+            try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
+            guard !Task.isCancelled else { return }
+            withAnimation(DS.Motion.base(reduceMotion)) { zoomToast = nil }
+        }
+    }
 
     /// Un ícono grande que aparece y se va (el doble toque se nota sin abrir los controles).
     private func flash(_ symbol: String) {
@@ -529,9 +572,50 @@ struct PlayerScreen: View {
             }
             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
             if withActions { actions(model) }
+            DSIconButton(symbol: zoom.symbol, label: LocalizedStringKey(zoom.title)) { setZoom(zoom.next) }
+                .accessibilityHint(Text("Cambia el zoom del video"))
+                .accessibilityIdentifier("player-zoom")
             AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
                 .accessibilityLabel(Text("AirPlay"))
         }
+    }
+
+    /// La tira de «probar subtítulos»: ‹ › entre versiones del idioma, «Inglés · 2 de 12» y por qué, ±0.5 s y «Este va bien».
+    /// Se va sola si no la tocas.
+    private func subtitleTryStrip(_ model: PlayerModel, language: String) -> some View {
+        let versions = model.subtitleVersions(language: language)
+        let at = versions.firstIndex { $0.id == model.selectedVersionID }
+        let name = Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: language)?.capitalized ?? language
+        let title = at.map { String(localized: "\(name) · \($0 + 1) de \(versions.count)") } ?? name
+        let reason: Text = {
+            guard let at else { return Text("Cargando…") }
+            let v = versions[at]
+            if v.fromVideo { return Text("Del video") }
+            if v.matchesCopy { return Text("Coincide con tu copia") }
+            if let d = v.downloads, d > 0 { return Text("\(d.formatted(.number.notation(.compactName))) descargas") }
+            return Text("De internet")
+        }()
+        func touched() { tryStripTouches += 1 }
+        return GeometryReader { geo in
+            let rect = videoRect(in: geo.size)
+            SubtitleTryStrip(title: title, reason: reason, delay: model.subtitleDelay, step: PlayerModel.subtitleStep,
+                             previous: { touched(); Task { await model.stepVersion(-1) } },
+                             next: { touched(); Task { await model.stepVersion(1) } },
+                             nudge: { touched(); model.nudgeSubtitles(by: $0) },
+                             confirm: { model.confirmSubtitle() })
+                .padding(.horizontal, DS.Space.s3)
+                // En horizontal, con los controles a la vista, sube sobre la barra de avance.
+                .padding(.bottom, landscape && controlsVisible && !panel ? DS.Space.s6 + DS.Size.touchTarget * 2 : DS.Space.s3)
+                .frame(width: rect.width, height: rect.height, alignment: .bottom)
+                .offset(x: rect.minX, y: rect.minY)
+        }
+        .ignoresSafeArea(edges: landscape ? .all : [])
+        .transition(.opacity)
+        .task(id: tryStripTouches) {
+            try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
+            if !Task.isCancelled { model.dismissTry() }
+        }
+        .accessibilityIdentifier("player-subtitle-try")
     }
 
     /// «Saltar intro» (o «Saltar resumen»): abajo a la derecha, justo encima de la barra de avance (donde lo buscas al verla).
@@ -647,6 +731,12 @@ struct PlayerScreen: View {
     /// Dónde va el video. Horizontal: toda la pantalla (o a la izquierda del panel). Vertical: arriba, a todo lo ancho y en su
     /// proporción y de orilla a orilla (no apachurrado), a la altura que lo dejes al arrastrarlo; con el panel abierto, la mitad de arriba.
     private func videoRect(in size: CGSize) -> CGRect {
+        if landscape && zoom == .fitSafeArea && !panel {
+            // «Ajustar al área segura»: el cuadro nunca queda bajo la isla ni bajo el indicador de inicio.
+            let inset = Self.windowSafeArea
+            return CGRect(x: inset.left, y: inset.top, width: max(0, size.width - inset.left - inset.right),
+                          height: max(0, size.height - inset.top - inset.bottom))
+        }
         if landscape {
             return CGRect(x: 0, y: 0, width: panel ? max(0, size.width - DS.PlayerPanel.width - DS.Space.s4 * 2) : size.width, height: size.height)
         }
@@ -656,6 +746,11 @@ struct PlayerScreen: View {
         let center = size.height * (portraitDrag ?? portraitCenter)
         let y = min(max(0, center - height / 2), max(0, size.height - height))
         return CGRect(x: 0, y: y, width: size.width, height: height)
+    }
+
+    /// Los márgenes seguros de la ventana (el video en horizontal ignora el área segura, así que no los trae su `GeometryReader`).
+    private static var windowSafeArea: UIEdgeInsets {
+        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.safeAreaInsets ?? .zero
     }
 
     /// «12:34 de 22:00».
@@ -675,7 +770,37 @@ struct PlayerScreen: View {
         await env.playExternal(current, source: holder.model.source)
     }
 
-    private func lockLandscape() { rotate(allowed: .allButUpsideDown, to: .landscape) }
+
+    /// La orientación del teléfono al abrir el reproductor (con el candado de rotación, la última que iOS conoce).
+    private static var openingOrientation: UIInterfaceOrientationMask {
+        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+        switch UIDevice.current.orientation {
+        case .portrait: return .portrait
+        case .landscapeLeft: return .landscapeRight      // el teléfono a la izquierda deja la interfaz a la derecha
+        case .landscapeRight: return .landscapeLeft
+        default: return .landscape
+        }
+    }
+
+    /// Sigue al teléfono (solo llega si el candado de rotación del sistema está quitado). Una sola petición, a la
+    /// orientación exacta: la preferencia de `requestGeometryUpdate` se queda pegada, así que no basta el giro solo de UIKit.
+    private func followDevice() {
+        guard !locked else { return }
+        let target: UIInterfaceOrientationMask
+        switch UIDevice.current.orientation {
+        case .portrait: target = .portrait
+        case .landscapeLeft: target = .landscapeRight    // el teléfono a la izquierda deja la interfaz a la derecha
+        case .landscapeRight: target = .landscapeLeft
+        default: return                                  // boca arriba, boca abajo o de cabeza: se queda como está
+        }
+        AppDelegate.orientations = .allButUpsideDown
+        guard let scene = refreshSupportedOrientations() else { return }
+        Self.geometryGeneration += 1                      // cancela los reintentos de la apertura
+        scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { _ in }
+    }
+
+    /// Cada petición nueva invalida los reintentos pendientes de la anterior (no vuelven a forzar el horizontal).
+    private static var geometryGeneration = 0
     private func unlockPortrait() { rotate(allowed: .portrait, to: .portrait) }
 
     /// Desde iOS 16 hay que avisar a la vista raíz de que cambiaron las orientaciones permitidas antes de pedir el giro;
@@ -683,7 +808,8 @@ struct PlayerScreen: View {
     private func rotate(allowed: UIInterfaceOrientationMask, to target: UIInterfaceOrientationMask) {
         AppDelegate.orientations = allowed
         guard let scene = refreshSupportedOrientations() else { return }
-        Self.requestGeometry(scene, target, attemptsLeft: 10)
+        Self.geometryGeneration += 1
+        Self.requestGeometry(scene, target, attemptsLeft: 10, generation: Self.geometryGeneration)
     }
 
     /// Avisa a la raíz y a todo lo que presenta encima (el reproductor es una pantalla completa presentada) de que
@@ -712,11 +838,12 @@ struct PlayerScreen: View {
 
     /// Mientras la pantalla completa se está presentando, iOS rechaza el giro («Supported: portrait»): se reintenta
     /// en cuanto termina la animación (unas décimas). Cada intento va en otra vuelta, cuando iOS ya leyó las orientaciones nuevas.
-    private static func requestGeometry(_ scene: UIWindowScene, _ target: UIInterfaceOrientationMask, attemptsLeft: Int) {
+    private static func requestGeometry(_ scene: UIWindowScene, _ target: UIInterfaceOrientationMask, attemptsLeft: Int, generation: Int) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            guard generation == geometryGeneration else { return }
             scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { _ in
                 guard attemptsLeft > 1 else { return }
-                DispatchQueue.main.async { requestGeometry(scene, target, attemptsLeft: attemptsLeft - 1) }
+                DispatchQueue.main.async { requestGeometry(scene, target, attemptsLeft: attemptsLeft - 1, generation: generation) }
             }
         }
     }
@@ -760,6 +887,9 @@ struct VideoSettingsPanel: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var observer: ModelObserver<PlayerModel>
     @State private var page: Page = .hub
+    /// El idioma elegido en el menú de Subtítulos («» = sin subtítulos); nil: el de los puestos o el tuyo.
+    @State private var subtitleLanguage: String?
+    @State private var moreLanguages = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(model: PlayerModel, close: @escaping () -> Void, openInInfuse: @escaping () -> Void, drawsSubtitles: Bool = true) {
@@ -784,6 +914,11 @@ struct VideoSettingsPanel: View {
             .animation(DS.Motion.base(reduceMotion), value: page)
         }
         .scrollBounceBehavior(.basedOnSize)
+        #if DEBUG
+        .onAppear { if Demo.isOn, Demo.player == "subtitles" { page = .subtitles } }   // `-demo-player subtitles`
+        #endif
+        // Mide lo que mide la lista (no `fixedSize`): si la hoja no cabe, se queda al tope y la lista se recorre hasta abajo.
+        .fittedScrollSheet()
     }
 
     private func header(_ title: LocalizedStringKey, back: Bool) -> some View {
@@ -874,47 +1009,60 @@ struct VideoSettingsPanel: View {
     }
 
     // MARK: subtítulos
+    /// Arriba el idioma (un menú); debajo, una sola lista con todas las versiones de ese idioma (las del video y las de
+    /// internet), la que más probablemente va a tiempo primero. Sin SDH ni forzados (decisión del usuario).
     @ViewBuilder private var subtitles: some View {
         let s = model.snapshot
         let settings = env.services.appSettings
-        let mine = [settings.subtitles, settings.audio].filter { !$0.isEmpty }
-        // En un orden fijo (por pista): el motor a veces las manda en otro orden y las cápsulas brincaban de lugar.
-        let tracks = s.subtitleTracks.sorted { $0.id < $1.id }
-        let yours = tracks.filter { t in mine.contains { TrackChooser.matches(t, $0) } }
-        let others = tracks.filter { t in !yours.contains(t) }
+        let lang = chosenSubtitleLanguage
+        let counts = Dictionary(model.subtitleLanguages.map { ($0.code, $0.count) }, uniquingKeysWith: +)
         header("Subtítulos", back: true)
-        if !yours.isEmpty {
-            PanelGroupTitle(title: "Tu idioma")
-            FlowChips { ForEach(yours) { chip($0, selected: s.selectedSubtitle == $0.id) } }
+        Menu {
+            Section("Tus idiomas") {
+                ForEach(yourSubtitleLanguages, id: \.self) { code in languageButton(code, count: counts[code] ?? 0) }
+            }
+            Section("Otros idiomas") {
+                ForEach(model.subtitleLanguages.filter { !yourSubtitleLanguages.contains($0.code) }, id: \.code) { languageButton($0.code, count: $0.count) }
+            }
+            Button("Más idiomas…", systemImage: "globe") { moreLanguages = true }
+            Button("Sin subtítulos", systemImage: "captions.bubble") {
+                subtitleLanguage = ""
+                Task { await model.selectSubtitle(nil) }
+            }
+        } label: {
+            if let lang {
+                PanelMenuLabel(title: languageName(lang), detail: model.searchingSubtitles && (counts[lang] ?? 0) == 0 ? Text("Buscando…") : Text("\(counts[lang] ?? 0) opciones"))
+            } else {
+                PanelMenuLabel(title: String(localized: "Sin subtítulos"), detail: Text(verbatim: ""))
+            }
         }
-        PanelGroupTitle(title: yours.isEmpty ? "Idiomas" : "Otros")
-        FlowChips {
-            ForEach(others) { chip($0, selected: s.selectedSubtitle == $0.id) }
-            PanelChip(title: Text("Sin subtítulos"), selected: s.selectedSubtitle == nil) { Task { await model.selectSubtitle(nil) } }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("player-subtitle-language")
+        .sheet(isPresented: $moreLanguages) {
+            LanguageSearchList(codes: SubtitleLanguage.all, name: languageName) { code in
+                subtitleLanguage = code
+                Task { await model.ensureSubtitleSearch() }
+            }
         }
-        // Sin el que buscas (o el video no trae ninguno): OpenSubtitles, integrado; con una descarga, los de esa copia exacta.
-        PanelGroupTitle(title: "En internet")
-        if let found = model.foundSubtitles {
-            FlowChips {
-                ForEach(subtitleLanguages(found, mine: mine), id: \.self) { code in
-                    let options = found.filter { $0.language == code }
-                    let added = options.filter { model.addedSubtitleURLs.contains($0.url) }.count
-                    // Cada toque suma el siguiente de ese idioma (si el primero no va a tiempo, el otro): «Español · 2 de 12».
-                    PanelChip(title: added == 0 ? Text(verbatim: "\(languageName(code)) · \(options.count)") : Text(verbatim: "\(languageName(code)) · \(added)/\(options.count)"),
-                              selected: added > 0, symbol: added == options.count ? "checkmark" : "arrow.down.circle") {
-                        Task { await model.addFoundSubtitle(language: code) }
-                    }
-                    .disabled(added == options.count)
+        // Se busca en internet al abrir (para contar las versiones de cada idioma), sin tocar «Buscar».
+        .task { await model.ensureSubtitleSearch() }
+        if let lang {
+            let versions = model.subtitleVersions(language: lang)
+            ForEach(Array(versions.enumerated()), id: \.element.id) { index, version in
+                SubtitleVersionRow(title: versionTitle(version, index: index), selected: model.selectedVersionID == version.id,
+                                   fromVideo: version.fromVideo, matchesCopy: version.matchesCopy, downloads: version.downloads,
+                                   loading: version.option.map { model.addedSubtitleURLs.contains($0.url) && model.addedTracks[$0.url] == nil } ?? false) {
+                    Task { await model.selectVersion(version, trying: true) }
                 }
             }
-        } else {
-            if model.subtitleSearchFailed { DSNotice(text: "No encontré subtítulos (o no hay conexión). Vuelve a intentar.", tone: .warn) }
-            PanelChip(title: model.searchingSubtitles ? Text("Buscando…") : (model.subtitleSearchFailed ? Text("Volver a buscar") : Text("Buscar subtítulos")),
-                      selected: false, symbol: "magnifyingglass") {
-                Task { await model.searchSubtitles() }
+            if versions.isEmpty {
+                if model.searchingSubtitles { Text("Buscando en internet…").recipe(.footnote) }
+                else if model.subtitleSearchFailed {
+                    DSNotice(text: "No encontré subtítulos (o no hay conexión). Vuelve a intentar.", tone: .warn)
+                    PanelChip(title: Text("Volver a buscar"), selected: false, symbol: "magnifyingglass") { Task { await model.searchSubtitles() } }
+                        .accessibilityIdentifier("player-search-subtitles")
+                } else { Text("No hay subtítulos en este idioma.").recipe(.footnote) }
             }
-            .disabled(model.searchingSubtitles)
-            .accessibilityIdentifier("player-search-subtitles")
         }
         // Sincronía (como Infuse): si las líneas salen antes o después de lo que se dice. Solo con subtítulos puestos y si los
         // dibuja la app (AVPlayer pinta los suyos y no se pueden mover).
@@ -941,25 +1089,39 @@ struct VideoSettingsPanel: View {
         }
     }
 
-    /// Los idiomas encontrados, el tuyo primero y luego por cuántos hay.
-    private func subtitleLanguages(_ found: [SubtitleOption], mine: [String]) -> [String] {
-        var counts: [String: Int] = [:]
-        for o in found { counts[o.language, default: 0] += 1 }
-        let yours = Set(mine.flatMap { [$0, Streams.languageCodes[$0] ?? $0] })
-        return counts.keys.sorted { a, b in
-            let ya = yours.contains(a), yb = yours.contains(b)
-            return ya != yb ? ya : (counts[a] ?? 0) > (counts[b] ?? 0)
+    /// El idioma de la lista: el que elegiste en el menú; si no, el de los subtítulos puestos; si no, el tuyo (Ajustes:
+    /// subtítulos, luego audio). nil: sin subtítulos.
+    private var chosenSubtitleLanguage: String? {
+        if let subtitleLanguage { return subtitleLanguage.isEmpty ? nil : subtitleLanguage }
+        let s = model.snapshot
+        if let id = s.selectedSubtitle, let code = SubtitleLanguage.code(s.subtitleTracks.first { $0.id == id }?.language) { return code }
+        return yourSubtitleLanguages.first
+    }
+
+    private var yourSubtitleLanguages: [String] {
+        let settings = env.services.appSettings
+        var out: [String] = []
+        for code in [settings.subtitles, settings.audio].compactMap(SubtitleLanguage.code) where !out.contains(code) { out.append(code) }
+        return out
+    }
+
+    private func languageButton(_ code: String, count: Int) -> some View {
+        Button { subtitleLanguage = code } label: {
+            Text(verbatim: count > 0 ? "\(languageName(code)) · \(count)" : languageName(code))
+            if code == chosenSubtitleLanguage { Image(systemName: "checkmark") }
         }
     }
 
-    /// «spa» → «Español» (en el idioma de la app).
-    private func languageName(_ code: String) -> String {
-        let two = Streams.languageCodes.first { $0.value == code }?.key ?? code
-        return locale.localizedString(forLanguageCode: two)?.capitalized(with: locale) ?? code
+    private func versionTitle(_ version: SubtitleVersion, index: Int) -> String {
+        if let name = version.name { return name }
+        if let track = version.track { return TrackChooser.label(track, locale: locale, technical: false) }
+        return String(localized: "Versión \(index + 1)")
     }
 
-    private func chip(_ track: MediaTrack, selected: Bool) -> some View {
-        PanelChip(title: Text(verbatim: TrackChooser.label(track, locale: locale, technical: false)), selected: selected) { Task { await model.selectSubtitle(track.id) } }
+    /// «spa» o «es» → «Español» (en el idioma de la app).
+    private func languageName(_ code: String) -> String {
+        let two = SubtitleLanguage.code(code) ?? code
+        return locale.localizedString(forLanguageCode: two)?.capitalized(with: locale) ?? code
     }
 
     // MARK: fuente

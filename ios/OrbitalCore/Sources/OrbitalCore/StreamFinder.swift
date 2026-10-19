@@ -131,7 +131,12 @@ public actor StreamFinder {
                     return subs.compactMap { sub in
                         guard let text = sub["url"]?.string, let u = URL(string: text), ["http", "https"].contains(u.scheme?.lowercased() ?? ""),
                               let lang = sub["lang"]?.string else { return nil }
-                        return SubtitleOption(url: u, language: lang)
+                        // Lo que algunos complementos cuentan de más (OpenSubtitles por su API): la copia, las descargas, si es para sordos o forzado.
+                        let release = sub["release"]?.string ?? sub["releaseName"]?.string ?? sub["release_name"]?.string ?? sub["title"]?.string
+                        let downloads = sub["downloads"]?.intValue ?? sub["download_count"]?.intValue
+                        let hi = sub["hearing_impaired"]?.bool ?? sub["hearingImpaired"]?.bool ?? false
+                        let forced = sub["foreign_parts_only"]?.bool ?? sub["forced"]?.bool ?? false
+                        return SubtitleOption(url: u, language: lang, release: release, downloads: downloads, hearingImpaired: hi, foreignOnly: forced)
                     }
                 }
             }
@@ -146,8 +151,15 @@ public actor StreamFinder {
 public struct SubtitleOption: Sendable, Equatable, Identifiable {
     public var url: URL
     public var language: String
+    public var release: String?          // el nombre de la copia para la que se hizo («…WEB-DL-NTb»)
+    public var downloads: Int?
+    public var hearingImpaired = false   // SDH/CC
+    public var foreignOnly = false       // forzado: solo carteles o partes en otro idioma
     public var id: URL { url }
-    public init(url: URL, language: String) { self.url = url; self.language = language }
+    public init(url: URL, language: String, release: String? = nil, downloads: Int? = nil, hearingImpaired: Bool = false, foreignOnly: Bool = false) {
+        self.url = url; self.language = language; self.release = release; self.downloads = downloads
+        self.hearingImpaired = hearingImpaired; self.foreignOnly = foreignOnly
+    }
 }
 
 /// La huella de OpenSubtitles de un archivo (su tamaño más la suma de los primeros y últimos 64 KB): encuentra los
