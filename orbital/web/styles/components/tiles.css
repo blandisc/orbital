@@ -3,7 +3,14 @@
    cualquier pantalla; el acomodo de cada pantalla vive en su propio CSS (home.css…). */
 
 /* --- Destacado: lo último que jugaste o viste, con sus acciones como leyenda --------------- */
-.tile--feature { min-height: 0; background: var(--color-surface); container-type: size; }
+.tile--feature { min-height: 0; background: var(--color-surface); container-type: size; isolation: isolate; }
+/* Esquinas limpias: el arte (que se acerca al enfocar) y su sombra curvan igual que la tarjeta, y la orilla fina va encima.
+   Antes, en Edge, la capa del arte a veces se salía del recorte redondeado y dejaba una sombra en las esquinas. */
+.tile--feature > .tile__art, .tile--feature > .tile__shade { border-radius: inherit; }
+.tile--feature::after {
+  content: ""; position: absolute; inset: 0; z-index: var(--z-raised); border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
+}
 /* El detalle («T8 E23 · quedan 9 min») es lo que más importa: con poco alto se va primero «Serie» y
    el logo se achica; el detalle no se encoge (antes quedaba cortado a la mitad en la Legion Go). */
 .tile--feature__store { position: absolute; z-index: var(--z-raised); left: var(--inset-feature); top: var(--inset-feature); } /* alineada con el texto */

@@ -4,7 +4,7 @@ import { dragArea, dragScroll } from "../core/swipe.js";
 import { buildHome, queueTitle } from "../core/home.js";
 import { settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
-import { ConsoleTile, FeatureTile, RowTile } from "./tiles.js";
+import { ConsoleTile, eyebrowOf, FeatureTile, RowTile } from "./tiles.js";
 import { SectionHead } from "./ui.js";
 
 /**
@@ -33,8 +33,11 @@ const TOP_MIN = .52; // lo de arriba (lo último y «También tenías») nunca m
 
 export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const stage = h("div", { class: "home__stage" });
+  // El rótulo del destacado («Seguir jugando», «Seguir viendo»…) como título de su columna, a la altura de «Continuar»: dos
+  // títulos en una línea y debajo dos bloques del mismo alto.
+  const featureHead = h("div", { class: "home__feature-head" });
   const queue = h("div", { class: "home__queue" });
-  const top = h("div", { class: "home__top" }, stage, queue);
+  const top = h("div", { class: "home__top" }, featureHead, stage, queue);
   const consolesHead = h("div", { class: "home__consoles-head" });
   const consolesTrack = h("div", { class: "home__consoles-track", role: "group" });
   const consolesViewport = h("div", { class: "home__consoles-viewport" }, consolesTrack);
@@ -139,8 +142,9 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     if (staged === item) return;
     staged = item;
     const owner = () => "feature";
+    mount(featureHead, item ? SectionHead(eyebrowOf(item, options.runningId) || (item.id === options.runningId ? "Abierto ahora" : "Destacado")) : null);
     mount(stage, item
-      ? FeatureTile(item, { runningId: options.runningId, glyphs: options.glyphs,
+      ? FeatureTile(item, { runningId: options.runningId, glyphs: options.glyphs, eyebrow: false,
         onPress: () => onPick?.(targets.get(owner()), owner()),
         onAction: (action) => onAction?.(action, targets.get(owner())) })
       : emptyFeature(model.consoles.length > 0, hiddenCount));
