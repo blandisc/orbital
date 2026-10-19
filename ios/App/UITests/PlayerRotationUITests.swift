@@ -32,8 +32,8 @@ final class PlayerRotationUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(wait(app, landscape: true), "y vuelve a horizontal")
 
-        app.tap()
-        let lock = app.buttons["player-lock"]
+        if !app.buttons["player-lock"].waitForExistence(timeout: 2) { app.tap() }
+        let lock = app.buttons.matching(NSPredicate(format: "label == %@ OR identifier == %@", "Bloquear", "player-lock")).firstMatch
         XCTAssertTrue(lock.waitForExistence(timeout: 5))
         lock.tap()
         sleep(1)

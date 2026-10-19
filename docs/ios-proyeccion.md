@@ -123,7 +123,8 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `ListCard`, `SourceBadge` | Una lista tuya (pila de pósters, nombre, sello y cuántos) y el sello de origen (Trakt, Stremio, Orbital) junto a un título | Para ti › Listas |
 | `BecauseCard` | «Porque viste X»: el póster de lo que viste y lo relacionado al lado | Para ti › Listas |
 | `YearCard` | Un año con cuatro de sus películas y el número grande | Para ti › Por año |
-| `SortableGrid` | Una lista abierta con ordenar y filtrar (series o películas, género, ocultar lo visto) arriba a la derecha | Listas, premios, años |
+| `SortableGrid` | Una lista abierta con ordenar y filtrar (series o películas, género, calificación, década, ocultar lo visto) arriba a la derecha; con su vacío, su carga al centro y, si la pantalla ya trae `DSKindFilter`, sin repetirlo (`showsKindFilter`) | Listas, premios, años, géneros, «Ver todo» |
+| `DSPosterGrid` | La cuadrícula de pósters de toda la app: columnas fijas que llenan el ancho (`DS.Poster.gridColumns` 3; 4 en pantallas anchas; 2 con letra de accesibilidad), separación `DS.Space.s3`, bordes en el margen; cada celda recibe el ancho de su columna | `SortableGrid`, Buscar (resultados), Persona (filmografía), Top 10 abierto |
 | `StudioEmblem` | El logo del estudio en blanco (como la TV); sin logo, su nombre en cápsula | Para ti › Estudios |
 | `GameNowCard`, `CompanionPanel`, `ConsoleStatePanel`, `GuidePanel`, `NotesPanel`, `TimerPanel`, `ControlsPanel` | Modo acompañante: el juego en la consola (volver, inicio, cerrar) y su carrusel (la consola, guía, notas, temporizador, controles de emulador) | Inicio, mientras juegas |
 | `AppMark` | El logotipo como en la TV y la computadora (`OrbitalWordmark`: planeta, «orbital» y su luna) en lugar del saludo | Inicio |

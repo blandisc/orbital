@@ -1679,7 +1679,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Charging"
+            "value": "Loading"
           }
         }
       }
@@ -11283,6 +11283,160 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · matches your copy"
+          }
+        }
+      }
+    },
+    "Ahora no": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        }
+      }
+    },
+    "Atajo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcut"
+          }
+        }
+      }
+    },
+    "Desbloquear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock"
+          }
+        }
+      }
+    },
+    "En vertical solo se nota en videos de otro formato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In portrait it only shows on videos with a different shape"
+          }
+        }
+      }
+    },
+    "Esta lista todavía no tiene títulos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This list has no titles yet."
+          }
+        }
+      }
+    },
+    "Menos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Less"
+          }
+        }
+      }
+    },
+    "Sin filmografía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No filmography"
+          }
+        }
+      }
+    },
+    "Subtítulos antes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles earlier"
+          }
+        }
+      }
+    },
+    "Subtítulos después": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles later"
+          }
+        }
+      }
+    },
+    "TMDB no tiene títulos de esta persona.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TMDB has no titles for this person."
+          }
+        }
+      }
+    },
+    "del video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in the video"
+          }
+        }
+      }
+    },
+    "quedan %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        }
+      }
+    },
+    "Clasificación %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rated %@"
+          }
+        }
+      }
+    },
+    "Lo mejor disponible: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best available: %@"
           }
         }
       }

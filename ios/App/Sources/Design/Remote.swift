@@ -27,7 +27,7 @@ struct TouchPad: View {
                         .position(touch).allowsHitTesting(false)
                 }
             }
-            .frame(minHeight: DS.Remote.padHeight)
+            .frame(minHeight: DS.Remote.padHeightFitted)
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -102,6 +102,7 @@ struct RemoteKey: View {
     @State private var held = 0
     /// Cuándo se disparó «mantener»: el toque que llega justo después (al soltar) no se manda; uno de verdad, luego, sí.
     @State private var heldAt: Date?
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         Button {
@@ -111,13 +112,13 @@ struct RemoteKey: View {
             taps += 1; action()
         } label: {
             VStack(spacing: DS.Space.s1) {
-                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font)
-                title.recipe(.caption, color: DS.textMuted).lineLimit(1)
+                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).frame(height: DS.Remote.keyIcon)
+                title.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
-            .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeight)
+            .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted)
             .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             .overlay(alignment: .topTrailing) {
-                if let glyph {
+                if let glyph, !typeSize.isAccessibilitySize {   // con letra grande la letra del mando tapaba el ícono
                     Text(verbatim: glyph).recipe(.caption, color: DS.textFaint).padding(.top, DS.Space.s1).padding(.trailing, DS.Space.s2)
                         .accessibilityHidden(true)
                 }
@@ -157,7 +158,7 @@ struct RemoteTextField: View {
         .onChange(of: autoFocus, initial: true) { _, wants in if wants { focused = true } }
         .font(DS.TextRecipe.body.font)
         .padding(.horizontal, DS.Space.s4)
-        .frame(minHeight: DS.Remote.keyHeight)
+        .frame(minHeight: DS.Remote.keyHeightFitted)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
     }
 }
@@ -191,7 +192,7 @@ struct VoiceCommandBar: View {
                 Spacer(minLength: 0)
             }
             .padding(DS.Space.s3)
-            .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeight, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted, alignment: .leading)
             .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -280,7 +281,7 @@ struct VolumeControl: View {
         .foregroundStyle(DS.text)
         .buttonStyle(.plain)
         // Como las teclas y «Dile a Orbital»: el mismo relleno, esquinas y alto (antes era una cápsula de vidrio, distinta).
-        .padding(.horizontal, DS.Space.s2).frame(minHeight: DS.Remote.keyHeight)
+        .padding(.horizontal, DS.Space.s2).frame(minHeight: DS.Remote.keyHeightFitted)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .sensoryFeedback(.selection, trigger: level)
         .accessibilityElement(children: .contain)

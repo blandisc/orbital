@@ -1,21 +1,134 @@
 import SwiftUI
+import OrbitalCore
+import OrbitalModels
 
 // Piezas del panel «Ajustes del video» y de los botones con nombre del reproductor.
 
-/// Un botón del reproductor con su nombre («En la TV», «Ventana», «Audio y subtítulos»); si no cabe, solo el ícono
-/// (VoiceOver siempre dice el nombre).
+/// Un botón de la fila del reproductor en vertical («Ajustes», «Bloquear», «Ventana», «En la TV»): el ícono arriba y el
+/// nombre corto abajo; todos del mismo ancho (la fila se reparte en partes iguales). `accessibility`: el nombre largo.
 struct PlayerLabelButton: View {
     let title: LocalizedStringKey
     let symbol: String
+    var accessibility: LocalizedStringKey?
     let action: () -> Void
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            Button(action: action) { Label(title, systemImage: symbol).labelStyle(.titleAndIcon).lineLimit(1) }
-            Button(action: action) { Label(title, systemImage: symbol).labelStyle(.iconOnly) }
+        Button(action: action) {
+            VStack(spacing: DS.Space.s1) {
+                Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(height: DS.Size.touchTarget / 2)
+                Text(title).recipe(.caption, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.PlayerPanel.labelMinScale)
+            }
+            .foregroundStyle(DS.text)
+            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget * 1.25)
+            .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
         }
-        .buttonStyle(.glass).controlSize(.large)
-        .font(DS.TextRecipe.footnote.font.weight(.semibold))
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(accessibility ?? title))
+    }
+}
+
+/// Un botón redondo de la barra de arriba del reproductor: todos del mismo diámetro (el del toque mínimo).
+struct PlayerCircleButton: View {
+    let symbol: String
+    let label: LocalizedStringKey
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) { PlayerCircleGlyph(symbol: symbol) }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text(label))
+    }
+}
+
+/// El círculo de vidrio con su glifo (los botones de la barra de arriba).
+struct PlayerCircleGlyph: View {
+    let symbol: String
+    var body: some View {
+        Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+            .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            .glassEffect(.regular.interactive(), in: Circle())
+            .contentShape(Circle())
+    }
+}
+
+/// Bloqueado: el primer toque enseña esto; el botón grande «Desbloquear» es lo único que responde.
+struct PlayerUnlockPrompt: View {
+    let unlock: () -> Void
+    var body: some View {
+        VStack(spacing: DS.Space.s3) {
+            Label("Pantalla y giro bloqueados", systemImage: "lock.fill").recipe(.footnote, color: DS.text).fontWeight(.semibold)
+            Button(action: unlock) {
+                Label("Desbloquear", systemImage: "lock.open.fill").font(DS.TextRecipe.secondary.font.weight(.semibold))
+                    .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
+            }
+            .buttonStyle(.glassProminent).tint(DS.primary).foregroundStyle(DS.onPrimary)
+            .accessibilityIdentifier("player-unlock")
+        }
+        .padding(DS.Space.s4)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
+    }
+}
+
+/// «Siguiente episodio»: la imagen del episodio (si la hay), cuál es, «Ver ahora» con la cuenta atrás en un anillo y «Ahora no».
+struct UpNextCard: View {
+    let card: UpNext
+    /// Cuántos segundos dura la cuenta completa (para el anillo).
+    let total: Double
+    let watchNow: () -> Void
+    let cancel: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: DS.Space.s3) {
+            if let thumb = card.thumbnail.flatMap(URL.init(string:)) {
+                RemoteImage(url: thumb, maxPoints: DS.PlayerPanel.upNextThumb) { phase in
+                    if case .success(let image) = phase { image.resizable().scaledToFill() } else { DS.fill }
+                }
+                .frame(width: DS.PlayerPanel.upNextThumb, height: DS.PlayerPanel.upNextThumb / DS.Poster.stillAspect)
+                .clipShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius / 2, style: .continuous))
+                .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                Text("Siguiente episodio").recipe(.caption)
+                Text(verbatim: [card.label, card.title].filter { !$0.isEmpty }.joined(separator: " · "))
+                    .recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
+                // Si no caben lado a lado (vertical, SE), uno bajo el otro.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: DS.Space.s2) { upNextButtons }
+                    VStack(alignment: .leading, spacing: DS.Space.s2) { upNextButtons }
+                }
+            }
+        }
+        .padding(DS.Space.s4).frame(maxWidth: DS.Size.cardMax, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder private var upNextButtons: some View {
+        Button(action: watchNow) {
+            HStack(spacing: DS.Space.s2) {
+                if card.secondsLeft > 0 { countdown }
+                Text("Ver ahora").lineLimit(1)
+            }
+            .fixedSize()
+        }
+        .dsPrimaryButton()
+        .accessibilityValue(card.secondsLeft > 0 ? Text("Empieza en \(card.secondsLeft) s") : Text(verbatim: ""))
+        Button(action: cancel) { Text("Ahora no").lineLimit(1).fixedSize() }.buttonStyle(.glass)
+    }
+
+    /// El anillo que se llena hasta que empieza solo, con los segundos dentro.
+    private var countdown: some View {
+        let progress = total > 0 ? 1 - Double(card.secondsLeft) / total : 1
+        return ZStack {
+            Circle().stroke(DS.onPrimary.opacity(DesignTokens.Opacity.scrim), lineWidth: DS.PlayerPanel.ringWidth)
+            Circle().trim(from: 0, to: progress).stroke(DS.onPrimary, style: StrokeStyle(lineWidth: DS.PlayerPanel.ringWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(DS.Motion.base(false), value: card.secondsLeft)
+            Text(verbatim: "\(card.secondsLeft)").recipe(.caption, color: DS.onPrimary).fontWeight(.bold).monospacedDigit()
+        }
+        .frame(width: DS.PlayerPanel.ring, height: DS.PlayerPanel.ring)
+        .accessibilityHidden(true)
     }
 }
 
@@ -278,6 +391,8 @@ struct SubtitleVersionRow: View {
     var matchesCopy = false
     var downloads: Int?
     var loading = false
+    /// El nombre del archivo o de la pista, chico y cortado (el título ya dice lo que importa).
+    var detail: String?
     let action: () -> Void
 
     var body: some View {
@@ -287,6 +402,7 @@ struct SubtitleVersionRow: View {
                     .font(DS.TextRecipe.secondary.font).foregroundStyle(selected ? DS.text : DS.textFaint)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(verbatim: title).recipe(.footnote, color: DS.text).fontWeight(selected ? .semibold : .regular).lineLimit(2)
+                    if let detail, !detail.isEmpty { Text(verbatim: detail).recipe(.caption, color: DS.textFaint).lineLimit(1).truncationMode(.middle) }
                     HStack(spacing: DS.Space.s1) {
                         if fromVideo { DSChip(text: "Del video") }
                         if matchesCopy { DSChip(text: "Coincide con tu copia", tone: .good) }
@@ -329,10 +445,12 @@ struct SubtitleTryStrip: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             arrow("chevron.right", label: Text("Versión siguiente"), action: next)
-            Button { nudge(-step) } label: { Text(verbatim: String(format: "−%g", step)).monospacedDigit() }
-                .buttonStyle(.glass).accessibilityLabel(Text("Adelantar medio segundo"))
-            Button { nudge(step) } label: { Text(verbatim: String(format: "+%g", step)).monospacedDigit() }
-                .buttonStyle(.glass).accessibilityLabel(Text("Atrasar medio segundo"))
+            Button { nudge(-step) } label: { Text(verbatim: String(format: "−%g s", step)).monospacedDigit().lineLimit(1) }
+                .buttonStyle(.glass).accessibilityLabel(Text("Subtítulos antes"))
+                .accessibilityHint(Text("Adelantar medio segundo"))
+            Button { nudge(step) } label: { Text(verbatim: String(format: "+%g s", step)).monospacedDigit().lineLimit(1) }
+                .buttonStyle(.glass).accessibilityLabel(Text("Subtítulos después"))
+                .accessibilityHint(Text("Atrasar medio segundo"))
                 .accessibilityValue(Text(verbatim: String(format: "%+.1f s", delay)))
             Button(action: confirm) { Image(systemName: "checkmark").fontWeight(.bold).foregroundStyle(DS.onPrimary) }
                 .buttonStyle(.glassProminent).tint(DS.success)

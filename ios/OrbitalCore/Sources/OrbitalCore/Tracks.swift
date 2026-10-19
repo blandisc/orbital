@@ -103,6 +103,13 @@ public enum TrackChooser {
                 .compactMap { $0?.lowercased() }
             if let title, !names.contains(title.lowercased()) { parts.append(title) }
         } else if let title { parts.append(title) }
+        else if track.kind == .audio {
+            // Sin idioma ni nombre: «Audio 2 (AAC)» (no «Pista 2 · AAC», que parece un dato técnico más).
+            let tech = Self.technical(track)
+            parts.append(technical && !tech.isEmpty ? "Audio \(track.id + 1) (\(tech))" : "Audio \(track.id + 1)")
+            if track.isForced { parts.append(english ? "forced" : "forzados") }
+            return parts.joined(separator: " · ")
+        }
         else { parts.append(english ? "Track \(track.id + 1)" : "Pista \(track.id + 1)") }
         let tech = Self.technical(track)
         if technical, !tech.isEmpty { parts.append(tech) }

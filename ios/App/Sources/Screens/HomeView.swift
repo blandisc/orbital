@@ -157,7 +157,7 @@ struct HomeView: View {
         let items: [Suggestion] = route.id == "watchlist" ? home.model.traktPending
             : route.id == "foryou" ? home.model.forYouPicks : home.model.myList.map(suggestion)
         return ScrollView {
-            SortableGrid(listID: "home:\(route.id)", items: items) { s in TitleLink(route: s.route, width: DS.Poster.gridMinimum) }
+            SortableGrid(listID: "home:\(route.id)", items: items) { s, width in TitleLink(route: s.route, width: width) }
                 .padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop(tint: tint.colors))

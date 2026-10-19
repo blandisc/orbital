@@ -62,6 +62,10 @@ enum Demo {
     }
     /// `-demo-player panel|sources|subtitles`: ya reproduciendo, abre el panel de audio y subtítulos (o directo en Subtítulos) o el de otra fuente.
     static var player: String? { value(after: "-demo-player") }
+    /// `-demo-player-state skip-intro|error|upnext|locked`: ya reproduciendo, pone «Saltar intro», el error, la tarjeta de
+    /// «Siguiente episodio» o el bloqueo (estados que el simulador no alcanza solo). `-demo-player-portrait`: abre en vertical.
+    static var playerState: String? { value(after: "-demo-player-state") }
+    static var playerPortrait: Bool { ProcessInfo.processInfo.arguments.contains("-demo-player-portrait") }
     /// `-demo-widget sample|empty|live`: lo que enseña el widget «Lo siguiente para ti» (por omisión un snapshot de ejemplo; `empty`,
     /// sin nada pendiente; `live`, el que arma Inicio con la biblioteca de demostración).
     static var widget: String? { value(after: "-demo-widget") }
@@ -233,7 +237,14 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         let path = url.path.replacingOccurrences(of: "/3", with: "")
         let body: JSON
         if path.hasPrefix("/find/") {
-            body = ["movie_results": [["id": 1]], "tv_results": [["id": 1]]]
+            // Los de `demoSpanish` tienen su propio id (300+): su nombre en español, sin sinopsis de México (sale la de España).
+            let id = Self.demoSpanish.firstIndex { $0.0 == url.lastPathComponent }.map { 300 + $0 } ?? 1
+            body = ["movie_results": [["id": .int(id)]], "tv_results": [["id": .int(id)]]]
+        } else if path.hasSuffix("/translations"), let id = Int(url.deletingLastPathComponent().lastPathComponent), id >= 300, Self.demoSpanish.indices.contains(id - 300) {
+            body = ["translations": [["iso_639_1": "es", "iso_3166_1": "ES", "data": ["title": .string(Self.demoSpanish[id - 300].1), "name": .string(Self.demoSpanish[id - 300].1),
+                                                                                      "overview": "Sinopsis de demostración en español de España."]]]]
+        } else if let id = Int(url.lastPathComponent), id >= 300, Self.demoSpanish.indices.contains(id - 300) {
+            body = ["id": .int(id), "title": .string(Self.demoSpanish[id - 300].1), "name": .string(Self.demoSpanish[id - 300].1), "overview": ""]
         } else if path.hasPrefix("/person/") {
             body = ["id": 1, "name": "Steve Carell", "birthday": "1962-08-16", "place_of_birth": "Concord, Massachusetts",
                     "biography": "Actor, comediante y productor estadounidense. Conocido por Michael Scott en The Office, y por Foxcatcher, Little Miss Sunshine y The Big Short.",
@@ -265,6 +276,9 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         }
         return HTTPResponse(status: 200, data: body.serialized())
     }
+
+    /// Nombres en español para el TMDB de mentira (Mi media y la ficha los enseñan traducidos).
+    static let demoSpanish: [(String, String)] = [("tt15239678", "Dune: Parte dos"), ("tt11280740", "Separación")]
 
     /// Títulos reales para el TMDB de mentira (sus pósters salen de metahub).
     static let demoIMDb: [(String, String)] = [

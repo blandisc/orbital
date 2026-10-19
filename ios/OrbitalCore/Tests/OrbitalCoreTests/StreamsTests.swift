@@ -67,4 +67,12 @@ final class StreamsTests: XCTestCase {
         let prefs = Preferences(audio: "en", quality: "1080p")
         XCTAssertEqual(Streams.rank([remux, small], prefs: prefs, purpose: .download).first?.index, 2)
     }
+
+    /// El botón «Ver» dice lo mejor sin repetir: DV ya implica HDR y Atmos ya implica DD+.
+    func testQualitySummaryDropsWhatIsImplied() {
+        let best = Streams.parse(["name": "T\n4K [RD+]", "title": "Peli.2160p.DV.HDR10.DDP5.1.Atmos.REMUX"], addon: "T", transportURL: "u", index: 0)
+        XCTAssertEqual(best.qualitySummary, ["4K", "Dolby Vision", "Atmos"])
+        let plain = Streams.parse(["name": "T\n1080p", "title": "Peli.1080p.WEB-DL.x265"], addon: "T", transportURL: "u", index: 1)
+        XCTAssertEqual(plain.qualitySummary, ["1080p"])
+    }
 }

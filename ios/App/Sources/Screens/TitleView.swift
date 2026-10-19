@@ -21,6 +21,12 @@ struct TitleView: View {
 
     struct Replacement { var source: Source; var videoID: String; var existing: DownloadItem }
     @State private var saving = false
+    /// Lo que mide la pantalla visible (sin la barra de pestañas) y lo que hay bajo el arte hasta las acciones: el arte
+    /// se ajusta para que «Ver», Guardar, Descargar y Fuente queden a la vista al abrir, en un SE y en un Pro.
+    @State private var viewport: CGSize = .zero
+    @State private var topInset: CGFloat = 0
+    @State private var bottomInset: CGFloat = 0
+    @State private var belowHero: CGFloat = 0
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var id: String { "\(videoID)-\(purpose)" } }
 
@@ -34,9 +40,12 @@ struct TitleView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 hero(model)
-                VStack(alignment: .leading, spacing: DS.Space.s5) {
-                    facts(model)
-                    actions(model)
+                VStack(alignment: .leading, spacing: DS.Space.s6) {
+                    VStack(alignment: .leading, spacing: DS.Space.s6) {
+                        facts(model)
+                        actions(model)
+                    }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
                     if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
                     if let error = model.error, model.overview.isEmpty { DSNotice(verbatim: env.message(error), tone: .warn) }
                     synopsis(model)
@@ -49,6 +58,9 @@ struct TitleView: View {
                 .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: los datos no se le pegan
             }
         }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { bottomInset = $0 }
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
         .background(Backdrop(tint: tint.colors))
         .navigationBarTitleDisplayMode(.inline)
@@ -91,10 +103,24 @@ struct TitleView: View {
     }
 
     // MARK: partes
+    /// Ancho / alto del arte: el de siempre si cabe; si no, más ancho (más bajito) hasta que las acciones queden sobre la
+    /// barra de pestañas. Antes de medir, la proporción fija de los teléfonos bajitos.
+    private var heroAspect: CGFloat {
+        let fallback = UIScreen.main.bounds.height < DS.TitleAction.shortScreen ? DS.TitleAction.heroAspectShort : DS.TitleAction.heroAspect
+        guard viewport.width > 0, belowHero > 0 else { return fallback }
+        let padding = scheme == .dark ? 0 : DS.Space.s4
+        // La barra de pestañas flota sobre el contenido: su alto (el margen de abajo) no cuenta como espacio libre.
+        let room = viewport.height + topInset - bottomInset - belowHero - padding - DS.Space.s3
+        let width = viewport.width - (scheme == .dark ? 0 : DS.Space.gutter * 2)
+        guard room > 0 else { return typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax }
+        let cap = typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax
+        return min(cap, max(DS.TitleAction.heroAspect, width / room))
+    }
+
     /// El arte a sangre, más alto, con el logo (o el nombre) al centro y la frase de la película debajo, como un cartel de cine.
     private func hero(_ model: TitleModel) -> some View {
         BleedArt(url: model.background ?? model.poster, title: model.title,
-                 aspect: UIScreen.main.bounds.height < DS.TitleAction.shortScreen ? DS.TitleAction.heroAspectShort : DS.TitleAction.heroAspect) {
+                 aspect: heroAspect) {
             VStack(spacing: DS.Space.s2) {
                 TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, dark: model.logoIsDark, centered: true)
                     .containerRelativeFrame(.horizontal) { width, _ in width * DS.TitleAction.logoWidth }
@@ -108,16 +134,19 @@ struct TitleView: View {
         .ignoresSafeArea(edges: .top)
     }
 
-    /// Bajo el arte, al centro: qué es, año, géneros y duración; lo mejor disponible (4K · HDR · Atmos) y las calificaciones.
+    /// Bajo el arte, al centro, un solo renglón: año · géneros · duración («2 h 25 min») y la clasificación («B») como insignia
+    /// con contorno al final; debajo, las calificaciones. Lo mejor disponible (4K · Dolby Vision) vive dentro de «Ver».
     private func facts(_ model: TitleModel) -> some View {
         let language = env.services.appSettings.uiLanguage
-        let facts = [Strings.kind(model.kind, language: language)] + [model.extras?.certification].compactMap { $0 }
-            + Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: model.info.runtime, rating: "")
-        return VStack(spacing: DS.Space.s3) {
-            Text(verbatim: Vocabulary.factLine(facts)).recipe(.footnote).multilineTextAlignment(.center).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
-            if let best = model.bestSource {
-                QualityBadges(items: QualityBadges.items(resolution: best.resolution, hdr: best.hdr, audio: best.audioBadges))
-                    .accessibilityLabel(Text("Lo mejor disponible"))
+        let minutes = Int(CinemetaParsing.runtimeSeconds(model.info.runtime) / 60)
+        let runtime = Vocabulary.runtimeText(minutes: minutes > 0 ? minutes : nil) ?? model.info.runtime
+        let facts = Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: runtime, rating: "")
+        return VStack(spacing: DS.Space.s4) {
+            HStack(spacing: DS.Space.s2) {
+                Text(verbatim: Vocabulary.factLine(facts)).recipe(.footnote).multilineTextAlignment(.center).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+                if let certification = model.extras?.certification {
+                    QualityBadges(items: [certification]).fixedSize().accessibilityLabel(Text("Clasificación \(certification)"))
+                }
             }
             RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating, centered: true)
         }
@@ -142,20 +171,16 @@ struct TitleView: View {
 
     private var artAccent: Color { tint.colors?.accent ?? DS.accent }
 
-    /// El botón principal (con el color del arte), la línea de lo que llevas visto y, debajo, cuatro círculos: Guardar,
-    /// Descargar, Tráiler y Fuente. Cada círculo cambia en su lugar (Guardada, el anillo de la descarga): nada brinca.
+    /// El botón principal sólido (negro en claro, blanco en oscuro) con la calidad de lo que va a sonar en un segundo renglón
+    /// y, si ibas a medias, cuánto falta y su barrita; debajo, cuatro acciones del mismo tamaño: Guardar, Descargar, Tráiler y
+    /// Fuente. Cada una cambia en su lugar (Guardada, el anillo de la descarga): nada brinca.
     private func actions(_ model: TitleModel) -> some View {
         let label = model.continueLabel
         return VStack(spacing: DS.Space.s4) {
             VStack(spacing: DS.Space.s2) {
-                Button { start(model, videoID: nil) } label: {
-                    Label { primaryLabel(label, model).lineLimit(typeSize.isAccessibilitySize ? 2 : 1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
-                }
-                .dsArtButton(tint.colors).controlSize(.large).disabled(model.continueVideoID == nil)   // el color del arte, como en la TV
-                .accessibilityIdentifier("title-play")
-                if let fraction = model.resumeFraction {
-                    DSProgress(fraction: fraction).padding(.horizontal, DS.Space.s5).accessibilityHidden(true)
-                }
+                Button { start(model, videoID: nil) } label: { primaryButtonLabel(label, model) }
+                    .dsSolidPrimaryButton().disabled(model.continueVideoID == nil)
+                    .accessibilityIdentifier("title-play")
                 // «Desde el principio» (como la TV, `core/watch.js`), discreto: solo si ibas a medias.
                 if label.isResume {
                     Button("Desde el principio", systemImage: "arrow.counterclockwise") { start(model, videoID: nil, fromStart: true) }
@@ -163,7 +188,9 @@ struct TitleView: View {
                         .accessibilityIdentifier("title-restart")
                 }
             }
-            HStack(alignment: .top, spacing: DS.Space.s2) {   // rectángulos que llenan el renglón (antes círculos con hueco)
+            // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize ? 2 : (model.extras?.trailer?.url == nil ? 3 : 4)),
+                      spacing: DS.Space.s2) {
                 saveAction(model).frame(maxWidth: .infinity)
                 downloadAction(model).frame(maxWidth: .infinity)
                 if let url = model.extras?.trailer?.url {
@@ -171,12 +198,56 @@ struct TitleView: View {
                         .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
                 }
                 Button { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } } label: {
-                    ActionTileLabel(title: Text("Fuente"), symbol: "list.bullet", tint: artAccent)
+                    ActionTileLabel(title: Text("Fuente"), symbol: "list.bullet.rectangle", tint: artAccent)
                 }
                 .buttonStyle(.plain).frame(maxWidth: .infinity).disabled(model.continueVideoID == nil).accessibilityIdentifier("title-sources")
             }
             .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
         }
+    }
+
+    /// Lo de adentro de «Ver»: ▶ Ver (o «Continuar · quedan 42 min») y, abajo, la calidad de la fuente que va a sonar
+    /// («4K · Dolby Vision · Atmos»; nada si aún no se sabe). Con avance, una barrita al pie. Mientras carga, «Cargando».
+    @ViewBuilder private func primaryButtonLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> some View {
+        let quality = model.bestSource?.qualitySummary ?? []
+        VStack(spacing: DS.Space.s1) {
+            if model.continueVideoID == nil {
+                HStack(spacing: DS.Space.s2) {
+                    ProgressView().tint(DS.onSolidPrimary)
+                    Text("Cargando")
+                }
+                .font(DS.TextRecipe.body.font.weight(.semibold))
+            } else {
+                Label {
+                    if label.isResume, let left = Vocabulary.runtimeText(minutes: model.minutesToFinish) {
+                        primaryLabel(label, model) + Text(verbatim: " · ") + Text("quedan \(left)")
+                    } else {
+                        primaryLabel(label, model)
+                    }
+                } icon: { Image(systemName: "play.fill") }
+                .font(DS.TextRecipe.body.font.weight(.semibold))
+                .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+                if !quality.isEmpty {
+                    Text(verbatim: quality.joined(separator: " · ")).font(DS.TextRecipe.caption.font.weight(.medium))
+                        .opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                        .accessibilityLabel(Text("Lo mejor disponible: \(quality.joined(separator: ", "))"))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: DS.TitleAction.primaryHeight - DS.Space.s3 * 2)
+        .overlay(alignment: .bottom) {
+            if let fraction = model.resumeFraction, model.continueVideoID != nil {
+                GeometryReader { box in
+                    Capsule().fill(DS.onSolidPrimary.opacity(DesignTokens.Opacity.track))
+                        .overlay(alignment: .leading) { Capsule().fill(DS.onSolidPrimary).frame(width: box.size.width * fraction) }
+                }
+                .frame(height: DS.TitleAction.primaryProgress)
+                .padding(.horizontal, DS.Space.s4)
+                .offset(y: DS.Space.s1)
+                .accessibilityHidden(true)
+            }
+        }
+        .padding(.vertical, DS.Space.s3 - DS.Space.s2)
     }
 
     /// Guardar: un toque la guarda en Mi lista (con un aviso que deja cambiar); mantener presionado elige dónde.
@@ -192,7 +263,7 @@ struct TitleView: View {
                 Button("Tus listas de Trakt…", systemImage: "list.bullet") { saving = true }
             }
         } label: {
-            ActionTileLabel(title: model.isSaved ? Text("Guardada") : Text("Guardar"), symbol: model.isSaved ? "checkmark" : "plus", active: model.isSaved, tint: artAccent)
+            ActionTileLabel(title: model.isSaved ? Text("Guardada") : Text("Guardar"), symbol: model.isSaved ? "checkmark.circle.fill" : "plus.circle", active: model.isSaved, tint: artAccent)
         } primaryAction: {
             Task { await quickSave(model) }
         }
@@ -246,7 +317,7 @@ struct TitleView: View {
                     Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
                     Button("Borrar la descarga", systemImage: "trash", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
                 } label: {
-                    ActionTileLabel(title: Text("Descargada"), symbol: "checkmark", active: true, tint: artAccent)
+                    ActionTileLabel(title: Text("Descargada"), symbol: "arrow.down.circle.fill", active: true, tint: artAccent)
                 }
             default:
                 Menu {
@@ -324,7 +395,11 @@ struct TitleView: View {
 
     /// La sinopsis en tres renglones y «más» para leerla completa.
     @ViewBuilder private func synopsis(_ model: TitleModel) -> some View {
-        if !model.overview.isEmpty {
+        if model.overview.isEmpty, model.isLoading {
+            // Esqueleto: el lugar de la sinopsis mientras llega (antes la ficha se veía vacía la primera vez).
+            Text(verbatim: String(repeating: "placeholder ", count: 24)).recipe(.secondary).lineLimit(DS.TitleAction.synopsisLines)
+                .redacted(reason: .placeholder).accessibilityHidden(true)
+        } else if !model.overview.isEmpty {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(model.overview).recipe(.secondary, color: DS.text).lineLimit(fullSynopsis ? nil : DS.TitleAction.synopsisLines)
                 if model.overview.count > DS.Size.synopsisFold {

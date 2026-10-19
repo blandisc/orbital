@@ -53,6 +53,8 @@ struct CollectionGridView: View {
     @State private var kind = "movie"
     @State private var yearItems: [Suggestion] = []
     @State private var loading = false
+    @State private var loadedOnce = false
+    @State private var settled = false
 
     var body: some View {
         ScrollView {
@@ -61,17 +63,24 @@ struct CollectionGridView: View {
                 if route.kind == .year {
                     DSKindFilter(kind: $kind, includeAll: false).padding(.horizontal, DS.Space.gutter)
                 }
-                if loading && items.isEmpty { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s10) }
+                // Un año ya trae su Películas · Series arriba: el menú no repite ese filtro.
                 SortableGrid(listID: "\(route.kind):\(route.id)", items: items, watched: { await collections.model.watchedIDs() },
-                             imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) }) { s in
-                    TitleLink(route: s.route, width: DS.Poster.gridMinimum, detail: detail(s))
+                             imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) },
+                             showsKindFilter: route.kind != .year, loading: isLoading) { s, width in
+                    TitleLink(route: s.route, width: width, detail: detail(s))
                 }
             }
             .padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop())
         .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
-        .task { if route.kind == .studio, let id = Int(route.id) { await collections.model.loadStudio(id) } }
+        .task {
+            // Un estudio se pide aquí; un premio llega con las colecciones. Si al final no hay nada (falló o tardó
+            // demasiado), el vacío en lugar de la ruedita para siempre.
+            if route.kind == .studio, let id = Int(route.id) { await collections.model.loadStudio(id) }
+            else { try? await Task.sleep(nanoseconds: DS.Timing.listGiveUp) }
+            settled = true
+        }
         .task(id: kind) {
             guard route.kind == .year, let year = Int(route.id) else { return }
             loading = true
@@ -79,6 +88,7 @@ struct CollectionGridView: View {
             guard !Task.isCancelled else { return }   // cambiaste de Películas a Series: no se pinta lo del otro
             yearItems = found
             loading = false
+            loadedOnce = true
         }
     }
 
@@ -93,6 +103,16 @@ struct CollectionGridView: View {
                 }
             }
             .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+        }
+    }
+
+    /// Todavía viene en camino (un año que se pide, un estudio o un premio sin cargar).
+    private var isLoading: Bool {
+        switch route.kind {
+        case .year: loading || yearItems.isEmpty && !loadedOnce
+        case .studio: !settled && Int(route.id).flatMap { collections.model.studioItems[$0] } == nil
+        case .award: !settled && award == nil
+        case .myList: false
         }
     }
 

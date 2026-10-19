@@ -24,44 +24,82 @@ struct TmdbTitleView: View {
     }
 }
 
-/// Una persona (al tocar su cara): su foto, de dónde es, su biografía (se despliega) y lo que ha hecho, lo más conocido primero.
+/// Una persona (al tocar su cara): su foto, de dónde es, su biografía (se despliega con «Más») y lo que ha hecho, lo más
+/// conocido primero, en la cuadrícula de pósters de la app. El nombre sube a la barra solo al deslizar (arriba ya está grande).
 struct PersonView: View {
     let route: PersonRoute
     @EnvironmentObject private var env: AppEnvironment
     @State private var person: PersonDetails?
     @State private var failed = false
     @State private var expanded = false
+    @State private var scrolledDown = false
+    /// La biografía no cabe en sus renglones (entonces sí va «Más»).
+    @State private var bioCut = false
+    @State private var bioFull: CGFloat = 0
+    @State private var bioShown: CGFloat = 0
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
-                HStack(alignment: .top, spacing: DS.Space.s4) {
-                    PersonPhoto(name: route.name, photo: person?.photo, size: DS.Rich.personPhoto)
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        Text(verbatim: route.name).recipe(.title)
-                        if let born = person?.born { Text(verbatim: [born, person?.place].compactMap { $0 }.joined(separator: " · ")).recipe(.footnote) }
+                VStack(alignment: .leading, spacing: DS.Space.s5) {
+                    HStack(alignment: .top, spacing: DS.Space.s4) {
+                        PersonPhoto(name: route.name, photo: person?.photo, size: DS.Rich.personPhoto)
+                        VStack(alignment: .leading, spacing: DS.Space.s1) {
+                            Text(verbatim: route.name).recipe(.title)
+                            if let born = person?.born { Text(verbatim: [born, person?.place].compactMap { $0 }.joined(separator: " · ")).recipe(.footnote) }
+                        }
                     }
+                    if let bio = person?.biography, !bio.isEmpty { biography(bio) }
+                    if let credits = person?.credits, !credits.isEmpty { DSSectionHead(title: "Filmografía") }
                 }
-                if let bio = person?.biography, !bio.isEmpty {
-                    Text(verbatim: bio).recipe(.secondary, color: DS.textMuted).lineLimit(expanded ? nil : DS.Rich.bioLines)
-                        .onTapGesture { withAnimation { expanded.toggle() } }
-                }
+                .padding(.horizontal, DS.Space.gutter)
                 if let credits = person?.credits, !credits.isEmpty {
-                    DSSectionHead(title: "Filmografía")
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.railWidth), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                        ForEach(credits) { TmdbPoster(title: $0) }
-                    }
+                    DSPosterGrid(items: credits) { title, width in TmdbPoster(title: title, width: width) }
+                } else if person != nil {
+                    DSEmptyState(symbol: "film", title: Text("Sin filmografía"), message: Text("TMDB no tiene títulos de esta persona."))
                 }
-                if person == nil && !failed { ProgressView().frame(maxWidth: .infinity) }
-                if failed { DSNotice(text: "No pude traer a esta persona de TMDB.") }
+                if person == nil && !failed { ProgressView().frame(maxWidth: .infinity).padding(.vertical, DS.Space.s10) }
+                if failed { DSNotice(text: "No pude traer a esta persona de TMDB.").padding(.horizontal, DS.Space.gutter) }
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
+            .padding(.bottom, DS.Space.s14)
         }
+        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > DS.Size.titleCollapse } action: { _, down in scrolledDown = down }
         .background(Backdrop())
-        .navigationTitle(Text(verbatim: route.name)).navigationBarTitleDisplayMode(.inline)
+        // El nombre en la barra solo cuando el grande ya se fue (o si no hay nada más que mostrar).
+        .navigationTitle(scrolledDown || failed ? Text(verbatim: route.name) : Text(verbatim: "")).navigationBarTitleDisplayMode(.inline)
         .task {
             guard person == nil else { return }
             do { person = try await env.services.tmdb.person(route.id) } catch { failed = true }
         }
+    }
+
+    /// La biografía en unos renglones, con «Más ⌄» a la vista para leerla completa (antes solo se desplegaba al tocar el texto).
+    private func biography(_ bio: String) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            Text(verbatim: bio).recipe(.secondary, color: DS.textMuted).lineLimit(expanded ? nil : DS.Rich.bioLines)
+                .background(alignment: .topLeading) {
+                    // La biografía completa, invisible, para saber si se corta.
+                    Text(verbatim: bio).recipe(.secondary).fixedSize(horizontal: false, vertical: true).hidden()
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { full in bioFull = full; if !expanded { bioCut = full > bioShown + 1 } }
+                }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { shown in if !expanded { bioShown = shown; bioCut = bioFull > shown + 1 } }
+            if bioCut || expanded { Button { withAnimation { expanded.toggle() } } label: {
+                Label(expanded ? "Menos" : "Más", systemImage: expanded ? "chevron.up" : "chevron.down")
+                    .labelStyle(TrailingIconLabelStyle())
+                    .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.accent)
+            }
+            .buttonStyle(.plain)
+            .frame(minHeight: DS.Size.touchTarget)
+            .accessibilityIdentifier("person-bio-more") }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { withAnimation { expanded.toggle() } }
+    }
+}
+
+/// «Más ⌄»: el nombre primero y el ícono después.
+private struct TrailingIconLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: DS.Space.s1) { configuration.title; configuration.icon }
     }
 }

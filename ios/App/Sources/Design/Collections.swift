@@ -159,7 +159,6 @@ struct BecauseCard<Related: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             deckHeader
-            Text("te recomendamos:").recipe(.body, color: DS.textMuted)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: DS.Space.s2) { related() }
                     .environment(\.posterCaptions, false)

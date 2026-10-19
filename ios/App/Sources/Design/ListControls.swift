@@ -68,7 +68,12 @@ struct SortableGrid<Cell: View>: View {
     var watched: (() async -> Set<String>)?
     /// Las calificaciones de IMDb (se piden al elegir ese orden).
     var imdbRatings: (([Suggestion]) async -> [String: Double])?
-    @ViewBuilder var cell: (Suggestion) -> Cell
+    /// Sin «Series o películas» en el menú: la pantalla ya trae su propio `DSKindFilter` (un año de «Por año»).
+    var showsKindFilter = true
+    /// La lista todavía viene en camino: la ruedita al centro en lugar del vacío.
+    var loading = false
+    /// Cada póster recibe el ancho de su columna (`DSPosterGrid`).
+    @ViewBuilder var cell: (Suggestion, CGFloat) -> Cell
     @State private var sort: ListSort
     @State private var filter = ListFilter()
     @State private var seen: Set<String> = []
@@ -76,9 +81,11 @@ struct SortableGrid<Cell: View>: View {
     @State private var rating = false
 
     init(listID: String, items: [Suggestion], watched: (() async -> Set<String>)? = nil,
-         imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, @ViewBuilder cell: @escaping (Suggestion) -> Cell) {
+         imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, showsKindFilter: Bool = true, loading: Bool = false,
+         @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
         let shared = ListsView.sharedCollections
         self.listID = listID; self.items = items; self.cell = cell
+        self.showsKindFilter = showsKindFilter; self.loading = loading
         self.watched = watched ?? { await shared.watchedIDs() }
         self.imdbRatings = imdbRatings ?? { items in await shared.imdbRatings(items.map { ($0.kind, $0.imdb) }) }
         _sort = State(initialValue: UserDefaults.standard.string(forKey: "list-sort.\(listID)").flatMap(ListSort.init(rawValue:)) ?? .added)
@@ -88,12 +95,15 @@ struct SortableGrid<Cell: View>: View {
         let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb)
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             if filter.isActive { activeChips }
-            if rating { ProgressView().frame(maxWidth: .infinity) }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                ForEach(shown) { s in cell(s) }
+            if items.isEmpty {
+                // Mientras llega, la ruedita al centro; ya llegada y sin nada, el vacío de la app (no una pantalla en blanco).
+                if loading { ProgressView().frame(maxWidth: .infinity).padding(.vertical, DS.Space.s14) }
+                else { DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"), message: Text("Esta lista todavía no tiene títulos.")) }
+            } else if shown.isEmpty {
+                DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Cambia el orden o lo que ocultas."))
+            } else {
+                DSPosterGrid(items: shown) { s, width in cell(s, width) }
             }
-            .padding(.horizontal, DS.Space.gutter)
-            if shown.isEmpty, !items.isEmpty { DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Cambia el orden o lo que ocultas.")) }
         }
         .toolbar { ToolbarItem(placement: .topBarTrailing) { menu } }
         .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }
@@ -146,12 +156,14 @@ struct SortableGrid<Cell: View>: View {
                     }
                 }
             } label: { Label("Ordenar", systemImage: "arrow.up.arrow.down") }
-            Picker(selection: $filter.kind) {
-                Text("Todo").tag(String?.none)
-                Text("Series").tag(String?.some("series"))
-                Text("Películas").tag(String?.some("movie"))
-            } label: { Label("Series o películas", systemImage: "film.stack") }
-            .pickerStyle(.menu)
+            if showsKindFilter {
+                Picker(selection: $filter.kind) {
+                    Text("Todo").tag(String?.none)
+                    Text("Series").tag(String?.some("series"))
+                    Text("Películas").tag(String?.some("movie"))
+                } label: { Label("Series o películas", systemImage: "film.stack") }
+                .pickerStyle(.menu)
+            }
             if !genres.isEmpty {
                 Picker(selection: $filter.genre) {
                     Text("Todos").tag(String?.none)
@@ -173,7 +185,9 @@ struct SortableGrid<Cell: View>: View {
             }
             if AppEnvironment.shared.services.trakt?.linked == true { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
         } label: {
-            Image(systemName: filter.isActive || sort != .added ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+            // Mientras llegan las calificaciones de IMDb, la ruedita va en el botón (la cuadrícula no se mueve).
+            if rating { ProgressView() }
+            else { Image(systemName: filter.isActive || sort != .added ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle") }
         }
         .accessibilityLabel(Text("Ordenar y filtrar"))
         .accessibilityIdentifier("list-controls")
@@ -201,4 +215,42 @@ struct SortableGrid<Cell: View>: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+/// La cuadrícula de pósters de toda la app: columnas fijas que llenan el ancho (3; 4 en pantallas anchas; 2 con letra de
+/// accesibilidad), separadas por `DS.Space.s3` y con los bordes en el margen de la pantalla. Cada celda recibe el ancho de su
+/// columna para que el póster (2:3) la llene: antes, `.adaptive` con celdas fijas de 100 dejaba huecos de 27 y los pósters
+/// metidos del margen.
+struct DSPosterGrid<Data: RandomAccessCollection, Cell: View>: View where Data.Element: Identifiable {
+    let items: Data
+    var rowSpacing: CGFloat = DS.Space.s4
+    @ViewBuilder var cell: (Data.Element, CGFloat) -> Cell
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var width: CGFloat = 0
+
+    private var columns: Int {
+        if typeSize.isAccessibilitySize { return DS.Poster.gridColumnsLarge }
+        return width >= DS.Poster.gridWideWidth ? DS.Poster.gridColumnsWide : DS.Poster.gridColumns
+    }
+
+    private var cellWidth: CGFloat {
+        let inner = width - DS.Space.gutter * 2 - DS.Space.s3 * CGFloat(columns - 1)
+        return max(0, (inner / CGFloat(columns)).rounded(.down))
+    }
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3, alignment: .topLeading), count: columns),
+                  alignment: .leading, spacing: rowSpacing) {
+            if width > 0 { ForEach(items) { cell($0, cellWidth) } }
+        }
+        .padding(.horizontal, DS.Space.gutter)
+        .frame(maxWidth: .infinity)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+    }
+}
+
+/// Un lugar vacío de `DSPosterGrid` mientras llegan los resultados.
+struct DSPosterSlot: Identifiable {
+    let id: Int
+    static func slots(_ count: Int) -> [DSPosterSlot] { (0..<count).map(DSPosterSlot.init) }
 }

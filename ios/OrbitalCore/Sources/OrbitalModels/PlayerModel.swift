@@ -38,6 +38,8 @@ public struct UpNext: Sendable, Equatable {
     public var label: String           // «T2 · E6»
     public var title: String
     public var secondsLeft: Int
+    /// La imagen del episodio (Cinemeta), si la trae.
+    public var thumbnail: String? = nil
 }
 
 public enum PlayerNotice: Sendable, Equatable {
@@ -124,6 +126,8 @@ public final class PlayerModel: ObservableModel {
     /// El panel de ajustes del video está abierto (la tarjeta de «Siguiente» no se ve).
     public var panelOpen = false
     private var upNextDismissed = false
+    /// Modo demostración: el estado puesto a mano no lo recalcula el avance.
+    private var demoPinned = false
     private var autoAdvances = 0
     private var reachedEnd = false
     private var finalReported = false
@@ -752,6 +756,7 @@ public final class PlayerModel: ObservableModel {
 
     /// «Saltar intro» / «Saltar resumen»: primero los capítulos del archivo; si no los trae, las marcas de la comunidad.
     private func updateSkipIntro(_ s: EngineSnapshot) {
+        if demoPinned { return }
         let sorted = s.chapters.sorted { $0.time < $1.time }
         for (i, chapter) in sorted.enumerated() where PlaybackRules.chapterKind(chapter.title) == .intro {
             let end = i + 1 < sorted.count ? sorted[i + 1].time : s.duration
@@ -778,6 +783,7 @@ public final class PlayerModel: ObservableModel {
     }
 
     private func evaluateUpNext(_ s: EngineSnapshot, now: Date) async {
+        if demoPinned { return }
         guard let next = nextEpisodeID(), s.duration > 0, let request else { return }
         let remaining = s.duration - s.position
         if remaining <= PlaybackRules.upNextLookahead && !preloadedNext && request.localFile == nil {
@@ -794,7 +800,7 @@ public final class PlayerModel: ObservableModel {
         if upNext == nil && !upNextDismissed && near {
             upNextDeadline = now.addingTimeInterval(PlaybackRules.upNextCountdown)
             let (label, title) = episodeText(next)
-            upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: Int(PlaybackRules.upNextCountdown))
+            upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: Int(PlaybackRules.upNextCountdown), thumbnail: episodeThumbnail(next))
         } else if upNext != nil && !near && remaining > PlaybackRules.upNextAt + 5 {
             upNext = nil; upNextDeadline = nil          // retrocediste lejos del final: la tarjeta ya no aplica
         }
@@ -807,6 +813,29 @@ public final class PlayerModel: ObservableModel {
         }
         return ("", "")
     }
+
+    private func episodeThumbnail(_ videoID: String) -> String? {
+        guard let meta = request?.meta else { return nil }
+        return CinemetaParsing.seasons(meta).lazy.compactMap { $0.episodes.first { $0.id == videoID } }.first?.thumbnail
+    }
+
+    #if DEBUG
+    /// Solo para el modo demostración: pone el reproductor en un estado difícil de alcanzar en el simulador
+    /// («skip-intro», «error», «upnext»).
+    public func demoState(_ kind: String) {
+        demoPinned = true
+        switch kind {
+        case "skip-intro": skipKind = .intro; skipIntroTo = snapshot.position + 60
+        case "error": fail("No pude abrir este video. La fuente dejó de responder.")
+        case "upnext":
+            guard let next = nextEpisodeIDIgnoringLocal() else { return }
+            let (label, title) = episodeText(next)
+            upNextDeadline = nil   // que no avance solo mientras se captura
+            upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: Int(PlaybackRules.upNextCountdown) - 3, thumbnail: episodeThumbnail(next))
+        default: break
+        }
+    }
+    #endif
 
     public func cancelUpNext() { userTouched(); upNext = nil; upNextDeadline = nil; upNextDismissed = true }
     public func playNextNow() async { userTouched(); await advance(auto: false)?.value }
