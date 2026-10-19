@@ -190,6 +190,7 @@ const ui = {
     load: (choice) => api.forYouDecide(choice),
     skip: (imdb) => api.forYouDecideSkip(imdb),
     onPick: (item) => openTitle(item),
+    onChange: () => renderHints(),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),

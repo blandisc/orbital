@@ -18,7 +18,7 @@ const QUESTIONS = [
 ];
 const TIME_LEAD = { short: "media hora", hour: "una hora", long: "dos horas o más" };
 
-export function createDecide({ load, skip, onPick, onMove, onClose }) {
+export function createDecide({ load, skip, onPick, onMove, onClose, onChange = () => {} }) {
   const lead = h("p", { class: "decide__lead" });
   const picksEl = h("div", { class: "decide__picks", role: "group" });
   const name = h("h3", { class: "decide__name" });
@@ -92,6 +92,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose }) {
     }
     paintPicks();
     paint();
+    onChange(); // el pie: «Ver la ficha» y «Hoy no» ya aplican (antes se quedaba con el de «Buscando…»)
   }
 
   /** Elegir una respuesta: la propuesta cambia con ella. */
