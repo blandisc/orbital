@@ -62,13 +62,14 @@ def quit_orbital(app) -> None:
 
 def wait_until_up(url: str, timeout: float = 20) -> bool:
     deadline = time.time() + timeout
-    while time.time() < deadline:
+    while True:
         try:
-            with urllib.request.urlopen(url + "/api/health", timeout=1):
+            with urllib.request.urlopen(url + "/api/health", timeout=min(2.0, max(.5, deadline - time.time()))):
                 return True
         except OSError:
+            if time.time() >= deadline:
+                return False
             time.sleep(0.3)
-    return False
 
 
 def open_window(url: str) -> None:
@@ -325,13 +326,19 @@ def main(argv: list[str] | None = None) -> None:
 
     url = f"http://127.0.0.1:{config.server.port}"
     mode = args.ui or config.ui.mode
-    if already_running(url):  # el ícono del escritorio con Orbital ya abierto: solo mostrar su ventana
-        log.info("Orbital ya está abierto: traigo su ventana")
-        show_running(url)
-        return
-    if not supervisor.is_child() and not single_instance(wait=10):  # otro Orbital que no termina de cerrar
-        log.warning("Hay otro Orbital abierto que no responde; no abro un segundo")
-        return
+    if not supervisor.is_child():
+        # El clic en el ícono: si ya está abierta (o arrancando), su ventana; si se colgó, se cierra y se abre otra.
+        from . import launch_click, windows
+
+        outcome = launch_click.resolve(
+            answers=lambda seconds: wait_until_up(url, timeout=seconds),
+            take_lock=lambda seconds: single_instance(wait=seconds),
+            show=lambda: show_running(url),
+            stuck=lambda: launch_click.stuck_orbital(os.getpid(), windows.processes, windows.command_line),
+            kill=launch_click.kill)
+        if outcome != "start":
+            log.info("Orbital ya estaba abierta: traigo su ventana" if outcome == "shown" else "No abrí Orbital (ver lanzador.log)")
+            return
     if supervising:  # el candado es del vigilante; el Orbital de verdad corre como su hijo
         raise SystemExit(supervisor.run(raw_argv))
     holder: dict = {}
