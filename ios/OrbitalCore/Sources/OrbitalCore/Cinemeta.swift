@@ -74,20 +74,34 @@ public actor Cinemeta {
     static let cacheMax = 400
 
     private let http: HTTPClient
+    /// Solo para Cinemeta mismo (sin claves en sus direcciones): guarda en disco lo que Cinemeta deja guardar (un día), así una
+    /// búsqueda ya hecha sale al instante aunque cierres la app. Los complementos siguen por `http`, sin disco.
+    private let cached: HTTPClient?
     private let root: URL
     private let registry: AddonRegistry?
     private let clock: @Sendable () -> Date
     private var cache: [URL: (expires: Date, json: JSON)] = [:]
 
-    public init(http: HTTPClient, base: URL = Cinemeta.base, registry: AddonRegistry? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.root = base; self.registry = registry; self.clock = clock
+    public init(http: HTTPClient, cached: HTTPClient? = nil, base: URL = Cinemeta.base, registry: AddonRegistry? = nil,
+                clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.http = http; self.cached = cached; self.root = base; self.registry = registry; self.clock = clock
     }
 
-    private func get(_ url: URL) async throws -> JSON {
+    /// Cuánto se espera una búsqueda (el doble como plazo total): Cinemeta a veces se cuelga con una búsqueda nueva, y
+    /// antes eso dejaba la pantalla en blanco hasta 20 s por intento. Lo demás (fichas, catálogos) espera lo de siempre.
+    public static let searchTimeout: TimeInterval = 4
+
+    /// Abre la conexión con Cinemeta antes de la primera búsqueda (DNS y TLS ya hechos al escribir la primera letra).
+    public func warmUp() async {
+        _ = try? await (cached ?? http).send(HTTPRequest(url: root.appendingPathComponent("manifest.json"), method: "HEAD", timeout: 5))
+    }
+
+    private func get(_ url: URL, timeout: TimeInterval = 10) async throws -> JSON {
         let now = clock()
         if let hit = cache[url], now < hit.expires { return hit.json }
         let json: JSON?
-        do { json = try await http.getJSON(url, timeout: 10) } catch { throw CinemetaError.network("\(error)") }
+        let client = url.host == root.host ? (cached ?? http) : http
+        do { json = try await client.getJSON(url, timeout: timeout) } catch { throw CinemetaError.network("\(error)") }
         guard let json, json.object != nil else { throw CinemetaError.unexpected }
         if cache.count >= Self.cacheMax {  // la caché no crece sin tope
             for key in cache.filter({ now >= $0.value.expires }).keys { cache[key] = nil }
@@ -110,7 +124,7 @@ public actor Cinemeta {
     public func search(_ kind: String, query: String) async throws -> [JSON] {
         let q = uriComponent(query.trimmingCharacters(in: .whitespacesAndNewlines))
         guard let url = url("/catalog/\(kind)/top/search=\(q).json") else { throw CinemetaError.unexpected }
-        return CinemetaParsing.usable(try await get(url)["metas"]?.array)
+        return CinemetaParsing.usable(try await get(url, timeout: Self.searchTimeout)["metas"]?.array)
     }
 
     /// Películas y series juntas, alternando tipos.

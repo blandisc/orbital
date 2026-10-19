@@ -128,7 +128,7 @@ public enum DesignTokens {
     public enum Aspect { public static let poster = 2.0 / 3.0, hero = 16.0 / 11.0, still = 16.0 / 9.0 }
     /// Esperas de la interfaz (segundos).
     public enum Timing {
-        public static let controlsHide = 4.0, banner = 4.0, searchDebounce = 0.3, tick = 1.0, longPressDelay = 0.4
+        public static let controlsHide = 4.0, banner = 4.0, searchDebounce = 0.2, tick = 1.0, longPressDelay = 0.4
         /// Cuánto se queda a la vista el indicador de brillo o volumen después de soltar, antes de desvanecerse.
         public static let gestureIndicatorHold = 1.0
     }

@@ -63,7 +63,9 @@ struct BrowseView: View {
             #if DEBUG
             if Demo.isOn, let text = Demo.search { query = text }
             #endif
+            async let warm: Void = env.services.cinemeta.warmUp()   // la conexión con Cinemeta lista antes de la primera letra
             if catalog.model.popular.isEmpty { await catalog.model.load() }   // ya se pidió al abrir la app
+            await warm
         }
         .refreshable { await catalog.model.load() }
     }

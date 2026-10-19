@@ -39,6 +39,15 @@ public struct URLSessionHTTPClient: HTTPClient {
     /// Sesión efímera: no guarda en disco las respuestas (las direcciones de los complementos llevan tu clave de Real-Debrid).
     public init(session: URLSession = URLSession(configuration: .ephemeral)) { self.session = session }
 
+    /// Para servicios públicos sin claves en la dirección (Cinemeta): respeta lo que el servidor deja guardar, en disco.
+    public static func publicCache(_ name: String, megabytes: Int = 40) -> URLSessionHTTPClient {
+        let config = URLSessionConfiguration.default
+        config.urlCache = URLCache(memoryCapacity: 4 << 20, diskCapacity: megabytes << 20, directory: FileManager.default
+            .urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent(name, isDirectory: true))
+        config.requestCachePolicy = .useProtocolCachePolicy
+        return URLSessionHTTPClient(session: URLSession(configuration: config))
+    }
+
     public func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         var urlRequest = URLRequest(url: request.url, timeoutInterval: request.timeout)
         urlRequest.httpMethod = request.method

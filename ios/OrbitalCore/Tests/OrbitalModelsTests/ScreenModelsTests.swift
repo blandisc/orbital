@@ -109,6 +109,29 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(SearchModel(rig.services).recent, ["DUNE", "Severance"], "se guarda")
     }
 
+    func testSearchShowsEachKindAsItArrivesAndKeepsOneWhenTheOtherFails() async throws {
+        let rig = try ServicesRig()
+        let movies = try Fixtures.json("cinemeta/search_movie_dune.json"), series = try Fixtures.json("cinemeta/search_series_dune.json")
+        let movieURL = "https://v3-cinemeta.strem.io/catalog/movie/top/search=dune.json", seriesURL = "https://v3-cinemeta.strem.io/catalog/series/top/search=dune.json"
+        rig.http.json[movieURL] = ["metas": movies]
+        rig.http.json[seriesURL] = ["metas": series]
+        rig.http.delays = [seriesURL: 400]
+        let search = SearchModel(rig.services)
+        let running = Task { await search.search("dune") }
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertTrue(!search.results.isEmpty && search.results.allSatisfy { $0.kind == "movie" }, "las películas no esperan a las series")
+        await running.value
+        XCTAssertTrue(search.results.contains { $0.kind == "series" }, "las series se suman al llegar")
+
+        // Series falla (las dos veces): las películas se quedan y no hay error.
+        rig.http.json[seriesURL.replacingOccurrences(of: "dune", with: "duna")] = nil
+        rig.http.json[movieURL.replacingOccurrences(of: "dune", with: "duna")] = ["metas": movies]
+        rig.http.delays = [:]
+        await search.search("duna")
+        XCTAssertNil(search.error)
+        XCTAssertTrue(!search.results.isEmpty && search.results.allSatisfy { $0.kind == "movie" })
+    }
+
     // MARK: ficha
     func titleRig() throws -> ServicesRig {
         let rig = try ServicesRig()

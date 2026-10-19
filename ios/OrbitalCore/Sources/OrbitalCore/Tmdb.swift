@@ -279,6 +279,19 @@ public actor Localizer {
         return value
     }
 
+    /// Los nombres en tu idioma que ya se tienen (memoria o disco), sin pedir nada: así una búsqueda se ve traducida desde
+    /// el primer momento en lo ya conocido, en vez de salir en inglés y cambiar al rato.
+    public func knownTitles(kind: String, ids: [String]) -> [String: String] {
+        guard let lang = active else { return [:] }
+        var names: [String: String] = [:]
+        for id in ids {
+            let key = "\(lang)|\(id)|\(kind)|false"
+            let found = cache[key].flatMap { clock() < $0.expires ? $0.value : nil } ?? saved(key)
+            if let title = found?.title, !title.isEmpty { names[id] = title }
+        }
+        return names
+    }
+
     /// La ficha en tu idioma (una copia; la original no se toca).
     public func meta(kind: String, meta: JSON) async -> JSON {
         let imdb = meta["imdb_id"]?.string ?? meta["id"]?.string
