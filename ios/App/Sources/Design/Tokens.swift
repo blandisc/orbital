@@ -55,6 +55,8 @@ enum DS {
     static let brandMoon = role(.brandMoon)
     /// Lo que salió bien o ya está (visto, descargado, conectado): el papel, como la TV.
     static let good = role(.accent)
+    /// Un interruptor prendido que tiene que leerse de lejos (los avisos de estrenos): el verde del sistema.
+    static let switchOn = Color.green
     static let warning = role(.warning)
     static let danger = role(.danger)
     static let hairline = overlay(DesignTokens.Opacity.hairline)
@@ -80,11 +82,15 @@ enum DS {
     /// «Un Simpson al azar»: la ruleta de episodios (ancho de cada imagen, espacio, cuánto gira y cuánto se queda el elegido
     /// antes de empezar), la dona y el amarillo de Los Simpson.
     enum Simpsons {
-        // Un cambio de canal (≈1.2 s): aparece con rebote (0.25 s), tres clics con estática y su número de canal (~0.35 s),
-        // se queda y brilla (0.3 s) y la imagen crece desde la pantalla hasta llenar el iPhone (0.35 s).
+        // Un cambio de canal (≈2.4 s): aparece con rebote (0.25 s), tres clics con estática y su número de canal (~0.35 s),
+        // se queda y brilla, se sostiene en el canal elegido (0.7 s) y la imagen crece despacio desde la pantalla hasta
+        // llenar el iPhone (1.1 s, arranque suave y aterrizaje largo), una pausa breve con la imagen llena y entra el video.
         static let reelLength = 3, warmWait: Double = 0.25
         static let appear: Double = 0.25, bounce: Double = 0.35, staticBurst: Double = 0.08, flip: Double = 0.1
-        static let settle: Double = 0.15, flashOff: Double = 0.08, hold: Double = 0.3, zoom: Double = 0.35, handoff: Double = 0.05
+        static let settle: Double = 0.15, flashOff: Double = 0.08, hold: Double = 0.7, zoom: Double = 1.1, handoff: Double = 0.05
+        static let zoomRest: Double = 0.2   // la imagen ya llena, quieta un instante antes de que entre el reproductor
+        /// Curva del crecimiento: sale lento, avanza y se posa sin frenazo (no «te la avienta»).
+        static let zoomCurve = Animation.timingCurve(0.4, 0, 0.15, 1, duration: zoom)
         static let channels = [3, 7, 12]
         // La tele.
         static let screen: CGFloat = 220, screenAspect: CGFloat = 4 / 3, screenRadius: CGFloat = 28, screenFrame: CGFloat = 3
@@ -376,6 +382,8 @@ enum DS {
         static let deckPoster: CGFloat = 112, deckShift: CGFloat = 7, deckTurn: Double = 3, deckShrink: CGFloat = 0.05, deckThrow: CGFloat = 40, deckDepth = 3
         /// Aventar la carta: sale volando de lado en 0.22 s y las de abajo suben con un resorte ágil.
         static let deckFly: Double = 0.22, deckFlyDistance: CGFloat = 340, deckSettle: Double = 0.28
+        /// Los botones de anterior y siguiente del mazo: el glifo y el círculo (≥ 44 pt para tocar).
+        static let deckNavGlyph: CGFloat = 22, deckNav: CGFloat = 48
         /// «Por año»: la tarjeta (cuatro pósters) y su número.
         static let yearWidth: CGFloat = 150, yearHeight: CGFloat = 150
         /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.

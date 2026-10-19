@@ -42,9 +42,14 @@ public protocol PlayerEngine: AnyObject, Sendable {
     /// en la ventana de PiP.
     func prepare(audioLanguages: [String], subtitleLanguages: [String], externalSubtitles: [URL]) async
     var snapshots: AsyncStream<EngineSnapshot> { get }
+    /// Al volver de segundo plano: rearma lo que el sistema le quitó al video (el motor suelta el decodificador y la conexión
+    /// al irse a segundo plano en pausa) en el mismo punto, y sigue sonando si `resume`. `false`: no pudo (la fuente ya no
+    /// contesta o su enlace caducó) y hay que volver a pedir el video.
+    func restoreAfterBackground(resume: Bool) async -> Bool
 }
 
 public extension PlayerEngine {
+    func restoreAfterBackground(resume: Bool) async -> Bool { true }
     func setRate(_ rate: Float) async {}
     func prepare(audioLanguages: [String], subtitleLanguages: [String], externalSubtitles: [URL]) async {}
 }

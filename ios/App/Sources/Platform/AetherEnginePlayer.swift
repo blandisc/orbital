@@ -111,6 +111,24 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         if currentRate != 1 { engine.setRate(currentRate) }
     }
 
+    /// En segundo plano y en pausa (o tras la ventana de gracia de 15 s), AetherEngine suelta el decodificador y la conexión
+    /// (`releaseVideoPipelineForBackground`) y deja al anfitrión el rearmado: `needsForegroundVideoRestore` lo avisa y
+    /// `reloadAtCurrentPosition` lo hace. Sin esto, al volver la capa quedaba sin video (negro) para siempre.
+    func restoreAfterBackground(resume: Bool) async -> Bool {
+        var broken = false
+        if case .error = engine.state { broken = true }
+        guard engine.needsForegroundVideoRestore || broken else {
+            if resume, engine.state == .paused { engine.play() }
+            return true
+        }
+        guard engine.sessionReloadRefusal == nil else { return false }
+        do { try await engine.reloadAtCurrentPosition() } catch { return false }
+        if case .error = engine.state { return false }
+        if resume { engine.play() } else { engine.pause() }
+        if currentRate != 1 { engine.setRate(currentRate) }
+        return true
+    }
+
     private func publish() {
         let state: EngineState
         switch engine.state {

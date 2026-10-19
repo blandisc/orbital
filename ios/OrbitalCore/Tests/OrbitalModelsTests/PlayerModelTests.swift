@@ -258,6 +258,22 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertNil(model.skipIntroTo)
     }
 
+    /// IntroDB que no responde a la primera: se reintenta, y el botón sale en cuanto llegan las marcas (sin otro aviso del motor).
+    func testCommunityMarksAreRetriedAndShowTheButtonAsSoonAsTheyArrive() async throws {
+        let rig = try twoSources()
+        final class Calls: @unchecked Sendable { var n = 0 }
+        let calls = Calls()
+        let model = PlayerModel(engine: rig.engine, finder: rig.finder, watch: rig.watch, titlePrefs: rig.titlePrefs, settings: rig.settings, clock: { rig.clock.now },
+                                skipSegments: { _ in calls.n += 1; return calls.n == 1 ? nil : SkipSegments(intro: 0...31) })
+        model.segmentRetryDelays = [0.01]
+        await model.begin(rig.request())
+        await model.handle(rig.playing(5))
+        XCTAssertNil(model.skipIntroTo)
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(calls.n, 2, "la primera falla y se pide otra vez")
+        XCTAssertEqual(model.skipIntroTo, 31, "sin esperar el siguiente aviso del motor")
+    }
+
     func testAsksYourAddonsForSubtitlesWhenTheVideoHasNone() async throws {
         let rig = try twoSources()
         rig.settings.update { $0.audio = "en"; $0.subtitles = "es" }
@@ -440,6 +456,27 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(request)
         XCTAssertEqual(rig.engine.loads.map(\.url.path), ["/tmp/video.mkv"])
         XCTAssertFalse(rig.http.calls.contains { $0.contains("/stream/") })
+    }
+
+    func testScrubThenReleaseSeeksOnceToTheLastPointInOrder() async throws {
+        let rig = try Rig()
+        await rig.model.begin(rig.request())
+        let before = rig.engine.calls.count
+        rig.model.scrub(to: 100); rig.model.scrub(to: 200); rig.model.scrub(to: 300)
+        await rig.model.seek(to: 320)
+        try await Task.sleep(nanoseconds: 2 * PlaybackRules.streamScrubInterval)
+        XCTAssertEqual(Array(rig.engine.calls.dropFirst(before)), ["seek 320"], "solo el último punto, una vez, y nada viejo después")
+    }
+
+    func testScrubKeepsTheLatestPointWhileASeekIsInFlight() async throws {
+        let rig = try Rig()
+        await rig.model.begin(rig.request())
+        let before = rig.engine.calls.count
+        rig.model.scrub(to: 100)
+        await Task.yield(); await Task.yield()
+        rig.model.scrub(to: 150); rig.model.scrub(to: 180)
+        try await Task.sleep(nanoseconds: 3 * PlaybackRules.streamScrubInterval)
+        XCTAssertEqual(rig.engine.calls.dropFirst(before).last, "seek 180", "el punto final del arrastre no se pierde")
     }
 }
 

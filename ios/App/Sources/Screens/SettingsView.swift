@@ -272,6 +272,7 @@ struct SettingsView: View {
                     else { model.update { $0.releaseAlerts = false }; env.notify("Activa los avisos de Orbital en Ajustes del iPhone.", tone: .warn) }
                 }
             }))
+            .tint(DS.switchOn)
             .accessibilityIdentifier("release-alerts")
         } footer: {
             Text("De las series que sigues en Trakt. Te avisa cuando ya hay fuente en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.")
