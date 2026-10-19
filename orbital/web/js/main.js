@@ -404,7 +404,8 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   }
   state.focus = next;
   const rowId = state.rows[next.r]?.id;
-  if (rowId === "curated:because-seeds") chooseBecause(state.rows[next.r].items[next.c]?.seed);
+  const seedFocused = state.rows[next.r]?.items[next.c]?.seed;
+  if (seedFocused) chooseBecause(seedFocused); // «Porque viste»: moverte por tus títulos cambia lo relacionado
   if (rowId) state.memory[rowId] = next.c;
   ui.shelf.setFocus(next.r, next.c);
   if (moved || silent) {

@@ -114,17 +114,19 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   }
   const because = byId.because;
   if (because?.seed) {
-    // Como el iPhone («Mini pósters»): arriba tus últimos títulos para elegir de cuál (← → en la fila; cada día otro de los
-    // primeros cinco) y debajo lo que Trakt relaciona con el elegido, en su orden. El porqué es la semilla.
+    // «Escenario» (la tele, no el mazo del iPhone): una sola fila. A la izquierda, fijo, lo que viste en grande y tus
+    // últimos títulos en miniatura (moverte por ellos cambia la sugerencia; cada día otro de los primeros cinco); a la
+    // derecha, lo que Trakt relaciona con el elegido, en su orden.
     const { seed: s, listId, seeds } = becauseSeed(because, becauseChoice);
     const related = itemsOf(itemsById, { ...because, id: listId }, filter).filter((i) => i.meta_id !== s.meta_id);
-    if (seeds.length > 1) {
-      rows.push({ id: "curated:because-seeds", title: "Porque viste", seal: "trakt", group: "because", seeds: true,
-        items: seeds.map((x) => ({ ...curatedItem({ meta_id: x.meta_id, kind: x.kind, title: x.title, image: x.image, why: "Viste hace poco" }),
-          id: `seed:${x.meta_id}`, seed: x.meta_id, chosen: x.meta_id === s.meta_id })) });
-    }
-    if (related.length) {
-      rows.push({ id: "curated:because", title: `Porque viste ${s.title}`, seal: "trakt", group: "because", items: related.slice(0, 15).map(curatedItem) });
+    const thumbs = (seeds.length ? seeds : [s]).map((x) => ({
+      ...curatedItem({ meta_id: x.meta_id, kind: x.kind, title: x.title, image: x.image, why: "Viste hace poco",
+        hero: `https://images.metahub.space/background/medium/${x.meta_id}/img` }),
+      id: `seed:${x.meta_id}`, seed: x.meta_id, chosen: x.meta_id === s.meta_id }));
+    if (related.length || thumbs.length > 1) {
+      rows.push({ id: "curated:because", title: `Porque viste ${s.title}`, seal: "trakt", group: "because",
+        stage: { title: s.title, kind: s.kind, image: `https://images.metahub.space/background/medium/${s.meta_id}/img`, seeds: thumbs.length },
+        items: [...thumbs, ...related.slice(0, 15).map(curatedItem)] });
     }
   }
   for (const [id, seal] of [["recs", "trakt"], ["trend", "trakt"], ["popular", "trakt"], ["cinemeta", "stremio"]]) {
