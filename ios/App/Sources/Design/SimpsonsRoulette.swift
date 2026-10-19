@@ -174,8 +174,8 @@ struct SimpsonsRoulette: View {
             await wait(DS.Simpsons.hold)
             guard !Task.isCancelled else { return }
             // La imagen crece desde la pantalla hasta llenar el iPhone.
-            withAnimation(.timingCurve(0.65, 0, 0.35, 1, duration: DS.Simpsons.zoom)) { expanded = true }
-            await wait(DS.Simpsons.zoom)
+            withAnimation(DS.Simpsons.zoomCurve) { expanded = true }
+            await wait(DS.Simpsons.zoom + DS.Simpsons.zoomRest)
             if !Task.isCancelled { start() }
         }
     }

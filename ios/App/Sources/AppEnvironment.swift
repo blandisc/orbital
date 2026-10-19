@@ -417,8 +417,10 @@ final class AppEnvironment: ObservableObject {
     func playSimpsons(_ draw: SimpsonsDraw) {
         let (season, episode) = draw.chosen
         let label = Strings.episode(season: season, episode: episode.episode, language: services.appSettings.uiLanguage) + (episode.hasTitle ? " · \(episode.title)" : "")
-        play(PlayRequest(kind: "series", metaID: Self.simpsons, videoID: episode.id, originalTitle: draw.name, displayTitle: draw.name, episodeLabel: label,
-                         poster: String(format: ForYou.metahubPoster, Self.simpsons), meta: draw.meta, fromStart: true))
+        var request = PlayRequest(kind: "series", metaID: Self.simpsons, videoID: episode.id, originalTitle: draw.name, displayTitle: draw.name, episodeLabel: label,
+                                  poster: String(format: ForYou.metahubPoster, Self.simpsons), meta: draw.meta, fromStart: true)
+        request.startPortrait = true   // sale de la tele de pie: el video entra en vertical, sin girar
+        play(request)
     }
 
     /// La imagen de un episodio (metahub).

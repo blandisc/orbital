@@ -22,6 +22,8 @@ public struct PlayRequest: Sendable {
     public var sourceIndex: Int?           // una fuente elegida en la lista
     /// Desde Mi media: primero tu copia de OneDrive (también para el siguiente episodio); si falla, Real-Debrid.
     public var ownCopy = false
+    /// Empieza en vertical (la ruleta de Los Simpson: la tele ya está de pie); girar el teléfono lo acuesta igual.
+    public var startPortrait = false
 
     public init(kind: String, metaID: String, videoID: String, originalTitle: String, displayTitle: String, episodeLabel: String = "", poster: String? = nil,
                 year: String? = nil, meta: JSON? = nil, fromStart: Bool = false, localFile: URL? = nil, localSubtitles: [URL] = [], binge: String? = nil, sourceIndex: Int? = nil) {
@@ -254,7 +256,7 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// Los mensajes de los motores pueden traer la dirección del video (con tu clave): nunca llegan a la pantalla.
-    private func fail(_ message: String) { phase = .failed(stripURLs(message)); startupDeadline = nil }
+    private func fail(_ message: String) { phase = .failed(stripURLs(message)); startupDeadline = nil; reconnecting = false; foregroundCheck = nil }
 
     // MARK: lo que dice el motor
     func handle(_ raw: EngineSnapshot) async {
@@ -276,6 +278,7 @@ public final class PlayerModel: ObservableModel {
             return
         }
         if s.state == .playing && !hasPlayed { hasPlayed = true; startupDeadline = nil; phase = .playing }
+        if reconnecting, hasPlayed, foregroundCheck == nil, s.state == .playing || s.state == .paused { reconnecting = false }
         if hasPlayed {
             await applyTracksOnce(s)                 // primero el audio y los subtítulos; el aviso a Trakt no los retrasa
             await selectNewSubtitleIfAny(s)
@@ -312,6 +315,7 @@ public final class PlayerModel: ObservableModel {
         guard phase != .closed, !closing else { return }
         let now = clock()
         defer { lastTick = now }
+        if foregroundCheck != nil { await checkForegroundStall(now: now) }
         if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying { return await retryWithAnotherSource()?.value ?? () }
         if snapshot.state == .playing {
             if now.timeIntervalSince(lastSave) >= PlaybackRules.saveEvery { await report(.tick) }
@@ -530,6 +534,13 @@ public final class PlayerModel: ObservableModel {
         userTouched()
         let target = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))
         if hasPlayed, abs(target - snapshot.position) >= PlaybackRules.rescrobbleJump { rescrobbleAfterSeek = true }
+        // Al soltar la barra con un arrastre en curso: la búsqueda final va en la misma fila (nunca dos a la vez, que
+        // podían terminar en desorden y dejar la escena en un punto viejo) y sin la espera entre búsquedas.
+        if let running = scrubTask {
+            scrubTarget = target; scrubFinishing = true
+            await running.value
+            return
+        }
         await engine.seek(to: target)
     }
     /// Mientras arrastras la barra: la escena sigue al dedo. Se busca el último punto pedido apenas termina la búsqueda
@@ -543,11 +554,12 @@ public final class PlayerModel: ObservableModel {
             while let self, let target = self.scrubTarget {
                 self.scrubTarget = nil
                 await self.engine.seek(to: target)
-                if !local { try? await Task.sleep(nanoseconds: PlaybackRules.streamScrubInterval) }
+                if !local, !self.scrubFinishing { try? await Task.sleep(nanoseconds: PlaybackRules.streamScrubInterval) }
             }
-            self?.scrubTask = nil
+            self?.scrubTask = nil; self?.scrubFinishing = false
         }
     }
+    private var scrubFinishing = false
     private var scrubTarget: Double?
     private var scrubTask: Task<Void, Never>?
 
@@ -574,15 +586,27 @@ public final class PlayerModel: ObservableModel {
 
     // MARK: intro y siguiente episodio
     /// Las marcas de IntroDB del video que va a sonar (una vez por video; otra fuente del mismo no las vuelve a pedir).
+    /// Esperas entre reintentos de las marcas de IntroDB cuando no responde.
+    var segmentRetryDelays: [Double] = [2, 5]
     private func loadSegmentsIfNeeded() {
         guard let videoID = request?.videoID, segmentsFor != videoID else { return }
         segmentsFor = videoID
         segments = nil
         let fetch = skipSegments
         Task { [weak self] in
-            let found = await fetch(videoID)
+            // Un tropiezo de red (o el límite de 6 s) no deja el video sin «Saltar intro»: se pide otra vez antes de rendirse.
+            var found = await fetch(videoID)
+            for delay in self?.segmentRetryDelays ?? [] where found == nil {
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                guard let self, self.request?.videoID == videoID, self.phase != .closed else { return }
+                found = await fetch(videoID)
+            }
             guard let self, self.request?.videoID == videoID else { return }
+            // Sin marcas: la próxima carga del mismo video (otra fuente, volver a abrirlo) las vuelve a pedir.
+            if found == nil { self.segmentsFor = nil; return }
             self.segments = found
+            // El botón sale en cuanto llegan, sin esperar al siguiente aviso del motor (en pausa no llega ninguno).
+            if self.hasPlayed { self.updateSkipIntro(self.snapshot) }
         }
     }
 
@@ -713,6 +737,83 @@ public final class PlayerModel: ObservableModel {
 
     /// Al pasar a segundo plano: se guarda ya (iOS puede suspender la app).
     public func appDidEnterBackground() async { if hasPlayed, phase != .closed, !closing { await report(.tick) } }
+
+    // MARK: volver de segundo plano
+    /// Volviendo de segundo plano: «Reconectando…» en vez de una pantalla negra, hasta que el video vuelve a avanzar.
+    public private(set) var reconnecting = false { didSet { changed() } }
+    private var backgrounded = false
+    private var resumeOnForeground = false
+    /// Tras volver: si iba sonando y en este plazo no avanzó, el video se pide otra vez en el mismo punto.
+    private var foregroundCheck: (deadline: Date, position: Double)?
+    static let foregroundStallSeconds: TimeInterval = 8
+
+    /// La app pasó a segundo plano de verdad (no solo el Centro de control): se recuerda si iba sonando.
+    public func appDidEnterBackgroundFully() {
+        guard hasPlayed, phase == .playing, !closing else { return }
+        backgrounded = true
+        resumeOnForeground = snapshot.state == .playing || snapshot.state == .buffering
+    }
+
+    /// De vuelta al frente: el motor rearma su video (lo soltó en segundo plano); si no puede, o si el video no vuelve a
+    /// avanzar, se vuelve a pedir la misma fuente en el mismo punto (con enlace nuevo si el de Real-Debrid caducó).
+    public func appDidBecomeActive() async {
+        guard backgrounded else { return }
+        backgrounded = false
+        guard hasPlayed, phase == .playing, !closing, acceptingSnapshots, !retrying else { return }
+        let resume = resumeOnForeground
+        let position = snapshot.position
+        let mine = generation
+        reconnecting = true
+        let restored = await engine.restoreAfterBackground(resume: resume)
+        guard mine == generation, !closing else { return }
+        if !restored { return await reloadCurrentSource(at: position, resume: resume) }
+        if resume { foregroundCheck = (clock().addingTimeInterval(Self.foregroundStallSeconds), position) } else { reconnecting = false }
+    }
+
+    /// El plazo tras volver: el video tenía que avanzar y no lo hizo (negro o congelado) → se pide de nuevo.
+    private func checkForegroundStall(now: Date) async {
+        guard let check = foregroundCheck else { return }
+        if snapshot.state == .paused { foregroundCheck = nil; reconnecting = false; return }   // lo pausaste tú
+        if snapshot.state == .playing, snapshot.position > check.position + 0.5 { foregroundCheck = nil; reconnecting = false; return }
+        guard now >= check.deadline else { return }
+        foregroundCheck = nil
+        await reloadCurrentSource(at: max(check.position, snapshot.position), resume: true)
+    }
+
+    /// Vuelve a abrir la fuente que sonaba en el mismo punto: la descarga, tu copia (enlace nuevo) o la de Real-Debrid
+    /// (con la lista renovada si ya caducó). Si tampoco abre, se prueba otra fuente como en cualquier corte.
+    private func reloadCurrentSource(at position: Double, resume: Bool) async {
+        guard let request, !closing else { return }
+        reconnecting = true
+        generation += 1
+        let mine = generation
+        acceptingSnapshots = false
+        var url: URL?
+        if let file = request.localFile { url = file }
+        else if let current = source {
+            if request.ownCopy, !sourceChoices.contains(where: { $0.key == current.key }), let own = await ownSource?(request.videoID, current.index) {
+                source = own; url = own.playbackURL
+            } else {
+                if clock().timeIntervalSince(choicesAt) > Self.choicesLifetime {
+                    let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
+                    if let fresh = try? await finder.find(kind: request.kind, videoID: request.videoID, prefs: prefs, fresh: true) { sourceChoices = fresh; choicesAt = clock() }
+                }
+                let pick = sourceChoices.first(where: { $0.key == current.key }) ?? current
+                source = pick; url = pick.playbackURL
+            }
+        }
+        guard mine == generation, !closing else { return }
+        startLoading()
+        phase = .preparing
+        guard let url else { await retryWithAnotherSource()?.value; return }
+        do {
+            try await loadVideo(url, at: position)
+            if !resume, mine == generation { await engine.pause() }
+        } catch {
+            guard mine == generation else { return }
+            await retryWithAnotherSource()?.value
+        }
+    }
 }
 
 extension Double {

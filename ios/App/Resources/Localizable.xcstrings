@@ -7173,6 +7173,17 @@
         }
       }
     },
+    "Pantalla y giro bloqueados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen and rotation locked"
+          }
+        }
+      }
+    },
     "Para conectar Trakt hace falta una aplicación de la API de Trakt (trakt.tv/oauth/applications). Pega aquí su identificador.": {
       "extractionState": "manual",
       "localizations": {
@@ -7950,6 +7961,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recommend based on…"
+          }
+        }
+      }
+    },
+    "Reconectando…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnecting…"
           }
         }
       }

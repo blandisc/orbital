@@ -115,6 +115,14 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     }
 
     func play() async { await MainActor.run { player.play() } }
+    /// AVPlayer se rearma solo; lo que no recupera es un elemento que falló (la conexión se cortó estando suspendida).
+    func restoreAfterBackground(resume: Bool) async -> Bool {
+        await MainActor.run {
+            guard let item = player.currentItem, item.status != .failed, player.error == nil else { return false }
+            if resume { player.play() }
+            return true
+        }
+    }
     func setRate(_ rate: Float) async {
         await MainActor.run {
             player.defaultRate = rate                       // la que usa `play()` desde ahora

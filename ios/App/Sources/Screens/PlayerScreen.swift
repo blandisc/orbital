@@ -62,7 +62,6 @@ struct PlayerScreen: View {
     @AppStorage("scare-warnings") private var scareWarnings = true
     @State private var finished = false
     @StateObject private var pip = PictureInPicture()
-    @State private var tilt = DeviceTilt()
     @State private var nowPlaying = NowPlaying()
     /// En vertical, a qué altura va el video (lo mueves arrastrándolo; se recuerda) y su valor mientras arrastras.
     @AppStorage("player-portrait-center") private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
@@ -134,6 +133,11 @@ struct PlayerScreen: View {
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
             if controlsVisible && !locked && !panel { controls(model).transition(.opacity) }
+            // «Saltar intro» no depende de los controles (se esconden a los pocos segundos y con ellos se iba el botón):
+            // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse.
+            else if !locked && !panel && model.skipIntroTo != nil {
+                VStack { Spacer(); skipIntro(model) }.padding(landscape ? DS.Space.s6 : DS.Space.gutter).transition(.opacity)
+            }
             if panel && landscape {
                 // Tocar fuera del panel lo cierra; el video sigue a la vista (el cambio de subtítulos se ve al momento).
                 Color.clear.contentShape(Rectangle()).onTapGesture { panel = false }
@@ -157,16 +161,9 @@ struct PlayerScreen: View {
         .animation(DS.Motion.base(reduceMotion), value: panel)
         .animation(DS.Motion.base(reduceMotion), value: dragAxis)
         .task {
-            lockLandscape()
-            // Girar el teléfono gira el video (aunque tengas el candado de rotación).
-            tilt.onChange = { pose in
-                switch pose {
-                case .portrait: rotate(allowed: .allButUpsideDown, to: .portrait)
-                case .landscapeLeft: rotate(allowed: .allButUpsideDown, to: .landscapeLeft)
-                case .landscapeRight: rotate(allowed: .allButUpsideDown, to: .landscapeRight)
-                }
-            }
-            tilt.start()
+            if request.startPortrait { rotate(allowed: .allButUpsideDown, to: .portrait) } else { lockLandscape() }
+            // Después, girar el teléfono gira el video como el resto de iOS: UIKit gira solo dentro de `allButUpsideDown`
+            // y respeta el candado de rotación del teléfono (con el candado puesto, el video se queda como está).
             // La sesión de video, siempre (la voz del control la deja en otro modo y con el volumen bajado).
             try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
             try? AVAudioSession.sharedInstance().setActive(true)
@@ -196,7 +193,12 @@ struct PlayerScreen: View {
                 nowPlaying.update(title: current.displayTitle, subtitle: current.episodeLabel, poster: current.poster, snapshot: model.snapshot)
             }
         }
-        .onChange(of: scenePhase) { _, phase in if phase != .active { Task { await model.appDidEnterBackground() } } }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { Task { await model.appDidEnterBackground() } }
+            // De vuelta: el motor soltó el video en segundo plano; se rearma (o se pide otra vez) en vez de quedarse en negro.
+            if phase == .background { model.appDidEnterBackgroundFully() }
+            if phase == .active { Task { await model.appDidBecomeActive() } }
+        }
         .onChange(of: model.phase) { _, phase in if phase == .closed { finish() } }
         // El video ya llegó (o pasó un momento): el pulgar vuelve a seguir el avance real.
         .onChange(of: model.snapshot.position) { _, position in
@@ -214,15 +216,17 @@ struct PlayerScreen: View {
             settingsPanel(model).fittedSheet().presentationDragIndicator(.visible)
         }
         .onDisappear {
-            UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); tilt.stop(); unlockPortrait()
+            UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait()
             UIScreen.main.brightness = CGFloat(originalBrightness)   // el brillo es del sistema: no se queda en lo que dejó el gesto
         }
     }
 
     // MARK: bloquear
-    /// Bloqueado: todo toque solo enseña el candado; nada pausa, adelanta ni mueve el video.
+    /// Bloqueado: todo toque solo enseña el candado; nada pausa, adelanta ni mueve el video, y el giro se congela
+    /// en la orientación de ese momento (girar el teléfono no voltea el video).
+    /// El aviso va arriba (en los dos sentidos): abajo tapaba los subtítulos y, en vertical, el pie del video.
     private var lockLayer: some View {
-        ZStack(alignment: .bottom) {
+        ZStack(alignment: .top) {
             Color.clear.contentShape(Rectangle())
                 .onTapGesture { showUnlockPrompt() }
                 .gesture(DragGesture(minimumDistance: 0).onEnded { _ in showUnlockPrompt() })
@@ -231,7 +235,7 @@ struct PlayerScreen: View {
                     HStack(spacing: DS.Space.s3) {
                         Image(systemName: "lock.fill").font(DS.TextRecipe.cardTitle.font)
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("Pantalla bloqueada").recipe(.footnote, color: DS.text).fontWeight(.semibold)
+                            Text("Pantalla y giro bloqueados").recipe(.footnote, color: DS.text).fontWeight(.semibold)
                             Text("Toca para desbloquear").recipe(.caption)
                         }
                     }
@@ -239,7 +243,7 @@ struct PlayerScreen: View {
                     .glassEffect(.regular.interactive(), in: Capsule())
                 }
                 .buttonStyle(.plain)
-                .padding(.bottom, DS.Space.s14)
+                .padding(.top, DS.Space.s4)
                 .transition(.opacity.combined(with: .scale(scale: DS.PlayerPanel.lockScale)))
                 .accessibilityIdentifier("player-unlock")
             }
@@ -252,6 +256,7 @@ struct PlayerScreen: View {
         panel = false
         hideTask?.cancel()
         withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false; locked = true }
+        freezeOrientation()
         showUnlockPrompt()
     }
 
@@ -268,6 +273,7 @@ struct PlayerScreen: View {
         unlockHide?.cancel()
         unlockPrompt = false
         withAnimation(DS.Motion.base(reduceMotion)) { locked = false; controlsVisible = true }
+        AppDelegate.orientations = .allButUpsideDown; refreshSupportedOrientations()
         scheduleHide()
     }
 
@@ -459,11 +465,14 @@ struct PlayerScreen: View {
                     Button { Task { await openInInfuse() } } label: { Label { Text("Abrir en Infuse") } icon: { InfuseIcon() } }.dsPrimaryButton()
                 }
             }.padding(DS.Space.s6)
-        default: if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
+        default:
+            if model.reconnecting { VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text("Reconectando…").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) } }
+            else if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
         }
     }
 
     private func preparingText(_ model: PlayerModel) -> LocalizedStringKey {
+        if model.reconnecting { return "Reconectando…" }
         if case .triedAnotherSource(let n)? = model.notice { return "Probando otra fuente (\(n))…" }
         return "Buscando la mejor fuente…"
     }
@@ -636,13 +645,14 @@ struct PlayerScreen: View {
     private var landscape: Bool { verticalSize == .compact }
 
     /// Dónde va el video. Horizontal: toda la pantalla (o a la izquierda del panel). Vertical: arriba, a todo lo ancho y en su
-    /// proporción (no apachurrado), a la altura que lo dejes al arrastrarlo; con el panel abierto, la mitad de arriba.
+    /// proporción y de orilla a orilla (no apachurrado), a la altura que lo dejes al arrastrarlo; con el panel abierto, la mitad de arriba.
     private func videoRect(in size: CGSize) -> CGRect {
         if landscape {
             return CGRect(x: 0, y: 0, width: panel ? max(0, size.width - DS.PlayerPanel.width - DS.Space.s4 * 2) : size.width, height: size.height)
         }
         if panel { return CGRect(x: 0, y: 0, width: size.width, height: size.height * DS.PlayerPanel.videoShare) }
-        let height = min(size.width / DS.Poster.stillAspect, size.height * DS.PlayerPanel.videoShare)
+        // De orilla a orilla: el alto sale del ancho y la proporción (sin tope), salvo que no quepa en la pantalla.
+        let height = min(size.width / DS.Poster.stillAspect, size.height)
         let center = size.height * (portraitDrag ?? portraitCenter)
         let y = min(max(0, center - height / 2), max(0, size.height - height))
         return CGRect(x: 0, y: y, width: size.width, height: height)
@@ -672,13 +682,32 @@ struct PlayerScreen: View {
     /// si no, la petición se ignora y el video se queda en vertical.
     private func rotate(allowed: UIInterfaceOrientationMask, to target: UIInterfaceOrientationMask) {
         AppDelegate.orientations = allowed
-        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return }
+        guard let scene = refreshSupportedOrientations() else { return }
+        Self.requestGeometry(scene, target, attemptsLeft: 10)
+    }
+
+    /// Avisa a la raíz y a todo lo que presenta encima (el reproductor es una pantalla completa presentada) de que
+    /// cambiaron las orientaciones permitidas.
+    @discardableResult
+    private func refreshSupportedOrientations() -> UIWindowScene? {
+        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return nil }
         for window in scene.windows {
-            // La raíz y todo lo que presenta encima (el reproductor es una pantalla completa presentada).
             var controller = window.rootViewController
             while let current = controller { current.setNeedsUpdateOfSupportedInterfaceOrientations(); controller = current.presentedViewController }
         }
-        Self.requestGeometry(scene, target, attemptsLeft: 10)
+        return scene
+    }
+
+    /// «Bloquear» también congela el giro: solo se permite la orientación de este momento hasta desbloquear.
+    private func freezeOrientation() {
+        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return }
+        let mask: UIInterfaceOrientationMask = switch scene.interfaceOrientation {
+        case .landscapeLeft: .landscapeLeft
+        case .landscapeRight: .landscapeRight
+        default: .portrait
+        }
+        AppDelegate.orientations = mask
+        refreshSupportedOrientations()
     }
 
     /// Mientras la pantalla completa se está presentando, iOS rechaza el giro («Supported: portrait»): se reintenta

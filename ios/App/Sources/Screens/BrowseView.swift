@@ -193,13 +193,12 @@ struct GenreView: View {
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                ForEach(items) { item in
-                    TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster), width: DS.Poster.gridMinimum,
-                              detail: yearAndKind(year: item.year, kind: item.kind))
-                }
+            // Con el mismo ordenar y filtrar que todo «Ver todo».
+            SortableGrid(listID: "genre:\(genre)", items: items.map(suggestion)) { s in
+                TitleLink(route: TitleRoute(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster.isEmpty ? nil : s.poster), width: DS.Poster.gridMinimum,
+                          detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s8)
+            .padding(.bottom, DS.Space.s8)
             .overlay { if !loaded { ProgressView() } }
         }
         .background(Backdrop())
@@ -210,5 +209,9 @@ struct GenreView: View {
             await model.genre(genre) { items = $0; loaded = true }
             loaded = true
         }
+    }
+
+    private func suggestion(_ item: CatalogItem) -> Suggestion {
+        Suggestion(kind: item.kind, imdb: item.metaID, title: item.title, year: Int(item.year.prefix(4)), poster: item.poster ?? "", wide: "", reason: .popular)
     }
 }

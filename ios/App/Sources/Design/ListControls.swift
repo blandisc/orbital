@@ -3,30 +3,46 @@ import OrbitalCore
 
 /// Cómo se ordena una lista abierta.
 enum ListSort: String, CaseIterable {
-    case added, imdb, trakt, newest, oldest, title
+    case added, best, imdb, trakt, newest, oldest, title, shortest
     var label: LocalizedStringKey {
         switch self {
-        case .added: "Como viene la lista"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"
+        case .added: "Como viene la lista"; case .best: "Mejor calificadas (IMDb y Trakt)"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"
+        case .shortest: "Más cortas primero"
         case .newest: "Año (lo más nuevo primero)"; case .oldest: "Año: más viejas"; case .title: "A–Z"
         }
     }
 }
 
-/// Lo que se filtra en una lista abierta: series o películas, un género, y ocultar lo que ya viste.
+/// Lo que se filtra en una lista abierta: series o películas, un género, una calificación mínima, una década y ocultar lo
+/// que ya viste. El mismo filtro en todo «Ver todo».
 struct ListFilter: Equatable {
     var kind: String?
     var genre: String?
+    /// «De 7 para arriba»: la calificación unida (IMDb y Trakt) mínima.
+    var minRating: Double?
+    /// «Los 90»: el primer año de la década.
+    var decade: Int?
     var hideWatched = false
-    var isActive: Bool { kind != nil || genre != nil || hideWatched }
+    var isActive: Bool { kind != nil || genre != nil || minRating != nil || decade != nil || hideWatched }
+
+    /// La calificación de un título juntando los servicios que la tengan (el promedio de IMDb y Trakt); nil si ninguno.
+    static func rating(_ s: Suggestion, imdb: [String: Double]) -> Double? {
+        let found = [imdb[s.imdb], s.traktRating].compactMap { $0 }.filter { $0 > 0 }
+        return found.isEmpty ? nil : found.reduce(0, +) / Double(found.count)
+    }
 
     func apply(_ items: [Suggestion], sort: ListSort, watched: Set<String>, imdb: [String: Double] = [:]) -> [Suggestion] {
         let kept = items.filter { s in
             (kind == nil || s.kind == kind)
                 && (genre == nil || s.genres.contains { $0.lowercased() == genre })
+                && (minRating == nil || (Self.rating(s, imdb: imdb) ?? 0) >= minRating!)
+                && (decade == nil || s.year.map { $0 / 10 * 10 == decade } == true)
                 && (!hideWatched || !watched.contains(s.imdb))
         }
         switch sort {
         case .added: return kept
+        case .best: return kept.sorted { (Self.rating($0, imdb: imdb) ?? 0) > (Self.rating($1, imdb: imdb) ?? 0) }
+        case .shortest: return kept.sorted { ($0.runtime ?? Int.max) < ($1.runtime ?? Int.max) }
         case .imdb: return kept.sorted { (imdb[$0.imdb] ?? 0) > (imdb[$1.imdb] ?? 0) }
         case .trakt: return kept.sorted { ($0.traktRating ?? 0) > ($1.traktRating ?? 0) }
         case .newest: return kept.sorted { ($0.year ?? 0) > ($1.year ?? 0) }
@@ -43,7 +59,8 @@ struct ListFilter: Equatable {
 }
 
 /// Una lista abierta en cuadrícula de pósters, con el botón de ordenar y filtrar arriba a la derecha y lo filtrado en
-/// cápsulas que se quitan con ✕. Cada lista recuerda su orden.
+/// cápsulas que se quitan con ✕. Cada lista recuerda su orden. Es el único «Ver todo»: lo visto y las calificaciones de
+/// IMDb salen solos de las colecciones de la app, así que toda lista tiene los mismos órdenes y filtros.
 struct SortableGrid<Cell: View>: View {
     let listID: String
     let items: [Suggestion]
@@ -60,7 +77,10 @@ struct SortableGrid<Cell: View>: View {
 
     init(listID: String, items: [Suggestion], watched: (() async -> Set<String>)? = nil,
          imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, @ViewBuilder cell: @escaping (Suggestion) -> Cell) {
-        self.listID = listID; self.items = items; self.watched = watched; self.imdbRatings = imdbRatings; self.cell = cell
+        let shared = ListsView.sharedCollections
+        self.listID = listID; self.items = items; self.cell = cell
+        self.watched = watched ?? { await shared.watchedIDs() }
+        self.imdbRatings = imdbRatings ?? { items in await shared.imdbRatings(items.map { ($0.kind, $0.imdb) }) }
         _sort = State(initialValue: UserDefaults.standard.string(forKey: "list-sort.\(listID)").flatMap(ListSort.init(rawValue:)) ?? .added)
     }
 
@@ -78,13 +98,23 @@ struct SortableGrid<Cell: View>: View {
         .toolbar { ToolbarItem(placement: .topBarTrailing) { menu } }
         .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }
         .task(id: filter.hideWatched) { if filter.hideWatched, let watched { seen = await watched() } }
-        .task(id: sort) {
-            guard sort == .imdb, let imdbRatings else { return }
+        .task(id: needsIMDb) {
+            guard needsIMDb, let imdbRatings else { return }
             rating = true
             imdb = await imdbRatings(items)
             rating = false
         }
     }
+
+    /// IMDb se pide solo si el orden o la calificación mínima la usan.
+    private var needsIMDb: Bool { sort == .best || sort == .imdb || filter.minRating != nil }
+
+    /// Las décadas que hay en la lista, de la más nueva a la más vieja.
+    private var decades: [Int] { Array(Set(items.compactMap { $0.year.map { $0 / 10 * 10 } })).sorted(by: >) }
+
+    private func decadeName(_ d: Int) -> Text { Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s") }
+
+    private func ratingName(_ r: Double) -> Text { Text("De \(Int(r)) para arriba") }
 
     private var genres: [String] {
         var counts: [String: Int] = [:]
@@ -98,6 +128,7 @@ struct SortableGrid<Cell: View>: View {
             switch s {
             case .imdb: imdbRatings != nil
             case .trakt: items.contains { $0.traktRating != nil }
+            case .shortest: items.contains { $0.runtime != nil }
             // Como la TV: sin «Como viene» (sin orden elegido, la lista va como llega) ni «más viejas».
             case .added, .oldest: false
             default: true
@@ -128,7 +159,19 @@ struct SortableGrid<Cell: View>: View {
                 } label: { Label("Género", systemImage: "theatermasks") }
                 .pickerStyle(.menu)
             }
-            if watched != nil { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
+            Picker(selection: $filter.minRating) {
+                Text("Cualquiera").tag(Double?.none)
+                ForEach([6.0, 7.0, 8.0], id: \.self) { ratingName($0).tag(Double?.some($0)) }
+            } label: { Label("Calificación", systemImage: "star") }
+            .pickerStyle(.menu)
+            if decades.count > 1 {
+                Picker(selection: $filter.decade) {
+                    Text("Todas").tag(Int?.none)
+                    ForEach(decades, id: \.self) { decadeName($0).tag(Int?.some($0)) }
+                } label: { Label("Década", systemImage: "calendar") }
+                .pickerStyle(.menu)
+            }
+            if AppEnvironment.shared.services.trakt?.linked == true { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
         } label: {
             Image(systemName: filter.isActive || sort != .added ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
         }
@@ -141,6 +184,8 @@ struct SortableGrid<Cell: View>: View {
             HStack(spacing: DS.Space.s2) {
                 if let kind = filter.kind { chip(kind == "movie" ? Text("Películas") : Text("Series")) { filter.kind = nil } }
                 if let genre = filter.genre { chip(Text(verbatim: genreName(genre))) { filter.genre = nil } }
+                if let min = filter.minRating { chip(ratingName(min)) { filter.minRating = nil } }
+                if let decade = filter.decade { chip(decadeName(decade)) { filter.decade = nil } }
                 if filter.hideWatched { chip(Text("Sin lo que ya vi")) { filter.hideWatched = false } }
             }
         }
