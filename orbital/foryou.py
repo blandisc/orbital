@@ -1253,6 +1253,24 @@ class ForYou:
         kind = kind if kind in ("movie", "series") else "movie"
         return self.cache.get(f"tmdb-imdb:{kind}:{int(tmdb_id)}", SLOW_TTL, lambda: self.tmdb.imdb_of(kind, int(tmdb_id)))
 
+    def sagas(self, imdbs: list[str]) -> list[dict]:
+        """Las sagas de tus películas (TMDB), solo las que tienen dos o más tuyas: [{id, name, imdbs}]. Cada película se
+        pregunta una vez y se recuerda mucho tiempo (no cambia de saga)."""
+        if not self.tmdb.configured:
+            return []
+
+        def one(imdb: str):
+            try:
+                return imdb, self.cache.get(f"saga:{imdb}", 30 * SLOW_TTL, lambda: self.tmdb.collection_of(imdb) or {})
+            except SERVICE_ERRORS:
+                return imdb, None
+        groups: dict[int, dict] = {}
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            for imdb, saga in pool.map(one, imdbs[:200]):
+                if saga and saga.get("id"):
+                    groups.setdefault(saga["id"], {"id": saga["id"], "name": saga["name"], "imdbs": []})["imdbs"].append(imdb)
+        return sorted((g for g in groups.values() if len(g["imdbs"]) >= 2), key=lambda g: g["name"])
+
     # --- ¿Qué vemos? (como el iPhone) -------------------------------------------------------------
     def _decide_pool(self) -> list[dict]:
         """De dónde salen las propuestas: el mosaico, tus recomendaciones, tu watchlist y lo que es tendencia."""

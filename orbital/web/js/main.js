@@ -41,7 +41,7 @@ import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
 import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
-import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows } from "./core/media-plan.js";
+import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows, miMediaItem } from "./core/media-plan.js";
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 
@@ -905,14 +905,8 @@ async function loadCuration() {
     try {
       mediaLists = ((await api.forYou()).lists || []).filter((l) => l.group !== "games");
       const wanted = fetchPlan(mediaLists);
-      // «En tu OneDrive»: lo que se reconoció en la carpeta que elegiste (no es una lista de Para ti).
-      if (state.settings?.onedrive?.titles) {
-        const res = await api.onedriveTitles().catch(() => null);
-        if (res?.items?.length) {
-          mediaLists.push({ id: "onedrive", title: "En tu OneDrive" });
-          mediaItems[keyOf("onedrive", null)] = res.items;
-        }
-      }
+      // Mi media: tu carpeta de OneDrive como biblioteca (no es una lista de Para ti).
+      if (state.settings?.onedrive?.titles || state.settings?.onedrive?.videos) miMedia = await api.onedriveLibrary().catch(() => miMedia);
       const chosen = becauseSeed(mediaLists.find((l) => l.id === "because"), becauseChoice()).listId;
       if (chosen !== "because") wanted.push({ id: chosen, kind: null }); // el que elegiste hoy con X
       await fetchMany(wanted.filter((w) => !LATER(w)));
@@ -937,7 +931,7 @@ function buildCuration() {
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice() }),
+  applyCuration([...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), miMedia }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 
@@ -964,6 +958,7 @@ function openCollection(item) {
   }
   const l = c.list || {};
   if (l.id === "estrenos") return openUpcoming(l, cached);
+  if (l.id === "mimedia") return openMiMedia();
   const kinds = l.split ? (c.type === "year" ? [["movie", "Películas"], ["series", "Series"]] : [["series", "Series"], ["movie", "Películas"]])
     : [[l.kinds?.[0] ?? null, ""]];
   // Un premio: su estatuilla; un estudio: su logo en blanco. Un año: el título ya es el número grande.
@@ -971,6 +966,30 @@ function openCollection(item) {
   ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: c.source, media, metal: c.type === "award" ? c.tint || "gold" : null,
     tabs: kinds.map(([kind, label]) => ({ id: kind || "all", label, load: () => cached(l.id, kind).then((items) => items.map(curatedItem)) })) });
   return renderHints();
+}
+
+// ---------------------------------------------------------------- Mi media (tu OneDrive)
+let miMedia = null; // { titles, unmatched, sagas, watched, folder }
+
+/** Mi media, como en el iPhone: una pestaña por vista (lo último que subiste, películas, series, sin ver, sagas y lo que
+ *  no se reconoció). A abre la ficha (con tu copia primero); lo «Sin ficha» se ve tal cual. ☰ ordena (A–Z). */
+function openMiMedia() {
+  const lib = miMedia || { titles: [], unmatched: [], sagas: [], watched: [] };
+  const all = lib.titles.map((t) => miMediaItem(t));
+  const byImdb = new Map(all.map((i) => [i.meta_id, i]));
+  const watched = new Set(lib.watched || []);
+  const sagas = (lib.sagas || []).flatMap((s) => s.imdbs.map((id) => byImdb.get(id) && { ...byImdb.get(id), day_label: s.name }).filter(Boolean));
+  const loose = (lib.unmatched || []).map((f) => ({ id: `onedrive-file:${f.id}`, title: f.name.replace(/\.[a-z0-9]{2,4}$/i, ""), source: "onedrive-file",
+    subtitle: "Sin ficha · se ve tal cual", file: { id: f.id, name: f.name } }));
+  const movies = all.filter((i) => i.kind === "movie").length;
+  const tab = (id, label, items) => items.length && { id, label, load: () => Promise.resolve(items) };
+  sound.play("open");
+  ui.listScreen.open({ id: "mimedia", title: "Mi media", source: "orbital", media: {},
+    meta: [`${movies} ${movies === 1 ? "película" : "películas"} · ${all.length - movies} ${all.length - movies === 1 ? "serie" : "series"}`, lib.folder && `OneDrive › ${lib.folder}`].filter(Boolean).join(" · "),
+    tabs: [tab("recent", "Recién agregado", all), tab("movie", "Películas", all.filter((i) => i.kind === "movie")),
+      tab("series", "Series", all.filter((i) => i.kind === "series")), tab("unwatched", "Sin ver", all.filter((i) => !watched.has(i.meta_id))),
+      tab("sagas", "Sagas", sagas), tab("loose", "Sin ficha", loose)].filter(Boolean) });
+  renderHints();
 }
 
 // ---------------------------------------------------------------- descargas (ver sin internet)
@@ -1109,6 +1128,16 @@ function backFromPerson(list) {
 
 /** Un póster de una lista abierta: su ficha. De la filmografía (TMDB) primero se busca su IMDb. */
 async function openListItem(item) {
+  if (item.file) { // Mi media › Sin ficha: el archivo tal cual
+    try {
+      await api.onedrivePlayFile(item.file.id, item.title);
+      sound.play("open");
+    } catch (err) {
+      sound.play("error");
+      ui.toast.show(err.message, { error: true });
+    }
+    return;
+  }
   if (item.meta_id || !item.tmdb_id) return openTitle(item);
   try {
     const { imdb } = await api.forYouTmdbImdb(item.kind, item.tmdb_id);
@@ -1929,7 +1958,7 @@ function handleEvent(event) {
   } else if (event.type === "onedrive-link-failed") {
     sound.play("error");
     return ui.traktLink.failed(event.message);
-  } else if (event.type === "onedrive-changed") { // terminó de buscar tus videos: la fila «En tu OneDrive»
+  } else if (event.type === "onedrive-changed") { // terminó de buscar tus videos: Mi media al día
     api.onedrive().then((s) => applySettings({ ...state.settings, onedrive: s })).catch(() => {});
     return loadCuration();
   } else if (event.type === "trakt-link-failed") {

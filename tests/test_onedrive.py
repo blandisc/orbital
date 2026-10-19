@@ -140,3 +140,26 @@ def test_the_folder_you_choose_is_kept_clean():
     lib = onedrive_library.OneDriveLibrary(Offline(), FakeCinemeta(), State())
     lib.set_folder("\Películas/../Series/./Drama/")
     assert lib.folder == "Películas/Series/Drama"  # sin «..» ni «.»: solo lo que tú elegiste
+
+
+def test_mi_media_newest_first_with_what_was_not_recognized(tmp_path):
+    class Dated(FakeClient):
+        def videos(self, folder):
+            found = super().videos(folder)
+            for f, added in zip(found, (100.0, 300.0, 200.0), strict=True):
+                f["added"] = added
+            return found
+    lib = onedrive_library.OneDriveLibrary(Dated(), FakeCinemeta(), State())
+    lib.state.data["onedrive_folder"] = "Películas"
+    lib.scan()
+    mine = lib.library()
+    assert [t["title"] for t in mine["titles"]] == ["Severance", "Dune: Parte dos"]  # lo último que subiste primero
+    assert mine["titles"][0]["episodes"] == 1 and mine["titles"][1]["files"] == 1
+    assert [f["id"] for f in mine["unmatched"]] == ["C1"]  # «Sin ficha»: se puede ver tal cual
+    assert lib.file_url("C1") == "https://descarga.example/C1"
+    assert lib.file_url("ZZ") is None  # solo archivos de tu carpeta
+
+
+def test_the_upload_date_comes_from_onedrive():
+    assert onedrive.added_at("2026-10-12T03:04:05Z") == 1791774245.0
+    assert onedrive.added_at(None) is None and onedrive.added_at("nada") is None

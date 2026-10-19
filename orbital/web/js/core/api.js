@@ -133,6 +133,8 @@ export const api = {
   onedriveFolder: (path) => post("/api/onedrive/folder", { path }),
   onedriveScan: () => post("/api/onedrive/scan"),
   onedriveTitles: () => request("/api/onedrive/titles"),
+  onedriveLibrary: () => request("/api/onedrive/library", { timeout: 30000 }),
+  onedrivePlayFile: (id, name) => post("/api/onedrive/play-file", { id, name }),
   // «TV en vivo»
   tv: () => request("/api/tv"),
   tvPlay: (id, category = "todos", keep = false) => post("/api/tv/play", { id, category, keep }),

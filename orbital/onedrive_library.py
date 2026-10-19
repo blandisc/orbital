@@ -147,6 +147,36 @@ class OneDriveLibrary:
                                                 "year": f.get("show_year") or f.get("year")}
         return list(seen.values())
 
+    def library(self) -> dict:
+        """Mi media (como el iPhone): cada película o serie una vez, lo más reciente primero (cuándo lo subiste), con
+        cuántos archivos tiene; y lo que no se reconoció («Sin ficha»), que se puede ver tal cual."""
+        titles: dict[tuple[str, str], dict] = {}
+        unmatched = []
+        for f in self.files:
+            if not f.get("imdb"):
+                unmatched.append({"id": f["id"], "name": f["name"], "path": f.get("path") or f["name"], "size": f.get("size") or 0,
+                                  "added": f.get("added")})
+                continue
+            key = (f["kind"], f["imdb"])
+            t = titles.setdefault(key, {"kind": f["kind"], "imdb": f["imdb"], "title": f.get("show_title") or f["title"],
+                                        "year": f.get("show_year") or f.get("year"), "added": None, "files": 0, "episodes": set()})
+            t["files"] += 1
+            if f.get("added") and (t["added"] is None or f["added"] > t["added"]):
+                t["added"] = f["added"]
+            if f["kind"] == "series" and f.get("season") is not None and f.get("episode") is not None:
+                t["episodes"].add((f["season"], f["episode"]))
+        out = [{**t, "episodes": len(t["episodes"])} for t in titles.values()]
+        out.sort(key=lambda t: -(t["added"] or 0))
+        unmatched.sort(key=lambda f: -(f["added"] or 0))
+        return {"titles": out, "unmatched": unmatched, "folder": self.folder, "scanned_at": self.scanned_at or None,
+                "scanning": self.scanning, "error": self.error}
+
+    def file_url(self, file_id: str) -> str | None:
+        """La dirección temporal de un archivo de tu carpeta (uno «Sin ficha», para verlo tal cual)."""
+        if not any(f.get("id") == file_id for f in self.files):
+            return None
+        return self.client.stream_url(file_id)
+
     def file_for(self, kind: str, video_id: str) -> dict | None:
         """El archivo de ese título (película) o episodio («tt123:1:3»)."""
         parts = str(video_id).split(":")

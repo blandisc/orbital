@@ -238,6 +238,16 @@ class Tmdb:
                 "biography": bio, "born": born_text(raw.get("birthday"), raw.get("deathday")),
                 "place": str(raw.get("place_of_birth") or "").strip() or None, "credits": found[:40]}
 
+    def collection_of(self, imdb: str) -> dict | None:
+        """La saga de una película («Dune: colección»): {id, name}; None si no es de ninguna."""
+        found = self.find_id(imdb, "movie")
+        if not found:
+            return None
+        part = self._get(f"/movie/{int(found)}").get("belongs_to_collection")
+        if not isinstance(part, dict) or not isinstance(part.get("id"), int):
+            return None
+        return {"id": part["id"], "name": str(part.get("name") or "").strip()}
+
     def imdb_of(self, kind: str, tmdb_id: int) -> str | None:
         """El IMDb de un título de TMDB (para abrir su ficha desde la filmografía de una persona)."""
         raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}/external_ids")

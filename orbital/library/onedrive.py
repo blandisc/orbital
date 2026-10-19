@@ -33,6 +33,16 @@ DEPTH = 4  # subcarpetas que se recorren («Series/Adventure Time/Temporada 5»)
 MAX_FILES = 5000
 
 
+def added_at(text) -> float | None:
+    """«2026-10-12T03:04:05Z» (createdDateTime de Graph) → segundos desde 1970; None si no viene."""
+    from datetime import datetime
+
+    try:
+        return datetime.fromisoformat(str(text).replace("Z", "+00:00")).timestamp() if text else None
+    except ValueError:
+        return None
+
+
 class OneDriveError(Exception):
     pass
 
@@ -177,7 +187,7 @@ class OneDrive:
     @staticmethod
     def _children_url(path: str) -> str:
         path = path.strip("/")
-        select = "$select=id,name,size,folder,file&$top=200"
+        select = "$select=id,name,size,folder,file,createdDateTime&$top=200"  # cuándo lo subiste: «Recién agregado»
         return f"/me/drive/root/children?{select}" if not path else f"/me/drive/root:/{quote(path)}:/children?{select}"
 
     def children(self, path: str = "") -> list[dict]:
@@ -205,7 +215,8 @@ class OneDrive:
                 if r.get("folder") and depth < DEPTH:
                     walk(f"{folder}/{name}".strip("/"), depth + 1)
                 elif r.get("file") and (info := parse_name(name)):
-                    found.append({"id": r["id"], "name": name, "path": f"{folder}/{name}".strip("/"), "size": r.get("size") or 0, **info})
+                    found.append({"id": r["id"], "name": name, "path": f"{folder}/{name}".strip("/"), "size": r.get("size") or 0,
+                                  "added": added_at(r.get("createdDateTime")), **info})
         walk(path.strip("/"), 0)
         return found
 
