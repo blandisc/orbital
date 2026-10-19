@@ -98,3 +98,12 @@ def test_a_history_row_counts_episode_minutes():
     play = trakt.history_play(row)
     assert (play["kind"], play["minutes"], play["season"], play["episode"], play["episode_title"]) == ("series", 50, 1, 2, "Half Loop")
     assert trakt.history_play({"type": "movie", "movie": {"title": "X", "ids": {}}}) is None
+
+
+def test_subtitle_sync_like_the_iphone():
+    from orbital import player_ui
+
+    assert [o["label"] for o in player_ui.sync_options(0)] == ["Antes", "A tiempo", "Después"]
+    assert player_ui.sync_options(1.0)[1]["label"] == "+1,0 s" and player_ui.sync_options(-0.5)[1]["label"] == "-0,5 s"
+    panel = player_ui.tracks_panel([], 1.0, sub_delay=0.5)
+    assert panel.find("sync").options[1]["hint"] == "Volver a cero"

@@ -452,14 +452,34 @@ class Watch:
             log.info("%s recordará %s: %s", meta.get("title") or meta["meta_id"], kind, lang or "sin subtítulos")
 
     def stream_sources(self, kind: str, video_id: str, prefs: streams.Preferences | None = None) -> list[streams.Source]:
-        """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada). Si está en tu OneDrive,
-        «Tu OneDrive» va primero (es tuya y arranca sin esperar a Real-Debrid)."""
-        mine = self.onedrive.source(kind, video_id) if self.onedrive is not None else None
+        """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada). Tu OneDrive ya no va aquí
+        (como el iPhone): tu copia se ve desde Mi media (play_own)."""
         if not self.has_addons:
-            if mine:
-                return [mine]
             raise stremio_api.StremioError(stremio_api.NOT_LINKED)
-        return ([mine] if mine else []) + self.streams.find(kind, video_id, prefs or self.stream_prefs)
+        return self.streams.find(kind, video_id, prefs or self.stream_prefs)
+
+    def _url_for(self, source: streams.Source) -> str | None:
+        if source.stream.get("onedrive") and self.onedrive is not None:
+            return self.onedrive.stream_url(source)
+        return player.stream_url(source.stream)
+
+    def play_own(self, kind: str, meta_id: str, video_id: str, title: str, file_id: str | None = None,
+                 keep: bool = False, from_start: bool = False) -> dict:
+        """Mi media: tu copia de OneDrive (la mejor versión, o la que elegiste). Si no abre, Real-Debrid en el mismo punto
+        (el respaldo de siempre); el siguiente episodio también sale de tu carpeta si está."""
+        source = self.onedrive.source(kind, video_id, file_id) if self.onedrive is not None else None
+        mpv_exe = player.find_mpv()
+        if source is None:
+            raise LookupError("Eso ya no está en tu carpeta de OneDrive.")
+        if not mpv_exe:
+            raise LookupError("Falta el reproductor de Orbital (mpv) para ver tu copia.")
+        url = self.onedrive.stream_url(source) if self.onedrive is not None else None
+        if not url:
+            raise LookupError("OneDrive no me dio el archivo. Inténtalo de nuevo.")
+        prefs, subtitles = self.language_for(meta_id)
+        self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep, source=source, from_start=from_start,
+                         audio=prefs.audio, subtitles=subtitles, own=True)
+        return {"source": source.public(), "label": f"Tu copia · {source.resolution}" if source.resolution else "Tu copia en OneDrive"}
 
     def _wire_player(self) -> None:
         """Lo que el reproductor le pregunta al catálogo (siguiente episodio, otras fuentes…)."""
@@ -608,6 +628,14 @@ class Watch:
         from .downloads import pick_source
 
         prefs = self.language_for(job["meta_id"])[0]
+        # Tu copia de OneDrive primero (la de 1080p si la hay, como el iPhone); si no, Real-Debrid.
+        mine = self.onedrive.versions(job["kind"], job["video_id"]) if self.onedrive is not None else []
+        if mine:
+            pick = next((v for v in mine if v["resolution"] == "1080p"), mine[0])
+            source = self.onedrive.source(job["kind"], job["video_id"], pick["id"]) if self.onedrive is not None else None
+            if source is not None:
+                job["quality"] = source.resolution or None
+                return self.onedrive.stream_url(source) or "", source.release
         source = pick_source(self.stream_sources(job["kind"], job["video_id"], prefs), prefs.audio)
         if source is None:
             return "", ""
@@ -646,7 +674,8 @@ class Watch:
 
     def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
                     keep: bool = False, source: streams.Source | None = None, from_start: bool = False,
-                    audio: str | None = None, subtitles: str | None = None, sub_pick: dict | None = None) -> None:
+                    audio: str | None = None, subtitles: str | None = None, sub_pick: dict | None = None,
+                    own: bool = False) -> None:
         """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
         if not from_start and self.player.starting(video_id, source.key if source else None):
             # Ya está cargando: Orbital sigue tapando hasta la primera imagen (el aviso del primer intento sigue en pie).
@@ -654,8 +683,10 @@ class Watch:
             self.sessions.revealing = True
             return
         start = 0.0 if from_start else self.resume_position(meta_id, video_id)
-        meta = self._media_meta(kind, meta_id, video_id, title, source) if source else \
+        meta: dict = self._media_meta(kind, meta_id, video_id, title, source) if source else \
             {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title}
+        if own:
+            meta["own"] = True  # desde Mi media: el siguiente episodio también de tu carpeta
         # Lo que estaba abierto se cierra justo antes de abrir el video, no antes de buscar sus datos por
         # internet (si algo fallaba, tu juego ya se había cerrado para nada).
         if self.sessions.before_launch and not keep:
@@ -679,12 +710,14 @@ class Watch:
                                         ready=lambda: bool(self.player.segment and self.player.segment.playing))
 
     def _load_in_player(self, kind: str, meta_id: str, video_id: str, title: str, source: streams.Source,
-                        start: float = 0, message: str | None = None, tried: list[int] | None = None) -> bool:
-        url = player.stream_url(source.stream)
+                        start: float = 0, message: str | None = None, tried: list[int] | None = None, own: bool = False) -> bool:
+        url = self._url_for(source)
         if not url:
             return False
         meta = self._media_meta(kind, meta_id, video_id, title, source)
         meta["tried"] = sorted(set(tried or []) | {source.index})
+        if own:
+            meta["own"] = True
         prefs, subtitles = self.language_for(meta_id)  # el audio y los subtítulos que esta serie recuerda
         return self.player.load(url, title, meta, start=start, message=message, subtitles=subtitles, audio=prefs.audio,
                                 fallback_subs=self._fallback_subs(kind, video_id, subtitles))
@@ -757,11 +790,15 @@ class Watch:
             pass
         label, name = self._episode_label(info, next_id)
         return {"label": label, "title": name,
-                "play": lambda: self._play_episode(meta["meta_id"], next_id, title, meta.get("binge"))}
+                "play": lambda: self._play_episode(meta["meta_id"], next_id, title, meta.get("binge"), own=bool(meta.get("own")))}
 
     def _play_episode(self, meta_id: str, video_id: str, title: str, binge: str | None = None,
-                      start: float = 0) -> bool | None:
-        """Otro episodio en el mismo reproductor (sin volver a Orbital). False: no cargó; None: ya se avisó."""
+                      start: float = 0, own: bool = False) -> bool | None:
+        """Otro episodio en el mismo reproductor (sin volver a Orbital). False: no cargó; None: ya se avisó. Desde Mi
+        media (`own`), de tu carpeta si está."""
+        mine = self.onedrive.source("series", video_id) if own and self.onedrive is not None else None
+        if mine is not None:
+            return self._load_in_player("series", meta_id, video_id, title, mine, start=start, own=True)
         # El idioma que esta serie recuerda (antes: el de Ajustes, y el siguiente episodio salía en otro idioma).
         source = self.best_source("series", video_id, binge, prefs=self.language_for(meta_id)[0])
         if source is None:
@@ -781,7 +818,7 @@ class Watch:
             return
         title, _ = self._episode_title(info, meta["meta_id"], episodes[i])
         return self._play_episode(meta["meta_id"], episodes[i], title, meta.get("binge"),
-                                  start=self.resume_position(meta["meta_id"], episodes[i]))
+                                  start=self.resume_position(meta["meta_id"], episodes[i]), own=bool(meta.get("own")))
 
     def _season_episodes(self, meta: dict) -> list[dict]:
         """Y › Episodios en el reproductor: los de la temporada que estás viendo."""
@@ -801,7 +838,7 @@ class Watch:
         title, _ = self._episode_title(info, meta["meta_id"], video_id)
         # None: _play_episode ya avisó (no hay fuente); False sí es «no pude» y lo avisa el reproductor.
         return self._play_episode(meta["meta_id"], video_id, title, meta.get("binge"),
-                                  start=self.resume_position(meta["meta_id"], video_id))
+                                  start=self.resume_position(meta["meta_id"], video_id), own=bool(meta.get("own")))
 
     @property
     def native_player(self) -> bool:

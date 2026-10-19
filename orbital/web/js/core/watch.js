@@ -41,7 +41,7 @@ export function downloadAction(job) {
   return { id: "download", icon: "download", label: pct != null ? `Descargando ${pct} %` : "En espera", short: pct != null ? `${pct} %` : "En espera" };
 }
 
-export function titleActions(details, { kind = "movie", phone = false, download = undefined } = {}) {
+export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null } = {}) {
   if (!details) return [];
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
@@ -83,6 +83,9 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   if (playable) out.push({ id: "sources", icon: "list", label: "Elegir fuente", short: "Fuente" });
   if (restart) out.push(restart);
   if (playable && phone) out.push({ id: "phone-open", icon: "phone", label: "Enviar al iPhone", short: "Al iPhone" });
+  // Desde Mi media (tu OneDrive), como el iPhone: elegir cuál de tus versiones ver y corregir la ficha si no es esta.
+  if (own?.versions > 1) out.push({ id: "versions", icon: "cover", label: `Versiones en tu carpeta (${own.versions})`, short: "Versiones" });
+  if (own) out.push({ id: "fix", icon: "search", label: `¿No es esta ${(details.kind || kind) === "series" ? "serie" : "película"}? Corregir ficha`, short: "Corregir ficha" });
   return out;
 }
 

@@ -221,6 +221,7 @@ class OrbitalPlayer(PlayerScreen):
         self._more_token = None
         self._episode_steps, self._episode_timer = 0, None  # LT/RT seguidos (ver _queue_episode)  # el panel Y que se está buscando (ver _open_more_soon)  # current y segment cambian juntos (play) o se leen juntos (finish)  # lo último pedido a mpv (pausa, volumen, posición)
         self.sub_scale = 1.0
+        self.sub_delay = 0.0  # Sincronía de los subtítulos (s); vuelve a cero con cada video
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
         self.on_progress = None  # igual que on_finished, cada minuto y al pausar
         self.on_scrobble = None  # (acción, meta, posición, duración): «start» | «pause» | «stop» para Trakt; nunca de TV en vivo
@@ -355,6 +356,8 @@ class OrbitalPlayer(PlayerScreen):
         self.mpv.command("set_property", "pause", False)
         for prop, value in track_properties(self._audio_lang, self._subs_lang):
             self.mpv.command("set_property", prop, value)  # el idioma de este título, no la pista del anterior
+        self.sub_delay = 0.0  # la sincronía era del archivo anterior
+        self.mpv.command("set_property", "sub-delay", 0)
         self._reveal_wait = 0.0  # otro episodio u otra fuente en la misma ventana: se destapa en cuanto haya imagen
         self._curtain(1)
         self.mpv.command("loadfile", url, "replace")

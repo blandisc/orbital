@@ -54,6 +54,7 @@ export function rememberSearch(recent, query) {
 }
 
 export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], popular = () => [] }) {
+  let picking = null; // { kind, onPick }: «Corregir ficha»
   const field = h("div", { class: "search__field" });
   const caret = h("span", { class: "search__caret", "aria-hidden": "true" });
   const query = h("span", { class: "search__query" });
@@ -160,7 +161,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       return;
     }
     // Tus juegos y apps al instante; las películas y series llegan después, detrás de ellos.
-    const local = localSearch(q);
+    // Eligiendo una ficha («Corregir ficha»): solo películas o series del tipo que corrige, nada de tus juegos.
+    const local = picking ? [] : localSearch(q);
     showResults(local);
     setHint(local.length ? `${count(local.length)} · buscando películas y series…` : "Buscando…");
     timer = setTimeout(async () => {
@@ -170,7 +172,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
         const data = await api.stremioSearch(q);
         if (mine !== token) return;
         pending = "";
-        showResults([...local, ...data.results]);
+        showResults([...local, ...data.results.filter((r) => !picking || (r.kind || r.extra?.kind) === picking.kind || !picking.kind)]);
         setHint(items.length ? count(items.length) : `Nada con «${q}». Prueba con otra palabra o menos letras.`);
       } catch (err) {
         if (mine !== token) return;
@@ -284,6 +286,13 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       schedule();
       return;
     }
+    if (picking) { // «Corregir ficha»: este es el título correcto
+      const done = picking.onPick;
+      picking = null;
+      close();
+      done(item);
+      return;
+    }
     storage.set(RECENT_KEY, rememberSearch(storage.get(RECENT_KEY, []), text));
     onOpen(item);
   }
@@ -337,8 +346,11 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     return true;
   }
 
-  function show(initial = "") {
+  /** `pick`: { kind, onPick(result) } — elegir una ficha («Corregir ficha» de Mi media) en vez de abrirla. */
+  function show(initial = "", { pick = null } = {}) {
     cancelExit();
+    picking = pick;
+    if (pick) setHint(pick.kind === "series" ? "Busca la serie correcta y elígela" : "Busca la película correcta y elígela");
     if (initial) text = initial.toLowerCase();
     zone = "keys";
     el.hidden = false;
@@ -347,6 +359,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   }
 
   function close() {
+    picking = null;
     clearTimeout(timer);
     token++; // una respuesta que llegue tarde ya no pinta nada
     listening?.stop();

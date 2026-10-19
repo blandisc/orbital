@@ -35,17 +35,18 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     return playStremio(play);
   }
 
-  async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null, keep = false, from_start: fromStart = false }) {
+  async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null, keep = false, from_start: fromStart = false,
+    own = false, file_id: fileId = null }) {
     const local = !!videoId && !!state.downloaded?.has(videoId); // lo descargaste: del disco, también sin internet
     if (!local && offlineBlock(title)) return;
     if (!takeLaunchLock(state)) return;
     sound.play("open");
     rumble("launch");
     state.launchingId = "media:player";
-    const native = local || (state.player === "orbital" && state.stremioLinked);
+    const native = local || own || (state.player === "orbital" && state.stremioLinked);
     ui.launch.show({ ...(item || {}), title }, native ? "" : "Se abre en Stremio");
     // Fases honestas: primero se busca la fuente (hasta unos segundos), luego se conecta.
-    if (native && source === null) ui.launch.status(local ? "Tu descarga" : "Buscando dónde verlo");
+    if (native && source === null) ui.launch.status(local ? "Tu descarga" : own ? "Tu copia en OneDrive" : "Buscando dónde verlo");
     // Mientras el servidor busca, la pantalla de carga se queda y no se puede abrir otra cosa encima
     // (antes se iba a los 8 s y un segundo Enter lanzaba otra reproducción).
     state.launchLockedUntil = Infinity;
@@ -56,8 +57,11 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       // solo (antes decía «inténtalo de nuevo» y, si lo hacías, se abrían dos). A sigue diciendo «Todavía
       // estoy abriendo…» hasta que conteste (o 3 min, por si nunca lo hace).
       // Abierto con el dedo: el reproductor empieza con botones que se tocan (no glifos del mando).
-      const request = api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart,
-        touch: state.modality === "touch", keyboard: state.modality === "keyboard" });
+      // Mi media: tu copia de OneDrive (con Real-Debrid de respaldo en el servidor si no abre).
+      const request = own && !local
+        ? api.onedrivePlay({ kind, meta_id: id, video_id: videoId, title, file_id: fileId, keep, from_start: fromStart })
+        : api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart,
+          touch: state.modality === "touch", keyboard: state.modality === "keyboard" });
       const res = await Promise.race([request, new Promise((resolve) => setTimeout(() => resolve(SLOW), 40_000))]);
       if (res === SLOW) {
         ui.launch.hide();

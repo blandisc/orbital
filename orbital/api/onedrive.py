@@ -17,6 +17,25 @@ class ClientRequest(BaseModel):
     id: str = Field("", max_length=200)
 
 
+class OwnPlayRequest(BaseModel):
+    kind: str
+    meta_id: str = Field(max_length=20)
+    video_id: str = Field(max_length=40)
+    title: str = ""
+    file_id: str | None = Field(default=None, max_length=200)
+    keep: bool = False
+    from_start: bool = False
+
+
+class FixRequest(BaseModel):
+    kind: str
+    imdb: str = Field(max_length=20)
+    name: str
+    year: int | None = None
+    file_id: str | None = Field(default=None, max_length=200)
+    current: str | None = Field(default=None, max_length=20)
+
+
 class FileRequest(BaseModel):
     id: str = Field(max_length=200)
     name: str = ""
@@ -100,6 +119,48 @@ def router(d: Deps) -> APIRouter:
         lib["sagas"] = foryou.sagas([t["imdb"] for t in lib["titles"] if t["kind"] == "movie"])
         lib["watched"] = [t["imdb"] for t in lib["titles"] if t["imdb"] in set(foryou.watched_ids())]
         return lib
+
+    @r.post("/play")
+    def play_own(body: OwnPlayRequest) -> dict:
+        """Mi media › Ver: tu copia (la mejor versión, o la elegida). Si no abre, Real-Debrid en el mismo punto."""
+        if body.kind not in ("movie", "series") or not body.video_id.startswith(body.meta_id):
+            raise HTTPException(400, "Falta qué reproducir")
+        try:
+            return {"ok": True, **d.catalog.watch.play_own(body.kind, body.meta_id, body.video_id, body.title[:200] or "Video",
+                                                           file_id=body.file_id, keep=body.keep, from_start=body.from_start)}
+        except LookupError as exc:
+            raise HTTPException(404, str(exc))
+        except onedrive.OneDriveError as exc:
+            raise HTTPException(502, str(exc))
+
+    @r.get("/title")
+    def own_title(kind: str, imdb: str) -> dict:
+        """Lo tuyo de un título (para su ficha desde Mi media): qué videos están en tu carpeta y, si es película, sus versiones."""
+        have = library.have(kind, imdb[:20])
+        return {"have": have, "versions": library.versions(kind, imdb[:20]) if kind == "movie" else []}
+
+    @r.get("/versions")
+    def versions(kind: str, video_id: str) -> dict:
+        """«Versiones en tu carpeta» de una película o un episodio, la mejor primero."""
+        return {"items": library.versions(kind, video_id[:40])}
+
+    @r.post("/fix")
+    def fix(body: FixRequest) -> dict:
+        """«Corregir ficha»: esos archivos son este título (vale para todos los que se llaman igual)."""
+        try:
+            changed = library.fix(kind=body.kind, imdb=body.imdb, name=body.name[:200], year=body.year, file_id=body.file_id,
+                                  current=body.current)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        return {"ok": True, "changed": changed}
+
+    @r.get("/listing")
+    async def listing(path: str = "") -> dict:
+        """Ver carpetas: tu OneDrive tal cual (carpetas y videos)."""
+        try:
+            return await run_in_threadpool(library.listing, path[:400])
+        except onedrive.OneDriveError as exc:
+            raise HTTPException(502, str(exc))
 
     @r.post("/play-file")
     def play_file(body: FileRequest) -> dict:
