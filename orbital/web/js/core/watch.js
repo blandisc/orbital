@@ -77,12 +77,12 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   // Descargar aquí, para ver sin internet (el episodio que sigue o la película), como el iPhone.
   if (playable && download !== undefined) out.push(downloadAction(download));
   // Solo con un iPhone conectado (si no, ni aparecen): el episodio que sigue o el enfocado.
-  if (playable && phone) out.push({ id: "phone-download", icon: "phone", label: "Descargar en el iPhone", short: "Bajar al iPhone" });
+  if (playable && phone) out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" });
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
   // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
   if (playable) out.push({ id: "sources", icon: "list", label: "Elegir fuente", short: "Fuente" });
   if (restart) out.push(restart);
-  if (playable && phone) out.push({ id: "phone-open", icon: "phone", label: "Enviar al iPhone", short: "Al iPhone" });
+  if (playable && phone) out.push({ id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
   // Desde Mi media (tu OneDrive), como el iPhone: elegir cuál de tus versiones ver y corregir la ficha si no es esta.
   if (own?.versions > 1) out.push({ id: "versions", icon: "cover", label: `Versiones en tu carpeta (${own.versions})`, short: "Versiones" });
   if (own) out.push({ id: "fix", icon: "search", label: `¿No es esta ${(details.kind || kind) === "series" ? "serie" : "película"}? Corregir ficha`, short: "Corregir ficha" });

@@ -6,9 +6,11 @@
 }
 .person-chip__photo {
   width: var(--person-photo); height: var(--person-photo); border-radius: 50%; object-fit: cover; background: var(--color-surface-raised);
-  display: grid; place-items: center; color: var(--color-text-muted); font-size: var(--text-lg); font-weight: var(--weight-bold);
   transition: transform var(--duration-snap) var(--ease-pop), box-shadow var(--duration-base) var(--ease-out);
 }
+/* Sin foto: sus iniciales al centro del círculo (también en la cabecera grande). */
+.person-chip__photo--initials { display: grid; place-items: center; color: var(--color-text-muted); font-size: var(--text-lg); font-weight: var(--weight-bold); }
+.person-head__photo.person-chip__photo--initials { font-size: var(--text-2xl); }
 .person-chip--focused .person-chip__photo { box-shadow: var(--ring-focus); transform: scale(var(--inverse-scale)); }
 .person-chip__name, .person-chip__role {
   max-width: 100%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-bottom: .1em;
