@@ -174,6 +174,9 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
   if (hiddenCount) {
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
+  // Como el iPhone: «¿Qué vemos?» (Para ti › 🎲) y «Tu año» (bajo tu perfil).
+  options.push({ icon: "spark", label: "¿Qué vemos?", hint: "Tres que caben en tu tiempo", command: { type: "decide" } });
+  options.push({ icon: "chart", label: "Tu año", hint: "Lo que viste según Trakt", command: { type: "year" } });
   options.push({ icon: "gamepad", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
   if (alexa) options.push({ icon: "assistant", label: "Lo que puedes decir", hint: "Alexa, el iPhone y Siri", command: { type: "alexa-menu" } });
   options.push({ icon: "settings", label: "Ajustes", command: { type: "settings" } });

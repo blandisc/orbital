@@ -142,6 +142,29 @@ class DemoTrakt:
         return [{**show, "season": s, "episode": e, "episode_title": t, "aired": when, "network": net, "runtime": 50}
                 for show, s, e, t, when, net in rows]
 
+    def watched_ids(self):  # lo que ya viste: Dune: Parte dos (para probar que ¿Qué vemos? no la propone)
+        return [M["dune2"]["imdb"]]
+
+    def plays(self, since, until, max_pages=20):  # «Tu año»: un historial de muestra, de enero a hoy
+        import random as _random
+        from datetime import datetime as _dt
+        rng = _random.Random(7)
+        start, end = _dt.fromisoformat(since).timestamp(), _dt.fromisoformat(until).timestamp()
+        shows, movies = ["severance", "tlou", "silo", "bear", "futurama"], ["dune2", "oppen", "inter", "br", "poor", "past"]
+        found, t = [], start
+        while t < end:
+            t += rng.choice([0.4, 0.7, 1, 1, 1.5, 3, 6]) * 86400
+            if t >= end:
+                break
+            if rng.random() < .3:
+                m = M[rng.choice(movies)]
+                found.append({"at": t, "kind": "movie", "imdb": m["imdb"], "title": m["title"], "minutes": 130, "genres": ["science-fiction"]})
+            else:
+                k = rng.choice(shows)
+                found.append({"at": t, "kind": "series", "imdb": S[k]["imdb"], "title": S[k]["title"], "minutes": 50, "genres": ["drama"],
+                              "season": 1, "episode": rng.randint(1, 9), "episode_title": None})
+        return found
+
     def watching(self, limit=12):
         return [{**S["severance"], "next": {"season": 2, "episode": 6}}, {**S["silo"], "next": {"season": 2, "episode": 3}},
                 {**S["tlou"], "next": {"season": 2, "episode": 1}}, {**S["futurama"], "next": {"season": 8, "episode": 4}}]
@@ -163,11 +186,29 @@ class DemoTmdb:
         return None
 
     def extras(self, kind, tmdb_id, region="MX"):  # la ficha: frase, clasificación y créditos de muestra
+        face = lambda i, name, role: {"id": i, "name": name, "role": role, "photo": None}  # noqa: E731 - sin internet: iniciales
         if kind == "series":
             return {"tagline": "Separa tu vida del trabajo. Para siempre.", "certification": "B15", "directors": ["Dan Erickson"],
-                    "writers": [], "cast": ["Adam Scott", "Britt Lower", "Zach Cherry"]}
+                    "writers": [], "cast": ["Adam Scott", "Britt Lower", "Zach Cherry"],
+                    "people": [face(1, "Dan Erickson", "Creación"), face(2, "Adam Scott", "Mark Scout"), face(3, "Britt Lower", "Helly R."),
+                               face(4, "Zach Cherry", "Dylan G."), face(5, "Patricia Arquette", "Harmony Cobel"), face(6, "John Turturro", "Irving B.")]}
         return {"tagline": "Larga vida a la lucha.", "certification": "B", "directors": ["Denis Villeneuve"],
-                "writers": ["Jon Spaihts"], "cast": ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"]}
+                "writers": ["Jon Spaihts"], "cast": ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"],
+                "people": [face(7, "Denis Villeneuve", "Dirección"), face(8, "Jon Spaihts", "Guion"), face(9, "Timothée Chalamet", "Paul Atreides"),
+                           face(10, "Zendaya", "Chani"), face(11, "Rebecca Ferguson", "Jessica")]}
+
+    def person(self, person_id):  # una persona: su filmografía con los títulos del demo
+        picks = ["severance", "dune2", "inter", "br", "arrival", "tlou", "andor", "oppen"]
+        return {"id": person_id, "name": "Adam Scott", "photo": None, "born": "3 de abril de 1973", "place": "Santa Cruz, California, EE. UU.",
+                "biography": "Actor y productor estadounidense. Empezó en televisión y se hizo conocido por comedias como Parks and Recreation; "
+                             "en Severance interpreta a Mark Scout, un empleado de Lumon cuya memoria del trabajo y de su casa está separada.",
+                "credits": [{"tmdb_id": n + 1, "kind": "series" if k in S else "movie", "title": {**M, **S}[k]["title"],
+                             "poster": f"https://images.metahub.space/poster/medium/{ {**M, **S}[k]['imdb'] }/img",
+                             "year": {**M, **S}[k].get("year"), "role": "Mark Scout" if k == "severance" else None} for n, k in enumerate(picks)]}
+
+    def imdb_of(self, kind, tmdb_id):
+        picks = ["severance", "dune2", "inter", "br", "arrival", "tlou", "andor", "oppen"]
+        return {**M, **S}[picks[(tmdb_id - 1) % len(picks)]]["imdb"]
 
     def discover(self, kind, provider_id, region):
         brand = list(self.PLATFORMS)[provider_id - 1]

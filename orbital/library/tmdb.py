@@ -12,6 +12,7 @@ La clave puede ser la «API Key» (v3) o el «Read Access Token» (v4, empieza c
 from __future__ import annotations
 
 import logging
+import re
 from urllib.parse import urlencode
 
 from ..net import NET_ERRORS, http_json
@@ -65,6 +66,46 @@ def match_platforms(rows) -> dict[str, dict]:
             if brand not in found and name in names:
                 found[brand] = {"id": row["provider_id"], "logo": image(row.get("logo_path"), "w154")}
     return found
+
+
+MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+ROLE_NAMES = {"Creator": "Creación", "Director": "Dirección", "Screenplay": "Guion", "Writer": "Guion", "Novel": "Novela"}
+
+
+def born_text(birthday, deathday=None) -> str | None:
+    """«12 de marzo de 1971» (y «† 2016» si murió); None si TMDB no lo sabe."""
+    def day(value):
+        m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", str(value or ""))
+        return (int(m[1]), int(m[2]), int(m[3])) if m and 1 <= int(m[2]) <= 12 else None
+    born = day(birthday)
+    if not born:
+        return None
+    text = f"{born[2]} de {MONTHS[born[1] - 1]} de {born[0]}"
+    died = day(deathday)
+    return f"{text} · † {died[0]}" if died else text
+
+
+def credit_people(raw: dict) -> list[dict]:
+    """Las caras de la ficha (como el iPhone): quien la creó o dirigió y escribió (hasta 6), luego el reparto (hasta 20).
+    Cada una: {id, name, role, photo}; el papel en español («Dirección») o el personaje."""
+    credits = raw.get("credits") if isinstance(raw.get("credits"), dict) else {}
+    people: list[dict] = []
+    seen: set[int] = set()
+
+    def add(c, role):
+        if isinstance(c, dict) and isinstance(c.get("id"), int) and c.get("name") and c["id"] not in seen:
+            seen.add(c["id"])
+            people.append({"id": c["id"], "name": str(c["name"]).strip(), "role": role, "photo": image(c.get("profile_path"), "w185")})
+
+    for c in raw.get("created_by") or []:
+        add(c, ROLE_NAMES["Creator"])
+    for job in ("Director", "Screenplay", "Writer", "Novel"):
+        for c in credits.get("crew") or []:
+            if isinstance(c, dict) and c.get("job") == job and len(people) < 6:
+                add(c, ROLE_NAMES[job])
+    for c in (credits.get("cast") or [])[:20]:
+        add(c, str(c.get("character") or "").strip() if isinstance(c, dict) else "")
+    return people
 
 
 class Tmdb:
@@ -154,6 +195,7 @@ class Tmdb:
         names = lambda jobs: list(dict.fromkeys(p.get("name") for p in crew if isinstance(p, dict) and p.get("job") in jobs and p.get("name")))  # noqa: E731
         creators = [c.get("name") for c in raw.get("created_by") or [] if isinstance(c, dict) and c.get("name")]
         cast = [c.get("name") for c in ((raw.get("credits") or {}).get("cast") or [])[:3] if isinstance(c, dict) and c.get("name")]
+        people = credit_people(raw)
         rating = None
         if kind == "series":
             rows = (raw.get("content_ratings") or {}).get("results") or []
@@ -168,7 +210,39 @@ class Tmdb:
                     break
         return {"tagline": str(raw.get("tagline") or "").strip() or None, "certification": rating,
                 "directors": creators or names({"Director"}), "writers": [] if kind == "series" else names({"Screenplay", "Writer"}),
-                "cast": cast}
+                "cast": cast, "people": people}
+
+    def person(self, person_id: int) -> dict:
+        """Una persona (al elegir su cara en la ficha), como el iPhone: foto, de dónde es, su biografía (en español; si
+        TMDB no la tiene, en inglés) y lo que ha hecho, lo más conocido primero, sin repetir y solo con póster."""
+        raw = self._get(f"/person/{int(person_id)}", append_to_response="combined_credits")
+        bio = str(raw.get("biography") or "").strip()
+        if not bio:
+            bio = str(self._get(f"/person/{int(person_id)}", language="en-US").get("biography") or "").strip()
+        credits = raw.get("combined_credits") if isinstance(raw.get("combined_credits"), dict) else {}
+        rows = [(c, c.get("character")) for c in credits.get("cast") or [] if isinstance(c, dict)]
+        rows += [(c, c.get("job")) for c in credits.get("crew") or [] if isinstance(c, dict)]
+        rows.sort(key=lambda pair: -float(pair[0].get("popularity") or 0))
+        found, seen = [], set()
+        for c, role in rows:
+            kind = {"movie": "movie", "tv": "series"}.get(str(c.get("media_type")))
+            name = str(c.get("title") or c.get("name") or "").strip()
+            poster = image(c.get("poster_path"), "w342")
+            if not kind or not name or not poster or not isinstance(c.get("id"), int) or (kind, c["id"]) in seen:
+                continue
+            seen.add((kind, c["id"]))
+            found.append({"tmdb_id": c["id"], "kind": kind, "title": name, "poster": poster,
+                          "year": _year(c.get("release_date") or c.get("first_air_date")),
+                          "role": str(role or "").strip() or None})
+        return {"id": raw.get("id"), "name": str(raw.get("name") or "").strip(), "photo": image(raw.get("profile_path"), "h632"),
+                "biography": bio, "born": born_text(raw.get("birthday"), raw.get("deathday")),
+                "place": str(raw.get("place_of_birth") or "").strip() or None, "credits": found[:40]}
+
+    def imdb_of(self, kind: str, tmdb_id: int) -> str | None:
+        """El IMDb de un título de TMDB (para abrir su ficha desde la filmografía de una persona)."""
+        raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}/external_ids")
+        imdb = raw.get("imdb_id")
+        return imdb if isinstance(imdb, str) and imdb.startswith("tt") else None
 
     def images(self, kind: str, tmdb_id: int, limit: int = 18) -> dict[str, list[str]]:
         """Los pósters y fondos de un título (para «Cambiar el arte»): primero los en español, luego inglés y sin texto."""

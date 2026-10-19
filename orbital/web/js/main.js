@@ -30,6 +30,8 @@ import { createToast } from "./components/toast.js";
 import { createPhoneLink } from "./components/phone-link.js";
 import { createArtPicker } from "./components/art-picker.js";
 import { createListScreen, SORTS } from "./components/list-screen.js";
+import { createDecide } from "./components/decide.js";
+import { createYear } from "./components/year.js";
 import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
@@ -115,6 +117,7 @@ const ui = {
   title: createTitle({
     onPlay: (play) => watch(play),
     onSources: (play) => openSources(play),
+    onPerson: (person) => openPerson(person),
     canPrefetch: () => state.stremioLinked,
     canSendPhone: () => state.phone,
     onSendPhone: (send) => sendToPhone(send),
@@ -146,6 +149,7 @@ const ui = {
     onTitle: (ref) => openTitle(ref), // una serie nueva: su ficha
     onLaunch: (item) => launch(item),
     onMore: (item) => openMenu(forYouMenu(item)),
+    onDecide: () => openDecide(),
     onFocus: (item) => forYouFocused(item),
     onEdge: () => { sound.play("error"); rumble("edge"); },
   }),
@@ -170,12 +174,26 @@ const ui = {
   // Una lista abierta de Películas y series (una tarjeta: plataforma, premio, estudio, año, tu lista, un género).
   listScreen: createListScreen({
     onMove: () => sound.play("move"),
-    onPick: (item) => openTitle(item),
+    onPick: (item) => openListItem(item),
     onMore: (item) => openMenu(gameMenu(item, { running: state.running, phone: state.phone })),
     onSort: (screen) => openMenu(listSortMenu(screen)),
-    onClose: () => { sound.play("back"); renderHints(); },
+    onClose: (list) => { sound.play("back"); renderHints(); backFromPerson(list); },
     ratings: (items) => api.forYouRatings(items).then((r) => r.ratings || {}),
     watched: () => api.forYouWatched().then((r) => r.ids || []),
+  }),
+  // Como el iPhone: «¿Qué vemos?» (X en Para ti, o ☰) y «Tu año» (☰).
+  decide: createDecide({
+    load: (choice) => api.forYouDecide(choice),
+    skip: (imdb) => api.forYouDecideSkip(imdb),
+    onPick: (item) => openTitle(item),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
+  year: createYear({
+    load: () => api.forYouYear(),
+    onPick: (item) => openTitle(item),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
   }),
   launch: createLaunchOverlay({ backGlyph: () => glyphs().back }),
   viewer: createViewer({
@@ -201,7 +219,7 @@ const touchMenu = h("button", { class: "touch-back touch-back--menu", type: "but
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -283,7 +301,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.search];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.year, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -931,6 +949,7 @@ function openCollection(item) {
     return renderHints();
   }
   const l = c.list || {};
+  if (l.id === "estrenos") return openUpcoming(l, cached);
   const kinds = l.split ? (c.type === "year" ? [["movie", "Películas"], ["series", "Series"]] : [["series", "Series"], ["movie", "Películas"]])
     : [[l.kinds?.[0] ?? null, ""]];
   // Un premio: su estatuilla; un estudio: su logo en blanco. Un año: el título ya es el número grande.
@@ -938,6 +957,65 @@ function openCollection(item) {
   ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: c.source, media, metal: c.type === "award" ? c.tint || "gold" : null,
     tabs: kinds.map(([kind, label]) => ({ id: kind || "all", label, load: () => cached(l.id, kind).then((items) => items.map(curatedItem)) })) });
   return renderHints();
+}
+
+/** Próximos estrenos por semana (como «Semana» del iPhone): una pestaña por día («Hoy 18», «Mañana 19», «Lunes 20»)
+ *  y en cada póster su hora. */
+async function openUpcoming(l, cached) {
+  const items = await cached(l.id, null).catch(() => []);
+  const days = [];
+  for (const i of items) {
+    let d = days.find((x) => x.day === i.day);
+    if (!d) days.push(d = { day: i.day, label: /[0-9]/.test(i.day_label) ? i.day_label : `${i.day_label} ${Number(String(i.day).slice(8, 10))}`, items: [] });
+    d.items.push({ ...curatedItem(i), day_label: i.time, subtitle: [i.episode_label, i.network].filter(Boolean).join(" · ") });
+  }
+  ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: "trakt", media: {},
+    tabs: days.length ? days.map((d) => ({ id: d.day, label: d.label, load: () => Promise.resolve(d.items) }))
+      : [{ id: "all", label: "", load: () => Promise.resolve([]) }] });
+  return renderHints();
+}
+
+/** «¿Qué vemos?»: tres propuestas que caben en tu tiempo (como el 🎲 del iPhone). */
+function openDecide() {
+  sound.play("open");
+  ui.decide.open();
+  renderHints();
+}
+
+/** Una persona del reparto (en la ficha): su foto, biografía y filmografía, como el iPhone. B vuelve a la ficha. */
+let personFrom = null;
+function openPerson(person) {
+  personFrom = ui.title.current;
+  ui.title.close();
+  sound.play("open");
+  ui.listScreen.open({ id: `person:${person.id}`, title: person.name, meta: person.role || "", media: {},
+    person: { name: person.name, photo: person.photo },
+    tabs: [{ id: "all", label: "", load: () => api.forYouPerson(person.id).then((p) => {
+      ui.listScreen.setPerson(p);
+      return (p.credits || []).map((c) => ({ id: `tmdb:${c.kind}:${c.tmdb_id}`, title: c.title, image: c.poster, kind: c.kind,
+        tmdb_id: c.tmdb_id, year: c.year, subtitle: [c.role, c.year].filter(Boolean).join(" · ") }));
+    }) }] });
+  renderHints();
+}
+
+/** Al cerrar la persona: de vuelta a la ficha de la que venías. */
+function backFromPerson(list) {
+  if (!String(list?.id || "").startsWith("person:") || !personFrom) return;
+  const back = personFrom;
+  personFrom = null;
+  setTimeout(() => { if (!ui.title.isOpen && !topOverlay()) openTitle(back); }, 0);
+}
+
+/** Un póster de una lista abierta: su ficha. De la filmografía (TMDB) primero se busca su IMDb. */
+async function openListItem(item) {
+  if (item.meta_id || !item.tmdb_id) return openTitle(item);
+  try {
+    const { imdb } = await api.forYouTmdbImdb(item.kind, item.tmdb_id);
+    openTitle({ ...item, meta_id: imdb, id: `cinemeta:${item.kind}:${imdb}` });
+  } catch (err) {
+    sound.play("error");
+    ui.toast.show(err.message || "Este título no está en Stremio.", { error: true });
+  }
 }
 
 /** Un género (Por género): su lista completa, como las demás. */
@@ -1291,6 +1369,14 @@ async function runCommand(command, context = null) {
         if (stillThere(context)) ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
+      case "decide":
+        ui.sheet.close();
+        return openDecide();
+      case "year":
+        ui.sheet.close();
+        sound.play("open");
+        ui.year.open();
+        return renderHints();
       case "controls":
         return openMenu(controlsMenu((await api.controllers().catch(() => ({ controllers: [] }))).controllers), nested(context));
       case "runner-menu":

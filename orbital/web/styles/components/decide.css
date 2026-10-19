@@ -1,0 +1,22 @@
+/* «¿Qué vemos?» (js/components/decide.js), como DecideView del iPhone: tres carteles lado a lado, el porqué de la
+   enfocada y abajo las preguntas en píldora (browse__filter). El marco es .screen. */
+.decide { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+.decide__lead { margin: 0; color: var(--color-text-muted); font-size: var(--text-md); }
+.decide__stage { display: flex; align-items: center; gap: var(--space-10); min-height: calc(var(--decide-poster-height) * var(--card-focus-scale) + var(--space-6)); padding-top: var(--space-6); }
+.decide__picks { display: flex; align-items: center; gap: var(--card-gap); }
+.decide__card { --card-height: var(--decide-poster-height); }
+.decide__about { display: flex; flex-direction: column; gap: var(--space-2); width: 26rem; min-width: 0; }
+.decide__name {
+  margin: 0; font-size: var(--text-2xl); font-weight: var(--weight-bold); line-height: 1.1; letter-spacing: var(--tracking-display);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding-bottom: .15em;
+}
+.decide__why { margin: 0; color: var(--color-accent); font-size: var(--text-md); font-weight: var(--weight-medium); }
+.decide__overview {
+  margin: 0; color: var(--color-text-muted); font-size: var(--type-secondary); line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+}
+.decide__status { margin: 0; color: var(--color-text-muted); font-size: var(--text-md); }
+.decide__questions { display: grid; gap: var(--space-3); }
+.decide__question { display: grid; grid-template-columns: 6rem minmax(0, 1fr); align-items: center; gap: var(--space-4); }
+.decide__label { color: var(--color-text-muted); font-size: var(--type-secondary); text-align: right; }
+.decide[data-zone="questions"] .decide__picks .card { opacity: .6; }

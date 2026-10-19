@@ -148,6 +148,9 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const traktOrder = (l) => (l.id === "watchlist" ? 0 : l.id === "mine" ? 1 : 2);
   const trakt = lists.filter((l) => ["watchlist", "mine"].includes(l.id) || l.id?.startsWith("list:"))
     .sort((a, b) => traktOrder(a) - traktOrder(b)).map((l) => listCard(l, "trakt")).filter(Boolean);
+  // Próximos estrenos también como tarjeta (como el iPhone, en Listas › Trakt): se abre con un día por pestaña («Semana»).
+  const upcoming = byId.estrenos && listCard(byId.estrenos, "trakt");
+  if (upcoming) trakt.splice(Math.min(2, trakt.length), 0, upcoming);
   if (trakt.length) rows.push({ id: "curated:lists-trakt", title: "Listas de Trakt", group: "lists", cards: true, items: trakt });
   const stremio = lists.filter((l) => l.id === "mylist" || l.id?.startsWith("addon:")).map((l) => listCard(l, "stremio")).filter(Boolean);
   if (stremio.length) rows.push({ id: "curated:lists-stremio", title: "Listas de Stremio", group: "lists", cards: true, items: stremio });
