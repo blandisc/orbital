@@ -35,24 +35,37 @@ class RotatingStream:
         self.backups = backups
         self._lock = threading.Lock()
         path.parent.mkdir(parents=True, exist_ok=True)
-        self._rotate()  # cada arranque empieza en un archivo nuevo (el anterior queda como .1)
-        self._file = open(path, "w", encoding="utf-8", buffering=1)  # noqa: SIM115 - vive todo el proceso
+        # Cada arranque empieza en un archivo nuevo (el anterior queda como .1). Si otro Orbital lo tiene abierto (el clic
+        # en el ícono con Orbital ya abierta), Windows no deja moverlo: se escribe al final del mismo. Antes ese error
+        # mataba al clic sin decir nada (pythonw no tiene consola): «le doy clic y no inicia».
+        rotated = self._rotate()
+        self._file = self._open("w" if rotated else "a")
 
-    def _rotate(self) -> None:
-        for i in range(self.backups - 1, 0, -1):
-            older = self.path.with_suffix(f".log.{i}")
-            if older.exists():
-                older.replace(self.path.with_suffix(f".log.{i + 1}"))
-        if self.path.exists():
-            self.path.replace(self.path.with_suffix(".log.1"))
+    def _open(self, mode: str):
+        try:
+            return open(self.path, mode, encoding="utf-8", buffering=1)  # noqa: SIM115 - vive todo el proceso
+        except OSError:
+            return open(os.devnull, "w", encoding="utf-8")  # noqa: SIM115 - sin registro, pero Orbital abre igual
+
+    def _rotate(self) -> bool:
+        """True si quedó rotado; False si un archivo estaba en uso (se sigue escribiendo en el actual)."""
+        try:
+            for i in range(self.backups - 1, 0, -1):
+                older = self.path.with_suffix(f".log.{i}")
+                if older.exists():
+                    older.replace(self.path.with_suffix(f".log.{i + 1}"))
+            if self.path.exists():
+                self.path.replace(self.path.with_suffix(".log.1"))
+            return True
+        except OSError:
+            return False
 
     def write(self, text: str) -> int:
         with self._lock:
             written = self._file.write(text)
             if self._file.tell() > self.max_bytes:
                 self._file.close()
-                self._rotate()
-                self._file = open(self.path, "w", encoding="utf-8", buffering=1)  # noqa: SIM115
+                self._file = self._open("w" if self._rotate() else "a")
             return written
 
     def flush(self) -> None:
