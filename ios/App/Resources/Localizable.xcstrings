@@ -1398,6 +1398,17 @@
         }
       }
     },
+    "Calendario del mes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Month calendar"
+          }
+        }
+      }
+    },
     "Calidad": {
       "extractionState": "manual",
       "localizations": {
@@ -4016,6 +4027,17 @@
         }
       }
     },
+    "Ese día no sale nada de lo que sigues.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing you follow comes out that day."
+          }
+        }
+      }
+    },
     "Ese día no viste nada.": {
       "extractionState": "manual",
       "localizations": {
@@ -5820,6 +5842,28 @@
         }
       }
     },
+    "Mes anterior": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous month"
+          }
+        }
+      }
+    },
+    "Mes siguiente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next month"
+          }
+        }
+      }
+    },
     "Mi lista": {
       "extractionState": "manual",
       "localizations": {
@@ -6146,6 +6190,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing recognized yet"
+          }
+        }
+      }
+    },
+    "Nada sale": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing out"
           }
         }
       }
@@ -10612,6 +10667,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "continue it on my iPhone"
+          }
+        }
+      }
+    },
+    "te recomendamos:": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "we recommend:"
           }
         }
       }

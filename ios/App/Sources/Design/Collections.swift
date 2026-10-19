@@ -144,18 +144,12 @@ struct BecauseSeed: Identifiable, Equatable {
     let poster: String?
 }
 
-/// «Porque viste»: lo último que viste arriba y lo que Trakt relaciona con el elegido abajo. Se elige de dos formas (Ajustes ›
-/// Inicio y Para ti): `posters`, una fila de mini pósters (el elegido crece) y `deck`, un mazo de cartas que se avienta a
-/// un lado para pasar al siguiente. Sin elegir, cambia solo cada día.
-enum BecauseStyle: String { case posters, deck }
-
+/// «Porque viste X, te recomendamos»: el mazo de cartas de lo último que viste (la de arriba es el título elegido; se
+/// avienta a un lado o con ‹ › para pasar al siguiente) y abajo lo que Trakt relaciona con él. Sin elegir, cambia solo cada día.
 struct BecauseCard<Related: View>: View {
-    let style: BecauseStyle
     let seeds: [BecauseSeed]
     let selected: String
     var choose: (String) -> Void = { _ in }
-    /// Cambiar entre los dos estilos ahí mismo (también en Ajustes › Inicio y Para ti).
-    var switchStyle: ((BecauseStyle) -> Void)?
     @ViewBuilder var related: () -> Related
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -164,15 +158,8 @@ struct BecauseCard<Related: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack {
-                Text("Porque viste").recipe(.eyebrow, color: DS.accent)
-                Spacer(minLength: DS.Space.s2)
-                if let switchStyle { stylePicker(switchStyle) }
-            }
-            switch style {
-            case .posters: postersHeader
-            case .deck: deckHeader
-            }
+            deckHeader
+            Text("te recomendamos:").recipe(.secondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: DS.Space.s2) { related() }
                     .environment(\.posterCaptions, false)
@@ -186,52 +173,6 @@ struct BecauseCard<Related: View>: View {
         .sensoryFeedback(.selection, trigger: selected)
     }
 
-    /// Los dos estilos, discretos: mini pósters o mazo de cartas (el elegido en el acento).
-    private func stylePicker(_ pick: @escaping (BecauseStyle) -> Void) -> some View {
-        HStack(spacing: 0) {
-            ForEach([(BecauseStyle.posters, "square.grid.3x1.below.line.grid.1x2", LocalizedStringKey("Mini pósters")),
-                     (BecauseStyle.deck, "rectangle.portrait.on.rectangle.portrait", LocalizedStringKey("Mazo de cartas"))], id: \.1) { option, symbol, label in
-                Button { pick(option) } label: {
-                    Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.semibold))
-                        .foregroundStyle(option == style ? DS.accent : DS.textFaint)
-                        .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text(label))
-                .accessibilityAddTraits(option == style ? .isSelected : [])
-            }
-        }
-        .padding(.vertical, -DS.Space.s3)   // el botón es de 44 pt; el renglón no crece por él
-        .sensoryFeedback(.selection, trigger: style)
-    }
-
-    // MARK: mini pósters
-    private var postersHeader: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            if seeds.count > 1 {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .bottom, spacing: DS.Space.s2) {
-                        ForEach(seeds) { seed in
-                            let on = seed.id == current?.id
-                            Button { choose(seed.id) } label: {
-                                PosterView(url: seed.poster, title: seed.title)
-                                    .frame(width: on ? DS.Collections.miniPosterOn : DS.Collections.miniPoster)
-                                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(on ? DS.accent : .clear, lineWidth: DS.SettingsLook.optionRing))
-                                    .opacity(on ? 1 : DS.Collections.miniOff)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(Text(verbatim: seed.title))
-                            .accessibilityAddTraits(on ? .isSelected : [])
-                        }
-                    }
-                }
-                .accessibilityIdentifier("because-posters")
-            }
-            Text(verbatim: current?.title ?? "").recipe(.cardTitle).lineLimit(2)
-        }
-    }
-
     // MARK: mazo
     private var deckHeader: some View {
         HStack(alignment: .center, spacing: DS.Space.s4) {
@@ -240,7 +181,8 @@ struct BecauseCard<Related: View>: View {
                 choose(seeds[(index + step + seeds.count) % seeds.count].id)
             }
             VStack(alignment: .leading, spacing: DS.Space.s2) {
-                Text(verbatim: current?.title ?? "").recipe(.cardTitle).lineLimit(3)
+                Text("Porque viste").recipe(.footnote)
+                Text(verbatim: current?.title ?? "").recipe(.title).lineLimit(3)
                 if seeds.count > 1 {
                     Text("Avienta la carta para cambiar").recipe(.caption)
                     HStack(spacing: DS.Space.s2) {

@@ -1,117 +1,157 @@
 import SwiftUI
 import OrbitalCore
 
-/// «Un Simpson al azar» como ruleta: las imágenes de los episodios pasan como en una tragamonedas, frenan en el elegido,
-/// se dice cuál es (temporada, episodio y nombre) y arranca solo en el iPhone. «Otro» vuelve a tirar; «Ver ya», sin esperar.
+/// «Un Simpson al azar» como un cambio de canal en la tele morada de la sala (un segundo): la tele aparece, estática y tres
+/// clics de canal (pasan tres episodios de un parpadeo), se queda en el elegido con su nombre y la pantalla crece hasta
+/// volverse el reproductor. Con «Reducir movimiento», directo al elegido.
 struct SimpsonsRoulette: View {
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draw: AppEnvironment.SimpsonsDraw?
-    @State private var offset: CGFloat = 0
+    /// Qué canal se ve (un índice de `draw.reel`; el último es el elegido).
+    @State private var channel = 0
+    @State private var staticOn = true
+    @State private var shown = false
     @State private var landed = false
-    @State private var spin = 0.0
-    @State private var autoplay: Task<Void, Never>?
-
-    private var step: CGFloat { DS.Simpsons.card + DS.Simpsons.gap }
+    @State private var zoom = false
+    @State private var clicks = 0
+    @State private var run: Task<Void, Never>?
 
     var body: some View {
         ZStack {
             DS.backdropDeep.ignoresSafeArea()
-            RadialGradient(colors: [DS.Simpsons.amarillo.opacity(DesignTokens.Opacity.faint), .clear], center: .top, startRadius: 0, endRadius: DS.Simpsons.glow)
-                .ignoresSafeArea()
+            RadialGradient(colors: [DS.Simpsons.amarillo.opacity(DesignTokens.Opacity.faint), .clear], center: .center, startRadius: 0, endRadius: DS.Simpsons.glow)
+                .ignoresSafeArea().opacity(zoom ? 0 : 1)
             VStack(spacing: DS.Space.s5) {
-                Image("Glyphs/donut").resizable().frame(width: DS.Simpsons.donut, height: DS.Simpsons.donut)
-                    .rotationEffect(.degrees(spin))
-                    .accessibilityHidden(true)
-                Text("Un Simpson al azar").recipe(.title).foregroundStyle(DS.text)
-                reel
-                reveal
                 Spacer(minLength: 0)
-                Button("Cancelar") { autoplay?.cancel(); dismiss() }.buttonStyle(.glass)
+                tv
+                caption.opacity(zoom ? 0 : 1)
+                Spacer(minLength: 0)
+                Button("Cancelar") { run?.cancel(); dismiss() }.buttonStyle(.glass).opacity(zoom ? 0 : 1)
             }
             .padding(.vertical, DS.Space.s8)
         }
         .environment(\.colorScheme, .dark)
+        .sensoryFeedback(.selection, trigger: clicks)
         .sensoryFeedback(.success, trigger: landed) { _, now in now }
         .task { await roll() }
-        .onDisappear { autoplay?.cancel() }
+        .onDisappear { run?.cancel() }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text("Un Simpson al azar"))
     }
 
-    /// La tira de imágenes: el elegido es la última y queda al centro.
-    private var reel: some View {
-        GeometryReader { geo in
-            HStack(spacing: DS.Simpsons.gap) {
-                ForEach(Array((draw?.reel ?? []).enumerated()), id: \.offset) { i, item in
-                    let isChosen = landed && i == (draw?.reel.count ?? 0) - 1
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        PosterView(url: AppEnvironment.simpsonsStill(season: item.season, episode: item.episode.episode), title: "", aspect: DS.Poster.stillAspect)
-                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(isChosen ? DS.Simpsons.amarillo : .clear, lineWidth: DS.SettingsLook.optionRing))
-                        Text(verbatim: Strings.episode(season: item.season, episode: item.episode.episode, language: env.services.appSettings.uiLanguage))
-                            .recipe(.caption, color: isChosen ? DS.Simpsons.amarillo : DS.textMuted).fontWeight(.semibold)
-                    }
-                    .frame(width: DS.Simpsons.card)
-                    .scaleEffect(isChosen ? DS.Simpsons.chosenScale : 1)
-                    .opacity(landed && !isChosen ? DesignTokens.Opacity.disabled : 1)
-                }
-            }
-            .offset(x: geo.size.width / 2 - DS.Simpsons.card / 2 + offset)
+    /// La tele de la sala: cuerpo morado, pantalla con la imagen del canal (o estática) y dos perillas.
+    private var tv: some View {
+        let still = draw.map { d -> String in
+            let item = d.reel[min(channel, d.reel.count - 1)]
+            return AppEnvironment.simpsonsStill(season: item.season, episode: item.episode.episode)
         }
-        .frame(height: DS.Simpsons.card / DS.Poster.stillAspect + DS.Space.s6)
-        .overlay { if draw == nil { ProgressView() } }
+        return HStack(spacing: DS.Space.s3) {
+            ZStack {
+                PosterView(url: still, title: "", aspect: DS.Simpsons.screenAspect, bleed: true)
+                    .opacity(staticOn ? DS.Simpsons.ghost : 1)
+                if staticOn { TVStatic().transition(.opacity) }
+            }
+            .frame(width: DS.Simpsons.screen, height: DS.Simpsons.screen / DS.Simpsons.screenAspect)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Simpsons.screenRadius, style: .continuous))
+            VStack(spacing: DS.Space.s3) {
+                Circle().fill(DS.Simpsons.knob).frame(width: DS.Simpsons.knobSize, height: DS.Simpsons.knobSize)
+                    .rotationEffect(.degrees(Double(clicks) * DS.Simpsons.knobTurn))
+                Circle().fill(DS.Simpsons.knob).frame(width: DS.Simpsons.knobSize, height: DS.Simpsons.knobSize)
+            }
+            .opacity(zoom ? 0 : 1)
+        }
+        .padding(DS.Space.s4)
+        .background(DS.Simpsons.tvBody.opacity(zoom ? 0 : 1), in: RoundedRectangle(cornerRadius: DS.Simpsons.tvRadius, style: .continuous))
+        .scaleEffect(zoom ? DS.Simpsons.zoomScale : (shown ? 1 : DS.Simpsons.appearScale))
+        .opacity(shown ? 1 : 0)
         .accessibilityHidden(true)
     }
 
-    /// Cuál salió y qué hacer.
-    @ViewBuilder private var reveal: some View {
-        if landed, let chosen = draw?.chosen {
-            VStack(spacing: DS.Space.s2) {
+    /// El canal en el que se quedó: temporada, episodio y nombre.
+    @ViewBuilder private var caption: some View {
+        VStack(spacing: DS.Space.s1) {
+            Text("Un Simpson al azar").recipe(.footnote)
+            if landed, let chosen = draw?.chosen {
                 Text(verbatim: Strings.episode(season: chosen.season, episode: chosen.episode.episode, language: env.services.appSettings.uiLanguage))
                     .recipe(.eyebrow, color: DS.Simpsons.amarillo)
                 if chosen.episode.hasTitle { Text(verbatim: chosen.episode.title).recipe(.section).multilineTextAlignment(.center).foregroundStyle(DS.text) }
-                Text("Empieza en un momento…").recipe(.footnote)
-                HStack(spacing: DS.Space.s3) {
-                    Button("Otro", systemImage: "arrow.triangle.2.circlepath") { Task { await roll() } }.buttonStyle(.glass).controlSize(.large)
-                    Button("Ver ya", systemImage: "play.fill") { start() }.dsPrimaryButton().controlSize(.large)
-                }
-                .padding(.top, DS.Space.s2)
             }
-            .padding(.horizontal, DS.Space.gutter)
-            .transition(.opacity.combined(with: .scale(scale: DS.Simpsons.revealScale)))
-            .accessibilityElement(children: .contain)
         }
+        .frame(minHeight: DS.Simpsons.captionHeight, alignment: .top)
+        .padding(.horizontal, DS.Space.gutter)
     }
 
     private func roll() async {
-        autoplay?.cancel()
-        withAnimation(DS.Motion.base(reduceMotion)) { landed = false }
-        offset = 0
-        guard let found = await env.drawSimpsons(reelLength: DS.Simpsons.reelLength) else { dismiss(); return }
-        // Las imágenes, antes de girar (si no, pasaban en gris).
+        run?.cancel()
+        guard let found = await env.takeSimpsons() else { dismiss(); return }
+        // Las imágenes de los canales, antes de cambiar (si no, pasaban en negro); con un tope corto.
         let stills = found.reel.map { AppEnvironment.simpsonsStill(season: $0.season, episode: $0.episode.episode) }
-        await withTaskGroup(of: Void.self) { group in   // todas, con un tope: si la red tarda, gira igual
+        await withTaskGroup(of: Void.self) { group in
             group.addTask { await ImagePipeline.shared.warmPosters(stills) }
             group.addTask { try? await Task.sleep(nanoseconds: UInt64(DS.Simpsons.warmWait * 1_000_000_000)) }
             await group.next(); group.cancelAll()
         }
-        draw = found
-        let end = -CGFloat(found.reel.count - 1) * step
+        draw = found; channel = 0; landed = false; zoom = false
         if reduceMotion {
-            offset = end; landed = true
-        } else {
-            withAnimation(.timingCurve(0.12, 0.8, 0.18, 1, duration: DS.Simpsons.spin)) { offset = end; spin += DS.Simpsons.donutTurns }
-            completion: { withAnimation(DS.Motion.base(reduceMotion)) { landed = true } }
+            shown = true; staticOn = false; channel = found.reel.count - 1; landed = true
+            try? await Task.sleep(nanoseconds: UInt64(DS.Simpsons.hold * 1_000_000_000))
+            start(); return
         }
-        autoplay = Task {
-            try? await Task.sleep(nanoseconds: UInt64(((reduceMotion ? 0 : DS.Simpsons.spin) + DS.Simpsons.hold) * 1_000_000_000))
+        run = Task { @MainActor in
+            func wait(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
+            withAnimation(.spring(duration: DS.Simpsons.appear)) { shown = true }
+            await wait(DS.Simpsons.appear)
+            // Clic, clic, clic: cada canal, un parpadeo de estática y luego su imagen.
+            for i in 0..<found.reel.count where !Task.isCancelled {
+                staticOn = true; channel = i; clicks += 1
+                await wait(DS.Simpsons.staticBurst)
+                withAnimation(.easeOut(duration: DS.Simpsons.staticBurst)) { staticOn = false }
+                if i < found.reel.count - 1 { await wait(DS.Simpsons.flip) }
+            }
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: DS.Simpsons.settle)) { landed = true }
+            await wait(DS.Simpsons.hold)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeIn(duration: DS.Simpsons.zoom)) { zoom = true }   // la pantalla se vuelve el reproductor
+            await wait(DS.Simpsons.zoom)
             if !Task.isCancelled { start() }
         }
     }
 
     private func start() {
-        autoplay?.cancel()
+        run?.cancel()
         guard let draw else { return }
         dismiss()
         env.playSimpsons(draw)
+    }
+}
+
+/// La estática de una tele vieja: rayas grises al azar que cambian en cada cuadro.
+private struct TVStatic: View {
+    var body: some View {
+        TimelineView(.animation) { context in
+            Canvas { ctx, size in
+                var rng = SeededNoise(seed: UInt64(context.date.timeIntervalSinceReferenceDate * 60))
+                let rows = Int(size.height / DS.Simpsons.staticLine)
+                for r in 0..<rows {
+                    let y = CGFloat(r) * DS.Simpsons.staticLine
+                    ctx.fill(Path(CGRect(x: 0, y: y, width: size.width, height: DS.Simpsons.staticLine)), with: .color(DS.text.opacity(rng.next())))
+                }
+            }
+        }
+        .blendMode(.screen)
+        .allowsHitTesting(false)
+    }
+}
+
+/// Números al azar repetibles por cuadro (la estática no depende del generador del sistema).
+private struct SeededNoise {
+    var state: UInt64
+    init(seed: UInt64) { state = seed &* 6364136223846793005 &+ 1442695040888963407 }
+    mutating func next() -> Double {
+        state = state &* 6364136223846793005 &+ 1442695040888963407
+        return Double((state >> 33) % 1000) / 1000 * DesignTokens.Opacity.faint
     }
 }

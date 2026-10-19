@@ -80,11 +80,24 @@ enum DS {
     /// «Un Simpson al azar»: la ruleta de episodios (ancho de cada imagen, espacio, cuánto gira y cuánto se queda el elegido
     /// antes de empezar), la dona y el amarillo de Los Simpson.
     enum Simpsons {
-        // Un segundo de transición al episodio (no un juego de 7 s): el carrete gira 0.7 s y el elegido se ve 0.3 s.
-        static let card: CGFloat = 200, gap: CGFloat = 14, reelLength = 10, warmWait: Double = 0.2
-        static let spin: Double = 0.7, hold: Double = 0.3, donut: CGFloat = 72, donutTurns: Double = 360
-        static let chosenScale: CGFloat = 1.08, revealScale: CGFloat = 0.92, glow: CGFloat = 420
-        static let amarillo = Color(red: 1, green: 0.85, blue: 0.12)   // el amarillo de Los Simpson
+        // Un cambio de canal de un segundo en la tele morada de la sala: aparece (0.15 s), tres clics con estática (~0.4 s),
+        // se queda en el elegido (0.25 s) y la pantalla crece hasta llenar el iPhone (0.2 s).
+        static let reelLength = 3, warmWait: Double = 0.25
+        static let appear: Double = 0.15, staticBurst: Double = 0.06, flip: Double = 0.07, settle: Double = 0.15, hold: Double = 0.25, zoom: Double = 0.2
+        static let screen: CGFloat = 240, screenAspect: CGFloat = 4 / 3, screenRadius: CGFloat = 26, tvRadius: CGFloat = 36
+        static let knobSize: CGFloat = 22, knobTurn: Double = 60, appearScale: CGFloat = 0.9, zoomScale: CGFloat = 3.2
+        static let ghost: Double = 0.35, staticLine: CGFloat = 3, captionHeight: CGFloat = 96, glow: CGFloat = 420
+        static let amarillo = Color(red: 1, green: 0.85, blue: 0.12)    // el amarillo de Los Simpson
+        static let tvBody = Color(red: 0.55, green: 0.38, blue: 0.68)   // la tele morada de la sala
+        static let knob = Color(red: 0.33, green: 0.2, blue: 0.42)
+    }
+
+    /// El calendario de estrenos (Sale hoy › el mes): cada día pintado con el color del arte de lo que sale.
+    enum ReleaseDays {
+        static let cell: CGFloat = 50, radius: CGFloat = 10, inset: CGFloat = 3, split: CGFloat = 1.5
+        /// Cuántas series se pintan por día (dos: la casilla partida a la mitad); más, con «+N».
+        static let maxColors = 2
+        static let pastOpacity: Double = 0.55
     }
 
     enum TitleAction {
@@ -296,8 +309,6 @@ enum DS {
         /// La vista previa del carrusel: tres tarjetas chicas que se deslizan solas, de ida y vuelta.
         static let deckPreviewHeight: CGFloat = 120, deckPreviewCard = CGSize(width: 58, height: 86), deckPreviewStep: CGFloat = 50
         static let deckPreviewBlur: CGFloat = 1.5, deckPreviewDrop: CGFloat = 6, deckPreviewSpeed: Double = 0.9
-        /// La vista previa de «Porque viste»: los mini pósters (el elegido, más grande).
-        static let previewPoster: CGFloat = 22, previewPosterOn: CGFloat = 32
         /// La vista previa de cuánto falta: una tarjeta del tamaño real, reducida.
         static let timePreviewCard = CGSize(width: 300, height: 190), timePreviewScale: CGFloat = 0.5
         static let optionRadius: CGFloat = 18, optionRing: CGFloat = 2
@@ -343,7 +354,6 @@ enum DS {
         /// «Porque viste»: el póster de lo que viste y los relacionados.
         static let seedPoster: CGFloat = 104, relatedPoster: CGFloat = 64
         /// «Porque viste» en mini pósters: el tamaño de cada uno, el elegido (crece) y qué tan apagados los demás.
-        static let miniPoster: CGFloat = 44, miniPosterOn: CGFloat = 58, miniOff: Double = 0.55
         /// «Porque viste» en mazo: la carta de arriba, cuánto se corre y gira cada una de abajo, y cuánto hay que arrastrar.
         static let deckPoster: CGFloat = 96, deckShift: CGFloat = 6, deckTurn: Double = 3, deckShrink: CGFloat = 0.05, deckThrow: CGFloat = 40, deckDepth = 3
         /// «Por año»: la tarjeta (cuatro pósters) y su número.

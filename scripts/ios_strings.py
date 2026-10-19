@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Calendario del mes": "Month calendar", "Ese día no sale nada de lo que sigues.": "Nothing you follow comes out that day.", "Mes anterior": "Previous month", "Mes siguiente": "Next month", "Nada sale": "Nothing out", "te recomendamos:": "we recommend:",
     "El N.º 1 de cada plataforma": "No. 1 on each platform", "Lo que todos están viendo": "What everyone's watching",
     "Lo número 1 en tus plataformas": "The number 1 on your platforms",
     "Mejor elige la carpeta de tus películas: con todo tu OneDrive la revisión tarda más.": "Better choose the folder with your movies: with your whole OneDrive the check takes longer.", "Todo tu OneDrive": "Your whole OneDrive", "Usar todo mi OneDrive": "Use my whole OneDrive",

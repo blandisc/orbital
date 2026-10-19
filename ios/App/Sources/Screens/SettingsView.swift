@@ -206,16 +206,7 @@ struct SettingsView: View {
             .padding(.vertical, DS.Space.s2)
         } header: { Text("Cuánto falta") } footer: { Text("Cómo te dice la tarjeta lo que te queda por ver.") }
         .listRowBackground(DS.surface)
-        Section {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
-                StyleOption(label: "Mini pósters", selected: s.becauseStyle != BecauseStyle.deck.rawValue, action: { model.update { $0.becauseStyle = BecauseStyle.posters.rawValue } }) { BecauseStylePreview(style: .posters) }
-                StyleOption(label: "Mazo de cartas", selected: s.becauseStyle == BecauseStyle.deck.rawValue, action: { model.update { $0.becauseStyle = BecauseStyle.deck.rawValue } }) { BecauseStylePreview(style: .deck) }
-            }
-            .padding(.vertical, DS.Space.s2)
-            .accessibilityIdentifier("because-options")
-        } header: { Text("Porque viste") } footer: { Text("Cómo eliges, en Para ti, de qué título quieres recomendaciones.") }
-        .listRowBackground(DS.surface)
-        .sensoryFeedback(.selection, trigger: s.homeDeck + s.homeTime + s.becauseStyle)
+        .sensoryFeedback(.selection, trigger: s.homeDeck + s.homeTime)
     }
 
     private func timeName(_ style: TimeStyle) -> LocalizedStringKey {

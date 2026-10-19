@@ -336,7 +336,7 @@ struct ListsView: View {
                             Spacer(minLength: DS.Space.s2)
                             if model.hasKindSplit {
                                 DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
-                                                           set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), compact: true)
+                                                           set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), menu: true)
                             }
                         }
                         .padding(.horizontal, DS.Space.gutter)
@@ -484,15 +484,8 @@ struct ListsView: View {
         let fromHistory = model.becauseSeeds.map { BecauseSeed(id: $0.imdb, title: $0.title, poster: String(format: ForYou.metahubPoster, $0.imdb)) }
         let seeds = fromHistory.contains { $0.id == because.seed.imdb } ? fromHistory
             : [BecauseSeed(id: because.seed.imdb, title: because.seed.title, poster: String(format: ForYou.metahubPoster, because.seed.imdb))] + fromHistory
-        return BecauseCard(style: BecauseStyle(rawValue: env.services.appSettings.becauseStyle) ?? .posters,
-                           seeds: seeds, selected: because.seed.imdb,
-                           choose: { id in if let seed = model.becauseSeeds.first(where: { $0.imdb == id }) { Task { await model.chooseBecause(seed) } } },
-                           switchStyle: { style in
-                               withAnimation(DS.Motion.base(reduceMotion)) {
-                                   env.services.settings.update { $0.becauseStyle = style.rawValue }
-                                   env.services.settingsDidChange()
-                               }
-                           }) {
+        return BecauseCard(seeds: seeds, selected: because.seed.imdb,
+                           choose: { id in if let seed = model.becauseSeeds.first(where: { $0.imdb == id }) { Task { await model.chooseBecause(seed) } } }) {
             ForEach(because.items) { s in
                 ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], width: DS.Collections.relatedPoster) { dismissed in Task { await model.dismiss(dismissed) } }
             }

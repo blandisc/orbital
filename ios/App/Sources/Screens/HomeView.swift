@@ -18,6 +18,8 @@ struct HomeView: View {
     @State private var topMovies = false
     /// La ruleta de «Un Simpson al azar».
     @State private var rollingSimpsons = false
+    /// Sale hoy › el mes completo.
+    @State private var showingCalendar = false
     /// El alto de cada renglón de «Tu watchlist», que crece con el tamaño de letra.
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -105,6 +107,10 @@ struct HomeView: View {
         .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .subtitle(syncText)
         .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette() }
+        .sheet(isPresented: $showingCalendar) {
+            ReleaseCalendarView { route in showingCalendar = false; openTitle = route }
+                .presentationDetents([.large]).presentationDragIndicator(.visible)
+        }
         .task(priority: .utility) { await env.prefetchSimpsons() }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
@@ -259,7 +265,7 @@ struct HomeView: View {
 
     /// Todo · Películas · Series: un botón chico (como el de Para ti), sin otro renglón.
     private func kindFilter(_ model: HomeModel) -> some View {
-        DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }), compact: true)
+        DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }), menu: true)
             .accessibilityIdentifier("home-kind-filter")
     }
 
@@ -444,8 +450,18 @@ struct HomeView: View {
         let today = model.airingToday
         let rest = model.upcoming.filter { $0.id != today?.id }
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: today == nil ? Text("Sale pronto") : Text("Sale hoy"), source: .trakt, eyebrow: Text("De las series que sigues"))
-                .padding(.horizontal, DS.Space.gutter)
+            HStack(alignment: .sectionTitle) {
+                DSSectionHead(title: today == nil ? Text("Sale pronto") : Text("Sale hoy"), source: .trakt, eyebrow: Text("De las series que sigues"))
+                Spacer(minLength: DS.Space.s2)
+                // El mes completo: cada día con el color de lo que sale.
+                Button { showingCalendar = true } label: {
+                    DSCapsuleLabel(title: Text(verbatim: Date().formatted(Date.FormatStyle(locale: env.uiLocale).month(.wide)).capitalized(with: env.uiLocale)), symbol: "calendar")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Calendario del mes"))
+                .accessibilityIdentifier("release-calendar")
+            }
+            .padding(.horizontal, DS.Space.gutter)
             if let today {
                 NavigationLink(value: today.series.route) {
                     CoverCard(art: today.series.wide, logo: Artwork.logoURL(metaID: today.series.imdb), title: today.series.title,

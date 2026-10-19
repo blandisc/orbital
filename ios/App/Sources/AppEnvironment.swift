@@ -379,9 +379,9 @@ final class AppEnvironment: ObservableObject {
     }
 
     /// Elige uno y arma la tira de la ruleta (otros al azar y, al final, el elegido).
-    func drawSimpsons(reelLength: Int) async -> SimpsonsDraw? {
+    func drawSimpsons(reelLength: Int, quiet: Bool = false) async -> SimpsonsDraw? {
         let id = Self.simpsons
-        guard let meta = try? await services.cinemeta.meta(kind: "series", id: id) else { notify("No pude traer los episodios de Los Simpson."); return nil }
+        guard let meta = try? await services.cinemeta.meta(kind: "series", id: id) else { if !quiet { notify("No pude traer los episodios de Los Simpson.") }; return nil }
         let pool = CinemetaParsing.seasons(meta).filter { Self.simpsonsSeasons.contains($0.season) }
             .flatMap { season in season.episodes.map { (season: season.season, episode: $0) } }
         guard pool.count > 1, let chosen = pool.randomElement() else { notify("No pude traer los episodios de Los Simpson."); return nil }
@@ -390,7 +390,18 @@ final class AppEnvironment: ObservableObject {
     }
 
     /// La lista de episodios de Los Simpson, pedida antes de que toques la dona: así la ruleta dura un segundo y no espera a la red.
-    func prefetchSimpsons() async { _ = try? await services.cinemeta.meta(kind: "series", id: Self.simpsons) }
+    /// Y el siguiente episodio ya elegido, con sus imágenes en caché: al tocar la dona, la tele tiene todo listo.
+    func prefetchSimpsons() async {
+        guard nextSimpsons == nil, let draw = await drawSimpsons(reelLength: DS.Simpsons.reelLength, quiet: true) else { return }
+        await ImagePipeline.shared.warmPosters(draw.reel.map { Self.simpsonsStill(season: $0.season, episode: $0.episode.episode) })
+        nextSimpsons = draw
+    }
+    private var nextSimpsons: SimpsonsDraw?
+    /// El que ya estaba listo (y se prepara el siguiente), o uno nuevo.
+    func takeSimpsons() async -> SimpsonsDraw? {
+        if let ready = nextSimpsons { nextSimpsons = nil; Task { await prefetchSimpsons() }; return ready }
+        return await drawSimpsons(reelLength: DS.Simpsons.reelLength)
+    }
 
     /// El elegido, en el iPhone y desde el principio.
     func playSimpsons(_ draw: SimpsonsDraw) {

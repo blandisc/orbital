@@ -622,12 +622,23 @@ struct DSKindFilter: View {
     @Binding var kind: String
     var includeAll = true
     var counts: (movies: Int, series: Int)?
-    /// Chico, a la derecha del título de su sección (Inicio, Top 10, Para ti): el switch en cápsula.
+    /// Chico, a la derecha del título de su sección: el switch en cápsula (dos opciones, como el Top 10).
     var compact = false
+    /// Una lista que se despliega (tres opciones no caben junto al título): la cápsula con lo elegido y ⌄, como «Ver todo».
+    var menu = false
 
     var body: some View {
         Group {
-            if compact {
+            if menu {
+                Menu {
+                    Picker(selection: $kind) { ForEach(options, id: \.0) { Text($0.1).tag($0.0) } } label: { EmptyView() }
+                } label: {
+                    DSCapsuleLabel(title: Text(options.first { $0.0 == kind }?.1 ?? "Todo"), symbol: "chevron.down", symbolFirst: false)
+                }
+                .fixedSize()
+                .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
+                .sensoryFeedback(.selection, trigger: kind)
+            } else if compact {
                 // El switch chico del Top 10 (cápsula con lo elegido resaltado), a la derecha del título de su sección.
                 DSSegmented(options: options, selection: $kind).fixedSize()
                     .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
@@ -990,15 +1001,27 @@ extension VerticalAlignment {
 
 /// «Ver todo ›»: en una cápsula tenue, a la altura del título (la misma en toda la app).
 struct SeeAllLabel: View {
+    var body: some View { DSCapsuleLabel(title: Text("Ver todo"), symbol: "chevron.forward", symbolFirst: false) }
+}
+
+/// La cápsula tenue de lo que va a la derecha de un título de sección («Ver todo ›», «📅 Octubre», «Todo ⌄»).
+struct DSCapsuleLabel: View {
+    let title: Text
+    let symbol: String
+    var symbolFirst = true
+
     var body: some View {
         HStack(spacing: DS.Space.s1) {
-            Text("Ver todo").font(DS.TextRecipe.footnote.font.weight(.semibold))
-            Image(systemName: "chevron.forward").font(DS.TextRecipe.caption.font.weight(.bold))
+            if symbolFirst { icon }
+            title.font(DS.TextRecipe.footnote.font.weight(.semibold))
+            if !symbolFirst { icon }
         }
         .foregroundStyle(DS.text)
         .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
         .background(DS.fill, in: Capsule())
+        .contentShape(Capsule())
         .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
-        .accessibilityLabel(Text("Ver todo"))
     }
+
+    private var icon: some View { Image(systemName: symbol).font(DS.TextRecipe.caption.font.weight(.bold)) }
 }
