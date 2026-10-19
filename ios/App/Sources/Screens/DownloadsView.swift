@@ -137,8 +137,11 @@ struct DownloadsView: View {
         HStack(spacing: DS.Space.s3) {
             PosterView(url: item.poster, title: item.title).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(item.title).recipe(.cardTitle).lineLimit(1)
-                DataLine(parts: [fromMedia(item), item.subtitle.isEmpty ? nil : item.subtitle, item.quality, status(item)].compactMap { $0 }, color: item.state == .failed ? DS.danger : nil)
+                // Dos renglones para el nombre y el estado en el suyo: con letra grande «En pausa» se caía al final de la línea.
+                Text(item.title).recipe(.cardTitle).lineLimit(2)
+                let details = [fromMedia(item), item.subtitle.isEmpty ? nil : item.subtitle, item.quality].compactMap { $0 }
+                if !details.isEmpty { DataLine(parts: details) }
+                if let status = status(item) { Text(verbatim: status).recipe(.data, color: item.state == .failed ? DS.danger : nil).lineLimit(2) }
             }
             Spacer(minLength: DS.Space.s2)
             // El avance es el mismo anillo de la ficha y de la fila de un episodio, con pausar o reanudar adentro.

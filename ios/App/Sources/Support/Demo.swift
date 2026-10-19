@@ -178,6 +178,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if url.host == "opensubtitles-v3.strem.io" { return HTTPResponse(status: 200, data: Self.subtitlesDemo.serialized()) }
         if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
         if url.host == "api.trakt.tv", Demo.because, let found = Self.becauseDemo(url.path) { return HTTPResponse(status: 200, data: found.serialized()) }
+        // La calificación de la comunidad de Trakt (la ficha la enseña con su logo junto a IMDb y TMDB).
+        if url.host == "api.trakt.tv", url.path.hasSuffix("/ratings") { return HTTPResponse(status: 200, data: JSON.object(["rating": .double(8.4), "votes": 52_310]).serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
             let user: JSON = url.path == "/users/settings" ? ["user": ["username": "demo"]] : [:]
             return HTTPResponse(status: url.path == "/users/settings" ? 200 : 404, data: user.serialized())
@@ -268,6 +270,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                     "credits": ["cast": [["id": 1, "name": "Steve Carell", "character": "Michael Scott"], ["id": 2, "name": "Rainn Wilson", "character": "Dwight Schrute"],
                                          ["id": 3, "name": "John Krasinski", "character": "Jim Halpert"], ["id": 4, "name": "Jenna Fischer", "character": "Pam Beesly"]], "crew": []],
                     "content_ratings": ["results": [["iso_3166_1": "MX", "rating": "B"]]],
+                    "release_dates": ["results": [["iso_3166_1": "MX", "release_dates": [["certification": "B12"]]]]],
                     "videos": ["results": [["site": "YouTube", "key": "LHOtME2DL4g", "type": "Trailer", "name": "Tráiler"],
                                            ["site": "YouTube", "key": "gO8N3L_aERg", "type": "Featurette", "name": "Así se hizo"]]],
                     "recommendations": ["results": [["id": 8, "name": "Parks and Recreation", "first_air_date": "2009-04-09", "poster_path": "/p.jpg"],
@@ -523,7 +526,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
              "behaviorHints": ["bingeGroup": "demo-1080p"]],
             ["name": "[RD+] Demo\n1080p", "title": "Big.Buck.Bunny.1080p.BluRay.x264\n💾 30.7 MB 🇬🇧",
              "url": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_30MB.mp4"],
-            ["name": "[RD+] Demo\n4K", "title": "Jellyfish.2160p.HDR.WEB-DL\n💾 14.8 GB 🇬🇧",
+            ["name": "[RD+] Demo\n4K", "title": "Jellyfish.2160p.DV.HDR.WEB-DL.DDP5.1.Atmos\n💾 14.8 GB 🇬🇧",
              "url": "https://test-videos.co.uk/vids/jellyfish/mp4/h264/1080/Jellyfish_1080_10s_20MB.mp4"],
         ]
         return HTTPResponse(status: 200, data: JSON.object(["streams": .array(streams)]).serialized())

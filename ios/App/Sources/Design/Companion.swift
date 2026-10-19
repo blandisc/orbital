@@ -55,7 +55,10 @@ struct CompanionPanel<Content: View>: View {
             Spacer(minLength: 0)
         }
         .padding(DS.Space.s4)
-        .frame(width: DS.Companion.panelWidth, height: DS.Companion.panelHeight, alignment: .topLeading)
+        .frame(height: DS.Companion.panelHeight, alignment: .topLeading)
+        // Casi todo el ancho (`width` ya descuenta los márgenes del carrusel): la siguiente solo asoma su orilla, `peek`
+        // (antes asomaba media tarjeta con el texto cortado a media palabra).
+        .containerRelativeFrame(.horizontal) { width, _ in width + DS.Space.gutter - DS.Space.s3 - DS.Companion.peek }
         .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 }

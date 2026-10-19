@@ -24,8 +24,6 @@ struct TitleView: View {
     /// Lo que mide la pantalla visible (sin la barra de pestañas) y lo que hay bajo el arte hasta las acciones: el arte
     /// se ajusta para que «Ver», Guardar, Descargar y Fuente queden a la vista al abrir, en un SE y en un Pro.
     @State private var viewport: CGSize = .zero
-    @State private var topInset: CGFloat = 0
-    @State private var bottomInset: CGFloat = 0
     @State private var belowHero: CGFloat = 0
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var id: String { "\(videoID)-\(purpose)" } }
@@ -59,8 +57,6 @@ struct TitleView: View {
             }
         }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { bottomInset = $0 }
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
         .background(Backdrop(tint: tint.colors))
         .navigationBarTitleDisplayMode(.inline)
@@ -78,6 +74,7 @@ struct TitleView: View {
             if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
             if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
             if Demo.isOn, Demo.open == "download-tap" { await downloadRecommended(model) }
+            if Demo.isOn, Demo.open == "save" { saving = true }   // `-demo-open save`: la hoja «Guardar en…», para capturas
             #endif
             await tint.load(model.background ?? model.poster)
         }
@@ -109,8 +106,10 @@ struct TitleView: View {
         let fallback = UIScreen.main.bounds.height < DS.TitleAction.shortScreen ? DS.TitleAction.heroAspectShort : DS.TitleAction.heroAspect
         guard viewport.width > 0, belowHero > 0 else { return fallback }
         let padding = scheme == .dark ? 0 : DS.Space.s4
-        // La barra de pestañas flota sobre el contenido: su alto (el margen de abajo) no cuenta como espacio libre.
-        let room = viewport.height + topInset - bottomInset - belowHero - padding - DS.Space.s3
+        // `viewport` ya es el alto entre la barra de arriba y la de pestañas, y el contenido empieza bajo la de arriba (el arte
+        // solo se extiende detrás de ella): lo libre es eso menos lo de abajo del arte. Antes se sumaba el margen de arriba y
+        // la segunda fila de acciones quedaba debajo de las pestañas.
+        let room = viewport.height - belowHero - padding - DS.Space.s3
         let width = viewport.width - (scheme == .dark ? 0 : DS.Space.gutter * 2)
         guard room > 0 else { return typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax }
         let cap = typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax

@@ -55,6 +55,8 @@ struct PlayerScreen: View {
     @State private var unlockPrompt = false
     @State private var unlockHide: Task<Void, Never>?
     @State private var hideTask: Task<Void, Never>?
+    /// El «⋯» de la barra horizontal abierto: mientras está, los controles no se esconden (si no, se cerraba solo).
+    @State private var moreOpen = false
     @State private var panel = false
     @Environment(\.verticalSizeClass) private var verticalSize
     @State private var scrubbing: Double?
@@ -256,6 +258,7 @@ struct PlayerScreen: View {
             if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
         }
         .task(id: pendingSeek) { if pendingSeek != nil { try? await Task.sleep(nanoseconds: DS.Timing.seekPatience); pendingSeek = nil } }
+        .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
         .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
         .alert("¿Sigues viendo?", isPresented: Binding(get: { model.stillWatchingPrompt }, set: { _ in })) {
             Button("Seguir") { Task { await model.confirmStillWatching() } }
@@ -524,7 +527,7 @@ struct PlayerScreen: View {
         hideTask = Task {
             try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
             // Con la barra de avance bajo el dedo, los controles no se esconden (se iría el slider a media búsqueda).
-            if !Task.isCancelled, !voiceOver, scrubbing == nil, holder.model.snapshot.state == .playing { controlsVisible = false }
+            if !Task.isCancelled, !voiceOver, !moreOpen, scrubbing == nil, holder.model.snapshot.state == .playing { controlsVisible = false }
         }
     }
 
@@ -635,13 +638,29 @@ struct PlayerScreen: View {
             AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
                 .accessibilityLabel(Text("AirPlay"))
             if withActions {
-                // Todos redondos y del mismo tamaño (un menú «⋯» se cerraba al esconderse los controles).
-                PlayerCircleButton(symbol: "lock", label: "Bloquear") { lock() }.accessibilityIdentifier("player-lock")
-                if pip.isPossible { PlayerCircleButton(symbol: "pip.enter", label: "Ventana") { pip.toggle() } }
-                if canHandOffToTV(model) { PlayerCircleButton(symbol: "tv", label: "Ver en la TV") { Task { await continueOnTV() } } }
+                // Bloquear, Ventana y Ver en la TV van juntos detrás del «⋯». Es un globo (no un `Menu` del sistema): así se
+                // sabe cuándo está abierto y los controles no se esconden debajo de él.
+                PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") { hideTask?.cancel(); moreOpen = true }
+                    .accessibilityIdentifier("player-more")
+                    .popover(isPresented: $moreOpen) {
+                        HStack(spacing: DS.Space.s2) {
+                            PlayerLabelButton(title: "Bloquear", symbol: "lock") { moreOpen = false; lock() }
+                                .accessibilityIdentifier("player-lock")
+                            if pip.isPossible { PlayerLabelButton(title: "Ventana", symbol: "pip.enter") { moreOpen = false; pip.toggle() } }
+                            if canHandOffToTV(model) {
+                                PlayerLabelButton(title: "En la TV", symbol: "tv", accessibility: "Ver en la TV") { moreOpen = false; Task { await continueOnTV() } }
+                            }
+                        }
+                        .frame(width: DS.Size.touchTarget * 2 * CGFloat(moreCount(model)))
+                        .padding(DS.Space.s3)
+                        .presentationCompactAdaptation(.popover)
+                    }
             }
         }
     }
+
+    /// Cuántos botones lleva el «⋯» (para su ancho).
+    private func moreCount(_ model: PlayerModel) -> Int { 1 + (pip.isPossible ? 1 : 0) + (canHandOffToTV(model) ? 1 : 0) }
 
     /// Un video que te pasaron (sin reconocer) no lo puede poner la TV.
     private func canHandOffToTV(_ model: PlayerModel) -> Bool {

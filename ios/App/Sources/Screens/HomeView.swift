@@ -114,7 +114,12 @@ struct HomeView: View {
             ReleaseCalendarView { route in showingCalendar = false; openTitle = route }
                 .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
-        .task(priority: .utility) { await env.prefetchSimpsons() }
+        .task(priority: .utility) {
+            await env.prefetchSimpsons()
+            #if DEBUG
+            if Demo.isOn, Demo.open == "simpsons" { rollingSimpsons = true }   // `-demo-open simpsons`: la ruleta sola
+            #endif
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
                 .sharedBackgroundVisibility(.hidden)

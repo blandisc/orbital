@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Aún no tienes listas en Trakt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don't have any Trakt lists yet."
+          }
+        }
+      }
+    },
     "%@ GB libres": {
       "extractionState": "manual",
       "localizations": {

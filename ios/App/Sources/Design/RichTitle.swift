@@ -36,21 +36,32 @@ struct RatingsRow: View {
     var centered = false
 
     var body: some View {
-        HStack(spacing: DS.Space.s4) {
-            if centered { Spacer(minLength: 0) }
-            if let imdb, (Double(imdb) ?? 0) > 0 { rating(.imdb, Text(verbatim: imdb)) }
-            if let tmdb, tmdb > 0 { rating(.tmdb, Text(verbatim: "\(Int((tmdb * 10).rounded())) %")) }
-            if let trakt, trakt > 0 { rating(.trakt, Text(verbatim: "\(Int((trakt * 10).rounded())) %")) }
-            Spacer(minLength: 0)
+        // En un renglón; si no cabe (letra de accesibilidad en un SE), uno debajo de otro en vez de cortar los números.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Space.s4) {
+                if centered { Spacer(minLength: 0) }
+                marks
+                Spacer(minLength: 0)
+            }
+            VStack(alignment: centered ? .center : .leading, spacing: DS.Space.s2) { marks }
+                .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
         }
         .frame(minHeight: DS.Size.touchTarget / 2)
         .accessibilityElement(children: .combine)
     }
 
+    @ViewBuilder private var marks: some View {
+        if let imdb, (Double(imdb) ?? 0) > 0 { rating(.imdb, Text(verbatim: imdb)) }
+        if let tmdb, tmdb > 0 { rating(.tmdb, Text(verbatim: "\(Int((tmdb * 10).rounded()))\u{00A0}%")) }
+        if let trakt, trakt > 0 { rating(.trakt, Text(verbatim: "\(Int((trakt * 10).rounded()))\u{00A0}%")) }
+    }
+
     private func rating(_ service: RatingMark.Service, _ value: Text) -> some View {
         HStack(spacing: DS.Space.s2) {
             RatingMark(service: service)
+            // Entero y en un renglón (con letra grande «86 %» se partía y el % caía abajo).
             value.font(DS.TextRecipe.secondary.font.weight(.semibold)).monospacedDigit().foregroundStyle(DS.text)
+                .lineLimit(1).fixedSize()
         }
     }
 }

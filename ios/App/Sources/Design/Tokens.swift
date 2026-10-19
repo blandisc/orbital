@@ -385,6 +385,8 @@ enum DS {
     enum Companion {
         static let dot: CGFloat = 8, cardHeight: CGFloat = 300, panelWidth: CGFloat = 300, panelHeight: CGFloat = 250
         static let lowBattery = 20, noteLines = 5
+        /// Lo que se asoma la tarjeta siguiente del carrusel (una orilla, sin texto a medias): así se lee que se desliza.
+        static let peek: CGFloat = 28
         static let timerSteps = [15, 30, 60, 90]
         /// Cuánto antes del cierre automático se avisa (segundos).
         static let closeWarning: TimeInterval = 600

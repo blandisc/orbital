@@ -9,6 +9,7 @@ struct TouchPad: View {
     /// Lo que hace tocar (la A) en la pantalla de la TV ahora («Ver», «Escribir», «Jugar»…), de su leyenda; nil: «A».
     var selectLabel: String?
     let onAction: (OrbitalRemote.InputAction) -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var origin: CGPoint?
     @State private var gestureStart: CGPoint?
     @State private var moved = false
@@ -75,8 +76,16 @@ struct TouchPad: View {
             VStack(spacing: DS.Space.s1) {
                 // La A dice lo que va a pasar al tocar, como el pie de la TV; sin leyenda, la letra del mando.
                 Text(verbatim: selectLabel ?? "A").recipe(.title, color: DS.textMuted).lineLimit(1).contentTransition(.opacity)
-                (selectLabel == nil ? Text("Desliza · toca para elegir") : Text("A · desliza para moverte")).recipe(.caption, color: DS.textFaint)
+                // Con letra de accesibilidad el pad no da para dos renglones entre las flechas: queda solo lo que hace tocar.
+                if !typeSize.isAccessibilitySize {
+                    (selectLabel == nil ? Text("Desliza · toca para elegir") : Text("A · desliza para moverte")).recipe(.caption, color: DS.textFaint)
+                        .lineLimit(1)
+                }
             }
+            .minimumScaleFactor(DS.Size.statScale)
+            // Entre las flechas, sin encimarse: con letra de accesibilidad «Reproducir» tapaba las de arriba y abajo.
+            .padding(.horizontal, DS.Space.s6).padding(.vertical, DS.Space.s5)
+            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         }
         .padding(DS.Space.s4)
         .allowsHitTesting(false)

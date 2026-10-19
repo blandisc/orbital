@@ -310,7 +310,9 @@ struct RemoteSheet: View {
         HStack(spacing: DS.Space.s2) {
             key(model, "chevron.left.2", "LB", nil, Text("Anterior"), .prevsection)
             if let section = model.section {
-                Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+                // Un renglón siempre: con letra grande se achica (antes se partía en «Pelícu-las y s…» entre las teclas).
+                Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1)
+                    .minimumScaleFactor(DS.Size.statScale).multilineTextAlignment(.center)
                     .fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: false)   // con letra grande cede: «Ante…» no cabía
             }
             key(model, "chevron.right.2", "RB", nil, Text("Siguiente"), .nextsection)
