@@ -115,6 +115,27 @@ def _when(value) -> float | None:
         return None
 
 
+def history_play(row) -> dict | None:
+    """Una fila del historial de Trakt → lo que cuenta «Tu año». None si no trae fecha o IMDb."""
+    if not isinstance(row, dict):
+        return None
+    at = _when(row.get("watched_at"))
+    movie = row.get("type") == "movie"
+    item = row.get("movie") if movie else row.get("show")
+    ids = item.get("ids") if isinstance(item, dict) and isinstance(item.get("ids"), dict) else {}
+    imdb = ids.get("imdb")
+    if at is None or not isinstance(imdb, str) or not imdb.startswith("tt") or not isinstance(item.get("title"), str):
+        return None
+    ep = {} if movie or not isinstance(row.get("episode"), dict) else row["episode"]
+    minutes = _positive(item.get("runtime")) if movie else (_positive(ep.get("runtime")) or _positive(item.get("runtime")))
+    assert isinstance(item, dict)
+    return {"at": at, "kind": "movie" if movie else "series", "imdb": imdb, "title": item["title"].strip(), "minutes": minutes or 0,
+            "genres": [g for g in item.get("genres") or [] if isinstance(g, str)],
+            "season": ep.get("season") if isinstance(ep.get("season"), int) else None,
+            "episode": ep.get("number") if isinstance(ep.get("number"), int) else None,
+            "episode_title": str(ep.get("title") or "").strip() or None}
+
+
 def _typed(rows) -> list[dict]:
     """Filas mezcladas («type»: movie/show) → solo películas y series con IMDb, sin repetir."""
     found, seen = [], set()
@@ -362,6 +383,23 @@ class Trakt:
                 found.append({**e, "watched_at": _when(row.get("watched_at"))})
                 if len(found) >= limit:
                     break
+        return found
+
+    HISTORY_PAGE = 250
+
+    def plays(self, since: str, until: str, max_pages: int = 20) -> list[dict]:
+        """«Tu año»: cada cosa que viste entre dos fechas (ISO 8601), como el iPhone (Trakt.plays): {at (segundos), kind,
+        imdb, title, minutes, genres, season, episode, episode_title}. Son varias páginas de 250."""
+        found: list[dict] = []
+        for page in range(1, max(1, max_pages) + 1):
+            rows = self._get("/sync/history", start_at=since, end_at=until, extended="full", limit=self.HISTORY_PAGE, page=page)
+            rows = rows if isinstance(rows, list) else []
+            for row in rows:
+                play = history_play(row)
+                if play:
+                    found.append(play)
+            if len(rows) < self.HISTORY_PAGE:
+                break
         return found
 
     def last_watched(self) -> dict | None:

@@ -55,6 +55,11 @@
   --color-award-gold: #d4a640;
   --color-award-silver: #c7c2b8;
   --color-award-bronze: #b87342;
+  /* Tu año: el mapa día por día, los colores del iPhone (DS.YearMap): películas, series y las dos el mismo día. */
+  --color-year-movies: #3d70d9;
+  --color-year-series: #6b4ac4;
+  --color-year-both: #b04ad6;
+  --color-year-empty: rgba(255, 255, 255, .07);
   --color-studio-halo: #8c8f9e; /* neutro: cada estudio es de muchos colores */
   --color-progress: var(--palette-paper);
   --color-progress-track: rgba(255, 255, 255, .2);

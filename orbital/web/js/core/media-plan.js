@@ -13,7 +13,7 @@ const CENTERED = new Set(["platforms", "awards", "studios", "years"]);
 
 /** Los grupos de «Ir a…» (☰), en orden; LT/RT pasan de uno a otro. */
 export const GROUPS = [
-  { id: "spotlight", label: "Destacados" }, { id: "onedrive", label: "Tu OneDrive" }, { id: "because", label: "Porque viste" }, { id: "general", label: "Recomendadas y populares" },
+  { id: "spotlight", label: "Destacados" }, { id: "onedrive", label: "Mi media" }, { id: "because", label: "Porque viste" }, { id: "general", label: "Recomendadas y populares" },
   { id: "fresh", label: "Nuevo en tus plataformas" }, { id: "platforms", label: "Tus plataformas" }, { id: "awards", label: "Premios" },
   { id: "studios", label: "Estudios" }, { id: "years", label: "Por año" }, { id: "estrenos", label: "Próximos estrenos" },
   { id: "lists", label: "Tus listas" }, { id: "genres", label: "Por género" },
@@ -84,15 +84,34 @@ export function becauseSeed(because, chosen = null) {
   return picked ? { seed: picked, listId: `because:${picked.meta_id}`, seeds } : { seed: because?.seed || null, listId: "because", seeds };
 }
 
-export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = {}, becauseChoice = null } = {}) {
+/** Cuánto tiempo algo de tu OneDrive cuenta como «Nuevo» (como el iPhone). */
+export const NEW_FOR = 14 * 86400;
+
+/** Una película o serie de Mi media como portada (su ficha pone tu copia primero). */
+export function miMediaItem(t, now = Date.now() / 1000) {
+  const fresh = t.added && now - t.added < NEW_FOR;
+  const kind = t.kind === "series" ? "series" : "movie";
+  return { ...curatedItem({ meta_id: t.imdb, kind, title: t.title, year: t.year, why: fresh ? "Nuevo" : "En tu OneDrive",
+    image: `https://images.metahub.space/poster/medium/${t.imdb}/img`, hero: `https://images.metahub.space/background/medium/${t.imdb}/img` }),
+  day_label: fresh ? "Nuevo" : undefined, added: t.added || null,
+  subtitle: kind === "series" ? `${t.episodes} ${t.episodes === 1 ? "episodio" : "episodios"} tuyos` : String(t.year || "Película") };
+}
+
+export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = {}, becauseChoice = null, miMedia = null } = {}) {
   const byId = Object.fromEntries(lists.filter((l) => l?.id).map((l) => [l.id, l]));
   const rows = [];
   // El rótulo de cada título no repite el nombre de su fila (en «En tendencia», cada tarjeta decía «En tendencia»).
   const inRow = (title) => (item) => curatedItem(item, { rowTitle: title });
   const plain = (id, title, items, extra) => { if (items.length) rows.push({ id: `curated:${id}`, title, items: items.slice(0, 20).map(inRow(title)), ...extra }); };
 
-  // Tus videos de OneDrive (la carpeta que elegiste): lo tuyo va arriba, antes de las sugerencias.
-  if (byId.onedrive) plain("onedrive", "En tu OneDrive", itemsOf(itemsById, byId.onedrive, filter), { seal: "orbital", group: "onedrive" });
+  // Mi media (tu carpeta de OneDrive, como el iPhone): su tarjeta abre la biblioteca entera; al lado, lo último que subiste.
+  const mine = (miMedia?.titles || []).filter((t) => filter === "all" || t.kind === filter);
+  if (mine.length) {
+    const items = mine.map((t) => miMediaItem(t));
+    const library = card("collection:mimedia", "Mi media", { type: "list", name: "Mi media", source: "orbital", count: mine.length,
+      posters: items.slice(0, 2).map(posterOf), list: { id: "mimedia", title: "Mi media" } }, heroOf(items[0], "Tu OneDrive"));
+    rows.push({ id: "curated:onedrive", title: "Mi media", seal: "orbital", group: "onedrive", items: [library, ...items.slice(0, 12)] });
+  }
   const because = byId.because;
   if (because?.seed) {
     // Como el iPhone («Mini pósters»): arriba tus últimos títulos para elegir de cuál (← → en la fila; cada día otro de los
@@ -148,6 +167,9 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const traktOrder = (l) => (l.id === "watchlist" ? 0 : l.id === "mine" ? 1 : 2);
   const trakt = lists.filter((l) => ["watchlist", "mine"].includes(l.id) || l.id?.startsWith("list:"))
     .sort((a, b) => traktOrder(a) - traktOrder(b)).map((l) => listCard(l, "trakt")).filter(Boolean);
+  // Próximos estrenos también como tarjeta (como el iPhone, en Listas › Trakt): se abre con un día por pestaña («Semana»).
+  const upcoming = byId.estrenos && listCard(byId.estrenos, "trakt");
+  if (upcoming) trakt.splice(Math.min(2, trakt.length), 0, upcoming);
   if (trakt.length) rows.push({ id: "curated:lists-trakt", title: "Listas de Trakt", group: "lists", cards: true, items: trakt });
   const stremio = lists.filter((l) => l.id === "mylist" || l.id?.startsWith("addon:")).map((l) => listCard(l, "stremio")).filter(Boolean);
   if (stremio.length) rows.push({ id: "curated:lists-stremio", title: "Listas de Stremio", group: "lists", cards: true, items: stremio });

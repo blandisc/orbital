@@ -177,6 +177,12 @@
   /* Esquinas concéntricas: lo que va dentro de una tarjeta curva lo mismo que ella, menos el margen. */
   --radius-inner-row: calc(var(--tile-radius) - var(--inset-row));
   --home-queue-width: 34rem; /* Inicio: la columna de «También tenías» */
+  /* Las caras del reparto (person-chip) y la persona arriba de su filmografía (person-head), como el iPhone. */
+  --person-photo: 5.4rem;
+  --person-head-photo: 8.5rem;
+  --year-cell: .95rem; /* Tu año: cada día del mapa (53 semanas caben a lo ancho) */
+  --decide-poster-height: 16rem; /* ¿Qué vemos?: los tres carteles */
+  --year-top-height: 8.6rem; /* Tu año: los pósters de «Lo que más viste» (caben bajo el mapa) */
   --key-height: 3.2rem;
   --tv-rail-width: 15rem; /* TV en vivo: la lista de categorías */
   --tv-preview-width: 30rem; /* TV en vivo: la miniatura en vivo del canal enfocado */

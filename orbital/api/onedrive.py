@@ -17,6 +17,11 @@ class ClientRequest(BaseModel):
     id: str = Field("", max_length=200)
 
 
+class FileRequest(BaseModel):
+    id: str = Field(max_length=200)
+    name: str = ""
+
+
 class FolderRequest(BaseModel):
     path: str = Field("", max_length=1000)
 
@@ -85,6 +90,32 @@ def router(d: Deps) -> APIRouter:
     def scan() -> dict:
         library.scan_soon()
         return library.status()
+
+    @r.get("/library")
+    def mi_media() -> dict:
+        """Mi media: tu carpeta como biblioteca (recién agregado, sagas, lo que ya viste y lo que no se reconoció)."""
+        library.maybe_rescan()
+        lib = library.library()
+        foryou = d.catalog.foryou
+        lib["sagas"] = foryou.sagas([t["imdb"] for t in lib["titles"] if t["kind"] == "movie"])
+        lib["watched"] = [t["imdb"] for t in lib["titles"] if t["imdb"] in set(foryou.watched_ids())]
+        return lib
+
+    @r.post("/play-file")
+    def play_file(body: FileRequest) -> dict:
+        """Un video «Sin ficha», tal cual (con el reproductor de Orbital)."""
+        from .. import player
+
+        try:
+            url = library.file_url(body.id)
+        except onedrive.OneDriveError as exc:
+            raise HTTPException(502, str(exc))
+        mpv = player.find_mpv()
+        if not url or not mpv:
+            raise HTTPException(404, "Ese archivo ya no está en tu OneDrive." if not url else "Falta el reproductor de Orbital (mpv).")
+        d.catalog.watch.play_native(mpv, url, "movie", f"onedrive:{body.id}", f"onedrive:{body.id}", body.name[:200] or "Video",
+                                    from_start=True)
+        return {"ok": True}
 
     @r.get("/titles")
     def titles() -> dict:

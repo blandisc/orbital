@@ -89,7 +89,7 @@ export const isWatchable = (item) => item?.source === "stremio" || item?.source 
 
 /** Lo que no funciona sin internet: películas y series (se ven en línea), los juegos en la nube, las apps web, la TV en
  * vivo y un juego de Steam sin instalar (instalarlo baja de internet). Lo demás —tus juegos y emuladores— sí. */
-export const needsInternet = (item) => !!item && (isWatchable(item) || item.source === "geforcenow" || item.id === "media:stremio"
+export const needsInternet = (item) => !!item && item.download?.status !== "done" && (isWatchable(item) || item.source === "geforcenow" || item.id === "media:stremio"
   || item.category === "continue" || item.extra?.installed === false || /^https?:/i.test(item.uri || "") || item.kind === "channel");
 
 /** Serie del catálogo de Stremio (su ficha muestra los episodios). */
@@ -110,6 +110,8 @@ export const primaryLabel = (item, runningId = null) => {
     return item.category === "apps" || item.category === "media" ? "Volver a la app" : "Volver al juego";
   }
   if (item?.source === "search") return "Buscar";
+  // Una descarga: lista, se ve (del disco); si no, cómo va. El avance de la barra es la descarga, no lo visto.
+  if (item?.download) return item.download.status === "done" ? `Ver${item.download.detail ? ` ${item.download.detail}` : ""}` : "Cómo va";
   if (item?.source === "genre") return "Ver títulos"; // Por género: abre su lista
   // Una tarjeta de colección (plataforma, premio, estudio, año, lista) abre su lista; «Porque viste X», su ficha.
   if (item?.source === "collection") return item.collection?.type === "seed" ? "Ficha" : "Ver la lista";

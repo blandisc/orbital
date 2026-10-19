@@ -32,6 +32,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from . import decide as decide_api
 from .library import charts as charts_api
 from .library import rawg as rawg_api
 from .library import stremio_api
@@ -367,6 +368,7 @@ class ForYou:
         self._logo_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="logos")  # calentar logos, de uno en uno
         self._studio_logos_busy = False
         self._logo_misses: dict[str, float] = {}
+        self._skipped: dict[str, float] = {}  # «Hoy no» de ¿Qué vemos?: IMDb → cuándo
 
     def _key(self, name: str) -> str:
         return (self.catalog.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)
@@ -613,7 +615,7 @@ class ForYou:
         """La ficha como el iPhone: frase, clasificación, quién la hizo (TMDB) y «Más como esto» (lo que Trakt relaciona, ya
         con IMDb para abrirlo). Lo que no se pueda (sin clave, sin red) queda vacío; se recuerda (también sin internet)."""
         kind = kind if kind in ("movie", "series") else "movie"
-        empty = {"tagline": None, "certification": None, "directors": [], "writers": [], "cast": [], "more": []}
+        empty = {"tagline": None, "certification": None, "directors": [], "writers": [], "cast": [], "people": [], "more": []}
         if not isinstance(imdb, str) or not re.fullmatch(r"tt[0-9]{1,12}", imdb):
             return empty
         out = dict(empty)
@@ -740,6 +742,9 @@ class ForYou:
 
     def _with_art(self, item: dict) -> dict:
         """El póster o fondo que elegiste para ese título («Cambiar el arte»), en lugar del de siempre."""
+        name = self.catalog.names.name(item.get("kind"), item.get("meta_id")) if getattr(self.catalog, "names", None) else None
+        if name and name != item.get("title"):  # el mismo nombre que en la ficha y en Buscar (tu idioma)
+            item = {**item, "title": name}
         art = self.catalog.watch.art_for(item.get("meta_id")) if item.get("meta_id") else {}
         if not art:
             return item
@@ -1235,6 +1240,112 @@ class ForYou:
             self._logos.clear()
         self._logos[imdb] = png
         return png
+
+    # --- una persona (como el iPhone) -------------------------------------------------------------
+    def person(self, person_id: int) -> dict:
+        """Foto, biografía y filmografía de alguien del reparto (TMDB). Se recuerda un día."""
+        if not self.tmdb.configured:
+            raise ValueError("Para ver a esta persona falta la clave de TMDB (Ajustes › Cuentas).")
+        return self.cache.get(f"person:{int(person_id)}", SLOW_TTL, lambda: self.tmdb.person(int(person_id)))
+
+    def tmdb_imdb(self, kind: str, tmdb_id: int) -> str | None:
+        """El IMDb de un título de TMDB (abrir su ficha desde la filmografía)."""
+        kind = kind if kind in ("movie", "series") else "movie"
+        return self.cache.get(f"tmdb-imdb:{kind}:{int(tmdb_id)}", SLOW_TTL, lambda: self.tmdb.imdb_of(kind, int(tmdb_id)))
+
+    def sagas(self, imdbs: list[str]) -> list[dict]:
+        """Las sagas de tus películas (TMDB), solo las que tienen dos o más tuyas: [{id, name, imdbs}]. Cada película se
+        pregunta una vez y se recuerda mucho tiempo (no cambia de saga)."""
+        if not self.tmdb.configured:
+            return []
+
+        def one(imdb: str):
+            try:
+                return imdb, self.cache.get(f"saga:{imdb}", 30 * SLOW_TTL, lambda: self.tmdb.collection_of(imdb) or {})
+            except SERVICE_ERRORS:
+                return imdb, None
+        groups: dict[int, dict] = {}
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            for imdb, saga in pool.map(one, imdbs[:200]):
+                if saga and saga.get("id"):
+                    groups.setdefault(saga["id"], {"id": saga["id"], "name": saga["name"], "imdbs": []})["imdbs"].append(imdb)
+        return sorted((g for g in groups.values() if len(g["imdbs"]) >= 2), key=lambda g: g["name"])
+
+    # --- ¿Qué vemos? (como el iPhone) -------------------------------------------------------------
+    def _decide_pool(self) -> list[dict]:
+        """De dónde salen las propuestas: el mosaico, tus recomendaciones, tu watchlist y lo que es tendencia."""
+        pool = [i for i in self.mosaic() if i.get("meta_id")]
+        for list_id in ("recs", "watchlist", "trend"):
+            try:
+                pool += self.list_items(list_id)
+            except (KeyError, *SERVICE_ERRORS):
+                continue
+        hidden = self.catalog.state.dismissed()
+        return [i for i in pool if i.get("key") not in hidden]
+
+    def _decide_details(self, items: list[dict]) -> dict[str, dict]:
+        """Género, duración y calificación de lo que no los trae (Cinemeta, varios a la vez; se recuerda un día)."""
+        def one(item: dict) -> tuple[str, dict]:
+            imdb, kind = item["meta_id"], item["kind"]
+
+            def load() -> dict:
+                try:
+                    meta = self.catalog.cinemeta.meta(kind, imdb, localized=False)
+                except Exception:  # noqa: BLE001 - sin datos, se decide con lo que hay
+                    return {}
+                rating = meta.get("imdbRating")
+                try:
+                    score = float(rating) if rating not in (None, "") else None
+                except (TypeError, ValueError):
+                    score = None
+                return {"genres": list(meta.get("genres") or meta.get("genre") or []),
+                        "minutes": decide_api.runtime_minutes(meta.get("runtime")), "rating": score}
+            return imdb, self.cache.get(f"decide:{imdb}", SLOW_TTL, load) or {}
+
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            return dict(pool.map(one, items[:60]))
+
+    def decide(self, time_choice: str | None = None, mood: str | None = None, kind: str | None = None,
+               genres: list[str] | None = None, include_watched: bool = False, now: datetime | None = None) -> dict:
+        """Tres propuestas (la primera es la elegida) con su porqué: duración y calificación de IMDb."""
+        now = now or datetime.now().astimezone()
+        time_choice = time_choice if time_choice in decide_api.TIMES else decide_api.context_time(now)
+        mood = mood if mood in decide_api.MOODS else None
+        kind = kind if kind in ("movie", "series") else None
+        stamp = now.timestamp()
+        self._skipped = {k: v for k, v in self._skipped.items() if stamp - v < decide_api.SKIP_HOURS * 3600}
+        exclude = set(self._skipped)
+        if not include_watched:
+            exclude |= set(self.watched_ids())
+        pool = self._decide_pool()
+        details: dict[str, dict] = {}
+        if mood or genres or time_choice != "long":
+            missing = [i for i in pool if i.get("meta_id") not in exclude and (not i.get("genres") or not i.get("runtime"))]
+            details = self._decide_details(missing)
+        picks = decide_api.choose(pool, time=time_choice, mood=mood, kind=kind, genres=set(genres or ()), exclude=exclude,
+                                  details=details)
+        details.update(self._decide_details([p for p in picks if p["meta_id"] not in details]))
+        out = []
+        for p in picks:
+            d = details.get(p["meta_id"], {})
+            out.append({**p, "minutes": p.get("runtime") or d.get("minutes"), "imdb_rating": d.get("rating"),
+                        "genres": p.get("genres") or d.get("genres") or []})
+        return {"time": time_choice, "mood": mood, "kind": kind, "picks": out}
+
+    def skip_today(self, imdb: str) -> None:
+        """«Hoy no»: esa no vuelve a proponerse en 24 horas."""
+        if re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
+            self._skipped[imdb] = time.time()
+
+    # --- Tu año (como el iPhone) ------------------------------------------------------------------
+    def year_review(self, now: datetime | None = None) -> dict | None:
+        """Lo que viste desde el 1 de enero (historial de Trakt; se recuerda una hora: son varias páginas). Sin Trakt: None."""
+        if not self.trakt.linked:
+            return None
+        now = now or datetime.now().astimezone()
+        start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        plays = self.cache.get(f"trakt:year:{now.year}", RECS_TTL, lambda: self.trakt.plays(start.isoformat(), now.isoformat()))
+        return decide_api.year_review(plays, now.year, now.tzinfo)
 
     # --- «No me interesa» ----------------------------------------------------------------------
     def dismiss(self, key: str) -> None:

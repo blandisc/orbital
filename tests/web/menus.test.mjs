@@ -30,10 +30,10 @@ test("opciones de un juego favorito y sin alternativas", () => {
 
 test("menú ☰: lo de todos los días; lo técnico en Ajustes → Mantenimiento", () => {
   const basic = mainMenu({ running: null, hiddenCount: 0 });
-  assert.deepEqual(basic.options.map((o) => o.label), ["Panel rápido", "Cómo se usa", "Ajustes", "Apagar"]);
+  assert.deepEqual(basic.options.map((o) => o.label), ["Panel rápido", "¿Qué vemos?", "Tu año", "Cómo se usa", "Ajustes", "Apagar"]);
   const full = mainMenu({ running: { title: "Zelda", managed: true }, hiddenCount: 3 });
   assert.deepEqual(full.options.map((o) => o.label),
-    ["Panel rápido", "Cerrar Zelda", "Mostrar juegos ocultos", "Cómo se usa", "Ajustes", "Apagar"]);
+    ["Panel rápido", "Cerrar Zelda", "Mostrar juegos ocultos", "¿Qué vemos?", "Tu año", "Cómo se usa", "Ajustes", "Apagar"]);
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
   const maintenance = settingsPage("maintenance", {});

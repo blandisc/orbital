@@ -41,6 +41,7 @@ class Localizer:
         self.language = language
         self._cache: dict[tuple, tuple[float, dict | None]] = {}
         self._lock = threading.Lock()
+        self.on_name: Callable[[str, str, str], None] | None = None  # (imdb, nombre, idioma): TitleNames lo recuerda
 
     @property
     def active(self) -> str | None:
@@ -76,6 +77,8 @@ class Localizer:
         if not lang or kind not in ("movie", "series") or not isinstance(imdb, str) or not imdb.startswith("tt"):
             return meta
         found = self._translation(kind, imdb, lang, episodes=kind == "series")
+        if found and found.get("title") and self.on_name:
+            self.on_name(imdb, found["title"], lang)
         return apply(meta, found) if found else meta
 
     def catalog(self, kind: str, metas: list[dict]) -> list[dict]:
@@ -118,3 +121,94 @@ def apply(meta: dict, found: dict) -> dict:
             videos.append(video)
         out["videos"] = videos
     return out
+
+
+class TitleNames:
+    """El nombre de cada película o serie en el idioma de Orbital, el mismo en todos lados: la ficha y Buscar ya lo
+    traducían (TMDB) pero las listas de Trakt, Para ti y tu biblioteca de Stremio llegaban en inglés («Dune: Part Two» en
+    una fila y «Dune: Parte dos» en la ficha). Se guarda en disco; lo que falta se pide en segundo plano (nunca hace
+    esperar a una lista) y entra en la siguiente vuelta. En inglés, o sin clave de TMDB, todo queda como viene."""
+
+    SAVE_DELAY = 5.0
+
+    def __init__(self, localizer: Localizer, path=None, on_new: Callable[[], None] | None = None) -> None:
+        self.localizer = localizer
+        self.path = path
+        self.on_new = on_new  # llegaron nombres nuevos (la interfaz vuelve a pedir lo que enseña)
+        self._names: dict[str, dict[str, str]] = {}
+        self._tried: set[tuple[str, str]] = set()
+        self._lock = threading.Lock()
+        self._pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="nombres")
+        self._save_timer: threading.Timer | None = None
+        self._load()
+
+    def _load(self) -> None:
+        if not self.path:
+            return
+        import json
+        try:
+            raw = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return
+        if isinstance(raw, dict):
+            self._names = {lang: {k: v for k, v in names.items() if isinstance(v, str)}
+                           for lang, names in raw.items() if isinstance(names, dict)}
+
+    def _save(self) -> None:
+        if not self.path:
+            return
+        import json
+        with self._lock:
+            data = json.dumps(self._names, ensure_ascii=False)
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.path.with_suffix(".tmp")
+            tmp.write_text(data, encoding="utf-8")
+            tmp.replace(self.path)
+        except OSError as exc:
+            log.info("No pude guardar los nombres traducidos: %s", exc)
+
+    def _schedule_save(self) -> None:
+        with self._lock:
+            if self._save_timer:
+                return
+            self._save_timer = threading.Timer(self.SAVE_DELAY, self._flush)
+            self._save_timer.daemon = True
+            self._save_timer.start()
+
+    def _flush(self) -> None:
+        with self._lock:
+            self._save_timer = None
+        self._save()
+        if self.on_new:
+            self.on_new()
+
+    def remember(self, imdb: str, name: str, lang: str | None = None) -> None:
+        """Un nombre ya traducido (la ficha lo trae): sirve para todo lo demás."""
+        lang = lang or self.localizer.active
+        if not lang or not isinstance(imdb, str) or not imdb.startswith("tt") or not str(name or "").strip():
+            return
+        with self._lock:
+            if self._names.setdefault(lang, {}).get(imdb) == name.strip():
+                return
+            self._names[lang][imdb] = name.strip()
+        self._schedule_save()
+
+    def _fetch(self, kind: str, imdb: str, lang: str) -> None:
+        found = self.localizer._translation(kind, imdb, lang, episodes=False)
+        if found and found.get("title"):
+            self.remember(imdb, found["title"], lang)
+
+    def name(self, kind: str | None, imdb: str | None) -> str | None:
+        """El nombre en tu idioma si ya se sabe (si no, se pide para la próxima)."""
+        lang = self.localizer.active
+        if not lang or kind not in ("movie", "series") or not isinstance(imdb, str) or not imdb.startswith("tt"):
+            return None
+        with self._lock:
+            hit = self._names.get(lang, {}).get(imdb)
+            ask = hit is None and (lang, imdb) not in self._tried
+            if ask:
+                self._tried.add((lang, imdb))
+        if ask:
+            self._pool.submit(self._fetch, kind, imdb, lang)
+        return hit

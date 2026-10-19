@@ -134,6 +134,54 @@ def demo_cinemeta(self, path: str, base: str | None = None) -> dict:
     return {"metas": []}
 
 
+def demo_downloads(catalog, tmp: Path) -> None:
+    """Descargas sin internet: un archivo de mentiras (25 MB) que «baja» poco a poco, para ver el avance en la tele."""
+    import io
+    import threading
+
+    fake = tmp / "video-de-muestra.mkv"
+    fake.write_bytes(bytes(25 << 20))
+
+    class Slow(io.BufferedReader):
+        status = 200
+        url = "https://demo/Pelicula.mkv"
+        headers = {"Content-Length": str(fake.stat().st_size), "Content-Type": "video/x-matroska"}
+
+        def read(self, size=-1):
+            time.sleep(.35)
+            return super().read(size)
+
+    catalog.downloads.resolve = lambda job: ("https://demo/Pelicula.mkv", "Pelicula.1080p.mkv")
+    catalog.downloads.opener = lambda request, timeout=0: Slow(open(fake, "rb"))
+    threading.Thread(target=catalog.downloads._worker, name="descargas-demo", daemon=True).start()
+
+
+def demo_onedrive(catalog) -> None:
+    """Mi media sin cuenta de Microsoft: una carpeta de mentiras ya revisada (con fechas, una serie y uno sin ficha)."""
+    now = time.time()
+    lib = catalog.onedrive
+    class DemoOneDrive:  # el demo no habla con Microsoft
+        configured = linked = True
+
+        def stream_url(self, item_id):
+            return f"https://demo.onedrive/{item_id}"
+    lib.client = DemoOneDrive()
+    lib.state.set_setting("onedrive_folder", "Películas")
+    files = [("A1", "Dune Part Two (2024) 2160p.mkv", "movie", "tt15239678", "Dune: Parte dos", 2024, None, None, 2),
+             ("A2", "Dune (2021) 1080p.mkv", "movie", "tt1160419", "Dune", 2021, None, None, 40),
+             ("A3", "Interstellar (2014).mkv", "movie", "tt0816692", "Interstellar", 2014, None, None, 5),
+             ("B1", "Severance.S01E01.mkv", "series", "tt11280740", "Severance", None, 1, 1, 20),
+             ("B2", "Severance.S01E02.mkv", "series", "tt11280740", "Severance", None, 1, 2, 20),
+             ("C1", "Cumpleaños de la abuela 2019.mp4", "movie", None, None, None, None, None, 1)]
+    lib.files = [{"id": i, "name": n, "path": f"Películas/{n}", "size": 1, "kind": k, "title": t or n, "added": now - d * 86400,
+                  **({"imdb": imdb, "show_title": t, "show_year": y} if imdb else {}),
+                  **({"season": se, "episode": ep} if se else {})}
+                 for i, n, k, imdb, t, y, se, ep, d in files]
+    lib.scanned_at = now
+    lib.maybe_rescan = lambda: None
+    catalog.foryou.sagas = lambda imdbs: [{"id": 726871, "name": "Dune: colección", "imdbs": [i for i in imdbs if i in ("tt15239678", "tt1160419")]}]
+
+
 def no_side_effects() -> None:
     """Nada de lo que se pulse en el demo toca este equipo: ni volumen, brillo o energía, ni apagar,
     ni ventanas, ni capturas, ni la música, ni cerrar programas, ni actualizar (git) la carpeta.
@@ -216,6 +264,7 @@ def build(tmp: Path):
         "stremio": {"executable": ""},
         "esde": {"enabled": False},
         "detect": {"enabled": False},
+        "downloads": {"dir": str(tmp / "Descargas")},  # nunca en Videos\Orbital de verdad
         "apps": [{"id": "yt", "name": "YouTube", "target": "https://youtube.com/tv", "category": "media"}],
     })
     # Sin internet ni programas de este equipo.
@@ -254,6 +303,8 @@ def build(tmp: Path):
     catalog.state.record_session("steam:1086940", 62 * 3600)
     catalog.set_prefs("steam:367520", favorite=True)
     demo_foryou.install(catalog)
+    demo_downloads(catalog, tmp)
+    demo_onedrive(catalog)
     demo_tv.install(catalog, tmp)  # «TV en vivo»: canales y logos de mentiras, sin Internet ni mpv
     return create_app(config, catalog)
 

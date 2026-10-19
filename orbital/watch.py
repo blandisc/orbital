@@ -189,6 +189,7 @@ class Watch:
         self.stremio_client = stremio_client
         self.cinemeta = cinemeta_client
         self.onedrive = None  # OneDriveLibrary (catalog.py la pone): «Tu OneDrive» como fuente
+        self.downloads = None  # Downloads (catalog.py la pone): lo que bajaste para ver sin internet
         self.trailer_available = youtube_available  # «Tráiler» solo si el video existe (las pruebas lo cambian)
         self.store = store
         self.events = events
@@ -553,7 +554,10 @@ class Watch:
 
     def play_best(self, kind: str, meta_id: str, video_id: str, title: str, keep: bool = False,
                   from_start: bool = False) -> dict:
-        """"Ver": sin lista de fuentes. Orbital elige la recomendada y arranca (la lista queda en Y)."""
+        """"Ver": sin lista de fuentes. Orbital elige la recomendada y arranca (la lista queda en Y). Si lo descargaste,
+        tu descarga, del disco (arranca al instante y sin internet)."""
+        if self.downloads is not None and self.downloads.file_for(video_id) and self.play_downloaded(video_id, from_start=from_start):
+            return {"source": None, "label": "Tu descarga · sin internet"}
         prefs, subtitles = self.language_for(meta_id)
         resume = None if from_start else self.resume_choice(meta_id, video_id)
         source = None
@@ -598,6 +602,32 @@ class Watch:
         uri = streams.player_link(source, cinemeta.MANIFEST, kind, meta_id, video_id)
         self.sessions.open_stremio(uri, title)
         return uri
+
+    def download_url(self, job: dict) -> tuple[str, str]:
+        """Para Descargas: la dirección del archivo que se va a bajar (tu OneDrive; si no, una directa de 1080p)."""
+        from .downloads import pick_source
+
+        prefs = self.language_for(job["meta_id"])[0]
+        source = pick_source(self.stream_sources(job["kind"], job["video_id"], prefs), prefs.audio)
+        if source is None:
+            return "", ""
+        job["quality"] = source.resolution or None
+        if source.stream.get("onedrive") and self.onedrive is not None:
+            return self.onedrive.stream_url(source) or "", source.release
+        return player.stream_url(source.stream) or "", source.release
+
+    def play_downloaded(self, video_id: str, from_start: bool = False) -> bool:
+        """Lo que bajaste, directo del disco (sin internet). False si no está descargado."""
+        if self.downloads is None:
+            return False
+        job = self.downloads.find(video_id)
+        path = self.downloads.file_for(video_id) if job else None
+        mpv_exe = player.find_mpv()
+        if job is None or not path or not mpv_exe:
+            return False
+        title = job.get("title") or "Video"
+        self.play_native(mpv_exe, str(path), job["kind"], job["meta_id"], video_id, title, from_start=from_start)
+        return True
 
     def resume_position(self, meta_id: str, video_id: str) -> float:
         """Dónde ibas según Stremio (0 si no se sabe)."""

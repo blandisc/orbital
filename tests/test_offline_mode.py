@@ -40,9 +40,9 @@ def test_the_tv_title_page_gets_tagline_rating_and_credits_like_the_iphone(monke
     monkeypatch.setattr(client, "_get", lambda path, **params: movie)
     x = client.extras("movie", 693134, "MX")
     assert x == {"tagline": "Larga vida a la lucha.", "certification": "PG-13", "directors": ["Denis Villeneuve"],
-                 "writers": ["Jon Spaihts"], "cast": ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"]}
+                 "writers": ["Jon Spaihts"], "cast": ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"], "people": []}  # sin id, sin cara
     show = {"tagline": "", "created_by": [{"name": "Dan Erickson"}], "content_ratings": {"results": [{"iso_3166_1": "MX", "rating": "B15"}]},
             "credits": {"crew": [], "cast": [{"name": "Adam Scott"}]}}
     monkeypatch.setattr(client, "_get", lambda path, **params: show)
     assert client.extras("series", 95396, "MX") == {"tagline": None, "certification": "B15", "directors": ["Dan Erickson"],
-                                                    "writers": [], "cast": ["Adam Scott"]}
+                                                    "writers": [], "cast": ["Adam Scott"], "people": []}

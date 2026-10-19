@@ -36,15 +36,16 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
   }
 
   async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null, keep = false, from_start: fromStart = false }) {
-    if (offlineBlock(title)) return;
+    const local = !!videoId && !!state.downloaded?.has(videoId); // lo descargaste: del disco, también sin internet
+    if (!local && offlineBlock(title)) return;
     if (!takeLaunchLock(state)) return;
     sound.play("open");
     rumble("launch");
     state.launchingId = "media:player";
-    const native = state.player === "orbital" && state.stremioLinked;
+    const native = local || (state.player === "orbital" && state.stremioLinked);
     ui.launch.show({ ...(item || {}), title }, native ? "" : "Se abre en Stremio");
     // Fases honestas: primero se busca la fuente (hasta unos segundos), luego se conecta.
-    if (native && source === null) ui.launch.status("Buscando dónde verlo");
+    if (native && source === null) ui.launch.status(local ? "Tu descarga" : "Buscando dónde verlo");
     // Mientras el servidor busca, la pantalla de carga se queda y no se puede abrir otra cosa encima
     // (antes se iba a los 8 s y un segundo Enter lanzaba otra reproducción).
     state.launchLockedUntil = Infinity;

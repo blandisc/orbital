@@ -1,0 +1,27 @@
+/* «Tu año» (js/components/year.js), como YearView del iPhone: tres datos, el mapa día por día en su panel (los colores
+   de DS.YearMap) con lo que viste el día enfocado, y «Lo que más viste». El marco es .screen. */
+.year { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); overflow: hidden; }
+.year > * { flex-shrink: 0; }
+.year__status { margin: 0; color: var(--color-text-muted); font-size: var(--text-md); }
+.year__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 12rem)); gap: var(--tile-gap); }
+.year__stat { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3) var(--inset-card); }
+.year__value { font-size: var(--text-xl); font-weight: var(--weight-bold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.year__label { color: var(--color-text-muted); font-size: var(--type-secondary); }
+.year__panel {
+  display: flex; flex-direction: column; gap: var(--space-3); max-width: 100%; padding: var(--inset-card);
+  border-radius: var(--tile-radius); background: var(--color-surface);
+}
+/* Semanas en columnas (de domingo a sábado), como el mapa del iPhone y el de GitHub. */
+.year__map { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, var(--year-cell)); grid-auto-columns: var(--year-cell); gap: .2rem; }
+.year__cell { width: var(--year-cell); height: var(--year-cell); border-radius: .2rem; background: var(--color-year-empty); }
+.year__cell--movies { background: var(--color-year-movies); }
+.year__cell--series { background: var(--color-year-series); }
+.year__cell--both { background: var(--color-year-both); }
+.year__cell--out { visibility: hidden; }
+.year__cell--focused { box-shadow: 0 0 0 .14rem var(--color-focus); transform: scale(1.25); }
+.year__legend { display: flex; gap: var(--space-5); color: var(--color-text-muted); font-size: var(--type-secondary); }
+.year__key { display: flex; align-items: center; gap: var(--space-2); }
+.year__day { margin: 0; min-height: 1.4em; font-size: var(--text-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.year__top { display: flex; gap: var(--card-gap); max-width: 100%; overflow-x: auto; scrollbar-width: none; padding: var(--space-4) var(--space-2) var(--space-2); }
+.year__top > .card { flex: none; --card-height: var(--year-top-height); }
+.year[data-zone="top"] .year__panel { opacity: .6; }

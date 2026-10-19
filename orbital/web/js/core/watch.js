@@ -32,7 +32,16 @@ export function titleProgress(details) {
  * Botones de la ficha. El primero es lo más probable y lleva el foco:
  * "Continuar T3 E5" si ibas a medias, "Ver T3 E6" si terminaste el anterior, "Ver" si es nueva.
  */
-export function titleActions(details, { kind = "movie", phone = false } = {}) {
+/** El botón de Descargar según cómo va (para ver sin internet): Descargar · Descargando 42 % · Descargada. */
+export function downloadAction(job) {
+  if (!job) return { id: "download", icon: "download", label: "Descargar" };
+  if (job.status === "done") return { id: "download", icon: "check", label: "Descargada", active: true };
+  if (job.status === "failed") return { id: "download", icon: "refresh", label: "Reintentar la descarga", short: "Reintentar" };
+  const pct = job.progress != null ? Math.floor(job.progress * 100) : null;
+  return { id: "download", icon: "download", label: pct != null ? `Descargando ${pct} %` : "En espera", short: pct != null ? `${pct} %` : "En espera" };
+}
+
+export function titleActions(details, { kind = "movie", phone = false, download = undefined } = {}) {
   if (!details) return [];
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
@@ -65,8 +74,10 @@ export function titleActions(details, { kind = "movie", phone = false } = {}) {
     : { id: "mylist", icon: "plus", label: "Guardar" });
   // Una serie sin episodios (ni uno en el que ibas) no tiene fuente que elegir: el botón no hacía nada.
   const playable = (details.kind || kind) !== "series" || resume?.video_id || (details.seasons || []).some((s) => s.episodes?.length);
+  // Descargar aquí, para ver sin internet (el episodio que sigue o la película), como el iPhone.
+  if (playable && download !== undefined) out.push(downloadAction(download));
   // Solo con un iPhone conectado (si no, ni aparecen): el episodio que sigue o el enfocado.
-  if (playable && phone) out.push({ id: "phone-download", icon: "download", label: "Descargar en el iPhone", short: "Descargar" });
+  if (playable && phone) out.push({ id: "phone-download", icon: "phone", label: "Descargar en el iPhone", short: "Bajar al iPhone" });
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
   // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
   if (playable) out.push({ id: "sources", icon: "list", label: "Elegir fuente", short: "Fuente" });

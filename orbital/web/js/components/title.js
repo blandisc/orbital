@@ -1,6 +1,7 @@
 import { api } from "../core/api.js";
 import { Chip } from "./ui.js";
 import { Card } from "./card.js";
+import { PersonChip } from "./people.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { genres, runtime } from "../core/format.js";
 import { trimmedLogo } from "../core/foryou.js";
@@ -19,7 +20,7 @@ import { actionStep, availability, episodeStates, titleActions, titleProgress } 
  */
 const touching = () => document.body.dataset.input === "touch";
 
-export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
+export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload = null, downloadOf = () => null, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -43,7 +44,11 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   const browser = h("div", { class: "title__browser" }, tabs, list);
   // Al bajar desde los botones: «Más como esto» (lo que Trakt relaciona), y solo eso (la ficha del iPhone, adaptada).
   const moreRow = h("div", { class: "title__more-row", role: "group" });
-  const more = h("div", { class: "title__more", hidden: true }, h("h2", { class: "title__more-head" }, "Más como esto"), moreRow);
+  const moreHead = h("h2", { class: "title__more-head" }, "Más como esto");
+  // …y debajo, las caras del reparto y de quien la hizo (como el iPhone): A abre a la persona y su filmografía.
+  const castRow = h("div", { class: "title__more-row", role: "group" });
+  const castHead = h("h2", { class: "title__more-head" }, "Reparto");
+  const more = h("div", { class: "title__more", hidden: true }, moreHead, moreRow, castHead, castRow);
   // El orden del iPhone: logo y frase; qué es (Serie · clasificación · año · géneros · duración); lo disponible; las
   // calificaciones; Ver y sus botones; la sinopsis; y quién la hizo («Creada por» / «Dirección · Guion», «Con»).
   const el = h("section", { class: "title", hidden: true, "aria-label": "Ficha" },
@@ -54,11 +59,13 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   let item = null;
   let details = null;
   let buttons = [];
-  let zone = "actions"; // "actions" | "episodes" | "more"
+  let zone = "actions"; // "actions" | "episodes" | "more" | "cast"
   let action = 0;
   let extras = null; // frase, clasificación, créditos y «Más como esto» (title-extras)
   let moreItems = [];
   let moreIndex = 0;
+  let castItems = [];
+  let castIndex = 0;
   let season = 0;
   let index = 0;
   let states = new Map(); // video_id -> { watched, progress, upcoming }
@@ -120,14 +127,33 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       const card = Card(m, { onPress: () => (zone === "more" && i === moreIndex ? openMore() : (zone = "more", moreIndex = i, render(), onMove?.())) });
       return card;
     }));
-    more.hidden = !moreItems.length;
+    castItems = (x?.people || []).filter((p) => p?.id && p.name);
+    castIndex = 0;
+    mount(castRow, castItems.map((p, i) => PersonChip(p, {
+      onPress: () => (zone === "cast" && i === castIndex ? openPerson() : (zone = "cast", castIndex = i, render(), onMove?.())),
+    })));
+    moreHead.hidden = moreRow.hidden = !moreItems.length;
+    castHead.hidden = castRow.hidden = !castItems.length;
+    more.hidden = !moreItems.length && !castItems.length;
     onChange();
   }
+
+  /** La persona enfocada del reparto: su pantalla (foto, biografía y filmografía), encima de la ficha. */
+  function openPerson() {
+    const p = castItems[castIndex];
+    if (p) onPerson(p);
+  }
+
+  /** ↓ desde los botones: lo primero que haya en el panel de abajo (Más como esto, o el reparto). */
+  const panelZone = () => (moreItems.length ? "more" : castItems.length ? "cast" : null);
 
   function paintMore() {
     [...moreRow.children].forEach((card, i) => card.classList.toggle("card--focused", zone === "more" && i === moreIndex));
     const node = moreRow.children[moreIndex];
     if (node && zone === "more") moreRow.scrollTo({ left: Math.max(0, node.offsetLeft - moreRow.clientWidth * .3), behavior: motion("smooth") });
+    [...castRow.children].forEach((chip, i) => chip.classList.toggle("person-chip--focused", zone === "cast" && i === castIndex));
+    const face = castRow.children[castIndex];
+    if (face && zone === "cast") castRow.scrollTo({ left: Math.max(0, face.offsetLeft - castRow.clientWidth * .3), behavior: motion("smooth") });
   }
 
   /** Abre la sugerencia enfocada: su ficha, en esta misma pantalla. */
@@ -151,7 +177,9 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   }
 
   function renderActions() {
-    buttons = titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone() });
+    const t = details && !details.error ? target() : null;
+    buttons = titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone(),
+      download: onDownload && t ? downloadOf(t.video_id) : undefined });
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // El principal lleva el botón del mando que lo hace (A / Enter), como todo Orbital; los demás, su ícono en una caja y su
     // nombre corto debajo, siempre a la vista (antes solo ícono, y el nombre aparecía al enfocarlo).
@@ -194,6 +222,13 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     tabs.classList.toggle("title__tabs--more-right", tabs.scrollLeft + tabs.clientWidth < tabs.scrollWidth - 2);
   }
 
+  /** Un episodio descargado (o bajándose) lo dice en su renglón. */
+  function downloadChip(job) {
+    if (!job || job.status === "failed") return null;
+    return job.status === "done" ? Chip("Descargado", { tone: "good" })
+      : Chip(job.status === "queued" ? "Descarga en espera" : "Descargando"); // el número vive en el botón (este renglón no se repinta a cada rato)
+  }
+
   function renderList() {
     const episodes = seasons()[season]?.episodes ?? [];
     mount(list, episodes.map((ep, i) => {
@@ -218,6 +253,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
           h("span", { style: { width: `${Math.round(st.progress * 100)}%` } }))),
       h("span", { class: "episode__text" },
         h("strong", { class: "episode__title" }, ep.title),
+        downloadChip(downloadOf(ep.id)),
         st.upcoming ? h("span", { class: "episode__date" }, st.upcoming)
           : ep.overview && h("span", { class: "episode__overview" }, ep.overview)));
     }));
@@ -320,7 +356,19 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     else if (button.id === "mylist") toggleList();
     else if (button.id.startsWith("phone-")) sendPhone(button.id.slice(6), episodeById(button.video_id));
     else if (button.id === "trailer") trailer();
+    else if (button.id === "download") download();
     else if (button.id === "retry") load();
+  }
+
+  /** Descargar para ver sin internet: la película, o el episodio enfocado (si no, el que sigue). */
+  function download(ep = null) {
+    const t = target(zone === "episodes" ? episode() : ep);
+    if (!t || !onDownload) return;
+    const s = seasons().find((x) => x.episodes.some((e) => e.id === t.video_id));
+    const e = s?.episodes.find((x) => x.id === t.video_id);
+    onDownload({ kind: t.kind, meta_id: t.id, video_id: t.video_id, title: details?.title || item.title,
+      detail: t.kind === "series" && s ? `T${s.season} E${e?.episode ?? ""}` : "", poster: details?.poster || item.image || null,
+      season: s?.season ?? null, episode: e?.episode ?? null }, downloadOf(t.video_id));
   }
 
   /** Al iPhone: la película, o el episodio enfocado en la lista (si no, el que sigue). */
@@ -473,7 +521,9 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     action = 0;
     extras = null;
     moreItems = [];
+    castItems = [];
     mount(moreRow);
+    mount(castRow);
     more.hidden = true;
     season = 0;
     index = 0;
@@ -500,7 +550,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     if (act === "search") { close(); return false; } // S: buscar otra cosa (la ficha se cierra y se abre Buscar)
     if (act === "back") {
       // Con el mando, B primero sube de los episodios a los botones; con el dedo, «Atrás» cierra (ese paso no se veía).
-      if ((zone === "episodes" || zone === "more") && !touching()) { zone = "actions"; onMove?.(); render(); return true; }
+      if ((zone === "episodes" || zone === "more" || zone === "cast") && !touching()) { zone = "actions"; onMove?.(); render(); return true; }
       close();
       return true;
     }
@@ -511,7 +561,16 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       if (act === "left" && moreIndex > 0) { moreIndex--; moved = true; }
       else if (act === "right" && moreIndex < moreItems.length - 1) { moreIndex++; moved = true; }
       else if (act === "up") { zone = "actions"; moved = true; render(); }
+      else if (act === "down" && castItems.length) { zone = "cast"; moved = true; }
       else if (act === "select") openMore();
+      if (moved) { paintMore(); el.dataset.zone = zone; onMove?.(); }
+      return true;
+    }
+    if (zone === "cast") {
+      if (act === "left" && castIndex > 0) { castIndex--; moved = true; }
+      else if (act === "right" && castIndex < castItems.length - 1) { castIndex++; moved = true; }
+      else if (act === "up") { zone = moreItems.length ? "more" : "actions"; moved = true; if (zone === "actions") render(); }
+      else if (act === "select") openPerson();
       if (moved) { paintMore(); el.dataset.zone = zone; onMove?.(); }
       return true;
     }
@@ -519,8 +578,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       if (["left", "right", "up", "down"].includes(act)) {
         const next = actionStep(buttons.length, action, act);
         // ↓ desde los botones de abajo: «Más como esto»; → desde el último: los episodios (están a la derecha).
-        if (next === "episodes" && act === "down" && moreItems.length && action > 0) {
-          zone = "more"; moreIndex = Math.min(moreIndex, moreItems.length - 1); onMove?.(); render(); return true;
+        if (next === "episodes" && act === "down" && panelZone() && action > 0) {
+          zone = panelZone(); onMove?.(); render(); return true;
         }
         if (next === "episodes") {
           if (!series) return true;
@@ -549,6 +608,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       // Temporada vacía: nada que ver (antes A ponía otro episodio, el de «Continuar» o T1 E1).
       else if (act === "select") { if (episode()) play(episode()); }
       else if (act === "options") { if (episode()) sources(episode()); }
+      else if (act === "alt" && onDownload) { if (episode()) download(episode()); }
     }
     el.dataset.zone = zone;
     if (moved) onMove?.();
@@ -564,21 +624,30 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   };
   const hintsFor = (g) => (details?.error ? [{ glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "more"
-    ? [{ glyph: g.select, label: "Ver la ficha" }, { glyph: g.back, label: "Atrás", end: true }]
+    ? [{ glyph: g.select, label: "Ver la ficha" }, castItems.length && { glyph: g.rows, label: "Reparto" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
+    : zone === "cast"
+    ? [{ glyph: g.select, label: "Ver a la persona" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "episodes"
-    ? [episode() && { glyph: g.select, label: "Ver" }, episode() && { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
+    ? [episode() && { glyph: g.select, label: "Ver" }, episode() && { glyph: g.options, label: "Fuente" },
+      episode() && onDownload && { glyph: g.alt, label: downloadOf(episode().id) ? "Descarga" : "Descargar" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
     : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && { glyph: g.options, label: "Elegir fuente" },
-      moreItems.length ? { glyph: g.rows, label: "Más como esto" } : kindOf() === "series" && seasons().length && { glyph: g.rows, label: "Episodios" },
+      moreItems.length ? { glyph: g.rows, label: "Más como esto" } : castItems.length ? { glyph: g.rows, label: "Reparto" } : kindOf() === "series" && seasons().length && { glyph: g.rows, label: "Episodios" },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("title--leaving"); },
     get current() { return item; },
     /** Vuelve a pedir la ficha (al regresar de ver algo: «Continuar T3 E6», los ✓, el progreso). */
-    refresh() { if (!el.hidden && item) load({ quiet: true }); } };
+    refresh() { if (!el.hidden && item) load({ quiet: true }); },
+    /** Cambió una descarga: el botón (y, si cambió de estado, los episodios) al día, sin mover el foco. */
+    downloadsChanged(statusChanged = false) {
+      if (el.hidden || !details || details.error) return;
+      renderActions();
+      if (statusChanged && kindOf() === "series" && seasons().length) renderList();
+    } };
 }
 
 /** Lo que hace falta para abrir la ficha a partir de una tarjeta, un resultado o un enlace. */

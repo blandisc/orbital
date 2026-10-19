@@ -102,6 +102,11 @@ body:has(.title:not([hidden])) .touch-back:not(.touch-back--menu) { top: calc(va
 [data-input="touch"] .button, [data-input="touch"] .status-bar__tab, [data-input="touch"] .sheet__item,
 [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant, [data-input="touch"] .title__tab { min-height: 2.9rem; }
 [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant { min-width: 2.9rem; justify-content: center; }
+/* Con el dedo no hay glifo (A, B…): el espacio que le dejaban los botones (más angosto a la izquierda) descentraba el texto
+   («Jugar», «Ver la serie»). Mismo margen a los dos lados y el texto al centro. */
+[data-input="touch"] .button { justify-content: center; padding-inline: 1.25rem; }
+[data-input="touch"] .button--primary { padding-inline: 1.6rem; }
+[data-input="touch"] .title__action--primary { padding-inline: var(--space-8); }
 /* ‹ › de un ajuste: cada flecha se toca por separado. */
 [data-input="touch"] .sheet__chev { min-width: 2.9rem; min-height: 2.9rem; opacity: .8; }
 

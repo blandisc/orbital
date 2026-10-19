@@ -100,6 +100,18 @@ export const api = {
   forYouDismiss: (key) => post("/api/foryou/dismiss", { key }),
   forYouRatings: (items) => request(`/api/foryou/ratings?ids=${encodeURIComponent(items.map((i) => `${i.kind}:${i.meta_id}`).join(","))}`),
   forYouWatched: () => request("/api/foryou/watched"),
+  // Como el iPhone: una persona del reparto, abrir un título de su filmografía, «¿Qué vemos?» y «Tu año».
+  forYouPerson: (id) => request(`/api/foryou/person/${Number(id)}`),
+  forYouTmdbImdb: (kind, id) => request(`/api/foryou/tmdb-imdb?kind=${kind}&id=${Number(id)}`),
+  forYouDecide: ({ time = "", mood = "", kind = "" } = {}) => request(`/api/foryou/decide?time=${time}&mood=${mood}&kind=${kind}`, { timeout: 20000 }),
+  forYouDecideSkip: (imdb) => post("/api/foryou/decide/skip", { key: imdb }),
+  forYouYear: () => request("/api/foryou/year", { timeout: 30000 }),
+  // Descargas para ver sin internet.
+  downloads: () => request("/api/downloads"),
+  downloadAdd: (body) => post("/api/downloads", body),
+  downloadRetry: (id) => post(`/api/downloads/${encodeURIComponent(id)}/retry`, {}),
+  downloadRemove: (id) => request(`/api/downloads/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  downloadPlay: (videoId, fromStart = false) => post(`/api/downloads/play/${encodeURIComponent(videoId)}`, { from_start: fromStart }),
   traceInput: (entries) => post("/api/ui/trace", { entries }),
   titleRatings: (kind, id) => request(`/api/foryou/title-ratings?kind=${kind}&id=${encodeURIComponent(id)}`),
   titleExtras: (kind, id) => request(`/api/foryou/title-extras?kind=${kind}&id=${encodeURIComponent(id)}`),
@@ -121,6 +133,8 @@ export const api = {
   onedriveFolder: (path) => post("/api/onedrive/folder", { path }),
   onedriveScan: () => post("/api/onedrive/scan"),
   onedriveTitles: () => request("/api/onedrive/titles"),
+  onedriveLibrary: () => request("/api/onedrive/library", { timeout: 30000 }),
+  onedrivePlayFile: (id, name) => post("/api/onedrive/play-file", { id, name }),
   // «TV en vivo»
   tv: () => request("/api/tv"),
   tvPlay: (id, category = "todos", keep = false) => post("/api/tv/play", { id, category, keep }),

@@ -51,8 +51,9 @@
   background: linear-gradient(180deg, transparent, var(--color-tinted-bg) 28%);
   transform: translateY(100%); transition: transform var(--duration-slow) var(--ease-out);
 }
-.title[data-zone="more"] .title__more { transform: none; }
-.title[data-zone="more"] .title__info, .title[data-zone="more"] .title__browser { opacity: .35; transition: opacity var(--duration-base) var(--ease-out); }
+.title[data-zone="more"] .title__more, .title[data-zone="cast"] .title__more { transform: none; }
+.title[data-zone="more"] .title__info, .title[data-zone="more"] .title__browser,
+.title[data-zone="cast"] .title__info, .title[data-zone="cast"] .title__browser { opacity: .35; transition: opacity var(--duration-base) var(--ease-out); }
 .title__more-head { margin: 0; font-size: var(--type-section); font-weight: var(--weight-bold); }
 .title__more-row { display: flex; gap: var(--card-gap); overflow-x: auto; scrollbar-width: none; padding: var(--space-3) var(--space-2); align-items: flex-end; }
 .title__more-row > .card { flex: none; }

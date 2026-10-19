@@ -13,7 +13,7 @@ import { createForYouMosaic } from "./foryou-mosaic.js";
  */
 const EMPTY = "Aún no hay nada que sugerirte. Agrega juegos o conecta Trakt (Ajustes › Cuentas).";
 
-export function createForYou({ onWatch, onTitle, onLaunch, onMore, onFocus, onEdge }) {
+export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onFocus, onEdge }) {
   const notice = h("div", { class: "foryou__notice", role: "status" });
   const details = new Map(); // clave → { overview, facts, logo_dark }
   let detailTimer = 0;
@@ -93,6 +93,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onFocus, onEd
     mosaic.wake();
     if (action === "select") return activate(mosaic.current);
     if (action === "options") { if (mosaic.current) onMore?.(mosaic.current); return mosaic.current ? true : "edge"; }
+    if (action === "alt" && onDecide) { onDecide(); return true; } // X: «¿Qué vemos?» (el 🎲 del iPhone)
     return mosaic.handle(action);
   }
 
@@ -102,7 +103,8 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onFocus, onEd
     if (!data) return [end];
     if (mosaic.ambient) return [{ glyph: g.select, label: "Elegir" }, end];
     const item = mosaic.current;
-    return [item?.action && { glyph: g.select, label: item.action }, item && { glyph: g.options, label: "Opciones" }, end].filter(Boolean);
+    return [item?.action && { glyph: g.select, label: item.action }, item && { glyph: g.options, label: "Opciones" },
+      onDecide && { glyph: g.alt, label: "¿Qué vemos?" }, end].filter(Boolean);
   }
 
   /** «No me interesa»: se quita de todos lados y no vuelve. */

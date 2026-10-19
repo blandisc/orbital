@@ -26,11 +26,12 @@ from urllib.parse import quote
 from . import player
 from .config import Config, expand
 from .credentials import Credentials
+from .downloads import Downloads
 from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
 from .foryou import ForYou
 from .launcher import Launcher
-from .library import cinemeta, detect, emulators, esde, geforcenow, steam, steam_store, stremio, stremio_api, wiki_games
+from .library import cinemeta, detect, emulators, esde, geforcenow, localize, steam, steam_store, stremio, stremio_api, wiki_games
 from .library import onedrive as onedrive_api
 from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
@@ -175,6 +176,14 @@ class Catalog:
         self.onedrive = OneDriveLibrary(onedrive_api.OneDrive(self.credentials), self.watch.cinemeta, self.state,
                                         cache / "onedrive-library.json" if cache else None, publish=self.notify)
         self.watch.onedrive = self.onedrive
+        # Descargas para ver sin internet (Videos\Orbital): la película o el episodio, del disco.
+        self.downloads = Downloads(Path(expand(config.downloads.dir)) if config.downloads.dir else None,
+                                   resolve=self.watch.download_url, publish=self.notify, autostart=bool(cache))
+        self.watch.downloads = self.downloads
+        # El nombre de cada título en tu idioma, igual en las filas, Para ti, tu biblioteca y la ficha.
+        self.names = localize.TitleNames(self.watch.localizer, cache / "title-names.json" if cache else None,
+                                         on_new=lambda: self.notify({"type": "library-changed"}))
+        self.watch.localizer.on_name = self.names.remember
         self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
         self.watch.scrobbler.trakt = lambda: self.foryou.trakt  # lo que ves, a Trakt (se pide en cada aviso)
         self.tv = LiveTV(config, self)  # «TV en vivo»: canales y su salud (no sale a internet hasta que arranca)
@@ -549,6 +558,9 @@ class Catalog:
             data["new"] = True
         # Cuándo llegó (filtro «Añadidos»): lo que vio Orbital o, para lo que ya tenías, la fecha del archivo.
         data["added"] = seen or item.extra.get("added") or None
+        # Una película o serie: su nombre en tu idioma (Stremio guarda el original en inglés).
+        if item.source == "stremio" and item.extra.get("meta_id"):
+            data["title"] = self.names.name(item.extra.get("kind"), item.extra["meta_id"]) or data["title"]
         return data
 
     def last_played(self, item: LibraryItem) -> float | None:

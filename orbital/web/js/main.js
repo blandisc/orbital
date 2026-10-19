@@ -30,6 +30,8 @@ import { createToast } from "./components/toast.js";
 import { createPhoneLink } from "./components/phone-link.js";
 import { createArtPicker } from "./components/art-picker.js";
 import { createListScreen, SORTS } from "./components/list-screen.js";
+import { createDecide } from "./components/decide.js";
+import { createYear } from "./components/year.js";
 import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
@@ -39,7 +41,7 @@ import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
 import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
-import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows } from "./core/media-plan.js";
+import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows, miMediaItem } from "./core/media-plan.js";
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 
@@ -115,6 +117,9 @@ const ui = {
   title: createTitle({
     onPlay: (play) => watch(play),
     onSources: (play) => openSources(play),
+    onPerson: (person) => openPerson(person),
+    onDownload: (body, job) => downloadTitle(body, job),
+    downloadOf: (videoId) => downloadsByVideo.get(videoId) || null,
     canPrefetch: () => state.stremioLinked,
     canSendPhone: () => state.phone,
     onSendPhone: (send) => sendToPhone(send),
@@ -146,6 +151,7 @@ const ui = {
     onTitle: (ref) => openTitle(ref), // una serie nueva: su ficha
     onLaunch: (item) => launch(item),
     onMore: (item) => openMenu(forYouMenu(item)),
+    onDecide: () => openDecide(),
     onFocus: (item) => forYouFocused(item),
     onEdge: () => { sound.play("error"); rumble("edge"); },
   }),
@@ -170,12 +176,26 @@ const ui = {
   // Una lista abierta de Películas y series (una tarjeta: plataforma, premio, estudio, año, tu lista, un género).
   listScreen: createListScreen({
     onMove: () => sound.play("move"),
-    onPick: (item) => openTitle(item),
+    onPick: (item) => openListItem(item),
     onMore: (item) => openMenu(gameMenu(item, { running: state.running, phone: state.phone })),
     onSort: (screen) => openMenu(listSortMenu(screen)),
-    onClose: () => { sound.play("back"); renderHints(); },
+    onClose: (list) => { sound.play("back"); renderHints(); backFromPerson(list); },
     ratings: (items) => api.forYouRatings(items).then((r) => r.ratings || {}),
     watched: () => api.forYouWatched().then((r) => r.ids || []),
+  }),
+  // Como el iPhone: «¿Qué vemos?» (X en Para ti, o ☰) y «Tu año» (☰).
+  decide: createDecide({
+    load: (choice) => api.forYouDecide(choice),
+    skip: (imdb) => api.forYouDecideSkip(imdb),
+    onPick: (item) => openTitle(item),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
+  year: createYear({
+    load: () => api.forYouYear(),
+    onPick: (item) => openTitle(item),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
   }),
   launch: createLaunchOverlay({ backGlyph: () => glyphs().back }),
   viewer: createViewer({
@@ -201,7 +221,7 @@ const touchMenu = h("button", { class: "touch-back touch-back--menu", type: "but
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -283,7 +303,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.search];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.year, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -441,10 +461,20 @@ function applySettings(settings) {
   root.dataset.motion = settings.reduce_motion ? "reduce" : "full";
   sound.enabled = settings.sounds !== false;
   haptics.enabled = settings.haptics !== false;
-  ui.hero.tips = settings.voice_tips !== false;
+  ui.hero.tips = settings.voice_tips !== false && !onTheDevice();
   if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   if (inGames()) renderGames(); // los ajustes pueden cambiar glifos y textos
 }
+
+/** ¿En la pantalla de la consola (sin tele)? La de la Legion Go es 16:10 y una tele 16:9. Ahí las frases para Alexa junto a
+ *  cada título sobran (estás con el mando en la mano): solo queda el botón de Alexa arriba a la derecha. */
+function onTheDevice() { return screen.width / screen.height < 1.7; }
+let deviceScreen = onTheDevice();
+addEventListener("resize", () => { // conectaste (o quitaste) la tele
+  if (onTheDevice() === deviceScreen || !state.settings) return;
+  deviceScreen = onTheDevice();
+  applySettings(state.settings);
+});
 
 // ---------------------------------------------------------------- Inicio
 /** X en el Inicio: la ficha (videos) o el otro emulador (juegos). */
@@ -723,7 +753,8 @@ function goToSection(id, direction = 0) {
   if (state.online === false && ["media", "tv"].includes(id) && !state.offlineToldFor?.has(id)) {
     (state.offlineToldFor ??= new Set()).add(id);
     ui.toast.show(id === "tv" ? "Sin internet: la TV en vivo vuelve cuando haya conexión"
-      : "Sin internet: ves lo último que se guardó; para ver algo necesitas conexión");
+      : state.downloaded?.size ? "Sin internet: tus descargas se ven igual; lo demás vuelve con la conexión"
+        : "Sin internet: ves lo último que se guardó; para ver algo necesitas conexión (o descárgalo antes)");
   }
   ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Nada por aquí todavía", emptyText: "" }));
   const saved = state.sectionFocus[id] || {};
@@ -792,6 +823,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     state.popId = null;
     if (!state.libraryLoaded) {
       loadCuration(); // los estantes de Películas y series (Top 10, plataformas, tus listas), en segundo plano
+      loadDownloads(); // lo que bajaste para ver sin internet (fila «Descargas»)
       ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
       ui.foryou.load(); // en segundo plano: Para ti ya está listo cuando llegas (LB desde el Inicio)
       ui.tv.load(); // y la TV en vivo, para que los canales ya estén cuando llegas
@@ -873,14 +905,8 @@ async function loadCuration() {
     try {
       mediaLists = ((await api.forYou()).lists || []).filter((l) => l.group !== "games");
       const wanted = fetchPlan(mediaLists);
-      // «En tu OneDrive»: lo que se reconoció en la carpeta que elegiste (no es una lista de Para ti).
-      if (state.settings?.onedrive?.titles) {
-        const res = await api.onedriveTitles().catch(() => null);
-        if (res?.items?.length) {
-          mediaLists.push({ id: "onedrive", title: "En tu OneDrive" });
-          mediaItems[keyOf("onedrive", null)] = res.items;
-        }
-      }
+      // Mi media: tu carpeta de OneDrive como biblioteca (no es una lista de Para ti).
+      if (state.settings?.onedrive?.titles || state.settings?.onedrive?.videos) miMedia = await api.onedriveLibrary().catch(() => miMedia);
       const chosen = becauseSeed(mediaLists.find((l) => l.id === "because"), becauseChoice()).listId;
       if (chosen !== "because") wanted.push({ id: chosen, kind: null }); // el que elegiste hoy con X
       await fetchMany(wanted.filter((w) => !LATER(w)));
@@ -905,7 +931,7 @@ function buildCuration() {
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice() }),
+  applyCuration([...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), miMedia }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 
@@ -931,6 +957,8 @@ function openCollection(item) {
     return renderHints();
   }
   const l = c.list || {};
+  if (l.id === "estrenos") return openUpcoming(l, cached);
+  if (l.id === "mimedia") return openMiMedia();
   const kinds = l.split ? (c.type === "year" ? [["movie", "Películas"], ["series", "Series"]] : [["series", "Series"], ["movie", "Películas"]])
     : [[l.kinds?.[0] ?? null, ""]];
   // Un premio: su estatuilla; un estudio: su logo en blanco. Un año: el título ya es el número grande.
@@ -938,6 +966,186 @@ function openCollection(item) {
   ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: c.source, media, metal: c.type === "award" ? c.tint || "gold" : null,
     tabs: kinds.map(([kind, label]) => ({ id: kind || "all", label, load: () => cached(l.id, kind).then((items) => items.map(curatedItem)) })) });
   return renderHints();
+}
+
+// ---------------------------------------------------------------- Mi media (tu OneDrive)
+let miMedia = null; // { titles, unmatched, sagas, watched, folder }
+
+/** Mi media, como en el iPhone: una pestaña por vista (lo último que subiste, películas, series, sin ver, sagas y lo que
+ *  no se reconoció). A abre la ficha (con tu copia primero); lo «Sin ficha» se ve tal cual. ☰ ordena (A–Z). */
+function openMiMedia() {
+  const lib = miMedia || { titles: [], unmatched: [], sagas: [], watched: [] };
+  const all = lib.titles.map((t) => miMediaItem(t));
+  const byImdb = new Map(all.map((i) => [i.meta_id, i]));
+  const watched = new Set(lib.watched || []);
+  const sagas = (lib.sagas || []).flatMap((s) => s.imdbs.map((id) => byImdb.get(id) && { ...byImdb.get(id), day_label: s.name }).filter(Boolean));
+  const loose = (lib.unmatched || []).map((f) => ({ id: `onedrive-file:${f.id}`, title: f.name.replace(/\.[a-z0-9]{2,4}$/i, ""), source: "onedrive-file",
+    subtitle: "Sin ficha · se ve tal cual", file: { id: f.id, name: f.name } }));
+  const movies = all.filter((i) => i.kind === "movie").length;
+  const tab = (id, label, items) => items.length && { id, label, load: () => Promise.resolve(items) };
+  sound.play("open");
+  ui.listScreen.open({ id: "mimedia", title: "Mi media", source: "orbital", media: {},
+    meta: [`${movies} ${movies === 1 ? "película" : "películas"} · ${all.length - movies} ${all.length - movies === 1 ? "serie" : "series"}`, lib.folder && `OneDrive › ${lib.folder}`].filter(Boolean).join(" · "),
+    tabs: [tab("recent", "Recién agregado", all), tab("movie", "Películas", all.filter((i) => i.kind === "movie")),
+      tab("series", "Series", all.filter((i) => i.kind === "series")), tab("unwatched", "Sin ver", all.filter((i) => !watched.has(i.meta_id))),
+      tab("sagas", "Sagas", sagas), tab("loose", "Sin ficha", loose)].filter(Boolean) });
+  renderHints();
+}
+
+// ---------------------------------------------------------------- descargas (ver sin internet)
+let downloadsList = [];
+let downloadsByVideo = new Map();
+let downloadsShape = ""; // qué hay y en qué estado: si cambia, la fila «Descargas» se vuelve a armar
+let downloadsTimer = 0;
+
+/** Una descarga como portada de la fila: el póster, su avance y cómo va. Se ve y se pone como lo de Seguir viendo. */
+function downloadItem(job) {
+  const pct = job.progress != null ? Math.floor(job.progress * 100) : null;
+  const status = job.status === "done" ? "Lista sin internet" : job.status === "failed" ? "No se pudo descargar"
+    : pct != null ? `Descargando ${pct} %` : "En espera";
+  return { id: `download:${job.id}`, title: job.title, source: "stremio", category: "downloads", kind: job.kind, meta_id: job.meta_id,
+    image: job.poster || `https://images.metahub.space/poster/medium/${job.meta_id}/img`,
+    subtitle: [job.detail, status].filter(Boolean).join(" · "), progress: job.status === "done" ? null : job.progress, download: job,
+    extra: { kind: job.kind, meta_id: job.meta_id, video_id: job.video_id, eyebrow: "Descargas", description: status } };
+}
+
+/** La fila de arriba en Películas y series (y lo que queda sin internet). */
+const downloadsRow = () => (downloadsList.length
+  ? [{ id: "curated:downloads", title: "Descargas", seal: "orbital", group: "downloads", items: downloadsList.map(downloadItem) }] : []);
+
+async function loadDownloads() {
+  try {
+    downloadsList = (await api.downloads()).items || [];
+  } catch {
+    return;
+  }
+  applyDownloads();
+}
+
+function applyDownloads() {
+  downloadsByVideo = new Map(downloadsList.map((j) => [j.video_id, j]));
+  state.downloaded = new Set(downloadsList.filter((j) => j.status === "done").map((j) => j.video_id));
+  const shape = downloadsList.map((j) => `${j.id}:${j.status}`).join(",");
+  const changed = shape !== downloadsShape;
+  downloadsShape = shape;
+  ui.title.downloadsChanged(changed);
+  if (changed) buildCuration(); // también sin internet (sin Para ti), la fila «Descargas» queda
+}
+
+/** Un aviso de avance (cada segundo y medio): solo ese número; la fila se repinta como mucho cada 5 s. */
+function downloadProgress(event) {
+  const job = downloadsList.find((j) => j.id === event.id);
+  if (!job) return loadDownloads();
+  job.done = event.done;
+  job.size = event.size;
+  job.progress = event.size ? Math.round((event.done / event.size) * 1000) / 1000 : null;
+  job.status = "downloading";
+  ui.title.downloadsChanged(false);
+  if (!downloadsTimer && state.section === "media") {
+    downloadsTimer = setTimeout(() => { downloadsTimer = 0; buildCuration(); }, 5000);
+  }
+}
+
+/** «Descargar» en la ficha: empieza, o dice cómo va (y reintenta si falló). */
+async function downloadTitle(body, job) {
+  try {
+    if (job?.status === "done") return ui.toast.show(`${body.title} ya está descargada: «Ver» la pone del disco, sin internet`);
+    if (job?.status === "failed") {
+      await api.downloadRetry(job.id);
+      ui.toast.show(`Otra vez: descargando ${body.title}`);
+    } else if (job) {
+      return ui.toast.show(job.progress != null ? `Descargando ${body.title} · ${Math.floor(job.progress * 100)} %` : `${body.title} está en espera`);
+    } else {
+      await api.downloadAdd(body);
+      sound.play("select");
+      ui.toast.show(`Descargando ${body.title}${body.detail ? ` · ${body.detail}` : ""} para ver sin internet`);
+    }
+    loadDownloads();
+  } catch (err) {
+    sound.play("error");
+    ui.toast.show(err.message || "No pude empezar la descarga", { error: true });
+  }
+}
+
+/** Y sobre una descarga: verla, reintentar o quitarla (borra el archivo que bajó Orbital). */
+function downloadMenu(item) {
+  const job = item.download;
+  const options = [];
+  if (job.status === "done") options.push({ icon: "play", label: "Ver", command: { type: "download-play", item } });
+  if (job.status === "failed") options.push({ icon: "refresh", label: "Reintentar", hint: job.error || "", command: { type: "download-retry", id: job.id } });
+  options.push({ icon: "info", label: "Ver la ficha", command: { type: "download-title", item } });
+  options.push({ icon: "close", label: job.status === "done" ? "Quitar la descarga" : "Cancelar la descarga", danger: true,
+    hint: job.status === "done" ? "Libera espacio" : "", command: { type: "download-remove", id: job.id, title: job.title } });
+  return { title: job.title, subtitle: job.detail || (job.status === "done" ? "Lista para ver sin internet" : ""), options };
+}
+
+/** Próximos estrenos por semana (como «Semana» del iPhone): una pestaña por día («Hoy 18», «Mañana 19», «Lunes 20»)
+ *  y en cada póster su hora. */
+async function openUpcoming(l, cached) {
+  const items = await cached(l.id, null).catch(() => []);
+  const days = [];
+  for (const i of items) {
+    let d = days.find((x) => x.day === i.day);
+    if (!d) days.push(d = { day: i.day, label: /[0-9]/.test(i.day_label) ? i.day_label : `${i.day_label} ${Number(String(i.day).slice(8, 10))}`, items: [] });
+    d.items.push({ ...curatedItem(i), day_label: i.time, subtitle: [i.episode_label, i.network].filter(Boolean).join(" · ") });
+  }
+  ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: "trakt", media: {},
+    tabs: days.length ? days.map((d) => ({ id: d.day, label: d.label, load: () => Promise.resolve(d.items) }))
+      : [{ id: "all", label: "", load: () => Promise.resolve([]) }] });
+  return renderHints();
+}
+
+/** «¿Qué vemos?»: tres propuestas que caben en tu tiempo (como el 🎲 del iPhone). */
+function openDecide() {
+  sound.play("open");
+  ui.decide.open();
+  renderHints();
+}
+
+/** Una persona del reparto (en la ficha): su foto, biografía y filmografía, como el iPhone. B vuelve a la ficha. */
+let personFrom = null;
+function openPerson(person) {
+  personFrom = ui.title.current;
+  ui.title.close();
+  sound.play("open");
+  ui.listScreen.open({ id: `person:${person.id}`, title: person.name, meta: person.role || "", media: {},
+    person: { name: person.name, photo: person.photo },
+    tabs: [{ id: "all", label: "", load: () => api.forYouPerson(person.id).then((p) => {
+      ui.listScreen.setPerson(p);
+      return (p.credits || []).map((c) => ({ id: `tmdb:${c.kind}:${c.tmdb_id}`, title: c.title, image: c.poster, kind: c.kind,
+        tmdb_id: c.tmdb_id, year: c.year, subtitle: [c.role, c.year].filter(Boolean).join(" · ") }));
+    }) }] });
+  renderHints();
+}
+
+/** Al cerrar la persona: de vuelta a la ficha de la que venías. */
+function backFromPerson(list) {
+  if (!String(list?.id || "").startsWith("person:") || !personFrom) return;
+  const back = personFrom;
+  personFrom = null;
+  setTimeout(() => { if (!ui.title.isOpen && !topOverlay()) openTitle(back); }, 0);
+}
+
+/** Un póster de una lista abierta: su ficha. De la filmografía (TMDB) primero se busca su IMDb. */
+async function openListItem(item) {
+  if (item.file) { // Mi media › Sin ficha: el archivo tal cual
+    try {
+      await api.onedrivePlayFile(item.file.id, item.title);
+      sound.play("open");
+    } catch (err) {
+      sound.play("error");
+      ui.toast.show(err.message, { error: true });
+    }
+    return;
+  }
+  if (item.meta_id || !item.tmdb_id) return openTitle(item);
+  try {
+    const { imdb } = await api.forYouTmdbImdb(item.kind, item.tmdb_id);
+    openTitle({ ...item, meta_id: imdb, id: `cinemeta:${item.kind}:${imdb}` });
+  } catch (err) {
+    sound.play("error");
+    ui.toast.show(err.message || "Este título no está en Stremio.", { error: true });
+  }
 }
 
 /** Un género (Por género): su lista completa, como las demás. */
@@ -1291,6 +1499,29 @@ async function runCommand(command, context = null) {
         if (stillThere(context)) ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
+      case "download-play":
+        ui.sheet.close();
+        return launch(command.item);
+      case "download-retry":
+        ui.sheet.close();
+        await api.downloadRetry(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
+        return loadDownloads();
+      case "download-title":
+        ui.sheet.close();
+        return openTitle(command.item);
+      case "download-remove":
+        ui.sheet.close();
+        await api.downloadRemove(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
+        ui.toast.show(`Quité la descarga de ${command.title}`);
+        return loadDownloads();
+      case "decide":
+        ui.sheet.close();
+        return openDecide();
+      case "year":
+        ui.sheet.close();
+        sound.play("open");
+        ui.year.open();
+        return renderHints();
       case "controls":
         return openMenu(controlsMenu((await api.controllers().catch(() => ({ controllers: [] }))).controllers), nested(context));
       case "runner-menu":
@@ -1589,6 +1820,7 @@ function handleAction(action, { repeat = false } = {}) {
     case "select": {
       if (item?.source === "genre") return openGenre(item); // Por género: su lista completa
       if (item?.source === "collection") return openCollection(item);
+      if (item?.download && item.download.status !== "done") return openMenu(downloadMenu(item)); // aún no está: cómo va
       return launch(item);
     }
     case "search": return openSearch();
@@ -1601,6 +1833,7 @@ function handleAction(action, { repeat = false } = {}) {
     }
     case "options":
       if (item?.source === "genre" || item?.source === "collection") { sound.play("error"); return rumble("edge"); } // una lista no tiene opciones
+      if (item?.download) return openMenu(downloadMenu(item));
       return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
     case "menu":
       if (state.section === "media") return openMenu(mediaMenu());
@@ -1700,6 +1933,8 @@ function handleEvent(event) {
     if (event.voice) ui.status.pulseAlexa();
   } else if (event.type === "navigate") {
     handleAction(event.direction);
+  } else if (event.type === "downloads") {
+    return event.id ? downloadProgress(event) : loadDownloads();
   } else if (event.type === "library-changed") {
     loadLibrary();
     ui.title.refresh();
@@ -1723,7 +1958,7 @@ function handleEvent(event) {
   } else if (event.type === "onedrive-link-failed") {
     sound.play("error");
     return ui.traktLink.failed(event.message);
-  } else if (event.type === "onedrive-changed") { // terminó de buscar tus videos: la fila «En tu OneDrive»
+  } else if (event.type === "onedrive-changed") { // terminó de buscar tus videos: Mi media al día
     api.onedrive().then((s) => applySettings({ ...state.settings, onedrive: s })).catch(() => {});
     return loadCuration();
   } else if (event.type === "trakt-link-failed") {

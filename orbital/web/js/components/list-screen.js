@@ -3,6 +3,7 @@ import { storage } from "../core/storage.js";
 import { keepInView } from "./browse.js";
 import { Card, RankedCard } from "./card.js";
 import { SourceBadge } from "./collection-card.js";
+import { PersonHead } from "./people.js";
 
 /**
  * Una lista abierta de Películas y series (como SortableGrid del iPhone): arriba la lista en grande (estatuilla o logo,
@@ -10,7 +11,9 @@ import { SourceBadge } from "./collection-card.js";
  * con su nombre. ☰ abre «Ordenar y filtrar» (hoja); los filtros activos quedan como cápsulas arriba. Cada lista recuerda
  * cómo la ordenaste. Un ranking (Top 10) no se reordena.
  *
- * open({ id, title, meta, media: { statue?, logo? }, source?, tabs: [{ id, label, load, ranked?, brand? }] })
+ * open({ id, title, meta, media: { statue?, logo? }, source?, person?, tabs: [{ id, label, load, ranked?, brand? }] })
+ * Una persona (`person`: foto, de dónde es y biografía, como PersonView del iPhone) va arriba de su filmografía; X
+ * despliega la biografía.
  * onPick(item) · onMore(item) · onSort(screen) · onMove() · onClose()
  */
 // Sin «Como viene»: si no eliges orden, la lista va como llega (elegir otra vez el que está puesto lo quita).
@@ -32,9 +35,10 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
   const grid = h("div", { class: "list-screen__grid", role: "group" });
   const viewport = h("div", { class: "list-screen__viewport" }, grid);
   const status = h("p", { class: "list-screen__status" });
+  const about = h("div", { hidden: true }); // una persona: su foto y su biografía (PersonHead)
   const el = h("section", { class: "list-screen screen", hidden: true, "aria-label": "Lista" },
     h("header", { class: "list-screen__head" }, media, h("span", { class: "list-screen__heading" }, title, meta), chips),
-    tabsEl, status, viewport);
+    about, tabsEl, status, viewport);
 
   let list = null; // lo que se abrió
   let tab = 0;
@@ -60,6 +64,15 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     title.className = ["list-screen__title", list.metal && "award-wordmark", list.metal && `award-wordmark--${list.metal}`].filter(Boolean).join(" ");
     if (list.metal) title.textContent = list.title.toLocaleUpperCase("es"); // en mayúsculas: es su logotipo
     mount(meta, [list.source && SourceBadge(list.source), list.meta && h("span", {}, list.meta)].filter(Boolean));
+    mount(about, list.person ? PersonHead(list.person) : null);
+    about.hidden = !list.person;
+  }
+
+  /** Lo de la persona que llega después (TMDB): su foto, de dónde es y su biografía. */
+  function setPerson(person) {
+    if (!list?.person) return;
+    list.person = { ...list.person, ...person };
+    paintHead();
   }
 
   function paintTabs() {
@@ -208,6 +221,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
       return true;
     }
     const item = shown[index];
+    if (action === "alt" && list.person?.biography) { about.firstChild?.classList.toggle("person-head--open"); onMove?.(); return true; }
     if (action === "select" || action === "alt") { if (item) onPick?.(item); return true; }
     if (action === "options") { if (item) onMore?.(item); return true; }
     return true;
@@ -248,11 +262,12 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
 
   const hints = (g) => [
     { glyph: g.select, label: "Ver" },
+    list?.person?.biography && { glyph: g.alt, label: "Biografía" },
     // Cuántos hay puestos, también en el pie (las fichas de arriba dicen cuáles).
     { glyph: g.menu, label: `${ranked() ? "Filtrar" : "Ordenar y filtrar"}${activeFilters().length ? ` · ${activeFilters().length}` : ""}` },
     list?.tabs.length > 1 && { glyph: g.section, label: "Cambiar" },
     { glyph: g.back, label: "Atrás", end: true },
   ].filter(Boolean);
 
-  return { el, open, close, handle, hints, sorter: api, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
+  return { el, open, close, handle, hints, sorter: api, setPerson, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

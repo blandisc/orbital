@@ -62,6 +62,53 @@ def router(d: Deps) -> APIRouter:
         """IMDb, TMDB y Trakt de un título (la ficha, como el iPhone)."""
         return foryou.title_ratings(kind, id[:20])
 
+    @r.get("/person/{person_id}")
+    def person(person_id: int) -> dict:
+        """Una persona del reparto: foto, biografía y filmografía (TMDB), como el iPhone."""
+        try:
+            return foryou.person(person_id)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc))
+        except SERVICE_ERRORS as exc:
+            log.info("Para ti: no pude traer a la persona %s: %s", person_id, exc)
+            raise HTTPException(502, "No pude traer a esta persona de TMDB. Revisa tu conexión e inténtalo de nuevo.")
+
+    @r.get("/tmdb-imdb")
+    def tmdb_imdb(kind: str, id: int) -> dict:
+        """El IMDb de un título de la filmografía (para abrir su ficha)."""
+        try:
+            imdb = foryou.tmdb_imdb(kind, id)
+        except SERVICE_ERRORS:
+            raise HTTPException(502, "No pude abrir este título. Revisa tu conexión e inténtalo de nuevo.")
+        if not imdb:
+            raise HTTPException(404, "Este título no está en Stremio.")
+        return {"imdb": imdb}
+
+    @r.get("/decide")
+    def decide(time: str | None = None, mood: str | None = None, kind: str | None = None, genres: str = "",
+               watched: bool = False) -> dict:
+        """«¿Qué vemos?»: tres propuestas que caben en tu tiempo y tu ánimo, como el iPhone."""
+        return foryou.decide(time, mood, kind, [g for g in genres[:300].split(",") if g], watched)
+
+    @r.post("/decide/skip")
+    def decide_skip(body: DismissRequest) -> dict:
+        """«Hoy no»: esa propuesta no vuelve en 24 horas."""
+        foryou.skip_today(body.key.removeprefix("video:"))
+        return {"ok": True}
+
+    @r.get("/year")
+    def year() -> dict:
+        """«Tu año»: lo que viste este año según Trakt (horas, racha, tu género, el mapa y lo que más viste)."""
+        try:
+            review = foryou.year_review()
+        except trakt.TraktAuthError as exc:
+            raise HTTPException(409, str(exc))
+        except SERVICE_ERRORS:
+            raise HTTPException(502, "No pude leer tu historial de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        if review is None:
+            raise HTTPException(409, "Conecta Trakt (Ajustes › Cuentas) para ver tu año.")
+        return review
+
     @r.get("/watched")
     def watched() -> dict:
         """Los IMDb de lo que ya viste en Trakt (para «Ocultar lo que ya vi»)."""
