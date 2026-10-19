@@ -84,7 +84,7 @@ const tint = (item) => (platformColor(item) ? { "--platform": platformColor(item
  * Destacado: lo último que jugaste o viste, a lo grande, con sus acciones (A, X, Y) como leyenda.
  * `onAction("select" | "alt" | "options")`.
  */
-export function FeatureTile(item, { focusId = "feature", runningId = null, glyphs, onPress, onAction }) {
+export function FeatureTile(item, { focusId = "feature", runningId = null, glyphs, onPress, onAction, eyebrow = true }) {
   const open = item.id === runningId;
   const logo = item.extra?.logo;
   const alt = isWatchable(item) ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha")
@@ -97,7 +97,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
     h("span", { class: "tile__shade tile--feature__shade" }),
     platform(item, ["tile__platform--pill", "tile--feature__store"]),
     h("div", { class: "tile--feature__body" },
-      eyebrowOf(item, runningId) && h("span", { class: "tile--feature__eyebrow" }, eyebrowOf(item, runningId)),
+      eyebrow && eyebrowOf(item, runningId) && h("span", { class: "tile--feature__eyebrow" }, eyebrowOf(item, runningId)),
       logo ? featureLogo(logo, item.title) : h("h2", { class: "tile--feature__title" }, item.title),
       detailOf(item) && h("span", { class: "tile--feature__detail" }, detailOf(item)),
       Progress(item.progress, { className: "tile--feature__progress" }),

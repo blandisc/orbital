@@ -15,18 +15,27 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 
 /* Arriba: el destacado (enseña lo enfocado) y «También tenías» en renglones a la derecha. El alto lo
    pone home.js (la pantalla menos el saludo y el título de Tus consolas, que asoma abajo). */
+/* El destacado mide lo mismo que el bloque de renglones de la derecha y empieza a su altura: el título («Continuar») y la
+   píldora del próximo estreno van en sus propias filas, arriba de la columna (antes el destacado empezaba a la altura del
+   título y se veía más alto que el bloque). */
 .home__top {
   flex: none; min-height: 13rem;
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, var(--home-queue-width)); gap: var(--tile-gap);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, var(--home-queue-width)); grid-template-rows: auto minmax(0, 1fr);
+  column-gap: var(--tile-gap);
 }
 .home__top--alone { grid-template-columns: minmax(0, 1fr); }
 .home__top--alone .home__queue { display: none; }
-.home__stage { display: grid; min-height: 0; }
+.home__stage { display: grid; min-height: 0; grid-column: 1; grid-row: 2; }
+.home__top--alone .home__stage { grid-row: 2; }
+.home__feature-head { grid-column: 1; grid-row: 1; margin-bottom: var(--space-3); padding: 0 var(--space-2); }
 .home__stage > .tile { min-height: 0; }
 .home__stage--swap .tile__art, .home__stage--swap .tile__case { animation: home-swap var(--duration-enter) var(--ease-out); }
 @keyframes home-swap { from { opacity: .35; } }
-.home__queue { display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; }
-.home__queue-head { flex: none; padding: 0 var(--space-2); justify-content: space-between; }
+.home__queue { display: contents; } /* sus piezas se acomodan en la cuadrícula de .home__top */
+.home__queue-head { grid-column: 2; grid-row: 1; margin-bottom: var(--space-3); padding: 0 var(--space-2); justify-content: space-between; }
+/* El próximo estreno, en la misma línea que «Continuar», a la derecha (en su propia fila dejaba un hueco a la izquierda). */
+.home__queue > .home__next { grid-column: 2; grid-row: 1; justify-self: end; align-self: center; max-width: 70%; margin-bottom: var(--space-3); }
+.home__queue > .home__rows { grid-column: 2; grid-row: 2; }
 /* Los renglones se reparten el alto de la columna: así no queda hueco abajo con letra normal ni se
    salen con letra grande. */
 .home__rows {
@@ -75,7 +84,7 @@ body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) v
 
 /* Entrada (al abrir Orbital): saludo, destacado, tarjetas y las consolas una tras otra. */
 .home--intro .tile--feature { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-1) both; }
-.home--intro .home__queue { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-2) both; }
+.home--intro .home__feature-head, .home--intro .home__queue > * { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-2) both; }
 .home--intro .home__consoles-head { animation: home-in var(--duration-enter) var(--ease-out) var(--delay-3) both; }
 .home--intro .tile--console { animation: home-in var(--duration-enter-long) var(--ease-out) calc(var(--delay-3) + (var(--i, 0) + 1) * var(--stagger)) both; }
 @keyframes home-in { from { opacity: 0; transform: translateY(1.2rem) scale(.985); } }
@@ -96,6 +105,7 @@ body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) v
 @media (max-width: 760px) {
   .home__top { grid-template-columns: 1fr; }
   .home__queue { display: none; }
+  .home__stage { grid-row: 2; }
   .home__consoles-track > .tile--console { flex-basis: calc((100% - 2 * var(--tile-gap)) / 2.35); }
 }
 
