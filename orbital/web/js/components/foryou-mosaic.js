@@ -27,7 +27,7 @@ const DRIFT = [16, 12, 19, 14, 17, 13]; // px/s de cada columna en el ambiente (
 // Al abrir, todas las columnas parejas; al entrar al ambiente (si siguen parejas) las de turno impar suben estas
 // separaciones con la animación y de ahí sigue la deriva (como el iPhone: DesignTokens.Mosaic.ambientLiftGaps).
 const AMBIENT_LIFT_GAPS = 5;
-const IDLE_MS = 3000; // quieto 3 s: el mosaico empieza a subir solo (el iPhone igual: DesignTokens.Mosaic.idleSeconds)
+const IDLE_MS = 2000; // quieto 2 s: el mosaico empieza a subir solo (el iPhone igual: DesignTokens.Mosaic.idleSeconds)
 const RAMP_MS = 2400; // y arranca suave: de quieto a su ritmo en ~2,4 s, sin tirón
 const ALIVE_MS = 2200;
 const BUFFER = 360; // px de piezas de sobra debajo de lo visible (más, y se gastaban sugerencias que aún no se ven)
