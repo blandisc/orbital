@@ -37,6 +37,19 @@ public final class OneDriveModel: ObservableModel {
         return services.oneDrive.linked ? .linked : .unlinked
     }
 
+    /// Al volver a la pantalla: lo que cambió en otro lado (la sesión caducó, Mi media revisó la carpeta). A media conexión se deja.
+    public func refresh() {
+        clientID = services.appSettings.oneDriveClientID
+        folder = services.appSettings.oneDriveFolder
+        index = services.oneDriveLibrary.saved
+        if case .linking = state { return }
+        if case .failed = state { return }
+        state = computed()
+    }
+
+    /// Cómo se llama tu carpeta: «/» es todo tu OneDrive.
+    public static func folderName(_ path: String) -> String? { path == "/" ? nil : (path as NSString).lastPathComponent }
+
     public var movies: Int { index?.entries.filter { $0.kind == "movie" }.count ?? 0 }
     public var episodes: Int { index?.entries.filter { $0.kind == "series" }.count ?? 0 }
 
@@ -90,8 +103,9 @@ public final class OneDriveModel: ObservableModel {
 
     public func choose(_ raw: String) async {
         // Sin «..» ni «.»: solo una ruta dentro de tu OneDrive.
-        let path = raw.split(separator: "/").map(String.init).filter { !$0.isEmpty && $0 != "." && $0 != ".." }.joined(separator: "/")
-        guard !path.isEmpty else { return }
+        // «/» es todo tu OneDrive.
+        let cleaned = raw.split(separator: "/").map(String.init).filter { !$0.isEmpty && $0 != "." && $0 != ".." }.joined(separator: "/")
+        let path = cleaned.isEmpty ? "/" : cleaned
         services.settings.update { $0.oneDriveFolder = path }
         folder = path
         services.oneDriveLibrary.forget()

@@ -5710,6 +5710,17 @@
         }
       }
     },
+    "Mejor elige la carpeta de tus películas: con todo tu OneDrive la revisión tarda más.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Better choose the folder with your movies: with your whole OneDrive the check takes longer."
+          }
+        }
+      }
+    },
     "Mejor película": {
       "extractionState": "manual",
       "localizations": {
@@ -9285,6 +9296,17 @@
         }
       }
     },
+    "Todo tu OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your whole OneDrive"
+          }
+        }
+      }
+    },
     "Todos": {
       "extractionState": "manual",
       "localizations": {
@@ -9963,6 +9985,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Use this folder"
+          }
+        }
+      }
+    },
+    "Usar todo mi OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use my whole OneDrive"
           }
         }
       }

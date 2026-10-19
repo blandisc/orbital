@@ -68,7 +68,8 @@ struct MiMediaView<Top: View>: View {
     private func header(_ model: MiMediaModel) -> some View {
         HStack(spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Tu OneDrive · \((model.folder as NSString).lastPathComponent)").recipe(.cardTitle).lineLimit(1)
+                if let name = OneDriveModel.folderName(model.folder) { Text("Tu OneDrive · \(name)").recipe(.cardTitle).lineLimit(1) }
+                else { Text("Todo tu OneDrive").recipe(.cardTitle) }
                 Text("Películas: \(model.movies) · Series: \(model.series)").recipe(.caption).lineLimit(1)
                 if model.scanning { Text("Revisando…").recipe(.caption) }
                 else if let at = model.scannedAt { Text("Revisada \(at, format: .relative(presentation: .named))").recipe(.caption).lineLimit(1) }
@@ -156,6 +157,10 @@ struct MiMediaTitleView: View {
     @State private var season = 0
     @State private var next: String?
     @State private var fixing = false
+    /// «Buscar fuente» de un episodio que no está en tu carpeta: la hoja de fuentes de Real-Debrid de ese episodio.
+    @State private var findingSource: MissingEpisode?
+    @State private var titleModel: TitleModel?
+    struct MissingEpisode: Identifiable { let id: String }
     /// El idioma de la app (no el del iPhone) para fechas e idiomas.
     private var appLocale: Locale { Locale(identifier: env.services.appSettings.uiLanguage) }
 
@@ -180,6 +185,15 @@ struct MiMediaTitleView: View {
                     if let wanted { season = wanted } else if !seasons.contains(where: { $0.season == season }) { season = seasons.first?.season ?? 0 }
                 }
                 .task { await tint.load(String(format: ForYou.metahubBackground, t.imdb)) }
+                .sheet(item: $findingSource) { missing in
+                    if let tm = titleModel {
+                        SourcesSheet(model: tm, videoID: missing.id, purpose: .watch) { source, purpose in
+                            findingSource = nil
+                            Task { await useSource(source, purpose: purpose, videoID: missing.id, tm) }
+                        }
+                        .presentationDetents([.large]).presentationDragIndicator(.visible)
+                    }
+                }
                 .sheet(isPresented: $fixing) {
                     if let first = t.entries.first {
                         // Al corregir cambia la ficha (y su id): se regresa a Mi media, donde ya sale con la buena.
@@ -317,7 +331,11 @@ struct MiMediaTitleView: View {
             .disabled(row.missing)
             .accessibilityHint(row.missing ? Text("No está en tu carpeta") : Text("Ver"))
             if row.missing {
-                NavigationLink(value: TitleRoute(kind: "series", metaID: t.imdb, title: t.name, poster: t.poster)) { Text("Buscar fuente") }.buttonStyle(.bordered)
+                Button("Buscar fuente") {
+                    if titleModel == nil { titleModel = TitleModel(env.services, kind: "series", metaID: t.imdb, hint: (t.name, t.poster)) }
+                    findingSource = MissingEpisode(id: row.id)
+                }
+                .buttonStyle(.bordered)
             } else if let state = model.onPhone[row.id] {
                 if state >= 1 { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("En el iPhone")) }
                 else { DownloadRing(fraction: state, lineWidth: DS.TitleAction.ringSmallLine).frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall) }
@@ -355,10 +373,23 @@ struct MiMediaTitleView: View {
         }
     }
 
-    private func report(_ outcome: TitleModel.DownloadOutcome) async {
+    /// Una fuente de Real-Debrid para un episodio que no tienes: verla o bajarla, como desde la ficha.
+    private func useSource(_ source: Source, purpose: Purpose, videoID: String, _ tm: TitleModel) async {
+        await tm.load()   // la ficha: el nombre del episodio y el siguiente
+        switch purpose {
+        case .watch:
+            guard var request = tm.playRequest(videoID: videoID) else { return }
+            request.sourceIndex = source.index
+            if env.services.appSettings.preferInfuse { await env.playExternal(request, source: source) } else { env.play(request) }
+        case .download:
+            await report(tm.download([videoID], source: source), ownCopy: false)
+        }
+    }
+
+    private func report(_ outcome: TitleModel.DownloadOutcome, ownCopy: Bool = true) async {
         switch outcome {
         case .queued: break   // lo dice el anillo
-        case .noSources: env.notify("No encontré ese archivo en tu OneDrive.")
+        case .noSources: env.notify(ownCopy ? "No encontré ese archivo en tu OneDrive." : "No hay fuentes de Real-Debrid para descargar.")
         case .notEnoughSpace(let text): env.notify(text)
         case .already: env.notify("Ya está descargado.", tone: .info)
         case .failed(let text): env.notify(text)
@@ -450,7 +481,7 @@ struct MiMediaFolderView: View {
             } else { ProgressView().frame(maxWidth: .infinity).listRowBackground(DS.surface) }
         }
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle(Text(verbatim: (path as NSString).lastPathComponent)).navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(OneDriveModel.folderName(path).map { Text(verbatim: $0) } ?? Text("OneDrive")).navigationBarTitleDisplayMode(.inline)
         .task {
             do { let found = try await observer.model.listing(path); folders = found.folders; videos = found.videos }
             catch { self.error = "\(error)" }

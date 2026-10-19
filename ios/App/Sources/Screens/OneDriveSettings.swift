@@ -5,7 +5,7 @@ import OrbitalModels
 /// Ajustes › OneDrive: tus películas y series de OneDrive como una fuente más (como en la TV). Se conecta con un código
 /// en microsoft.com/link, se elige la carpeta y sus videos salen primero en «Fuente» de su película o episodio.
 struct OneDriveSettings: View {
-    @StateObject private var observer = ModelObserver(OneDriveModel(AppEnvironment.shared.services))
+    @StateObject private var observer = ModelObserver(AppEnvironment.shared.oneDriveSetup)
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.openURL) private var openURL
     @State private var confirmUnlink = false
@@ -60,7 +60,7 @@ struct OneDriveSettings: View {
                     Button { pickingFolder = true } label: {
                         HStack(spacing: DS.Space.s2) {
                             SettingsRow(title: "Carpeta", symbol: "folder", tint: DS.ListTint.library,
-                                        value: model.folder.isEmpty ? Text("Elige una") : Text(verbatim: model.folder))
+                                        value: model.folder.isEmpty ? Text("Elige una") : model.folder == "/" ? Text("Todo tu OneDrive") : Text(verbatim: model.folder))
                             Image(systemName: "chevron.right").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textFaint)
                         }
                         .contentShape(Rectangle())
@@ -96,6 +96,7 @@ struct OneDriveSettings: View {
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("OneDrive").navigationBarTitleDisplayMode(.inline)
+        .onAppear { model.refresh() }
         .sheet(isPresented: $pickingFolder) {
             NavigationStack { OneDriveFolderPicker(path: "", model: model) { pickingFolder = false } }
         }
@@ -117,17 +118,22 @@ struct OneDriveFolderPicker: View {
 
     var body: some View {
         List {
-            if !path.isEmpty {
-                Section {
-                    Button("Usar esta carpeta", systemImage: "checkmark.circle") {
-                        Task { await model.choose(path) }
-                        done()
-                    }
-                } footer: { Text(verbatim: path) }
-                .listRowBackground(DS.surface)
-            }
             Section {
-                if let error { DSNotice(verbatim: env.message(error), tone: .warn) }
+                // En la raíz: todo tu OneDrive (se recorren hasta cuatro niveles de carpetas).
+                Button(path.isEmpty ? "Usar todo mi OneDrive" : "Usar esta carpeta", systemImage: "checkmark.circle") {
+                    Task { await model.choose(path.isEmpty ? "/" : path) }
+                    done()
+                }
+            } footer: {
+                if path.isEmpty { Text("Mejor elige la carpeta de tus películas: con todo tu OneDrive la revisión tarda más.") }
+                else { Text(verbatim: path) }
+            }
+            .listRowBackground(DS.surface)
+            Section {
+                if let error {
+                    DSNotice(verbatim: env.message(error), tone: .warn)
+                    Button("Volver a intentar", systemImage: "arrow.clockwise") { Task { await load() } }
+                }
                 else if let folders {
                     if folders.isEmpty { Text("No hay más carpetas aquí.").recipe(.footnote) }
                     ForEach(folders) { folder in
@@ -143,8 +149,11 @@ struct OneDriveFolderPicker: View {
         .navigationTitle(path.isEmpty ? Text("OneDrive") : Text(verbatim: (path as NSString).lastPathComponent))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { if path.isEmpty { ToolbarItem(placement: .cancellationAction) { Button("Cancelar", action: done) } } }
-        .task {
-            do { folders = try await model.folders(path) } catch { self.error = "\(error)" }
-        }
+        .task { await load() }
+    }
+
+    private func load() async {
+        error = nil; folders = nil
+        do { folders = try await model.folders(path) } catch { self.error = "\(error)" }
     }
 }

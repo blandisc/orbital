@@ -17,6 +17,8 @@ final class AppEnvironment: ObservableObject {
     /// Lo popular de Buscar: uno para toda la app, pedido al abrirla (Buscar ya lo encuentra listo, con su color).
     private(set) var catalog: CatalogModel!
     private(set) var inbox: InboxModel!
+    /// Conectar OneDrive: uno para toda la app (si sales de Ajustes mientras escribes el código, al volver sigue esperando).
+    lazy var oneDriveSetup = OneDriveModel(services)
     private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
     private let liveActivity = DownloadLiveActivityController()
