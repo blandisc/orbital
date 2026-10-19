@@ -106,6 +106,12 @@ export const api = {
   forYouDecide: ({ time = "", mood = "", kind = "" } = {}) => request(`/api/foryou/decide?time=${time}&mood=${mood}&kind=${kind}`, { timeout: 20000 }),
   forYouDecideSkip: (imdb) => post("/api/foryou/decide/skip", { key: imdb }),
   forYouYear: () => request("/api/foryou/year", { timeout: 30000 }),
+  // Descargas para ver sin internet.
+  downloads: () => request("/api/downloads"),
+  downloadAdd: (body) => post("/api/downloads", body),
+  downloadRetry: (id) => post(`/api/downloads/${encodeURIComponent(id)}/retry`, {}),
+  downloadRemove: (id) => request(`/api/downloads/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  downloadPlay: (videoId, fromStart = false) => post(`/api/downloads/play/${encodeURIComponent(videoId)}`, { from_start: fromStart }),
   traceInput: (entries) => post("/api/ui/trace", { entries }),
   titleRatings: (kind, id) => request(`/api/foryou/title-ratings?kind=${kind}&id=${encodeURIComponent(id)}`),
   titleExtras: (kind, id) => request(`/api/foryou/title-extras?kind=${kind}&id=${encodeURIComponent(id)}`),

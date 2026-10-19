@@ -88,3 +88,7 @@ apps:
     name: YouTube
     target: "https://www.youtube.com/tv"
     category: media
+
+# Descargas para ver sin internet (Descargar en la ficha): dónde se guardan. Sin esto, en Videos\Orbital.
+# downloads:
+#   dir: 'D:\Peliculas\Orbital'

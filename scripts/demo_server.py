@@ -134,6 +134,28 @@ def demo_cinemeta(self, path: str, base: str | None = None) -> dict:
     return {"metas": []}
 
 
+def demo_downloads(catalog, tmp: Path) -> None:
+    """Descargas sin internet: un archivo de mentiras (25 MB) que «baja» poco a poco, para ver el avance en la tele."""
+    import io
+    import threading
+
+    fake = tmp / "video-de-muestra.mkv"
+    fake.write_bytes(bytes(25 << 20))
+
+    class Slow(io.BufferedReader):
+        status = 200
+        url = "https://demo/Pelicula.mkv"
+        headers = {"Content-Length": str(fake.stat().st_size), "Content-Type": "video/x-matroska"}
+
+        def read(self, size=-1):
+            time.sleep(.35)
+            return super().read(size)
+
+    catalog.downloads.resolve = lambda job: ("https://demo/Pelicula.mkv", "Pelicula.1080p.mkv")
+    catalog.downloads.opener = lambda request, timeout=0: Slow(open(fake, "rb"))
+    threading.Thread(target=catalog.downloads._worker, name="descargas-demo", daemon=True).start()
+
+
 def no_side_effects() -> None:
     """Nada de lo que se pulse en el demo toca este equipo: ni volumen, brillo o energía, ni apagar,
     ni ventanas, ni capturas, ni la música, ni cerrar programas, ni actualizar (git) la carpeta.
@@ -216,6 +238,7 @@ def build(tmp: Path):
         "stremio": {"executable": ""},
         "esde": {"enabled": False},
         "detect": {"enabled": False},
+        "downloads": {"dir": str(tmp / "Descargas")},  # nunca en Videos\Orbital de verdad
         "apps": [{"id": "yt", "name": "YouTube", "target": "https://youtube.com/tv", "category": "media"}],
     })
     # Sin internet ni programas de este equipo.
@@ -254,6 +277,7 @@ def build(tmp: Path):
     catalog.state.record_session("steam:1086940", 62 * 3600)
     catalog.set_prefs("steam:367520", favorite=True)
     demo_foryou.install(catalog)
+    demo_downloads(catalog, tmp)
     demo_tv.install(catalog, tmp)  # «TV en vivo»: canales y logos de mentiras, sin Internet ni mpv
     return create_app(config, catalog)
 

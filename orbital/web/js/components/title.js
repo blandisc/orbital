@@ -20,7 +20,7 @@ import { actionStep, availability, episodeStates, titleActions, titleProgress } 
  */
 const touching = () => document.body.dataset.input === "touch";
 
-export function createTitle({ onPlay, onSources, onPerson = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
+export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload = null, downloadOf = () => null, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -177,7 +177,9 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onMove, on
   }
 
   function renderActions() {
-    buttons = titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone() });
+    const t = details && !details.error ? target() : null;
+    buttons = titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone(),
+      download: onDownload && t ? downloadOf(t.video_id) : undefined });
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // El principal lleva el botón del mando que lo hace (A / Enter), como todo Orbital; los demás, su ícono en una caja y su
     // nombre corto debajo, siempre a la vista (antes solo ícono, y el nombre aparecía al enfocarlo).
@@ -220,6 +222,13 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onMove, on
     tabs.classList.toggle("title__tabs--more-right", tabs.scrollLeft + tabs.clientWidth < tabs.scrollWidth - 2);
   }
 
+  /** Un episodio descargado (o bajándose) lo dice en su renglón. */
+  function downloadChip(job) {
+    if (!job || job.status === "failed") return null;
+    return job.status === "done" ? Chip("Descargado", { tone: "good" })
+      : Chip(job.status === "queued" ? "Descarga en espera" : "Descargando"); // el número vive en el botón (este renglón no se repinta a cada rato)
+  }
+
   function renderList() {
     const episodes = seasons()[season]?.episodes ?? [];
     mount(list, episodes.map((ep, i) => {
@@ -244,6 +253,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onMove, on
           h("span", { style: { width: `${Math.round(st.progress * 100)}%` } }))),
       h("span", { class: "episode__text" },
         h("strong", { class: "episode__title" }, ep.title),
+        downloadChip(downloadOf(ep.id)),
         st.upcoming ? h("span", { class: "episode__date" }, st.upcoming)
           : ep.overview && h("span", { class: "episode__overview" }, ep.overview)));
     }));
@@ -346,7 +356,19 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onMove, on
     else if (button.id === "mylist") toggleList();
     else if (button.id.startsWith("phone-")) sendPhone(button.id.slice(6), episodeById(button.video_id));
     else if (button.id === "trailer") trailer();
+    else if (button.id === "download") download();
     else if (button.id === "retry") load();
+  }
+
+  /** Descargar para ver sin internet: la película, o el episodio enfocado (si no, el que sigue). */
+  function download(ep = null) {
+    const t = target(zone === "episodes" ? episode() : ep);
+    if (!t || !onDownload) return;
+    const s = seasons().find((x) => x.episodes.some((e) => e.id === t.video_id));
+    const e = s?.episodes.find((x) => x.id === t.video_id);
+    onDownload({ kind: t.kind, meta_id: t.id, video_id: t.video_id, title: details?.title || item.title,
+      detail: t.kind === "series" && s ? `T${s.season} E${e?.episode ?? ""}` : "", poster: details?.poster || item.image || null,
+      season: s?.season ?? null, episode: e?.episode ?? null }, downloadOf(t.video_id));
   }
 
   /** Al iPhone: la película, o el episodio enfocado en la lista (si no, el que sigue). */
@@ -586,6 +608,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onMove, on
       // Temporada vacía: nada que ver (antes A ponía otro episodio, el de «Continuar» o T1 E1).
       else if (act === "select") { if (episode()) play(episode()); }
       else if (act === "options") { if (episode()) sources(episode()); }
+      else if (act === "alt" && onDownload) { if (episode()) download(episode()); }
     }
     el.dataset.zone = zone;
     if (moved) onMove?.();
@@ -605,7 +628,8 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onMove, on
     : zone === "cast"
     ? [{ glyph: g.select, label: "Ver a la persona" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "episodes"
-    ? [episode() && { glyph: g.select, label: "Ver" }, episode() && { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
+    ? [episode() && { glyph: g.select, label: "Ver" }, episode() && { glyph: g.options, label: "Fuente" },
+      episode() && onDownload && { glyph: g.alt, label: downloadOf(episode().id) ? "Descarga" : "Descargar" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
@@ -617,7 +641,13 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onMove, on
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("title--leaving"); },
     get current() { return item; },
     /** Vuelve a pedir la ficha (al regresar de ver algo: «Continuar T3 E6», los ✓, el progreso). */
-    refresh() { if (!el.hidden && item) load({ quiet: true }); } };
+    refresh() { if (!el.hidden && item) load({ quiet: true }); },
+    /** Cambió una descarga: el botón (y, si cambió de estado, los episodios) al día, sin mover el foco. */
+    downloadsChanged(statusChanged = false) {
+      if (el.hidden || !details || details.error) return;
+      renderActions();
+      if (statusChanged && kindOf() === "series" && seasons().length) renderList();
+    } };
 }
 
 /** Lo que hace falta para abrir la ficha a partir de una tarjeta, un resultado o un enlace. */

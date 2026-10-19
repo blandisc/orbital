@@ -26,6 +26,7 @@ from urllib.parse import quote
 from . import player
 from .config import Config, expand
 from .credentials import Credentials
+from .downloads import Downloads
 from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
 from .foryou import ForYou
@@ -175,6 +176,10 @@ class Catalog:
         self.onedrive = OneDriveLibrary(onedrive_api.OneDrive(self.credentials), self.watch.cinemeta, self.state,
                                         cache / "onedrive-library.json" if cache else None, publish=self.notify)
         self.watch.onedrive = self.onedrive
+        # Descargas para ver sin internet (Videos\Orbital): la película o el episodio, del disco.
+        self.downloads = Downloads(Path(expand(config.downloads.dir)) if config.downloads.dir else None,
+                                   resolve=self.watch.download_url, publish=self.notify, autostart=bool(cache))
+        self.watch.downloads = self.downloads
         # El nombre de cada título en tu idioma, igual en las filas, Para ti, tu biblioteca y la ficha.
         self.names = localize.TitleNames(self.watch.localizer, cache / "title-names.json" if cache else None,
                                          on_new=lambda: self.notify({"type": "library-changed"}))

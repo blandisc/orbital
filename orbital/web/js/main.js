@@ -118,6 +118,8 @@ const ui = {
     onPlay: (play) => watch(play),
     onSources: (play) => openSources(play),
     onPerson: (person) => openPerson(person),
+    onDownload: (body, job) => downloadTitle(body, job),
+    downloadOf: (videoId) => downloadsByVideo.get(videoId) || null,
     canPrefetch: () => state.stremioLinked,
     canSendPhone: () => state.phone,
     onSendPhone: (send) => sendToPhone(send),
@@ -751,7 +753,8 @@ function goToSection(id, direction = 0) {
   if (state.online === false && ["media", "tv"].includes(id) && !state.offlineToldFor?.has(id)) {
     (state.offlineToldFor ??= new Set()).add(id);
     ui.toast.show(id === "tv" ? "Sin internet: la TV en vivo vuelve cuando haya conexión"
-      : "Sin internet: ves lo último que se guardó; para ver algo necesitas conexión");
+      : state.downloaded?.size ? "Sin internet: tus descargas se ven igual; lo demás vuelve con la conexión"
+        : "Sin internet: ves lo último que se guardó; para ver algo necesitas conexión (o descárgalo antes)");
   }
   ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Nada por aquí todavía", emptyText: "" }));
   const saved = state.sectionFocus[id] || {};
@@ -820,6 +823,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     state.popId = null;
     if (!state.libraryLoaded) {
       loadCuration(); // los estantes de Películas y series (Top 10, plataformas, tus listas), en segundo plano
+      loadDownloads(); // lo que bajaste para ver sin internet (fila «Descargas»)
       ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
       ui.foryou.load(); // en segundo plano: Para ti ya está listo cuando llegas (LB desde el Inicio)
       ui.tv.load(); // y la TV en vivo, para que los canales ya estén cuando llegas
@@ -933,7 +937,7 @@ function buildCuration() {
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice() }),
+  applyCuration([...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice() }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 
@@ -967,6 +971,93 @@ function openCollection(item) {
   ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: c.source, media, metal: c.type === "award" ? c.tint || "gold" : null,
     tabs: kinds.map(([kind, label]) => ({ id: kind || "all", label, load: () => cached(l.id, kind).then((items) => items.map(curatedItem)) })) });
   return renderHints();
+}
+
+// ---------------------------------------------------------------- descargas (ver sin internet)
+let downloadsList = [];
+let downloadsByVideo = new Map();
+let downloadsShape = ""; // qué hay y en qué estado: si cambia, la fila «Descargas» se vuelve a armar
+let downloadsTimer = 0;
+
+/** Una descarga como portada de la fila: el póster, su avance y cómo va. Se ve y se pone como lo de Seguir viendo. */
+function downloadItem(job) {
+  const pct = job.progress != null ? Math.floor(job.progress * 100) : null;
+  const status = job.status === "done" ? "Lista sin internet" : job.status === "failed" ? "No se pudo descargar"
+    : pct != null ? `Descargando ${pct} %` : "En espera";
+  return { id: `download:${job.id}`, title: job.title, source: "stremio", category: "downloads", kind: job.kind, meta_id: job.meta_id,
+    image: job.poster || `https://images.metahub.space/poster/medium/${job.meta_id}/img`,
+    subtitle: [job.detail, status].filter(Boolean).join(" · "), progress: job.status === "done" ? null : job.progress, download: job,
+    extra: { kind: job.kind, meta_id: job.meta_id, video_id: job.video_id, eyebrow: "Descargas", description: status } };
+}
+
+/** La fila de arriba en Películas y series (y lo que queda sin internet). */
+const downloadsRow = () => (downloadsList.length
+  ? [{ id: "curated:downloads", title: "Descargas", seal: "orbital", group: "downloads", items: downloadsList.map(downloadItem) }] : []);
+
+async function loadDownloads() {
+  try {
+    downloadsList = (await api.downloads()).items || [];
+  } catch {
+    return;
+  }
+  applyDownloads();
+}
+
+function applyDownloads() {
+  downloadsByVideo = new Map(downloadsList.map((j) => [j.video_id, j]));
+  state.downloaded = new Set(downloadsList.filter((j) => j.status === "done").map((j) => j.video_id));
+  const shape = downloadsList.map((j) => `${j.id}:${j.status}`).join(",");
+  const changed = shape !== downloadsShape;
+  downloadsShape = shape;
+  ui.title.downloadsChanged(changed);
+  if (changed) buildCuration(); // también sin internet (sin Para ti), la fila «Descargas» queda
+}
+
+/** Un aviso de avance (cada segundo y medio): solo ese número; la fila se repinta como mucho cada 5 s. */
+function downloadProgress(event) {
+  const job = downloadsList.find((j) => j.id === event.id);
+  if (!job) return loadDownloads();
+  job.done = event.done;
+  job.size = event.size;
+  job.progress = event.size ? Math.round((event.done / event.size) * 1000) / 1000 : null;
+  job.status = "downloading";
+  ui.title.downloadsChanged(false);
+  if (!downloadsTimer && state.section === "media") {
+    downloadsTimer = setTimeout(() => { downloadsTimer = 0; buildCuration(); }, 5000);
+  }
+}
+
+/** «Descargar» en la ficha: empieza, o dice cómo va (y reintenta si falló). */
+async function downloadTitle(body, job) {
+  try {
+    if (job?.status === "done") return ui.toast.show(`${body.title} ya está descargada: «Ver» la pone del disco, sin internet`);
+    if (job?.status === "failed") {
+      await api.downloadRetry(job.id);
+      ui.toast.show(`Otra vez: descargando ${body.title}`);
+    } else if (job) {
+      return ui.toast.show(job.progress != null ? `Descargando ${body.title} · ${Math.floor(job.progress * 100)} %` : `${body.title} está en espera`);
+    } else {
+      await api.downloadAdd(body);
+      sound.play("select");
+      ui.toast.show(`Descargando ${body.title}${body.detail ? ` · ${body.detail}` : ""} para ver sin internet`);
+    }
+    loadDownloads();
+  } catch (err) {
+    sound.play("error");
+    ui.toast.show(err.message || "No pude empezar la descarga", { error: true });
+  }
+}
+
+/** Y sobre una descarga: verla, reintentar o quitarla (borra el archivo que bajó Orbital). */
+function downloadMenu(item) {
+  const job = item.download;
+  const options = [];
+  if (job.status === "done") options.push({ icon: "play", label: "Ver", command: { type: "download-play", item } });
+  if (job.status === "failed") options.push({ icon: "refresh", label: "Reintentar", hint: job.error || "", command: { type: "download-retry", id: job.id } });
+  options.push({ icon: "info", label: "Ver la ficha", command: { type: "download-title", item } });
+  options.push({ icon: "close", label: job.status === "done" ? "Quitar la descarga" : "Cancelar la descarga", danger: true,
+    hint: job.status === "done" ? "Libera espacio" : "", command: { type: "download-remove", id: job.id, title: job.title } });
+  return { title: job.title, subtitle: job.detail || (job.status === "done" ? "Lista para ver sin internet" : ""), options };
 }
 
 /** Próximos estrenos por semana (como «Semana» del iPhone): una pestaña por día («Hoy 18», «Mañana 19», «Lunes 20»)
@@ -1379,6 +1470,21 @@ async function runCommand(command, context = null) {
         if (stillThere(context)) ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
+      case "download-play":
+        ui.sheet.close();
+        return launch(command.item);
+      case "download-retry":
+        ui.sheet.close();
+        await api.downloadRetry(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
+        return loadDownloads();
+      case "download-title":
+        ui.sheet.close();
+        return openTitle(command.item);
+      case "download-remove":
+        ui.sheet.close();
+        await api.downloadRemove(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
+        ui.toast.show(`Quité la descarga de ${command.title}`);
+        return loadDownloads();
       case "decide":
         ui.sheet.close();
         return openDecide();
@@ -1685,6 +1791,7 @@ function handleAction(action, { repeat = false } = {}) {
     case "select": {
       if (item?.source === "genre") return openGenre(item); // Por género: su lista completa
       if (item?.source === "collection") return openCollection(item);
+      if (item?.download && item.download.status !== "done") return openMenu(downloadMenu(item)); // aún no está: cómo va
       return launch(item);
     }
     case "search": return openSearch();
@@ -1697,6 +1804,7 @@ function handleAction(action, { repeat = false } = {}) {
     }
     case "options":
       if (item?.source === "genre" || item?.source === "collection") { sound.play("error"); return rumble("edge"); } // una lista no tiene opciones
+      if (item?.download) return openMenu(downloadMenu(item));
       return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
     case "menu":
       if (state.section === "media") return openMenu(mediaMenu());
@@ -1796,6 +1904,8 @@ function handleEvent(event) {
     if (event.voice) ui.status.pulseAlexa();
   } else if (event.type === "navigate") {
     handleAction(event.direction);
+  } else if (event.type === "downloads") {
+    return event.id ? downloadProgress(event) : loadDownloads();
   } else if (event.type === "library-changed") {
     loadLibrary();
     ui.title.refresh();

@@ -70,6 +70,11 @@ class EsdeConfig:
 
 
 @dataclass
+class DownloadsConfig:
+    dir: str | None = None  # dónde se guardan las descargas (si no: Videos\Orbital)
+
+
+@dataclass
 class DetectConfig:
     """Detección automática de emuladores en Descargas, Escritorio, C:\\Emuladores, etc."""
 
@@ -148,6 +153,7 @@ class Config:
     stremio: StremioConfig = field(default_factory=StremioConfig)
     esde: EsdeConfig = field(default_factory=EsdeConfig)
     detect: DetectConfig = field(default_factory=DetectConfig)
+    downloads: DownloadsConfig = field(default_factory=DownloadsConfig)
     sessions: SessionsConfig = field(default_factory=SessionsConfig)
     art: ArtConfig = field(default_factory=ArtConfig)
     para_ti: ParaTiConfig = field(default_factory=ParaTiConfig)
@@ -189,6 +195,7 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
         stremio=_section(StremioConfig, raw.get("stremio")),
         esde=_section(EsdeConfig, raw.get("esde")),
         detect=_section(DetectConfig, raw.get("detect")),
+        downloads=_section(DownloadsConfig, raw.get("downloads")),
         sessions=_section(SessionsConfig, raw.get("sessions")),
         art=_section(ArtConfig, raw.get("art")),
         para_ti=_section(ParaTiConfig, raw.get("para_ti")),

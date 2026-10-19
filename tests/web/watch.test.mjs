@@ -133,3 +133,15 @@ test("la ficha: «Ver» arriba a todo lo ancho, los demás abajo; ← → los re
   assert.equal(actionStep(5, 0, "up"), null);
   assert.equal(actionStep(1, 0, "down"), "episodes"); // solo «Ver»
 });
+
+test("Descargar en la ficha dice cómo va (para ver sin internet), como el iPhone", async () => {
+  const { downloadAction, titleActions } = await import("../../orbital/web/js/core/watch.js");
+  assert.equal(downloadAction(null).label, "Descargar");
+  assert.equal(downloadAction({ status: "downloading", progress: 0.426 }).short, "42 %");
+  assert.equal(downloadAction({ status: "queued", progress: null }).label, "En espera");
+  assert.deepEqual([downloadAction({ status: "done" }).label, downloadAction({ status: "done" }).active], ["Descargada", true]);
+  assert.equal(downloadAction({ status: "failed" }).short, "Reintentar");
+  const movie = { kind: "movie", in_library: false };
+  assert.ok(!titleActions(movie).some((b) => b.id === "download")); // sin descargas (el demo viejo, pruebas): no aparece
+  assert.deepEqual(titleActions(movie, { download: null }).map((b) => b.id), ["play", "mylist", "download", "sources"]);
+});
