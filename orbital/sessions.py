@@ -172,7 +172,7 @@ class Sessions:
                 try:
                     self.launcher.run(item.argv, cwd=item.cwd)
                     self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW", alive=geforcenow.in_session,
-                                            start_timeout=GFN_START_TIMEOUT)
+                                            start_timeout=GFN_START_TIMEOUT, on_end=geforcenow.close_app)
                 except BaseException:
                     self.unpin(pinned)
                     raise

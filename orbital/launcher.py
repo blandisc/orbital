@@ -39,6 +39,7 @@ class Running:
     # Cuándo sigue el juego, si no basta con que el programa siga abierto (GeForce NOW: la app queda en su biblioteca).
     alive: Callable[[], bool] | None = None
     start_timeout: float = 30.0  # s para que aparezca (o empiece, con `alive`)
+    on_end: Callable[[], None] | None = None  # al terminar (GeForce NOW: cerrar su app, que se queda en su biblioteca)
     adopted: threading.Event = field(default_factory=threading.Event)  # despierta al vigilante en cuanto llega el nuevo
 
 
@@ -137,12 +138,13 @@ class Launcher:
     EXE_START_TIMEOUT = 30  # s para que aparezca el ejecutable vigilado
 
     def track_exe(self, item_id: str, title: str, exe: str, runner: str | None = None,
-                  alive: Callable[[], bool] | None = None, start_timeout: float | None = None) -> None:
+                  alive: Callable[[], bool] | None = None, start_timeout: float | None = None,
+                  on_end: Callable[[], None] | None = None) -> None:
         """Para apps de instancia única: si ya estaba abierta, el proceso que lanzamos le pasa el
         enlace y termina al instante. Lo fiable es vigilar que su ejecutable siga existiendo.
         `alive`: otra señal de que el juego sigue (GeForce NOW: el título de su ventana)."""
         running = Running(item_id, title, None, runner=runner, exe=exe, alive=alive,
-                          start_timeout=start_timeout or self.EXE_START_TIMEOUT)
+                          start_timeout=start_timeout or self.EXE_START_TIMEOUT, on_end=on_end)
         with self._lock:
             self.current = running
         threading.Thread(target=self._watch_exe, args=(running,), daemon=True).start()
@@ -326,6 +328,11 @@ class Launcher:
                 self.current = None
         elapsed = time.time() - running.started
         log.info("%s terminó tras %.0f s", running.title, elapsed)
+        if running.on_end:
+            try:
+                running.on_end()
+            except Exception:  # noqa: BLE001 - el hilo vigilante no se cae por esto
+                log.exception("Error al terminar %s", running.title)
         self.last_stopped_by_user = running.stopped
         self.last_was_already_open = running.already_open
         if self.on_exit:

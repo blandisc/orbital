@@ -43,6 +43,17 @@ def in_game_title(title: str) -> bool:
     return bool(title) and title.strip() != APP_TITLE and APP_TITLE in title
 
 
+def close_app() -> None:
+    """Cierra la app (y su contenedor) al terminar el juego: se quedaba abierta en su biblioteca detrás de Orbital, gastando
+    memoria y CPU. La sesión en la nube ya terminó; la próxima vez la app abre de cero (~6 s hasta el juego)."""
+    import subprocess
+
+    for exe in (APP_EXE, "GeForceNOWContainer.exe"):
+        subprocess.run(["taskkill", "/IM", exe, "/T", "/F"], capture_output=True,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    log.info("GeForce NOW cerrado al terminar el juego")
+
+
 def in_session() -> bool:
     """¿Hay un juego abierto en la app? Al salir del juego la app vuelve a su biblioteca y sigue abierta: lo que cuenta es
     el título de su ventana, no que el programa siga."""

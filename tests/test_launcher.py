@@ -469,7 +469,9 @@ def test_cloud_game_ends_when_its_window_drops_the_name_even_if_the_app_stays():
     ended, playing = [], [False]
     lau = Launcher(on_exit=lambda *args: ended.append(args))
     lau.POLL = .02
-    lau.track_exe("gfn:1", "Hogwarts Legacy", "GeForceNOW.exe", runner="GeForce NOW", alive=lambda: playing[0], start_timeout=2)
+    closed = []
+    lau.track_exe("gfn:1", "Hogwarts Legacy", "GeForceNOW.exe", runner="GeForce NOW", alive=lambda: playing[0], start_timeout=2,
+                  on_end=lambda: closed.append(1))
     time.sleep(.1)
     assert lau.status()["id"] == "gfn:1" and not ended  # abriendo: todavía no cuenta como cerrado
     playing[0] = True  # la ventana ya dice «Hogwarts Legacy on GeForce NOW»
@@ -477,3 +479,4 @@ def test_cloud_game_ends_when_its_window_drops_the_name_even_if_the_app_stays():
     playing[0] = False  # saliste del juego: la app vuelve a su biblioteca
     assert wait_for(lambda: ended)
     assert ended[0][:2] == ("gfn:1", "Hogwarts Legacy") and lau.status() is None
+    assert closed == [1]  # y la app se cierra (se quedaba en su biblioteca gastando detrás de Orbital)
