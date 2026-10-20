@@ -25,6 +25,7 @@ from .store import ItemStore
 
 log = logging.getLogger(__name__)
 
+GFN_START_TIMEOUT = 60.0  # s para que la app abra el juego (con la app cerrada: ~6 s; con fila de espera, más)
 GFN_READY_TIMEOUT = 30.0  # s de pantalla de carga como mucho en GeForce NOW (luego se ve su fila de espera)
 
 
@@ -33,7 +34,8 @@ def _cloud_game_ready(exe: str) -> bool:
     from . import windows
 
     hwnd = windows.main_window(windows.pids_by_exe(exe))
-    return bool(hwnd) and windows.is_fullscreen(hwnd)
+    # A pantalla completa y con el nombre del juego: la app en su biblioteca también puede estar a pantalla completa.
+    return bool(hwnd) and windows.is_fullscreen(hwnd) and geforcenow.in_game_title(windows.title(hwnd))
 
 
 TASKBAR_BACK_AFTER = 3.0  # s tras la pantalla de carga: el juego ya está en pantalla completa y tapa la barra
@@ -156,8 +158,9 @@ class Sessions:
             self.state.record_launch(item.id)
             return item
         if item.source == "geforcenow":
-            # La app (y su reproductor en la nube) es de instancia única: se vigila por ejecutable.
-            exe = geforcenow.APP_EXE if item.id == "app:geforcenow" else geforcenow.STREAMER_EXE
+            # La app es de instancia única: se vigila por ejecutable. Los juegos también los abre la app (con su ruta); un
+            # juego sigue mientras la ventana de la app lleva su nombre (al salir, la app vuelve a su biblioteca y sigue).
+            exe = geforcenow.APP_EXE
             if item.id == "app:geforcenow":
                 self.launcher.run(item.argv, cwd=item.cwd)
                 self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
@@ -168,7 +171,8 @@ class Sessions:
                 pinned = self.pin()
                 try:
                     self.launcher.run(item.argv, cwd=item.cwd)
-                    self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
+                    self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW", alive=geforcenow.in_session,
+                                            start_timeout=GFN_START_TIMEOUT)
                 except BaseException:
                     self.unpin(pinned)
                     raise

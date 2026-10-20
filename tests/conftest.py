@@ -159,7 +159,7 @@ class FakeLauncher:
         self.ran.append(argv)
         return object()  # basta con que no sea None: cuenta como proceso propio
 
-    def track_exe(self, item_id, title, exe, runner=None):
+    def track_exe(self, item_id, title, exe, runner=None, alive=None, start_timeout=None):
         self.current = {"id": item_id, "title": title, "managed": True, "runner": runner, "exe": exe}
 
     def track(self, item_id, title, process, steam_appid=None, runner=None):

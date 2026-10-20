@@ -36,6 +36,9 @@ class Running:
     # Orbital lo está relanzando (Xenia cambia de programa): el proceso viejo se cierra a propósito y el nuevo llega con
     # adopt. Mientras tanto, que se cierre el viejo no es «terminó».
     switching: bool = False
+    # Cuándo sigue el juego, si no basta con que el programa siga abierto (GeForce NOW: la app queda en su biblioteca).
+    alive: Callable[[], bool] | None = None
+    start_timeout: float = 30.0  # s para que aparezca (o empiece, con `alive`)
     adopted: threading.Event = field(default_factory=threading.Event)  # despierta al vigilante en cuanto llega el nuevo
 
 
@@ -133,10 +136,13 @@ class Launcher:
 
     EXE_START_TIMEOUT = 30  # s para que aparezca el ejecutable vigilado
 
-    def track_exe(self, item_id: str, title: str, exe: str, runner: str | None = None) -> None:
+    def track_exe(self, item_id: str, title: str, exe: str, runner: str | None = None,
+                  alive: Callable[[], bool] | None = None, start_timeout: float | None = None) -> None:
         """Para apps de instancia única: si ya estaba abierta, el proceso que lanzamos le pasa el
-        enlace y termina al instante. Lo fiable es vigilar que su ejecutable siga existiendo."""
-        running = Running(item_id, title, None, runner=runner, exe=exe)
+        enlace y termina al instante. Lo fiable es vigilar que su ejecutable siga existiendo.
+        `alive`: otra señal de que el juego sigue (GeForce NOW: el título de su ventana)."""
+        running = Running(item_id, title, None, runner=runner, exe=exe, alive=alive,
+                          start_timeout=start_timeout or self.EXE_START_TIMEOUT)
         with self._lock:
             self.current = running
         threading.Thread(target=self._watch_exe, args=(running,), daemon=True).start()
@@ -189,8 +195,9 @@ class Launcher:
         from . import windows
 
         exe = running.exe or ""
-        deadline = time.time() + self.EXE_START_TIMEOUT
-        while not windows.pids_by_exe(exe):
+        present = running.alive or (lambda: bool(windows.pids_by_exe(exe)))
+        deadline = time.time() + running.start_timeout
+        while not present():
             if self.current is not running:
                 return
             if time.time() > deadline:
@@ -199,7 +206,7 @@ class Launcher:
                         self.current = None
                 return
             time.sleep(self.POLL / 2)
-        while windows.pids_by_exe(exe):
+        while present():
             if self.current is not running:
                 return self._replaced(running)  # se abrió otra cosa: ya no es lo que estamos midiendo
             time.sleep(self.POLL)
