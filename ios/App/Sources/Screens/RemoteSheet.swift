@@ -270,9 +270,12 @@ struct RemoteSheet: View {
                     }
                 }
             } label: {
+                // Como las demás teclas: el ícono a la misma altura (antes «Salir» quedaba más abajo) y solo lo primero de la
+                // pista («Inglés», no «Inglés · Subtítulos · de…» cortado); el nombre completo está en el menú.
                 VStack(spacing: DS.Space.s1) {
-                    Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font)
-                    (tracks.first(where: \.selected).map { Text(verbatim: $0.label) } ?? Text("Sin subtítulos")).recipe(.caption, color: DS.textMuted).lineLimit(1)
+                    Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).frame(height: DS.Remote.keyIcon)
+                    (tracks.first(where: \.selected).map { Text(verbatim: Self.shortTrack($0.label)) } ?? Text("Sin subtítulos"))
+                        .recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 }
                 .foregroundStyle(DS.text)
                 .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted)
@@ -281,6 +284,11 @@ struct RemoteSheet: View {
             .accessibilityLabel(title)
             .accessibilityValue(tracks.first(where: \.selected).map { Text(verbatim: $0.label) } ?? Text("Sin subtítulos"))
         }
+    }
+
+    /// Lo primero del nombre de una pista («Inglés · Subtítulos · de Netflix» → «Inglés»).
+    static func shortTrack(_ label: String) -> String {
+        label.components(separatedBy: " · ").first.map { $0.trimmingCharacters(in: .whitespaces) }.flatMap { $0.isEmpty ? nil : $0 } ?? label
     }
 
     /// En vivo: canal anterior y siguiente, grandes, y silencio.
