@@ -632,6 +632,47 @@ public final class PlayerModel: ObservableModel {
         return next
     }
 
+    /// La versión que tenías antes de apagarlos (para prenderlos otra vez igual).
+    private var versionBeforeOff: SubtitleVersion?
+
+    /// Mantener presionado el botón: apaga los subtítulos o los vuelve a prender (lo que tenías, lo que elegiste en este
+    /// título o lo mejor de tus idiomas). Devuelve la versión puesta; nil si quedaron apagados (o no hay ninguna).
+    @discardableResult
+    public func toggleSubtitles(languages: [String]) async -> SubtitleVersion? {
+        userTouched()
+        if snapshot.selectedSubtitle != nil {
+            versionBeforeOff = allSubtitleVersions.first { $0.id == selectedVersionID } ?? versionBeforeOff
+            await selectSubtitle(nil)
+            return nil
+        }
+        if let back = versionBeforeOff, subtitleVersions(language: back.language).contains(where: { $0.id == back.id }) {
+            await selectVersion(back); return back
+        }
+        if let request, let pick = subtitlePicks?.pick(metaID: request.metaID), let best = pick.best(in: subtitleVersions(language: pick.language)) {
+            await selectVersion(best); return best
+        }
+        let language = languages.first { !subtitleVersions(language: $0).isEmpty } ?? languages.first
+        guard let language else { return nil }
+        return await chooseLanguage(language) ? allSubtitleVersions.first { $0.id == selectedVersionID } : nil
+    }
+
+    /// Tocar un idioma en la hoja: pone ya su mejor versión (antes había que tocar también una versión). Si el video no lo
+    /// trae, lo busca en internet primero. false si no hay ninguna.
+    @discardableResult
+    public func chooseLanguage(_ language: String) async -> Bool {
+        var versions = subtitleVersions(language: language)
+        if versions.isEmpty {
+            await ensureSubtitleSearch()
+            versions = subtitleVersions(language: language)
+        }
+        guard let best = versions.first else { return false }
+        await selectVersion(best)
+        return true
+    }
+
+    /// Todas las versiones de todos los idiomas que hay ahora (para encontrar la puesta).
+    private var allSubtitleVersions: [SubtitleVersion] { subtitleLanguages.flatMap { subtitleVersions(language: $0.code) } }
+
     /// ‹ › de la tira: la versión anterior o la siguiente del mismo idioma.
     public func stepVersion(_ delta: Int) async {
         guard let language = tryingSubtitles else { return }

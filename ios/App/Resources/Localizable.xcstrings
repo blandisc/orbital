@@ -661,6 +661,17 @@
         }
       }
     },
+    "Ajustar tiempo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjust timing"
+          }
+        }
+      }
+    },
     "Ajustes": {
       "extractionState": "manual",
       "localizations": {
@@ -767,6 +778,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Off"
+          }
+        }
+      }
+    },
+    "Apagar subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn subtitles off"
           }
         }
       }
@@ -1339,6 +1361,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Searching subtitles…"
+          }
+        }
+      }
+    },
+    "Buscando versiones en internet…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searching online for versions…"
           }
         }
       }
@@ -2923,6 +2956,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Right"
+          }
+        }
+      }
+    },
+    "Desactivados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
+          }
+        }
+      }
+    },
+    "Desactivar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off"
           }
         }
       }
@@ -6007,6 +6062,17 @@
         }
       }
     },
+    "Mantén presionado para apagarlos o prenderlos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch and hold to turn them off or on"
+          }
+        }
+      }
+    },
     "Mantén presionado para elegir en qué lista": {
       "extractionState": "manual",
       "localizations": {
@@ -7140,6 +7206,17 @@
         }
       }
     },
+    "No pudimos buscar subtítulos. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't search for subtitles. Check your connection."
+          }
+        }
+      }
+    },
     "No pudimos reproducirlo": {
       "extractionState": "manual",
       "localizations": {
@@ -8064,6 +8141,17 @@
         }
       }
     },
+    "Prender subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn subtitles on"
+          }
+        }
+      }
+    },
     "Primer episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -8845,6 +8933,28 @@
         }
       }
     },
+    "Se recuerda para esta película.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remembered for this movie."
+          }
+        }
+      }
+    },
+    "Se recuerda para toda la serie.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remembered for the whole show."
+          }
+        }
+      }
+    },
     "Se ven al instante y se pueden descargar": {
       "extractionState": "manual",
       "localizations": {
@@ -9545,6 +9655,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Subtitles earlier"
+          }
+        }
+      }
+    },
+    "Subtítulos desactivados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles off"
           }
         }
       }
@@ -10957,6 +11078,17 @@
         }
       }
     },
+    "Versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
+          }
+        }
+      }
+    },
     "Versión %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -11525,6 +11657,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Disconnect Trakt?"
+          }
+        }
+      }
+    },
+    "¿Las letras salen antes que la voz? Toca +.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do the words show up before the voice? Tap +."
           }
         }
       }

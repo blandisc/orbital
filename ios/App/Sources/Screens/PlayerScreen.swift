@@ -75,6 +75,8 @@ struct PlayerScreen: View {
     /// Cada toque en la tira de probar subtítulos reinicia su tiempo para irse.
     @State private var tryStripTouches = 0
     @State private var zoomToast: VideoZoom?
+    /// «Subtítulos desactivados» o «Español · 1 de 4», un momento, al apagar o prender con el botón.
+    @State private var subtitleToast: String?
     /// La página con que abre el panel (mantener el botón de subtítulos lo abre en Subtítulos).
     @State private var panelPage: VideoSettingsPanel.Page = .hub
     @State private var zoomToastTask: Task<Void, Never>?
@@ -171,7 +173,6 @@ struct PlayerScreen: View {
             }
             // Probando subtítulos (elegidos en el panel): la tira al pie del video (en vertical nunca tapa los controles,
             // que van debajo del video).
-            if let language = model.tryingSubtitles, !locked { subtitleTryStrip(model, language: language) }
             if panel && landscape {
                 // Tocar fuera del panel lo cierra; el video sigue a la vista (el cambio de subtítulos se ve al momento).
                 Color.clear.contentShape(Rectangle()).onTapGesture { panel = false }
@@ -436,6 +437,10 @@ struct PlayerScreen: View {
         if isFastForwarding {
             VStack { DSSpeedPill(); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
         }
+        if let subtitleToast {
+            VStack { DSToastPill(text: LocalizedStringKey(subtitleToast)); Spacer() }.padding(.top, DS.Space.s14)
+                .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
+        }
         if let zoomToast {
             // Siempre se ve: en horizontal arriba; en vertical sobre el video (arriba lo tapaba la barra), y si el modo no
             // cambia nada en vertical, lo dice.
@@ -646,8 +651,8 @@ struct PlayerScreen: View {
                 PlayerCircleButton(symbol: "slider.horizontal.3", label: "Audio y subtítulos") { panelPage = .hub; panel = true }
                     .accessibilityIdentifier("player-settings")
             }
-            SubtitleCycleButton(on: model.snapshot.selectedSubtitle != nil, loading: model.loadingSubtitle,
-                                next: { nextSubtitle(model) }, openList: { panelPage = .subtitles; panel = true })
+            SubtitleButton(code: currentSubtitleCode(model), state: subtitleState(model), loading: model.loadingSubtitle,
+                           open: { panelPage = .subtitles; panel = true }, toggle: { toggleSubtitles(model) })
                 .accessibilityIdentifier("player-next-subtitle")
             PlayerCircleButton(symbol: zoom.symbol, label: LocalizedStringKey(zoom.title)) { setZoom(nextZoom) }
                 .accessibilityHint(Text("Cambia el zoom del video"))
@@ -696,6 +701,34 @@ struct PlayerScreen: View {
     private var nextZoom: VideoZoom {
         if !landscape { return zoom == .fill ? .fit : .fill }
         return zoom.next
+    }
+
+    /// El idioma puesto, en corto («es»); nil: apagados.
+    private func currentSubtitleCode(_ model: PlayerModel) -> String? {
+        let s = model.snapshot
+        return s.selectedSubtitle.flatMap { id in SubtitleLanguage.code(s.subtitleTracks.first { $0.id == id }?.language) ?? "" }
+            .map { $0.isEmpty ? "CC" : $0 }
+    }
+
+    /// «Español · 2 de 7» o «Desactivados» (para VoiceOver y el aviso).
+    private func subtitleState(_ model: PlayerModel) -> String {
+        subtitleInfo(model)?.title ?? Strings.tr("Desactivados", language: env.services.appSettings.uiLanguage)
+    }
+
+    /// Mantener presionado el botón: apaga o prende, y lo dice un momento.
+    private func toggleSubtitles(_ model: PlayerModel) {
+        pulse()
+        let settings = env.services.appSettings
+        var languages: [String] = []
+        for code in [settings.subtitles, settings.audio, settings.uiLanguage].compactMap(SubtitleLanguage.code) where !languages.contains(code) { languages.append(code) }
+        Task {
+            await model.toggleSubtitles(languages: languages)
+            let text = model.snapshot.selectedSubtitle == nil ? Strings.tr("Subtítulos desactivados", language: settings.uiLanguage) : subtitleState(model)
+            withAnimation(DS.Motion.base(reduceMotion)) { subtitleToast = text }
+            UIAccessibility.post(notification: .announcement, argument: text)
+            try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
+            withAnimation(DS.Motion.base(reduceMotion)) { if subtitleToast == text { subtitleToast = nil } }
+        }
     }
 
     /// Un toque en el botón de subtítulos: la versión siguiente, sin pausar; los controles se quedan (para seguir tocando),
@@ -1154,75 +1187,74 @@ struct VideoSettingsPanel: View {
     }
 
     // MARK: subtítulos
-    /// Arriba el idioma (un menú); debajo, una sola lista con todas las versiones de ese idioma (las del video y las de
-    /// internet), la que más probablemente va a tiempo primero. Sin SDH ni forzados (decisión del usuario).
+    /// Tres pasos, de arriba abajo: el idioma (fichas, «Desactivar» primero; tocar uno ya pone su mejor versión), el ajuste
+    /// de tiempo (si hay subtítulos puestos) y las versiones de ese idioma (la recomendada primero). Abajo, qué se recuerda.
     @ViewBuilder private var subtitles: some View {
         let s = model.snapshot
         let settings = env.services.appSettings
         let lang = chosenSubtitleLanguage
-        let counts = Dictionary(model.subtitleLanguages.map { ($0.code, $0.count) }, uniquingKeysWith: +)
+        let off = s.selectedSubtitle == nil && subtitleLanguage == ""
+        let available = Set(model.subtitleLanguages.map(\.code))
+        let others = model.subtitleLanguages.map(\.code).filter { !yourSubtitleLanguages.contains($0) }
+            .sorted { languageName($0).localizedCompare(languageName($1)) == .orderedAscending }
         header("Subtítulos", back: true)
-        Menu {
-            Section("Tus idiomas") {
-                ForEach(yourSubtitleLanguages, id: \.self) { code in languageButton(code, count: counts[code] ?? 0) }
-            }
-            Section("Otros idiomas") {
-                ForEach(model.subtitleLanguages.filter { !yourSubtitleLanguages.contains($0.code) }, id: \.code) { languageButton($0.code, count: $0.count) }
-            }
-            Button("Más idiomas…", systemImage: "globe") { moreLanguages = true }
-            Button("Sin subtítulos", systemImage: "captions.bubble") {
+        PanelGroupTitle(title: "Idioma")
+        FlowChips {
+            PanelChip(title: Text("Desactivar"), selected: off || (s.selectedSubtitle == nil && subtitleLanguage == nil), symbol: "captions.bubble") {
                 subtitleLanguage = ""
                 Task { await model.selectSubtitle(nil) }
             }
-        } label: {
-            if let lang {
-                PanelMenuLabel(title: languageName(lang), detail: model.searchingSubtitles && (counts[lang] ?? 0) == 0 ? Text("Buscando…") : Text("\(counts[lang] ?? 0) opciones"))
-            } else {
-                PanelMenuLabel(title: String(localized: "Sin subtítulos"), detail: Text(verbatim: ""))
+            .accessibilityIdentifier("player-subtitles-off")
+            ForEach(yourSubtitleLanguages + others, id: \.self) { code in
+                PanelChip(title: Text(verbatim: languageName(code)), selected: !off && s.selectedSubtitle != nil && code == lang) {
+                    subtitleLanguage = code
+                    Task { await model.chooseLanguage(code) }
+                }
+                .opacity(available.contains(code) || model.searchingSubtitles ? 1 : DesignTokens.Opacity.faint)
             }
+            PanelChip(title: Text("Más idiomas…"), selected: false, symbol: "globe") { moreLanguages = true }
         }
-        .buttonStyle(.plain)
         .accessibilityIdentifier("player-subtitle-language")
         .sheet(isPresented: $moreLanguages) {
             LanguageSearchList(codes: SubtitleLanguage.all, name: languageName) { code in
                 subtitleLanguage = code
-                Task { await model.ensureSubtitleSearch() }
+                Task { await model.chooseLanguage(code) }
             }
         }
-        // Se busca en internet al abrir (para contar las versiones de cada idioma), sin tocar «Buscar».
+        // Se busca en internet al abrir (para que haya más versiones), sin tocar «Buscar».
         .task { await model.ensureSubtitleSearch() }
-        if let lang {
+        // Ajustar el tiempo (como Infuse), arriba de las versiones: solo con subtítulos puestos y si los dibuja la app.
+        if s.selectedSubtitle != nil, drawsSubtitles {
+            PanelGroupTitle(title: "Ajustar tiempo")
+            FlowChips {
+                PanelChip(title: Text(verbatim: String(format: "−%g s", PlayerModel.subtitleStep)), selected: false) { model.nudgeSubtitles(by: -PlayerModel.subtitleStep) }
+                    .accessibilityLabel(Text("Subtítulos antes")).accessibilityHint(Text("Adelantar medio segundo"))
+                PanelChip(title: model.subtitleDelay == 0 ? Text("A tiempo") : Text(verbatim: String(format: "%+.1f s", model.subtitleDelay)),
+                          selected: model.subtitleDelay != 0) { model.resetSubtitleDelay() }
+                PanelChip(title: Text(verbatim: String(format: "+%g s", PlayerModel.subtitleStep)), selected: false) { model.nudgeSubtitles(by: PlayerModel.subtitleStep) }
+                    .accessibilityLabel(Text("Subtítulos después")).accessibilityHint(Text("Atrasar medio segundo"))
+            }
+            Text(model.subtitleDelay == 0 ? "¿Las letras salen antes que la voz? Toca +." : "Toca el del centro para volver a como venían.").recipe(.caption)
+        }
+        if let lang, !off {
             let versions = model.subtitleVersions(language: lang)
+            if !versions.isEmpty { PanelGroupTitle(title: "Versión") }
             ForEach(Array(versions.enumerated()), id: \.element.id) { index, version in
-                SubtitleVersionRow(title: versionTitle(version, index: index), selected: model.selectedVersionID == version.id,
+                SubtitleVersionRow(title: versionTitle(version, index: index, recommended: index == 0), selected: model.selectedVersionID == version.id,
                                    fromVideo: version.fromVideo, matchesCopy: version.matchesCopy, downloads: version.downloads,
                                    loading: version.option.map { model.addedSubtitleURLs.contains($0.url) && model.addedTracks[$0.url] == nil } ?? false,
                                    detail: version.name) {
-                    Task { await model.selectVersion(version, trying: true) }
+                    Task { await model.selectVersion(version) }
                 }
             }
             if versions.isEmpty {
-                if model.searchingSubtitles { Text("Buscando en internet…").recipe(.footnote) }
+                if model.searchingSubtitles { Text("Buscando versiones en internet…").recipe(.footnote) }
                 else if model.subtitleSearchFailed {
-                    DSNotice(text: "No encontré subtítulos (o no hay conexión). Vuelve a intentar.", tone: .warn)
+                    DSNotice(text: "No pudimos buscar subtítulos. Revisa tu conexión.", tone: .warn)
                     PanelChip(title: Text("Volver a buscar"), selected: false, symbol: "magnifyingglass") { Task { await model.searchSubtitles() } }
                         .accessibilityIdentifier("player-search-subtitles")
                 } else { Text("No hay subtítulos en este idioma.").recipe(.footnote) }
             }
-        }
-        // Sincronía (como Infuse): si las líneas salen antes o después de lo que se dice. Solo con subtítulos puestos y si los
-        // dibuja la app (AVPlayer pinta los suyos y no se pueden mover).
-        if s.selectedSubtitle != nil, drawsSubtitles {
-        PanelGroupTitle(title: "Sincronía")
-        FlowChips {
-            PanelChip(title: Text(verbatim: String(format: "−%g s", PlayerModel.subtitleStep)), selected: false) { model.nudgeSubtitles(by: -PlayerModel.subtitleStep) }
-                .accessibilityLabel(Text("Subtítulos antes")).accessibilityHint(Text("Adelantar medio segundo"))
-            PanelChip(title: model.subtitleDelay == 0 ? Text("A tiempo") : Text(verbatim: String(format: "%+.1f s", model.subtitleDelay)),
-                      selected: model.subtitleDelay != 0) { model.resetSubtitleDelay() }
-            PanelChip(title: Text(verbatim: String(format: "+%g s", PlayerModel.subtitleStep)), selected: false) { model.nudgeSubtitles(by: PlayerModel.subtitleStep) }
-                .accessibilityLabel(Text("Subtítulos después")).accessibilityHint(Text("Atrasar medio segundo"))
-        }
-        if model.subtitleDelay != 0 { Text("Toca el del centro para volver a como venían.").recipe(.caption) }
         }
         PanelGroupTitle(title: "Tamaño")
         FlowChips {
@@ -1233,6 +1265,9 @@ struct VideoSettingsPanel: View {
                 .accessibilityLabel(size == "small" ? Text("Chico") : size == "large" ? Text("Grande") : Text("Mediano"))
             }
         }
+        // Qué se recuerda: lo que elijas aquí vale para todo el título (sin confirmar nada).
+        Label(model.request?.kind == "series" ? "Se recuerda para toda la serie." : "Se recuerda para esta película.", systemImage: "checkmark.circle")
+            .recipe(.caption)
     }
 
     /// El idioma de la lista: el que elegiste en el menú; si no, el de los subtítulos puestos; si no, el tuyo (Ajustes:
@@ -1251,16 +1286,15 @@ struct VideoSettingsPanel: View {
         return out
     }
 
-    private func languageButton(_ code: String, count: Int) -> some View {
-        Button { subtitleLanguage = code } label: {
-            Text(verbatim: count > 0 ? "\(languageName(code)) · \(count)" : languageName(code))
-            if code == chosenSubtitleLanguage { Image(systemName: "checkmark") }
-        }
-    }
-
     /// Un título que se entiende («Español · del video», «WEB-DL · 1080p»), no el nombre del archivo («SPA (srt)»,
     /// «Show.S01E02.1080p.WEB-DL.srt»), que va abajo, chico.
-    private func versionTitle(_ version: SubtitleVersion, index: Int) -> String {
+    private func versionTitle(_ version: SubtitleVersion, index: Int, recommended: Bool = false) -> String {
+        let tr = { (key: String) in Strings.tr(key, language: language) }
+        let base = versionBaseTitle(version, index: index)
+        return recommended ? "\(base) · \(tr("Recomendada"))" : base
+    }
+
+    private func versionBaseTitle(_ version: SubtitleVersion, index: Int) -> String {
         let tr = { (key: String) in Strings.tr(key, language: language) }
         if version.fromVideo {
             let name = languageName(version.language)

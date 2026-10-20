@@ -472,30 +472,41 @@ struct SubtitleTryStrip: View {
     }
 }
 
-/// El botón de subtítulos de los controles del reproductor: un toque pone la versión siguiente (sin pausar ni abrir nada),
-/// mantenerlo abre la lista de Subtítulos. Mientras baja una versión de internet, enseña que carga.
-struct SubtitleCycleButton: View {
-    let on: Bool
+/// El botón de subtítulos de la barra del reproductor: dice qué está puesto (el ícono lleno y el idioma en corto, «ES»).
+/// Un toque abre la hoja de subtítulos; mantenerlo presionado los apaga o los vuelve a prender.
+struct SubtitleButton: View {
+    /// El idioma puesto en corto («ES»); nil: apagados.
+    let code: String?
+    /// El estado completo para VoiceOver («Español · 2 de 7», «Desactivados»).
+    let state: String
     let loading: Bool
-    let next: () -> Void
-    let openList: () -> Void
+    let open: () -> Void
+    let toggle: () -> Void
 
     var body: some View {
         ZStack {
             if loading { ProgressView().tint(DS.text) }
-            else { Image(systemName: on ? "captions.bubble.fill" : "captions.bubble").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text) }
+            else { Image(systemName: code != nil ? "captions.bubble.fill" : "captions.bubble").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text) }
         }
         .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+        .overlay(alignment: .bottomTrailing) {
+            if let code, !loading {
+                Text(verbatim: code.uppercased()).font(DS.TextRecipe.caption.font.weight(.heavy)).foregroundStyle(DS.onPrimary)
+                    .padding(.horizontal, DS.Space.s1).background(DS.primary, in: Capsule())
+            }
+        }
         .glassEffect(.regular.interactive(), in: Circle())
         .contentShape(Circle())
-        .onTapGesture(perform: next)
-        .onLongPressGesture(minimumDuration: DS.Timing.longPressDelay, perform: openList)
+        .onTapGesture(perform: open)
+        .onLongPressGesture(minimumDuration: DS.Timing.longPressDelay, perform: toggle)
+        .sensoryFeedback(.selection, trigger: code)
         .accessibilityElement()
         .accessibilityAddTraits(.isButton)
-        .accessibilityLabel(Text("Siguiente subtítulo"))
-        .accessibilityHint(Text("Mantén presionado para ver la lista de subtítulos"))
-        .accessibilityAction(.default, next)
-        .accessibilityAction(named: Text("Lista de subtítulos"), openList)
+        .accessibilityLabel(Text("Subtítulos"))
+        .accessibilityValue(Text(verbatim: state))
+        .accessibilityHint(Text("Mantén presionado para apagarlos o prenderlos"))
+        .accessibilityAction(.default, open)
+        .accessibilityAction(named: code == nil ? Text("Prender subtítulos") : Text("Apagar subtítulos"), toggle)
     }
 }
 

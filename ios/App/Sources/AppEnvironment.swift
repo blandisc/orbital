@@ -242,7 +242,8 @@ final class AppEnvironment: ObservableObject {
         var chosen = source
         if chosen == nil { chosen = try? await services.finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs) }
         guard let url = chosen?.playbackURL else { return notify("No hay fuentes de Real-Debrid para este título.") }
-        let subtitle = await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles.isEmpty ? services.appSettings.subtitles : langs.subtitles).first
+        // Apagados en este título (o en Ajustes): Infuse los recibe apagados (antes mandaba los de Ajustes de todos modos).
+        let subtitle = langs.subtitles.isEmpty ? nil : await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles).first
         var season: Int?, episode: Int?
         let parts = request.videoID.split(separator: ":")
         if request.kind == "series", parts.count >= 3 { season = Int(parts[parts.count - 2]); episode = Int(parts[parts.count - 1]) }
