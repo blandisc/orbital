@@ -114,7 +114,7 @@ struct PlayerScreen: View {
                 let rect = videoRect(in: geo.size)
                 ZStack {
                     holder.engine.surface
-                    if dragAxis != .horizontal {
+                    if dragAxis != .horizontal && !fillsPortrait {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
                         // quedaba a media imagen).
@@ -124,6 +124,16 @@ struct PlayerScreen: View {
                 }
                 .frame(width: rect.width, height: rect.height)
                 .offset(x: rect.minX, y: rect.minY)
+                // «Recortar» en vertical: los subtítulos con el tamaño de siempre (el de un cuadro a lo ancho), abajo; con los
+                // controles a la vista suben sobre ellos.
+                .overlay(alignment: .bottom) {
+                    if fillsPortrait && dragAxis != .horizontal {
+                        holder.engine.subtitleOverlay(lifted: false, heightFraction: env.services.appSettings.subtitleHeightFraction, delay: model.subtitleDelay)
+                            .frame(width: geo.size.width, height: geo.size.width / DS.Poster.stillAspect)
+                            .padding(.bottom, controlsVisible ? geo.size.height * DS.PlayerPanel.portraitFillControlsShare : DS.Space.s6)
+                            .allowsHitTesting(false)
+                    }
+                }
                 .overlay(alignment: .bottom) {
                     // En vertical con el panel: bajo el video, qué es y dónde vas (llena el espacio y orienta).
                     if panel && !landscape {
@@ -219,6 +229,9 @@ struct PlayerScreen: View {
             // `begin` va aparte: el plazo de arranque (45 s) tiene que seguir corriendo mientras carga.
             let engine = holder.engine
             zoom = VideoZoom(stored: env.services.appSettings.videoZoom)
+            #if DEBUG
+            if Demo.isOn, let raw = Demo.value(after: "-demo-zoom") { zoom = VideoZoom(stored: raw) }   // `-demo-zoom fill`: para capturas
+            #endif
             engine.setZoom(zoom)
             pip.onActiveChange = { engine.setPictureInPictureActive($0) }
             nowPlaying.start(model: model)
@@ -432,7 +445,7 @@ struct PlayerScreen: View {
             } else {
                 GeometryReader { geo in
                     let rect = videoRect(in: geo.size)
-                    DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: zoomToast == .fit ? nil : Text("En vertical solo se nota en videos de otro formato"))
+                    DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: zoomToast == .fill ? Text("Llena la pantalla y recorta los lados") : nil)
                         .position(x: rect.midX, y: rect.midY)
                 }
                 .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
@@ -580,6 +593,10 @@ struct PlayerScreen: View {
                 let rect = videoRect(in: geo.size)
                 ZStack(alignment: .top) {
                     topScrim
+                    // Con el video a pantalla completa, los controles van encima: un velo abajo para que se lean.
+                    if fillsPortrait {
+                        LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
+                    }
                     topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
                     VStack(spacing: DS.Space.s5) {
                         // «Siguiente episodio» entre el video y la barra (antes tapaba los controles).
@@ -589,12 +606,14 @@ struct PlayerScreen: View {
                         if model.phase != .preparing { transport(model) }
                         HStack(spacing: DS.Space.s2) { actions(model) }
                         // Cómo mover el video: solo las primeras veces que abres el reproductor.
-                        if showsDragHint {
+                        if showsDragHint && !fillsPortrait {
                             Label("Arrastra el video para subirlo o bajarlo", systemImage: "arrow.up.and.down").recipe(.caption, color: DS.textFaint)
                         }
                     }
                     .padding(.horizontal, DS.Space.gutter)
-                    .offset(y: rect.maxY + DS.Space.s4)
+                    .padding(.bottom, fillsPortrait ? DS.Space.s8 : 0)
+                    .offset(y: fillsPortrait ? 0 : rect.maxY + DS.Space.s4)
+                    .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
             }
@@ -672,10 +691,11 @@ struct PlayerScreen: View {
 
     /// El zoom siguiente del botón. En vertical «Ajustar al área segura» no cambia nada (el video ya va dentro del área
     /// segura), así que se salta.
+    /// En vertical el botón alterna entre «Ajustar» y «Recortar» (pantalla completa); el área segura y «Estirar» solo tienen
+    /// sentido en horizontal.
     private var nextZoom: VideoZoom {
-        var target = zoom.next
-        if !landscape && target == .fitSafeArea { target = target.next }
-        return target
+        if !landscape { return zoom == .fill ? .fit : .fill }
+        return zoom.next
     }
 
     /// Un toque en el botón de subtítulos: la versión siguiente, sin pausar; los controles se quedan (para seguir tocando),
@@ -870,6 +890,8 @@ struct PlayerScreen: View {
         }
         if landscape { return CGRect(x: 0, y: 0, width: size.width, height: size.height) }
         if panel { return CGRect(x: 0, y: 0, width: size.width, height: size.height * DS.PlayerPanel.videoShare) }
+        // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
+        if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // De orilla a orilla: el alto sale del ancho y la proporción (sin tope), salvo que no quepa en la pantalla.
         let height = min(size.width / DS.Poster.stillAspect, size.height)
         // Sin controles (y sin arrastrar), el video al centro; con ellos, a la altura que lo dejaste.
@@ -877,6 +899,9 @@ struct PlayerScreen: View {
         let y = min(max(0, center - height / 2), max(0, size.height - height))
         return CGRect(x: 0, y: y, width: size.width, height: height)
     }
+
+    /// Vertical con «Recortar»: el video a pantalla completa.
+    private var fillsPortrait: Bool { !landscape && !panel && zoom == .fill }
 
     /// Los márgenes seguros de la ventana (el video en horizontal ignora el área segura, así que no los trae su `GeometryReader`).
     private static var windowSafeArea: UIEdgeInsets {

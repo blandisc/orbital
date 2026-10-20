@@ -284,6 +284,8 @@ enum DS {
 
     /// El panel «Ajustes del video» del reproductor: a la derecha en horizontal, hoja ajustada en vertical.
     enum PlayerPanel {
+        /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).
+        static let portraitFillControlsShare: CGFloat = 0.3
         /// El candado de «Pantalla bloqueada» entra creciendo desde este tamaño.
         static let lockScale: CGFloat = 0.9
         /// El ícono de una app (Infuse) junto a su botón: tamaño y redondeo como los íconos de iOS.
