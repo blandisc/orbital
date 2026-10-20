@@ -1090,6 +1090,17 @@
         }
       }
     },
+    "Bajando %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading %lld"
+          }
+        }
+      }
+    },
     "Bajando la recomendada": {
       "extractionState": "manual",
       "localizations": {
