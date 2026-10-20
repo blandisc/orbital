@@ -19,6 +19,25 @@ final class TracksTests: XCTestCase {
         XCTAssertNil(TrackChooser.audio([], language: "es"))
     }
 
+    func testSubtitleWithoutYourLanguageIsNotAnotherLanguagesDefault() {
+        let english: [MediaTrack] = [.init(id: 20, kind: .subtitle, language: "eng", isDefault: true)]
+        XCTAssertNil(TrackChooser.subtitle(english, mode: .language("es"), audioLanguage: "en"),
+                     "sin español: nada (y entonces se busca en internet), no el inglés por defecto")
+    }
+
+    func testRememberedSubtitlesForgetAndAnyLanguage() {
+        let kv = InMemoryKeyValueStore()
+        let picks = SubtitlePicks(kv)
+        picks.remember(metaID: "tt1", SubtitlePick(language: "es", group: "NTb"))
+        picks.forget(metaID: "tt1")
+        XCTAssertNil(SubtitlePicks(kv).pick(metaID: "tt1"), "apagar olvida la versión elegida")
+        let prefs = TitlePreferences(kv)
+        prefs.remember(metaID: "tt1", subtitleTrack: "fr")
+        XCTAssertEqual(prefs.languages(for: "tt1", settings: AppSettings()).subtitles, "fr", "francés también se recuerda")
+        prefs.remember(metaID: "tt1", subtitleTrack: "")
+        XCTAssertEqual(prefs.languages(for: "tt1", settings: AppSettings()).subtitles, "", "apagados se recuerda")
+    }
+
     func testSubtitleModes() {
         XCTAssertNil(TrackChooser.subtitle(tracks, mode: .off, audioLanguage: "es"))
         XCTAssertEqual(TrackChooser.subtitle(tracks, mode: .language("es"), audioLanguage: "en")?.id, 12, "completos antes que forzados")

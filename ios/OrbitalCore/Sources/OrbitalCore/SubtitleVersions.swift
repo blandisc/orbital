@@ -177,6 +177,13 @@ public final class SubtitlePicks: @unchecked Sendable {
         all = kv.data(Self.key).flatMap { try? JSONDecoder().decode([String: SubtitlePick].self, from: $0) } ?? [:]
     }
     public func pick(metaID: String) -> SubtitlePick? { lock.withLock { all[metaID] } }
+    /// Apagaste los subtítulos: se olvida la versión elegida (si no, el siguiente episodio los volvía a poner).
+    public func forget(metaID: String) {
+        lock.withLock {
+            all[metaID] = nil
+            kv.set(Self.key, data: try? JSONEncoder().encode(all))
+        }
+    }
     public func remember(metaID: String, _ pick: SubtitlePick) {
         lock.withLock {
             all[metaID] = pick

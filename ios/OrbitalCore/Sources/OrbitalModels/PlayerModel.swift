@@ -410,8 +410,10 @@ public final class PlayerModel: ObservableModel {
     private func applyTracksOnce(_ s: EngineSnapshot) async {
         guard !tracksApplied, !s.audioTracks.isEmpty || !s.subtitleTracks.isEmpty, let request else { return }
         tracksApplied = true
-        // «Este va bien» en esta serie: el subtítulo más parecido al que elegiste (gana a «Continuar» y a la regla).
-        let picked = await applyRememberedPick(s)
+        // Apagados en este título: eso gana a todo lo recordado.
+        let subtitlesOff = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).subtitles.isEmpty
+        // La versión que elegiste en este título: el subtítulo más parecido (gana a «Continuar» y a la regla).
+        let picked = subtitlesOff ? false : await applyRememberedPick(s)
         // «Continuar»: las mismas pistas con que lo dejaste; lo que no se encuentre, con la regla de siempre.
         // También en el siguiente episodio de la serie (antes solo en el mismo episodio exacto).
         if !picked, !request.fromStart, let choice = titlePrefs.lastChoice(metaID: request.metaID), await applyResumeTracks(choice, s) { return }
@@ -425,7 +427,9 @@ public final class PlayerModel: ObservableModel {
         let sub = TrackChooser.subtitle(s.subtitleTracks, mode: mode, audioLanguage: audioLanguage)
         knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
         if let sub { await engine.selectSubtitle(sub.id) }
-        else if case .language(let language) = mode, !(audio.map { TrackChooser.matches($0, language) } ?? false) {
+        // El video no trae tu idioma (a lo más los carteles del audio): se busca en internet aunque haya puesto los carteles.
+        if case .language(let language) = mode, !(sub.map { TrackChooser.matches($0, language) } ?? false),
+           !(audio.map { TrackChooser.matches($0, language) } ?? false) {
             // El video no trae subtítulos en tu idioma: se piden a tus complementos (OpenSubtitles…) o a la descarga.
             await addExternalSubtitle(language: language)
         }
@@ -581,9 +585,14 @@ public final class PlayerModel: ObservableModel {
         userTouched()
         if trying { tryingSubtitles = version.language }
         await apply(version)
-        if let request {
-            titlePrefs.remember(metaID: request.metaID, subtitleTrack: Streams.languageCodes[version.language] ?? version.language)
-        }
+        rememberVersion(version)
+    }
+
+    /// Lo que elijas se recuerda al momento para ese título (serie o película), sin tener que tocar «Este va bien».
+    private func rememberVersion(_ version: SubtitleVersion) {
+        guard let request else { return }
+        titlePrefs.remember(metaID: request.metaID, subtitleTrack: version.language)
+        subtitlePicks?.remember(metaID: request.metaID, SubtitlePick(version))
     }
 
     private func apply(_ version: SubtitleVersion) async {
@@ -619,9 +628,7 @@ public final class PlayerModel: ObservableModel {
         guard let next = SubtitleVersions.next(after: playing == nil ? nil : selectedVersionID, in: versions) else { return nil }
         tryingSubtitles = language
         await apply(next)
-        if let request {
-            titlePrefs.remember(metaID: request.metaID, subtitleTrack: Streams.languageCodes[next.language] ?? next.language)
-        }
+        rememberVersion(next)
         return next
     }
 
@@ -633,6 +640,7 @@ public final class PlayerModel: ObservableModel {
         let at = versions.firstIndex { $0.id == selectedVersionID } ?? -1
         let next = ((at + delta) % versions.count + versions.count) % versions.count
         await apply(versions[next])
+        rememberVersion(versions[next])
     }
 
     public func dismissTry() { tryingSubtitles = nil }
@@ -640,14 +648,14 @@ public final class PlayerModel: ObservableModel {
     /// «Este va bien»: cierra la tira y, en una serie, recuerda idioma y copia para el siguiente episodio.
     public func confirmSubtitle() {
         defer { tryingSubtitles = nil }
-        guard let request, request.kind == "series", let language = tryingSubtitles,
+        guard let request, let language = tryingSubtitles,
               let version = subtitleVersions(language: language).first(where: { $0.id == selectedVersionID }) else { return }
         subtitlePicks?.remember(metaID: request.metaID, SubtitlePick(version))
     }
 
     /// Al empezar un episodio: lo de «Este va bien» de la serie. true si se puso un subtítulo.
     private func applyRememberedPick(_ s: EngineSnapshot) async -> Bool {
-        guard let request, request.kind == "series", let pick = subtitlePicks?.pick(metaID: request.metaID) else { return false }
+        guard let request, let pick = subtitlePicks?.pick(metaID: request.metaID) else { return false }
         knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
         let embedded = subtitleVersions(language: pick.language)
         // Una pista del video igual a la elegida, o el video no trae ese idioma: se busca también en internet.
@@ -675,7 +683,10 @@ public final class PlayerModel: ObservableModel {
             if let track = snapshot.subtitleTracks.first(where: { $0.id == id }), let language = track.language, !language.isEmpty {
                 titlePrefs.remember(metaID: request.metaID, subtitleTrack: language)
             }
-        } else { titlePrefs.remember(metaID: request.metaID, subtitleTrack: "") }
+        } else {
+            titlePrefs.remember(metaID: request.metaID, subtitleTrack: "")
+            subtitlePicks?.forget(metaID: request.metaID)
+        }
     }
 
     // MARK: controles

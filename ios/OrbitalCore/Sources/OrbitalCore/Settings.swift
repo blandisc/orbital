@@ -221,7 +221,8 @@ public final class TitlePreferences: @unchecked Sendable {
         lock.withLock {
             var saved = all[metaID] ?? Saved()
             if let audioTrack, let lang = PlaybackRules.languageCode(audioTrack), !lang.isEmpty { saved.audio = lang }
-            if let subtitleTrack, let lang = PlaybackRules.languageCode(subtitleTrack) { saved.subtitles = lang }
+            // Cualquier idioma (antes solo español e inglés: elegir francés no se recordaba). "" = apagados.
+            if let subtitleTrack { saved.subtitles = subtitleTrack.isEmpty ? "" : (SubtitleLanguage.code(subtitleTrack) ?? PlaybackRules.languageCode(subtitleTrack) ?? subtitleTrack) }
             all[metaID] = saved
             kv.set(Self.key, data: try? JSONEncoder().encode(all))
         }
