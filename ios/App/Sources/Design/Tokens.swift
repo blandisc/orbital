@@ -285,6 +285,8 @@ enum DS {
     enum PlayerPanel {
         /// Subtítulos rápidos: ancho máximo del panel (horizontal) y hasta dónde puede bajar su borde de arriba (vertical).
         static let dockWidth: CGFloat = 560, dockPortraitMaxTop: CGFloat = 0.55
+        /// La barrita bajo el video en vertical que dice que se puede arrastrar.
+        static let dragGrabber = CGSize(width: 36, height: 5)
         /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).
         static let portraitFillControlsShare: CGFloat = 0.3
         /// El candado de «Pantalla bloqueada» entra creciendo desde este tamaño.

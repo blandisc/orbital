@@ -612,6 +612,13 @@ struct PlayerScreen: View {
                         LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     }
                     topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+                    // Que se puede arrastrar: una barrita como la de las hojas de iOS, pegada al pie del video (siempre que haya
+                    // controles; el letrero de abajo solo sale las primeras veces).
+                    if !fillsPortrait {
+                        Capsule().fill(DS.textMuted).frame(width: DS.PlayerPanel.dragGrabber.width, height: DS.PlayerPanel.dragGrabber.height)
+                            .offset(y: rect.maxY + DS.Space.s1)
+                            .allowsHitTesting(false).accessibilityHidden(true)
+                    }
                     VStack(spacing: DS.Space.s5) {
                         // «Siguiente episodio» entre el video y la barra (antes tapaba los controles).
                         if let up = model.upNext, !locked { upNextCard(model, up) }
@@ -626,7 +633,7 @@ struct PlayerScreen: View {
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     .padding(.bottom, fillsPortrait ? DS.Space.s8 : 0)
-                    .offset(y: fillsPortrait ? 0 : rect.maxY + DS.Space.s4)
+                    .offset(y: fillsPortrait ? 0 : rect.maxY + DS.Space.s6)
                     .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
