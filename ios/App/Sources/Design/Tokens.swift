@@ -173,6 +173,8 @@ enum DS {
         static let heroAspectMaxLarge: CGFloat = 3
         /// «Ver» / «Continuar»: el botón sólido de la ficha (con la calidad en un segundo renglón) y su barrita de avance.
         static let primaryHeight: CGFloat = 60, primaryProgress: CGFloat = 3
+        /// El velo bajo la barra de la ficha: desde cuánto se baja, su alto (reloj y botones) y qué tan sólido queda a media altura.
+        static let veilAfter: CGFloat = 240, veilHeight: CGFloat = 130, veilEdge: Double = 0.85
     }
 
     /// Subtítulos: medidas relativas a la letra o al video (la letra misma sale de Ajustes › Tamaño de subtítulos).
@@ -444,6 +446,8 @@ enum DS {
     /// Ajustes: los renglones con su ícono de color y las vistas previas de cada estilo de Inicio.
     enum SettingsLook {
         static let rowIcon: CGFloat = 28
+        /// Lo que ocupa la flecha de un renglón que lleva a otra página.
+        static let chevronSlot: CGFloat = 20
         static let profileAvatar: CGFloat = 60, editBadge: CGFloat = 22
         /// La vista previa del carrusel: tres tarjetas chicas que se deslizan solas, de ida y vuelta.
         static let deckPreviewHeight: CGFloat = 120, deckPreviewCard = CGSize(width: 58, height: 86), deckPreviewStep: CGFloat = 50
@@ -624,8 +628,8 @@ enum DS {
         /// El logotipo arriba de Inicio (el tamaño de la letra de «orbital»).
         static let tabBarClearance: CGFloat = 76   // lo que ocupa la barra de pestañas (los avisos de abajo van encima)
         /// La marca de Inicio. Con 32 (a la par del título grande de Para ti, Descargas y Buscar) la barra no cabía en un iPhone de
-        /// 375 pt y el perfil se iba al «···»: en un teléfono angosto baja a `headerWordmarkCompact`.
-        static let headerWordmark: CGFloat = 32, headerWordmarkCompact: CGFloat = 23, compactWidth: CGFloat = 400
+        /// 375 pt y el perfil se iba al «···»: en un teléfono angosto va sin el planeta y a `headerWordmarkCompact`.
+        static let headerWordmark: CGFloat = 32, headerWordmarkCompact: CGFloat = 28, compactWidth: CGFloat = 400
         /// Lo más que se encoge un número de «Tu año» para caber en su tarjeta.
         static let statScale: CGFloat = 0.6
         /// Una sinopsis más larga que esto (caracteres) se corta con «más».

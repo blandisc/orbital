@@ -134,7 +134,7 @@ struct DSSectionHead: View {
                 // Un solo lugar para el porqué de una sección en toda la app: arriba del título, en ámbar (como una revista).
                 // Antes unas lo ponían arriba en ámbar y otras abajo en gris.
                 if let line = eyebrow ?? meta { line.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2).multilineTextAlignment(.leading) }
-                HStack(alignment: .center, spacing: DS.Space.s2) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
                     title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
                         // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
                         // así lo de la derecha no queda alto.

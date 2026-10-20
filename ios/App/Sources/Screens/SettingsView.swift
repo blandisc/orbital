@@ -64,7 +64,7 @@ struct SettingsView: View {
                 }
                 if traktFromOrbital(model) {
                     // Trakt llega de tu Orbital: aquí no hay nada que configurar.
-                    SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: Text("Desde tu Orbital"))
+                    SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: Text("Desde tu Orbital"), linked: false)
                 } else {
                     NavigationLink { page("Trakt") { traktSection(model) } } label: {
                         SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))

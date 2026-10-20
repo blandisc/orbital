@@ -122,7 +122,7 @@ struct ListCard: View {
             }
             .frame(width: DS.Collections.stackWidth, alignment: .leading)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(verbatim: name).recipe(.cardTitle).lineLimit(2)
+                Text(verbatim: name).recipe(.cardTitle).lineLimit(2).minimumScaleFactor(DS.Size.titleShrink)
                 // El sello («STREMIO») no se parte, así que si con su conteo no cabe en la tarjeta, el conteo pasa abajo: antes la
                 // tarjeta pedía más que su columna y, en un iPhone de 375 pt, las dos se salían del margen.
                 ViewThatFits(in: .horizontal) {
@@ -327,7 +327,8 @@ struct YearCard: View {
 /// saludo. Al abrir, el anillo se dibuja y la luna cae en su lugar.
 struct AppMark: View {
     var body: some View {
-        OrbitalWordmark(size: UIScreen.main.bounds.width < DS.Size.compactWidth ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true)
+        let compact = UIScreen.main.bounds.width < DS.Size.compactWidth
+        OrbitalWordmark(size: compact ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
             .foregroundStyle(DS.text).fixedSize()
     }
 }

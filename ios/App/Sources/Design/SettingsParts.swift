@@ -9,10 +9,12 @@ struct SettingsRow: View {
     let symbol: String
     let tint: Color
     var value: Text?
+    /// Lleva a otra página (con flecha). Sin ella, el valor se corre para quedar en la misma columna.
+    var linked = true
 
     var body: some View {
         LabeledContent {
-            if let value { value.lineLimit(1) }
+            if let value { value.lineLimit(1).padding(.trailing, linked ? 0 : DS.SettingsLook.chevronSlot) }
         } label: {
             Label {
                 Text(title).foregroundStyle(DS.text)

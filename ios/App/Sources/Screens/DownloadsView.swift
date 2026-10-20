@@ -61,6 +61,15 @@ struct DownloadsView: View {
     }
 
     /// En el iPhone: lo que se baja y lo listo para ver sin conexión.
+    /// El encabezado de una sección como el primer renglón de ella, sin fondo ni sangría: queda al ras de las tarjetas (como en
+    /// el resto de la app); un encabezado de lista agrupada se mete lo que se meten sus renglones y cambia con el ancho.
+    private func headerRow(_ head: DSSectionHead) -> some View {
+        head
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
+
     private func phoneList(_ model: DownloadsModel) -> some View {
         let settings = env.services.appSettings
         return List {
@@ -73,37 +82,39 @@ struct DownloadsView: View {
                 .listRowBackground(DS.surface)
             }
             if !model.active.isEmpty {
-                Section { ForEach(model.active) { row($0, model) } } header: { DSSectionHead(title: "Descargando", count: model.active.count) }
-                    .downloadCard()
+                Section {
+                    headerRow(DSSectionHead(title: "Descargando", count: model.active.count))
+                    ForEach(model.active) { row($0, model) }
+                }
+                .downloadCard()
             }
             // Listo para ver: series (una fila cada una; dentro, sus temporadas y episodios) y películas, aparte.
             if !model.readySeries.isEmpty {
                 Section {
+                    headerRow(DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes }))))
                     ForEach(model.readySeries) { g in
                         NavigationLink(value: DownloadSeriesRoute(metaID: g.metaID)) { seriesRow(g) }
                             .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete(g.items.map(\.id)) }.tint(DS.danger) }
                     }
-                } header: {
-                    DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })))
                 }
                 .downloadCard()
             }
             if !model.readyMovies.isEmpty {
                 Section {
+                    headerRow(DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes }))))
                     // Un renglón por cada película, siempre (un `if` que a veces no pinta nada descuadra la lista al borrar).
                     ForEach(model.readyMovies.compactMap { g in g.items.first.map { (g, $0) } }, id: \.0.id) { g, item in
                         readyRow(title: g.title, poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
                     }
-                } header: {
-                    DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })))
                 }
                 .downloadCard()
             }
             if !model.items.isEmpty {
                 Section {
+                    headerRow(DSSectionHead(title: "Descarga inteligente"))
                     Toggle("Bajar el siguiente episodio al terminar uno", isOn: setting(\.autoNextDownload))
                     Toggle("Borrar al terminar de verlo", isOn: setting(\.deleteWhenWatched))
-                } header: { DSSectionHead(title: "Descarga inteligente") } footer: {
+                } footer: {
                     if settings.wifiOnlyDownloads { Label("Solo con Wi‑Fi", systemImage: "wifi").recipe(.footnote) }
                 }
                 .listRowBackground(DS.surface)
@@ -116,6 +127,9 @@ struct DownloadsView: View {
             }
         }
         .listRowSpacing(DS.Space.s2)
+        // Las tarjetas a 16 pt en todos los tamaños (la lista agrupada las metía 16 o 24 según el ancho) y los encabezados al
+        // ras de ellas, como en el resto de la app.
+        .listSectionMargins(.horizontal, DS.Space.gutter)
         // El espacio va pegado al selector (la lista agrupada dejaba un hueco grande arriba de su primera sección).
         .contentMargins(.top, DS.Space.s2, for: .scrollContent)
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
