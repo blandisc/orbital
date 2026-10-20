@@ -94,3 +94,6 @@ body[data-view="home"] .backdrop__space { opacity: 1; }
   animation: stars-drift var(--duration-stars) linear infinite;
 }
 @keyframes stars-drift { to { transform: translate3d(-640px, -640px, 0); } }
+/* Quieta (main.js): sin tocar nada un rato, o con un juego al frente, el fondo se detiene donde iba. Se mueve tan despacio
+   que no se nota, y moverlo era redibujar la pantalla entera 60 veces por segundo (38 % de GPU sin hacer nada). */
+body[data-still] .backdrop__glow--drift, body[data-still] .backdrop__stars { animation-play-state: paused; }

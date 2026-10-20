@@ -171,7 +171,7 @@ export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && 
  * onAction(acción, { repeat }) — `repeat`: viene de mantener el botón (sin rebote ni vibración).
  * Mientras `typing()` es verdadero (el teclado de Buscar), las letras van a onText y no son atajos.
  */
-export function createInput({ onAction, onModality, onText = null, typing = () => false, onTrace = null }) {
+export function createInput({ onAction, onModality, onText = null, typing = () => false, onTrace = null, resting = () => false }) {
   // Diagnóstico (entrada.log): lo que llega en bruto y lo que se dispara, con si Orbital tenía el foco.
   const trace = (entry) => onTrace?.({ ms: Date.now(), focus: document.hasFocus(), hidden: document.hidden, ...entry });
   document.addEventListener("keydown", (event) => {
@@ -265,7 +265,10 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
       trace({ src: "action", from: "pad", action, repeat: repeater.isRepeat(action) });
       onAction(action, { repeat: repeater.isRepeat(action) });
     });
-    requestAnimationFrame(loop);
+    // Con Orbital quieta (`resting`), el mando se lee 15 veces por segundo en vez de 60: el primer botón tarda a lo mucho
+    // 66 ms y despierta todo. Así, sin tocar nada, la página casi no usa CPU.
+    if (resting() && !active.size) setTimeout(() => requestAnimationFrame(loop), 66);
+    else requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
 }

@@ -1830,6 +1830,7 @@ function handleAction(action, { repeat = false } = {}) {
     clearTimeout(holdTimer);
     holdTimer = setTimeout(() => { delete document.body.dataset.holding; }, 260);
   }
+  stir();
   if (saver.wake()) return; // con el protector de pantalla, el primer botón solo lo quita
   spotlightIdle = Date.now(); // el carrusel de Destacados espera mientras te mueves
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
@@ -2086,6 +2087,7 @@ createInput({
   onText: (char) => { (ui.login.isOpen ? ui.login.type(char === ERASE_WORD ? "" : char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
   onTrace: (entry) => traceInput(entry),
+  resting: () => document.body.dataset.still !== undefined,
 });
 // Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla
 // completa, solo con la hora (como el de Game Glance, con tus juegos y películas). Nunca con un juego o un video al frente
@@ -2122,7 +2124,27 @@ const saver = (() => {
   };
 })();
 setInterval(() => saver.check(), 15_000);
-for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventListener(type, () => saver.wake(), { capture: true, passive: true });
+for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventListener(type, () => { stir(); saver.wake(); }, { capture: true, passive: true });
+
+// Quieta (body[data-still]): el fondo vivo se detiene tras un rato sin tocar nada, y al instante si Orbital no está al frente
+// (un juego o un video encima). Sus ciclos duran de 38 a 240 s, así que detenerlo no se nota, pero moverlo obligaba a la GPU
+// a redibujar la pantalla 4K entera 60 veces por segundo: 38 % de GPU con Orbital sin hacer nada (medido 2026-10-20), justo
+// lo que necesita el juego. Cualquier botón, toque o volver a Orbital lo despierta.
+const STILL_MS = 12_000;
+let stillTimer = 0;
+function stir() {
+  delete document.body.dataset.still;
+  clearTimeout(stillTimer);
+  stillTimer = setTimeout(() => { document.body.dataset.still = ""; }, STILL_MS);
+}
+function settle() {
+  clearTimeout(stillTimer);
+  document.body.dataset.still = "";
+}
+window.addEventListener("blur", settle);
+window.addEventListener("focus", stir);
+document.addEventListener("visibilitychange", () => (document.hidden ? settle() : stir()));
+stir();
 
 // Al volver la conexión (Orbital se reinició), la biblioteca y el estado se piden otra vez.
 api.events(handleEvent, { onReconnect: () => { loadLibrary(); pollStatus(); } });

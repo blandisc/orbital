@@ -305,7 +305,11 @@ def _load_get_state():
 class GamepadWatcher:
     """Hilo que sondea los 4 mandos XInput y entrega eventos a `on_event(nombre)`."""
 
-    POLL = 1 / 60
+    # 30 lecturas por segundo con un mando conectado: de sobra para un toque de Home (dura ~80 ms) y la cruceta del
+    # reproductor. Sin ninguno, 4 por segundo, solo para notar cuando conectas uno. Antes eran 60 siempre: el servidor
+    # gastaba CPU sin parar aunque no hubiera mando (y es lo que más hacía con Orbital quieta y un juego al frente).
+    POLL = 1 / 30
+    POLL_IDLE = 1 / 4
 
     def __init__(self, on_event: Callable[[str], None],
                  on_buttons: Callable[[int, int, float], None] | None = None) -> None:
@@ -404,4 +408,4 @@ class GamepadWatcher:
                         self.on_buttons(slot, buttons, now)
                     except Exception:  # noqa: BLE001
                         log.exception("Error en el control remoto")
-            self._stop.wait(self.POLL)
+            self._stop.wait(self.POLL if any(was_connected) else self.POLL_IDLE)

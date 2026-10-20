@@ -153,7 +153,9 @@ class GameOverlay:
                 root.attributes("-alpha", alpha)
                 if alpha == 0.0:
                     _hide(hwnd)  # terminó de desvanecerse: fuera de la pantalla hasta la próxima
-            root.after(16, tick)
+            # 60 vueltas por segundo solo mientras se ve (la barra se llena, el fundido); escondida, 10: una orden nueva
+            # tarda a lo mucho 100 ms en notarse (el aviso sale a los 250 ms de mantener el atajo) y no gasta CPU sin parar.
+            root.after(16 if state["alpha"] > 0 or state["target"] > 0 or state["filling"] else 100, tick)
 
         self._ready.set()
         root.after(16, tick)
