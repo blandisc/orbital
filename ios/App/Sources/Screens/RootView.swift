@@ -43,15 +43,19 @@ struct RootView: View {
             Button("No", role: .cancel) { env.askFinished = nil }
         } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }
         // Los avisos, siempre arriba y del mismo tipo (`Toast`): «Pasó a tu Orbital · Deshacer» gana sobre los demás.
+        // Debajo del renglón de botones de arriba (atrás, TV, compartir, perfil): en esa franja se les encimaba.
         .overlay(alignment: .top) {
-            if let h = ui.handoff {
-                Toast(symbol: "tv", color: DS.accent, title: Text("Pasó a tu Orbital"),
-                      detail: Text("\(h.request.displayTitle) · sigue en \(Duration.seconds(h.position).formatted(.time(pattern: h.position >= 3600 ? .hourMinuteSecond : .minuteSecond)))"),
-                      actionTitle: "Deshacer", action: { Task { await env.undoHandoff() } }, seconds: DS.Timing.handoff, dismiss: { env.handoff = nil })
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            } else {
-                BannerView()
+            Group {
+                if let h = ui.handoff {
+                    Toast(symbol: "tv", color: DS.accent, title: Text("Pasó a tu Orbital"),
+                          detail: Text("\(h.request.displayTitle) · sigue en \(Duration.seconds(h.position).formatted(.time(pattern: h.position >= 3600 ? .hourMinuteSecond : .minuteSecond)))"),
+                          actionTitle: "Deshacer", action: { Task { await env.undoHandoff() } }, seconds: DS.Timing.handoff, dismiss: { env.handoff = nil })
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                } else {
+                    BannerView()
+                }
             }
+            .padding(.top, DS.Size.touchTarget + DS.Space.s2)
         }
         .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
         .animation(DS.Motion.base(reduceMotion), value: ui.banner)
