@@ -125,7 +125,14 @@ struct RemoteSheet: View {
                     Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
                 }
                 Spacer(minLength: DS.Space.s2)
-                if !now.live && model.context != .player {   // en el reproductor, la pausa ya está en sus teclas
+                if model.context == .player || model.context == .live {
+                    // Reproduciendo o en vivo (la pausa ya está en sus teclas): el pad, para moverte por la TV cuando quieras.
+                    DSIconButton(symbol: showsPad ? "play.rectangle" : "hand.point.up.left", label: showsPad ? (model.context == .live ? LocalizedStringKey("Volver a los canales") : LocalizedStringKey("Volver al reproductor")) : LocalizedStringKey("Moverte por la TV"),
+                                 prominent: !showsPad) {
+                        withAnimation(DS.Motion.base(reduceMotion)) { showsPad.toggle() }
+                    }
+                    .accessibilityIdentifier("remote-pad-button")
+                } else if !now.live {
                     DSIconButton(symbol: now.paused ? "play.fill" : "pause.fill", label: now.paused ? "Continuar" : "Pausa", prominent: true) {
                         Task { await model.control("toggle") }
                     }
@@ -350,17 +357,10 @@ struct RemoteSheet: View {
         }
     }
 
-    /// El pad en lugar de lo de arriba (reproduciendo o en vivo): para moverte por el panel que abriste en la TV
+    /// El pad en lugar de lo de arriba (reproduciendo o en vivo): para moverte por la TV o por el panel que abriste
     /// (episodios, fuentes, la guía). Cabe en una pantalla: el pad y Atrás · Inicio · Menú · Buscar.
     @ViewBuilder private func padMode(_ model: TVNowModel) -> some View {
-        Button { withAnimation(DS.Motion.base(reduceMotion)) { showsPad = false } } label: {
-            Label(model.context == .live ? "Volver a los canales" : "Volver al reproductor", systemImage: "chevron.backward")
-                .recipe(.footnote, color: DS.text).fontWeight(.semibold)
-                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                .background(DS.fill, in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("remote-pad-toggle")
+        // Se vuelve con el botón de arriba a la derecha (el mismo que abre el pad).
         TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
             .frame(height: DS.Remote.padHeightFitted)

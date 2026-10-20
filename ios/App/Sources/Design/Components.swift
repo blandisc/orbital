@@ -254,7 +254,7 @@ struct PosterView: View {
         if let url, let u = URL(string: url) {
             RemoteImage(url: u, maxPoints: maxPoints) { phase in
                 switch phase {
-                case .success(let image): image.resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                case .success(let image): image.resizable().scaledToFit()   // sin redondear: las esquinas del arte se ven completas
                 default: frame.clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                 }
             }
