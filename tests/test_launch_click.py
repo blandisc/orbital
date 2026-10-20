@@ -27,9 +27,10 @@ def test_already_open_brings_its_window():
     assert out == "shown" and calls["shown"] == 1 and calls["killed"] is None
 
 
-def test_not_open_starts_a_new_one():
+def test_not_open_starts_a_new_one_without_waiting():
     out, calls = run(answers=[False], lock=[True])
     assert out == "start" and calls["shown"] == 0
+    assert calls["waits"] == []  # el candado libre ya dice que no hay otra: antes se esperaban 3 s en cada arranque
 
 
 def test_starting_up_waits_and_brings_it_instead_of_closing_silently():

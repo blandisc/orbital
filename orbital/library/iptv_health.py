@@ -8,6 +8,7 @@ que nunca se han verificado se muestran, para que la sección no salga vacía mi
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import ssl
@@ -55,6 +56,7 @@ class Check:
     ms: int = 0
 
 
+@functools.cache  # uno para todas las pruebas: armarlo carga los certificados de Windows (≈100 ms de CPU cada vez)
 def _context() -> ssl.SSLContext:
     # mpv no valida certificados de fábrica (tls-verify=no) y hay canales de México con el suyo vencido que sí se ven
     # (Unison TV): una prueba más estricta que el reproductor los ocultaría sin motivo.

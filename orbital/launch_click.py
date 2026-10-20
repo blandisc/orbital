@@ -4,6 +4,8 @@ Antes, si Orbital estaba ocupada o arrancando (tardaba más de 1 s en contestar)
 topaba con el candado de «un solo Orbital», esperaba 10 s y se cerraba sin decir nada: «le doy clic y no inicia». Y si un
 Orbital anterior se quedó colgado, pasaba lo mismo en cada clic. Ahora:
 
+  0. Si nadie tiene el candado de «un solo Orbital», no hay ninguna abierta: se abre ya. Antes se esperaban primero 3 s a
+     que contestara una Orbital que no existía (3 s de cada arranque, sin hacer nada).
   1. Si contesta (hasta 3 s): se trae su ventana.
   2. Si el candado está tomado pero no contesta: se espera a que termine de arrancar (hasta 25 s) y se trae su ventana.
   3. Si sigue sin contestar, está colgado: se cierran sus procesos (solo los de Orbital, no tus juegos) y se abre uno nuevo.
@@ -67,13 +69,13 @@ def resolve(*, answers: Callable[[float], bool], take_lock: Callable[[float], bo
             stuck: Callable[[], list[int]], kill: Callable[[list[int]], None], note: Callable[[str], None] = note) -> str:
     """Qué hace este clic: «shown» (ya estaba: se trajo su ventana), «start» (abrir Orbital; el candado ya es nuestro) o
     «gave-up» (no se pudo; dice por qué en lanzador.log)."""
+    if take_lock(0):
+        note("Clic: abro Orbital")
+        return "start"
     if answers(ANSWER_WAIT):
         note("Clic: Orbital ya estaba abierta, traigo su ventana")
         show()
         return "shown"
-    if take_lock(0):
-        note("Clic: abro Orbital")
-        return "start"
     note("Clic: hay una Orbital que no contesta todavía; espero a que termine de arrancar")
     if answers(STARTING_WAIT):
         note("Clic: ya contestó, traigo su ventana")

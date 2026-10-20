@@ -7,14 +7,30 @@ cualquier otro error de red, con un plazo TOTAL (no solo por lectura) y un tama�
 
 from __future__ import annotations
 
+import functools
 import http.client
 import json
+import ssl
 import time
+import urllib.request
 
 # Todo lo que puede lanzar urllib al leer: URLError/HTTPError y TimeoutError son OSError.
 NET_ERRORS = (OSError, http.client.HTTPException, ValueError)
 
 MAX_BYTES = 16 * 1024 * 1024  # una respuesta de catálogo nunca pesa tanto
+
+
+@functools.cache
+def tls_context() -> ssl.SSLContext:
+    """Un solo contexto TLS para todo Orbital. urllib armaba uno por conexión, y cada uno carga los certificados de
+    Windows (424 en la Legion Go): 104 ms de CPU por pedido. Al arrancar se hacen cientos (fichas, arte, canales, GeForce
+    NOW) y el servidor pasaba más de un minuto con un núcleo al 100 %: la interfaz respondía lenta justo al abrirla."""
+    return ssl.create_default_context()
+
+
+def share_tls() -> None:
+    """Que todo urlopen (sin contexto propio) use el contexto compartido. Una vez, al arrancar."""
+    urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPSHandler(context=tls_context())))
 
 
 def read_body(res, *, timeout: float, limit: int = MAX_BYTES, truncate: bool = False) -> bytes:

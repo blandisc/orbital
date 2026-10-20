@@ -349,6 +349,9 @@ def main(argv: list[str] | None = None) -> None:
 
         from . import windows
         atexit.register(windows.set_taskbar_visible, True)  # al cerrar Orbital (de cualquier forma limpia), la barra vuelve
+    from . import net, startup_profile
+    net.share_tls()  # un contexto TLS para todas las conexiones (armarlo cuesta ≈100 ms de CPU cada vez)
+    startup_profile.start()  # qué ocupa al servidor los primeros 90 s (arranque.log)
     app = create_app(config, kiosk=kiosk, shortcuts=True, log_path=log_path)
     holder["app"] = app
     public_app = create_public_app(config, app) if config.server.public_port else None
