@@ -341,32 +341,30 @@ public final class DecideModel: ObservableModel {
         }.count
     }
 
-    // MARK: el arte de los mosaicos
-    /// El arte de los mosaicos de «Más filtros»: para cada género y cada época, una de tus sugerencias de eso, sin repetir
-    /// título entre mosaicos mientras haya de dónde escoger (antes Drama, Terror y 2020s salían con la misma imagen). Siempre
-    /// la misma mientras no cambie lo sugerido; falta la de lo que aún no se sabe (los géneros llegan de Cinemeta).
-    public func tileArt() -> (genres: [String: String], decades: [Int: String]) {
-        var used = Set<String>()
-        func pick(_ matches: (Suggestion) -> Bool) -> String? {
-            let options = candidatesPool.filter(matches)
-            guard let s = options.first(where: { !used.contains($0.imdb) }) ?? options.first else { return nil }
-            used.insert(s.imdb)
-            return Self.artwork(s)
-        }
-        var genres: [String: String] = [:], decades: [Int: String] = [:]
-        for g in Self.genreChoices {
-            genres[g] = pick { s in Self.matches(s.genres.isEmpty ? (self.details[s.imdb]?.genres ?? []) : s.genres, picked: [g]) }
-        }
-        for d in Self.decadeChoices {
-            decades[d] = pick { s in (s.year ?? self.details[s.imdb]?.year).map { Self.inDecades($0, [d]) } ?? false }
-        }
-        return (genres, decades)
-    }
-
-    nonisolated static func artwork(_ s: Suggestion) -> String { s.wide.isEmpty ? s.poster : s.wide }
-
     /// Las listas elegidas, para decir de dónde salen («de «Terror de octubre»», «de 2 listas»).
     public var chosenSourceNames: [String] { sources.filter { sourceIDs.contains($0.id) }.map(\.name) }
+
+    /// Cuántas candidatas aún no se pueden decidir con lo elegido (falta su género, año o calificación de Cinemeta).
+    public func unknownCount() -> Int {
+        let f = filters
+        return candidatesPool.filter { verdict($0, f) == nil }.count
+    }
+
+    /// Pide ya a Cinemeta lo que falta para decidir con lo elegido (en «Más filtros», al tocar un género o una época): el
+    /// conteo llega solo, en vez de decir «sin opciones» mientras no se sabe.
+    private var resolving: Task<Void, Never>?
+    public func resolveUnknown() {
+        let f = filters
+        let unknown = candidatesPool.filter { verdict($0, f) == nil }
+        guard !unknown.isEmpty, resolving == nil else { return }
+        resolving = Task { [weak self] in
+            for start in stride(from: 0, to: unknown.count, by: Self.chunk) {
+                guard !Task.isCancelled, let self else { return }
+                await self.describe(Array(unknown[start..<min(start + Self.chunk, unknown.count)]))
+            }
+            self?.resolving = nil
+        }
+    }
 
     /// Nada cumple: qué quitar (o qué tiempo dar) y con cuántas quedarías; los dos que más abren.
     public func relaxations() -> [(relax: Relax, count: Int)] {
@@ -571,6 +569,7 @@ public final class DecideModel: ObservableModel {
     /// Al cerrar la hoja: lo que se preparaba en segundo plano ya no hace falta.
     public func stop() {
         dropUpcoming(); enriching?.cancel(); describingAll?.cancel(); describingAll = nil; ratingTMDB?.cancel(); ratingTMDB = nil
+        resolving?.cancel(); resolving = nil
     }
 
     /// «No me interesa» (lo mismo que en Para ti): ya no se sugiere en ningún lado (ni en la TV) y se cambia por otra.

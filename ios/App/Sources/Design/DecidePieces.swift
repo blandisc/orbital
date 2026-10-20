@@ -4,11 +4,12 @@ import OrbitalCore
 // Piezas de «¿Qué vemos?»: el mosaico de un género o una época y el renglón de una lista (los filtros de la hoja son
 // `DSCapsuleLabel`, las mismas cápsulas de toda la app).
 
-/// Un género o una época en «Más filtros»: un mosaico con el arte de una de tus sugerencias de eso, un velo abajo y el nombre;
-/// elegido, con borde y ✓. Sin arte todavía, el fondo liso de las tarjetas. `centered`: el nombre al centro (las épocas).
+/// Un género o una época en «Más filtros»: un mosaico con su imagen (generada con Grok Imagine, viene con la app: sale al
+/// instante y sin red), un velo abajo y el nombre; elegido, con borde y ✓. `centered`: el nombre al centro (las épocas).
 struct DecideTile: View {
     let title: Text
-    let art: String?
+    /// El nombre de la imagen en `Assets.xcassets/Decide`.
+    let image: String
     let selected: Bool
     let height: CGFloat
     var centered = false
@@ -18,12 +19,13 @@ struct DecideTile: View {
         let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
         Button(action: toggle) {
             ZStack(alignment: centered ? .bottom : .bottomLeading) {
-                if let art { PosterView(url: art, title: "", aspect: nil, bleed: true, maxPoints: DS.Decide.tileArt) } else { DS.surfaceRaised }
+                // La imagen llena su celda y se recorta a ella (sin esto su ancho natural estiraba la columna y se encimaban).
+                Color.clear.overlay { Image(image).resizable().scaledToFill().accessibilityHidden(true) }.clipped()
                 LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
                 title.font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                     .padding(.horizontal, DS.Space.s2).padding(.bottom, DS.Space.s1)
             }
-            .frame(maxWidth: .infinity).frame(height: height)
+            .frame(minWidth: 0, maxWidth: .infinity).frame(height: height)
             .clipShape(shape)
             .overlay(shape.strokeBorder(selected ? DS.text : DS.hairline, lineWidth: selected ? DS.Decide.chosenStroke : DS.Size.hairline))
             .overlay(alignment: .topTrailing) {

@@ -1497,6 +1497,17 @@
         }
       }
     },
+    "Buscando opciones…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding options…"
+          }
+        }
+      }
+    },
     "Buscando subtítulos…": {
       "extractionState": "manual",
       "localizations": {

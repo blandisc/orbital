@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Buscando opciones…": "Finding options…",
     "de «%@»": "from “%@”",
     "de %lld listas": "from %lld lists",
     "Antes": "Earlier",

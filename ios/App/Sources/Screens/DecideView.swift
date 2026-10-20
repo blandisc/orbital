@@ -26,6 +26,9 @@ struct DecideView: View {
 
     private var language: String { env.services.appSettings.uiLanguage }
 
+    /// La imagen del mosaico de un género (en `Assets.xcassets/Decide`).
+    static func tileImage(genre: String) -> String { "decide-genre-" + genre.replacingOccurrences(of: "-", with: "") }
+
     var body: some View {
         let m = observer.model
         NavigationStack(path: $path) {
@@ -357,30 +360,31 @@ struct DecideMoreFilters: View {
     var body: some View {
         let m = observer.model
         let count = m.count()
-        let art = m.tileArt()
+        let unknown = count == 0 ? m.unknownCount() : 0
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 PanelGroupTitle(title: "Géneros")
                 // Mosaicos con el arte de tus sugerencias de cada género (el `id` con lo elegido: ver `FlowChips`).
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
                     ForEach(DecideModel.genreChoices, id: \.self) { g in
-                        DecideTile(title: Text(verbatim: genreName(g)), art: art.genres[g], selected: m.genres.contains(g), height: DS.Decide.genreTile) {
+                        DecideTile(title: Text(verbatim: genreName(g)), image: DecideView.tileImage(genre: g), selected: m.genres.contains(g), height: DS.Decide.genreTile) {
                             if m.genres.contains(g) { m.genres.remove(g) } else { m.genres.insert(g) }
                         }
                     }
                 }
-                // Que se redibuje al elegir y cuando llega el arte (los géneros se saben de Cinemeta, en segundo plano).
-                .id(DecideModel.genreChoices.map { art.genres[$0] ?? "" } + m.genres.sorted())
+                .id(m.genres)   // que se redibuje al elegir (ver `FlowChips`)
+                .onChange(of: m.genres) { m.resolveUnknown() }
                 PanelGroupTitle(title: "Época")
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DecideModel.decadeChoices.count), spacing: DS.Space.s2) {
                     ForEach(DecideModel.decadeChoices, id: \.self) { d in
-                        DecideTile(title: d == 1980 ? Text("Antes") : Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s"), art: art.decades[d],
+                        DecideTile(title: d == 1980 ? Text("Antes") : Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s"), image: "decide-era-\(d)",
                                    selected: m.decades.contains(d), height: DS.Decide.eraTile, centered: true) {
                             if m.decades.contains(d) { m.decades.remove(d) } else { m.decades.insert(d) }
                         }
                     }
                 }
-                .id(DecideModel.decadeChoices.map { art.decades[$0] ?? "" } + m.decades.sorted().map(String.init))
+                .id(m.decades)
+                .onChange(of: m.decades) { m.resolveUnknown() }
                 if !m.sources.isEmpty { lists(m) }
                 Toggle(isOn: Binding(get: { m.includeWatched }, set: { m.includeWatched = $0 })) { Text("Incluir lo que ya vi").recipe(.secondary, color: DS.text) }
                     .tint(DS.accent)
@@ -389,7 +393,8 @@ struct DecideMoreFilters: View {
         }
         .safeAreaInset(edge: .bottom) {
             Button { done() } label: {
-                Text(count > 0 ? String(format: Strings.tr("Ver %lld", language: language), count) : Strings.tr("Sin opciones con eso", language: language))
+                Text(count > 0 ? String(format: Strings.tr("Ver %lld", language: language), count)
+                     : unknown > 0 ? Strings.tr("Buscando opciones…", language: language) : Strings.tr("Sin opciones con eso", language: language))
                     .frame(maxWidth: .infinity)
             }
             .dsPrimaryButton().controlSize(.large)
