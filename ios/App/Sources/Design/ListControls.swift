@@ -108,11 +108,12 @@ struct SortableGrid<Cell: View>: View {
         .toolbar { ToolbarItem(placement: .topBarTrailing) { menu } }
         .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }
         .task(id: filter.hideWatched) { if filter.hideWatched, let watched { seen = await watched() } }
-        .task(id: needsIMDb) {
-            guard needsIMDb, let imdbRatings else { return }
+        // También cuando llega la lista: si entraste con el orden de IMDb guardado, la lista todavía venía vacía.
+        .task(id: needsIMDb ? items.count : -1) {
+            guard needsIMDb, let imdbRatings, !items.isEmpty else { rating = false; return }
             rating = true
+            defer { rating = false }
             imdb = await imdbRatings(items)
-            rating = false
         }
     }
 
