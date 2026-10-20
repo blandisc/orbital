@@ -66,8 +66,9 @@ struct DownloadLiveActivity: Widget {
             } compactLeading: {
                 ActivityPoster(file: context.state.poster, width: DS.Space.s5)
             } compactTrailing: {
-                // El porcentaje (antes un anillo gris grande que casi no se llenaba).
-                percent(context.state).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.paper)
+                // Un anillo chico y blanco que se llena (con la app en segundo plano, solo hasta la hora estimada); al terminar,
+                // la palomita. Antes: el porcentaje, que en segundo plano se volvía una cuenta regresiva que estiraba la isla.
+                compactProgress(context.state)
             } minimal: {
                 Image(systemName: context.state.done ? "checkmark" : "arrow.down").font(DS.font(.sm, weight: .bold))
                     .foregroundStyle(context.state.done ? DS.good : DS.paper)
@@ -95,9 +96,29 @@ struct DownloadLiveActivity: Widget {
     private func percent(_ state: DownloadActivityAttributes.ContentState) -> some View {
         Group {
             if state.done { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good) }
-            // En segundo plano, lo que falta en cuenta regresiva (el porcentaje se quedaría congelado).
-            else if let end = state.estimateEnd, end > .now { Text(timerInterval: Date.now...end, countsDown: true).monospacedDigit() }
+            // En segundo plano, lo que falta en cuenta regresiva (el porcentaje se quedaría congelado), con ancho fijo.
+            else if let end = state.estimateEnd, end > .now {
+                Text(timerInterval: Date.now...end, countsDown: true).monospacedDigit().multilineTextAlignment(.trailing)
+                    .frame(width: DS.Widget.timerWidth, alignment: .trailing)
+            }
             else { Text(state.fraction, format: .percent.precision(.fractionLength(0))).monospacedDigit() }
+        }
+    }
+
+    @ViewBuilder private func compactProgress(_ state: DownloadActivityAttributes.ContentState) -> some View {
+        if state.done {
+            Image(systemName: "checkmark.circle.fill").font(DS.font(.sm, weight: .bold)).foregroundStyle(DS.good)
+        } else {
+            Group {
+                if let start = state.estimateStart, let end = state.estimateEnd, end > start {
+                    ProgressView(timerInterval: start...end, countsDown: false) { EmptyView() } currentValueLabel: { EmptyView() }
+                } else {
+                    ProgressView(value: state.fraction)
+                }
+            }
+            .progressViewStyle(.circular)
+            .tint(DS.paper)
+            .frame(width: DS.Widget.compactRing, height: DS.Widget.compactRing)
         }
     }
 

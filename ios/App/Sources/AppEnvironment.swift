@@ -571,6 +571,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
         // Puede llegar antes de que exista ninguna vista: se arma el entorno (que reconecta la sesión de descargas) y se guarda aquí.
+        // Solo la sesión de las descargas (la de «Probar la velocidad» se cancela al terminar: no hay nada que entregar).
+        guard identifier == BackgroundDownloadTransport.identifier else { return completionHandler() }
         AppEnvironment.shared.transport.backgroundCompletion = completionHandler
     }
 }

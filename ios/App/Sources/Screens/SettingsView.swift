@@ -277,6 +277,13 @@ struct SettingsView: View {
             Toggle("Borrar al terminar de verlo", isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
         }
         .listRowBackground(DS.surface)
+        Section {
+            NavigationLink { DownloadSpeedTestView() } label: { Label("Probar la velocidad", systemImage: "speedometer") }
+                .accessibilityIdentifier("speed-test")
+        } footer: {
+            Text("Si las descargas van lentas: mide tu internet, Real-Debrid y la forma en que baja la app.")
+        }
+        .listRowBackground(DS.surface)
     }
 
     /// «Ya está para ver»: un aviso cuando un episodio de lo que sigues en Trakt ya tiene fuente (no a la hora en que sale).

@@ -583,6 +583,9 @@ enum DS {
         /// La actividad en vivo de descargas: el póster (pixeles con que se guarda, ancho en la pantalla bloqueada y en la isla).
         static let activityPosterPixels: CGFloat = 240, activityPoster: CGFloat = 52, islandPoster: CGFloat = 44
         static let posterRadius: CGFloat = 8
+        /// La cuenta regresiva («1:12:24») tiene ancho fijo: un `Text(timerInterval:)` sin él se estira a todo lo que puede (en
+        /// la isla compacta salía enorme y en medio). En la compacta, en vez de texto, un anillo chico que se llena solo.
+        static let timerWidth: CGFloat = 64, compactRing: CGFloat = 18
     }
 
     /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.

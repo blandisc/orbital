@@ -2619,6 +2619,17 @@
         }
       }
     },
+    "Copiado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        }
+      }
+    },
     "Copiar": {
       "extractionState": "manual",
       "localizations": {
@@ -2637,6 +2648,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copy the code and open Microsoft"
+          }
+        }
+      }
+    },
+    "Copiar resultados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy results"
           }
         }
       }
@@ -3895,6 +3917,17 @@
         }
       }
     },
+    "El tope es la forma en que baja iOS en segundo plano: dentro de la app baja bastante más rápido. Eso se arregla en Orbital.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The bottleneck is how iOS downloads in the background: inside the app it's much faster. That can be fixed in Orbital."
+          }
+        }
+      }
+    },
     "Elegir": {
       "extractionState": "manual",
       "localizations": {
@@ -4012,6 +4045,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Emmy"
+          }
+        }
+      }
+    },
+    "Empezar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
           }
         }
       }
@@ -6634,6 +6678,17 @@
         }
       }
     },
+    "Midiendo…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measuring…"
+          }
+        }
+      }
+    },
     "Mini pósters": {
       "extractionState": "manual",
       "localizations": {
@@ -7459,6 +7514,17 @@
         }
       }
     },
+    "No pude conseguir un enlace de Real-Debrid para probar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't get a Real-Debrid link to test."
+          }
+        }
+      }
+    },
     "No pude crear la lista: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -7642,6 +7708,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "We couldn't check your OneDrive. Check your connection."
+          }
+        }
+      }
+    },
+    "No respondió": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No response"
           }
         }
       }
@@ -8658,6 +8735,17 @@
         }
       }
     },
+    "Probar la velocidad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test the speed"
+          }
+        }
+      }
+    },
     "Probar otra": {
       "extractionState": "manual",
       "localizations": {
@@ -8665,6 +8753,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Try another"
+          }
+        }
+      }
+    },
+    "Probar otra vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test again"
           }
         }
       }
@@ -8867,6 +8966,17 @@
         }
       }
     },
+    "Qué quiere decir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What it means"
+          }
+        }
+      }
+    },
     "Qué significa cada etiqueta": {
       "extractionState": "manual",
       "localizations": {
@@ -8940,6 +9050,72 @@
           "stringUnit": {
             "state": "translated",
             "value": "Real-Debrid doesn't have this title yet. New releases usually show up a few hours later."
+          }
+        }
+      }
+    },
+    "Real-Debrid limita cada conexión: con varias a la vez baja mucho más rápido. Eso se arregla en Orbital usando más conexiones.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid limits each connection: with several at once it's much faster. That can be fixed in Orbital with more connections."
+          }
+        }
+      }
+    },
+    "Real-Debrid te está dando menos que tu internet: puede ser su servidor de ese momento o la ruta hasta él.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid is giving you less than your internet: it may be its server right now or the route to it."
+          }
+        }
+      }
+    },
+    "Real-Debrid y la app ya van a la velocidad de tu internet: el tope es tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid and the app already run at your internet speed: your connection is the limit."
+          }
+        }
+      }
+    },
+    "Real-Debrid · 1 conexión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid · 1 connection"
+          }
+        }
+      }
+    },
+    "Real-Debrid · 8 conexiones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid · 8 connections"
+          }
+        }
+      }
+    },
+    "Real-Debrid · como baja hoy (segundo plano, 4 partes)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid · how it downloads today (background, 4 parts)"
           }
         }
       }
@@ -9714,6 +9890,17 @@
         }
       }
     },
+    "Si las descargas van lentas: mide tu internet, Real-Debrid y la forma en que baja la app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If downloads are slow: measures your internet, Real-Debrid and how the app downloads."
+          }
+        }
+      }
+    },
     "Si no funciona": {
       "extractionState": "manual",
       "localizations": {
@@ -9952,6 +10139,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Offline: showing what I saved last."
+          }
+        }
+      }
+    },
+    "Sin enlace": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No link"
           }
         }
       }
@@ -11265,6 +11463,17 @@
         }
       }
     },
+    "Tu internet (sin Real-Debrid)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your internet (without Real-Debrid)"
+          }
+        }
+      }
+    },
     "Tu nombre": {
       "extractionState": "manual",
       "localizations": {
@@ -11558,6 +11767,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Just one, from your suggestions, that you haven't seen."
+          }
+        }
+      }
+    },
+    "Unos segundos cada una, sin guardar nada. Hazla con Wi‑Fi y con la app abierta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A few seconds each, nothing is saved. Run it on Wi‑Fi with the app open."
           }
         }
       }
