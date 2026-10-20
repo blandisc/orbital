@@ -25,7 +25,7 @@ struct DecideTile: View {
                 title.font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                     .padding(.horizontal, DS.Space.s2).padding(.bottom, DS.Space.s1)
             }
-            .frame(minWidth: 0, maxWidth: .infinity).frame(height: height)
+            .frame(minWidth: 0, maxWidth: .infinity).frame(height: height)   // ds-exception: mínimo 0 para que la imagen no estire la columna
             .clipShape(shape)
             .overlay(shape.strokeBorder(selected ? DS.text : DS.hairline, lineWidth: selected ? DS.Decide.chosenStroke : DS.Size.hairline))
             .overlay(alignment: .topTrailing) {
