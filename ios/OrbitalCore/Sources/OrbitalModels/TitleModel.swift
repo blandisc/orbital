@@ -55,7 +55,11 @@ public final class TitleModel: ObservableModel {
     /// La ficha rica de TMDB (elenco con foto, saga, tráiler…); nil sin clave de TMDB o mientras llega.
     public private(set) var extras: TitleExtras? { didSet { changed() } }
     /// «Lo mejor disponible» entre las fuentes del episodio o película que toca (como el encabezado de Infuse).
+    /// Lo mejor que hay (para «Disponible: 4K · Dolby Vision» en los detalles).
     public private(set) var bestSource: Source? { didSet { changed() } }
+    /// La que va a sonar al tocar «Ver»: la recomendada (idioma, calidad y tamaño; la primera de «Elegir la fuente»). Su
+    /// calidad es la que dice el botón (antes decía la mejor, 4K, y luego sonaba la recomendada en 1080p).
+    public private(set) var recommendedSource: Source? { didSet { changed() } }
     /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
     public private(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
     /// La calificación de Trakt (0–10), si alguien votó.
@@ -140,13 +144,14 @@ public final class TitleModel: ObservableModel {
 
     /// Busca las fuentes del video que toca (el mismo pedido que «Elegir fuente», así luego sale de la caché) y se queda con
     /// la mejor para el encabezado. Sin fuentes o sin red, no se enseña nada.
-    public func loadBestSource() async {
+    public func loadBestSource(onCellular: Bool = false) async {
         guard let videoID = continueVideoID else { return }
-        let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings).prefs
+        let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings, onCellular: onCellular).prefs
         do {
             let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
             guard !Task.isCancelled else { return }
             bestSource = Source.best(found)
+            recommendedSource = found.first
             sourceCheck = found.isEmpty ? .none : .available
         } catch {
             if !Task.isCancelled { sourceCheck = error is StreamFinderError ? .offline : .unknown }

@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Se va a ver en: %@": "It will play in: %@",
     "Bajando %@ · la misma versión": "Downloading %@ · the same version",
     "Ya está en Descargas": "Already in Downloads",
     "Ya está en Descargas.": "Already in Downloads.",

@@ -9483,6 +9483,17 @@
         }
       }
     },
+    "Se va a ver en: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It will play in: %@"
+          }
+        }
+      }
+    },
     "Se ven al instante y se pueden descargar": {
       "extractionState": "manual",
       "localizations": {

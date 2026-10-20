@@ -75,7 +75,7 @@ struct TitleView: View {
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .task {
             await model.load()
-            Task { await model.loadBestSource() }   // aparte: las fuentes tardan y no detienen el color del fondo
+            Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) }   // aparte: las fuentes tardan y no detienen el color del fondo
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
             if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
@@ -147,7 +147,7 @@ struct TitleView: View {
     }
 
     /// Bajo el arte, al centro, un solo renglón: año · géneros · duración («2 h 25 min») y la clasificación («B») como insignia
-    /// con contorno al final; debajo, las calificaciones. Lo mejor disponible (4K · Dolby Vision) vive dentro de «Ver».
+    /// con contorno al final; debajo, las calificaciones. La calidad de la que va a sonar (la recomendada) vive dentro de «Ver».
     private func facts(_ model: TitleModel) -> some View {
         let language = env.services.appSettings.uiLanguage
         let minutes = Int(CinemetaParsing.runtimeSeconds(model.info.runtime) / 60)
@@ -218,10 +218,10 @@ struct TitleView: View {
         }
     }
 
-    /// Lo de adentro de «Ver»: ▶ Ver (o «Continuar · quedan 42 min») y, abajo, la calidad de la fuente que va a sonar
+    /// Lo de adentro de «Ver»: ▶ Ver (o «Continuar · quedan 42 min») y, abajo, la calidad de la recomendada (la que va a sonar)
     /// («4K · Dolby Vision · Atmos»; nada si aún no se sabe). Con avance, una barrita al pie. Mientras carga, «Cargando».
     @ViewBuilder private func primaryButtonLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> some View {
-        let quality = model.bestSource?.qualitySummary ?? []
+        let quality = model.recommendedSource?.qualitySummary ?? []
         VStack(spacing: DS.Space.s1) {
             if model.continueVideoID == nil && !model.isLoading {
                 // Ya cargó y no hay qué ver: sin red, o una serie que aún no tiene episodios.
@@ -252,7 +252,7 @@ struct TitleView: View {
                 } else if !quality.isEmpty {
                     Text(verbatim: quality.joined(separator: " · ")).font(DS.TextRecipe.caption.font.weight(.medium))
                         .opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                        .accessibilityLabel(Text("Lo mejor disponible: \(quality.joined(separator: ", "))"))
+                        .accessibilityLabel(Text("Se va a ver en: \(quality.joined(separator: ", "))"))
                 }
             }
         }
