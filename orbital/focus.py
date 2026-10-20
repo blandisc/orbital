@@ -48,6 +48,10 @@ FADE_TO_BLACK = .75  # s de la salida de la pantalla de carga (el "salto" al jue
 # La entrada de la pantalla de carga (la portada vuela, el anillo se dibuja) dura casi 2 s. xemu abre a pantalla completa
 # desde el primer instante y contaba como listo en 1 s: la salida cortaba la entrada a medias y se veía trabada.
 MIN_LOADING = 2.0
+# xemu arranca la consola en negro varios segundos antes de la primera imagen del juego (2,5–5 s medidos): con su ventana ya
+# a pantalla completa contaba como listo y se veía ese negro. Con estos, se espera a que su ventana tenga imagen (con tope).
+PICTURE_RUNNERS = ("xemu",)
+PICTURE_WAIT = 12.0  # s más, como mucho: un juego que de verdad arranca en negro se enseña igual
 
 
 def _words(text: str) -> set[str]:
@@ -146,6 +150,9 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
     target = 0
     started = clock()
     grace = int(FULLSCREEN_GRACE / .3)
+    wants_picture = any(r in normalize(runner or "") for r in PICTURE_RUNNERS) and hasattr(win, "has_picture")
+    picture_until = None
+    pictures = 0  # lecturas seguidas con imagen: al pasar a pantalla completa xemu suelta un cuadro suelto que no es el juego
     try:
         deadline = time.time() + timeout
         while time.time() < deadline and not (skip and skip.is_set()):
@@ -170,6 +177,15 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
                     target = ready
                     sleep(.3)
                     continue
+                if ready and orbital and wants_picture:
+                    pictures = pictures + 1 if win.has_picture(ready) is not False else 0
+                    picture_until = picture_until or time.time() + PICTURE_WAIT
+                    if pictures < 2 and time.time() < picture_until:
+                        target = ready  # ya a pantalla completa, pero todavía en negro: la pantalla de carga sigue
+                        sleep(.3)
+                        continue
+                    if pictures < 2:
+                        log.info("%s sin imagen en %.0f s: se muestra igual", title, PICTURE_WAIT)
                 if ready or not orbital:
                     target = ready or target
                     if ready:

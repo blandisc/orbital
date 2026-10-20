@@ -400,6 +400,63 @@ def window_rect(hwnd: int) -> tuple[int, int, int, int] | None:
     return rect.left, rect.top, rect.right, rect.bottom
 
 
+PICTURE_LEVEL = 4  # brillo medio (0-255) a partir del cual la ventana ya enseña algo: el negro de arranque da 0
+
+
+def has_picture(hwnd: int) -> bool | None:
+    """¿La ventana ya enseña una imagen (no puro negro)? Se dibuja aparte con PrintWindow (PW_RENDERFULLCONTENT), así que
+    sirve aunque Orbital esté encima tapándola. None si no se pudo leer (entonces no hay que esperarla)."""
+    if not WIN or not hwnd:
+        return None
+    gdi32 = ctypes.windll.gdi32  # type: ignore[attr-defined]
+    handle = ctypes.c_void_p
+    for fn, args, res in ((user32.GetWindowDC, [handle], handle), (user32.ReleaseDC, [handle, handle], ctypes.c_int),
+                          (user32.PrintWindow, [handle, handle, wintypes.UINT], wintypes.BOOL),
+                          (gdi32.CreateCompatibleDC, [handle], handle), (gdi32.CreateCompatibleBitmap, [handle, ctypes.c_int, ctypes.c_int], handle),
+                          (gdi32.SelectObject, [handle, handle], handle), (gdi32.DeleteObject, [handle], wintypes.BOOL),
+                          (gdi32.DeleteDC, [handle], wintypes.BOOL), (gdi32.SetStretchBltMode, [handle, ctypes.c_int], ctypes.c_int),
+                          (gdi32.StretchBlt, [handle] + [ctypes.c_int] * 4 + [handle] + [ctypes.c_int] * 4 + [wintypes.DWORD], wintypes.BOOL),
+                          (gdi32.GetDIBits, [handle, handle, wintypes.UINT, wintypes.UINT, ctypes.c_void_p, ctypes.c_void_p, wintypes.UINT], ctypes.c_int)):
+        fn.argtypes, fn.restype = args, res
+    rect = window_rect(hwnd)
+    if not rect:
+        return None
+    width, height = rect[2] - rect[0], rect[3] - rect[1]
+    if width <= 0 or height <= 0:
+        return None
+    small_w, small_h = 48, 27
+    screen = user32.GetWindowDC(hwnd)
+    big, small = gdi32.CreateCompatibleDC(screen), gdi32.CreateCompatibleDC(screen)
+    big_bmp, small_bmp = gdi32.CreateCompatibleBitmap(screen, width, height), gdi32.CreateCompatibleBitmap(screen, small_w, small_h)
+    try:
+        gdi32.SelectObject(big, big_bmp)
+        gdi32.SelectObject(small, small_bmp)
+        if not user32.PrintWindow(hwnd, big, 2):  # PW_RENDERFULLCONTENT: también lo que dibuja la GPU
+            return None
+        gdi32.SetStretchBltMode(small, 4)  # HALFTONE: promedia, un punto de luz no engaña
+        gdi32.StretchBlt(small, 0, 0, small_w, small_h, big, 0, 0, width, height, 0x00CC0020)  # SRCCOPY
+
+        class BitmapInfo(ctypes.Structure):
+            _fields_ = [("biSize", wintypes.DWORD), ("biWidth", wintypes.LONG), ("biHeight", wintypes.LONG),
+                        ("biPlanes", wintypes.WORD), ("biBitCount", wintypes.WORD), ("biCompression", wintypes.DWORD),
+                        ("biSizeImage", wintypes.DWORD), ("biXPelsPerMeter", wintypes.LONG), ("biYPelsPerMeter", wintypes.LONG),
+                        ("biClrUsed", wintypes.DWORD), ("biClrImportant", wintypes.DWORD)]
+
+        info = BitmapInfo(ctypes.sizeof(BitmapInfo), small_w, -small_h, 1, 32, 0, 0, 0, 0, 0, 0)
+        pixels = ctypes.create_string_buffer(small_w * small_h * 4)
+        if not gdi32.GetDIBits(small, small_bmp, 0, small_h, pixels, ctypes.byref(info), 0):
+            return None
+        data = pixels.raw
+        level = sum(data[i] + data[i + 1] + data[i + 2] for i in range(0, len(data), 4)) / (3 * small_w * small_h)
+        return level >= PICTURE_LEVEL
+    finally:
+        gdi32.DeleteObject(big_bmp)
+        gdi32.DeleteObject(small_bmp)
+        gdi32.DeleteDC(big)
+        gdi32.DeleteDC(small)
+        user32.ReleaseDC(hwnd, screen)
+
+
 def is_fullscreen(hwnd: int) -> bool:
     """¿La ventana cubre todo su monitor? (para no alternar pantalla completa por error)."""
     if not WIN or not hwnd:

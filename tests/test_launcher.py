@@ -410,3 +410,39 @@ def test_measuring_windows_memory_never_holds_the_launch(monkeypatch):
     health.note_dwm("antes de abrir algo")
     assert time.monotonic() - t0 < .5
     started.set()
+
+
+def test_xemu_keeps_the_loading_screen_until_its_window_has_a_picture():
+    """xemu abre a pantalla completa y arranca la consola en negro 2,5–5 s: la pantalla de carga sigue hasta ver el juego
+    (dos lecturas seguidas: el cuadro suelto al pasar a pantalla completa no cuenta)."""
+    win = FocusWindows()
+    win.open(3, "xemu | v0.8.137", fullscreen=True)
+    seen = iter([False, True, False, False, True, True])
+    win.has_picture = lambda hwnd: next(seen, True)
+    now, events = [100.0], []
+
+    def sleep(seconds):
+        now[0] += seconds
+
+    assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Star Wars: Battlefront II", "xemu",
+                               notify=lambda e: events.append(now[0] - 100), timeout=20, win=win, sleep=sleep, pinned=1,
+                               clock=lambda: now[0])
+    assert next(seen, "fin") == "fin"  # leyó las seis: no se dio por listo con el destello de la segunda
+    assert events  # y al final sí: la pantalla de carga hace su salida
+
+
+def test_a_game_that_stays_black_is_shown_anyway():
+    win = FocusWindows()
+    win.open(3, "xemu | v0.8.137", fullscreen=True)
+    reads = []
+    win.has_picture = lambda hwnd: reads.append(1) or False
+    clock = [0.0]
+    focus_mod.time, real = type("T", (), {"time": staticmethod(lambda: clock[0])}), focus_mod.time
+    try:
+        def sleep(seconds):
+            clock[0] += seconds
+        assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Halo", "xemu", timeout=60, win=win,
+                                   sleep=sleep, pinned=1, clock=lambda: clock[0])
+    finally:
+        focus_mod.time = real
+    assert len(reads) <= focus_mod.PICTURE_WAIT / .3 + 2  # con tope: no se queda los 60 s

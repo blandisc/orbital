@@ -303,13 +303,15 @@ export function createForYouMosaic({ onFocus, onPick }) {
       });
       applyOffsets();
     }
-    if (running) frame = requestAnimationFrame(tick);
+    // Solo mientras deriva: enfocada en una pieza no hay nada que mover, y un ciclo de 60 por segundo sin trabajo gastaba CPU.
+    frame = running && mode === "ambient" ? requestAnimationFrame(tick) : 0;
   }
 
   function goAmbient() {
     if (!running || mode === "ambient" || reduced() || !pool.length) return;
     mode = "ambient";
     ambientSince = performance.now();
+    if (!frame) { last = ambientSince; frame = requestAnimationFrame(tick); }
     if (columns.length && columns.every((col) => col.offset === columns[0].offset)) {
       columns.forEach((col, c) => { if (c % 2) col.offset += gap() * AMBIENT_LIFT_GAPS; });
       columns.forEach((col, c) => fill(col, c));
@@ -457,7 +459,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
     if (running) return;
     running = true;
     last = performance.now();
-    frame = requestAnimationFrame(tick);
+    if (mode === "ambient") frame = requestAnimationFrame(tick);
     wake();
     if (pool.length) paint();
   }
@@ -465,6 +467,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
   function stop() {
     running = false;
     cancelAnimationFrame(frame);
+    frame = 0;
     clearTimeout(idleTimer);
     clearTimeout(aliveTimer);
     if (mode === "ambient") { mode = "focus"; el.classList.remove("foryou-mosaic--drifting"); }

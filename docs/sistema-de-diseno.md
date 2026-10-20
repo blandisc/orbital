@@ -56,7 +56,6 @@ primero se nombra aquí: qué *es* (`--duration-enter`, «algo que aparece»), n
 | `--duration-tint` · `--duration-drift` | El color del fondo cambia · el fondo sigue al foco. |
 | `--duration-alive` | «Cobra vida»: quieto en una pieza de Para ti, su arte se acerca despacio. |
 | `--duration-pulse` · `--duration-breathe` | Cursor de escribir, «te escuché» · algo que espera (dictando). |
-| `--duration-glow` · `--duration-stars` · `--duration-stars-far` | Ambiente: la luz respira, las estrellas derivan. |
 | `--duration-launch-*` | Pantalla de carga (cinemática, más lenta a propósito). |
 | `--delay-1/2/3` · `--stagger` | Escalonado: cada pieza entra un poco después. |
 | `--ease-out` · `--ease-in` · `--ease-spring` · `--ease-pop` · `--ease-launch` · `--ease-sweep` | Entradas · salidas · resorte corto · foco que salta · disparo · barrido. |

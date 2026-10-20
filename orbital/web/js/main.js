@@ -2126,10 +2126,8 @@ const saver = (() => {
 setInterval(() => saver.check(), 15_000);
 for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventListener(type, () => { stir(); saver.wake(); }, { capture: true, passive: true });
 
-// Quieta (body[data-still]): el fondo vivo se detiene tras un rato sin tocar nada, y al instante si Orbital no está al frente
-// (un juego o un video encima). Sus ciclos duran de 38 a 240 s, así que detenerlo no se nota, pero moverlo obligaba a la GPU
-// a redibujar la pantalla 4K entera 60 veces por segundo: 38 % de GPU con Orbital sin hacer nada (medido 2026-10-20), justo
-// lo que necesita el juego. Cualquier botón, toque o volver a Orbital lo despierta.
+// Quieta (body[data-still]): tras un rato sin tocar nada, y al instante si Orbital no está al frente (un juego o un video
+// encima), el mando se lee 15 veces por segundo en vez de 60 (input.js). Cualquier botón, toque o volver a Orbital la despierta.
 const STILL_MS = 12_000;
 let stillTimer = 0;
 function stir() {
