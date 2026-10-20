@@ -45,6 +45,9 @@ ORBITAL_BROWSERS = {"msedge.exe", "chrome.exe", "chromium.exe"}
 READY_TIMEOUT = 25.0  # s máximos con la pantalla de carga de Orbital encima
 READY_SETTLE = .6  # s tras detectar el juego: que pinte sus primeros cuadros
 FADE_TO_BLACK = .75  # s de la salida de la pantalla de carga (el "salto" al juego) antes del fundido
+# La entrada de la pantalla de carga (la portada vuela, el anillo se dibuja) dura casi 2 s. xemu abre a pantalla completa
+# desde el primer instante y contaba como listo en 1 s: la salida cortaba la entrada a medias y se veía trabada.
+MIN_LOADING = 2.0
 
 
 def _words(text: str) -> set[str]:
@@ -123,7 +126,7 @@ def keep_game_in_front(launcher: Launcher, item_id: str, win, user_returned=lamb
 def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runner: str | None = None,
                         notify=None, skip: threading.Event | None = None, timeout: float = READY_TIMEOUT,
                         win=None, sleep=time.sleep, pinned: int | None = None, ready_check=None,
-                        user_returned=None) -> bool:
+                        user_returned=None, clock=time.time) -> bool:
     """Pantalla de carga hasta que el juego esté listo, y luego un fundido de Orbital al juego.
 
     Mientras el emulador abre se ven sus ventanas feas (la lista de juegos de Eden, una consola…).
@@ -141,7 +144,7 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
     notify = notify or (lambda event: None)
     orbital = pin_orbital(win) if pinned is None else pinned
     target = 0
-    started = time.time()
+    started = clock()
     grace = int(FULLSCREEN_GRACE / .3)
     try:
         deadline = time.time() + timeout
@@ -181,6 +184,9 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
             target = win.main_window(pids) if pids else 0
         if orbital:
             settle(win, target, sleep)
+            early = MIN_LOADING - (clock() - started)
+            if early > 0 and not (skip and skip.is_set()):
+                sleep(early)  # que la entrada termine antes de la salida
             notify({"type": "launch-ready", "id": item_id})  # la pantalla de carga hace su salida
             sleep(FADE_TO_BLACK)
             if target and win.foreground() != target:

@@ -1633,8 +1633,9 @@ async function runCommand(command, context = null) {
         if (state.legion === undefined) {
           const pads = (await api.controllers().catch(() => ({ controllers: [] }))).controllers;
           state.legion = pads.some((c) => c.kind === "legion");
+          state.gamesir = pads.some((c) => c.kind === "gamesir");
         }
-        ui.sheet.open(tourMenu(command.step, { legion: state.legion }), { index: 0, stack: [] });
+        ui.sheet.open(tourMenu(command.step, { legion: state.legion, gamesir: state.gamesir }), { index: 0, stack: [] });
         return renderHints();
       }
       case "update-check":

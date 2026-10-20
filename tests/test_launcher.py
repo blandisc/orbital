@@ -337,6 +337,24 @@ def test_reveal_leaves_orbital_behind_the_game():
     assert win.below == [(1, 3)]  # sin "siempre encima", detrás del juego (no encima de él)
 
 
+def test_instant_ready_still_lets_the_loading_screen_finish_its_entrance():
+    """xemu abre a pantalla completa al instante: la salida esperaba 0 s y cortaba la entrada a medias."""
+    win = FocusWindows()
+    win.open(3, "xemu | v0.8.137", fullscreen=True)
+    now, steps, events = [100.0], [], []
+
+    def sleep(seconds):
+        steps.append(seconds)
+        now[0] += seconds
+
+    def notify(event):
+        events.append((event, now[0] - 100))
+
+    assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Star Wars: Battlefront II", "xemu",
+                               notify=notify, timeout=5, win=win, sleep=sleep, pinned=1, clock=lambda: now[0])
+    assert events == [({"type": "launch-ready", "id": "x"}, focus_mod.MIN_LOADING)]
+
+
 def test_guard_respects_home_and_closed_games():
 
     win, launcher = _Win(), _Launcher()

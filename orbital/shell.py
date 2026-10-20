@@ -2,7 +2,7 @@
 
   * Home (o un toque de Legion L): desde el juego -> Orbital; desde Orbital -> de vuelta al juego.
   * Legion L dos veces seguidas desde un juego -> se cierra (el primer toque ya te trajo a Orbital).
-  * Start + Select + Home mantenidos en el juego -> aviso encima del juego (sin salir de él) con una
+  * El atajo de cerrar mantenido en el juego (Start + Select + Home; GameSir: LB + RB + Select) -> aviso encima del juego (sin salir de él) con una
     barra que se llena; al completarse, el emulador se cierra de golpe y vuelves a Orbital.
     Soltar antes = no pasa nada. Sostenerlo 1,5 s ya es la confirmación: sin "¿Seguro?".
 

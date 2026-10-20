@@ -1,4 +1,4 @@
-"""Aviso encima del juego: "Mantén Start + Select + Home para cerrar".
+"""Aviso encima del juego mientras se mantiene el atajo de cerrar (Start + Select + Home; GameSir: LB + RB + Select).
 
 Una ventana pequeña, centrada, siempre visible y que NO toma el foco: el juego sigue
 recibiendo el mando. Se dibuja con Tkinter (viene con Python) en su propio hilo.

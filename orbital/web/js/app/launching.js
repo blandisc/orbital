@@ -175,9 +175,11 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     rumble("launch");
     const name = runnerName(item, runner);
     const from = item.id === current()?.id ? focusedRect() : null;
-    ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle, { from });
+    const art = ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle, { from });
     inFlight = true;
     try {
+      await art; // el fondo listo antes que el emulador (xemu abre en 1 s y se lleva el CPU)
+      if (!ui.launch.visible) return; // B mientras tanto: cancelado antes de abrir nada
       const res = await api.launch(item.id, runner, keep);
       if (res.reveal) ui.launch.hold(); // Orbital tapa las ventanas del emulador hasta que el juego está listo
       pollStatus();

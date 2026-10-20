@@ -32,10 +32,10 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Ir a Orbital sin cerrar el juego | Home (solo, al soltarlo) o un toque de Legion L | ✅ |
 | Volver al juego desde Orbital | Home, Legion L, o A sobre el juego ("Continuar") | ✅ |
 | Juego olvidado en pausa | Aviso 10 min antes de cerrarlo solo | ✅ (nuevo) |
-| Cerrar el juego | GameSir: mantener Start + Select + Home 1,5 s (barra encima del juego, cierre inmediato). Controles de la Legion Go: mantener Start + Select 1,5 s (no tienen Home ni cambio de modo) o Legion L dos veces seguidas. Ninguno choca con el cambio de modo del GameSir (Start+Select o Home sostenidos) | ✅ |
+| Cerrar el juego | GameSir: mantener LB + RB + Select 1,5 s (barra encima del juego, cierre inmediato; antes Start + Select + Home, que chocaba con los combos del propio GameSir —Start + Select cambia de modo, Home + Start reinicia sus ajustes— y con la Vista de tareas que Windows abre al mantener Home desde 2026-10-18). Otros mandos: Start + Select + Home. Controles de la Legion Go: mantener Start + Select 1,5 s (no tienen Home ni cambio de modo) o Legion L dos veces seguidas. Ninguno choca con el cambio de modo del GameSir (Start+Select o Home sostenidos) | ✅ |
 | Cerrar desde Orbital | ☰ → Cerrar… o Y → Cerrar (pide confirmación) | ✅ |
 | El juego se cierra solo | Orbital vuelve al frente con el tiempo jugado | ✅ |
-| Juego de Steam | A lo abre; Start + Select + Home lo cierra si está al frente | ⚠️ Steam puede mostrar sus propios avisos (sincronización en la nube, actualizaciones); se manejan con el mando en Steam, no en Orbital |
+| Juego de Steam | A lo abre; el atajo de cerrar (GameSir: LB + RB + Select) lo cierra si está al frente | ⚠️ Steam puede mostrar sus propios avisos (sincronización en la nube, actualizaciones); se manejan con el mando en Steam, no en Orbital |
 
 ## Entrar y salir de un juego: todos los casos
 
@@ -51,7 +51,7 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Abres un juego y su ventana aparece detrás de Orbital (Windows lo hace a veces) | Orbital se la pasa al frente en cuanto existe, solo si Orbital sigue al frente | ✅ (nuevo) |
 | El emulador se relanza a sí mismo al arrancar (xemu) | Orbital sigue al proceso nuevo; no sale encima del juego | ✅ (nuevo; antes salía a los 2 s) |
 | Un lanzador abre el juego y se cierra (`launch-eden.cmd`, lanzadores propios) | Orbital sigue al juego, no al lanzador | ✅ (nuevo) |
-| El juego se cierra normal (menú del juego, Start + Select + Home, Legion L ×2, "cierra el juego") | Orbital al frente, con el tiempo jugado y la tarjeta enfocada | ✅ |
+| El juego se cierra normal (menú del juego, el atajo de cerrar, Legion L ×2, "cierra el juego") | Orbital al frente, con el tiempo jugado y la tarjeta enfocada | ✅ |
 | El juego truena | Igual que cerrarse: Orbital al frente con "De vuelta de…" | ✅ |
 | El juego se cierra solo a los pocos segundos | "X se cerró enseguida" como error (revisa ROM, firmware, claves), no "De vuelta de…" | ✅ (nuevo) |
 | El emulador no está (lo moviste o desinstalaste) | Mensaje claro y, si hay otro emulador, "Abrir con …" en el mismo momento | ✅ (nuevo) |
@@ -61,7 +61,7 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Vuelves al juego por tu cuenta (Alt+Tab, toque) | Se descongela solo | ✅ |
 | Orbital se cierra de golpe con un juego congelado | Al volver a abrir, lo descongela | ✅ |
 | Cerrar un juego que siguió en otro proceso | Cierra ese proceso, no el lanzador que ya no existe | ✅ (nuevo) |
-| Abres desde ES-DE o Steam (no desde Orbital) | Home lleva a Orbital y regresa; Start + Select + Home lo cierra si está al frente | ✅ |
+| Abres desde ES-DE o Steam (no desde Orbital) | Home lleva a Orbital y regresa; el atajo de cerrar lo cierra si está al frente | ✅ |
 | Un aviso de Windows o de Steam sale encima | Orbital no compite por el foco; Home sigue funcionando | ⚠️ el aviso se maneja con el mando en su app |
 
 ## Multimedia y apps

@@ -53,7 +53,8 @@ se controla con la voz a través de **Alexa**.
 |---|---|
 | Home (Guía) | Del juego a Orbital y, desde Orbital, de vuelta al juego |
 | Legion L | Un toque: igual que Home. Dos toques seguidos desde un juego: lo cierra |
-| Start + Select + Home (mantener 1,5 s) | Una barra se llena encima del juego y lo cierra (soltar antes = nada). Los tres juntos para no chocar con el cambio de modo del GameSir |
+| LB + RB + Select (mantener 1,5 s), GameSir | Una barra se llena encima del juego y lo cierra (soltar antes = nada). Sin Home ni Start: Start + Select le cambian el modo al GameSir, Home + Start le reinician los ajustes y mantener Home abre la Vista de tareas de Windows |
+| Start + Select + Home (mantener 1,5 s), otros mandos | Lo mismo |
 | Start + Select (mantener 1,5 s), controles de la Legion Go | Lo mismo: Orbital reconoce los controles de Lenovo y no les pide Home (no tienen) |
 
 > Home abre la Xbox Game Bar por defecto. Para que no se encimen: *Configuración → Juegos →

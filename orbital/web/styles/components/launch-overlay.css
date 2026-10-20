@@ -17,6 +17,9 @@
   transition: opacity var(--duration-launch-out) var(--ease-in), transform var(--duration-launch-reveal) var(--ease-in);
 }
 
+/* El arte entra con fundido cuando ya está decodificado (no a medio pintar). */
+.launch--art-loading .launch__backdrop { opacity: 0; transition: none; }
+
 /* Del arte al juego: el fondo propio del juego, nítido y avanzando despacio (solo transform: nada de filtros animados).
    Un velo abajo y al centro para que se lean la portada y el texto. */
 .launch--art .launch__backdrop {

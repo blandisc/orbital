@@ -4,6 +4,18 @@ import { KeyHint } from "./ui.js";
 // Con pantalla de carga el servidor avisa antes: un video espera su primera imagen hasta 50 s (STARTUP_TIMEOUT + 5).
 // Con 26 s la pantalla se iba antes, Orbital quedaba encima con la biblioteca y otro A volvía a abrir el video de cero.
 const HOLD_MS = 52_000;
+// El arte se decodifica antes de pedir el juego: xemu abre en 1 s y, con el CPU tomado por el emulador, el fondo (un JPEG
+// de 1920×1080) llegaba tarde o nunca. Si tarda más que esto, se lanza igual y el fondo entra con fundido cuando esté.
+const ART_WAIT_MS = 700;
+
+/** Decodifica las imágenes (quedan listas para pintarse sin trabar el cuadro). Nunca falla. */
+function decodeAll(urls) {
+  return Promise.all(urls.filter(Boolean).map((url) => {
+    const img = new Image();
+    img.src = url;
+    return img.decode().then(() => img, () => null);
+  }));
+}
 
 /**
  * Pantalla de carga: el viaje de Orbital al juego.
@@ -68,9 +80,24 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
    * `from`: la portada en la fila ({ rect, ratio }). La portada "vuela" desde ahí hasta su lugar
    * (transición de elemento compartido), así abrir un juego se siente continuo, no un corte.
    */
+  let shown = 0; // cada show: un arte que llega tarde de un lanzamiento anterior no pisa el de ahora
+  let decoded = []; // las imágenes decodificadas, vivas mientras se ven (así no se vuelven a decodificar)
+
   function show(item, detail, { from = null } = {}) {
-    backdrop.style.backgroundImage = cssUrl(item.hero || item.image);
-    el.classList.toggle("launch--art", Boolean(item.hero) && !item.extra?.placeholder_hero);
+    const turn = ++shown;
+    const art = item.hero || item.image;
+    backdrop.style.backgroundImage = "";
+    // El arte y su velo oscuro entran juntos y ya decodificados: antes el velo salía primero sobre las estrellas (una
+    // sombra negra rara) y la imagen se pintaba encima a medias.
+    el.classList.remove("launch--art");
+    el.classList.add("launch--art-loading");
+    const ready = decodeAll([art, item.image]).then((imgs) => {
+      if (turn !== shown) return;
+      decoded = imgs;
+      backdrop.style.backgroundImage = cssUrl(art);
+      el.classList.toggle("launch--art", Boolean(item.hero) && !item.extra?.placeholder_hero);
+      el.classList.remove("launch--art-loading");
+    });
     cover.style.backgroundImage = cssUrl(item.image);
     cover.hidden = !item.image; // sin portada, la órbita gira sola alrededor de la marca
     el.classList.toggle("launch--no-cover", !item.image);
@@ -106,6 +133,8 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
     }
     clearTimeout(timer);
     timer = setTimeout(hide, timeout);
+    // Para quien lanza: esperar el arte (con tope) antes de pedir el juego.
+    return Promise.race([ready, new Promise((resolve) => { setTimeout(resolve, ART_WAIT_MS); })]);
   }
 
   /** El servidor mantiene Orbital encima hasta que el juego está listo: esperar su aviso. */
@@ -149,6 +178,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
 
   function hide() {
     clearTimeout(timer);
+    decoded = [];
     holding = false;
     waiting = false;
     cancelExit = hideAfterExit(el, "launch--leaving", 350);

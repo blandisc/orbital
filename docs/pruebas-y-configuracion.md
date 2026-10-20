@@ -21,8 +21,8 @@
 - [ ] Un toque de Legion L hace lo mismo que Home; dos toques seguidos (menos de 2 s) desde un juego lo cierran. Legion Space no se queda abierto.
 - [ ] Cambiar de modo el GameSir (Start+Select o Home sostenidos) no cierra el juego.
 - [ ] Home+X, Home+B… dentro de Eden siguen haciendo lo de Eden (no mueven a Orbital).
-- [ ] Start + Select + Home sostenidos en un juego: aparece el aviso encima del juego; soltar antes no cierra; sostener 1,5 s cierra sin preguntar.
-- [ ] Start + Select + Home también cierra un juego de Steam que esté al frente.
+- [ ] GameSir: LB + RB + Select sostenidos en un juego (otros mandos: Start + Select + Home): aparece el aviso encima del juego; soltar antes no cierra; sostener 1,5 s cierra sin preguntar.
+- [ ] Ese mismo atajo también cierra un juego de Steam que esté al frente.
 - [ ] A sobre el juego abierto dice "Continuar" y regresa a él (no abre otra copia).
 - [ ] ☰ → Ventanas abiertas salta a otra app; ☰ → Apagado → Suspender.
 - [ ] El mando vibra al llegar al final de una fila y al abrir un juego.
