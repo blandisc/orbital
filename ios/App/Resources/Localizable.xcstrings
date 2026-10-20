@@ -8119,6 +8119,17 @@
         }
       }
     },
+    "Prueba de velocidad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed test"
+          }
+        }
+      }
+    },
     "Próximo estreno": {
       "extractionState": "manual",
       "localizations": {

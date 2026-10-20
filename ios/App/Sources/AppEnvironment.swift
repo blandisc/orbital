@@ -133,6 +133,18 @@ final class AppEnvironment: ObservableObject {
         catalog = CatalogModel(services)
         inbox.onEvent = { [weak self] event in self?.announce(event) }
         Task { await services.downloads.start() }
+        #if DEBUG
+        // `-demo-real-download <url>`: una descarga de verdad (con el transporte real, por pedazos) para medir el motor.
+        if Demo.isOn, let raw = Demo.value(after: "-demo-real-download"), let url = URL(string: raw) {
+            Task {
+                let item = DownloadItem(id: "tt0000001|tt0000001", kind: "movie", metaID: "tt0000001", videoID: "tt0000001", title: "Prueba de velocidad",
+                                        originalTitle: "Prueba", subtitle: "", poster: nil, addon: "Demo", sourceIndex: 0, expectedBytes: nil,
+                                        relativePath: DownloadFiles.relativePath(metaID: "tt0000001", videoID: "tt0000001", ext: "bin"),
+                                        createdAt: Date().timeIntervalSince1970)
+                try? await services.downloads.enqueue(item, url: url)
+            }
+        }
+        #endif
         DownloadsModel.clearShared()   // los enlaces de «Compartir» de la vez pasada
         Task.detached(priority: .background) { AppEnvironment.pruneImported() }
         let settings = services.settings
