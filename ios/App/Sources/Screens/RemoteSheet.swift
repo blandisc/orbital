@@ -7,6 +7,7 @@ import OrbitalModels
 /// (`TouchPad`), sus teclas (`RemoteKey`) y «Escribir» cuando la TV tiene dónde.
 struct RemoteSheet: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @ObservedObject var tvNow: ModelObserver<TVNowModel>
     @Binding var large: Bool
     let onContinueHere: (OrbitalRemote.NowPlaying) -> Void
@@ -32,7 +33,7 @@ struct RemoteSheet: View {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
                 header(model)
                     // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !large { compactHeight = min($0 + DS.Space.s6 + DS.Space.s10, UIScreen.main.bounds.height * DS.Remote.maxShare) } }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !large { compactHeight = min($0 + DS.Space.s6 + DS.Space.s10, UIScreen.main.bounds.height * DS.Remote.maxShareFitted) } }
                 if large { full(model).transition(.opacity.combined(with: .move(edge: .bottom))) }
                 else {
                     Label("Estira hacia arriba para el control completo", systemImage: "chevron.compact.up")
@@ -40,9 +41,9 @@ struct RemoteSheet: View {
                 }
             }
             .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { fullHeight = min($0, UIScreen.main.bounds.height * DS.Remote.maxShare) } }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { fullHeight = min($0, UIScreen.main.bounds.height * DS.Remote.maxShareFitted) } }
         }
-        .scrollDisabled(!large && compactHeight < UIScreen.main.bounds.height * DS.Remote.maxShare)   // corta y sin caber (letra grande): se desliza
+        .scrollDisabled(!large && compactHeight < UIScreen.main.bounds.height * DS.Remote.maxShareFitted)   // corta y sin caber (letra grande): se desliza
         .scrollBounceBehavior(.basedOnSize)
         // Sin nada en la TV la hoja corta no tiene qué enseñar (quedaba «Tu Orbital» y un hueco, y bajarla se atoraba ahí):
         // solo la altura completa, y bajarla la cierra.
@@ -211,7 +212,7 @@ struct RemoteSheet: View {
             // Lo que puedes decir: donde surge la duda (como el resto de las teclas).
             Button { showsGuide = true } label: {
                 Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text)
-                    .frame(width: DS.Remote.keyHeight, height: DS.Remote.keyHeight)
+                    .frame(width: DS.Remote.keyHeightFitted, height: DS.Remote.keyHeightFitted)
                     .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -274,7 +275,7 @@ struct RemoteSheet: View {
                     (tracks.first(where: \.selected).map { Text(verbatim: $0.label) } ?? Text("Sin subtítulos")).recipe(.caption, color: DS.textMuted).lineLimit(1)
                 }
                 .foregroundStyle(DS.text)
-                .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeight)
+                .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted)
                 .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .accessibilityLabel(title)
@@ -309,27 +310,33 @@ struct RemoteSheet: View {
         HStack(spacing: DS.Space.s2) {
             key(model, "chevron.left.2", "LB", nil, Text("Anterior"), .prevsection)
             if let section = model.section {
-                Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize()
+                // Un renglón siempre: con letra grande se achica (antes se partía en «Pelícu-las y s…» entre las teclas).
+                Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1)
+                    .minimumScaleFactor(DS.Size.statScale).multilineTextAlignment(.center)
+                    .fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: false)   // con letra grande cede: «Ante…» no cabía
             }
             key(model, "chevron.right.2", "RB", nil, Text("Siguiente"), .nextsection)
         }
         TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
             // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
-            .frame(height: max(DS.Remote.padHeight, UIScreen.main.bounds.height * DS.Remote.padShare))
+            .frame(height: DS.Remote.padHeightFitted)   // en un SE, más bajito: las teclas de abajo y «Escribir» caben
         HStack(spacing: DS.Space.s2) {
             key(model, "chevron.backward", "B", "back", Text("Atrás"), .back, hold: .home)   // mantener: al inicio
-            key(model, "square.on.square", "X", "alt", Text("Acción X"), .alt)
+            key(model, "bolt", "X", "alt", Text("Atajo"), .alt)   // lo que haga X en esa pantalla lo dice la leyenda
             key(model, "ellipsis", "Y", "options", Text("Opciones"), .options)
         }
         HStack(spacing: DS.Space.s2) {
-            key(model, "backward.end", "LT", "page", Text("−5"), .pageleft)
+            key(model, "backward.end", narrowGlyph("LT"), "page", Text("−5"), .pageleft)
             key(model, "house", nil, nil, Text("Inicio"), .home)
-            key(model, "line.3.horizontal", "☰", "menu", Text("Menú"), .menu)
-            key(model, "magnifyingglass", "⧉", "search", Text("Buscar"), .search)
-            key(model, "forward.end", "RT", "page", Text("+5"), .pageright)
+            key(model, "line.3.horizontal", nil, "menu", Text("Menú"), .menu)
+            key(model, "magnifyingglass", nil, "search", Text("Buscar"), .search)
+            key(model, "forward.end", narrowGlyph("RT"), "page", Text("+5"), .pageright)
         }
     }
+
+    /// En la fila de cinco teclas de un teléfono bajito no cabe la letra del mando junto al ícono: se quita.
+    private func narrowGlyph(_ glyph: String) -> String? { DS.Remote.isShortScreen ? nil : glyph }
 
     /// Escribir en la TV: si no tiene un campo abierto, abre su búsqueda con ese texto.
     private func typing(_ model: TVNowModel, autoFocus: Bool) -> some View {

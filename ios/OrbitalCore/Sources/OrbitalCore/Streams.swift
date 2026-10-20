@@ -44,6 +44,14 @@ public struct Source: Sendable, Equatable, Identifiable {
         return found
     }
 
+    /// La calidad en palabras para el botón «Ver» de la ficha: «4K · Dolby Vision · Atmos». Sin redundancias: Dolby Vision ya
+    /// implica HDR y Atmos ya implica Dolby Digital Plus, así que solo va lo mejor de cada cosa. Vacío si no se sabe nada.
+    public var qualitySummary: [String] {
+        let picture = hdr.contains("DV") ? "Dolby Vision" : hdr.contains("HDR10+") ? "HDR10+" : hdr.contains("HDR") ? "HDR" : ""
+        let sound = ["Atmos", "TrueHD", "DTS-HD", "DD+", "DTS", "7.1", "5.1"].first(where: audioBadges.contains) ?? ""
+        return [resolution, picture, sound].filter { !$0.isEmpty }
+    }
+
     static let audioPatterns: [(String, NSRegularExpression)] = [
         ("Atmos", Streams.r(#"\batmos\b"#)), ("TrueHD", Streams.r(#"\btrue-?hd\b"#)), ("DTS-HD", Streams.r(#"\bdts-?hd\b"#)),
         ("DTS", Streams.r(#"\bdts\b"#)), ("DD+", Streams.r(#"\b(ddp|dd\+|e-?ac-?3)"#)), ("7.1", Streams.r(#"\b7\.1\b"#)), ("5.1", Streams.r(#"\b5\.1\b"#)),

@@ -1,4 +1,4 @@
-import { h, mount } from "../core/dom.js";
+import { h, markGridEdge, mount } from "../core/dom.js";
 import { bytes, duration, genres, lastPlayed, shortAgo } from "../core/format.js";
 import { consoleGames, filtersFor, gameConsoles, pickConsole, stepConsole } from "../core/games.js";
 import { SYSTEMS, systemColor, systemOf } from "../core/home.js";
@@ -155,6 +155,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       const focused = node.dataset.focusId === focusId;
       node.classList.toggle(node.classList.contains("card") ? "card--focused" : "is-focused", focused);
       if (focused) node.setAttribute("aria-current", "true");
+      if (focused && node.parentElement?.classList.contains("browse__grid")) markGridEdge(node);
       else if (!node.classList.contains("rail__item--current")) node.removeAttribute("aria-current");
     }
     const target = targets.get(focusId);

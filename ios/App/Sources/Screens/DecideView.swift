@@ -1,4 +1,5 @@
 import SwiftUI
+import NaturalLanguage
 import OrbitalCore
 import OrbitalModels
 
@@ -49,7 +50,7 @@ struct DecideView: View {
                         .accessibilityIdentifier("decide-go")
                     }
                 }
-                .padding(DS.Space.s5)
+                .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s5)
                 // La hoja corta mide lo que su contenido (sin hueco abajo).
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in if stage == .quick { measuredQuick = h; quickHeight = min(h, UIScreen.main.bounds.height * DS.Remote.maxShare) } }
             }
@@ -124,9 +125,17 @@ struct DecideView: View {
                 Button {
                     dismiss()
                     if s.kind == "series" { open(s.route) } else { Task { await env.play(s) } }
-                } label: { Label(s.kind == "series" ? "Ver la serie" : "Ver", systemImage: "play.fill").frame(maxWidth: .infinity) }
+                } label: {
+                    // En un renglón siempre: si «Ver la serie» no cabe (letra grande, SE), solo «Ver».
+                    ViewThatFits(in: .horizontal) {
+                        if s.kind == "series" { Label("Ver la serie", systemImage: "play.fill").lineLimit(1).fixedSize() }
+                        Label("Ver", systemImage: "play.fill").lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
                     .dsPrimaryButton().controlSize(.large)
-                Button { Task { await m.next() } } label: { Label("Barajar", systemImage: "shuffle").frame(maxWidth: .infinity) }
+                // Con el color del texto: el vidrio sin tinte se leía como apagado con letra grande.
+                Button { Task { await m.next() } } label: { Label("Barajar", systemImage: "shuffle").lineLimit(1).foregroundStyle(DS.text).frame(maxWidth: .infinity) }
                     .buttonStyle(.glass).controlSize(.large).disabled(m.isLoading)
                     .accessibilityIdentifier("decide-shuffle")
                 DSMoreMenu {
@@ -150,6 +159,10 @@ struct DecideView: View {
     private func pitch(_ s: Suggestion) -> String? {
         let text = s.overview.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return nil }
+        // Solo en el idioma de la app: una sinopsis en inglés en la app en español se esconde (los datos de arriba bastan).
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+        if let found = recognizer.dominantLanguage, found.rawValue != env.services.appSettings.uiLanguage { return nil }
         if let end = text.firstIndex(where: { ".!?".contains($0) }), text.distance(from: text.startIndex, to: end) > DS.Decide.pitchMin {
             return String(text[...end])
         }

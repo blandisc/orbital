@@ -173,6 +173,9 @@ struct SimpsonsRoulette: View {
             withAnimation(.easeOut(duration: DS.Simpsons.settle).delay(DS.Simpsons.flashOff)) { glow = false }
             await wait(DS.Simpsons.hold)
             guard !Task.isCancelled else { return }
+            #if DEBUG
+            if Demo.isOn, Demo.open == "simpsons" { return }   // `-demo-open simpsons`: la ruleta se queda en el canal elegido (capturas)
+            #endif
             // La imagen crece desde la pantalla hasta llenar el iPhone.
             withAnimation(DS.Simpsons.zoomCurve) { expanded = true }
             await wait(DS.Simpsons.zoom + DS.Simpsons.zoomRest)

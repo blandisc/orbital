@@ -61,8 +61,9 @@ struct ParaTiView: View {
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti")
-        // El título grande en el renglón de los botones; en un teléfono angosto (SE, mini) no cabe junto a ellos y va en su renglón.
-        .toolbarTitleDisplayMode(UIScreen.main.bounds.width < DS.TitleAction.narrowScreen ? .large : .inlineLarge)
+        // El título grande en su renglón, igual en todos los tamaños: con cuatro botones no cabe junto a ellos en un teléfono
+        // angosto, y antes cambiaba de lugar según el iPhone.
+        .toolbarTitleDisplayMode(.large)
         .toolbar {
             // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
             ToolbarItem(placement: .topBarTrailing) {
@@ -666,8 +667,9 @@ struct ListGridView: View {
     let shelfID: String
     private var model: ParaTiModel { observer.model }
 
-    private func poster(_ s: Suggestion, _ plan: ShelfPlan) -> some View {
-        ShelfPoster(suggestion: s, style: plan.style == .top10 ? .platform : plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }
+    private func poster(_ s: Suggestion, _ plan: ShelfPlan, width: CGFloat) -> some View {
+        ShelfPoster(suggestion: s, style: plan.style == .top10 ? .platform : plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb),
+                    width: width) { dismissed in Task { await model.dismiss(dismissed) } }
     }
 
     var body: some View {
@@ -685,13 +687,11 @@ struct ListGridView: View {
                         DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"))
                     } else if plan.style == .top10 {
                         // Un ranking se lee en su orden: sin ordenar ni filtrar.
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                            ForEach(items) { s in poster(s, plan) }
-                        }
-                        .padding(.horizontal, DS.Space.gutter)
+                        DSPosterGrid(items: items) { s, width in poster(s, plan, width: width) }
                     } else {
                         SortableGrid(listID: plan.id, items: items, watched: { await collections.model.watchedIDs() },
-                             imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) }) { s in poster(s, plan) }
+                             imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) },
+                                     loading: model.isLoading(shelf: plan)) { s, width in poster(s, plan, width: width) }
                     }
                 }
                 .padding(.bottom, DS.Space.s14)

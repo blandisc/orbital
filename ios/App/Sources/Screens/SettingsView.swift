@@ -95,6 +95,9 @@ struct SettingsView: View {
         }
         .tint(DS.accent)   // interruptores, selectores y botones del formulario: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop())
+        // Sin el hueco grande de arriba del primer grupo y con aire abajo: el último grupo no queda bajo la barra flotante.
+        .contentMargins(.top, DS.Space.s2, for: .scrollContent)
+        .contentMargins(.bottom, DS.Space.s10, for: .scrollContent)
         .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("¿Cerrar sesión de Stremio?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Cerrar sesión", role: .destructive) { Task { await session.model.signOut() } }

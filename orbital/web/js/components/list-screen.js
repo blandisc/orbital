@@ -1,4 +1,4 @@
-import { h, hideAfterExit, mount } from "../core/dom.js";
+import { h, hideAfterExit, markGridEdge, mount } from "../core/dom.js";
 import { storage } from "../core/storage.js";
 import { keepInView } from "./browse.js";
 import { Card, RankedCard } from "./card.js";
@@ -133,6 +133,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
       const on = zone === "grid" && i === index;
       card.classList.toggle("card--focused", on);
       card.tabIndex = on ? 0 : -1;
+      if (on) markGridEdge(card);
     });
     paintTabs();
     if (zone === "grid" && shown.length) keepInView(grid, viewport, `item:${index}`);

@@ -50,6 +50,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var displayName = ""                // cómo te saluda Inicio («Hola, Fer»); vacío: el de tu Trakt
     public var oneDriveClientID = ""           // el «ID de la aplicación» de Microsoft Entra (no es secreto; la sesión va en el Keychain)
     public var oneDriveFolder = ""             // la carpeta de OneDrive con tus películas y series («Videos/Películas»)
+    public var videoZoom = VideoZoom.fit.rawValue   // cómo llena la pantalla el video del reproductor (`VideoZoom`); se recuerda
 
     public init() {}
 
@@ -82,12 +83,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
         displayName = try c.decodeIfPresent(String.self, forKey: .displayName) ?? displayName
         oneDriveClientID = try c.decodeIfPresent(String.self, forKey: .oneDriveClientID) ?? oneDriveClientID
         oneDriveFolder = try c.decodeIfPresent(String.self, forKey: .oneDriveFolder) ?? oneDriveFolder
+        videoZoom = try c.decodeIfPresent(String.self, forKey: .videoZoom) ?? videoZoom
     }
 
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
-        case homeDeck, homeTime, avatar, displayName, latinSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder
+        case homeDeck, homeTime, avatar, displayName, latinSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 
@@ -99,6 +101,37 @@ public struct AppSettings: Codable, Equatable, Sendable {
         var q = quality
         if onCellular, let want = ["4K", "1080p", "720p", "480p"].firstIndex(of: cellularQuality), let have = ["4K", "1080p", "720p", "480p"].firstIndex(of: q), have < want { q = cellularQuality }
         return Preferences(audio: audio, quality: q)
+    }
+}
+
+/// El botón de zoom del reproductor (como Infuse): cada toque pasa al siguiente modo y pellizcar va entre
+/// `fit` (cerrar los dedos) y `fill` (abrirlos).
+public enum VideoZoom: String, CaseIterable, Sendable {
+    case fit            // «Ajustar»: el cuadro completo a todo el ancho (en horizontal puede quedar bajo la isla)
+    case fitSafeArea    // «Ajustar al área segura»: el cuadro completo, nunca bajo la isla
+    case fill           // «Recortar»: llena la pantalla y recorta las orillas
+    case stretch        // «Estirar»: llena la pantalla deformando la imagen
+
+    /// Lo guardado en ajustes (un valor desconocido vuelve a «Ajustar»).
+    public init(stored: String) { self = VideoZoom(rawValue: stored) ?? .fit }
+
+    /// El siguiente modo del botón (después de «Estirar» vuelve a «Ajustar»).
+    public var next: VideoZoom {
+        let all = Self.allCases
+        return all[(all.firstIndex(of: self)! + 1) % all.count]
+    }
+
+    /// Pellizcar: abrir los dedos recorta, cerrarlos vuelve a ver el cuadro completo.
+    public static func pinched(magnification: Double) -> VideoZoom { magnification > 1 ? .fill : .fit }
+
+    /// El nombre que dice el aviso y VoiceOver (la clave de `Localizable.xcstrings`).
+    public var title: String {
+        switch self {
+        case .fit: "Ajustar"
+        case .fitSafeArea: "Ajustar al área segura"
+        case .fill: "Recortar"
+        case .stretch: "Estirar"
+        }
     }
 }
 

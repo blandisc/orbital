@@ -74,7 +74,7 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         if let source = engine.softwarePiPSource { return .sampleBuffer(source.layer, AetherSampleBufferPiP(source: source)) }
         return nil
     }
-    func setFillsScreen(_ fill: Bool) { engine.videoGravity = fill ? .resizeAspectFill : .resizeAspect; fills = fill }
+    func setZoom(_ zoom: VideoZoom) { engine.videoGravity = zoom.gravity; fills = zoom == .fill }
     private var fills = false
 
     /// AetherEngine no pinta subtítulos: entrega las líneas y la app las dibuja encima del video (su README: «your UI paints them»).

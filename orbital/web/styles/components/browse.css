@@ -84,6 +84,9 @@
 .browse__grid .card { --ratio: var(--grid-ratio, .667) !important; }
 .browse__grid .card__image { object-fit: cover; }
 .browse__grid .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: var(--z-raised); }
+/* En la primera y la última columna crece hacia adentro: no se sale del margen (markGridEdge). */
+.browse__grid .card--focused[data-edge="start"] { transform-origin: left bottom; }
+.browse__grid .card--focused[data-edge="end"] { transform-origin: right bottom; }
 .browse__empty { max-width: 34rem; color: var(--color-text-muted); font-size: var(--type-body); line-height: 1.5; padding: var(--space-4) 0; }
 
 /* Cambio de sección: un fundido corto del contenido, sin nada que cruce la pantalla. */

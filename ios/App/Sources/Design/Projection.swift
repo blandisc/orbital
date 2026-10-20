@@ -339,7 +339,23 @@ private struct FittedSheet: ViewModifier {
     }
 }
 
+/// Como `FittedSheet` pero para una hoja cuya raíz es un `ScrollView`: la altura sale del contenido de la lista, sin
+/// `fixedSize`. Con `fixedSize` la lista larga medía más que la pantalla, la hoja se topaba y lo de abajo quedaba fuera
+/// sin poder recorrerse (p. ej. «Fuente» en el reproductor). Así, si no cabe, la hoja llega al tope y la lista se desplaza.
+private struct FittedScrollSheet: ViewModifier {
+    @State private var height: CGFloat = DS.Size.touchTarget * 6
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height + $0.contentInsets.top + $0.contentInsets.bottom } action: { _, h in height = h }
+            .presentationDetents([.height(height)])
+            .presentationDragIndicator(.visible)
+    }
+}
+
 extension View {
+    /// Receta: hoja a la medida de su lista, que se desplaza si no cabe (ver `FittedScrollSheet`). Va sobre el `ScrollView`.
+    func fittedScrollSheet() -> some View { modifier(FittedScrollSheet()) }
     /// Receta: hoja a la medida de su contenido (ver `FittedSheet`).
     func fittedSheet() -> some View { modifier(FittedSheet()) }
 }

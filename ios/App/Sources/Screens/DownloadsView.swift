@@ -67,8 +67,8 @@ struct DownloadsView: View {
         return List {
             if !model.items.isEmpty {
                 Section {
-                    StorageBar(parts: [.init(id: "series", label: Text("Series"), bytes: model.items.filter { $0.kind == "series" }.reduce(0) { $0 + $1.writtenBytes }, color: DS.ListTint.series),
-                                       .init(id: "movies", label: Text("Películas"), bytes: model.items.filter { $0.kind != "series" }.reduce(0) { $0 + $1.writtenBytes }, color: DS.ListTint.watching)],
+                    StorageBar(parts: [.init(id: "series", label: Text("Series"), bytes: model.readySeries.reduce(0) { $0 + $1.bytes }, color: DS.ListTint.series),
+                                       .init(id: "movies", label: Text("Películas"), bytes: model.readyMovies.reduce(0) { $0 + $1.bytes }, color: DS.ListTint.watching)],
                                free: model.freeBytes, total: DiskSpace.totalBytes(), format: bytes)
                 }
                 .listRowBackground(DS.surface)
@@ -137,14 +137,17 @@ struct DownloadsView: View {
         HStack(spacing: DS.Space.s3) {
             PosterView(url: item.poster, title: item.title).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(item.title).recipe(.cardTitle).lineLimit(1)
-                DataLine(parts: [fromMedia(item), item.subtitle.isEmpty ? nil : item.subtitle, item.quality, status(item)].compactMap { $0 }, color: item.state == .failed ? DS.danger : nil)
+                // Dos renglones para el nombre y el estado en el suyo: con letra grande «En pausa» se caía al final de la línea.
+                Text(item.title).recipe(.cardTitle).lineLimit(2)
+                let details = [fromMedia(item), item.subtitle.isEmpty ? nil : item.subtitle, item.quality].compactMap { $0 }
+                if !details.isEmpty { DataLine(parts: details) }
+                if let status = status(item) { Text(verbatim: status).recipe(.data, color: item.state == .failed ? DS.danger : nil).lineLimit(2) }
             }
             Spacer(minLength: DS.Space.s2)
             // El avance es el mismo anillo de la ficha y de la fila de un episodio, con pausar o reanudar adentro.
             switch item.state {
             case .downloading, .queued: ringButton(item, symbol: "pause.fill", label: "Pausar") { Task { await model.pause(item.id) } }
-            case .paused, .failed: ringButton(item, symbol: item.state == .failed ? "arrow.clockwise" : "play.fill", label: item.state == .failed ? "Reintentar" : "Reanudar") { Task { await model.resume(item.id) } }
+            case .paused, .failed: ringButton(item, symbol: item.state == .failed ? "arrow.clockwise" : "arrow.down", label: item.state == .failed ? "Reintentar" : "Reanudar") { Task { await model.resume(item.id) } }
             case .done: EmptyView()
             }
         }
@@ -174,7 +177,9 @@ struct DownloadsView: View {
         case .downloading:
             if item.waitingForNetwork { return Strings.tr(settings.wifiOnlyDownloads ? "Esperando Wi‑Fi" : "Esperando conexión", language: language) }
             return "\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"
-        case .paused: return Strings.tr("En pausa", language: language)
+        case .paused:
+            let paused = Strings.tr("En pausa", language: language)
+            return item.progress.map { "\(paused) · \(Int(($0 * 100).rounded())) %" } ?? paused
         case .failed: return item.lastError.map { Strings.message($0, language: language) } ?? Strings.tr("No se pudo descargar", language: language)   // los errores fijos de la descarga, también traducidos
         case .done: return nil
         }
@@ -234,7 +239,7 @@ struct DownloadsView: View {
     }
 
     /// «1,2 GB» en el idioma de la app (no en el del sistema).
-    private func bytes(_ n: Int64) -> String { n.formatted(.byteCount(style: .file, spellsOutZero: false).locale(env.uiLocale)) }   // «0 KB», no «Zero kB»
+    private func bytes(_ n: Int64) -> String { ByteSize.text(n, locale: env.uiLocale) }   // el mismo formato en la barra, las secciones y las filas
 }
 
 /// A dónde lleva una serie descargada (sus temporadas) y una temporada (sus episodios).
@@ -256,7 +261,7 @@ struct DownloadSeriesView: View {
                         ForEach(group.seasons) { season in
                             NavigationLink(value: DownloadSeasonRoute(metaID: metaID, season: season.number)) {
                                 LabeledContent {
-                                    Text(verbatim: season.bytes.formatted(.byteCount(style: .file, spellsOutZero: false).locale(env.uiLocale)))
+                                    Text(verbatim: ByteSize.text(season.bytes, locale: env.uiLocale))
                                 } label: {
                                     Text("Temporada \(season.number)").recipe(.cardTitle)
                                     Text(verbatim: String(format: Strings.tr(season.items.count == 1 ? "%lld episodio" : "%lld episodios", language: env.services.appSettings.uiLanguage), season.items.count)).recipe(.footnote)
@@ -296,7 +301,7 @@ struct DownloadSeasonView: View {
                         HStack(spacing: DS.Space.s3) {
                             VStack(alignment: .leading, spacing: DS.Space.s1) {
                                 Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle).recipe(.cardTitle).lineLimit(2)
-                                DataLine(parts: [item.quality, item.writtenBytes.formatted(.byteCount(style: .file, spellsOutZero: false).locale(env.uiLocale))].compactMap { $0 })
+                                DataLine(parts: [item.quality, ByteSize.text(item.writtenBytes, locale: env.uiLocale)].compactMap { $0 })
                             }
                             Spacer(minLength: DS.Space.s2)
                             Image(systemName: "play.circle.fill").font(DS.TextRecipe.section.font).foregroundStyle(DS.text).accessibilityHidden(true)

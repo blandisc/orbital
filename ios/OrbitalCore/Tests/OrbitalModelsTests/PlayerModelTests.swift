@@ -285,6 +285,33 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertTrue(rig.engine.calls.contains("sub 12"), "el subtítulo nuevo se activa")
     }
 
+    /// «Este va bien» en una serie: en el siguiente episodio se pone el de la misma copia (grupo), aunque el video traiga uno.
+    func testThisOneWorksPicksTheSameReleaseNextEpisode() async throws {
+        let rig = try twoSources()
+        rig.model.subtitlePicks = SubtitlePicks(rig.kv)
+        rig.settings.update { $0.audio = "en"; $0.subtitles = "es" }
+        let subs: JSON = ["subtitles": [["url": "https://s.example/a.srt", "lang": "spa", "release": "Show.HDTV-LOL", "downloads": 900],
+                                        ["url": "https://s.example/b.srt", "lang": "spa", "release": "Show.WEB-DL-NTb", "downloads": 5],
+                                        ["url": "https://s.example/sdh.srt", "lang": "spa", "release": "Show.WEB-DL-NTb", "hearing_impaired": true]]]
+        rig.http.json["https://a.example/subtitles/series/tt0386676%3A1%3A1.json"] = subs
+        rig.http.json["https://a.example/subtitles/series/tt0386676%3A1%3A2.json"] = subs
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs], selectedAudio: 1))
+        await rig.model.ensureSubtitleSearch()
+        let versions = rig.model.subtitleVersions(language: "es")
+        XCTAssertEqual(versions.count, 3, "la del video y dos de internet (sin la de sordos)")
+        await rig.model.selectVersion(versions[2], trying: true)   // Show.WEB-DL-NTb
+        XCTAssertEqual(rig.model.tryingSubtitles, "es")
+        await rig.model.handle(rig.playing(1, audio: [eng], subs: [subEn, subEs, MediaTrack(id: 20, kind: .subtitle, language: "spa")], selectedAudio: 1, selectedSubtitle: 20))
+        XCTAssertEqual(rig.model.selectedVersionID, "https://s.example/b.srt")
+        rig.model.confirmSubtitle()
+        XCTAssertNil(rig.model.tryingSubtitles)
+        XCTAssertEqual(SubtitlePicks(rig.kv).pick(metaID: "tt0386676")?.group, "ntb")
+        await rig.model.begin(rig.request(video: "tt0386676:1:2"))
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs], selectedAudio: 1))
+        XCTAssertEqual(rig.engine.subs.last?.absoluteString, "https://s.example/b.srt", "la misma copia, no la del video")
+    }
+
     func testDoesNotFetchSubtitlesWhenAudioAlreadyInYourLanguage() async throws {
         let rig = try twoSources()
         rig.settings.update { $0.audio = "es"; $0.subtitles = "es" }

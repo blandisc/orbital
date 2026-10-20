@@ -111,6 +111,8 @@ struct MainTabs: View {
     /// La hoja del control estirada (el control completo) o corta.
     @State private var remoteLarge = false
     @State private var tab: Int
+    /// Cuántas descargas siguen bajando o en pausa: el globito de la pestaña Descargas.
+    @State private var pendingDownloads = 0
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
 
     init() {
@@ -128,11 +130,21 @@ struct MainTabs: View {
         TabView(selection: $tab) {
             Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
             Tab("Para ti", image: OrbitalIcon.spark.asset, value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() }.tint(DS.primary) }
-            Tab("Descargas", systemImage: "arrow.down.circle", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
+            // «arrow.down.to.line» no tiene versión rellena: queda de contorno como las demás (el círculo salía siempre relleno).
+            Tab("Descargas", systemImage: "arrow.down.to.line", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
+                .badge(pendingDownloads)
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
+        .task {
+            let downloads = env.services.downloads
+            pendingDownloads = await downloads.all.filter { $0.state != .done }.count
+            for await items in downloads.makeUpdates() {
+                let count = items.filter { $0.state != .done }.count
+                if count != pendingDownloads { pendingDownloads = count }
+            }
+        }
         // El accesorio mientras la TV reproduce algo o corre un juego, en cualquier pantalla (antes se iba al entrar a una
         // ficha y parecía que a veces no salía). Sin nada en la TV, el control se abre con el botón junto al avatar.
         .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.game != nil) {

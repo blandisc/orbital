@@ -57,12 +57,18 @@ enum DS {
     static let good = role(.accent)
     /// Un interruptor prendido que tiene que leerse de lejos (los avisos de estrenos): el verde del sistema.
     static let switchOn = Color.green
+    /// Lo que confirmas que va bien («Este va bien» de los subtítulos): el mismo verde.
+    static let success = switchOn
     static let warning = role(.warning)
     static let danger = role(.danger)
     static let hairline = overlay(DesignTokens.Opacity.hairline)
     static let fill = overlay(DesignTokens.Opacity.fill)
     static let fillStrong = overlay(DesignTokens.Opacity.fillStrong)
     static let track = overlay(DesignTokens.Opacity.track)
+    /// El botón principal sólido de la ficha: negro (el color del texto) en claro y, en oscuro, invertido a blanco, que es lo
+    /// que más resalta sobre la sala oscura. La letra va con el color del fondo.
+    static let solidPrimary = text
+    static let onSolidPrimary = bg
 
     // MARK: Sobre el arte (siempre la sala oscura, en los dos modos)
     /// El grafito más profundo: el fondo del tono del arte en modo oscuro y la base de los velos.
@@ -134,8 +140,12 @@ enum DS {
         static let heroAspect: CGFloat = 0.9, logoWidth: CGFloat = 0.66
         /// En un teléfono bajito (SE) el arte es más ancho que alto: «Ver» y sus botones quedan a la vista sin deslizar.
         static let heroAspectShort: CGFloat = 1.3, shortScreen: CGFloat = 700
-        /// Ancho bajo el cual el título de la barra va en su propio renglón (no cabe junto a cuatro botones: «Para…»).
-        static let narrowScreen: CGFloat = 400
+        /// Lo más ancho (bajito) que se vuelve el arte para que las acciones queden sobre la barra de pestañas.
+        static let heroAspectMax: CGFloat = 1.6
+        /// Con letra de accesibilidad el arte cede más (las acciones ocupan dos renglones).
+        static let heroAspectMaxLarge: CGFloat = 3
+        /// «Ver» / «Continuar»: el botón sólido de la ficha (con la calidad en un segundo renglón) y su barrita de avance.
+        static let primaryHeight: CGFloat = 60, primaryProgress: CGFloat = 3
     }
 
     /// Subtítulos: medidas relativas a la letra o al video (la letra misma sale de Ajustes › Tamaño de subtítulos).
@@ -180,6 +190,8 @@ enum DS {
     // MARK: Tipografía (con Dynamic Type: hace de «Tamaño del texto»)
     enum Typeface {
         case xs, sm, md, lg, xl, xxl, display
+        /// El tope de letra del campo de búsqueda del sistema (con letra de accesibilidad se dibujaba vacío).
+        static let searchFieldMax = DynamicTypeSize.xxxLarge
         var style: Font.TextStyle {
             switch self { case .xs: .caption2; case .sm: .caption; case .md: .subheadline; case .lg: .headline; case .xl: .title2; case .xxl: .title; case .display: .largeTitle }
         }
@@ -285,8 +297,20 @@ enum DS {
         static let videoShare: CGFloat = 0.5
         /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando) y entre qué límites.
         static let portraitCenter: CGFloat = 0.32, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
+        /// En vertical sin controles a la vista, el video se centra.
+        static let portraitCenterIdle: CGFloat = 0.5
         /// El botón de reproducir, más grande que ±10 (lo que más se toca).
         static let playButton: CGFloat = 72, playGlyph: CGFloat = 30, sideButton: CGFloat = 52
+        /// La tira para probar subtítulos sobre el video: lo más ancha que se pone.
+        static let tryStripMaxWidth: CGFloat = 480
+        /// El nombre corto bajo el ícono de la fila de vertical puede encogerse hasta esta parte (para que quepa en un SE).
+        static let labelMinScale: CGFloat = 0.8
+        /// «Siguiente episodio»: el ancho de la imagen del episodio y el anillo de la cuenta atrás en «Ver ahora».
+        static let upNextThumb: CGFloat = 96, ring: CGFloat = 22, ringWidth: CGFloat = 2.5
+        /// El degradado oscuro de arriba (detrás del nombre y el episodio), para leerlos sobre un video claro.
+        static let topScrimHeight: CGFloat = 170
+        /// Cuántas veces se enseña «Arrastra el video para subirlo o bajarlo» antes de dejar de decirlo.
+        static let dragHintTimes = 3
     }
 
     /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.
@@ -300,12 +324,12 @@ enum DS {
     }
 
     /// Los colores de marca de las calificaciones (IMDb, TMDB, Trakt) para sus logotipos en la ficha.
+    /// Las marcas de las calificaciones: los logos oficiales viven como vectores en `Assets.xcassets/Ratings` (IMDb, TMDB,
+    /// Trakt), con sus colores de marca (ds-exception: logos de terceros, no se tiñen). Aquí, el rojo de Trakt que usan las
+    /// colecciones y el alto común de los tres logos.
     enum RatingBrand {
-        static let imdb = Color(red: 0.96, green: 0.77, blue: 0.09), imdbInk = Color(red: 0, green: 0, blue: 0)
-        static let tmdbStart = Color(red: 0.56, green: 0.81, blue: 0.63), tmdbEnd = Color(red: 0, green: 0.71, blue: 0.89)
-        static let tmdbInk = Color(red: 0.05, green: 0.15, blue: 0.25)
         static let trakt = Color(red: 0.93, green: 0.11, blue: 0.14)
-        static let markHeight: CGFloat = 18, markRadius: CGFloat = 4
+        static let markHeight: CGFloat = 18
     }
 
     /// «Lo que puedes decir»: el globo con la frase para empezar toma un poco del color de su lugar.
@@ -361,6 +385,8 @@ enum DS {
     enum Companion {
         static let dot: CGFloat = 8, cardHeight: CGFloat = 300, panelWidth: CGFloat = 300, panelHeight: CGFloat = 250
         static let lowBattery = 20, noteLines = 5
+        /// Lo que se asoma la tarjeta siguiente del carrusel (una orilla, sin texto a medias): así se lee que se desliza.
+        static let peek: CGFloat = 28
         static let timerSteps = [15, 30, 60, 90]
         /// Cuánto antes del cierre automático se avisa (segundos).
         static let closeWarning: TimeInterval = 600
@@ -462,9 +488,19 @@ enum DS {
         /// La barra del volumen de la TV en el control.
         static let volumeBar: CGFloat = 6
         /// Alto del pad táctil y de cada tecla.
-        static let padHeight: CGFloat = 200, keyHeight: CGFloat = 60
+        static let padHeight: CGFloat = 170, keyHeight: CGFloat = 60
+        /// En un teléfono bajito (SE) el pad y las teclas se encogen: «Atrás» y «Escribir en la TV» caben sin deslizar.
+        static let padHeightShort: CGFloat = 116, keyHeightShort: CGFloat = 46, shortScreen: CGFloat = 700
+        /// El alto fijo del ícono de una tecla: los nombres quedan en el mismo renglón aunque los símbolos midan distinto.
+        static let keyIcon: CGFloat = 24
+        static var isShortScreen: Bool { UIScreen.main.bounds.height < shortScreen }
+        /// El alto de una tecla y del pad según el teléfono.
+        static var keyHeightFitted: CGFloat { isShortScreen ? keyHeightShort : keyHeight }
+        /// En un SE la hoja estirada puede llegar arriba del todo (opaca) para que quepa el control completo.
+        static var maxShareFitted: CGFloat { isShortScreen ? 1 : maxShare }
+        static var padHeightFitted: CGFloat { isShortScreen ? padHeightShort : max(padHeight, UIScreen.main.bounds.height * padShare) }
         /// Qué parte del alto de la pantalla toma el pad (en un iPhone grande crece).
-        static let padShare: CGFloat = 0.25
+        static let padShare: CGFloat = 0.2
         /// Lo más que crece la hoja estirada (por debajo de la altura completa, que iOS vuelve opaca).
         static let maxShare: CGFloat = 0.86
         /// Cuánto hay que deslizar para una flecha (y cada cuánto se repite al seguir deslizando).
@@ -562,6 +598,8 @@ enum DS {
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
     enum Timing {
+        /// Cuánto espera una lista abierta (un premio) antes de dar por hecho que no llegará y mostrar el vacío.
+        static let listGiveUp: UInt64 = 15_000_000_000
         /// Lo más que el pulgar espera en el destino de un salto antes de volver al avance real.
         static let seekPatience: UInt64 = 4_000_000_000
         /// Entre que se cierra una hoja y se abre otra (el resumen del juego tras cerrar su hoja).
@@ -601,6 +639,10 @@ enum DS {
         static let heroAspect = DesignTokens.Aspect.hero, stillAspect = DesignTokens.Aspect.still
         static let railWidth: CGFloat = 112
         static let gridMinimum: CGFloat = 100
+        /// `DSPosterGrid`: columnas fijas que llenan el ancho (3; 4 en pantallas anchas; 2 con letra de accesibilidad) y
+        /// desde qué ancho de contenido cuenta como ancha (iPhone horizontal, iPad).
+        static let gridColumns = 3, gridColumnsWide = 4, gridColumnsLarge = 2
+        static let gridWideWidth: CGFloat = 600
         static let episodeThumbWidth: CGFloat = 122
         /// Una pieza ancha (16:9) de un riel: «Todo lo que sigues», episodios nuevos.
         static let stillWidth: CGFloat = 220

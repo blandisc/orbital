@@ -58,7 +58,7 @@
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va. */
 .search .keyboard { align-self: end; justify-self: center; min-height: 0; }
 /* Con el dedo: sin pie de controles, el teclado ocupa ese lugar y todo el ancho, con teclas que se aciertan sin mirar. */
-[data-input="touch"] .search { padding-bottom: calc(var(--space-4) + var(--safe-y)); --key-height: min(3.5rem, 6.4vh); }
+[data-input="touch"] .search { padding-bottom: calc(var(--space-4) + var(--safe-y)); --key-height: min(3.5rem, 6.4vh); --card-height: min(11rem, 15vh); } /* teclas más altas: la portada cede (si no, el teclado tapaba el pie del resultado) */
 [data-input="touch"] .search .keyboard { width: min(72rem, 100%); }
 [data-input="touch"] .search .keyboard__key { font-size: var(--text-xl); }
 

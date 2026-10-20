@@ -46,7 +46,7 @@ export function gameMenu(item, { running = null, phone = false } = {}) {
   // Un video de Seguir viendo se puede llevar al iPhone (el episodio que sigue): solo si hay uno conectado.
   if (phone && !isOpen && watch) {
     const metaId = watch.meta_id;
-    options.push({ icon: "phone", label: "Enviar al iPhone",
+    options.push({ icon: "phoneSend", label: "Enviar al iPhone",
         command: { type: "phone-send", action: "open", kind: watch.kind, metaId, videoId: watch.video_id, title: item.title } },
       { icon: "download", label: "Descargar en el iPhone",
         command: { type: "phone-send", action: "download", kind: watch.kind, metaId, videoId: watch.video_id, title: item.title } });

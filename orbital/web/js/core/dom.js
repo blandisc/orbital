@@ -80,3 +80,14 @@ export function hideAfterExit(el, leavingClass, fallbackMs = 250) {
     el.classList.remove(leavingClass);
   };
 }
+
+/**
+ * En una cuadrícula, marca si la portada está en la primera o la última columna (data-edge="start"|"end"): al enfocarse
+ * crece hacia adentro en vez de salirse del margen de la pantalla.
+ */
+export function markGridEdge(card) {
+  const cards = [...card.parentElement.children];
+  const left = Math.min(...cards.map((c) => c.offsetLeft));
+  const right = Math.max(...cards.map((c) => c.offsetLeft + c.offsetWidth));
+  card.dataset.edge = card.offsetLeft <= left + 2 ? "start" : card.offsetLeft + card.offsetWidth >= right - 2 ? "end" : "";
+}

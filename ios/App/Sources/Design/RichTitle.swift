@@ -25,8 +25,9 @@ struct QualityBadges: View {
     }
 }
 
-/// IMDb · TMDB · Trakt, cada una con el logotipo de su servicio y su calificación. El renglón guarda su alto aunque aún no
-/// llegue nada (no brinca).
+/// IMDb · TMDB · Trakt, cada una con el logotipo oficial de su servicio y su calificación real: IMDb de Cinemeta
+/// (`imdbRating`), TMDB de su `vote_average` ×10 y Trakt de su `rating` ×10. La que falta o vale 0 no se enseña. Los tres
+/// logos miden lo mismo de alto y van al mismo espacio; los números, de ancho fijo. El renglón guarda su alto (no brinca).
 struct RatingsRow: View {
     let imdb: String?
     let tmdb: Double?
@@ -35,51 +36,47 @@ struct RatingsRow: View {
     var centered = false
 
     var body: some View {
-        HStack(spacing: DS.Space.s4) {
-            if centered { Spacer(minLength: 0) }
-            if let imdb, !imdb.isEmpty { rating(RatingMark(service: .imdb), Text(verbatim: imdb)) }
-            if let tmdb { rating(RatingMark(service: .tmdb), Text(verbatim: "\(Int((tmdb * 10).rounded())) %")) }
-            if let trakt { rating(RatingMark(service: .trakt), Text(verbatim: "\(Int((trakt * 10).rounded())) %")) }
-            Spacer(minLength: 0)
+        // En un renglón; si no cabe (letra de accesibilidad en un SE), uno debajo de otro en vez de cortar los números.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Space.s4) {
+                if centered { Spacer(minLength: 0) }
+                marks
+                Spacer(minLength: 0)
+            }
+            VStack(alignment: centered ? .center : .leading, spacing: DS.Space.s2) { marks }
+                .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
         }
         .frame(minHeight: DS.Size.touchTarget / 2)
         .accessibilityElement(children: .combine)
     }
 
-    private func rating(_ mark: RatingMark, _ value: Text) -> some View {
+    @ViewBuilder private var marks: some View {
+        if let imdb, (Double(imdb) ?? 0) > 0 { rating(.imdb, Text(verbatim: imdb)) }
+        if let tmdb, tmdb > 0 { rating(.tmdb, Text(verbatim: "\(Int((tmdb * 10).rounded()))\u{00A0}%")) }
+        if let trakt, trakt > 0 { rating(.trakt, Text(verbatim: "\(Int((trakt * 10).rounded()))\u{00A0}%")) }
+    }
+
+    private func rating(_ service: RatingMark.Service, _ value: Text) -> some View {
         HStack(spacing: DS.Space.s2) {
-            mark
+            RatingMark(service: service)
+            // Entero y en un renglón (con letra grande «86 %» se partía y el % caía abajo).
             value.font(DS.TextRecipe.secondary.font.weight(.semibold)).monospacedDigit().foregroundStyle(DS.text)
+                .lineLimit(1).fixedSize()
         }
     }
 }
 
-/// El logotipo de un servicio de calificaciones, dibujado en sus colores de marca (como los muestra Infuse).
+/// El logotipo oficial de un servicio de calificaciones (vector en `Assets.xcassets/Ratings`, en sus colores de marca),
+/// a la altura común de los tres; crece con la letra.
 struct RatingMark: View {
-    enum Service { case imdb, tmdb, trakt }
+    enum Service: String { case imdb, tmdb, trakt }
     let service: Service
+    @ScaledMetric(relativeTo: .subheadline) private var height = DS.RatingBrand.markHeight
 
     var body: some View {
-        Group {
-            switch service {
-            case .imdb:
-                Text(verbatim: "IMDb").font(DS.TextRecipe.caption.font.weight(.black)).foregroundStyle(DS.RatingBrand.imdbInk)
-                    .padding(.horizontal, DS.Space.s1)
-                    .frame(height: DS.RatingBrand.markHeight)
-                    .background(DS.RatingBrand.imdb, in: RoundedRectangle(cornerRadius: DS.RatingBrand.markRadius))
-            case .tmdb:
-                Text(verbatim: "TMDB").font(DS.TextRecipe.caption.font.weight(.heavy)).foregroundStyle(DS.RatingBrand.tmdbInk)
-                    .padding(.horizontal, DS.Space.s1)
-                    .frame(height: DS.RatingBrand.markHeight)
-                    .background(LinearGradient(colors: [DS.RatingBrand.tmdbStart, DS.RatingBrand.tmdbEnd], startPoint: .leading, endPoint: .trailing),
-                                in: RoundedRectangle(cornerRadius: DS.RatingBrand.markRadius))
-            case .trakt:
-                Image(systemName: "checkmark").font(DS.TextRecipe.caption.font.weight(.heavy)).foregroundStyle(DS.paper)
-                    .frame(width: DS.RatingBrand.markHeight, height: DS.RatingBrand.markHeight)
-                    .background(DS.RatingBrand.trakt, in: Circle())
-            }
-        }
-        .accessibilityLabel(Text(verbatim: service == .imdb ? "IMDb" : service == .tmdb ? "TMDB" : "Trakt"))
+        Image("rating-" + service.rawValue).resizable().scaledToFit()
+            .frame(height: height)
+            .accessibilityLabel(Text(verbatim: service == .imdb ? "IMDb" : service == .tmdb ? "TMDB" : "Trakt"))
     }
 }
 
@@ -180,14 +177,16 @@ struct PersonRoute: Hashable { var id: Int; var name: String }
 /// Un póster de TMDB que abre su ficha.
 struct TmdbPoster: View {
     let title: TmdbTitle
+    /// El ancho del póster: el de la tira, o el de su columna en una cuadrícula (`DSPosterGrid`).
+    var width: CGFloat = DS.Poster.railWidth
     @Environment(\.posterCaptions) private var captions
     var body: some View {
         NavigationLink(value: TmdbRoute(title: title)) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                PosterCard(title: title.title, poster: title.poster, width: DS.Poster.railWidth)
+                PosterCard(title: title.title, poster: title.poster, width: width)
                 if captions {   // en la filmografía (cuadrícula) dice su papel; en una tira, solo el póster
-                    Text(verbatim: title.title).recipe(.footnote).lineLimit(1).frame(width: DS.Poster.railWidth, alignment: .leading)
-                    Text(verbatim: title.role ?? title.year.map(String.init) ?? "").recipe(.footnote).lineLimit(1).frame(width: DS.Poster.railWidth, alignment: .leading)
+                    Text(verbatim: title.title).recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
+                    Text(verbatim: title.role ?? title.year.map(String.init) ?? "").recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
                 }
             }
         }

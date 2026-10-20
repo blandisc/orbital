@@ -110,7 +110,7 @@
 
 /* --- Consola: su foto (o logotipo) sobre un brillo de su color; nombre, juegos y lo último ---- */
 .tile--console {
-  display: flex; flex-direction: column; padding: 0;
+  display: flex; flex-direction: column; padding: 0; container-type: inline-size; /* el nombre se ajusta al ancho (abajo) */
   background: var(--gradient-console-tile);
 }
 .tile--console__glow {
@@ -134,7 +134,8 @@
 .tile--console__cover { max-height: 4.8rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
 .tile--console__text { position: relative; display: flex; flex-direction: column; gap: .1rem; padding: var(--space-2) var(--inset-card) var(--inset-card); }
 .tile--console__name {
-  font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); line-height: 1.15; letter-spacing: var(--tracking-tight);
+  /* Con letra grande, «GameCube» quedaba en «GameC…»: el nombre se achica lo justo para caber en la tarjeta. */
+  font-family: var(--font-sans); font-size: min(var(--text-lg), var(--console-name-fit)); font-weight: var(--weight-bold); line-height: 1.15; letter-spacing: var(--tracking-tight);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.08em;
 }
 .tile--console__text { min-width: 0; }

@@ -60,8 +60,12 @@ enum Demo {
         guard let parts = value(after: "-demo-title")?.split(separator: ":"), parts.count == 2 else { return nil }
         return (String(parts[0]), String(parts[1]))
     }
-    /// `-demo-player panel|sources`: ya reproduciendo, abre el panel de audio y subtítulos o el de otra fuente.
+    /// `-demo-player panel|sources|subtitles`: ya reproduciendo, abre el panel de audio y subtítulos (o directo en Subtítulos) o el de otra fuente.
     static var player: String? { value(after: "-demo-player") }
+    /// `-demo-player-state skip-intro|error|upnext|locked`: ya reproduciendo, pone «Saltar intro», el error, la tarjeta de
+    /// «Siguiente episodio» o el bloqueo (estados que el simulador no alcanza solo). `-demo-player-portrait`: abre en vertical.
+    static var playerState: String? { value(after: "-demo-player-state") }
+    static var playerPortrait: Bool { ProcessInfo.processInfo.arguments.contains("-demo-player-portrait") }
     /// `-demo-widget sample|empty|live`: lo que enseña el widget «Lo siguiente para ti» (por omisión un snapshot de ejemplo; `empty`,
     /// sin nada pendiente; `live`, el que arma Inicio con la biblioteca de demostración).
     static var widget: String? { value(after: "-demo-widget") }
@@ -107,7 +111,7 @@ enum Demo {
     static var search: String? { value(after: "-demo-search") }
     /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.
     static var open: String? { value(after: "-demo-open") }
-    /// `-demo-gesture brightness|volume|seek|fastforward`: simula el gesto a medio camino (sin tocar la pantalla),
+    /// `-demo-gesture brightness|volume|seek|fastforward|next-subtitle`: simula el gesto a medio camino (sin tocar la pantalla),
     /// para capturar su indicador en el simulador.
     static var gesture: String? { value(after: "-demo-gesture") }
     /// `-demo-console`: simula que tu Orbital de mentira sí contesta «Para ti» (con una lista de ejemplo con puesto),
@@ -170,8 +174,12 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
+        // OpenSubtitles de mentira: varias versiones por idioma (con copia, descargas, y unas SDH/forzadas que se esconden).
+        if url.host == "opensubtitles-v3.strem.io" { return HTTPResponse(status: 200, data: Self.subtitlesDemo.serialized()) }
         if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
         if url.host == "api.trakt.tv", Demo.because, let found = Self.becauseDemo(url.path) { return HTTPResponse(status: 200, data: found.serialized()) }
+        // La calificación de la comunidad de Trakt (la ficha la enseña con su logo junto a IMDb y TMDB).
+        if url.host == "api.trakt.tv", url.path.hasSuffix("/ratings") { return HTTPResponse(status: 200, data: JSON.object(["rating": .double(8.4), "votes": 52_310]).serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
             let user: JSON = url.path == "/users/settings" ? ["user": ["username": "demo"]] : [:]
             return HTTPResponse(status: url.path == "/users/settings" ? 200 : 404, data: user.serialized())
@@ -231,7 +239,14 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         let path = url.path.replacingOccurrences(of: "/3", with: "")
         let body: JSON
         if path.hasPrefix("/find/") {
-            body = ["movie_results": [["id": 1]], "tv_results": [["id": 1]]]
+            // Los de `demoSpanish` tienen su propio id (300+): su nombre en español, sin sinopsis de México (sale la de España).
+            let id = Self.demoSpanish.firstIndex { $0.0 == url.lastPathComponent }.map { 300 + $0 } ?? 1
+            body = ["movie_results": [["id": .int(id)]], "tv_results": [["id": .int(id)]]]
+        } else if path.hasSuffix("/translations"), let id = Int(url.deletingLastPathComponent().lastPathComponent), id >= 300, Self.demoSpanish.indices.contains(id - 300) {
+            body = ["translations": [["iso_639_1": "es", "iso_3166_1": "ES", "data": ["title": .string(Self.demoSpanish[id - 300].1), "name": .string(Self.demoSpanish[id - 300].1),
+                                                                                      "overview": "Sinopsis de demostración en español de España."]]]]
+        } else if let id = Int(url.lastPathComponent), id >= 300, Self.demoSpanish.indices.contains(id - 300) {
+            body = ["id": .int(id), "title": .string(Self.demoSpanish[id - 300].1), "name": .string(Self.demoSpanish[id - 300].1), "overview": ""]
         } else if path.hasPrefix("/person/") {
             body = ["id": 1, "name": "Steve Carell", "birthday": "1962-08-16", "place_of_birth": "Concord, Massachusetts",
                     "biography": "Actor, comediante y productor estadounidense. Conocido por Michael Scott en The Office, y por Foxcatcher, Little Miss Sunshine y The Big Short.",
@@ -255,6 +270,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                     "credits": ["cast": [["id": 1, "name": "Steve Carell", "character": "Michael Scott"], ["id": 2, "name": "Rainn Wilson", "character": "Dwight Schrute"],
                                          ["id": 3, "name": "John Krasinski", "character": "Jim Halpert"], ["id": 4, "name": "Jenna Fischer", "character": "Pam Beesly"]], "crew": []],
                     "content_ratings": ["results": [["iso_3166_1": "MX", "rating": "B"]]],
+                    "release_dates": ["results": [["iso_3166_1": "MX", "release_dates": [["certification": "B12"]]]]],
                     "videos": ["results": [["site": "YouTube", "key": "LHOtME2DL4g", "type": "Trailer", "name": "Tráiler"],
                                            ["site": "YouTube", "key": "gO8N3L_aERg", "type": "Featurette", "name": "Así se hizo"]]],
                     "recommendations": ["results": [["id": 8, "name": "Parks and Recreation", "first_air_date": "2009-04-09", "poster_path": "/p.jpg"],
@@ -263,6 +279,9 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         }
         return HTTPResponse(status: 200, data: body.serialized())
     }
+
+    /// Nombres en español para el TMDB de mentira (Mi media y la ficha los enseñan traducidos).
+    static let demoSpanish: [(String, String)] = [("tt15239678", "Dune: Parte dos"), ("tt11280740", "Separación")]
 
     /// Títulos reales para el TMDB de mentira (sus pósters salen de metahub).
     static let demoIMDb: [(String, String)] = [
@@ -473,6 +492,20 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         }
     }
 
+    static var subtitlesDemo: JSON {
+        let rows: [(String, String, Int, Bool, Bool)] = [
+            ("eng", "Elephants.Dream.1080p.WEB-DL.DDP5.1.H264-NTb", 4210, false, false), ("eng", "Elephants.Dream.720p.BluRay.x264-SPARKS", 18_400, false, false),
+            ("eng", "Elephants.Dream.1080p.WEB-DL.H264-NTb.SDH", 3100, true, false), ("eng", "Elephants.Dream.HDTV.x264-LOL", 950, false, false),
+            ("spa", "Elephants.Dream.1080p.WEB-DL.H264-NTb", 1290, false, false), ("spa", "Elephants.Dream.DVDRip.XviD-FXG", 3400, false, false),
+            ("spa", "Elephants.Dream.Forzados", 220, false, true), ("fre", "Elephants.Dream.1080p.BluRay-AMIABLE", 610, false, false),
+            ("ger", "Elephants.Dream.WEBRip-GER", 120, false, false), ("por", "Elephants.Dream.1080p.WEB-DL-NTb", 480, false, false),
+        ]
+        return ["subtitles": .array(rows.enumerated().map { i, r in
+            ["id": .string("\(i)"), "url": .string("https://demo.orbital.invalid/sub/\(i).srt"), "lang": .string(r.0), "release": .string(r.1),
+             "downloads": .int(r.2), "hearing_impaired": .bool(r.3), "foreign_parts_only": .bool(r.4)]
+        })]
+    }
+
     static let manifest: JSON = ["id": "orbital.demo", "name": "Demo (videos de prueba)", "resources": ["stream"], "types": ["movie", "series"], "idPrefixes": ["tt"]]
 
     private func addon(_ path: String) -> HTTPResponse {
@@ -493,7 +526,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
              "behaviorHints": ["bingeGroup": "demo-1080p"]],
             ["name": "[RD+] Demo\n1080p", "title": "Big.Buck.Bunny.1080p.BluRay.x264\n💾 30.7 MB 🇬🇧",
              "url": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_30MB.mp4"],
-            ["name": "[RD+] Demo\n4K", "title": "Jellyfish.2160p.HDR.WEB-DL\n💾 14.8 GB 🇬🇧",
+            ["name": "[RD+] Demo\n4K", "title": "Jellyfish.2160p.DV.HDR.WEB-DL.DDP5.1.Atmos\n💾 14.8 GB 🇬🇧",
              "url": "https://test-videos.co.uk/vids/jellyfish/mp4/h264/1080/Jellyfish_1080_10s_20MB.mp4"],
         ]
         return HTTPResponse(status: 200, data: JSON.object(["streams": .array(streams)]).serialized())

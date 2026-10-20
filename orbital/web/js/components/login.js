@@ -172,15 +172,20 @@ export function createLogin({ onDone, onMove, onClose }) {
   });
 
   /** Pide un código para escribir desde el celular y enseña su QR (sin túnel, no hay QR: solo el teclado). */
+  // Los pedidos de código van en fila y solo vale el último: con dos seguidos (abrir dos veces rápido) el servidor se
+  // quedaba con uno y la pantalla mostraba el QR del otro, que ya no existía.
+  let remoteChain = Promise.resolve();
+  let remoteSeq = 0;
   function startRemote() {
     stopRemote();
     const mine = attempt;
     const wanted = form;
-    api.remoteInputStart(form.title, form.fields.map(({ name, label, secret, optional }) => ({ name, label, secret, optional })))
+    const seq = ++remoteSeq;
+    const fieldsOut = form.fields.map(({ name, label, secret, optional }) => ({ name, label, secret, optional }));
+    remoteChain = remoteChain.then(() => (seq === remoteSeq ? api.remoteInputStart(wanted.title, fieldsOut) : null))
       .then((res) => {
-        if (!res?.ready || el.hidden || form !== wanted || mine !== attempt) {
-          if (res?.code) api.remoteInputCancel(res.code).catch(() => {});
-          return;
+        if (!res?.ready || el.hidden || form !== wanted || mine !== attempt || seq !== remoteSeq) {
+          return res?.code ? api.remoteInputCancel(res.code).catch(() => {}) : undefined; // en la fila: antes del siguiente
         }
         remoteCode = res.code;
         phoneImage.src = `/api/remote-input/qr.svg?code=${encodeURIComponent(res.code)}`;

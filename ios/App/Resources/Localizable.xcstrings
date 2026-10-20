@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Aún no tienes listas en Trakt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don't have any Trakt lists yet."
+          }
+        }
+      }
+    },
     "%@ GB libres": {
       "extractionState": "manual",
       "localizations": {
@@ -34,6 +45,17 @@
         }
       }
     },
+    "%@ descargas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ downloads"
+          }
+        }
+      }
+    },
     "%@ libres de %@": {
       "extractionState": "manual",
       "localizations": {
@@ -63,6 +85,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · %@"
+          }
+        }
+      }
+    },
+    "%@ · %lld de %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lld of %lld"
           }
         }
       }
@@ -184,6 +217,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld min"
+          }
+        }
+      }
+    },
+    "%lld opciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld options"
           }
         }
       }
@@ -635,6 +679,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Saver"
+          }
+        }
+      }
+    },
+    "Ajustar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fit"
+          }
+        }
+      }
+    },
+    "Ajustar al área segura": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fit to Safe Area"
           }
         }
       }
@@ -1244,6 +1310,17 @@
         }
       }
     },
+    "Buscando en internet…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searching online…"
+          }
+        }
+      }
+    },
     "Buscando la mejor fuente…": {
       "extractionState": "manual",
       "localizations": {
@@ -1306,6 +1383,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Find a source"
+          }
+        }
+      }
+    },
+    "Buscar idioma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search language"
           }
         }
       }
@@ -1475,6 +1563,17 @@
         }
       }
     },
+    "Cambia el zoom del video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes the video zoom"
+          }
+        }
+      }
+    },
     "Cambiar": {
       "extractionState": "manual",
       "localizations": {
@@ -1591,7 +1690,18 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Charging"
+            "value": "Loading"
+          }
+        }
+      }
+    },
+    "Cargando…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading…"
           }
         }
       }
@@ -1757,6 +1867,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Classic"
+          }
+        }
+      }
+    },
+    "Coincide con tu copia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matches your copy"
           }
         }
       }
@@ -2586,6 +2707,17 @@
         }
       }
     },
+    "De internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the internet"
+          }
+        }
+      }
+    },
     "De las series que sigues": {
       "extractionState": "manual",
       "localizations": {
@@ -2714,6 +2846,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "From the streaming service: good quality, medium size."
+          }
+        }
+      }
+    },
+    "Del video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the video"
           }
         }
       }
@@ -4192,6 +4335,17 @@
         }
       }
     },
+    "Este va bien": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This one works"
+          }
+        }
+      }
+    },
     "Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas.": {
       "extractionState": "manual",
       "localizations": {
@@ -4210,6 +4364,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pull up for the full remote"
+          }
+        }
+      }
+    },
+    "Estirar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stretch"
           }
         }
       }
@@ -6029,6 +6194,28 @@
         }
       }
     },
+    "Más idiomas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More languages"
+          }
+        }
+      }
+    },
+    "Más idiomas…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More languages…"
+          }
+        }
+      }
+    },
     "Más lento": {
       "extractionState": "manual",
       "localizations": {
@@ -6498,6 +6685,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing is playing on the TV to continue here."
+          }
+        }
+      }
+    },
+    "No hay subtítulos en este idioma.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No subtitles in this language."
           }
         }
       }
@@ -7114,6 +7312,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Others"
+          }
+        }
+      }
+    },
+    "Otros idiomas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other languages"
           }
         }
       }
@@ -7972,6 +8181,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reconnecting…"
+          }
+        }
+      }
+    },
+    "Recortar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crop"
           }
         }
       }
@@ -9901,6 +10121,17 @@
         }
       }
     },
+    "Tus idiomas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your languages"
+          }
+        }
+      }
+    },
     "Tus listas": {
       "extractionState": "manual",
       "localizations": {
@@ -10359,6 +10590,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Versions in your folder"
+          }
+        }
+      }
+    },
+    "Versión %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %lld"
+          }
+        }
+      }
+    },
+    "Versión anterior": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous version"
+          }
+        }
+      }
+    },
+    "Versión siguiente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next version"
           }
         }
       }
@@ -10986,6 +11250,204 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last scrobble"
+          }
+        }
+      }
+    },
+    "Siguiente subtítulo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next subtitle"
+          }
+        }
+      }
+    },
+    "Mantén presionado para ver la lista de subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press and hold to see the subtitle list"
+          }
+        }
+      }
+    },
+    "Lista de subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle list"
+          }
+        }
+      }
+    },
+    "%@ · coincide con tu copia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · matches your copy"
+          }
+        }
+      }
+    },
+    "Ahora no": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        }
+      }
+    },
+    "Atajo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcut"
+          }
+        }
+      }
+    },
+    "Desbloquear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock"
+          }
+        }
+      }
+    },
+    "En vertical solo se nota en videos de otro formato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In portrait it only shows on videos with a different shape"
+          }
+        }
+      }
+    },
+    "Esta lista todavía no tiene títulos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This list has no titles yet."
+          }
+        }
+      }
+    },
+    "Menos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Less"
+          }
+        }
+      }
+    },
+    "Sin filmografía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No filmography"
+          }
+        }
+      }
+    },
+    "Subtítulos antes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles earlier"
+          }
+        }
+      }
+    },
+    "Subtítulos después": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles later"
+          }
+        }
+      }
+    },
+    "TMDB no tiene títulos de esta persona.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TMDB has no titles for this person."
+          }
+        }
+      }
+    },
+    "del video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in the video"
+          }
+        }
+      }
+    },
+    "quedan %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        }
+      }
+    },
+    "Clasificación %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rated %@"
+          }
+        }
+      }
+    },
+    "Lo mejor disponible: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best available: %@"
           }
         }
       }
