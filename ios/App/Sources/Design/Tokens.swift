@@ -353,7 +353,10 @@ enum DS {
         /// Tamaños de letra de muestra («Aa») para chico, mediano y grande.
         static let sampleSizes: [String: CGFloat] = ["small": 12, "medium": 15, "large": 19]
         /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando) y entre qué límites.
-        static let portraitCenter: CGFloat = 0.32, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
+        static let portraitCenter: CGFloat = -1, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
+        /// Mientras no lo mueves (`portraitCenter` < 0), el video queda a esta distancia bajo el área segura: la misma en todos los
+        /// iPhone (antes era una fracción del alto y en un Pro Max quedaba cientos de puntos más abajo que en un SE).
+        static let portraitTop: CGFloat = 24
         /// En vertical sin controles a la vista, el video se centra.
         /// El botón de reproducir, más grande que ±10 (lo que más se toca).
         static let playButton: CGFloat = 76, playGlyph: CGFloat = 30, sideButton: CGFloat = 56
@@ -488,7 +491,7 @@ enum DS {
         static let dot: CGFloat = 8, cardHeight: CGFloat = 300, panelWidth: CGFloat = 300, panelHeight: CGFloat = 250
         static let lowBattery = 20, noteLines = 5
         /// Lo que se asoma la tarjeta siguiente del carrusel (una orilla, sin texto a medias): así se lee que se desliza.
-        static let peek: CGFloat = 28
+        static let peek: CGFloat = 40
         static let timerSteps = [15, 30, 60, 90]
         /// Cuánto antes del cierre automático se avisa (segundos).
         static let closeWarning: TimeInterval = 600
@@ -546,7 +549,10 @@ enum DS {
     enum PlatformFan {
         /// El subrayado de la lista elegida en la página de una plataforma.
         static let tabUnderline: CGFloat = 3
-        static let width: CGFloat = 168, height: CGFloat = 176, radius: CGFloat = 22
+        /// Dos tarjetas y un pedazo de la tercera (como «Próximos estrenos»): en un iPhone de 375 pt las dos de 168 llenaban casi todo
+        /// el ancho y dejaban 11 pt a la derecha contra 16 a la izquierda.
+        static var width: CGFloat { min(maxWidth, (UIScreen.main.bounds.width - DS.Space.gutter - DS.Space.s3 - DS.Poster.peek) / 2) }
+        static let maxWidth: CGFloat = 168, height: CGFloat = 176, radius: CGFloat = 22
         static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
         static let logo: CGFloat = 34, logoRadius: CGFloat = 10, glow: CGFloat = 18
         /// La pastilla de una plataforma (el Top 10 de Inicio): el logo (en círculo), el aire alrededor y el borde de la elegida.
@@ -781,6 +787,10 @@ enum DS {
         static let gridColumns = 3, gridColumnsWide = 4, gridColumnsLarge = 2
         static let gridWideWidth: CGFloat = 600
         static let episodeThumbWidth: CGFloat = 122
+        /// Una tarjeta de «Próximos estrenos»: dos y un pedazo (`peek`) de la tercera, en cualquier ancho (con un ancho fijo, en un
+        /// iPhone de 375 pt las dos llenaban la pantalla y parecía una cuadrícula que terminaba a 5 pt del borde).
+        static let peek: CGFloat = 28
+        static var airingWidth: CGFloat { (UIScreen.main.bounds.width - DS.Space.gutter - DS.Space.s3 - peek) / 2 }
         /// Una pieza ancha (16:9) de un riel: «Todo lo que sigues», episodios nuevos.
         static let stillWidth: CGFloat = 220
         static let heroHeight: CGFloat = 300

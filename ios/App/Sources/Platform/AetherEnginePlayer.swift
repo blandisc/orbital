@@ -268,7 +268,12 @@ struct AetherSubtitleOverlay: View {
     private func videoRect(in size: CGSize) -> CGRect {
         if let layer = engine.nativePlayerLayer, !layer.videoRect.isEmpty { return layer.videoRect }
         guard let picture = engine.softwareDisplaySize, picture.width > 0, picture.height > 0, size.width > 0, size.height > 0 else {
-            return CGRect(origin: .zero, size: size)
+            // Sin saber todavía cómo es el cuadro: 16:9 centrado (antes se tomaba todo el rectángulo y, con un hueco arriba y abajo
+            // del video —el panel en vertical de un Pro Max—, la línea quedaba fuera de la imagen).
+            guard size.width > 0, size.height > 0 else { return CGRect(origin: .zero, size: size) }
+            let scale = fills ? max(size.width, size.height * DS.Poster.stillAspect) : min(size.width, size.height * DS.Poster.stillAspect)
+            let w = scale, h = scale / DS.Poster.stillAspect
+            return CGRect(x: (size.width - w) / 2, y: (size.height - h) / 2, width: w, height: h)
         }
         let scale = fills ? max(size.width / picture.width, size.height / picture.height) : min(size.width / picture.width, size.height / picture.height)
         let w = picture.width * scale, h = picture.height * scale

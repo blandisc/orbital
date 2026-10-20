@@ -155,6 +155,8 @@ struct PlayerScreen: View {
     /// ×2: lo que lleva el anillo antes de quedarse fijo.
     @State private var fastForwardProgress: Double = 0
     @State private var flashTask: Task<Void, Never>?
+    /// Lo que mide la tarjeta de «Siguiente episodio» (para subir los subtítulos sobre ella).
+    @State private var upNextHeight: CGFloat = 0
     @State private var rateBeforeFastForward: Float = 1
 
     /// Lo que suena ahora: cambia al pasar solo al siguiente episodio (el `request` es solo con el que se abrió).
@@ -175,6 +177,8 @@ struct PlayerScreen: View {
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
                         // quedaba a media imagen).
                         holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
+                            // Con la tarjeta de «Siguiente episodio» (abajo a la derecha, en horizontal) la línea sube sobre ella.
+                            .offset(y: landscape && model.upNext != nil && !panel && !locked && !subtitleDock ? -(upNextHeight + DS.Space.s6) : 0)
                             .transition(.opacity)
                     }
                 }
@@ -230,7 +234,7 @@ struct PlayerScreen: View {
             // Con el panel de subtítulos abierto, tampoco: se encimaba sobre él (sale al cerrarlo, si aún falta).
             if let up = model.upNext, !locked, !subtitleDock {
                 if landscape {
-                    VStack { Spacer(); HStack { Spacer(); upNextCard(model, up) } }
+                    VStack { Spacer(); HStack { Spacer(); upNextCard(model, up).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { upNextHeight = $0 } } }
                         .padding(.horizontal, DS.Space.s6)
                         .padding(.bottom, controlsVisible ? DS.Space.s6 + DS.Size.touchTarget * 2 : DS.Space.s6)
                 } else if ipod != nil {
