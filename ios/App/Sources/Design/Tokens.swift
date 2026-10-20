@@ -518,7 +518,7 @@ enum DS {
         /// La gota de los puntos de un carrusel: cuánto se alarga la activa y su resorte (respuesta y amortiguación).
         static let pageDotStretch: CGFloat = 2.6, pageDotSpring: Double = 0.38, pageDotDamping: Double = 0.62
         /// El logotipo arriba de Inicio (el tamaño de la letra de «orbital»).
-        static let headerWordmark: CGFloat = 26
+        static let headerWordmark: CGFloat = 32   // a la par del título grande de Para ti, Descargas y Buscar
         /// Lo más que se encoge un número de «Tu año» para caber en su tarjeta.
         static let statScale: CGFloat = 0.6
         /// Una sinopsis más larga que esto (caracteres) se corta con «más».

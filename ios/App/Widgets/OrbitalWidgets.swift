@@ -8,7 +8,6 @@ struct OrbitalWidgets: WidgetBundle {
     var body: some Widget {
         NextUpWidget()
         DownloadLiveActivity()
-        RemoteControlButton()
     }
 }
 
@@ -67,9 +66,11 @@ struct DownloadLiveActivity: Widget {
             } compactLeading: {
                 ActivityPoster(file: context.state.poster, width: DS.Space.s5)
             } compactTrailing: {
-                Gauge(value: context.state.fraction) { EmptyView() }.gaugeStyle(.accessoryCircularCapacity).tint(context.state.done ? DS.good : DS.paper)
+                // El porcentaje (antes un anillo gris grande que casi no se llenaba).
+                percent(context.state).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.paper)
             } minimal: {
-                Gauge(value: context.state.fraction) { Image(systemName: context.state.done ? "checkmark" : "arrow.down") }.gaugeStyle(.accessoryCircularCapacity)
+                Image(systemName: context.state.done ? "checkmark" : "arrow.down").font(DS.font(.sm, weight: .bold))
+                    .foregroundStyle(context.state.done ? DS.good : DS.paper)
             }
         }
     }

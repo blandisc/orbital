@@ -140,7 +140,8 @@ struct MainTabs: View {
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
-        .tabBarMinimizeBehavior(.onScrollDown)
+        // En Buscar la barra no se encoge al bajar: con ella se escondía el campo de búsqueda.
+        .tabBarMinimizeBehavior(tab == 2 ? .never : .onScrollDown)
         .task {
             let downloads = env.services.downloads
             pendingDownloads = await downloads.all.filter { $0.state != .done }.count

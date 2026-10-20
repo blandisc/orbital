@@ -167,6 +167,8 @@ public actor Downloads {
     private let onChange: @Sendable ([DownloadItem]) -> Void
     private var items: [String: DownloadItem] = [:]
     private var waiting = Set<String>()      // esperando su reintento (no se arrancan hasta que pase la espera)
+    /// Un solo `pump` a la vez (el actor deja entrar otro en cada `await`: dos podían arrancar la misma o pasarse del tope).
+    private var pumping = false, pumpAgain = false
     private var listening: Task<Void, Never>?
     private nonisolated let updatesHub = UpdatesHub()
 
@@ -203,7 +205,9 @@ public actor Downloads {
     /// Un flujo nuevo con cada cambio de la cola (cada pantalla pide el suyo: al cerrar una, las demás siguen).
     public nonisolated func makeUpdates() -> AsyncStream<[DownloadItem]> { updatesHub.makeStream() }
 
-    private func changed() { let snapshot = all; onChange(snapshot); updatesHub.send(snapshot) }
+    /// `persist: false` para el avance: antes cada avance (4 por segundo con dos descargas) reescribía todo el índice en disco.
+    /// Al relanzar, lo bajado se recupera del archivo y de los datos de reanudación, no del índice.
+    private func changed(persist: Bool = true) { let snapshot = all; if persist { onChange(snapshot) }; updatesHub.send(snapshot) }
 
     /// Lo que falta por bajar de las que ya están en marcha o en cola (para no prometer un espacio dos veces).
     private func pendingBytes(excluding id: String) -> Int64 {
@@ -273,8 +277,17 @@ public actor Downloads {
 
     // MARK: cola
     private func pump() async {
+        if pumping { pumpAgain = true; return }
+        pumping = true
+        repeat { pumpAgain = false; await pumpOnce() } while pumpAgain
+        pumping = false
+    }
+
+    private func pumpOnce() async {
         var active = items.values.filter { $0.state == .downloading }.count
         for var item in all where item.state == .queued && !waiting.contains(item.id) && active < Self.maxActive {
+            guard let latest = items[item.id], latest.state == .queued, latest.createdAt == item.createdAt else { continue }   // cambió mientras arrancaba otra
+            item = latest
             guard let url = secrets.get(SecretKey.download(item.id)).flatMap(URL.init(string:)) else {
                 item.state = .failed; item.lastError = DownloadError.noURL.description
                 items[item.id] = item; continue
@@ -341,7 +354,7 @@ public actor Downloads {
             // al terminar lo tiene que poder ver.
             if let total, !Self.notTheVideo(size: total, advertised: item.expectedBytes) { item.expectedBytes = total }
             items[id] = item
-            changed()
+            changed(persist: false)
         case .finished(let id):
             guard var item = items[id] else { return }
             let file = fileURL(item)
@@ -357,9 +370,9 @@ public actor Downloads {
             secrets.set(SecretKey.download(id), nil)  // el enlace ya no hace falta
             items[id] = item
             changed()
-            await saveSubtitles(for: id)
-            changed()
+            // La siguiente arranca ya; los subtítulos se bajan aparte (antes la cola esperaba hasta 20 s por idioma).
             await pump()
+            Task { await self.saveSubtitles(for: id); self.changedAfterSubtitles() }
         case .failed(let id, let status, let message):
             guard let item = items[id], item.state == .downloading else { return }
             if status == 416, let file = Optional(fileURL(item)) { try? FileManager.default.removeItem(at: file) }   // el parcial no cuadra: de nuevo desde cero
@@ -384,8 +397,8 @@ public actor Downloads {
             items[id] = item
             let current = secrets.get(SecretKey.download(id))
             let fresh = await refresh(item)
-            // Mientras se pedía el enlace nuevo pudieron pausar o borrar la descarga: se revisa.
-            guard let now = items[id], now.state == .downloading else { return }
+            // Mientras se pedía el enlace nuevo pudieron pausar, borrar o cambiar por otra versión la descarga: se revisa.
+            guard let now = items[id], now.state == .downloading, now.createdAt == item.createdAt else { return }
             if let fresh, fresh.absoluteString != current {
                 secrets.set(SecretKey.download(id), fresh.absoluteString)
                 item = now
@@ -405,10 +418,13 @@ public actor Downloads {
         await pump()
     }
 
+    private func changedAfterSubtitles() { changed() }
+
     private func saveSubtitles(for id: String) async {
         guard let snapshot = items[id] else { return }
         let found = await subtitles(snapshot)
-        guard var item = items[id] else { return }          // lo borraron mientras se bajaban los subtítulos
+        // Lo borraron (o lo cambiaron por otra versión) mientras se bajaban los subtítulos: no son de esta.
+        guard var item = items[id], item.createdAt == snapshot.createdAt else { return }
         let folder = fileURL(item).deletingLastPathComponent().appendingPathComponent("subs")
         guard DownloadFiles.isStrictlyInside(folder, root: root) else { return }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

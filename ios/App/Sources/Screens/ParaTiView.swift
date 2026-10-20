@@ -61,9 +61,8 @@ struct ParaTiView: View {
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti")
-        // El título grande en su renglón, igual en todos los tamaños: con cuatro botones no cabe junto a ellos en un teléfono
-        // angosto, y antes cambiaba de lugar según el iPhone.
-        .toolbarTitleDisplayMode(.large)
+        // El título grande en el renglón de los botones, como Descargas y Buscar (antes iba debajo de los íconos).
+        .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
             ToolbarItem(placement: .topBarTrailing) {
@@ -85,7 +84,7 @@ struct ParaTiView: View {
                         .disabled(m.isLoading).accessibilityLabel(Text("Actualizar"))
                 }
             }
-            ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            // Sin separar el perfil: en una sola pastilla los botones caben junto al título aun en un SE («Para…» se cortaba).
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
         .titleDestinations()

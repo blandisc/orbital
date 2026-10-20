@@ -1123,6 +1123,17 @@
         }
       }
     },
+    "Bajar también esta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download this one too"
+          }
+        }
+      }
+    },
     "Bajar temporada": {
       "extractionState": "manual",
       "localizations": {
@@ -1603,6 +1614,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Change what I want"
+          }
+        }
+      }
+    },
+    "Cambiarla por esta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace it with this one"
           }
         }
       }
@@ -5160,6 +5182,17 @@
         }
       }
     },
+    "La que elegiste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The one you chose"
+          }
+        }
+      }
+    },
     "La que tienes": {
       "extractionState": "manual",
       "localizations": {
@@ -8027,6 +8060,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Upcoming episodes"
+          }
+        }
+      }
+    },
+    "Puedes guardar varias versiones del mismo título.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can keep several versions of the same title."
           }
         }
       }
@@ -10975,6 +11019,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ready to watch · “%@”"
+          }
+        }
+      }
+    },
+    "Ya la tienes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already have it"
           }
         }
       }

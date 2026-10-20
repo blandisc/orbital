@@ -327,12 +327,12 @@ public final class TitleModel: ObservableModel {
 
     /// Descarga uno o varios episodios con la fuente que mejor sirve para guardar (1080p, moderada).
     @discardableResult
-    public func download(_ videoIDs: [String], source: Source? = nil, replace: Bool = false) async -> DownloadOutcome {
+    public func download(_ videoIDs: [String], source: Source? = nil, replace: Bool = false, keepBoth: Bool = false) async -> DownloadOutcome {
         var queued = 0
         for video in videoIDs {
             var label = ""
             if let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
-            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster, source: source, replace: replace) {
+            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster, source: source, replace: replace, keepBoth: keepBoth) {
             case .queued: queued += 1
             case .noSources: if queued == 0 { return .noSources } else { continue }
             case .already: if videoIDs.count == 1 { return .already } else { continue }

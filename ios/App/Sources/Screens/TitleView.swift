@@ -75,6 +75,11 @@ struct TitleView: View {
             if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
             if Demo.isOn, Demo.open == "download-tap" { await downloadRecommended(model) }
             if Demo.isOn, Demo.open == "save" { saving = true }   // `-demo-open save`: la hoja «Guardar en…», para capturas
+            if Demo.isOn, Demo.open == "versions", let v = model.downloadTarget {   // `-demo-open versions`: la hoja «Ya la tienes»
+                await report(model.download([v]), model)
+                await model.loadBestSource()
+                if let source = model.bestSource, let existing = await model.existingDownload(v) { replacing = Replacement(source: source, videoID: v, existing: existing) }
+            }
             #endif
             await tint.load(model.background ?? model.poster)
         }
@@ -89,13 +94,14 @@ struct TitleView: View {
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
-        .confirmationDialog("Ya la tienes descargada", isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } }), titleVisibility: .visible, presenting: replacing) { r in
-            Button("Cambiarla por esta fuente") { Task { await report(model.download([r.videoID], source: r.source, replace: true), model) } }
-            Button("Dejar la que tengo", role: .cancel) {}
-        } message: { r in
-            let what = r.existing.quality ?? (r.existing.addon.isEmpty ? nil : r.existing.addon)
-            if let what { Text("Guardamos una sola copia. La que tienes es \(what); si la cambias, se borra y se baja la nueva.") }
-            else { Text("Guardamos una sola copia: si la cambias, se borra la que tienes y se baja la nueva.") }
+        .sheet(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
+            if let r = replacing {
+                DownloadVersionSheet(current: describe(r.existing), new: describe(r.source),
+                    keepBoth: { replacing = nil; Task { await report(model.download([r.videoID], source: r.source, keepBoth: true), model) } },
+                    replace: { replacing = nil; Task { await report(model.download([r.videoID], source: r.source, replace: true), model) } },
+                    cancel: { replacing = nil })
+                .fittedSheet()
+            }
         }
     }
 
@@ -559,6 +565,23 @@ struct TitleView: View {
                 await report(model.download([videoID], source: source), model)   // la fuente que elegiste
             }
         }
+    }
+
+    /// «4K · Dolby Vision» y «12.3 GB · Torrentio» (o «Bajando 40 % · Torrentio») para la hoja «Ya la tienes».
+    private func describe(_ item: DownloadItem) -> (label: String, detail: Text) {
+        let size = item.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? ""
+        let tail = item.addon.isEmpty ? "" : " · \(item.addon)"
+        if item.state != .done, let expected = item.expectedBytes, expected > 0 {
+            let percent = "\(Int(Double(item.writtenBytes) / Double(expected) * 100)) %"
+            return (item.quality ?? item.addon, Text("Bajando \(percent)") + Text(verbatim: tail))
+        }
+        return (item.quality ?? item.addon, Text(verbatim: size + tail))
+    }
+
+    private func describe(_ source: Source) -> (label: String, detail: Text) {
+        let label = ([source.resolution] + source.hdr).filter { !$0.isEmpty }.joined(separator: " · ")
+        let size = source.size > 0 ? ByteCountFormatter.string(fromByteCount: Int64(source.size), countStyle: .file) : nil
+        return (label.isEmpty ? source.addon : label, Text(verbatim: [size, source.addon.isEmpty ? nil : source.addon].compactMap { $0 }.joined(separator: " · ")))
     }
 
     private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel) async {

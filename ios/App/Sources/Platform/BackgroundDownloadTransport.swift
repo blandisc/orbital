@@ -16,6 +16,22 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         var file: String            // relativo a `root`: la ruta del contenedor cambia al actualizar la app
         var url: String
         var usedResumeData = false
+        /// La marca de la tarea de ahora (`id#token`). Antes las tareas se reconocían solo por `id`, y al cambiar una
+        /// descarga por otra versión la nueva «adoptaba» la vieja que se estaba cancelando: bajaba unos KB y se atoraba.
+        var token: String?
+    }
+
+    /// `id#token` → (id, token). Las tareas de versiones anteriores no traen token.
+    private static func parse(_ description: String?) -> (id: String, token: String?)? {
+        guard let description else { return nil }
+        guard let hash = description.lastIndex(of: "#") else { return (description, nil) }
+        return (String(description[..<hash]), String(description[description.index(after: hash)...]))
+    }
+
+    /// El contexto de una tarea, solo si es la tarea vigente de esa descarga (no una vieja que se está cancelando).
+    private func current(_ task: URLSessionTask) -> (id: String, context: Context)? {
+        guard let (id, token) = Self.parse(task.taskDescription), let context = lock.withLock({ contexts[id] }) else { return nil }
+        return context.token == token ? (id, context) : nil
     }
 
     private let lock = NSLock()
@@ -56,9 +72,12 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     // MARK: DownloadTransport
     func start(id: String, url: URL, resumeFrom: Int64, file: URL) async {
         // Si el sistema siguió bajando mientras la app estaba cerrada, esa tarea sigue viva: se adopta (no se reinicia).
+        // Solo una tarea viva de verdad (no una que se está cancelando) y que sea la vigente de esta descarga.
         let tasks = await session.allTasks
-        if tasks.contains(where: { $0.taskDescription == id && $0.state != .completed }) {
-            lock.withLock { if contexts[id] == nil { contexts[id] = Context(file: relative(file), url: url.absoluteString); saveContexts() } }
+        let token = lock.withLock { contexts[id]?.token }
+        if let live = tasks.first(where: { Self.parse($0.taskDescription)?.id == id && ($0.state == .running || $0.state == .suspended) }),
+           Self.parse(live.taskDescription)?.token == token, token != nil || live.taskDescription == id {
+            live.resume()
             return
         }
         let resumeURL = resumeFile(id)
@@ -76,8 +95,9 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
             if resumeFrom > 0 { request.setValue("bytes=\(resumeFrom)-", forHTTPHeaderField: "Range") }
             task = session.downloadTask(with: request)
         }
-        task.taskDescription = id
-        lock.withLock { contexts[id] = Context(file: relative(file), url: url.absoluteString, usedResumeData: usedResume); saveContexts() }
+        let newToken = UUID().uuidString
+        task.taskDescription = "\(id)#\(newToken)"
+        lock.withLock { contexts[id] = Context(file: relative(file), url: url.absoluteString, usedResumeData: usedResume, token: newToken); saveContexts() }
         try? FileManager.default.removeItem(at: resumeURL)
         task.resume()
     }
@@ -85,7 +105,7 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     /// Pausa: se detiene y se guardan los datos de reanudación.
     func cancel(id: String) async {
         let tasks = await session.allTasks
-        for task in tasks where task.taskDescription == id {
+        for task in tasks where Self.parse(task.taskDescription)?.id == id && (task.state == .running || task.state == .suspended) {
             await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
                 guard let download = task as? URLSessionDownloadTask else { task.cancel(); return done.resume() }
                 download.cancel(byProducingResumeData: { [weak self] data in
@@ -99,14 +119,14 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     /// Borrar: se detiene y se olvida todo.
     func discard(id: String) async {
         let tasks = await session.allTasks
-        for task in tasks where task.taskDescription == id { task.cancel() }
+        for task in tasks where Self.parse(task.taskDescription)?.id == id { task.cancel() }
         try? FileManager.default.removeItem(at: resumeFile(id))
         lock.withLock { contexts[id] = nil; lastProgress[id] = nil; saveContexts() }
     }
 
     // MARK: URLSessionDownloadDelegate
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-        guard let id = downloadTask.taskDescription, let context = lock.withLock({ contexts[id] }) else { return }
+        guard let (id, context) = current(downloadTask) else { return }   // una tarea vieja (cambiada o cancelada): no cuenta
         let response = downloadTask.response as? HTTPURLResponse
         var base: Int64 = 0
         var total: Int64? = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : nil
@@ -122,7 +142,14 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        guard let id = downloadTask.taskDescription, let context = lock.withLock({ contexts[id] }) else { return }
+        guard let (id, context) = current(downloadTask) else {
+            // Sin contexto pero sin otra tarea vigente (se perdió al cerrar la app): que la cola lo vuelva a pedir, no que se
+            // quede «descargando» para siempre.
+            if let id = Self.parse(downloadTask.taskDescription)?.id, lock.withLock({ contexts[id] }) == nil {
+                continuation.yield(.failed(id: id, status: nil, message: "Se perdió la descarga; se vuelve a pedir"))
+            }
+            return
+        }
         let status = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {
             // Un 403/404/410 no es un archivo: Real-Debrid dice que el enlace caducó.
@@ -158,7 +185,7 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard let id = task.taskDescription else { return }
+        guard let (id, _) = current(task) else { return }   // una tarea vieja: ni borra el contexto de la nueva ni la marca fallida
         guard let error else { lock.withLock { contexts[id] = nil; saveContexts() }; return }
         let nsError = error as NSError
         // Un corte (sin red, tiempo agotado) trae datos para continuar: se guardan.
@@ -169,7 +196,7 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
 
     /// Sin la red que pide (con «Solo con Wi‑Fi», sin Wi‑Fi): se dice «Esperando Wi‑Fi» en vez de parecer que baja.
     func urlSession(_ session: URLSession, taskIsWaitingForConnectivity task: URLSessionTask) {
-        guard let id = task.taskDescription else { return }
+        guard let (id, _) = current(task) else { return }
         continuation.yield(.waiting(id: id))
     }
 
