@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import companion, emulator_clock, focus, health, system
+from . import companion, emulator_clock, focus, health, system, title_switch
 from .config import Config
 from .events import EventBus
 from .launcher import Launcher
@@ -188,6 +188,8 @@ class Sessions:
             self.launcher.track(item.id, item.title, proc, runner=runner.name if runner else None)
             self._last_launch = {"id": item.id, "runner": runner_id, "retried": retry}
             self.revealing = self.to_front(item.id, item.title, runner.name if runner else None, pinned=pinned)
+            self.watch_program_switch(item, runner.argv if runner else item.argv, runner.cwd if runner else item.cwd,
+                                      runner.name if runner else None)
         elif item.uri:
             if item.source == "steam" and item.steam_appid and self.config.steam.silent_start:
                 steam.ready_silent(steam.find_steam(self.config.steam.path))
@@ -197,6 +199,25 @@ class Sessions:
             raise NotLaunchable(f"{item.title} no tiene forma de lanzarse")
         self.state.record_launch(item.id)
         return item
+
+    def watch_program_switch(self, item: LibraryItem, argv: list[str], cwd: str | None, runner: str | None) -> None:
+        """Xenia: cuando el juego pide abrir su otro programa (Black Ops II, de la campaña a Zombies), Orbital relanza Xenia
+        y lo vuelve a traer al frente; antes había que pulsar OK, salir y abrirlo otra vez (ver title_switch)."""
+        folder = title_switch.xenia_dir(argv)
+        if folder is None:
+            return
+
+        def still_playing() -> bool:
+            status = self.launcher.status()
+            return bool(status and status.get("id") == item.id)
+
+        def relaunch(module: str) -> None:
+            # La pantalla de carga del juego por si Windows pone a Orbital al frente al cerrarse el Xenia viejo.
+            self.events.publish({"type": "switching", "id": item.id, "title": item.title, "detail": title_switch.program_name(module)})
+            if self.launcher.relaunch(item.id, argv, cwd=cwd):
+                self.to_front(item.id, item.title, runner)
+
+        title_switch.start(folder, still_playing, relaunch)
 
     def _launchable(self, item: LibraryItem, runner_id: str | None) -> bool:
         if item.source in ("stremio", "cinemeta", "geforcenow") or item.id == "media:stremio":

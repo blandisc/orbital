@@ -100,6 +100,22 @@ def test_unrelated_consoles_never_count_as_the_game():
     assert wait_for(lambda: ended)
 
 
+def test_game_orphaned_by_a_quick_launcher_keeps_the_session():
+    """launch-xenia.cmd → PowerShell → Xenia: los dos primeros se cierran a los 2–3 s y Xenia queda huérfano (su padre ya no
+    existe). Antes eso contaba como «terminó a los 3 s»."""
+    procs = {}
+    lau, proc, ended, thread = make(procs)
+    procs[150] = ("powershell.exe", 100)
+    time.sleep(.35)  # el vigilante ve a PowerShell
+    procs[300] = ("xenia_canary_netplay.exe", 150)
+    del procs[150], procs[100]
+    proc.done.set()
+    assert wait_for(lambda: lau.current is not None and 300 in lau.current.followers)
+    assert not ended
+    del procs[300]
+    assert wait_for(lambda: ended)
+
+
 def test_stop_closes_the_process_that_took_over(monkeypatch):
     killed = []
     monkeypatch.setattr(launcher_mod, "_taskkill", lambda pid, force=False: killed.append((pid, force)))

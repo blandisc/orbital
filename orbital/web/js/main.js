@@ -1982,6 +1982,10 @@ function handleEvent(event) {
     });
   }
   if (event.type === "launch-ready") return ui.launch.reveal();
+  if (event.type === "switching") { // Xenia cambia de programa (Black Ops II: campaña ↔ Zombies): su pantalla de carga mientras se relanza
+    ui.launch.show(findItem(event.id) || { title: event.title }, event.detail || "");
+    return ui.launch.keep(30_000);
+  }
   if (event.type === "input") return handleAction(event.action); // el control remoto del iPhone, como el mando
   if (event.type === "text") return remoteText(String(event.text || ""), !!event.submit, !!event.replace);
   if (event.type === "settings") return event.settings && applySettings(event.settings);
