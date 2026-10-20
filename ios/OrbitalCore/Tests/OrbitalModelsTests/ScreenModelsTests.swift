@@ -109,6 +109,19 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(SearchModel(rig.services).recent, ["DUNE", "Severance"], "se guarda")
     }
 
+    func testSearchCountsAreTheRealOnesNotNineAndNine() async throws {
+        let rig = try ServicesRig()
+        func metas(_ prefix: String, _ n: Int) -> JSON {
+            .array((0..<n).map { .object(["id": .string("tt\(prefix)\($0)"), "name": .string("Star \($0)"), "poster": .string("https://images.metahub.space/poster/medium/tt\(prefix)\($0)/img")]) })
+        }
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top/search=star.json"] = ["metas": metas("1", 15)]
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/series/top/search=star.json"] = ["metas": metas("2", 12)]
+        let search = SearchModel(rig.services)
+        await search.search("star")
+        XCTAssertEqual(search.results.filter { $0.kind == "movie" }.count, 15, "antes salían 15 películas como 9 (18 en total, alternando)")
+        XCTAssertEqual(search.results.filter { $0.kind == "series" }.count, 12)
+    }
+
     func testSearchShowsEachKindAsItArrivesAndKeepsOneWhenTheOtherFails() async throws {
         let rig = try ServicesRig()
         let movies = try Fixtures.json("cinemeta/search_movie_dune.json"), series = try Fixtures.json("cinemeta/search_series_dune.json")

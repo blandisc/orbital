@@ -102,7 +102,7 @@ public final class SearchModel: ObservableModel {
                 let settled = parts.count + failed.count == 2
                 var now: [SearchResult] = []
                 if !parts.isEmpty {
-                    now = CinemetaParsing.searchResults(query: query, movies: parts["movie"] ?? [], series: parts["series"] ?? [])
+                    now = CinemetaParsing.searchResults(query: query, movies: parts["movie"] ?? [], series: parts["series"] ?? [], limit: Self.resultLimit)
                     // Del tipo que Cinemeta no ha dado (o no pudo), lo que haya traído Trakt.
                     let ids = Set(now.map(\.metaID))
                     now += (fromTrakt ?? []).filter { parts[$0.kind] == nil && !ids.contains($0.metaID) }
@@ -128,6 +128,9 @@ public final class SearchModel: ObservableModel {
     }
 
     static let retryDelay: UInt64 = 600_000_000
+    /// Todo lo que contesta Cinemeta (hasta 100 por tipo). Antes eran 18 en total, alternando tipos: el filtro decía
+    /// siempre «Películas 9 · Series 9» aunque hubiera más de uno y menos del otro.
+    static let resultLimit = 200
     /// Si Cinemeta no ha contestado nada en este tiempo, también se le pregunta a Trakt.
     static let hedgeDelay: UInt64 = 1_200_000_000
 

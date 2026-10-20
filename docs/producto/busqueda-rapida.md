@@ -59,3 +59,9 @@ y a veces responde 504 tras 6 s.
    (`orbital/server.py:217-222`).
 
 Con 1 a 3, la primera respuesta debería quedar en 0.5–1 s, sin los atorones de 10–60 s cuando Cinemeta falla.
+
+## Cuántos resultados (arreglado en el iPhone)
+
+La búsqueda juntaba películas y series alternando y se quedaba con 18. Con los dos tipos de 9 o más, el filtro decía siempre
+«Películas 9 · Series 9». El iPhone ya muestra todo lo que contesta Cinemeta. La TV tiene el mismo tope en
+`orbital/library/cinemeta.py:292` (`search_results(..., limit=18)`).
