@@ -40,6 +40,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var preferInfuse = false            // reproducir en Infuse en vez del reproductor propio
     public var traktClientID = ""            // el identificador no es secreto; el secreto de la aplicación va en el Keychain
     public var subtitleSize = "medium"         // «small» | «medium» | «large»: el tamaño de la letra de los subtítulos
+    public var subtitleBackground = "outline"  // «outline» (contorno) | «box» (caja oscura) | «translucent»
+    public var subtitlePosition = "normal"     // «normal» | «raised» (más arriba)
+    public var subtitlesOnSkipBack = true      // al regresar 10 s con subtítulos apagados, se ven un momento
+    public var forcedForForeignAudio = true    // audio en otro idioma (ni el tuyo ni inglés): los carteles en tu idioma
+    public var subtitleSystemStyle = false     // «Usar el estilo del iPhone» (Accesibilidad › Subtítulos): su color, fondo y tamaño
     public var orbitalAddress = ""             // tu Orbital por el túnel («orbital.midominio.com»); el token va en el Keychain
     public var appearance = "system"           // «system» | «light» | «dark»: el modo de la app (por omisión, el del iPhone)
     public var homeDeck = "coverflow"          // el carrusel de Inicio: «coverflow» | «fan» (abanico)
@@ -73,6 +78,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
         preferInfuse = try c.decodeIfPresent(Bool.self, forKey: .preferInfuse) ?? preferInfuse
         traktClientID = try c.decodeIfPresent(String.self, forKey: .traktClientID) ?? traktClientID
         subtitleSize = try c.decodeIfPresent(String.self, forKey: .subtitleSize) ?? subtitleSize
+        subtitleBackground = try c.decodeIfPresent(String.self, forKey: .subtitleBackground) ?? subtitleBackground
+        subtitlePosition = try c.decodeIfPresent(String.self, forKey: .subtitlePosition) ?? subtitlePosition
+        subtitlesOnSkipBack = try c.decodeIfPresent(Bool.self, forKey: .subtitlesOnSkipBack) ?? subtitlesOnSkipBack
+        forcedForForeignAudio = try c.decodeIfPresent(Bool.self, forKey: .forcedForForeignAudio) ?? forcedForForeignAudio
+        subtitleSystemStyle = try c.decodeIfPresent(Bool.self, forKey: .subtitleSystemStyle) ?? subtitleSystemStyle
         orbitalAddress = try c.decodeIfPresent(String.self, forKey: .orbitalAddress) ?? orbitalAddress
         appearance = try c.decodeIfPresent(String.self, forKey: .appearance) ?? appearance
         homeDeck = try c.decodeIfPresent(String.self, forKey: .homeDeck) ?? homeDeck
@@ -90,6 +100,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
         case homeDeck, homeTime, avatar, displayName, latinSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom
+        case subtitleBackground, subtitlePosition, subtitlesOnSkipBack, forcedForForeignAudio, subtitleSystemStyle
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 

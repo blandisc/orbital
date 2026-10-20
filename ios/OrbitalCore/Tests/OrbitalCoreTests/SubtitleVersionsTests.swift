@@ -59,6 +59,18 @@ final class SubtitleVersionsTests: XCTestCase {
         XCTAssertEqual(langs.map(\.count), [2, 1, 1])
     }
 
+    /// El ajuste de tiempo se recuerda por título y versión; volver a «A tiempo» lo olvida.
+    func testOffsetsAreRememberedPerVersion() {
+        let kv = InMemoryKeyValueStore()
+        SubtitleOffsets(kv).remember(metaID: "tt1", versionID: "https://subs.example/1", 2.3)
+        let offsets = SubtitleOffsets(kv)
+        XCTAssertEqual(offsets.offset(metaID: "tt1", versionID: "https://subs.example/1"), 2.3)
+        XCTAssertNil(offsets.offset(metaID: "tt1", versionID: "track-3"))
+        XCTAssertNil(offsets.offset(metaID: "tt2", versionID: "https://subs.example/1"))
+        offsets.remember(metaID: "tt1", versionID: "https://subs.example/1", 0)
+        XCTAssertNil(SubtitleOffsets(kv).offset(metaID: "tt1", versionID: "https://subs.example/1"))
+    }
+
     func testRememberedPickChoosesSameGroupNextEpisode() {
         let kv = InMemoryKeyValueStore()
         let picks = SubtitlePicks(kv)

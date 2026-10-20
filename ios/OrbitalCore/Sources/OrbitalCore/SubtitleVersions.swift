@@ -165,6 +165,29 @@ public struct SubtitlePick: Sendable, Equatable, Codable {
     }
 }
 
+/// El ajuste de tiempo de cada versión de subtítulo con tu título (lo que corregiste no se pierde al volver).
+public final class SubtitleOffsets: @unchecked Sendable {
+    static let key = "subtitle-offsets"
+    static let limit = 400
+    private let kv: KeyValueStore
+    private let lock = NSLock()
+    private var all: [String: Double]
+
+    public init(_ kv: KeyValueStore) {
+        self.kv = kv
+        all = kv.data(Self.key).flatMap { try? JSONDecoder().decode([String: Double].self, from: $0) } ?? [:]
+    }
+    public func offset(metaID: String, versionID: String) -> Double? { lock.withLock { all["\(metaID)|\(versionID)"] } }
+    public func remember(metaID: String, versionID: String, _ value: Double) {
+        lock.withLock {
+            let key = "\(metaID)|\(versionID)"
+            if value == 0 { all[key] = nil } else { all[key] = value }
+            if all.count > Self.limit { for k in all.keys.prefix(all.count - Self.limit) { all[k] = nil } }
+            kv.set(Self.key, data: try? JSONEncoder().encode(all))
+        }
+    }
+}
+
 /// Las elecciones de «Este va bien» por serie (id de IMDb).
 public final class SubtitlePicks: @unchecked Sendable {
     static let key = "subtitle-picks"

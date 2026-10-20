@@ -79,9 +79,22 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
 
     /// AetherEngine no pinta subtítulos: entrega las líneas y la app las dibuja encima del video (su README: «your UI paints them»).
     var drawsSubtitles: Bool { true }
-    func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView {
-        AnyView(AetherSubtitleOverlay(engine: engine, clock: engine.clock, lifted: lifted, heightFraction: heightFraction, fills: fills, delay: delay))
+    func subtitleOverlay(lifted: Bool, look: SubtitleLook, delay: Double) -> AnyView {
+        AnyView(AetherSubtitleOverlay(engine: engine, clock: engine.clock, lifted: lifted, look: look, fills: fills, delay: delay))
     }
+    @MainActor func subtitleLines(from seconds: Double, count: Int) -> [SubtitleLine] {
+        engine.subtitleCues.sorted { $0.startTime < $1.startTime }.lazy.filter { $0.startTime >= seconds }.compactMap { cue -> SubtitleLine? in
+            let text: String
+            switch cue.body {
+            case .text(let t): text = t
+            case .richText(let runs): text = runs.map(\.text).joined()
+            case .image: return nil
+            }
+            let clean = text.replacingOccurrences(of: "\\N", with: " ").replacingOccurrences(of: "\\n", with: " ").replacingOccurrences(of: "\n", with: " ").replacingOccurrences(of: "|", with: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+            return clean.isEmpty ? nil : SubtitleLine(start: cue.startTime, text: clean)
+        }.prefix(count).map { $0 }
+    }
+    @MainActor var shownTime: Double { engine.clock.sourceTime }
     func setPictureInPictureActive(_ active: Bool) {
         engine.pictureInPictureActive = active
         // En la ventana de PiP el subtítulo que dibujamos encima del video no existe: AVKit dibuja el suyo (la pista de
@@ -156,7 +169,7 @@ struct AetherSubtitleOverlay: View {
     @ObservedObject var engine: AetherEngine
     @ObservedObject var clock: PlaybackClock
     let lifted: Bool
-    let heightFraction: Double
+    let look: SubtitleLook
     let fills: Bool
     /// La sincronía elegida (s): con +1 cada línea sale un segundo después.
     var delay: Double = 0
@@ -194,7 +207,7 @@ struct AetherSubtitleOverlay: View {
     private func textBlock(_ cues: [SubtitleCue], video: CGRect, screen: CGSize) -> some View {
         // La parte del video que se ve (con «llenar pantalla» el video se sale por los lados).
         let visible = video.intersection(CGRect(origin: .zero, size: screen))
-        let fontSize = max(DS.Subtitle.minFont, visible.height * heightFraction)
+        let fontSize = max(DS.Subtitle.minFont, visible.height * look.heightFraction)
         let lift = lifted ? DS.Subtitle.liftWithControls : 0
         let placement = cues.compactMap(\.placement).first
         let top = placement?.alignment.map { (7...9).contains($0) } ?? false
@@ -204,28 +217,20 @@ struct AetherSubtitleOverlay: View {
         .multilineTextAlignment(.center)
         .padding(.horizontal, fontSize)
         // El margen va por dentro del rectángulo del video (si no, en un video que llena el alto la línea se sale por abajo).
-        .padding(top ? .top : .bottom, visible.height * DS.Subtitle.edgeMargin + lift)
+        .padding(top ? .top : .bottom, visible.height * (look.raised && !top ? DS.Subtitle.raisedMargin : DS.Subtitle.edgeMargin) + lift)
         .frame(width: visible.width, height: visible.height, alignment: top ? .top : .bottom)
         .offset(x: visible.minX, y: visible.minY)
     }
 
-    /// Contorno oscuro (cuatro copias desplazadas, sin desenfoque) más una sombra suave detrás: se lee tanto sobre
-    /// nieve como sobre un fondo negro, que es donde fallaba un solo `shadow` difuminado.
     private func line(_ cue: SubtitleCue, size: CGFloat) -> some View {
-        let outline = size * DS.Subtitle.outlineWidth
-        return styled(cue.body, size: size)
-            .shadow(color: DS.subtitleShadow, radius: 0, x: -outline, y: 0)
-            .shadow(color: DS.subtitleShadow, radius: 0, x: outline, y: 0)
-            .shadow(color: DS.subtitleShadow, radius: 0, x: 0, y: -outline)
-            .shadow(color: DS.subtitleShadow, radius: 0, x: 0, y: outline)
-            .shadow(color: DS.subtitleShadow, radius: size * DS.Subtitle.shadowRadius)
+        styled(cue.body, size: size).subtitleLook(look, size: size)
     }
 
     private func styled(_ body: SubtitleCue.Body, size: CGFloat) -> Text {
         let base = Font.system(size: size, weight: .semibold)   // ds-exception: la letra se mide con el video, no con Dynamic Type
         switch body {
         case .text(let text):
-            return Text(clean(text)).font(base).foregroundStyle(DS.subtitleText)
+            return Text(clean(text)).font(base).foregroundStyle(look.text)
         case .richText(let runs):
             var text = AttributedString()
             for run in runs {
@@ -236,7 +241,7 @@ struct AetherSubtitleOverlay: View {
                 piece.font = font
                 if run.isUnderlined { piece.underlineStyle = .single }
                 if run.isStruckThrough { piece.strikethroughStyle = .single }
-                piece.foregroundColor = run.color.map { Color(red: Double($0.r) / 255, green: Double($0.g) / 255, blue: Double($0.b) / 255) } ?? DS.subtitleText   // ds-exception: el color lo trae el archivo de subtítulos
+                piece.foregroundColor = run.color.map { Color(red: Double($0.r) / 255, green: Double($0.g) / 255, blue: Double($0.b) / 255) } ?? look.text   // ds-exception: el color lo trae el archivo de subtítulos
                 text += piece
             }
             return Text(text)
@@ -247,7 +252,9 @@ struct AetherSubtitleOverlay: View {
 
     /// Saltos de línea de ASS (`\N`, `\n`) y espacios sobrantes.
     private func clean(_ text: String) -> String {
-        text.replacingOccurrences(of: "\\N", with: "\n").replacingOccurrences(of: "\\n", with: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        // `|` es el salto de línea de MicroDVD (algunos SRT convertidos lo traen tal cual).
+        text.replacingOccurrences(of: "\\N", with: "\n").replacingOccurrences(of: "\\n", with: "\n").replacingOccurrences(of: "|", with: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Una imagen PGS/DVB: su lienzo se acomoda a lo ancho del video, centrado (como lo pide AetherEngine).

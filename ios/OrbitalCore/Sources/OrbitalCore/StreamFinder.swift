@@ -110,6 +110,9 @@ public actor StreamFinder {
 
     /// La fuente recomendada; en una serie, mejor la del mismo grupo que el episodio anterior (misma calidad
     /// e idioma: así lo hace Stremio con bingeGroup). `skip`: fuentes que ya fallaron.
+    /// La huella de un video en línea (para pedir subtítulos de esa copia exacta).
+    public func fingerprint(of url: URL) async -> FileFingerprint? { await FileFingerprint.ofRemote(url, http: http) }
+
     public func best(kind: String, videoID: String, prefs: Preferences, binge: String? = nil, skip: Set<Int> = [], purpose: Purpose = .watch) async throws -> Source? {
         let found = try await find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose).filter { !skip.contains($0.index) }
         guard let first = found.first else { return nil }
@@ -196,6 +199,28 @@ public struct FileFingerprint: Sendable, Equatable {
         guard let tail = try? handle.read(upToCount: chunk) else { return nil }
         add(tail)
         return FileFingerprint(hash: String(format: "%016llx", sum), size: Int64(end))
+    }
+
+    /// La misma huella (la de OpenSubtitles) de un video en línea, con dos pedidos de 64 KB (el principio y el final): así
+    /// también lo que ves sin bajar encuentra los subtítulos hechos para esa copia exacta.
+    public static func compute(head: Data, tail: Data, size: Int64) -> FileFingerprint? {
+        guard head.count == 65_536, tail.count == 65_536, size >= 65_536 else { return nil }
+        var sum = UInt64(size)
+        for data in [head, tail] {
+            data.withUnsafeBytes { raw in
+                for i in stride(from: 0, to: raw.count - 7, by: 8) { sum = sum &+ raw.loadUnaligned(fromByteOffset: i, as: UInt64.self).littleEndian }
+            }
+        }
+        return FileFingerprint(hash: String(format: "%016llx", sum), size: size)
+    }
+
+    public static func ofRemote(_ url: URL, http: HTTPClient) async -> FileFingerprint? {
+        let chunk: Int64 = 65_536
+        guard let first = try? await http.send(HTTPRequest(url: url, headers: ["Range": "bytes=0-\(chunk - 1)"], timeout: 10)), first.status == 206,
+              let total = first.headers["content-range"]?.split(separator: "/").last.flatMap({ Int64($0) }), total >= chunk,
+              let last = try? await http.send(HTTPRequest(url: url, headers: ["Range": "bytes=\(total - chunk)-\(total - 1)"], timeout: 10)), last.status == 206
+        else { return nil }
+        return compute(head: first.data, tail: last.data, size: total)
     }
 }
 

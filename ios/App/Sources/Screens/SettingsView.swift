@@ -229,12 +229,28 @@ struct SettingsView: View {
             }
         }
         .listRowBackground(DS.surface)
-        Section("Subtítulos") {
-            Picker("Subtítulos", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Sin subtítulos").tag("") }
+        Section {
+            SubtitlePreview(look: SubtitleLook(settings: s)).listRowInsets(EdgeInsets(top: DS.Space.s3, leading: DS.Space.s4, bottom: DS.Space.s3, trailing: DS.Space.s4))
+            Picker("Idioma de siempre", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Apagados").tag("") }
             Toggle("Solo subtítulos forzados", isOn: Binding(get: { s.onlyForcedSubtitles }, set: { v in model.update { $0.onlyForcedSubtitles = v } }))
-            Picker("Tamaño de subtítulos", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
+            Picker("Tamaño", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
                 Text("Chico").tag("small"); Text("Mediano").tag("medium"); Text("Grande").tag("large")
             }
+            Picker("Fondo", selection: Binding(get: { s.subtitleBackground }, set: { v in model.update { $0.subtitleBackground = v } })) {
+                Text("Contorno").tag("outline"); Text("Caja oscura").tag("box"); Text("Translúcido").tag("translucent")
+            }
+            .disabled(s.subtitleSystemStyle)
+            Picker("Posición", selection: Binding(get: { s.subtitlePosition }, set: { v in model.update { $0.subtitlePosition = v } })) {
+                Text("Normal").tag("normal"); Text("Más arriba").tag("raised")
+            }
+        } header: { Text("Subtítulos") }
+        .listRowBackground(DS.surface)
+        Section {
+            Toggle("Mostrarlos al regresar 10 s", isOn: Binding(get: { s.subtitlesOnSkipBack }, set: { v in model.update { $0.subtitlesOnSkipBack = v } }))
+            Toggle("Carteles en tu idioma si el audio es otro", isOn: Binding(get: { s.forcedForForeignAudio }, set: { v in model.update { $0.forcedForForeignAudio = v } }))
+            Toggle("Usar el estilo del iPhone", isOn: Binding(get: { s.subtitleSystemStyle }, set: { v in model.update { $0.subtitleSystemStyle = v } }))
+        } footer: {
+            Text("El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.")
         }
         .listRowBackground(DS.surface)
     }

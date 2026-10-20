@@ -96,13 +96,45 @@ public final class PlayerModel: ObservableModel {
     private var segmentsFor: String?
     public private(set) var stillWatchingPrompt = false { didSet { changed() } }
     public private(set) var notice: PlayerNotice? { didSet { changed() } }
-    /// Sincronía de los subtítulos (s): positivo los atrasa, negativo los adelanta (como Infuse). Vuelve a 0 con cada video.
+    /// Sincronía de los subtítulos (s): positivo los atrasa, negativo los adelanta (como Infuse). Se recuerda por versión
+    /// (`SubtitleOffsets`): al volver a esa versión de ese título, se pone sola.
     public private(set) var subtitleDelay: Double = 0 { didSet { changed() } }
-    public static let subtitleStep = 0.5, subtitleMaxDelay = 10.0
-    public func nudgeSubtitles(by seconds: Double) {
-        subtitleDelay = max(-Self.subtitleMaxDelay, min(Self.subtitleMaxDelay, (subtitleDelay + seconds).rounded(toPlaces: 1)))
+    public static let subtitleStep = 0.5, subtitleMaxDelay = 30.0
+    public func nudgeSubtitles(by seconds: Double) { setSubtitleDelay(subtitleDelay + seconds) }
+    public func resetSubtitleDelay() { setSubtitleDelay(0) }
+    /// Un ajuste exacto (lo usa «Sincronizar con una línea»): se guarda para la versión puesta.
+    public func setSubtitleDelay(_ value: Double) {
+        subtitleDelay = max(-Self.subtitleMaxDelay, min(Self.subtitleMaxDelay, value.rounded(toPlaces: 1)))
+        restoredDelay = nil
+        if let request, let id = selectedVersionID { subtitleOffsets?.remember(metaID: request.metaID, versionID: id, subtitleDelay) }
     }
-    public func resetSubtitleDelay() { subtitleDelay = 0 }
+    /// El ajuste que se puso solo al volver a una versión (para decir «Usamos tu ajuste de +1.5 s»).
+    public private(set) var restoredDelay: Double? { didSet { changed() } }
+    public var subtitleOffsets: SubtitleOffsets?
+    /// La versión a la que ya se le puso su ajuste (las que pone el arranque solo, sin pasar por `apply`, también).
+    private var offsetVersionID: String?
+    private func restoreOffsetIfVersionChanged() {
+        let id = selectedVersionID
+        guard id != offsetVersionID else { return }
+        offsetVersionID = id
+        guard let id, let request else { return }
+        let saved = subtitleOffsets?.offset(metaID: request.metaID, versionID: id) ?? 0
+        if saved != subtitleDelay { subtitleDelay = saved; restoredDelay = saved == 0 ? nil : saved }
+    }
+
+    /// Las versiones que ya probaste en este video (para no volver a las que no iban).
+    public private(set) var triedVersionIDs: Set<String> = [] { didSet { changed() } }
+    /// Elegiste otra versión: se pregunta un momento «¿Va a tiempo?».
+    public private(set) var askInSync = false { didSet { changed() } }
+    public func confirmInSync() { askInSync = false; restoredDelay = nil }
+    /// «Probar otra»: la siguiente del mismo idioma que no hayas probado (y se vuelve a preguntar).
+    public func tryAnotherVersion() async {
+        guard let id = selectedVersionID, let current = allSubtitleVersions.first(where: { $0.id == id }) else { return }
+        let versions = subtitleVersions(language: current.language)
+        let untried = versions.first { !triedVersionIDs.contains($0.id) && $0.id != id }
+        guard let next = untried ?? SubtitleVersions.next(after: id, in: versions), next.id != id else { return }
+        await selectVersion(next)
+    }
     /// Velocidad de reproducción elegida (sigue igual en el siguiente episodio y al cambiar de fuente).
     public private(set) var rate: Float = 1 { didSet { changed() } }
     public static let rates: [Float] = [0.75, 1, 1.25, 1.5, 2]
@@ -198,6 +230,7 @@ public final class PlayerModel: ObservableModel {
 
     private func resetForNewVideo() {
         failure = nil
+        triedVersionIDs = []; askInSync = false; restoredDelay = nil; offsetVersionID = nil; stopBriefSubtitles()
         failedSources = []; hasPlayed = false; startupDeadline = nil; lastSnapshotAt = nil; watchedUnsaved = 0
         scrobbleStarted = false; scrobblePlaying = false; rescrobbleAfterSeek = false
         tracksApplied = false; addedExternalSubtitle = false; knownSubtitleIDs = []; preloadedNext = false
@@ -300,6 +333,7 @@ public final class PlayerModel: ObservableModel {
         if previous.state == .playing, let last = lastSnapshotAt { watchedUnsaved += min(max(0, now.timeIntervalSince(last)), 5) }
         lastSnapshotAt = now
         snapshot = s
+        restoreOffsetIfVersionChanged()
 
         if case .failed(let message) = s.state {
             // Una fuente que se corta (antes o después de empezar) se cambia por otra en el mismo punto, como en Orbital.
@@ -424,8 +458,13 @@ public final class PlayerModel: ObservableModel {
         let audioLanguage = PlaybackRules.languageCode(audio?.language) ?? langs.prefs.audio
         if picked { return }
         let mode: SubtitleMode = settings.value.onlyForcedSubtitles ? .forced : SubtitleMode(settings: langs.subtitles, onlyForced: false)
-        let sub = TrackChooser.subtitle(s.subtitleTracks, mode: mode, audioLanguage: audioLanguage)
+        var sub = TrackChooser.subtitle(s.subtitleTracks, mode: mode, audioLanguage: audioLanguage)
         knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
+        // Apagados, pero el audio es de otro idioma (ni el tuyo ni inglés): los carteles en tu idioma, si el video los trae.
+        if sub == nil, case .off = mode, settings.value.forcedForForeignAudio, let yours = SubtitleLanguage.code(settings.value.uiLanguage),
+           let heard = SubtitleLanguage.code(audioLanguage), heard != yours, heard != "en" {
+            sub = s.subtitleTracks.first { $0.isForced && TrackChooser.matches($0, yours) }
+        }
         if let sub { await engine.selectSubtitle(sub.id) }
         // El video no trae tu idioma (a lo más los carteles del audio): se busca en internet aunque haya puesto los carteles.
         if case .language(let language) = mode, !(sub.map { TrackChooser.matches($0, language) } ?? false),
@@ -496,7 +535,10 @@ public final class PlayerModel: ObservableModel {
         let mine = generation
         searchingSubtitles = true
         defer { searchingSubtitles = false }
-        let file = request.localFile.flatMap(FileFingerprint.of)
+        // La huella de tu copia (la descarga, o el video en línea con dos pedidos chicos): lo hecho para ella va primero.
+        var file = request.localFile.flatMap(FileFingerprint.of)
+        if file == nil, let url = source?.playbackURL, !url.isFileURL { file = await finder.fingerprint(of: url) }
+        guard generation == mine else { return }
         let found = await finder.subtitleOptions(kind: request.kind, videoID: request.videoID, file: file)
         guard generation == mine else { return }   // ya es otro video: no se le cuelgan los de este
         // Nada (o sin red): se queda el botón para volver a intentar, con el aviso.
@@ -583,6 +625,9 @@ public final class PlayerModel: ObservableModel {
     /// Pone esa versión: la del video al momento; la de internet se baja, se suma y se activa (sin pausar).
     public func selectVersion(_ version: SubtitleVersion, trying: Bool = false) async {
         userTouched()
+        stopBriefSubtitles()
+        if let current = selectedVersionID, current != version.id { triedVersionIDs.insert(current) }
+        askInSync = true
         if trying { tryingSubtitles = version.language }
         await apply(version)
         rememberVersion(version)
@@ -596,6 +641,11 @@ public final class PlayerModel: ObservableModel {
     }
 
     private func apply(_ version: SubtitleVersion) async {
+        // El ajuste de tiempo que ya le habías dado a esta versión (o ninguno).
+        let saved = request.flatMap { subtitleOffsets?.offset(metaID: $0.metaID, versionID: version.id) } ?? 0
+        subtitleDelay = saved
+        restoredDelay = saved == 0 ? nil : saved
+        offsetVersionID = version.id
         switch version.origin {
         case .embedded(let track): await engine.selectSubtitle(track.id)
         case .internet(let option):
@@ -614,7 +664,7 @@ public final class PlayerModel: ObservableModel {
     /// Devuelve la versión puesta (nil: no hay ninguna en ese idioma).
     @discardableResult
     public func cycleSubtitle(languages: [String]) async -> SubtitleVersion? {
-        userTouched()
+        userTouched(); stopBriefSubtitles()
         if foundSubtitles == nil, !searchingSubtitles, !subtitleSearchFailed { Task { await ensureSubtitleSearch() } }
         let s = snapshot
         let playing = s.selectedSubtitle.flatMap { id in SubtitleLanguage.code(s.subtitleTracks.first { $0.id == id }?.language) }
@@ -639,7 +689,7 @@ public final class PlayerModel: ObservableModel {
     /// título o lo mejor de tus idiomas). Devuelve la versión puesta; nil si quedaron apagados (o no hay ninguna).
     @discardableResult
     public func toggleSubtitles(languages: [String]) async -> SubtitleVersion? {
-        userTouched()
+        userTouched(); stopBriefSubtitles()
         if snapshot.selectedSubtitle != nil {
             versionBeforeOff = allSubtitleVersions.first { $0.id == selectedVersionID } ?? versionBeforeOff
             await selectSubtitle(nil)
@@ -716,7 +766,7 @@ public final class PlayerModel: ObservableModel {
     }
 
     public func selectSubtitle(_ id: Int?) async {
-        userTouched()
+        userTouched(); stopBriefSubtitles()
         await engine.selectSubtitle(id)
         guard let request else { return }
         if let id {
@@ -785,7 +835,33 @@ public final class PlayerModel: ObservableModel {
     private var scrubTarget: Double?
     private var scrubTask: Task<Void, Never>?
 
-    public func skip(_ delta: Double) async { await seek(to: snapshot.position + delta) }
+    public func skip(_ delta: Double) async {
+        await seek(to: snapshot.position + delta)
+        if delta < 0 { await showSubtitlesBriefly() }
+    }
+
+    /// Regresaste con los subtítulos apagados: se ven unos segundos («¿qué dijo?», como en Apple TV) y se vuelven a apagar.
+    private var briefSubtitles: Task<Void, Never>?
+    public static let briefSubtitlesSeconds = 8.0
+    private func showSubtitlesBriefly() async {
+        guard settings.value.subtitlesOnSkipBack, let request else { return }
+        if briefSubtitles == nil {
+            guard snapshot.selectedSubtitle == nil else { return }
+            var languages: [String] = []
+            for code in [settings.value.subtitles, settings.value.uiLanguage].compactMap(SubtitleLanguage.code) where !languages.contains(code) { languages.append(code) }
+            guard let best = languages.lazy.compactMap({ self.subtitleVersions(language: $0).first }).first else { return }
+            await apply(best)   // sin recordarlo: es solo un momento
+        }
+        briefSubtitles?.cancel()
+        let videoID = request.videoID, wait = UInt64(Self.briefSubtitlesSeconds * 1_000_000_000)
+        briefSubtitles = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: wait)
+            guard let self, !Task.isCancelled, self.request?.videoID == videoID else { return }
+            self.briefSubtitles = nil
+            await self.engine.selectSubtitle(nil)
+        }
+    }
+    private func stopBriefSubtitles() { briefSubtitles?.cancel(); briefSubtitles = nil }
 
     /// Cambia de fuente en el mismo punto. Si la lista de fuentes es vieja (los enlaces de Real-Debrid caducan) se pide de nuevo.
     public func switchSource(to index: Int) async {

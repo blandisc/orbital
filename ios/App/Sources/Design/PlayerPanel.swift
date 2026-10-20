@@ -646,74 +646,219 @@ private struct ScrollIfNeeded: ViewModifier {
 }
 
 /// Subtítulos rápidos: un panel chico sobre el video (no una hoja que lo tapa), para arreglarlos sin dejar de ver la escena.
-/// Cuatro renglones fijos: el idioma (Apagados · Español · Inglés · Otro), la versión con ‹ › para probar la siguiente al
-/// momento, el tiempo y el tamaño con su nombre, y «Listo». La lista completa de versiones, detrás de un toque.
+/// De arriba abajo: el idioma (Apagados · Español · Inglés · Otro…), la versión con ‹ › y por qué está ahí («Hecho para
+/// tu copia», «Del video», descargas) y «N de M», la pregunta «¿Va a tiempo?» al cambiar de versión, el tiempo
+/// («− Antes · A tiempo · Después +»), «Sincronizar con una línea» y el tamaño. En horizontal, tres renglones arriba.
 struct SubtitleDock: View {
     struct Language: Identifiable { let id: String; let title: String; let selected: Bool }
+    /// La versión puesta: su nombre, su etiqueta (`strong`: hecha para tu copia, en verde) y «2 de 9».
+    struct Version { let title: String; let badge: String?; let strong: Bool; let position: String }
+    /// Lo que se pregunta o se avisa debajo de la versión.
+    enum Check: Equatable {
+        case inSync                // «¿Va a tiempo?» después de cambiar de versión
+        case restored(Double)      // «Usamos tu ajuste de +1.5 s» al volver a una versión que ya ajustaste
+    }
     let languages: [Language]
     let pickLanguage: (String) -> Void
     let otherLanguage: () -> Void
-    /// La versión puesta («WEB-DL · 1080p») y su contexto («2 de 7 · coincide con tu copia»); nil sin subtítulos.
-    let version: (title: String, detail: String)?
+    /// nil sin subtítulos; `loading` mientras llega la versión elegida.
+    let version: Version?
+    var loading = false
     let canStep: Bool
     let previous: () -> Void
     let next: () -> Void
     let allVersions: () -> Void
-    let delay: Double
+    var check: Check?
+    var confirm: () -> Void = {}
+    var tryAnother: (() -> Void)?
+    /// Los nombres de las versiones que ya probaste en este video (tachados).
+    var tried: [String] = []
+    /// El tiempo solo si los subtítulos los dibuja la app (con AVPlayer no se pueden mover).
+    let delay: Double?
     let nudge: (Double) -> Void
     let resetDelay: () -> Void
+    /// nil: esta versión no trae frases de texto (PGS) o el motor no lo permite.
+    var sync: (() -> Void)?
     let sizeName: String
     let smaller: (() -> Void)?
     let larger: (() -> Void)?
     let done: () -> Void
-    /// En horizontal (poco alto): sin el renglón del título; «Listo» va junto a los idiomas.
+    /// En horizontal (poco alto): sin título; «Listo» junto a los idiomas y el tiempo junto a la versión.
     var compact = false
+    /// El idioma de la app (para los textos armados con números).
+    var language = "es"
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: compact ? DS.Space.s2 : DS.Space.s3) {
             if !compact {
                 HStack {
-                    Label("Subtítulos", systemImage: "captions.bubble.fill").recipe(.cardTitle)
+                    Text("Subtítulos").recipe(.cardTitle)
                     Spacer()
                     doneButton
                 }
             }
-            // 1. Idioma: un solo renglón.
             HStack(spacing: DS.Space.s2) {
                 ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected) { pickLanguage(l.id) } }
-                pill(Text("Otro…"), selected: false, action: otherLanguage)
+                pill(Text("Otro…"), selected: false, action: otherLanguage).accessibilityIdentifier("subtitle-dock-other")
                 if compact { doneButton }
             }
             if let version {
-                // 2. Versión: grande, con ‹ › a los lados (se prueba la siguiente sin dejar de ver).
-                HStack(spacing: DS.Space.s2) {
-                    stepButton("chevron.left", label: "Versión anterior", enabled: canStep, action: previous)
-                    Button(action: allVersions) {
-                        VStack(spacing: 0) {
-                            Text(verbatim: version.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                            Text(verbatim: version.detail).recipe(.caption).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                        .contentShape(Rectangle())
+                if compact {
+                    HStack(spacing: DS.Space.s2) {
+                        versionRow(version)
+                        if delay != nil { Divider().frame(height: DS.Size.touchTarget); timeRow }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityHint(Text("Ver todas las versiones"))
-                    stepButton("chevron.right", label: "Versión siguiente", enabled: canStep, action: next)
-                        .accessibilityIdentifier("subtitle-dock-next")
+                } else {
+                    versionRow(version)
                 }
-                // 3. Tiempo y tamaño, cada uno con su nombre.
-                HStack(spacing: DS.Space.s3) {
-                    adjust(title: Text("Tiempo"), value: delay == 0 ? Text("A tiempo") : Text(verbatim: String(format: "%+.1f s", delay)),
-                           minus: { nudge(-PlayerModel.subtitleStep) }, plus: { nudge(PlayerModel.subtitleStep) }, tapValue: resetDelay)
-                    adjust(title: Text("Tamaño"), value: Text(verbatim: sizeName), minus: smaller, plus: larger, tapValue: nil)
+                // Con la pregunta abierta solo se ve la pregunta (lo demás vuelve al contestar).
+                if let check {
+                    checkCard(check)
+                } else {
+                    if compact {
+                        HStack(spacing: DS.Space.s2) {
+                            if delay != nil, let sync { syncButton(sync) }
+                            sizeRow
+                        }
+                    } else {
+                        // En vertical cada cosa en su renglón: en un iPhone chico no caben juntas.
+                        if delay != nil { timeRow }
+                        if delay != nil, let sync { syncButton(sync) }
+                        sizeRow
+                    }
                 }
+                if !tried.isEmpty, check != nil { triedLine }
             }
         }
-        .padding(DS.Space.s4)
+        .padding(compact ? DS.Space.s3 : DS.Space.s4)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
         .accessibilityElement(children: .contain)
     }
 
+    // MARK: renglones
+    private func versionRow(_ version: Version) -> some View {
+        HStack(spacing: DS.Space.s2) {
+            stepButton("chevron.left", label: "Versión anterior", enabled: canStep, action: previous)
+            Button(action: allVersions) {
+                VStack(spacing: DS.Space.s1) {
+                    HStack(spacing: DS.Space.s1) {
+                        Text(verbatim: version.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                        if loading { ProgressView().controlSize(.mini) }
+                    }
+                    HStack(spacing: DS.Space.s1) {
+                        if let badge = version.badge {
+                            Text(verbatim: badge).font(DS.TextRecipe.caption.font.weight(.bold)).lineLimit(1)
+                                .foregroundStyle(version.strong ? DS.onPrimary : DS.text)
+                                .padding(.horizontal, DS.Space.s1)
+                                .background(version.strong ? DS.success : DS.fillStrong, in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
+                        }
+                        Text(verbatim: version.position).recipe(.caption).monospacedDigit().lineLimit(1)
+                    }
+                    .minimumScaleFactor(DS.Size.statScale)
+                }
+                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(Text("Ver todas las versiones"))
+            .accessibilityIdentifier("subtitle-dock-versions")
+            stepButton("chevron.right", label: "Versión siguiente", enabled: canStep, action: next)
+                .accessibilityIdentifier("subtitle-dock-next")
+        }
+    }
+
+    /// «− Antes · A tiempo · Después +»: dice hacia dónde se mueven (no «+0.5»); el valor del centro vuelve a como venían.
+    private var timeRow: some View {
+        let value = delay ?? 0
+        return HStack(spacing: DS.Space.s1) {
+            capsule(Text("− Antes"), label: "Subtítulos antes") { nudge(-PlayerModel.subtitleStep) }
+            Button(action: resetDelay) {
+                (value == 0 ? Text("A tiempo") : Text(verbatim: String(format: "%+.1f s", value)))
+                    .recipe(.footnote, color: DS.text).fontWeight(.semibold).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                    .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(value == 0 ? Text("A tiempo") : Text(verbatim: String(format: "%+.1f s", value)))
+            .accessibilityHint(Text("Volver a como venían"))
+            capsule(Text("Después +"), label: "Subtítulos después") { nudge(PlayerModel.subtitleStep) }
+        }
+        .accessibilityIdentifier("subtitle-dock-time")
+    }
+
+    private func syncButton(_ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text("Sincronizar con una línea").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                .padding(.horizontal, DS.Space.s3)
+                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                .overlay(Capsule().strokeBorder(DS.hairline))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("subtitle-dock-sync")
+    }
+
+    private var sizeRow: some View {
+        HStack(spacing: DS.Space.s1) {
+            Text("Tamaño").recipe(.footnote).fixedSize()
+            if !compact { Spacer(minLength: DS.Space.s2) }
+            stepButton("minus", label: "Más chico", enabled: smaller != nil) { smaller?() }
+            Text(verbatim: sizeName).recipe(.footnote, color: DS.text).fontWeight(.semibold).fixedSize()
+                .frame(minWidth: DS.PlayerPanel.sizeValue)
+            stepButton("plus", label: "Más grande", enabled: larger != nil) { larger?() }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    /// La tarjeta clara de la pregunta (o del aviso del ajuste recordado), con sus dos respuestas del mismo tamaño.
+    private func checkCard(_ check: Check) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            switch check {
+            case .inSync:
+                if !compact {
+                    Text("¿Va a tiempo?").recipe(.secondary, color: DS.onSolidPrimary).fontWeight(.bold)
+                    Text("Mira unas frases. Si las letras no van con la voz, prueba otra.").recipe(.caption, color: DS.onSolidPrimary)
+                }
+                HStack(spacing: DS.Space.s2) {
+                    if compact { Text("¿Va a tiempo?").recipe(.footnote, color: DS.onSolidPrimary).fontWeight(.bold).fixedSize() }
+                    answer(Text("Sí, va bien"), primary: true, action: confirm).accessibilityIdentifier("subtitle-dock-in-sync")
+                    if let tryAnother { answer(Text("Probar otra"), primary: false, action: tryAnother).accessibilityIdentifier("subtitle-dock-try-another") }
+                }
+            case .restored(let value):
+                HStack(spacing: DS.Space.s2) {
+                    Text(String(format: Strings.tr("Usamos tu ajuste de %@ para esta versión.", language: language), String(format: "%+.1f s", value)))
+                        .recipe(.footnote, color: DS.onSolidPrimary).fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    answer(Text("Bien"), primary: true, action: confirm).fixedSize()
+                }
+            }
+        }
+        .padding(DS.Space.s3)
+        .background(DS.solidPrimary, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+    }
+
+    private func answer(_ title: Text, primary: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            title.font(DS.TextRecipe.footnote.font.weight(.semibold)).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                .foregroundStyle(primary ? DS.solidPrimary : DS.onSolidPrimary)
+                .padding(.horizontal, DS.Space.s3)
+                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                .background(primary ? DS.onSolidPrimary : .clear, in: Capsule())
+                .overlay(Capsule().strokeBorder(primary ? .clear : DS.onSolidPrimary.opacity(DesignTokens.Opacity.disabled)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var triedLine: some View {
+        HStack(spacing: DS.Space.s1) {
+            Text("Ya probaste:").recipe(.caption)
+            ForEach(tried, id: \.self) { Text(verbatim: $0).recipe(.caption).strikethrough() }
+        }
+        .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+    }
+
+    // MARK: piezas
     private var doneButton: some View {
         Button(action: done) { Text("Listo").fontWeight(.semibold) }.buttonStyle(.glassProminent).tint(DS.primary).foregroundStyle(DS.onPrimary)
             .accessibilityIdentifier("subtitle-dock-done")
@@ -731,6 +876,18 @@ struct SubtitleDock: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
+    private func capsule(_ title: Text, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            title.font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1).fixedSize()
+                .padding(.horizontal, DS.Space.s3)
+                .frame(minHeight: DS.Size.touchTarget)
+                .background(DS.fillStrong, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
+    }
+
     private func stepButton(_ symbol: String, label: LocalizedStringKey, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font.weight(.bold)).foregroundStyle(DS.text)
@@ -740,21 +897,102 @@ struct SubtitleDock: View {
         .buttonStyle(.plain).disabled(!enabled).opacity(enabled ? 1 : DesignTokens.Opacity.faint)
         .accessibilityLabel(Text(label))
     }
+}
 
-    /// «Tiempo  − A tiempo +»: el nombre arriba, el valor entre los dos botones.
-    private func adjust(title: Text, value: Text, minus: (() -> Void)?, plus: (() -> Void)?, tapValue: (() -> Void)?) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s1) {
-            title.recipe(.caption)
-            HStack(spacing: DS.Space.s1) {
-                stepButton("minus", label: "Menos", enabled: minus != nil) { minus?() }
-                Button { tapValue?() } label: {
-                    value.recipe(.footnote, color: DS.text).fontWeight(.semibold).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                        .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+/// «Sincronizar con una línea»: tres frases que vienen; tocas la que escuchas en el momento en que la oyes y el tiempo se
+/// ajusta solo (se recuerda para esa versión). Luego, «¿Ya van bien?»: Sí, u Otra vez con las siguientes.
+struct SubtitleSyncView: View {
+    let lines: [SubtitleLine]
+    /// La frase que tocaste y el ajuste que quedó.
+    var picked: Double?
+    var result: Double?
+    let pick: (SubtitleLine) -> Void
+    let confirm: () -> Void
+    let again: () -> Void
+    let back: () -> Void
+    var compact = false
+    var language = "es"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: compact ? DS.Space.s2 : DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
+                Button(action: back) {
+                    Image(systemName: "chevron.left").font(DS.TextRecipe.secondary.font.weight(.bold)).foregroundStyle(DS.text)
+                        .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                        .background(DS.fill, in: Circle())
                 }
-                .buttonStyle(.plain).allowsHitTesting(tapValue != nil)   // sin acción no se toca, pero se lee igual (no gris)
-                stepButton("plus", label: "Más", enabled: plus != nil) { plus?() }
+                .buttonStyle(.plain).accessibilityLabel(Text("Volver"))
+                Text("Sincronizar con una línea").recipe(.cardTitle).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            }
+            if lines.isEmpty {
+                Text("Esta versión no trae frases de texto para sincronizar. Usa Antes y Después.").recipe(.footnote)
+            } else if let result {
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    Text(resultTitle(result)).recipe(.secondary, color: DS.onSolidPrimary).fontWeight(.bold)
+                    Text("¿Ya van bien? Se recuerda para esta versión.").recipe(.caption, color: DS.onSolidPrimary)
+                    HStack(spacing: DS.Space.s2) {
+                        answer(Text("Sí"), primary: true, action: confirm).accessibilityIdentifier("subtitle-sync-yes")
+                        answer(Text("Otra vez"), primary: false, action: again).accessibilityIdentifier("subtitle-sync-again")
+                    }
+                }
+                .padding(DS.Space.s3)
+                .background(DS.solidPrimary, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+            } else {
+                Text("Toca la frase en el momento en que la escuches.").recipe(.footnote)
+                ForEach(lines) { line in
+                    Button { pick(line) } label: {
+                        Text(verbatim: line.text).recipe(.secondary, color: DS.text).lineLimit(compact ? 1 : 2).multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
+                            .padding(.horizontal, DS.Space.s3)
+                            .background(picked == line.start ? DS.fillStrong : DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("subtitle-sync-line")
+                }
             }
         }
-        .frame(maxWidth: .infinity)
+        .padding(compact ? DS.Space.s3 : DS.Space.s4)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
+    }
+
+    private func resultTitle(_ value: Double) -> String {
+        if abs(value) < 0.05 { return Strings.tr("Listo: ya iban a tiempo", language: language) }
+        let key = value > 0 ? "Listo: subtítulos %@ s después" : "Listo: subtítulos %@ s antes"
+        return String(format: Strings.tr(key, language: language), String(format: "%.1f", abs(value)))
+    }
+
+    private func answer(_ title: Text, primary: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            title.font(DS.TextRecipe.footnote.font.weight(.semibold)).lineLimit(1)
+                .foregroundStyle(primary ? DS.solidPrimary : DS.onSolidPrimary)
+                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                .background(primary ? DS.onSolidPrimary : .clear, in: Capsule())
+                .overlay(Capsule().strokeBorder(primary ? .clear : DS.onSolidPrimary.opacity(DesignTokens.Opacity.disabled)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Ajustes › Subtítulos: una escena de muestra con una línea dibujada con tu estilo (fondo, tamaño, posición).
+struct SubtitlePreview: View {
+    let look: SubtitleLook
+
+    var body: some View {
+        GeometryReader { geo in
+            let size = max(DS.Subtitle.minFont, geo.size.width / DS.Poster.stillAspect * look.heightFraction)
+            Text("— Así se van a ver.")
+                .font(.system(size: size, weight: .semibold))   // ds-exception: la letra se mide con el video, como en el reproductor
+                .foregroundStyle(look.text)
+                .subtitleLook(look, size: size)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, geo.size.height * (look.raised ? DS.Subtitle.raisedMargin : DS.Subtitle.edgeMargin) * 2)
+        }
+        .aspectRatio(DS.Poster.stillAspect, contentMode: .fit)
+        .background(LinearGradient(colors: [DS.backdropDeep, DS.warning.opacity(DesignTokens.Opacity.disabled), DS.backdropDeep],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing))
+        .clipShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+        .accessibilityHidden(true)
     }
 }

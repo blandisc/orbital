@@ -312,6 +312,52 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.subs.last?.absoluteString, "https://s.example/b.srt", "la misma copia, no la del video")
     }
 
+    /// El ajuste de tiempo se recuerda por versión: cambias a otra (se pregunta «¿Va a tiempo?») y al volver se pone solo.
+    func testSubtitleOffsetIsRememberedPerVersionAndTriedOnesAreMarked() async throws {
+        let rig = try twoSources()
+        rig.model.subtitleOffsets = SubtitleOffsets(rig.kv)
+        rig.settings.update { $0.audio = "en"; $0.subtitles = "es" }
+        let subEs2 = MediaTrack(id: 12, kind: .subtitle, language: "spa", title: "Castellano")
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs, subEs2], selectedAudio: 1, selectedSubtitle: 11))
+        rig.model.nudgeSubtitles(by: 1.5)
+        XCTAssertEqual(SubtitleOffsets(rig.kv).offset(metaID: "tt0386676", versionID: "track-11"), 1.5)
+        let other = try XCTUnwrap(rig.model.subtitleVersions(language: "es").first { $0.id == "track-12" })
+        await rig.model.selectVersion(other)
+        XCTAssertEqual(rig.model.subtitleDelay, 0, "otra versión, sin ajuste")
+        XCTAssertTrue(rig.model.askInSync)
+        XCTAssertEqual(rig.model.triedVersionIDs, ["track-11"])
+        await rig.model.handle(rig.playing(1, audio: [eng], subs: [subEn, subEs, subEs2], selectedAudio: 1, selectedSubtitle: 12))
+        await rig.model.tryAnotherVersion()   // la única sin probar ya es la 11: vuelve, con su ajuste
+        XCTAssertTrue(rig.engine.calls.contains("sub 11"))
+        XCTAssertEqual(rig.model.subtitleDelay, 1.5)
+        XCTAssertEqual(rig.model.restoredDelay, 1.5)
+        rig.model.confirmInSync()
+        XCTAssertFalse(rig.model.askInSync)
+        // Otro día: arranca con esa versión y el ajuste se pone solo.
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.model.subtitleDelay, 0)
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs, subEs2], selectedAudio: 1, selectedSubtitle: 11))
+        XCTAssertEqual(rig.model.subtitleDelay, 1.5)
+    }
+
+    /// Regresar 10 s con los subtítulos apagados los enseña un momento (sin recordarlos como elegidos).
+    func testSkipBackShowsSubtitlesBriefly() async throws {
+        let rig = try twoSources()
+        rig.settings.update { $0.audio = "en"; $0.subtitles = "" ; $0.uiLanguage = "es" }
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(100, audio: [eng], subs: [subEn, subEs], selectedAudio: 1))
+        XCTAssertFalse(rig.engine.calls.contains("sub 11"))
+        await rig.model.skip(-10)
+        XCTAssertTrue(rig.engine.calls.contains("sub 11"), "se ven al regresar")
+        rig.settings.update { $0.subtitlesOnSkipBack = false }
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(100, audio: [eng], subs: [subEn, subEs], selectedAudio: 1))
+        let before = rig.engine.calls.filter { $0 == "sub 11" }.count
+        await rig.model.skip(-10)
+        XCTAssertEqual(rig.engine.calls.filter { $0 == "sub 11" }.count, before, "apagado en Ajustes")
+    }
+
     func testDoesNotFetchSubtitlesWhenAudioAlreadyInYourLanguage() async throws {
         let rig = try twoSources()
         rig.settings.update { $0.audio = "es"; $0.subtitles = "es" }

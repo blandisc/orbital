@@ -20,7 +20,9 @@ public struct HTTPRequest: Sendable {
 public struct HTTPResponse: Sendable {
     public var status: Int
     public var data: Data
-    public init(status: Int, data: Data) { self.status = status; self.data = data }
+    /// Encabezados, con el nombre en minúsculas («content-range»).
+    public var headers: [String: String]
+    public init(status: Int, data: Data, headers: [String: String] = [:]) { self.status = status; self.data = data; self.headers = headers }
 }
 
 public protocol HTTPClient: Sendable {
@@ -66,7 +68,10 @@ public struct URLSessionHTTPClient: HTTPClient {
                     let (data, response) = try await session.data(for: urlRequest)
                     if response.expectedContentLength > Int64(URLSessionHTTPClient.maxBody) { throw NetworkError("La respuesta es demasiado grande") }
                     guard data.count <= URLSessionHTTPClient.maxBody else { throw NetworkError("La respuesta es demasiado grande") }
-                    return HTTPResponse(status: (response as? HTTPURLResponse)?.statusCode ?? 0, data: data)
+                    let http = response as? HTTPURLResponse
+                    var headers: [String: String] = [:]
+                    for (key, value) in http?.allHeaderFields ?? [:] { if let k = key as? String, let v = value as? String { headers[k.lowercased()] = v } }
+                    return HTTPResponse(status: http?.statusCode ?? 0, data: data, headers: headers)
                 }
                 group.addTask { try await Task.sleep(nanoseconds: UInt64(deadline * 1e9)); throw NetworkError("Tiempo agotado") }
                 defer { group.cancelAll() }

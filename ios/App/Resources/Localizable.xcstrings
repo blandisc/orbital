@@ -34,6 +34,17 @@
         }
       }
     },
+    "%@ descargas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ downloads"
+          }
+        }
+      }
+    },
     "%@ libres de %@": {
       "extractionState": "manual",
       "localizations": {
@@ -74,6 +85,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · %@"
+          }
+        }
+      }
+    },
+    "%@ · %lld versiones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lld versions"
           }
         }
       }
@@ -1134,6 +1156,17 @@
         }
       }
     },
+    "Bajando %@ · la misma versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading %@ · the same version"
+          }
+        }
+      }
+    },
     "Bajando %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -1240,6 +1273,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Console battery low"
+          }
+        }
+      }
+    },
+    "Bien": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         }
       }
@@ -1552,6 +1596,17 @@
         }
       }
     },
+    "Caja oscura": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark box"
+          }
+        }
+      }
+    },
     "Calculado en el iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -1812,6 +1867,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Carousel"
+          }
+        }
+      }
+    },
+    "Carteles en tu idioma si el audio es otro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signs in your language when the audio is another"
           }
         }
       }
@@ -2483,6 +2549,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Continue S%lld E%lld"
+          }
+        }
+      }
+    },
+    "Contorno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outline"
           }
         }
       }
@@ -3202,6 +3279,17 @@
         }
       }
     },
+    "Descargar este video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download this video"
+          }
+        }
+      }
+    },
     "Descargar funciona aunque estés fuera de casa.": {
       "extractionState": "manual",
       "localizations": {
@@ -3451,6 +3539,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Later"
+          }
+        }
+      }
+    },
+    "Después +": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Later +"
           }
         }
       }
@@ -3737,6 +3836,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The iPhone has to be on the same network as the console (or on Tailscale), with Orbital open on the TV."
+          }
+        }
+      }
+    },
+    "El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language, version and timing are remembered for each show or movie. The iPhone style is set in Settings › Accessibility › Subtitles."
           }
         }
       }
@@ -4555,6 +4665,17 @@
         }
       }
     },
+    "Esta versión no trae frases de texto para sincronizar. Usa Antes y Después.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This version has no text lines to sync. Use Earlier and Later."
+          }
+        }
+      }
+    },
     "Este título no está en Stremio": {
       "extractionState": "manual",
       "localizations": {
@@ -4705,6 +4826,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Filter Featured"
+          }
+        }
+      }
+    },
+    "Fondo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background"
           }
         }
       }
@@ -4973,6 +5105,17 @@
         }
       }
     },
+    "Hecho para tu copia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Made for your copy"
+          }
+        }
+      }
+    },
     "Hola": {
       "extractionState": "manual",
       "localizations": {
@@ -5090,6 +5233,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "App and title language"
+          }
+        }
+      }
+    },
+    "Idioma de siempre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usual language"
           }
         }
       }
@@ -5629,6 +5783,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Done."
+          }
+        }
+      }
+    },
+    "Listo: subtítulos %@ s antes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done: subtitles %@ s earlier"
+          }
+        }
+      }
+    },
+    "Listo: subtítulos %@ s después": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done: subtitles %@ s later"
+          }
+        }
+      }
+    },
+    "Listo: ya iban a tiempo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done: they were already in sync"
           }
         }
       }
@@ -6458,6 +6645,28 @@
         }
       }
     },
+    "Mira unas frases. Si las letras no van con la voz, prueba otra.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch a few lines. If the text doesn't match the voices, try another."
+          }
+        }
+      }
+    },
+    "Misma fuente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Same source"
+          }
+        }
+      }
+    },
     "Modo": {
       "extractionState": "manual",
       "localizations": {
@@ -6487,6 +6696,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show"
+          }
+        }
+      }
+    },
+    "Mostrarlos al regresar 10 s": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show them when going back 10 s"
           }
         }
       }
@@ -6524,6 +6744,28 @@
         }
       }
     },
+    "Más arriba": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Higher"
+          }
+        }
+      }
+    },
+    "Más chico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smaller"
+          }
+        }
+      }
+    },
     "Más como esto": {
       "extractionState": "manual",
       "localizations": {
@@ -6553,6 +6795,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Shortest first"
+          }
+        }
+      }
+    },
+    "Más grande": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Larger"
           }
         }
       }
@@ -7481,6 +7734,17 @@
         }
       }
     },
+    "Normal": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normal"
+          }
+        }
+      }
+    },
     "Novela": {
       "extractionState": "manual",
       "localizations": {
@@ -7730,6 +7994,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Another source…"
+          }
+        }
+      }
+    },
+    "Otra vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Again"
           }
         }
       }
@@ -8295,6 +8570,17 @@
         }
       }
     },
+    "Posición": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position"
+          }
+        }
+      }
+    },
     "Preguntándole a tu Orbital…": {
       "extractionState": "manual",
       "localizations": {
@@ -8368,6 +8654,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Test connection"
+          }
+        }
+      }
+    },
+    "Probar otra": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another"
           }
         }
       }
@@ -9769,6 +10066,17 @@
         }
       }
     },
+    "Sincronizar con una línea": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync with a line"
+          }
+        }
+      }
+    },
     "Sincronía": {
       "extractionState": "manual",
       "localizations": {
@@ -10044,6 +10352,17 @@
         }
       }
     },
+    "Sí, va bien": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, it's fine"
+          }
+        }
+      }
+    },
     "T%lld E%lld": {
       "extractionState": "manual",
       "localizations": {
@@ -10264,6 +10583,17 @@
         }
       }
     },
+    "Tiempo y tamaño…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timing and size…"
+          }
+        }
+      }
+    },
     "Tiempos de Where's The Jump": {
       "extractionState": "manual",
       "localizations": {
@@ -10293,6 +10623,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tap the name to pick something else you watched"
+          }
+        }
+      }
+    },
+    "Toca la frase en el momento en que la escuches.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the line the moment you hear it."
           }
         }
       }
@@ -10656,6 +10997,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trakt: %@"
+          }
+        }
+      }
+    },
+    "Translúcido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translucent"
           }
         }
       }
@@ -11210,6 +11562,28 @@
         }
       }
     },
+    "Usamos tu ajuste de %@ para esta versión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We used your %@ adjustment for this version."
+          }
+        }
+      }
+    },
+    "Usar el estilo del iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the iPhone style"
+          }
+        }
+      }
+    },
     "Usar esta carpeta": {
       "extractionState": "manual",
       "localizations": {
@@ -11551,6 +11925,17 @@
         }
       }
     },
+    "Viene dentro del archivo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comes inside the file"
+          }
+        }
+      }
+    },
     "Visto": {
       "extractionState": "manual",
       "localizations": {
@@ -11562,6 +11947,17 @@
         }
       }
     },
+    "Volver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        }
+      }
+    },
     "Volver a buscar": {
       "extractionState": "manual",
       "localizations": {
@@ -11569,6 +11965,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search again"
+          }
+        }
+      }
+    },
+    "Volver a como venían": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset to original timing"
           }
         }
       }
@@ -11716,6 +12123,28 @@
         }
       }
     },
+    "Ya está en Descargas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already in Downloads"
+          }
+        }
+      }
+    },
+    "Ya está en Descargas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already in Downloads."
+          }
+        }
+      }
+    },
     "Ya está en tu Real-Debrid: empieza sin esperar.": {
       "extractionState": "manual",
       "localizations": {
@@ -11800,6 +12229,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No scares left"
+          }
+        }
+      }
+    },
+    "Ya probaste:": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already tried:"
           }
         }
       }
@@ -12200,6 +12640,17 @@
         }
       }
     },
+    "¿Va a tiempo?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In sync?"
+          }
+        }
+      }
+    },
     "¿Ver en la TV?": {
       "extractionState": "manual",
       "localizations": {
@@ -12207,6 +12658,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watch on the TV?"
+          }
+        }
+      }
+    },
+    "¿Ya van bien? Se recuerda para esta versión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In sync now? It's remembered for this version."
           }
         }
       }
@@ -12255,6 +12717,17 @@
         }
       }
     },
+    "— Así se van a ver.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "— This is how they'll look."
+          }
+        }
+      }
+    },
     "‹ Anterior": {
       "extractionState": "manual",
       "localizations": {
@@ -12262,6 +12735,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "‹ Previous"
+          }
+        }
+      }
+    },
+    "− Antes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "− Earlier"
           }
         }
       }

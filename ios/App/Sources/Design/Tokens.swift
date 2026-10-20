@@ -83,6 +83,8 @@ enum DS {
     static let video = Color.black   // detrás de un video: negro de verdad
     static let subtitleText = Color.white       // subtítulos: blanco puro sobre el video, como cualquier reproductor
     static let subtitleShadow = Color.black.opacity(DesignTokens.Opacity.subtitleShadow)
+    static let subtitleBox = Color.black.opacity(DesignTokens.Subtitle.boxOpacity)               // «Caja oscura»
+    static let subtitleTranslucent = Color.black.opacity(DesignTokens.Subtitle.translucentOpacity) // «Translúcido»
 
     /// Las acciones de la ficha (Guardar, Descargar, Tráiler, Fuente): el alto del rectángulo y el grueso del anillo de avance. El anillo es el mismo en la fila de un episodio (`ring`).
     /// «Un Simpson al azar»: la ruleta de episodios (ancho de cada imagen, espacio, cuánto gira y cuánto se queda el elegido
@@ -153,6 +155,9 @@ enum DS {
         static let minFont = CGFloat(DesignTokens.Subtitle.minFont), liftWithControls = CGFloat(DesignTokens.Subtitle.liftWithControls)
         static let lineGap = CGFloat(DesignTokens.Subtitle.lineGap), edgeMargin = CGFloat(DesignTokens.Subtitle.edgeMargin)
         static let shadowRadius = CGFloat(DesignTokens.Subtitle.shadowRadius), outlineWidth = CGFloat(DesignTokens.Subtitle.outlineWidth)
+        static let raisedMargin = CGFloat(DesignTokens.Subtitle.raisedMargin)
+        static let boxPaddingH = CGFloat(DesignTokens.Subtitle.boxPaddingH), boxPaddingV = CGFloat(DesignTokens.Subtitle.boxPaddingV)
+        static let boxRadius = CGFloat(DesignTokens.Subtitle.boxRadius)
     }
 
     /// Brillo, volumen y buscar arrastrando (como Infuse): el umbral que decide el eje (el mismo número que usa
@@ -296,6 +301,8 @@ enum DS {
         static let width: CGFloat = 420, radius: CGFloat = 30, rowRadius: CGFloat = 16, icon: CGFloat = 32
         /// El ancho del valor de la velocidad («1.25×») entre − y +.
         static let speedValue: CGFloat = 52
+        /// El ancho del nombre del tamaño de subtítulos («Mediano») entre − y +: no brinca al cambiar.
+        static let sizeValue: CGFloat = 72
         /// Tamaños de letra de muestra («Aa») para chico, mediano y grande.
         static let sampleSizes: [String: CGFloat] = ["small": 12, "medium": 15, "large": 19]
         /// En vertical con el panel abierto, la parte de arriba de la pantalla que queda para el video.
