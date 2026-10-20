@@ -71,8 +71,7 @@ struct DecideView: View {
         return HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("¿Qué vemos?").recipe(.title)
-                Text(verbatim: count > 0 ? String(format: Strings.tr(count == 1 ? "%lld opción" : "%lld opciones", language: language), count)
-                                         : Strings.tr("Ninguna con estos filtros", language: language))
+                Text(verbatim: optionsLine(m, count))
                     .recipe(.footnote).monospacedDigit().contentTransition(.numericText())
                     .accessibilityIdentifier("decide-count")
             }
@@ -80,6 +79,16 @@ struct DecideView: View {
             DSKindFilter(kind: Binding(get: { m.kind ?? "" }, set: { m.kind = $0.isEmpty ? nil : $0; Task { await m.apply() } }), menu: true)
                 .accessibilityIdentifier("decide-kind")
         }
+    }
+
+    /// «4 opciones · de «Terror de octubre»» (de dónde salen, si elegiste listas).
+    private func optionsLine(_ m: DecideModel, _ count: Int) -> String {
+        var line = count > 0 ? String(format: Strings.tr(count == 1 ? "%lld opción" : "%lld opciones", language: language), count)
+                             : Strings.tr("Ninguna con estos filtros", language: language)
+        let lists = m.chosenSourceNames
+        if lists.count == 1 { line += " · " + String(format: Strings.tr("de «%@»", language: language), lists[0]) }
+        else if lists.count > 1 { line += " · " + String(format: Strings.tr("de %lld listas", language: language), lists.count) }
+        return line
     }
 
     /// Tres carteles lado a lado (la elegida, resaltada); debajo, su nombre, sus datos y por qué verla; luego Ver, Barajar y «⋯».
@@ -348,28 +357,30 @@ struct DecideMoreFilters: View {
     var body: some View {
         let m = observer.model
         let count = m.count()
+        let art = m.tileArt()
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 PanelGroupTitle(title: "Géneros")
-                FlowChips {
+                // Mosaicos con el arte de tus sugerencias de cada género (el `id` con lo elegido: ver `FlowChips`).
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
                     ForEach(DecideModel.genreChoices, id: \.self) { g in
-                        PanelChip(title: Text(verbatim: genreName(g)), selected: m.genres.contains(g)) {
+                        DecideTile(title: Text(verbatim: genreName(g)), art: art.genres[g], selected: m.genres.contains(g), height: DS.Decide.genreTile) {
                             if m.genres.contains(g) { m.genres.remove(g) } else { m.genres.insert(g) }
                         }
                     }
                 }
-                // Un `ForEach` dentro de `FlowChips` no se vuelve a dibujar solo cuando cambia el modelo (una clase): con
-                // su estado como identidad, sí (antes se tocaba un género y no se marcaba).
-                .id(m.genres)
+                // Que se redibuje al elegir y cuando llega el arte (los géneros se saben de Cinemeta, en segundo plano).
+                .id(DecideModel.genreChoices.map { art.genres[$0] ?? "" } + m.genres.sorted())
                 PanelGroupTitle(title: "Época")
-                FlowChips {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DecideModel.decadeChoices.count), spacing: DS.Space.s2) {
                     ForEach(DecideModel.decadeChoices, id: \.self) { d in
-                        PanelChip(title: d == 1980 ? Text("Antes de los 90") : Text(verbatim: "\(d)s"), selected: m.decades.contains(d)) {
+                        DecideTile(title: d == 1980 ? Text("Antes") : Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s"), art: art.decades[d],
+                                   selected: m.decades.contains(d), height: DS.Decide.eraTile, centered: true) {
                             if m.decades.contains(d) { m.decades.remove(d) } else { m.decades.insert(d) }
                         }
                     }
                 }
-                .id(m.decades)
+                .id(DecideModel.decadeChoices.map { art.decades[$0] ?? "" } + m.decades.sorted().map(String.init))
                 if !m.sources.isEmpty { lists(m) }
                 Toggle(isOn: Binding(get: { m.includeWatched }, set: { m.includeWatched = $0 })) { Text("Incluir lo que ya vi").recipe(.secondary, color: DS.text) }
                     .tint(DS.accent)

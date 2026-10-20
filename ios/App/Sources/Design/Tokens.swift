@@ -391,6 +391,8 @@ enum DS {
         static let pitchMin = 40
         /// Los carteles apilados de una lista en «De qué listas».
         static let listPoster: CGFloat = 44
+        /// Los mosaicos de «Más filtros»: alto de un género y de una época, y a qué tamaño se baja su arte.
+        static let genreTile: CGFloat = 56, eraTile: CGFloat = 72, tileArt: CGFloat = 240
     }
 
     /// Modo acompañante: la tarjeta del juego, las del carrusel, la batería baja (%), las líneas de la nota y los tiempos

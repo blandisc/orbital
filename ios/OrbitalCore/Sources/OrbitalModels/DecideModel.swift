@@ -341,6 +341,33 @@ public final class DecideModel: ObservableModel {
         }.count
     }
 
+    // MARK: el arte de los mosaicos
+    /// El arte de los mosaicos de «Más filtros»: para cada género y cada época, una de tus sugerencias de eso, sin repetir
+    /// título entre mosaicos mientras haya de dónde escoger (antes Drama, Terror y 2020s salían con la misma imagen). Siempre
+    /// la misma mientras no cambie lo sugerido; falta la de lo que aún no se sabe (los géneros llegan de Cinemeta).
+    public func tileArt() -> (genres: [String: String], decades: [Int: String]) {
+        var used = Set<String>()
+        func pick(_ matches: (Suggestion) -> Bool) -> String? {
+            let options = candidatesPool.filter(matches)
+            guard let s = options.first(where: { !used.contains($0.imdb) }) ?? options.first else { return nil }
+            used.insert(s.imdb)
+            return Self.artwork(s)
+        }
+        var genres: [String: String] = [:], decades: [Int: String] = [:]
+        for g in Self.genreChoices {
+            genres[g] = pick { s in Self.matches(s.genres.isEmpty ? (self.details[s.imdb]?.genres ?? []) : s.genres, picked: [g]) }
+        }
+        for d in Self.decadeChoices {
+            decades[d] = pick { s in (s.year ?? self.details[s.imdb]?.year).map { Self.inDecades($0, [d]) } ?? false }
+        }
+        return (genres, decades)
+    }
+
+    nonisolated static func artwork(_ s: Suggestion) -> String { s.wide.isEmpty ? s.poster : s.wide }
+
+    /// Las listas elegidas, para decir de dónde salen («de «Terror de octubre»», «de 2 listas»).
+    public var chosenSourceNames: [String] { sources.filter { sourceIDs.contains($0.id) }.map(\.name) }
+
     /// Nada cumple: qué quitar (o qué tiempo dar) y con cuántas quedarías; los dos que más abren.
     public func relaxations() -> [(relax: Relax, count: Int)] {
         var out: [(Relax, Int)] = []

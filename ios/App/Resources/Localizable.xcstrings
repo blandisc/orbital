@@ -12915,6 +12915,28 @@
         }
       }
     },
+    "de %lld listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "from %lld lists"
+          }
+        }
+      }
+    },
+    "de «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "from “%@”"
+          }
+        }
+      }
+    },
     "en total": {
       "extractionState": "manual",
       "localizations": {
