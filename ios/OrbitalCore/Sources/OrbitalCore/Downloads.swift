@@ -169,6 +169,15 @@ public actor Downloads {
     private var waiting = Set<String>()      // esperando su reintento (no se arrancan hasta que pase la espera)
     /// Un solo `pump` a la vez (el actor deja entrar otro en cada `await`: dos podían arrancar la misma o pasarse del tope).
     private var pumping = false, pumpAgain = false
+    /// La app se va a segundo plano: se crean de una vez todas las de la cola. Una tarea creada en segundo plano (la siguiente
+    /// al terminar una, un reintento) iOS la trata como «discrecional» y puede esperar horas a Wi‑Fi y carga; creadas antes,
+    /// el sistema las va bajando en orden (dos a la vez por servidor) sin esa espera.
+    private var backgrounded = false
+
+    public func setBackgrounded(_ value: Bool) async {
+        backgrounded = value
+        if value { await pump() }
+    }
     private var listening: Task<Void, Never>?
     private nonisolated let updatesHub = UpdatesHub()
 
@@ -285,7 +294,8 @@ public actor Downloads {
 
     private func pumpOnce() async {
         var active = items.values.filter { $0.state == .downloading }.count
-        for var item in all where item.state == .queued && !waiting.contains(item.id) && active < Self.maxActive {
+        let limit = backgrounded ? Int.max : Self.maxActive
+        for var item in all where item.state == .queued && !waiting.contains(item.id) && active < limit {
             guard let latest = items[item.id], latest.state == .queued, latest.createdAt == item.createdAt else { continue }   // cambió mientras arrancaba otra
             item = latest
             guard let url = secrets.get(SecretKey.download(item.id)).flatMap(URL.init(string:)) else {

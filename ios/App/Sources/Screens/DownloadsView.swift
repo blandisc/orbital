@@ -34,7 +34,6 @@ struct DownloadsView: View {
             if showsMedia { switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
         }
         .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .subtitle(downloadingCount(model) == 0 ? nil : Text("\(downloadingCount(model)) descargando"))   // solo las que bajan (no las en pausa)   // el espacio, en su barra
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -118,14 +117,14 @@ struct DownloadsView: View {
             }
         }
         .listRowSpacing(DS.Space.s2)
+        // El espacio va pegado al selector (la lista agrupada dejaba un hueco grande arriba de su primera sección).
+        .contentMargins(.top, DS.Space.s2, for: .scrollContent)
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
     }
 
     /// Lo que vino de tu OneDrive (Mi media), para distinguirlo de lo de Real-Debrid.
     private func fromMedia(_ item: DownloadItem) -> String? { item.addon == OneDriveLibrary.addonName ? env.message("De Mi media") : nil }
-
-    private func downloadingCount(_ model: DownloadsModel) -> Int { model.active.filter { $0.state == .downloading || $0.state == .queued }.count }
 
     /// Un ajuste de Descargas como interruptor (se guarda al momento, igual que en Ajustes).
     private func setting(_ key: WritableKeyPath<AppSettings, Bool>) -> Binding<Bool> {
@@ -141,7 +140,7 @@ struct DownloadsView: View {
                 Text(item.title).recipe(.cardTitle).lineLimit(2)
                 let details = [fromMedia(item), item.subtitle.isEmpty ? nil : item.subtitle, item.quality].compactMap { $0 }
                 if !details.isEmpty { DataLine(parts: details) }
-                if let status = status(item) { Text(verbatim: status).recipe(.data, color: item.state == .failed ? DS.danger : nil).lineLimit(2) }
+                if let status = status(item, model) { Text(verbatim: status).recipe(.data, color: item.state == .failed ? DS.danger : nil).lineLimit(2) }
             }
             Spacer(minLength: DS.Space.s2)
             // El avance es el mismo anillo de la ficha y de la fila de un episodio, con pausar o reanudar adentro.
@@ -169,14 +168,21 @@ struct DownloadsView: View {
         .accessibilityLabel(Text(label))
     }
 
-    private func status(_ item: DownloadItem) -> String? {
+    private func status(_ item: DownloadItem, _ model: DownloadsModel) -> String? {
         let language = env.services.appSettings.uiLanguage
         let settings = env.services.appSettings
         switch item.state {
         case .queued: return Strings.tr("En cola", language: language)
         case .downloading:
             if item.waitingForNetwork { return Strings.tr(settings.wifiOnlyDownloads ? "Esperando Wi‑Fi" : "Esperando conexión", language: language) }
-            return "\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"
+            // «1.2 GB / 4.5 GB · 18 MB/s · 3 min»: lo que lleva, la velocidad y cuánto falta.
+            var parts = ["\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"]
+            if let speed = model.speeds[item.id] { parts.append(bytes(Int64(speed)) + "/s") }
+            if let left = model.secondsLeft(item) {
+                let units: Set<Duration.UnitsFormatStyle.Unit> = left >= 3600 ? [.hours, .minutes] : [.minutes, .seconds]
+                parts.append(Duration.seconds(left).formatted(.units(allowed: units, width: .abbreviated, maximumUnitCount: left >= 3600 ? 2 : 1).locale(env.uiLocale)))
+            }
+            return parts.joined(separator: " · ")
         case .paused:
             let paused = Strings.tr("En pausa", language: language)
             return item.progress.map { "\(paused) · \(Int(($0 * 100).rounded())) %" } ?? paused

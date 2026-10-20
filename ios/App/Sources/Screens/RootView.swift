@@ -93,6 +93,12 @@ struct RootView: View {
             if phase == .active { DemoHTTPClient.postReleaseAlert(language: env.services.appSettings.uiLanguage) }
             #endif
             if phase == .background { InboxBackgroundTask.schedule(); ReleaseNotifier.schedule() }
+            // Las descargas en cola se crean antes de irse (en segundo plano iOS las posterga): ver `Downloads.setBackgrounded`.
+            if phase == .background || phase == .active {
+                let background = phase == .background
+                let id = background ? UIApplication.shared.beginBackgroundTask(withName: "orbital.downloads") : .invalid
+                Task { await env.services.downloads.setBackgrounded(background); if id != .invalid { UIApplication.shared.endBackgroundTask(id) } }
+            }
         }
     }
 }

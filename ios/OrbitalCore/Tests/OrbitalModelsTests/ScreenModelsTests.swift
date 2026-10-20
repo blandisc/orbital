@@ -574,6 +574,22 @@ final class CatalogAndSourcesTests: XCTestCase {
         XCTAssertEqual(second.engine.loads.first?.url.absoluteString, "https://rd.example/other.mkv")
     }
 
+    func testDownloadSpeedAndTimeLeft() throws {
+        let rig = try ServicesRig()
+        let model = DownloadsModel(rig.services, freeSpace: { 0 })
+        var d = DownloadItem(id: "tt1|tt1", kind: "movie", metaID: "tt1", videoID: "tt1", title: "A", originalTitle: "A", subtitle: "", poster: nil,
+                             addon: "", sourceIndex: 0, expectedBytes: 100_000_000, relativePath: "", createdAt: 0)
+        d.state = .downloading
+        let t0 = Date(timeIntervalSince1970: 1000)
+        d.writtenBytes = 10_000_000; model.measure([d], at: t0)
+        XCTAssertNil(model.speeds[d.id], "con una sola muestra todavía no hay velocidad")
+        d.writtenBytes = 30_000_000; model.measure([d], at: t0.addingTimeInterval(2))
+        XCTAssertEqual(model.speeds[d.id] ?? 0, 10_000_000, accuracy: 1, "20 MB en 2 s")
+        XCTAssertEqual(model.secondsLeft(d) ?? 0, 7, accuracy: 0.01, "70 MB a 10 MB/s")
+        d.state = .paused; model.measure([d], at: t0.addingTimeInterval(3))
+        XCTAssertNil(model.speeds[d.id], "en pausa no hay velocidad")
+    }
+
     func testReadyDownloadsAreGroupedByTitleInArrivalOrder() {
         func item(_ meta: String, _ video: String, bytes: Int64) -> DownloadItem {
             var d = DownloadItem(id: "\(meta)|\(video)", kind: "series", metaID: meta, videoID: video, title: meta, originalTitle: meta, subtitle: "", poster: nil,

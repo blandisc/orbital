@@ -60,6 +60,9 @@ public struct DownloadSeason: Identifiable, Equatable, Sendable {
 public final class DownloadsModel: ObservableModel {
     public private(set) var items: [DownloadItem] = [] { didSet { changed() } }
     public private(set) var freeBytes: Int64 = 0 { didSet { changed() } }
+    /// Bytes por segundo de cada descarga que está bajando (promedio suave de los últimos segundos).
+    public private(set) var speeds: [String: Double] = [:]
+    private var samples: [String: (bytes: Int64, at: Date)] = [:]
     private let services: Services
     private let freeSpace: @Sendable () -> Int64
 
@@ -78,8 +81,32 @@ public final class DownloadsModel: ObservableModel {
         for await snapshot in services.downloads.makeUpdates() {
             let now = Date()
             if Self.shape(snapshot) == Self.shape(items), now.timeIntervalSince(lastPaint) < Self.progressInterval { continue }
+            measure(snapshot, at: now)
             items = snapshot; freeBytes = freeSpace(); lastPaint = now
         }
+    }
+
+    /// La velocidad: lo bajado entre dos muestras de al menos un segundo, suavizado (no brinca con cada avance).
+    func measure(_ snapshot: [DownloadItem], at now: Date) {
+        var next: [String: Double] = [:]
+        for item in snapshot where item.state == .downloading && !item.waitingForNetwork {
+            guard let last = samples[item.id] else { samples[item.id] = (item.writtenBytes, now); continue }
+            let elapsed = now.timeIntervalSince(last.at)
+            guard elapsed >= Self.speedWindow else { if let old = speeds[item.id] { next[item.id] = old }; continue }
+            let rate = max(0, Double(item.writtenBytes - last.bytes) / elapsed)
+            next[item.id] = speeds[item.id].map { $0 * (1 - Self.speedSmoothing) + rate * Self.speedSmoothing } ?? rate
+            samples[item.id] = (item.writtenBytes, now)
+        }
+        samples = samples.filter { id, _ in snapshot.contains { $0.id == id && $0.state == .downloading } }
+        speeds = next
+    }
+
+    static let speedWindow = 1.0, speedSmoothing = 0.4
+
+    /// Cuánto falta (segundos) a la velocidad de ahora.
+    public func secondsLeft(_ item: DownloadItem) -> Double? {
+        guard let speed = speeds[item.id], speed > 0, let expected = item.expectedBytes, expected > item.writtenBytes else { return nil }
+        return Double(expected - item.writtenBytes) / speed
     }
 
     /// Cada cuánto se pinta el avance (segundos).
