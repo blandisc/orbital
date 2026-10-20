@@ -4181,6 +4181,17 @@
         }
       }
     },
+    "Elige uno o varios · el número es cuántas hay": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick one or more · the number is how many there are"
+          }
+        }
+      }
+    },
     "Elige y toca «Decide por mí»": {
       "extractionState": "manual",
       "localizations": {

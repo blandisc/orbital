@@ -232,6 +232,8 @@ enum DS {
         static func enter(_ reduce: Bool) -> Animation? { reduce ? nil : .easeOut(duration: DesignTokens.Motion.enter) }
         static func tint(_ reduce: Bool) -> Animation? { reduce ? nil : .easeInOut(duration: DesignTokens.Motion.tint) }
         static func spring(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.2) }
+        /// Un rebote más marcado y corto: elegir un mosaico («¿Qué vemos?» › Más filtros).
+        static func pop(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.base, bounce: 0.45) }
     }
 
     /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32
@@ -392,7 +394,10 @@ enum DS {
         /// Los carteles apilados de una lista en «De qué listas».
         static let listPoster: CGFloat = 44
         /// Los mosaicos de «Más filtros»: alto de un género y de una época, y a qué tamaño se baja su arte.
-        static let genreTile: CGFloat = 56, eraTile: CGFloat = 72
+        static let genreTile: CGFloat = 60, eraTile: CGFloat = 80
+        /// Elegir un mosaico: crece un poco (y su imagen se acerca), anillo con brillo; los demás pierden color.
+        static let chosenScale: CGFloat = 1.04, artZoom: CGFloat = 1.08, glowRadius: CGFloat = 10, glowOpacity: Double = 0.55
+        static let dimSaturation: Double = 0.4, labelShadow: CGFloat = 4, eraTracking: CGFloat = -0.5
     }
 
     /// Modo acompañante: la tarjeta del juego, las del carrusel, la batería baja (%), las líneas de la nota y los tiempos

@@ -364,10 +364,13 @@ struct DecideMoreFilters: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 PanelGroupTitle(title: "Géneros")
+                Text("Elige uno o varios · el número es cuántas hay").recipe(.caption, color: DS.textFaint)
                 // Mosaicos con el arte de tus sugerencias de cada género (el `id` con lo elegido: ver `FlowChips`).
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
                     ForEach(DecideModel.genreChoices, id: \.self) { g in
-                        DecideTile(title: Text(verbatim: genreName(g)), image: DecideView.tileImage(genre: g), selected: m.genres.contains(g), height: DS.Decide.genreTile) {
+                        DecideTile(title: Text(verbatim: genreName(g)), image: DecideView.tileImage(genre: g), selected: m.genres.contains(g),
+                                   dimmed: !m.genres.isEmpty && !m.genres.contains(g), count: m.count { $0.genres = [g] },
+                                   height: DS.Decide.genreTile) {
                             if m.genres.contains(g) { m.genres.remove(g) } else { m.genres.insert(g) }
                         }
                     }
@@ -378,7 +381,8 @@ struct DecideMoreFilters: View {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DecideModel.decadeChoices.count), spacing: DS.Space.s2) {
                     ForEach(DecideModel.decadeChoices, id: \.self) { d in
                         DecideTile(title: d == 1980 ? Text("Antes") : Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s"), image: "decide-era-\(d)",
-                                   selected: m.decades.contains(d), height: DS.Decide.eraTile, centered: true) {
+                                   selected: m.decades.contains(d), dimmed: !m.decades.isEmpty && !m.decades.contains(d),
+                                   count: m.count { $0.decades = [d] }, height: DS.Decide.eraTile, era: true) {
                             if m.decades.contains(d) { m.decades.remove(d) } else { m.decades.insert(d) }
                         }
                     }

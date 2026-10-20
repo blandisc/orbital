@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Elige uno o varios · el número es cuántas hay": "Pick one or more · the number is how many there are",
     "Buscando opciones…": "Finding options…",
     "de «%@»": "from “%@”",
     "de %lld listas": "from %lld lists",
