@@ -5479,6 +5479,17 @@
         }
       }
     },
+    "Llena la pantalla y recorta los lados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fills the screen and crops the sides"
+          }
+        }
+      }
+    },
     "Lleva %lld %": {
       "extractionState": "manual",
       "localizations": {
