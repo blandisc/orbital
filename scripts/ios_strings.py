@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "‹ Anterior": "‹ Previous", "Siguiente ›": "Next ›", "¿No va a tiempo o se ve mal? Toca Siguiente para probar otra.": "Out of sync or looks wrong? Tap Next to try another.", "Ya la probaste": "Already tried", "Con subtítulos para este video": "With subtitles for this video", "Buscar en internet": "Search online",
     "No pudimos cargar la ficha. Revisa tu conexión.": "We couldn't load this title. Check your connection.", "Aún sin episodios": "No episodes yet", "No pudimos armar tu mosaico": "We couldn't build your mosaic", "Revisa tu conexión e intenta de nuevo.": "Check your connection and try again.", "Tu Orbital ya no reconoce este iPhone": "Your Orbital no longer recognizes this iPhone", "Vuelve a conectarlos: en tu TV abre Ajustes › iPhone y escanea el código.": "Connect them again: on your TV open Settings › iPhone and scan the code.", "Tu Orbital no contesta": "Your Orbital isn't responding", "Revisa que la consola esté prendida y en la misma red que tu iPhone.": "Make sure the console is on and on the same network as your iPhone.",
     "Sin fuentes por ahora": "No sources yet", "Todavía no sale": "Not out yet", "Real-Debrid aún no lo tiene. Los estrenos suelen aparecer unas horas después.": "Real-Debrid doesn't have it yet. New releases usually show up a few hours later.",
     "Termina como a las %@": "Done around %@",

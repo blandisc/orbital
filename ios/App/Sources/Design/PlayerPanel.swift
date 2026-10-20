@@ -513,6 +513,8 @@ struct SubtitleButton: View {
 /// «Más idiomas…»: todos los idiomas, con buscador.
 struct LanguageSearchList: View {
     let codes: [String]
+    /// Los que tienen subtítulos para este video (con cuántas versiones): van primero, aparte.
+    var available: [(code: String, count: Int)] = []
     let name: (String) -> String
     let pick: (String) -> Void
     @State private var query = ""
@@ -521,9 +523,29 @@ struct LanguageSearchList: View {
     var body: some View {
         let all = codes.map { ($0, name($0)) }.sorted { $0.1.localizedCompare($1.1) == .orderedAscending }
         let shown = query.isEmpty ? all : all.filter { $0.1.localizedCaseInsensitiveContains(query) || $0.0.hasPrefix(query.lowercased()) }
+        let ready = available.filter { a in query.isEmpty || name(a.code).localizedCaseInsensitiveContains(query) }
+            .sorted { name($0.code).localizedCompare(name($1.code)) == .orderedAscending }
+        let readyCodes = Set(ready.map(\.code))
         NavigationStack {
-            List(shown, id: \.0) { code, title in
-                Button { pick(code); dismiss() } label: { Text(verbatim: title).foregroundStyle(DS.text) }
+            List {
+                if !ready.isEmpty {
+                    Section("Con subtítulos para este video") {
+                        ForEach(ready, id: \.code) { a in
+                            Button { pick(a.code); dismiss() } label: {
+                                HStack {
+                                    Text(verbatim: name(a.code)).foregroundStyle(DS.text)
+                                    Spacer()
+                                    Text("\(a.count) versiones").recipe(.footnote)
+                                }
+                            }
+                        }
+                    }
+                }
+                Section(ready.isEmpty ? "Idiomas" : "Buscar en internet") {
+                    ForEach(shown.filter { !readyCodes.contains($0.0) }, id: \.0) { code, title in
+                        Button { pick(code); dismiss() } label: { Text(verbatim: title).foregroundStyle(DS.text) }
+                    }
+                }
             }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Buscar idioma"))
             .navigationTitle(Text("Más idiomas"))

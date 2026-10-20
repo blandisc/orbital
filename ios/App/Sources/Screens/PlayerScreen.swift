@@ -927,8 +927,8 @@ struct PlayerScreen: View {
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // De orilla a orilla: el alto sale del ancho y la proporción (sin tope), salvo que no quepa en la pantalla.
         let height = min(size.width / DS.Poster.stillAspect, size.height)
-        // Sin controles (y sin arrastrar), el video al centro; con ellos, a la altura que lo dejaste.
-        let center = size.height * (portraitDrag ?? (controlsVisible ? portraitCenter : Double(DS.PlayerPanel.portraitCenterIdle)))
+        // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
+        let center = size.height * (portraitDrag ?? portraitCenter)
         let y = min(max(0, center - height / 2), max(0, size.height - height))
         return CGRect(x: 0, y: y, width: size.width, height: height)
     }
@@ -1053,6 +1053,8 @@ struct VideoSettingsPanel: View {
     @State private var page: Page = .hub
     /// El idioma elegido en el menú de Subtítulos («» = sin subtítulos); nil: el de los puestos o el tuyo.
     @State private var subtitleLanguage: String?
+    /// Las versiones que ya probaste en esta sesión (para no volver a las que no iban).
+    @State private var triedVersions: Set<String> = []
     @State private var moreLanguages = false
     /// Si queda más lista abajo (se desvanece el pie para que se note que sigue).
     @State private var moreBelow = false
@@ -1195,8 +1197,8 @@ struct VideoSettingsPanel: View {
         let lang = chosenSubtitleLanguage
         let off = s.selectedSubtitle == nil && subtitleLanguage == ""
         let available = Set(model.subtitleLanguages.map(\.code))
-        let others = model.subtitleLanguages.map(\.code).filter { !yourSubtitleLanguages.contains($0) }
-            .sorted { languageName($0).localizedCompare(languageName($1)) == .orderedAscending }
+        // Pocos idiomas a la vista: los tuyos, español e inglés, y el que esté puesto; los demás en «Más idiomas…».
+        let shortList = (yourSubtitleLanguages + ["es", "en"] + (lang.map { [$0] } ?? [])).reduce(into: [String]()) { out, c in if !out.contains(c) { out.append(c) } }
         header("Subtítulos", back: true)
         PanelGroupTitle(title: "Idioma")
         FlowChips {
@@ -1205,7 +1207,7 @@ struct VideoSettingsPanel: View {
                 Task { await model.selectSubtitle(nil) }
             }
             .accessibilityIdentifier("player-subtitles-off")
-            ForEach(yourSubtitleLanguages + others, id: \.self) { code in
+            ForEach(shortList, id: \.self) { code in
                 PanelChip(title: Text(verbatim: languageName(code)), selected: !off && s.selectedSubtitle != nil && code == lang) {
                     subtitleLanguage = code
                     Task { await model.chooseLanguage(code) }
@@ -1216,7 +1218,7 @@ struct VideoSettingsPanel: View {
         }
         .accessibilityIdentifier("player-subtitle-language")
         .sheet(isPresented: $moreLanguages) {
-            LanguageSearchList(codes: SubtitleLanguage.all, name: languageName) { code in
+            LanguageSearchList(codes: SubtitleLanguage.all, available: model.subtitleLanguages.filter { !shortList.contains($0.code) }, name: languageName) { code in
                 subtitleLanguage = code
                 Task { await model.chooseLanguage(code) }
             }
@@ -1239,11 +1241,30 @@ struct VideoSettingsPanel: View {
         if let lang, !off {
             let versions = model.subtitleVersions(language: lang)
             if !versions.isEmpty { PanelGroupTitle(title: "Versión") }
+            // Probar rápido: ‹ › van a la versión anterior o siguiente (se ve al momento en el video, arriba); las que ya
+            // probaste quedan marcadas en la lista.
+            if versions.count > 1 {
+                let at = versions.firstIndex { $0.id == model.selectedVersionID }
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    HStack(spacing: DS.Space.s2) {
+                        PanelChip(title: Text("‹ Anterior"), selected: false) { step(versions, from: at, by: -1) }
+                        Spacer(minLength: DS.Space.s2)
+                        Text(verbatim: at.map { String(format: Strings.tr("%lld de %lld", language: language), $0 + 1, versions.count) } ?? "—")
+                            .recipe(.secondary, color: DS.text).fontWeight(.semibold).monospacedDigit()
+                        Spacer(minLength: DS.Space.s2)
+                        PanelChip(title: Text("Siguiente ›"), selected: false) { step(versions, from: at, by: 1) }
+                            .accessibilityIdentifier("player-subtitle-next-version")
+                    }
+                    Text("¿No va a tiempo o se ve mal? Toca Siguiente para probar otra.").recipe(.caption)
+                }
+            }
             ForEach(Array(versions.enumerated()), id: \.element.id) { index, version in
-                SubtitleVersionRow(title: versionTitle(version, index: index, recommended: index == 0), selected: model.selectedVersionID == version.id,
+                let selected = model.selectedVersionID == version.id
+                SubtitleVersionRow(title: versionTitle(version, index: index, recommended: index == 0), selected: selected,
                                    fromVideo: version.fromVideo, matchesCopy: version.matchesCopy, downloads: version.downloads,
                                    loading: version.option.map { model.addedSubtitleURLs.contains($0.url) && model.addedTracks[$0.url] == nil } ?? false,
-                                   detail: version.name) {
+                                   detail: triedVersions.contains(version.id) && !selected ? "\(Strings.tr("Ya la probaste", language: language)) · \(version.name ?? "")" : version.name) {
+                    if let current = model.selectedVersionID { triedVersions.insert(current) }
                     Task { await model.selectVersion(version) }
                 }
             }
@@ -1268,6 +1289,14 @@ struct VideoSettingsPanel: View {
         // Qué se recuerda: lo que elijas aquí vale para todo el título (sin confirmar nada).
         Label(model.request?.kind == "series" ? "Se recuerda para toda la serie." : "Se recuerda para esta película.", systemImage: "checkmark.circle")
             .recipe(.caption)
+    }
+
+    /// ‹ › de las versiones: pone la anterior o la siguiente y marca la de antes como probada.
+    private func step(_ versions: [SubtitleVersion], from at: Int?, by delta: Int) {
+        guard !versions.isEmpty else { return }
+        if let current = model.selectedVersionID { triedVersions.insert(current) }
+        let next = at.map { (($0 + delta) % versions.count + versions.count) % versions.count } ?? 0
+        Task { await model.selectVersion(versions[next]) }
     }
 
     /// El idioma de la lista: el que elegiste en el menú; si no, el de los subtítulos puestos; si no, el tuyo (Ajustes:

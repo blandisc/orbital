@@ -300,7 +300,6 @@ enum DS {
         /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando) y entre qué límites.
         static let portraitCenter: CGFloat = 0.32, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
         /// En vertical sin controles a la vista, el video se centra.
-        static let portraitCenterIdle: CGFloat = 0.5
         /// El botón de reproducir, más grande que ±10 (lo que más se toca).
         static let playButton: CGFloat = 72, playGlyph: CGFloat = 30, sideButton: CGFloat = 52
         /// La tira para probar subtítulos sobre el video: lo más ancha que se pone.

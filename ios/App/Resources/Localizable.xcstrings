@@ -1409,6 +1409,17 @@
         }
       }
     },
+    "Buscar en internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search online"
+          }
+        }
+      }
+    },
     "Buscar en la web": {
       "extractionState": "manual",
       "localizations": {
@@ -2142,6 +2153,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Using your Orbital's session: nothing to connect here."
+          }
+        }
+      }
+    },
+    "Con subtítulos para este video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With subtitles for this video"
           }
         }
       }
@@ -9428,6 +9450,17 @@
         }
       }
     },
+    "Siguiente ›": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next ›"
+          }
+        }
+      }
+    },
     "Silencio": {
       "extractionState": "manual",
       "localizations": {
@@ -11518,6 +11551,17 @@
         }
       }
     },
+    "Ya la probaste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already tried"
+          }
+        }
+      }
+    },
     "Ya la tienes": {
       "extractionState": "manual",
       "localizations": {
@@ -11903,6 +11947,17 @@
         }
       }
     },
+    "¿No va a tiempo o se ve mal? Toca Siguiente para probar otra.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out of sync or looks wrong? Tap Next to try another."
+          }
+        }
+      }
+    },
     "¿Qué le digo a Orbital?": {
       "extractionState": "manual",
       "localizations": {
@@ -11998,6 +12053,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last scrobble"
+          }
+        }
+      }
+    },
+    "‹ Anterior": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‹ Previous"
           }
         }
       }
