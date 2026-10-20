@@ -484,17 +484,21 @@ struct SubtitleButton: View {
     let toggle: () -> Void
 
     var body: some View {
+        // Prendidos: el idioma («ES») en una placa sólida, como el «CC» de los reproductores, dentro del círculo (antes era
+        // una etiqueta en la esquina que se salía). Apagados: la burbuja vacía.
         ZStack {
             if loading { ProgressView().tint(DS.text) }
-            else { Image(systemName: code != nil ? "captions.bubble.fill" : "captions.bubble").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text) }
-        }
-        .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-        .overlay(alignment: .bottomTrailing) {
-            if let code, !loading {
-                Text(verbatim: code.uppercased()).font(DS.TextRecipe.caption.font.weight(.heavy)).foregroundStyle(DS.onPrimary)
-                    .padding(.horizontal, DS.Space.s1).background(DS.primary, in: Capsule())
+            else if let code {
+                Text(verbatim: code.uppercased()).font(DS.TextRecipe.caption.font.weight(.heavy)).foregroundStyle(DS.onSolidPrimary)
+                    .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                    .padding(.horizontal, DS.Space.s1)
+                    .frame(minWidth: DS.Size.touchTarget / 2)
+                    .background(DS.solidPrimary, in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
+            } else {
+                Image(systemName: "captions.bubble").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
             }
         }
+        .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
         .glassEffect(.regular.interactive(), in: Circle())
         .contentShape(Circle())
         .onTapGesture(perform: open)
