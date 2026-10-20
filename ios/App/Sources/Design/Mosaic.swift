@@ -258,6 +258,9 @@ struct Mosaic: View {
     var onFocusChange: ((Suggestion?) -> Void)?
     /// Un segundo toque en la enfocada: abre su ficha (lo hace la pantalla).
     var onOpen: ((Suggestion) -> Void)?
+    /// Todavía cargando: la ruedita. Ya terminó y no hay nada: lo dice y deja reintentar (antes giraba para siempre).
+    var loading = true
+    var retry: (() -> Void)?
 
     @StateObject private var runtime = MosaicRuntime()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -331,7 +334,16 @@ struct Mosaic: View {
                 if wasEmpty, let demoFocus { runtime.focusTile(imdb: demoFocus) }
             }
         }
-        .overlay { if runtime.isEmpty { ProgressView() } }
+        .overlay {
+            if runtime.isEmpty {
+                if loading { ProgressView() }
+                else {
+                    DSEmptyState(symbol: "square.grid.3x3", title: Text("No pudimos armar tu mosaico"), message: Text("Revisa tu conexión e intenta de nuevo.")) {
+                        if let retry { Button("Intentar de nuevo", action: retry) }
+                    }
+                }
+            }
+        }
         .accessibilityElement(children: .contain).accessibilityIdentifier("mosaic")   // para las pruebas de interfaz
         #if DEBUG
         .task { await MosaicBench.runIfRequested(runtime) { c, r in withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: c, row: r) } } }

@@ -45,7 +45,14 @@ struct TitleView: View {
                     }
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
                     if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
-                    if let error = model.error, model.overview.isEmpty { DSNotice(verbatim: env.message(error), tone: .warn) }
+                    if let error = model.error, !model.isLoading {
+                        // No cargó (sin red, Cinemeta caído): lo dice y deja reintentar (antes «Cargando» se quedaba para siempre).
+                        VStack(alignment: .leading, spacing: DS.Space.s2) {
+                            DSNotice(verbatim: env.message(error), tone: .warn)
+                            Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.load() } }
+                                .buttonStyle(.glass).accessibilityIdentifier("title-retry")
+                        }
+                    }
                     synopsis(model)
                     creditLine(model)
                     if model.kind == "series" { episodes(model) }
@@ -216,7 +223,10 @@ struct TitleView: View {
     @ViewBuilder private func primaryButtonLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> some View {
         let quality = model.bestSource?.qualitySummary ?? []
         VStack(spacing: DS.Space.s1) {
-            if model.continueVideoID == nil {
+            if model.continueVideoID == nil && !model.isLoading {
+                // Ya cargó y no hay qué ver: sin red, o una serie que aún no tiene episodios.
+                (model.error != nil ? Text("Sin conexión") : Text("Aún sin episodios")).font(DS.TextRecipe.body.font.weight(.semibold))
+            } else if model.continueVideoID == nil {
                 HStack(spacing: DS.Space.s2) {
                     ProgressView().tint(DS.onSolidPrimary)
                     Text("Cargando")

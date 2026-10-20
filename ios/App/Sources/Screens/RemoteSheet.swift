@@ -156,6 +156,29 @@ struct RemoteSheet: View {
                     .accessibilityIdentifier("remote-scares")
                 }
             }
+        } else if model.tokenProblem {
+            // La TV ya no reconoce este iPhone (cambió su token): sin esto el control quedaba muerto sin decir por qué.
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                Label("Tu Orbital ya no reconoce este iPhone", systemImage: "lock.trianglebadge.exclamationmark").recipe(.cardTitle)
+                Text("Vuelve a conectarlos: en tu TV abre Ajustes › iPhone y escanea el código.").recipe(.footnote)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else if model.unreachable && !model.answered || model.unreachable && model.now == nil {
+            // Apagada u otra red: lo dice y deja reintentar (antes «Conectando…» se quedaba girando para siempre).
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Label("Tu Orbital no contesta", systemImage: "tv.slash").recipe(.cardTitle)
+                    Text("Revisa que la consola esté prendida y en la misma red que tu iPhone.").recipe(.footnote)
+                }
+                Button { Task { await model.retryNow() } } label: {
+                    Text("Intentar de nuevo").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                        .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
+                        .background(DS.fill, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("remote-retry")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         } else if !model.answered {
             // La TV todavía no contesta (recién abierta la app): no se dice «nada sonando» antes de saberlo.
             HStack(spacing: DS.Space.s3) {

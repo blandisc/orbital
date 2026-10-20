@@ -1090,6 +1090,17 @@
         }
       }
     },
+    "Aún sin episodios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No episodes yet"
+          }
+        }
+      }
+    },
     "A–Z": {
       "extractionState": "manual",
       "localizations": {
@@ -7206,6 +7217,17 @@
         }
       }
     },
+    "No pudimos armar tu mosaico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't build your mosaic"
+          }
+        }
+      }
+    },
     "No pudimos buscar fuentes. Intenta de nuevo.": {
       "extractionState": "manual",
       "localizations": {
@@ -7224,6 +7246,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "We couldn't search for subtitles. Check your connection."
+          }
+        }
+      }
+    },
+    "No pudimos cargar la ficha. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't load this title. Check your connection."
           }
         }
       }
@@ -8746,6 +8779,17 @@
         }
       }
     },
+    "Revisa que la consola esté prendida y en la misma red que tu iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make sure the console is on and on the same network as your iPhone."
+          }
+        }
+      }
+    },
     "Revisa tu conexión a internet e intenta de nuevo.": {
       "extractionState": "manual",
       "localizations": {
@@ -8753,6 +8797,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Check your internet connection and try again."
+          }
+        }
+      }
+    },
+    "Revisa tu conexión e intenta de nuevo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your connection and try again."
           }
         }
       }
@@ -10572,6 +10627,17 @@
         }
       }
     },
+    "Tu Orbital no contesta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Orbital isn't responding"
+          }
+        }
+      }
+    },
     "Tu Orbital no tiene sugerencias todavía.": {
       "extractionState": "manual",
       "localizations": {
@@ -10590,6 +10656,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your Orbital asked to wait a bit: too many attempts."
+          }
+        }
+      }
+    },
+    "Tu Orbital ya no reconoce este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Orbital no longer recognizes this iPhone"
           }
         }
       }
@@ -11349,6 +11426,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voice and Siri"
+          }
+        }
+      }
+    },
+    "Vuelve a conectarlos: en tu TV abre Ajustes › iPhone y escanea el código.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect them again: on your TV open Settings › iPhone and scan the code."
           }
         }
       }

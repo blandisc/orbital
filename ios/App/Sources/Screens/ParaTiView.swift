@@ -36,7 +36,7 @@ struct ParaTiView: View {
                            // Sin nada elegido (al abrir, o al pasar de largo) no hay pie; elegir una lo muestra.
                            focused = new
                            if let new { focusedArt = new.wide }
-                       }, onOpen: { openTitle = $0.route })
+                       }, onOpen: { openTitle = $0.route }, loading: m.isLoading, retry: { Task { await m.refresh() } })
                 // La pieza elegida, contada sobre el pie del mosaico (flota: el mosaico no cambia de alto al elegir o soltar).
                 .overlay(alignment: .bottom) {
                     if DS.Mosaic.uniform, let item = focused {
