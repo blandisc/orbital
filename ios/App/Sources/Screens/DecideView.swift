@@ -65,6 +65,7 @@ struct DecideView: View {
             m.warmPosters = { await ImagePipeline.shared.warmPosters($0) }
             if m.pick == nil { await m.quick() }
         }
+        .onDisappear { m.stop() }
         #if DEBUG
         .task { if Demo.isOn, let l = Demo.value(after: "-demo-decide-level") { stage = l == "3" ? .precise : l == "2" ? .more : .quick } }
         #endif
@@ -108,8 +109,6 @@ struct DecideView: View {
                 }
             }
             .frame(maxHeight: stage == .quick ? nil : DS.Decide.trioCompactHeight)
-            .opacity(m.isLoading ? DS.Decide.otherOpacity : 1)
-            .overlay { if m.isLoading { ProgressView() } }
             .sensoryFeedback(.selection, trigger: s.imdb)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: s.title).recipe(.cardTitle).lineLimit(1)
@@ -135,7 +134,14 @@ struct DecideView: View {
                 }
                     .dsPrimaryButton().controlSize(.large)
                 // Con el color del texto: el vidrio sin tinte se leía como apagado con letra grande.
-                Button { Task { await m.next() } } label: { Label("Barajar", systemImage: "shuffle").lineLimit(1).foregroundStyle(DS.text).frame(maxWidth: .infinity) }
+                // Lo que se espera (rara vez: los siguientes ya están listos) se ve en el botón, no encima de los carteles.
+                Button { Task { await m.next() } } label: {
+                    HStack(spacing: DS.Space.s2) {
+                        if m.isLoading { ProgressView().controlSize(.small) } else { Image(systemName: "shuffle") }
+                        Text("Barajar").lineLimit(1)
+                    }
+                    .foregroundStyle(DS.text).frame(maxWidth: .infinity)
+                }
                     .buttonStyle(.glass).controlSize(.large).disabled(m.isLoading)
                     .accessibilityIdentifier("decide-shuffle")
                 DSMoreMenu {

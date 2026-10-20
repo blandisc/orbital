@@ -206,3 +206,28 @@ final class DecideRulesTests: XCTestCase {
         XCTAssertEqual(DecideModel.contextTime(late, calendar: cal), .short, "muy noche: algo corto")
     }
 }
+
+/// «¿Qué vemos?»: los carteles y «Barajar» no esperan a Cinemeta (duración y calificación llegan después), y los
+/// siguientes tríos ya están listos cuando barajas.
+@MainActor
+final class DecideSpeedTests: XCTestCase {
+    func testShuffleDoesNotWaitForDetailsAndUsesPreparedTrios() async throws {
+        let rig = try ServicesRig()
+        let pool = (1...12).map { Suggestion(kind: "movie", imdb: "tt\($0)", title: "Peli \($0)", runtime: 90, poster: "", wide: "", reason: .recommended) }
+        // Cinemeta tarda mucho en contestar la duración y la calificación.
+        rig.http.delays = Dictionary(uniqueKeysWithValues: pool.map { ("https://v3-cinemeta.strem.io/meta/movie/\($0.imdb).json", 3000) })
+        let model = DecideModel(rig.services, pool: pool)
+        let started = Date()
+        await model.quick()
+        XCTAssertLessThan(Date().timeIntervalSince(started), 1.0, "los tres salen sin esperar a Cinemeta")
+        XCTAssertEqual(model.picks.count, 3)
+        XCTAssertFalse(model.isLoading, "«Barajar» responde ya")
+        let first = Set(model.picks.map(\.imdb))
+        try await Task.sleep(nanoseconds: 100_000_000)   // los siguientes se preparan solos
+        let shuffled = Date()
+        await model.next()
+        XCTAssertLessThan(Date().timeIntervalSince(shuffled), 0.5, "barajar usa el trío preparado")
+        XCTAssertTrue(first.isDisjoint(with: model.picks.map(\.imdb)), "otros tres")
+        model.stop()
+    }
+}

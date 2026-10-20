@@ -52,7 +52,11 @@ public final class DecideModel: ObservableModel {
     public let sources: [Source]
     private let services: Services
     private let pool: [Suggestion]
-    private var details: [String: (genres: [String], minutes: Int?, rating: Double?, year: Int?)] = [:]
+    /// Lo que Cinemeta dice de cada candidata (género, duración, calificación, año). Se guarda entre aperturas: con eso los
+    /// filtros se resuelven sin red y «Barajar» no espera.
+    struct Detail: Codable, Equatable { var genres: [String]; var minutes: Int?; var rating: Double?; var year: Int? }
+    private var details: [String: Detail] = [:]
+    static let detailsKey = "decide-details", detailsLimit = 1500
     private var shown = Set<String>()
     /// Las candidatas en el orden de esta vuelta.
     private var order: [Suggestion] = []
@@ -70,6 +74,7 @@ public final class DecideModel: ObservableModel {
         // Lo que ya viste: el de la última vez (guardado) sirve desde ya; el de hoy se pide aparte y se guarda para la próxima.
         // Antes se esperaba a Trakt (hasta 4 s) antes de enseñar nada.
         watched = services.kv.data(Self.watchedKey).flatMap { try? JSONDecoder().decode([String].self, from: $0) }.map(Set.init)
+        details = services.kv.data(Self.detailsKey).flatMap { try? JSONDecoder().decode([String: Detail].self, from: $0) } ?? [:]
         if let trakt = services.trakt, trakt.linked {
             let kv = services.kv
             watchedTask = Task { [weak self] in
@@ -131,8 +136,34 @@ public final class DecideModel: ObservableModel {
     /// Baja los carteles antes de enseñarlos (la app lo pone): los tres aparecen juntos, ya con imagen, en vez de uno y
     /// luego los otros.
     public var warmPosters: (@MainActor ([String]) async -> Void)?
-    /// Los tres siguientes, ya buscados y con sus carteles bajados mientras ves estos: «Barajar» los cambia al instante.
-    private var upcoming: (key: String, task: Task<[Suggestion], Never>)?
+    /// Los siguientes tríos, ya buscados y con sus carteles bajados mientras ves estos (dos por delante): «Barajar» los
+    /// cambia al instante. Cada uno espera al anterior (no buscan dos a la vez).
+    private var upcoming: [(key: String, task: Task<[Suggestion], Never>)] = []
+    static let ahead = 2
+    /// Los datos de toda la lista se piden una vez, en segundo plano, al abrir.
+    private var describingAll: Task<Void, Never>?
+    private var enriching: Task<Void, Never>?
+
+    /// Lo que se está preparando ya no sirve (cambiaron los filtros o se cerró): se cancela, no se espera.
+    private func dropUpcoming() {
+        for item in upcoming { item.task.cancel() }
+        upcoming = []
+    }
+
+    /// Prepara tríos hasta tener `ahead` listos (o en camino) para los filtros de ahora.
+    private func fillUpcoming() {
+        let key = filtersKey
+        if upcoming.contains(where: { $0.key != key }) { dropUpcoming() }
+        while upcoming.count < Self.ahead {
+            let previous = upcoming.last?.task
+            let task = Task { [weak self] () -> [Suggestion] in
+                _ = await previous?.value
+                guard !Task.isCancelled, let self else { return [] }
+                return await self.trio(waitForPosters: false)
+            }
+            upcoming.append((key, task))
+        }
+    }
 
     /// Lo que eligiste, en una cadena: los siguientes ya buscados solo sirven si no cambió.
     private var filtersKey: String {
@@ -148,20 +179,26 @@ public final class DecideModel: ObservableModel {
         if let warm = warmPosters { let first = order.prefix(Self.trio * 3).map(\.poster); Task { await warm(first) } }
         await prepare()
         await next()
+        describeAllInBackground()
     }
 
-    /// La duración y la calificación de la propuesta, si no se sabían (sin filtros no se le preguntaron a Cinemeta): el
-    /// porqué siempre lleva datos que se pueden comprobar.
-    private func enrichPick() async {
-        guard let s = pick, details[s.imdb] == nil else { return }
-        await describe([s])
-        guard pick?.imdb == s.imdb else { return }
-        minutes = s.runtime ?? details[s.imdb]?.minutes
-        imdbRating = details[s.imdb]?.rating
+    /// Duración, género, año y calificación de todo lo sugerido, de a poco y sin estorbar: así los filtros (niveles 2 y 3)
+    /// ya no tienen que preguntar a Cinemeta mientras esperas.
+    private func describeAllInBackground() {
+        guard describingAll == nil else { return }
+        let missing = pool.filter { details[$0.imdb] == nil }
+        guard !missing.isEmpty else { return }
+        describingAll = Task(priority: .utility) { [weak self] in
+            for start in stride(from: 0, to: missing.count, by: Self.chunk) {
+                guard !Task.isCancelled, let self else { return }
+                await self.describe(Array(missing[start..<min(start + Self.chunk, missing.count)]))
+            }
+        }
     }
 
     /// Niveles 2 y 3: con lo que elegiste.
     public func decide() async {
+        dropUpcoming()
         await prepare()
         order = candidatesPool.shuffled()
         await next()
@@ -173,7 +210,7 @@ public final class DecideModel: ObservableModel {
     }
 
     private func prepare() async {
-        if let stale = upcoming { upcoming = nil; _ = await stale.task.value }
+        dropUpcoming()
         shown = []
         exhausted = false
         if watched == nil, let trakt = services.trakt, trakt.linked {
@@ -197,45 +234,55 @@ public final class DecideModel: ObservableModel {
     /// Mientras busca, los tres de antes se quedan quietos (antes el nombre cambiaba con cada búsqueda y los carteles
     /// hasta el final); los nuevos llegan juntos, con sus datos y sus carteles.
     public func next() async {
-        isLoading = true
-        defer { isLoading = false }
         let key = filtersKey
-        var found: [Suggestion]
-        if let ready = upcoming, ready.key == key {
-            upcoming = nil
+        var found: [Suggestion] = []
+        if let ready = upcoming.first, ready.key == key {
+            upcoming.removeFirst()
+            // Casi siempre ya está listo (se preparó mientras veías los de antes); si no, se espera solo a ese.
+            isLoading = true
             let skipped = notToday()
             found = await ready.task.value.filter { !skipped.contains($0.imdb) }
-            if found.isEmpty { found = await trio() }
-        } else {
-            if let stale = upcoming { upcoming = nil; _ = await stale.task.value }   // que no busquen dos a la vez
-            found = await trio()
         }
+        if found.isEmpty {
+            dropUpcoming()
+            isLoading = true
+            found = await trio(waitForPosters: true)
+        }
+        isLoading = false   // ya se ven: «Barajar» responde otra vez (antes esperaba también la duración y la calificación)
         picks = found
         if let first = found.first { select(first) } else { pick = nil; exhausted = true }
-        // La duración y la calificación llegan después (Cinemeta): los carteles ya no las esperan.
-        if found.contains(where: { details[$0.imdb] == nil }) {
-            await describe(found)
-            if let current = pick { select(current) }
-        }
-        // Los que siguen, desde ya.
-        upcoming = (key, Task { [weak self] in await self?.trio() ?? [] })
+        // La duración y la calificación llegan después, sin bloquear nada; los siguientes se preparan desde ya.
+        fillUpcoming()
+        enrichPicks(found)
     }
 
-    /// Tres que caben, con sus datos y sus carteles ya bajados (con un tiempo máximo: si la red tarda, se enseñan igual).
-    private func trio() async -> [Suggestion] {
+    /// La duración y la calificación de los tres que se ven, si faltan: llegan solas al renglón de datos.
+    private func enrichPicks(_ found: [Suggestion]) {
+        enriching?.cancel()
+        guard found.contains(where: { details[$0.imdb] == nil }) else { return }
+        enriching = Task { [weak self] in
+            await self?.describe(found)
+            guard let self, !Task.isCancelled, let current = self.pick, found.contains(where: { $0.imdb == current.imdb }) else { return }
+            self.select(current)
+        }
+    }
+
+    /// Tres que caben, con sus datos y sus carteles. `waitForPosters`: los de ahora esperan sus carteles un momento (si la
+    /// red tarda, se enseñan igual); los que se preparan por adelantado los bajan completos, sin prisa.
+    private func trio(waitForPosters: Bool) async -> [Suggestion] {
         var found: [Suggestion] = []
         for _ in 0..<Self.trio {
-            guard let p = await search(), !found.contains(where: { $0.imdb == p.imdb }) else { break }
+            guard !Task.isCancelled, let p = await search(), !found.contains(where: { $0.imdb == p.imdb }) else { break }
             found.append(p)
         }
-        if let warm = warmPosters {
-            let posters = found.compactMap(\.poster)
-            await withTaskGroup(of: Void.self) { group in
-                group.addTask { await warm(posters) }
-                group.addTask { try? await Task.sleep(nanoseconds: UInt64(Self.posterWait * 1_000_000_000)) }
-                await group.next()
-                group.cancelAll()
-            }
+        guard !Task.isCancelled, let warm = warmPosters else { return found }
+        let posters = found.compactMap(\.poster)
+        if !waitForPosters { await warm(posters); return found }
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await warm(posters) }
+            group.addTask { try? await Task.sleep(nanoseconds: UInt64(Self.posterWait * 1_000_000_000)) }
+            await group.next()
+            group.cancelAll()
         }
         return found
     }
@@ -289,7 +336,7 @@ public final class DecideModel: ObservableModel {
         // 2) Lo demás, de 12 en 12, mientras haya tiempo.
         let unknown = candidates.filter { verdict($0) == nil }
         for chunk in stride(from: 0, to: unknown.count, by: Self.chunk).map({ Array(unknown[$0..<min($0 + Self.chunk, unknown.count)]) }) {
-            if services.now().timeIntervalSince(started) > Self.budget { break }
+            if Task.isCancelled || services.now().timeIntervalSince(started) > Self.budget { break }
             await describe(chunk)
             for s in chunk {
                 guard let v = verdict(s) else { continue }
@@ -312,7 +359,12 @@ public final class DecideModel: ObservableModel {
     static let posterWait: Double = 1.2
 
     /// Volver a las preguntas.
-    public func reset() async { pick = nil; exhausted = false; upcoming = nil }
+    public func reset() async { pick = nil; exhausted = false; dropUpcoming() }
+
+    /// Al cerrar la hoja: lo que se preparaba en segundo plano ya no hace falta.
+    public func stop() {
+        dropUpcoming(); enriching?.cancel(); describingAll?.cancel(); describingAll = nil
+    }
 
     /// «No me interesa» (lo mismo que en Para ti): ya no se sugiere en ningún lado (ni en la TV) y se cambia por otra.
     public func notInterested() async {
@@ -332,7 +384,7 @@ public final class DecideModel: ObservableModel {
             // Solo esa se cambia por otra; las otras dos se quedan.
             let current = pick.imdb
             let others = picks.filter { $0.imdb != current }
-            if let stale = upcoming { upcoming = nil; _ = await stale.task.value }   // que no busquen dos a la vez
+            dropUpcoming()   // los preparados ya no cuentan (se piden otros abajo, sin esperar a los viejos)
             if let fresh = await search(), !others.contains(where: { $0.imdb == fresh.imdb }) {
                 await describe([fresh])
                 await warmPosters?([fresh.poster].compactMap { $0 })
@@ -342,6 +394,7 @@ public final class DecideModel: ObservableModel {
                 picks = others
                 if let first = others.first { select(first) }
             }
+            fillUpcoming()
             return
         }
         await next()
@@ -374,6 +427,18 @@ public final class DecideModel: ObservableModel {
             for await r in group { out.append(r) }
             return out
         }
-        for (id, genres, minutes, rating, year) in found { details[id] = (genres, minutes, rating, year) }
+        var learned = false
+        for (id, genres, minutes, rating, year) in found {
+            details[id] = Detail(genres: genres, minutes: minutes, rating: rating, year: year)
+            learned = learned || !genres.isEmpty || minutes != nil || rating != nil || year != nil
+        }
+        if learned { saveDetails() }
+    }
+
+    /// Se guardan solo los que trajeron algo (un fallo de red se vuelve a preguntar la próxima vez), hasta un tope.
+    private func saveDetails() {
+        var keep = details.filter { !$0.value.genres.isEmpty || $0.value.minutes != nil || $0.value.rating != nil || $0.value.year != nil }
+        if keep.count > Self.detailsLimit { keep = Dictionary(uniqueKeysWithValues: keep.prefix(Self.detailsLimit).map { ($0.key, $0.value) }) }
+        services.kv.set(Self.detailsKey, data: try? JSONEncoder().encode(keep))
     }
 }
