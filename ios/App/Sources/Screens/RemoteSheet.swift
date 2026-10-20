@@ -63,7 +63,7 @@ struct RemoteSheet: View {
         // Los botones de volumen del iPhone suben y bajan la TV mientras el control está abierto (como el del Apple TV).
         .background { if model.isConfigured { HardwareVolumeButtons { up in Task { await model.changeVolume(by: up ? 5 : -5) } } } }
         #if DEBUG
-        .task { if Demo.isOn, Demo.open == "voice-guide" { showsGuide = true } }   // -demo-open voice-guide: la guía, para capturas
+        .task { if Demo.isOn, Demo.open == "voice-guide" { showsGuide = true }; if Demo.isOn, Demo.open == "remote-pad" { showsPad = true } }   // -demo-open voice-guide: la guía, para capturas
         #endif
         .sheet(isPresented: $showsGuide) {
             NavigationStack {
@@ -119,7 +119,7 @@ struct RemoteSheet: View {
         if large, let now = model.now {
             // Estirada: lo que se ve en la TV en un renglón (póster, nombre y pausa); el resto del alto es para el control.
             HStack(spacing: DS.Space.s3) {
-                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Size.thumbSmall)
+                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect, whole: true).frame(width: DS.Size.thumbSmall)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
                     Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
@@ -210,15 +210,17 @@ struct RemoteSheet: View {
             VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
                             heardNothing: speech.heardNothing, asking: asking) { listen(model) }
             // Lo que puedes decir: donde surge la duda (como el resto de las teclas).
+            // Del mismo alto que «Dile a Orbital» (que crece con su texto): antes quedaba más bajito a su lado.
             Button { showsGuide = true } label: {
                 Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text)
-                    .frame(width: DS.Remote.keyHeightFitted, height: DS.Remote.keyHeightFitted)
+                    .frame(width: DS.Remote.keyHeightFitted).frame(maxHeight: .infinity)
                     .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text("Lo que puedes decir"))
             .accessibilityIdentifier("remote-voice-guide")
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     @ViewBuilder private func volume(_ model: TVNowModel) -> some View {

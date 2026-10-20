@@ -221,9 +221,13 @@ struct PosterView: View {
     var bleed = false
     /// El lado más largo, en puntos, al que se reduce la imagen al bajarla (no se decodifica a tamaño completo).
     var maxPoints: CGFloat = DS.Image.card
+    /// La imagen completa, con su propia forma (sin recortar): el arte que manda la TV no siempre es un póster vertical.
+    /// `aspect` queda solo para el lugar que ocupa mientras carga.
+    var whole = false
 
     var body: some View {
-        if bleed { art.clipped().accessibilityLabel(Text(title)) }
+        if whole { wholeArt.accessibilityLabel(Text(title)) }
+        else if bleed { art.clipped().accessibilityLabel(Text(title)) }
         else {
             art
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -244,6 +248,17 @@ struct PosterView: View {
                     }
                 } else { placeholder }
             }
+    }
+
+    @ViewBuilder private var wholeArt: some View {
+        if let url, let u = URL(string: url) {
+            RemoteImage(url: u, maxPoints: maxPoints) { phase in
+                switch phase {
+                case .success(let image): image.resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                default: frame.clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                }
+            }
+        } else { frame.clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)) }
     }
 
     /// El fondo marca el tamaño: con proporción, la del póster; sin ella, todo lo que le den.

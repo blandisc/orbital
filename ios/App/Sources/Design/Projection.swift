@@ -182,9 +182,9 @@ struct TVAccessory: View {
     private var info: some View {
         HStack(spacing: DS.Space.s3) {
             // El póster como póster (vertical, esquinas suaves); el logo de un canal en vivo, cuadrado. Nunca en círculo.
-            PosterView(url: now.art, title: now.title, aspect: now.live ? 1 : DS.Poster.aspect)
+            // Completo, con su propia forma: el arte de la TV no siempre es vertical y antes se recortaba.
+            PosterView(url: now.art, title: now.title, aspect: now.live ? 1 : DS.Poster.aspect, whole: true)
                 .frame(height: DS.Size.accessoryArt)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             VStack(alignment: .leading, spacing: 0) {
                 Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
                 if placement != .inline {
