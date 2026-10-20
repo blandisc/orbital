@@ -33,6 +33,18 @@ struct MiMediaView<Top: View>: View {
                     }
                 } else {
                     header(model).padding(.horizontal, DS.Space.gutter)
+                    // Antes este error nunca se veía (se quedaba «Nada reconocido» o la lista vieja).
+                    if let error = model.error, !model.scanning {
+                        VStack(alignment: .leading, spacing: DS.Space.s2) {
+                            DSNotice(verbatim: env.message(error), tone: .warn)
+                            if error.localizedCaseInsensitiveContains("caduc") || error.localizedCaseInsensitiveContains("sesión") {
+                                NavigationLink { OneDriveSettings() } label: { Label("Volver a conectar", systemImage: "cloud") }.buttonStyle(.glass)
+                            } else {
+                                Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.rescan() } }.buttonStyle(.glass)
+                            }
+                        }
+                        .padding(.horizontal, DS.Space.gutter)
+                    }
                     DSSegmented(options: [(MiMediaModel.Filter.all, LocalizedStringKey("Todo")), (.movies, "Películas"), (.series, "Series"), (.unwatched, "Sin ver")],
                                 selection: Binding(get: { model.filter }, set: { model.filter = $0 }))
                         .padding(.horizontal, DS.Space.gutter)

@@ -140,6 +140,12 @@ struct MainTabs: View {
         _tab = State(initialValue: initial)
     }
 
+    /// Abrir el control (si hay TV configurada); aparte para que el compilador no se ahogue con el cuerpo.
+    private var openRemoteAction: (() -> Void)? {
+        guard tvNow.model.isConfigured else { return nil }
+        return { remoteLarge = tvNow.model.now == nil; showRemote = true }
+    }
+
     var body: some View {
         TabView(selection: $tab) {
             Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
@@ -170,7 +176,7 @@ struct MainTabs: View {
                 TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = false; showRemote = true })
             }
         }
-        .environment(\.openRemote, tvNow.model.isConfigured ? { remoteLarge = tvNow.model.now == nil; showRemote = true } : nil)
+        .environment(\.openRemote, openRemoteAction)
         // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).
         // (Estirado, el control completo sirve aunque no haya video: se queda.)
         .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped, !remoteLarge { showRemote = false } }
@@ -208,6 +214,11 @@ struct MainTabs: View {
         .onAppear(perform: openPendingTitle)
         .onChange(of: ui.pendingTitle) { openPendingTitle() }
         .onChange(of: ui.openTab) { _, new in if let new { tab = new; env.openTab = nil } }
+        .onChange(of: ui.openSettings) { _, open in
+            guard open else { return }
+            ui.openSettings = false
+            paths[tab].append(SettingsRoute())
+        }
         .onChange(of: ui.openRemote, initial: true) { _, wants in
             guard wants else { return }
             ui.openRemote = false

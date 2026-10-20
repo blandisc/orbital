@@ -40,7 +40,22 @@ struct HomeView: View {
         let model = home.model
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                if model.offline { DSNotice(text: "Sin conexión: se ve lo último que guardé.", tone: .warn).padding(.horizontal, DS.Space.gutter) }
+                if model.sessionExpired {
+                    // Antes se decía «Sin conexión» para siempre: era la sesión de Stremio, y no había cómo salir.
+                    VStack(alignment: .leading, spacing: DS.Space.s2) {
+                        DSNotice(text: "Tu sesión de Stremio se cerró. Vuelve a entrar para ver lo que tienes a medias y tu lista.", tone: .warn)
+                        Button("Volver a entrar", systemImage: "person.crop.circle") { Task { await env.session.signOut() } }
+                            .buttonStyle(.glass).accessibilityIdentifier("home-relogin")
+                    }
+                    .padding(.horizontal, DS.Space.gutter)
+                } else if model.offline {
+                    VStack(alignment: .leading, spacing: DS.Space.s2) {
+                        DSNotice(text: "Sin conexión: se ve lo último que guardé.", tone: .warn)
+                        Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.refresh() } }
+                            .buttonStyle(.glass).accessibilityIdentifier("home-retry")
+                    }
+                    .padding(.horizontal, DS.Space.gutter)
+                }
                 // Con iOS 26.1 lo que suena en la TV vive en el accesorio de la barra de pestañas (y su control remoto en una hoja);
                 // antes, en esta tarjeta.
                 if !Self.hasTabAccessory, let now = tvNow.model.now {

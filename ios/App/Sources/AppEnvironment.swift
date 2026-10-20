@@ -22,6 +22,7 @@ final class AppEnvironment: ObservableObject {
     private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
     private let liveActivity = DownloadLiveActivityController()
+    private var traktObserver: NSObjectProtocol?
     /// La actividad en vivo de las descargas: en segundo plano su barra avanza sola con lo estimado.
     func setDownloadsBackgrounded(_ value: Bool) async { await liveActivity.setBackgrounded(value) }
 
@@ -134,6 +135,13 @@ final class AppEnvironment: ObservableObject {
         tvNow.inbox = inbox
         catalog = CatalogModel(services)
         inbox.onEvent = { [weak self] event in self?.announce(event) }
+        // Trakt cerró la sesión: se avisa una vez, con un botón a Ajustes (antes se desconectaba en silencio).
+        traktObserver = NotificationCenter.default.addObserver(forName: Trakt.sessionLost, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.notify("Tu sesión de Trakt se cerró", detail: "Conéctala otra vez para tus recomendaciones y lo que viste.", tone: .warn,
+                             actionTitle: "Conectar") { self?.ui.openSettings = true }
+            }
+        }
         Task { await services.downloads.start() }
         #if DEBUG
         // `-demo-real-download <url>`: una descarga de verdad (con el transporte real, por pedazos) para medir el motor.
@@ -585,4 +593,6 @@ final class AppUI: ObservableObject {
     @Published var openTab: Int?
     /// El Centro de control pidió el control de tu Orbital.
     @Published var openRemote = false
+    /// Abrir Ajustes (desde un aviso, como «Tu sesión de Trakt se cerró · Conectar»).
+    @Published var openSettings = false
 }

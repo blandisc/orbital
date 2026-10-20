@@ -71,6 +71,8 @@ public final class HomeModel: ObservableModel {
     /// Lo primero que sale hoy: la portada de Inicio y el título al bajar («Sale hoy: Severance»).
     public var airingToday: Airing? { upcoming.first { Calendar.current.isDateInToday($0.day) } }
     public private(set) var offline = false { didSet { changed() } }
+    /// Stremio cerró tu sesión (no es falta de red): Inicio lo dice y deja volver a entrar.
+    public private(set) var sessionExpired = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
     private let services: Services
     static let cacheKey = "home-cache"
@@ -200,13 +202,16 @@ public final class HomeModel: ObservableModel {
             async let continued = items(continueItems), listed = items(mine)   // las dos traducciones a la vez
             continueWatching = await continued.filter { !dismissed.contains($0.metaID) }
             myList = await listed
-            offline = false; error = nil
+            offline = false; sessionExpired = false; error = nil
             // Lo que ya estás viendo no se repite arriba.
             let watching = Set(continueWatching.map(\.metaID))
             if spotlight.contains(where: { watching.contains($0.imdb) }) { spotlight.removeAll { watching.contains($0.imdb) } }
             services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(continueWatching: continueWatching, myList: myList)))
         } catch where !Task.isCancelled {   // cancelado (cambio de pestaña): no es estar sin conexión
-            offline = true
+            // La sesión caducó: Stremio contesta (no es la red), pero ya no reconoce la clave.
+            if case StremioError.api(let message) = error, message.lowercased().contains("session") {
+                sessionExpired = true; offline = false
+            } else { offline = true }
             self.error = "\(error)"
         } catch {}
     }

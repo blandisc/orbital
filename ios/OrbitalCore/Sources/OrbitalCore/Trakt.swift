@@ -178,6 +178,11 @@ public enum TraktParsing {
 /// tienen un tope de apps conectadas: si Trakt no deja conectar, se avisa (`TraktError.auth`/`.http`) y el
 /// resto de la app sigue funcionando.
 public actor Trakt {
+    /// Trakt cerró la sesión (no la red): la app lo avisa una vez, con un botón para conectarla otra vez (antes se desconectaba
+    /// en silencio y Para ti se volvía genérico).
+    public static let sessionLost = Notification.Name("orbital.trakt.session-lost")
+    static func announceSessionLost() { NotificationCenter.default.post(name: sessionLost, object: nil) }
+
     public static let api = URL(string: "https://api.trakt.tv")!
     public static let redirect = "urn:ietf:wg:oauth:2.0:oob"
 
@@ -277,7 +282,7 @@ public actor Trakt {
             guard status == 200, let data else {
                 // Solo un rechazo del refresh token (400/401/403) desconecta; un error del servidor o un 429 son pasajeros.
                 if [400, 401, 403].contains(status) {
-                    secrets.set(SecretKey.traktTokens, nil)
+                    secrets.set(SecretKey.traktTokens, nil); Trakt.announceSessionLost()
                     throw TraktError.auth("Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes.")
                 }
                 throw TraktError.http(status)
@@ -319,7 +324,7 @@ public actor Trakt {
             // un 401 al leer borraba la sesión prestada y el scrobble se apagaba sin decir nada.
             try await renewAfterRejection()
             (status, data) = try await call("GET", path, auth: auth, params: params)
-            if status == 401 { secrets.set(SecretKey.traktTokens, nil); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
+            if status == 401 { secrets.set(SecretKey.traktTokens, nil); Trakt.announceSessionLost(); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
         }
         guard status == 200 else { throw TraktError.http(status) }
         return data
@@ -338,7 +343,7 @@ public actor Trakt {
             // Un 401 no siempre es el final: se pide una sesión nueva UNA vez (se renueva, o se la pide a tu Orbital) y se reintenta.
             try await renewAfterRejection()
             result = try await call("POST", path, body: body)
-            if result.0 == 401 { secrets.set(SecretKey.traktTokens, nil); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
+            if result.0 == 401 { secrets.set(SecretKey.traktTokens, nil); Trakt.announceSessionLost(); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
         }
         return result
     }

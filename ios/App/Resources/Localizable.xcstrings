@@ -2388,6 +2388,17 @@
         }
       }
     },
+    "Conectar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect"
+          }
+        }
+      }
+    },
     "Conectar OneDrive": {
       "extractionState": "manual",
       "localizations": {
@@ -2494,6 +2505,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remote control"
+          }
+        }
+      }
+    },
+    "Conéctala otra vez para tus recomendaciones y lo que viste.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect it again for your recommendations and history."
           }
         }
       }
@@ -7305,6 +7327,17 @@
         }
       }
     },
+    "No pudimos revisar tu OneDrive. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't check your OneDrive. Check your connection."
+          }
+        }
+      }
+    },
     "No sale nada de las series que sigues.": {
       "extractionState": "manual",
       "localizations": {
@@ -10792,6 +10825,17 @@
         }
       }
     },
+    "Tu sesión de Stremio se cerró. Vuelve a entrar para ver lo que tienes a medias y tu lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Stremio session ended. Sign in again to see what you're watching and your list."
+          }
+        }
+      }
+    },
     "Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes.": {
       "extractionState": "manual",
       "localizations": {
@@ -10799,6 +10843,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your Trakt session expired: connect it again in Settings."
+          }
+        }
+      }
+    },
+    "Tu sesión de Trakt se cerró": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Trakt session ended"
           }
         }
       }
@@ -11393,6 +11448,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search again"
+          }
+        }
+      }
+    },
+    "Volver a conectar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnect"
+          }
+        }
+      }
+    },
+    "Volver a entrar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in again"
           }
         }
       }
