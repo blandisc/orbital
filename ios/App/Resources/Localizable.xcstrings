@@ -7063,6 +7063,17 @@
         }
       }
     },
+    "Más filtros · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More filters · %lld"
+          }
+        }
+      }
+    },
     "Más grande": {
       "extractionState": "manual",
       "localizations": {
@@ -7312,6 +7323,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Netflix · this week"
+          }
+        }
+      }
+    },
+    "Ninguna con estos filtros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None with these filters"
           }
         }
       }
@@ -10022,6 +10044,17 @@
         }
       }
     },
+    "Según (basta una)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "According to (any one)"
+          }
+        }
+      }
+    },
     "Según (basta una):": {
       "extractionState": "manual",
       "localizations": {
@@ -10865,6 +10898,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "S%lld E%lld"
+          }
+        }
+      }
+    },
+    "TMDB (falta su clave)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TMDB (key missing)"
           }
         }
       }

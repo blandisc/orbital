@@ -1058,21 +1058,29 @@ struct DSCapsuleLabel: View {
     let title: Text
     let symbol: String
     var symbolFirst = true
+    /// Elegido (un filtro puesto): en papel, como las opciones en cápsula.
+    var selected = false
+    /// Todo el ancho que le den (varias en rejilla, todas parejas); si no, lo de su texto.
+    var stretch = false
+    /// Un glifo a la derecha además del de la izquierda (el ⌄ de un menú en una cápsula con ícono).
+    var trailing: String?
 
     var body: some View {
         HStack(spacing: DS.HeaderControl.iconGap) {
-            if symbolFirst { icon }
-            title.font(DS.TextRecipe.secondary.font.weight(.semibold))
-            if !symbolFirst { icon }
+            if symbolFirst { icon(symbol) }
+            title.font(DS.TextRecipe.secondary.font.weight(.semibold)).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            if !symbolFirst { icon(symbol) }
+            if let trailing { icon(trailing) }
         }
-        .foregroundStyle(DS.text)
+        .foregroundStyle(selected ? DS.onPrimary : DS.text)
         .padding(.horizontal, DS.HeaderControl.padding)
+        .frame(maxWidth: stretch ? .infinity : nil)
         .frame(height: DS.HeaderControl.height)
-        .background(DS.fillStrong, in: Capsule())
+        .background(selected ? DS.primary : DS.fillStrong, in: Capsule())
         .frame(minHeight: DS.Size.touchTarget)   // se ve de 32 pt; se toca en 44
         .contentShape(Rectangle())
         .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
     }
 
-    private var icon: some View { Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.bold)).imageScale(.small) }
+    private func icon(_ name: String) -> some View { Image(systemName: name).font(DS.TextRecipe.footnote.font.weight(.bold)).imageScale(.small) }
 }

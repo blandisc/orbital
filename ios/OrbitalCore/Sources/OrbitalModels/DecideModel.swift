@@ -80,9 +80,9 @@ public final class DecideModel: ObservableModel {
         (timeChosen ? 1 : 0) + (mood == nil ? 0 : 1) + (kind == nil ? 0 : 1) + genres.count + (decades.isEmpty ? 0 : 1)
             + (minRating > 0 ? 1 : 0) + (sourceIDs.isEmpty ? 0 : 1) + (includeWatched ? 1 : 0)
     }
-    /// Los de «Más filtros» (para «Más filtros · 2»).
+    /// Los de «Más filtros» (para «Más filtros · 2»); la calificación tiene su propia cápsula.
     public var moreFilters: Int {
-        genres.count + (decades.isEmpty ? 0 : 1) + (minRating > 0 ? 1 : 0) + (sourceIDs.isEmpty ? 0 : 1) + (includeWatched ? 1 : 0)
+        genres.count + (decades.isEmpty ? 0 : 1) + (sourceIDs.isEmpty ? 0 : 1) + (includeWatched ? 1 : 0)
     }
 
     /// Los géneros que se ofrecen (su nombre en inglés, como los dan Trakt y Cinemeta).
@@ -366,9 +366,9 @@ public final class DecideModel: ObservableModel {
         await apply()
     }
 
-    /// «Limpiar» en «Más filtros»: géneros, época, listas, calificación y lo visto.
+    /// «Limpiar» en «Más filtros»: géneros, época, listas y lo visto (la calificación va aparte).
     public func clearMoreFilters() async {
-        genres = []; decades = []; minRating = 0; ratingSources = [.imdb, .trakt]; includeWatched = false; sourceIDs = []
+        genres = []; decades = []; includeWatched = false; sourceIDs = []
         await apply()
     }
 

@@ -389,8 +389,8 @@ enum DS {
         static let chosenStroke: CGFloat = 3, otherScale: CGFloat = 0.92, otherOpacity: Double = 0.7
         /// La frase de por qué verla: al menos estos caracteres antes de cortar en el primer punto.
         static let pitchMin = 40
-        /// Las celdas de la fila de filtros (qué es arriba, lo puesto abajo) y los carteles apilados de una lista.
-        static let cellHeight: CGFloat = 52, listPoster: CGFloat = 44
+        /// Los carteles apilados de una lista en «De qué listas».
+        static let listPoster: CGFloat = 44
     }
 
     /// Modo acompañante: la tarjeta del juego, las del carrusel, la batería baja (%), las líneas de la nota y los tiempos

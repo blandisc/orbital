@@ -65,16 +65,20 @@ struct DecideView: View {
         .scrollBounceBehavior(.basedOnSize)
     }
 
+    /// «¿Qué vemos?» con cuántas opciones quedan y, a la derecha, «Todo ⌄» (películas o series), el mismo de Para ti.
     private func header(_ m: DecideModel) -> some View {
         let count = m.count()
-        return HStack(alignment: .firstTextBaseline) {
-            Text("¿Qué vemos?").recipe(.title)
-            Spacer()
-            if count > 0 {
-                Text(verbatim: String(format: Strings.tr(count == 1 ? "%lld opción" : "%lld opciones", language: language), count))
+        return HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Text("¿Qué vemos?").recipe(.title)
+                Text(verbatim: count > 0 ? String(format: Strings.tr(count == 1 ? "%lld opción" : "%lld opciones", language: language), count)
+                                         : Strings.tr("Ninguna con estos filtros", language: language))
                     .recipe(.footnote).monospacedDigit().contentTransition(.numericText())
                     .accessibilityIdentifier("decide-count")
             }
+            Spacer()
+            DSKindFilter(kind: Binding(get: { m.kind ?? "" }, set: { m.kind = $0.isEmpty ? nil : $0; Task { await m.apply() } }), menu: true)
+                .accessibilityIdentifier("decide-kind")
         }
     }
 
@@ -176,44 +180,74 @@ struct DecideView: View {
     }
 
     // MARK: los filtros (se aplican al tocarlos)
+    /// Cuatro cápsulas parejas (las mismas «Todo ⌄» de toda la app), en dos renglones: siempre caben y quedan alineadas.
     private func filterRow(_ m: DecideModel) -> some View {
-        HStack(spacing: DS.Space.s2) {
-            Menu {
-                ForEach(DecideModel.Time.allCases, id: \.self) { t in
-                    Button { m.time = t; m.timeChosen = true; Task { await m.apply() } } label: {
-                        optionLabel(timeName(t), count: m.count(strictTime: true) { $0.time = t }, selected: m.time == t)
+        Grid(horizontalSpacing: DS.Space.s2, verticalSpacing: DS.Space.s2) {
+            GridRow {
+                Menu {
+                    ForEach(DecideModel.Time.allCases, id: \.self) { t in
+                        Button { m.time = t; m.timeChosen = true; Task { await m.apply() } } label: {
+                            optionLabel(timeName(t), count: m.count(strictTime: true) { $0.time = t }, selected: m.time == t)
+                        }
                     }
-                }
-            } label: { DecideFilterCell(caption: Text("Tiempo"), value: Text(verbatim: timeName(m.time)), active: m.timeChosen) }
-            .accessibilityIdentifier("decide-time")
-            Menu {
-                Button { m.mood = nil; Task { await m.apply() } } label: {
-                    optionLabel(Strings.tr("Lo que sea", language: language), count: m.count { $0.mood = nil }, selected: m.mood == nil)
-                }
-                ForEach(DecideModel.Mood.allCases, id: \.self) { mood in
-                    Button { m.mood = mood; Task { await m.apply() } } label: {
-                        optionLabel(Strings.tr(moodLabel(mood), language: language), count: m.count { $0.mood = mood }, selected: m.mood == mood, symbol: moodSymbol(mood))
+                } label: { DSCapsuleLabel(title: Text(verbatim: timeName(m.time)), symbol: "clock", selected: m.timeChosen, stretch: true, trailing: "chevron.down") }
+                .accessibilityIdentifier("decide-time")
+                Menu {
+                    Button { m.mood = nil; Task { await m.apply() } } label: {
+                        optionLabel(Strings.tr("Lo que sea", language: language), count: m.count { $0.mood = nil }, selected: m.mood == nil)
                     }
+                    ForEach(DecideModel.Mood.allCases, id: \.self) { mood in
+                        Button { m.mood = mood; Task { await m.apply() } } label: {
+                            optionLabel(Strings.tr(moodLabel(mood), language: language), count: m.count { $0.mood = mood }, selected: m.mood == mood, symbol: moodSymbol(mood))
+                        }
+                    }
+                } label: {
+                    DSCapsuleLabel(title: m.mood.map { Text(LocalizedStringKey(moodLabel($0))) } ?? Text("Ánimo"), symbol: m.mood.map(moodSymbol) ?? "face.smiling",
+                                   selected: m.mood != nil, stretch: true, trailing: "chevron.down")
                 }
-            } label: {
-                DecideFilterCell(caption: Text("Ánimo"), value: m.mood.map { Text(LocalizedStringKey(moodLabel($0))) } ?? Text("Cualquiera"), active: m.mood != nil)
+                .accessibilityIdentifier("decide-mood")
             }
-            .accessibilityIdentifier("decide-mood")
-            Menu {
-                ForEach([nil, "movie", "series"] as [String?], id: \.self) { k in
-                    Button { m.kind = k; Task { await m.apply() } } label: {
-                        optionLabel(kindName(k), count: m.count { $0.kind = k }, selected: m.kind == k)
-                    }
+            GridRow {
+                ratingMenu(m)
+                Button { path.append(.more) } label: {
+                    DSCapsuleLabel(title: m.moreFilters > 0 ? Text("Más filtros · \(m.moreFilters)") : Text("Más filtros"), symbol: "slider.horizontal.3",
+                                   selected: m.moreFilters > 0, stretch: true)
                 }
-            } label: { DecideFilterCell(caption: Text("Qué"), value: Text(verbatim: kindShort(m.kind)), active: m.kind != nil) }
-            .accessibilityIdentifier("decide-kind")
-            Button { path.append(.more) } label: {
-                DecideFilterCell(caption: Text("Más filtros"), value: m.moreFilters > 0 ? Text("\(m.moreFilters) puestos") : Text("Ninguno"),
-                                 active: m.moreFilters > 0, chevron: false)
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("decide-more")
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("decide-more")
         }
+    }
+
+    /// «★ Calificación»: el mínimo (con cuántas quedan) y según qué plataformas (basta con que una llegue).
+    private func ratingMenu(_ m: DecideModel) -> some View {
+        Menu {
+            Section {
+                ForEach(DecideModel.ratingSteps, id: \.self) { r in
+                    Button { m.minRating = r; Task { await m.apply() } } label: {
+                        optionLabel(r == 0 ? Strings.tr("Cualquiera", language: language) : String(format: "%.0f+", r),
+                                    count: m.count { $0.minRating = r }, selected: m.minRating == r)
+                    }
+                }
+            }
+            Section(Strings.tr("Según (basta una)", language: language)) {
+                ForEach(DecideModel.RatingSource.allCases, id: \.self) { source in
+                    Toggle(isOn: Binding(get: { m.ratingSources.contains(source) }, set: { on in
+                        if on { m.ratingSources.insert(source) } else if m.ratingSources.count > 1 { m.ratingSources.remove(source) }
+                        if m.minRating > 0 { Task { await m.apply() } }
+                    })) { Text(verbatim: ratingSourceName(source)) }
+                    .disabled(source == .tmdb && !env.services.tmdb.configured)
+                }
+            }
+        } label: {
+            DSCapsuleLabel(title: m.minRating > 0 ? Text(verbatim: String(format: "%.0f+", m.minRating)) : Text("Calificación"), symbol: "star",
+                           selected: m.minRating > 0, stretch: true, trailing: "chevron.down")
+        }
+        .accessibilityIdentifier("decide-rating")
+    }
+
+    private func ratingSourceName(_ s: DecideModel.RatingSource) -> String {
+        switch s { case .imdb: "IMDb"; case .trakt: "Trakt"; case .tmdb: env.services.tmdb.configured ? "TMDB" : Strings.tr("TMDB (falta su clave)", language: language) }
     }
 
     /// Un renglón de menú: el nombre, cuántas quedarían y la palomita en el que está puesto.
@@ -283,11 +317,6 @@ struct DecideView: View {
         switch k { case "movie": Strings.tr("Películas", language: language); case "series": Strings.tr("Series", language: language); default: Strings.tr("Películas y series", language: language) }
     }
 
-    /// En la celda (poco ancho): «Todo», «Películas», «Series».
-    private func kindShort(_ k: String?) -> String {
-        switch k { case "movie": Strings.tr("Películas", language: language); case "series": Strings.tr("Series", language: language); default: Strings.tr("Todo", language: language) }
-    }
-
     private func decadeName(_ d: Int) -> String { d == 1980 ? Strings.tr("Antes de los 90", language: language) : "\(d)s" }
 
     private func moodSymbol(_ m: DecideModel.Mood) -> String {
@@ -342,7 +371,6 @@ struct DecideMoreFilters: View {
                 }
                 .id(m.decades)
                 if !m.sources.isEmpty { lists(m) }
-                rating(m)
                 Toggle(isOn: Binding(get: { m.includeWatched }, set: { m.includeWatched = $0 })) { Text("Incluir lo que ya vi").recipe(.secondary, color: DS.text) }
                     .tint(DS.accent)
             }
@@ -397,36 +425,6 @@ struct DecideMoreFilters: View {
         }
     }
 
-    /// «Que esté bien calificada»: el mínimo y según quién (basta con que una llegue). TMDB necesita su clave en Ajustes.
-    @ViewBuilder private func rating(_ m: DecideModel) -> some View {
-        PanelGroupTitle(title: "Calificación mínima")
-        FlowChips {
-            ForEach(DecideModel.ratingSteps, id: \.self) { r in
-                PanelChip(title: r == 0 ? Text("Cualquiera") : Text(verbatim: String(format: "%.0f+", r)), selected: m.minRating == r) { m.minRating = r }
-            }
-        }
-        .id(m.minRating)
-        if m.minRating > 0 {
-            Text("Según (basta una):").recipe(.caption)
-            FlowChips {
-                ForEach(DecideModel.RatingSource.allCases, id: \.self) { source in
-                    let available = source != .tmdb || env.services.tmdb.configured
-                    PanelChip(title: Text(verbatim: sourceName(source)), selected: m.ratingSources.contains(source)) {
-                        if m.ratingSources.contains(source) { if m.ratingSources.count > 1 { m.ratingSources.remove(source) } }
-                        else { m.ratingSources.insert(source) }
-                    }
-                    .disabled(!available)
-                    .opacity(available ? 1 : DesignTokens.Opacity.faint)
-                }
-            }
-            .id(m.ratingSources)
-            if !env.services.tmdb.configured { Text("TMDB necesita su clave en Ajustes.").recipe(.caption) }
-        }
-    }
-
-    private func sourceName(_ s: DecideModel.RatingSource) -> String {
-        switch s { case .imdb: "IMDb"; case .trakt: "Trakt"; case .tmdb: "TMDB" }
-    }
 }
 
 // MARK: - De qué listas
