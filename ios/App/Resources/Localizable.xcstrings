@@ -1,17 +1,6 @@
 {
   "sourceLanguage": "es",
   "strings": {
-    "Aún no tienes listas en Trakt.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You don't have any Trakt lists yet."
-          }
-        }
-      }
-    },
     "%@ GB libres": {
       "extractionState": "manual",
       "localizations": {
@@ -45,17 +34,6 @@
         }
       }
     },
-    "%@ descargas": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ downloads"
-          }
-        }
-      }
-    },
     "%@ libres de %@": {
       "extractionState": "manual",
       "localizations": {
@@ -63,6 +41,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ free of %@"
+          }
+        }
+      }
+    },
+    "%@ para el siguiente susto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ until the next scare"
           }
         }
       }
@@ -85,17 +74,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · %@"
-          }
-        }
-      }
-    },
-    "%@ · %lld de %lld": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · %lld of %lld"
           }
         }
       }
@@ -217,17 +195,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld min"
-          }
-        }
-      }
-    },
-    "%lld opciones": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld options"
           }
         }
       }
@@ -672,6 +639,17 @@
         }
       }
     },
+    "Ahora no": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        }
+      }
+    },
     "Ahorro": {
       "extractionState": "manual",
       "localizations": {
@@ -679,28 +657,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Saver"
-          }
-        }
-      }
-    },
-    "Ajustar": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fit"
-          }
-        }
-      }
-    },
-    "Ajustar al área segura": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fit to Safe Area"
           }
         }
       }
@@ -936,6 +892,17 @@
         }
       }
     },
+    "Atajo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcut"
+          }
+        }
+      }
+    },
     "Atmos · 5.1": {
       "extractionState": "manual",
       "localizations": {
@@ -1086,6 +1053,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Year: oldest"
+          }
+        }
+      }
+    },
+    "Aún no tienes listas en Trakt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don't have any Trakt lists yet."
           }
         }
       }
@@ -1541,6 +1519,17 @@
         }
       }
     },
+    "Calificación": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rating"
+          }
+        }
+      }
+    },
     "Calificación mínima": {
       "extractionState": "manual",
       "localizations": {
@@ -1690,7 +1679,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Loading"
+            "value": "Charging"
           }
         }
       }
@@ -1805,6 +1794,17 @@
         }
       }
     },
+    "Cinemeta no contestó": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cinemeta didn't respond"
+          }
+        }
+      }
+    },
     "Claro": {
       "extractionState": "manual",
       "localizations": {
@@ -1823,6 +1823,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rating"
+          }
+        }
+      }
+    },
+    "Clasificación %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rated %@"
           }
         }
       }
@@ -2652,6 +2663,17 @@
         }
       }
     },
+    "De %lld para arriba": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld and up"
+          }
+        }
+      }
+    },
     "De Mi media": {
       "extractionState": "manual",
       "localizations": {
@@ -2856,7 +2878,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "In the video"
+            "value": "From the video"
           }
         }
       }
@@ -3363,6 +3385,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Runtime"
+          }
+        }
+      }
+    },
+    "Década": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decade"
           }
         }
       }
@@ -3994,6 +4027,17 @@
         }
       }
     },
+    "En vertical solo se nota en videos de otro formato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In portrait it only shows on videos with another aspect ratio"
+          }
+        }
+      }
+    },
     "En vivo": {
       "extractionState": "manual",
       "localizations": {
@@ -4302,6 +4346,17 @@
         }
       }
     },
+    "Esta lista todavía no tiene títulos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This list has no titles yet."
+          }
+        }
+      }
+    },
     "Esta semana en México": {
       "extractionState": "manual",
       "localizations": {
@@ -4364,17 +4419,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pull up for the full remote"
-          }
-        }
-      }
-    },
-    "Estirar": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stretch"
           }
         }
       }
@@ -5259,6 +5303,17 @@
         }
       }
     },
+    "Lista de subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle list"
+          }
+        }
+      }
+    },
     "Lista inválida": {
       "extractionState": "manual",
       "localizations": {
@@ -5420,6 +5475,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Best available"
+          }
+        }
+      }
+    },
+    "Lo mejor disponible: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best available: %@"
           }
         }
       }
@@ -5864,6 +5930,17 @@
         }
       }
     },
+    "Mantén presionado para ver la lista de subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch and hold to see the subtitle list"
+          }
+        }
+      }
+    },
     "Mapa de sustos · %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -5926,6 +6003,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Medium"
+          }
+        }
+      }
+    },
+    "Mejor calificadas (IMDb y Trakt)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top rated (IMDb and Trakt)"
           }
         }
       }
@@ -6190,6 +6278,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "More contrast and color. DV is Dolby Vision: iPhone plays it."
+          }
+        }
+      }
+    },
+    "Más cortas primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortest first"
           }
         }
       }
@@ -6695,7 +6794,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No subtitles in this language."
+            "value": "There are no subtitles in this language."
           }
         }
       }
@@ -6762,6 +6861,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't open that title."
+          }
+        }
+      }
+    },
+    "No pude abrir este video. La fuente dejó de responder.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't open this video. The source stopped responding."
           }
         }
       }
@@ -8185,17 +8295,6 @@
         }
       }
     },
-    "Recortar": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Crop"
-          }
-        }
-      }
-    },
     "Reintentar": {
       "extractionState": "manual",
       "localizations": {
@@ -8911,6 +9010,17 @@
         }
       }
     },
+    "Siguiente subtítulo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next subtitle"
+          }
+        }
+      }
+    },
     "Silencio": {
       "extractionState": "manual",
       "localizations": {
@@ -8962,6 +9072,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No match"
+          }
+        }
+      }
+    },
+    "Sin filmografía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No filmography"
           }
         }
       }
@@ -9219,6 +9340,28 @@
         }
       }
     },
+    "Subtítulos antes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles earlier"
+          }
+        }
+      }
+    },
+    "Subtítulos después": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles later"
+          }
+        }
+      }
+    },
     "Subtítulos guardados con la descarga.": {
       "extractionState": "manual",
       "localizations": {
@@ -9303,6 +9446,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "S%lld E%lld"
+          }
+        }
+      }
+    },
+    "TMDB no tiene títulos de esta persona.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TMDB has no titles for this person."
           }
         }
       }
@@ -10693,6 +10847,17 @@
         }
       }
     },
+    "Volver a los canales": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to channels"
+          }
+        }
+      }
+    },
     "Volver al juego": {
       "extractionState": "manual",
       "localizations": {
@@ -10700,6 +10865,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Back to the game"
+          }
+        }
+      }
+    },
+    "Volver al reproductor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the player"
           }
         }
       }
@@ -11250,204 +11426,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last scrobble"
-          }
-        }
-      }
-    },
-    "Siguiente subtítulo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next subtitle"
-          }
-        }
-      }
-    },
-    "Mantén presionado para ver la lista de subtítulos": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Press and hold to see the subtitle list"
-          }
-        }
-      }
-    },
-    "Lista de subtítulos": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Subtitle list"
-          }
-        }
-      }
-    },
-    "%@ · coincide con tu copia": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · matches your copy"
-          }
-        }
-      }
-    },
-    "Ahora no": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not now"
-          }
-        }
-      }
-    },
-    "Atajo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shortcut"
-          }
-        }
-      }
-    },
-    "Desbloquear": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unlock"
-          }
-        }
-      }
-    },
-    "En vertical solo se nota en videos de otro formato": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In portrait it only shows on videos with a different shape"
-          }
-        }
-      }
-    },
-    "Esta lista todavía no tiene títulos.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This list has no titles yet."
-          }
-        }
-      }
-    },
-    "Menos": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Less"
-          }
-        }
-      }
-    },
-    "Sin filmografía": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No filmography"
-          }
-        }
-      }
-    },
-    "Subtítulos antes": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Subtitles earlier"
-          }
-        }
-      }
-    },
-    "Subtítulos después": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Subtitles later"
-          }
-        }
-      }
-    },
-    "TMDB no tiene títulos de esta persona.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TMDB has no titles for this person."
-          }
-        }
-      }
-    },
-    "del video": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "in the video"
-          }
-        }
-      }
-    },
-    "quedan %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ left"
-          }
-        }
-      }
-    },
-    "Clasificación %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rated %@"
-          }
-        }
-      }
-    },
-    "Lo mejor disponible: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Best available: %@"
           }
         }
       }

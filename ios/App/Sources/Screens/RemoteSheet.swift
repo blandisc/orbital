@@ -125,7 +125,7 @@ struct RemoteSheet: View {
                     Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
                 }
                 Spacer(minLength: DS.Space.s2)
-                if !now.live {
+                if !now.live && model.context != .player {   // en el reproductor, la pausa ya está en sus teclas
                     DSIconButton(symbol: now.paused ? "play.fill" : "pause.fill", label: now.paused ? "Continuar" : "Pausa", prominent: true) {
                         Task { await model.control("toggle") }
                     }
@@ -183,14 +183,20 @@ struct RemoteSheet: View {
                     .transition(.opacity)
             }
             switch model.context {
+            // Reproduciendo o en vivo, el pad no se suma abajo (no cabía y repetía pausa, ±10, volumen, pistas y salir):
+            // reemplaza lo de arriba cuando hace falta moverse por un panel de la TV (episodios, fuentes, la guía).
             case .player:
-                if let now = model.now { playerDeck(model, now) }
-                volume(model)
-                foldedPad(model)
+                if showsPad { padMode(model) }
+                else {
+                    if let now = model.now { playerDeck(model, now) }
+                    volume(model)
+                }
             case .live:
-                liveDeck(model)
-                volume(model)
-                foldedPad(model)
+                if showsPad { padMode(model) }
+                else {
+                    liveDeck(model)
+                    volume(model)
+                }
             case .typing:
                 typing(model, autoFocus: true)
                 navigation(model)
@@ -202,6 +208,8 @@ struct RemoteSheet: View {
             }
         }
         .animation(DS.Motion.base(reduceMotion), value: model.context)
+        .animation(DS.Motion.base(reduceMotion), value: showsPad)
+        .onChange(of: model.context) { _, _ in showsPad = false }   // otra pantalla en la TV: vuelve a lo suyo
     }
 
     private func voice(_ model: TVNowModel) -> some View {
@@ -233,25 +241,62 @@ struct RemoteSheet: View {
 
     /// Reproduciendo: la línea de tiempo (o el mapa de sustos), los botones del reproductor y sus pistas.
     @ViewBuilder private func playerDeck(_ model: TVNowModel, _ now: OrbitalRemote.NowPlaying) -> some View {
-        if let scares = model.scares {
-            ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares)
-        } else {
-            TimelineView(.periodic(from: model.fetchedAt, by: DS.NowPlaying.progressTick)) { context in
-                let position = now.position(at: context.date, since: model.fetchedAt)
+        let series = now.kind == "series"
+        TimelineView(.periodic(from: model.fetchedAt, by: DS.NowPlaying.progressTick)) { context in
+            let position = now.position(at: context.date, since: model.fetchedAt)
+            if let scares = model.scares, showsScares {
+                VStack(spacing: DS.Space.s2) {
+                    ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares)
+                    Button { withAnimation(DS.Motion.base(reduceMotion)) { showsScares = false } } label: {
+                        Label("Ocultar los sustos", systemImage: "chevron.up").recipe(.footnote, color: DS.textMuted).frame(minHeight: DS.Size.touchTarget)
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else if let scares = model.scares {
+                // Los sustos en un renglón (la barra y cuánto falta para el siguiente); un toque abre el detalle.
+                Button { withAnimation(DS.Motion.base(reduceMotion)) { showsScares = true } } label: {
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        ScareTimeline(position: position, duration: now.duration, scares: scares)
+                        nextScare(scares, position: position)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("remote-scares")
+            } else {
                 ScareTimeline(position: position, duration: now.duration)
             }
         }
         HStack(spacing: DS.Space.s2) {
+            if series { RemoteKey(symbol: "backward.end.fill", title: Text("Anterior")) { Task { await model.press(.pageleft) } } }
             RemoteKey(symbol: "gobackward.10", title: Text("−10 s")) { Task { await model.control("skip", delta: -10) } }
             RemoteKey(symbol: now.paused ? "play.fill" : "pause.fill", title: now.paused ? Text("Continuar") : Text("Pausa")) { Task { await model.control("toggle") } }
             RemoteKey(symbol: "goforward.10", title: Text("+10 s")) { Task { await model.control("skip", delta: 10) } }
-            if now.kind == "series" { RemoteKey(symbol: "forward.end.fill", title: Text("Siguiente")) { Task { await model.control("next") } } }
+            if series { RemoteKey(symbol: "forward.end.fill", title: Text("Siguiente")) { Task { await model.control("next") } } }
         }
-        // Las pistas: si la consola las manda, se eligen aquí; si no, X y Y con lo que la TV diga que hacen.
+        // Las pistas: si la consola las manda, se eligen aquí; si no, X (audio y subtítulos en la TV). Episodios o Fuentes
+        // abre ese panel en la TV y cambia el control al pad para moverte por él.
         HStack(spacing: DS.Space.s2) {
             trackMenu(model, title: Text("Subtítulos"), symbol: "captions.bubble", action: "subtitles", tracks: now.subtitleTracks, fallback: .alt, legendKey: "alt")
-            trackMenu(model, title: Text("Audio"), symbol: "waveform", action: "audio", tracks: now.audioTracks, fallback: .options, legendKey: "options")
+            trackMenu(model, title: Text("Audio"), symbol: "waveform", action: "audio", tracks: now.audioTracks, fallback: .alt, legendKey: "alt")
+            RemoteKey(symbol: series ? "list.bullet" : "square.stack", title: model.legend["options"].map { Text(verbatim: $0) } ?? (series ? Text("Episodios") : Text("Fuentes"))) {
+                Task { await model.press(.options) }
+                withAnimation(DS.Motion.base(reduceMotion)) { showsPad = true }
+            }
+            .accessibilityIdentifier("remote-options")
             RemoteKey(symbol: "xmark", title: Text("Salir")) { Task { await model.control("stop") } }
+        }
+    }
+
+    /// «0:53 para el siguiente susto» (o que ya no quedan).
+    private func nextScare(_ scares: [JumpScare], position: Double) -> some View {
+        let next = scares.first { $0.time > position }
+        let text = next.map { Text("\(Duration.seconds(Int($0.time - position)).formatted(.time(pattern: .minuteSecond))) para el siguiente susto") }
+            ?? Text("Ya no quedan sustos")
+        return HStack(spacing: DS.Space.s1) {
+            text.recipe(.footnote, color: DS.textMuted).monospacedDigit().lineLimit(1)
+            Spacer(minLength: DS.Space.s2)
+            Image(systemName: "chevron.down").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textFaint)
         }
     }
 
@@ -298,21 +343,33 @@ struct RemoteSheet: View {
         HStack(spacing: DS.Space.s2) {
             RemoteKey(symbol: "chevron.up", title: Text("Canal siguiente")) { Task { await model.control("channel_up") } }
             RemoteKey(symbol: "chevron.down", title: Text("Canal anterior")) { Task { await model.control("channel_down") } }
-            RemoteKey(symbol: "list.bullet.rectangle", title: Text("Guía")) { Task { await model.control("guide") } }
+            RemoteKey(symbol: "list.bullet.rectangle", title: Text("Guía")) {
+                Task { await model.control("guide") }
+                withAnimation(DS.Motion.base(reduceMotion)) { showsPad = true }   // la guía se recorre con el pad
+            }
         }
     }
 
-    /// El pad plegado (reproduciendo o en vivo): un renglón que lo abre para moverte por los menús de la TV.
-    @ViewBuilder private func foldedPad(_ model: TVNowModel) -> some View {
-        Button { withAnimation(DS.Motion.base(reduceMotion)) { showsPad.toggle() } } label: {
-            Label(showsPad ? "Ocultar el pad" : "Moverte por la TV", systemImage: showsPad ? "chevron.up" : "hand.point.up.left")
+    /// El pad en lugar de lo de arriba (reproduciendo o en vivo): para moverte por el panel que abriste en la TV
+    /// (episodios, fuentes, la guía). Cabe en una pantalla: el pad y Atrás · Inicio · Menú · Buscar.
+    @ViewBuilder private func padMode(_ model: TVNowModel) -> some View {
+        Button { withAnimation(DS.Motion.base(reduceMotion)) { showsPad = false } } label: {
+            Label(model.context == .live ? "Volver a los canales" : "Volver al reproductor", systemImage: "chevron.backward")
                 .recipe(.footnote, color: DS.text).fontWeight(.semibold)
                 .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
                 .background(DS.fill, in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("remote-pad-toggle")
-        if showsPad { navigation(model).transition(.opacity.combined(with: .move(edge: .top))) }
+        TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
+            .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
+            .frame(height: DS.Remote.padHeightFitted)
+        HStack(spacing: DS.Space.s2) {
+            key(model, "chevron.backward", "B", "back", Text("Atrás"), .back, hold: .home)
+            key(model, "house", nil, nil, Text("Inicio"), .home)
+            key(model, "line.3.horizontal", nil, "menu", Text("Menú"), .menu)
+            key(model, "magnifyingglass", nil, "search", Text("Buscar"), .search)
+        }
     }
 
     /// Navegar la interfaz de la TV: las secciones (LB / RB), el pad (A al tocar) y las teclas con lo que hace cada una.
