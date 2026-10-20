@@ -545,6 +545,29 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(request.localSubtitles.map(\.lastPathComponent), ["es.srt"])
         XCTAssertNotNil(request.meta)
     }
+
+    /// Borrar desde la lista quita el renglón en el acto y no regresa con el siguiente aviso de la cola (la lista truena si
+    /// el renglón que el deslizar ya quitó vuelve a aparecer).
+    func testDeleteHidesTheRowRightAwayAndForGood() async throws {
+        let rig = try ServicesRig()
+        func movie(_ version: String) -> DownloadItem {
+            DownloadItem(id: "tt1|tt1|\(version)", kind: "movie", metaID: "tt1", videoID: "tt1", title: "Peli", originalTitle: "Peli", subtitle: "",
+                         poster: nil, addon: "Torrentio", sourceIndex: 1, expectedBytes: 1000, relativePath: "tt1/\(version)/video.mkv", createdAt: 1)
+        }
+        try await rig.services.downloads.enqueue(movie("a"), url: URL(string: "https://rd.example/a")!)
+        try await rig.services.downloads.enqueue(movie("b"), url: URL(string: "https://rd.example/b")!)
+        let model = DownloadsModel(rig.services, freeSpace: { 50_000_000_000 })
+        let run = Task { await model.run() }
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertEqual(model.items.count, 2)
+        model.delete(["tt1|tt1|a"])
+        XCTAssertEqual(model.items.map(\.id), ["tt1|tt1|b"], "se quita sin esperar al archivo")
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(model.items.map(\.id), ["tt1|tt1|b"])
+        let left = await rig.services.downloads.item("tt1|tt1|a")
+        XCTAssertNil(left)
+        run.cancel()
+    }
 }
 
 @MainActor

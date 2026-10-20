@@ -81,7 +81,7 @@ struct DownloadsView: View {
                 Section {
                     ForEach(model.readySeries) { g in
                         NavigationLink(value: DownloadSeriesRoute(metaID: g.metaID)) { seriesRow(g) }
-                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { for item in g.items { await model.remove(item.id) } } }.tint(DS.danger) }
+                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete(g.items.map(\.id)) }.tint(DS.danger) }
                     }
                 } header: {
                     DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })))
@@ -90,10 +90,9 @@ struct DownloadsView: View {
             }
             if !model.readyMovies.isEmpty {
                 Section {
-                    ForEach(model.readyMovies) { g in
-                        if let item = g.items.first {
-                            readyRow(title: g.title, poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
-                        }
+                    // Un renglón por cada película, siempre (un `if` que a veces no pinta nada descuadra la lista al borrar).
+                    ForEach(model.readyMovies.compactMap { g in g.items.first.map { (g, $0) } }, id: \.0.id) { g, item in
+                        readyRow(title: g.title, poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
                     }
                 } header: {
                     DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })))
@@ -159,7 +158,7 @@ struct DownloadsView: View {
             }
         }
         .padding(.vertical, DS.Space.s1)
-        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
+        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
     }
 
     private func ringButton(_ item: DownloadItem, symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
@@ -241,7 +240,7 @@ struct DownloadsView: View {
         }
         .buttonStyle(.plain)
         .padding(.vertical, DS.Space.s1)   // aire arriba y abajo: al deslizar para borrar, el póster no se corta en las esquinas
-        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
+        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
         .contextMenu { fileMenu(item, title: title, model: model) }
     }
 
@@ -251,7 +250,7 @@ struct DownloadsView: View {
         ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: title))) {
             Label("Compartir el archivo", systemImage: "square.and.arrow.up")
         }
-        Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }
+        Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }
     }
 
     private func episodesText(_ count: Int) -> String {
@@ -296,7 +295,7 @@ struct DownloadSeriesView: View {
                                     Text(verbatim: String(format: Strings.tr(season.items.count == 1 ? "%lld episodio" : "%lld episodios", language: env.services.appSettings.uiLanguage), season.items.count)).recipe(.footnote)
                                 }
                             }
-                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { for item in season.items { await observer.model.remove(item.id) } } }.tint(DS.danger) }
+                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { observer.model.delete(season.items.map(\.id)) }.tint(DS.danger) }
                         }
                     }
                     .downloadCard()
@@ -338,7 +337,7 @@ struct DownloadSeasonView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }
+                    .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }
                     .contextMenu {
                         Button("Buscar subtítulos", systemImage: "captions.bubble") { subtitlesFor = item }
                         ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle))) {
