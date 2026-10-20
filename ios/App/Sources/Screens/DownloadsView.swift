@@ -175,14 +175,16 @@ struct DownloadsView: View {
         case .queued: return Strings.tr("En cola", language: language)
         case .downloading:
             if item.waitingForNetwork { return Strings.tr(settings.wifiOnlyDownloads ? "Esperando Wi‑Fi" : "Esperando conexión", language: language) }
-            // «1.2 GB / 4.5 GB · 18 MB/s · 3 min»: lo que lleva, la velocidad y cuánto falta.
-            var parts = ["\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"]
+            // Dos renglones: «1.2 GB / 4.5 GB» y abajo «18 MB/s · faltan 3 min» (en uno solo se desparramaba).
+            let progress = "\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"
+            var parts: [String] = []
             if let speed = model.speeds[item.id] { parts.append(bytes(Int64(speed)) + "/s") }
             if let left = model.secondsLeft(item) {
                 let units: Set<Duration.UnitsFormatStyle.Unit> = left >= 3600 ? [.hours, .minutes] : [.minutes, .seconds]
-                parts.append(Duration.seconds(left).formatted(.units(allowed: units, width: .abbreviated, maximumUnitCount: left >= 3600 ? 2 : 1).locale(env.uiLocale)))
+                let time = Duration.seconds(left).formatted(.units(allowed: units, width: .abbreviated, maximumUnitCount: left >= 3600 ? 2 : 1).locale(env.uiLocale))
+                parts.append(String(format: Strings.tr("faltan %@", language: env.services.appSettings.uiLanguage), time))
             }
-            return parts.joined(separator: " · ")
+            return parts.isEmpty ? progress : progress + "\n" + parts.joined(separator: " · ")
         case .paused:
             let paused = Strings.tr("En pausa", language: language)
             return item.progress.map { "\(paused) · \(Int(($0 * 100).rounded())) %" } ?? paused

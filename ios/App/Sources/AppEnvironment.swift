@@ -22,6 +22,8 @@ final class AppEnvironment: ObservableObject {
     private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
     private let liveActivity = DownloadLiveActivityController()
+    /// La actividad en vivo de las descargas: en segundo plano su barra avanza sola con lo estimado.
+    func setDownloadsBackgrounded(_ value: Bool) async { await liveActivity.setBackgrounded(value) }
 
     /// El estado que solo pinta la raíz (el reproductor, los avisos, la pestaña que se pide abrir) vive aparte, en `ui`:
     /// así un aviso o el reproductor que se abre no vuelven a pintar Inicio, Para ti y la ficha (que observan `env`).
@@ -240,8 +242,14 @@ final class AppEnvironment: ObservableObject {
         let position = request.fromStart ? 0 : await services.watch.resumePosition(metaID: request.metaID, videoID: request.videoID)
         let langs = services.titlePrefs.languages(for: request.metaID, settings: services.appSettings)
         var chosen = source
-        if chosen == nil { chosen = try? await services.finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs) }
-        guard let url = chosen?.playbackURL else { return notify("No hay fuentes de Real-Debrid para este título.") }
+        var unreachable = false
+        if chosen == nil {
+            do { chosen = try await services.finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs) }
+            catch { unreachable = error is StreamFinderError }
+        }
+        guard let url = chosen?.playbackURL else {
+            return notify(unreachable ? "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet." : "Real-Debrid aún no tiene este título.")
+        }
         // Apagados en este título (o en Ajustes): Infuse los recibe apagados (antes mandaba los de Ajustes de todos modos).
         let subtitle = langs.subtitles.isEmpty ? nil : await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles).first
         var season: Int?, episode: Int?

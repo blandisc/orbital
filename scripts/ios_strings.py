@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Termina como a las %@": "Done around %@",
+    "faltan %@": "%@ left", "Real-Debrid aún no tiene este título. Los estrenos suelen aparecer unas horas después.": "Real-Debrid doesn't have this title yet. New releases usually show up a few hours later.", "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet.": "No connection: we couldn't ask for sources. Check your internet.", "No pudimos buscar fuentes. Intenta de nuevo.": "We couldn't search for sources. Try again.", "Real-Debrid aún no tiene este título.": "Real-Debrid doesn't have this title yet.", "No pudimos preparar la descarga. Intenta de nuevo.": "We couldn't prepare the download. Try again.", "Sin conexión: no pudimos preguntar por fuentes.": "No connection: we couldn't ask for sources.",
     "Ajustar tiempo": "Adjust timing", "Apagar subtítulos": "Turn subtitles off", "Buscando versiones en internet…": "Searching online for versions…", "Desactivar": "Turn off", "Mantén presionado para apagarlos o prenderlos": "Touch and hold to turn them off or on", "No pudimos buscar subtítulos. Revisa tu conexión.": "We couldn't search for subtitles. Check your connection.", "Prender subtítulos": "Turn subtitles on", "Se recuerda para esta película.": "Remembered for this movie.", "Se recuerda para toda la serie.": "Remembered for the whole show.", "Subtítulos desactivados": "Subtitles off", "Versión": "Version", "¿Las letras salen antes que la voz? Toca +.": "Do the words show up before the voice? Tap +.", "Desactivados": "Off",
     "Llena la pantalla y recorta los lados": "Fills the screen and crops the sides",
     "Prueba de velocidad": "Speed test",

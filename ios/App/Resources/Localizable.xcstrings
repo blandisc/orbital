@@ -7206,6 +7206,17 @@
         }
       }
     },
+    "No pudimos buscar fuentes. Intenta de nuevo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't search for sources. Try again."
+          }
+        }
+      }
+    },
     "No pudimos buscar subtítulos. Revisa tu conexión.": {
       "extractionState": "manual",
       "localizations": {
@@ -7213,6 +7224,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "We couldn't search for subtitles. Check your connection."
+          }
+        }
+      }
+    },
+    "No pudimos preparar la descarga. Intenta de nuevo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't prepare the download. Try again."
           }
         }
       }
@@ -8438,6 +8460,28 @@
         }
       }
     },
+    "Real-Debrid aún no tiene este título.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't have this title yet."
+          }
+        }
+      }
+    },
+    "Real-Debrid aún no tiene este título. Los estrenos suelen aparecer unas horas después.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't have this title yet. New releases usually show up a few hours later."
+          }
+        }
+      }
+    },
     "Reanudar": {
       "extractionState": "manual",
       "localizations": {
@@ -9362,6 +9406,28 @@
         }
       }
     },
+    "Sin conexión: no pudimos preguntar por fuentes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No connection: we couldn't ask for sources."
+          }
+        }
+      }
+    },
+    "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No connection: we couldn't ask for sources. Check your internet."
+          }
+        }
+      }
+    },
     "Sin conexión: se ve lo último que guardé.": {
       "extractionState": "manual",
       "localizations": {
@@ -9941,6 +10007,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I have"
+          }
+        }
+      }
+    },
+    "Termina como a las %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done around %@"
           }
         }
       }
@@ -11393,6 +11470,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "this time"
+          }
+        }
+      }
+    },
+    "faltan %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
           }
         }
       }

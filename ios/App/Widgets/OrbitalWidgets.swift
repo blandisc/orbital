@@ -27,8 +27,8 @@ struct DownloadLiveActivity: Widget {
                     if !context.state.detail.isEmpty {
                         Text(verbatim: context.state.detail).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
                     }
-                    ProgressView(value: context.state.fraction).tint(context.state.done ? DS.good : DS.paper)
-                    Text(subtitle(context.state)).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
+                    bar(context.state).tint(context.state.done ? DS.good : DS.paper)
+                    subtitleText(context.state).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
                 }
             }
             .padding()
@@ -57,8 +57,8 @@ struct DownloadLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        ProgressView(value: context.state.fraction).tint(context.state.done ? DS.good : nil)
-                        Text(subtitle(context.state)).font(DS.font(.sm)).foregroundStyle(.secondary).lineLimit(1)
+                        bar(context.state).tint(context.state.done ? DS.good : nil)
+                        subtitleText(context.state).font(DS.font(.sm)).foregroundStyle(.secondary).lineLimit(1)
                     }
                     .padding(.horizontal, DS.Space.s1)
                     .environment(\.locale, Locale(identifier: context.state.language))
@@ -75,9 +75,28 @@ struct DownloadLiveActivity: Widget {
         }
     }
 
+    /// La barra: con la app en segundo plano avanza sola hasta la hora estimada; si no, la fracción que mandó la app.
+    @ViewBuilder private func bar(_ state: DownloadActivityAttributes.ContentState) -> some View {
+        if !state.done, let start = state.estimateStart, let end = state.estimateEnd, end > start {
+            ProgressView(timerInterval: start...end, countsDown: false) { EmptyView() } currentValueLabel: { EmptyView() }
+        } else {
+            ProgressView(value: state.fraction)
+        }
+    }
+
+    /// «Termina como a las 10:42» mientras avanza sola; si no, lo de siempre.
+    private func subtitleText(_ state: DownloadActivityAttributes.ContentState) -> Text {
+        if !state.done, let end = state.estimateEnd {
+            return Text("Termina como a las \(end.formatted(Date.FormatStyle(locale: Locale(identifier: state.language)).hour().minute()))")
+        }
+        return Text(subtitle(state))
+    }
+
     private func percent(_ state: DownloadActivityAttributes.ContentState) -> some View {
         Group {
             if state.done { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good) }
+            // En segundo plano, lo que falta en cuenta regresiva (el porcentaje se quedaría congelado).
+            else if let end = state.estimateEnd, end > .now { Text(timerInterval: Date.now...end, countsDown: true).monospacedDigit() }
             else { Text(state.fraction, format: .percent.precision(.fractionLength(0))).monospacedDigit() }
         }
     }

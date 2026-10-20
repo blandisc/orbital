@@ -254,7 +254,7 @@ public final class PlayerModel: ObservableModel {
                 else if failedSources.isEmpty, !request.fromStart, let key = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID)?.source,
                         let pick = sourceChoices.first(where: { $0.key == key }) { found = pick }
                 else { found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: request.binge, skip: failedSources) }
-            } catch { guard mine == generation else { return }; return fail("No pude pedir las fuentes: \(error)", .network) }
+            } catch { guard mine == generation else { return }; return fail("Sin conexión: no pudimos preguntar por fuentes.", .network) }
             guard mine == generation, !closing else { return }
             guard let found else { return failedSources.isEmpty ? fail("No hay fuentes de Real-Debrid para este título.", .noSources) : fail("Ninguna fuente funcionó.", .noneWorked) }
             source = found
@@ -279,7 +279,7 @@ public final class PlayerModel: ObservableModel {
     private func fail(_ message: String, _ kind: Failure) {
         failure = kind
         phase = .failed(stripURLs(message)); startupDeadline = nil; reconnecting = false; foregroundCheck = nil
-        Task { await engine.pause() }   // que no siga una ruedita girando detrás
+        if source != nil { Task { await engine.pause() } }   // con un video a medio cargar: que no siga una ruedita detrás
     }
 
     /// Intentar otra vez desde el principio (otra búsqueda de fuentes), donde ibas.

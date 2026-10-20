@@ -1,5 +1,11 @@
 import Foundation
 
+/// Ningún complemento contestó (sin internet, o tus complementos caídos): no es lo mismo que «no hay fuentes».
+public enum StreamFinderError: Error, Sendable, CustomStringConvertible {
+    case unreachable
+    public var description: String { "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet." }
+}
+
 /// Pide fuentes a los complementos que las dan (en paralelo) y las recuerda unos minutos.
 /// Los enlaces de Real-Debrid caducan: una caché vieja no se usa para reproducir.
 public actor StreamFinder {
@@ -30,6 +36,8 @@ public actor StreamFinder {
         do {
             let streams = try await http.getJSON(url, timeout: 15)?["streams"]?.array ?? []
             return streams.filter { $0.object != nil && ($0["url"]?.nonEmptyString != nil || $0["infoHash"]?.nonEmptyString != nil) }
+        } catch let error as NetworkError where error.description.hasPrefix("HTTP 4") {
+            return []   // contestó (no tiene ese video): eso es «no hay», no un fallo de red
         } catch { return nil }
     }
 
@@ -53,6 +61,8 @@ public actor StreamFinder {
             }
         }
         let ranked = Streams.rank(sources, prefs: prefs, kind: kind, purpose: purpose)
+        // Nadie contestó: es la red, no que no haya fuentes (antes se decía «No hay fuentes» sin internet).
+        if !results.isEmpty, results.allSatisfy({ $0 == nil }), ranked.isEmpty { throw StreamFinderError.unreachable }
         if failed && ranked.isEmpty { return ranked }  // la red falló y no hay nada: no se recuerda
         if cache.count >= Self.cacheMax { for k in cache.sorted(by: { $0.value.expires < $1.value.expires }).prefix(Self.cacheMax / 2).map(\.key) { cache[k] = nil } }
         cache[key] = (clock().addingTimeInterval(failed ? Self.retryFailed : Self.cacheSeconds), ranked)

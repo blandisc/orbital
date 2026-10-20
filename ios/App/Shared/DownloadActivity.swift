@@ -21,6 +21,10 @@ struct DownloadActivityAttributes: ActivityAttributes {
         var poster: String?
         /// Terminó: «Descargado» (no «descargando» al 100 %).
         var done = false
+        /// Con la app en segundo plano iOS no la deja mandar avances: la barra avanza sola entre estas dos horas (calculadas con
+        /// la velocidad de ese momento) en lugar de quedarse congelada mientras la descarga sigue.
+        var estimateStart: Date?
+        var estimateEnd: Date?
 
         init(title: String, fraction: Double, remaining: Int, waiting: Bool, language: String, detail: String = "", poster: String? = nil, done: Bool = false) {
             self.title = title; self.fraction = fraction; self.remaining = remaining; self.waiting = waiting; self.language = language
@@ -38,6 +42,8 @@ struct DownloadActivityAttributes: ActivityAttributes {
             detail = try c.decodeIfPresent(String.self, forKey: .detail) ?? ""
             poster = try c.decodeIfPresent(String.self, forKey: .poster)
             done = try c.decodeIfPresent(Bool.self, forKey: .done) ?? false
+            estimateStart = try c.decodeIfPresent(Date.self, forKey: .estimateStart)
+            estimateEnd = try c.decodeIfPresent(Date.self, forKey: .estimateEnd)
         }
     }
 }

@@ -58,12 +58,16 @@ public final class SourcesModel: ObservableModel {
         let prefs = services.titlePrefs.languages(for: metaID, settings: settings, onCellular: onCellular).prefs
         let found: [Source]
         do { found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose) }
-        catch where !Task.isCancelled { sources = []; rows = []; self.error = "\(error)"; return }
+        catch where !Task.isCancelled {
+            sources = []; rows = []
+            self.error = (error as? StreamFinderError)?.description ?? "No pudimos buscar fuentes. Intenta de nuevo."
+            return
+        }
         catch { return }
         // Cancelada (cambiaste de pestaña antes de que llegara): no pisa la lista nueva.
         guard !Task.isCancelled, purpose == self.purpose else { return }
         sources = found
-        error = sources.isEmpty ? "No hay fuentes de Real-Debrid para este título." : nil
+        error = sources.isEmpty ? "Real-Debrid aún no tiene este título. Los estrenos suelen aparecer unas horas después." : nil
         let limit = Int64(settings.warnCellularOverGB * 1e9)
         rows = sources.enumerated().map { i, s in
             let langs = s.languages.prefix(2).map { Streams.languageName($0, in: services.appSettings.uiLanguage) }.joined(separator: " + ")

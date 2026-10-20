@@ -97,7 +97,11 @@ struct RootView: View {
             if phase == .background || phase == .active {
                 let background = phase == .background
                 let id = background ? UIApplication.shared.beginBackgroundTask(withName: "orbital.downloads") : .invalid
-                Task { await env.services.downloads.setBackgrounded(background); if id != .invalid { UIApplication.shared.endBackgroundTask(id) } }
+                Task {
+                    await env.services.downloads.setBackgrounded(background)
+                    await env.setDownloadsBackgrounded(background)
+                    if id != .invalid { UIApplication.shared.endBackgroundTask(id) }
+                }
             }
         }
     }

@@ -67,9 +67,14 @@ final class StreamFinderTests: XCTestCase {
     func testNetworkFailureIsNotRememberedAsEmpty() async throws {
         let http = FakeHTTP(), clock = Clock()
         let finder = makeFinder(http, clock: clock)
-        // Los dos complementos fallan (404 = sin JSON): lista vacía pero no se recuerda como «no hay»
-        let first = try await finder.find(kind: "movie", videoID: "tt9", prefs: Preferences())
-        XCTAssertTrue(first.isEmpty)
+        // Sin red (ningún complemento contesta): se dice que es la red, no «no hay», y no se recuerda.
+        http.failing = ["https://a.example/stream/movie/tt9.json", "https://b.example/stream/movie/tt9.json"]
+        do { _ = try await finder.find(kind: "movie", videoID: "tt9", prefs: Preferences()); XCTFail("sin red debe avisar") }
+        catch { XCTAssertTrue(error is StreamFinderError) }
+        http.failing = []
+        // Un 404 sí es «no tiene ese video»: lista vacía, sin error.
+        let none = try await finder.find(kind: "movie", videoID: "tt8", prefs: Preferences())
+        XCTAssertTrue(none.isEmpty)
         http.json["https://a.example/stream/movie/tt9.json"] = ["streams": [["name": "T", "url": "https://rd.example/z"]]]
         clock.now.addTimeInterval(StreamFinder.retryFailed + 1)
         let second = try await finder.find(kind: "movie", videoID: "tt9", prefs: Preferences())
