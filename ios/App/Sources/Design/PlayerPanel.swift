@@ -4,30 +4,6 @@ import OrbitalModels
 
 // Piezas del panel «Ajustes del video» y de los botones con nombre del reproductor.
 
-/// Un botón de la fila del reproductor en vertical («Ajustes», «Bloquear», «Ventana», «En la TV»): el ícono arriba y el
-/// nombre corto abajo; todos del mismo ancho (la fila se reparte en partes iguales). `accessibility`: el nombre largo.
-struct PlayerLabelButton: View {
-    let title: LocalizedStringKey
-    let symbol: String
-    var accessibility: LocalizedStringKey?
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: DS.Space.s1) {
-                Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(height: DS.Size.touchTarget / 2)
-                Text(title).recipe(.caption, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.PlayerPanel.labelMinScale)
-            }
-            .foregroundStyle(DS.text)
-            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget * 1.25)
-            .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(accessibility ?? title))
-    }
-}
-
 /// Un botón redondo de la barra de arriba del reproductor: todos del mismo diámetro (el del toque mínimo).
 struct PlayerCircleButton: View {
     let symbol: String
@@ -242,13 +218,24 @@ struct FlowChips: Layout {
         }
         return CGSize(width: min(widest, width), height: y + line)
     }
+    /// Cada renglón centra sus piezas a lo alto (una insignia con borde, más baja que una cápsula, ya no queda arriba).
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX, y = bounds.minY, line: CGFloat = 0
+        var lines: [[(LayoutSubview, CGSize)]] = [[]]
+        var x: CGFloat = 0
         for view in subviews {
             let size = view.sizeThatFits(.unspecified)
-            if x > bounds.minX, x + size.width > bounds.maxX { x = bounds.minX; y += line + spacing; line = 0 }
-            view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
-            x += size.width + spacing; line = max(line, size.height)
+            if x > 0, bounds.minX + x + size.width > bounds.maxX { lines.append([]); x = 0 }
+            lines[lines.count - 1].append((view, size)); x += size.width + spacing
+        }
+        var y = bounds.minY
+        for line in lines {
+            let height = line.map(\.1.height).max() ?? 0
+            var lineX = bounds.minX
+            for (view, size) in line {
+                view.place(at: CGPoint(x: lineX, y: y + (height - size.height) / 2), proposal: ProposedViewSize(size))
+                lineX += size.width + spacing
+            }
+            y += height + spacing
         }
     }
 }
@@ -328,7 +315,7 @@ struct InfuseIcon: View {
     }
 }
 
-/// Reproducir o pausar: el botón grande del centro (papel, círculo) entre ±10, que son más chicos y de vidrio.
+/// Reproducir o pausar: el botón grande del centro, el único con círculo (de vidrio), entre ±10.
 struct PlayPauseButton: View {
     let playing: Bool
     let action: () -> Void
@@ -338,9 +325,9 @@ struct PlayPauseButton: View {
             Image(systemName: playing ? "pause.fill" : "play.fill")
                 .font(.system(size: DS.PlayerPanel.playGlyph, weight: .bold))   // ds-exception: el glifo del botón grande se mide con el botón, no con Dynamic Type
                 .contentTransition(.symbolEffect(.replace))
-                .foregroundStyle(DS.onPrimary)
+                .foregroundStyle(DS.text)
                 .frame(width: DS.PlayerPanel.playButton, height: DS.PlayerPanel.playButton)
-                .background(DS.primary, in: Circle())
+                .glassEffect(.regular.interactive(), in: Circle())
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -348,20 +335,90 @@ struct PlayPauseButton: View {
     }
 }
 
-/// ±10 s junto al botón grande.
+/// ±10 s junto al botón grande: la flecha en círculo con el 10, sin fondo (se ve qué lado regresa y cuál adelanta).
 struct SkipButton: View {
     let forward: Bool
+    let action: () -> Void
+    @State private var taps = 0
+
+    var body: some View {
+        Button { taps += 1; action() } label: {
+            Image(systemName: forward ? "goforward.10" : "gobackward.10")
+                .font(.system(size: DS.PlayerPanel.skipGlyph, weight: .medium))   // ds-exception: el glifo se mide con el botón grande, no con Dynamic Type
+                .symbolEffect(.rotate.byLayer, options: .speed(2), value: taps)
+                .foregroundStyle(DS.text)
+                .frame(width: DS.PlayerPanel.sideButton, height: DS.PlayerPanel.sideButton)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(forward ? Text("Adelantar 10 segundos") : Text("Retroceder 10 segundos"))
+    }
+}
+
+/// La barra de avance fina (la misma en vertical y en horizontal): el riel, la intro, el resumen y los créditos marcados
+/// más claros, lo visto en el color de Orbital y una perilla chica que crece mientras la arrastras.
+struct PlayerScrubBar: View {
+    let value: Double
+    let duration: Double
+    /// Los tramos marcados (intro, resumen, créditos), en segundos.
+    var marks: [ClosedRange<Double>] = []
+    let change: (Double) -> Void
+    let editing: (Bool) -> Void
+    @State private var dragging = false
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let x = { (t: Double) in CGFloat(min(max(t / max(duration, 1), 0), 1)) * width }
+            ZStack(alignment: .leading) {
+                Capsule().fill(DS.track).frame(height: DS.PlayerPanel.scrubTrack)
+                ForEach(Array(marks.enumerated()), id: \.offset) { _, mark in
+                    Rectangle().fill(DS.textFaint)
+                        .frame(width: max(0, x(mark.upperBound) - x(mark.lowerBound)), height: DS.PlayerPanel.scrubTrack)
+                        .offset(x: x(mark.lowerBound))
+                }
+                Capsule().fill(DS.brandMoon).frame(width: x(value), height: DS.PlayerPanel.scrubTrack)
+                Circle().fill(DS.text)
+                    .frame(width: dragging ? DS.PlayerPanel.scrubKnobActive : DS.PlayerPanel.scrubKnob,
+                           height: dragging ? DS.PlayerPanel.scrubKnobActive : DS.PlayerPanel.scrubKnob)
+                    .offset(x: x(value) - (dragging ? DS.PlayerPanel.scrubKnobActive : DS.PlayerPanel.scrubKnob) / 2)
+                    .animation(.snappy, value: dragging)
+            }
+            .frame(width: width, height: DS.PlayerPanel.scrubHit)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { g in
+                    if !dragging { dragging = true; editing(true) }
+                    change(Double(min(max(g.location.x / max(width, 1), 0), 1)) * duration)
+                }
+                .onEnded { _ in dragging = false; editing(false) })
+        }
+        .frame(height: DS.PlayerPanel.scrubHit)
+        .sensoryFeedback(.selection, trigger: dragging)
+    }
+}
+
+/// Un renglón del menú «⋯» del reproductor: el ícono, el nombre y, a la derecha, un dato (el zoom puesto).
+struct PlayerMenuRow: View {
+    let title: LocalizedStringKey
+    let symbol: String
+    var detail: Text?
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: forward ? "goforward.10" : "gobackward.10").font(DS.TextRecipe.title.font.weight(.semibold))
-                .foregroundStyle(DS.text)
-                .frame(width: DS.PlayerPanel.sideButton, height: DS.PlayerPanel.sideButton)
-                .glassEffect(.regular.interactive(), in: Circle())
+            HStack(spacing: DS.Space.s3) {
+                Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(width: DS.Size.touchTarget / 2)
+                Text(title).recipe(.secondary, color: DS.text).lineLimit(1)
+                Spacer(minLength: DS.Space.s2)
+                if let detail { detail.recipe(.footnote).lineLimit(1) }
+            }
+            .foregroundStyle(DS.text)
+            .padding(.horizontal, DS.Space.s3)
+            .frame(minHeight: DS.Size.touchTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(forward ? Text("Adelantar 10 segundos") : Text("Retroceder 10 segundos"))
     }
 }
 

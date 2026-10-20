@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Bloquear pantalla": "Lock screen",
+    "Ventana (PiP)": "Window (PiP)",
     "Ligera para guardar": "Light to save",
     "Toca una para verla · ↓ para guardarla": "Tap one to watch · ↓ to save it",
     "Copiar resultados": "Copy results",

@@ -309,11 +309,15 @@ enum DS {
         static let portraitCenter: CGFloat = 0.32, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
         /// En vertical sin controles a la vista, el video se centra.
         /// El botón de reproducir, más grande que ±10 (lo que más se toca).
-        static let playButton: CGFloat = 72, playGlyph: CGFloat = 30, sideButton: CGFloat = 52
+        static let playButton: CGFloat = 76, playGlyph: CGFloat = 30, sideButton: CGFloat = 56
+        /// ±10: la flecha en círculo, sin fondo (el botón grande es el único con círculo).
+        static let skipGlyph: CGFloat = 32
+        /// La barra de avance fina: el riel, la perilla (crece al arrastrar) y el alto que se puede tocar.
+        static let scrubTrack: CGFloat = 4, scrubKnob: CGFloat = 14, scrubKnobActive: CGFloat = 26, scrubHit: CGFloat = 32
+        /// El menú del «⋯»: su ancho.
+        static let menuWidth: CGFloat = 272
         /// La tira para probar subtítulos sobre el video: lo más ancha que se pone.
         static let tryStripMaxWidth: CGFloat = 480
-        /// El nombre corto bajo el ícono de la fila de vertical puede encogerse hasta esta parte (para que quepa en un SE).
-        static let labelMinScale: CGFloat = 0.8
         /// «Siguiente episodio»: el ancho de la imagen del episodio y el anillo de la cuenta atrás en «Ver ahora».
         static let upNextThumb: CGFloat = 96, ring: CGFloat = 22, ringWidth: CGFloat = 2.5
         /// El degradado oscuro de arriba (detrás del nombre y el episodio), para leerlos sobre un video claro.

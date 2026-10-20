@@ -8,10 +8,11 @@ final class PlayerPanelUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         app.launch()
         sleep(9)
-        app.tap()
-        let settings = app.buttons["Audio y subtítulos"]
-        XCTAssertTrue(settings.waitForExistence(timeout: 10), "el botón dice qué hace")
-        XCTAssertTrue(app.buttons["player-more"].exists, "Bloquear, Ventana y la TV van en el «⋯»")
+        if !app.buttons["player-more"].waitForExistence(timeout: 3) { app.tap() }
+        XCTAssertTrue(app.buttons["player-more"].waitForExistence(timeout: 10), "Audio y subtítulos, zoom, ventana, la TV y bloquear van en el «⋯»")
+        app.buttons["player-more"].tap()
+        let settings = app.buttons["player-settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 5), "el renglón dice qué hace")
         settings.tap()
         XCTAssertTrue(app.staticTexts["Ajustes del video"].waitForExistence(timeout: 5), "abre el panel")
         app.buttons["panel-subtitles"].tap()
@@ -64,7 +65,9 @@ final class PlayerPanelUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         app.launch()
         sleep(9)
-        if !app.buttons["player-zoom"].waitForExistence(timeout: 3) { app.tap() }
+        if !app.buttons["player-more"].waitForExistence(timeout: 3) { app.tap() }
+        XCTAssertTrue(app.buttons["player-more"].waitForExistence(timeout: 5))
+        app.buttons["player-more"].tap()   // el zoom va en el «⋯», con el modo puesto a la derecha
         let zoom = app.buttons["player-zoom"]
         XCTAssertTrue(zoom.waitForExistence(timeout: 5))
         zoom.tap()

@@ -181,7 +181,7 @@ struct PlayerScreen: View {
             // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse. Con los controles a la
             // vista (en pausa, o con la ventana de PiP afuera) ya va dentro de ellos: antes salía dos veces.
             else if !controlsShown && !locked && !panel && model.skipIntroTo != nil {
-                VStack { Spacer(); skipIntro(model) }.padding(landscape ? DS.Space.s6 : DS.Space.gutter).transition(.opacity)
+                VStack { Spacer(); HStack { Spacer(); skipIntro(model) } }.padding(landscape ? DS.Space.s6 : DS.Space.gutter).transition(.opacity)
             }
             // Probando subtítulos (elegidos en el panel): la tira al pie del video (en vertical nunca tapa los controles,
             // que van debajo del video).
@@ -591,9 +591,12 @@ struct PlayerScreen: View {
     }
 
     // MARK: controles
-    /// Horizontal: arriba ✕, el nombre, Audio y subtítulos, Ventana, Ver en la TV y AirPlay; al centro ±10 y el botón
-    /// grande; abajo solo la barra.
-    /// Vertical: lo mismo pero bajo el video (que va arriba): nada tapa la imagen ni los subtítulos.
+    /// Una sola identidad en los dos sentidos («barra limpia»): arriba ✕, el nombre y el episodio, subtítulos, AirPlay y «⋯»
+    /// (lo demás: audio y subtítulos, zoom, ventana, la TV, descargar y bloquear); la barra fina con las horas a los lados;
+    /// ±10 (flecha en círculo) y el botón grande de vidrio; «Saltar intro», una cápsula sólida.
+    /// Horizontal: arriba la barra de botones, al centro ±10 y el botón grande, abajo la barra con «Saltar intro» a su lado.
+    /// Vertical: la barra pegada al video, «Saltar intro» debajo a la derecha, ±10 y el botón grande al centro de lo que queda
+    /// y, al pie, cómo mover el video. Nada tapa la imagen ni los subtítulos.
     private func controls(_ model: PlayerModel) -> some View {
         GeometryReader { geo in
             if landscape {
@@ -601,12 +604,14 @@ struct PlayerScreen: View {
                     LinearGradient(colors: [DS.scrim, .clear, DS.scrim], startPoint: .top, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     topScrim
                     VStack(spacing: DS.Space.s3) {
-                        topBar(model, withActions: true)
+                        topBar(model)
                         Spacer()
                         if model.phase != .preparing { transport(model) }
                         Spacer()
-                        skipIntro(model)
-                        if model.snapshot.duration > 0 { scrubber(model) }
+                        HStack(spacing: DS.Space.s3) {
+                            if model.snapshot.duration > 0 { scrubber(model) } else { Spacer() }
+                            skipIntro(model)
+                        }
                     }
                     .padding(DS.Space.s6)
                 }
@@ -619,25 +624,25 @@ struct PlayerScreen: View {
                         LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     }
                     topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
-                    VStack(spacing: DS.Space.s5) {
+                    VStack(spacing: DS.Space.s3) {
                         // «Siguiente episodio» entre el video y la barra (antes tapaba los controles).
                         if let up = model.upNext, !locked { upNextCard(model, up) }
-                        skipIntro(model)
                         if model.snapshot.duration > 0 { scrubber(model) }
+                        // Su lugar está apartado aunque no salga: ±10 y el botón grande no brincan cuando aparece.
+                        HStack { Spacer(); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
+                        if !fillsPortrait { Spacer(minLength: 0) }
                         if model.phase != .preparing { transport(model) }
-                        HStack(spacing: DS.Space.s2) { actions(model) }
-                        // Cómo mover el video, dicho con palabras y siempre que estén los controles (la barrita pegada al video no
-                        // se entendía): abajo de todo, separado de los botones.
                         if !fillsPortrait {
+                            Spacer(minLength: 0)
+                            // Cómo mover el video, dicho con palabras y siempre que estén los controles: al pie, solo.
                             Label("Arrastra el video para subirlo o bajarlo", systemImage: "arrow.up.and.down")
                                 .recipe(.footnote, color: DS.textMuted)
-                                .padding(.top, DS.Space.s4)
                                 .accessibilityIdentifier("player-drag-hint")
                         }
                     }
                     .padding(.horizontal, DS.Space.gutter)
-                    .padding(.bottom, fillsPortrait ? DS.Space.s8 : 0)
-                    .offset(y: fillsPortrait ? 0 : rect.maxY + DS.Space.s6)
+                    .padding(.bottom, fillsPortrait ? DS.Space.s8 : DS.Space.s4)
+                    .padding(.top, fillsPortrait ? 0 : rect.maxY + DS.Space.s3)
                     .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
@@ -655,56 +660,50 @@ struct PlayerScreen: View {
         .ignoresSafeArea().allowsHitTesting(false)
     }
 
-    /// `withActions` (horizontal): Ajustes del video, subtítulos, zoom, AirPlay, Bloquear, Ventana y En la TV, todos
-    /// redondos y del mismo tamaño; abajo solo queda la barra.
-    private func topBar(_ model: PlayerModel, withActions: Bool = false) -> some View {
-        HStack(alignment: .top, spacing: DS.Space.s3) {
+    /// La barra de arriba, igual en los dos sentidos: ✕, el nombre y el episodio, subtítulos, AirPlay y «⋯».
+    private func topBar(_ model: PlayerModel) -> some View {
+        HStack(alignment: .center, spacing: DS.Space.s3) {
             PlayerCircleButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
                 .accessibilityIdentifier("player-close")
-            // El nombre y el episodio completos (dos renglones si hace falta), sin botones que los corten.
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(current.displayTitle).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
-                if !current.episodeLabel.isEmpty { Text(current.episodeLabel).recipe(.footnote).lineLimit(2) }
+                if !current.episodeLabel.isEmpty { Text(current.episodeLabel).recipe(.footnote).lineLimit(1) }
             }
             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
-            if withActions {
-                PlayerCircleButton(symbol: "slider.horizontal.3", label: "Audio y subtítulos") { panelPage = .hub; panel = true }
-                    .accessibilityIdentifier("player-settings")
-            }
             SubtitleButton(code: currentSubtitleCode(model), state: subtitleState(model), loading: model.loadingSubtitle,
                            open: { withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false; subtitleDock = true } },
                            toggle: { toggleSubtitles(model) })
                 .accessibilityIdentifier("player-next-subtitle")
-            PlayerCircleButton(symbol: zoom.symbol, label: LocalizedStringKey(zoom.title)) { setZoom(nextZoom) }
-                .accessibilityHint(Text("Cambia el zoom del video"))
-                .accessibilityIdentifier("player-zoom")
             AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
                 .accessibilityLabel(Text("AirPlay"))
-            if withActions {
-                // Bloquear, Ventana y Ver en la TV van juntos detrás del «⋯». Es un globo (no un `Menu` del sistema): así se
-                // sabe cuándo está abierto y los controles no se esconden debajo de él.
-                PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") { hideTask?.cancel(); moreOpen = true }
-                    .accessibilityIdentifier("player-more")
-                    .popover(isPresented: $moreOpen) {
-                        HStack(spacing: DS.Space.s2) {
-                            PlayerLabelButton(title: "Bloquear", symbol: "lock") { moreOpen = false; lock() }
-                                .accessibilityIdentifier("player-lock")
-                            if pip.isPossible { PlayerLabelButton(title: "Ventana", symbol: "pip.enter") { moreOpen = false; pip.toggle() } }
-                            if canHandOffToTV(model) {
-                                PlayerLabelButton(title: "En la TV", symbol: "tv", accessibility: "Ver en la TV") { moreOpen = false; Task { await continueOnTV() } }
-                            }
-                            if canDownload { downloadButton { moreOpen = false } }
-                        }
-                        .frame(width: DS.Size.touchTarget * 2 * CGFloat(moreCount(model)))
-                        .padding(DS.Space.s3)
-                        .presentationCompactAdaptation(.popover)
-                    }
-            }
+            // Un globo (no un `Menu` del sistema): así se sabe cuándo está abierto y los controles no se esconden debajo de él.
+            PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") { hideTask?.cancel(); moreOpen = true }
+                .accessibilityIdentifier("player-more")
+                .popover(isPresented: $moreOpen) { moreMenu(model).presentationCompactAdaptation(.popover) }
         }
     }
 
-    /// Cuántos botones lleva el «⋯» (para su ancho).
-    private func moreCount(_ model: PlayerModel) -> Int { 1 + (pip.isPossible ? 1 : 0) + (canHandOffToTV(model) ? 1 : 0) + (canDownload ? 1 : 0) }
+    /// El «⋯»: audio y subtítulos, el zoom (con el puesto a la derecha), ventana, la TV, descargar y, aparte, bloquear.
+    private func moreMenu(_ model: PlayerModel) -> some View {
+        let language = env.services.appSettings.uiLanguage
+        return VStack(alignment: .leading, spacing: 0) {
+            PlayerMenuRow(title: "Audio y subtítulos", symbol: "slider.horizontal.3") { moreOpen = false; panelPage = .hub; panel = true }
+                .accessibilityIdentifier("player-settings")
+            PlayerMenuRow(title: "Zoom", symbol: zoom.symbol, detail: Text(verbatim: Strings.tr(zoom.title, language: language))) { setZoom(nextZoom) }
+                .accessibilityHint(Text("Cambia el zoom del video"))
+                .accessibilityIdentifier("player-zoom")
+            if pip.isPossible { PlayerMenuRow(title: "Ventana (PiP)", symbol: "pip.enter") { moreOpen = false; pip.toggle() } }
+            if canHandOffToTV(model) {
+                PlayerMenuRow(title: "Ver en la TV", symbol: "tv") { moreOpen = false; Task { await continueOnTV() } }
+            }
+            if canDownload { downloadRow { moreOpen = false } }
+            Divider().padding(.vertical, DS.Space.s1)
+            PlayerMenuRow(title: "Bloquear pantalla", symbol: "lock") { moreOpen = false; lock() }
+                .accessibilityIdentifier("player-lock")
+        }
+        .padding(.vertical, DS.Space.s2)
+        .frame(width: DS.PlayerPanel.menuWidth)
+    }
 
     // MARK: descargar
     /// Lo que se está viendo en línea y se puede guardar (una descarga ya está; un archivo que te pasaron no tiene ficha).
@@ -712,9 +711,8 @@ struct PlayerScreen: View {
 
     /// «Descargar»: la misma versión que estás viendo (si es un archivo; si es una lista HLS, la recomendada para guardar).
     /// Ya en Descargas: «Descargada» y el toque lleva a Descargas.
-    private func downloadButton(_ before: @escaping () -> Void = {}) -> some View {
-        PlayerLabelButton(title: inDownloads ? "Descargada" : "Descargar", symbol: inDownloads ? "checkmark.circle" : "arrow.down.circle",
-                          accessibility: inDownloads ? "Ya está en Descargas" : "Descargar este video") {
+    private func downloadRow(_ before: @escaping () -> Void = {}) -> some View {
+        PlayerMenuRow(title: inDownloads ? "Descargada" : "Descargar", symbol: inDownloads ? "checkmark.circle" : "arrow.down.circle") {
             before()
             Task { if inDownloads { await toast(Strings.tr("Ya está en Descargas", language: env.services.appSettings.uiLanguage)) } else { await downloadCurrent() } }
         }
@@ -1008,26 +1006,14 @@ struct PlayerScreen: View {
     /// «Saltar intro» (o «Saltar resumen»): abajo a la derecha, justo encima de la barra de avance (donde lo buscas al verla).
     @ViewBuilder private func skipIntro(_ model: PlayerModel) -> some View {
         if model.skipIntroTo != nil {
-            HStack {
-                Spacer()
-                Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }
-                    .buttonStyle(.glass).controlSize(.large)
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-            }
+            // Sólida (papel): lo único que se ofrece en ese momento, se distingue del vidrio de los demás.
+            Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }
+                .fontWeight(.semibold)
+                .buttonStyle(.glassProminent).tint(DS.primary).foregroundStyle(DS.onPrimary).controlSize(.regular)
+                .fixedSize()
+                .transition(.opacity.combined(with: .move(edge: .trailing)))
+                .accessibilityIdentifier("player-skip-intro")
         }
-    }
-
-    /// La fila de vertical: ícono y nombre corto, todos del mismo ancho (VoiceOver dice el nombre largo).
-    @ViewBuilder private func actions(_ model: PlayerModel) -> some View {
-        PlayerLabelButton(title: "Ajustes", symbol: "slider.horizontal.3", accessibility: "Audio y subtítulos") { panelPage = .hub; panel = true }
-            .accessibilityIdentifier("player-settings")
-        PlayerLabelButton(title: "Bloquear", symbol: "lock") { lock() }
-            .accessibilityIdentifier("player-lock")
-        if pip.isPossible { PlayerLabelButton(title: "Ventana", symbol: "pip.enter") { pip.toggle() } }
-        if canHandOffToTV(model) {
-            PlayerLabelButton(title: "En la TV", symbol: "tv", accessibility: "Ver en la TV") { Task { await continueOnTV() } }
-        }
-        if canDownload { downloadButton() }
     }
 
     /// Retroceder, el botón grande y adelantar (solo cuando ya hay video: mientras busca fuente no hacen nada).
@@ -1056,25 +1042,33 @@ struct PlayerScreen: View {
                     .padding(.horizontal, DS.Remote.playhead / 2)
                     .scareWarning(position: model.snapshot.position, scares: scares, enabled: scareWarnings && model.snapshot.state == .playing)
             }
-            // La escena sigue al dedo mientras arrastras (antes solo cambiaba al soltar).
-            Slider(value: Binding(get: { shown }, set: { scrubbing = $0; model.scrub(to: $0) }), in: 0...duration) { editing in
-                if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde
-                if let target = scrubbing { pendingSeek = target; scrubbing = nil; Task { await model.seek(to: target) } }
-                pulse()
-            }
-            .tint(DS.accent)   // el avance, en el acento (como en toda la app)
-            .accessibilityLabel(Text("Avance")).accessibilityValue(Text(verbatim: "\(clock(shown)) / \(clock(duration))"))
-            // Con VoiceOver, deslizar arriba/abajo no llama a `onEditingChanged`: salta 10 s como los botones.
-            .accessibilityAdjustableAction { d in
-                Task { await model.skip(d == .increment ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
-            }
-            HStack {
-                Text(verbatim: clock(shown)).recipe(.data)
-                Spacer()
+            // Las horas a los lados de la barra fina (como en horizontal); la escena sigue al dedo mientras arrastras.
+            HStack(spacing: DS.Space.s3) {
+                Text(verbatim: clock(shown)).recipe(.data).monospacedDigit().fixedSize()
+                PlayerScrubBar(value: shown, duration: duration, marks: skipMarks(model),
+                               change: { scrubbing = $0; model.scrub(to: $0) },
+                               editing: { editing in
+                                   if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde
+                                   if let target = scrubbing { pendingSeek = target; scrubbing = nil; Task { await model.seek(to: target) } }
+                                   pulse()
+                               })
+                    .accessibilityElement()
+                    .accessibilityLabel(Text("Avance")).accessibilityValue(Text(verbatim: "\(clock(shown)) / \(clock(duration))"))
+                    // Con VoiceOver, deslizar arriba/abajo salta 10 s como los botones.
+                    .accessibilityAdjustableAction { d in
+                        Task { await model.skip(d == .increment ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
+                    }
+                    .accessibilityIdentifier("player-scrub")
                 // Lo que falta (sin la hora a la que terminas: no la querías).
-                Text(verbatim: "−\(clock(max(0, duration - shown)))").recipe(.data)
+                Text(verbatim: "−\(clock(max(0, duration - shown)))").recipe(.data).monospacedDigit().fixedSize()
             }
         }
+    }
+
+    /// La intro, el resumen y los créditos (IntroDB), marcados en la barra.
+    private func skipMarks(_ model: PlayerModel) -> [ClosedRange<Double>] {
+        guard let segments = model.segments else { return [] }
+        return [segments.recap, segments.intro, segments.credits].compactMap { $0 }
     }
 
     private func clock(_ seconds: Double) -> String {

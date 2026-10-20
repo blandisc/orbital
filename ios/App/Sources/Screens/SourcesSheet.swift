@@ -170,16 +170,14 @@ struct SourceRowView: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             Text(row.headline).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
             if row.recommended { Text("La elegimos por tu idioma, la calidad y el tamaño").recipe(.caption) }
-            // Las que no caben se deslizan de lado (dentro del renglón, hasta su orilla).
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: DS.Space.s1) {
-                    if row.recommended { DSChip(text: "Recomendada", tone: .good) }
-                    if row.bestToSave { DSChip(text: "Ligera para guardar", tone: .good) }
-                    if row.cached { DSChip(text: "Al instante", tone: .good) }
-                    if let gb = row.sizeGB { DSChipText(text: gb >= 1 ? String(format: "%.1f GB", gb) : String(format: "%.0f MB", gb * 1000), tone: row.heavy ? .warn : .normal) }
-                    QualityBadges(items: QualityBadges.items(resolution: row.resolution, hdr: row.hdr, audio: row.audio))
-                    ForEach(row.tags, id: \.self) { DSChipText(text: $0) }
-                }
+            // Las que no caben pasan al siguiente renglón (antes se deslizaban de lado y la última quedaba cortada).
+            FlowChips(spacing: DS.Space.s1) {
+                if row.recommended { DSChip(text: "Recomendada", tone: .good) }
+                if row.bestToSave { DSChip(text: "Ligera para guardar", tone: .good) }
+                if row.cached { DSChip(text: "Al instante", tone: .good) }
+                if let gb = row.sizeGB { DSChipText(text: gb >= 1 ? String(format: "%.1f GB", gb) : String(format: "%.0f MB", gb * 1000), tone: row.heavy ? .warn : .normal) }
+                ForEach(QualityBadges.items(resolution: row.resolution, hdr: row.hdr, audio: row.audio), id: \.self) { QualityBadges(items: [$0]) }
+                ForEach(row.tags, id: \.self) { DSChipText(text: $0) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
