@@ -92,8 +92,6 @@ struct PlayerScreen: View {
     @State private var panelPage: VideoSettingsPanel.Page = .hub
     @State private var zoomToastTask: Task<Void, Never>?
     /// Cuántas veces se ha visto «Arrastra el video…» (se deja de decir después de unas pocas).
-    @AppStorage("player-drag-hint-count") private var dragHintCount = 0
-    @State private var showsDragHint = false
 
     // MARK: gestos como Infuse (brillo, volumen, buscar arrastrando, 2×)
     @State private var dragAxis: GestureAxis = .undecided
@@ -176,11 +174,13 @@ struct PlayerScreen: View {
             }
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
-            if controlsVisible && !locked && !panel && !failed(model) && !subtitleDock { controls(model).transition(.opacity) }
+            let controlsShown = controlsVisible && !locked && !panel && !failed(model) && !subtitleDock
+            if controlsShown { controls(model).transition(.opacity) }
             if subtitleDock && !locked && !panel { subtitleDockLayer(model).transition(.move(edge: .bottom).combined(with: .opacity)) }
             // «Saltar intro» no depende de los controles (se esconden a los pocos segundos y con ellos se iba el botón):
-            // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse.
-            else if !locked && !panel && model.skipIntroTo != nil {
+            // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse. Con los controles a la
+            // vista (en pausa, o con la ventana de PiP afuera) ya va dentro de ellos: antes salía dos veces.
+            else if !controlsShown && !locked && !panel && model.skipIntroTo != nil {
                 VStack { Spacer(); skipIntro(model) }.padding(landscape ? DS.Space.s6 : DS.Space.gutter).transition(.opacity)
             }
             // Probando subtítulos (elegidos en el panel): la tira al pie del video (en vertical nunca tapa los controles,
@@ -223,8 +223,6 @@ struct PlayerScreen: View {
         .animation(DS.Motion.base(reduceMotion), value: dragAxis)
         .task {
             // Abre como tienes el teléfono (Los Simpson, siempre vertical); boca arriba o sin saberlo, horizontal.
-            showsDragHint = dragHintCount < DS.PlayerPanel.dragHintTimes
-            if showsDragHint { dragHintCount += 1 }
             #if DEBUG
             let startPortrait = request.startPortrait || Demo.playerPortrait
             #else
@@ -620,13 +618,6 @@ struct PlayerScreen: View {
                         LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     }
                     topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
-                    // Que se puede arrastrar: una barrita como la de las hojas de iOS, pegada al pie del video (siempre que haya
-                    // controles; el letrero de abajo solo sale las primeras veces).
-                    if !fillsPortrait {
-                        Capsule().fill(DS.textMuted).frame(width: DS.PlayerPanel.dragGrabber.width, height: DS.PlayerPanel.dragGrabber.height)
-                            .offset(y: rect.maxY + DS.Space.s1)
-                            .allowsHitTesting(false).accessibilityHidden(true)
-                    }
                     VStack(spacing: DS.Space.s5) {
                         // «Siguiente episodio» entre el video y la barra (antes tapaba los controles).
                         if let up = model.upNext, !locked { upNextCard(model, up) }
@@ -634,9 +625,13 @@ struct PlayerScreen: View {
                         if model.snapshot.duration > 0 { scrubber(model) }
                         if model.phase != .preparing { transport(model) }
                         HStack(spacing: DS.Space.s2) { actions(model) }
-                        // Cómo mover el video: solo las primeras veces que abres el reproductor.
-                        if showsDragHint && !fillsPortrait {
-                            Label("Arrastra el video para subirlo o bajarlo", systemImage: "arrow.up.and.down").recipe(.caption, color: DS.textFaint)
+                        // Cómo mover el video, dicho con palabras y siempre que estén los controles (la barrita pegada al video no
+                        // se entendía): abajo de todo, separado de los botones.
+                        if !fillsPortrait {
+                            Label("Arrastra el video para subirlo o bajarlo", systemImage: "arrow.up.and.down")
+                                .recipe(.footnote, color: DS.textMuted)
+                                .padding(.top, DS.Space.s4)
+                                .accessibilityIdentifier("player-drag-hint")
                         }
                     }
                     .padding(.horizontal, DS.Space.gutter)

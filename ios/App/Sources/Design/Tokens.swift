@@ -290,8 +290,6 @@ enum DS {
     enum PlayerPanel {
         /// Subtítulos rápidos: ancho máximo del panel (horizontal) y hasta dónde puede bajar su borde de arriba (vertical).
         static let dockWidth: CGFloat = 560, dockPortraitMaxTop: CGFloat = 0.55
-        /// La barrita bajo el video en vertical que dice que se puede arrastrar.
-        static let dragGrabber = CGSize(width: 36, height: 5)
         /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).
         static let portraitFillControlsShare: CGFloat = 0.3
         /// El candado de «Pantalla bloqueada» entra creciendo desde este tamaño.
@@ -320,8 +318,6 @@ enum DS {
         static let upNextThumb: CGFloat = 96, ring: CGFloat = 22, ringWidth: CGFloat = 2.5
         /// El degradado oscuro de arriba (detrás del nombre y el episodio), para leerlos sobre un video claro.
         static let topScrimHeight: CGFloat = 170
-        /// Cuántas veces se enseña «Arrastra el video para subirlo o bajarlo» antes de dejar de decirlo.
-        static let dragHintTimes = 3
     }
 
     /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.
