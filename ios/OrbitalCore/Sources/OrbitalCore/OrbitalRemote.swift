@@ -11,7 +11,7 @@ public struct OrbitalRemote: Sendable {
             switch self {
             case .notConfigured: "Conecta tu Orbital en Ajustes (la dirección y el token)."
             case .badToken: "Tu Orbital no aceptó el token. Revísalo en Ajustes."
-            case .unreachable: "No encontré tu Orbital. ¿Está prendida la consola y el túnel?"
+            case .unreachable: "Tu Orbital no contesta. ¿Está prendida la consola?"
             case .refused(let message): message
             case .outdated: "Actualiza tu Orbital para usar el control completo."
             }

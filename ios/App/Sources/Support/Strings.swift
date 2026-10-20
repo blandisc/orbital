@@ -24,7 +24,8 @@ enum Strings {
     /// Un texto que el modelo arma en español (un error, un aviso) en el idioma de la app. Los fijos son su clave; los que
     /// llevan datos («No pude marcarlo: %@», «La descarga falló (código %@).») se reconocen por la forma de su clave en el
     /// catálogo y se vuelven a armar con la traducción (y lo de adentro, también traducido si es otro de estos textos).
-    static func message(_ text: String, language: String) -> String {
+    static func message(_ raw: String, language: String) -> String {
+        let text = humanize(raw)
         guard !language.hasPrefix("es") else { return text }
         let direct = tr(text, language: language)
         if direct != text { return direct }
@@ -37,6 +38,9 @@ enum Strings {
         }
         return text
     }
+
+    /// Lo técnico no llega a la pantalla (ver `UserMessages.humanize`).
+    static func humanize(_ text: String) -> String { UserMessages.humanize(text) }
 
     /// Cuántas letras propias necesita una clave con datos para reconocer un mensaje por su forma.
     private static let minFormLetters = 10
