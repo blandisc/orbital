@@ -83,13 +83,30 @@ public final class TitleModel: ObservableModel {
     }
 
     private func applyDownloads(_ items: [DownloadItem]) {
-        let mine = items.filter { $0.metaID == metaID }
-        let states = Dictionary(uniqueKeysWithValues: mine.map { ($0.videoID, $0.state) })
-        let progress = Dictionary(uniqueKeysWithValues: mine.compactMap { item in item.progress.map { (item.videoID, $0) } })
+        // Puede haber dos versiones del mismo video («Bajar también esta»): por video se enseña la que más importa (la que
+        // está bajando antes que la terminada). Antes se armaba con claves únicas y con dos versiones la app se cerraba.
+        var chosen: [String: DownloadItem] = [:]
+        for item in items where item.metaID == metaID {
+            if let current = chosen[item.videoID], Self.rank(current.state) <= Self.rank(item.state) { continue }
+            chosen[item.videoID] = item
+        }
+        let states = chosen.mapValues(\.state)
+        let progress = chosen.compactMapValues(\.progress)
         guard states != downloadStates || progress != downloadProgress else { return }
         let stateChanged = states != downloadStates
         downloadStates = states; downloadProgress = progress
         if stateChanged { buildRows() } else { changed() }
+    }
+
+    /// Qué versión de un video se enseña en la ficha: la que bajando, luego en cola, en pausa, lista y, al final, la fallida.
+    static func rank(_ state: DownloadState) -> Int {
+        switch state {
+        case .downloading: 0
+        case .queued: 1
+        case .paused: 2
+        case .done: 3
+        case .failed: 4
+        }
     }
 
     public init(_ services: Services, kind: String, metaID: String, hint: (title: String, poster: String?)? = nil) {

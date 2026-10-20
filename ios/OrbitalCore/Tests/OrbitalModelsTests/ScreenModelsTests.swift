@@ -267,6 +267,26 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(title.rows.first { $0.id == "tt0386676:1:3" }?.download, .downloading)
     }
 
+    /// «Bajar también esta»: dos versiones del mismo episodio. La ficha que las sigue no se cierra (antes armaba un
+    /// diccionario con claves únicas por video y la app tronaba).
+    func testTwoVersionsOfTheSameVideoDoNotCrashTheTitle() async throws {
+        let rig = try titleRig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A3.json"] = ["streams": [
+            ["name": "T\n1080p [RD+]", "title": "Show S01E03 1080p WEB-DL\n💾 0.5 GB", "url": "https://rd.example/one.mkv"]]]
+        let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await title.load()
+        let following = Task { await title.followDownloads() }
+        defer { following.cancel() }
+        let first = await title.download(["tt0386676:1:3"])
+        XCTAssertEqual(first, .queued(1))
+        let second = await title.download(["tt0386676:1:3"], keepBoth: true)
+        XCTAssertEqual(second, .queued(1))
+        try await Task.sleep(nanoseconds: 100_000_000)
+        let all = await rig.services.downloads.all
+        XCTAssertEqual(all.filter { $0.videoID == "tt0386676:1:3" }.count, 2)
+        XCTAssertNotNil(title.downloadState("tt0386676:1:3"))
+    }
+
     func testDownloadWithoutSourcesOrWithoutSpace() async throws {
         let rig = try titleRig()
         let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")

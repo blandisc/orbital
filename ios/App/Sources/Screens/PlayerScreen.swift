@@ -195,7 +195,8 @@ struct PlayerScreen: View {
             }
             // Bloqueado no se ve (ni se toca): si llega a cero, pasa solo al siguiente. En vertical va entre el video y la barra
             // (dentro de los controles, o sola si están escondidos); en horizontal, abajo a la derecha sobre la barra.
-            if let up = model.upNext, !panel, !locked {
+            // Con el panel de subtítulos abierto, tampoco: se encimaba sobre él (sale al cerrarlo, si aún falta).
+            if let up = model.upNext, !panel, !locked, !subtitleDock {
                 if landscape {
                     VStack { Spacer(); HStack { Spacer(); upNextCard(model, up) } }
                         .padding(.horizontal, DS.Space.s6)

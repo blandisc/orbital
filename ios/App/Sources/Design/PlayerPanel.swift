@@ -701,7 +701,7 @@ struct SubtitleDock: View {
                     doneButton
                 }
             }
-            HStack(spacing: DS.Space.s2) {
+            HStack(spacing: DS.Space.s1) {
                 ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected) { pickLanguage(l.id) } }
                 pill(Text("Otro…"), selected: false, action: otherLanguage).accessibilityIdentifier("subtitle-dock-other")
                 if compact { doneButton }
@@ -870,8 +870,11 @@ struct SubtitleDock: View {
 
     private func pill(_ title: Text, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            title.font(DS.TextRecipe.footnote.font.weight(.semibold)).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            title.font(DS.TextRecipe.footnote.font.weight(.semibold)).lineLimit(1).fixedSize()
                 .foregroundStyle(selected ? DS.onPrimary : DS.text)
+                // Cada cápsula mide lo de su nombre más aire a los lados (antes todas iguales: «Apagados» quedaba justo o se
+                // encogía); lo que sobra se reparte.
+                .padding(.horizontal, DS.Space.s3)
                 .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
                 .background(selected ? DS.primary : DS.fill, in: Capsule())
                 .contentShape(Capsule())
