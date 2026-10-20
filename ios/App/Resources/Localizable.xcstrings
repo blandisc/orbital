@@ -8438,6 +8438,17 @@
         }
       }
     },
+    "Real-Debrid aún no lo tiene. Los estrenos suelen aparecer unas horas después.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't have it yet. New releases usually show up a few hours later."
+          }
+        }
+      }
+    },
     "Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.": {
       "extractionState": "manual",
       "localizations": {
@@ -9461,6 +9472,17 @@
         }
       }
     },
+    "Sin fuentes por ahora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No sources yet"
+          }
+        }
+      }
+    },
     "Sin lo que ya vi": {
       "extractionState": "manual",
       "localizations": {
@@ -10150,6 +10172,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nowhere to watch it yet"
+          }
+        }
+      }
+    },
+    "Todavía no sale": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not out yet"
           }
         }
       }

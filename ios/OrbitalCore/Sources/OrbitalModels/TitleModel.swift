@@ -14,7 +14,12 @@ public struct EpisodeRow: Equatable, Identifiable {
     public var timeLeft: String
     public var leftMinutes: Int
     public var download: DownloadState?
+    /// Todavía no sale: cuándo (nil = ya salió o no se sabe). Se ve con su fecha y no se puede reproducir ni bajar.
+    public var airs: Date? = nil
 }
+
+/// Lo que se sabe de las fuentes del video de «Ver» antes de abrir el reproductor.
+public enum SourceCheck: Equatable, Sendable { case unknown, available, none, offline }
 
 /// La ficha de una película o serie: datos en tu idioma, temporadas y episodios con su estado (visto, a medias,
 /// descargado), Mi lista (Stremio), watchlist (Trakt) y las acciones de ver y descargar.
@@ -51,6 +56,8 @@ public final class TitleModel: ObservableModel {
     public private(set) var extras: TitleExtras? { didSet { changed() } }
     /// «Lo mejor disponible» entre las fuentes del episodio o película que toca (como el encabezado de Infuse).
     public private(set) var bestSource: Source? { didSet { changed() } }
+    /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
+    public private(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
     /// La calificación de Trakt (0–10), si alguien votó.
     public private(set) var traktRating: Double? { didSet { changed() } }
 
@@ -136,8 +143,14 @@ public final class TitleModel: ObservableModel {
     public func loadBestSource() async {
         guard let videoID = continueVideoID else { return }
         let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings).prefs
-        guard let found = try? await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch), !Task.isCancelled else { return }
-        bestSource = Source.best(found)
+        do {
+            let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
+            guard !Task.isCancelled else { return }
+            bestSource = Source.best(found)
+            sourceCheck = found.isEmpty ? .none : .available
+        } catch {
+            if !Task.isCancelled { sourceCheck = error is StreamFinderError ? .offline : .unknown }
+        }
     }
 
     /// Un título de TMDB (recomendación, saga, filmografía) → su id de IMDb, para abrir su ficha.
@@ -196,7 +209,8 @@ public final class TitleModel: ObservableModel {
             return EpisodeRow(id: ep.id, season: seasonNumber, number: ep.episode, title: ep.title, hasTitle: ep.hasTitle, overview: ep.overview, thumbnail: ep.thumbnail,
                               watched: watched.contains(ep.id), progress: ongoing ? min(1, Double(offset) / Double(duration)) : nil,
                               timeLeft: ongoing ? PlaybackRules.timeLeft(Double(duration - offset) / 1000) : "",
-                              leftMinutes: ongoing ? PlaybackRules.minutesLeft(Double(duration - offset) / 1000) : 0, download: downloadStates[ep.id])
+                              leftMinutes: ongoing ? PlaybackRules.minutesLeft(Double(duration - offset) / 1000) : 0, download: downloadStates[ep.id],
+                              airs: Self.airDate(ep.released))
         }
     }
 
@@ -248,6 +262,18 @@ public final class TitleModel: ObservableModel {
         return PlayRequest(kind: kind, metaID: metaID, videoID: video, originalTitle: originalTitle, displayTitle: title, episodeLabel: label,
                            poster: poster, year: info.year, meta: meta, fromStart: fromStart)
     }
+
+    /// La fecha de estreno si todavía no llega («2026-10-23T02:00:00.000Z»).
+    static func airDate(_ released: String?, now: Date = Date()) -> Date? {
+        guard let released else { return nil }
+        let iso = ISO8601DateFormatter(); iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        guard let date = iso.date(from: released) ?? plain.date(from: released), date > now else { return nil }
+        return date
+    }
+
+    /// El video de «Ver» todavía no sale: cuándo.
+    public var continueAirs: Date? { continueVideoID.flatMap { episode($0)?.1.released }.flatMap { Self.airDate($0) } }
 
     private func episode(_ id: String) -> (Int, Episode)? {
         for season in seasons { if let ep = season.episodes.first(where: { $0.id == id }) { return (season.season, ep) } }

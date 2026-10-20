@@ -574,6 +574,14 @@ final class CatalogAndSourcesTests: XCTestCase {
         XCTAssertEqual(second.engine.loads.first?.url.absoluteString, "https://rd.example/other.mkv")
     }
 
+    func testUnairedEpisodesKnowTheirDate() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        XCTAssertNotNil(TitleModel.airDate("2030-01-01T02:00:00.000Z", now: now), "todavía no sale")
+        XCTAssertNil(TitleModel.airDate("2020-01-01T02:00:00.000Z", now: now), "ya salió")
+        XCTAssertNotNil(TitleModel.airDate("2030-01-01T02:00:00Z", now: now), "sin milisegundos también")
+        XCTAssertNil(TitleModel.airDate(nil, now: now))
+    }
+
     func testDownloadSpeedAndTimeLeft() throws {
         let rig = try ServicesRig()
         let model = DownloadsModel(rig.services, freeSpace: { 0 })

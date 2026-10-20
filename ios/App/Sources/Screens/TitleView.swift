@@ -183,8 +183,8 @@ struct TitleView: View {
         let label = model.continueLabel
         return VStack(spacing: DS.Space.s4) {
             VStack(spacing: DS.Space.s2) {
-                Button { start(model, videoID: nil) } label: { primaryButtonLabel(label, model) }
-                    .dsSolidPrimaryButton().disabled(model.continueVideoID == nil)
+                Button { play(model) } label: { primaryButtonLabel(label, model) }
+                    .dsSolidPrimaryButton().disabled(model.continueVideoID == nil || model.continueAirs != nil)
                     .accessibilityIdentifier("title-play")
                 // «Desde el principio» (como la TV, `core/watch.js`), discreto: solo si ibas a medias.
                 if label.isResume {
@@ -222,6 +222,10 @@ struct TitleView: View {
                     Text("Cargando")
                 }
                 .font(DS.TextRecipe.body.font.weight(.semibold))
+            } else if let airs = model.continueAirs {
+                // Todavía no sale: la fecha en lugar de «Ver» (antes abría un reproductor que fallaba).
+                Label { Text("Sale el \(airs, format: .dateTime.day().month(.wide))") } icon: { Image(systemName: "calendar") }
+                    .font(DS.TextRecipe.body.font.weight(.semibold)).lineLimit(1)
             } else {
                 Label {
                     if label.isResume, let left = Vocabulary.runtimeText(minutes: model.minutesToFinish) {
@@ -232,7 +236,10 @@ struct TitleView: View {
                 } icon: { Image(systemName: "play.fill") }
                 .font(DS.TextRecipe.body.font.weight(.semibold))
                 .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
-                if !quality.isEmpty {
+                if model.sourceCheck == .none || model.sourceCheck == .offline {
+                    (model.sourceCheck == .none ? Text("Sin fuentes por ahora") : Text("Sin conexión"))
+                        .font(DS.TextRecipe.caption.font.weight(.medium)).opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1)
+                } else if !quality.isEmpty {
                     Text(verbatim: quality.joined(separator: " · ")).font(DS.TextRecipe.caption.font.weight(.medium))
                         .opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                         .accessibilityLabel(Text("Lo mejor disponible: \(quality.joined(separator: ", "))"))
@@ -388,7 +395,7 @@ struct TitleView: View {
         }
         LazyVStack(spacing: 0) {   // perezosa: una serie larga no arma (ni pide imágenes de) todos sus episodios a la vez
             ForEach(model.rows) { row in
-                EpisodeRowView(row: row, play: { start(model, videoID: row.id) }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
+                EpisodeRowView(row: row, play: { if row.airs == nil { start(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
                                markWatched: { Task { await model.markWatched(row.id) } }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
                                resumeDownload: { Task { await model.resumeDownload(row.id) } },
                                downloadFraction: model.downloadFraction(row.id),
@@ -548,6 +555,15 @@ struct TitleView: View {
     }
 
     // MARK: acciones
+    /// «Ver»: si ya se sabe que no hay fuentes (o no hay red), lo dice aquí en vez de abrir un reproductor que va a fallar.
+    private func play(_ model: TitleModel) {
+        switch model.sourceCheck {
+        case .none: env.notify("Real-Debrid aún no lo tiene. Los estrenos suelen aparecer unas horas después.", tone: .info)
+        case .offline: env.notify("Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet.")
+        default: start(model, videoID: nil)
+        }
+    }
+
     private func start(_ model: TitleModel, videoID: String?, source: Source? = nil, fromStart: Bool = false) {
         guard var request = model.playRequest(videoID: videoID) else { return }
         request.sourceIndex = source?.index
@@ -638,24 +654,29 @@ struct EpisodeRowView: View {
             stateIcon.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
         }
         .padding(.vertical, DS.Space.s3)
+        .opacity(row.airs == nil ? 1 : DesignTokens.Opacity.faint)
         .contextMenu {
+            if row.airs == nil {
             Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
             Button("Descargar", systemImage: "arrow.down.circle", action: download)
             Button("Elegir la fuente…", systemImage: "list.bullet", action: chooseSource)
             if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
+            }
         }
     }
 
-    private var hasStatus: Bool { row.watched || row.leftMinutes > 0 || row.download == .done }
+    private var hasStatus: Bool { row.airs != nil || row.watched || row.leftMinutes > 0 || row.download == .done }
 
     @ViewBuilder private var status: some View {
-        if row.watched { Text("Visto") }
+        if let airs = row.airs { Text("Sale el \(airs, format: .dateTime.day().month(.abbreviated))") }
+        else if row.watched { Text("Visto") }
         else if row.leftMinutes > 0 { Text(timeLeftText(minutes: row.leftMinutes)) }
         else if row.download == .done { Text("Descargado") }
     }
 
     @ViewBuilder private var stateIcon: some View {
-        if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Visto")) }
+        if row.airs != nil { Image(systemName: "calendar").foregroundStyle(DS.textFaint).accessibilityLabel(Text("Todavía no sale")) }
+        else if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Visto")) }
         else if row.download == .done { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Descargado")) }
         else if row.download == .downloading || row.download == .queued {
             // El mismo anillo que el círculo de Descargar de la ficha.
