@@ -147,6 +147,8 @@ struct SourceRowView: View {
                 if !featured {
                     round("play.fill", label: "Ver", action: watch)
                     if let download { round("arrow.down", label: "Descargar", action: download).accessibilityIdentifier("source-download") }
+                    // Sin ↓ (una lista HLS) se aparta su lugar: el ▶ queda en la misma columna que el de las demás filas.
+                    else { Color.clear.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).accessibilityHidden(true) }
                 }
             }
             if featured {

@@ -153,7 +153,9 @@ struct ArtTile: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            Group {
+            // El arte va dentro de un `overlay` de un `Color.clear`: una imagen `scaledToFill` se pide su ancho de alto × proporción
+            // y empujaba la columna más allá del margen (en un iPhone de 375 pt las dos columnas se salían y se pegaban entre sí).
+            Color.clear.overlay {
                 if let asset { Image(asset).resizable().scaledToFill() }
                 else { PosterView(url: art, title: "", aspect: nil, bleed: true, maxPoints: DS.Image.card) }
             }
