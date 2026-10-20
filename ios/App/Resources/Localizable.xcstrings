@@ -5721,6 +5721,17 @@
         }
       }
     },
+    "Ligera para guardar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light to save"
+          }
+        }
+      }
+    },
     "Ligero": {
       "extractionState": "manual",
       "localizations": {
@@ -10876,6 +10887,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tap to finish"
+          }
+        }
+      }
+    },
+    "Toca una para verla · ↓ para guardarla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap one to watch · ↓ to save it"
           }
         }
       }

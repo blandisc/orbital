@@ -91,7 +91,7 @@ struct TitleView: View {
             await tint.load(model.background ?? model.poster)
         }
         .sheet(item: $sourcesFor) { target in
-            SourcesSheet(model: model, videoID: target.videoID, purpose: target.purpose, choose: { source, purpose in
+            SourcesSheet(model: model, videoID: target.videoID, choose: { source, purpose in
                 sourcesFor = nil
                 handle(source: source, videoID: target.videoID, purpose: purpose, model: model)   // lo que quedó en el selector de la hoja
             }, infuse: { source in

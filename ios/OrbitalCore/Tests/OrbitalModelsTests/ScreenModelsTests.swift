@@ -564,19 +564,22 @@ final class CatalogAndSourcesTests: XCTestCase {
         XCTAssertNotNil(none.error)
     }
 
-    func testSourcesAreOrderedDifferentlyForWatchingAndDownloading() async throws {
+    /// Una sola lista (ordenada para ver) y en ella se marca la que más conviene guardar.
+    func testOneSourceListMarksTheBestToSave() async throws {
         let rig = try ServicesRig()
         rig.http.json["https://a.example/stream/movie/tt1.json"] = ["streams": [
             ["name": "T\n2160p [RD+]", "title": "Peli 2160p REMUX HDR\n👤 200 💾 40 GB 🇬🇧", "url": "https://rd.example/big"],
-            ["name": "T\n1080p [RD+]", "title": "Peli 1080p WEB-DL x265\n👤 100 💾 2 GB 🇬🇧", "url": "https://rd.example/small"]]]
+            ["name": "T\n1080p [RD+]", "title": "Peli 1080p WEB-DL x265\n👤 100 💾 2 GB 🇬🇧", "url": "https://rd.example/small"],
+            ["name": "T\n1080p [RD+]", "title": "Peli 1080p HLS\n👤 100 💾 2 GB 🇬🇧", "url": "https://rd.example/list.m3u8"]]]
         rig.services.settings.update { $0.audio = "en"; $0.quality = "4K" }
         let model = SourcesModel(rig.services, kind: "movie", metaID: "tt1", videoID: "tt1")
-        await model.load(.watch)
+        await model.load()
         XCTAssertTrue(model.rows[0].recommended)
-        XCTAssertEqual(model.rows[0].sizeGB ?? 0, 40, accuracy: 0.01)
-        XCTAssertEqual(model.source(model.rows[0].id)?.playbackURL?.absoluteString, "https://rd.example/big")
-        await model.load(.download)
-        XCTAssertEqual(model.source(model.rows[0].id)?.playbackURL?.absoluteString, "https://rd.example/small", "para guardar: 1080p moderado primero")
+        XCTAssertEqual(model.source(model.rows[0].id)?.playbackURL?.absoluteString, "https://rd.example/big", "para ver: la recomendada")
+        let save = try XCTUnwrap(model.rows.first(where: \.bestToSave))
+        XCTAssertEqual(model.source(save.id)?.playbackURL?.absoluteString, "https://rd.example/small", "para guardar: 1080p moderado")
+        XCTAssertEqual(model.rows.filter(\.bestToSave).count, 1)
+        XCTAssertFalse(model.rows.first { model.source($0.id)?.playbackURL?.pathExtension == "m3u8" }?.downloadable ?? true, "una lista HLS no se baja")
         XCTAssertTrue(model.rows.first { $0.sizeGB == 40 }?.heavy == true, "más de 5 GB: aviso con datos móviles")
         XCTAssertFalse(model.rows.contains { $0.headline.isEmpty })
     }

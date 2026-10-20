@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Ligera para guardar": "Light to save",
+    "Toca una para verla · ↓ para guardarla": "Tap one to watch · ↓ to save it",
     "Copiar resultados": "Copy results",
     "El tope es la forma en que baja iOS en segundo plano: dentro de la app baja bastante más rápido. Eso se arregla en Orbital.": "The bottleneck is how iOS downloads in the background: inside the app it's much faster. That can be fixed in Orbital.",
     "Midiendo…": "Measuring…",

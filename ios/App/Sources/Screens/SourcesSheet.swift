@@ -2,19 +2,18 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// La lista de fuentes de Real-Debrid: «Ver» o «Descargar». La recomendada va arriba y es la que arranca sola.
+/// La lista de fuentes de Real-Debrid, una sola: en cada una se ve o se descarga, sin cambiar de pestaña. La recomendada va
+/// arriba con sus dos botones del mismo tamaño; la más ligera para guardar se marca. Mantener presionada da lo demás.
 struct SourcesSheet: View {
     @StateObject private var observer: ModelObserver<SourcesModel>
-    @State private var purpose: Purpose
-    /// La fuente elegida y para qué (Ver o Descargar, como quedó el selector de la hoja).
+    /// La fuente elegida y para qué (ver o descargar).
     let choose: (Source, Purpose) -> Void
     /// Abrir una fuente con Infuse (mantener presionada), si quien abre la hoja lo permite.
     var infuse: ((Source) -> Void)?
     @EnvironmentObject private var env: AppEnvironment
 
-    init(model: TitleModel, videoID: String, purpose: Purpose, choose: @escaping (Source, Purpose) -> Void, infuse: ((Source) -> Void)? = nil) {
+    init(model: TitleModel, videoID: String, choose: @escaping (Source, Purpose) -> Void, infuse: ((Source) -> Void)? = nil) {
         _observer = StateObject(wrappedValue: ModelObserver(SourcesModel(AppEnvironment.shared.services, kind: model.kind, metaID: model.metaID, videoID: videoID)))
-        _purpose = State(initialValue: purpose)
         self.choose = choose
         self.infuse = infuse
     }
@@ -27,7 +26,7 @@ struct SourcesSheet: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Fuente").recipe(.title)
-                    Text("De Real-Debrid · por calidad, la recomendada primero").recipe(.footnote)
+                    Text("Toca una para verla · ↓ para guardarla").recipe(.footnote)
                 }
                 Spacer()
                 // Qué quiere decir cada etiqueta (4K, DV, REMUX, Al instante…).
@@ -37,13 +36,12 @@ struct SourcesSheet: View {
                     .accessibilityIdentifier("sources-info")
             }
             .padding(.horizontal, DS.Space.s4)
-            DSSegmented(options: [(Purpose.watch, "Ver"), (.download, "Descargar")], selection: $purpose).padding(.horizontal, DS.Space.s4)
             ScrollView {
                 VStack(spacing: DS.Space.s2) {
                     if model.isLoading { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s6) }
                     if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
                     // La recomendada arriba, con su porqué; luego el resto agrupado por calidad (4K, 1080p, 720p, otras).
-                    if let best = model.rows.first(where: \.recommended) { sourceRow(best, model) }
+                    if let best = model.rows.first(where: \.recommended) { recommendedCard(best, model) }
                     ForEach(groups(model.rows.filter { !$0.recommended }), id: \.0) { group, rows in
                         Text(LocalizedStringKey(group)).recipe(.caption, color: DS.textFaint).fontWeight(.semibold)
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.top, DS.Space.s2)
@@ -59,20 +57,31 @@ struct SourcesSheet: View {
             }
         }
         .padding(.vertical, DS.Space.s4)
-        .task(id: purpose) { await model.load(purpose, onCellular: env.connectivity.isCellular) }
+        .task { await model.load(onCellular: env.connectivity.isCellular) }
         .sheet(isPresented: $showsGlossary) { SourcesGlossary().fittedSheet().presentationDragIndicator(.visible) }
     }
 
-    /// Tocar elige (para lo que se cargó la lista: `model.purpose`, no la pestaña recién tocada que aún carga); mantener
-    /// presionada da el nombre del archivo y las otras formas de usarla.
+    /// La recomendada: sus datos y «Ver» / «Descargar», del mismo tamaño.
+    private func recommendedCard(_ row: SourceRow, _ model: SourcesModel) -> some View {
+        SourceRowView(row: row, watch: { pick(row, .watch, model) }, download: row.downloadable ? { pick(row, .download, model) } : nil, featured: true)
+            .contextMenu { menu(row, model) }
+    }
+
+    /// Tocar la fuente la pone; ↓ la baja; mantener presionada da el nombre del archivo y las otras formas de usarla.
     private func sourceRow(_ row: SourceRow, _ model: SourcesModel) -> some View {
-        SourceRowView(row: row, purpose: purpose) { if let source = model.source(row.id) { choose(source, model.purpose) } }
-            .contextMenu {
-                if !row.release.isEmpty { Text(verbatim: row.release) }
-                Button("Ver aquí", systemImage: "play.fill") { if let s = model.source(row.id) { choose(s, .watch) } }
-                Button("Descargar", systemImage: "arrow.down.circle") { if let s = model.source(row.id) { choose(s, .download) } }
-                if let infuse { Button("Abrir con Infuse", systemImage: "arrow.up.forward.app") { if let s = model.source(row.id) { infuse(s) } } }
-            }
+        SourceRowView(row: row, watch: { pick(row, .watch, model) }, download: row.downloadable ? { pick(row, .download, model) } : nil)
+            .contextMenu { menu(row, model) }
+    }
+
+    private func pick(_ row: SourceRow, _ purpose: Purpose, _ model: SourcesModel) {
+        if let source = model.source(row.id) { choose(source, purpose) }
+    }
+
+    @ViewBuilder private func menu(_ row: SourceRow, _ model: SourcesModel) -> some View {
+        if !row.release.isEmpty { Text(verbatim: row.release) }
+        Button("Ver aquí", systemImage: "play.fill") { pick(row, .watch, model) }
+        if row.downloadable { Button("Descargar", systemImage: "arrow.down.circle") { pick(row, .download, model) } }
+        if let infuse { Button("Abrir con Infuse", systemImage: "arrow.up.forward.app") { if let s = model.source(row.id) { infuse(s) } } }
     }
 
     /// Los grupos de calidad en orden, sin los vacíos.
@@ -118,38 +127,71 @@ struct SourcesGlossary: View {
 
 struct SourceRowView: View {
     let row: SourceRow
-    var purpose: Purpose = .watch
-    let choose: () -> Void
+    let watch: () -> Void
+    /// nil: no se puede bajar (una lista HLS).
+    let download: (() -> Void)?
+    /// La recomendada: «Ver» y «Descargar» abajo, del mismo tamaño (las demás: ▶ y ↓ a la derecha).
+    var featured = false
     @State private var taps = 0
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-        HStack(alignment: .center, spacing: DS.Space.s3) {
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                Text(row.headline).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
-                if row.recommended { Text("La elegimos por tu idioma, la calidad y el tamaño").recipe(.caption) }
-                // Las que no caben se deslizan de lado (dentro del renglón, hasta su orilla).
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: DS.Space.s1) {
-                        if row.recommended { DSChip(text: "Recomendada", tone: .good) }
-                        if row.cached { DSChip(text: "Al instante", tone: .good) }
-                        if let gb = row.sizeGB { DSChipText(text: gb >= 1 ? String(format: "%.1f GB", gb) : String(format: "%.0f MB", gb * 1000), tone: row.heavy ? .warn : .normal) }
-                        QualityBadges(items: QualityBadges.items(resolution: row.resolution, hdr: row.hdr, audio: row.audio))
-                        ForEach(row.tags, id: \.self) { DSChipText(text: $0) }
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            HStack(alignment: .center, spacing: DS.Space.s2) {
+                info
+                    .contentShape(Rectangle())
+                    .onTapGesture { taps += 1; watch() }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction { watch() }
+                if !featured {
+                    round("play.fill", label: "Ver", action: watch)
+                    if let download { round("arrow.down", label: "Descargar", action: download).accessibilityIdentifier("source-download") }
+                }
+            }
+            if featured {
+                HStack(spacing: DS.Space.s2) {
+                    Button(action: watch) { Label("Ver", systemImage: "play.fill").frame(maxWidth: .infinity) }.dsPrimaryButton().controlSize(.large)
+                    if let download {
+                        Button(action: download) { Label("Descargar", systemImage: "arrow.down").frame(maxWidth: .infinity) }
+                            .buttonStyle(.glass).controlSize(.large)
+                            .accessibilityIdentifier("source-download")
                     }
                 }
             }
-            Image(systemName: purpose == .download ? "arrow.down.circle" : "play.circle.fill")
-                .font(DS.TextRecipe.section.font).foregroundStyle(row.recommended ? DS.accent : DS.textMuted)
         }
         .padding(DS.Space.s3)
-        .background(row.recommended ? DS.fillStrong : DS.fill, in: shape)
-        .overlay(shape.strokeBorder(row.recommended ? DS.accent : DS.hairline, lineWidth: DS.Size.hairline))   // dentro del borde: no se corta
-        .contentShape(shape)
-        .onTapGesture { taps += 1; choose() }
+        .background(featured ? DS.fillStrong : DS.fill, in: shape)
+        .overlay(shape.strokeBorder(featured ? DS.accent : DS.hairline, lineWidth: DS.Size.hairline))   // dentro del borde: no se corta
         .sensoryFeedback(.selection, trigger: taps)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAction { choose() }
+    }
+
+    private var info: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Text(row.headline).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
+            if row.recommended { Text("La elegimos por tu idioma, la calidad y el tamaño").recipe(.caption) }
+            // Las que no caben se deslizan de lado (dentro del renglón, hasta su orilla).
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Space.s1) {
+                    if row.recommended { DSChip(text: "Recomendada", tone: .good) }
+                    if row.bestToSave { DSChip(text: "Ligera para guardar", tone: .good) }
+                    if row.cached { DSChip(text: "Al instante", tone: .good) }
+                    if let gb = row.sizeGB { DSChipText(text: gb >= 1 ? String(format: "%.1f GB", gb) : String(format: "%.0f MB", gb * 1000), tone: row.heavy ? .warn : .normal) }
+                    QualityBadges(items: QualityBadges.items(resolution: row.resolution, hdr: row.hdr, audio: row.audio))
+                    ForEach(row.tags, id: \.self) { DSChipText(text: $0) }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func round(_ symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                .background(DS.fillStrong, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
     }
 }

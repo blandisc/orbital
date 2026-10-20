@@ -199,7 +199,7 @@ struct MiMediaTitleView: View {
                 .task { await tint.load(String(format: ForYou.metahubBackground, t.imdb)) }
                 .sheet(item: $findingSource) { missing in
                     if let tm = titleModel {
-                        SourcesSheet(model: tm, videoID: missing.id, purpose: .watch) { source, purpose in
+                        SourcesSheet(model: tm, videoID: missing.id) { source, purpose in
                             findingSource = nil
                             Task { await useSource(source, purpose: purpose, videoID: missing.id, tm) }
                         }
