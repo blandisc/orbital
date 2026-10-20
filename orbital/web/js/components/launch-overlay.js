@@ -186,7 +186,15 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
 
   // Cuando el emulador/juego toma el foco, la ventana de Orbital lo pierde. Con pantalla de carga
   // el foco puede irse al emulador mientras Orbital sigue encima: ahí no se oculta.
-  window.addEventListener("blur", () => { if (!el.hidden && !holding && !waiting) setTimeout(() => !holding && !waiting && hide(), 600); });
+  // Ya en «Listo» tampoco: el servidor pasa el juego al frente y manda a Orbital detrás, y la salida se oculta sola. Antes,
+  // xemu se llevaba el foco al aparecer su ventana, «Listo» llegaba en esos 600 ms y la pantalla de carga se desvanecía
+  // con Orbital todavía encima: se veía la biblioteca (un parpadeo) antes del juego.
+  const quiet = () => holding || waiting || el.classList.contains("launch--revealing");
+  window.addEventListener("blur", () => {
+    if (el.hidden || quiet()) return;
+    const turn = shown;
+    setTimeout(() => { if (turn === shown && !quiet()) hide(); }, 600);
+  });
 
   return {
     el, show, hold, keep, reveal, hide, status,
