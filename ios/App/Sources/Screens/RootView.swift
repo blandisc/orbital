@@ -207,9 +207,6 @@ struct MainTabs: View {
         .onChange(of: tvNow.model.game?.id) { _, id in if id != nil, Demo.isOn, Demo.open == "game" { showGame = true } }   // `-demo-open game`
         #endif
         // Se cerró un juego en la consola: su resumen.
-        .sheet(item: $ui.played) { item in
-            GameSessionSummary(item: item) { ui.played = nil }.fittedSheet().presentationDragIndicator(.visible)
-        }
         .sheet(isPresented: $showRemote) {
             RemoteSheet(tvNow: tvNow, large: $remoteLarge, onContinueHere: { now in showRemote = false; openNowPlaying(now) })
         }

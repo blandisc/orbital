@@ -69,7 +69,7 @@ struct PlayerScreen: View {
     @StateObject private var pip = PictureInPicture()
     @State private var nowPlaying = NowPlaying()
     /// En vertical, a qué altura va el video (lo mueves arrastrándolo; se recuerda) y su valor mientras arrastras.
-    @AppStorage("player-portrait-center") private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
+    @AppStorage(PlayerScreen.portraitCenterKey) private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
     @State private var portraitDrag: Double?
     @State private var portraitAtDragStart: Double = 0
     /// El zoom del video (botón de arriba y pellizco, como Infuse); se recuerda en ajustes. `zoomToast`: el aviso con su nombre.
@@ -1142,19 +1142,26 @@ struct PlayerScreen: View {
         if panel { return CGRect(x: 0, y: 0, width: size.width, height: size.height * DS.PlayerPanel.videoShare) }
         // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
-        // De orilla a orilla: el alto sale del ancho y la proporción (sin tope), salvo que no quepa en la pantalla.
-        let height = min(size.width / DS.Poster.stillAspect, size.height)
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
-        let center = size.height * (portraitDrag ?? portraitCenter)
-        let y = min(max(0, center - height / 2), max(0, size.height - height))
+        return Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter)
+    }
+
+    /// El video en vertical: de orilla a orilla, el alto sale del ancho y la proporción (sin tope, salvo que no quepa), a la
+    /// altura `center` (fracción del alto). `size` es el área segura. Lo usa también la ruleta de Los Simpson, que crece
+    /// hasta aquí para que el episodio arranque donde ya está la imagen.
+    static func portraitVideoRect(in size: CGSize, center: Double) -> CGRect {
+        let height = min(size.width / DS.Poster.stillAspect, size.height)
+        let y = min(max(0, size.height * center - height / 2), max(0, size.height - height))
         return CGRect(x: 0, y: y, width: size.width, height: height)
     }
+    /// Dónde dejaste el video en vertical (se recuerda entre videos).
+    static let portraitCenterKey = "player-portrait-center"
 
     /// Vertical con «Recortar»: el video a pantalla completa.
     private var fillsPortrait: Bool { !landscape && !panel && zoom == .fill }
 
     /// Los márgenes seguros de la ventana (el video en horizontal ignora el área segura, así que no los trae su `GeometryReader`).
-    private static var windowSafeArea: UIEdgeInsets {
+    static var windowSafeArea: UIEdgeInsets {
         UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.safeAreaInsets ?? .zero
     }
 

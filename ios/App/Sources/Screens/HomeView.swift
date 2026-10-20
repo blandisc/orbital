@@ -132,7 +132,7 @@ struct HomeView: View {
         .task(priority: .utility) {
             await env.prefetchSimpsons()
             #if DEBUG
-            if Demo.isOn, Demo.open == "simpsons" { rollingSimpsons = true }   // `-demo-open simpsons`: la ruleta sola
+            if Demo.isOn, Demo.open?.hasPrefix("simpsons") == true { rollingSimpsons = true }   // `-demo-open simpsons`: la ruleta sola
             #endif
         }
         .toolbar {

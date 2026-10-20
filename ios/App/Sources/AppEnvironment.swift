@@ -202,13 +202,8 @@ final class AppEnvironment: ObservableObject {
             case .notEnoughSpace: notify(format: "No hay espacio para descargar %@ (desde la TV)", name)
             case .other: notify(format: "No pude descargar %@ (desde la TV)", name)
             }
-        case .played(let item):
-            // El resumen de la sesión, en su hoja; un momento después, por si la hoja del juego se está cerrando (dos hojas en
-            // el mismo cambio: la segunda no salía).
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: DS.Timing.sheetHandoff)
-                self.ui.played = item
-            }
+        case .played:
+            break   // Se cerró un juego en la consola: sin resumen ni aviso (se sentía como un regaño por el tiempo jugado).
         }
     }
 
@@ -588,8 +583,6 @@ final class AppUI: ObservableObject {
     @Published var askFinished: PlayRequest?
     @Published var banner: AppEnvironment.Banner?
     @Published var handoff: AppEnvironment.TVHandoff?
-    /// Se cerró un juego en la consola: su resumen (una hoja).
-    @Published var played: OrbitalRemote.InboxItem?
     @Published var openTab: Int?
     /// El Centro de control pidió el control de tu Orbital.
     @Published var openRemote = false

@@ -614,8 +614,6 @@ enum DS {
         static let listGiveUp: UInt64 = 15_000_000_000
         /// Lo más que el pulgar espera en el destino de un salto antes de volver al avance real.
         static let seekPatience: UInt64 = 4_000_000_000
-        /// Entre que se cierra una hoja y se abre otra (el resumen del juego tras cerrar su hoja).
-        static let sheetHandoff: UInt64 = 600_000_000
         /// Cuánto espera una confirmación («¿Ver en la TV?») antes de cerrarse sola.
         static let confirm: UInt64 = 3_500_000_000
         static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)
