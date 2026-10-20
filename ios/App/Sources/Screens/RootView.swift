@@ -57,6 +57,10 @@ struct RootView: View {
             }
             .padding(.top, DS.Size.touchTarget + DS.Space.s2)
         }
+        // Los que traen botón, abajo, sobre la barra de pestañas: cambiar o deshacer sin estirar el dedo hasta arriba.
+        .overlay(alignment: .bottom) {
+            BannerView(withAction: true).padding(.bottom, DS.Size.tabBarClearance)
+        }
         .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
         .animation(DS.Motion.base(reduceMotion), value: ui.banner)
         .task {
@@ -269,9 +273,11 @@ struct MainTabs: View {
 struct BannerView: View {
     @EnvironmentObject private var env: AppEnvironment
     @ObservedObject private var ui = AppEnvironment.shared.ui
+    /// Arriba los avisos sin botón; abajo (al alcance del pulgar) los que traen uno («Guardada en Mi lista · Cambiar»).
+    var withAction = false
 
     var body: some View {
-        if let banner = ui.banner {
+        if let banner = ui.banner, (banner.action != nil) == withAction {
             Toast(symbol: symbol(banner.tone), color: color(banner.tone), title: Text(verbatim: banner.text), detail: banner.detail.map { Text(verbatim: $0) },
                   actionTitle: banner.action == nil ? nil : banner.actionTitle.map { LocalizedStringKey($0) } ?? "Ver", action: banner.action.map { a in { run(a) } },
                   dismiss: { env.banner = nil })

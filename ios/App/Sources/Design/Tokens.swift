@@ -235,13 +235,12 @@ enum DS {
         static let box: CGFloat = 32
         static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8, ringStroke: CGFloat = 2.1
         /// El anillo, un poco más tenue que el planeta.
-        static let ringOpacity: Double = 0.7
         /// La luna: su ancho, lo que sube sobre la línea de base y lo que la separa de la palabra (em).
         static let moon: CGFloat = 0.26, moonRise: CGFloat = 0.62, moonGap: CGFloat = 0.1
         /// De dónde cae la luna al aparecer (em) y lo chica que empieza.
         static let moonFromX: CGFloat = -0.9, moonFromY: CGFloat = -0.7, moonFromScale: CGFloat = 0.2
         /// «orbital»: interletrado apretado (em); la marca mide 1.7 veces la letra y va a media letra de ella.
-        static let tracking: CGFloat = -0.035, markScale: CGFloat = 1.7, markGap: CGFloat = 0.5
+        static let tracking: CGFloat = -0.035, markScale: CGFloat = 1.7, markGap: CGFloat = 0.2
         /// Al arrancar: el anillo se dibuja en este tiempo y la luna cae después (s), como en la TV (--duration-land).
         static let drawSeconds = 0.76, moonDelay = 0.76 * 1.7
         /// La letra de «orbital» (en la TV, Segoe UI Variable Display): SF Pro Rounded en negrita, del tamaño de la marca.
@@ -284,6 +283,8 @@ enum DS {
 
     /// El panel «Ajustes del video» del reproductor: a la derecha en horizontal, hoja ajustada en vertical.
     enum PlayerPanel {
+        /// Subtítulos rápidos: ancho máximo del panel (horizontal) y hasta dónde puede bajar su borde de arriba (vertical).
+        static let dockWidth: CGFloat = 560, dockPortraitMaxTop: CGFloat = 0.55
         /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).
         static let portraitFillControlsShare: CGFloat = 0.3
         /// El candado de «Pantalla bloqueada» entra creciendo desde este tamaño.
@@ -519,6 +520,7 @@ enum DS {
         /// La gota de los puntos de un carrusel: cuánto se alarga la activa y su resorte (respuesta y amortiguación).
         static let pageDotStretch: CGFloat = 2.6, pageDotSpring: Double = 0.38, pageDotDamping: Double = 0.62
         /// El logotipo arriba de Inicio (el tamaño de la letra de «orbital»).
+        static let tabBarClearance: CGFloat = 76   // lo que ocupa la barra de pestañas (los avisos de abajo van encima)
         static let headerWordmark: CGFloat = 32   // a la par del título grande de Para ti, Descargas y Buscar
         /// Lo más que se encoge un número de «Tu año» para caber en su tarjeta.
         static let statScale: CGFloat = 0.6

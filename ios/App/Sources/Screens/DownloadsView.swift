@@ -137,10 +137,18 @@ struct DownloadsView: View {
             PosterView(url: item.poster, title: item.title).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 // Dos renglones para el nombre y el estado en el suyo: con letra grande «En pausa» se caía al final de la línea.
-                Text(item.title).recipe(.cardTitle).lineLimit(2)
                 let details = [fromMedia(item), item.subtitle.isEmpty ? nil : item.subtitle, item.quality].compactMap { $0 }
-                if !details.isEmpty { DataLine(parts: details) }
-                if let status = status(item, model) { Text(verbatim: status).recipe(.data, color: item.state == .failed ? DS.danger : nil).lineLimit(2) }
+                if item.state == .downloading && !item.waitingForNetwork {
+                    // Bajando: el nombre y siempre dos renglones de datos, sin desparramarse: qué es y cuánto lleva, y la
+                    // velocidad con lo que falta (lo que no cabe se deja fuera, no se parte en más renglones).
+                    Text(item.title).recipe(.cardTitle).lineLimit(1)
+                    DataLine(parts: details + ["\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"])
+                    DataLine(parts: speedParts(item, model))
+                } else {
+                    Text(item.title).recipe(.cardTitle).lineLimit(2)
+                    if !details.isEmpty { DataLine(parts: details) }
+                    if let status = status(item, model) { Text(verbatim: status).recipe(.data, color: item.state == .failed ? DS.danger : nil).lineLimit(2) }
+                }
             }
             Spacer(minLength: DS.Space.s2)
             // El avance es el mismo anillo de la ficha y de la fila de un episodio, con pausar o reanudar adentro.
@@ -166,6 +174,19 @@ struct DownloadsView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(label))
+    }
+
+    /// «12 MB/s · faltan 3 min» (o «Calculando…» mientras se mide).
+    private func speedParts(_ item: DownloadItem, _ model: DownloadsModel) -> [String] {
+        let language = env.services.appSettings.uiLanguage
+        var parts: [String] = []
+        if let speed = model.speeds[item.id] { parts.append(bytes(Int64(speed)) + "/s") }
+        if let left = model.secondsLeft(item) {
+            let units: Set<Duration.UnitsFormatStyle.Unit> = left >= 3600 ? [.hours, .minutes] : [.minutes, .seconds]
+            let time = Duration.seconds(left).formatted(.units(allowed: units, width: .abbreviated, maximumUnitCount: left >= 3600 ? 2 : 1).locale(env.uiLocale))
+            parts.append(String(format: Strings.tr("faltan %@", language: language), time))
+        }
+        return parts.isEmpty ? [Strings.tr("Calculando…", language: language)] : parts
     }
 
     private func status(_ item: DownloadItem, _ model: DownloadsModel) -> String? {

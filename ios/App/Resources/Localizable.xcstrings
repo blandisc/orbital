@@ -1563,6 +1563,17 @@
         }
       }
     },
+    "Calculando…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculating…"
+          }
+        }
+      }
+    },
     "Calendario del mes": {
       "extractionState": "manual",
       "localizations": {
@@ -6337,6 +6348,17 @@
         }
       }
     },
+    "Menos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Less"
+          }
+        }
+      }
+    },
     "Menos opciones": {
       "extractionState": "manual",
       "localizations": {
@@ -7763,6 +7785,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Other languages"
+          }
+        }
+      }
+    },
+    "Otro…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other…"
           }
         }
       }
@@ -10220,6 +10253,17 @@
         }
       }
     },
+    "Tiempo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timing"
+          }
+        }
+      }
+    },
     "Tiempos de Where's The Jump": {
       "extractionState": "manual",
       "localizations": {
@@ -11382,6 +11426,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watch offline"
+          }
+        }
+      }
+    },
+    "Ver todas las versiones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See all versions"
           }
         }
       }

@@ -644,3 +644,117 @@ private struct ScrollIfNeeded: ViewModifier {
         ViewThatFits(in: .vertical) { content; ScrollView { content } }
     }
 }
+
+/// Subtítulos rápidos: un panel chico sobre el video (no una hoja que lo tapa), para arreglarlos sin dejar de ver la escena.
+/// Cuatro renglones fijos: el idioma (Apagados · Español · Inglés · Otro), la versión con ‹ › para probar la siguiente al
+/// momento, el tiempo y el tamaño con su nombre, y «Listo». La lista completa de versiones, detrás de un toque.
+struct SubtitleDock: View {
+    struct Language: Identifiable { let id: String; let title: String; let selected: Bool }
+    let languages: [Language]
+    let pickLanguage: (String) -> Void
+    let otherLanguage: () -> Void
+    /// La versión puesta («WEB-DL · 1080p») y su contexto («2 de 7 · coincide con tu copia»); nil sin subtítulos.
+    let version: (title: String, detail: String)?
+    let canStep: Bool
+    let previous: () -> Void
+    let next: () -> Void
+    let allVersions: () -> Void
+    let delay: Double
+    let nudge: (Double) -> Void
+    let resetDelay: () -> Void
+    let sizeName: String
+    let smaller: (() -> Void)?
+    let larger: (() -> Void)?
+    let done: () -> Void
+    /// En horizontal (poco alto): sin el renglón del título; «Listo» va junto a los idiomas.
+    var compact = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            if !compact {
+                HStack {
+                    Label("Subtítulos", systemImage: "captions.bubble.fill").recipe(.cardTitle)
+                    Spacer()
+                    doneButton
+                }
+            }
+            // 1. Idioma: un solo renglón.
+            HStack(spacing: DS.Space.s2) {
+                ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected) { pickLanguage(l.id) } }
+                pill(Text("Otro…"), selected: false, action: otherLanguage)
+                if compact { doneButton }
+            }
+            if let version {
+                // 2. Versión: grande, con ‹ › a los lados (se prueba la siguiente sin dejar de ver).
+                HStack(spacing: DS.Space.s2) {
+                    stepButton("chevron.left", label: "Versión anterior", enabled: canStep, action: previous)
+                    Button(action: allVersions) {
+                        VStack(spacing: 0) {
+                            Text(verbatim: version.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                            Text(verbatim: version.detail).recipe(.caption).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(Text("Ver todas las versiones"))
+                    stepButton("chevron.right", label: "Versión siguiente", enabled: canStep, action: next)
+                        .accessibilityIdentifier("subtitle-dock-next")
+                }
+                // 3. Tiempo y tamaño, cada uno con su nombre.
+                HStack(spacing: DS.Space.s3) {
+                    adjust(title: Text("Tiempo"), value: delay == 0 ? Text("A tiempo") : Text(verbatim: String(format: "%+.1f s", delay)),
+                           minus: { nudge(-PlayerModel.subtitleStep) }, plus: { nudge(PlayerModel.subtitleStep) }, tapValue: resetDelay)
+                    adjust(title: Text("Tamaño"), value: Text(verbatim: sizeName), minus: smaller, plus: larger, tapValue: nil)
+                }
+            }
+        }
+        .padding(DS.Space.s4)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
+        .accessibilityElement(children: .contain)
+    }
+
+    private var doneButton: some View {
+        Button(action: done) { Text("Listo").fontWeight(.semibold) }.buttonStyle(.glassProminent).tint(DS.primary).foregroundStyle(DS.onPrimary)
+            .accessibilityIdentifier("subtitle-dock-done")
+    }
+
+    private func pill(_ title: Text, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            title.font(DS.TextRecipe.footnote.font.weight(.semibold)).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                .foregroundStyle(selected ? DS.onPrimary : DS.text)
+                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                .background(selected ? DS.primary : DS.fill, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func stepButton(_ symbol: String, label: LocalizedStringKey, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font.weight(.bold)).foregroundStyle(DS.text)
+                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                .background(DS.fillStrong, in: Circle())
+        }
+        .buttonStyle(.plain).disabled(!enabled).opacity(enabled ? 1 : DesignTokens.Opacity.faint)
+        .accessibilityLabel(Text(label))
+    }
+
+    /// «Tiempo  − A tiempo +»: el nombre arriba, el valor entre los dos botones.
+    private func adjust(title: Text, value: Text, minus: (() -> Void)?, plus: (() -> Void)?, tapValue: (() -> Void)?) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            title.recipe(.caption)
+            HStack(spacing: DS.Space.s1) {
+                stepButton("minus", label: "Menos", enabled: minus != nil) { minus?() }
+                Button { tapValue?() } label: {
+                    value.recipe(.footnote, color: DS.text).fontWeight(.semibold).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                        .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                }
+                .buttonStyle(.plain).allowsHitTesting(tapValue != nil)   // sin acción no se toca, pero se lee igual (no gris)
+                stepButton("plus", label: "Más", enabled: plus != nil) { plus?() }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}

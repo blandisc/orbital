@@ -77,6 +77,9 @@ struct PlayerScreen: View {
     @State private var zoomToast: VideoZoom?
     /// «Subtítulos desactivados» o «Español · 1 de 4», un momento, al apagar o prender con el botón.
     @State private var subtitleToast: String?
+    /// Subtítulos rápidos (el panel chico sobre el video) y su lista de idiomas.
+    @State private var subtitleDock = false
+    @State private var dockLanguages = false
     /// La página con que abre el panel (mantener el botón de subtítulos lo abre en Subtítulos).
     @State private var panelPage: VideoSettingsPanel.Page = .hub
     @State private var zoomToastTask: Task<Void, Never>?
@@ -165,7 +168,8 @@ struct PlayerScreen: View {
             }
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
-            if controlsVisible && !locked && !panel && !failed(model) { controls(model).transition(.opacity) }
+            if controlsVisible && !locked && !panel && !failed(model) && !subtitleDock { controls(model).transition(.opacity) }
+            if subtitleDock && !locked && !panel { subtitleDockLayer(model).transition(.move(edge: .bottom).combined(with: .opacity)) }
             // «Saltar intro» no depende de los controles (se esconden a los pocos segundos y con ellos se iba el botón):
             // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse.
             else if !locked && !panel && model.skipIntroTo != nil {
@@ -242,6 +246,7 @@ struct PlayerScreen: View {
                 if Demo.isOn, let open = Demo.player {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
                     if open == "panel" || open == "sources" || open == "subtitles" { panel = true } else if open == "close" { await close() }
+                    if open == "dock" { subtitleDock = true }   // `-demo-player dock`: los subtítulos rápidos
                 }
                 if Demo.isOn, let state = Demo.playerState {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
@@ -353,7 +358,11 @@ struct PlayerScreen: View {
                     .onTapGesture(count: 2) { Task { await model.skip(PlaybackRules.skipSeconds) }; flash("goforward.10") }
             }
             .contentShape(Rectangle())
-            .onTapGesture { controlsVisible.toggle(); if controlsVisible { scheduleHide() } }
+            .onTapGesture {
+                // Con los subtítulos rápidos abiertos, tocar el video los cierra (y nada más).
+                if subtitleDock { withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false }; return }
+                controlsVisible.toggle(); if controlsVisible { scheduleHide() }
+            }
             .gesture(MagnifyGesture().onEnded { value in
                 // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
                 let target = VideoZoom.pinched(magnification: Double(value.magnification))
@@ -652,7 +661,8 @@ struct PlayerScreen: View {
                     .accessibilityIdentifier("player-settings")
             }
             SubtitleButton(code: currentSubtitleCode(model), state: subtitleState(model), loading: model.loadingSubtitle,
-                           open: { panelPage = .subtitles; panel = true }, toggle: { toggleSubtitles(model) })
+                           open: { withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false; subtitleDock = true } },
+                           toggle: { toggleSubtitles(model) })
                 .accessibilityIdentifier("player-next-subtitle")
             PlayerCircleButton(symbol: zoom.symbol, label: LocalizedStringKey(zoom.title)) { setZoom(nextZoom) }
                 .accessibilityHint(Text("Cambia el zoom del video"))
@@ -701,6 +711,73 @@ struct PlayerScreen: View {
     private var nextZoom: VideoZoom {
         if !landscape { return zoom == .fill ? .fit : .fill }
         return zoom.next
+    }
+
+    // MARK: subtítulos rápidos
+    /// El panel chico: en horizontal abajo y al centro, sobre el video; en vertical bajo el video (en el lugar de los controles).
+    private func subtitleDockLayer(_ model: PlayerModel) -> some View {
+        GeometryReader { geo in
+            let rect = videoRect(in: geo.size)
+            let dock = subtitleDockView(model).frame(maxWidth: DS.PlayerPanel.dockWidth)
+            if landscape {
+                // Arriba: los subtítulos van abajo, y son lo que estás revisando.
+                VStack { dock; Spacer() }.frame(maxWidth: .infinity).padding(.top, DS.Space.s3)
+            } else {
+                dock.padding(.horizontal, DS.Space.gutter).offset(y: min(rect.maxY + DS.Space.s4, geo.size.height * DS.PlayerPanel.dockPortraitMaxTop))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+        }
+        .sheet(isPresented: $dockLanguages) {
+            LanguageSearchList(codes: SubtitleLanguage.all, available: model.subtitleLanguages.filter { !["es", "en"].contains($0.code) },
+                               name: { Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: SubtitleLanguage.code($0) ?? $0)?.capitalized ?? $0 }) { code in
+                Task { await model.chooseLanguage(code) }
+            }
+        }
+        .task { await model.ensureSubtitleSearch() }
+    }
+
+    private func subtitleDockView(_ model: PlayerModel) -> some View {
+        let settings = env.services.appSettings
+        let locale = Locale(identifier: settings.uiLanguage)
+        let name = { (code: String) in locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code }
+        let on = currentSubtitleCode(model).flatMap { $0 == "CC" ? nil : $0 }
+        let off = model.snapshot.selectedSubtitle == nil
+        var codes = ["es", "en"]
+        if let on, !codes.contains(on) { codes.append(on) }
+        var languages = [SubtitleDock.Language(id: "", title: Strings.tr("Apagados", language: settings.uiLanguage), selected: off)]
+        languages += codes.map { SubtitleDock.Language(id: $0, title: name($0), selected: !off && on == $0) }
+        let versions = on.map { model.subtitleVersions(language: $0) } ?? []
+        let at = versions.firstIndex { $0.id == model.selectedVersionID }
+        let version: (title: String, detail: String)? = off ? nil : at.map { i in
+            let v = versions[i]
+            let tr = { (k: String) in Strings.tr(k, language: settings.uiLanguage) }
+            let res = v.name.flatMap { n in n.range(of: #"(2160|1080|720|480)[pi]"#, options: [.regularExpression, .caseInsensitive]).map { String(n[$0]).lowercased() } }
+            let named = [v.traits.source, res].compactMap { $0 }.joined(separator: " · ")
+            let title = v.fromVideo ? tr("Del video") : (named.isEmpty ? String(format: tr("Versión %lld"), i + 1) : named)
+            var detail = String(format: tr("%lld de %lld"), i + 1, versions.count)
+            if v.matchesCopy { detail += " · " + tr("Coincide con tu copia") }
+            return (title, detail)
+        } ?? (off ? nil : (Strings.tr("Cargando…", language: settings.uiLanguage), ""))
+        let sizes = ["small", "medium", "large"]
+        let sizeAt = sizes.firstIndex(of: settings.subtitleSize) ?? 1
+        let sizeNames = ["Chico", "Mediano", "Grande"].map { Strings.tr($0, language: settings.uiLanguage) }
+        func setSize(_ i: Int) { env.services.settings.update { $0.subtitleSize = sizes[i] } }
+        func step(_ d: Int) {
+            guard !versions.isEmpty else { return }
+            let next = at.map { (($0 + d) % versions.count + versions.count) % versions.count } ?? 0
+            Task { await model.selectVersion(versions[next]) }
+        }
+        return SubtitleDock(
+            languages: languages,
+            pickLanguage: { code in Task { if code.isEmpty { await model.selectSubtitle(nil) } else { await model.chooseLanguage(code) } } },
+            otherLanguage: { dockLanguages = true },
+            version: version, canStep: versions.count > 1,
+            previous: { step(-1) }, next: { step(1) },
+            allVersions: { subtitleDock = false; panelPage = .subtitles; panel = true },
+            delay: model.subtitleDelay, nudge: { model.nudgeSubtitles(by: $0) }, resetDelay: { model.resetSubtitleDelay() },
+            sizeName: sizeNames[sizeAt],
+            smaller: sizeAt > 0 ? { setSize(sizeAt - 1) } : nil, larger: sizeAt < 2 ? { setSize(sizeAt + 1) } : nil,
+            done: { withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false } }, compact: landscape)
     }
 
     /// El idioma puesto, en corto («es»); nil: apagados.
