@@ -314,6 +314,7 @@ class GamepadWatcher:
         self._detectors = [ComboDetector() for _ in range(4)]
         self._stop = threading.Event()
         self._redetect = threading.Event()
+        self.hold_label = ""  # el atajo de cerrar que se está manteniendo («LB + RB + Select»), para el aviso
 
     def start(self) -> bool:
         if sys.platform != "win32":
@@ -375,6 +376,8 @@ class GamepadWatcher:
                     traced[slot] = None
                     input_log.record([{"from": "xinput", "slot": slot, "gone": True}])
                 for event in detector.update(buttons, now):
+                    if event == "hold-start":
+                        self.hold_label = CLOSE_LABELS.get(detector.combo, "")
                     try:
                         self.on_event(event)
                     except Exception:  # noqa: BLE001 - un fallo aquí no debe matar el hilo

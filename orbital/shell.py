@@ -261,8 +261,10 @@ class ConsoleShell:
         self.hold = target
         self.remember(fg)
         if self.overlay:
-            runner = target.get("runner") or "el juego"
-            self.overlay.show(f"Mantén para cerrar {runner}", target["title"], int((HOLD_TOTAL - HOLD_ARM) * 1000))
+            # El juego en grande y qué mantener (el atajo del mando que lo está haciendo: el GameSir no usa Home).
+            label = getattr(getattr(self, "gamepad", None), "hold_label", "")
+            self.overlay.show(target["title"], f"Mantén {label} para cerrar" if label else "Sigue manteniendo para cerrar",
+                              int((HOLD_TOTAL - HOLD_ARM) * 1000))
 
     def hold_cancel(self) -> None:
         if self.hold is None:
@@ -276,7 +278,7 @@ class ConsoleShell:
         if target is None:
             return
         if self.overlay:
-            self.overlay.closing(f"Cerrando {target.get('runner') or 'el juego'}")
+            self.overlay.closing(f"Cerrando {target['title']}", target.get("runner") or "")
         self.stop_game()
         if self.overlay:
             self.overlay.hide(delay_ms=350)
@@ -433,7 +435,7 @@ class ConsoleShell:
             self.hold = self.target(left["hwnd"]) or left["target"]
             log.info("Legion L dos veces: cierro %s", self.hold.get("title"))
             if self.overlay:
-                self.overlay.closing(f"Cerrando {self.hold.get('runner') or 'el juego'}")
+                self.overlay.closing(f"Cerrando {self.hold.get('title') or 'el juego'}", self.hold.get("runner") or "")
             self.stop_game()
             if self.overlay:
                 self.overlay.hide(delay_ms=350)

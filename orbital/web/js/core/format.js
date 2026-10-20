@@ -85,6 +85,17 @@ export function closedMessage({ id = "", title = "", seconds, finished = false, 
   return played ? `De vuelta. Jugaste ${title} ${played}` : `De vuelta de ${title}`;
 }
 
+/** El aviso al volver, en dos renglones (el título del juego arriba, qué pasó abajo) para el aviso con portada.
+ *  Sin título (o la TV en vivo), un solo renglón: el de closedMessage. */
+export function closedSummary(event) {
+  const { id = "", title = "", seconds, finished = false, live = false } = event;
+  if (live || !title) return { heading: "", message: closedMessage(event) };
+  if (id === "media:player") return { heading: title, message: finished ? "Lo terminaste" : "Guardé dónde ibas" };
+  if (id.startsWith("media:") || id.startsWith("app:")) return { heading: title, message: "De vuelta en Orbital" };
+  const played = duration(seconds);
+  return { heading: title, message: played ? `Jugaste ${played}` : "De vuelta en Orbital" };
+}
+
 /** Se cerró solo a los pocos segundos: qué revisar según de dónde es el juego. */
 export function crashMessage({ title, kind = "emulator" }) {
   if (kind === "steam") return `${title} se cerró enseguida. Si no llegó a abrir, revisa en Steam que esté instalado y actualizado.`;

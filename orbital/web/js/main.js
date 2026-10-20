@@ -5,7 +5,7 @@
 import { api } from "./core/api.js";
 import { h, svg } from "./core/dom.js";
 import { ICONS } from "./core/icons.js";
-import { closedMessage, crashMessage } from "./core/format.js";
+import { closedSummary, crashMessage } from "./core/format.js";
 import { createInput, ERASE_WORD, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
@@ -2068,7 +2068,9 @@ function handleEvent(event) {
       sound.play("error");
       ui.toast.show(crashMessage(event), { error: true });
     } else {
-      ui.toast.show(closedMessage(event));
+      // Con su portada y el tiempo jugado en su propio renglón (antes una sola frase larga).
+      const { heading, message } = closedSummary(event);
+      ui.toast.show(message, { heading, image: findItem(event.id)?.image });
     }
     loadLibrary({ keepId: event.id });
   }
