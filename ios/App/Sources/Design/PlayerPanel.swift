@@ -155,6 +155,8 @@ struct PanelRow<Value: View>: View {
     let color: Color
     var action: (() -> Void)?
     @ViewBuilder var value: () -> Value
+    /// En horizontal (poco alto) los renglones se compactan: si no, el último queda fuera de la hoja.
+    @Environment(\.verticalSizeClass) private var verticalSize
 
     var body: some View {
         let row = HStack(spacing: DS.Space.s3) {
@@ -166,7 +168,7 @@ struct PanelRow<Value: View>: View {
             Spacer(minLength: DS.Space.s2)
             if action != nil { Image(systemName: "chevron.right").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textFaint) }
         }
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s3)
+        .padding(.horizontal, DS.Space.s3).padding(.vertical, verticalSize == .compact ? DS.Space.s2 : DS.Space.s3)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
         .contentShape(Rectangle())
         if let action { Button(action: action) { row }.buttonStyle(.plain) } else { row }

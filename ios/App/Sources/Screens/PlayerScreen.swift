@@ -111,6 +111,8 @@ struct PlayerScreen: View {
     /// El ícono que aparece un momento al centro tras un doble toque (pausa, ±10 s).
     @State private var flashSymbol: String?
     @State private var flashTask: Task<Void, Never>?
+    /// Lo que mide la tarjeta de «Siguiente episodio» (para subir los subtítulos sobre ella).
+    @State private var upNextHeight: CGFloat = 0
     @State private var rateBeforeFastForward: Float = 1
 
     /// Lo que suena ahora: cambia al pasar solo al siguiente episodio (el `request` es solo con el que se abrió).
@@ -130,6 +132,8 @@ struct PlayerScreen: View {
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
                         // quedaba a media imagen).
                         holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
+                            // Con la tarjeta de «Siguiente episodio» (abajo a la derecha, en horizontal) la línea sube sobre ella.
+                            .offset(y: landscape && model.upNext != nil && !panel && !locked && !subtitleDock ? -(upNextHeight + DS.Space.s6) : 0)
                             .transition(.opacity)
                     }
                 }
@@ -198,7 +202,7 @@ struct PlayerScreen: View {
             // Con el panel de subtítulos abierto, tampoco: se encimaba sobre él (sale al cerrarlo, si aún falta).
             if let up = model.upNext, !panel, !locked, !subtitleDock {
                 if landscape {
-                    VStack { Spacer(); HStack { Spacer(); upNextCard(model, up) } }
+                    VStack { Spacer(); HStack { Spacer(); upNextCard(model, up).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { upNextHeight = $0 } } }
                         .padding(.horizontal, DS.Space.s6)
                         .padding(.bottom, controlsVisible ? DS.Space.s6 + DS.Size.touchTarget * 2 : DS.Space.s6)
                 } else if !controlsVisible {
@@ -397,7 +401,7 @@ struct PlayerScreen: View {
                     dragAxis = PlayerGestures.dominantAxis(dx: dx, dy: dy)
                     switch dragAxis {
                     case .vertical where !landscape:
-                        portraitAtDragStart = portraitCenter   // en vertical, arrastrar arriba o abajo mueve el video
+                        portraitAtDragStart = Self.resolvedCenter(portraitCenter, in: size)   // en vertical, arrastrar arriba o abajo mueve el video
                         controlsVisible = true                 // se mueve a la altura de los controles (sin ellos va al centro)
                     case .vertical:
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
@@ -1141,8 +1145,15 @@ struct PlayerScreen: View {
     /// hasta aquí para que el episodio arranque donde ya está la imagen.
     static func portraitVideoRect(in size: CGSize, center: Double) -> CGRect {
         let height = min(size.width / DS.Poster.stillAspect, size.height)
-        let y = min(max(0, size.height * center - height / 2), max(0, size.height - height))
+        let y = min(max(0, size.height * resolvedCenter(center, in: size) - height / 2), max(0, size.height - height))
         return CGRect(x: 0, y: y, width: size.width, height: height)
+    }
+
+    /// El centro del video como fracción del alto: el que dejaste, o (negativo: sin mover) el que lo deja a `portraitTop`.
+    static func resolvedCenter(_ stored: Double, in size: CGSize) -> Double {
+        if stored >= 0 || size.height <= 0 { return stored }
+        let height = min(size.width / DS.Poster.stillAspect, size.height)
+        return Double((DS.PlayerPanel.portraitTop + height / 2) / size.height)
     }
     /// Dónde dejaste el video en vertical (se recuerda entre videos).
     static let portraitCenterKey = "player-portrait-center"
@@ -1266,6 +1277,7 @@ struct VideoSettingsPanel: View {
     /// «Tiempo y tamaño»: cierra el menú y abre el panel chico sobre el video (ahí se ajustan viendo la escena).
     var openSubtitleDock: () -> Void = {}
     @EnvironmentObject private var env: AppEnvironment
+    @Environment(\.verticalSizeClass) private var verticalSize
     @StateObject private var observer: ModelObserver<PlayerModel>
     @State private var page: Page = .hub
     /// El idioma elegido en el menú de Subtítulos («» = sin subtítulos); nil: el de los puestos o el tuyo.
@@ -1288,7 +1300,7 @@ struct VideoSettingsPanel: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
+            VStack(alignment: .leading, spacing: verticalSize == .compact ? DS.Space.s1 : DS.Space.s2) {
                 switch page {
                 case .hub: hub
                 case .audio: audio
@@ -1296,13 +1308,13 @@ struct VideoSettingsPanel: View {
                 case .source: source
                 }
             }
-            .padding(DS.Space.s4)
+            .padding(verticalSize == .compact ? DS.Space.s3 : DS.Space.s4)
             .animation(DS.Motion.base(reduceMotion), value: page)
         }
         .scrollBounceBehavior(.basedOnSize)
         // El último renglón no queda bajo la barra de inicio, y si hay más abajo el pie se desvanece (antes se cortaba
         // «Abrir en Infuse» o «Sincronía» sin aviso).
-        .contentMargins(.bottom, DS.Space.s6, for: .scrollContent)
+        .contentMargins(.bottom, verticalSize == .compact ? DS.Space.s3 : DS.Space.s6, for: .scrollContent)
         .onScrollGeometryChange(for: Bool.self) { g in
             g.contentOffset.y + g.containerSize.height < g.contentSize.height + g.contentInsets.bottom - DS.Space.s2
         } action: { _, more in moreBelow = more }
@@ -1359,7 +1371,7 @@ struct VideoSettingsPanel: View {
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
         Button(action: openInInfuse) { Label { Text("Abrir en Infuse") } icon: { InfuseIcon() } }
             .buttonStyle(.borderless).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-            .frame(maxWidth: .infinity).padding(.top, DS.Space.s2)
+            .frame(maxWidth: .infinity).padding(.top, verticalSize == .compact ? 0 : DS.Space.s2)
     }
 
 

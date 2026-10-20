@@ -159,7 +159,7 @@ struct AiringCard: View {
                 (dayName(airing.day, locale: locale) + Text(verbatim: " · \(airing.episodeLabel(AppEnvironment.shared.services.episodeLabel))"))
                     .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
             }
-            .frame(width: DS.Poster.episodeThumbWidth * 1.4)
+            .frame(width: DS.Poster.airingWidth)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
