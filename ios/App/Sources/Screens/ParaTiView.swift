@@ -18,6 +18,9 @@ struct ParaTiView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
 
+    /// Un iPhone de 375 pt o menos (SE, mini): la barra de arriba no da para todo junto al título.
+    static var narrow: Bool { UIScreen.main.bounds.width < DS.Size.compactWidth }
+
     init() { _model = StateObject(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
 
     var body: some View {
@@ -54,7 +57,7 @@ struct ParaTiView: View {
                         .id(item.imdb)
                     }
                 }
-            case .lists: ListsView(observer: model)
+            case .lists: ListsView(observer: model, onDecide: { deciding = true })
             }
         }
         .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio
@@ -65,8 +68,11 @@ struct ParaTiView: View {
         .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
+            // En Listas y en un iPhone angosto no cabían los cuatro botones junto al título («Para…»): «Decide por mí» pasa al índice.
+            if !(m.mode == .lists && Self.narrow) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
+                }
             }
             // Un solo selector en la pantalla (Todo · Series · Películas, en Listas): mosaico ↔ listas es este botón.
             ToolbarItem(placement: .topBarTrailing) {
@@ -85,7 +91,8 @@ struct ParaTiView: View {
                 }
             }
             // Sin separar el perfil: en una sola pastilla los botones caben junto al título aun en un SE («Para…» se cortaba).
-            ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
+            // En Listas, `ListsView` pone el índice de secciones y luego el perfil: así el perfil es siempre el último botón.
+            if m.mode == .mosaic { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -245,6 +252,8 @@ enum KindFilter: String { case all, series, movie }
 /// «Para ti › Listas»: el filtro Todo · Series · Películas, un destacado y los estantes (cada uno dice de dónde viene).
 struct ListsView: View {
     @ObservedObject var observer: ModelObserver<ParaTiModel>
+    /// «Decide por mí» (en un iPhone angosto vive en el índice de arriba).
+    var onDecide: () -> Void = {}
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var openTitle: TitleRoute?
@@ -411,6 +420,7 @@ struct ListsView: View {
         // Brincar a una sección: un menú en la barra (marca en cuál estás).
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { sectionMenu(proxy) }
+            ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
 
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
@@ -449,6 +459,10 @@ struct ListsView: View {
     /// Ir a una sección (el filtro Todo · Películas · Series va arriba de la lista, el mismo de toda la app).
     private func sectionMenu(_ proxy: ScrollViewProxy) -> some View {
         Menu {
+            if ParaTiView.narrow {
+                Button("Decide por mí", systemImage: "dice", action: onDecide)
+                Divider()
+            }
             ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
                 Button {
                     activeSection = section

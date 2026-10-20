@@ -31,7 +31,7 @@ struct SourcesSheet: View {
                 Spacer()
                 // Qué quiere decir cada etiqueta (4K, DV, REMUX, Al instante…).
                 Button { showsGlossary = true } label: { Image(systemName: "info.circle").font(DS.TextRecipe.section.font) }
-                    .buttonStyle(.plain).foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                    .buttonStyle(.plain).foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget, alignment: .trailing)   // el ícono al ras del margen, el toque sigue de 44
                     .accessibilityLabel(Text("Qué significa cada etiqueta"))
                     .accessibilityIdentifier("sources-info")
             }

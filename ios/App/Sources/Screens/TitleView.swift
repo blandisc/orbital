@@ -25,6 +25,8 @@ struct TitleView: View {
     /// se ajusta para que «Ver», Guardar, Descargar y Fuente queden a la vista al abrir, en un SE y en un Pro.
     @State private var viewport: CGSize = .zero
     @State private var belowHero: CGFloat = 0
+    /// Ya se bajó del arte: un velo bajo la barra de arriba (los episodios no pasan por debajo de los botones a pelo).
+    @State private var scrolledPastHero = false
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var id: String { "\(videoID)-\(purpose)" } }
 
@@ -64,6 +66,13 @@ struct TitleView: View {
             }
         }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
+        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y > DS.TitleAction.veilAfter } action: { _, past in scrolledPastHero = past }
+        .overlay(alignment: .top) {
+            LinearGradient(colors: [DS.bg, DS.bg.opacity(DS.TitleAction.veilEdge), .clear], startPoint: .top, endPoint: .bottom)
+                .frame(height: DS.TitleAction.veilHeight).ignoresSafeArea(edges: .top)
+                .opacity(scrolledPastHero ? 1 : 0).animation(DS.Motion.base(reduceMotion), value: scrolledPastHero)
+                .allowsHitTesting(false)
+        }
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
         .background(Backdrop(tint: tint.colors))
         .navigationBarTitleDisplayMode(.inline)
@@ -661,7 +670,7 @@ struct EpisodeRowView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            stateIcon.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            stateIcon.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget, alignment: .trailing)
         }
         .padding(.vertical, DS.Space.s3)
         .opacity(row.airs == nil ? 1 : DesignTokens.Opacity.faint)
