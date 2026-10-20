@@ -3554,6 +3554,17 @@
         }
       }
     },
+    "El archivo descargado no se puede leer. Bórralo en Descargas y bájalo otra vez.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The downloaded file can't be read. Delete it in Downloads and download it again."
+          }
+        }
+      }
+    },
     "El borde avanza": {
       "extractionState": "manual",
       "localizations": {
@@ -5050,6 +5061,17 @@
         }
       }
     },
+    "Intentar de nuevo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
     "Ir a una sección": {
       "extractionState": "manual",
       "localizations": {
@@ -5156,6 +5178,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Picked for your language, quality and size"
+          }
+        }
+      }
+    },
+    "La fuente dejó de responder. Al intentar de nuevo seguimos donde ibas, con otra si hace falta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The source stopped responding. Try again and we'll pick up where you were, with another source if needed."
           }
         }
       }
@@ -7096,6 +7129,17 @@
         }
       }
     },
+    "No pudimos reproducirlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't play it"
+          }
+        }
+      }
+    },
     "No sale nada de las series que sigues.": {
       "extractionState": "manual",
       "localizations": {
@@ -7136,6 +7180,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Could not play"
+          }
+        }
+      }
+    },
+    "No se puede abrir la descarga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The download can't be opened"
           }
         }
       }
@@ -8009,6 +8064,17 @@
         }
       }
     },
+    "Probamos las fuentes que hay y ninguna respondió. A veces es momentáneo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We tried the available sources and none responded. Sometimes it's temporary."
+          }
+        }
+      }
+    },
     "Probando otra fuente (%lld)…": {
       "extractionState": "manual",
       "localizations": {
@@ -8236,6 +8302,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ rankings"
+          }
+        }
+      }
+    },
+    "Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't have this movie yet. New releases usually show up a few hours later; try again later."
+          }
+        }
+      }
+    },
+    "Real-Debrid aún no tiene este episodio. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't have this episode yet. New releases usually show up a few hours later; try again later."
           }
         }
       }
@@ -8493,6 +8581,17 @@
         }
       }
     },
+    "Revisa tu conexión a internet e intenta de nuevo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your internet connection and try again."
+          }
+        }
+      }
+    },
     "Revisada %@": {
       "extractionState": "manual",
       "localizations": {
@@ -8676,6 +8775,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "It closed because memory ran out: close other console apps before playing again."
+          }
+        }
+      }
+    },
+    "Se cortó el video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The video stopped"
           }
         }
       }
@@ -9105,6 +9215,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not connected"
+          }
+        }
+      }
+    },
+    "Sin conexión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No connection"
           }
         }
       }
@@ -9798,6 +9919,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing yet: it shows up once you watch something on the iPhone."
+          }
+        }
+      }
+    },
+    "Todavía no hay dónde verlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowhere to watch it yet"
           }
         }
       }

@@ -521,3 +521,93 @@ struct LanguageSearchList: View {
         }
     }
 }
+
+/// Cuando el reproductor no puede: una pantalla propia (no un aviso rojo encima de los controles), con lo que pasó dicho
+/// desde tu lado y solo las salidas que sirven en ese caso.
+struct PlayerFailureView: View {
+    let failure: PlayerModel.Failure
+    /// Un episodio (no una película): para decir «este episodio».
+    let isEpisode: Bool
+    let retry: () -> Void
+    let infuse: (() -> Void)?
+    let close: () -> Void
+
+    var body: some View {
+        VStack(spacing: DS.Space.s4) {
+            Image(systemName: symbol).font(DS.TextRecipe.display.font).foregroundStyle(DS.textMuted)
+            VStack(spacing: DS.Space.s2) {
+                title.recipe(.section).multilineTextAlignment(.center)
+                message.recipe(.secondary, color: DS.textMuted).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: DS.Size.cardMax)
+            VStack(spacing: DS.Space.s2) {
+                switch failure {
+                case .noSources, .localFile:
+                    option(Text("Cerrar"), primary: true, action: close)
+                case .network:
+                    option(Text("Intentar de nuevo"), primary: true, action: retry)
+                    option(Text("Cerrar"), primary: false, action: close)
+                case .noneWorked, .sourceDied:
+                    option(Text("Intentar de nuevo"), primary: true, action: retry)
+                    if let infuse { option(Text("Abrir en Infuse"), primary: false, action: infuse) }
+                    option(Text("Cerrar"), primary: false, action: close)
+                }
+            }
+            .frame(maxWidth: DS.Size.cardMax)
+        }
+        .padding(DS.Space.gutter)
+        .frame(maxWidth: .infinity)
+        .frame(maxHeight: .infinity)
+        // En horizontal (poco alto) se desliza en vez de cortar el texto.
+        .modifier(ScrollIfNeeded())
+        .background(DS.backdropDeep.ignoresSafeArea())
+        .accessibilityElement(children: .contain)
+    }
+
+    private var symbol: String {
+        switch failure {
+        case .noSources: "film.stack"
+        case .noneWorked, .sourceDied: "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90"
+        case .network: "wifi.slash"
+        case .localFile: "externaldrive.badge.exclamationmark"
+        }
+    }
+
+    private var title: Text {
+        switch failure {
+        case .noSources: Text("Todavía no hay dónde verlo")
+        case .noneWorked: Text("No pudimos reproducirlo")
+        case .sourceDied: Text("Se cortó el video")
+        case .network: Text("Sin conexión")
+        case .localFile: Text("No se puede abrir la descarga")
+        }
+    }
+
+    private var message: Text {
+        switch failure {
+        case .noSources: isEpisode ? Text("Real-Debrid aún no tiene este episodio. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
+            : Text("Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
+        case .noneWorked: Text("Probamos las fuentes que hay y ninguna respondió. A veces es momentáneo.")
+        case .sourceDied: Text("La fuente dejó de responder. Al intentar de nuevo seguimos donde ibas, con otra si hace falta.")
+        case .network: Text("Revisa tu conexión a internet e intenta de nuevo.")
+        case .localFile: Text("El archivo descargado no se puede leer. Bórralo en Descargas y bájalo otra vez.")
+        }
+    }
+
+    private func option(_ label: Text, primary: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            label.font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(primary ? DS.onPrimary : DS.text)
+                .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeight)
+                .background(primary ? DS.primary : DS.fillStrong, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Centrado si cabe; si no (horizontal, letra grande), se desliza.
+private struct ScrollIfNeeded: ViewModifier {
+    func body(content: Content) -> some View {
+        ViewThatFits(in: .vertical) { content; ScrollView { content } }
+    }
+}

@@ -157,6 +157,13 @@ public actor Cinemeta {
 
 /// Las partes de Cinemeta que no necesitan red (se prueban con las respuestas guardadas de Python).
 public enum CinemetaParsing {
+    /// «Episode 3», «Episodio 3», «Ep. 3», «TBA», «TBD»: lo que pone Cinemeta cuando todavía no hay nombre.
+    public static func isPlaceholderEpisodeName(_ name: String) -> Bool {
+        let n = name.trimmingCharacters(in: .whitespaces)
+        return n.range(of: #"^(episode|episodio|ep\.?|capítulo|chapter)\s*\d+$"#, options: [.regularExpression, .caseInsensitive]) != nil
+            || ["tba", "tbd", "to be announced"].contains(n.lowercased())
+    }
+
     static func list(_ value: JSON?) -> [JSON] { value?.array ?? [] }
 
     /// Un título con id y nombre de texto: un nombre numérico (1917) o una lista tumbaban la biblioteca.
@@ -214,7 +221,9 @@ public enum CinemetaParsing {
         for video in list(meta["videos"]) {
             guard let season = video["season"]?.intValue, let episode = video["episode"]?.intValue, case .int = video["season"]!, case .int = video["episode"]!,
                   let id = video["id"]?.nonEmptyString else { continue }
-            let named = text(video["name"]).isEmpty ? text(video["title"]) : text(video["name"])
+            var named = text(video["name"]).isEmpty ? text(video["title"]) : text(video["name"])
+            // Un nombre de relleno («Episode 1», «Episodio 1», «TBA»): como si no tuviera (se ve «T1 E1», no inglés suelto).
+            if CinemetaParsing.isPlaceholderEpisodeName(named) { named = "" }
             let overview = text(video["overview"]).isEmpty ? text(video["description"]) : text(video["overview"])
             bySeason[season, default: []].append(Episode(
                 id: id, episode: episode, title: named.isEmpty ? "Episodio \(episode)" : named, thumbnail: video["thumbnail"]?.nonEmptyString,

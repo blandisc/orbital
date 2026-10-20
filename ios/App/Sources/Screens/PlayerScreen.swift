@@ -153,7 +153,7 @@ struct PlayerScreen: View {
             }
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
-            if controlsVisible && !locked && !panel { controls(model).transition(.opacity) }
+            if controlsVisible && !locked && !panel && !failed(model) { controls(model).transition(.opacity) }
             // «Saltar intro» no depende de los controles (se esconden a los pocos segundos y con ellos se iba el botón):
             // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse.
             else if !locked && !panel && model.skipIntroTo != nil {
@@ -536,21 +536,19 @@ struct PlayerScreen: View {
         switch model.phase {
         case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
         case .failed(let message):
-            VStack(spacing: DS.Space.s4) {
-                DSNotice(verbatim: env.message(message), tone: .error)
-                HStack {
-                    Button("Cerrar") { Task { await close() } }.buttonStyle(.glass)
-                    Button { Task { await openInInfuse() } } label: { Label { Text("Abrir en Infuse") } icon: { InfuseIcon() } }.dsPrimaryButton()
-                }
-            }
-            .padding(DS.Space.s6)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(DS.scrimStrong.ignoresSafeArea())   // el aviso se lee aunque detrás quede la última imagen
+            // Una pantalla por cada caso (sin fuentes, ninguna sirvió, sin red…), sobre los controles, que se esconden.
+            PlayerFailureView(failure: model.failure ?? .sourceDied, isEpisode: model.request?.kind == "series",
+                              retry: { Task { await model.retry() } },
+                              infuse: model.source == nil ? nil : { Task { await openInInfuse() } },
+                              close: { Task { await close() } })
+                .accessibilityHint(Text(verbatim: env.message(message)))
         default:
             if model.reconnecting { VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text("Reconectando…").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) } }
             else if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
         }
     }
+
+    private func failed(_ model: PlayerModel) -> Bool { if case .failed = model.phase { true } else { false } }
 
     private func preparingText(_ model: PlayerModel) -> LocalizedStringKey {
         if model.reconnecting { return "Reconectando…" }

@@ -6,6 +6,14 @@ final class CinemetaTests: XCTestCase {
     let series = try! Fixtures.json("cinemeta/meta_series_tt0386676.json")
     let movie = try! Fixtures.json("cinemeta/meta_movie_tt0816692.json")
 
+    func testPlaceholderEpisodeNamesCountAsMissing() {
+        for name in ["Episode 1", "episodio 12", "Ep. 3", "TBA", "  Episode 10 "] { XCTAssertTrue(CinemetaParsing.isPlaceholderEpisodeName(name), name) }
+        for name in ["Pilot", "Episode One Hundred", "The Episode 1 Special"] { XCTAssertFalse(CinemetaParsing.isPlaceholderEpisodeName(name), name) }
+        let meta: JSON = ["videos": [["id": "tt1:1:1", "season": 1, "episode": 1, "name": "Episode 1"], ["id": "tt1:1:2", "season": 1, "episode": 2, "name": "Pilot"]]]
+        let eps = CinemetaParsing.seasons(meta).first?.episodes ?? []
+        XCTAssertEqual(eps.map(\.hasTitle), [false, true])
+    }
+
     func testSeasonsMatchPython() throws {
         let expected = try XCTUnwrap(golden["seasons"]?.array)
         let got = CinemetaParsing.seasons(series)

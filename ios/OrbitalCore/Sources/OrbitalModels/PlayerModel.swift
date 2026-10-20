@@ -63,6 +63,20 @@ public struct LocalEpisode: Sendable, Equatable {
 @MainActor
 public final class PlayerModel: ObservableModel {
     public enum Phase: Equatable { case idle, preparing, playing, failed(String), closed }
+    /// Por qué falló: cada caso tiene su pantalla y sus salidas (no un aviso rojo encima de los controles).
+    public enum Failure: Equatable, Sendable {
+        /// Real-Debrid no tiene nada para este video (un estreno de hoy, algo raro).
+        case noSources
+        /// Había fuentes y ninguna arrancó.
+        case noneWorked
+        /// No se pudieron pedir las fuentes (sin red, el complemento caído).
+        case network
+        /// Arrancó y la fuente dejó de responder.
+        case sourceDied
+        /// La descarga del iPhone no se puede leer.
+        case localFile
+    }
+    public private(set) var failure: Failure? { didSet { changed() } }
 
     public private(set) var phase: Phase = .idle { didSet { changed() } }
     public private(set) var snapshot = EngineSnapshot() { didSet { changed() } }
@@ -183,6 +197,7 @@ public final class PlayerModel: ObservableModel {
     }
 
     private func resetForNewVideo() {
+        failure = nil
         failedSources = []; hasPlayed = false; startupDeadline = nil; lastSnapshotAt = nil; watchedUnsaved = 0
         scrobbleStarted = false; scrobblePlaying = false; rescrobbleAfterSeek = false
         tracksApplied = false; addedExternalSubtitle = false; knownSubtitleIDs = []; preloadedNext = false
@@ -213,7 +228,7 @@ public final class PlayerModel: ObservableModel {
             if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } }
             guard mine == generation, !closing else { return }
             startLoading()
-            do { try await loadVideo(file, at: start) } catch { fail("No pude abrir el archivo descargado.") }
+            do { try await loadVideo(file, at: start) } catch { fail("No pude abrir el archivo descargado.", .localFile) }
             return
         }
         let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
@@ -239,9 +254,9 @@ public final class PlayerModel: ObservableModel {
                 else if failedSources.isEmpty, !request.fromStart, let key = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID)?.source,
                         let pick = sourceChoices.first(where: { $0.key == key }) { found = pick }
                 else { found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: request.binge, skip: failedSources) }
-            } catch { guard mine == generation else { return }; return fail("No pude pedir las fuentes: \(error)") }
+            } catch { guard mine == generation else { return }; return fail("No pude pedir las fuentes: \(error)", .network) }
             guard mine == generation, !closing else { return }
-            guard let found else { return fail(failedSources.isEmpty ? "No hay fuentes de Real-Debrid para este título." : "Ninguna fuente funcionó.") }
+            guard let found else { return failedSources.isEmpty ? fail("No hay fuentes de Real-Debrid para este título.", .noSources) : fail("Ninguna fuente funcionó.", .noneWorked) }
             source = found
             var start = startAt ?? 0
             if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } }
@@ -253,7 +268,7 @@ public final class PlayerModel: ObservableModel {
                 guard mine == generation else { return }
                 failedSources.insert(found.index)
                 attempts = failedSources.count
-                if failedSources.count > PlaybackRules.maxSourceRetries { return fail("Ninguna fuente funcionó.") }
+                if failedSources.count > PlaybackRules.maxSourceRetries { return fail("Ninguna fuente funcionó.", .noneWorked) }
                 notice = .triedAnotherSource(attempt: failedSources.count)
                 acceptingSnapshots = false
             }
@@ -261,7 +276,18 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// Los mensajes de los motores pueden traer la dirección del video (con tu clave): nunca llegan a la pantalla.
-    private func fail(_ message: String) { phase = .failed(stripURLs(message)); startupDeadline = nil; reconnecting = false; foregroundCheck = nil }
+    private func fail(_ message: String, _ kind: Failure) {
+        failure = kind
+        phase = .failed(stripURLs(message)); startupDeadline = nil; reconnecting = false; foregroundCheck = nil
+        Task { await engine.pause() }   // que no siga una ruedita girando detrás
+    }
+
+    /// Intentar otra vez desde el principio (otra búsqueda de fuentes), donde ibas.
+    public func retry() async {
+        guard let request else { return }
+        failure = nil
+        await begin(request)
+    }
 
     // MARK: lo que dice el motor
     func handle(_ raw: EngineSnapshot) async {
@@ -338,11 +364,11 @@ public final class PlayerModel: ObservableModel {
     @discardableResult
     private func retryWithAnotherSource() -> Task<Void, Never>? {
         guard !retrying, !closing else { return transition }
-        guard request?.localFile == nil else { fail("No pude abrir el archivo descargado."); return nil }
+        guard request?.localFile == nil else { fail("No pude abrir el archivo descargado.", .localFile); return nil }
         retrying = true; acceptingSnapshots = false; startupDeadline = nil
         if let source { failedSources.insert(source.index) }
         attempts = failedSources.count
-        guard failedSources.count <= PlaybackRules.maxSourceRetries else { retrying = false; fail("Ninguna fuente funcionó."); return nil }
+        guard failedSources.count <= PlaybackRules.maxSourceRetries else { retrying = false; fail("Ninguna fuente funcionó.", .noneWorked); return nil }
         notice = .triedAnotherSource(attempt: failedSources.count)
         let position = snapshot.position
         generation += 1
@@ -826,7 +852,8 @@ public final class PlayerModel: ObservableModel {
         demoPinned = true
         switch kind {
         case "skip-intro": skipKind = .intro; skipIntroTo = snapshot.position + 60
-        case "error": fail("No pude abrir este video. La fuente dejó de responder.")
+        case "error": fail("No pude abrir este video. La fuente dejó de responder.", .sourceDied)
+        case "no-sources": fail("No hay fuentes de Real-Debrid para este título.", .noSources)
         case "upnext":
             guard let next = nextEpisodeIDIgnoringLocal() else { return }
             let (label, title) = episodeText(next)
