@@ -432,6 +432,23 @@ public final class ParaTiModel: ObservableModel {
 
     public func items(for list: ForYouList) -> [Suggestion] { railItems[key(list)] ?? [] }
 
+    /// «¿Qué vemos?» › De qué listas: lo de una lista que aún no se abrió, pedido solo si la eliges (series y películas,
+    /// alternadas). Tienes muchas listas: no se piden todas al abrir la hoja.
+    public func decideLoader(for list: ForYouList) -> @Sendable () async -> [Suggestion] {
+        let remote = services.forYouRemote, local = services.forYou, source = source, id = list.id
+        return {
+            @Sendable func fetch(_ kind: String) async -> [Suggestion] {
+                switch source {
+                case .console: return (try? await remote.items(listID: id, kind: kind)) ?? []
+                case .phone: return (try? await local.items(listID: id, kind: kind)) ?? []
+                }
+            }
+            async let series = fetch("series")
+            async let movies = fetch("movie")
+            return await ParaTiModel.interleaved(series, movies)
+        }
+    }
+
     // MARK: tus plataformas
     /// Las plataformas con sus rankings (la fila en abanico de «Tus plataformas» y su página).
     public var platformHubs: [PlatformHub] { PlatformPlanner.hubs(lists) }

@@ -111,8 +111,9 @@ struct ParaTiView: View {
     private func decideSources(_ m: ParaTiModel) -> [DecideModel.Source] {
         let language = env.services.appSettings.uiLanguage
         var out: [DecideModel.Source] = []
-        if let because = m.because { out.append(.init(id: "because", name: String(format: Strings.tr("Porque viste %@", language: language), because.seed.title), items: because.items)) }
-        if !m.newOnPlatforms.isEmpty { out.append(.init(id: "new", name: Strings.tr("Nuevo en tus plataformas", language: language), items: m.newOnPlatforms)) }
+        let suggested = "Sugerencias"
+        if let because = m.because { out.append(.init(id: "because", name: String(format: Strings.tr("Porque viste %@", language: language), because.seed.title), origin: suggested, items: because.items)) }
+        if !m.newOnPlatforms.isEmpty { out.append(.init(id: "new", name: Strings.tr("Nuevo en tus plataformas", language: language), origin: suggested, items: m.newOnPlatforms)) }
         for plan in m.visibleShelves {
             let name: String = switch plan.id {
             case "watchlist": Strings.tr("Tu watchlist", language: language)
@@ -122,7 +123,12 @@ struct ParaTiView: View {
             case "popular": Strings.tr("Lo más popular", language: language)
             default: plan.title.isEmpty ? plan.id : plan.title
             }
-            out.append(.init(id: plan.id, name: name, items: m.items(for: plan)))
+            out.append(.init(id: plan.id, name: name, origin: suggested, items: m.items(for: plan)))
+        }
+        // Todas tus listas (tienes muchas): las que aún no se abren se piden solo si las eliges.
+        for list in m.traktLists where !out.contains(where: { $0.id == list.id }) && !list.title.isEmpty {
+            let origin = list.source.isEmpty ? (list.group == .mine ? "Trakt" : suggested) : list.source
+            out.append(.init(id: list.id, name: list.title, origin: origin, items: m.items(for: list), load: m.decideLoader(for: list)))
         }
         return out
     }

@@ -221,6 +221,28 @@
         }
       }
     },
+    "%lld lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld list"
+          }
+        }
+      }
+    },
+    "%lld listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld lists"
+          }
+        }
+      }
+    },
     "%lld min": {
       "extractionState": "manual",
       "localizations": {
@@ -228,6 +250,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld min"
+          }
+        }
+      }
+    },
+    "%lld opciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld options"
+          }
+        }
+      }
+    },
+    "%lld opción": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld option"
           }
         }
       }
@@ -276,6 +320,17 @@
         }
       }
     },
+    "%lld puestos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld set"
+          }
+        }
+      }
+    },
     "%lld sustos por delante": {
       "extractionState": "manual",
       "localizations": {
@@ -294,6 +349,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld seasons"
+          }
+        }
+      }
+    },
+    "%lld título": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld title"
           }
         }
       }
@@ -1497,6 +1563,17 @@
         }
       }
     },
+    "Buscar entre tus %lld listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search your %lld lists"
+          }
+        }
+      }
+    },
     "Buscar fuente": {
       "extractionState": "manual",
       "localizations": {
@@ -2168,6 +2245,17 @@
         }
       }
     },
+    "Con %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With %@"
+          }
+        }
+      }
+    },
     "Con Alexa": {
       "extractionState": "manual",
       "localizations": {
@@ -2773,6 +2861,28 @@
         }
       }
     },
+    "Cualquier ánimo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any mood"
+          }
+        }
+      }
+    },
+    "Cualquier época": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any era"
+          }
+        }
+      }
+    },
     "Cualquiera": {
       "extractionState": "manual",
       "localizations": {
@@ -3033,6 +3143,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "From what you watched lately"
+          }
+        }
+      }
+    },
+    "De qué listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which lists"
           }
         }
       }
@@ -3935,6 +4056,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The bottleneck is how iOS downloads in the background: inside the app it's much faster. That can be fixed in Orbital."
+          }
+        }
+      }
+    },
+    "Elegidas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chosen"
           }
         }
       }
@@ -5754,6 +5886,17 @@
         }
       }
     },
+    "Limpiar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        }
+      }
+    },
     "Lista de subtítulos": {
       "extractionState": "manual",
       "localizations": {
@@ -5838,6 +5981,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Done"
+          }
+        }
+      }
+    },
+    "Listo · %lld lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done · %lld list"
+          }
+        }
+      }
+    },
+    "Listo · %lld listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done · %lld lists"
+          }
+        }
+      }
+    },
+    "Listo · todo lo sugerido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done · everything suggested"
           }
         }
       }
@@ -6876,6 +7052,17 @@
         }
       }
     },
+    "Más filtros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More filters"
+          }
+        }
+      }
+    },
     "Más grande": {
       "extractionState": "manual",
       "localizations": {
@@ -6949,6 +7136,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No. %lld on %@"
+          }
+        }
+      }
+    },
+    "Nada con %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing with %@"
           }
         }
       }
@@ -7125,6 +7323,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No source worked."
+          }
+        }
+      }
+    },
+    "Ninguno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
           }
         }
       }
@@ -8823,6 +9032,17 @@
         }
       }
     },
+    "Prueba quitando un filtro.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try removing a filter."
+          }
+        }
+      }
+    },
     "Próximo estreno": {
       "extractionState": "manual",
       "localizations": {
@@ -8929,6 +9149,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remove"
+          }
+        }
+      }
+    },
+    "Quitar %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %@"
           }
         }
       }
@@ -9791,6 +10022,17 @@
         }
       }
     },
+    "Según (basta una):": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "According to (any one):"
+          }
+        }
+      }
+    },
     "Semana": {
       "extractionState": "manual",
       "localizations": {
@@ -10220,6 +10462,28 @@
         }
       }
     },
+    "Sin mínimo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No minimum"
+          }
+        }
+      }
+    },
+    "Sin opciones con eso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No options with that"
+          }
+        }
+      }
+    },
     "Sin pistas de audio": {
       "extractionState": "manual",
       "localizations": {
@@ -10605,6 +10869,17 @@
         }
       }
     },
+    "TMDB necesita su clave en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TMDB needs its key in Settings."
+          }
+        }
+      }
+    },
     "TMDB no tiene títulos de esta persona.": {
       "extractionState": "manual",
       "localizations": {
@@ -10935,6 +11210,28 @@
         }
       }
     },
+    "Todas · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All · %lld"
+          }
+        }
+      }
+    },
+    "Todas, de la A a la Z": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All, A to Z"
+          }
+        }
+      }
+    },
     "Todavía nada": {
       "extractionState": "manual",
       "localizations": {
@@ -11030,6 +11327,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Everything you're watching · %@"
+          }
+        }
+      }
+    },
+    "Todo lo sugerido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything suggested"
           }
         }
       }
@@ -11826,6 +12134,17 @@
         }
       }
     },
+    "Usadas hace poco": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently used"
+          }
+        }
+      }
+    },
     "Usamos tu ajuste de %@ para esta versión.": {
       "extractionState": "manual",
       "localizations": {
@@ -11921,6 +12240,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watch %@"
+          }
+        }
+      }
+    },
+    "Ver %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See %lld"
           }
         }
       }
@@ -12530,6 +12860,17 @@
         }
       }
     },
+    "de %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "of %lld"
+          }
+        }
+      }
+    },
     "en total": {
       "extractionState": "manual",
       "localizations": {
@@ -12944,6 +13285,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "In sync now? It's remembered for this version."
+          }
+        }
+      }
+    },
+    "Ánimo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mood"
           }
         }
       }

@@ -231,3 +231,52 @@ final class DecideSpeedTests: XCTestCase {
         model.stop()
     }
 }
+
+/// Los filtros nuevos: cuántas quedan, qué quitar si ninguna, la calificación de varias fuentes y listas que se piden al elegirlas.
+@MainActor
+final class DecideFiltersTests: XCTestCase {
+    private func suggestion(_ id: Int, genres: [String], runtime: Int = 90, trakt: Double? = nil, year: Int = 2020) -> Suggestion {
+        var s = Suggestion(kind: "movie", imdb: "tt\(id)", title: "Peli \(id)", year: year, runtime: runtime, poster: "", wide: "", reason: .recommended)
+        s.genres = genres; s.traktRating = trakt
+        return s
+    }
+
+    func testCountsRelaxationsAndRatingFromAnySource() async throws {
+        let rig = try ServicesRig()
+        let pool = [suggestion(1, genres: ["Horror"], trakt: 7.5), suggestion(2, genres: ["Comedy"], trakt: 6.0),
+                    suggestion(3, genres: ["Comedy"], runtime: 30, trakt: 8.1), suggestion(4, genres: ["Drama"], year: 1995)]
+        let model = DecideModel(rig.services, pool: pool)
+        model.time = .long
+        XCTAssertEqual(model.count(), 4)
+        XCTAssertEqual(model.count { $0.mood = .light }, 2, "ligero: las dos comedias")
+        model.genres = ["horror"]; model.decades = [1990]
+        XCTAssertEqual(model.count(), 0)
+        let relax = model.relaxations()
+        XCTAssertEqual(relax.first?.relax, .genre("horror"), "quitar Terror abre más")
+        XCTAssertEqual(relax.first?.count, 1)
+        model.genres = []; model.decades = []
+        // Calificación: basta con una de las elegidas (solo Trakt aquí; IMDb no se sabe sin Cinemeta → Trakt manda).
+        model.ratingSources = [.trakt]; model.minRating = 7
+        XCTAssertEqual(model.count(), 2, "Trakt 7.5 y 8.1")
+        model.ratingSources = [.trakt, .imdb]
+        XCTAssertEqual(model.count(), 2, "con Trakt ya alcanza (basta una)")
+        model.minRating = 8
+        XCTAssertEqual(model.count(), 1, "solo 8.1; las demás esperan a IMDb (aún no se sabe) y no cuentan todavía")
+        model.stop()
+    }
+
+    func testListsLoadWhenChosen() async throws {
+        let rig = try ServicesRig()
+        let listItems = [suggestion(10, genres: ["Horror"]), suggestion(11, genres: ["Horror"]), suggestion(12, genres: ["Horror"])]
+        let lazy = DecideModel.Source(id: "list:terror", name: "Terror de octubre", origin: "Trakt", items: [], load: { listItems })
+        let model = DecideModel(rig.services, pool: [suggestion(1, genres: ["Comedy"])], sources: [lazy])
+        model.time = .long
+        XCTAssertNil(model.itemCount(lazy), "aún no se abre")
+        await model.setSources(["list:terror"])
+        XCTAssertEqual(model.itemCount(lazy), 3)
+        XCTAssertEqual(model.count(), 3)
+        XCTAssertTrue(model.picks.allSatisfy { $0.imdb.hasPrefix("tt1") && $0.imdb != "tt1" }, "de la lista elegida")
+        XCTAssertEqual(model.recentSourceIDs.first, "list:terror")
+        model.stop()
+    }
+}

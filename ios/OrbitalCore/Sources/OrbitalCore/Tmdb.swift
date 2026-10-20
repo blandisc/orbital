@@ -157,6 +157,17 @@ public struct Tmdb: Sendable {
         return rows.first?["id"]?.intValue.flatMap { $0 > 0 ? $0 : nil }
     }
 
+    /// La calificación de TMDB (0–10) de un título de IMDb, en la misma consulta de `find` (nil: TMDB no la tiene).
+    public func rating(imdb: String, kind: String) async throws -> Double? {
+        guard imdb.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil else { return nil }
+        let data = try await get("/find/\(imdb)", [("external_source", "imdb_id")])
+        let row = data[kind == "movie" ? "movie_results" : "tv_results"]?.array?.first
+        guard let votes = row?["vote_count"]?.intValue, votes >= Self.minVotes, let r = row?["vote_average"]?.doubleValue, r > 0 else { return nil }
+        return r
+    }
+    /// Con menos votos, la calificación de TMDB no dice mucho (un 9 con 3 votos).
+    public static let minVotes = 20
+
     /// La saga de una película («Dune: colección»), si TMDB la tiene: su id y su nombre en tu idioma.
     public func collection(imdb: String) async throws -> (id: Int, name: String)? {
         guard let id = try await findID(imdb: imdb, kind: "movie") else { return nil }

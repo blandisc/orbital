@@ -1433,6 +1433,8 @@ struct VideoSettingsPanel: View {
             }
             PanelChip(title: Text("Más idiomas…"), selected: false, symbol: "globe") { moreLanguages = true }
         }
+        // Un `ForEach` dentro de `FlowChips` no se redibuja solo cuando cambia el modelo: con el estado como identidad, sí.
+        .id("\(lang ?? "")-\(off)-\(s.selectedSubtitle ?? -1)")
         .accessibilityIdentifier("player-subtitle-language")
         .sheet(isPresented: $moreLanguages) {
             LanguageSearchList(codes: SubtitleLanguage.all, available: model.subtitleLanguages.filter { !shortList.contains($0.code) }, name: languageName) { code in

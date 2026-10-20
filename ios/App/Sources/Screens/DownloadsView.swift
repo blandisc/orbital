@@ -387,6 +387,7 @@ struct DownloadSubtitlesSheet: View {
                             .disabled(saving != nil || done >= options.count)
                         }
                     }
+                    .id("\(saved.sorted { $0.key < $1.key })-\(saving ?? "")")   // que se redibuje al guardar (ver `FlowChips`)
                 }
             } else {
                 HStack(spacing: DS.Space.s2) { ProgressView(); Text("Buscando subtítulos…").recipe(.footnote) }

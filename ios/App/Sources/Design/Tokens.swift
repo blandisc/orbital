@@ -383,12 +383,14 @@ enum DS {
     /// «¿Qué vemos?»: el alto de la hoja corta (la propuesta rápida), la parte de la pantalla de la estirada, el alto de la
     /// propuesta y los mínimos de calificación que se ofrecen.
     enum Decide {
-        static let quickHeight: CGFloat = 470, moreShare: CGFloat = 0.72, cardHeight: CGFloat = 230, compactCardHeight: CGFloat = 130
-        /// Los tres carteles: el elegido con su borde; los otros, un poco más chicos y tenues; al elegir filtros, más bajos.
-        static let chosenStroke: CGFloat = 3, otherScale: CGFloat = 0.92, otherOpacity: Double = 0.7, trioCompactHeight: CGFloat = 150
+        /// El alto de la hoja corta antes de medirse.
+        static let quickHeight: CGFloat = 470
+        /// Los tres carteles: el elegido con su borde; los otros, un poco más chicos y tenues.
+        static let chosenStroke: CGFloat = 3, otherScale: CGFloat = 0.92, otherOpacity: Double = 0.7
         /// La frase de por qué verla: al menos estos caracteres antes de cortar en el primer punto.
         static let pitchMin = 40
-        static let ratingSteps: [Double] = [0, 6, 7, 8]
+        /// Las celdas de la fila de filtros (qué es arriba, lo puesto abajo) y los carteles apilados de una lista.
+        static let cellHeight: CGFloat = 52, listPoster: CGFloat = 44
     }
 
     /// Modo acompañante: la tarjeta del juego, las del carrusel, la batería baja (%), las líneas de la nota y los tiempos
