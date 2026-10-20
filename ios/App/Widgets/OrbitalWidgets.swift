@@ -1,5 +1,6 @@
 import ActivityKit
 import SwiftUI
+import ImageIO
 import WidgetKit
 
 @main
@@ -92,13 +93,24 @@ struct ActivityPoster: View {
     let file: String?
     let width: CGFloat
 
+    @Environment(\.displayScale) private var scale
+
     var body: some View {
-        if let file, let url = WidgetStore.imageURL(file), let image = UIImage(contentsOfFile: url.path) {
+        // Reducida al tamaño exacto de donde va: una imagen más grande que su lugar (la de 240 px en la isla compacta, de
+        // 20 pt) hace que iOS no dibuje la actividad y enseñe solo bloques grises.
+        if let file, let url = WidgetStore.imageURL(file), let image = Self.thumbnail(url, maxPixel: width / DS.Poster.aspect * scale) {
             Image(uiImage: image).resizable().scaledToFill()
                 .frame(width: width, height: width / DS.Poster.aspect)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Widget.posterRadius, style: .continuous))
         } else {
             Image(systemName: "arrow.down.circle.fill").font(DS.font(.lg)).foregroundStyle(DS.paper).frame(width: width)
         }
+    }
+
+    static func thumbnail(_ url: URL, maxPixel: CGFloat) -> UIImage? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
+                                        kCGImageSourceThumbnailMaxPixelSize: max(1, Int(maxPixel.rounded(.up)))]
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary).map { UIImage(cgImage: $0) }
     }
 }
