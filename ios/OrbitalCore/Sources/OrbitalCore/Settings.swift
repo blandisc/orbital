@@ -127,15 +127,16 @@ public struct AppSettings: Codable, Equatable, Sendable {
 /// El botón de zoom del reproductor (como Infuse): cada toque pasa al siguiente modo y pellizcar va entre
 /// `fit` (cerrar los dedos) y `fill` (abrirlos).
 public enum VideoZoom: String, CaseIterable, Sendable {
-    case fit            // «Ajustar»: el cuadro completo a todo el ancho (en horizontal puede quedar bajo la isla)
-    case fitSafeArea    // «Ajustar al área segura»: el cuadro completo, nunca bajo la isla
+    // Los cuatro de Infuse (8.1.7+), ni más ni menos, en el mismo orden del botón: Normal, Aspect Fit, Crop y Stretch.
+    case fit            // «Normal»: el cuadro completo a todo el ancho (en horizontal puede quedar bajo la isla)
+    case fitSafeArea    // «Ajuste de aspecto»: el cuadro completo, lejos de la isla y de las esquinas redondeadas
     case fill           // «Recortar»: llena la pantalla y recorta las orillas
     case stretch        // «Estirar»: llena la pantalla deformando la imagen
 
     /// Lo guardado en ajustes (un valor desconocido vuelve a «Ajustar»).
     public init(stored: String) { self = VideoZoom(rawValue: stored) ?? .fit }
 
-    /// El siguiente modo del botón (después de «Estirar» vuelve a «Ajustar»).
+    /// El siguiente modo del botón (después de «Estirar» vuelve a «Normal»), en los dos sentidos, como Infuse.
     public var next: VideoZoom {
         let all = Self.allCases
         return all[(all.firstIndex(of: self)! + 1) % all.count]
@@ -147,8 +148,8 @@ public enum VideoZoom: String, CaseIterable, Sendable {
     /// El nombre que dice el aviso y VoiceOver (la clave de `Localizable.xcstrings`).
     public var title: String {
         switch self {
-        case .fit: "Ajustar"
-        case .fitSafeArea: "Ajustar al área segura"
+        case .fit: "Normal"
+        case .fitSafeArea: "Ajuste de aspecto"
         case .fill: "Recortar"
         case .stretch: "Estirar"
         }

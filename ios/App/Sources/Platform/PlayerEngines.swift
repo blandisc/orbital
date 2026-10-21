@@ -11,7 +11,7 @@ protocol VideoPlayerEngine: PlayerEngine {
     var name: String { get }
     /// Lo que se puede llevar a una ventana de PiP ahora (cambia con cada fuente; nil antes de cargar).
     @MainActor var pictureInPicture: PictureInPictureContent? { get }
-    /// El zoom del video (botón y pellizco, como Infuse). «Ajustar al área segura» es ajustar: el recuadro más chico lo pone `PlayerScreen`.
+    /// El zoom del video (botón y pellizco, como Infuse). «Ajuste de aspecto» es ajustar: el recuadro más chico lo pone `PlayerScreen`.
     @MainActor func setZoom(_ zoom: VideoZoom)
     /// La ventana de PiP se abrió o se cerró (el motor sigue decodificando video en segundo plano mientras tanto).
     @MainActor func setPictureInPictureActive(_ active: Bool)

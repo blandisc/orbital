@@ -516,7 +516,8 @@ struct PlayerScreen: View {
             } else {
                 GeometryReader { geo in
                     let rect = videoRect(in: geo.size)
-                    DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: zoomToast == .fill ? Text("Llena la pantalla y recorta los lados") : nil)
+                    DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: zoomToast == .fill ? Text("Llena la pantalla y recorta los lados")
+                                : zoomToast == .stretch ? Text("Llena la pantalla deformando la imagen") : nil)
                         .position(x: rect.midX, y: rect.midY)
                 }
                 .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
@@ -855,14 +856,8 @@ struct PlayerScreen: View {
             .transition(.opacity)
     }
 
-    /// El zoom siguiente del botón. En vertical «Ajustar al área segura» no cambia nada (el video ya va dentro del área
-    /// segura), así que se salta.
-    /// En vertical el botón alterna entre «Ajustar» y «Recortar» (pantalla completa); el área segura y «Estirar» solo tienen
-    /// sentido en horizontal.
-    private var nextZoom: VideoZoom {
-        if !landscape { return zoom == .fill ? .fit : .fill }
-        return zoom.next
-    }
+    /// El zoom siguiente del botón: los cuatro de Infuse en orden, en los dos sentidos (antes en vertical solo había dos).
+    private var nextZoom: VideoZoom { zoom.next }
 
     // MARK: subtítulos rápidos
     /// El panel chico: en horizontal abajo y al centro, sobre el video; en vertical bajo el video (en el lugar de los controles).
@@ -1238,7 +1233,7 @@ struct PlayerScreen: View {
     /// proporción y de orilla a orilla (no apachurrado), a la altura que lo dejes al arrastrarlo; con el panel abierto, la mitad de arriba.
     private func videoRect(in size: CGSize) -> CGRect {
         if landscape && zoom == .fitSafeArea && !panel {
-            // «Ajustar al área segura»: el cuadro nunca queda bajo la isla ni bajo el indicador de inicio.
+            // «Ajuste de aspecto» (Aspect Fit de Infuse): el cuadro nunca queda bajo la isla ni bajo el indicador de inicio.
             let inset = Self.windowSafeArea
             return CGRect(x: inset.left, y: inset.top, width: max(0, size.width - inset.left - inset.right),
                           height: max(0, size.height - inset.top - inset.bottom))
@@ -1257,7 +1252,13 @@ struct PlayerScreen: View {
         // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
-        return Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter)
+        let band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter)
+        // «Ajuste de aspecto» en vertical: el cuadro con su margen a los lados, lejos de las esquinas redondeadas.
+        if zoom == .fitSafeArea {
+            let width = band.width - DS.Space.gutter * 2, height = width / DS.Poster.stillAspect
+            return CGRect(x: band.minX + DS.Space.gutter, y: band.midY - height / 2, width: width, height: height)
+        }
+        return band
     }
 
     /// El video en vertical: de orilla a orilla, el alto sale del ancho y la proporción (sin tope, salvo que no quepa), a la
@@ -1276,7 +1277,7 @@ struct PlayerScreen: View {
     static let portraitCenterKey = "player-portrait-center"
 
     /// Vertical con «Recortar»: el video a pantalla completa.
-    private var fillsPortrait: Bool { !landscape && !panel && zoom == .fill }
+    private var fillsPortrait: Bool { !landscape && !panel && (zoom == .fill || zoom == .stretch) }
 
     /// Los márgenes seguros de la ventana (el video en horizontal ignora el área segura, así que no los trae su `GeometryReader`).
     static var windowSafeArea: UIEdgeInsets {

@@ -815,6 +815,17 @@
         }
       }
     },
+    "Ajuste de aspecto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aspect Fit"
+          }
+        }
+      }
+    },
     "Ajustes": {
       "extractionState": "manual",
       "localizations": {
@@ -5204,6 +5215,17 @@
         }
       }
     },
+    "Estirar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stretch"
+          }
+        }
+      }
+    },
     "Estreno": {
       "extractionState": "manual",
       "localizations": {
@@ -6432,6 +6454,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Done: they were already in sync"
+          }
+        }
+      }
+    },
+    "Llena la pantalla deformando la imagen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fills the screen by stretching the picture"
           }
         }
       }
@@ -10249,6 +10282,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reconnecting…"
+          }
+        }
+      }
+    },
+    "Recortar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crop"
           }
         }
       }
