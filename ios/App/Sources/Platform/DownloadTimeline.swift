@@ -25,7 +25,8 @@ enum DownloadTimeline {
         append(line + "\n")
     }
 
-    private static func append(_ text: String) {
+    /// Agrega un renglón a una bitácora (esta o la de los avisos de estrenos); al pasar de ~200 KB empieza otra.
+    static func append(_ text: String, to file: URL = file) {
         let size = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int) ?? 0
         if size > limit { try? FileManager.default.removeItem(at: file) }
         if !FileManager.default.fileExists(atPath: file.path) { FileManager.default.createFile(atPath: file.path, contents: nil) }

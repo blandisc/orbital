@@ -12,7 +12,10 @@ enum InboxBackgroundTask {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: identifier, using: nil) { task in
             schedule()   // la siguiente vez, pase lo que pase
             let work = Task { @MainActor in
+                // De paso, los estrenos: iOS da pocas oportunidades en segundo plano y cada una cuenta.
+                async let releases: Void = ReleaseNotifier.check(origin: "ios-buzon")
                 await AppEnvironment.shared.checkTVInbox()
+                await releases
                 task.setTaskCompleted(success: !Task.isCancelled)
             }
             task.expirationHandler = { work.cancel() }

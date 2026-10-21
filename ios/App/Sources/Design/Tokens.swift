@@ -302,9 +302,16 @@ enum DS {
         /// La agarradera del video en vertical: la rayita, la franja de abajo que la toma (y lo que se mete sobre el video).
         /// «Audio y subtítulos»: cuántos idiomas de otra versión se ofrecen junto a las pistas de este archivo.
         static let otherVersionsShown = 2
-        static let handleWidth: CGFloat = 40, handleHeight: CGFloat = 5, handleZone: CGFloat = 34, handleReach: CGFloat = 12
-        /// Cuántas funciones se dice «Arrastra para mover» junto a la agarradera.
+        /// La agarradera va dentro del borde de abajo del video (sobre un velo): la rayita, a cuánto del borde, el alto del velo, la
+        /// franja que la toma (dentro del video, desde abajo, y un poco por fuera) y el aire hasta la barra de avance.
+        static let handleWidth: CGFloat = 44, handleHeight: CGFloat = 5, handleInset: CGFloat = 10, handleScrim: CGFloat = 44
+        static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap: CGFloat = 20
+        static let handleReach: CGFloat = 12
+        /// Cuántas funciones da el video un brinquito (hacia abajo y de regreso) para enseñar que se mueve, y de qué tamaño (parte del alto).
         static let moveHintTimes = 3
+        static let moveNudge: Double = 0.025
+        /// Al arrastrarlo: se levanta (un poco más chico, con esquinas y sombra).
+        static let liftScale: CGFloat = 0.97, liftRadius: CGFloat = 14, liftShadow: CGFloat = 24
         /// Subtítulos rápidos: ancho máximo del panel (horizontal) y hasta dónde puede bajar su borde de arriba (vertical).
         static let dockWidth: CGFloat = 560, dockPortraitMaxTop: CGFloat = 0.55
         /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).
@@ -713,6 +720,10 @@ enum DS {
         static let inboxRefresh: TimeInterval = 15 * 60
         /// Cada cuánto (como mínimo) iOS despierta la app para ver si un estreno ya se puede ver.
         static let releaseRefresh: TimeInterval = 30 * 60
+        /// Revisar estrenos: lo más pronto que se pide la siguiente y cuánto después de que sale un episodio (para que ya tenga fuente).
+        static let releaseSoonest: TimeInterval = 15 * 60, releaseAfterAiring: TimeInterval = 15 * 60
+        /// La imagen del aviso de estreno: lo más que se espera por ella (en segundo plano el tiempo es poco; sin ella igual se avisa).
+        static let releaseImageTimeout: TimeInterval = 5
         /// Cuánto se queda a la vista el candado de «Pantalla bloqueada» tras un toque.
         static let unlockPrompt: UInt64 = 3_000_000_000
         /// Cuánto se queda a la vista el indicador de brillo o volumen tras soltar, antes de desvanecerse.

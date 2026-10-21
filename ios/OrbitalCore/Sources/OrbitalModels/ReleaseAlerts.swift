@@ -33,6 +33,23 @@ public final class ReleaseAlerts {
     static let memory = 200
     /// El horario silencioso: de las 23 a las 8, el aviso espera a las 8.
     public nonisolated static let quietFrom = 23, quietUntil = 8
+    /// Lo más que se espera por las fuentes de cada episodio. Se preguntan todos a la vez: antes iban de uno en uno y un
+    /// episodio sin fuentes todavía esperaba a cada complemento hasta 15-30 s; con dos así se acababan los ~30 s que da iOS en
+    /// segundo plano, iOS cortaba la revisión y el que sí tenía fuente nunca se avisaba.
+    public nonisolated static let findBudget: TimeInterval = 10
+
+    /// Lo que pasó en la última revisión (para la bitácora): qué faltaba avisar, qué ya tenía fuente, qué no contestó a
+    /// tiempo y cuándo sale lo siguiente de tu calendario.
+    public struct Report: Sendable, Equatable {
+        public var pending: [String] = []
+        public var found: [String] = []
+        public var timedOut: [String] = []
+        public var nextAiring: Date?
+        public var seconds: Double = 0
+    }
+    public private(set) var report = Report()
+    /// El tope por episodio de esta revisión (las pruebas lo bajan).
+    var budget = ReleaseAlerts.findBudget
 
     private let services: Services
     public init(_ services: Services) { self.services = services }
@@ -54,17 +71,57 @@ public final class ReleaseAlerts {
 
     /// Lo que ya se puede ver y no se ha avisado. Sin el aviso encendido o sin Trakt, nada.
     public func due() async -> [Alert] {
+        report = Report()
         guard services.appSettings.releaseAlerts else { return [] }
+        let started = Date()
+        let now = services.now()
         let airings = (try? await services.forYou.calendar(skip: -1, days: 2)) ?? []
+        report.nextAiring = airings.map(\.aired).filter { $0 > now }.min()
+        let pending = Self.pending(airings, sent: sent(), now: now)
+        report.pending = pending.map(\.id)
+        // Todos a la vez, cada uno con su tope: la revisión entera cabe en el tiempo que da iOS.
+        let finder = services.finder
+        let budget = self.budget
+        let asks = pending.map { item in
+            (item, services.titlePrefs.languages(for: item.airing.series.imdb, settings: services.appSettings).prefs)
+        }
+        let answers = await withTaskGroup(of: (Int, Source?, Bool).self) { group in
+            for (i, ask) in asks.enumerated() {
+                group.addTask { let (best, late) = await Self.firstSource(finder, id: ask.0.id, prefs: ask.1, budget: budget); return (i, best, late) }
+            }
+            var out: [(Int, Source?, Bool)] = []
+            for await answer in group { out.append(answer) }
+            return out.sorted { $0.0 < $1.0 }
+        }
         var out: [Alert] = []
-        for (airing, episode, id) in Self.pending(airings, sent: sent(), now: services.now()) {
-            let prefs = services.titlePrefs.languages(for: airing.series.imdb, settings: services.appSettings).prefs
-            guard let sources = try? await services.finder.find(kind: "series", videoID: id, prefs: prefs, fresh: true), let best = sources.first else { continue }
+        for (i, best, late) in answers {
+            let (airing, episode, id) = pending[i]
+            if late { report.timedOut.append(id) }
+            guard let best else { continue }
+            report.found.append(id)
             out.append(Alert(id: id, metaID: airing.series.imdb, show: airing.series.title, season: airing.season, episode: episode,
                              episodeTitle: episode == airing.first ? airing.episodeTitle : "", poster: airing.series.poster, art: airing.series.wide,
                              quality: best.resolution.isEmpty ? nil : best.resolution, instant: best.cached, minutes: airing.series.runtime))
         }
+        report.seconds = Date().timeIntervalSince(started)
         return out
+    }
+
+    /// La mejor fuente de un episodio, o nada si en `budget` segundos no llegó ninguna (`late`: se acabó el tiempo). Lo que
+    /// gane primero contesta y a lo otro ya no se le espera: la búsqueda corre en su propia tarea, que no se detiene al
+    /// cancelarla, y un grupo de tareas se quedaba esperándola hasta el final.
+    nonisolated static func firstSource(_ finder: StreamFinder, id: String, prefs: Preferences, budget: TimeInterval) async -> (Source?, late: Bool) {
+        await withCheckedContinuation { (done: CheckedContinuation<(Source?, late: Bool), Never>) in
+            let once = Once()
+            let lookup = Task {
+                let best = (try? await finder.find(kind: "series", videoID: id, prefs: prefs, fresh: true))?.first
+                if once.claim() { done.resume(returning: (best, false)) }
+            }
+            Task {
+                try? await Task.sleep(nanoseconds: UInt64(budget * 1_000_000_000))
+                if once.claim() { lookup.cancel(); done.resume(returning: (nil, true)) }
+            }
+        }
     }
 
     /// Ya se avisó: no se vuelve a avisar.
@@ -76,4 +133,11 @@ public final class ReleaseAlerts {
 
     private func sentList() -> [String] { services.kv.data(Self.sentKey).flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? [] }
     private func sent() -> Set<String> { Set(sentList()) }
+}
+
+/// Quién llegó primero (la búsqueda o el tope): solo uno contesta.
+private final class Once: @unchecked Sendable {
+    private let lock = NSLock()
+    private var taken = false
+    func claim() -> Bool { lock.withLock { defer { taken = true }; return !taken } }
 }

@@ -669,14 +669,15 @@ struct EpisodeRowView: View {
         }
         .padding(.vertical, DS.Space.s3)
         .opacity(row.airs == nil ? 1 : DesignTokens.Opacity.faint)
-        .contextMenu {
-            if row.airs == nil {
-            Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
-            Button("Descargar", systemImage: "arrow.down.circle", action: download)
-            Button("Elegir la fuente…", systemImage: "list.bullet", action: chooseSource)
-            if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
-            }
-        }
+        .contextMenu { if row.airs == nil { actions(download: true) } }
+    }
+
+    /// Lo que se puede hacer con un episodio: en el «⋯» de su renglón (a la vista) y al mantenerlo presionado.
+    @ViewBuilder private func actions(download withDownload: Bool) -> some View {
+        if withDownload { Button("Descargar", systemImage: "arrow.down.circle", action: download) }
+        Button("Elegir versión…", systemImage: "slider.horizontal.3", action: chooseSource)
+        Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
+        if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
     }
 
     private var hasStatus: Bool { row.airs != nil || row.watched || row.leftMinutes > 0 || row.download == .done }
@@ -705,6 +706,14 @@ struct EpisodeRowView: View {
             }
             .buttonStyle(.plain).accessibilityLabel(row.download == .failed ? Text("Reintentar") : Text("Reanudar"))
         }
-        else { Button(action: download) { Image(systemName: "arrow.down.circle").foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget) }.buttonStyle(.plain).accessibilityLabel(Text("Descargar")) }
+        else {
+            // «⋯» a la vista: Descargar, Elegir versión, Marcar como visto y Ver en la TV (antes solo la flecha de descargar, y
+            // elegir la versión de un episodio estaba escondido en mantenerlo presionado).
+            Menu { actions(download: true) } label: {
+                Image(systemName: "ellipsis.circle").foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            }
+            .accessibilityLabel(Text("Más del episodio"))
+            .accessibilityIdentifier("episode-more")
+        }
     }
 }

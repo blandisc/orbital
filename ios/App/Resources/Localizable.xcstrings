@@ -562,6 +562,28 @@
         }
       }
     },
+    "Abriendo la versión que elegiste…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening the version you picked…"
+          }
+        }
+      }
+    },
+    "Abriendo tu descarga…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening your download…"
+          }
+        }
+      }
+    },
     "Abrir Ajustes": {
       "extractionState": "manual",
       "localizations": {
@@ -1068,6 +1090,17 @@
         }
       }
     },
+    "Arrastra hacia arriba o hacia abajo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag up or down"
+          }
+        }
+      }
+    },
     "Arrastra para mover": {
       "extractionState": "manual",
       "localizations": {
@@ -1372,6 +1405,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download the next episode when one finishes"
+          }
+        }
+      }
+    },
+    "Bajar el video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move the video down"
           }
         }
       }
@@ -2131,6 +2175,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Signs in your language when the audio is another"
+          }
+        }
+      }
+    },
+    "Centro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Middle"
           }
         }
       }
@@ -7514,6 +7569,17 @@
         }
       }
     },
+    "Mover el video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move the video"
+          }
+        }
+      }
+    },
     "Moverte por la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -7587,6 +7653,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Shortest first"
+          }
+        }
+      }
+    },
+    "Más del episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More for this episode"
           }
         }
       }
@@ -11690,6 +11767,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stremio answered HTTP %@"
+          }
+        }
+      }
+    },
+    "Subir el video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move the video up"
           }
         }
       }

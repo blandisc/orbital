@@ -115,7 +115,8 @@ struct PlayerScreen: View {
     /// Cuántas veces se ha visto «Arrastra para mover» junto a la agarradera (se deja de decir después de unas pocas).
     @AppStorage("player-move-hint-seen") private var moveHintSeen = 0
     /// En esta función se dice (se decide al abrir, para que no aparezca y desaparezca a media película).
-    @State private var showsMoveHint = false
+    /// Arrastrando el video: la altura (de las tres) a la que se imantaría al soltar (vibra al cambiar).
+    @State private var snapIndex: Int?
     /// En vertical, este arrastre mueve el video (empezó en la agarradera o fuera del video); si no, es brillo o volumen.
     @State private var movingVideo = false
 
@@ -158,10 +159,16 @@ struct PlayerScreen: View {
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
                         // quedaba a media imagen).
                         holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
+                            // En vertical, con la agarradera a la vista (dentro del borde de abajo), el subtítulo sube sobre ella.
+                            .offset(y: showsHandle ? -DS.PlayerPanel.handleScrim / 2 : 0)
                             .transition(.opacity)
                     }
                 }
                 .frame(width: rect.width, height: rect.height)
+                // Al arrastrarlo se levanta: un poco más chico, con esquinas y sombra (como al mover algo en iOS).
+                .clipShape(RoundedRectangle(cornerRadius: movingVideo ? DS.PlayerPanel.liftRadius : 0, style: .continuous))
+                .scaleEffect(movingVideo ? DS.PlayerPanel.liftScale : 1)
+                .shadow(color: movingVideo ? DS.scrimStrong : .clear, radius: DS.PlayerPanel.liftShadow)
                 .offset(x: rect.minX, y: rect.minY)
                 // «Recortar» en vertical: los subtítulos con el tamaño de siempre (el de un cuadro a lo ancho), abajo; con los
                 // controles a la vista suben sobre ellos.
@@ -336,7 +343,18 @@ struct PlayerScreen: View {
             }
         }
         // «Arrastra para mover» junto a la agarradera solo las primeras funciones.
-        .task { if moveHintSeen < DS.PlayerPanel.moveHintTimes { showsMoveHint = true; moveHintSeen += 1 } }
+        // Las primeras veces, el video da un brinquito (hacia abajo y de regreso) en cuanto aparece la agarradera: enseña que se
+        // mueve sin decirlo con texto.
+        .task {
+            guard moveHintSeen < DS.PlayerPanel.moveHintTimes, !reduceMotion else { return }
+            try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 3)
+            guard !landscape, ipod == nil, !fillsPortrait, !panel, controlsVisible else { return }
+            moveHintSeen += 1
+            withAnimation(DS.Motion.spring(reduceMotion)) { portraitDrag = portraitCenter + DS.PlayerPanel.moveNudge }
+            try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 8)
+            withAnimation(DS.Motion.spring(reduceMotion)) { portraitDrag = nil }
+        }
+        .sensoryFeedback(.selection, trigger: snapIndex)
         // Esta versión no trae tu idioma (o no el latino) y otra sí: se ofrece cambiar sin perder el punto.
         .onChange(of: model.notice) { _, value in
             guard case .otherVersionHasYourLanguage(let want, let have, let index)? = value else { return }
@@ -487,8 +505,10 @@ struct PlayerScreen: View {
                 }
                 switch dragAxis {
                 case .vertical where movingVideo:
-                    let range = DS.PlayerPanel.portraitCenterRange
-                    portraitDrag = min(max(portraitAtDragStart + dy / Double(size.height), Double(range.lowerBound)), Double(range.upperBound))
+                    let snaps = Self.portraitSnaps(in: size)
+                    let center = min(max(portraitAtDragStart + dy / Double(size.height), snaps.first ?? 0), snaps.last ?? 1)
+                    portraitDrag = center
+                    snapIndex = Self.nearest(center, in: snaps)
                 case .vertical:
                     guard let kind = verticalKind else { return }
                     let start = kind == .brightness ? brightnessAtDragStart : volumeAtDragStart
@@ -504,8 +524,13 @@ struct PlayerScreen: View {
                 }
             }
             .onEnded { _ in
-                if let moved = portraitDrag { portraitCenter = moved; portraitDrag = nil }
-                movingVideo = false
+                // Al soltar se imanta a la más cercana de las tres alturas (arriba, centro, abajo): siempre queda bien puesto.
+                if movingVideo, let moved = portraitDrag {
+                    let snaps = Self.portraitSnaps(in: size)
+                    let target = snaps[Self.nearest(moved, in: snaps)]
+                    withAnimation(DS.Motion.spring(reduceMotion)) { portraitCenter = target; portraitDrag = nil; movingVideo = false }
+                } else if let moved = portraitDrag { portraitCenter = moved; portraitDrag = nil }
+                movingVideo = false; snapIndex = nil
                 if dragAxis == .horizontal, let target = seekPreview { pendingSeek = target; Task { await model.seek(to: target) } }
                 dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil
                 scheduleIndicatorHide()
@@ -514,6 +539,7 @@ struct PlayerScreen: View {
     }
 
     @ViewBuilder private var gestureOverlays: some View {
+        if movingVideo { snapGuides.transition(.opacity) }
         if indicatorVisible, let indicator {
             HStack {
                 if indicator.kind == .brightness { DSGestureIndicator(symbol: indicator.symbol, value: indicator.value); Spacer() }
@@ -651,7 +677,7 @@ struct PlayerScreen: View {
     private func startsOnHandle(_ point: CGPoint, size: CGSize) -> Bool {
         guard !landscape, !fillsPortrait, !panel, ipod == nil else { return false }
         let rect = videoRect(in: size)
-        return point.y >= rect.maxY - DS.PlayerPanel.handleReach && point.y <= rect.maxY + DS.PlayerPanel.handleZone
+        return point.y >= rect.maxY - DS.PlayerPanel.handleGrab && point.y <= rect.maxY + DS.PlayerPanel.handleBelow
     }
 
     private func scheduleHide() {
@@ -695,6 +721,9 @@ struct PlayerScreen: View {
 
     private func preparingText(_ model: PlayerModel) -> LocalizedStringKey {
         if case .triedAnotherSource(let n)? = model.notice { return "Probando otra fuente (\(n))…" }
+        // Ya sabe qué abrir: la versión que elegiste o tu descarga. «Buscando la mejor fuente» ahí no era cierto.
+        if current.localFile != nil { return "Abriendo tu descarga…" }
+        if current.sourceIndex != nil { return "Abriendo la versión que elegiste…" }
         return "Buscando la mejor fuente…"
     }
 
@@ -732,17 +761,24 @@ struct PlayerScreen: View {
                         LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     }
                     topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
-                    // La agarradera pegada al borde de abajo del video (como la de las hojas de iOS): de ahí se mueve. Las
-                    // primeras veces dice qué hace; luego queda la rayita.
+                    // La agarradera dentro del borde de abajo del video, sobre un velo (como la de las hojas de iOS): de ahí se
+                    // mueve. Sin texto: las primeras veces el video da un brinquito. Antes iba fuera, pegada a la barra de avance,
+                    // y se leía como parte de ella.
                     if !fillsPortrait {
-                        VStack(spacing: DS.Space.s1) {
-                            Capsule().fill(DS.textMuted).frame(width: DS.PlayerPanel.handleWidth, height: DS.PlayerPanel.handleHeight)
-                            if showsMoveHint { Text("Arrastra para mover").recipe(.caption, color: DS.textMuted) }
+                        ZStack(alignment: .bottom) {
+                            LinearGradient(colors: [.clear, DS.scrim], startPoint: .top, endPoint: .bottom)
+                                .frame(width: rect.width, height: DS.PlayerPanel.handleScrim)
+                            Capsule().fill(DS.text).shadow(color: DS.scrimStrong, radius: DS.Space.s1)
+                                .frame(width: DS.PlayerPanel.handleWidth, height: DS.PlayerPanel.handleHeight)
+                                .padding(.bottom, DS.PlayerPanel.handleInset)
                         }
-                        .padding(.top, rect.maxY + DS.Space.s1)
+                        .padding(.top, rect.maxY - DS.PlayerPanel.handleScrim)
                         .allowsHitTesting(false)
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(Text("Arrastra para mover el video"))
+                        .accessibilityLabel(Text("Mover el video"))
+                        .accessibilityHint(Text("Arrastra hacia arriba o hacia abajo"))
+                        .accessibilityAction(named: Text("Subir el video")) { stepVideo(-1, size: geo.size) }
+                        .accessibilityAction(named: Text("Bajar el video")) { stepVideo(1, size: geo.size) }
                         .accessibilityIdentifier("player-drag-hint")
                     }
                     VStack(spacing: DS.Space.s3) {
@@ -757,7 +793,7 @@ struct PlayerScreen: View {
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     .padding(.bottom, fillsPortrait ? DS.Space.s8 : DS.Space.s4)
-                    .padding(.top, fillsPortrait ? 0 : rect.maxY + DS.PlayerPanel.handleZone)
+                    .padding(.top, fillsPortrait ? 0 : rect.maxY + DS.PlayerPanel.handleGap)
                     .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
@@ -1430,11 +1466,67 @@ struct PlayerScreen: View {
         let y = min(max(top, size.height * center - height / 2), lowest)
         return CGRect(x: 0, y: y, width: size.width, height: height)
     }
+    /// Las tres alturas a las que se imanta el video al soltarlo (arriba, centro y abajo), como centro (parte del alto): las
+    /// de los extremos son lo más arriba y lo más abajo que puede ir.
+    static func portraitSnaps(in size: CGSize) -> [Double] {
+        let height = min(size.width / DS.Poster.stillAspect, size.height)
+        let top = DS.PlayerPanel.portraitTopClearance
+        let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
+        guard size.height > 0 else { return [Double(DS.PlayerPanel.portraitCenter)] }
+        return [top, (top + lowest) / 2, lowest].map { Double(($0 + height / 2) / size.height) }
+    }
+    static func nearest(_ value: Double, in snaps: [Double]) -> Int {
+        snaps.indices.min { abs(snaps[$0] - value) < abs(snaps[$1] - value) } ?? 0
+    }
+
+    /// Mientras arrastras el video: las tres alturas a las que se imanta (una línea donde quedaría su borde de arriba), la
+    /// más cercana resaltada.
+    private var snapGuides: some View {
+        GeometryReader { geo in
+            let snaps = Self.portraitSnaps(in: geo.size)
+            let height = min(geo.size.width / DS.Poster.stillAspect, geo.size.height)
+            let names: [LocalizedStringKey] = ["Arriba", "Centro", "Abajo"]
+            ForEach(Array(snaps.enumerated()), id: \.offset) { i, center in
+                let on = i == snapIndex
+                let y = center * Double(geo.size.height) - Double(height) / 2
+                // El nombre arriba de su línea; el de «Arriba», debajo (arriba de la línea está la barra de botones).
+                let below = i == 0
+                VStack(alignment: .trailing, spacing: DS.Space.s1) {
+                    if !below { guideName(names[min(i, names.count - 1)], on: on) }
+                    Rectangle().fill(on ? DS.primary : DS.hairline).frame(height: DS.PlayerPanel.handleHeight / 2)
+                    if below { guideName(names[0], on: on) }
+                }
+                .padding(.horizontal, DS.Space.gutter)
+                .frame(width: geo.size.width, alignment: .trailing)
+                .offset(y: below ? y : y - DS.Space.s5)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func guideName(_ name: LocalizedStringKey, on: Bool) -> some View {
+        Text(name).recipe(.caption, color: on ? DS.primary : DS.textMuted).fontWeight(on ? .semibold : .regular)
+    }
+
+    /// VoiceOver: subir o bajar el video a la siguiente de las tres alturas.
+    private func stepVideo(_ step: Int, size: CGSize) {
+        let snaps = Self.portraitSnaps(in: size)
+        let at = Self.nearest(portraitCenter, in: snaps)
+        let next = min(max(at + step, 0), snaps.count - 1)
+        withAnimation(DS.Motion.spring(reduceMotion)) { portraitCenter = snaps[next] }
+    }
+
     /// Dónde dejaste el video en vertical (se recuerda entre videos).
     static let portraitCenterKey = "player-portrait-center"
 
     /// Vertical con «Recortar»: el video a pantalla completa.
     private var fillsPortrait: Bool { !landscape && !panel && ipod == nil && (zoom == .fill || zoom == .stretch) }
+
+    /// La agarradera se ve (vertical, con los controles, sin iPod ni «Recortar»).
+    private var showsHandle: Bool {
+        !landscape && !panel && ipod == nil && !fillsPortrait && !locked && !subtitleDock && (controlsVisible || movingVideo)
+    }
 
     /// El iPod se ve en vertical y sin el panel abierto (con el panel, el video sube a la mitad de arriba como siempre).
     private var ipod: IPodFace? { landscape || panel ? nil : IPodFace(rawValue: ipodFace) }

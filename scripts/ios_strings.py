@@ -19,6 +19,10 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Arriba": "Top", "Centro": "Middle", "Abajo": "Bottom", "Mover el video": "Move the video",
+    "Arrastra hacia arriba o hacia abajo": "Drag up or down", "Subir el video": "Move the video up", "Bajar el video": "Move the video down",
+    "Más del episodio": "More for this episode",
+    "Abriendo tu descarga…": "Opening your download…", "Abriendo la versión que elegiste…": "Opening the version you picked…",
     "Buscando recomendaciones": "Finding recommendations",
     "Trakt aún no relaciona nada con este título. Prueba con otro.": "Trakt doesn't relate anything to this title yet. Try another one.",
     "Modo iPod": "iPod mode", "Blanco": "White", "Negro": "Black", "Reproduciendo": "Now Playing",
