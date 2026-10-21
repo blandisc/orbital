@@ -304,6 +304,8 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     (re.compile(r"^(?:que|que estoy)\s+(?:se esta jugando|jugando|esta abierto|hay abierto)$"), "WhatsPlayingIntent", None),
     (re.compile(rf"^{_V['go']}\s+(?:al\s+|el\s+)escritorio$|^{_V['close']}\s+orbital$"), "ExitToDesktopIntent", None),
     (re.compile(rf"^(?:{_V['open']}|{_V['back']}\s+a|{_V['go']})\s+(?:la\s+consola|orbital)$"), "OpenOrbitalIntent", None),
+    # «prende la consola»: también prende la tele y la pone en la entrada de Orbital («prende la tele» es la TV en vivo)
+    (re.compile(r"^(?:prende|prenda|prender|enciende|encienda|encender)\s+(?:la\s+consola|orbital)$"), "OpenOrbitalIntent", None),
     (re.compile(rf"^{_V['move']}\s+(?:a\s+(?:la\s+)?)?(?P<v>\w+)$"), "NavigateIntent", "direction"),
     (re.compile(rf"^{_V['play']}\s+(?P<v>.+)$"), "LaunchGameIntent", "game"),  # «el juego X»: kind_hint lo lee
 ]
@@ -489,9 +491,10 @@ def _parse(clean: str) -> tuple[str, dict[str, str]] | None:
 
 
 class VoiceController:
-    def __init__(self, catalog: Catalog, kiosk=None) -> None:
+    def __init__(self, catalog: Catalog, kiosk=None, tv=None) -> None:
         self.catalog = catalog
         self.kiosk = kiosk  # KioskWindow, o None si la interfaz no la abrió Orbital
+        self.tv = tv  # roku.RokuTv: «abre Orbital» prende la tele y la pone en la entrada de Orbital
 
     def handle_text(self, text: str) -> VoiceResult:
         heard = tidy(normalize(text))
@@ -776,6 +779,8 @@ class VoiceController:
         return VoiceResult("Listo, saliste al escritorio. Di abre la consola para volver.")
 
     def _open_orbital_intent(self, slots: dict) -> VoiceResult:
+        if self.tv is not None and self.tv.enabled:
+            self.tv.turn_on_soon()  # en segundo plano: prender tarda más de lo que Alexa espera
         if self.kiosk is None:
             return VoiceResult("No puedo abrir la pantalla de la consola desde aquí.", ok=False)
         self.kiosk.open()

@@ -2465,6 +2465,17 @@
         }
       }
     },
+    "Cómo pedirlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to ask"
+          }
+        }
+      }
+    },
     "Cómo pedírselo": {
       "extractionState": "manual",
       "localizations": {
@@ -6414,6 +6425,17 @@
         }
       }
     },
+    "No hace falta decirlo exacto.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don't need to say it exactly."
+          }
+        }
+      }
+    },
     "No hay espacio para descargar %@ (desde la TV)": {
       "extractionState": "manual",
       "localizations": {
@@ -7620,6 +7642,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Awards"
+          }
+        }
+      }
+    },
+    "Prende la tele en la entrada de tu Orbital y muestra la consola.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turns on the TV on your Orbital's input and shows the console."
+          }
+        }
+      }
+    },
+    "Prender la consola": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on the console"
           }
         }
       }
@@ -10451,13 +10495,13 @@
         }
       }
     },
-    "Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital».": {
+    "Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital» o «Oye Siri, prende Orbital».": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Then, when asked, the command. Direct: “Hey Siri, pause Orbital”."
+            "value": "Then, when asked, the command. Direct: “Hey Siri, pause Orbital” or “Hey Siri, turn on Orbital”."
           }
         }
       }

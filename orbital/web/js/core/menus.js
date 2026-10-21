@@ -136,7 +136,8 @@ export function alexaMenu(guide = null) {
 
 /** Los íconos de los temas de la guía (los nombres de SF Symbols del iPhone → los de la tele). */
 const GUIDE_ICONS = { gamecontroller: "gamepad", film: "movie", "play.rectangle": "play", play: "play", tv: "tv",
-  sparkles: "spark", gearshape: "settings", gear: "settings" };
+  sparkles: "spark", gearshape: "settings", gear: "settings", power: "power", "captions.bubble": "swap",
+  "speaker.wave.2": "sound", "antenna.radiowaves.left.and.right": "tv" };
 
 /** Un tema de la guía: todas sus frases, con lo que hace cada una. */
 export function voiceGroupMenu(group) {
@@ -155,6 +156,7 @@ export function voiceHelpMenu() {
       { icon: "search", label: "Revisa lo que entendió", hint: "Abajo sale «No entendí…» con lo que escuchó: dilo más despacio o búscalo", command: { type: "stay" } },
       { icon: "grid", label: "Cuando hay varias", hint: "Si pides «pon Dune» y hay más de una, salen en la tele para elegir", command: { type: "stay" } },
       { icon: "wifi", label: "Si Alexa no encuentra tu consola", hint: "Orbital tiene que estar encendida y con Internet", command: { type: "stay" } },
+      { icon: "power", label: "Si la tele no prende", hint: "En la tele: Configuración › Sistema › Energía › Inicio rápido de TV", command: { type: "stay" } },
       { icon: "phone", label: "Desde el iPhone", hint: "El micrófono del control y Siri usan las mismas frases", command: { type: "stay" } },
     ],
   };

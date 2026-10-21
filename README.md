@@ -232,7 +232,8 @@ los Echo de tu cuenta sin publicarla.
 
 | Di… | Hace |
 |---|---|
-| "Alexa, abre Orbital" | Muestra Orbital (si saliste al escritorio) y pregunta qué quieres |
+| "Alexa, abre Orbital" | Prende la tele en la entrada de Orbital (ver [La tele](#la-tele)), muestra Orbital y pregunta qué quieres |
+| "Alexa, pídele a Orbital que prenda la consola" / "…que encienda Orbital" | Prende la tele en la entrada de Orbital y muestra la consola |
 | "Alexa, pídele a Orbital que abra Hollow Knight" | Abre el juego |
 | "Alexa, pídele a Orbital que abra Zelda con Eden" | Abre con el emulador alternativo |
 | "Alexa, pídele a Orbital que abra Fortnite en la nube" | Abre tu juego de GeForce NOW |
@@ -264,7 +265,26 @@ Con la skill abierta ("Alexa, abre Orbital") también sirven "pausa", "continúa
 Las skills propias siempre necesitan "pídele a Orbital que…". Para frases cortas usa las Rutinas
 de la app Alexa: *Más → Rutinas → +* → *Cuando esto ocurra: Voz* → "a jugar Zelda" → *Agregar
 acción → Personalizado* → `pídele a Orbital que abra zelda`. Ideas: "modo película" →
-`pídele a Orbital que siga viendo`; "apaga la consola" → `pídele a Orbital que salga al escritorio`.
+`pídele a Orbital que siga viendo`; "apaga la consola" → `pídele a Orbital que salga al escritorio`;
+**"prende la consola" → `pídele a Orbital que prenda la consola`** (prende la tele, pone la entrada y muestra Orbital).
+
+La lista completa de frases (la que enseñan la app de iPhone y Ajustes › Voz en la tele) está en
+[`alexa/commands.json`](alexa/commands.json); una prueba comprueba que cada una llega a un comando.
+
+### La tele
+
+Si tu tele es una **Roku TV**, «abre Orbital» y «prende la consola» la prenden y la cambian a la entrada
+de la Legion Go, por la red de la casa (sin la skill de Roku). Una sola vez, con la tele prendida en la
+entrada de Orbital:
+
+```bash
+orbital tv setup   # la encuentra y escribe la sección tv: de config.yaml
+orbital tv on      # prueba: la prende en esa entrada
+```
+
+En la tele activa *Configuración › Sistema › Energía › Inicio rápido de TV*: si no, apagada no escucha.
+Si cambias el modelo de voz (`interaction_model.es-MX.json`), pégalo otra vez en la consola de Alexa y
+pulsa *Build*.
 
 ### Limitaciones conocidas
 
