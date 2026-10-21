@@ -435,9 +435,11 @@ final class AppEnvironment: ObservableObject {
     }
 
     /// Del reproductor del iPhone a tu Orbital, en el mismo punto: la TV sigue donde ibas y la app enseña el aviso.
-    func handOffToTV(_ request: PlayRequest, position: Double) async {
+    func handOffToTV(_ request: PlayRequest, position: Double, choice: ResumeChoice? = nil) async {
         do {
-            try await services.orbital.play(kind: request.kind, metaID: request.metaID, videoID: request.videoID, title: request.displayTitle)
+            // Con el segundo exacto y lo que tenías puesto: la TV no adivina con su recomendada ni con el avance de Stremio.
+            try await services.orbital.play(kind: request.kind, metaID: request.metaID, videoID: request.videoID, title: request.displayTitle,
+                                            position: position, choice: choice)
             handoff = TVHandoff(request: request, position: position)
         } catch { notify((error as? OrbitalRemote.Failure)?.description ?? "\(error)") }
     }
@@ -500,6 +502,9 @@ final class AppEnvironment: ObservableObject {
 
     /// «Ver» en la tarjeta «Desde la TV»: lo mismo, con lo que mandó la consola.
     func play(_ item: OrbitalRemote.InboxItem) async {
+        // «Seguir en el iPhone»: la fuente, el audio y los subtítulos de la TV quedan como «Continuar» de ese video, y el
+        // reproductor los usa (la misma huella de fuente en los dos; lo que este archivo no traiga, de su complemento o por idioma).
+        if let choice = item.choice { services.titlePrefs.remember(metaID: item.metaID, choice: choice) }
         await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.title,
                    episodeLabel: services.tvEpisodeLabel(item.season, item.episode, item.episodeLabel), poster: item.poster, at: item.position)
     }

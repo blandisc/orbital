@@ -130,7 +130,23 @@ public struct ResumeChoice: Codable, Equatable, Sendable {
         public var off = false
         public var language: String?
         public var title: String?
-        public init(off: Bool = false, language: String? = nil, title: String? = nil) { self.off = off; self.language = language; self.title = title }
+        /// Subtítulos de un complemento (OpenSubtitles…) que traía la TV: si este archivo no los tiene, se cargan de ahí.
+        public var url: String?
+        public init(off: Bool = false, language: String? = nil, title: String? = nil, url: String? = nil) {
+            self.off = off; self.language = language; self.title = title; self.url = url
+        }
+
+        /// Como la manda la TV ({"off", "lang", "title", "url"}); nil si no es una pista.
+        public static func parse(_ json: JSON?) -> Track? {
+            guard let json, case .object = json else { return nil }
+            return Track(off: json["off"]?.bool ?? false, language: json["lang"]?.nonEmptyString, title: json["title"]?.nonEmptyString,
+                         url: json["url"]?.nonEmptyString)
+        }
+
+        /// Para la TV (`/api/stremio/play`): el mismo formato.
+        public var json: JSON {
+            .object(["off": .bool(off), "lang": .string(language ?? ""), "title": .string(title ?? ""), "url": .string(url ?? "")])
+        }
     }
     public var videoID: String
     public var source: String?

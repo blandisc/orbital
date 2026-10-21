@@ -136,7 +136,7 @@ class PlayerScreen:
             position=position, duration=duration, paused=bool(self._value("pause")) if paused is None else paused,
             audio=player_ui.current_label(tracks, "audio"), subtitles=player_ui.current_label(tracks, "sub"),
             source=meta.get("source_label", ""), series=meta.get("kind") == "series" and self.on_episode is not None,
-            ends=player_ui.ends_at(position, duration), now=clock(),
+            now=clock(),
             chapters=[float(c["time"]) for c in chapters], chapter_titles=[str(c.get("title") or "") for c in chapters],
             facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking,
             pip=bool(getattr(self, "pip_on_home", False)))

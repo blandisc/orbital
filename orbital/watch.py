@@ -56,6 +56,15 @@ def language_code(code: str | None) -> str | None:
     return None
 
 
+def handoff_pick(handoff: dict) -> dict | None:
+    """Las pistas que venía usando el iPhone, como las recuerda la TV («Continuar»): los subtítulos (o sin) y el audio."""
+    sub, audio = handoff.get("subtitle"), handoff.get("audio")
+    pick = dict(sub) if isinstance(sub, dict) else {}
+    if isinstance(audio, dict):
+        pick["audio"] = audio
+    return pick or None
+
+
 def source_label(source: streams.Source, long: bool = False) -> str:
     """"1080p · Al instante" / "4K HDR · Torrentio": de dónde viene lo que ves, en pocas palabras."""
     quality = " ".join(p for p in (source.resolution or "SD", *source.hdr[:1]) if p)
@@ -220,8 +229,9 @@ class Watch:
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
             on_idle=lambda title, minutes, live=False: self.events.publish({
-                "type": "toast", "message": f"Cerré {title}: llevaba {minutes} min sin que lo vieras." if live
-                else f"Cerré {title}: llevaba {minutes} min en pausa. Sigues donde te quedaste."}))
+                "type": "toast", "message": f"Cerré {title}",
+                "detail": f"Llevaba {minutes} min sin que lo vieras" if live
+                else f"Llevaba {minutes} min en pausa · Sigues donde te quedaste"}))
         self.scrobbler = TraktScrobbler()  # catalog.py le da el Trakt de «Para ti» cuando ya existe
         self._wire_player()
 
@@ -506,9 +516,12 @@ class Watch:
         """Y › «Seguir en el iPhone» (el mismo minuto) / «Enviar al iPhone» / «Descargar en el iPhone» con lo que se está
         viendo (el episodio en curso; el de un canal de Orbital, como episodio de su serie)."""
         kind = "series" if meta.get("synthetic") or meta.get("kind") == "channel" else meta.get("kind") or "movie"
+        # «Seguir en el iPhone»: el mismo segundo, la misma fuente, el mismo audio y los mismos subtítulos.
+        choice = {"source": meta.get("source_key"), "audio": self.player.current_audio(),
+                  "subtitle": self.player.current_subtitle()} if action == "continue" else None
         sent = companion.send_to_phone(self, self.config, "open" if action == "continue" else action, kind,
                                        meta.get("meta_id") or "", meta.get("video_id"),
-                                       position=position if action == "continue" else None)
+                                       position=position if action == "continue" else None, choice=choice)
         if action == "continue":
             minute = int((position or 0) // 60)
             return f"Abriendo en tu iPhone · {sent.get('episode_label') or sent.get('title') or ''} en el minuto {minute}".replace(" ·  en", " en")
@@ -573,13 +586,31 @@ class Watch:
         return "No encontré dónde ver esto: tus complementos de Stremio no lo tienen."
 
     def play_best(self, kind: str, meta_id: str, video_id: str, title: str, keep: bool = False,
-                  from_start: bool = False) -> dict:
+                  from_start: bool = False, handoff: dict | None = None) -> dict:
         """"Ver": sin lista de fuentes. Orbital elige la recomendada y arranca (la lista queda en Y). Si lo descargaste,
-        tu descarga, del disco (arranca al instante y sin internet)."""
-        if self.downloads is not None and self.downloads.file_for(video_id) and self.play_downloaded(video_id, from_start=from_start):
+        tu descarga, del disco (arranca al instante y sin internet).
+        `handoff`: lo que venía viendo el iPhone («Ver en la TV» desde su reproductor): {position, source, audio,
+        subtitle}. Se sigue en ese segundo, con esa fuente (si la TV la tiene), ese audio y esos subtítulos."""
+        handoff = handoff if handoff and not from_start else None
+        start_at = handoff.get("position") if handoff else None
+        pick = handoff_pick(handoff) if handoff else None
+        if self.downloads is not None and self.downloads.file_for(video_id) \
+                and self.play_downloaded(video_id, from_start=from_start, start_at=start_at, sub_pick=pick):
             return {"source": None, "label": "Tu descarga · sin internet"}
         prefs, subtitles = self.language_for(meta_id)
         resume = None if from_start else self.resume_choice(meta_id, video_id)
+        if resume and isinstance(resume.get("audio"), dict):  # el audio con que lo dejaste en la TV
+            resume = {**resume, "sub": {**(resume.get("sub") or {}), "audio": resume["audio"]}}
+        if handoff:
+            resume = {"video_id": video_id, "source": handoff.get("source"), "sub": pick}
+            audio = language_code((handoff.get("audio") or {}).get("lang"))
+            if audio:  # el idioma del audio del iPhone: también para elegir fuente si la suya no está
+                prefs = streams.Preferences(audio=audio, quality=prefs.quality)
+            sub = handoff.get("subtitle") or {}
+            if sub.get("off"):
+                subtitles = ""
+            elif language_code(sub.get("lang")):
+                subtitles = language_code(sub.get("lang")) or subtitles
         source = None
         if resume and resume.get("source"):  # «Continuar»: la fuente con la que lo dejaste, si sigue ahí
             source = next((s for s in self.stream_sources(kind, video_id, prefs) if s.key == resume["source"]), None)
@@ -587,12 +618,12 @@ class Watch:
         if source is None:
             raise LookupError(self.no_sources_message(kind, video_id))
         self.play_source(kind, meta_id, video_id, source.index, title, keep=keep, from_start=from_start,
-                         prefs=prefs, subtitles=subtitles, sub_pick=(resume or {}).get("sub"))
+                         prefs=prefs, subtitles=subtitles, sub_pick=(resume or {}).get("sub"), start_at=start_at)
         return {"source": source.public(), "label": source_label(source)}
 
     def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str, keep: bool = False,
                     from_start: bool = False, prefs: streams.Preferences | None = None,
-                    subtitles: str | None = None, sub_pick: dict | None = None) -> str:
+                    subtitles: str | None = None, sub_pick: dict | None = None, start_at: float | None = None) -> str:
         """Reproduce la fuente elegida: en el reproductor de Orbital (mpv, con el mando) o, si no
         está o así se configuró, directo en el de Stremio (sin su lista de fuentes).
         `prefs`/`subtitles`: idioma pedido para esta vez ("…en español"); si no, el de Ajustes."""
@@ -617,7 +648,8 @@ class Watch:
             mpv_exe = player.find_mpv()  # Stremio no sabe abrir tu OneDrive: siempre el reproductor de Orbital
         if mpv_exe and url:
             self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep, source=source,
-                             from_start=from_start, audio=prefs.audio, subtitles=subtitles, sub_pick=sub_pick)
+                             from_start=from_start, audio=prefs.audio, subtitles=subtitles, sub_pick=sub_pick,
+                             start_at=start_at)
             return "orbital"
         uri = streams.player_link(source, cinemeta.MANIFEST, kind, meta_id, video_id)
         self.sessions.open_stremio(uri, title)
@@ -644,7 +676,8 @@ class Watch:
             return self.onedrive.stream_url(source) or "", source.release
         return player.stream_url(source.stream) or "", source.release
 
-    def play_downloaded(self, video_id: str, from_start: bool = False) -> bool:
+    def play_downloaded(self, video_id: str, from_start: bool = False, start_at: float | None = None,
+                        sub_pick: dict | None = None) -> bool:
         """Lo que bajaste, directo del disco (sin internet). False si no está descargado."""
         if self.downloads is None:
             return False
@@ -654,7 +687,8 @@ class Watch:
         if job is None or not path or not mpv_exe:
             return False
         title = job.get("title") or "Video"
-        self.play_native(mpv_exe, str(path), job["kind"], job["meta_id"], video_id, title, from_start=from_start)
+        self.play_native(mpv_exe, str(path), job["kind"], job["meta_id"], video_id, title, from_start=from_start,
+                         start_at=start_at, sub_pick=sub_pick)
         return True
 
     def resume_position(self, meta_id: str, video_id: str) -> float:
@@ -675,14 +709,20 @@ class Watch:
     def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
                     keep: bool = False, source: streams.Source | None = None, from_start: bool = False,
                     audio: str | None = None, subtitles: str | None = None, sub_pick: dict | None = None,
-                    own: bool = False) -> None:
-        """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
+                    own: bool = False, start_at: float | None = None) -> None:
+        """mpv a pantalla completa, desde donde te quedaste (según Stremio); con `start_at`, desde ese segundo (el que
+        venía viendo el iPhone)."""
         if not from_start and self.player.starting(video_id, source.key if source else None):
             # Ya está cargando: Orbital sigue tapando hasta la primera imagen (el aviso del primer intento sigue en pie).
             log.info("%s ya se está abriendo: no lo empiezo otra vez", title)
             self.sessions.revealing = True
             return
-        start = 0.0 if from_start else self.resume_position(meta_id, video_id)
+        if from_start:
+            start = 0.0
+        elif isinstance(start_at, (int, float)) and start_at > 0:
+            start = float(start_at)
+        else:
+            start = self.resume_position(meta_id, video_id)
         meta: dict = self._media_meta(kind, meta_id, video_id, title, source) if source else \
             {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title}
         if own:
@@ -881,7 +921,8 @@ class Watch:
                     else:
                         subtitles = audio
                         name = {"es": "español", "en": "inglés"}.get(audio, audio)
-                        self.events.publish({"type": "toast", "message": f"No hay audio en {name} para {title}: va con subtítulos en {name}"})
+                        self.events.publish({"type": "toast", "tone": "warn", "message": f"No hay audio en {name} para {title}",
+                                             "detail": f"Va con subtítulos en {name}"})
                 self.play_source(kind, meta_id, video_id, source.index, title, prefs=prefs, subtitles=subtitles, from_start=from_start)
                 if audio:  # lo pediste en voz alta: el siguiente episodio y el respaldo siguen igual
                     key = f"stremio:{meta_id}"
@@ -1085,7 +1126,8 @@ class Watch:
         """Junto a «dónde ibas»: la fuente (su huella) y la pista de subtítulos que tenías."""
         if not meta.get("meta_id") or not meta.get("video_id") or meta.get("live"):
             return
-        choice = {"video_id": meta["video_id"], "source": meta.get("source_key"), "sub": self.player.current_subtitle()}
+        choice = {"video_id": meta["video_id"], "source": meta.get("source_key"), "sub": self.player.current_subtitle(),
+                  "audio": self.player.current_audio()}
         if choice != self.state.prefs(f"stremio:{meta['meta_id']}").get("resume"):
             self.state.set_pref(f"stremio:{meta['meta_id']}", "resume", choice)
 

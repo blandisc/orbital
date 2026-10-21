@@ -15,6 +15,14 @@ from .deps import Deps
 log = logging.getLogger(__name__)
 
 
+class Track(BaseModel):
+    """Una pista de audio o subtítulos, como la etiquetan los dos reproductores (idioma y nombre)."""
+    off: bool = False  # subtítulos quitados
+    lang: str = Field("", max_length=20)
+    title: str = Field("", max_length=200)
+    url: str = Field("", max_length=2000)  # subtítulos de un complemento (OpenSubtitles…)
+
+
 class PlayRequest(BaseModel):
     kind: str
     id: str
@@ -25,6 +33,20 @@ class PlayRequest(BaseModel):
     from_start: bool = False  # "Desde el principio"
     touch: bool = False  # lo abriste con el dedo: el reproductor empieza con botones táctiles, no glifos del mando
     keyboard: bool = False  # lo abriste con el teclado: la barra enseña las teclas
+    # «Ver en la TV» desde el reproductor del iPhone: lo que venías viendo ahí, para seguir igual en la TV.
+    position: float | None = Field(None, ge=0, le=86400 * 2)  # el segundo exacto
+    source_key: str | None = Field(None, max_length=500)  # la huella de la fuente (streams.Source.key)
+    audio: Track | None = None
+    subtitle: Track | None = None
+
+    def handoff(self) -> dict | None:
+        if self.position is None and not self.source_key and self.audio is None and self.subtitle is None:
+            return None
+        sub = self.subtitle.model_dump() if self.subtitle else None
+        if sub and not sub["url"].startswith(("http://", "https://")):
+            sub["url"] = ""  # solo direcciones web: nada de rutas de archivo
+        return {"position": self.position, "source": self.source_key,
+                "audio": {"lang": self.audio.lang, "title": self.audio.title} if self.audio else None, "subtitle": sub}
 
 
 def stremio_message(exc: Exception) -> str:
@@ -207,7 +229,8 @@ def router(d: Deps) -> APIRouter:
                                     from_start=body.from_start)
                 return {"ok": True, "reveal": catalog.revealing}
             if video_id and catalog.native_player:
-                chosen = catalog.watch.play_best(kind, meta_id, video_id, title, keep=body.keep, from_start=body.from_start)
+                chosen = catalog.watch.play_best(kind, meta_id, video_id, title, keep=body.keep, from_start=body.from_start,
+                                                 handoff=body.handoff())
                 return {"ok": True, "reveal": catalog.revealing, **chosen}
         except stremio_api.StremioError as exc:
             raise HTTPException(409, stremio_message(exc))

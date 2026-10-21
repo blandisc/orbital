@@ -401,26 +401,38 @@ public final class PlayerModel: ObservableModel {
             tracks.first { $0.language == saved.language && $0.title == saved.title }
                 ?? tracks.first { PlaybackRules.languageCode($0.language) != nil && PlaybackRules.languageCode($0.language) == PlaybackRules.languageCode(saved.language) && !$0.isForced }
         }
-        guard let sub = choice.subtitle else { return false }
         if let audio = choice.audio, let track = find(s.audioTracks, audio), track.id != s.selectedAudio { await engine.selectAudio(track.id) }
+        guard let sub = choice.subtitle else { return false }
         knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
         if sub.off { await engine.selectSubtitle(nil); return true }
-        guard let track = find(s.subtitleTracks, sub) else { return false }
-        await engine.selectSubtitle(track.id)
-        return true
+        if let track = find(s.subtitleTracks, sub) { await engine.selectSubtitle(track.id); return true }
+        // Este archivo no los trae (otra fuente, o venían de la TV): los mismos de su complemento, o los de ese idioma.
+        if let text = sub.url, let url = URL(string: text), url.scheme == "https" || url.scheme == "http" {
+            addedExternalSubtitle = true
+            await engine.addSubtitle(url: url, language: sub.language)
+            return true
+        }
+        if let language = PlaybackRules.languageCode(sub.language) { await addExternalSubtitle(language: language); return true }
+        return false
     }
 
-    /// Junto a «dónde ibas»: la fuente y las pistas que tienes puestas (para «Continuar»).
-    private func rememberChoice() {
-        guard let request, snapshot.position >= PlaybackRules.rememberChoiceAfter else { return }
+    /// La fuente y las pistas que tienes puestas ahora: para «Continuar» y para pasarlas a la TV («Ver en la TV»).
+    public func currentChoice() -> ResumeChoice? {
+        guard let request else { return nil }
         func pick(_ tracks: [MediaTrack], _ selected: Int?) -> ResumeChoice.Track? {
             guard !tracks.isEmpty else { return nil }
             guard let selected, let t = tracks.first(where: { $0.id == selected }) else { return ResumeChoice.Track(off: true) }
             return ResumeChoice.Track(language: t.language, title: t.title)
         }
         let audio = pick(snapshot.audioTracks, snapshot.selectedAudio).flatMap { $0.off ? nil : $0 }
-        titlePrefs.remember(metaID: request.metaID, choice: ResumeChoice(videoID: request.videoID, source: source?.key, audio: audio,
-                                                                        subtitle: pick(snapshot.subtitleTracks, snapshot.selectedSubtitle)))
+        return ResumeChoice(videoID: request.videoID, source: source?.key, audio: audio,
+                            subtitle: pick(snapshot.subtitleTracks, snapshot.selectedSubtitle))
+    }
+
+    /// Junto a «dónde ibas»: la fuente y las pistas que tienes puestas (para «Continuar»).
+    private func rememberChoice() {
+        guard let request, snapshot.position >= PlaybackRules.rememberChoiceAfter, let choice = currentChoice() else { return }
+        titlePrefs.remember(metaID: request.metaID, choice: choice)
     }
 
     private func addExternalSubtitle(language: String) async {
