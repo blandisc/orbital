@@ -40,8 +40,10 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
    salen con letra grande. */
 .home__rows {
   flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(auto, 1fr); align-content: start; gap: var(--space-2); overflow: hidden;
-  /* Aire para el anillo del foco (sale .34rem): sin esto la columna lo recortaba a los lados y arriba. */
-  padding: var(--space-2); margin: calc(-1 * var(--space-2));
+  /* Aire para el anillo del foco (sale .34rem) y para lo que crece la enfocada (2,5 % de un renglón ancho, ~.45rem por
+     lado): con solo --space-2 a los lados, el anillo blanco se cortaba en los extremos izquierdo y derecho. El margen
+     negativo deja la columna donde estaba. */
+  padding: var(--space-2) var(--space-4); margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-4));
 }
 .home__rows > [hidden] { display: none; } /* los que no caben (home.js · fitRows): mejor 3 legibles que 4 aplastados */
 /* La enfocada se resalta y crece un poco en su lugar: los cuatro renglones siguen a la vista (antes crecía al doble y
