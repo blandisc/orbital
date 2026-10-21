@@ -7,15 +7,16 @@ import { Glyph } from "./glyph.js";
  * Todas devuelven un nodo y aceptan `className` para colocarlas (nunca para cambiar su aspecto).
  */
 
-/** Un dato corto: «4K», «Inglés», «Al instante» (tone: "good" | "warn"). */
-export const Chip = (text, { tone = null, className = null } = {}) =>
-  h("span", { class: ["chip", tone && `chip--${tone}`, className] }, text);
+/** Un dato corto: «4K», «Inglés», «Al instante» (tone: "good" | "warn"). `plate`: sobre una imagen (póster, logo), en la placa oscura. */
+export const Chip = (text, { tone = null, plate = false, className = null } = {}) =>
+  h("span", { class: ["chip", plate && "chip--plate", tone && `chip--${tone}`, className] }, text);
 
 /** La marca de una plataforma (platformMark: logo o foto real, a color); sin marca, el ícono de líneas que le pases. */
 export const PlatformMark = (src, fallback = null) => (src ? h("img", { class: "platform-mark", src, alt: "", "aria-hidden": "true" }) : fallback);
 
-/** Etiqueta que llama la atención: «+2 nuevos», «Recomendada» (large: sobre arte grande, el mosaico). */
-export const Badge = (text, { className = null, large = false } = {}) => h("span", { class: ["badge", large && "badge--lg", className] }, text);
+/** Etiqueta que llama la atención: «+2 nuevos», «Recomendada» (large: sobre arte grande, el mosaico; plate: sobre una imagen, en la placa oscura). */
+export const Badge = (text, { className = null, large = false, plate = false } = {}) =>
+  h("span", { class: ["badge", large && "badge--lg", plate && "badge--plate", className] }, text);
 
 /** Encabezado de una pantalla completa (Conectar Stremio, Conectar Trakt): de dónde es, el título y una línea. */
 export const ScreenHead = ({ eyebrow, title, lead = null, className = null }) =>
@@ -23,6 +24,15 @@ export const ScreenHead = ({ eyebrow, title, lead = null, className = null }) =>
     eyebrow && h("div", { class: "screen-head__eyebrow" }, eyebrow),
     h("h1", { class: "screen-head__title" }, title),
     lead && h("p", { class: "screen-head__lead" }, lead));
+
+/**
+ * Píldora que se elige: un filtro (Juegos, ¿Qué vemos?), una pestaña (lista, temporada) o una búsqueda reciente. Lo elegido
+ * lleva relleno tenue (`on`) y el foco se invierte (`pill--focused`, o `.is-focused` si lo pone la navegación espacial).
+ * `tone`: "outline" (con contorno, los filtros) o "fill" (con relleno). El resto de `attrs` va al botón (role, onClick…).
+ */
+export const Pill = (label, { on = false, tone = null, icon = null, className = null, ...attrs } = {}) =>
+  h("button", { class: ["pill", tone && `pill--${tone}`, on && "pill--on", className], type: "button",
+    ...(attrs.role === "tab" && !("aria-selected" in attrs) ? { "aria-selected": on ? "true" : "false" } : {}), ...attrs }, icon, label);
 
 /** Cuánto llevas (0..1). Sin avance no se dibuja nada. */
 export function Progress(fraction, { className = null, label = "Avance" } = {}) {

@@ -17,8 +17,8 @@ export function createSheet({ onCommand, onMove, onClose }) {
   const title = h("div", { class: "sheet__title", id: "sheet-title" });
   const subtitle = h("div", { class: "sheet__subtitle" });
   const list = h("div", { class: "sheet__items", role: "menu", "aria-labelledby": "sheet-title" });
-  const panel = h("div", { class: "sheet__panel" }, back, title, subtitle, list);
-  const el = h("div", { class: "sheet", hidden: true, onClick: (e) => e.target === el && cancel() }, panel);
+  const panel = h("div", { class: ["side-panel__panel", "sheet__panel"] }, back, title, subtitle, list);
+  const el = h("div", { class: ["side-panel", "sheet"], hidden: true, onClick: (e) => e.target === el && cancel() }, panel);
   let menu = null;
   let index = 0;
   let stack = []; // menús de los que vienes: [{ menu, index }]
@@ -73,7 +73,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
       choice(option)
         // Con el dedo, ‹ y › se tocan por separado (antes el toque siempre hacía lo de A: subir o silenciar).
         ? [h("span", { class: "sheet__chev", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "left") }, svg(ICONS.back)), option.value,
-          h("span", { class: "sheet__chev sheet__chev--next", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "right") }, svg(ICONS.chevron))]
+          h("span", { class: "sheet__chev", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "right") }, svg(ICONS.chevron))]
         : option.value),
     option.hint && !below(option) && h("small", { class: "sheet__hint" }, option.hint))));
   }
@@ -132,7 +132,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
     busyUntil = 0;
     menu = null;
     stack = [];
-    cancelExit = hideAfterExit(el, "sheet--leaving");
+    cancelExit = hideAfterExit(el, "side-panel--leaving");
     onClose?.();
   }
 

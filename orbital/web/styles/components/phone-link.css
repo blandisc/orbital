@@ -10,8 +10,8 @@
 /* El QR trae su propio fondo blanco (las cámaras leen negro sobre blanco): aquí solo su medida y su radio. */
 .phone-link__qr { display: grid; place-items: center; width: 18rem; height: 18rem; }
 .phone-link__image { width: 100%; height: 100%; border-radius: var(--radius-lg); animation: rise-in var(--duration-enter) var(--ease-out); }
-.phone-link__placeholder { color: var(--color-text-faint); font-size: var(--text-md); }
-.phone-link__status { min-height: 1.6em; color: var(--color-text-muted); font-size: var(--text-md); }
+.phone-link__placeholder { color: var(--color-text-faint); font-size: var(--type-body); }
+.phone-link__status { min-height: 1.6em; color: var(--color-text-muted); font-size: var(--type-body); }
 .phone-link__status strong { color: var(--color-text); font-weight: var(--weight-bold); }
 .phone-link__status--error { color: var(--color-danger); }
-.phone-link__steps { padding-left: var(--space-6); display: grid; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); text-align: left; }
+.phone-link__steps { padding-left: var(--space-6); display: grid; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); text-align: left; }

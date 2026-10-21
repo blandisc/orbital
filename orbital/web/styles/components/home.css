@@ -27,12 +27,12 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 .home__top--alone .home__queue { display: none; }
 .home__stage { display: grid; min-height: 0; grid-column: 1; grid-row: 2; }
 .home__top--alone .home__stage { grid-row: 2; }
-.home__feature-head { grid-column: 1; grid-row: 1; margin-bottom: var(--space-3); padding: 0 var(--space-2); }
+.home__feature-head { grid-column: 1; grid-row: 1; margin-bottom: var(--space-3); } /* a ras del borde de la tarjeta, como «Tus consolas» */
 .home__stage > .tile { min-height: 0; }
 .home__stage--swap .tile__art, .home__stage--swap .tile__case { animation: home-swap var(--duration-enter) var(--ease-out); }
 @keyframes home-swap { from { opacity: .35; } }
 .home__queue { display: contents; } /* sus piezas se acomodan en la cuadrícula de .home__top */
-.home__queue-head { grid-column: 2; grid-row: 1; margin-bottom: var(--space-3); padding: 0 var(--space-2); justify-content: space-between; }
+.home__queue-head { grid-column: 2; grid-row: 1; margin-bottom: var(--space-3); justify-content: space-between; }
 /* El próximo estreno, en la misma línea que «Continuar», a la derecha (en su propia fila dejaba un hueco a la izquierda). */
 .home__queue > .home__next { grid-column: 2; grid-row: 1; justify-self: end; align-self: center; max-width: 70%; margin-bottom: var(--space-3); }
 .home__queue > .home__rows { grid-column: 2; grid-row: 2; }
@@ -52,16 +52,14 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 
 /* Abajo: tus consolas en una fila que se desplaza si no caben (6 a la vista). */
 /* Compactas (home.js · fit): cuando enteras no caben junto a lo de arriba, foto más chica y sin el tercer renglón. */
-.home--compact { --console-size: 7.4rem; }
-.home--compact .tile--console__media { padding-top: var(--space-2); }
-.home--compact .tile--console__photo { max-height: 3.1rem; }
-.home--compact .tile--console__logo { height: 2.4rem; }
-.home--compact .tile--console__cover { max-height: 3.3rem; }
-.home--compact .tile--console__text { padding-top: var(--space-2); padding-bottom: var(--space-3); }
+.home--compact {
+  --console-size: 7.4rem; --console-media-top: var(--space-2); --console-photo-max: 3.1rem; --console-logo-height: 2.4rem;
+  --console-cover-max: 3.3rem; --console-text-top: var(--space-2); --console-text-bottom: var(--space-3);
+}
 .home__consoles { flex: none; display: flex; flex-direction: column; gap: var(--space-3); }
 /* Espacio para el anillo y el crecer. Antes la fila se subía 1.6rem bajo el título (sin hueco) y la consola enfocada, al
    crecer, tapaba «7 sistemas · 21 juegos»: ahora solo se sube lo del anillo. */
-.home__consoles-viewport { overflow: hidden; padding: .6rem 1rem; margin: -.6rem -1rem; }
+.home__consoles-viewport { overflow: hidden; padding: .6rem var(--space-4); margin: -.6rem calc(-1 * var(--space-4)); }
 /* Tarjetas cuadradas (7 enteras y la octava asomando: así se nota que hay más; el borde se desvanece hacia ese lado).
    La enfocada crece hacia arriba (la fila guarda ese alto: nada brinca). */
 .home__consoles-track {
@@ -78,9 +76,6 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 .home__consoles-viewport--more { --fade-right: transparent; }
 .home__consoles-viewport--before { --fade-left: transparent; }
 
-/* Fondo del Inicio: sin arte a pantalla completa; una luz del color de lo enfocado (cambia suave). */
-body[data-view="home"] .backdrop__layer, body[data-view="home"] .backdrop__scrim { opacity: 0; }
-body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep); }
 
 /* Entrada (al abrir Orbital): saludo, destacado, tarjetas y las consolas una tras otra. */
 .home--intro .tile--feature { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-1) both; }
@@ -111,8 +106,8 @@ body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) v
 
 /* El próximo estreno (bajo «Seguir viendo»): discreto, en una línea; si no cabe, se corta el nombre con «…» (la fecha siempre se ve). */
 .home__next { flex: none; display: inline-flex; align-self: flex-start; align-items: center; max-width: 100%; padding: var(--space-1) var(--space-4) var(--space-1) var(--space-3);
-  border-radius: var(--radius-pill); background: var(--color-fill); gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+  border-radius: var(--radius-pill); background: var(--color-fill); gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--type-secondary); }
 /* El próximo estreno, en su píldora: separado de la lista (antes parecía un renglón más). */
-.home__next .icon { flex: none; width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.home__next .icon { flex: none; width: var(--icon-sm); height: var(--icon-sm); fill: none; stroke: currentColor; stroke-width: var(--stroke-fine); stroke-linecap: round; stroke-linejoin: round; }
 .home__next-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text); }
 .home__next-when { flex: none; white-space: nowrap; }

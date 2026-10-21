@@ -29,15 +29,15 @@
 .foryou-mosaic__tile--alive .foryou-mosaic__art--wide { transform: scale(1.09); }
 /* La cápsula de la tienda (Steam) va encima del hero en lo ancho sin foco; enfocada, el hero y su logo. */
 .foryou-mosaic__art--capsule { opacity: 0; }
-.foryou-mosaic__tile--land:not(.foryou-mosaic__tile--on) .foryou-mosaic__art--capsule { opacity: 1; }
+.foryou-mosaic__tile--land:not(.foryou-mosaic__tile--focused) .foryou-mosaic__art--capsule { opacity: 1; }
 .foryou-mosaic__tile--gone { opacity: 0 !important; transform: scale(.96); transition: opacity var(--duration-enter) var(--ease-in), transform var(--duration-enter) var(--ease-in); }
 
 /* Con foco: lo demás se apaga un poco; la enfocada lleva el anillo. */
-.foryou-mosaic--focusing .foryou-mosaic__tile:not(.foryou-mosaic__tile--on) { opacity: .5; filter: saturate(.6); }
-.foryou-mosaic__tile--on { z-index: var(--z-raised); box-shadow: var(--ring-focus); }
+.foryou-mosaic--focusing .foryou-mosaic__tile:not(.foryou-mosaic__tile--focused) { opacity: var(--opacity-away); filter: saturate(.6); }
+.foryou-mosaic__tile--focused { z-index: var(--z-raised); box-shadow: var(--ring-focus); }
 /* Recorriendo rápido: el marco va adelante y la columna se abre al detenerte (foryou-mosaic.js · paintSoon). */
 .foryou-mosaic__tile--next { z-index: var(--z-raised); box-shadow: var(--ring-focus); opacity: 1 !important; filter: none !important; }
-.foryou-mosaic__tile--on::after { opacity: 1; }
+.foryou-mosaic__tile--focused::after { opacity: 1; }
 
 /* Qué es: su ícono en un círculo de vidrio (la consola de un juego, o serie / película). */
 .foryou-mosaic__kind {
@@ -46,12 +46,12 @@
   background: var(--color-badge-bg); backdrop-filter: blur(var(--blur-glass)); box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
 }
-.foryou-mosaic__kind svg { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
-.foryou-mosaic__kind svg:not(.icon) { stroke-width: 3.2; width: 1.35rem; height: 1.35rem; }
-.foryou-mosaic__tile--on .foryou-mosaic__kind { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; }
+.foryou-mosaic__kind svg { width: var(--icon-md); height: var(--icon-md); fill: none; stroke: currentColor; stroke-width: var(--stroke-fine); stroke-linecap: round; stroke-linejoin: round; }
+.foryou-mosaic__kind svg:not(.icon) { stroke-width: var(--stroke-heavy); width: var(--icon-lg); height: var(--icon-lg); }
+.foryou-mosaic__tile--focused .foryou-mosaic__kind { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; }
 /* Solo la enfocada lo lleva (y una sin imagen): en las demás tapaba el logo del póster (Hollow Knight). */
 .foryou-mosaic__kind { opacity: 0; transform: scale(.8); transition: opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-spring), background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out); }
-.foryou-mosaic__tile--on .foryou-mosaic__kind, .foryou-mosaic__tile--bare .foryou-mosaic__kind { opacity: 1; transform: none; }
+.foryou-mosaic__tile--focused .foryou-mosaic__kind, .foryou-mosaic__tile--bare .foryou-mosaic__kind { opacity: 1; transform: none; }
 
 /* Solo la enfocada habla: una etiqueta corta, el logo (o el nombre) y un dato. */
 .foryou-mosaic__info {
@@ -60,13 +60,13 @@
   opacity: 0; transform: translateY(.6rem);
   transition: opacity var(--duration-slow) var(--ease-out) var(--delay-1), transform var(--duration-slow) var(--ease-out) var(--delay-1);
 }
-.foryou-mosaic__tile--on .foryou-mosaic__info { opacity: 1; transform: none; }
+.foryou-mosaic__tile--focused .foryou-mosaic__info { opacity: 1; transform: none; }
 /* Sin ninguna imagen que cargue: su nombre siempre a la vista (si no, sería un cuadro vacío). */
 .foryou-mosaic__tile--bare .foryou-mosaic__info { opacity: 1; transform: none; }
 .foryou-mosaic__logo { max-width: min(100%, 16rem); max-height: 4.4rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
 .foryou-mosaic__logo--dark { filter: var(--filter-logo-light); }
 .foryou-mosaic__name {
-  max-width: 100%; font-family: var(--font-sans); font-size: var(--text-xl); font-weight: var(--weight-bold); line-height: 1.12; text-shadow: var(--shadow-text);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-bottom: .12em;
+  max-width: 100%; font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--weight-bold); line-height: var(--leading-tight); letter-spacing: var(--tracking-tight); text-shadow: var(--shadow-text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0; padding-bottom: .12em;
 }
-.foryou-mosaic__fact { max-width: 100%; font-size: var(--text-sm); opacity: .86; text-shadow: var(--shadow-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.foryou-mosaic__fact { max-width: 100%; font-size: var(--type-secondary); opacity: var(--opacity-text); text-shadow: var(--shadow-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

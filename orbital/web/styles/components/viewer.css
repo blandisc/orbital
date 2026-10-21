@@ -9,5 +9,5 @@
 .viewer__image { max-width: 100%; max-height: 100%; object-fit: contain; }
 .viewer__caption {
   position: absolute; left: 0; right: 0; bottom: calc(var(--space-6) + var(--safe-y));
-  text-align: center; color: var(--color-text-muted); font-size: var(--text-sm);
+  text-align: center; color: var(--color-text-muted); font-size: var(--type-secondary);
 }

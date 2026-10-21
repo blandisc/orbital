@@ -47,9 +47,16 @@
 /* Velo mínimo: arriba para la hora y a la izquierda para el título. */
 .backdrop__scrim { position: absolute; inset: 0; background: var(--scrim-hero); }
 
-/* --- Fondo vivo (Inicio y Juegos) ------------------------------------------------- */
+/* --- Fondo vivo (Inicio, Juegos, Para ti y TV en vivo) ------------------------------------------------- */
 .backdrop__space { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity var(--duration-tint) var(--ease-out); }
-body[data-view="home"] .backdrop__space { opacity: 1; }
+/* Las vistas con fondo de ambiente (Inicio, Juegos, Para ti, TV en vivo): sin arte a pantalla completa (el arte vive en su ficha);
+   el espacio vivo y una luz del color de lo enfocado, que cambia suave. Una sola regla para las cuatro. */
+body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop__layer,
+body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop__scrim { opacity: 0; }
+body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop {
+  transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep);
+}
+body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop__space { opacity: 1; }
 
 /* Luz del color de lo enfocado: una sigue al foco (suave) y otra queda quieta abajo a la derecha. Gradientes ya
    difuminados (sin filter: blur, que es caro). Antes la segunda y las estrellas derivaban solas sin parar (ciclos de

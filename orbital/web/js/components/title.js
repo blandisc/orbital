@@ -1,5 +1,5 @@
 import { api } from "../core/api.js";
-import { Chip } from "./ui.js";
+import { Chip, Pill, Progress } from "./ui.js";
 import { Card } from "./card.js";
 import { PersonChip } from "./people.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
@@ -7,7 +7,8 @@ import { genres, runtime } from "../core/format.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Glyph } from "./glyph.js";
-import { motion } from "../core/motion.js";
+import { flight, motion, reducedMotion } from "../core/motion.js";
+import { tokenPx } from "../core/tokens.js";
 import { actionStep, availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
 
 /**
@@ -25,7 +26,6 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
-  logo.addEventListener("error", () => { logo.hidden = true; name.hidden = false; }); // sin Internet o 404
   const tagline = h("p", { class: "title__tagline", hidden: true }); // la frase de la película (TMDB), como el iPhone
   const facts = h("div", { class: "title__facts" });
   // IMDb · TMDB · Trakt, cada una con el logotipo de su servicio (RatingsRow del iPhone). Guarda su alto mientras llegan.
@@ -33,10 +33,9 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   const description = h("p", { class: "title__description" });
   const people = h("div", { class: "title__people" });
   const avail = h("div", { class: "title__avail", hidden: true });
-  const progressFill = h("span", { class: "title__progress-fill" });
+  const progressBar = h("span", { class: "title__progress-bar" });
   const progressLabel = h("span", { class: "title__progress-label" });
-  const progress = h("div", { class: "title__progress", hidden: true },
-    h("span", { class: "title__progress-bar" }, progressFill), progressLabel);
+  const progress = h("div", { class: "title__progress", hidden: true }, progressBar, progressLabel);
   const actions = h("div", { class: "title__actions", role: "toolbar" });
   const status = h("div", { class: "title__status", role: "status" });
   const tabs = h("div", { class: "title__tabs", role: "tablist" });
@@ -52,7 +51,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   const more = h("div", { class: "title__more", hidden: true }, moreHead, moreRow, castHead, castRow);
   // El orden del iPhone: logo y frase; qué es (Serie · clasificación · año · géneros · duración); lo disponible; las
   // calificaciones; Ver y sus botones; la sinopsis; y quién la hizo («Creada por» / «Dirección · Guion», «Con»).
-  const el = h("section", { class: "title", hidden: true, "aria-label": "Ficha" },
+  const el = h("section", { class: ["screen", "title"], hidden: true, "aria-label": "Ficha" },
     backdrop,
     h("div", { class: "title__info" }, logo, name, tagline, facts, avail, ratings, progress, actions, description, people, status),
     browser, more);
@@ -67,6 +66,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   let moreIndex = 0;
   let castItems = [];
   let castIndex = 0;
+  let restore = null; // { zone: "cast", castIndex }: el foco que dejaste al abrir una persona
   let own = null; // desde Mi media: { have: Set(video_id), versions: [...] } (tu carpeta de OneDrive)
   let season = 0;
   let index = 0;
@@ -137,6 +137,8 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     moreHead.hidden = moreRow.hidden = !moreItems.length;
     castHead.hidden = castRow.hidden = !castItems.length;
     more.hidden = !moreItems.length && !castItems.length;
+    if (restore?.zone === "cast" && castItems[restore.castIndex]) { zone = "cast"; castIndex = restore.castIndex; render(); }
+    restore = null;
     onChange();
   }
 
@@ -211,10 +213,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   }
 
   function renderTabs() {
-    mount(tabs, seasons().map((s, i) => h("button", {
-      class: ["title__tab", i === season && "title__tab--active"], type: "button", role: "tab",
-      onClick: () => setSeason(i),
-    }, s.label)));
+    mount(tabs, seasons().map((s, i) => Pill(s.label, { on: i === season, role: "tab", onClick: () => setSeason(i) })));
     showSeasonTab();
   }
 
@@ -261,10 +260,9 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
         },
       },
       h("span", { class: "episode__thumb", style: { backgroundImage: cssUrl(ep.thumbnail) } },
-        h("span", { class: "episode__number" }, String(ep.episode)),
+        Chip(String(ep.episode), { plate: true, className: "episode__number" }),
         st.watched && h("span", { class: "episode__check", "aria-label": "Visto" }, svg(ICONS.check)),
-        st.progress > 0 && h("span", { class: "episode__progress" },
-          h("span", { style: { width: `${Math.round(st.progress * 100)}%` } }))),
+        Progress(st.progress, { className: "episode__progress" })),
       h("span", { class: "episode__text" },
         h("strong", { class: "episode__title" }, ep.title),
         own && !st.upcoming && (own.have.has(ep.id) ? Chip("En tu carpeta", { tone: "good" }) : Chip("No está en tu carpeta")),
@@ -281,8 +279,8 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     progress.hidden = !info;
     if (!info) return;
     progressLabel.textContent = info.label;
-    progressFill.parentElement.hidden = info.fraction === null;
-    progressFill.style.width = `${Math.round((info.fraction || 0) * 100)}%`;
+    mount(progressBar, Progress(info.fraction, { label: "Dónde ibas" }));
+    progressBar.hidden = !progressBar.firstChild;
   }
 
   function render() {
@@ -509,13 +507,12 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
    * viaja de la tarjeta a su lugar; lo demás llega a su sitio solo (title.css · title-settle). `from`: { rect, logoRect }.
    */
   function flyIn(from) {
-    if (!from?.rect || !backdrop.animate || document.documentElement.dataset.motion === "reduce") return;
+    if (!from?.rect || !backdrop.animate || reducedMotion()) return;
     const r = from.rect;
-    const ease = "cubic-bezier(.16, 1, .3, 1)";
     backdrop.animate([
-      { clipPath: `inset(${r.top}px ${innerWidth - r.right}px ${innerHeight - r.bottom}px ${r.left}px round 18px)`, opacity: 1 },
+      { clipPath: `inset(${r.top}px ${innerWidth - r.right}px ${innerHeight - r.bottom}px ${r.left}px round ${tokenPx("--card-radius")}px)`, opacity: 1 },
       { clipPath: "inset(0px 0px 0px 0px round 0px)" },
-    ], { duration: 560, easing: ease });
+    ], flight("--duration-enter"));
     if (!from.logoRect) return;
     const go = () => {
       const to = logo.getBoundingClientRect();
@@ -523,7 +520,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
       const fly = logo.animate([
         { transform: `translate(${from.logoRect.left - to.left}px, ${from.logoRect.top - to.top}px) scale(${from.logoRect.width / to.width})` },
         { transform: "none" },
-      ], { duration: 620, easing: ease });
+      ], flight());
       logo.classList.add("title__logo--flying");
       fly.finished.catch(() => {}).finally(() => logo.classList.remove("title__logo--flying"));
     };
@@ -532,8 +529,9 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   }
 
   /** `info`: { kind, meta_id, title, hero, image, extra } (lo que ya se sabe, para pintar al instante). */
-  function open(info, from = null) {
+  function open(info, from = null, restoreFocus = null) {
     item = info;
+    restore = restoreFocus; // al volver de una persona: el reparto, con la misma cara enfocada (applyExtras)
     cancelExit();
     zone = "actions";
     action = 0;
@@ -559,13 +557,13 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   function close() {
     if (el.hidden) return;
     token++;
-    cancelExit = hideAfterExit(el, "title--leaving", 300);
+    cancelExit = hideAfterExit(el, "screen--leaving", 300);
     onClose?.();
   }
 
   /** Acción del mando o teclado. Devuelve true si la vista la consumió. */
   function handle(act) {
-    if (el.hidden || el.classList.contains("title--leaving")) return false;
+    if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (act === "menu") return false; // ☰ abre el menú desde cualquier pantalla (como en Xbox)
     if (act === "search") { close(); return false; } // S: buscar otra cosa (la ficha se cierra y se abre Buscar)
     if (act === "back") {
@@ -648,7 +646,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     : zone === "cast"
     ? [{ glyph: g.select, label: "Ver a la persona" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "episodes"
-    ? [episode() && { glyph: g.select, label: own && !own.have.has(episode().id) ? "Buscar fuente" : "Ver" }, episode() && { glyph: g.options, label: "Fuente" },
+    ? [episode() && { glyph: g.select, label: own && !own.have.has(episode().id) ? "Buscar fuente" : "Ver" }, episode() && { glyph: g.options, label: "Elegir fuente" },
       episode() && onDownload && { glyph: g.alt, label: downloadOf(episode().id) ? "Descarga" : "Descargar" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
@@ -658,8 +656,10 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 
-  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("title--leaving"); },
+  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); },
     get current() { return item; },
+    /** Dónde está el foco (para volver a él al regresar de una persona). */
+    get focusState() { return { zone, castIndex }; },
     /** Vuelve a pedir la ficha (al regresar de ver algo: «Continuar T3 E6», los ✓, el progreso). */
     refresh() { if (!el.hidden && item) load({ quiet: true }); },
     /** Cambió una descarga: el botón (y, si cambió de estado, los episodios) al día, sin mover el foco. */

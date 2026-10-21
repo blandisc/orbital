@@ -2,9 +2,10 @@ import { h, svg } from "../core/dom.js";
 import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, posterRatio } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { sized } from "../core/images.js";
-import { settler } from "../core/motion.js";
+import { reducedMotion, settler } from "../core/motion.js";
 import { Badge } from "./ui.js";
 import { dragArea, hoverArea } from "../core/swipe.js";
+import { tokenPx } from "../core/tokens.js";
 
 // Al ancho en que se ven (core/images.js): el póster de una columna y la pieza enfocada, que se ensancha.
 const POSTER_PX = 360;
@@ -23,7 +24,8 @@ const WIDE_PX = 720;
  */
 const COLS = 6;
 const GROW = 2.3; // cuánto más ancha es la columna enfocada
-const DRIFT = [16, 12, 19, 14, 17, 13]; // px/s de cada columna en el ambiente (cada una a su ritmo)
+const DRIFT = [16, 12, 19, 14, 17, 13, 15, 18]; // px/s de cada columna en el ambiente (cada una a su ritmo; las dos últimas, las de las orillas)
+const EDGE_MIN = 12; // px: menos que esto no vale la pena una columna de orilla
 // Al abrir, todas las columnas parejas; al entrar al ambiente (si siguen parejas) las de turno impar suben estas
 // separaciones con la animación y de ahí sigue la deriva (como el iPhone: DesignTokens.Mosaic.ambientLiftGaps).
 const AMBIENT_LIFT_GAPS = 5;
@@ -32,7 +34,7 @@ const RAMP_MS = 2400; // y arranca suave: de quieto a su ritmo en ~2,4 s, sin ti
 const ALIVE_MS = 2200;
 const BUFFER = 360; // px de piezas de sobra debajo de lo visible (más, y se gastaban sugerencias que aún no se ven)
 
-export function createForYouMosaic({ onFocus, onPick }) {
+export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   const el = h("div", { class: "foryou-mosaic" });
   // Con el dedo, como en el celular: todo el mosaico sube o baja bajo el dedo (y sigue de largo al
   // soltar); abajo llegan piezas nuevas. Tocar una la enfoca y volver a tocar la abre.
@@ -66,12 +68,13 @@ export function createForYouMosaic({ onFocus, onPick }) {
   let mode = "focus"; // focus | ambient
   let running = false;
   let idleTimer = 0;
+  let coveredSeen = false; // el temporizador de inactividad vio una capa encima (hoja, ficha…)
   let ambientSince = 0; // cuándo empezó a subir solo (para arrancar suave)
   let aliveTimer = 0;
   let frame = 0;
   let last = 0;
 
-  const reduced = () => document.documentElement.dataset.motion === "reduce";
+  const reduced = reducedMotion;
   // Cambió el ancho (la ventana arrancó chica y luego pasó a pantalla completa, o de la Legion Go a la tele): las columnas
   // se vuelven a repartir a todo lo ancho. Antes se quedaban del primer tamaño y la mitad de la pantalla quedaba vacía.
   let measured = 0;
@@ -159,35 +162,65 @@ export function createForYouMosaic({ onFocus, onPick }) {
   function layout() {
     const { W } = size();
     const g = gap();
-    const weights = columns.map((_, c) => (mode === "focus" && c === focus.col ? GROW : 1));
+    const main = columns.slice(0, COLS);
+    const weights = main.map((_, c) => (mode === "focus" && c === focus.col ? GROW : 1));
     const r = ring();
-    const unit = (W - 2 * r - g * (COLS - 1)) / weights.reduce((a, b) => a + b, 0);
+    // Protector de pantalla: el mosaico va con el margen de la TV a los lados, y ese margen se llena con una columna de más
+    // en cada orilla (solo se ve un pedazo; el resto queda fuera de la pantalla): así no hay franjas vacías.
+    const inset = document.body.dataset.screensaver === "true" ? tokenPx("--page-gutter") : 0;
+    const start = inset + r;
+    const unit = (W - 2 * start - g * (COLS - 1)) / weights.reduce((a, b) => a + b, 0);
     unitW = unit;
-    let x = r;
-    columns.forEach((col, c) => {
+    let x = start;
+    main.forEach((col, c) => {
       col.x = x;
       col.w = unit * weights[c];
       x += col.w + g;
-      col.el.style.left = `${col.x}px`;
-      col.el.style.width = `${col.w}px`;
-      fill(col, c); // primero las piezas que falten; luego cada una en su lugar (y la enfocada, marcada)
-      let y = col.tiles[0]?.top ?? 0; // desde donde empieza lo que sigue vivo (lo de arriba pudo podarse)
-      col.tiles.forEach((t, r) => {
-        const on = mode === "focus" && c === focus.col && r === focus.row;
-        t.h = tileHeight(col, c, r, t.item);
-        t.top = y;
-        y += t.h + g;
-        t.node.style.top = `${t.top}px`;
-        t.node.style.height = `${t.h}px`;
-        t.node.style.left = t.node.style.right = tileInset(col, c, r);
-        t.node.classList.toggle("foryou-mosaic__tile--land", on);
-        if (on) t.loadWide();
-        t.node.classList.toggle("foryou-mosaic__tile--on", mode === "focus" && c === focus.col && r === focus.row);
-      });
+      place(col, c);
+    });
+    // Las de las orillas: del ancho de una columna normal, pegadas a la primera y a la última (x ya cuenta el hueco).
+    const sliver = start - g; // lo que asoma dentro de la pantalla
+    columns.slice(COLS).forEach((col, i) => {
+      if (sliver < EDGE_MIN) { retire(col); return; }
+      if (!col.active) { col.active = true; col.el.hidden = false; col.offset = 0; }
+      col.x = i === 0 ? start - g - unit : x;
+      col.w = unit;
+      place(col, COLS + i);
     });
   }
 
+  /** Una columna en su lugar: su ancho y, dentro, cada pieza (y la enfocada, marcada). */
+  function place(col, c) {
+    const g = gap();
+    col.el.style.left = `${col.x}px`;
+    col.el.style.width = `${col.w}px`;
+    fill(col, c); // primero las piezas que falten; luego cada una en su lugar
+    let y = col.tiles[0]?.top ?? 0; // desde donde empieza lo que sigue vivo (lo de arriba pudo podarse)
+    col.tiles.forEach((t, r) => {
+      const on = mode === "focus" && c === focus.col && r === focus.row;
+      t.h = tileHeight(col, c, r, t.item);
+      t.top = y;
+      y += t.h + g;
+      t.node.style.top = `${t.top}px`;
+      t.node.style.height = `${t.h}px`;
+      t.node.style.left = t.node.style.right = tileInset(col, c, r);
+      t.node.classList.toggle("foryou-mosaic__tile--land", on);
+      if (on) t.loadWide();
+      t.node.classList.toggle("foryou-mosaic__tile--focused", on);
+    });
+  }
+
+  /** Una columna de orilla sin lugar donde asomar (la pantalla normal): sin piezas, oculta y sin pedir imágenes. */
+  function retire(col) {
+    if (!col.active) return;
+    col.tiles.forEach((t) => t.node.remove());
+    col.tiles = [];
+    col.active = false;
+    col.el.hidden = true;
+  }
+
   function fill(col, c) {
+    if (col.edge && !col.active) return;
     const { H } = size();
     const g = gap();
     const bottom = () => (col.tiles.length ? col.tiles.at(-1).top + col.tiles.at(-1).h : 0);
@@ -263,7 +296,6 @@ export function createForYouMosaic({ onFocus, onPick }) {
   function paint({ together = false } = {}) {
     if (!el.clientWidth) return; // oculto (se precarga al arrancar): se acomoda al mostrarse
     el.classList.toggle("foryou-mosaic--focusing", mode === "focus");
-    el.classList.toggle("foryou-mosaic--ambient", mode === "ambient");
     layout();
     if (mode === "focus") reveal(together);
     else applyOffsets();
@@ -275,7 +307,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
   /** Lo que sigue, listo antes de llegar: el arte ancho de las piezas a la vista de su columna y de las de al lado. */
   function readyAhead() {
     const { H } = size();
-    for (const c of [focus.col - 1, focus.col, focus.col + 1]) {
+    for (const c of [focus.col - 1, focus.col, focus.col + 1].filter((n) => n >= 0 && n < COLS)) {
       const col = columns[c];
       col?.tiles.forEach((t) => { if (t.top + t.h > col.offset - H * .25 && t.top < col.offset + H * 1.25) t.loadWide(); });
     }
@@ -297,6 +329,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
       const t = Math.min(1, (now - ambientSince) / RAMP_MS);
       const ease = t * t * (3 - 2 * t); // acelera despacio y se asienta en su ritmo
       columns.forEach((col, c) => {
+        if (col.edge && !col.active) return;
         col.offset += DRIFT[c] * ease * dt;
         while (col.tiles.length > 1 && col.tiles[0].top + col.tiles[0].h < col.offset - 80) col.tiles.shift().node.remove();
         fill(col, c);
@@ -309,6 +342,9 @@ export function createForYouMosaic({ onFocus, onPick }) {
 
   function goAmbient() {
     if (!running || mode === "ambient" || reduced() || !pool.length) return;
+    // Con una hoja o una ficha encima no hay nadie mirando el mosaico: sin ambiente (al volver, estaría sin foco y en otra pieza).
+    if (covered()) { coveredSeen = true; idleTimer = setTimeout(goAmbient, IDLE_MS); return; }
+    if (coveredSeen) { coveredSeen = false; idleTimer = setTimeout(goAmbient, IDLE_MS); return; } // la capa se acaba de cerrar: otros 2 s de calma
     mode = "ambient";
     ambientSince = performance.now();
     if (!frame) { last = ambientSince; frame = requestAnimationFrame(tick); }
@@ -323,6 +359,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
   /** Cualquier botón: reinicia la espera y, si estaba en ambiente, enfoca lo que quedó al centro. */
   function wake() {
     clearTimeout(idleTimer);
+    coveredSeen = false;
     if (running) idleTimer = setTimeout(goAmbient, IDLE_MS);
     if (mode === "focus") return false;
     el.classList.remove("foryou-mosaic--drifting");
@@ -398,11 +435,13 @@ export function createForYouMosaic({ onFocus, onPick }) {
     pool = Array.isArray(items) ? items : [];
     cursor = 0;
     el.replaceChildren();
-    columns = Array.from({ length: COLS }, (_, c) => {
+    // Las COLS de siempre y, al final, las dos de las orillas del protector de pantalla (sin foco ni piezas hasta entonces).
+    columns = Array.from({ length: COLS + 2 }, (_, c) => {
       const track = h("div", { class: "foryou-mosaic__track" });
-      const node = h("div", { class: "foryou-mosaic__col", style: { "--i": c } }, track);
+      const edge = c >= COLS;
+      const node = h("div", { class: "foryou-mosaic__col", style: { "--i": c }, hidden: edge, "aria-hidden": edge ? "true" : null }, track);
       el.append(node);
-      return { el: node, track, tiles: [], offset: 0, x: 0, w: 0 }; // parejas al abrir (el escalón llega con el ambiente)
+      return { el: node, track, tiles: [], offset: 0, x: 0, w: 0, edge, active: !edge }; // parejas al abrir (el escalón llega con el ambiente)
     });
     focus = { col: Math.min(focus.col, COLS - 1), row: 0 };
     mode = "focus";

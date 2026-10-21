@@ -1,8 +1,5 @@
 /* «Para ti» (js/components/foryou.js): el mosaico ocupa el centro, como Juegos; el fondo es el espacio del Inicio. */
 body[data-view="foryou"] .hero, body[data-view="foryou"] .shelf { display: none; }
-body[data-view="foryou"] .backdrop__layer, body[data-view="foryou"] .backdrop__scrim { opacity: 0; }
-body[data-view="foryou"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep); }
-body[data-view="foryou"] .backdrop__space { opacity: 1; }
 
 /* El mosaico va de orilla a orilla: los pósters también pasan por los lados (antes quedaba el margen de la página vacío). */
 .foryou { grid-row: 2 / 4; position: relative; min-height: 0; padding: var(--space-4) 0 var(--space-2); }
@@ -10,16 +7,16 @@ body[data-view="foryou"] .backdrop__space { opacity: 1; }
 
 .foryou__notice { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
 .foryou__notice:empty { display: none; }
-.foryou__message { max-width: 34rem; padding: 0 var(--space-6); text-align: center; color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5; }
+.foryou__message { max-width: 34rem; padding: 0 var(--space-6); text-align: center; color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed); }
 .foryou__message--waiting { animation: fade-in var(--duration-enter) var(--ease-out); }
 
 /* Protector de pantalla (main.js · saver): el mosaico a pantalla completa y solo la hora; nada de botones ni leyendas. */
 body[data-screensaver] .hints, body[data-screensaver] .status-bar__brand,
 body[data-screensaver] .status-bar__search, body[data-screensaver] .status-bar__tabs,
 body[data-screensaver] .status-bar__right > :not(.status-bar__clock):not(.battery) { display: none; }
-body[data-screensaver] .foryou-mosaic__tile--on { box-shadow: none; }
+body[data-screensaver] .foryou-mosaic__tile--focused { box-shadow: none; }
 /* De borde a borde (sin el aire de la barra ni del pie) y, encima, a la derecha, solo la batería y la hora en blanco. */
-body[data-screensaver] .foryou { position: fixed; inset: 0; z-index: var(--z-raised); padding: 0 var(--page-gutter); }
+body[data-screensaver] .foryou { position: fixed; inset: 0; z-index: var(--z-raised); padding: 0; } /* el margen de la TV lo guarda el mosaico por dentro: ese lugar lo llenan las columnas de las orillas */
 body[data-screensaver] .foryou-mosaic {
   -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 3%, var(--mask-solid) 97%, transparent 100%);
   mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 3%, var(--mask-solid) 97%, transparent 100%);

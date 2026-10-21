@@ -156,3 +156,25 @@ test("«Porque viste» en escenario: una fila con tus títulos al principio y lo
   assert.deepEqual(row.items.slice(3).map((x) => x.meta_id), ["r2"]);
   assert.equal(mediaRows([because], items)[0].items[3].meta_id, "r1");
 });
+
+test("«Porque viste»: tus títulos llevan su logo (el héroe no los pone en texto plano) y LT/RT saltan entre tus títulos y lo sugerido", async () => {
+  const { mediaRows, stageJump, stageSide } = await import("../../orbital/web/js/core/media-plan.js");
+  const s = (id, title) => ({ meta_id: id, kind: "series", title, image: `p/${id}` });
+  const because = { id: "because", title: "Porque viste Severance", seed: s("tt1", "Severance"), seeds: [s("tt1", "Severance"), s("tt2", "The Bear"), s("tt3", "Dark")] };
+  const items = { "because:tt2:": [{ meta_id: "r1", kind: "series", title: "Hoy" }, { meta_id: "r2", kind: "movie", title: "Otra" }] };
+  const [row] = mediaRows([because], items, { becauseChoice: "tt2" });
+  assert.ok(row.items.slice(0, 3).every((x) => x.extra.logo.includes("/logo/") && x.extra.logo.includes(x.meta_id)));
+  assert.equal(row.stage.meta_id, "tt2"); // el escenario también enseña el logo del elegido
+  // Dónde estás: tus títulos (columnas 0–2) o lo sugerido (3 en adelante).
+  assert.deepEqual([0, 2, 3, 4].map((c) => stageSide(row, c)), ["seeds", "seeds", "related", "related"]);
+  // RT: de tus títulos, a la primera sugerida; ya del lado de las sugeridas, null (toca pasar de grupo).
+  assert.equal(stageJump(row, 0, 1), 3);
+  assert.equal(stageJump(row, 2, 1), 3);
+  assert.equal(stageJump(row, 3, 1), null);
+  // LT: de lo sugerido, de vuelta al título elegido (tt2, columna 1); ya en tus títulos, null.
+  assert.equal(stageJump(row, 4, -1), 1);
+  assert.equal(stageJump(row, 1, -1), null);
+  // Sin sugeridas, o en otra fila, no hay a dónde saltar.
+  assert.equal(stageSide({ stage: { seeds: 1 }, items: [{}] }, 0), null);
+  assert.equal(stageJump({ id: "curated:trend", items: [{}, {}] }, 0, 1), null);
+});

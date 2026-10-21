@@ -40,12 +40,19 @@
   --color-brand-moon: var(--palette-teal-300); /* la luna de «orbital»: el único color fijo de la marca (la luna del logotipo) */
   /* El nombre de una plataforma dentro de un motivo del mosaico («N.º 1 en Prime Video»): su color de marca, en el tono
      que se lee sobre la insignia clara de la pieza enfocada (≥ 4,5:1 sobre el papel). Solo para ese nombre. */
+  /* El color de cada plataforma sobre lo oscuro (halo de su tarjeta y cifras de su Top 10): los mismos que el iPhone
+     (design/tokens.json › platforms; una prueba los compara). «other»: Apple TV+ y las demás, plata. */
+  --platform-netflix: #e60a14;
+  --platform-disney: #456eff;
+  --platform-hbo: #7a3dff;
+  --platform-prime: #1a99ff;
+  --platform-paramount: #0063ff;
+  --platform-other: #c7c7d1;
   --brand-netflix: #d10a14;
   --brand-prime: #006bb8;
   --brand-disney: #113ccf;
   --brand-hbo: #5a22b4;
   --brand-paramount: #0057e0;
-  --brand-appletv: #c7c7cc; /* Apple TV+: gris claro (su marca es blanco y negro) */
   --brand-crunchyroll: #b8500a;
   /* Películas y series (como Para ti › Listas del iPhone, DS.Collections): el sello de dónde viene una lista y los halos
      de las tarjetas. Los mismos valores que el iPhone. */
@@ -99,6 +106,8 @@
   --gradient-console-tile: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--palette-ink-900) 100%);
   /* El planeta de la pantalla de carga cuando lo que abres no tiene portada (una app). */
   --gradient-launch-planet: radial-gradient(circle at 35% 30%, var(--color-star), var(--palette-ink-200) 45%, var(--palette-ink-700));
+  /* El fondo del arranque: grafito que se oscurece hacia las orillas. */
+  --gradient-boot: radial-gradient(ellipse at 50% 42%, var(--palette-ink-850) 0%, var(--palette-ink-950) 55%, var(--palette-ink-1000) 100%);
   /* Sombras para fotos y logotipos recortados (filter: drop-shadow sigue la silueta). */
   --shadow-drop-sm: drop-shadow(0 .3rem .5rem rgba(0, 0, 0, .45));
   --shadow-drop: drop-shadow(0 .5rem 1rem rgba(0, 0, 0, .5));

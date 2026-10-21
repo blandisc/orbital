@@ -71,7 +71,7 @@ export function createLogin({ onDone, onMove, onClose }) {
       const shown = field.secret && !reveal ? "•".repeat(Array.from(field.value).length) : field.value;
       mount(field.node, h("span", { class: "login__label" }, field.label),
         h("span", { class: "login__value" }, shown, i === active && h("span", { class: "login__caret", "aria-hidden": "true" })));
-      field.node.classList.toggle("login__field--active", i === active);
+      field.node.classList.toggle("login__field--focused", i === active);
     });
   }
 

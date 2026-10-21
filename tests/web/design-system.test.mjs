@@ -36,6 +36,10 @@ const RULES = [
   ["tiempo", /(?<![\w.-])\d*\.?\d+m?s\b/],
   ["capa", /z-index:\s*-?\d/],
   ["letra", /font-size:\s*(?!var\(|calc\(var|inherit|100%)[\d.]/],
+  ["escala de letra directa", /var\(--text-(?:2xs|xs|sm|md|lg|xl|2xl|3xl|display)\)/], // un componente usa la receta --type-*
+  ["interlineado", /line-height:\s*[\d.]/],
+  ["trazo", /stroke-width:\s*[\d.]/], // --stroke-*
+  ["espaciado de letras", /letter-spacing:\s*-?[\d.]/],
   ["mayúsculas", /text-transform:\s*uppercase/],
   // La paleta cruda es del tema: un componente usa el nombre semántico (--color-…, --gradient-…).
   ["paleta", /var\(--palette-/],
@@ -76,8 +80,9 @@ test("todo componente está en el catálogo del sistema de diseño", () => {
   assert.deepEqual(missing, [], `Componentes sin documentar en docs/sistema-de-diseno.md (agrégalos al catálogo): ${missing.join(", ")}`);
 });
 
-test("sin CSS muerto: cada clase de un componente la usa algún JavaScript", () => {
-  const js = JS_FILES.map(read).join("\n");
+test("sin CSS muerto: cada clase de un componente la usa algún JavaScript (o index.html)", () => {
+  // index.html trae el DOM del arranque (#boot): sus clases las usa el HTML, no un componente.
+  const js = [...JS_FILES, join(WEB, "index.html")].map(read).join("\n");
   const problems = [];
   for (const file of COMPONENT_CSS) {
     const classes = new Set([...stripCssComments(read(file)).matchAll(/\.([a-z][\w-]*__?[\w-]*|[a-z][\w]*--[\w-]+)/g)].map((m) => m[1]));
@@ -103,6 +108,41 @@ test("JavaScript no pinta colores fijos (salvo excepciones documentadas)", () =>
     });
   }
   assert.deepEqual(problems, [], `Colores fijos en JS:\n${problems.join("\n")}`);
+});
+
+test("JavaScript no pone mayúsculas a un texto entero (salvo logotipos documentados)", () => {
+  // «Sin mayúsculas espaciadas» (docs/sistema-de-diseno.md · Texto): un logotipo en mayúsculas es una excepción con su motivo.
+  // Una letra suelta (la inicial de una frase, las iniciales de una persona, una tecla) no es un texto entero.
+  const problems = [];
+  for (const file of JS_FILES) {
+    read(file).split("\n").forEach((line, i) => {
+      const whole = /toLocaleUpperCase\(/.test(line) || (/\.toUpperCase\(\)/.test(line) && !/\[0\]|charAt\(0\)|\bkey\b|\bk\.toUpperCase/.test(line));
+      if (!whole) return;
+      const why = line.match(/ds-exception:\s*(.+?)\s*(\*\/|$)/)?.[1];
+      if (why && DOC.includes(why)) return;
+      problems.push(`${file.slice(WEB.length + 1)}:${i + 1} ${line.trim().slice(0, 110)}`);
+    });
+  }
+  assert.deepEqual(problems, [], `Mayúsculas en JS (documenta la excepción):\n${problems.join("\n")}`);
+});
+
+test("movimiento: ni el JS ni el CSS escriben a mano tiempos o curvas (salvo el temblor del mando)", () => {
+  // Web Animations (`.animate(…, { duration: 620 })`) no pasa por el CSS: sus tiempos y curvas salen de los tokens (core/motion.js · flight).
+  const problems = [];
+  for (const file of JS_FILES.filter((f) => !f.endsWith("haptics.js"))) {
+    read(file).split("\n").forEach((line, i) => {
+      if (/\b(duration|delay)\s*:\s*\d|cubic-bezier\(/.test(line)) problems.push(`${file.slice(WEB.length + 1)}:${i + 1} ${line.trim().slice(0, 110)}`);
+    });
+  }
+  for (const file of STYLE_FILES) {
+    read(file).split("\n").forEach((line, i) => {
+      const code = stripComments(line);
+      if (/(?:^|[\s:,(])ease(?:-in-out|-in|-out)?(?=[\s;,)]|$)|cubic-bezier\(/.test(code) && !/var\(--ease/.test(code.replace(/--ease[\w-]*:/g, ""))) {
+        problems.push(`${file.slice(WEB.length + 1)}:${i + 1} ${line.trim().slice(0, 110)}`);
+      }
+    });
+  }
+  assert.deepEqual(problems, [], `Tiempos o curvas a mano (usa --duration-* y --ease-*):\n${problems.join("\n")}`);
 });
 
 function stripCssComments(text) {

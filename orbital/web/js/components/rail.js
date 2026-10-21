@@ -39,7 +39,7 @@ export function createRail({ label, onPick, onStep }) {
       if (e.heading) return h("div", { class: "rail__heading" }, h("span", { class: "rail__heading-text" }, e.heading));
       const i = n++;
       const current = e.id === currentId;
-      const tile = h("span", { class: ["rail__tile", e.media?.brand && "rail__tile--brand", !e.media?.brand && !e.media?.photo && !e.media?.cover && "rail__tile--icon"] });
+      const tile = h("span", { class: ["rail__tile", e.media?.brand && "rail__tile--brand"] });
       tile.append(media(e.media, tile));
       return h("button", {
         class: ["rail__item", current && "rail__item--current"], type: "button", tabindex: "-1",

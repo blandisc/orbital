@@ -13,7 +13,7 @@ import { createForYouMosaic } from "./foryou-mosaic.js";
  */
 const EMPTY = "Aún no hay nada que sugerirte. Agrega juegos o conecta Trakt (Ajustes › Cuentas).";
 
-export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onFocus, onEdge }) {
+export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onFocus, onEdge, covered = () => false }) {
   const notice = h("div", { class: "foryou__notice", role: "status" });
   const details = new Map(); // clave → { overview, facts, logo_dark }
   let detailTimer = 0;
@@ -22,7 +22,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
     clearTimeout(detailTimer);
     if (item?.key) detailTimer = setTimeout(() => fetchDetails(item), 250);
   };
-  const mosaic = createForYouMosaic({ onFocus: (item) => focused(item), onPick: (item) => activate(item) });
+  const mosaic = createForYouMosaic({ onFocus: (item) => focused(item), onPick: (item) => activate(item), covered });
   const el = h("section", { class: "foryou", hidden: true, "aria-label": "Para ti" }, h("div", { class: "foryou__stage" }, mosaic.el), notice);
 
   let data = null;
@@ -99,7 +99,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
 
   /** Pistas del pie. */
   function hints(g) {
-    const end = { glyph: g.section, label: "Sección", end: true };
+    const end = { glyph: g.menu, label: "Menú", end: true }; // como en todas las pantallas base (las secciones ya las enseña la barra de arriba)
     if (!data) return [end];
     if (mosaic.ambient) return [{ glyph: g.select, label: "Elegir" }, end];
     const item = mosaic.current;
@@ -121,7 +121,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
     setGlyphs: () => paint(),
     wake: () => mosaic.wake(),
     /** Protector de pantalla: el mosaico (ya es lo único que hay). */
-    screensaver: () => paint(),
+    screensaver: () => { mosaic.relayout(); paint(); }, // con o sin protector de pantalla cambian los márgenes del mosaico
     get current() { return mosaic.current; },
     get loaded() { return !!data; },
   };

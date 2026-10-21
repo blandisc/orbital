@@ -24,7 +24,7 @@ export function createGames({ onFocus, onPick, onAction }) {
   const head = h("div", { class: "browse__head" });
   const filters = h("div", { class: "browse__filters", role: "tablist" });
   const count = h("span", { class: "browse__count" });
-  const grid = h("div", { class: "browse__grid", role: "group" });
+  const grid = h("div", { class: ["card-grid", "browse__grid"], role: "group" });
   const sheet = createDetailPanel({ onAction: (id, d) => onAction?.(id, d.item) });
   const viewport = h("div", { class: "browse__viewport" }, grid);
   const bar = h("div", { class: "browse__bar" }, filters, count);
@@ -106,7 +106,6 @@ export function createGames({ onFocus, onPick, onAction }) {
       ? "Aún no tienes favoritos aquí. Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos."
       : c?.folder !== undefined ? `Ya tienes el emulador. Pon tus juegos en ${c.folder || "su carpeta de ROMs"} y elige ☰ → Buscar juegos nuevos.`
         : "Nada por aquí."));
-    el.classList.toggle("games--empty", games.length === 0);
     const remembered = games.findIndex((g) => g.id === memory[consoleId]);
     if (focusId.startsWith("game:") && remembered >= 0) {
       focusId = `game:${remembered}`; // el foco sigue al juego, no a la posición (la lista se reordena al jugar)

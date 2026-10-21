@@ -1,5 +1,6 @@
 import { h, hideAfterExit, mount } from "../core/dom.js";
 import { genres as genreNames } from "../core/format.js";
+import { motion } from "../core/motion.js";
 import { Card } from "./card.js";
 import { ScreenHead, SectionHead } from "./ui.js";
 
@@ -17,7 +18,7 @@ const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0
 const poster = (imdb, kind) => `https://images.metahub.space/poster/medium/${imdb}/img`;
 
 export function createYear({ load, onPick, onMove, onClose }) {
-  const head = h("div", { class: "year__head" });
+  const head = h("div");
   const stats = h("div", { class: "year__stats" });
   const mapHead = h("div");
   const map = h("div", { class: "year__map", role: "grid" });
@@ -80,7 +81,7 @@ export function createYear({ load, onPick, onMove, onClose }) {
     if (zone === "map") map.children[at]?.classList.add("year__cell--focused");
     [...topRow.children].forEach((c, i) => c.classList.toggle("card--focused", zone === "top" && i === topIndex));
     const card = topRow.children[topIndex];
-    if (card && zone === "top") topRow.scrollTo({ left: Math.max(0, card.offsetLeft - topRow.clientWidth * .3), behavior: "smooth" });
+    if (card && zone === "top") topRow.scrollTo({ left: Math.max(0, card.offsetLeft - topRow.clientWidth * .3), behavior: motion() });
     el.dataset.zone = zone;
     paintDay();
   }
@@ -104,6 +105,7 @@ export function createYear({ load, onPick, onMove, onClose }) {
     mount(head, ScreenHead({ eyebrow: "Según tu historial de Trakt", title: `Tu ${new Date().getFullYear()}` }));
     status.hidden = false;
     status.textContent = "Leyendo tu historial…";
+    el.classList.remove("year--empty");
     el.hidden = false;
     try {
       const r = await load();
@@ -114,6 +116,7 @@ export function createYear({ load, onPick, onMove, onClose }) {
       paint();
     } catch (err) {
       if (mine !== token) return;
+      el.classList.add("year--empty"); // sin datos no hay mapa que enseñar: solo el aviso
       status.textContent = err?.message || "No pude leer tu año.";
     }
     onMove?.();

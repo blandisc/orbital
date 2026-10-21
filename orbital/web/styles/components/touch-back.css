@@ -1,0 +1,17 @@
+/* TouchBack: «Atrás» (con el dedo, en todo lo que va encima): siempre arriba a la derecha, el mismo lugar en cada pantalla.
+   Antes iba abajo a la izquierda (sobre la tecla «Atrás» de Buscar y los pósters de abajo) y en la ficha arriba a la izquierda.
+   Los encabezados que usan esa esquina le dejan lugar (--touch-back-room). «Menú» (sin nada encima) sigue abajo a la derecha:
+   arriba está la barra con la hora. */
+.touch-back {
+  position: fixed; right: var(--page-gutter); top: calc(var(--space-5) + var(--safe-y, 0px)); z-index: var(--z-touch-back);
+  display: none; align-items: center; gap: var(--space-2); min-height: var(--control-height); padding: 0 var(--space-5) 0 var(--space-4);
+  border-radius: var(--radius-pill); background: var(--color-fill-hover); color: var(--color-text);
+  font-size: var(--type-body); font-weight: var(--weight-medium);
+  -webkit-backdrop-filter: blur(var(--blur-glass)); backdrop-filter: blur(var(--blur-glass));
+}
+.touch-back svg { width: var(--icon-md); height: var(--icon-md); }
+[data-input="touch"][data-overlay="true"] .touch-back { display: inline-flex; animation: fade-in var(--duration-base) var(--ease-out); }
+/* «Menú», abajo a la derecha, solo sin nada encima (con una vista encima va «Atrás»). */
+.touch-back--menu { top: auto; bottom: var(--space-5); }
+[data-input="touch"][data-overlay="true"] .touch-back--menu { display: none; }
+[data-input="touch"]:not([data-overlay="true"]) .touch-back--menu { display: inline-flex; }

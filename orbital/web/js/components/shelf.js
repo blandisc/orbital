@@ -1,6 +1,7 @@
-import { h, mount } from "../core/dom.js";
+import { cssUrl, h, mount } from "../core/dom.js";
 import { centeredOffset, rowOffset } from "../core/library.js";
 import { swipeArea, swipeSteps } from "../core/swipe.js";
+import { logoUrl } from "../core/foryou.js";
 import { tokenPx } from "../core/tokens.js";
 import { Card, RankedCard } from "./card.js";
 import { CollectionCard, SourceBadge } from "./collection-card.js";
@@ -38,6 +39,57 @@ export function createShelf({ onPick, onSwipe }) {
     };
   };
 
+  /**
+   * El escenario de «Porque viste»: el arte de lo que viste, su logo (o su nombre con estilo si no hay), una línea que dice qué
+   * hacer con tus últimos títulos y, al lado de ellos, hacia dónde sigue (las sugeridas, con RT).
+   */
+  function Stage(info, seedEls, { more }) {
+    const name = h("strong", { class: "shelf__stage-title" }, info.title);
+    // Su logo, como en el héroe (Orbital lo guarda recortado); sin logo, o si falla, el nombre en texto.
+    const logo = info.meta_id && h("img", { class: "shelf__stage-logo", src: logoUrl(info.meta_id), alt: info.title, hidden: true, decoding: "async" });
+    logo?.addEventListener("load", () => { logo.hidden = false; name.hidden = true; });
+    logo?.addEventListener("error", () => { logo.hidden = true; name.hidden = false; });
+    return h("div", { class: "shelf__stage" },
+      h("span", { class: "shelf__stage-art", style: { backgroundImage: cssUrl(info.image) } }),
+      h("span", { class: "shelf__stage-hint" }, seedEls.length > 1 ? "◀ ▶ Elige otro título que viste" : "Lo último que viste"),
+      logo, name,
+      h("span", { class: "shelf__stage-seeds", role: "group", "aria-label": "Tus últimos títulos" }, seedEls,
+        more && h("span", { class: "shelf__stage-next", "aria-hidden": "true" }, "Sugeridas ›")));
+  }
+
+  /** Una fila armada: su título, su sello y sus tarjetas (o el escenario de «Porque viste»). */
+  function makeRow(row, r, popId) {
+    // Un Top 10 (row.ranked): cada póster con su cifra grande detrás, como en Para ti y el iPhone.
+    const built = row.items.map((item, c) => {
+      const options = {
+        onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId, wide: !!row.spotlight,
+        onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
+      };
+      // Una tarjeta de colección (plataforma, premio, estudio, año, lista): la abre completa, como en el iPhone.
+      if (item.collection) return { card: CollectionCard(item, options) };
+      return row.ranked ? RankedCard(item, { ...options, brand: row.brand }) : { card: Card(item, options) };
+    });
+    const cards = built.map((b) => b.card);
+    const els = built.map((b) => b.el ?? b.card);
+    // «Porque viste» (row.stage): lo que viste fijo a la izquierda (su arte, su nombre y tus títulos en miniatura, que son
+    // las primeras tarjetas de la fila) y lo relacionado a la derecha, que se recorre sin tapar el escenario.
+    const seeds = row.stage ? Math.min(row.stage.seeds, els.length) : 0;
+    const track = h("div", { class: "shelf__track", role: "group" }, els.slice(seeds));
+    const stage = row.stage && Stage(row.stage, els.slice(0, seeds), { more: els.length > seeds });
+    const rest = stage && h("div", { class: "shelf__stage-rest" }, track);
+    const count = h("span", { class: "shelf__count" }, String(row.items.length - seeds));
+    // Destacados: puntos en vez del contador (uno por pieza; el actual, alargado), como el carrusel del iPhone.
+    const dots = row.spotlight && h("span", { class: "shelf__dots", "aria-hidden": "true" }, row.items.map(() => h("i")));
+    // Una plataforma: su logo en vez de su nombre (como en el iPhone); el nombre queda para el lector de pantalla.
+    const logo = row.logo && h("img", { class: "shelf__logo", src: row.logo, alt: row.label || "", decoding: "async" });
+    logo?.addEventListener("error", () => logo.replaceWith(row.label || ""), { once: true });
+    // De dónde viene (Trakt, Stremio, tu Orbital): el sello junto al título, como en el iPhone.
+    const seal = row.seal ? SourceBadge(row.seal) : null;
+    const rowEl = h("div", { class: ["shelf__row", row.centered && "shelf__row--centered"] },
+      h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count), stage ? h("div", { class: "shelf__stage-row" }, stage, rest) : track);
+    return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered, seeds, rest };
+  }
+
   function setRows(rows, { emptyTitle, emptyText, popId } = {}) {
     if (!rows.length) {
       rowEls = [];
@@ -47,40 +99,7 @@ export function createShelf({ onPick, onSwipe }) {
         h("p", { class: "shelf__empty" }, emptyText)));
       return;
     }
-    rowEls = rows.map((row, r) => {
-      // Un Top 10 (row.ranked): cada póster con su cifra grande detrás, como en Para ti y el iPhone.
-      const built = row.items.map((item, c) => {
-        const options = {
-          onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId, wide: !!row.spotlight,
-          onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
-        };
-        // Una tarjeta de colección (plataforma, premio, estudio, año, lista): la abre completa, como en el iPhone.
-        if (item.collection) return { card: CollectionCard(item, options) };
-        return row.ranked ? RankedCard(item, { ...options, brand: row.brand }) : { card: Card(item, options) };
-      });
-      const cards = built.map((b) => b.card);
-      const els = built.map((b) => b.el ?? b.card);
-      // «Porque viste» (row.stage): lo que viste fijo a la izquierda (su arte, su nombre y tus títulos en miniatura, que son
-      // las primeras tarjetas de la fila) y lo relacionado a la derecha, que se recorre sin tapar el escenario.
-      const seeds = row.stage ? Math.min(row.stage.seeds, els.length) : 0;
-      const track = h("div", { class: "shelf__track", role: "group" }, els.slice(seeds));
-      const stage = row.stage && h("div", { class: "shelf__stage" },
-        h("span", { class: "shelf__stage-art", style: { backgroundImage: `url("${row.stage.image}")` } }),
-        h("strong", { class: "shelf__stage-title" }, row.stage.title),
-        h("span", { class: "shelf__stage-seeds", role: "group", "aria-label": "Tus últimos títulos" }, els.slice(0, seeds)));
-      const rest = stage && h("div", { class: "shelf__stage-rest" }, track);
-      const count = h("span", { class: "shelf__count" }, String(row.items.length - seeds));
-      // Destacados: puntos en vez del contador (uno por pieza; el actual, alargado), como el carrusel del iPhone.
-      const dots = row.spotlight && h("span", { class: "shelf__dots", "aria-hidden": "true" }, row.items.map(() => h("i")));
-      // Una plataforma: su logo en vez de su nombre (como en el iPhone); el nombre queda para el lector de pantalla.
-      const logo = row.logo && h("img", { class: "shelf__logo", src: row.logo, alt: row.label || "", decoding: "async" });
-      logo?.addEventListener("error", () => logo.replaceWith(row.label || ""), { once: true });
-      // De dónde viene (Trakt, Stremio, tu Orbital): el sello junto al título, como en el iPhone.
-      const seal = row.seal ? SourceBadge(row.seal) : null;
-      const rowEl = h("div", { class: ["shelf__row", row.spotlight && "shelf__row--spotlight", row.centered && "shelf__row--centered", stage && "shelf__row--stage"] },
-        h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count), stage ? h("div", { class: "shelf__stage-row" }, stage, rest) : track);
-      return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered, seeds, rest };
-    });
+    rowEls = rows.map((row, r) => makeRow(row, r, popId));
     mount(rowsEl, rowEls.map((x) => x.rowEl));
     if (!introduced) {
       introduced = true;
@@ -115,6 +134,15 @@ export function createShelf({ onPick, onSwipe }) {
     place();
   }
 
+  /** Cambia solo una fila (las demás se quedan como están): moverte por «Porque viste» ya no rehace toda la biblioteca. */
+  function updateRow(r, row) {
+    if (!rowEls[r]) return;
+    const next = makeRow(row, r, null);
+    rowEls[r].rowEl.replaceWith(next.rowEl);
+    rowEls[r] = next;
+    setFocus(focus.r, focus.c);
+  }
+
   /** Desplaza la fila actual según el ancho real de cada tarjeta. */
   function place() {
     const row = rowEls[focus.r];
@@ -125,6 +153,8 @@ export function createShelf({ onPick, onSwipe }) {
       const widths = cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
       const x = c < 0 ? 0 : rowOffset(widths, c, { gap: metrics.gap, grow: (widths[c] ?? 0) * (metrics.scale - 1), visible: row.rest.clientWidth });
       row.track.style.transform = `translateX(${-x}px)`;
+      // La primera sugerida, al crecer, se salía por la izquierda del recorte: solo entonces se le deja ese lugar.
+      row.rest.classList.toggle("shelf__stage-rest--first", c === 0 && x === 0);
       return;
     }
     // Con la cifra del Top 10, cada pieza es más ancha que su póster: se mide lo que de verdad ocupa.
@@ -159,5 +189,5 @@ export function createShelf({ onPick, onSwipe }) {
   }
 
   window.addEventListener("resize", () => { measure(); setFocus(focus.r, focus.c); });
-  return { el, setRows, setFocus, bump, focused, slide };
+  return { el, setRows, updateRow, setFocus, bump, focused, slide };
 }

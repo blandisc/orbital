@@ -148,6 +148,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
         onPress: () => onPick?.(targets.get(owner()), owner()),
         onAction: (action) => onAction?.(action, targets.get(owner())) })
       : emptyFeature(model.consoles.length > 0, hiddenCount));
+    markFocused(); // el tile nuevo nace sin foco: se lo ponemos (paint() ya pasó si el destacado esperó su turno)
     stage.classList.remove("home__stage--swap");
     void stage.offsetWidth;
     stage.classList.add("home__stage--swap"); // el arte nuevo entra con un fundido
@@ -220,10 +221,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     })));
   }
 
-  /** Marca el foco, atenúa lo demás y mantiene la consola enfocada a la vista. */
-  function paint() {
-    const inConsoles = focusId.startsWith("console:");
-    queueStage();
+  /** Marca el foco y atenúa lo demás. También cuando el destacado se monta después (renderStage): si no, quedaba sin anillo. */
+  function markFocused() {
     for (const node of [...el.querySelectorAll("[data-focus-id]"), ...outside()]) {
       const focused = node.dataset.focusId === focusId;
       node.classList.toggle(node.classList.contains("tile") ? "tile--focused" : "is-focused", focused);
@@ -231,6 +230,13 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       if (focused) node.setAttribute("aria-current", "true");
       else node.removeAttribute("aria-current");
     }
+  }
+
+  /** Marca el foco, atenúa lo demás y mantiene la consola enfocada a la vista. */
+  function paint() {
+    const inConsoles = focusId.startsWith("console:");
+    queueStage();
+    markFocused();
     el.dataset.zone = inConsoles ? "consoles" : "top";
     keepFeatureColor(focusId.startsWith("card:"));
     keepConsoleVisible();
@@ -319,5 +325,6 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     get current() { return targets.get(focusId) ?? null; },
     get focusId() { return focusId; },
     get visible() { return !el.hidden; },
+    get hasConsoles() { return (model?.consoles.length ?? 0) > 0; },
   };
 }

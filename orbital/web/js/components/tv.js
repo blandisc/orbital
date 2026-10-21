@@ -1,7 +1,7 @@
 import { api } from "../core/api.js";
 import { h, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
-import { settler } from "../core/motion.js";
+import { reducedMotion, settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { swipeArea } from "../core/swipe.js";
 import { clock } from "../core/format.js";
@@ -86,9 +86,9 @@ export function createTv({ onFocus, onPick }) {
     return h("button", {
       class: ["tile", "tv__tile", "needs-internet", isShaky(channel) && "tile--dimmed"], type: "button", tabindex: "-1", "data-focus-id": id,
       "aria-label": channelLabel(channel), onClick: () => onPick?.(targets.get(id), id),
-    }, channel.synthetic ? Chip("24/7", { className: "tv__number" }) : channel.number && Chip(String(channel.number), { className: "tv__number" }),
-    channel.id === playing ? Badge("Al aire", { className: "tv__flag" })
-      : isShaky(channel) && Chip("Sin señal reciente", { tone: "warn", className: "tv__flag" }),
+    }, channel.synthetic ? Chip("24/7", { plate: true, className: "tv__number" }) : channel.number && Chip(String(channel.number), { plate: true, className: "tv__number" }),
+    channel.id === playing ? Badge("Al aire", { plate: true, className: "tv__flag" })
+      : isShaky(channel) && Chip("Sin señal reciente", { tone: "warn", plate: true, className: "tv__flag" }),
     h("span", { class: "tv__media" }, logo || fallback),
     h("span", { class: "tv__name" }, channel.name));
   }
@@ -205,7 +205,7 @@ export function createTv({ onFocus, onPick }) {
     previewing = channel.id;
     if (channel.id === playing) return showLogo(channel, "Al aire en grande"); // ya se ve en el reproductor
     if (channel.synthetic) return showStill(channel);
-    if (document.documentElement.dataset.motion === "reduce") return showLogo(channel, "");
+    if (reducedMotion()) return showLogo(channel, "");
     previewBadge.textContent = "Conectando…";
     video.src = `/api/tv/preview.m3u8?id=${encodeURIComponent(channel.id)}`;
     video.play().catch(() => {});

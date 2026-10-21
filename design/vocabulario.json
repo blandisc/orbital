@@ -4,7 +4,6 @@
     { "texto": "Ver", "en": ["tv", "ios"] },
     { "texto": "Continuar", "en": ["tv", "ios"], "nota": "Solo un video a medias. Un juego abierto: «Volver al juego»." },
     { "texto": "Ver la serie", "en": ["tv", "ios"], "evitar": ["Ver serie"] },
-    { "texto": "Guardar", "en": ["tv"], "nota": "La acción; «Mi lista» es el lugar. En el iPhone ya dice así (rama del Mac, aún sin subir): al llegar, va también \"ios\"." },
     { "texto": "Guardada", "en": ["tv"], "nota": "El botón cuando ya está guardada (la película, la serie)." },
     { "texto": "Elegir fuente", "en": ["tv", "ios"], "evitar": ["Elegir Fuente", "Escoger fuente"] },
     { "texto": "Ver en la TV", "en": ["ios"], "evitar": ["Ver en TV", "Ver en la tele", "Mandar a la TV"] },

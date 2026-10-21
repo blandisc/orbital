@@ -20,8 +20,8 @@ export const COLLECTION_RATIO = { platform: 1.45, studio: 1.45, award: 1.45, yea
 
 /** El halo de cada una, de los tokens (los mismos colores que el iPhone). */
 const HALO = {
-  netflix: "var(--brand-netflix)", prime: "var(--brand-prime)", disney: "var(--brand-disney)", hbo: "var(--brand-hbo)",
-  paramount: "var(--brand-paramount)", appletv: "var(--brand-appletv)",
+  netflix: "var(--platform-netflix)", prime: "var(--platform-prime)", disney: "var(--platform-disney)", hbo: "var(--platform-hbo)",
+  paramount: "var(--platform-paramount)", appletv: "var(--platform-other)",
   gold: "var(--color-award-gold)", silver: "var(--color-award-silver)", bronze: "var(--color-award-bronze)",
   studio: "var(--color-studio-halo)",
 };
@@ -31,7 +31,7 @@ const HALO = {
 const METAL = { gold: "award-wordmark award-wordmark--gold", silver: "award-wordmark award-wordmark--silver",
   bronze: "award-wordmark award-wordmark--bronze" };
 export function AwardWordmark(name, tint = "gold", extra = "") {
-  return h("span", { class: [METAL[tint] || METAL.gold, extra], "aria-label": name }, String(name).toLocaleUpperCase("es"));
+  return h("span", { class: [METAL[tint] || METAL.gold, extra], "aria-label": name }, String(name).toLocaleUpperCase("es")); // ds-exception: logotipo en mayúsculas
 }
 
 /** El sello de origen junto a un título (Trakt, Stremio o tu Orbital), como SourceBadge del iPhone. */
@@ -41,7 +41,7 @@ const SOURCE = {
 };
 export function SourceBadge(source) {
   const [cls, name] = SOURCE[source] ?? [];
-  return cls ? h("span", { class: cls, "aria-label": `De ${name}` }, name.toUpperCase()) : null;
+  return cls ? h("span", { class: cls, "aria-label": `De ${name}` }, name.toUpperCase()) : null; // ds-exception: logotipo en mayúsculas
 }
 
 const POSTER_CLASS = ["collection__poster collection__poster--1", "collection__poster collection__poster--2",

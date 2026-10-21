@@ -70,3 +70,14 @@ test("la leyenda: como mucho cinco pistas a la vista, B siempre «Atrás»; lo d
     if (back) assert.equal(back.label, "Atrás");
   }
 });
+
+test("Inicio: LT/RT dicen a dónde saltan (Tus consolas desde arriba, Arriba desde las consolas)", async () => {
+  const { homeHints } = await import("../../orbital/web/js/core/hints.js");
+  const g = { select: "A", alt: "X", back: "B", options: "Y", rows: "↑↓", search: "S", section: "LB RB", page: "LT RT", menu: "☰", home: "Home" };
+  const top = homeHints(g, { kind: "item", item: {} }, { onScreen: true, jump: "Tus consolas" });
+  assert.deepEqual(top.find((i) => i.glyph === "LT RT"), { glyph: "LT RT", label: "Tus consolas", secondary: true });
+  const consoles = homeHints(g, { kind: "console", console: { last: null } }, { jump: "Arriba" });
+  assert.equal(consoles.find((i) => i.glyph === "LT RT").label, "Arriba");
+  assert.ok(consoles.filter((i) => !i.offscreen).length <= 5);
+  assert.equal(homeHints(g, { kind: "console", console: { last: null } }).some((i) => i.glyph === "LT RT"), false); // sin consolas, no hay a dónde saltar
+});
