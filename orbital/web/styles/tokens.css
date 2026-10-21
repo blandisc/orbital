@@ -222,7 +222,6 @@
   --decide-poster-height: 16rem;
   --console-name-fit: 15cqi; /* el nombre de una consola en su tarjeta, como mucho este tanto de su ancho (8 letras caben) */
   --because-stage-width: 30rem; /* «Porque viste»: el escenario fijo de la izquierda */
-  --because-seed-height: 5.4rem; /* sus miniaturas (tus últimos títulos) */
   --year-top-height: 8.6rem; /* Tu año: los pósters de «Lo que más viste» (caben bajo el mapa) */
   --key-height: 3.2rem;
   --tv-rail-width: 15rem; /* TV en vivo: la lista de categorías */
