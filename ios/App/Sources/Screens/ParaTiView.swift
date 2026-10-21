@@ -507,18 +507,11 @@ struct ListsView: View {
         }
     }
 
-    /// Un título de lo que viste, para el mazo: qué es y cuándo lo viste («Serie · la viste hace 3 días»; el año, solo si no
-    /// se sabe cuándo: junto a la fecha no cabía y es lo que menos dice).
+    /// Un título de lo que viste, para el mazo: qué es y de qué año («Serie · 2005»). Sin «la viste hace…»: no gustó.
     private func becauseSeed(_ e: TraktEntry) -> BecauseSeed {
         let language = env.services.appSettings.uiLanguage
         var parts = [Strings.tr(e.kind == "movie" ? "Película" : "Serie", language: language)]
-        if e.watchedAt == nil, let year = e.year { parts.append(String(year)) }
-        if let at = e.watchedAt {
-            let formatter = RelativeDateTimeFormatter()
-            formatter.locale = Locale(identifier: language == "en" ? "en" : "es-MX")
-            formatter.dateTimeStyle = .named
-            parts.append(String(format: Strings.tr("la viste %@", language: language), formatter.localizedString(for: at, relativeTo: .now)))
-        }
+        if let year = e.year { parts.append(String(year)) }
         return BecauseSeed(id: e.imdb, title: e.title, poster: String(format: ForYou.metahubPoster, e.imdb), detail: parts.joined(separator: " · "))
     }
 

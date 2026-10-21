@@ -142,7 +142,7 @@ struct BecauseSeed: Identifiable, Equatable {
     let id: String
     let title: String
     let poster: String?
-    /// Qué es y cuándo lo viste: «Serie · la viste hace 3 días».
+    /// Qué es y de qué año: «Serie · 2005».
     var detail: String = ""
 }
 
@@ -213,8 +213,8 @@ struct BecauseCard<Related: View>: View {
                 Text(verbatim: current?.title ?? "").recipe(.title)
                     .lineLimit(2, reservesSpace: true).minimumScaleFactor(DS.Collections.becauseTitleScale).allowsTightening(true)
                     .contentTransition(.opacity)
-                // Qué es y cuándo lo viste: el porqué de la recomendación (antes ese lugar quedaba vacío).
-                Text(verbatim: current?.detail ?? "").recipe(.footnote).lineLimit(2, reservesSpace: true)
+                // Qué es y de qué año.
+                Text(verbatim: current?.detail ?? "").recipe(.footnote).lineLimit(1)
                     .contentTransition(.opacity)
                 Spacer(minLength: DS.Space.s2)
                 if seeds.count > 1 {

@@ -14048,17 +14048,6 @@
         }
       }
     },
-    "la viste %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "watched %@"
-          }
-        }
-      }
-    },
     "menos": {
       "extractionState": "manual",
       "localizations": {
