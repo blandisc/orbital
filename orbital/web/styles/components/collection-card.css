@@ -39,14 +39,13 @@
    los pósters (sin placa: el filtro también la pintaría de blanco). */
 .collection__logo--mono { max-height: 2.2rem; filter: brightness(0) invert(1) drop-shadow(0 .15rem .5rem color-mix(in oklab, var(--color-bg) 85%, transparent)); }
 .collection__name {
-  font-size: var(--text-md); font-weight: var(--weight-bold); line-height: 1.1; letter-spacing: var(--tracking-tight);
-  text-shadow: var(--shadow-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
-}
-.collection__detail { color: var(--color-text-muted); font-size: var(--type-caption); line-height: 1.2; }
+  font-size: var(--type-body); font-weight: var(--weight-bold); line-height: var(--leading-title); letter-spacing: var(--tracking-tight);
+  text-shadow: var(--shadow-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.collection__detail { color: var(--color-text-muted); font-size: var(--type-caption); line-height: var(--leading-snug); }
 /* Un estudio: su nombre en cápsula al frente (como el iPhone). */
 .collection__capsule {
   padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-badge-bg);
-  font-size: var(--text-sm); font-weight: var(--weight-bold); box-shadow: var(--shadow-badge); white-space: nowrap;
+  font-size: var(--type-secondary); font-weight: var(--weight-bold); box-shadow: var(--shadow-badge); white-space: nowrap;
 }
 /* Un premio: la estatuilla real recortada al frente, abajo a la derecha, con su halo. */
 .collection__statue {
@@ -62,7 +61,7 @@
 }
 .collection__year {
   position: absolute; inset: auto var(--space-3) var(--space-2) var(--space-3); z-index: var(--z-above);
-  font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: 1; letter-spacing: var(--tracking-rank);
+  font-size: var(--type-display); font-weight: var(--weight-bold); line-height: var(--leading-none); letter-spacing: var(--tracking-rank);
   font-variant-numeric: tabular-nums; text-shadow: var(--shadow-text-strong);
 }
 
@@ -74,7 +73,7 @@
 .collection__stack .collection__poster--2 { left: 22%; }
 .collection__text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .card--list .collection__name { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.collection__meta { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
+.collection__meta { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); }
 .collection__count { font-variant-numeric: tabular-nums; }
 /* «Porque viste X» (BecauseCard): lo que viste, con su nombre al lado; lo relacionado sigue en la fila. */
 .card--seed .collection__poster { flex: none; height: 100%; width: auto; aspect-ratio: 2 / 3; }
@@ -91,13 +90,13 @@
 .award-wordmark--gold { --metal: var(--color-award-gold); }
 .award-wordmark--silver { --metal: var(--color-award-silver); }
 .award-wordmark--bronze { --metal: var(--color-award-bronze); }
-.collection__foot .award-wordmark { font-size: var(--text-md); line-height: 1.1; }
+.collection__foot .award-wordmark { font-size: var(--type-body); line-height: var(--leading-tight); }
 
 /* El sello de origen (SourceBadge): el nombre del servicio en mayúsculas sobre su color. */
 .source-badge {
   display: inline-flex; align-items: center; padding: .1rem .45rem; border-radius: var(--radius-xs);
-  color: var(--color-text); font-size: var(--text-2xs); font-weight: var(--weight-bold); letter-spacing: var(--tracking-label);
-  line-height: 1.3; white-space: nowrap;
+  color: var(--color-text); font-size: var(--type-footnote); font-weight: var(--weight-bold); letter-spacing: var(--tracking-label); /* ≥ 18,7 px en negrita cuenta como letra grande: 3:1 le basta sobre el color del servicio */
+  line-height: var(--leading-normal); white-space: nowrap;
 }
 .source-badge--trakt { background: var(--color-source-trakt); }
 .source-badge--stremio { background: var(--color-source-stremio); }
@@ -107,6 +106,6 @@
    chicas y apagadas (como el carrusel centrado del iPhone), y debajo el reflejo de la fila actual. */
 .shelf__row--centered .card--collection { transform-origin: 50% 100%; }
 .shelf__row--centered .card--collection.card--focused { transform: scale(var(--card-focus-scale)); margin-inline: calc(var(--card-height) * var(--ratio) * (var(--card-focus-scale) - 1) / 2); }
-.shelf__row--current.shelf__row--centered .card--collection:not(.card--focused) { transform: scale(.9); opacity: .55; }
+.shelf__row--current.shelf__row--centered .card--collection:not(.card--focused) { transform: scale(.9); opacity: var(--opacity-away); }
 /* Un reflejo corto y tenue: solo insinuado, sin meterse bajo el título de la fila de abajo. */
 .shelf__row--current.shelf__row--centered .shelf__track { -webkit-box-reflect: below var(--space-1) linear-gradient(transparent 84%, color-mix(in oklab, var(--color-text) 9%, transparent)); }

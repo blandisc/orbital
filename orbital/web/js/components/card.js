@@ -5,7 +5,7 @@ import { SYSTEMS, systemColor, systemOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { clampRatio, coverRatio, needsInternet } from "../core/library.js";
-import { Badge } from "./ui.js";
+import { Badge, Progress } from "./ui.js";
 
 /** Portada de un juego/app. Si no hay imagen (o falla), muestra el ícono de su tipo y el título. */
 /**
@@ -38,9 +38,9 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   // El puesto del Top 10 (Netflix oficial, lo más visto de una plataforma): la otra esquina, siempre
   // legible sobre cualquier póster (la misma receta de insignia que el resto de la app).
   const place = rankOf(item);
-  const rank = place != null && !ranked ? Badge(String(place), { className: "card__rank", large: true }) : null; // `ranked`: la cifra grande ya lo dice
+  const rank = place != null && !ranked ? Badge(String(place), { className: "card__rank", large: true, plate: true }) : null; // `ranked`: la cifra grande ya lo dice
   const move = trendOf(item); // ▲2 / ▼1 / Nuevo, debajo del puesto
-  const trend = move ? Badge(move.text, { className: `card__trend card__trend--${move.dir}` }) : null;
+  const trend = move ? Badge(move.text, { className: `card__trend card__trend--${move.dir}`, plate: true }) : null;
   // Lo que está abierto ahora (como las actividades de PS5): se ve desde la fila.
   const live = item.live ? h("span", { class: "card__live" }, h("span", { class: "card__live-dot" }), "Abierto") : null;
   const ago = showAgo ? shortAgo(item.last_played) : null;
@@ -49,10 +49,7 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   const chip = caption
     ? h("span", { class: "card__caption" }, h("strong", {}, item.title), h("span", {}, item.subtitle))
     : ago ? h("span", { class: "card__chip" }, ago) : null;
-  const progress = item.progress > 0
-    ? h("span", { class: "card__progress", role: "progressbar", "aria-valuenow": Math.round(item.progress * 100), "aria-valuemin": 0, "aria-valuemax": 100 },
-      h("span", { class: "card__progress-fill", style: { width: `${Math.round(item.progress * 100)}%` } }))
-    : null;
+  const progress = Progress(item.progress, { className: "card__progress" });
   // Un nombre sobre el arte (Por género: «Terror»), como las tarjetas de Explora del iPhone.
   const label = item.label ? h("span", { class: "card__label" }, item.label) : null;
   // Ancha: el logo del título sobre el arte (sin él, el arte de fondo no dice qué es); si no carga, el nombre.

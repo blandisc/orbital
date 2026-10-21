@@ -50,6 +50,19 @@ def test_gamesir_mode_switch_never_closes_the_game():
     assert run(d, [(9, GUIDE | START), (9.1, GUIDE | START | BACK), (9.2, 0)]) == []  # combo: Home no cuenta
 
 
+def test_gamesir_closes_with_lb_rb_select_and_its_own_combos_never_do():
+    """Home + Start + Select chocaba con el GameSir: Start + Select le cambian el modo, Home + Start le reinician los
+    ajustes y, desde la actualización de Windows del 2026-10-18, mantener Home abre la Vista de tareas."""
+    from orbital.gamepad import CLOSE_LABELS, GAMESIR_CLOSE_COMBO, LB_BUTTON, RB_BUTTON, close_combo_for
+    assert close_combo_for(0x3537) == GAMESIR_CLOSE_COMBO == LB_BUTTON | RB_BUTTON | BACK
+    assert CLOSE_LABELS[GAMESIR_CLOSE_COMBO] == "LB + RB + Select"
+    d = ComboDetector(arm=.25, total=1.5, combo=GAMESIR_CLOSE_COMBO)
+    assert run(d, [(0, GUIDE | BACK | START), (2, GUIDE | BACK | START), (2.1, 0)]) == []  # el atajo viejo ya no
+    assert run(d, [(3, BACK | START), (6, BACK | START), (6.1, 0)]) == []  # cambiar de modo
+    assert run(d, [(7, LB_BUTTON | RB_BUTTON | BACK), (7.3, LB_BUTTON | RB_BUTTON | BACK),
+                   (8.6, LB_BUTTON | RB_BUTTON | BACK)]) == ["hold-start", "hold-complete"]
+
+
 def test_remote_maps_buttons_to_keys_with_repeat_on_dpad():
     from orbital.gamepad import A_BUTTON, DPAD_RIGHT, VK_RIGHT, VK_SPACE, KeyRemote
 
@@ -75,7 +88,7 @@ def test_remote_ignores_orbital_shortcuts():
 def test_legion_go_controllers_close_with_start_select():
     from orbital.gamepad import LEGION_CLOSE_COMBO, close_combo_for
     assert close_combo_for(0x17EF) == LEGION_CLOSE_COMBO  # controles de la Legion Go
-    assert close_combo_for(0x3537) == BACK | START | GUIDE  # GameSir y demás: los tres
+    assert close_combo_for(0x045E) == BACK | START | GUIDE  # los demás: los tres
     assert close_combo_for(None) == BACK | START | GUIDE
     d = ComboDetector(arm=.25, total=1.5, combo=LEGION_CLOSE_COMBO)
     assert run(d, [(0, BACK | START), (0.3, BACK | START), (1.6, BACK | START)]) == ["hold-start", "hold-complete"]

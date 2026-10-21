@@ -162,6 +162,9 @@ test("cómo se usa: una hoja, con el mando que tienes", () => {
   const byLabel = (menu) => Object.fromEntries(menu.options.filter((o) => !o.heading).map((o) => [o.label, o.value]));
   assert.equal(byLabel(legion)["Cerrar el juego"], "Mantén Start + Select");
   assert.equal(byLabel(controlsMenu([]))["Cerrar el juego"], "Mantén Start + Select + Home");
+  // El GameSir cierra con LB + RB + Select (Home y Start + Select son combos del propio control).
+  assert.equal(byLabel(controlsMenu([{ slot: 1, kind: "gamesir", close: "LB + RB + Select" }, { slot: 2, kind: "legion", close: "Start + Select" }]))["Cerrar el juego"],
+    "Mantén LB + RB + Select");
   assert.ok(legion.options.every((o) => o.heading || ["stay", "tour"].includes(o.command.type)));
 });
 

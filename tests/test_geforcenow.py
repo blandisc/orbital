@@ -21,7 +21,8 @@ def test_shortcuts_become_cloud_games(monkeypatch):
 
     [apex] = geforcenow.items(Art())
     assert apex.id == "gfn:100013311" and apex.title == "Apex Legends" and apex.category == "geforcenow"
-    assert apex.argv == [r"C:\GFN\GeForceNOWStreamer.exe", "--url-route=#?cmsId=100013311&launchSource=External"]
+    # El Streamer de un acceso directo viejo ya no abre nada: lo abre la app, que es quien entiende la ruta.
+    assert apex.argv == [r"C:\GFN\GeForceNOW.exe", "--url-route=#?cmsId=100013311&launchSource=External"]
     assert apex.image.endswith("/1172470/library_600x900.jpg") and apex.extra["logo"].endswith("/logo.png")
 
 
@@ -53,7 +54,7 @@ def test_library_from_gfn_cache(tmp_path):
     games = geforcenow.read_library_cache(tmp_path)
     assert games == [{"recent": 0, "title": "Apex Legends", "cms_id": "100013311", "short_name": "apex_steam", "store": "Steam",
                       "banner": "https://img/b.jpg", "hero": "https://img/h.jpg"}]  # solo lo jugable
-    argv = geforcenow.library_argv(r"C:\GFN\GeForceNOWStreamer.exe", games[0])
+    argv = geforcenow.library_argv(r"C:\GFN\GeForceNOW.exe", games[0])
     assert argv[1] == "--url-route=#?cmsId=100013311&launchSource=External&shortName=apex_steam&parentGameId="
 
 
@@ -72,7 +73,14 @@ def test_library_games_become_cards_without_duplicating_shortcuts(monkeypatch, t
     apex, raro = geforcenow.items(Art())
     assert apex.argv[0] == "S.exe"  # el acceso directo manda
     assert raro.subtitle == "GeForce NOW · EA app" and raro.image == "https://b" and raro.hero == "https://h"
-    assert raro.argv[0].endswith("GeForceNOWStreamer.exe")
+    assert raro.argv[0].endswith("GeForceNOW.exe")
+
+
+def test_a_cloud_game_lasts_while_the_app_window_carries_its_name():
+    """Al salir del juego la app de GFN vuelve a su biblioteca y sigue abierta: el juego terminó aunque el programa siga."""
+    assert geforcenow.in_game_title("STAR WARS™ Battlefront II (Classic, 2005) on GeForce NOW")
+    assert not geforcenow.in_game_title("GeForce NOW")  # su biblioteca
+    assert not geforcenow.in_game_title("")  # recién abierta, sin título
 
 
 def test_steam_art_is_remembered_between_starts(tmp_path, monkeypatch):

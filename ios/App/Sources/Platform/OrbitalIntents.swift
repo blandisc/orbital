@@ -50,6 +50,22 @@ struct ResumeTVIntent: AppIntent {
     }
 }
 
+/// «Prende Orbital»: prende la tele, la pone en la entrada de la consola y muestra Orbital (como «Alexa, abre Orbital»).
+struct TurnOnConsoleIntent: AppIntent {
+    static let title: LocalizedStringResource = "Prender la consola"
+    static let description = IntentDescription("Prende la tele en la entrada de tu Orbital y muestra la consola.")
+    static let openAppWhenRun = false
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let env = AppEnvironment.shared
+        let outcome = await VoiceAssistant(services: env.services, tvNow: env.tvNow).handle("prende la consola")
+        let speech = outcome.speech.isEmpty ? String(localized: "Listo.")
+            : Strings.message(outcome.speech, language: env.services.appSettings.uiLanguage)
+        return .result(dialog: IntentDialog(stringLiteral: speech))
+    }
+}
+
 /// Las frases que Siri reconoce sin configurar nada (aparecen solas en Atajos).
 struct OrbitalShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
@@ -58,6 +74,9 @@ struct OrbitalShortcuts: AppShortcutsProvider {
         AppShortcut(intent: AskOrbitalIntent(), phrases: [
             "Habla con \(.applicationName)", "Orden para \(.applicationName)", "Usa \(.applicationName)", "\(.applicationName)",
         ], shortTitle: "Habla con Orbital", systemImageName: "waveform")
+        AppShortcut(intent: TurnOnConsoleIntent(), phrases: [
+            "Prende \(.applicationName)", "Enciende \(.applicationName)", "Prende la consola con \(.applicationName)",
+        ], shortTitle: "Prender la consola", systemImageName: "power")
         AppShortcut(intent: PauseTVIntent(), phrases: [
             "Pausa la TV con \(.applicationName)", "Pausa \(.applicationName)",
         ], shortTitle: "Pausar la TV", systemImageName: "pause.fill")

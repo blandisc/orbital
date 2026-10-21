@@ -78,7 +78,7 @@ export function createHero({ onAction }) {
     title.classList.toggle("award-wordmark--gold", award === "gold");
     title.classList.toggle("award-wordmark--silver", award === "silver");
     title.classList.toggle("award-wordmark--bronze", award === "bronze");
-    if (award) title.textContent = item.title.toLocaleUpperCase("es"); // en mayúsculas: es su logotipo
+    if (award) title.textContent = item.title.toLocaleUpperCase("es"); // ds-exception: logotipo en mayúsculas
     title.hidden = false;
     logo.hidden = true;
     // El logo recortado y guardado por Orbital (/api/foryou/logo), no el original de internet: carga al instante.

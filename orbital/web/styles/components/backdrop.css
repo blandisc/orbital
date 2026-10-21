@@ -47,12 +47,21 @@
 /* Velo mínimo: arriba para la hora y a la izquierda para el título. */
 .backdrop__scrim { position: absolute; inset: 0; background: var(--scrim-hero); }
 
-/* --- Fondo vivo (Inicio y Juegos) ------------------------------------------------- */
+/* --- Fondo vivo (Inicio, Juegos, Para ti y TV en vivo) ------------------------------------------------- */
 .backdrop__space { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity var(--duration-tint) var(--ease-out); }
-body[data-view="home"] .backdrop__space { opacity: 1; }
+/* Las vistas con fondo de ambiente (Inicio, Juegos, Para ti, TV en vivo): sin arte a pantalla completa (el arte vive en su ficha);
+   el espacio vivo y una luz del color de lo enfocado, que cambia suave. Una sola regla para las cuatro. */
+body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop__layer,
+body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop__scrim { opacity: 0; }
+body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop {
+  transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep);
+}
+body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop__space { opacity: 1; }
 
-/* Luz del color de lo enfocado: una sigue al foco (suave), otra deriva sola muy despacio. Gradientes
-   ya difuminados (sin filter: blur, que es caro) que solo se mueven. */
+/* Luz del color de lo enfocado: una sigue al foco (suave) y otra queda quieta abajo a la derecha. Gradientes ya
+   difuminados (sin filter: blur, que es caro). Antes la segunda y las estrellas derivaban solas sin parar (ciclos de
+   38–240 s, imperceptibles): la GPU redibujaba la pantalla 4K 60 veces por segundo aunque nada cambiara (28–38 %).
+   Ahora el fondo solo se mueve cuando tú te mueves. */
 .backdrop__glow {
   position: absolute; left: 0; top: 0; width: 80vmax; height: 80vmax; margin: -40vmax 0 0 -40vmax; border-radius: 50%;
   background: radial-gradient(circle, color-mix(in oklab, var(--art-accent) 16%, transparent) 0%, color-mix(in oklab, var(--art-tint) 60%, transparent) 30%, transparent 64%);
@@ -64,19 +73,11 @@ body[data-view="home"] .backdrop__space { opacity: 1; }
 }
 .backdrop__glow--drift {
   width: 60vmax; height: 60vmax; margin: -30vmax 0 0 -30vmax; opacity: .55;
-  animation: glow-drift var(--duration-glow) ease-in-out infinite alternate;
-}
-@keyframes glow-drift {
-  from { transform: translate3d(78vw, 85vh, 0) scale(1); }
-  to { transform: translate3d(62vw, 55vh, 0) scale(1.25); }
+  transform: translate3d(70vw, 70vh, 0) scale(1.12);
 }
 
-/* Estrellas: dos capas que derivan a distinta velocidad (paralaje). El patrón mide 640 px y la capa
-   se mueve justo eso: el ciclo no se nota. */
-.backdrop__stars {
-  position: absolute; left: 0; top: 0; width: calc(100% + 640px); height: calc(100% + 640px);
-  background-size: 640px 640px; will-change: transform;
-}
+/* Estrellas: dos capas quietas, del tamaño de la pantalla (patrón de 640 px). */
+.backdrop__stars { position: absolute; inset: 0; background-size: 640px 640px; }
 .backdrop__stars--far {
   opacity: .35;
   background-image:
@@ -84,13 +85,11 @@ body[data-view="home"] .backdrop__space { opacity: 1; }
     radial-gradient(1px 1px at 380px 140px, var(--color-star), transparent), radial-gradient(1px 1px at 520px 470px, var(--color-star), transparent),
     radial-gradient(1px 1px at 120px 520px, var(--color-star), transparent), radial-gradient(1px 1px at 600px 250px, var(--color-star), transparent),
     radial-gradient(1px 1px at 300px 600px, var(--color-star), transparent), radial-gradient(1px 1px at 450px 40px, var(--color-star), transparent);
-  animation: stars-drift var(--duration-stars-far) linear infinite;
 }
 .backdrop__stars--near {
   opacity: .5;
   background-image:
     radial-gradient(1.6px 1.6px at 90px 200px, var(--color-star), transparent), radial-gradient(1.4px 1.4px at 330px 420px, var(--color-star), transparent),
     radial-gradient(1.8px 1.8px at 560px 90px, var(--color-star), transparent), radial-gradient(1.4px 1.4px at 250px 40px, var(--color-star), transparent);
-  animation: stars-drift var(--duration-stars) linear infinite;
+  background-position: 320px 180px; /* desfasada de la lejana: que no coincidan los patrones */
 }
-@keyframes stars-drift { to { transform: translate3d(-640px, -640px, 0); } }

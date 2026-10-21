@@ -33,6 +33,14 @@ class Running:
     stopped: bool = False  # lo cerró Orbital (no se cerró solo ni tronó)
     # Ya estaba abierto cuando lo pediste (Steam solo lo trajo al frente): cerrarlo pronto no es una falla.
     already_open: bool = False
+    # Orbital lo está relanzando (Xenia cambia de programa): el proceso viejo se cierra a propósito y el nuevo llega con
+    # adopt. Mientras tanto, que se cierre el viejo no es «terminó».
+    switching: bool = False
+    # Cuándo sigue el juego, si no basta con que el programa siga abierto (GeForce NOW: la app queda en su biblioteca).
+    alive: Callable[[], bool] | None = None
+    start_timeout: float = 30.0  # s para que aparezca (o empiece, con `alive`)
+    on_end: Callable[[], None] | None = None  # al terminar (GeForce NOW: cerrar su app, que se queda en su biblioteca)
+    adopted: threading.Event = field(default_factory=threading.Event)  # despierta al vigilante en cuanto llega el nuevo
 
 
 def redact(arg: str) -> str:
@@ -129,20 +137,69 @@ class Launcher:
 
     EXE_START_TIMEOUT = 30  # s para que aparezca el ejecutable vigilado
 
-    def track_exe(self, item_id: str, title: str, exe: str, runner: str | None = None) -> None:
+    def track_exe(self, item_id: str, title: str, exe: str, runner: str | None = None,
+                  alive: Callable[[], bool] | None = None, start_timeout: float | None = None,
+                  on_end: Callable[[], None] | None = None) -> None:
         """Para apps de instancia única: si ya estaba abierta, el proceso que lanzamos le pasa el
-        enlace y termina al instante. Lo fiable es vigilar que su ejecutable siga existiendo."""
-        running = Running(item_id, title, None, runner=runner, exe=exe)
+        enlace y termina al instante. Lo fiable es vigilar que su ejecutable siga existiendo.
+        `alive`: otra señal de que el juego sigue (GeForce NOW: el título de su ventana)."""
+        running = Running(item_id, title, None, runner=runner, exe=exe, alive=alive,
+                          start_timeout=start_timeout or self.EXE_START_TIMEOUT, on_end=on_end)
         with self._lock:
             self.current = running
         threading.Thread(target=self._watch_exe, args=(running,), daemon=True).start()
+
+    def begin_switch(self, item_id: str) -> list[int] | None:
+        """Orbital va a relanzar el juego (Xenia cambiando de programa: Black Ops II de la campaña a Zombies). Devuelve el
+        proceso de ahora (para cerrarlo), o None si ya no se está jugando eso. Hasta adopt/end_switch, que se cierre no es
+        «terminó»: antes Orbital regresaba encima a media partida. Devuelve los procesos que cerrar: el lanzado (si sigue)
+        y en los que siguió el juego (launch-xenia.cmd abre Xenia y se cierra: el juego es su «seguidor»)."""
+        with self._lock:
+            cur = self.current
+            if cur is None or cur.item_id != item_id or cur.process is None:
+                return None
+            cur.switching = True
+            return ([cur.process.pid] if cur.process.poll() is None else []) + sorted(cur.followers)
+
+    def adopt(self, item_id: str, process: subprocess.Popen) -> bool:
+        """El juego sigue en este proceso nuevo: ahora es el que se vigila."""
+        with self._lock:
+            cur = self.current
+            if cur is None or cur.item_id != item_id:
+                return False
+            cur.process, cur.followers, cur.switching = process, set(), False
+            cur.adopted.set()
+            return True
+
+    def relaunch(self, item_id: str, argv: list[str], cwd: str | None = None) -> bool:
+        """Cierra el juego y lo abre otra vez con el mismo comando, como la misma partida (sin «terminó» de por medio)."""
+        old = self.begin_switch(item_id)
+        if old is None:
+            return False
+        try:
+            for pid in old:
+                _taskkill(pid, force=True)
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline and set(old) & set(self.process_list()):
+                time.sleep(.1)  # que suelte sus puertos y su ventana antes de abrir el nuevo
+            return self.adopt(item_id, self.run(argv, cwd=cwd))
+        except BaseException:
+            self.end_switch(item_id)
+            raise
+
+    def end_switch(self, item_id: str) -> None:
+        """No se pudo relanzar: si el viejo ya no está, el juego terminó."""
+        with self._lock:
+            if self.current is not None and self.current.item_id == item_id:
+                self.current.switching = False
 
     def _watch_exe(self, running: Running) -> None:
         from . import windows
 
         exe = running.exe or ""
-        deadline = time.time() + self.EXE_START_TIMEOUT
-        while not windows.pids_by_exe(exe):
+        present = running.alive or (lambda: bool(windows.pids_by_exe(exe)))
+        deadline = time.time() + running.start_timeout
+        while not present():
             if self.current is not running:
                 return
             if time.time() > deadline:
@@ -151,13 +208,14 @@ class Launcher:
                         self.current = None
                 return
             time.sleep(self.POLL / 2)
-        while windows.pids_by_exe(exe):
+        while present():
             if self.current is not running:
                 return self._replaced(running)  # se abrió otra cosa: ya no es lo que estamos midiendo
             time.sleep(self.POLL)
         self._finished(running)
 
     HANDOFF_GRACE = 1.5  # s tras cerrarse el proceso para ver si el juego siguió en otro
+    QUICK_LOOK = 10.0  # s del principio en que se mira la familia más seguido
 
     def process_list(self) -> dict[int, tuple[str, int]]:
         from . import windows
@@ -166,26 +224,59 @@ class Launcher:
     def _watch_process(self, running: Running) -> None:
         """Vigila el proceso y, si se cierra, a quien tomó su lugar: hijos que sigan vivos (un
         lanzador que abre el juego y termina) o una copia nueva del mismo programa (xemu se relanza
-        a sí mismo a los 2 s). Sin esto Orbital salía encima del juego como si se hubiera cerrado."""
-        pid = running.process.pid
+        a sí mismo a los 2 s). Sin esto Orbital salía encima del juego como si se hubiera cerrado.
+        Si Orbital lo relanza (adopt), se vuelve a vigilar desde el principio, con el proceso nuevo."""
+        while True:
+            outcome = self._watch_once(running)
+            if outcome == "replaced":
+                return self._replaced(running)  # se abrió otra cosa: ya no es lo que estamos midiendo
+            if outcome != "adopted":
+                break
+        self._finished(running)
+
+    def _watch_once(self, running: Running) -> str:
+        """«ended», «replaced» (se abrió otra cosa) o «adopted» (Orbital lo relanzó en otro proceso)."""
+        running.adopted.clear()
+        watched = running.process
+        pid = watched.pid
         snapshot = self.process_list()
         exe = snapshot.get(pid, ("", 0))[0]
         if exe in NOT_RELAUNCH:
             exe = ""  # otro cmd.exe abierto luego por cualquier cosa no es "el juego relanzado"
         before = {p for p, (name, _) in snapshot.items() if exe and name == exe and p != pid}  # ya abiertos: no son nuestros
         family: dict[int, str] = {}  # descendientes vistos (pid -> ejecutable)
+        quick_until = time.monotonic() + self.QUICK_LOOK
         while True:
+            if running.process is not watched:
+                return "adopted"
             try:
-                running.process.wait(timeout=self.POLL / 2)
-                break
+                # Los primeros segundos, más seguido: un lanzador (.cmd → PowerShell → Xenia) abre el juego y se cierra en
+                # 2–3 s; si no se le ve a tiempo, el juego queda huérfano y parecía que «terminó» a los 3 s.
+                watched.wait(timeout=.2 if time.monotonic() < quick_until else self.POLL / 2)
             except subprocess.TimeoutExpired:
                 family.update(_descendants(self.process_list(), pid))
+                continue
+            if running.process is not watched:
+                return "adopted"
+            if running.switching:
+                time.sleep(.1)  # Orbital lo cerró para relanzarlo: el nuevo está por llegar
+                continue
+            break
         deadline = time.monotonic() + self.HANDOFF_GRACE
         while True:
             if self.current is not running:
-                return self._replaced(running)  # se abrió otra cosa: ya no es lo que estamos midiendo
+                return "replaced"
+            if running.process is not watched:
+                return "adopted"
+            if running.switching:
+                time.sleep(.1)  # Orbital cerró el juego para relanzarlo: que no se vea como «terminó»
+                continue
             snapshot = self.process_list()
             alive = {p for p, name in family.items() if snapshot.get(p, ("",))[0] == name}
+            # Huérfanos: el juego que abrió alguien de la familia que ya se cerró (Xenia, cuyo PowerShell ya no está) sigue
+            # diciendo quién era su padre.
+            for p in [pid, *family]:
+                alive |= {c for c, name in _descendants(snapshot, p).items() if name not in NOT_RELAUNCH}
             relaunched = {p for p, (name, _) in snapshot.items() if exe and name == exe and p != pid and p not in before}
             followers = alive | relaunched
             for p in list(followers):  # y lo que ellos abran
@@ -195,12 +286,11 @@ class Launcher:
                 if not running.followers:
                     log.info("%s sigue abierto en otro proceso (%s)", running.title, sorted(followers))
                 running.followers = followers
-                time.sleep(self.POLL)
+                running.adopted.wait(self.POLL)  # como sleep, pero un relanzamiento lo despierta (su lanzador se va en 1 s)
             elif time.monotonic() < deadline and not running.followers:
                 time.sleep(.25)  # quizá el relevo aún no aparece
             else:
-                break
-        self._finished(running)
+                return "ended"
 
     def _watch_steam(self, running: Running, appid: int) -> None:
         deadline = time.time() + self.STEAM_START_TIMEOUT
@@ -238,6 +328,11 @@ class Launcher:
                 self.current = None
         elapsed = time.time() - running.started
         log.info("%s terminó tras %.0f s", running.title, elapsed)
+        if running.on_end:
+            try:
+                running.on_end()
+            except Exception:  # noqa: BLE001 - el hilo vigilante no se cae por esto
+                log.exception("Error al terminar %s", running.title)
         self.last_stopped_by_user = running.stopped
         self.last_was_already_open = running.already_open
         if self.on_exit:

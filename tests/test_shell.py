@@ -72,7 +72,7 @@ class FakeOverlay:
         self.calls = []
 
     def show(self, title, detail, ms): self.calls.append(("show", title, detail))
-    def closing(self, title): self.calls.append(("closing", title))
+    def closing(self, title, detail=""): self.calls.append(("closing", title, detail))
     def hide(self, delay_ms=0): self.calls.append(("hide",))
 
 
@@ -128,10 +128,18 @@ def test_hold_shows_overlay_in_game_and_closes_hard():
     shell, win, overlay = make(MANAGED)
     shell.hold_start()
     assert win.fg == GAME  # el aviso va encima del juego: no sales de él
-    assert overlay.calls == [("show", "Mantén para cerrar Eden", "Mario Party Superstars")]
+    # El juego en grande y qué mantener (sin mando que lo diga, sin atajo inventado).
+    assert overlay.calls == [("show", "Mario Party Superstars", "Sigue manteniendo para cerrar")]
     shell.hold_complete()
-    assert overlay.calls[1:] == [("closing", "Cerrando Eden"), ("hide",)]
+    assert overlay.calls[1:] == [("closing", "Cerrando Mario Party Superstars", "Eden"), ("hide",)]
     assert shell.catalog.launcher.stopped and shell.catalog.launcher.forced  # de golpe, sin "¿Seguro?"
+
+
+def test_hold_overlay_says_which_buttons_the_controller_holds():
+    shell, _, overlay = make(MANAGED)
+    shell.gamepad = type("Pad", (), {"hold_label": "LB + RB + Select"})()  # lo que mantiene el GameSir
+    shell.hold_start()
+    assert overlay.calls == [("show", "Mario Party Superstars", "Mantén LB + RB + Select para cerrar")]
 
 
 def test_hold_released_early_keeps_playing():
@@ -144,7 +152,7 @@ def test_hold_released_early_keeps_playing():
 def test_hold_also_works_with_emulator_opened_elsewhere():
     shell, win, overlay = make(None)  # Eden abierto desde ES-DE, no desde Orbital
     shell.hold_start()
-    assert overlay.calls[0][2] == "Eden | Mario Party Superstars" and shell.hold["pid"] == 20
+    assert overlay.calls[0][1] == "Eden | Mario Party Superstars" and shell.hold["pid"] == 20
 
 
 def test_hold_ignored_in_orbital_and_in_other_apps():
@@ -177,7 +185,7 @@ def test_legion_l_twice_closes_the_game():
     win.fg = LEGION
     shell.check_legion(LEGION, previous=ORBITAL, now=101.2)  # segundo toque: ya estabas en Orbital
     assert shell.catalog.launcher.stopped and shell.catalog.launcher.forced and not win.suspended
-    assert win.fg == ORBITAL and ("closing", "Cerrando Eden") in overlay.calls
+    assert win.fg == ORBITAL and ("closing", "Cerrando Mario Party Superstars", "Eden") in overlay.calls
     assert win.minimized == [LEGION, LEGION]  # Legion Space nunca se queda
 
 
@@ -205,7 +213,7 @@ def test_hold_closes_steam_game_in_front(monkeypatch):
     monkeypatch.setattr(ConsoleShell, "steam_running", staticmethod(lambda: True))
     shell.hold_start()
     assert shell.hold == {"title": "Hades II", "runner": None, "pid": 30}
-    assert overlay.calls[0][1] == "Mantén para cerrar el juego"
+    assert overlay.calls[0][1] == "Hades II"
     win.windows[DESKTOP_APP] = ("Steam", 30, "steamwebhelper.exe")  # Steam mismo: nunca
     shell.hold = None
     shell.hold_start()
@@ -312,7 +320,7 @@ def test_frozen_game_closes_after_the_limit(tmp_path):
     assert shell.check_idle(start + 60 * 60 + 1)  # +1: start + 3600 - start puede dar 3599.999… en flotante
     assert shell.catalog.launcher.stopped and not shell.is_paused and not win.suspended  # se descongela para cerrar
     assert "se cerrará en 10 min" in notes[0]["message"]  # el aviso llega antes, a los 50 min
-    assert "llevaba 60 min" in notes[-1]["message"]
+    assert "Llevaba 60 min" in notes[-1]["detail"]
 
 
 def test_sleep_is_noticed_by_a_late_check():

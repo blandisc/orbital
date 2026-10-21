@@ -9,8 +9,10 @@ instalado: no hace falta para usar Orbital.
 
 from __future__ import annotations
 
+import base64
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -88,6 +90,87 @@ def test_boots_and_shows_the_library(page):
     assert page.locator("button.card").count() >= 6
 
 
+def test_focused_piece_is_marked_with_aria_current(page):
+    """El sistema de diseño promete `aria-current` en lo enfocado, en cualquier pieza (core/focus-mark.js)."""
+    ready(page)
+    page.keyboard.press("e")  # Juegos: portada enfocada, filtro y consola del riel
+    page.locator('button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=5000)
+    page.wait_for_timeout(400)
+    assert page.locator(".card--focused[aria-current=true]:visible").count() == 1  # las vistas ocultas conservan su último foco
+    page.keyboard.press("m")  # el menú: una opción enfocada (.sheet__item--focused) sin que la hoja lo ponga a mano
+    page.locator(".sheet__item--focused").first.wait_for(timeout=3000)
+    first = page.locator(".sheet__item[aria-current=true]:visible")
+    assert first.count() == 1
+    before = first.inner_text()
+    page.keyboard.press("ArrowDown")
+    page.wait_for_timeout(300)
+    after = page.locator(".sheet__item[aria-current=true]:visible")
+    assert after.count() == 1 and after.inner_text() != before  # el foco se movió: la marca se fue con él
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
+
+
+def test_screensaver_fills_the_screen_edges(page):
+    """Protector de pantalla: el margen de la TV se llena con una columna de más en cada orilla (solo asoma un pedazo)."""
+    ready(page)
+    page.keyboard.press("q")  # Para ti
+    page.locator(".foryou-mosaic__tile").first.wait_for(timeout=8000)
+    page.evaluate("document.body.dataset.screensaver = 'true'")  # lo que hace main.js · saver al pasar el rato sin usarla
+    page.wait_for_function("document.querySelectorAll('.foryou-mosaic__col:not([hidden])').length === 8", timeout=8000)
+    width = page.evaluate("innerWidth")
+    left, right = [page.evaluate(f"(() => {{ const r = document.querySelectorAll('.foryou-mosaic__col')[{i}].getBoundingClientRect(); return [r.left, r.right]; }})()") for i in (6, 7)]
+    assert left[0] < 0 < left[1] < width / 4 and 3 * width / 4 < right[0] < width < right[1]  # asoman por los dos lados
+    assert all(page.locator(".foryou-mosaic__col").nth(i).locator(".foryou-mosaic__tile").count() > 0 for i in (6, 7))
+    page.evaluate("delete document.body.dataset.screensaver")  # sin protector, las de las orillas se retiran
+    page.wait_for_function("document.querySelectorAll('.foryou-mosaic__col:not([hidden])').length === 6", timeout=8000)
+    assert page.locator(".foryou-mosaic__col[hidden] .foryou-mosaic__tile").count() == 0
+
+
+PIXEL = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==")
+
+
+def _open_with_art(page, server, art) -> None:
+    """Abre lo enfocado con el arte de Steam servido (`art`: "ok") o caído ("fail"), sin depender de internet."""
+    page.route("**/steam/apps/**", lambda route: route.fulfill(body=PIXEL, content_type="image/png") if art == "ok" else route.abort())
+    page.reload()  # que nada venga de la memoria del navegador
+    ready(page)
+    page.keyboard.press("e")  # Juegos: una portada con su fondo
+    page.locator('button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=8000)
+    page.wait_for_timeout(400)
+    page.keyboard.press("Enter")
+    page.locator(".launch").wait_for(timeout=5000)
+
+
+def _stop(server) -> None:
+    """Cierra lo que abrió la prueba (cuando ya se registró): la siguiente abre de cero, no «Volver al juego»."""
+    deadline = time.monotonic() + 10
+    while not status(server)["running"] and time.monotonic() < deadline:
+        time.sleep(.2)
+    urllib.request.urlopen(urllib.request.Request(f"{server}/api/stop", method="POST"), timeout=5)
+    while status(server)["running"] and time.monotonic() < deadline:
+        time.sleep(.2)
+
+
+def test_loading_screen_paints_each_image_once_it_is_decoded(page, server):
+    """La pantalla de carga: el fondo ambiental (el arte difuminado en un lienzo diminuto) y la portada entran ya
+    decodificados (antes se pintaban a medias o nunca)."""
+    _open_with_art(page, server, "ok")
+    page.locator(".launch.launch--ambient").wait_for(timeout=5000)
+    page.locator(".launch__cover--ready .launch__poster img").wait_for(timeout=5000)
+    assert page.evaluate("document.querySelector('.launch__poster img').naturalWidth") > 0
+    assert page.evaluate("getComputedStyle(document.querySelector('.launch__art')).filter") == "none"  # sin filtros caros
+    _stop(server)
+
+
+def test_loading_screen_without_art_still_looks_intentional(page, server):
+    """Sin internet (o con el arte caído): las estrellas de la marca y la inicial del título en la tarjeta, nunca un hueco."""
+    _open_with_art(page, server, "fail")
+    page.locator(".launch.launch--plain").wait_for(timeout=8000)
+    page.locator(".launch__cover--missing").wait_for(timeout=8000)
+    assert not page.locator(".launch.launch--art").count()
+    _stop(server)
+
+
 def test_opening_a_game_and_coming_back(page, server):
     ready(page)
     page.keyboard.press("Enter")  # abre lo enfocado (el lanzador de prueba no abre nada de verdad)
@@ -96,7 +179,8 @@ def test_opening_a_game_and_coming_back(page, server):
         time.sleep(.2)
     assert status(server)["running"]
     urllib.request.urlopen(urllib.request.Request(f"{server}/api/stop", method="POST"), timeout=5)
-    page.locator(".toast", has_text="De vuelta de").wait_for(timeout=10_000)  # llegó el aviso por SSE
+    # Llegó el aviso por SSE (con portada: el título arriba y «Jugaste…» o «De vuelta en Orbital» abajo).
+    page.locator(".toast", has_text=re.compile("Jugaste|De vuelta en Orbital")).wait_for(timeout=10_000)
 
 
 def test_diagnostics_screen(page):

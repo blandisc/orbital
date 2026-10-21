@@ -256,7 +256,7 @@ class PhoneNotConnected(ValueError):
 
 
 def send_to_phone(watch, config, action: str, kind: str, meta_id: str, video_id: str | None = None, *, connected=None,
-                  position: float | None = None) -> dict:
+                  position: float | None = None, choice: dict | None = None) -> dict:
     """Deja un pendiente para el iPhone («Enviar al iPhone» abre el título allá; «Descargar en el iPhone» lo baja).
 
     El iPhone lo recoge en su próximo sondeo de `/api/companion/now` (o en segundo plano, si iOS lo deja) y lo quita
@@ -282,6 +282,9 @@ def send_to_phone(watch, config, action: str, kind: str, meta_id: str, video_id:
             "action": action, "at": int(time.time()), **episode_numbers(video_id if kind == "series" else None)}
     if isinstance(position, (int, float)) and position > 0:
         item["position"] = round(float(position), 1)  # «Seguir en el iPhone»: el iPhone abre en ese segundo
+        # …con la misma fuente (su huella, la misma en los dos: streams.Source.key), el mismo audio y los mismos
+        # subtítulos ({"off": True} si los tenías quitados). Lo que el iPhone no encuentre, con su regla de siempre.
+        item.update({k: v for k, v in (choice or {}).items() if k in ("source", "audio", "subtitle") and v})
     return watch.state.inbox_add(item, INBOX_LIMIT)
 
 

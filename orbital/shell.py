@@ -2,7 +2,7 @@
 
   * Home (o un toque de Legion L): desde el juego -> Orbital; desde Orbital -> de vuelta al juego.
   * Legion L dos veces seguidas desde un juego -> se cierra (el primer toque ya te trajo a Orbital).
-  * Start + Select + Home mantenidos en el juego -> aviso encima del juego (sin salir de él) con una
+  * El atajo de cerrar mantenido en el juego (Start + Select + Home; GameSir: LB + RB + Select) -> aviso encima del juego (sin salir de él) con una
     barra que se llena; al completarse, el emulador se cierra de golpe y vuelves a Orbital.
     Soltar antes = no pasa nada. Sostenerlo 1,5 s ya es la confirmación: sin "¿Seguro?".
 
@@ -261,8 +261,10 @@ class ConsoleShell:
         self.hold = target
         self.remember(fg)
         if self.overlay:
-            runner = target.get("runner") or "el juego"
-            self.overlay.show(f"Mantén para cerrar {runner}", target["title"], int((HOLD_TOTAL - HOLD_ARM) * 1000))
+            # El juego en grande y qué mantener (el atajo del mando que lo está haciendo: el GameSir no usa Home).
+            label = getattr(getattr(self, "gamepad", None), "hold_label", "")
+            self.overlay.show(target["title"], f"Mantén {label} para cerrar" if label else "Sigue manteniendo para cerrar",
+                              int((HOLD_TOTAL - HOLD_ARM) * 1000))
 
     def hold_cancel(self) -> None:
         if self.hold is None:
@@ -276,7 +278,7 @@ class ConsoleShell:
         if target is None:
             return
         if self.overlay:
-            self.overlay.closing(f"Cerrando {target.get('runner') or 'el juego'}")
+            self.overlay.closing(f"Cerrando {target['title']}", target.get("runner") or "")
         self.stop_game()
         if self.overlay:
             self.overlay.hide(delay_ms=350)
@@ -433,7 +435,7 @@ class ConsoleShell:
             self.hold = self.target(left["hwnd"]) or left["target"]
             log.info("Legion L dos veces: cierro %s", self.hold.get("title"))
             if self.overlay:
-                self.overlay.closing(f"Cerrando {self.hold.get('runner') or 'el juego'}")
+                self.overlay.closing(f"Cerrando {self.hold.get('title') or 'el juego'}", self.hold.get("runner") or "")
             self.stop_game()
             if self.overlay:
                 self.overlay.hide(delay_ms=350)
@@ -516,8 +518,8 @@ class ConsoleShell:
                 self._idle_warned = True
                 running = self.catalog.launcher.status()
                 if running:
-                    self.notify({"type": "toast", "message": f"{running['title']} se cerrará en {IDLE_WARNING // 60} min si no "
-                                                        "vuelves (Home). Lo no guardado se pierde."})
+                    self.notify({"type": "toast", "tone": "warn", "message": f"{running['title']} se cerrará en {IDLE_WARNING // 60} min",
+                                 "detail": "Si no vuelves (Home). Lo no guardado se pierde"})
             return False
         self._idle_warned = False
         running = self.catalog.launcher.status()
@@ -528,7 +530,7 @@ class ConsoleShell:
             for pid in pids:
                 subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True,
                                creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]
-        self.notify({"type": "toast", "message": f"Cerré {title}: llevaba {limit // 60} min en pausa."})
+        self.notify({"type": "toast", "message": f"Cerré {title}", "detail": f"Llevaba {limit // 60} min en pausa"})
         return True
 
     def unpin_orbital(self) -> None:

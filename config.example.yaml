@@ -54,6 +54,14 @@ para_ti:
   rawg_key: ""
   region: MX                          # país para «lo más popular en Netflix…»
 
+# --- La tele (Roku TV) -------------------------------------------------------
+# «Alexa, abre Orbital» la prende y la pone en la entrada de Orbital. `orbital tv setup` llena esto solo.
+# tv:
+#   host: 192.168.1.50
+#   serial: X000000000000
+#   mac: "aa:bb:cc:dd:ee:ff"
+#   input: hdmi1
+
 # --- Emuladores --------------------------------------------------------------
 # Orbital los DETECTA SOLO: busca Ryujinx, Eden, Citron, Dolphin, mGBA, xemu, Xenia,
 # DuckStation, PCSX2, PPSSPP, melonDS, Cemu y shadPS4 en Descargas, Escritorio, C:\Emuladores,

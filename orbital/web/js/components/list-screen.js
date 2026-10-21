@@ -4,6 +4,7 @@ import { keepInView } from "./browse.js";
 import { Card, RankedCard } from "./card.js";
 import { SourceBadge } from "./collection-card.js";
 import { PersonHead } from "./people.js";
+import { Chip, Pill } from "./ui.js";
 
 /**
  * Una lista abierta de Películas y series (como SortableGrid del iPhone): arriba la lista en grande (estatuilla o logo,
@@ -32,7 +33,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
   const meta = h("span", { class: "list-screen__meta" });
   const chips = h("div", { class: "list-screen__chips" });
   const tabsEl = h("div", { class: "list-screen__tabs", role: "tablist" });
-  const grid = h("div", { class: "list-screen__grid", role: "group" });
+  const grid = h("div", { class: ["card-grid", "list-screen__grid"], role: "group" });
   const viewport = h("div", { class: "list-screen__viewport" }, grid);
   const status = h("p", { class: "list-screen__status" });
   const about = h("div", { hidden: true }); // una persona: su foto y su biografía (PersonHead)
@@ -62,7 +63,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     title.textContent = list.title;
     // Un premio: su nombre con remate y su metal (award-wordmark, de collection-card).
     title.className = ["list-screen__title", list.metal && "award-wordmark", list.metal && `award-wordmark--${list.metal}`].filter(Boolean).join(" ");
-    if (list.metal) title.textContent = list.title.toLocaleUpperCase("es"); // en mayúsculas: es su logotipo
+    if (list.metal) title.textContent = list.title.toLocaleUpperCase("es"); // ds-exception: logotipo en mayúsculas
     mount(meta, [list.source && SourceBadge(list.source), list.meta && h("span", {}, list.meta)].filter(Boolean));
     mount(about, list.person ? PersonHead(list.person) : null);
     about.hidden = !list.person;
@@ -77,10 +78,10 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
 
   function paintTabs() {
     tabsEl.hidden = list.tabs.length < 2;
-    mount(tabsEl, list.tabs.map((t, i) => h("button", {
-      class: ["list-screen__tab", i === tab && "list-screen__tab--on", zone === "tabs" && i === tab && "list-screen__tab--focused"],
-      type: "button", tabindex: "-1", role: "tab", "aria-selected": i === tab ? "true" : "false", onClick: () => switchTab(i),
-    }, t.label)));
+    mount(tabsEl, list.tabs.map((t, i) => Pill(t.label, {
+      on: i === tab, className: zone === "tabs" && i === tab && "pill--focused",
+      tabindex: "-1", role: "tab", "aria-selected": i === tab ? "true" : "false", onClick: () => switchTab(i),
+    })));
   }
 
   /** Lo que se ve: el orden y los filtros que elegiste (un ranking se queda en su orden). */
@@ -120,7 +121,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
       const options = { caption: true, onPress: () => { zone = "grid"; index = i; paintFocus(); onPick?.(item); } };
       const built = ranked() ? RankedCard(item, { ...options, brand: current()?.brand }) : { card: Card(item, options) };
       built.card.dataset.focusId = `item:${i}`;
-      if (item.award_year || item.day_label) built.card.append(h("span", { class: "list-screen__note" }, String(item.award_year || item.day_label)));
+      if (item.award_year || item.day_label) built.card.append(Chip(String(item.award_year || item.day_label), { plate: true, className: "list-screen__note" }));
       return built.el ?? built.card;
     }));
     grid.dataset.shift = "0";

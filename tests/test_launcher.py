@@ -4,6 +4,8 @@ import subprocess
 import threading
 import time
 
+import pytest
+
 from orbital import focus as focus_mod
 from orbital import launcher as launcher_mod
 from orbital import player
@@ -97,6 +99,22 @@ def test_unrelated_consoles_never_count_as_the_game():
     procs[400] = ("cmd.exe", 1)  # otro cmd, de cualquier cosa
     del procs[100]
     proc.done.set()
+    assert wait_for(lambda: ended)
+
+
+def test_game_orphaned_by_a_quick_launcher_keeps_the_session():
+    """launch-xenia.cmd → PowerShell → Xenia: los dos primeros se cierran a los 2–3 s y Xenia queda huérfano (su padre ya no
+    existe). Antes eso contaba como «terminó a los 3 s»."""
+    procs = {}
+    lau, proc, ended, thread = make(procs)
+    procs[150] = ("powershell.exe", 100)
+    time.sleep(.35)  # el vigilante ve a PowerShell
+    procs[300] = ("xenia_canary_netplay.exe", 150)
+    del procs[150], procs[100]
+    proc.done.set()
+    assert wait_for(lambda: lau.current is not None and 300 in lau.current.followers)
+    assert not ended
+    del procs[300]
     assert wait_for(lambda: ended)
 
 
@@ -337,6 +355,67 @@ def test_reveal_leaves_orbital_behind_the_game():
     assert win.below == [(1, 3)]  # sin "siempre encima", detrás del juego (no encima de él)
 
 
+def test_instant_ready_still_lets_the_loading_screen_finish_its_entrance():
+    """xemu abre a pantalla completa al instante: la salida esperaba 0 s y cortaba la entrada a medias."""
+    win = FocusWindows()
+    win.open(3, "xemu | v0.8.137", fullscreen=True)
+    now, steps, events = [100.0], [], []
+
+    def sleep(seconds):
+        steps.append(seconds)
+        now[0] += seconds
+
+    def notify(event):
+        events.append((event, now[0] - 100))
+
+    assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Star Wars: Battlefront II", "xemu",
+                               notify=notify, timeout=5, win=win, sleep=sleep, pinned=1, clock=lambda: now[0])
+    assert events == [({"type": "launch-ready", "id": "x"}, focus_mod.MIN_LOADING)]
+
+
+def _reveal_with_art(art_wait):
+    """Un juego listo al instante; devuelve a qué segundo llegó launch-ready."""
+    win = FocusWindows()
+    win.open(3, "xemu | v0.8.137", fullscreen=True)
+    now, events = [100.0], []
+
+    def sleep(seconds):
+        now[0] += seconds
+
+    bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Dune", "xemu", notify=lambda e: events.append(now[0] - 100),
+                        timeout=5, win=win, sleep=sleep, pinned=1, clock=lambda: now[0], art_wait=lambda: art_wait(now[0] - 100))
+    return events[0]
+
+
+def test_loading_screen_waits_until_its_art_has_been_seen():
+    """Una película en caché abría en 2 s y el fondo llegaba después: la pantalla se iba sin que se viera."""
+    shown_at = 2.6  # el fondo se pintó a los 2.6 s: se queda ART_DWELL más
+    ready = _reveal_with_art(lambda t: .2 if t < shown_at else max(0.0, shown_at + focus_mod.ART_DWELL - t))
+    assert shown_at + focus_mod.ART_DWELL <= ready < shown_at + focus_mod.ART_DWELL + .3
+
+
+def test_art_that_never_arrives_does_not_hold_the_loading_screen_forever():
+    ready = _reveal_with_art(lambda t: .2)
+    assert ready == pytest.approx(focus_mod.MIN_LOADING + focus_mod.ART_WAIT, abs=.3)
+
+
+def test_no_art_notice_means_no_extra_wait():
+    assert _reveal_with_art(lambda t: 0.0) == focus_mod.MIN_LOADING
+
+
+def test_sessions_art_wait():
+    from orbital.sessions import Sessions
+    s = Sessions.__new__(Sessions)
+    s._art_pending_at = s._art_shown_at = None
+    assert s.art_wait(now=10) == 0  # sin aviso de la interfaz (iPhone, voz): no espera
+    s.art(False)
+    s._art_pending_at = 10.0
+    assert s.art_wait(now=11) > 0 and s.art_wait(now=200) == 0  # un aviso viejo no cuenta
+    s.art(True)
+    s._art_shown_at = 11.0
+    assert s.art_wait(now=11.5) == pytest.approx(focus_mod.ART_DWELL - .5) and s.art_wait(now=13) == 0
+
+
 def test_guard_respects_home_and_closed_games():
 
     win, launcher = _Win(), _Launcher()
@@ -392,3 +471,57 @@ def test_measuring_windows_memory_never_holds_the_launch(monkeypatch):
     health.note_dwm("antes de abrir algo")
     assert time.monotonic() - t0 < .5
     started.set()
+
+
+def test_xemu_keeps_the_loading_screen_until_its_window_has_a_picture():
+    """xemu abre a pantalla completa y arranca la consola en negro 2,5–5 s: la pantalla de carga sigue hasta ver el juego
+    (dos lecturas seguidas: el cuadro suelto al pasar a pantalla completa no cuenta)."""
+    win = FocusWindows()
+    win.open(3, "xemu | v0.8.137", fullscreen=True)
+    seen = iter([False, True, False, False, True, True])
+    win.has_picture = lambda hwnd: next(seen, True)
+    now, events = [100.0], []
+
+    def sleep(seconds):
+        now[0] += seconds
+
+    assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Star Wars: Battlefront II", "xemu",
+                               notify=lambda e: events.append(now[0] - 100), timeout=20, win=win, sleep=sleep, pinned=1,
+                               clock=lambda: now[0])
+    assert next(seen, "fin") == "fin"  # leyó las seis: no se dio por listo con el destello de la segunda
+    assert events  # y al final sí: la pantalla de carga hace su salida
+
+
+def test_a_game_that_stays_black_is_shown_anyway():
+    win = FocusWindows()
+    win.open(3, "xemu | v0.8.137", fullscreen=True)
+    reads = []
+    win.has_picture = lambda hwnd: reads.append(1) or False
+    clock = [0.0]
+    focus_mod.time, real = type("T", (), {"time": staticmethod(lambda: clock[0])}), focus_mod.time
+    try:
+        def sleep(seconds):
+            clock[0] += seconds
+        assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Halo", "xemu", timeout=60, win=win,
+                                   sleep=sleep, pinned=1, clock=lambda: clock[0])
+    finally:
+        focus_mod.time = real
+    assert len(reads) <= focus_mod.PICTURE_WAIT / .3 + 2  # con tope: no se queda los 60 s
+
+
+def test_cloud_game_ends_when_its_window_drops_the_name_even_if_the_app_stays():
+    """GeForce NOW: al salir del juego la app sigue abierta en su biblioteca. Antes el juego quedaba «en curso» para siempre."""
+    ended, playing = [], [False]
+    lau = Launcher(on_exit=lambda *args: ended.append(args))
+    lau.POLL = .02
+    closed = []
+    lau.track_exe("gfn:1", "Hogwarts Legacy", "GeForceNOW.exe", runner="GeForce NOW", alive=lambda: playing[0], start_timeout=2,
+                  on_end=lambda: closed.append(1))
+    time.sleep(.1)
+    assert lau.status()["id"] == "gfn:1" and not ended  # abriendo: todavía no cuenta como cerrado
+    playing[0] = True  # la ventana ya dice «Hogwarts Legacy on GeForce NOW»
+    time.sleep(.1)
+    playing[0] = False  # saliste del juego: la app vuelve a su biblioteca
+    assert wait_for(lambda: ended)
+    assert ended[0][:2] == ("gfn:1", "Hogwarts Legacy") and lau.status() is None
+    assert closed == [1]  # y la app se cierra (se quedaba en su biblioteca gastando detrás de Orbital)

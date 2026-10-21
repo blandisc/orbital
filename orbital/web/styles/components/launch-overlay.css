@@ -1,56 +1,62 @@
 /* LaunchOverlay: el viaje de Orbital al juego.
-   Portada en órbita sobre un campo de estrellas que avanza; al estar listo, salto a velocidad luz
-   y a negro (luego Windows funde la ventana sobre el juego). Solo se animan transform y opacity:
-   nada de filtros animados ni capas que se repinten en la GPU integrada. */
+   Portada en órbita sobre el arte del juego; al estar listo, todo se funde a negro (luego el juego entra en ese negro).
+   Ligera a propósito: se ve mientras el juego abre y se pelea la GPU integrada. Solo se animan transform y opacity de
+   piezas chicas; nada de filtros (ni quietos) sobre capas de pantalla completa, ni capas grandes que crezcan sin parar. */
 .launch {
   position: fixed; inset: 0; z-index: var(--z-launch); display: grid; place-items: center;
-  background: var(--color-tinted-bg); overflow: hidden;
+  background: var(--color-tinted-bg); overflow: hidden; contain: strict;
   animation: fade-in var(--duration-base) var(--ease-out);
   transition: background-color var(--duration-launch-out) var(--ease-in);
 }
 .launch--leaving { animation: fade-out var(--duration-base) var(--ease-in) forwards; }
 
-/* Arte del juego: desenfocado y oscuro, quieto (antes un desenfoque animado de 24 s). */
-.launch__backdrop {
-  position: absolute; inset: -3rem; background-size: cover; background-position: center;
-  filter: blur(30px) brightness(.2) saturate(1.25); transform: scale(1.04);
-  transition: opacity var(--duration-launch-out) var(--ease-in), transform var(--duration-launch-reveal) var(--ease-in);
+/* --- El fondo, en capas que llegan cada una a su tiempo -------------------------------------------------------- */
+/* Ambiental: el arte dibujado una vez en un lienzo de 48×27 y estirado (sale difuminado sin filtros, casi gratis). */
+.launch__ambient {
+  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0;
+  transition: opacity var(--duration-enter-long) var(--ease-out), transform var(--duration-launch-reveal) var(--ease-in);
+}
+.launch--ambient .launch__ambient { opacity: 1; }
+
+/* Nítido: el fondo propio del juego, ya decodificado (nunca a medio pintar), con fundido al llegar. Quieto: antes un
+   zoom de 26 s obligaba a volver a rasterizar un JPEG de pantalla completa y salía por pedazos. */
+.launch__art { position: absolute; inset: 0; opacity: 0;
+  transition: opacity var(--duration-enter-long) var(--ease-out), transform var(--duration-launch-reveal) var(--ease-in); }
+.launch__art img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
+.launch--art .launch__art { opacity: 1; }
+
+/* Velo de lectura (fijo): oscurece el centro y abajo, donde van la portada y el texto, sobre cualquier arte. */
+.launch__scrim {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(60% 55% at 50% 52%, color-mix(in oklab, var(--color-video-bg) 55%, transparent), transparent 80%),
+    linear-gradient(color-mix(in oklab, var(--color-video-bg) 35%, transparent),
+                    color-mix(in oklab, var(--color-video-bg) 20%, transparent) 40%,
+                    color-mix(in oklab, var(--color-video-bg) 80%, transparent));
+}
+.launch--art .launch__scrim {
+  background:
+    radial-gradient(55% 50% at 50% 55%, color-mix(in oklab, var(--color-video-bg) 50%, transparent), transparent 80%),
+    linear-gradient(color-mix(in oklab, var(--color-video-bg) 25%, transparent) 30%,
+                    color-mix(in oklab, var(--color-video-bg) 85%, transparent));
 }
 
-/* Del arte al juego: el fondo propio del juego, nítido y avanzando despacio (solo transform: nada de filtros animados).
-   Un velo abajo y al centro para que se lean la portada y el texto. */
-.launch--art .launch__backdrop {
-  inset: 0; filter: brightness(.5) saturate(1.1);
-  animation: launch-drift var(--duration-launch-drift) var(--ease-out) forwards;
-}
-.launch--art .launch__stars {
-  background: radial-gradient(70% 60% at 50% 55%, color-mix(in oklab, var(--color-video-bg) 55%, transparent), transparent 75%),
-    linear-gradient(transparent 55%, color-mix(in oklab, var(--color-video-bg) 70%, transparent));
-}
-.launch--art .launch__starfield { opacity: 0; animation-name: launch-travel-soft; } /* sobre el arte, estrellas tenues */
-@keyframes launch-drift { from { transform: scale(1.12); } to { transform: scale(1); } }
-@keyframes launch-travel-soft {
-  0% { transform: scale(.55); opacity: 0; }
-  25% { opacity: .35; }
-  100% { transform: scale(1.6); opacity: 0; }
-}
-
-/* Estrellas: dos capas de puntos que vienen hacia ti (cerca más rápido que lejos). */
-.launch__stars { position: absolute; inset: 0; pointer-events: none; }
+/* Sin arte de nada: el campo de estrellas de la marca (una sola capa, del tamaño de la pantalla). */
+.launch__stars { position: absolute; inset: 0; pointer-events: none; display: none; }
+.launch--plain .launch__stars { display: block; }
 .launch__starfield {
-  position: absolute; inset: -50%; opacity: 0;
+  position: absolute; inset: 0; opacity: 0; will-change: transform, opacity;
   background-image:
     radial-gradient(1.5px 1.5px at 20% 30%, color-mix(in srgb, var(--color-star) 90%, transparent), transparent),
     radial-gradient(1px 1px at 70% 80%, color-mix(in srgb, var(--color-star) 70%, transparent), transparent),
     radial-gradient(1.5px 1.5px at 85% 20%, color-mix(in oklab, var(--art-accent) 80%, var(--color-star)), transparent),
     radial-gradient(1px 1px at 40% 65%, color-mix(in srgb, var(--color-star) 60%, transparent), transparent),
     radial-gradient(1px 1px at 10% 85%, color-mix(in srgb, var(--color-star) 50%, transparent), transparent);
-  background-size: 22rem 22rem;
+  background-size: 13rem 13rem;
   animation: launch-travel var(--duration-launch-travel) linear infinite;
 }
-.launch__starfield--near { background-size: 31rem 31rem; animation-duration: var(--duration-launch-travel-near); animation-delay: calc(-1 * var(--duration-launch-travel-near) * .375); }
 @keyframes launch-travel {
-  0% { transform: scale(.55); opacity: 0; }
+  0% { transform: scale(1); opacity: 0; }
   25% { opacity: .9; }
   100% { transform: scale(1.6); opacity: 0; }
 }
@@ -60,16 +66,25 @@
   padding: 0 var(--page-gutter); text-align: center;
 }
 
-/* Portada en el centro, con la órbita de la marca girando alrededor. */
+/* --- Portada en el centro, con la órbita de la marca girando alrededor -------------------------------------------- */
 .launch__stage { position: relative; display: grid; place-items: center; height: 20rem;
   animation: launch-float var(--duration-launch-float) var(--ease-float) var(--duration-enter-long) infinite; }
 /* Flotar: unos pocos píxeles arriba y abajo, lento; sin esto el conjunto se veía pegado a la pantalla. */
 @keyframes launch-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-.4rem); } }
+/* La tarjeta: mientras llega la portada, una tarjeta de reserva (nunca un hueco ni una imagen a medias). */
 .launch__cover {
   position: relative; z-index: var(--z-raised); height: 17rem; width: calc(17rem * var(--ratio, .667)); border-radius: var(--radius-lg);
-  background: var(--gradient-card) center / cover; transform-origin: 50% 50%;
+  overflow: hidden; background: var(--gradient-card); transform-origin: 50% 50%;
   box-shadow: var(--shadow-overlay), 0 0 6rem -1rem color-mix(in oklab, var(--art-accent) 45%, transparent);
   transition: transform var(--duration-enter-long) var(--ease-launch), opacity var(--duration-enter) var(--ease-in);
+}
+.launch__poster { position: absolute; inset: 0; opacity: 0; transition: opacity var(--duration-enter) var(--ease-out); }
+.launch__poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.launch__cover--ready .launch__poster { opacity: 1; }
+/* La portada no llegó: la inicial del título en la tarjeta, que se vea a propósito. */
+.launch__cover--missing::after {
+  content: attr(data-initial); position: absolute; inset: 0; display: grid; place-items: center;
+  color: var(--color-text-muted); font-size: var(--type-title); font-weight: var(--weight-bold);
 }
 .launch__orbit {
   position: absolute; left: 50%; top: 50%;
@@ -77,12 +92,12 @@
   transform: rotate(-24deg);
   transition: transform var(--duration-enter-long) var(--ease-in), opacity var(--duration-enter) var(--ease-in);
 }
-/* El anillo: un trazo fino que se dibuja solo al entrar (de cero a la vuelta completa). Atrás, tenue (la profundidad). */
+/* El anillo: un trazo fino que se dibuja solo al entrar (de cero a la vuelta completa). */
 .launch__ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .launch__ring ellipse {
   /* Un solo color en toda la vuelta (antes la mitad de atrás iba en el tono del arte y la de enfrente casi blanca con
      brillo: se veían dos mitades). La profundidad la da el satélite, que atrás se aleja. */
-  fill: none; stroke: color-mix(in oklab, var(--color-star) 78%, var(--art-accent)); stroke-width: 1.6;
+  fill: none; stroke: color-mix(in oklab, var(--color-star) 78%, var(--art-accent)); stroke-width: var(--stroke-fine);
   stroke-dasharray: 100; stroke-dashoffset: 100; stroke-linecap: round;
   animation: launch-draw var(--duration-launch-draw) var(--ease-out) var(--delay-1) forwards;
 }
@@ -119,8 +134,6 @@
 }
 /* Profundidad: el arco de enfrente pasa por delante de la portada; el de atrás, detrás. */
 .launch__orbit--front { z-index: var(--z-above); clip-path: inset(50% -2rem -2rem -2rem); }
-/* Las dos mitades con el mismo trazo y la misma luz suave (que se lea sobre un póster cargado sin cambiar de color). */
-.launch__ring { filter: drop-shadow(0 0 .3rem color-mix(in oklab, var(--art-accent) 45%, transparent)); }
 .launch--revealing .launch__orbit--front { transform: rotate(-24deg) scale(1.18); opacity: 0; }
 /* Sin portada (una app): solo la órbita, con un planeta de la marca al centro. */
 .launch--no-cover .launch__stage::before {
@@ -129,13 +142,19 @@
   box-shadow: 0 0 4rem -.5rem color-mix(in oklab, var(--art-accent) 55%, transparent);
 }
 
+/* --- Qué está pasando -------------------------------------------------------------------------------------------- */
 .launch__text { display: grid; justify-items: center; animation: rise-in var(--duration-enter) var(--ease-out) var(--delay-2) backwards; transition: opacity var(--duration-base) var(--ease-in); }
-.launch__label { color: var(--color-accent); font-size: var(--text-md); font-weight: var(--weight-medium); }
-.launch__title { max-width: 40rem; margin: var(--space-2) 0; font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: 1.05; text-wrap: balance; }
-.launch__subtitle { color: var(--color-text-muted); font-size: var(--text-md); }
-.launch__leave { margin-top: var(--space-6); color: var(--color-text-muted); font-size: var(--text-sm); }
-/* Barra de carga: pista fina y un barrido de luz (no sabemos cuánto falta: no fingimos un porcentaje). */
-.launch__progress { position: relative; width: 13rem; height: 3px; margin-top: var(--space-6); border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden; }
+.launch__label { color: var(--color-accent); font-size: var(--type-body); font-weight: var(--weight-medium); }
+/* La fase cambia con un fundido corto (no un salto de texto). */
+.launch__label--changed { animation: fade-in var(--duration-enter) var(--ease-out); }
+.launch__title { max-width: 40rem; margin: var(--space-2) 0; font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); text-wrap: balance; }
+.launch__subtitle { color: var(--color-text-muted); font-size: var(--type-body); min-height: 1lh; }
+.launch__leave { margin-top: var(--space-6); color: var(--color-text-muted); font-size: var(--type-secondary); }
+/* Tarda de más: lo dice (que no parezca colgada); B sigue a la mano. */
+.launch__note { margin-top: var(--space-4); color: var(--color-text-muted); font-size: var(--type-secondary);
+  animation: fade-in var(--duration-enter) var(--ease-out); }
+/* Barra de carga: pista y un barrido de luz (no sabemos cuánto falta: no fingimos un porcentaje). */
+.launch__progress { position: relative; width: 16rem; height: 4px; margin-top: var(--space-6); border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden; }
 .launch__progress::after {
   content: ""; position: absolute; inset: 0; width: 45%; border-radius: inherit;
   background: linear-gradient(90deg, transparent, var(--color-progress), transparent);
@@ -145,28 +164,26 @@
 
 /* Destello del salto (del color del juego), y luego negro. */
 .launch__flash {
-  position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  position: absolute; inset: 0; pointer-events: none; opacity: 0; visibility: hidden;
   background: radial-gradient(circle at 50% 45%, color-mix(in oklab, var(--art-accent) 60%, var(--color-star)) 0%, transparent 60%);
 }
 
 /* --- Listo: todo se funde a negro, sin salto ----------------------------------------------- */
 .launch--revealing { background-color: var(--color-video-bg); }
-.launch--revealing .launch__backdrop { opacity: 0; transform: scale(1.08); }
-/* Con arte: se acerca un poco y se va a negro (sin el salto grande: el arte ya llena la pantalla). */
-.launch--art.launch--revealing .launch__backdrop { animation: none; transform: scale(1.06); }
-.launch--art.launch--revealing .launch__stars { background: none; }
-.launch--revealing .launch__stars { opacity: 0; transition: opacity var(--duration-launch-reveal) var(--ease-out); }
+.launch--revealing .launch__ambient, .launch--revealing .launch__art { opacity: 0; transform: scale(1.06);
+  transition: opacity var(--duration-launch-out) var(--ease-in), transform var(--duration-launch-reveal) var(--ease-out); }
+.launch--revealing .launch__stars, .launch--revealing .launch__scrim { opacity: 0; transition: opacity var(--duration-launch-reveal) var(--ease-out); }
 .launch--revealing .launch__cover { transform: scale(1.06); opacity: 0;
   transition: transform var(--duration-launch-reveal) var(--ease-out), opacity var(--duration-launch-reveal) var(--ease-in); }
 .launch--revealing .launch__orbit { transform: rotate(-24deg) scale(1.18); opacity: 0;
   transition: transform var(--duration-launch-reveal) var(--ease-out), opacity var(--duration-launch-out) var(--ease-in); }
 .launch--revealing .launch__text { opacity: 0; }
-.launch--revealing .launch__flash { animation: launch-flash var(--duration-launch-reveal) var(--ease-out) forwards; }
+.launch--revealing .launch__flash { visibility: visible; animation: launch-flash var(--duration-launch-reveal) var(--ease-out) forwards; }
 @keyframes launch-flash { 0% { opacity: 0; } 35% { opacity: .22; } 100% { opacity: 0; } }
 
 @media (max-width: 700px), (max-height: 520px) {
   .launch__stage { height: 13rem; }
   .launch__cover { height: 11rem; width: calc(11rem * var(--ratio, .667)); }
-  .launch__orbit { width: calc(11rem * var(--ratio, .667) + 8rem); height: 5rem; margin: -2.5rem 0 0 calc((11rem * var(--ratio, .667) + 8rem) / -2); }
+  .launch__orbit { width: calc(11rem * var(--ratio, .667) + 8rem); height: 5rem; margin: calc(-1 * var(--space-10)) 0 0 calc((11rem * var(--ratio, .667) + 8rem) / -2); }
   .launch__content { gap: var(--space-4); }
 }

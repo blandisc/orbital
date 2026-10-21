@@ -1,6 +1,7 @@
 import { api } from "../core/api.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 import { sized } from "../core/images.js";
+import { motion } from "../core/motion.js";
 import { ScreenHead } from "./ui.js";
 
 /**
@@ -35,7 +36,7 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
     ].filter((row) => row.urls.length > 1).map((row) => ({
       ...row, options: row.urls.map((url) => ({ url, el: tile(row.which, url, url ? current[row.which] === url : !current[row.which]) })),
     }));
-    mount(body, rows.map((row) => h("div", { class: "art-picker__row" },
+    mount(body, rows.map((row) => h("div", {},
       h("h3", { class: "art-picker__label" }, row.label),
       h("div", { class: "art-picker__track" }, row.options.map((o) => o.el)))));
     focus = { r: 0, c: 0 };
@@ -46,7 +47,7 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
     rows.forEach((row, r) => row.options.forEach((o, c) => {
       const on = r === focus.r && c === focus.c;
       o.el.classList.toggle("tile--focused", on);
-      if (on) o.el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+      if (on) o.el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: motion() });
     }));
   }
 
@@ -107,7 +108,7 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
     return true;
   }
 
-  const hints = (g) => [{ glyph: g.select, label: "Elegir" }, { glyph: g.back, label: "Atrás", end: true }];
+  const hints = (g) => [rows.length > 0 && { glyph: g.select, label: "Elegir" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean); // sin imágenes no hay nada que elegir
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import companion, emulator_clock, focus, health, system
+from . import companion, emulator_clock, focus, health, system, title_switch
 from .config import Config
 from .events import EventBus
 from .launcher import Launcher
@@ -25,6 +25,7 @@ from .store import ItemStore
 
 log = logging.getLogger(__name__)
 
+GFN_START_TIMEOUT = 60.0  # s para que la app abra el juego (con la app cerrada: ~6 s; con fila de espera, más)
 GFN_READY_TIMEOUT = 30.0  # s de pantalla de carga como mucho en GeForce NOW (luego se ve su fila de espera)
 
 
@@ -33,7 +34,8 @@ def _cloud_game_ready(exe: str) -> bool:
     from . import windows
 
     hwnd = windows.main_window(windows.pids_by_exe(exe))
-    return bool(hwnd) and windows.is_fullscreen(hwnd)
+    # A pantalla completa y con el nombre del juego: la app en su biblioteca también puede estar a pantalla completa.
+    return bool(hwnd) and windows.is_fullscreen(hwnd) and geforcenow.in_game_title(windows.title(hwnd))
 
 
 TASKBAR_BACK_AFTER = 3.0  # s tras la pantalla de carga: el juego ya está en pantalla completa y tapa la barra
@@ -95,6 +97,9 @@ class Sessions:
         # Antes de abrir algo, cerrar lo que estaba abierto (lo pone el servidor: shell.close_previous).
         self.before_launch: Callable[[str], None] | None = None
         self._reveal_skip = threading.Event()
+        # El arte de la pantalla de carga (lo avisa la interfaz): cuándo empezó a esperarlo y cuándo ya se vio.
+        self._art_pending_at: float | None = None
+        self._art_shown_at: float | None = None
         # Por hilo: cada petición sabe si SU lanzamiento tiene pantalla de carga (antes era un solo
         # valor compartido y un lanzamiento por voz en segundo plano podía pisar el de la interfaz).
         self._local = threading.local()
@@ -156,8 +161,9 @@ class Sessions:
             self.state.record_launch(item.id)
             return item
         if item.source == "geforcenow":
-            # La app (y su reproductor en la nube) es de instancia única: se vigila por ejecutable.
-            exe = geforcenow.APP_EXE if item.id == "app:geforcenow" else geforcenow.STREAMER_EXE
+            # La app es de instancia única: se vigila por ejecutable. Los juegos también los abre la app (con su ruta); un
+            # juego sigue mientras la ventana de la app lleva su nombre (al salir, la app vuelve a su biblioteca y sigue).
+            exe = geforcenow.APP_EXE
             if item.id == "app:geforcenow":
                 self.launcher.run(item.argv, cwd=item.cwd)
                 self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
@@ -168,7 +174,8 @@ class Sessions:
                 pinned = self.pin()
                 try:
                     self.launcher.run(item.argv, cwd=item.cwd)
-                    self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
+                    self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW", alive=geforcenow.in_session,
+                                            start_timeout=GFN_START_TIMEOUT, on_end=geforcenow.close_app)
                 except BaseException:
                     self.unpin(pinned)
                     raise
@@ -188,6 +195,8 @@ class Sessions:
             self.launcher.track(item.id, item.title, proc, runner=runner.name if runner else None)
             self._last_launch = {"id": item.id, "runner": runner_id, "retried": retry}
             self.revealing = self.to_front(item.id, item.title, runner.name if runner else None, pinned=pinned)
+            self.watch_program_switch(item, runner.argv if runner else item.argv, runner.cwd if runner else item.cwd,
+                                      runner.name if runner else None)
         elif item.uri:
             if item.source == "steam" and item.steam_appid and self.config.steam.silent_start:
                 steam.ready_silent(steam.find_steam(self.config.steam.path))
@@ -197,6 +206,25 @@ class Sessions:
             raise NotLaunchable(f"{item.title} no tiene forma de lanzarse")
         self.state.record_launch(item.id)
         return item
+
+    def watch_program_switch(self, item: LibraryItem, argv: list[str], cwd: str | None, runner: str | None) -> None:
+        """Xenia: cuando el juego pide abrir su otro programa (Black Ops II, de la campaña a Zombies), Orbital relanza Xenia
+        y lo vuelve a traer al frente; antes había que pulsar OK, salir y abrirlo otra vez (ver title_switch)."""
+        folder = title_switch.xenia_dir(argv)
+        if folder is None:
+            return
+
+        def still_playing() -> bool:
+            status = self.launcher.status()
+            return bool(status and status.get("id") == item.id)
+
+        def relaunch(module: str) -> None:
+            # La pantalla de carga del juego por si Windows pone a Orbital al frente al cerrarse el Xenia viejo.
+            self.events.publish({"type": "switching", "id": item.id, "title": item.title, "detail": title_switch.program_name(module)})
+            if self.launcher.relaunch(item.id, argv, cwd=cwd):
+                self.to_front(item.id, item.title, runner)
+
+        title_switch.start(folder, still_playing, relaunch)
 
     def _launchable(self, item: LibraryItem, runner_id: str | None) -> bool:
         if item.source in ("stremio", "cinemeta", "geforcenow") or item.id == "media:stremio":
@@ -231,10 +259,28 @@ class Sessions:
 
         threading.Thread(target=reveal, args=(self.launcher, item_id, title, runner),
                          kwargs={"notify": self.events.publish, "skip": self._reveal_skip, "pinned": pinned,
-                                 "ready_check": ready, "timeout": timeout,
+                                 "ready_check": ready, "timeout": timeout, "art_wait": self.art_wait,
                                  "user_returned": lambda: self.returned_at > launched},
                          daemon=True, name="to-front").start()
         return True
+
+    def art(self, shown: bool) -> None:
+        """La pantalla de carga avisa de su arte: `False` viene en camino, `True` ya se ve (o ya no hace falta)."""
+        if shown:
+            self._art_shown_at = time.monotonic() if self._art_pending_at is not None else None
+            self._art_pending_at = None
+        else:
+            self._art_pending_at, self._art_shown_at = time.monotonic(), None
+
+    def art_wait(self, now: float | None = None) -> float:
+        """Cuánto más espera la salida para que el arte se vea un momento. 0 sin aviso de la interfaz (desde el iPhone o
+        por voz no hay pantalla de carga que esperar) o si el aviso es viejo."""
+        now = time.monotonic() if now is None else now
+        if self._art_pending_at is not None:
+            return .2 if now - self._art_pending_at < 90 else 0.0
+        if self._art_shown_at is not None:
+            return max(0.0, self._art_shown_at + focus.ART_DWELL - now)
+        return 0.0
 
     def reveal_now(self) -> None:
         """B en la pantalla de carga: deja de esperar y muestra lo que haya."""

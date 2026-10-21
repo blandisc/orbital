@@ -1,15 +1,12 @@
-/* Title: la ficha de una película o serie, a pantalla completa sobre su arte (como Netflix o Apple TV).
+/* Title: la ficha de una película o serie, a pantalla completa sobre su arte (como Netflix o Apple TV). El marco es .screen.
    Izquierda: identidad, datos y los botones (el foco empieza en Continuar / Ver).
    Derecha (series): temporadas y episodios. */
 .title {
-  position: fixed; inset: 0; z-index: var(--z-overlay);
   display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: var(--space-10);
-  padding: calc(var(--space-14) + var(--safe-y)) var(--page-gutter) calc(3.4rem + var(--space-4) + var(--safe-y));
-  background: var(--color-tinted-bg);
-  animation: fade-in var(--duration-fast) var(--ease-out); /* el arte aparece casi de inmediato y se queda quieto */
+  padding-top: calc(var(--space-14) + var(--safe-y)); /* un poco más de aire arriba que el marco común (.screen) */
+  animation-duration: var(--duration-fast); /* el arte aparece casi de inmediato y se queda quieto */
 }
 .title--series { grid-template-columns: minmax(0, 36fr) minmax(0, 44fr); }
-.title--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
 .title__backdrop {
   position: absolute; inset: 0; z-index: var(--z-behind); background-size: cover; background-position: center 25%;
   opacity: .55; filter: saturate(1.1);
@@ -41,19 +38,19 @@
 /* Nada se encoge: un título o una sinopsis encogidos se rebanaban a media línea (con letra grande). */
 .title__info > * { flex-shrink: 0; }
 /* La frase de la película, bajo el logo (como el iPhone): en cursiva y discreta. */
-.title__tagline { margin: calc(-1 * var(--space-2)) 0 0; color: var(--color-text-muted); font-size: var(--text-md); font-style: italic;
+.title__tagline { margin: calc(-1 * var(--space-2)) 0 0; color: var(--color-text-muted); font-size: var(--type-body); font-style: italic;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 /* «Más como esto»: al bajar desde los botones, sube desde abajo sobre la ficha (solo eso: las sugerencias). */
 .title__more {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-raised);
   display: grid; gap: var(--space-3);
-  padding: var(--space-10) var(--page-gutter) calc(3.4rem + var(--space-4) + var(--safe-y));
+  padding: var(--space-10) var(--page-gutter) var(--hints-room);
   background: linear-gradient(180deg, transparent, var(--color-tinted-bg) 28%);
   transform: translateY(100%); transition: transform var(--duration-slow) var(--ease-out);
 }
 .title[data-zone="more"] .title__more, .title[data-zone="cast"] .title__more { transform: none; }
 .title[data-zone="more"] .title__info, .title[data-zone="more"] .title__browser,
-.title[data-zone="cast"] .title__info, .title[data-zone="cast"] .title__browser { opacity: .35; transition: opacity var(--duration-base) var(--ease-out); }
+.title[data-zone="cast"] .title__info, .title[data-zone="cast"] .title__browser { opacity: var(--opacity-off); transition: opacity var(--duration-base) var(--ease-out); }
 .title__more-head { margin: 0; font-size: var(--type-section); font-weight: var(--weight-bold); }
 .title__more-row { display: flex; gap: var(--card-gap); overflow-x: auto; scrollbar-width: none; padding: var(--space-3) var(--space-2); align-items: flex-end; }
 .title__more-row > .card { flex: none; }
@@ -63,29 +60,28 @@
 }
 .title__logo { max-width: min(100%, 30rem); max-height: 9rem; width: auto; object-fit: contain; object-position: left center; filter: var(--shadow-logo); }
 .title__name {
-  font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: 1.14; text-wrap: balance;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; /* sin relleno: no asoma la 4.ª línea */
-}
-.title__facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); color: var(--color-text); font-size: var(--text-md); font-variant-numeric: tabular-nums; }
+  font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); text-wrap: balance;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0; }
+.title__facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); color: var(--color-text); font-size: var(--type-body); font-variant-numeric: tabular-nums; }
 .title__fact { display: inline-flex; gap: var(--space-3); min-width: 0; }
 /* Calificaciones (RatingsRow del iPhone): cada servicio con su logotipo en sus colores de marca y su número. */
-.title__ratings { display: flex; align-items: center; gap: var(--space-5); min-height: 1.6rem; font-size: var(--text-md); font-variant-numeric: tabular-nums; }
+.title__ratings { display: flex; align-items: center; gap: var(--space-5); min-height: 1.6rem; font-size: var(--type-body); font-variant-numeric: tabular-nums; }
 .title__rating { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); }
 .title__rating-mark { display: block; height: 1.5rem; width: auto; }
 .title__rating-mark--trakt { height: 1.6rem; } /* el círculo se ve más chico que las cajas a la misma altura */
-.title__sep { opacity: .5; }
+.title__sep { opacity: var(--opacity-faint); }
 .title__fact--start .title__sep { display: none; } /* empieza renglón: sin punto delante */
 /* Lo que hay para ver (antes de elegir): 4K · HDR · Inglés, Español · Al instante. */
 .title__avail { display: flex; flex-wrap: wrap; gap: var(--space-2); text-shadow: none; }
-.title__avail .chip { background: var(--color-chip-on-art); box-shadow: inset 0 0 0 1px var(--color-hairline-strong); }
-.title__avail-none { display: inline-flex; align-items: center; min-height: 1.6rem; color: var(--color-text-muted); font-size: var(--text-sm); } /* la altura de un chip */
+.title__avail { --chip-bg: var(--color-chip-on-art); --chip-shadow: inset 0 0 0 1px var(--color-hairline-strong); } /* los chips sobre el arte de la ficha */
+.title__avail-none { display: inline-flex; align-items: center; min-height: 1.6rem; color: var(--color-text-muted); font-size: var(--type-secondary); } /* la altura de un chip */
 .title__description {
-  max-width: 40rem; color: var(--color-text); opacity: .86; font-size: var(--text-md); line-height: 1.55;
+  max-width: 40rem; color: var(--color-text); opacity: var(--opacity-text); font-size: var(--type-body); line-height: var(--leading-relaxed);
   display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
 }
-.title__people { display: flex; flex-direction: column; gap: var(--space-1); color: var(--color-text-muted); font-size: var(--text-sm); }
+.title__people { display: flex; flex-direction: column; gap: var(--space-1); color: var(--color-text-muted); font-size: var(--type-secondary); }
 .title__people em { font-style: normal; color: var(--color-text-faint-strong); }
-.title__status { color: var(--color-text-muted); font-size: var(--text-md); }
+.title__status { color: var(--color-text-muted); font-size: var(--type-body); }
 /* Error al cargar: una píldora con su ícono y la franja roja (como los avisos), legible sobre el arte. */
 .title__status--error {
   display: inline-flex; align-items: center; gap: var(--space-4); align-self: flex-start; max-width: 40rem;
@@ -94,15 +90,14 @@
   animation: rise-in var(--duration-enter) var(--ease-out);
 }
 .title__status-icon { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-fill); color: var(--color-danger); }
-.title__status-icon .icon { width: 1.15rem; height: 1.15rem; stroke-width: 2.25; }
+.title__status-icon .icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--stroke-regular); }
 .title__status-text { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
 .title__status-text strong { color: var(--color-text); font-weight: var(--weight-bold); }
 
 /* Dónde ibas: fuera de los botones (así caben en un renglón), con su barra. */
-.title__progress { display: flex; align-items: center; gap: var(--space-4); color: var(--color-text); font-size: var(--text-md); }
-.title__progress-bar { flex: none; width: 9rem; height: .35rem; border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden; }
+.title__progress { display: flex; align-items: center; gap: var(--space-4); color: var(--color-text); font-size: var(--type-body); }
+.title__progress-bar { flex: none; width: 9rem; }
 .title__progress-label { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.title__progress-fill { display: block; height: 100%; background: var(--color-progress); }
 /* Como el iPhone: «Ver» / «Continuar» en su renglón, a todo lo ancho; abajo los demás en partes iguales, llenando el renglón
    (siempre caben en la columna: antes, con siete, la fila se metía debajo de los episodios). */
 .title__actions {
@@ -114,20 +109,20 @@
   display: inline-flex; align-items: center; gap: var(--space-3);
   min-height: var(--control-height); padding: 0 var(--space-6) 0 var(--space-5); border-radius: var(--radius-md);
   flex: none; min-width: 0; max-width: 100%;
-  background: var(--color-fill); font-size: var(--text-lg); font-weight: var(--weight-medium); text-shadow: none;
+  background: var(--color-fill); font-size: var(--type-section); font-weight: var(--weight-medium); text-shadow: none;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-spring);
 }
-.title__action .icon { width: 1.3rem; height: 1.3rem; flex: none; }
+.title__action .icon { width: var(--icon-md); height: var(--icon-md); flex: none; }
 .title__action span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .title__action--primary { flex: none; } /* el principal nunca se corta: ceden los de al lado */
-.title__action small { color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); }
+.title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-regular); }
 .title__action--primary { padding-inline: var(--space-6) var(--space-8); }
 /* Los secundarios (Desde el inicio, Tráiler, Mi lista, Fuente…): su ícono en una caja y su nombre corto debajo, siempre a
    la vista (antes solo ícono, y el nombre salía en otra línea al enfocarlo). Miden lo mismo enfocados o no. */
 .title__actions { align-items: flex-start; }
 .title__action--icon {
   min-width: 0; flex-direction: column; gap: var(--space-2); min-height: 0; padding: 0; background: none;
-  font-size: var(--text-sm); color: var(--color-text-muted);
+  font-size: var(--type-secondary); color: var(--color-text-muted);
 }
 /* Prendido («Guardada»): la caja con el color del arte, como en el iPhone. */
 .title__action--on .title__action-tile { background: var(--color-primary-art); color: var(--inverse-fg); }
@@ -137,14 +132,14 @@
 }
 /* Entero: si no cabe en un renglón, dos (nunca «Al iPho…»). Con la clase del botón delante: «.title__action span» (una
    línea con «…», para los textos del principal) le ganaba y salía «Bajar al iPho…». */
-.title__action .title__action-name { max-width: 100%; text-align: center; line-height: 1.2; font-size: var(--text-xs); text-wrap: balance; overflow-wrap: anywhere; white-space: normal;
+.title__action .title__action-name { max-width: 100%; text-align: center; line-height: var(--leading-title); font-size: var(--type-footnote); text-wrap: balance; overflow-wrap: anywhere; white-space: normal;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 [data-input="touch"] .title__action--primary { flex-shrink: 0; }
 /* Foco invertido (como el menú): se ve desde el sofá. */
 .title__action--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 .title__action--icon.title__action--focused { background: none; color: var(--color-text); }
 .title__action--icon.title__action--focused .title__action-tile { background: var(--inverse-bg); color: var(--inverse-fg); }
-.title__action--focused small { color: inherit; opacity: .7; }
+.title__action--focused small { color: inherit; opacity: var(--opacity-near); }
 /* «Ver» / «Continuar» con el color del arte del título (como el Jugar de Game Glance). */
 /* El principal ocupa todo el ancho: enfocado no crece (se salía de la columna, más ancho que los botones de abajo y el texto). */
 .title__action--primary.title__action--focused { background: var(--color-primary-art); transform: none; box-shadow: var(--shadow-lifted); }
@@ -157,12 +152,6 @@
 .title__tabs--more-right { -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 4rem), transparent); mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 4rem), transparent); }
 .title__tabs--more-left { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem); }
 .title__tabs--more-left.title__tabs--more-right { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); }
-.title__tab {
-  flex: none; padding: .55rem 1.1rem; border-radius: var(--radius-pill);
-  color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium);
-  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
-}
-.title__tab--active { background: var(--color-fill-hover); color: var(--color-text); }
 .title__episodes {
   display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; overflow-y: auto; scrollbar-width: none;
   padding: var(--space-6) var(--space-2) var(--space-2); margin: 0 calc(-1 * var(--space-2));
@@ -172,7 +161,7 @@
   mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) var(--space-8), var(--mask-solid) 85%, transparent);
 }
 /* Mientras el foco está en los botones, la lista se queda en segundo plano. */
-.title[data-zone="actions"] .title__episodes { opacity: .62; transition: opacity var(--duration-base) var(--ease-out); }
+.title[data-zone="actions"] .title__episodes { opacity: var(--opacity-away); transition: opacity var(--duration-base) var(--ease-out); }
 
 .episode {
   position: relative; display: flex; align-items: center; gap: var(--space-5); width: 100%; padding: var(--space-3);
@@ -185,27 +174,22 @@
   background: var(--gradient-card) center / cover;
   box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
-.episode__number {
-  position: absolute; left: var(--space-2); bottom: var(--space-2); min-width: 1.7rem; padding: .1rem .45rem;
-  border-radius: var(--radius-xs); background: var(--color-badge-bg);
-  font-size: var(--text-xs); font-weight: var(--weight-bold); text-align: center; font-variant-numeric: tabular-nums; color: var(--color-text);
-}
+.episode__number { position: absolute; left: var(--inset-poster); bottom: var(--inset-poster); }
 .episode__check {
   position: absolute; right: var(--space-2); top: var(--space-2); display: grid; place-items: center;
   width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--color-badge-bg); color: var(--color-live);
 }
-.episode__check .icon { width: 1rem; height: 1rem; stroke-width: 2.5; }
-.episode__progress { position: absolute; left: 0; right: 0; bottom: 0; height: .3rem; background: var(--color-progress-track); }
-.episode__progress > span { display: block; height: 100%; background: var(--color-progress); }
+.episode__check .icon { width: var(--icon-sm); height: var(--icon-sm); stroke-width: var(--stroke-bold); }
+.episode__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); --progress-width: auto; }
 .episode__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
-.episode__title { font-size: var(--text-lg); font-weight: var(--weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.episode__title { font-size: var(--type-section); font-weight: var(--weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .episode__overview {
-  color: var(--color-text-muted); font-size: var(--text-sm); line-height: 1.45;
+  color: var(--color-text-muted); font-size: var(--type-secondary); line-height: var(--leading-relaxed);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.episode__date { color: var(--color-warning); font-size: var(--text-sm); }
+.episode__date { color: var(--color-warning); font-size: var(--type-secondary); }
 .episode--watched .episode__title { color: var(--color-text-muted); }
-.episode--upcoming { opacity: .55; }
+.episode--upcoming { opacity: var(--opacity-away); }
 /* Foco: fila invertida (texto oscuro sobre claro), visible desde el sofá; antes era un velo al 10 %. */
 /* El episodio enfocado se resalta sin volverse una losa blanca: un relleno y su texto a todo color. */
 .episode--focused, .episode--focused:hover { background: var(--color-fill-hover); }
@@ -226,3 +210,6 @@
   .title__description { -webkit-line-clamp: 2; }
   .title__people { display: none; }
 }
+/* Con el dedo: «Atrás» no tapa las temporadas y el botón principal no necesita el lugar del glifo (queda centrado). */
+[data-input="touch"] .title__tabs { padding-right: var(--touch-back-room); }
+[data-input="touch"] .title__action--primary { padding-inline: var(--space-8); }

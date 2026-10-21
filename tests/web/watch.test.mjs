@@ -97,16 +97,11 @@ test("un estreno de otro año dice el año (si no, parecía de este año)", asyn
   assert.match(states.get("s:1:2").upcoming, /2027/);
 });
 
-test("«termina a las…»: la hora en que acabas (en el Inicio; en la ficha ya no)", async () => {
-  const { endsAt } = await import("../../orbital/web/js/core/format.js");
+test("en el Inicio, un video dice solo lo que falta (sin «termina a las…»)", async () => {
   const { detailOf } = await import("../../orbital/web/js/components/tiles.js");
   const now = new Date(2026, 9, 17, 23, 30).getTime();
-  assert.equal(endsAt(45 * 60, now), "termina a las 12:15 a. m.");
-  assert.equal(endsAt(30, now), null);
-  assert.equal(endsAt(undefined, now), null);
   const movie = { source: "stremio", subtitle: "Película · quedan 1 h 43 min", progress: .2, extra: { kind: "movie", left: 6180 } };
-  assert.equal(detailOf(movie, now), "Quedan 1 h 43 min · termina a las 1:13 a. m.");
-  assert.equal(detailOf({ ...movie, extra: { kind: "movie" } }, now), "Quedan 1 h 43 min");
+  assert.equal(detailOf(movie, now), "Quedan 1 h 43 min");
 });
 
 test("la hoja de Fuente: la recomendada sola arriba y el resto por calidad, como el iPhone", async () => {

@@ -109,4 +109,7 @@ def test_un_juego_de_geforce_now_abre_con_la_pantalla_de_carga(library, monkeypa
     monkeypatch.setattr(windows, "pids_by_exe", lambda exe: {5})
     monkeypatch.setattr(windows, "main_window", lambda pids: 77)
     monkeypatch.setattr(windows, "is_fullscreen", lambda hwnd: hwnd == 77)
-    assert asked["ready"]() is True  # su ventana a pantalla completa: listo
+    monkeypatch.setattr(windows, "title", lambda hwnd: "GeForce NOW")
+    assert asked["ready"]() is False  # la app en su biblioteca (aunque esté a pantalla completa): todavía no
+    monkeypatch.setattr(windows, "title", lambda hwnd: "Hogwarts Legacy on GeForce NOW")
+    assert asked["ready"]() is True  # su ventana a pantalla completa y con el juego: listo

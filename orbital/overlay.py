@@ -1,4 +1,5 @@
-"""Aviso encima del juego: "Mantén Start + Select + Home para cerrar".
+"""Aviso encima del juego mientras se mantiene el atajo de cerrar (Start + Select + Home; GameSir: LB + RB + Select):
+el juego en grande, qué mantener y una barra que se llena.
 
 Una ventana pequeña, centrada, siempre visible y que NO toma el foco: el juego sigue
 recibiendo el mando. Se dibuja con Tkinter (viene con Python) en su propio hilo.
@@ -24,10 +25,14 @@ TEXT = "#f5f4f0"
 MUTED = "#a3a3ab"
 TRACK = "#2c2c32"
 FILL = "#f0574d"
+HAIRLINE = "#34343b"
 
-WIDTH, HEIGHT = 440, 116  # px lógicos (se escalan con el DPI)
-PAD = 26
-BAR = 4
+# px lógicos (se escalan con el DPI). Ancho para títulos largos; abajo al centro (como los avisos de las consolas),
+# no en medio del juego.
+WIDTH, HEIGHT = 560, 128
+PAD = 28
+BAR = 6
+FROM_TOP = .78  # dónde va su centro, en fracción del alto de la pantalla
 FADE_MS = 140
 
 
@@ -48,8 +53,8 @@ class GameOverlay:
     def show(self, title: str, detail: str, duration_ms: int) -> None:
         self._commands.put(("show", title, detail, duration_ms))
 
-    def closing(self, title: str) -> None:
-        self._commands.put(("closing", title))
+    def closing(self, title: str, detail: str = "") -> None:
+        self._commands.put(("closing", title, detail))
 
     def hide(self, delay_ms: int = 0) -> None:
         self._commands.put(("hide", delay_ms))
@@ -61,6 +66,7 @@ class GameOverlay:
         except (AttributeError, OSError):
             pass
         import tkinter as tk
+        import tkinter.font as tkfont
 
         root = tk.Tk()
         root.withdraw()
@@ -71,19 +77,29 @@ class GameOverlay:
         scale = root.winfo_fpixels("1i") / 96
         w, h, pad = int(WIDTH * scale), int(HEIGHT * scale), int(PAD * scale)
         x = (root.winfo_screenwidth() - w) // 2
-        y = (root.winfo_screenheight() - h) // 2
+        y = int(root.winfo_screenheight() * FROM_TOP) - h // 2
         root.geometry(f"{w}x{h}+{x}+{y}")
 
         canvas = tk.Canvas(root, width=w, height=h, bg=BG, highlightthickness=0, bd=0)
         canvas.pack()
-        title_font = ("Segoe UI Variable Display Semibold", 15)
-        detail_font = ("Segoe UI Variable Text", 11)
-        title = canvas.create_text(pad, pad, anchor="nw", fill=TEXT, font=title_font, text="")
+        canvas.create_rectangle(0, 0, w - 1, h - 1, outline=HAIRLINE, width=1)  # borde fino, como las hojas de Orbital
+        title_font = tkfont.Font(root, family="Segoe UI Variable Display Semibold", size=17)
+        detail_font = tkfont.Font(root, family="Segoe UI Variable Text", size=11)
+        title = canvas.create_text(pad, pad - int(4 * scale), anchor="nw", fill=TEXT, font=title_font, text="")
         detail = canvas.create_text(pad, pad + int(32 * scale), anchor="nw", fill=MUTED, font=detail_font, text="")
-        bar_y = h - pad - int(BAR * scale)
-        bar_h = max(2, int(BAR * scale))
+        bar_h = max(3, int(BAR * scale))
+        bar_y = h - pad - bar_h
         canvas.create_rectangle(pad, bar_y, w - pad, bar_y + bar_h, fill=TRACK, width=0)
         fill = canvas.create_rectangle(pad, bar_y, pad, bar_y + bar_h, fill=FILL, width=0)
+
+        def fit(text: str, font) -> str:
+            """Un renglón: un título largo se corta con «…» en vez de salirse de la ventana."""
+            room = w - 2 * pad
+            if font.measure(text) <= room:
+                return text
+            while text and font.measure(text + "…") > room:
+                text = text[:-1]
+            return text.rstrip() + "…"
 
         hwnd = _hwnd(root)
         _style_window(hwnd)
@@ -103,13 +119,14 @@ class GameOverlay:
             kind = cmd[0]
             if kind == "show":
                 _, text, sub, duration = cmd
-                canvas.itemconfigure(title, text=text)
-                canvas.itemconfigure(detail, text=sub)
+                canvas.itemconfigure(title, text=fit(text, title_font))
+                canvas.itemconfigure(detail, text=fit(sub, detail_font))
                 state.update(start=time.monotonic(), duration=max(duration, 1) / 1000, filling=True, target=0.97, hide_at=None)
                 set_progress(0)
                 _raise_no_activate(hwnd)
             elif kind == "closing":
-                canvas.itemconfigure(title, text=cmd[1])
+                canvas.itemconfigure(title, text=fit(cmd[1], title_font))
+                canvas.itemconfigure(detail, text=fit(cmd[2], detail_font))
                 state["filling"] = False
                 set_progress(1)
             elif kind == "hide":
@@ -136,7 +153,9 @@ class GameOverlay:
                 root.attributes("-alpha", alpha)
                 if alpha == 0.0:
                     _hide(hwnd)  # terminó de desvanecerse: fuera de la pantalla hasta la próxima
-            root.after(16, tick)
+            # 60 vueltas por segundo solo mientras se ve (la barra se llena, el fundido); escondida, 10: una orden nueva
+            # tarda a lo mucho 100 ms en notarse (el aviso sale a los 250 ms de mantener el atajo) y no gasta CPU sin parar.
+            root.after(16 if state["alpha"] > 0 or state["target"] > 0 or state["filling"] else 100, tick)
 
         self._ready.set()
         root.after(16, tick)

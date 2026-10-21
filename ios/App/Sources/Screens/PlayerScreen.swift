@@ -1135,10 +1135,11 @@ struct PlayerScreen: View {
     /// Sigue en la TV: se guarda dónde ibas (Stremio) y tu Orbital retoma desde ahí.
     /// Pasa a tu Orbital donde vas y avisa en la app: «Pasó a tu Orbital · sigue en 12:34 · Deshacer».
     private func continueOnTV() async {
-        let current = current, position = holder.model.snapshot.position
+        // El mismo segundo, la misma fuente, el mismo audio y los mismos subtítulos (se leen antes de cerrar).
+        let current = current, position = holder.model.snapshot.position, choice = holder.model.currentChoice()
         await holder.model.close()
         finish()
-        await env.handOffToTV(current, position: position)
+        await env.handOffToTV(current, position: position, choice: choice)
     }
 
     private var landscape: Bool { verticalSize == .compact }

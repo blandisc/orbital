@@ -3,9 +3,8 @@
  * Los componentes solo pintan; aquí vive el "qué pasa cuando…".
  */
 import { api } from "./core/api.js";
-import { h, svg } from "./core/dom.js";
-import { ICONS } from "./core/icons.js";
-import { closedMessage, crashMessage } from "./core/format.js";
+import { markFocus } from "./core/focus-mark.js";
+import { closedSummary, crashMessage } from "./core/format.js";
 import { createInput, ERASE_WORD, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
@@ -36,13 +35,14 @@ import { createCalendar } from "./components/calendar.js";
 import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
+import { createTouchBack } from "./components/touch-back.js";
 import { createBoot } from "./app/boot.js";
 import { createLaunching } from "./app/launching.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
 import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
-import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows, miMediaItem } from "./core/media-plan.js";
+import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows, miMediaItem, stageJump, stageSide } from "./core/media-plan.js";
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 
@@ -143,7 +143,7 @@ const ui = {
       if (form.service) return keysSaved(form, res);
       state.stremioLinked = true;
       sound.play("select");
-      ui.toast.show(`Listo: Stremio conectado · ${res.count} títulos en tu biblioteca`);
+      ui.toast.show(`Stremio conectado · ${res.count} títulos en tu biblioteca`, { tone: "success" });
       loadLibrary();
     },
     onMove: () => sound.play("move"),
@@ -157,6 +157,7 @@ const ui = {
     onDecide: () => openDecide(),
     onFocus: (item) => forYouFocused(item),
     onEdge: () => { sound.play("error"); rumble("edge"); },
+    covered: () => !!topOverlay() || ui.sheet.isOpen || ui.launch.visible, // con una capa encima, el mosaico no entra en ambiente
   }),
   tv: createTv({
     onFocus: () => tvFocused(),
@@ -173,7 +174,7 @@ const ui = {
   }),
   artPicker: createArtPicker({
     onMove: () => sound.play("move"),
-    onPicked: (target) => { sound.play("select"); ui.toast.show(`Listo: arte nuevo para ${target.title}`); loadLibrary(); },
+    onPicked: (target) => { sound.play("select"); ui.toast.show(`Arte nuevo para ${target.title}`, { tone: "success" }); loadLibrary(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   // Una lista abierta de Películas y series (una tarjeta: plataforma, premio, estudio, año, tu lista, un género).
@@ -209,7 +210,7 @@ const ui = {
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
-  launch: createLaunchOverlay({ backGlyph: () => glyphs().back }),
+  launch: createLaunchOverlay({ backGlyph: () => glyphs().back, onArt: (shown) => api.launchArt(shown).catch(() => {}) }),
   viewer: createViewer({
     // B regresa a la lista de Capturas, en la que estabas viendo (antes saltaba hasta Inicio).
     onClose: (at) => {
@@ -224,17 +225,14 @@ const ui = {
   toast: createToast(),
 };
 
-// Con el dedo no hay botón B: en las vistas encima (buscar, ficha, fuentes, menú) aparece "Atrás".
-const touchBack = h("button", { class: "touch-back", type: "button", "aria-label": "Atrás", onClick: () => handleAction("back") },
-  svg(ICONS.back), h("span", {}, "Atrás"));
-// …y en las pantallas de siempre, «Menú» abajo a la derecha (el pie con ☰ no se ve con el dedo; antes solo el logo lo abría).
-const touchMenu = h("button", { class: "touch-back touch-back--menu", type: "button", "aria-label": "Menú", onClick: () => handleAction("menu") },
-  svg(ICONS.menu), h("span", {}, "Menú"));
+// Con el dedo no hay botón B ni ☰: «Atrás» sobre las vistas encima y «Menú» en las pantallas de siempre.
+const { back: touchBack, menu: touchMenu } = createTouchBack({ onBack: () => handleAction("back"), onMenu: () => handleAction("menu") });
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
   touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
+markFocus(document.body); // «lo enfocado lleva aria-current», en todas las piezas
 
 // ---------------------------------------------------------------- render
 const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
@@ -283,13 +281,13 @@ function accountsAt(context) {
 async function keysSaved(form, status, { removed = false } = {}) {
   sound.play("select");
   if (form.service === "onedrive") { // su propio estado (no el de Para ti)
-    ui.toast.show(removed ? "Quité la clave de OneDrive" : "Listo: clave de OneDrive guardada · ahora conéctalo");
+    ui.toast.show(removed ? "Quité la clave de OneDrive" : "Clave de OneDrive guardada · Ahora conéctalo", { tone: "success" });
     const at = accountsAt(loginFrom?.context);
     applySettings({ ...state.settings, onedrive: status });
     if (at && !ui.sheet.isOpen && !topOverlay()) ui.sheet.open(settingsPage("accounts", state.settings), at);
     return renderHints();
   }
-  ui.toast.show(removed ? `Quité la clave de ${form.label}` : `Listo: ${form.label} guardada · Para ti se actualiza`);
+  ui.toast.show(removed ? `Quité la clave de ${form.label}` : `${form.label} guardada · Para ti se actualiza`, { tone: "success" });
   const at = accountsAt(loginFrom?.context);
   applySettings({ ...state.settings, trakt: status.trakt, para_ti: status });
   ui.foryou.load({ force: true });
@@ -375,6 +373,7 @@ function renderHints() {
       sections: visibleSections(state.allRows).length,
       // El destacado enseña sus botones (A, X, Y) también con un renglón enfocado: enseña ese renglón.
       onScreen: ui.home.focusId === "feature" || ui.home.focusId.startsWith("card:"),
+      jump: ui.home.hasConsoles ? (ui.home.focusId.startsWith("console:") ? "Arriba" : "Tus consolas") : null,
     }));
   }
   const { r, c } = state.focus;
@@ -388,6 +387,7 @@ function renderHints() {
     atHome: !r && !c,
     longRow: (state.rows[r]?.items.length ?? 0) >= LONG_ROW,
     groups: state.section === "media" && state.rows.some((row) => row.group),
+    stage: state.section === "media" ? stageSide(state.rows[r], c) : null,
     running: state.running?.managed ? state.running : null,
     rows: state.rows.length,
     heroButtons: !!item, // el héroe enseña los botones de lo enfocado
@@ -523,7 +523,7 @@ function renderView() {
 function forYouFocused(item) {
   if (!inForYou()) return;
   if (item) ui.backdrop.show(item.hero || item.image || null);
-  const node = document.querySelector(".foryou-mosaic__tile--on");
+  const node = document.querySelector(".foryou-mosaic__tile--focused");
   if (node) {
     const r = node.getBoundingClientRect();
     ui.backdrop.light((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight);
@@ -852,11 +852,11 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     if (refresh) {
       const countAfter = state.allRows.reduce((n, row) => n + row.items.length, 0);
       const diff = countAfter - countBefore;
-      ui.toast.show(diff > 0 ? `Listo: ${diff} cosa${diff === 1 ? "" : "s"} nueva${diff === 1 ? "" : "s"}` : "Biblioteca al día");
+      ui.toast.show(diff > 0 ? `${diff} cosa${diff === 1 ? "" : "s"} nueva${diff === 1 ? "" : "s"} en tu biblioteca` : "Biblioteca al día", { tone: "success" });
     }
   } catch (err) {
     // Al arrancar el servidor puede no estar listo: se reintenta solo (y se avisa una vez).
-    if (libraryRetry === 0 && !boot.waiting) ui.toast.show(`No pude cargar la biblioteca: ${err.message.replace(/\.$/, "")}. Reintentando…`, { error: true });
+    if (libraryRetry === 0 && !boot.waiting) ui.toast.show("No pude cargar la biblioteca", { error: true, detail: `${err.message.replace(/\.$/, "")} · Reintentando…` });
     // Tras varios intentos se dice qué pasa (antes «Conectando…» para siempre, sin pista de nada).
     if (boot.waiting) boot.status(libraryRetry < 3 ? "Conectando con Orbital…" : `No pude cargar tu biblioteca: ${err.message.replace(/\.$/, "")}. Sigo intentando…`);
     libraryRetry++;
@@ -891,8 +891,22 @@ function chooseBecause(imdb) {
     storage.set("orbital.because", { day: today(), imdb });
     const { listId } = becauseSeed(mediaLists.find((l) => l.id === "because"), imdb);
     if (!mediaItems[keyOf(listId, null)]) mediaItems[keyOf(listId, null)] = await fetchList(listId, null);
-    buildCuration();
+    refreshBecauseRow();
   }, 350);
+}
+
+/** Solo la fila de «Porque viste»: rehacer toda la biblioteca por cada título que recorrías era lo que volvía lento el carrusel. */
+function refreshBecauseRow() {
+  const next = mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), miMedia })
+    .find((row) => row.id === "curated:because");
+  const at = state.rows?.findIndex((row) => row.id === "curated:because") ?? -1;
+  if (!next || at < 0 || state.section !== "media") return buildCuration();
+  const swap = (rows) => rows.map((row) => (row.id === "curated:because" ? next : row));
+  curated = swap(curated);
+  state.allRows = swap(state.allRows);
+  state.rows = swap(state.rows);
+  ui.shelf.updateRow(at, next);
+  setFocus(state.focus.r, state.focus.c, { silent: true });
 }
 
 const fetchList = async (id, kind) => (await api.forYouList(id, kind).catch(() => ({ items: [] }))).items || [];
@@ -1031,7 +1045,7 @@ function fixTitle({ kind, imdb = null, title, fileId = null }) {
       const res = await api.onedriveFix({ kind: ref.kind, imdb: ref.meta_id, name: result.title, year: Number(result.year || result.extra?.year) || null,
         file_id: fileId, current: imdb });
       sound.play("select");
-      ui.toast.show(`Listo: ${res.changed === 1 ? "ese archivo es" : `esos ${res.changed} archivos son`} ${result.title}`);
+      ui.toast.show(`${res.changed === 1 ? "Ese archivo es" : `Esos ${res.changed} archivos son`} ${result.title}`, { tone: "success" });
       miMedia = await api.onedriveLibrary().catch(() => miMedia);
       buildCuration();
       openTitle({ ...curatedItem({ meta_id: ref.meta_id, kind: ref.kind, title: result.title, image: result.image }), own: true });
@@ -1123,10 +1137,10 @@ function downloadProgress(event) {
 /** «Descargar» en la ficha: empieza, o dice cómo va (y reintenta si falló). */
 async function downloadTitle(body, job) {
   try {
-    if (job?.status === "done") return ui.toast.show(`${body.title} ya está descargada: «Ver» la pone del disco, sin internet`);
+    if (job?.status === "done") return ui.toast.show(`${body.title} ya está descargada · «Ver» la pone del disco, sin internet`, { tone: "success" });
     if (job?.status === "failed") {
       await api.downloadRetry(job.id);
-      ui.toast.show(`Otra vez: descargando ${body.title}`);
+      ui.toast.show(`Descargando ${body.title} otra vez`);
     } else if (job) {
       return ui.toast.show(job.progress != null ? `Descargando ${body.title} · ${Math.floor(job.progress * 100)} %` : `${body.title} está en espera`);
     } else {
@@ -1163,7 +1177,7 @@ function openDecide() {
 /** Una persona del reparto (en la ficha): su foto, biografía y filmografía, como el iPhone. B vuelve a la ficha. */
 let personFrom = null;
 function openPerson(person) {
-  personFrom = ui.title.current;
+  personFrom = { item: ui.title.current, focus: ui.title.focusState };
   ui.title.close();
   sound.play("open");
   ui.listScreen.open({ id: `person:${person.id}`, title: person.name, meta: person.role || "", media: {},
@@ -1181,7 +1195,7 @@ function backFromPerson(list) {
   if (!String(list?.id || "").startsWith("person:") || !personFrom) return;
   const back = personFrom;
   personFrom = null;
-  setTimeout(() => { if (!ui.title.isOpen && !topOverlay()) openTitle(back); }, 0);
+  setTimeout(() => { if (!ui.title.isOpen && !topOverlay()) openTitle(back.item, back.focus); }, 0);
 }
 
 /** Un póster de una lista abierta: su ficha. De la filmografía (TMDB) primero se busca su IMDb. */
@@ -1339,31 +1353,31 @@ function setOnline(online) {
   document.body.toggleAttribute("data-offline", !online);
   if (was === undefined && online) return; // al arrancar con internet: nada que decir
   if (online) {
-    ui.toast.show("Volvió el internet: películas, series y TV en vivo otra vez");
+    ui.toast.show("Volvió el internet · Películas, series y TV en vivo otra vez", { tone: "success" });
     loadCuration();
     ui.tv.load({ force: true });
     ui.foryou.load({ force: true });
   } else {
-    ui.toast.show("Sin internet: tus juegos siguen aquí");
+    ui.toast.show("Sin internet · Tus juegos siguen aquí", { tone: "warn" });
   }
   if (inHome()) renderHome(); // el destacado: algo que sí funcione
 }
 
 // ---------------------------------------------------------------- películas y series
 /** La ficha (película o serie): datos, reparto, episodios, Continuar / Ver / Elegir fuente. */
-function openTitle(item) {
+function openTitle(item, restoreFocus = null) {
   const ref = titleRef(item);
   if (!ref) return;
   if (ui.sources.isOpen) ui.sources.close();
   sound.play("open");
-  ui.title.open(ref, openingFrom());
+  ui.title.open(ref, openingFrom(), restoreFocus);
   renderHints();
 }
 
 /** De dónde se abre la ficha: la tarjeta enfocada en pantalla y su logo (el arte se abre desde ahí; el logo viaja). */
 function openingFrom() {
   const view = inForYou() ? ui.foryou.el : inHome() ? ui.home.el : inGames() ? ui.games.el : ui.shelf.el;
-  const node = view?.querySelector(".tile--focused, .foryou-mosaic__tile--on, .card--focused");
+  const node = view?.querySelector(".tile--focused, .foryou-mosaic__tile--focused, .card--focused");
   const rect = node?.getBoundingClientRect();
   if (!rect?.width) return null;
   const logo = node.querySelector(".tile--feature__logo, .foryou-mosaic__logo");
@@ -1464,7 +1478,7 @@ async function runCommand(command, context = null) {
         ui.toast.show(`Buscando otra imagen para ${command.title}…`);
         const res = await api.replaceArt(command.id, command.kind);
         sound.play("select");
-        ui.toast.show(res.found ? "Listo: imagen nueva" : "No encontré otra; queda una de respaldo");
+        ui.toast.show(res.found ? "Imagen nueva" : "No encontré otra · Queda una de respaldo", { tone: res.found ? "success" : "warn" });
         return loadLibrary({ keepId: command.id });
       }
       case "phone-send":
@@ -1511,12 +1525,12 @@ async function runCommand(command, context = null) {
       case "mylist":
         await api.setInLibrary(command.kind, command.metaId, command.add);
         sound.play("select");
-        ui.toast.show(command.add ? `Guardé ${command.title} en Mi lista` : `Quité ${command.title} de Mi lista`);
+        ui.toast.show(command.add ? `Guardé ${command.title} en Mi lista` : `Quité ${command.title} de Mi lista`, { tone: "success" });
         return loadLibrary();
       case "dismiss":
         await api.dismiss(command.id);
         sound.play("select");
-        ui.toast.show(`Quité ${command.title} de Seguir viendo`);
+        ui.toast.show(`Quité ${command.title} de Seguir viendo`, { tone: "success" });
         return loadLibrary();
       case "stop":
         await api.stop();
@@ -1545,7 +1559,7 @@ async function runCommand(command, context = null) {
         return ui.toast.show("Saliendo al escritorio…");
       case "unhide-all":
         await api.unhideAll();
-        ui.toast.show("Juegos ocultos restaurados");
+        ui.toast.show("Juegos ocultos restaurados", { tone: "success" });
         return loadLibrary();
       case "settings":
         if (!command.page) return openMenu(settingsMenu(), nested(context));
@@ -1590,7 +1604,7 @@ async function runCommand(command, context = null) {
       case "download-remove":
         ui.sheet.close();
         await api.downloadRemove(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
-        ui.toast.show(`Quité la descarga de ${command.title}`);
+        ui.toast.show(`Quité la descarga de ${command.title}`, { tone: "success" });
         return loadDownloads();
       case "decide":
         ui.sheet.close();
@@ -1625,7 +1639,7 @@ async function runCommand(command, context = null) {
       case "close-app": {
         const res = await api.closeApp(command.exe);
         sound.play("select");
-        ui.toast.show(`Cerré ${command.name}: ${(res.freed_mb / 1024).toFixed(1)} GB libres de más`);
+        ui.toast.show(`Cerré ${command.name} · ${(res.freed_mb / 1024).toFixed(1)} GB libres de más`, { tone: "success" });
         // De vuelta a la lista (sin la pregunta ni la lista vieja en el «Atrás»).
         return openMenu(memoryMenu(await api.memory()), { stack: (context?.stack ?? []).slice(0, -1) });
       }
@@ -1633,8 +1647,9 @@ async function runCommand(command, context = null) {
         if (state.legion === undefined) {
           const pads = (await api.controllers().catch(() => ({ controllers: [] }))).controllers;
           state.legion = pads.some((c) => c.kind === "legion");
+          state.gamesir = pads.some((c) => c.kind === "gamesir");
         }
-        ui.sheet.open(tourMenu(command.step, { legion: state.legion }), { index: 0, stack: [] });
+        ui.sheet.open(tourMenu(command.step, { legion: state.legion, gamesir: state.gamesir }), { index: 0, stack: [] });
         return renderHints();
       }
       case "update-check":
@@ -1722,11 +1737,6 @@ async function runCommand(command, context = null) {
         loginFrom = { context };
         return keysSaved(KEY_FORMS[command.service], status, { removed: true });
       }
-      case "phone-link": // un QR para la cámara del iPhone: la app queda conectada sin escribir nada
-        sound.play("open");
-        phoneFrom = { context };
-        ui.phoneLink.open();
-        return renderHints();
       case "trakt-account":
         return openMenu(traktAccountMenu(), nested(context));
       case "onedrive-link": // un código para microsoft.com/link (el aviso llega por SSE)
@@ -1744,7 +1754,7 @@ async function runCommand(command, context = null) {
         const status = await api.onedriveFolder(command.path);
         applySettings({ ...state.settings, onedrive: status });
         sound.play("select");
-        return ui.toast.show(`Listo: busco tus videos en «${command.path}»`);
+        return ui.toast.show(`Busco tus videos en «${command.path}»`, { tone: "success" });
       }
       case "onedrive-scan":
         await api.onedriveScan();
@@ -1760,7 +1770,7 @@ async function runCommand(command, context = null) {
       case "foryou-dismiss":
         await ui.foryou.dismiss(command.item);
         sound.play("select");
-        return ui.toast.show("Listo, no te lo vuelvo a sugerir");
+        return ui.toast.show("No te lo vuelvo a sugerir", { tone: "success" });
       case "stay":
         if (context && stillThere(context)) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
         return renderHints();
@@ -1792,8 +1802,9 @@ function offerUndoHide(command) {
   const undo = { id: command.id, until: Date.now() + UNDO_MS, where: focusKey() };
   state.undoHide = undo;
   const title = command.title || "Listo";
-  const how = state.modality === "touch" ? "Toca para deshacer" : "Y Deshacer";
-  ui.toast.show(`${title} oculto · ${how}`, { duration: UNDO_MS, urgent: true, onPress: () => undoHide(undo) });
+  // Como el «Deshacer ›» del iPhone: la acción a la derecha, con el botón que la hace (con el dedo, solo la palabra).
+  ui.toast.show(`${title} oculto`, { duration: UNDO_MS, action: { label: "Deshacer", glyph: state.modality === "touch" ? "" : glyphs().options,
+    onPress: () => undoHide(undo) } });
 }
 
 /** Dónde está el foco ahora (sección y lugar): Y deshace solo si no te has movido. */
@@ -1811,7 +1822,7 @@ async function undoHide(undo = state.undoHide) {
   try {
     await api.setPrefs(undo.id, { hidden: false });
     sound.play("select");
-    ui.toast.show("Listo: vuelve a estar en tu biblioteca");
+    ui.toast.show("Vuelve a estar en tu biblioteca", { tone: "success" });
     await loadLibrary({ keepId: undo.id });
   } catch (err) {
     ui.toast.show(err.message, { error: true });
@@ -1829,6 +1840,7 @@ function handleAction(action, { repeat = false } = {}) {
     clearTimeout(holdTimer);
     holdTimer = setTimeout(() => { delete document.body.dataset.holding; }, 260);
   }
+  stir();
   if (saver.wake()) return; // con el protector de pantalla, el primer botón solo lo quita
   spotlightIdle = Date.now(); // el carrusel de Destacados espera mientras te mueves
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
@@ -1886,6 +1898,9 @@ function handleAction(action, { repeat = false } = {}) {
     case "nextsection": return stepSection(1);
     case "pageleft":
     case "pageright": {
+      // «Porque viste»: RT salta de tus títulos a lo sugerido y LT regresa (si ya estás de ese lado, pasa de grupo).
+      const jump = state.section === "media" ? stageJump(state.rows[r], c, action === "pageright" ? 1 : -1) : null;
+      if (jump != null) { sound.play("move"); return setFocus(r, jump); }
       // Películas y series: LT/RT pasan de grupo en grupo (Plataformas, Premios, Estudios…), como de consola en Juegos.
       if (state.section === "media" && state.rows.some((row) => row.group)) {
         const to = groupJump(state.rows, r, action === "pageright" ? 1 : -1);
@@ -1980,6 +1995,10 @@ function handleEvent(event) {
     });
   }
   if (event.type === "launch-ready") return ui.launch.reveal();
+  if (event.type === "switching") { // Xenia cambia de programa (Black Ops II: campaña ↔ Zombies): su pantalla de carga mientras se relanza
+    ui.launch.show(findItem(event.id) || { title: event.title }, event.detail || "");
+    return ui.launch.keep(30_000);
+  }
   if (event.type === "input") return handleAction(event.action); // el control remoto del iPhone, como el mando
   if (event.type === "text") return remoteText(String(event.text || ""), !!event.submit, !!event.replace);
   if (event.type === "settings") return event.settings && applySettings(event.settings);
@@ -1995,11 +2014,11 @@ function handleEvent(event) {
   if (event.type === "open-quick") return openQuick().catch((err) => ui.toast.show(err.message, { error: true }));
   if (event.type === "emulator-update-done") {
     sound.play(event.ok ? "select" : "error");
-    return ui.toast.show(event.message, { error: !event.ok });
+    return ui.toast.show(event.message, { tone: event.ok ? "success" : "error" });
   }
   if (event.type === "update-done") {
     sound.play(event.ok ? "select" : "error");
-    return ui.toast.show(event.message, { error: !event.ok });
+    return ui.toast.show(event.message, { tone: event.ok ? "success" : "error" });
   }
   if (event.type === "resumed") { // volvió de suspender: ponerse al día
     pollSystem();
@@ -2007,7 +2026,8 @@ function handleEvent(event) {
     return pollStatus();
   }
   if (event.type === "toast") {
-    ui.toast.show(event.message, { error: event.ok === false, voice: !!event.voice, countdown: event.countdown || 0 });
+    ui.toast.show(event.message, { tone: event.tone || "", error: event.ok === false, voice: !!event.voice, countdown: event.countdown || 0,
+      detail: event.detail || "" });
     if (event.voice) ui.status.pulseAlexa();
   } else if (event.type === "navigate") {
     handleAction(event.direction);
@@ -2024,13 +2044,13 @@ function handleEvent(event) {
     if (traktFrom) traktFrom.done = true;
     ui.traktLink.close({ cancel: false });
     sound.play("select");
-    ui.toast.show(event.name ? `Listo: Trakt conectado como ${event.name}` : "Listo: Trakt conectado");
+    ui.toast.show("Trakt conectado", { tone: "success", detail: event.name ? `Como ${event.name}` : "" });
     return;
   } else if (event.type === "onedrive-linked") {
     if (traktFrom) traktFrom.done = true;
     ui.traktLink.close({ cancel: false });
     sound.play("select");
-    ui.toast.show("Listo: OneDrive conectado · ahora elige la carpeta de tus videos en Ajustes › Cuentas");
+    ui.toast.show("OneDrive conectado · Ahora elige la carpeta de tus videos en Ajustes › Cuentas", { tone: "success" });
     api.onedrive().then((s) => applySettings({ ...state.settings, onedrive: s })).catch(() => {});
     return;
   } else if (event.type === "onedrive-link-failed") {
@@ -2067,7 +2087,9 @@ function handleEvent(event) {
       sound.play("error");
       ui.toast.show(crashMessage(event), { error: true });
     } else {
-      ui.toast.show(closedMessage(event));
+      // Con su portada y el tiempo jugado en su propio renglón (antes una sola frase larga).
+      const { heading, message } = closedSummary(event);
+      ui.toast.show(message, { heading, image: findItem(event.id)?.image });
     }
     loadLibrary({ keepId: event.id });
   }
@@ -2083,6 +2105,7 @@ createInput({
   onText: (char) => { (ui.login.isOpen ? ui.login.type(char === ERASE_WORD ? "" : char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
   onTrace: (entry) => traceInput(entry),
+  resting: () => document.body.dataset.still !== undefined,
 });
 // Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla
 // completa, solo con la hora (como el de Game Glance, con tus juegos y películas). Nunca con un juego o un video al frente
@@ -2119,7 +2142,25 @@ const saver = (() => {
   };
 })();
 setInterval(() => saver.check(), 15_000);
-for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventListener(type, () => saver.wake(), { capture: true, passive: true });
+for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventListener(type, () => { stir(); saver.wake(); }, { capture: true, passive: true });
+
+// Quieta (body[data-still]): tras un rato sin tocar nada, y al instante si Orbital no está al frente (un juego o un video
+// encima), el mando se lee 15 veces por segundo en vez de 60 (input.js). Cualquier botón, toque o volver a Orbital la despierta.
+const STILL_MS = 12_000;
+let stillTimer = 0;
+function stir() {
+  delete document.body.dataset.still;
+  clearTimeout(stillTimer);
+  stillTimer = setTimeout(() => { document.body.dataset.still = ""; }, STILL_MS);
+}
+function settle() {
+  clearTimeout(stillTimer);
+  document.body.dataset.still = "";
+}
+window.addEventListener("blur", settle);
+window.addEventListener("focus", stir);
+document.addEventListener("visibilitychange", () => (document.hidden ? settle() : stir()));
+stir();
 
 // Al volver la conexión (Orbital se reinició), la biblioteca y el estado se piden otra vez.
 api.events(handleEvent, { onReconnect: () => { loadLibrary(); pollStatus(); } });

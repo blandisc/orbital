@@ -6,6 +6,7 @@ import { ERASE_WORD, typingGlyphs } from "../core/input.js";
 import { storage } from "../core/storage.js";
 import { Card } from "./card.js";
 import { createKeyboard } from "./keyboard.js";
+import { Pill } from "./ui.js";
 
 /**
  * Buscar juegos, películas y series con el mando, sin sufrir con títulos largos:
@@ -64,7 +65,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   const results = h("div", { class: "search__results", role: "group" });
   const keyboard = createKeyboard({ label: "Teclado de búsqueda", onPress: (key) => press(key) });
   const keys = keyboard.el;
-  const el = h("section", { class: "search", hidden: true, "aria-label": "Buscar" },
+  const el = h("section", { class: ["screen", "search"], hidden: true, "aria-label": "Buscar" },
     h("div", { class: "search__top" }, field, hint), results, keys);
 
   let text = "";
@@ -95,7 +96,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       keyboard.setLayout(layout(undo, dictateGlyph, shownListening));
     }
     keyboard.active = zone === "keys";
-    focusables.forEach((node, i) => node.classList.toggle(node.classList.contains("card") ? "card--focused" : "search__recent--focused",
+    focusables.forEach((node, i) => node.classList.toggle(node.classList.contains("card") ? "card--focused" : "pill--focused",
       zone === "results" && i === resultIndex));
     field.classList.toggle("search__field--listening", !!listening);
   }
@@ -130,9 +131,9 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     const recent = storage.get(RECENT_KEY, []);
     const trending = popular().slice(0, 10);
     items = [...recent.map((q) => ({ recent: q })), ...trending];
-    const chips = recent.map((q, i) => h("button", {
-      class: "search__recent", type: "button", onClick: () => { resultIndex = i; zone = "results"; open(); },
-    }, svg(ICONS.search), q));
+    const chips = recent.map((q, i) => Pill(q, {
+      tone: "fill", icon: svg(ICONS.search), onClick: () => { resultIndex = i; zone = "results"; open(); },
+    }));
     const cards = trending.map((item, i) => Card(item, {
       caption: true, onPress: () => { zone = "results"; resultIndex = recent.length + i; open(); },
     }));
@@ -221,7 +222,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
 
   /** Teclado físico: una letra, "\b" para borrar, "\n" (Enter) para ver los resultados. */
   function type(char) {
-    if (el.hidden || el.classList.contains("search--leaving")) return;
+    if (el.hidden || el.classList.contains("screen--leaving")) return;
     if (char === "\t") return;
     if (char === "\n") {
       if (zone === "results") open();
@@ -242,7 +243,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
 
   /** El iPhone manda el campo entero: lo reemplaza (en vez de agregarlo letra por letra). */
   function setText(value) {
-    if (el.hidden || el.classList.contains("search--leaving")) return;
+    if (el.hidden || el.classList.contains("screen--leaving")) return;
     typedPhysically = true;
     cleared = "";
     text = Array.from(String(value).toLowerCase()).slice(0, MAX_CHARS).join("");
@@ -305,7 +306,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   }
 
   function handle(action, { repeat = false } = {}) {
-    if (el.hidden || el.classList.contains("search--leaving")) return false;
+    if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (action === "search") { close(); return true; } // el mismo atajo la cierra
     if (action === "back") { // B vuelve: de los resultados al teclado; del teclado, cierra (X borra)
       if (zone === "results") zone = "keys";
@@ -363,7 +364,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     clearTimeout(timer);
     token++; // una respuesta que llegue tarde ya no pinta nada
     listening?.stop();
-    cancelExit = hideAfterExit(el, "search--leaving", 300);
+    cancelExit = hideAfterExit(el, "screen--leaving", 300);
     onClose?.();
   }
 
@@ -381,11 +382,11 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     return [
       { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
       // Buscar, Dictar y Espacio ya están en el teclado con su botón: no se repiten en el pie (como mucho cinco pistas).
-      zone === "keys" && go && { glyph: go, label: "Buscar", offscreen: true },
+      zone === "keys" && go && !items.length && { glyph: go, label: "Buscar", offscreen: true },
       g.menu && { glyph: g.menu, label: "Dictar", offscreen: true }, // otra vez: deja de escuchar
-      // LT salta a los resultados (antes había que subir seis filas del teclado sin saberlo).
-      zone === "keys" && items.length && page[0] && { glyph: page[0], label: "Resultados" },
-      zone === "results" && page[1] && { glyph: page[1], label: "Teclado" },
+      // RT salta a los resultados (antes había que subir seis filas del teclado sin saberlo) y LT regresa al teclado: como el manejador.
+      zone === "keys" && items.length && go && { glyph: go, label: "Resultados" },
+      zone === "results" && page[0] && { glyph: page[0], label: "Teclado" },
       zone === "keys" && { glyph: g.alt, label: "Borrar", secondary: true },
       zone === "keys" && { glyph: g.options, label: "Espacio", offscreen: true },
       { glyph: g.back, label: "Atrás", end: true },
@@ -397,6 +398,6 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     if (!el.hidden && text.trim().length >= MIN_CHARS) schedule();
   }
 
-  return { el, open: show, close, handle, hints, refresh, type, setText, get isOpen() { return !el.hidden && !el.classList.contains("search--leaving"); },
-    get typing() { return !el.hidden && !el.classList.contains("search--leaving"); } };
+  return { el, open: show, close, handle, hints, refresh, type, setText, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); },
+    get typing() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

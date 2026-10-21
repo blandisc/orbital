@@ -1,12 +1,12 @@
 import { h, hideAfterExit, mount } from "../core/dom.js";
 import { genres as genreNames, runtime } from "../core/format.js";
 import { Card } from "./card.js";
-import { ScreenHead } from "./ui.js";
+import { Pill, ScreenHead } from "./ui.js";
 
 /**
  * «¿Qué vemos?» (como DecideView del iPhone): tres de tus sugerencias que caben en el tiempo que tienes y en tu ánimo,
  * lado a lado; la enfocada dice por qué («58 min · IMDb 8.1 · Comedia»). Abajo, lo que puedes cambiar: tiempo (la hora
- * lo propone), ánimo y series o películas, con las píldoras de siempre (browse__filter).
+ * lo propone), ánimo y series o películas, con las píldoras de siempre (`Pill`).
  *   ←/→ propuesta · ↓ a las preguntas · A ver su ficha · X barajar · Y hoy no · B cerrar
  *
  * load({ time, mood, kind }) → { time, mood, kind, picks } · skip(imdb) · onPick(item) · onMove() · onClose()
@@ -59,10 +59,10 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
   function paintQuestions() {
     mount(questions, QUESTIONS.map((q, qi) => h("div", { class: "decide__question" },
       h("span", { class: "decide__label" }, q.label),
-      h("div", { class: "browse__filters", role: "tablist" }, q.options.map(([value, label], oi) => h("button", {
-        class: ["browse__filter", (choice[q.id] || "") === value && "browse__filter--on", zone === qi && oi === option && "is-focused"],
-        type: "button", tabindex: "-1", role: "tab", onClick: () => { zone = qi; option = oi; answer(); },
-      }, label))))));
+      h("div", { class: "browse__filters", role: "tablist" }, q.options.map(([value, label], oi) => Pill(label, {
+        on: (choice[q.id] || "") === value, tone: "outline", className: zone === qi && oi === option && "is-focused",
+        tabindex: "-1", role: "tab", onClick: () => { zone = qi; option = oi; answer(); },
+      }))))));
   }
 
   function paint() {

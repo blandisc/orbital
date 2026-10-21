@@ -26,10 +26,10 @@
 .rail__track { display: flex; flex-direction: column; gap: var(--space-2); padding: .6rem 0; transition: transform var(--duration-slow) var(--ease-out); }
 
 /* RePág / AvPág: en la columna de las casillas. */
-.rail__key { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; width: var(--rail-width); min-height: 2.75rem; color: var(--color-text-muted); } /* tocable con el dedo */
+.rail__key { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; width: var(--rail-width); min-height: var(--control-sm); color: var(--color-text-muted); } /* tocable con el dedo */
 .rail__key--next { flex-direction: column-reverse; }
 .rail__arrow { display: grid; place-items: center; }
-.rail__arrow .icon { width: .9rem; height: .9rem; transform: rotate(-90deg); }
+.rail__arrow .icon { width: var(--icon-xs); height: var(--icon-xs); transform: rotate(-90deg); }
 .rail__key--next .rail__arrow .icon { transform: rotate(90deg); }
 
 /* Un grupo («Series y películas», «Juegos»): cerrado, una raya corta; abierto, su nombre. */
@@ -42,7 +42,7 @@
 .rail:not(.rail--open) .rail__heading:first-child { min-height: 0; }
 .rail__heading:first-child::before { opacity: 0; } /* el primer grupo no necesita raya que lo separe */
 .rail__heading-text {
-  padding-left: calc((var(--rail-width) - var(--rail-tile)) / 2); color: var(--color-text-muted); font-size: var(--text-xs); font-weight: var(--weight-medium);
+  padding-left: calc((var(--rail-width) - var(--rail-tile)) / 2); color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--weight-medium);
   white-space: nowrap; opacity: 0; transition: opacity var(--duration-fast) var(--ease-out);
 }
 .rail--open .rail__heading::before { opacity: 0; }
@@ -53,9 +53,9 @@
 .rail__tile {
   position: relative; flex: none; display: grid; place-items: center; box-sizing: border-box; overflow: hidden;
   grid-template: minmax(0, 1fr) / minmax(0, 1fr); /* la foto se mide contra la casilla: la Xbox 360 (alta) se cortaba abajo */
-  width: var(--rail-tile); height: var(--rail-tile); padding: .5rem; margin-left: calc((var(--rail-width) - var(--rail-tile)) / 2);
+  width: var(--rail-tile); height: var(--rail-tile); padding: var(--space-2); margin-left: calc((var(--rail-width) - var(--rail-tile)) / 2);
   border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline); color: var(--color-text-muted);
-  opacity: .6;
+  opacity: var(--opacity-away);
   transition: opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out),
     width var(--duration-base) var(--ease-out), height var(--duration-base) var(--ease-out), margin var(--duration-base) var(--ease-out);
 }
@@ -75,7 +75,7 @@
 .rail__tile--brand { padding: 0; background: none; }
 .rail__img--brand { object-fit: cover; filter: none; }
 .rail__icon { display: grid; place-items: center; }
-.rail__icon .icon { width: 1.7rem; height: 1.7rem; stroke-width: 1.9; }
+.rail__icon .icon { width: var(--icon-xl); height: var(--icon-xl); stroke-width: var(--stroke-fine); }
 .rail__item--current .rail__icon .icon { width: 2rem; height: 2rem; }
 
 .rail__label {
@@ -85,10 +85,10 @@
 }
 .rail--open .rail__label { opacity: 1; transform: none; transition-delay: var(--delay-1); }
 .rail__name {
-  color: var(--color-text-muted); font-size: var(--text-md); font-weight: var(--weight-medium); line-height: 1.25; padding-bottom: .1em;
+  color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--weight-medium); line-height: var(--leading-title); padding-bottom: .1em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.rail__meta { color: var(--color-text-faint); font-size: var(--text-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rail__meta { color: var(--color-text-faint); font-size: var(--type-footnote); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rail__item--current .rail__name { color: var(--color-text); }
 .rail__item.is-focused .rail__name { color: var(--color-text); font-weight: var(--weight-bold); }
 .rail__item.is-focused .rail__meta { color: var(--color-text-muted); }

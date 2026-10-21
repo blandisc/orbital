@@ -10,7 +10,7 @@
   border-radius: var(--radius-pill);
   background: var(--glyph-bg); color: var(--glyph-ink);
   box-shadow: inset 0 0 0 1.5px var(--glyph-ring);
-  font: var(--weight-bold) var(--text-2xs) / 1 var(--font-text); letter-spacing: var(--tracking-label);
+  font: var(--weight-bold) var(--type-caption) / 1 var(--font-text); letter-spacing: var(--tracking-label);
   /* La caja del texto de Segoe queda baja: sube medio píxel para verse centrado en el círculo. */
   padding-bottom: .06em;
 }
@@ -20,7 +20,7 @@
 [data-input="gamepad"] .glyph--x { --glyph-ink: var(--color-pad-x); --glyph-ring: color-mix(in oklab, var(--color-pad-x) 70%, transparent); }
 [data-input="gamepad"] .glyph--y { --glyph-ink: var(--color-pad-y); --glyph-ring: color-mix(in oklab, var(--color-pad-y) 70%, transparent); }
 [data-input="gamepad"] .glyph--a, [data-input="gamepad"] .glyph--b,
-[data-input="gamepad"] .glyph--x, [data-input="gamepad"] .glyph--y { width: var(--glyph-size); padding: 0 0 .06em; font-size: var(--text-xs); }
+[data-input="gamepad"] .glyph--x, [data-input="gamepad"] .glyph--y { width: var(--glyph-size); padding: 0 0 .06em; font-size: var(--type-footnote); }
 /* Teclado: tecla con borde y una sombra abajo (se ve "presionable"). */
 [data-input="keyboard"] .glyph, [data-input="touch"] .glyph {
   border-radius: var(--radius-xs);

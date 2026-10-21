@@ -6,9 +6,12 @@ aquí, en el servidor, con XInput (Windows):
   * Home (botón Guía), solo      -> ir a Orbital / volver al juego. Se dispara al SOLTARLO y
                                    solo si no se tocó otro botón: Home+X, Home+B... siguen siendo
                                    de los emuladores (Eden los usa).
-  * Start + Select + Home, mantenidos -> cerrar el juego (barra que se llena encima del juego).
-                                   Los tres juntos: el GameSir usa Start+Select y Home sostenido
-                                   para cambiar de modo, y eso nunca debe cerrar un juego.
+  * Cerrar el juego, mantenido (barra que se llena encima del juego), según el mando:
+      - GameSir: LB + RB + Select. Sus combinaciones propias chocaban con Home + Start + Select: Start + Select
+        sostenidos le cambian el modo (XInput/Switch/Android), Home + Start le reinicia los ajustes, y desde la
+        actualización de Windows de 2026-10-18 mantener Home abre la Vista de tareas.
+      - Controles de la Legion Go: Start + Select (no tienen Home ni cambian de modo).
+      - Los demás: Start + Select + Home.
 
 La lógica de botones (ComboDetector) es pura y tiene pruebas; el sondeo de XInput solo
 existe en Windows.
@@ -31,12 +34,18 @@ GUIDE = 0x0400
 BACK = 0x0020
 START = 0x0010
 
-CLOSE_COMBO = GUIDE | BACK | START  # Start + Select + Home (GameSir: Start+Select y Home solos cambian de modo)
+LB_BUTTON, RB_BUTTON = 0x0100, 0x0200
+
+CLOSE_COMBO = GUIDE | BACK | START  # Start + Select + Home: los mandos que no son GameSir ni de la Legion
 LEGION_CLOSE_COMBO = BACK | START  # controles de la Legion Go: no tienen Home y no cambian de modo
+GAMESIR_CLOSE_COMBO = LB_BUTTON | RB_BUTTON | BACK  # sin Home ni Start: esos son combos del propio GameSir
 LENOVO_VENDOR = 0x17EF
+GAMESIR_VENDOR = 0x3537
+CLOSE_LABELS = {CLOSE_COMBO: "Start + Select + Home", LEGION_CLOSE_COMBO: "Start + Select",
+                GAMESIR_CLOSE_COMBO: "LB + RB + Select"}
 
 
-VENDORS = {LENOVO_VENDOR: "legion", 0x3537: "gamesir", 0x045E: "xbox"}
+VENDORS = {LENOVO_VENDOR: "legion", GAMESIR_VENDOR: "gamesir", 0x045E: "xbox"}
 
 
 def connected_controllers() -> list[dict]:
@@ -54,14 +63,14 @@ def connected_controllers() -> list[dict]:
             continue
         vid = vendor(slot) if vendor else None
         found.append({"slot": slot + 1, "kind": VENDORS.get(vid or 0, "other"),
-                      "close": "Start + Select" if close_combo_for(vid) == LEGION_CLOSE_COMBO else "Start + Select + Home",
+                      "close": CLOSE_LABELS[close_combo_for(vid)],
                       "battery": battery(slot) if battery else None})
     return found
 
 
 def close_combo_for(vendor_id: int | None) -> int:
     """Qué botones mantener para cerrar el juego según la marca del mando."""
-    return LEGION_CLOSE_COMBO if vendor_id == LENOVO_VENDOR else CLOSE_COMBO
+    return {LENOVO_VENDOR: LEGION_CLOSE_COMBO, GAMESIR_VENDOR: GAMESIR_CLOSE_COMBO}.get(vendor_id or 0, CLOSE_COMBO)
 HOLD_ARM = 0.25  # s con el combo antes de reaccionar (evita toques accidentales)
 HOLD_TOTAL = 1.5  # s hasta preguntar si cerrar
 
@@ -121,7 +130,6 @@ class ComboDetector:
 # Botones XInput -> teclas virtuales de Windows, para apps sin soporte de mando (Stremio).
 DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT = 0x0001, 0x0002, 0x0004, 0x0008
 A_BUTTON, B_BUTTON, X_BUTTON, Y_BUTTON = 0x1000, 0x2000, 0x4000, 0x8000
-LB_BUTTON, RB_BUTTON = 0x0100, 0x0200
 # Con Home mantenido. LB/RB y no X/Y/B: esos ya los usa Eden (Home+X modo dock, Home+B pantalla completa).
 HOME_CHORDS = {LB_BUTTON: "quick", RB_BUTTON: "capture"}
 # Los gatillos son analógicos en XInput; para el reproductor cuentan como botones (bits que XInput no usa).
@@ -297,7 +305,11 @@ def _load_get_state():
 class GamepadWatcher:
     """Hilo que sondea los 4 mandos XInput y entrega eventos a `on_event(nombre)`."""
 
-    POLL = 1 / 60
+    # 30 lecturas por segundo con un mando conectado: de sobra para un toque de Home (dura ~80 ms) y la cruceta del
+    # reproductor. Sin ninguno, 4 por segundo, solo para notar cuando conectas uno. Antes eran 60 siempre: el servidor
+    # gastaba CPU sin parar aunque no hubiera mando (y es lo que más hacía con Orbital quieta y un juego al frente).
+    POLL = 1 / 30
+    POLL_IDLE = 1 / 4
 
     def __init__(self, on_event: Callable[[str], None],
                  on_buttons: Callable[[int, int, float], None] | None = None) -> None:
@@ -306,6 +318,7 @@ class GamepadWatcher:
         self._detectors = [ComboDetector() for _ in range(4)]
         self._stop = threading.Event()
         self._redetect = threading.Event()
+        self.hold_label = ""  # el atajo de cerrar que se está manteniendo («LB + RB + Select»), para el aviso
 
     def start(self) -> bool:
         if sys.platform != "win32":
@@ -317,7 +330,7 @@ class GamepadWatcher:
             return False
         threading.Thread(target=self._run, args=(get_state,), daemon=True, name="gamepad").start()
         log.info("Atajos del mando activos: Home = Orbital/juego · cerrar juego = Start+Select+Home "
-                 "(controles de la Legion Go: Start+Select)")
+                 "(GameSir: LB+RB+Select · controles de la Legion Go: Start+Select)")
         return True
 
     def stop(self) -> None:
@@ -348,7 +361,7 @@ class GamepadWatcher:
                     vid = vendor(slot)
                     detector.combo = close_combo_for(vid)
                     log.info("Mando %d (marca %s): cerrar juego con %s", slot + 1, f"{vid:04X}" if vid else "?",
-                             "Start+Select" if detector.combo == LEGION_CLOSE_COMBO else "Start+Select+Home")
+                             CLOSE_LABELS[detector.combo])
                 if was_connected[slot] and not connected:
                     # Se desconectó con botones apretados: eso no es «soltar Home» (no abre Orbital).
                     self._detectors[slot] = detector = ComboDetector(combo=detector.combo)
@@ -367,6 +380,8 @@ class GamepadWatcher:
                     traced[slot] = None
                     input_log.record([{"from": "xinput", "slot": slot, "gone": True}])
                 for event in detector.update(buttons, now):
+                    if event == "hold-start":
+                        self.hold_label = CLOSE_LABELS.get(detector.combo, "")
                     try:
                         self.on_event(event)
                     except Exception:  # noqa: BLE001 - un fallo aquí no debe matar el hilo
@@ -393,4 +408,4 @@ class GamepadWatcher:
                         self.on_buttons(slot, buttons, now)
                     except Exception:  # noqa: BLE001
                         log.exception("Error en el control remoto")
-            self._stop.wait(self.POLL)
+            self._stop.wait(self.POLL if any(was_connected) else self.POLL_IDLE)

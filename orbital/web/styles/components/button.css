@@ -3,8 +3,8 @@
    Principal: sólido claro (el estándar de consola). Secundarios: relleno tenue, sin borde. */
 .button {
   display: inline-flex; align-items: center; gap: var(--space-3);
-  height: var(--control-height); padding: 0 1.25rem 0 .7rem; border-radius: var(--radius-md);
-  font-size: var(--text-md); font-weight: var(--weight-medium); white-space: nowrap;
+  height: var(--control-height); padding: 0 var(--space-5) 0 .7rem; border-radius: var(--radius-md);
+  font-size: var(--type-body); font-weight: var(--weight-medium); white-space: nowrap;
   background: var(--color-fill); color: var(--color-text);
   transition: background var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
@@ -17,7 +17,7 @@
 .button > :not(.button__label) { flex: none; }
 .button-row { display: flex; flex-wrap: nowrap; gap: var(--space-3); min-width: 0; max-width: 100%; }
 .button:hover { background: var(--color-fill-hover); }
-.button:active { transform: scale(.97); }
+.button:active { transform: scale(var(--press-scale)); }
 .button--primary { padding-right: 1.6rem; background: var(--color-primary); color: var(--color-on-primary); font-weight: var(--weight-bold); }
 .button--primary:hover { background: var(--color-primary); filter: brightness(.94); }
 /* Principal con el color del arte de lo que enseña (destacado del Inicio, ficha lateral, héroe). */
@@ -26,3 +26,7 @@
 .button.is-focused { box-shadow: var(--ring-focus); transform: scale(var(--inverse-scale)); }
 /* El principal ya es blanco: con el anillo blanco se veía doble borde. Enfocado, solo crece y se eleva. */
 .button--primary.is-focused { box-shadow: var(--shadow-lifted); }
+/* Con el dedo no hay glifo (A, B…): el espacio que le dejaban los botones (más angosto a la izquierda) descentraba el texto
+   («Jugar», «Ver la serie»). Mismo margen a los dos lados y el texto al centro; objetivos de ~44 px. */
+[data-input="touch"] .button { min-height: var(--touch-target); justify-content: center; padding-inline: var(--space-5); }
+[data-input="touch"] .button--primary { padding-inline: 1.6rem; }

@@ -11,7 +11,7 @@ function setup(overrides = {}) {
   const state = createState();
   const calls = { launched: [], menus: [], shown: [], toasts: [], titles: [], polled: 0 };
   const ui = {
-    launch: { show: (item) => calls.shown.push(item.title), hide: () => {}, hold: () => {}, status: () => {} },
+    launch: { show: (item) => { calls.shown.push(item.title); }, hide: () => {}, hold: () => {}, status: () => {}, visible: true },
     toast: { show: (text) => calls.toasts.push(text) },
     shelf: { focused: () => null },
     sources: { isOpen: false, close: () => {} },
@@ -72,4 +72,23 @@ test("películas del catálogo abren su ficha", async () => {
   const { calls, flows } = setup();
   await flows.launch({ id: "cinemeta:movie:tt1", title: "Dune", source: "cinemeta", extra: { kind: "movie" } });
   assert.deepEqual(calls.titles, ["cinemeta:movie:tt1"]);
+});
+
+test("el juego se pide con el arte ya decodificado; B mientras tanto no abre nada", async () => {
+  const state = createState();
+  const launched = [];
+  let artReady;
+  const launch = { show: () => new Promise((resolve) => { artReady = resolve; }), hide: () => {}, hold: () => {}, status: () => {}, visible: true };
+  api.launch = async (id) => { launched.push(id); return { ok: true }; };
+  const flows = createLaunching({
+    state, ui: { launch, toast: { show: () => {} }, shelf: { focused: () => null }, sources: { isOpen: false, close: () => {} } },
+    current: () => null, openMenu: () => {}, openTitle: () => {}, openSearch: () => {}, pollStatus: () => {},
+  });
+  const pending = flows.launch(hades);
+  await Promise.resolve();
+  assert.deepEqual(launched, []); // todavía decodificando el fondo
+  launch.visible = false; // B
+  artReady();
+  await pending;
+  assert.deepEqual(launched, []);
 });

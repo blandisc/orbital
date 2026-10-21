@@ -66,54 +66,19 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 
 /* Ventanas estrechas o móviles */
 @media (max-width: 700px) {
-  :root { --root-size: 12px; --page-gutter: 16px; --text-display: 2.6rem; }
+  :root { --root-size: 12px; --page-gutter: 16px; --text-display: calc(2.6rem * var(--text-scale)); }
 }
 
 /* Íconos de interfaz (js/core/icons.js): heredan el color del texto. */
-.icon { display: block; width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.icon { display: block; width: var(--icon-md); height: var(--icon-md); fill: none; stroke: currentColor; stroke-width: var(--stroke-fine); stroke-linecap: round; stroke-linejoin: round; }
 .icon--fill { fill: currentColor; stroke: none; }
 
 /* Sin internet (main.js · setOnline): lo que necesita conexión se ve apagado; tus juegos, como siempre. */
-body[data-offline] .needs-internet { opacity: .4; filter: grayscale(.7); }
+body[data-offline] .needs-internet { opacity: var(--opacity-off); filter: grayscale(.7); }
 
-/* Pantalla táctil (Legion Go sin dock): sin glifos de botones ni pie de controles; botón Atrás a mano. */
+/* Pantalla táctil (Legion Go sin dock): sin glifos de botones ni pie de controles; botón Atrás a mano. Cada pieza lleva sus reglas
+   táctiles en su propio CSS (`[data-input="touch"]`); aquí solo lo que es de toda la interfaz. */
 [data-input="touch"] .glyph { display: none; }
-/* El atajo de Buscar, siempre: con el dibujo del mando (disco y aro), no como tecla de teclado (se veía crudo). */
-[data-input="touch"] .status-bar__search-glyph .glyph {
-  display: inline-grid; border-radius: var(--radius-pill); background: var(--glyph-bg); box-shadow: inset 0 0 0 1.5px var(--glyph-ring);
-}
-[data-input="touch"] .hints { visibility: hidden; }
-/* «Atrás» (con el dedo, en todo lo que va encima): siempre arriba a la derecha, el mismo lugar en cada pantalla. Antes iba
-   abajo a la izquierda (sobre la tecla «Atrás» de Buscar y los pósters de abajo) y en la ficha arriba a la izquierda. Los
-   encabezados que usan esa esquina le dejan lugar (--touch-back-room). «Menú» (sin nada encima) sigue abajo a la derecha:
-   arriba está la barra con la hora. */
-.touch-back {
-  position: fixed; right: var(--page-gutter); top: calc(var(--space-5) + var(--safe-y, 0px)); z-index: calc(var(--z-launch) + 1);
-  display: none; align-items: center; gap: var(--space-2); min-height: 3.2rem; padding: 0 var(--space-5) 0 var(--space-4);
-  border-radius: var(--radius-pill); background: var(--color-fill-hover); color: var(--color-text);
-  font-size: var(--text-md); font-weight: var(--weight-medium);
-  -webkit-backdrop-filter: blur(var(--blur-glass)); backdrop-filter: blur(var(--blur-glass));
-}
-.touch-back svg { width: 1.3rem; height: 1.3rem; }
-[data-input="touch"][data-overlay="true"] .touch-back { display: inline-flex; animation: fade-in var(--duration-base) var(--ease-out); }
-/* «Menú», abajo a la derecha, solo sin nada encima (con una vista encima va «Atrás»). */
-.touch-back--menu { top: auto; bottom: var(--space-5); }
-/* Lo que usa la esquina de arriba a la derecha le deja lugar a «Atrás» (solo con el dedo). */
-[data-input="touch"] .search__top, [data-input="touch"] .list-screen__head, [data-input="touch"] .sheet__title,
-[data-input="touch"] .sources__head, [data-input="touch"] .title__tabs { padding-right: var(--touch-back-room); }
-[data-input="touch"][data-overlay="true"] .touch-back--menu { display: none; }
-[data-input="touch"]:not([data-overlay="true"]) .touch-back--menu { display: inline-flex; }
-/* Dedos: objetivos de al menos ~44 px. */
-[data-input="touch"] .button, [data-input="touch"] .status-bar__tab, [data-input="touch"] .sheet__item,
-[data-input="touch"] .status-bar__search, [data-input="touch"] .assistant, [data-input="touch"] .title__tab { min-height: 2.9rem; }
-[data-input="touch"] .status-bar__search, [data-input="touch"] .assistant { min-width: 2.9rem; justify-content: center; }
-/* Con el dedo no hay glifo (A, B…): el espacio que le dejaban los botones (más angosto a la izquierda) descentraba el texto
-   («Jugar», «Ver la serie»). Mismo margen a los dos lados y el texto al centro. */
-[data-input="touch"] .button { justify-content: center; padding-inline: 1.25rem; }
-[data-input="touch"] .button--primary { padding-inline: 1.6rem; }
-[data-input="touch"] .title__action--primary { padding-inline: var(--space-8); }
-/* ‹ › de un ajuste: cada flecha se toca por separado. */
-[data-input="touch"] .sheet__chev { min-width: 2.9rem; min-height: 2.9rem; opacity: .8; }
 
 /* Aterrizaje: al terminar el arranque o al volver de un juego, la interfaz entra desde un poco
    más cerca y se asienta (como al salir de un juego en PS5), en vez de aparecer de golpe. */

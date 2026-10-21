@@ -136,7 +136,8 @@ export function alexaMenu(guide = null) {
 
 /** Los íconos de los temas de la guía (los nombres de SF Symbols del iPhone → los de la tele). */
 const GUIDE_ICONS = { gamecontroller: "gamepad", film: "movie", "play.rectangle": "play", play: "play", tv: "tv",
-  sparkles: "spark", gearshape: "settings", gear: "settings" };
+  sparkles: "spark", gearshape: "settings", gear: "settings", power: "power", "captions.bubble": "swap",
+  "speaker.wave.2": "sound", "antenna.radiowaves.left.and.right": "tv" };
 
 /** Un tema de la guía: todas sus frases, con lo que hace cada una. */
 export function voiceGroupMenu(group) {
@@ -155,6 +156,7 @@ export function voiceHelpMenu() {
       { icon: "search", label: "Revisa lo que entendió", hint: "Abajo sale «No entendí…» con lo que escuchó: dilo más despacio o búscalo", command: { type: "stay" } },
       { icon: "grid", label: "Cuando hay varias", hint: "Si pides «pon Dune» y hay más de una, salen en la tele para elegir", command: { type: "stay" } },
       { icon: "wifi", label: "Si Alexa no encuentra tu consola", hint: "Orbital tiene que estar encendida y con Internet", command: { type: "stay" } },
+      { icon: "power", label: "Si la tele no prende", hint: "En la tele: Configuración › Sistema › Energía › Inicio rápido de TV", command: { type: "stay" } },
       { icon: "phone", label: "Desde el iPhone", hint: "El micrófono del control y Siri usan las mismas frases", command: { type: "stay" } },
     ],
   };
@@ -835,14 +837,14 @@ export function setupMenu(status = {}) {
  * Guía rápida (la primera vez, desde "Tu consola", o en Controles): un paso por pantalla, con el
  * atajo del mando que tienes conectado (Legion Go o GameSir/otros).
  */
-export function tourMenu(step, { legion = false } = {}) {
+export function tourMenu(step, { legion = false, gamesir = false } = {}) {
   const steps = [
     { title: "Jugar y volver", text: legion
       ? "A abre un juego. En el juego, un toque de Legion L te trae a Orbital (el juego queda en pausa); A o Legion L te regresan."
       : "A abre un juego. En el juego, Home te trae a Orbital (el juego queda en pausa); A o Home te regresan." },
     { title: "Cerrar un juego", text: legion
       ? "Mantén Start + Select hasta que se llene la barra, o toca Legion L dos veces. Desde Orbital: Y sobre el juego → Cerrar."
-      : "Mantén Start + Select + Home hasta que se llene la barra. Desde Orbital: Y sobre el juego → Cerrar." },
+      : `Mantén ${gamesir ? "LB + RB + Select" : "Start + Select + Home"} hasta que se llene la barra. Desde Orbital: Y sobre el juego → Cerrar.` },
     { title: "Panel rápido", text: legion
       ? "☰ → Panel rápido: volumen, brillo, modo de energía, batería y capturas."
       : "Mantén Home y pulsa LB (o ☰ → Panel rápido): volumen, brillo, energía y batería. Home + RB toma una captura." },
@@ -864,11 +866,11 @@ export function tourMenu(step, { legion = false } = {}) {
 const row = (label, value, hint) => ({ icon: "gamepad", label, value, hint, command: { type: "stay" } });
 
 /** Lo que cambia según el mando: la Legion Go usa Legion L en vez de Home y no tiene combinaciones. */
-function gameRows(legion) {
+function gameRows(legion, close = "Start + Select + Home") {
   return legion
     ? [["Ir a Orbital", "Legion L"], ["Volver al juego", "Legion L o A"], ["Cerrar el juego", "Mantén Start + Select"],
       ["Panel rápido", "☰ → Panel rápido"]]
-    : [["Ir a Orbital", "Home"], ["Volver al juego", "Home o A"], ["Cerrar el juego", "Mantén Start + Select + Home"],
+    : [["Ir a Orbital", "Home"], ["Volver al juego", "Home o A"], ["Cerrar el juego", `Mantén ${close}`],
       ["Panel rápido", "Mantén Home + LB"], ["Captura", "Mantén Home + RB"]];
 }
 
@@ -892,7 +894,8 @@ export function controlsMenu(controllers = []) {
     title: "Cómo se usa", crumb: "Cómo se usa",
     // Sin mando conectado, lo del teclado va primero (y Ctrl + Inicio es su Home).
     options: [...(controllers.length ? [] : section("Con teclado", KEYBOARD_ROWS)),
-      ...section("En un juego", gameRows(legion)), ...section("En Orbital", SHORTCUTS.orbital),
+      // Cerrar depende de la marca (el GameSir no usa Home): el del primer mando que no es de la Legion.
+      ...section("En un juego", gameRows(legion, controllers.find((c) => c.kind !== "legion")?.close)), ...section("En Orbital", SHORTCUTS.orbital),
       ...section("Viendo algo", SHORTCUTS.player), ...(controllers.length ? section("Con teclado", KEYBOARD_ROWS) : []),
       // La guía de 5 pasos existía pero nada la abría.
       { icon: "play", label: "Guía paso a paso", hint: "Lo esencial en 5 pantallas", command: { type: "tour", step: 0 } }],

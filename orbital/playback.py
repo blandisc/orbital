@@ -137,6 +137,18 @@ def build_lang_list(lang: str) -> list[str]:
     return LANGS.get(lang, [lang])
 
 
+def base_language(code: str | None) -> str:
+    """El idioma de una pista sin importar cómo venga escrito: «spa», «es-419», «Spanish» → «es» (el iPhone y mpv
+    no los etiquetan igual). "" si no se sabe."""
+    code = str(code or "").strip().lower()
+    if not code:
+        return ""
+    for lang, names in LANGS.items():
+        if code in {n.lower() for n in names}:
+            return lang
+    return code.replace("_", "-").split("-")[0]
+
+
 # Pantalla táctil (y ratón): mpv le dice a Orbital dónde tocaste y Orbital decide (enseñar los botones,
 # pausar, adelantar, elegir en un panel…); el doble toque ya no saca de pantalla completa por accidente.
 TOUCH_BINDINGS = ("MBTN_LEFT script-message orbital-tap ${mouse-pos/x} ${mouse-pos/y} ${osd-dimensions/w} ${osd-dimensions/h}\n"

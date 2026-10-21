@@ -59,3 +59,58 @@ def test_saving_progress_remembers_the_source(library):
     assert watch.resume_choice("tt1", "tt1:1:2") is None  # medio minuto: aún no
     watch._save_progress(meta, 600, 1500, 60, refresh=False)
     assert watch.resume_choice("tt1", "tt1:1:2")["source"] == "Torrentio|abc|0"
+
+
+# --- Entre el iPhone y la TV: el mismo segundo, la misma fuente, el mismo audio y los mismos subtítulos -------------------
+
+def test_the_player_matches_tracks_from_the_iphone_by_language():
+    """El iPhone etiqueta las pistas distinto («es» y no «spa»): se usa la del mismo idioma (no la de forzados)."""
+    tracks = [{"type": "audio", "id": 1, "lang": "eng", "selected": True}, {"type": "audio", "id": 2, "lang": "spa"},
+              {"type": "sub", "id": 3, "lang": "spa", "title": "Forced"}, {"type": "sub", "id": 4, "lang": "spa", "title": "Full"}]
+    p, mpv = make_player(**{"track-list": tracks})
+    p._sub_pick = {"off": False, "lang": "es", "title": "Español", "audio": {"lang": "es-419", "title": ""}}
+    assert p._apply_sub_pick(tracks)
+    assert ("set_property", "aid", 2) in mpv.sent and ("set_property", "sid", 4) in mpv.sent
+    p._sub_pick = {"audio": {"lang": "spa", "title": ""}}  # solo el audio: los subtítulos, con la regla de siempre
+    assert not p._apply_sub_pick(tracks)
+
+
+def test_from_the_iphone_the_tv_follows_the_same_second_source_and_tracks(library, monkeypatch):
+    watch = library.watch
+    found = [_source(0, "best"), _source(1, "phone")]
+    monkeypatch.setattr(watch, "stream_sources", lambda kind, video_id, prefs=None: found)
+    monkeypatch.setattr(watch, "best_source", lambda kind, video_id, binge=None, skip=None, prefs=None: found[0])
+    played = []
+    monkeypatch.setattr(watch, "play_source", lambda kind, meta_id, video_id, index, title, **kw: played.append((index, kw)))
+    sub = {"off": False, "lang": "spa", "title": "Latino", "url": ""}
+    watch.play_best("movie", "tt1", "tt1", "Dune", handoff={"position": 1234.5, "source": found[1].key,
+                                                           "audio": {"lang": "eng", "title": "Original"}, "subtitle": sub})
+    index, kw = played[-1]
+    assert index == 1 and kw["start_at"] == 1234.5  # la fuente del iPhone, en su segundo
+    assert kw["sub_pick"] == {**sub, "audio": {"lang": "eng", "title": "Original"}}
+    assert kw["prefs"].audio == "en" and kw["subtitles"] == "es"
+    watch.play_best("movie", "tt1", "tt1", "Dune", handoff={"position": 60, "source": "otra|x|0", "subtitle": {"off": True}})
+    index, kw = played[-1]
+    assert index == 0 and kw["subtitles"] == "" and kw["sub_pick"] == {"off": True}  # su fuente no está: la recomendada
+
+
+def test_the_iphone_request_carries_what_it_was_playing():
+    from orbital.api.media import PlayRequest
+    body = PlayRequest(kind="movie", id="tt1", position=90, source_key="Torrentio|abc|0",
+                       audio={"lang": "en", "title": "Main"}, subtitle={"lang": "es", "url": "file:///etc/passwd"})
+    handoff = body.handoff()
+    assert handoff is not None
+    assert handoff["position"] == 90 and handoff["source"] == "Torrentio|abc|0" and handoff["audio"] == {"lang": "en", "title": "Main"}
+    assert handoff["subtitle"]["url"] == ""  # solo direcciones web
+    assert PlayRequest(kind="movie", id="tt1").handoff() is None  # «Ver en la TV» de una ficha: como siempre
+
+
+def test_continue_on_iphone_sends_the_source_and_tracks(library, monkeypatch):
+    from orbital import companion
+    watch = library.watch
+    monkeypatch.setattr(watch, "title_details", lambda kind, meta_id: {"title": "Dune", "poster": None})
+    choice = {"source": "Torrentio|abc|0", "audio": {"lang": "eng", "title": ""}, "subtitle": {"off": True}}
+    item = companion.send_to_phone(watch, library.config, "open", "movie", "tt1", position=600, connected=lambda c: True,
+                                   choice=choice)
+    assert item["position"] == 600 and item["source"] == "Torrentio|abc|0"
+    assert item["audio"] == {"lang": "eng", "title": ""} and item["subtitle"] == {"off": True}

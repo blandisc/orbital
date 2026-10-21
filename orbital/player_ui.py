@@ -24,12 +24,9 @@ from __future__ import annotations
 
 import json
 import math
-import time
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-
-from .text import clock as time_of_day
 
 W, H = 1920, 1080  # coordenadas del lienzo: 1080 de alto y lo ancho que dé la pantalla (ver set_canvas)
 MARGIN = 96
@@ -370,7 +367,6 @@ class Hud:
     chapters: list[float] = field(default_factory=list)  # inicio de cada capítulo (s)
     chapter_titles: list[str] = field(default_factory=list)
     series: bool = False  # LT/RT cambian de episodio
-    ends: str = ""  # "23:40": a qué hora termina (como en las TV)
     now: str = ""  # la hora, arriba a la derecha
     facts: str = ""  # "2024 · ★ 8.5 · Ciencia ficción" (en pausa)
     description: str = ""  # sinopsis (en pausa)
@@ -419,9 +415,7 @@ def progress_bar(hud: Hud, y: float = BAR_Y) -> tuple[str, float | None]:
 
 def _times(hud: Hud, y: float) -> str:
     remaining = (hud.duration - hud.position) if hud.duration and hud.position is not None else None
-    right = f"−{clock(remaining)}" if remaining is not None else clock(hud.duration)
-    if hud.ends and not hud.seeking:
-        right += f"  ·  termina a las {hud.ends}"
+    right = f"−{clock(remaining)}" if remaining is not None else clock(hud.duration)  # solo lo que falta, sin «termina a las…»
     return "\n".join([text(MARGIN, y, clock(hud.position), 26, weight="semi"),
                       text(W - MARGIN, y, esc(right), 26, MUTED, align=9)])
 
@@ -1025,17 +1019,6 @@ def curtain_ass(opacity: float) -> str:
     """Un negro de pantalla completa con esa opacidad (1 = tapa todo, 0 = transparente): el fundido de entrada del video."""
     alpha = max(0, min(255, round((1 - opacity) * 255)))
     return f"{{\\an7\\pos(0,0)\\bord0\\shad0\\1c&H000000&\\1a&H{alpha:02X}&\\p1}}m 0 0 l {W} 0 {W} {H} 0 {H}{{\\p0}}"
-
-
-def ends_at(position: float | None, duration: float | None, now: float | None = None) -> str:
-    """«11:40 p. m.»: la hora a la que termina si sigues viendo de corrido."""
-    if not isinstance(duration, (int, float)) or not isinstance(position, (int, float)):
-        return ""
-    if not (math.isfinite(duration) and math.isfinite(position)):
-        return ""
-    if not duration or duration - position < 60 or duration - position > 86400 * 2:
-        return ""
-    return time_of_day((now if now is not None else time.time()) + duration - position)
 
 
 def seek_label(seconds: int) -> str:

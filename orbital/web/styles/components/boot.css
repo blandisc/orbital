@@ -1,0 +1,55 @@
+/* Boot: la pantalla de arranque (index.html, js/app/boot.js). Un planeta con su órbita sobre las estrellas;
+   al estar lista la biblioteca, la cámara se zambulle en el planeta y la interfaz aparece detrás. */
+#boot {
+  position: fixed; inset: 0; z-index: var(--z-boot); display: grid; place-items: center; overflow: hidden;
+  background: var(--gradient-boot); color: var(--color-text); font-family: var(--font-sans);
+}
+#boot .boot__stars {
+  position: absolute; inset: -20%; opacity: .55;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 22%, var(--color-star), transparent), radial-gradient(1px 1px at 72% 18%, var(--color-star), transparent),
+    radial-gradient(1px 1px at 33% 78%, var(--color-star), transparent), radial-gradient(1.5px 1.5px at 86% 64%, var(--color-star), transparent),
+    radial-gradient(1px 1px at 52% 46%, var(--color-star), transparent), radial-gradient(1px 1px at 8% 58%, var(--color-star), transparent);
+  background-size: 38vmin 38vmin;
+  animation: boot-drift var(--duration-boot-drift) linear infinite;
+}
+#boot .boot__system { position: relative; width: 34vmin; height: 34vmin; display: grid; place-items: center; }
+#boot .boot__planet {
+  width: 13vmin; height: 13vmin; border-radius: 50%;
+  background: var(--gradient-launch-planet);
+  box-shadow: 0 0 6vmin -1vmin color-mix(in oklab, var(--color-star) 35%, transparent);
+  animation: boot-rise var(--duration-land) var(--ease-out) both;
+}
+#boot .boot__orbit {
+  position: absolute; left: 50%; top: 50%; width: 30vmin; height: 10.5vmin; margin: -5.25vmin 0 0 -15vmin;
+  border-radius: 50%; border: .3vmin solid color-mix(in oklab, var(--color-text) 85%, transparent); transform: rotate(-24deg);
+  animation: boot-orbit-in var(--duration-launch-draw) var(--ease-out) var(--delay-2) both;
+}
+#boot .boot__orbit--front { clip-path: inset(50% 0 0 0); z-index: var(--z-above); }
+#boot .boot__satellite {
+  position: absolute; left: 0; top: 0; width: 1.6vmin; height: 1.6vmin; border-radius: 50%; background: var(--color-star);
+  box-shadow: 0 0 2vmin .4vmin color-mix(in oklab, var(--color-danger) 90%, transparent);
+  offset-path: ellipse(50% 50% at 50% 50%); offset-rotate: 0deg;
+  animation: boot-satellite var(--duration-launch-orbit) linear infinite;
+}
+#boot .boot__word {
+  position: absolute; bottom: 26vh; font-size: var(--type-title); font-weight: var(--weight-bold); letter-spacing: var(--tracking-wordmark); text-indent: var(--tracking-wordmark);
+  text-transform: lowercase; animation: boot-word var(--duration-launch-draw) var(--ease-out) var(--delay-3) both;
+}
+#boot .boot__status {
+  position: absolute; bottom: 20vh; color: var(--color-text-muted); font-size: var(--type-secondary); letter-spacing: var(--tracking-label);
+  opacity: 0; transition: opacity var(--duration-slow) var(--ease-out);
+}
+#boot .boot__status:not(:empty) { opacity: 1; }
+/* Salida: la cámara se zambulle en el planeta y la interfaz aparece detrás. */
+#boot.boot--leaving { animation: boot-fade var(--duration-launch-reveal) var(--ease-in) var(--delay-2) forwards; }
+#boot.boot--leaving .boot__system { animation: boot-dive var(--duration-land) var(--ease-launch) forwards; }
+#boot.boot--leaving .boot__word, #boot.boot--leaving .boot__status { animation: boot-out var(--duration-slow) var(--ease-out) forwards; }
+@keyframes boot-drift { to { transform: translate(-38vmin, -19vmin); } }
+@keyframes boot-rise { from { opacity: 0; transform: scale(.6); } }
+@keyframes boot-orbit-in { from { opacity: 0; transform: rotate(-24deg) scale(.4); } }
+@keyframes boot-satellite { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+@keyframes boot-word { from { opacity: 0; letter-spacing: calc(var(--tracking-wordmark) * 2.5); } }
+@keyframes boot-out { to { opacity: 0; transform: translateY(1vh); } }
+@keyframes boot-dive { to { transform: scale(9); opacity: 0; } }
+@keyframes boot-fade { to { opacity: 0; visibility: hidden; } }

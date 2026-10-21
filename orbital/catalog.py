@@ -477,7 +477,7 @@ class Catalog:
         if new:
             names = ", ".join(i.title for i in new[:3]) + (f" y {len(new) - 3} más" if len(new) > 3 else "")
             log.info("Juegos nuevos: %s", names)
-            self.notify({"type": "toast", "message": f"Nuevo en tu biblioteca: {names}"})
+            self.notify({"type": "toast", "tone": "success", "message": "Nuevo en tu biblioteca", "detail": names})
         return new
 
     def scrape_art(self, background: bool = False) -> int:

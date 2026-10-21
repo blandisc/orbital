@@ -32,7 +32,33 @@ from .models import LibraryItem
 log = logging.getLogger(__name__)
 
 APP_EXE = "GeForceNOW.exe"
+# Lo que lanzaban los accesos directos viejos. En la app de ahora (2.0.89) ya no hace nada: se cierra en 0,1 s sin abrir el
+# juego (medido 2026-10-20). Quien entiende --url-route es la app misma, y si ya está abierta, cambia su ventana al juego.
 STREAMER_EXE = "GeForceNOWStreamer.exe"
+APP_TITLE = "GeForce NOW"  # la ventana de la app en su biblioteca; con un juego: «STAR WARS™ Battlefront II on GeForce NOW»
+
+
+def in_game_title(title: str) -> bool:
+    """¿El título de la ventana de la app es el de un juego en la nube (no su biblioteca ni una ventana sin título)?"""
+    return bool(title) and title.strip() != APP_TITLE and APP_TITLE in title
+
+
+def close_app() -> None:
+    """Cierra la app (y su contenedor) al terminar el juego: se quedaba abierta en su biblioteca detrás de Orbital, gastando
+    memoria y CPU. La sesión en la nube ya terminó; la próxima vez la app abre de cero (~6 s hasta el juego)."""
+    import subprocess
+
+    for exe in (APP_EXE, "GeForceNOWContainer.exe"):
+        subprocess.run(["taskkill", "/IM", exe, "/T", "/F"], capture_output=True,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    log.info("GeForce NOW cerrado al terminar el juego")
+
+
+def in_session() -> bool:
+    """¿Hay un juego abierto en la app? Al salir del juego la app vuelve a su biblioteca y sigue abierta: lo que cuenta es
+    el título de su ventana, no que el programa siga."""
+    from .. import windows
+    return any(in_game_title(windows.title(h)) for h in windows.windows_of(windows.pids_by_exe(APP_EXE)))
 STEAM_SEARCH = "https://store.steampowered.com/api/storesearch/?term={term}&l=english&cc=US"
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{name}"
 
@@ -221,10 +247,16 @@ def read_library_cache(folder: Path | None = None) -> list[dict]:
     return []
 
 
-def library_argv(streamer: str, game: dict) -> list[str]:
-    """Lo mismo que lanza un acceso directo de GFN para ese juego."""
+def library_argv(app: str, game: dict) -> list[str]:
+    """Lo que abre ese juego en la nube: la app con su ruta (la del acceso directo de GFN)."""
     route = f"#?cmsId={game['cms_id']}&launchSource=External&shortName={game['short_name']}&parentGameId="
-    return [streamer, f"--url-route={route}"]
+    return [app, f"--url-route={route}"]
+
+
+def _app_target(target: str) -> str:
+    """Un acceso directo viejo apunta al Streamer, que ya no abre nada: el de la app, en la misma carpeta."""
+    path = Path(target)
+    return str(path.with_name(APP_EXE)) if path.name.lower() == STREAMER_EXE.lower() else target
 
 
 class SteamArt:
@@ -300,7 +332,7 @@ def items(art: SteamArt | None = None, cloud: list[tuple[str, dict]] | None = No
     found: dict[str, LibraryItem] = {}
     for sc in read_shortcuts():
         title = clean_title(sc["title"])
-        found[sc["cms_id"]] = _item(art, sc["cms_id"], title, [sc["target"], *_split_args(sc["arguments"])])
+        found[sc["cms_id"]] = _item(art, sc["cms_id"], title, [_app_target(sc["target"]), *_split_args(sc["arguments"])])
     folder = install_dir()
     if folder is not None:
         library = read_library_cache()
@@ -310,14 +342,14 @@ def items(art: SteamArt | None = None, cloud: list[tuple[str, dict]] | None = No
         for game in library:
             if game["cms_id"] not in found:
                 found[game["cms_id"]] = _item(art, game["cms_id"], game["title"],
-                                              library_argv(str(folder / STREAMER_EXE), game), game)
+                                              library_argv(str(folder / APP_EXE), game), game)
         titles = {i.title.lower() for i in found.values()}
         appids = {i.steam_appid for i in found.values() if i.steam_appid}
         for appid, game in cloud or []:
             if game["cms_id"] in found or int(appid) in appids or game["title"].lower() in titles:
                 continue  # ya estaba en tu biblioteca de GeForce NOW
             found[game["cms_id"]] = _item(art, game["cms_id"], game["title"],
-                                          library_argv(str(folder / STREAMER_EXE), {**game, "short_name": ""}),
+                                          library_argv(str(folder / APP_EXE), {**game, "short_name": ""}),
                                           {"store": "Steam"}, appid=int(appid))
     if hasattr(art, "save"):
         art.save()

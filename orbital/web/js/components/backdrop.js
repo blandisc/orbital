@@ -58,7 +58,7 @@ export function createBackdrop({ settle = 150 } = {}) {
   // enfocado que respira y se acerca a donde está el foco. Solo transformaciones (las mueve la
   // tarjeta gráfica sin repintar); «Reducir movimiento» las detiene.
   const space = h("div", { class: "backdrop__space" },
-    h("div", { class: "backdrop__aurora" }, h("span", { class: "backdrop__glow backdrop__glow--follow" }), h("span", { class: "backdrop__glow backdrop__glow--drift" })),
+    h("div", {}, h("span", { class: "backdrop__glow backdrop__glow--follow" }), h("span", { class: "backdrop__glow backdrop__glow--drift" })),
     h("div", { class: "backdrop__stars backdrop__stars--far" }), h("div", { class: "backdrop__stars backdrop__stars--near" }));
   const el = h("div", { class: "backdrop", "aria-hidden": "true" }, space, ...layers.map((l) => l.el), h("div", { class: "backdrop__scrim" }));
   let front = 0;

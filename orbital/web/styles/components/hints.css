@@ -2,19 +2,20 @@
    Solo el ícono del botón y su acción: sin cápsulas ni fondos. El último («Menú») va a la derecha. */
 .hints {
   display: flex; align-items: center; gap: var(--space-8);
-  min-height: 3.6rem; padding: 0 var(--page-gutter) calc(var(--space-2) + var(--safe-y));
-  color: var(--color-text-muted); font-size: var(--text-sm); line-height: 1;
+  min-height: var(--menu-row-height); padding: 0 var(--page-gutter) calc(var(--space-2) + var(--safe-y));
+  color: var(--color-text-muted); font-size: var(--type-secondary); line-height: var(--leading-none);
   position: relative; z-index: var(--z-hints);
 }
 .hints__item { display: inline-flex; align-items: center; gap: .6rem; white-space: nowrap; animation: fade-in var(--duration-base) var(--ease-out); }
-.hints__item .glyph + .glyph { margin-left: -.25rem; } /* «LB RB»: un par, juntos */
+.hints__item .glyph + .glyph { margin-left: calc(-1 * var(--space-1)); } /* «LB RB»: un par, juntos */
 .hints__item .key-hint__label { padding-top: .05em; } /* alineado al centro óptico del ícono */
 .hints__item--end { margin-left: auto; }
 /* Respaldo táctil: cada glifo (o el letrero entero, si es uno solo) se toca y hace lo mismo que la tecla. */
 .hints__press { cursor: pointer; border-radius: var(--radius-sm); transition: color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out); }
 .hints__press:hover { color: var(--color-text); }
-.hints__press:active { transform: scale(.94); }
+.hints__press:active { transform: scale(var(--press-scale)); }
 @media (max-width: 1000px) {
   .hints { gap: var(--space-5); overflow: hidden; }
   .hints__item--secondary { display: none; }
 }
+[data-input="touch"] .hints { visibility: hidden; } /* con el dedo no hay pie de controles */

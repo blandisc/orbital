@@ -22,17 +22,17 @@
 .card__image--loaded { opacity: 1; }
 .card__image--instant { transition: none; }
 .card__placeholder { position: absolute; inset: 0 0 30% 0; display: grid; place-items: center; }
-.card__placeholder svg { width: 42%; height: auto; fill: none; stroke: var(--color-text-muted); stroke-width: 2; stroke-linejoin: round; opacity: .55; }
+.card__placeholder svg { width: 42%; height: auto; fill: none; stroke: var(--color-text-muted); stroke-width: var(--stroke-regular); stroke-linejoin: round; opacity: .55; }
 .card__badge {
   position: absolute; top: var(--inset-poster); right: var(--inset-poster); z-index: var(--z-raised);
   display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%;
   background: var(--color-badge-bg); color: var(--color-favorite);
   box-shadow: var(--shadow-badge);
 }
-.card__badge .icon { width: .85rem; height: .85rem;
+.card__badge .icon { width: var(--icon-xs); height: var(--icon-xs);
 }
 .card__badge--owned { color: var(--color-text); }
-.card__badge--owned .icon { stroke-width: 2.5; }
+.card__badge--owned .icon { stroke-width: var(--stroke-bold); }
 .card__badge--pop { animation: badge-pop var(--duration-enter) var(--ease-spring); }
 @keyframes badge-pop { from { transform: scale(0) rotate(-40deg); } 60% { transform: scale(1.35); } }
 /* Puesto del Top 10 (Netflix, lo más visto de una plataforma): la esquina opuesta a card__badge, con
@@ -40,7 +40,7 @@
 /* El sube y baja del Top 10, debajo del puesto. Sin verde: el teal es solo «En vivo»; abajo, tenue. */
 .card__trend.badge {
   position: absolute; top: calc(var(--inset-poster) + 2.4rem); left: var(--inset-poster); z-index: var(--z-raised);
-  background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge); font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums;
 }
 .card__trend--down.badge { color: var(--color-text-muted); }
 .card__trend--new.badge { font-weight: var(--weight-bold); }
@@ -50,19 +50,18 @@
 .card-ranked__number {
   flex: none; margin-right: calc(-1 * var(--space-6)); margin-bottom: calc(-.12 * var(--card-height));
   color: var(--color-decorative); font-family: var(--font-sans); font-size: calc(var(--card-height) * .82); font-weight: var(--weight-bold);
-  line-height: 1; letter-spacing: var(--tracking-rank); font-variant-numeric: tabular-nums; user-select: none; pointer-events: none;
+  line-height: var(--leading-none); letter-spacing: var(--tracking-rank); font-variant-numeric: tabular-nums; user-select: none; pointer-events: none;
 }
 .card-ranked .card__trend.badge { top: var(--inset-poster); }
 /* El Top 10 de una plataforma: la cifra en su color (como en la app de cada una), un poco apagada para no gritar. */
-.card-ranked--netflix .card-ranked__number { color: color-mix(in oklab, var(--brand-netflix) 85%, transparent); }
-.card-ranked--prime .card-ranked__number { color: color-mix(in oklab, var(--brand-prime) 85%, transparent); }
-.card-ranked--disney .card-ranked__number { color: color-mix(in oklab, var(--brand-disney) 90%, transparent); }
-.card-ranked--hbo .card-ranked__number { color: color-mix(in oklab, var(--brand-hbo) 90%, transparent); }
-.card-ranked--paramount .card-ranked__number { color: color-mix(in oklab, var(--brand-paramount) 90%, transparent); }
-.card-ranked--appletv .card-ranked__number { color: var(--brand-appletv); }
+.card-ranked--netflix .card-ranked__number { color: color-mix(in oklab, var(--platform-netflix) 85%, transparent); }
+.card-ranked--prime .card-ranked__number { color: color-mix(in oklab, var(--platform-prime) 85%, transparent); }
+.card-ranked--disney .card-ranked__number { color: color-mix(in oklab, var(--platform-disney) 90%, transparent); }
+.card-ranked--hbo .card-ranked__number { color: color-mix(in oklab, var(--platform-hbo) 90%, transparent); }
+.card-ranked--paramount .card-ranked__number { color: color-mix(in oklab, var(--platform-paramount) 90%, transparent); }
+.card-ranked--appletv .card-ranked__number { color: var(--platform-other); }
 .card__rank.badge {
   position: absolute; top: var(--inset-poster); left: var(--inset-poster); z-index: var(--z-raised);
-  background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge);
   font-variant-numeric: tabular-nums;
 }
 /* "Jugado recientemente": hace cuánto, como pie debajo de la portada (encima taparía la
@@ -75,7 +74,7 @@
 /* Pie con título y tipo (búsqueda): dos líneas, recortadas al ancho de la portada. */
 .card__caption {
   position: absolute; left: 0; right: 0; top: calc(100% + .55rem);
-  display: flex; flex-direction: column; gap: .1rem; font-size: var(--text-xs); line-height: 1.3;
+  display: flex; flex-direction: column; gap: .1rem; font-size: var(--caption-size, var(--type-footnote)); line-height: var(--leading-normal);
 }
 .card__caption strong { overflow: hidden; color: var(--color-text); font-weight: var(--weight-medium); text-overflow: ellipsis; white-space: nowrap; }
 .card__caption span { color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -105,11 +104,10 @@
 }
 .card__stand-in-photo { width: 88%; max-height: 50%; object-fit: contain; filter: var(--shadow-drop-lg); }
 .card--stand-in .card__subtitle { display: none; } /* la consola ya la dice la foto */
-.card--stand-in .card__title { font-family: var(--font-sans); font-size: var(--text-md); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); }
+.card--stand-in .card__title { font-family: var(--font-sans); font-size: min(var(--type-body), calc(var(--card-height) * .115)); /* la portada chica (Buscar) no parte palabras */ font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); }
 .card__title {
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-  font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2; overflow-wrap: break-word; hyphens: auto;
-}
+  font-size: var(--type-secondary); font-weight: var(--weight-medium); line-height: var(--leading-title); overflow-wrap: break-word; hyphens: auto; }
 .card__subtitle { color: var(--color-text-muted); font-size: var(--type-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
 /* Foco: el juego salta (resorte con rebote), se eleva un poco y proyecta un brillo de su propio
    color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
@@ -123,18 +121,20 @@
 }
 /* Jerarquía en la fila actual: las vecinas bajan un poco el brillo para que el foco mande. */
 /* Con opacidad (la compone la GPU) en vez de filter en cada vecina, que se repintaba al moverse. */
-.shelf__row--current .card:not(.card--focused) { opacity: .74; }
-.card--dimmed { opacity: .4; filter: saturate(.6); }
+.shelf__row--current .card:not(.card--focused) { opacity: var(--opacity-near); }
+.card--dimmed { opacity: var(--opacity-off); filter: saturate(.6); }
 /* Progreso de lo que estás viendo (Stremio): sobre un degradado para que se lea en cualquier póster. */
 .card--has-progress::before {
   content: ""; position: absolute; inset: auto 0 0 0; height: 30%; pointer-events: none; border-radius: 0 0 var(--card-radius) var(--card-radius);
   background: var(--gradient-art-base);
 }
-.card__progress {
-  position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
-  height: var(--progress-height); border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden;
-}
-.card__progress-fill { display: block; height: 100%; border-radius: inherit; background: var(--color-progress); }
+/* CardGrid: la cuadrícula de portadas (Juegos, una lista abierta). Todas con la misma forma (--grid-ratio, .667 si no se dice) y la
+   enfocada crece hacia arriba; en la primera y la última columna, hacia adentro: no se sale del margen (markGridEdge). */
+.card-grid .card { --ratio: var(--grid-ratio, .667) !important; }
+.card-grid .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: var(--z-raised); }
+.card-grid .card--focused[data-edge="start"] { transform-origin: left bottom; }
+.card-grid .card--focused[data-edge="end"] { transform-origin: right bottom; }
+.card__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); --progress-width: auto; } /* auto: el ancho lo dan left y right */
 .card--has-progress:not(.card--has-art) .card__meta { padding-bottom: calc(var(--space-3) + var(--progress-height) + var(--space-1)); }
 
 /* Abierto ahora: píldora arriba a la izquierda, con el punto vivo de la barra de estado. */
@@ -142,7 +142,7 @@
   position: absolute; left: var(--inset-poster); top: var(--inset-poster); z-index: var(--z-above);
   display: inline-flex; align-items: center; gap: .35rem; padding: .15rem .55rem .15rem .45rem;
   border-radius: var(--radius-pill); background: var(--color-badge-bg); color: var(--color-text);
-  font-size: var(--text-2xs); font-weight: var(--weight-bold); letter-spacing: var(--tracking-label);
+  font-size: var(--type-caption); font-weight: var(--weight-bold); letter-spacing: var(--tracking-label);
 }
 .card__live-dot { width: .45rem; height: .45rem; border-radius: 50%; background: var(--color-live); }
 
@@ -162,7 +162,7 @@
 /* El nombre sobre el arte (Por género), abajo a la izquierda con el margen del póster; el arte ya es oscuro abajo. */
 .card__label { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
   font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
-  line-height: 1.15; text-shadow: var(--shadow-text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .1em; }
+  line-height: var(--leading-title); text-shadow: var(--shadow-text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .1em; }
 
 /* «Porque viste»: el título del que salen las sugerencias de abajo, con un aro del acento (como el iPhone) mientras
    el foco está en otra parte. */

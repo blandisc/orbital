@@ -131,6 +131,28 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertTrue(old.inbox.isEmpty)
     }
 
+    func testContinueOnIPhoneBringsTheSourceAndTracksOfTheTV() async throws {
+        let http = FakeHTTP()
+        http.json["https://tv.example/api/companion/now"] = .object(["playing": .null, "inbox": .array([
+            .object(["id": "c3", "kind": "movie", "meta_id": "tt9", "video_id": "tt9", "title": "Dune", "action": "open",
+                     "at": .int(1_760_000_000), "position": .double(845.4), "source": "Torrentio|abc|0",
+                     "audio": .object(["lang": "eng", "title": ""]),
+                     "subtitle": .object(["off": false, "lang": "spa", "title": "Latino", "url": "https://subs/x.srt"])]),
+        ])])
+        let item = try XCTUnwrap(try await OrbitalRemote(http: http, address: "tv.example", token: "x").snapshot().inbox.first)
+        XCTAssertEqual(item.choice?.videoID, "tt9")
+        XCTAssertEqual(item.choice?.source, "Torrentio|abc|0", "la misma huella de fuente que el iPhone")
+        XCTAssertEqual(item.choice?.audio, ResumeChoice.Track(language: "eng"))
+        XCTAssertEqual(item.choice?.subtitle, ResumeChoice.Track(language: "spa", title: "Latino", url: "https://subs/x.srt"))
+    }
+
+    func testSendingToTheTVCarriesTheSecondSourceAndTracks() throws {
+        let track = ResumeChoice.Track(off: false, language: "es", title: "Forzados", url: nil)
+        XCTAssertEqual(track.json, .object(["off": .bool(false), "lang": "es", "title": "Forzados", "url": ""]))
+        XCTAssertEqual(ResumeChoice.Track.parse(track.json), ResumeChoice.Track(language: "es", title: "Forzados"))
+        XCTAssertNil(ResumeChoice.Track.parse(.null))
+    }
+
     func testNowBringsTheRunningGameAndTheConsoleState() async throws {
         let http = FakeHTTP()
         http.json["https://tv.example/api/companion/now"] = .object(["playing": .null, "inbox": .array([]), "game": .object([

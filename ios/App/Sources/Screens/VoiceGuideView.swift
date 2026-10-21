@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 /// «Lo que puedes decir» (Ajustes › Voz, y el «?» junto al micrófono del control): dónde hablarle a tu Orbital (el
-/// micrófono del control, Siri, Alexa), lo que solo hace el iPhone, todas las frases que entiende tu consola por tema y qué
+/// micrófono del control, Siri, Alexa), cómo pedirlo, lo que solo hace el iPhone, todas las frases que entiende tu consola por tema y qué
 /// hacer si no funciona. Las frases de la consola son las mismas para los tres (`voice.py`), así que la lista es la de
 /// Alexa (alexa/commands.json, copiada en Resources/AlexaCommands.json): una prueba de Orbital comprueba que cada frase llega
 /// de verdad a un comando. Las frases van en español (la consola habla español).
@@ -22,19 +22,25 @@ struct VoiceGuideView: View {
                             WhereCard(symbol: "mic.fill", tint: DS.ListTint.spark, title: Text("En el control"), starter: "pon The Office",
                                       detail: Text("Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas."))
                             WhereCard(symbol: "waveform", tint: DS.ListTint.bookmark, title: Text("Con Siri"), starter: "Oye Siri, habla con Orbital",
-                                      detail: Text("Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital»."))
+                                      detail: Text("Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital» o «Oye Siri, prende Orbital»."))
                             WhereCard(symbol: "homepod.fill", tint: DS.ListTint.library, title: Text("Con Alexa"), starter: "Alexa, pídele a Orbital que…",
                                       detail: Text("Sin «pídele a Orbital», Alexa intenta hacerlo ella sola."))
                         }
                         // Los temas, para saltar sin bajar todo.
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: DS.Space.s2) {
+                                topicChip("Cómo pedirlo", id: "how", proxy: proxy)
                                 topicChip("Solo en el iPhone", id: "phone", proxy: proxy)
                                 ForEach(guide.groups) { g in topicChip(g.title, id: g.id, proxy: proxy, verbatim: true) }
                                 topicChip("Si no funciona", id: "help", proxy: proxy)
                             }
                         }
                         .padding(.horizontal, -DS.Space.gutter).contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+                        // Cómo decirlo: empezar con Alexa, la rutina para prender todo, y que se puede hablar con naturalidad.
+                        topic(Text("Cómo pedirlo"), meta: Text("No hace falta decirlo exacto.")) {
+                            ForEach(guide.how) { PhraseRow(say: $0.say, note: Text(verbatim: $0.note)) }
+                        }
+                        .id("how")
                         topic(Text("Solo en el iPhone"), meta: Text("Descargar funciona aunque estés fuera de casa.")) {
                             ForEach(Self.phoneOnly, id: \.say) { PhraseRow(say: $0.say, note: $0.note) }
                         }

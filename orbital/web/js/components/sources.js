@@ -23,9 +23,9 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   const status = h("div", { class: "sources__status", role: "status" });
   const retry = h("div", { class: "sources__retry", hidden: true },
     Button({ label: "Reintentar", variant: "primary", onPress: () => request && open(request) }));
-  const panel = h("div", { class: "sources__panel" },
+  const panel = h("div", { class: ["side-panel__panel", "sources__panel"] },
     h("div", { class: "sources__head" }, heading, title, subtitle), status, retry, list);
-  const el = h("section", { class: "sources", hidden: true, "aria-label": "Fuentes",
+  const el = h("section", { class: ["side-panel", "sources"], hidden: true, "aria-label": "Fuentes",
     onClick: (e) => e.target === el && close() }, panel);
 
   let request = null; // { kind, id, video_id, title, item }
@@ -138,12 +138,12 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   function close() {
     if (el.hidden) return;
     token++;
-    cancelExit = hideAfterExit(el, "sources--leaving", 300);
+    cancelExit = hideAfterExit(el, "side-panel--leaving", 300);
     onClose?.();
   }
 
   function handle(action) {
-    if (el.hidden || el.classList.contains("sources--leaving")) return false;
+    if (el.hidden || el.classList.contains("side-panel--leaving")) return false;
     if (action === "menu") return false; // ☰ abre el menú desde cualquier pantalla
     if (action === "back" || action === "options") close();
     else if (action === "up") setIndex(index - 1);
@@ -169,5 +169,5 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       found.length > 7 && { glyph: g.page, label: "Saltar 5", secondary: true, offscreen: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 
-  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("sources--leaving"); } };
+  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("side-panel--leaving"); } };
 }

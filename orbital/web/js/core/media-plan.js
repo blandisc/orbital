@@ -121,11 +121,12 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
     const related = itemsOf(itemsById, { ...because, id: listId }, filter).filter((i) => i.meta_id !== s.meta_id);
     const thumbs = (seeds.length ? seeds : [s]).map((x) => ({
       ...curatedItem({ meta_id: x.meta_id, kind: x.kind, title: x.title, image: x.image, why: "Viste hace poco",
-        hero: `https://images.metahub.space/background/medium/${x.meta_id}/img` }),
+        hero: `https://images.metahub.space/background/medium/${x.meta_id}/img`,
+        logo: `https://images.metahub.space/logo/medium/${x.meta_id}/img` }), // con su logo, como las demás: sin él el héroe ponía el título en texto plano
       id: `seed:${x.meta_id}`, seed: x.meta_id, chosen: x.meta_id === s.meta_id }));
     if (related.length || thumbs.length > 1) {
       rows.push({ id: "curated:because", title: `Porque viste ${s.title}`, seal: "trakt", group: "because",
-        stage: { title: s.title, kind: s.kind, image: `https://images.metahub.space/background/medium/${s.meta_id}/img`, seeds: thumbs.length },
+        stage: { title: s.title, kind: s.kind, meta_id: s.meta_id, image: `https://images.metahub.space/background/medium/${s.meta_id}/img`, seeds: thumbs.length },
         items: [...thumbs, ...related.slice(0, 15).map(curatedItem)] });
     }
   }
@@ -180,6 +181,29 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
 }
 
 /** El primer renglón del grupo anterior / siguiente (LT/RT); null si no hay. */
+/**
+ * «Porque viste» en escenario (una fila: tus últimos títulos a la izquierda y lo sugerido a la derecha). Dónde estás: «seeds»
+ * (en tus títulos), «related» (en lo sugerido) o null (otra fila).
+ */
+export function stageSide(row, c) {
+  const seeds = row?.stage?.seeds ?? 0;
+  if (!seeds || row.items.length <= seeds) return null;
+  return c < seeds ? "seeds" : "related";
+}
+
+/**
+ * LT/RT dentro de «Porque viste»: RT salta de tus títulos a lo sugerido y LT regresa al título elegido. Devuelve la columna a la
+ * que se salta, o null si ya estás del lado al que apunta el botón (entonces toca pasar de grupo, como en las demás filas).
+ */
+export function stageJump(row, c, step) {
+  const side = stageSide(row, c);
+  if (!side) return null;
+  if (step > 0) return side === "seeds" ? row.stage.seeds : null;
+  if (side === "seeds") return null;
+  const chosen = row.items.findIndex((item, n) => n < row.stage.seeds && item.chosen);
+  return chosen >= 0 ? chosen : 0;
+}
+
 export function groupJump(rows, r, step) {
   const groupAt = (i) => rows[i]?.group ?? rows[i]?.id;
   const here = groupAt(r);

@@ -225,6 +225,38 @@ def alexa_command(args, config) -> int:
     return 0 if ok else 1
 
 
+def tv_command(args, config) -> int:
+    """La tele: setup la encuentra y la guarda en config.yaml; on la prende en la entrada de Orbital."""
+    from . import roku
+
+    if args.action == "on":
+        if not config.tv.host:
+            print("!! Todavía no sé cuál es la tele. Corre primero: orbital tv setup")
+            return 1
+        ok = roku.RokuTv(config.tv).turn_on()
+        print(f"Tele prendida en {config.tv.input}" if ok else "!! La tele no respondió (mira orbital.log)")
+        return 0 if ok else 1
+    print("Buscando teles Roku en la red...")
+    found = []
+    for each in roku.discover():
+        try:
+            found.append(roku.describe(each))
+        except (OSError, SyntaxError) as exc:  # SyntaxError: lo que lanza ElementTree con XML dañado
+            print(f"  !! {each.host}: {exc}")
+    for each in found:
+        print(f"  {each.name} ({each.host}): {'prendida' if each.power == 'PowerOn' else 'apagada'}"
+              + (f", en {each.input}" if each.input else ""))
+    # La de Orbital es la que estás viendo: prendida y en una entrada HDMI (no en una app de Roku).
+    showing = [f for f in found if f.power == "PowerOn" and f.input]
+    if len(showing) != 1:
+        print("!! Prende solo la tele donde se ve Orbital, ponla en su entrada y vuelve a correr este comando.")
+        return 1
+    tv = showing[0]
+    roku.save(config.source or default_config_path(), tv)
+    print(f"\nListo: {tv.name}, entrada {tv.input}. Reinicia Orbital y di «Alexa, abre Orbital».")
+    return 0
+
+
 def serve(config, app, public_app) -> None:
     """Interfaz/API en server.port y, si está activo, el puerto de Alexa en server.public_port."""
     import asyncio
@@ -263,7 +295,7 @@ def main(argv: list[str] | None = None) -> None:
     from . import supervisor
 
     raw_argv = list(sys.argv[1:] if argv is None else argv)
-    serving = not any(a in raw_argv for a in ("stremio", "alexa", "--list", "-h", "--help"))
+    serving = not any(a in raw_argv for a in ("stremio", "alexa", "tv", "--list", "-h", "--help"))
     supervising = serving and not supervisor.is_child() and os.environ.get("ORBITAL_NO_SUPERVISOR") != "1"
     # El vigilante escribe en su propio archivo: el Orbital de verdad rota orbital.log al arrancar.
     log_path = ensure_streams("vigilante.log" if supervising else "orbital.log")
@@ -286,6 +318,9 @@ def main(argv: list[str] | None = None) -> None:
     al.add_argument("text", nargs="?", default="qué está abierto", help="el comando para 'say'")
     al.add_argument("--url", help="dirección pública del túnel (si no se detecta Tailscale)")
     al.add_argument("--skill-id", help="ID de tu skill (amzn1.ask.skill…): la skill rechaza peticiones de otras")
+    tv = sub.add_parser("tv", help="La tele (Roku TV) que prende «Alexa, abre Orbital»")
+    tv.add_argument("action", choices=["setup", "on"],
+                    help="setup: busca la tele donde se ve Orbital y la guarda · on: la prende en la entrada de Orbital")
     args = parser.parse_args(argv)
     if args.command == "stremio" and args.action == "key" and not args.value:
         parser.error("falta la clave: orbital stremio key <clave>")
@@ -309,6 +344,8 @@ def main(argv: list[str] | None = None) -> None:
         except (ValueError, OSError) as exc:  # config.yaml dañado o sin permiso: un mensaje, no un traceback
             print(f"!! {exc}")
             raise SystemExit(1) from exc
+    if args.command == "tv":
+        raise SystemExit(tv_command(args, config))
     if config.server.token_is_ephemeral:
         log.warning("No hay token en config.yaml: Alexa no podrá conectarse. Ejecuta: orbital alexa setup")
 
@@ -349,6 +386,9 @@ def main(argv: list[str] | None = None) -> None:
 
         from . import windows
         atexit.register(windows.set_taskbar_visible, True)  # al cerrar Orbital (de cualquier forma limpia), la barra vuelve
+    from . import net, startup_profile
+    net.share_tls()  # un contexto TLS para todas las conexiones (armarlo cuesta ≈100 ms de CPU cada vez)
+    startup_profile.start()  # qué ocupa al servidor los primeros 90 s (arranque.log)
     app = create_app(config, kiosk=kiosk, shortcuts=True, log_path=log_path)
     holder["app"] = app
     public_app = create_public_app(config, app) if config.server.public_port else None

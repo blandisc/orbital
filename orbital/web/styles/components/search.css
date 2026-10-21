@@ -1,16 +1,12 @@
-/* Search: buscar películas y series con el mando (resultados vivos + teclado alfabético). */
+/* Search: buscar películas y series con el mando (resultados vivos + teclado alfabético). El marco es .screen. */
 .search {
-  position: fixed; inset: 0; z-index: var(--z-overlay);
   /* La enfocada crece (scale) hacia arriba y a los lados: los resultados y cada grupo le dejan ese lugar. */
   --focus-grow: calc(var(--card-height) * (var(--card-focus-scale) - 1));
   /* minmax(0, 1fr): una búsqueda larga no ensancha la cuadrícula (el teclado se salía de la pantalla). */
   display: grid; grid-template-rows: auto auto 1fr; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); overflow: hidden;
   /* Portadas y teclas un poco más compactas que en el resto: resultados + teclado + pie caben siempre
      en la pantalla (antes el teclado bajaba hasta las pistas del pie). */
-  --card-height: min(13rem, 18.5vh); --key-height: min(2.85rem, 5.3vh); /* pósters más grandes (antes 10.6rem / 17vh) */
-  padding: calc(var(--space-10) + var(--safe-y)) var(--page-gutter) calc(3.4rem + var(--space-4) + var(--safe-y)); /* libre el carril del pie */
-  background: var(--color-tinted-bg);
-  animation: fade-in var(--duration-slow) var(--ease-out);
+  --card-height: min(13rem, 17vh); --key-height: min(2.85rem, 4.9vh); /* resultados + teclado caben a 1080 y a 800 de alto (con 18.5vh / 5.3vh el pie de los resultados quedaba bajo las teclas) */
 }
 /* Letra más grande = pies de resultado más altos: la portada cede para que el teclado no los tape. */
 [data-text-size="large"] .search, [data-text-size="xlarge"] .search {
@@ -18,16 +14,15 @@
   padding-top: calc(var(--space-6) + var(--safe-y));
 }
 [data-text-size="xlarge"] .search__results { padding-bottom: 5.6rem; } /* el pie de la enfocada, más alto */
-.search--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
 
 .search__top { min-width: 0; display: flex; align-items: baseline; gap: var(--space-6); }
 .search__field {
   display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 0;
   padding-bottom: var(--space-3); border-bottom: 2px solid var(--color-hairline);
-  font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
+  font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
   transition: border-color var(--duration-base) var(--ease-out);
 }
-.search__field .icon { width: 1.8rem; height: 1.8rem; color: var(--color-text-muted); flex: none; }
+.search__field .icon { width: var(--icon-xl); height: var(--icon-xl); color: var(--color-text-muted); flex: none; }
 /* Larga: se ve el final, lo que estás escribiendo (search.js la desplaza al final). */
 .search__query { min-width: 0; white-space: pre; overflow: hidden; }
 /* Vacío: el texto de ayuda empieza justo donde está el cursor (como un campo de iOS): antes empezaba un poco a la derecha y lo
@@ -39,9 +34,9 @@
 .search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(2px - var(--space-3)); border-radius: 2px; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
 /* Dictando: la línea respira con el acento del juego. */
-.search__field--listening { border-color: var(--color-accent); animation: listening var(--duration-breathe) ease-in-out infinite; }
+.search__field--listening { border-color: var(--color-accent); animation: listening var(--duration-breathe) var(--ease-float) infinite; }
 @keyframes listening { 50% { border-color: transparent; } }
-.search__hint { flex: 0 1 36%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-muted); font-size: var(--text-sm); }
+.search__hint { flex: 0 1 36%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-muted); font-size: var(--type-secondary); }
 
 /* Resultados: la misma tarjeta que en el inicio, en una fila con desplazamiento. */
 .search__results {
@@ -52,41 +47,32 @@
   margin: 0 calc(-1 * var(--space-2)); scroll-padding-inline: calc(var(--focus-grow) / 2 + var(--space-2));
   overflow-x: auto; scrollbar-width: none;
 }
-/* La enfocada enseña el título completo (dos líneas): «Harry Potter and the Deat…» ×2 no se distinguían. */
-.search .card--focused:not(.card--no-art, .card--named) .card__caption strong { display: -webkit-box; white-space: normal; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* Todas enseñan el título en dos líneas (antes solo la enfocada: «Hollow Kni…» sobraba lugar): «Harry Potter and the Deat…» ×2 no se distinguían. */
+.search .card:not(.card--no-art, .card--named) .card__caption strong { display: -webkit-box; white-space: normal; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va. */
 .search .keyboard { align-self: end; justify-self: center; min-height: 0; }
 /* Con el dedo: sin pie de controles, el teclado ocupa ese lugar y todo el ancho, con teclas que se aciertan sin mirar. */
 [data-input="touch"] .search { padding-bottom: calc(var(--space-4) + var(--safe-y)); --key-height: min(3.5rem, 6.4vh); --card-height: min(11rem, 15vh); } /* teclas más altas: la portada cede (si no, el teclado tapaba el pie del resultado) */
 [data-input="touch"] .search .keyboard { width: min(72rem, 100%); }
-[data-input="touch"] .search .keyboard__key { font-size: var(--text-xl); }
+[data-input="touch"] .search .keyboard__key { font-size: var(--type-heading); }
 
 /* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
 /* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */
 .search__set { flex: none; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow)); }
 .search__set-cards { display: flex; align-items: flex-end; gap: var(--card-gap); }
 .search__group {
-  flex: none; color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+  flex: none; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); line-height: var(--leading-title);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Los títulos de los resultados, legibles desde el sillón (antes en letra de pie de foto). */
-.search .card__caption { font-size: var(--text-sm); }
+.search { --caption-size: var(--type-secondary); }
 /* Caja vacía: búsquedas recientes como píldoras. */
 .search__results--recent { align-items: center; min-height: 0; padding-bottom: var(--space-4); }
 .search__results--recent .search__group { align-self: center; padding: 0 var(--space-2) 0 0; }
-.search__recent {
-  flex: none; display: inline-flex; align-items: center; gap: var(--space-2);
-  height: 2.8rem; padding: 0 var(--space-5) 0 var(--space-4); border-radius: var(--radius-pill);
-  background: var(--color-fill); font-size: var(--text-md);
-  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
-}
-.search__recent .icon { width: 1rem; height: 1rem; color: var(--color-text-muted); }
-.search__recent--focused { background: var(--inverse-bg); color: var(--inverse-fg); }
-.search__recent--focused .icon { color: inherit; }
 
 @media (max-height: 640px) {
   .search { gap: var(--space-3); }
   .search__hint { display: none; }
 }
 @media (max-width: 760px) { .search__hint { display: none; } }
+[data-input="touch"] .search__top { padding-right: var(--touch-back-room); } /* «Atrás» (arriba a la derecha) no lo tapa */

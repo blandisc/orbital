@@ -1,4 +1,5 @@
 import { h, mount, svg } from "../core/dom.js";
+import { reducedMotion } from "../core/motion.js";
 import { Glyph } from "./glyph.js";
 import { clock } from "../core/format.js";
 import { ICONS } from "../core/icons.js";
@@ -18,9 +19,10 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   const search = h("button", { class: "status-bar__search", type: "button", "aria-label": "Buscar", "data-focus-id": "search", onClick: () => onSearch?.() },
     svg(ICONS.search), h("span", {}, "Buscar"), searchGlyph);
   const playingTitle = h("span", { class: "status-bar__playing-title" });
-  // Lo abierto: un ícono quieto y su nombre (antes un punto verde que parpadeaba y no se entendía).
-  const playing = h("span", { class: "status-bar__playing", hidden: true },
-    h("span", { class: "status-bar__live", "aria-hidden": "true" }, svg(ICONS.play)), playingTitle);
+  // Lo abierto: un ícono quieto, en verde, y su nombre: ▶ si es un video, el control si es un juego (setRunning).
+  const liveIcon = h("span", { class: "status-bar__live", "aria-hidden": "true" });
+  const playing = h("span", { class: "status-bar__playing", hidden: true }, liveIcon, playingTitle);
+  let liveKind = null;
   // Alexa: el anillo de asistente de voz y su nombre, discretos ("Orbital está conectado a Alexa").
   // Cuando acaba de escucharte, el anillo se pinta de azul y el texto dice «Te escuché» un momento.
   const alexaLabel = h("span", { class: "assistant__label" }, "Alexa");
@@ -121,7 +123,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     const t = target();
     if (!t) { pill.hidden = true; return; }
     pill.hidden = false;
-    const still = document.documentElement.dataset.motion === "reduce";
+    const still = reducedMotion();
     if (travel && edges && !still) {
       if (!chasing) { last = performance.now(); chasing = requestAnimationFrame(chase); }
       // Seguro: si la ventana deja de pintar a medio viaje (tapada, minimizada), la píldora no se queda a medias.
@@ -162,6 +164,12 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     playing.hidden = !running;
     playing.classList.toggle("status-bar__playing--paused", !!running?.paused);
     playingTitle.textContent = running ? running.title : "";
+    const kind = running?.id === "media:player" ? "video" : "game";
+    if (running && kind !== liveKind) {
+      liveKind = kind;
+      liveIcon.classList.toggle("status-bar__live--video", kind === "video");
+      mount(liveIcon, svg(kind === "video" ? ICONS.play : ICONS.gamepad));
+    }
     fit();
   }
 
@@ -198,7 +206,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
         battery.hidden = false;
         battery.classList.toggle("battery--low", pct <= 15 && !info.charging);
         battery.classList.toggle("battery--charging", info.charging);
-        level.style.width = `calc(${pct}% - 4px)`;
+        level.style.setProperty("--battery-level", `${pct}%`);
         bolt.style.display = info.charging ? "" : "none";
         battery.title = `${info.charging ? "Cargando" : "Batería"} · ${pct} %`;
         percent.textContent = `${pct}%`;

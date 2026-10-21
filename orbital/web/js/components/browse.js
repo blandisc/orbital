@@ -1,5 +1,6 @@
 import { h, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
+import { Pill } from "./ui.js";
 
 /**
  * Acomodo de una vista con secciones (Juegos, las Listas de Para ti): riel (rail.js) | encabezado,
@@ -32,11 +33,11 @@ export function BrowseHead({ title, meta, glow = null, media = {} }) {
 export function fillFilters(container, options, { current, targets, onPick }) {
   mount(container, options.map((o, n) => {
     targets.set(`filter:${n}`, { kind: "filter", value: o.id });
-    return h("button", {
-      class: ["browse__filter", o.id === current && "browse__filter--on"], type: "button", tabindex: "-1", role: "tab",
+    return Pill(o.label, {
+      on: o.id === current, tone: "outline", tabindex: "-1", role: "tab",
       "aria-selected": o.id === current ? "true" : "false", "data-focus-id": `filter:${n}`,
       onClick: () => onPick?.(targets.get(`filter:${n}`), `filter:${n}`),
-    }, o.label);
+    });
   }));
 }
 
@@ -71,10 +72,17 @@ export function keepInView(grid, viewport, focusId) {
   const shift = Number(grid.dataset.shift || 0);
   // Lo que de verdad se ve: sin el relleno de arriba y abajo ni el fundido del borde (browse.css).
   const style = getComputedStyle(viewport);
-  const fade = parseFloat(getComputedStyle(document.documentElement).fontSize) * 3;
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const fade = rem * 3;
   const room = viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - fade;
+  // El nombre y el año van bajo la portada (fuera de su caja) y la enfocada, al crecer, los empuja más abajo: sin contarlos, el
+  // último renglón de una lista quedaba con su pie bajo el fundido del borde («se desaparece y no se pinta bien»).
+  const caption = node.querySelector(".card__caption");
+  const scale = node.classList.contains("card--focused") ? parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--card-focus-scale")) || 1 : 1;
+  const below = caption ? Math.max(0, caption.offsetTop + caption.offsetHeight - node.offsetHeight) * scale : 0;
+  const bottom = node.offsetHeight + (below ? below + rem * .75 : 0); // y un respiro bajo el pie
   let next = shift;
-  if (top + node.offsetHeight - shift > room) next = top + node.offsetHeight - room;
+  if (top + bottom - shift > room) next = top + bottom - room;
   if (top < next) next = top; // el borde de arriba de la enfocada siempre gana
   grid.dataset.shift = String(Math.max(0, next));
   grid.style.transform = `translateY(${-Math.max(0, next)}px)`;

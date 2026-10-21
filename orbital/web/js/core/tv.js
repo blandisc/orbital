@@ -40,7 +40,7 @@ export function initials(name) {
   // Si solo queda un número («Canal 5»), el nombre completo: «C5».
   const words = useful.length && useful.some((w) => /\D/.test(w)) ? useful : all;
   const letters = words.length === 1 ? words[0].slice(0, 2) : words.slice(0, 2).map((w) => w[0]).join("");
-  return letters.toLocaleUpperCase("es-MX");
+  return letters.toLocaleUpperCase("es-MX"); // ds-exception: iniciales de un canal sin logo
 }
 
 const plural = (n) => `${n} canal${n === 1 ? "" : "es"}`;

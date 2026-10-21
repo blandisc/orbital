@@ -63,6 +63,12 @@ test("al volver: un video no se juega", async () => {
   assert.equal(closedMessage({ id: "media:player", title: "Azteca 7", live: true }), "De vuelta de la TV en vivo"); // la tele no guarda dónde ibas
   assert.equal(closedMessage({ id: "app:youtube", title: "YouTube", seconds: 900 }), "De vuelta de YouTube");
   assert.equal(closedMessage({ id: "steam:1", title: "Hades", seconds: 1800 }), "De vuelta. Jugaste Hades 30 min");
+  const { closedSummary } = await import("../../orbital/web/js/core/format.js");
+  // El aviso con portada: el título en su renglón y qué pasó abajo.
+  assert.deepEqual(closedSummary({ id: "steam:1", title: "Hades", seconds: 1800 }), { heading: "Hades", message: "Jugaste 30 min" });
+  assert.deepEqual(closedSummary({ id: "media:player", title: "Interstellar", finished: true }), { heading: "Interstellar", message: "Lo terminaste" });
+  assert.deepEqual(closedSummary({ id: "app:youtube", title: "YouTube" }), { heading: "YouTube", message: "De vuelta en Orbital" });
+  assert.deepEqual(closedSummary({ id: "media:player", title: "Azteca 7", live: true }), { heading: "", message: "De vuelta de la TV en vivo" });
 });
 
 test("si un juego se cierra enseguida, el aviso dice qué revisar según de dónde es", async () => {

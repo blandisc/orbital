@@ -71,9 +71,16 @@ public struct OrbitalRemote: Sendable {
     }
 
     /// Pone en la TV un título de Stremio (película o el episodio `videoID`), desde donde ibas.
-    public func play(kind: String, metaID: String, videoID: String?, title: String) async throws {
+    /// Desde el reproductor del iPhone («Ver en la TV»): `position` es el segundo exacto y `choice`, la fuente, el audio y los
+    /// subtítulos que tenías; la TV sigue igual (lo que no encuentre, con su regla de siempre).
+    public func play(kind: String, metaID: String, videoID: String?, title: String, position: Double? = nil,
+                     choice: ResumeChoice? = nil) async throws {
         var body: [String: JSON] = ["kind": .string(kind), "id": .string(metaID), "title": .string(title)]
         if let videoID { body["video_id"] = .string(videoID) }
+        if let position, position > 0 { body["position"] = .double(position) }
+        if let source = choice?.source { body["source_key"] = .string(source) }
+        if let audio = choice?.audio, !audio.off { body["audio"] = audio.json }
+        if let subtitle = choice?.subtitle { body["subtitle"] = subtitle.json }
         _ = try await send("api/stremio/play", method: "POST", body: JSON.object(body).serialized())
     }
 
@@ -172,6 +179,8 @@ public struct OrbitalRemote: Sendable {
         public var at: Double
         /// «Seguir en el iPhone»: el segundo exacto donde iba en la TV (nil con «Enviar al iPhone»).
         public var position: Double?
+        /// …y con qué lo venía viendo: la huella de la fuente (la misma en los dos: `Source.key`), el audio y los subtítulos.
+        public var choice: ResumeChoice?
         /// `played` (se cerró un juego): cuánto jugaste esta vez y en total, si se cerró solo o por falta de memoria, y las capturas.
         public var played: Session?
 
@@ -202,6 +211,7 @@ public struct OrbitalRemote: Sendable {
                              poster: json["poster"]?.nonEmptyString, action: action, at: at,
                              season: json["season"]?.intValue, episode: json["episode"]?.intValue,
                              position: json["position"]?.doubleValue.flatMap { $0 > 0 ? $0 : nil })
+                .with(choice: choice(json))
                 .with(played: action == .played ? Session(seconds: json["seconds"]?.doubleValue ?? 0, totalSeconds: json["total_seconds"]?.doubleValue,
                                                           crashed: json["crashed"]?.bool ?? false, lowMemory: json["low_memory"]?.bool ?? false,
                                                           captures: json["captures"]?.intValue ?? json["captures"]?.array?.count ?? 0,
@@ -209,6 +219,16 @@ public struct OrbitalRemote: Sendable {
         }
 
         func with(played: Session?) -> InboxItem { var copy = self; copy.played = played; return copy }
+        func with(choice: ResumeChoice?) -> InboxItem { var copy = self; copy.choice = choice; return copy }
+
+        /// La fuente y las pistas que mandó la TV con «Seguir en el iPhone» (nil si no mandó ninguna).
+        static func choice(_ json: JSON) -> ResumeChoice? {
+            let source = json["source"]?.nonEmptyString, audio = ResumeChoice.Track.parse(json["audio"])
+            let subtitle = ResumeChoice.Track.parse(json["subtitle"])
+            guard source != nil || audio != nil || subtitle != nil else { return nil }
+            let videoID = json["video_id"]?.nonEmptyString ?? json["meta_id"]?.nonEmptyString ?? ""
+            return ResumeChoice(videoID: videoID, source: source, audio: audio, subtitle: subtitle)
+        }
 
         /// «The Office T2 · E5» (o solo el título, si es una película).
         public var displayName: String { episodeLabel.isEmpty ? title : "\(title) \(episodeLabel)" }

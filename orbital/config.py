@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import secrets
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -146,6 +147,18 @@ class ParaTiConfig:
 
 
 @dataclass
+class TvConfig:
+    """La tele (Roku TV): «Alexa, abre Orbital» la prende y la pone en la entrada de Orbital.
+
+    Sin `host` no se toca. `orbital tv setup` la encuentra y escribe esta sección.
+    """
+    host: str = ""  # su IP en la red local
+    serial: str = ""  # para volver a encontrarla si cambia de IP
+    mac: str = ""  # para despertarla por Wi-Fi desde el reposo profundo
+    input: str = "hdmi1"  # la entrada del Legion Go
+
+
+@dataclass
 class Config:
     server: ServerConfig = field(default_factory=ServerConfig)
     ui: UiConfig = field(default_factory=UiConfig)
@@ -157,6 +170,7 @@ class Config:
     sessions: SessionsConfig = field(default_factory=SessionsConfig)
     art: ArtConfig = field(default_factory=ArtConfig)
     para_ti: ParaTiConfig = field(default_factory=ParaTiConfig)
+    tv: TvConfig = field(default_factory=TvConfig)
     emulators: list[EmulatorConfig] = field(default_factory=list)
     apps: list[AppConfig] = field(default_factory=list)
     source: Path | None = None
@@ -199,6 +213,7 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
         sessions=_section(SessionsConfig, raw.get("sessions")),
         art=_section(ArtConfig, raw.get("art")),
         para_ti=_section(ParaTiConfig, raw.get("para_ti")),
+        tv=_section(TvConfig, raw.get("tv")),
         emulators=[_section(EmulatorConfig, e) for e in raw.get("emulators") or []],
         apps=[_section(AppConfig, a) for a in raw.get("apps") or []],
         source=source,
@@ -218,6 +233,10 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
     if len(region) != 2 or not region.isalpha():
         raise ValueError("para_ti.region debe ser un país de dos letras (por ejemplo MX)")
     cfg.para_ti.region = region
+    cfg.tv.host = str(cfg.tv.host or "").strip()
+    cfg.tv.input = str(cfg.tv.input or "").strip().lower().removeprefix("tvinput.")
+    if not re.fullmatch(r"hdmi\d|av\d|dtv", cfg.tv.input):
+        raise ValueError("tv.input debe ser una entrada de la tele: hdmi1, hdmi2, hdmi3, av1 o dtv")
     for key in ("trakt_client_id", "trakt_client_secret", "tmdb_key", "rawg_key"):
         setattr(cfg.para_ti, key, str(getattr(cfg.para_ti, key) or "").strip())
     return cfg

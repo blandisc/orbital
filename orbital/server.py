@@ -39,6 +39,7 @@ from .foryou import SERVICE_ERRORS, TV_ONLY_PREFIXES
 from .library import trakt
 from .library_watch import LibraryWatcher
 from .remote_input import RemoteInput
+from .roku import RokuTv
 from .shell import ConsoleShell
 from .voice import VoiceController
 
@@ -121,7 +122,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         catalog.kiosk = kiosk
     shell = ConsoleShell(catalog, kiosk, pause_file=paused_path() if shortcuts else None)
     catalog.before_launch = shell.close_previous  # abrir algo nuevo cierra lo anterior (no queda olvidado)
-    d = Deps(config=config, catalog=catalog, shell=shell, voice=VoiceController(catalog, kiosk), hub=SseHub(),
+    d = Deps(config=config, catalog=catalog, shell=shell, voice=VoiceController(catalog, kiosk, RokuTv(config.tv)), hub=SseHub(),
              kiosk=kiosk, log_path=log_path, started=time.time())
 
     d.extra["emulator_updates"] = emulator_updates_for(d)

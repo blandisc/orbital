@@ -9,7 +9,7 @@
  * pie no los repite: solo enseña cómo moverse y cómo volver.
  */
 export function footerHints(glyphs, { sheetOpen = false, adjustable = false, inert = false, atHome = true, longRow = false, groups = false, running = null, rows = 2,
-  primary = null, alt = null, heroButtons = false } = {}) {
+  primary = null, alt = null, heroButtons = false, stage = null } = {}) {
   if (sheetOpen) {
     // Una fila que solo informa («Cómo se usa», ejemplos de Alexa): A no hace nada, no se ofrece.
     if (inert) return [{ glyph: glyphs.back, label: "Atrás" }];
@@ -26,7 +26,10 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
     glyphs.search && { glyph: glyphs.search, label: "Buscar", offscreen: true },
     glyphs.section && { glyph: glyphs.section, label: "Sección", offscreen: true },
     // Películas y series: LT/RT pasan de grupo (Plataformas, Premios…) en vez de saltar de 5 en 5.
-    groups ? { glyph: glyphs.page, label: "Grupo", secondary: true } : longRow && { glyph: glyphs.page, label: "Saltar 5", secondary: true },
+    // «Porque viste»: RT salta de tus títulos a lo sugerido y LT regresa a tus títulos (solo el botón que hace eso).
+    stage === "seeds" ? { glyph: String(glyphs.page).split(" ")[1], label: "Ver sugeridas", secondary: true }
+      : stage === "related" ? { glyph: String(glyphs.page).split(" ")[0], label: "Tus títulos", secondary: true }
+      : groups ? { glyph: glyphs.page, label: "Grupo", secondary: true } : longRow && { glyph: glyphs.page, label: "Saltar 5", secondary: true },
     !atHome && { glyph: glyphs.back, label: "Atrás", secondary: true },
     // Con un juego abierto, recuerda cómo volver a él (Home solo existe en el mando).
     running && glyphs.home && { glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` },
@@ -66,7 +69,7 @@ export function shortTitle(title = "") {
  * Pie del Inicio según lo enfocado: A y X dicen exactamente qué hacen (lógica pura).
  * target = { kind: "item" | "console" | "pending" | "empty", item?, console? }
  */
-export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null, sections = 2, onScreen = false } = {}) {
+export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null, sections = 2, onScreen = false, jump = null } = {}) {
   const list = [];
   if (target?.kind === "console") {
     list.push({ glyph: glyphs.select, label: "Entrar" });
@@ -85,6 +88,8 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
     list.push({ glyph: glyphs.select, label: target?.setup ? "Qué revisar" : "Ir a Juegos" });
   }
   if (glyphs.section && sections > 1) list.push({ glyph: glyphs.section, label: "Sección", offscreen: true });
+  // LT/RT saltan entre lo de arriba y Tus consolas (`jump`: a dónde llevan desde aquí).
+  if (jump && glyphs.page) list.push({ glyph: glyphs.page, label: jump, secondary: true });
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;

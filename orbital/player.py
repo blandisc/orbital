@@ -83,6 +83,7 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
     Playback,
     PlayerRemote,
     Segment,
+    base_language,
     build_command,
     build_lang_list,
     chapter_kind,
@@ -1011,19 +1012,48 @@ class OrbitalPlayer(PlayerScreen):
                                   "url": self._sub_url(chosen) if chosen.get("external") else ""}
         return getattr(self, "_last_sub", None)
 
+    def current_audio(self) -> dict | None:
+        """El audio que suena ahora: {"lang", "title"} (para «Continuar» y para pasarlo al iPhone), o None."""
+        try:
+            tracks = self.mpv.get("track-list")
+        except Exception:  # noqa: BLE001 - mpv ya cerró
+            tracks = None
+        if isinstance(tracks, list) and tracks:
+            chosen = next((t for t in tracks if isinstance(t, dict) and t.get("type") == "audio" and t.get("selected")), None)
+            self._last_audio = {"lang": str(chosen.get("lang") or ""), "title": str(chosen.get("title") or "")} if chosen else None
+        return getattr(self, "_last_audio", None)
+
+    @staticmethod
+    def _same_track(tracks: list, kind: str, saved: dict, exact_only: bool = False) -> dict | None:
+        """La misma pista (idioma y nombre); si en este archivo se llama distinto (otra fuente, o viene del iPhone, que las
+        etiqueta de otra forma), la del mismo idioma que no sea de forzados."""
+        mine = [t for t in tracks if isinstance(t, dict) and t.get("type") == kind and "id" in t]
+        lang, title = str(saved.get("lang") or ""), str(saved.get("title") or "")
+        exact = next((t for t in mine if str(t.get("lang") or "") == lang and str(t.get("title") or "") == title), None)
+        if exact is not None or exact_only or not base_language(lang):
+            return exact
+        return next((t for t in mine if base_language(t.get("lang")) == base_language(lang) and not t.get("forced")
+                     and "forced" not in str(t.get("title") or "").lower()), None)
+
     def _apply_sub_pick(self, tracks: list) -> bool:
-        """«Continuar»: los mismos subtítulos que tenías al salir (la misma pista: Latinoamérica y no España, los
-        forzados, o los que se buscaron en tu complemento). True si quedaron puestos; si no, lo de siempre."""
+        """«Continuar» (o lo que venía viendo el iPhone): el mismo audio y los mismos subtítulos (la misma pista:
+        Latinoamérica y no España, los forzados, o los que se buscaron en tu complemento). True si los subtítulos
+        quedaron puestos; si no, lo de siempre."""
         pick, self._sub_pick = getattr(self, "_sub_pick", None), None
         if not isinstance(pick, dict):
             return False
+        audio = self._same_track(tracks, "audio", pick["audio"]) if isinstance(pick.get("audio"), dict) else None
+        if audio is not None and not audio.get("selected"):
+            self.mpv.command("set_property", "aid", audio["id"])
+        if "off" not in pick:
+            return False  # solo el audio: los subtítulos, con la regla de siempre
         if pick.get("off"):
             self.mpv.command("set_property", "sid", "no")
             return True
-        subs = [t for t in tracks if isinstance(t, dict) and t.get("type") == "sub"]
-        same = [t for t in subs if str(t.get("lang") or "") == pick.get("lang") and str(t.get("title") or "") == pick.get("title")]
-        if same:
-            self.mpv.command("set_property", "sid", same[0]["id"])
+        # La pista exacta; si no, los mismos de tu complemento (su dirección); si no, otros del mismo idioma.
+        same = self._same_track(tracks, "sub", pick, exact_only=bool(pick.get("url")))
+        if same is not None:
+            self.mpv.command("set_property", "sid", same["id"])
             return True
         if pick.get("url"):
             self.add_sub(pick["url"], pick.get("title") or "Subtítulos", pick.get("lang") or "")

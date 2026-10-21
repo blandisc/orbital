@@ -2,8 +2,8 @@
    derecha, lo abierto, Alexa, Wi-Fi, la pila y la hora. Sin cápsulas ni vidrio. */
 .status-bar {
   position: relative; display: flex; align-items: center; gap: var(--space-8); min-width: 0;
-  height: 3rem; margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0;
-  font-size: var(--text-md);
+  height: var(--control-height); margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0;
+  font-size: var(--type-body);
 }
 .status-bar__brand {
   display: inline-flex; align-items: center; gap: var(--space-2);
@@ -30,17 +30,19 @@
 @keyframes mark-moon { from { opacity: 0; translate: -.9em -.7em; scale: .2; } 70% { opacity: 1; } }
 
 .status-bar__wordmark {
-  font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-display); line-height: 1; padding-bottom: .08em; /* centro óptico con el planeta */
+  font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-display); line-height: var(--leading-none); padding-bottom: .08em; /* centro óptico con el planeta */
   animation: fade-in var(--duration-enter) var(--ease-out) both; animation-delay: var(--delay-1);
 }
 
 .status-bar__playing { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); animation: fade-in var(--duration-base) var(--ease-out); }
-/* Lo abierto: un ▶ quieto (en pausa, ‖ en ámbar); sin parpadeos que distraigan. */
-/* Del alto de las mayúsculas y centrado con ellas (no con la caja del renglón, que suma el espacio de las letras con cola:
-   el ▶ quedaba chico y arriba del título). */
-.status-bar__live { display: grid; place-items: center; width: 1.1rem; height: 1.1rem; color: var(--color-text-muted); translate: 0 .08em; }
-.status-bar__live .icon { width: 1.1rem; height: 1.1rem; fill: currentColor; stroke: none; }
+/* Lo abierto: un ícono quieto en verde (el de «en vivo»), sin parpadeos que distraigan: ▶ si es un video (en pausa, en ámbar)
+   y el control si es un juego. Del alto de las mayúsculas y centrado con ellas (no con la caja del renglón, que suma el espacio
+   de las letras con cola: el ícono quedaba chico y arriba del título). */
+.status-bar__live { display: grid; place-items: center; width: 1.4rem; height: 1.4rem; color: var(--color-live); }
+.status-bar__live .icon { width: var(--icon-lg); height: var(--icon-lg); stroke-width: var(--stroke-regular); }
+.status-bar__live--video { translate: 0 .08em; } /* el triángulo es simétrico en su caja: baja al centro de las mayúsculas; el control ya carga su peso abajo */
+.status-bar__live--video .icon { width: 1.1rem; height: 1.1rem; fill: currentColor; stroke: none; }
 .status-bar__playing--paused .status-bar__live { color: var(--color-warning); }
 .status-bar__playing-title { overflow: hidden; max-width: 11rem; color: var(--color-text); text-overflow: ellipsis; white-space: nowrap; }
 /* Las pestañas van centradas: lo que está en curso no debe alcanzarlas. El ícono ya dice el estado
@@ -63,11 +65,11 @@
 /* Una sección: su ícono y, plegado, su nombre. La activa lo despliega (grid 0fr → 1fr: el ancho se anima sin medirlo)
    y la píldora la persigue mientras crece; la que dejas lo pliega a la vez, así los íconos de en medio se deslizan. */
 .status-bar__tab {
-  display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 .78rem; border-radius: var(--radius-pill);
-  color: var(--color-text-muted); font-size: var(--text-md); font-weight: var(--weight-medium); white-space: nowrap;
+  display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 0 .78rem; border-radius: var(--radius-pill);
+  color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--weight-medium); white-space: nowrap;
   transition: color var(--duration-base) var(--ease-out);
 }
-.status-bar__tab .icon { flex: none; width: 1.4rem; height: 1.4rem; stroke-width: 2; }
+.status-bar__tab .icon { flex: none; width: var(--icon-lg); height: var(--icon-lg); stroke-width: var(--stroke-regular); }
 .status-bar__tab-label {
   display: grid; grid-template-columns: 0fr; opacity: 0;
   transition: grid-template-columns var(--duration-slow) var(--ease-out), margin var(--duration-slow) var(--ease-out),
@@ -88,11 +90,11 @@
 /* Buscar: atajo global junto a la marca (botón Vista ⧉). Discreto hasta que lo señalas. */
 .status-bar__search {
   display: inline-flex; align-items: center; gap: var(--space-2); margin-left: calc(-1 * var(--space-3));
-  padding: .4rem .5rem .4rem .85rem; border-radius: var(--radius-pill);
-  background: var(--color-fill); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium);
+  padding: .4rem var(--space-2) .4rem .85rem; border-radius: var(--radius-pill);
+  background: var(--color-fill); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium);
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
 }
-.status-bar__search svg { width: 1rem; height: 1rem; }
+.status-bar__search svg { width: var(--icon-sm); height: var(--icon-sm); }
 .status-bar__search:hover { background: var(--color-fill-hover); color: var(--color-text); }
 .status-bar__search-glyph:empty { display: none; }
 /* Enfocado desde el Inicio (↑): el mismo foco invertido que las teclas y opciones. */
@@ -117,25 +119,25 @@
 .status-bar--tight-2 { gap: var(--space-4); }
 .status-bar--tight-2 .status-bar__tab { padding-inline: var(--space-2); }
 .status-bar--tight-2 .status-bar__right { gap: var(--space-3); }
-.status-bar--tight-3 .status-bar__offline { font-size: var(--text-xs); }
+.status-bar--tight-3 .status-bar__offline { font-size: var(--type-footnote); }
 .status-bar--tight-4 .status-bar__wordmark { display: none; }
 .status-bar--tight-5 .status-bar__tabs .glyph { display: none; }
-.status-bar--tight-6 .status-bar__tab { font-size: var(--text-sm); }
-.status-bar--tight-6 .status-bar__clock { font-size: var(--text-lg); }
-.status-bar__right { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--space-5); color: var(--color-text-muted); font-size: var(--text-sm); }
+.status-bar--tight-6 .status-bar__tab { font-size: var(--type-secondary); }
+.status-bar--tight-6 .status-bar__clock { font-size: var(--type-section); }
+.status-bar__right { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--space-5); color: var(--color-text-muted); font-size: var(--type-secondary); }
 .status-bar__right > * { flex: none; }
 .status-bar__right > .status-bar__playing { flex: 0 1 auto; }
 /* La hora cierra la barra: grande y separada del estado por una línea fina. */
 .status-bar__clock {
   padding-left: var(--space-5); border-left: 1px solid var(--color-hairline-strong);
-  color: var(--color-text); font-family: var(--font-sans); font-size: var(--text-xl); font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; line-height: 1;
+  color: var(--color-text); font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; line-height: var(--leading-none);
 }
 
 /* Alexa: anillo de asistente + nombre, en gris; azul y «Te escuché» justo después de oírte. */
 .assistant {
   display: inline-flex; align-items: center; gap: var(--space-2); padding: .4rem .85rem .4rem .6rem; margin: -.4rem 0;
-  border-radius: var(--radius-pill); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); white-space: nowrap;
+  border-radius: var(--radius-pill); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); white-space: nowrap;
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
 }
 .assistant:hover { background: var(--color-fill); color: var(--color-text); }
@@ -143,7 +145,7 @@
 .assistant.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 .assistant.is-focused .assistant__ring { color: inherit; filter: none; }
 .assistant__ring { position: relative; display: grid; place-items: center; color: var(--color-text-faint); transition: color var(--duration-slow) var(--ease-out); }
-.assistant__ring .icon { width: 1.2rem; height: 1.2rem; stroke-width: 2.4; }
+.assistant__ring .icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--stroke-regular); }
 .assistant--live .assistant__ring { color: color-mix(in oklab, var(--assistant-accent) 55%, var(--color-text-muted)); }
 .assistant__label { transition: color var(--duration-slow) var(--ease-out); }
 .assistant--heard { color: var(--color-text); }
@@ -154,8 +156,8 @@
 }
 @keyframes assistant-heard { 0% { opacity: .9; transform: scale(.6); } 100% { opacity: 0; transform: scale(1.5); } }
 
-.status-bar__offline { color: var(--color-warning); font-size: var(--text-sm); font-weight: var(--weight-medium); white-space: nowrap; }
-.wifi { display: block; width: 1.35rem; height: 1.1rem; fill: none; stroke: var(--color-text); stroke-width: 2; stroke-linecap: round; }
+.status-bar__offline { color: var(--color-warning); font-size: var(--type-secondary); font-weight: var(--weight-medium); white-space: nowrap; }
+.wifi { display: block; width: 1.35rem; height: 1.1rem; fill: none; stroke: var(--color-text); stroke-width: var(--stroke-regular); stroke-linecap: round; }
 .wifi__dot { fill: var(--color-text); stroke: none; }
 .wifi--weak .wifi__arc--2, .wifi--weak .wifi__arc--3, .wifi--fair .wifi__arc--3 { stroke: var(--color-text-faint); }
 
@@ -166,8 +168,8 @@
   border: 1.5px solid var(--color-text-muted); border-radius: 4px;
 }
 .battery__body::after { content: ""; position: absolute; right: -4.5px; top: 30%; width: 2.5px; height: 40%; background: var(--color-text-muted); border-radius: 0 2px 2px 0; }
-.battery__level { position: absolute; inset: 1.5px auto 1.5px 1.5px; background: var(--color-text-muted); border-radius: 2px; transition: width var(--duration-slow) var(--ease-out); }
-.battery__body .icon--fill { position: relative; width: .8rem; height: .8rem; color: var(--color-text); filter: drop-shadow(0 0 2px var(--color-art-shade)); }
+.battery__level { position: absolute; inset: 1.5px auto 1.5px 1.5px; width: calc(var(--battery-level, 0%) - 4px); background: var(--color-text-muted); border-radius: 2px; transition: width var(--duration-slow) var(--ease-out); }
+.battery__body .icon--fill { position: relative; width: var(--icon-xs); height: var(--icon-xs); color: var(--color-text); filter: drop-shadow(0 0 2px var(--color-art-shade)); }
 .battery__percent { color: var(--color-text-muted); }
 .battery--low { color: var(--color-danger); }
 .battery--low .battery__percent { color: var(--color-danger); }
@@ -182,10 +184,16 @@
   .status-bar { gap: var(--space-4); }
   .status-bar__wordmark, .status-bar .assistant { display: none; }
   .status-bar__right { gap: var(--space-4); }
-  .status-bar__clock { font-size: var(--text-lg); }
+  .status-bar__clock { font-size: var(--type-section); }
 }
 @media (max-width: 760px) {
   .status-bar__tabs .glyph { display: none; }
   .status-bar__tab { padding: 0 .55rem; }
 }
 @media (max-width: 480px) { .status-bar__search, .battery { display: none; } }
+/* Con el dedo: el atajo de Buscar siempre con el dibujo del mando (disco y aro), no como tecla de teclado (se veía crudo); objetivos de ~44 px. */
+[data-input="touch"] .status-bar__search-glyph .glyph {
+  display: inline-grid; border-radius: var(--radius-pill); background: var(--glyph-bg); box-shadow: inset 0 0 0 1.5px var(--glyph-ring);
+}
+[data-input="touch"] .status-bar__tab, [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant { min-height: var(--touch-target); }
+[data-input="touch"] .status-bar__search, [data-input="touch"] .assistant { min-width: var(--touch-target); justify-content: center; }
