@@ -176,15 +176,17 @@ extension SourcesModel {
     /// Las filas, ya ordenadas: el tuyo, el original, las variantes de español y luego los demás (por cuántas versiones tienen).
     /// SD solo se ofrece si ese idioma no tiene nada mejor.
     public static func languageRows(_ ranked: [Source], prefs: Preferences, limitGB: Double) -> (main: [LanguageRow], more: [LanguageRow], hidden: Int) {
-        let visible = ranked.filter { !hidden($0) }
+        // Si todo es de cine o tráiler, se enseña igual (si no, la hoja quedaba vacía y «Ver» reproducía una de esas).
+        let visible = ranked.contains { !hidden($0) } ? ranked.filter { !hidden($0) } : ranked
         let recommended = visible.first?.index
         var cells: [String: [String: [Source]]] = [:], evidence: [String: [Int: AudioLanguage.Evidence]] = [:], order: [String] = []
         var originals = Set<String>()
         for source in visible {
+            var placed = Set<String>()   // una versión, una vez por fila (con «es» y «es-419 tal vez» salía dos veces)
             for audio in source.audio {
                 let code = rowCode(audio)
                 if cells[code] == nil { order.append(code) }
-                cells[code, default: [:]][quality(source), default: []].append(source)
+                if placed.insert(code).inserted { cells[code, default: [:]][quality(source), default: []].append(source) }
                 if evidence[code, default: [:]][source.index].map({ audio.evidence < $0 }) ?? true { evidence[code, default: [:]][source.index] = audio.evidence }
                 if audio.evidence == .original { originals.insert(code) }
             }
@@ -201,7 +203,8 @@ extension SourcesModel {
                 return option(best, code: code, evidence: evidence[code]?[best.index] ?? .maybe, limitGB: limitGB,
                               recommended: best.index == recommended, others: list.dropFirst().map(\.index))
             }
-            if options.count > 1 { options.removeAll { $0.quality == "SD" } }
+            // SD solo si no hay nada mejor, salvo que sea la recomendada (la que reproduce «Ver» siempre se ve).
+            if options.count > 1 { options.removeAll { $0.quality == "SD" && !$0.recommended } }
             let yours = code == want || (want.count == 2 && code.hasPrefix(want))
             return LanguageRow(code: code, yours: yours, original: originals.contains(code), options: options)
         }

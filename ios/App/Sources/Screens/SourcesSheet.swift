@@ -59,7 +59,7 @@ struct SourcesSheet: View {
                             }
                             .padding(.top, DS.Space.s2)
                         } label: {
-                            Text("Otros idiomas · ") + Text(verbatim: model.moreLanguages.map { Streams.versionLanguageName($0.code, in: ui).lowercased() }.joined(separator: ", "))
+                            Text("Otros idiomas · ") + Text(verbatim: model.moreLanguages.map { VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui) }.joined(separator: ", "))
                         }
                         .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
                         .padding(DS.Space.s3)
@@ -138,7 +138,7 @@ struct VersionCard: View {
                     DisclosureGroup(isExpanded: $showsOthers) {
                         VStack(spacing: DS.Space.s2) { ForEach(others) { other in otherRow(other) } }.padding(.top, DS.Space.s2)
                     } label: {
-                        Text("Otras \(others.count) en \(language.lowercased()) \(option.quality)").recipe(.secondary, color: DS.text)
+                        Text("Otras \(others.count) en \(VersionLanguageRow.inline(language, uiLanguage)) \(option.quality)").recipe(.secondary, color: DS.text)
                     }
                     .tint(DS.textMuted)
                 }

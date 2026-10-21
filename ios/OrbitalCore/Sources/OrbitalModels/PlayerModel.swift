@@ -450,19 +450,39 @@ public final class PlayerModel: ObservableModel {
     // MARK: pistas
     /// Las pistas reales de esta versión: quedan «comprobadas» (la próxima vez se sabe su idioma sin adivinar).
     private func rememberCheckedAudio(_ s: EngineSnapshot) {
-        guard let source, titlePrefs.rememberChecked(key: source.key, tracks: s.audioTracks) else { return }
+        guard let source, titlePrefs.rememberChecked(key: source.key, codes: Self.realAudio(s.audioTracks, source: source)) else { return }
         let finder = finder
         Task { await finder.forgetSorted() }
     }
 
     /// Lo que trae esta versión no es lo que quieres (inglés y castellano, y quieres latino) y otra versión sí lo trae seguro:
     /// se ofrece cambiar a esa, en el mismo segundo.
+    /// Las pistas de audio de un archivo como idiomas de versión. Una pista «spa» sin nombre no dice si es latino o castellano:
+    /// si el nombre de la versión sí lo dice, se queda esa variante (comprobar no puede empeorar el dato).
+    static func realAudio(_ tracks: [MediaTrack], source: Source?) -> [String] {
+        let variant = source?.audio.first { $0.base == "es" && $0.code != "es" && $0.evidence.solid }?.code
+        var codes: [String] = []
+        for track in tracks where track.kind == .audio {
+            guard var code = TrackChooser.audioCode(track) else { continue }
+            if code == "es", let variant { code = variant }
+            if !codes.contains(code) { codes.append(code) }
+        }
+        return codes
+    }
+
     func offerVersionInYourLanguage(_ s: EngineSnapshot, prefs: Preferences) {
-        let have = s.audioTracks.compactMap(TrackChooser.audioCode)
+        guard let current = source, let request else { return }
+        // La elegiste tú en «Elegir versión»: no se te ofrece otra.
+        if request.sourceIndex == current.index { return }
+        let have = Self.realAudio(s.audioTracks, source: current)
         let want = prefs.wanted
-        guard !have.isEmpty, !have.contains(where: { $0 == want || (want.count == 2 && $0.hasPrefix(want)) }), let current = source else { return }
+        guard !have.isEmpty, !have.contains(where: { $0 == want || (want.count == 2 && $0.hasPrefix(want)) }) else { return }
+        // Ni una que ya falló, ni una que ya se comprobó en otro idioma, ni una de cine, un tráiler u otra película.
         let better = sourceChoices.first { choice in
-            choice.index != current.index && choice.playbackURL != nil && choice.audio.contains { $0.code == want && $0.evidence.solid }
+            guard choice.index != current.index, choice.playbackURL != nil, !failedSources.contains(choice.index),
+                  !choice.tags.contains("CAM"), !choice.tags.contains("Tráiler"), !choice.tags.contains(Streams.otherTitleTag) else { return false }
+            if let checked = titlePrefs.checkedAudio(choice.key) { return checked.contains { $0.code == want } }
+            return choice.audio.contains { $0.code == want && $0.evidence.solid }
         }
         guard let better else { return }
         var unique: [String] = []
@@ -484,7 +504,10 @@ public final class PlayerModel: ObservableModel {
         let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
         let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio, latin: langs.prefs.spanish == "es-419", castilian: langs.prefs.spanish == "es-ES")
         if let audio, audio.id != s.selectedAudio { await engine.selectAudio(audio.id) }
-        if TrackChooser.wrongAudio(s.audioTracks, language: langs.prefs.audio) { notice = .audioNotInYourLanguage }
+        // (Si la elegiste tú en «Elegir versión», ya sabías qué idioma trae: no se avisa.)
+        if TrackChooser.wrongAudio(s.audioTracks, language: langs.prefs.audio), request.sourceIndex == nil || request.sourceIndex != source?.index {
+            notice = .audioNotInYourLanguage
+        }
         offerVersionInYourLanguage(s, prefs: langs.prefs)
         let audioLanguage = PlaybackRules.languageCode(audio?.language) ?? langs.prefs.audio
         if picked { return }

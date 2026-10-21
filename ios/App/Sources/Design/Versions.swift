@@ -8,6 +8,11 @@ struct VersionLanguageRow: View {
     let row: LanguageRow
     let uiLanguage: String
     let pick: (VersionOption) -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    /// Un nombre de idioma a media frase: en minúsculas en español («en latino»), con su mayúscula en inglés («in Latin
+    /// American Spanish»).
+    static func inline(_ name: String, _ ui: String) -> String { ui.hasPrefix("en") ? name : name.lowercased() }
 
     /// La fila «Español» se llama así a secas; abajo dice que no se sabe cuál.
     static func spanish(_ ui: String) -> String { ui.hasPrefix("en") ? "Spanish" : "Español" }
@@ -30,7 +35,9 @@ struct VersionLanguageRow: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Version.chipMinimum), spacing: DS.Space.s2)], alignment: .leading, spacing: DS.Space.s2) {
+            // Con letra de accesibilidad, una por renglón (en dos, «1080p» se partía en tres renglones).
+            LazyVGrid(columns: typeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.adaptive(minimum: DS.Version.chipMinimum), spacing: DS.Space.s2)],
+                      alignment: .leading, spacing: DS.Space.s2) {
                 ForEach(row.options) { option in
                     VersionChip(option: option, language: Streams.versionLanguageName(row.code, in: uiLanguage)) { pick(option) }
                 }
@@ -52,7 +59,7 @@ struct VersionChip: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 HStack(spacing: DS.Space.s1) {
-                    Text(verbatim: option.quality).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
+                    Text(verbatim: option.quality).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
                     if option.recommended { Image(systemName: "sparkles").font(DS.TextRecipe.caption.font).foregroundStyle(DS.brandMoon) }
                 }
                 Text(verbatim: Self.facts(option)).recipe(.caption).lineLimit(1)

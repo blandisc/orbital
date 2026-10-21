@@ -245,6 +245,11 @@ public final class TitlePreferences: @unchecked Sendable {
         for track in tracks where track.kind == .audio {
             if let code = TrackChooser.audioCode(track), !codes.contains(code) { codes.append(code) }
         }
+        return rememberChecked(key: key, codes: codes)
+    }
+
+    /// Lo mismo con los idiomas ya resueltos («es-419» si el nombre lo decía y la pista solo dice «spa»).
+    @discardableResult public func rememberChecked(key: String, codes: [String]) -> Bool {
         guard !codes.isEmpty, !key.isEmpty else { return false }
         let value = codes.map { AudioLanguage($0, .checked) }
         return lock.withLock {
@@ -261,6 +266,8 @@ public final class TitlePreferences: @unchecked Sendable {
         let saved = lock.withLock { all[metaID] }
         var prefs = settings.preferences(onCellular: onCellular)
         if let audio = saved?.audio, !audio.isEmpty { prefs.audio = audio }
+        // Este título lo pusiste en español aunque tu audio de siempre sea otro: la variante que elegiste en Ajustes vale igual.
+        if prefs.audio == "es", prefs.spanish.isEmpty { prefs.spanish = settings.latinSpanish ? "es-419" : settings.castilianSpanish ? "es-ES" : "" }
         return (prefs, saved?.subtitles ?? settings.subtitles)
     }
 
