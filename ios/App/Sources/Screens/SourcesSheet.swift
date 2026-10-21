@@ -89,8 +89,7 @@ struct SourcesSheet: View {
                             if let source = model.source(id) { choose(source, purpose) }
                         },
                         infuse: infuse.map { open in { id in picked = nil; if let s = model.source(id) { open(s) } } })
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+                .fittedScrollSheet()   // del alto de lo que dice (sin espacio muerto); al abrir «Otras», crece
         }
     }
 }
