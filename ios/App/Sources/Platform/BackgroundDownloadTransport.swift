@@ -1,8 +1,13 @@
 import Foundation
 import OrbitalCore
 
-/// Descargas con `URLSession` en segundo plano: el sistema sigue bajando con la app suspendida y la relanza al
-/// terminar (no sobreviven a cerrar la app a la fuerza: iOS las cancela).
+/// Descargas con `URLSession`: dentro de la app mientras está abierta, y en segundo plano cuando te vas (el sistema sigue
+/// bajando con la app suspendida y la relanza al terminar; no sobreviven a cerrar la app a la fuerza: iOS las cancela).
+///
+/// - **Dos carriles**: la sesión de segundo plano de iOS baja lento (en el iPhone, ~1 MB/s contra 30–50 MB/s de Real-Debrid
+///   dentro de la app; ver «Probar la velocidad»). Con la app abierta, cada pedazo se baja con una conexión normal que escribe
+///   directo a su archivo; al irte, lo que le falta a cada pedazo pasa a la sesión de segundo plano desde donde iba, y al
+///   volver regresa al carril rápido. Lo que hay en el archivo del pedazo nunca se pierde (es la verdad de cuánto lleva).
 ///
 /// - **Por partes**: un archivo grande se baja en `parts` pedazos a la vez (cada uno con su `Range`), porque una sola
 ///   conexión rara vez llena la línea con Real-Debrid. Cada pedazo es una tarea en segundo plano con sus propios datos de
@@ -12,10 +17,10 @@ import OrbitalCore
 /// - **Enlace caducado** (Real-Debrid): los pedazos ya terminados se quedan; los demás se piden otra vez con el enlace nuevo.
 /// - **Relanzar la app**: una descarga que el sistema siguió en segundo plano se *adopta*, no se reinicia; si se cerró a media
 ///   unión de pedazos, la unión se retoma donde iba.
-final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSessionDownloadDelegate, @unchecked Sendable {
+final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSessionDownloadDelegate, URLSessionDataDelegate, @unchecked Sendable {
     static let identifier = "com.example.orbital.ios.downloads"
     /// Cuántos pedazos a la vez por archivo, y desde qué tamaño vale la pena partirlo.
-    static let parts = 4
+    static let parts = 8
     static let partsMinimumBytes: Int64 = 200_000_000
 
     private struct Part: Codable {
@@ -68,6 +73,19 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     private var throttled: [String: Int] = [:]
     static let throttleRetries = 8
     private var session: URLSession!
+    /// El carril rápido: dentro de la app, con la app a la vista.
+    private var foregroundSession: URLSession!
+    private var inForeground = false
+    /// Un pedazo que se baja dentro de la app: su tarea, su archivo abierto y cuánto lleva escrito.
+    private final class Stream {
+        let task: URLSessionDataTask
+        let handle: FileHandle
+        var got: Int64
+        init(task: URLSessionDataTask, handle: FileHandle, got: Int64) { self.task = task; self.handle = handle; self.got = got }
+    }
+    private var streams: [String: [Int: Stream]] = [:]
+    /// Lo que ya tenía el archivo de un pedazo cuando arrancó su tarea de segundo plano (su avance se suma a eso).
+    private var backgroundBase: [String: [Int: Int64]] = [:]
     private let continuation: AsyncStream<DownloadEvent>.Continuation
     let events: AsyncStream<DownloadEvent>
     private let defaults: UserDefaults
@@ -94,6 +112,14 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         configuration.waitsForConnectivity = true
         configuration.httpMaximumConnectionsPerHost = Self.parts * Downloads.maxActive
         session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+        let fast = URLSessionConfiguration.default
+        fast.httpMaximumConnectionsPerHost = Self.parts * Downloads.maxActive
+        fast.timeoutIntervalForRequest = 30
+        fast.requestCachePolicy = .reloadIgnoringLocalCacheData
+        fast.urlCache = nil
+        let queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 1   // cada pedazo escribe en orden
+        foregroundSession = URLSession(configuration: fast, delegate: self, delegateQueue: queue)
     }
 
     // MARK: archivos
@@ -103,6 +129,10 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     private func resumeFile(_ id: String, part: Int? = nil) -> URL { resumeFolder.appendingPathComponent(safe(id) + (part.map { "-\($0)" } ?? "")) }
     private func partFolder(_ id: String) -> URL { partsFolder.appendingPathComponent(safe(id), isDirectory: true) }
     private func partFile(_ id: String, _ part: Int) -> URL { partFolder(id).appendingPathComponent("\(part)") }
+    /// Lo que ya tiene el archivo de un pedazo.
+    private func got(_ id: String, _ part: Int) -> Int64 {
+        (try? FileManager.default.attributesOfItem(atPath: partFile(id, part).path)[.size] as? Int64) ?? 0
+    }
     private func saveContexts() { defaults.set(try? JSONEncoder().encode(contexts), forKey: "orbital.download-contexts") }
 
     // MARK: DownloadTransport
@@ -167,27 +197,92 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     private func startParts(id: String, context: Context, live: [URLSessionTask]) {
         guard let parts = context.parts, let token = context.token else { return }
         if parts.allSatisfy(\.done) { return assemble(id) }
-        let running = Set(live.compactMap { task -> Int? in
+        let foreground = lock.withLock { inForeground }
+        // Con la app a la vista, las tareas de segundo plano de este archivo se sueltan: el carril rápido sigue desde lo que hay en
+        // el archivo de cada pedazo (lo que la de segundo plano llevaba a medias se vuelve a bajar en segundos).
+        let running: Set<Int> = foreground ? [] : Set(live.compactMap { task -> Int? in
             guard let p = Self.parse(task.taskDescription), p.token == token, task.state == .running || task.state == .suspended else { return nil }
             task.resume()
             return p.part
         })
+        if foreground { for task in live { task.cancel() } }
         lock.withLock { _ = failedTokens.remove(token) }
         guard let target = URL(string: context.resolved ?? context.url) else { return }
+        var finished: [Int] = []
         for (i, part) in parts.enumerated() where !part.done && !running.contains(i) {
+            if lock.withLock({ streams[id]?[i] != nil }) { continue }   // ya baja dentro de la app
+            let have = min(part.size, got(id, i))
+            if have >= part.size { finished.append(i); continue }   // se terminó y la app se cerró antes de anotarlo
+            if foreground { startStream(id: id, part: i, range: part, have: have, token: token, target: target); continue }
             let resume = resumeFile(id, part: i)
             let task: URLSessionDownloadTask
-            if let data = try? Data(contentsOf: resume), !data.isEmpty { task = session.downloadTask(withResumeData: data) }
+            if have == 0, let data = try? Data(contentsOf: resume), !data.isEmpty { task = session.downloadTask(withResumeData: data) }
             else {
                 var request = URLRequest(url: target)
                 request.allowsCellularAccess = allowsCellular()
                 request.setValue("Orbital", forHTTPHeaderField: "User-Agent")
-                request.setValue("bytes=\(part.start)-\(part.end)", forHTTPHeaderField: "Range")
+                request.setValue("bytes=\(part.start + have)-\(part.end)", forHTTPHeaderField: "Range")
                 task = session.downloadTask(with: request)
             }
             try? FileManager.default.removeItem(at: resume)
+            lock.withLock { backgroundBase[id, default: [:]][i] = have }
             task.taskDescription = "\(id)#\(token)#\(i)"
             task.resume()
+        }
+        for i in finished { markPartDone(id, part: i) }
+    }
+
+    /// Un pedazo dentro de la app: desde lo que ya tiene su archivo hasta el final de su tramo, escribiendo conforme llega.
+    private func startStream(id: String, part i: Int, range part: Part, have: Int64, token: String, target: URL) {
+        let file = partFile(id, i)
+        let handle: FileHandle
+        do {
+            try FileManager.default.createDirectory(at: partFolder(id), withIntermediateDirectories: true)
+            if !FileManager.default.fileExists(atPath: file.path) { FileManager.default.createFile(atPath: file.path, contents: nil) }
+            handle = try FileHandle(forWritingTo: file)
+            try handle.truncate(atOffset: UInt64(have))
+            try handle.seekToEnd()
+        } catch {
+            return failParts(id, token: token, status: nil, message: "No pude guardar el archivo: \(error.localizedDescription)")
+        }
+        try? FileManager.default.removeItem(at: resumeFile(id, part: i))   // atados a un punto que ya pasó
+        var request = URLRequest(url: target)
+        request.allowsCellularAccess = allowsCellular()
+        request.setValue("Orbital", forHTTPHeaderField: "User-Agent")
+        request.setValue("bytes=\(part.start + have)-\(part.end)", forHTTPHeaderField: "Range")
+        let task = foregroundSession.dataTask(with: request)
+        task.taskDescription = "\(id)#\(token)#\(i)"
+        lock.withLock {
+            streams[id, default: [:]][i] = Stream(task: task, handle: handle, got: have)
+            partWritten[id, default: [:]][i] = have
+        }
+        task.resume()
+    }
+
+    /// Suelta los pedazos que se bajan dentro de la app (lo escrito se queda en sus archivos).
+    private func stopStreams(_ id: String) {
+        let stopped = lock.withLock { () -> [Stream] in
+            let all = Array((streams[id] ?? [:]).values)
+            streams[id] = nil
+            return all
+        }
+        for stream in stopped { stream.task.cancel(); try? stream.handle.close() }
+    }
+
+    /// La app se ve (o se va): cada archivo por pedazos cambia de carril desde donde iba.
+    func setForeground(_ value: Bool) async {
+        let changed = lock.withLock { () -> Bool in defer { inForeground = value }; return inForeground != value }
+        guard changed else { return }
+        let ids = lock.withLock { contexts.filter { $0.value.parts != nil }.map(\.key) }
+        let tasks = await session.allTasks
+        for id in ids {
+            guard let context = lock.withLock({ contexts[id] }), let token = context.token else { continue }
+            let live = tasks.filter { Self.parse($0.taskDescription).map { $0.id == id && $0.token == token } ?? false }
+            let streaming = lock.withLock { !(streams[id] ?? [:]).isEmpty }
+            // Solo las que estaban bajando (no las pausadas ni las que esperan turno en la cola).
+            guard streaming || live.contains(where: { $0.state == .running || $0.state == .suspended }) else { continue }
+            if !value { stopStreams(id) }
+            startParts(id: id, context: context, live: live)
         }
     }
 
@@ -216,6 +311,7 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
 
     /// Pausa: se detiene y se guardan los datos de reanudación (de cada pedazo).
     func cancel(id: String) async {
+        stopStreams(id)
         let tasks = await session.allTasks
         for task in tasks where Self.parse(task.taskDescription)?.id == id && (task.state == .running || task.state == .suspended) {
             let part = Self.parse(task.taskDescription)?.part
@@ -231,19 +327,32 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
 
     /// Borrar: se detiene y se olvida todo (también los pedazos).
     func discard(id: String) async {
+        stopStreams(id)
         let tasks = await session.allTasks
         for task in tasks where Self.parse(task.taskDescription)?.id == id { task.cancel() }
         try? FileManager.default.removeItem(at: resumeFile(id))
         for i in 0..<Self.parts { try? FileManager.default.removeItem(at: resumeFile(id, part: i)) }
         try? FileManager.default.removeItem(at: partFolder(id))
-        lock.withLock { contexts[id] = nil; lastProgress[id] = nil; partWritten[id] = nil; saveContexts() }
+        lock.withLock { contexts[id] = nil; lastProgress[id] = nil; partWritten[id] = nil; backgroundBase[id] = nil; saveContexts() }
     }
 
     // MARK: avance
     private func written(_ id: String, _ context: Context) -> Int64 {
         guard let parts = context.parts else { return 0 }
         let live = lock.withLock { partWritten[id] ?? [:] }
-        return parts.enumerated().reduce(0) { sum, item in sum + (item.element.done ? item.element.size : min(item.element.size, live[item.offset] ?? 0)) }
+        return parts.enumerated().reduce(0) { sum, item in
+            sum + (item.element.done ? item.element.size : min(item.element.size, live[item.offset] ?? got(id, item.offset)))
+        }
+    }
+
+    /// El avance de todo el archivo por pedazos, como mucho cada medio segundo (contarlo lee el tamaño de los pedazos).
+    private func reportParts(_ id: String, _ context: Context) {
+        let now = Date()
+        let due = lock.withLock { () -> Bool in
+            if let last = lastProgress[id], now.timeIntervalSince(last) < 0.5 { return false }
+            lastProgress[id] = now; return true
+        }
+        if due { continuation.yield(.progress(id: id, written: written(id, context), total: context.total)) }
     }
 
     private func report(_ id: String, written: Int64, total: Int64?) {
@@ -259,9 +368,11 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         guard let (id, part, context) = current(downloadTask) else { return }   // una tarea vieja (cambiada o cancelada): no cuenta
         if let part, context.parts != nil {
-            // Con datos de reanudación `totalBytesWritten` ya incluye lo que ese pedazo había bajado.
-            lock.withLock { partWritten[id, default: [:]][part] = totalBytesWritten }
-            return report(id, written: written(id, context), total: context.total)
+            // Con datos de reanudación `totalBytesWritten` ya incluye lo que esa tarea había bajado; se suma a lo que ya tenía el
+            // archivo del pedazo (lo del carril rápido).
+            let base = lock.withLock { backgroundBase[id]?[part] } ?? got(id, part)
+            lock.withLock { backgroundBase[id, default: [:]][part] = base; partWritten[id, default: [:]][part] = base + totalBytesWritten }
+            return reportParts(id, context)
         }
         let response = downloadTask.response as? HTTPURLResponse
         var base: Int64 = 0
@@ -327,31 +438,90 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         }
     }
 
-    /// Un pedazo terminó: se guarda aparte (hay que sacarlo antes de que el sistema lo borre) y, si era el último, se junta todo.
+    /// Un pedazo terminó en segundo plano: se guarda aparte (hay que sacarlo antes de que el sistema lo borre; si el carril
+    /// rápido ya había bajado el principio, va detrás de eso) y, si era el último, se junta todo.
     private func finishPart(_ id: String, part: Int, location: URL, status: Int, parts: [Part]) {
         let size = (try? FileManager.default.attributesOfItem(atPath: location.path)[.size] as? Int64) ?? 0
         let token = lock.withLock { contexts[id]?.token }
+        // Justo al volver a la app ese pedazo ya lo baja el carril rápido: este resultado se tira (escribirían los dos el archivo).
+        if lock.withLock({ streams[id]?[part] != nil }) { return }
+        let have = min(parts[part].size, got(id, part))
         // Un 200 a una petición de pedazo trae el archivo entero (el servidor ignoró el Range): no sirve como pedazo.
-        guard status == 206, size == parts[part].size else {
+        guard status == 206, size == parts[part].size - have else {
             return failParts(id, token: token, status: nil, message: "El servidor no mandó el pedazo completo")
         }
         do {
             try FileManager.default.createDirectory(at: partFolder(id), withIntermediateDirectories: true)
-            try? FileManager.default.removeItem(at: partFile(id, part))
-            try FileManager.default.moveItem(at: location, to: partFile(id, part))
+            if have > 0 { try append(location, to: partFile(id, part)) }
+            else {
+                try? FileManager.default.removeItem(at: partFile(id, part))
+                try FileManager.default.moveItem(at: location, to: partFile(id, part))
+            }
         } catch {
             return failParts(id, token: token, status: nil, message: "No pude guardar el archivo: \(error.localizedDescription)")
         }
         try? FileManager.default.removeItem(at: resumeFile(id, part: part))
+        markPartDone(id, part: part)
+    }
+
+    /// Un pedazo completo (por cualquier carril): se anota y, si era el último, se junta todo.
+    private func markPartDone(_ id: String, part: Int) {
         let allDone = lock.withLock { () -> Bool in
             throttled["\(id)#\(part)"] = nil
             contexts[id]?.parts?[part].done = true
             partWritten[id]?[part] = nil
+            backgroundBase[id]?[part] = nil
             saveContexts()
             return contexts[id]?.parts?.allSatisfy(\.done) ?? false
         }
         if allDone { assemble(id) }
-        else if let context = lock.withLock({ contexts[id] }) { report(id, written: written(id, context), total: context.total) }
+        else if let context = lock.withLock({ contexts[id] }) { reportParts(id, context) }
+    }
+
+    // MARK: carril rápido (URLSessionDataDelegate)
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        guard let (id, part, context) = current(dataTask), let part else { return completionHandler(.cancel) }
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 206 { return completionHandler(.allow) }
+        completionHandler(.cancel)
+        dropStream(id, part: part, task: dataTask)
+        if status == 429 || status == 503 { return retryPart(id, part: part, token: context.token) }
+        failParts(id, token: context.token, status: status, message: DownloadMessages.forStatus(status))
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        guard let (id, part, context) = current(dataTask), let part,
+              let stream = lock.withLock({ streams[id]?[part] }), stream.task === dataTask else { return }
+        do { try stream.handle.write(contentsOf: data) } catch {
+            // Lo soltamos justo mientras escribía (pausa o cambio de carril): no es una falla.
+            guard lock.withLock({ streams[id]?[part] === stream }) else { return }
+            dropStream(id, part: part, task: dataTask)
+            return failParts(id, token: context.token, status: nil, message: "No pude guardar el archivo: \(error.localizedDescription)")
+        }
+        lock.withLock { stream.got += Int64(data.count); partWritten[id, default: [:]][part] = stream.got }
+        reportParts(id, context)
+    }
+
+    /// Se acabó la tarea de un pedazo del carril rápido: completo, se anota; cortado, la cola reintenta desde lo que hay.
+    private func finishStream(_ task: URLSessionTask, error: Error?) {
+        guard let (id, part, context) = current(task), let part, let parts = context.parts, part < parts.count else { return }
+        guard let stream = dropStream(id, part: part, task: task) else { return }   // lo soltamos nosotros (pausa, cambio de carril)
+        if let error, (error as NSError).code == NSURLErrorCancelled { return }
+        if stream.got >= parts[part].size { return markPartDone(id, part: part) }
+        let status = (task.response as? HTTPURLResponse)?.statusCode
+        failParts(id, token: context.token, status: status, message: error?.localizedDescription ?? "El servidor cortó el pedazo")
+    }
+
+    /// Quita un pedazo del carril rápido (si sigue siendo esa tarea) y cierra su archivo.
+    @discardableResult private func dropStream(_ id: String, part: Int, task: URLSessionTask) -> Stream? {
+        let stream = lock.withLock { () -> Stream? in
+            guard let stream = streams[id]?[part], stream.task === task else { return nil }
+            streams[id]?[part] = nil
+            return stream
+        }
+        try? stream?.handle.close()
+        return stream
     }
 
     /// Junta los pedazos en el video, en orden. Se anota cada pedazo ya puesto: si la app se cierra a media unión, se sigue
@@ -378,7 +548,7 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
             }
             try? FileManager.default.removeItem(at: partFolder(id))
             excludeFromBackup(destination)
-            lock.withLock { contexts[id] = nil; partWritten[id] = nil; saveContexts() }
+            lock.withLock { contexts[id] = nil; partWritten[id] = nil; backgroundBase[id] = nil; saveContexts() }
             continuation.yield(.finished(id: id))
         } catch {
             continuation.yield(.failed(id: id, status: nil, message: "No pude guardar el archivo: \(error.localizedDescription)"))
@@ -410,6 +580,7 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if session === foregroundSession { return finishStream(task, error: error) }
         guard let (id, part, context) = current(task) else { return }   // una tarea vieja: ni borra el contexto de la nueva ni la marca fallida
         guard let error else {
             if context.parts == nil { lock.withLock { contexts[id] = nil; saveContexts() } }

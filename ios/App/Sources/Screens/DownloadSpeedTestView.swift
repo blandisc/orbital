@@ -49,8 +49,8 @@ struct DownloadSpeedTestView: View {
         func value(_ kind: DownloadSpeedTest.Row.Kind) -> Double? { test.rows.first { $0.kind == kind }?.bytesPerSecond }
         guard !test.running, let internet = value(.internet), let single = value(.single), let eight = value(.eight), let background = value(.background) else { return nil }
         let best = max(single, eight)
-        if background < best * 0.6 { return "El tope es la forma en que baja iOS en segundo plano: dentro de la app baja bastante más rápido. Eso se arregla en Orbital." }
-        if eight > single * 1.6 { return "Real-Debrid limita cada conexión: con varias a la vez baja mucho más rápido. Eso se arregla en Orbital usando más conexiones." }
+        if background < best * 0.6 { return "Con la app abierta baja a toda velocidad; con la app cerrada iOS la frena mucho. Para bajar rápido, deja Orbital abierta: al salir, sigue sola, más lento." }
+        if eight > single * 1.6 { return "Real-Debrid limita cada conexión: con varias a la vez baja mucho más rápido, y así baja Orbital con la app abierta." }
         if best < internet * 0.5 { return "Real-Debrid te está dando menos que tu internet: puede ser su servidor de ese momento o la ruta hasta él." }
         return "Real-Debrid y la app ya van a la velocidad de tu internet: el tope es tu conexión."
     }

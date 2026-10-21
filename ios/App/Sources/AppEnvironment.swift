@@ -24,7 +24,11 @@ final class AppEnvironment: ObservableObject {
     private let liveActivity = DownloadLiveActivityController()
     private var traktObserver: NSObjectProtocol?
     /// La actividad en vivo de las descargas: en segundo plano su barra avanza sola con lo estimado.
-    func setDownloadsBackgrounded(_ value: Bool) async { await liveActivity.setBackgrounded(value) }
+    func setDownloadsBackgrounded(_ value: Bool) async {
+        // Con la app a la vista, las descargas por pedazos van por el carril rápido; al irte, pasan a segundo plano.
+        await transport.setForeground(!value)
+        await liveActivity.setBackgrounded(value)
+    }
 
     /// El estado que solo pinta la raíz (el reproductor, los avisos, la pestaña que se pide abrir) vive aparte, en `ui`:
     /// así un aviso o el reproductor que se abre no vuelven a pintar Inicio, Para ti y la ficha (que observan `env`).

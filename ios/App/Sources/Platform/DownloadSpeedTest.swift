@@ -3,7 +3,7 @@ import OrbitalCore
 import OrbitalModels
 
 /// Ajustes › Descargas › «Probar la velocidad»: de dónde viene la lentitud. Mide, unos segundos cada una y sin guardar nada:
-/// tu internet sin Real-Debrid (un archivo de prueba de OVH, en Francia como los servidores de Real-Debrid), Real-Debrid con una conexión, con ocho, y como baja hoy la app (la sesión de
+/// tu internet sin Real-Debrid (un archivo de prueba de OVH, en Francia como los servidores de Real-Debrid), Real-Debrid con una conexión, con ocho (como baja la app abierta), y con la app cerrada (la sesión de
 /// segundo plano de iOS, con sus cuatro pedazos). Con eso se sabe si el tope es tu red, Real-Debrid o iOS.
 @MainActor
 final class DownloadSpeedTest: ObservableObject {
@@ -103,7 +103,7 @@ final class DownloadSpeedTest: ObservableObject {
         case .internet: "Tu internet (sin Real-Debrid)"
         case .single: "Real-Debrid · 1 conexión"
         case .eight: "Real-Debrid · 8 conexiones"
-        case .background: "Real-Debrid · como baja hoy (segundo plano, 4 partes)"
+        case .background: "Real-Debrid · con la app cerrada (segundo plano)"
         }
     }
 

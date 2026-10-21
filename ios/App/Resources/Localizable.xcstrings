@@ -1222,6 +1222,17 @@
         }
       }
     },
+    "Baja mucho más rápido con Orbital abierta; al salir, sigue sola.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads much faster with Orbital open; when you leave, it keeps going."
+          }
+        }
+      }
+    },
     "Bajando %@": {
       "extractionState": "manual",
       "localizations": {
@@ -2373,6 +2384,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "With genres picked, the mood doesn't count."
+          }
+        }
+      }
+    },
+    "Con la app abierta baja a toda velocidad; con la app cerrada iOS la frena mucho. Para bajar rápido, deja Orbital abierta: al salir, sigue sola, más lento.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With the app open it downloads at full speed; with the app closed iOS slows it down a lot. To download fast, keep Orbital open: when you leave, it keeps going on its own, slower."
           }
         }
       }
@@ -4111,17 +4133,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "The source's server failed. Trying again."
-          }
-        }
-      }
-    },
-    "El tope es la forma en que baja iOS en segundo plano: dentro de la app baja bastante más rápido. Eso se arregla en Orbital.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The bottleneck is how iOS downloads in the background: inside the app it's much faster. That can be fixed in Orbital."
           }
         }
       }
@@ -9703,13 +9714,13 @@
         }
       }
     },
-    "Real-Debrid limita cada conexión: con varias a la vez baja mucho más rápido. Eso se arregla en Orbital usando más conexiones.": {
+    "Real-Debrid limita cada conexión: con varias a la vez baja mucho más rápido, y así baja Orbital con la app abierta.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Real-Debrid limits each connection: with several at once it's much faster. That can be fixed in Orbital with more connections."
+            "value": "Real-Debrid limits each connection: with several at once it downloads much faster, and that's how Orbital downloads with the app open."
           }
         }
       }
@@ -9769,13 +9780,13 @@
         }
       }
     },
-    "Real-Debrid · como baja hoy (segundo plano, 4 partes)": {
+    "Real-Debrid · con la app cerrada (segundo plano)": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Real-Debrid · how it downloads today (background, 4 parts)"
+            "value": "Real-Debrid · with the app closed (background)"
           }
         }
       }

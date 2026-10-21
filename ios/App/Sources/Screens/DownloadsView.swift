@@ -73,7 +73,10 @@ struct DownloadsView: View {
                 .listRowBackground(DS.surface)
             }
             if !model.active.isEmpty {
-                Section { ForEach(model.active) { row($0, model) } } header: { DSSectionHead(title: "Descargando", count: model.active.count) }
+                Section { ForEach(model.active) { row($0, model) } } header: { DSSectionHead(title: "Descargando", count: model.active.count) } footer: {
+                    // Con la app cerrada iOS la frena mucho (ver «Probar la velocidad»): que se sepa.
+                    Text("Baja mucho más rápido con Orbital abierta; al salir, sigue sola.").recipe(.footnote)
+                }
                     .downloadCard()
             }
             // Listo para ver: series (una fila cada una; dentro, sus temporadas y episodios) y películas, aparte.
