@@ -207,7 +207,11 @@ class PlayerScreen:
         if self._fallback_subs and self._subs_lang:
             extra.append({"label": f"Buscar en {player_ui.language(self._subs_lang).lower()}…",
                           "action": ("fetch", self._subs_lang), "current": False})
-        self._open_panel(player_ui.tracks_panel(tracks, self.sub_scale, extra, focus, sub_delay=self.sub_delay))
+        meta = getattr(self.current, "meta", None) or {}
+        # Tu idioma (y los que esta no trae) en otra versión: de la lista ya buscada, sin esperar a internet.
+        versions = self._safe(self.versions_provider, meta) if self.versions_provider and self.current else None
+        self._open_panel(player_ui.tracks_panel(tracks, self.sub_scale, extra, focus, sub_delay=self.sub_delay,
+                                                versions=versions or None))
 
     def open_more(self, still_wanted=lambda: True) -> None:
         meta = getattr(self.current, "meta", None) or {}

@@ -3,88 +3,126 @@ import { motion } from "../core/motion.js";
 import { Badge, Chip } from "./ui.js";
 import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
-import { isOwnSource, sourceGroups } from "../core/watch.js";
+import { isOwnSource, languageLine, versionRows, versionStart, versionStep } from "../core/watch.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 
 /**
- * Elegir la fuente a mano (Y en la ficha): un panel a la derecha, encima de la ficha.
- * Lo normal es no necesitarlo: "Ver" arranca solo con la recomendada. Aquí está todo lo demás,
- * la recomendada arriba y el resto por calidad, dicho en palabras de persona; lo técnico (el nombre del archivo,
- * el complemento), solo si lo pides con X, como el iPhone.
- *   ↑/↓ fuente · A ver · X detalles · B volver a la ficha
+ * «Elegir versión» (Y en la ficha): un panel a la derecha, encima de la ficha. Lo normal es no necesitarlo: «Ver»
+ * arranca solo con la recomendada. Aquí, una fila por IDIOMA DE AUDIO (tu idioma primero, luego el original y los
+ * demás) y en cada una solo las calidades que hay, la mejor de cada una. Abajo, en una línea, cómo sabemos el idioma
+ * de la enfocada (lo dice el nombre, el sitio, es el original, tal vez, comprobado). X enseña todas las de esa fila y
+ * calidad con su nombre técnico, como el iPhone.
+ *   ↑/↓ idioma · ◀/▶ calidad · A ver · X todas las de aquí · B volver a la ficha
  */
-const AUDIO_NAMES = { en: "inglés", es: "español" };
-
 export function createSources({ onPlay, onMove, onClose, onChange }) {
-  const heading = h("div", { class: "sources__heading" }, "Elegir fuente");
+  const heading = h("div", { class: "sources__heading" }, "Elegir versión");
   const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
   const list = h("div", { class: "sources__list", role: "group" });
+  const why = h("div", { class: "sources__why", role: "status" });
   const status = h("div", { class: "sources__status", role: "status" });
   const retry = h("div", { class: "sources__retry", hidden: true },
     Button({ label: "Reintentar", variant: "primary", onPress: () => request && open(request) }));
   const panel = h("div", { class: ["side-panel__panel", "sources__panel"] },
-    h("div", { class: "sources__head" }, heading, title, subtitle), status, retry, list);
-  const el = h("section", { class: ["side-panel", "sources"], hidden: true, "aria-label": "Fuentes",
+    h("div", { class: "sources__head" }, heading, title, subtitle), status, retry, list, why);
+  const el = h("section", { class: ["side-panel", "sources"], hidden: true, "aria-label": "Elegir versión",
     onClick: (e) => e.target === el && close() }, panel);
 
   let request = null; // { kind, id, video_id, title, item }
   let found = [];
-  let index = 0;
+  let rows = []; // versionRows(found): [{ code, name, role, options: [{ res, source, proof, all }] }]
+  let at = { row: 0, col: 0 };
+  let cells = []; // los botones, rows × options
+  let cell = null; // X: la fila y calidad abiertas (todas las de ahí); null = las filas
+  let index = 0; // dentro de `cell`
+  let items = [];
   let token = 0;
-  let rows = []; // los botones, en el orden de `found` (la lista también lleva los títulos de cada grupo)
-  let details = false; // X: el nombre del archivo y el complemento de cada una
   let cancelExit = () => {};
 
-  /** Lo que importa para decidir, en orden: ¿arranca ya?, idioma, calidad de imagen y sonido. */
-  function chips(src) {
-    if (isOwnSource(src)) return [Chip("Tu OneDrive", { tone: "good" }), Chip("Al instante", { tone: "good" })];
-    return [
-      src.cached ? Chip("Al instante", { tone: "good" })
-        : src.debrid ? Chip("Tarda en empezar", { tone: "warn" }) : null,
-      Chip(src.languages.join(" + ") || "Idioma desconocido"),
-      ...src.hdr.map((t) => Chip(t === "DV" ? "Dolby Vision" : t)),
-      src.audio && Chip(src.audio === "Atmos" ? "Dolby Atmos" : `Sonido ${src.audio}`),
-    ].filter(Boolean);
+  const facts = (src) => [bytes(src.size), ...(src.hdr || []).map((t) => (t === "DV" ? "Dolby Vision" : t)),
+    src.audio && (src.audio === "Atmos" ? "Dolby Atmos" : src.audio)].filter(Boolean);
+  const state = (src) => (isOwnSource(src) || src.cached ? ["Al instante", "good"] : src.debrid ? ["Tarda en empezar", "warn"] : [src.addon, null]);
+
+  let start = { row: 0, col: 0 }; // dónde está la recomendada (una versión con dos idiomas sale en dos filas: se marca una)
+
+  function option(opt, r, c) {
+    const [label, tone] = state(opt.source);
+    const button = h("button", {
+      class: ["version", r === at.row && c === at.col && "version--focused"], type: "button",
+      "aria-label": `${rows[r].name} · ${opt.res}`,
+      onClick: () => (r === at.row && c === at.col ? play(opt.source) : focus({ row: r, col: c })),
+    },
+    h("span", { class: ["version__res", opt.res === "4K" && "version__res--4k"] }, opt.res),
+    h("span", { class: ["version__state", tone && `version__state--${tone}`] }, label),
+    h("span", { class: "version__facts" }, [...facts(opt.source).slice(0, 2), opt.proof === "maybe" && "tal vez"].filter(Boolean).join(" · ")),
+    r === start.row && c === start.col && opt.source === found[0] && Badge("Recomendada", { className: "version__badge" }),
+    opt.source.other_title && Chip("¿Otro título?", { tone: "warn", className: "version__other" }));
+    return button;
   }
 
-  function render() {
-    const { groups, order } = sourceGroups(found);
-    found = order;
-    let i = 0;
-    rows = [];
-    const row = (src) => {
-      const at = i++;
-      const button = h("button", {
-        class: ["source", at === index && "source--focused"], type: "button", role: "listitem",
-        onClick: () => (at === index ? play() : setIndex(at)),
-      },
-      h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
-      h("span", { class: "source__main" },
-        h("span", { class: "source__chips" }, chips(src)),
-        h("span", { class: "source__release" }, (details ? [bytes(src.size), src.addon, src.release] : [bytes(src.size)]).filter(Boolean).join(" · "))),
-      at === 0 && Badge("Recomendada", { className: "source__badge" }));
-      rows.push(button);
-      return button;
-    };
-    mount(list, groups.map((g) => h("div", { class: "sources__group", role: "group", "aria-label": g.title },
-      g.id !== "best" && h("div", { class: "sources__group-title" }, g.title),
-      ...g.items.map(row),
-      g.note && h("div", { class: "sources__note" }, g.note))));
+  function renderRows() {
+    cells = rows.map((row, r) => row.options.map((opt, c) => option(opt, r, c)));
+    mount(list, rows.map((row, r) => h("div", { class: "versions__row", role: "group", "aria-label": row.name },
+      h("div", { class: "versions__lang" },
+        h("span", { class: "versions__name" }, row.name),
+        (row.role || row.options.every((o) => o.proof === "maybe")) &&
+          h("span", { class: "versions__role" }, row.role || "Tal vez")),
+      h("div", { class: "versions__options" }, cells[r]))));
+    describe();
   }
 
-  function setIndex(i) {
-    const next = Math.max(0, Math.min(found.length - 1, i));
-    if (next === index) return;
-    rows[index]?.classList.remove("source--focused");
-    index = next;
-    rows[index]?.classList.add("source--focused");
-    rows[index]?.scrollIntoView({ block: "nearest", behavior: motion() });
+  /** La línea de abajo: lo que trae la enfocada y cómo lo sabemos. */
+  function describe() {
+    const opt = rows[at.row]?.options[at.col];
+    if (!opt) return mount(why);
+    const src = opt.source;
+    const more = opt.all.length > 1 ? `X: las ${opt.all.length} de aquí` : "";
+    mount(why,
+      h("span", { class: "sources__why-langs" }, languageLine(src, rows[at.row].code) || src.languages?.join(" + ") || "No dice idioma"),
+      h("span", { class: "sources__why-more" }, [src.other_title && "El nombre no dice este título", src.site, more].filter(Boolean).join(" · ")));
+  }
+
+  function renderCell() {
+    const opt = rows[cell.row].options[cell.col];
+    items = opt.all;
+    mount(list, h("div", { class: "sources__group", role: "group", "aria-label": `${rows[cell.row].name} · ${opt.res}` },
+      h("div", { class: "sources__group-title" }, `${rows[cell.row].name} · ${opt.res}`),
+      ...items.map((src, i) => {
+        const [label, tone] = state(src);
+        return h("button", { class: ["source", i === index && "source--focused"], type: "button", role: "listitem",
+          onClick: () => (i === index ? play(src) : setIndex(i)) },
+        h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
+        h("span", { class: "source__main" },
+          h("span", { class: "source__chips" }, Chip(label, { tone }), ...facts(src).map((f) => Chip(f))),
+          h("span", { class: "source__release" }, languageLine(src, rows[cell.row].code)),
+          h("span", { class: "source__release" }, [src.release, src.site].filter(Boolean).join(" · "))));
+      })));
+    mount(why);
+  }
+
+  function focus(next) {
+    if (next.row === at.row && next.col === at.col) return;
+    cells[at.row]?.[at.col]?.classList.remove("version--focused");
+    at = next;
+    const button = cells[at.row]?.[at.col];
+    button?.classList.add("version--focused");
+    button?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: motion() });
+    describe();
     onMove?.();
   }
 
-  function play() {
-    const src = found[index];
+  function setIndex(i) {
+    const next = Math.max(0, Math.min(items.length - 1, i));
+    if (next === index) return;
+    const buttons = list.querySelectorAll(".source");
+    buttons[index]?.classList.remove("source--focused");
+    index = next;
+    buttons[index]?.classList.add("source--focused");
+    buttons[index]?.scrollIntoView({ block: "nearest", behavior: motion() });
+    onMove?.();
+  }
+
+  function play(src) {
     if (!src || !request) return;
     onPlay({ ...request, source: src.id });
   }
@@ -97,11 +135,12 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     const mine = ++token;
     cancelExit();
     found = [];
-    index = 0;
-    details = false;
+    rows = [];
+    cell = null;
     title.textContent = req.title || "";
     subtitle.textContent = "";
     mount(list);
+    mount(why);
     status.textContent = "Buscando dónde verlo…";
     const started = performance.now();
     // Si falla otra vez enseguida, que se note que sí lo intentó (antes nada cambiaba en pantalla).
@@ -116,12 +155,14 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       if (!Array.isArray(data?.sources)) throw new Error("No pude leer las fuentes. Intenta de nuevo.");
       found = data.sources;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
-      subtitle.textContent = (isOwnSource(found[0]) ? "Tu OneDrive primero; luego, por calidad. " : "") + `Primero las de audio en ${AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
-        + "La recomendada es la que pone «Ver». «Al instante»: arranca en segundos; «Tarda en empezar»: primero se descarga.";
-      status.hidden = !!found.length;
-      status.textContent = found.length ? "" : "No encontré dónde ver esto: tus complementos de Stremio no lo tienen.";
-      failed = !found.length;
-      render();
+      rows = versionRows(found, { audio: data.audio, dub: data.dub });
+      at = versionStart(rows, found[0]);
+      start = { ...at };
+      subtitle.textContent = "«Al instante»: arranca en segundos. «Tarda en empezar»: Real-Debrid primero la descarga.";
+      status.hidden = !!rows.length;
+      status.textContent = rows.length ? "" : "No encontré dónde ver esto: tus complementos de Stremio no lo tienen.";
+      failed = !rows.length;
+      renderRows();
     } catch (err) {
       if (mine !== token) return;
       await settle();
@@ -145,29 +186,43 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   function handle(action) {
     if (el.hidden || el.classList.contains("side-panel--leaving")) return false;
     if (action === "menu") return false; // ☰ abre el menú desde cualquier pantalla
-    if (action === "back" || action === "options") close();
-    else if (action === "up") setIndex(index - 1);
-    else if (action === "down") setIndex(index + 1);
-    else if (action === "pageleft") setIndex(index - 5);
-    else if (action === "pageright") setIndex(index + 5);
-    else if (action === "alt" && found.length) {
-      details = !details;
-      render();
-      onChange?.(); // el pie: «Detalles» / «Menos detalles»
+    if (cell) { // X: todas las de una fila y calidad
+      if (action === "back" || action === "alt") {
+        cell = null;
+        renderRows();
+        onChange?.();
+      } else if (action === "options") close();
+      else if (action === "up") setIndex(index - 1);
+      else if (action === "down") setIndex(index + 1);
+      else if (action === "select") play(items[index]);
+      return true;
     }
-    else if (action === "select") {
+    if (action === "back" || action === "options") close();
+    else if (["up", "down", "left", "right"].includes(action) && rows.length) focus(versionStep(rows, at, action));
+    else if (action === "alt" && rows[at.row]?.options[at.col]) {
+      cell = { ...at };
+      index = 0;
+      renderCell();
+      onChange?.(); // el pie: «Volver a los idiomas»
+    } else if (action === "select") {
       if (failed && request) open(request); // sin fuentes o con error: A reintenta
-      else play();
+      else play(rows[at.row]?.options[at.col]?.source);
     }
     return true;
   }
 
-  /** Pistas del pie mientras la lista de fuentes está abierta. */
-  const hints = (g) => (found.length
-    ? [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
-      { glyph: g.alt, label: details ? "Menos detalles" : "Detalles", secondary: true },
-      found.length > 7 && { glyph: g.page, label: "Saltar 5", secondary: true, offscreen: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
-    : [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
+  /** Pistas del pie mientras el panel está abierto. */
+  const hints = (g) => {
+    if (cell) {
+      return [{ glyph: g.select, label: "Ver con esta" }, items.length > 1 && { glyph: g.rows, label: "Otra" },
+        { glyph: g.back, label: "Volver a los idiomas", end: true }].filter(Boolean);
+    }
+    if (!rows.length) return [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
+    const many = rows[at.row]?.options[at.col]?.all.length > 1;
+    return [{ glyph: g.select, label: "Ver con esta" }, rows.length > 1 && { glyph: g.rows, label: "Idioma" },
+      rows.some((r) => r.options.length > 1) && { glyph: g.rows === "↑↓" ? "← →" : "◀ ▶", label: "Calidad" },
+      many && { glyph: g.alt, label: "Todas las de aquí", secondary: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
+  };
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("side-panel--leaving"); } };
 }

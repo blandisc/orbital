@@ -188,6 +188,49 @@ def enrich_watch_item(item: LibraryItem, info: dict) -> None:
 _CACHE_LOCK = threading.Lock()
 RETRY_SECONDS = 1.5  # Cinemeta: espera antes del segundo intento
 
+class HeardTracks:
+    """Las pistas de audio que el reproductor vio en cada fuente (por su huella), para decir «Comprobado» la próxima
+    vez sin volver a abrirla. Un archivo chico en la caché; las más viejas se van."""
+
+    LIMIT = 1000
+
+    def __init__(self, path: Path | None) -> None:
+        self.path = path
+        self._lock = threading.Lock()
+        self._data: dict[str, dict] | None = None
+
+    def _load(self) -> dict[str, dict]:
+        if self._data is None:
+            try:
+                raw = json.loads(self.path.read_text(encoding="utf-8-sig")) if self.path and self.path.exists() else {}
+            except (OSError, ValueError):
+                raw = {}
+            self._data = raw if isinstance(raw, dict) else {}
+        return self._data
+
+    def get(self, key: str) -> list[dict] | None:
+        with self._lock:
+            hit = self._load().get(key)
+        return hit.get("audio") if isinstance(hit, dict) and isinstance(hit.get("audio"), list) else None
+
+    def put(self, key: str, audio: list[dict]) -> None:
+        with self._lock:
+            data = self._load()
+            data.pop(key, None)
+            data[key] = {"audio": audio, "at": int(time.time())}
+            while len(data) > self.LIMIT:
+                data.pop(next(iter(data)))
+            if not self.path:
+                return
+            try:
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+                tmp = self.path.with_suffix(".tmp")
+                tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+                tmp.replace(self.path)
+            except OSError:
+                log.warning("No pude guardar las pistas que vio el reproductor", exc_info=True)
+
+
 class Watch:
     def __init__(self, config: Config, state: State, credentials: Credentials, stremio_client: stremio_api.StremioAPI,
                  cinemeta_client: cinemeta.Cinemeta, store: ItemStore, events: EventBus, sessions: Sessions,
@@ -226,6 +269,10 @@ class Watch:
                                             lambda: self.setting("language", config.ui.language))
         self.cinemeta.localize = self.localizer.meta
         self.streams = streams.StreamFinder(self.addons)
+        self.streams.facts = self._title_facts  # el idioma original (TMDB): de qué idioma es una fuente que no lo dice
+        self.heard = HeardTracks((Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"
+                                  / "pistas-de-audio.json") if config.source else None)
+        self.streams.tracks = self.heard.get
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
             on_idle=lambda title, minutes, live=False: self.events.publish({
@@ -437,7 +484,8 @@ class Watch:
     @property
     def stream_prefs(self) -> streams.Preferences:
         return streams.Preferences(audio=self.setting("audio", self.config.stremio.audio),
-                                   quality=self.setting("quality", self.config.stremio.quality))
+                                   quality=self.setting("quality", self.config.stremio.quality),
+                                   dub=self.setting("dub", self.config.stremio.dub))
 
     @property
     def subtitles_lang(self) -> str:
@@ -450,7 +498,9 @@ class Watch:
         prefs = self.stream_prefs
         # Solo texto: un valor raro en state.json («audio»: ["x"]) impedía reproducir ese título.
         if isinstance(saved.get("audio"), str) and saved["audio"]:
-            prefs = streams.Preferences(audio=saved["audio"], quality=prefs.quality)
+            prefs = streams.Preferences(audio=saved["audio"], quality=prefs.quality, dub=prefs.dub)
+        if isinstance(saved.get("dub"), str) and saved["dub"] in ("latino", "castellano"):
+            prefs = streams.Preferences(audio=prefs.audio, quality=prefs.quality, dub=saved["dub"])
         subtitles = saved.get("subtitles")
         return prefs, subtitles if isinstance(subtitles, str) else self.subtitles_lang
 
@@ -508,6 +558,8 @@ class Watch:
         p.on_send_iphone = self._send_to_phone
         p.idle_seconds = int(self.setting("video_idle_minutes", self.config.sessions.video_idle_minutes)) * 60
         p.on_language = self._remember_language
+        p.on_tracks = self._tracks_seen
+        p.versions_provider = self._other_versions
         p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
         player_ui.set_text_size(self.setting("text_size", "normal"))  # la letra del reproductor sigue a Ajustes
@@ -605,7 +657,7 @@ class Watch:
             resume = {"video_id": video_id, "source": handoff.get("source"), "sub": pick}
             audio = language_code((handoff.get("audio") or {}).get("lang"))
             if audio:  # el idioma del audio del iPhone: también para elegir fuente si la suya no está
-                prefs = streams.Preferences(audio=audio, quality=prefs.quality)
+                prefs = streams.Preferences(audio=audio, quality=prefs.quality, dub=prefs.dub)
             sub = handoff.get("subtitle") or {}
             if sub.get("off"):
                 subtitles = ""
@@ -791,6 +843,81 @@ class Watch:
                       "message": f"No pude reproducir {title}. Prueba otra fuente desde la ficha (Y)."})
         return False
 
+    def _title_facts(self, kind: str, video_id: str) -> dict | None:
+        """Idioma original y nombres del título (TMDB, recordado un día; también el de Cinemeta) para las fuentes."""
+        imdb = video_id.split(":", 1)[0]
+        facts = dict(self.localizer.facts(kind, imdb) or {})
+        try:
+            name = self.cinemeta.meta(kind, imdb).get("name")
+        except cinemeta.CinemetaError:
+            name = None
+        if isinstance(name, str) and name:
+            facts["titles"] = [*facts.get("titles", []), name]
+        return facts
+
+    def _tracks_seen(self, meta: dict, tracks: list[dict]) -> str | None:
+        """El reproductor abrió una fuente y vio sus pistas: se recuerda (la próxima vez sale «Comprobado»); en español,
+        se pone la pista del doblaje que prefieres si el archivo trae los dos; y, si no trae el idioma que querías, dice
+        cuál trae y dónde está el tuyo. None: nada que avisar (o las pistas no dicen su idioma: no se sabe, no se avisa)."""
+        key = meta.get("source_key")
+        audio = [{"type": "audio", "lang": t.get("lang"), "title": t.get("title")} for t in tracks or []
+                 if isinstance(t, dict) and t.get("type") == "audio"]
+        langs = streams.track_languages(audio)
+        if not key or not langs or not meta.get("meta_id"):
+            return None
+        self.heard.put(key, audio)
+        prefs = self.language_for(meta["meta_id"])[0]
+        for src in self.streams.cached(meta.get("kind") or "", meta.get("video_id") or "", prefs):
+            if src.key == key:
+                streams.heard(src, audio)  # la lista ya buscada también lo sabe (X › Audio, Y › Fuentes)
+        if prefs.audio == "es" and prefs.dub and getattr(self, "player", None) is not None:
+            pick = player.dub_track(tracks, prefs.dub)  # mpv elige por «es»: con los dos doblajes podía poner el otro
+            if isinstance(pick, int) and not any(isinstance(t, dict) and t.get("id") == pick and t.get("selected") for t in tracks):
+                self.player.mpv.command("set_property", "aid", pick)
+        wanted = self._wanted_codes(prefs)
+        if set(langs) & wanted or (prefs.audio == "es" and "es" in langs):
+            return None  # lo trae (o es español sin decir cuál: no se sabe, no se avisa)
+        name = "español" if prefs.audio == "es" and not prefs.dub else streams.LANG_NAMES.get(next(iter(wanted)), "").lower()
+        names = [streams.LANG_NAMES.get(c, c).lower() for c in langs]
+        if len(names) > 3:
+            names = [*names[:3], f"{len(names) - 3} más"]
+        has = " y ".join(filter(None, [", ".join(names[:-1]), names[-1]]))  # «inglés, francés y castellano»
+        other = any(v["code"] in wanted for v in self._other_versions(meta))
+        where = f"X › Audio: hay {name} en otra versión" if other else "Y › Fuentes para elegir otra"
+        return f"Esta versión no trae {name}: sus pistas son {has} · {where}"
+
+    @staticmethod
+    def _wanted_codes(prefs: streams.Preferences) -> set[str]:
+        """Los idiomas que te sirven: en español, el doblaje que prefieres (o cualquiera de los dos)."""
+        if prefs.audio != "es":
+            return {prefs.audio}
+        return {{"latino": "es-419", "castellano": "es-ES"}.get(prefs.dub, "")} - {""} or {"es-419", "es-ES"}
+
+    def _other_versions(self, meta: dict) -> list[dict]:
+        """X › Audio en el reproductor: tu idioma (y los que no trae esta) en OTRA versión, la mejor de cada uno,
+        de la lista ya buscada (sin ir a internet: el panel no puede esperar). Elegirla cambia de fuente donde ibas."""
+        if meta.get("source") is None or not meta.get("kind") or not meta.get("video_id") or not meta.get("meta_id"):
+            return []
+        prefs = self.language_for(meta["meta_id"])[0]
+        found = self.streams.cached(meta["kind"], meta["video_id"], prefs)
+        current = next((s for s in found if s.index == meta["source"]), None)
+        have = set(current.audio_langs) if current else set()
+        out, seen = [], set(have)
+        for src in found:  # ya van de mejor a peor
+            if src.other_title or {"CAM", "Tráiler", "3D"} & set(src.tags):
+                continue
+            for code, how in src.audio_langs.items():
+                if code in seen or how == "maybe":
+                    continue
+                seen.add(code)
+                # Corto: la columna Audio es angosta (con cuatro columnas cabe «Castellano» + «En otra · 1080p», medido con
+                # player_ui.text_width; «Latino · en otra versión» y «4K HDR · al instante» se cortaban).
+                out.append({"id": src.index, "code": code, "label": streams.LANG_NAMES.get(code, code),
+                            "hint": f"En otra · {src.resolution or 'SD'}"})
+        wanted = self._wanted_codes(prefs)
+        out.sort(key=lambda o: o["code"] not in wanted)  # tu idioma primero (en español sin preferencia, los dos)
+        return out[:4]
+
     def _player_sources(self, meta: dict) -> list[dict]:
         """Pestaña Fuentes del reproductor: TODAS las del título, las mejores primero y la actual marcada
         (antes solo las 12 primeras: con la serie en inglés, las de español no salían)."""
@@ -810,6 +937,9 @@ class Watch:
                                   source, start=position, message=f"Cambiando a {source_label(source)}…")
         if ok and len(source.languages) == 1 and source.languages[0] != prefs.audio:
             self._remember_language(meta, "audio", source.languages[0])
+        sure = [c for c in ("es-419", "es-ES") if streams.EVIDENCE[source.audio_langs.get(c, "maybe")] >= streams.EVIDENCE["original"]]
+        if ok and len(sure) == 1 and meta.get("meta_id") and (prefs.audio == "es" or source.languages == ["es"]):
+            self.state.set_pref(f"stremio:{meta['meta_id']}", "dub", source.dub)  # pediste latino: la serie lo recuerda
         return ok
 
     def _episode_title(self, info: dict, meta_id: str, video_id: str) -> tuple[str, str]:
@@ -902,7 +1032,8 @@ class Watch:
         searched = threading.Event()
         problem: list[str] = []
         # Sin idioma pedido: el que recuerda ese título (el mismo con el que se listan sus fuentes).
-        prefs = streams.Preferences(audio=audio, quality=self.stream_prefs.quality) if audio else self.language_for(meta_id)[0]
+        prefs = (streams.Preferences(audio=audio, quality=self.stream_prefs.quality, dub=self.stream_prefs.dub) if audio
+                 else self.language_for(meta_id)[0])
 
         def run() -> None:
             try:

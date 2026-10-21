@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 MAX_DISMISSED = 2000  # «No me interesa» guardados (los más viejos se olvidan)
 _NUMBER = "número"
 # Qué tipo lleva cada ajuste: un «abc» en video_idle_minutes impedía arrancar (int("abc")).
-SETTING_TYPES = {"audio": str, "subtitles": str, "quality": str, "text_size": str, "sub_scale": _NUMBER,
+SETTING_TYPES = {"audio": str, "dub": str, "subtitles": str, "quality": str, "text_size": str, "sub_scale": _NUMBER,
                  "safe_area": _NUMBER, "game_idle_minutes": _NUMBER, "video_idle_minutes": _NUMBER,
                  "reduce_motion": bool, "sounds": bool, "haptics": bool, "voice_tips": bool, "close_previous": bool}
 
