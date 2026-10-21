@@ -296,6 +296,9 @@ enum DS {
 
     /// El panel «Ajustes del video» del reproductor: a la derecha en horizontal, hoja ajustada en vertical.
     enum PlayerPanel {
+        /// El video en vertical, al arrastrarlo: lo más arriba que sube (debajo de la barra de ✕ y el nombre: botón de 44 y
+        /// su aire) y lo que deja libre abajo para los controles (la barra, «Saltar intro», ±10, el botón grande y la pista).
+        static let portraitTopClearance: CGFloat = 60, portraitControlsReserve: CGFloat = 260
         /// Subtítulos rápidos: ancho máximo del panel (horizontal) y hasta dónde puede bajar su borde de arriba (vertical).
         static let dockWidth: CGFloat = 560, dockPortraitMaxTop: CGFloat = 0.55
         /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).

@@ -293,11 +293,12 @@ struct PlayerScreen: View {
         .onChange(of: model.notice) { _, value in
             guard case .otherVersionHasYourLanguage(let want, let have, let index)? = value else { return }
             let ui = env.services.appSettings.uiLanguage, tr = { (k: String) in Strings.tr(k, language: ui) }
-            let wanted = Streams.versionLanguageName(want, in: ui)
+            // Corto, para que quepa con su botón: «No trae latino · Sus pistas: inglés y castellano · Cambiar».
+            let wanted = want == "es" ? VersionLanguageRow.spanish(ui) : Streams.versionLanguageName(want, in: ui)
             let tracks = have.map { Streams.versionLanguageName($0, in: ui).lowercased() }.joined(separator: tr(" y "))
-            show(PlayerNotice(title: String(format: tr("Esta versión no trae %@"), wanted.lowercased()),
+            show(PlayerNotice(title: String(format: tr("No trae %@"), wanted.lowercased()),
                               detail: String(format: tr("Sus pistas: %@"), tracks), tone: .warn,
-                              switchTo: index, switchTitle: String(format: tr("Cambiar a %@"), wanted.lowercased())))
+                              switchTo: index, switchTitle: tr("Cambiar")))
         }
         // El video ya llegó (o pasó un momento): el pulgar vuelve a seguir el avance real.
         .onChange(of: model.snapshot.position) { _, position in
@@ -1187,9 +1188,13 @@ struct PlayerScreen: View {
     /// El video en vertical: de orilla a orilla, el alto sale del ancho y la proporción (sin tope, salvo que no quepa), a la
     /// altura `center` (fracción del alto). `size` es el área segura. Lo usa también la ruleta de Los Simpson, que crece
     /// hasta aquí para que el episodio arranque donde ya está la imagen.
+    /// Arriba nunca llega a la barra de botones (antes, subido hasta arriba, se encimaba con ✕ y el nombre) y abajo deja el
+    /// lugar de los controles (la barra, «Saltar intro», ±10 y el botón grande).
     static func portraitVideoRect(in size: CGSize, center: Double) -> CGRect {
         let height = min(size.width / DS.Poster.stillAspect, size.height)
-        let y = min(max(0, size.height * center - height / 2), max(0, size.height - height))
+        let top = DS.PlayerPanel.portraitTopClearance
+        let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
+        let y = min(max(top, size.height * center - height / 2), lowest)
         return CGRect(x: 0, y: y, width: size.width, height: height)
     }
     /// Dónde dejaste el video en vertical (se recuerda entre videos).

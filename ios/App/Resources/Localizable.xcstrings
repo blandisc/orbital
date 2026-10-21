@@ -1893,17 +1893,6 @@
         }
       }
     },
-    "Cambiar a %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Switch to %@"
-          }
-        }
-      }
-    },
     "Cambiar a mano": {
       "extractionState": "manual",
       "localizations": {
@@ -8654,6 +8643,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I didn't hear you. Tap and try again"
+          }
+        }
+      }
+    },
+    "No trae %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No %@ here"
           }
         }
       }

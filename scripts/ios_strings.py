@@ -514,7 +514,7 @@ TRANSLATIONS = {
     "Otra fuente": "Another source", "Ver el primero": "Watch the first", "Bajar todos": "Download all",
     "Descargando «%@»": "Downloading “%@”", "Empezando…": "Starting…",
     # «Elegir versión» (las mismas palabras que la TV).
-    "Buscando versión…": "Finding a version…", "Cambiar a %@": "Switch to %@", "El nombre del archivo dice el idioma:": "The file name says the language:",
+    "Buscando versión…": "Finding a version…", "No trae %@": "No %@ here", "El nombre del archivo dice el idioma:": "The file name says the language:",
     "Elegir versión": "Choose version", "Elegir versión…": "Choose version…", "Es el original": "It's the original",
     "Español (cualquiera)": "Spanish (any)", "Español de España": "Castilian Spanish", "Esta versión no trae %@": "This version doesn't have %@",
     "Hay pistas, pero no seguras (muchas banderas o solo «español»).": "There are hints, but not sure ones (many flags or just “Spanish”).",
