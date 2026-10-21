@@ -127,10 +127,16 @@ final class DownloadSpeedTest: ObservableObject {
     private static func resolve(_ url: URL) async -> (url: URL, total: Int64)? {
         var request = URLRequest(url: url, timeoutInterval: 15)
         request.setValue("bytes=0-0", forHTTPHeaderField: "Range")
-        guard let (_, response) = try? await URLSession(configuration: .ephemeral).data(for: request),
-              let http = response as? HTTPURLResponse, http.statusCode == 206, let final = http.url,
-              let total = http.value(forHTTPHeaderField: "Content-Range")?.split(separator: "/").last.flatMap({ Int64($0) }) else { return nil }
-        return (final, total)
+        // Solo los encabezados: hay servidores que no hacen caso del «Range» y mandan la película entera; con `data(for:)` se
+        // guardaba toda en memoria (seis a la vez) y iOS cerraba la app.
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        guard let (bytes, response) = try? await session.bytes(for: request) else { return nil }
+        bytes.task.cancel()
+        guard let http = response as? HTTPURLResponse, let final = http.url else { return nil }
+        if http.statusCode == 206, let total = http.value(forHTTPHeaderField: "Content-Range")?.split(separator: "/").last.flatMap({ Int64($0) }) { return (final, total) }
+        if http.statusCode == 200, http.expectedContentLength > 0 { return (final, http.expectedContentLength) }
+        return nil
     }
 
     /// Bytes por segundo con `connections` conexiones a la vez dentro de la app (cada una pide su tramo del archivo).

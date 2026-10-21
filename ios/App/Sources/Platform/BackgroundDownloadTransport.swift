@@ -152,8 +152,13 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         request.setValue("bytes=0-0", forHTTPHeaderField: "Range")
         request.setValue("Orbital", forHTTPHeaderField: "User-Agent")
         request.allowsCellularAccess = allowsCellular()
-        guard let (_, response) = try? await URLSession(configuration: .ephemeral).data(for: request),
-              let http = response as? HTTPURLResponse, http.statusCode == 206,
+        // Solo los encabezados: un servidor que no hace caso del «Range» manda la película entera, y con `data(for:)` se bajaba
+        // toda a la memoria solo para saber cuánto mide (y luego otra vez de verdad).
+        let probing = URLSession(configuration: .ephemeral)
+        defer { probing.invalidateAndCancel() }
+        guard let (bytes, response) = try? await probing.bytes(for: request) else { return nil }
+        bytes.task.cancel()
+        guard let http = response as? HTTPURLResponse, http.statusCode == 206,
               let range = http.value(forHTTPHeaderField: "Content-Range"), let total = range.split(separator: "/").last.flatMap({ Int64($0) }),
               let resolved = http.url else { return nil }
         return (total, resolved)
