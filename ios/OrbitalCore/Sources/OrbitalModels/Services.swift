@@ -116,6 +116,7 @@ public final class Services: ObservableModel {
         self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs, library: oneDriveLibrary),
+                                   otherSource: Services.otherSource(finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    subtitles: Services.subtitleFetcher(http: http, finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    clock: clock, onChange: onDownloadsChange)
         super.init()
@@ -146,6 +147,19 @@ public final class Services: ObservableModel {
                 ?? sources.first { !item.release.isEmpty && $0.release == item.release && (item.expectedBytes == nil || Int64($0.size) == item.expectedBytes) && ($0.addon == item.addon || item.addon.isEmpty) }
                 ?? sources.first { !item.release.isEmpty && $0.release == item.release }
             return (same ?? sources.first)?.playbackURL
+        }
+    }
+
+    /// La siguiente fuente para guardar (en el orden de siempre) que no sea una de las que ya no dieron el video.
+    static func otherSource(finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> DownloadSource? {
+        { item in
+            guard item.addon != OneDriveLibrary.addonName else { return nil }   // tu archivo de OneDrive no tiene otra fuente
+            let prefs = titlePrefs.languages(for: item.metaID, settings: settings.value).prefs
+            guard let sources = try? await finder.find(kind: item.kind, videoID: item.videoID, prefs: prefs, purpose: .download, fresh: true) else { return nil }
+            let skipped = Set(item.skippedReleases)
+            guard let next = sources.first(where: { $0.playbackURL != nil && !skipped.contains($0.release.isEmpty ? "#\($0.index)" : $0.release) }),
+                  let url = next.playbackURL else { return nil }
+            return DownloadSource(url: url, addon: next.addon, release: next.release, sourceIndex: next.index, size: next.size > 0 ? Int64(next.size) : nil)
         }
     }
 

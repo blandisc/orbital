@@ -2,6 +2,7 @@ import ActivityKit
 import SwiftUI
 import ImageIO
 import WidgetKit
+import OrbitalCore
 
 @main
 struct OrbitalWidgets: WidgetBundle {
@@ -36,6 +37,7 @@ struct DownloadLiveActivity: Widget {
             .environment(\.colorScheme, .dark)   // el fondo es el velo oscuro en los dos modos: letra clara siempre
             .activityBackgroundTint(DS.scrim)
             .activitySystemActionForegroundColor(DS.paper)
+            .widgetURL(WidgetLink.downloadsURL)   // tocarla abre Descargas
         } dynamicIsland: { context in
             DynamicIsland {
                 // Abierta: el póster a la izquierda, el porcentaje a la derecha y, abajo, nombre, episodio y avance (con aire:
@@ -73,6 +75,7 @@ struct DownloadLiveActivity: Widget {
                 Image(systemName: context.state.done ? "checkmark" : "arrow.down").font(DS.font(.sm, weight: .bold))
                     .foregroundStyle(context.state.done ? DS.good : DS.paper)
             }
+            .widgetURL(WidgetLink.downloadsURL)
         }
     }
 

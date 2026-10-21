@@ -32,6 +32,8 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
     public var subtitleFiles: [String] = []
     public var attempts = 0
     public var refreshes = 0              // cuántas veces se pidió un enlace nuevo (tope: `Downloads.maxRefreshes`)
+    /// Las fuentes que ya se probaron y no dieron el video (el aviso corto de Torrentio, una página de error): no se vuelven a elegir.
+    public var skippedReleases: [String] = []
     public var lastError: String?
     /// En espera de red (no se guarda: es del momento).
     public var waitingForNetwork = false
@@ -67,6 +69,7 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
         subtitleFiles = try c.decodeIfPresent([String].self, forKey: .subtitleFiles) ?? []
         attempts = try c.decodeIfPresent(Int.self, forKey: .attempts) ?? 0
         refreshes = try c.decodeIfPresent(Int.self, forKey: .refreshes) ?? 0
+        skippedReleases = try c.decodeIfPresent([String].self, forKey: .skippedReleases) ?? []
         lastError = try c.decodeIfPresent(String.self, forKey: .lastError)
         createdAt = try c.decodeIfPresent(Double.self, forKey: .createdAt) ?? 0
         finishedAt = try c.decodeIfPresent(Double.self, forKey: .finishedAt)
@@ -74,7 +77,7 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
 
     enum Keys: String, CodingKey {
         case id, kind, metaID, videoID, title, originalTitle, subtitle, poster, addon, release, sourceIndex, expectedBytes, writtenBytes, state
-        case relativePath, subtitleFiles, attempts, refreshes, lastError, createdAt, finishedAt
+        case relativePath, subtitleFiles, attempts, refreshes, skippedReleases, lastError, createdAt, finishedAt
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -84,7 +87,7 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
         try c.encodeIfPresent(poster, forKey: .poster); try c.encode(addon, forKey: .addon); try c.encode(release, forKey: .release)
         try c.encode(sourceIndex, forKey: .sourceIndex); try c.encodeIfPresent(expectedBytes, forKey: .expectedBytes); try c.encode(writtenBytes, forKey: .writtenBytes)
         try c.encode(state, forKey: .state); try c.encode(relativePath, forKey: .relativePath); try c.encode(subtitleFiles, forKey: .subtitleFiles)
-        try c.encode(attempts, forKey: .attempts); try c.encode(refreshes, forKey: .refreshes); try c.encodeIfPresent(lastError, forKey: .lastError)
+        try c.encode(attempts, forKey: .attempts); try c.encode(refreshes, forKey: .refreshes); try c.encode(skippedReleases, forKey: .skippedReleases); try c.encodeIfPresent(lastError, forKey: .lastError)
         try c.encode(createdAt, forKey: .createdAt); try c.encodeIfPresent(finishedAt, forKey: .finishedAt)
     }
 
@@ -147,12 +150,22 @@ public enum DownloadError: Error, Sendable, Equatable, CustomStringConvertible {
     }
 }
 
+/// Otra fuente del mismo video, para cuando la de una descarga no da el archivo.
+public struct DownloadSource: Sendable, Equatable {
+    public var url: URL, addon: String, release: String, sourceIndex: Int, size: Int64?
+    public init(url: URL, addon: String, release: String, sourceIndex: Int, size: Int64?) {
+        self.url = url; self.addon = addon; self.release = release; self.sourceIndex = sourceIndex; self.size = size
+    }
+}
+
 /// La cola de descargas: dos a la vez, reanuda, pide un enlace nuevo si el de Real-Debrid caducó (como mucho dos veces) y
 /// reintenta con espera creciente sin frenar a las demás. Cada cambio se avisa a `onChange` (la app lo guarda en disco).
 public actor Downloads {
     public static let maxActive = 2
     public static let maxAttempts = 5
     public static let maxRefreshes = 2
+    /// Cuántas fuentes distintas se prueban cuando la de una descarga no da el video.
+    public static let maxSourceSwaps = 3
     public static let spaceMargin: Int64 = 500_000_000   // deja al menos 500 MB libres
     static let expiredStatuses: Set<Int> = [401, 403, 404, 410]
 
@@ -161,6 +174,7 @@ public actor Downloads {
     private let root: URL
     private let freeSpace: @Sendable () -> Int64
     private let refresh: @Sendable (DownloadItem) async -> URL?
+    private let otherSource: @Sendable (DownloadItem) async -> DownloadSource?
     private let subtitles: @Sendable (DownloadItem) async -> [(name: String, data: Data)]
     private let clock: @Sendable () -> Date
     private let backoff: @Sendable (Int) async -> Void
@@ -182,14 +196,16 @@ public actor Downloads {
     private nonisolated let updatesHub = UpdatesHub()
 
     /// - refresh: pide un enlace nuevo de ese título (mismo complemento y fuente); nil si no hay.
+    /// - otherSource: otra fuente del mismo video que no esté en `skippedReleases` (la de ahora mandó algo que no es el video).
     /// - subtitles: descarga los subtítulos de ese título (nombre de archivo y contenido).
     public init(transport: DownloadTransport, secrets: SecretsStore, root: URL, saved: [DownloadItem] = [],
                 freeSpace: @escaping @Sendable () -> Int64, refresh: @escaping @Sendable (DownloadItem) async -> URL?,
+                otherSource: @escaping @Sendable (DownloadItem) async -> DownloadSource? = { _ in nil },
                 subtitles: @escaping @Sendable (DownloadItem) async -> [(name: String, data: Data)] = { _ in [] },
                 clock: @escaping @Sendable () -> Date = { Date() }, backoff: @escaping @Sendable (Int) async -> Void = { attempt in
                     try? await Task.sleep(nanoseconds: UInt64(min(60, pow(2, Double(attempt)))) * 1_000_000_000) },
                 onChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in }) {
-        self.transport = transport; self.secrets = secrets; self.root = root; self.freeSpace = freeSpace; self.refresh = refresh
+        self.transport = transport; self.secrets = secrets; self.root = root; self.freeSpace = freeSpace; self.refresh = refresh; self.otherSource = otherSource
         self.subtitles = subtitles; self.clock = clock; self.backoff = backoff; self.onChange = onChange
         for var item in saved {
             // Tras cerrar la app lo que bajaba queda en cola: se retoma al arrancar.
@@ -372,6 +388,9 @@ public actor Downloads {
             // Un «200» con una página de error o un video de aviso es muy menor de lo esperado: no es el archivo.
             if let expected = item.expectedBytes, expected > 10_000_000, size * 2 < expected || Self.notTheVideo(size: size, advertised: expected) {
                 try? FileManager.default.removeItem(at: file)
+                // Muy chico frente a lo esperado: esa fuente no da el video (Real-Debrid no la tiene lista). Se prueba otra en vez de
+                // insistir cinco veces con la misma.
+                if Self.notTheVideo(size: size, advertised: expected), await swapSource(id) { return }
                 await fail(id, status: nil, message: "El archivo bajado está incompleto o no es el video")
                 return
             }
@@ -426,6 +445,24 @@ public actor Downloads {
         changed()
         scheduleRetry(id, attempt: item.attempts)
         await pump()
+    }
+
+    /// Cambia la fuente de una descarga por otra del mismo video y la vuelve a formar desde cero. false: no hay otra.
+    private func swapSource(_ id: String) async -> Bool {
+        guard var item = items[id], item.skippedReleases.count < Self.maxSourceSwaps else { return false }
+        item.skippedReleases.append(item.release.isEmpty ? "#\(item.sourceIndex)" : item.release)
+        items[id] = item
+        guard let next = await otherSource(item) else { return false }
+        // Mientras se buscaba pudieron pausar, borrar o cambiar la descarga: se revisa.
+        guard var fresh = items[id], fresh.state == .downloading, fresh.createdAt == item.createdAt else { return true }
+        await transport.discard(id: id)
+        fresh.addon = next.addon; fresh.release = next.release; fresh.sourceIndex = next.sourceIndex; fresh.expectedBytes = next.size
+        fresh.writtenBytes = 0; fresh.attempts = 0; fresh.refreshes = 0; fresh.lastError = nil; fresh.state = .queued
+        secrets.set(SecretKey.download(id), next.url.absoluteString)
+        items[id] = fresh
+        changed()
+        await pump()
+        return true
     }
 
     private func changedAfterSubtitles() { changed() }

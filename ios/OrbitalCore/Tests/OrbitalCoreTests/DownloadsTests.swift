@@ -35,8 +35,10 @@ final class DownloadsTests: XCTestCase {
 
     func makeDownloads(_ transport: FakeTransport, secrets: SecretsStore = InMemorySecrets(), free: Int64 = 50_000_000_000, saved: [DownloadItem] = [],
                        refresh: @escaping @Sendable (DownloadItem) async -> URL? = { _ in nil },
+                       otherSource: @escaping @Sendable (DownloadItem) async -> DownloadSource? = { _ in nil },
                        subs: @escaping @Sendable (DownloadItem) async -> [(name: String, data: Data)] = { _ in [] }) -> Downloads {
-        let d = Downloads(transport: transport, secrets: secrets, root: root, saved: saved, freeSpace: { free }, refresh: refresh, subtitles: subs, backoff: { _ in })
+        let d = Downloads(transport: transport, secrets: secrets, root: root, saved: saved, freeSpace: { free }, refresh: refresh,
+                          otherSource: otherSource, subtitles: subs, backoff: { _ in })
         Task { await d.start() }
         return d
     }
@@ -341,6 +343,32 @@ final class DownloadsTests: XCTestCase {
         XCTAssertNotEqual(state, .done)
     }
 
+    /// La fuente manda 5 kB (el aviso de Torrentio) en vez de la película: se prueba la siguiente fuente al instante, desde cero, y la
+    /// mala no se vuelve a elegir; no se gastan los cinco intentos en la misma.
+    func testASourceThatDoesNotSendTheVideoIsSwappedForTheNextOne() async throws {
+        let transport = FakeTransport(), secrets = InMemorySecrets()
+        let asked = Locked<[[String]]>([])
+        let d = makeDownloads(transport, secrets: secrets, otherSource: { item in
+            asked.mutate { $0.append(item.skippedReleases) }
+            return DownloadSource(url: URL(string: "https://rd.example/good.mkv")!, addon: "Torrentio", release: "Peli.1080p.WEB", sourceIndex: 3, size: 3_000_000_000)
+        })
+        var bad = item("tt1:1:1", size: 3_870_000_000); bad.release = "Peli.AV1"
+        try await d.enqueue(bad, url: URL(string: "https://rd.example/bad.mkv")!)
+        await settle("empieza") { transport.starts.count == 1 }
+        try Data(count: 5_376).write(to: transport.starts[0].file)
+        transport.emit(.finished(id: "tt1|tt1:1:1"))
+        await settle("arranca con la otra fuente") { transport.starts.count == 2 }
+        XCTAssertEqual(transport.starts[1].url.absoluteString, "https://rd.example/good.mkv")
+        XCTAssertEqual(transport.starts[1].resumeFrom, 0, "desde cero")
+        XCTAssertEqual(asked.value, [["Peli.AV1"]], "la mala queda apartada")
+        XCTAssertTrue(transport.discards.contains("tt1|tt1:1:1"), "lo de la fuente mala se tira")
+        let now = await d.item("tt1|tt1:1:1")
+        XCTAssertEqual(now?.release, "Peli.1080p.WEB")
+        XCTAssertEqual(now?.expectedBytes, 3_000_000_000)
+        XCTAssertEqual(now?.attempts, 0)
+        XCTAssertEqual(secrets.get(SecretKey.download("tt1|tt1:1:1")), "https://rd.example/good.mkv")
+    }
+
     func testASeasonPackSizeDoesNotRejectTheEpisodeFile() async throws {
         let transport = FakeTransport()
         let d = makeDownloads(transport)
@@ -384,4 +412,13 @@ actor Gate {
     private var opened = false; private var waiters: [CheckedContinuation<Void, Never>] = []
     func wait() async { if opened { return }; await withCheckedContinuation { waiters.append($0) } }
     func open() { opened = true; waiters.forEach { $0.resume() }; waiters = [] }
+}
+
+/// Un valor que cambian varias tareas a la vez (para anotar lo que pide la cola).
+final class Locked<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value: Value
+    init(_ value: Value) { _value = value }
+    var value: Value { lock.withLock { _value } }
+    func mutate(_ change: (inout Value) -> Void) { lock.withLock { change(&_value) } }
 }

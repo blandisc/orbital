@@ -269,6 +269,9 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         for stream in stopped { stream.task.cancel(); try? stream.handle.close() }
     }
 
+    /// ¿Va por el carril rápido? (para la bitácora de velocidad).
+    var isFastLane: Bool { lock.withLock { inForeground } }
+
     /// La app se ve (o se va): cada archivo por pedazos cambia de carril desde donde iba.
     func setForeground(_ value: Bool) async {
         let changed = lock.withLock { () -> Bool in defer { inForeground = value }; return inForeground != value }

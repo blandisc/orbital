@@ -222,6 +222,20 @@ final class AppEnvironment: ObservableObject {
         }
         Task { await services.downloads.start() }
         #if DEBUG
+        // `-diag-download <imdb>`: con tu cuenta de verdad (no la demostración), baja esa película con la fuente recomendada, para
+        // medir en el iPhone qué pasa al salir de la app (ver `DownloadTimeline`). `-diag-cleanup <imdb>` la borra.
+        if let imdb = Demo.value(after: "-diag-download") {
+            Task {
+                try? FileManager.default.removeItem(at: DownloadTimeline.file)
+                // El camino de siempre de «Descargar» (la fuente recomendada; si no da el video, la cola prueba otra).
+                let outcome = await services.queueDownload(kind: "movie", metaID: imdb, videoID: imdb, title: "Prueba de descarga", originalTitle: "Prueba",
+                                                           subtitle: "", poster: nil)
+                NSLog("Orbital diag: %@", String(describing: outcome))
+            }
+        }
+        if let imdb = Demo.value(after: "-diag-cleanup") {
+            Task { for item in await services.downloads.all where item.metaID == imdb { await services.downloads.remove(item.id) } }
+        }
         // `-demo-real-download <url>`: una descarga de verdad (con el transporte real, por pedazos) para medir el motor.
         if Demo.isOn, let raw = Demo.value(after: "-demo-real-download"), let url = URL(string: raw) {
             Task {
@@ -253,6 +267,7 @@ final class AppEnvironment: ObservableObject {
             for await items in services.downloads.makeUpdates() {
                 DownloadFailureNotifier.observe(items, language: settings.value.uiLanguage)
                 downloadContinuation.update(items)
+                DownloadTimeline.record(items, fastLane: lanes.isFastLane, continued: downloadContinuation.isRunning)
             }
         }
     }
@@ -462,6 +477,8 @@ final class AppEnvironment: ObservableObject {
         switch link {
         case .remote:
             ui.openRemote = true
+        case .downloads:
+            openTab = Self.downloadsTab
         case .title(let kind, let id):
             pendingTitle = TitleRoute(kind: kind, metaID: id, title: "", poster: nil)
         case .play(let kind, let id, let video):
