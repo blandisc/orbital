@@ -98,6 +98,50 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         }.prefix(count).map { $0 }
     }
     @MainActor var shownTime: Double { engine.clock.sourceTime }
+
+    /// El cuadro que está en la pantalla, leído de la capa del video (al instante y sin red: decodificarlo aparte volvía a bajar
+    /// el archivo y en segundo plano no alcanzaba). Así lo hace el propio motor para tapar el cambio de pista de audio.
+    func stillFrame(maxSize: CGSize) async -> UIImage? {
+        var buffer: CVPixelBuffer?
+        if let player = engine.nativePlayerLayer?.player, let item = player.currentItem {
+            // AVPlayer: una salida de video sobre el elemento, en el tiempo en que está (en pausa responde en ~20 ms).
+            let output = AVPlayerItemVideoOutput(pixelBufferAttributes: [kCVPixelBufferIOSurfacePropertiesKey as String: [String: String]()])
+            item.add(output)
+            defer { item.remove(output) }
+            for _ in 0..<PlayerTiming.stillAttempts where buffer == nil {
+                let time = player.rate == 0 ? item.currentTime() : output.itemTime(forHostTime: CACurrentMediaTime())
+                if time.isNumeric { buffer = output.copyPixelBuffer(forItemTime: time, itemTimeForDisplay: nil) }
+                if buffer == nil { try? await Task.sleep(nanoseconds: PlayerTiming.stillRetry) }
+            }
+        } else if let layer = Self.sampleBufferLayer() {
+            // La vía propia del motor (MKV y lo que AVPlayer no abre): el cuadro que la capa tiene puesto.
+            buffer = layer.sampleBufferRenderer.displayedPixelBuffer()
+        }
+        guard let buffer else { return nil }
+        // Un 4K se guarda a lo más en 1080p: es solo para verlo un momento y no ocupar memoria de más.
+        var image = CIImage(cvPixelBuffer: buffer)
+        let scale = min(1, maxSize.width / image.extent.width, maxSize.height / image.extent.height)
+        if scale < 1 { image = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale)) }
+        guard let cg = Self.stillContext.createCGImage(image, from: image.extent) else { return nil }
+        return UIImage(cgImage: cg)
+    }
+    private static let stillContext = CIContext()
+
+    /// La capa de video de la vía propia del motor, dentro de la ventana (la más grande, por si hay otra de PiP).
+    private static func sampleBufferLayer() -> AVSampleBufferDisplayLayer? {
+        let windows = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows)
+        var found: [AVSampleBufferDisplayLayer] = []
+        func walk(_ layer: CALayer) {
+            if let video = layer as? AVSampleBufferDisplayLayer { found.append(video) }
+            layer.sublayers?.forEach(walk)
+        }
+        windows.forEach { walk($0.layer) }
+        return found.max { $0.bounds.width * $0.bounds.height < $1.bounds.width * $1.bounds.height }
+    }
+
+    /// Hay cuadro en pantalla y el motor no quedó esperando a que lo rearmen.
+    var showsVideo: Bool { !rearming && engine.hasFirstFrameReadyForDisplay && !engine.needsForegroundVideoRestore }
+    private var rearming = false
     func setPictureInPictureActive(_ active: Bool) {
         engine.pictureInPictureActive = active
         // En la ventana de PiP el subtítulo que dibujamos encima del video no existe: AVKit dibuja el suyo (la pista de
@@ -138,7 +182,13 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
             return true
         }
         guard engine.sessionReloadRefusal == nil else { return false }
+        // Mientras se rearma, «hay video» es mentira: la marca del primer cuadro se queda puesta de antes (no la baja soltar
+        // el video en segundo plano) y la pantalla quitaba el cuadro guardado antes de tiempo (y se veía negro).
+        rearming = true
+        defer { rearming = false }
         do { try await engine.reloadAtCurrentPosition() } catch { return false }
+        // Ya abrió: un momento para que el primer cuadro llegue a la pantalla.
+        try? await Task.sleep(nanoseconds: PlayerTiming.firstFrameSettle)
         if case .error = engine.state { return false }
         if resume { engine.play() } else { engine.pause() }
         if currentRate != 1 { engine.setRate(currentRate) }
@@ -300,4 +350,9 @@ final class AetherSampleBufferPiP: NSObject, AVPictureInPictureSampleBufferPlayb
 /// Plazos del motor de video (fuera de la vista: el motor no importa el sistema de diseño).
 enum PlayerTiming {
     static let backgroundGrace: Double = 25
+    /// Tras rearmar el video al volver de segundo plano: lo que se espera a que el primer cuadro esté en pantalla.
+    static let firstFrameSettle: UInt64 = 250_000_000
+    /// Leer el cuadro de AVPlayer: cuántas veces y cada cuánto (en pausa sale a la primera; sonando, en unos 300 ms).
+    static let stillAttempts = 60
+    static let stillRetry: UInt64 = 8_000_000
 }

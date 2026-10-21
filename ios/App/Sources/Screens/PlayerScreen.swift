@@ -76,6 +76,12 @@ struct PlayerScreen: View {
     @AppStorage("player-ipod") private var ipodFace = ""
     /// Girando la rueda del iPod: a dónde vas (se va al soltar) y cuándo fue la última muesca (rápido = de a minuto).
     @State private var wheelTarget: Double?
+    /// De vuelta de segundo plano: el cuadro donde ibas, a la vista mientras el motor rearma el video (antes, negro y a esperar).
+    @State private var frozenFrame: UIImage?
+    @State private var frozenTask: Task<Void, Never>?
+    /// Si la app está al frente. Un `@State` y no `scenePhase`: dentro de una tarea, `scenePhase` es una copia del momento
+    /// en que empezó (se quedaba en «segundo plano» para siempre y el cuadro guardado no se quitaba).
+    @State private var appActive = true
     @State private var lastNotch: Date?
     /// El zoom del video (botón de arriba y pellizco, como Infuse); se recuerda en ajustes. `zoomToast`: el aviso con su nombre.
     @State private var zoom: VideoZoom = .fit
@@ -146,6 +152,7 @@ struct PlayerScreen: View {
                 ZStack {
                     if ipod != nil { DS.video }   // la pantalla del iPod: negro detrás del video
                     holder.engine.surface
+                    if let frozenFrame { frozenCover(frozenFrame).transition(.opacity) }
                     if dragAxis != .horizontal && !fillsPortrait {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
@@ -308,10 +315,26 @@ struct PlayerScreen: View {
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { await model.appDidEnterBackground() } }
             // De vuelta: el motor soltó el video en segundo plano; se rearma (o se pide otra vez) en vez de quedarse en negro.
-            if phase == .background { model.appDidEnterBackgroundFully() }
-            if phase == .active { Task { await model.appDidBecomeActive() } }
+            if phase == .background { model.appDidEnterBackgroundFully(); captureFrozenFrame() }
+            appActive = phase == .active
+            if phase == .active {
+                // Si el video siguió vivo (volviste rápido, o seguía sonando), no hace falta el cuadro guardado.
+                if holder.engine.showsVideo { frozenTask?.cancel(); frozenFrame = nil }
+                Task { await model.appDidBecomeActive() }
+            }
         }
         .onChange(of: model.phase) { _, phase in if phase == .closed { finish() } }
+        // El cuadro guardado se queda hasta que el video de verdad vuelve a la pantalla (o algo falla y sale el error).
+        .task(id: frozenFrame != nil) {
+            while frozenFrame != nil, !Task.isCancelled {
+                if failed(holder.model) { frozenFrame = nil; break }
+                if appActive, holder.engine.showsVideo, holder.model.snapshot.state != .loading {
+                    withAnimation(DS.Motion.base(reduceMotion)) { frozenFrame = nil }
+                    break
+                }
+                try? await Task.sleep(nanoseconds: DS.Timing.frozenFramePoll)
+            }
+        }
         // «Arrastra para mover» junto a la agarradera solo las primeras funciones.
         .task { if moveHintSeen < DS.PlayerPanel.moveHintTimes { showsMoveHint = true; moveHintSeen += 1 } }
         // Esta versión no trae tu idioma (o no el latino) y otra sí: se ofrece cambiar sin perder el punto.
@@ -821,6 +844,32 @@ struct PlayerScreen: View {
         }
         .padding(.vertical, DS.Space.s2)
         .frame(width: DS.PlayerPanel.menuWidth)
+    }
+
+    // MARK: volver de segundo plano
+    /// Al irse a segundo plano: se guarda el cuadro que se ve (leído de la capa del video, con tiempo prestado por iOS). Si el
+    /// motor suelta el video (en pausa, pasado el plazo), al volver se ve ese cuadro en su lugar y no negro.
+    private func captureFrozenFrame() {
+        guard holder.model.phase == .playing else { return }
+        let engine = holder.engine
+        let app = UIApplication.shared
+        var assertion = UIBackgroundTaskIdentifier.invalid
+        assertion = app.beginBackgroundTask(withName: "orbital.frozenFrame") { app.endBackgroundTask(assertion); assertion = .invalid }
+        frozenTask?.cancel()
+        frozenTask = Task {
+            let image = await engine.stillFrame(maxSize: DS.PlayerPanel.frozenFrameMax)
+            if !Task.isCancelled, let image, !appActive || !engine.showsVideo { frozenFrame = image }
+            if assertion != .invalid { app.endBackgroundTask(assertion); assertion = .invalid }
+        }
+    }
+
+    /// El cuadro guardado, con el mismo zoom que el video.
+    @ViewBuilder private func frozenCover(_ image: UIImage) -> some View {
+        switch zoom {
+        case .fill: Image(uiImage: image).resizable().scaledToFill().frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
+        case .stretch: Image(uiImage: image).resizable()
+        default: Image(uiImage: image).resizable().scaledToFit()
+        }
     }
 
     // MARK: modo iPod

@@ -339,6 +339,8 @@ enum DS {
         static let upNextThumb: CGFloat = 96, ring: CGFloat = 22, ringWidth: CGFloat = 2.5
         /// El degradado oscuro de arriba (detrás del nombre y el episodio), para leerlos sobre un video claro.
         static let topScrimHeight: CGFloat = 170
+        /// El cuadro que se guarda al irse a segundo plano (para tenerlo a la vista al volver): lo más grande que se guarda.
+        static let frozenFrameMax = CGSize(width: 1920, height: 1080)
     }
 
     /// «Modo iPod» del reproductor vertical: un iPod Classic blanco o negro (la caja, la pantalla con su marco y la rueda).
@@ -690,6 +692,8 @@ enum DS {
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
     enum Timing {
+        /// De vuelta de segundo plano: cada cuánto se mira si el video ya está para quitar el cuadro guardado.
+        static let frozenFramePoll: UInt64 = 100_000_000
         /// Cuánto espera una lista abierta (un premio) antes de dar por hecho que no llegará y mostrar el vacío.
         static let listGiveUp: UInt64 = 15_000_000_000
         /// Lo más que el pulgar espera en el destino de un salto antes de volver al avance real.

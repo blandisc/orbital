@@ -545,7 +545,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         // para ver «Elegir versión» con latino, castellano, el original y los demás.
         if ProcessInfo.processInfo.arguments.contains("-demo-versions") {
             // Un video largo (el de prueba de Apple): con uno de 10 s el reproductor se cerraba antes de poder verlo.
-            let video = "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
+            // `-demo-video <url>`: otro video (p. ej. un MKV largo servido desde la Mac, para probar la vuelta de segundo plano).
+            let video = Demo.value(after: "-demo-video") ?? "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
             let rows: [(String, String, String, String)] = [
                 ("[RD+] Torrentio\n4k DV | HDR", "Inside.Out.2.2024.2160p.WEB-DL.DV.HDR10.PLUS.ENG.LATINO.DDP5.1.Atmos.H265-BEN.THE.MEN", "17.72 GB", "TorrentGalaxy\n🇬🇧 🇲🇽"),
                 ("[RD+] Torrentio\n1080p", "IntensaMente.2.2024.1080p-Dual-Lat", "2.93 GB", "Cinecalidad\n🇲🇽"),
