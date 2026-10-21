@@ -1035,6 +1035,28 @@
         }
       }
     },
+    "Arrastra para mover": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to move"
+          }
+        }
+      }
+    },
+    "Arrastra para mover el video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to move the video"
+          }
+        }
+      }
+    },
     "Arriba": {
       "extractionState": "manual",
       "localizations": {

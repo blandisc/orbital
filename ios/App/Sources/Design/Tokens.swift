@@ -299,6 +299,10 @@ enum DS {
         /// El video en vertical, al arrastrarlo: lo más arriba que sube (debajo de la barra de ✕ y el nombre: botón de 44 y
         /// su aire) y lo que deja libre abajo para los controles (la barra, «Saltar intro», ±10, el botón grande y la pista).
         static let portraitTopClearance: CGFloat = 60, portraitControlsReserve: CGFloat = 260
+        /// La agarradera del video en vertical: la rayita, la franja de abajo que la toma (y lo que se mete sobre el video).
+        static let handleWidth: CGFloat = 40, handleHeight: CGFloat = 5, handleZone: CGFloat = 34, handleReach: CGFloat = 12
+        /// Cuántas funciones se dice «Arrastra para mover» junto a la agarradera.
+        static let moveHintTimes = 3
         /// Subtítulos rápidos: ancho máximo del panel (horizontal) y hasta dónde puede bajar su borde de arriba (vertical).
         static let dockWidth: CGFloat = 560, dockPortraitMaxTop: CGFloat = 0.55
         /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).

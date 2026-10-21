@@ -101,7 +101,12 @@ struct PlayerScreen: View {
     /// La página con que abre el panel (mantener el botón de subtítulos lo abre en Subtítulos).
     @State private var panelPage: VideoSettingsPanel.Page = .hub
     @State private var zoomToastTask: Task<Void, Never>?
-    /// Cuántas veces se ha visto «Arrastra el video…» (se deja de decir después de unas pocas).
+    /// Cuántas veces se ha visto «Arrastra para mover» junto a la agarradera (se deja de decir después de unas pocas).
+    @AppStorage("player-move-hint-seen") private var moveHintSeen = 0
+    /// En esta función se dice (se decide al abrir, para que no aparezca y desaparezca a media película).
+    @State private var showsMoveHint = false
+    /// En vertical, este arrastre mueve el video (empezó en la agarradera o fuera del video); si no, es brillo o volumen.
+    @State private var movingVideo = false
 
     // MARK: gestos como Infuse (brillo, volumen, buscar arrastrando, 2×)
     @State private var dragAxis: GestureAxis = .undecided
@@ -289,6 +294,8 @@ struct PlayerScreen: View {
             if phase == .active { Task { await model.appDidBecomeActive() } }
         }
         .onChange(of: model.phase) { _, phase in if phase == .closed { finish() } }
+        // «Arrastra para mover» junto a la agarradera solo las primeras funciones.
+        .task { if moveHintSeen < DS.PlayerPanel.moveHintTimes { showsMoveHint = true; moveHintSeen += 1 } }
         // Esta versión no trae tu idioma (o no el latino) y otra sí: se ofrece cambiar sin perder el punto.
         .onChange(of: model.notice) { _, value in
             guard case .otherVersionHasYourLanguage(let want, let have, let index)? = value else { return }
@@ -417,8 +424,14 @@ struct PlayerScreen: View {
                     hideTask?.cancel()
                     dragAxis = PlayerGestures.dominantAxis(dx: dx, dy: dy)
                     switch dragAxis {
-                    case .vertical where !landscape:
-                        portraitAtDragStart = portraitCenter   // en vertical, arrastrar arriba o abajo mueve el video
+                    // En vertical: arrastrar sobre el video es brillo (izquierda) o volumen (derecha), como en horizontal y en
+                    // Infuse; desde la agarradera de abajo o lo negro de fuera, mueve el video (antes todo arrastre lo movía y
+                    // se perdían el brillo y el volumen).
+                    case .vertical where !landscape && !fillsPortrait && !panel
+                                          && !videoRect(in: size).insetBy(dx: 0, dy: -DS.PlayerPanel.handleReach).contains(value.startLocation)
+                                          || startsOnHandle(value.startLocation, size: size):
+                        movingVideo = true
+                        portraitAtDragStart = portraitCenter
                         controlsVisible = true                 // se mueve a la altura de los controles (sin ellos va al centro)
                     case .vertical:
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
@@ -432,7 +445,7 @@ struct PlayerScreen: View {
                     }
                 }
                 switch dragAxis {
-                case .vertical where !landscape:
+                case .vertical where movingVideo:
                     let range = DS.PlayerPanel.portraitCenterRange
                     portraitDrag = min(max(portraitAtDragStart + dy / Double(size.height), Double(range.lowerBound)), Double(range.upperBound))
                 case .vertical:
@@ -451,6 +464,7 @@ struct PlayerScreen: View {
             }
             .onEnded { _ in
                 if let moved = portraitDrag { portraitCenter = moved; portraitDrag = nil }
+                movingVideo = false
                 if dragAxis == .horizontal, let target = seekPreview { pendingSeek = target; Task { await model.seek(to: target) } }
                 dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil
                 scheduleIndicatorHide()
@@ -591,6 +605,13 @@ struct PlayerScreen: View {
         }
     }
 
+    /// La agarradera: una franja a lo ancho justo debajo del video (fácil de agarrar aunque la rayita sea chica).
+    private func startsOnHandle(_ point: CGPoint, size: CGSize) -> Bool {
+        guard !landscape, !fillsPortrait, !panel else { return false }
+        let rect = videoRect(in: size)
+        return point.y >= rect.maxY - DS.PlayerPanel.handleReach && point.y <= rect.maxY + DS.PlayerPanel.handleZone
+    }
+
     private func scheduleHide() {
         hideTask?.cancel()
         hideTask = Task {
@@ -669,6 +690,19 @@ struct PlayerScreen: View {
                         LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     }
                     topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+                    // La agarradera pegada al borde de abajo del video (como la de las hojas de iOS): de ahí se mueve. Las
+                    // primeras veces dice qué hace; luego queda la rayita.
+                    if !fillsPortrait {
+                        VStack(spacing: DS.Space.s1) {
+                            Capsule().fill(DS.textMuted).frame(width: DS.PlayerPanel.handleWidth, height: DS.PlayerPanel.handleHeight)
+                            if showsMoveHint { Text("Arrastra para mover").recipe(.caption, color: DS.textMuted) }
+                        }
+                        .padding(.top, rect.maxY + DS.Space.s1)
+                        .allowsHitTesting(false)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text("Arrastra para mover el video"))
+                        .accessibilityIdentifier("player-drag-hint")
+                    }
                     VStack(spacing: DS.Space.s3) {
                         // «Siguiente episodio» entre el video y la barra (antes tapaba los controles).
                         if let up = model.upNext, !locked { upNextCard(model, up) }
@@ -677,17 +711,11 @@ struct PlayerScreen: View {
                         HStack { Spacer(); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
                         if !fillsPortrait { Spacer(minLength: 0) }
                         if model.phase != .preparing { transport(model) }
-                        if !fillsPortrait {
-                            Spacer(minLength: 0)
-                            // Cómo mover el video, dicho con palabras y siempre que estén los controles: al pie, solo.
-                            Label("Arrastra el video para subirlo o bajarlo", systemImage: "arrow.up.and.down")
-                                .recipe(.footnote, color: DS.textMuted)
-                                .accessibilityIdentifier("player-drag-hint")
-                        }
+                        if !fillsPortrait { Spacer(minLength: 0) }
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     .padding(.bottom, fillsPortrait ? DS.Space.s8 : DS.Space.s4)
-                    .padding(.top, fillsPortrait ? 0 : rect.maxY + DS.Space.s3)
+                    .padding(.top, fillsPortrait ? 0 : rect.maxY + DS.PlayerPanel.handleZone)
                     .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
