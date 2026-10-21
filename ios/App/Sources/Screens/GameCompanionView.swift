@@ -74,14 +74,17 @@ struct GameCompanionView: View {
 /// consola y diez minutos antes de que un juego en pausa se cierre solo.
 @MainActor
 enum CompanionAlerts {
+    /// El principio del id del aviso de batería (con la app abierta, iOS no lo enseña: ya lo dice la app).
+    nonisolated static let batteryPrefix = "game-battery-warned."
+
     /// A la batería baja de la consola, una vez por juego: vibración y aviso.
     static func warnBattery(_ env: AppEnvironment, game: OrbitalRemote.Game, percent: Int?, plugged: Bool) {
         guard let percent, !plugged, percent <= DS.Companion.lowBattery else { return }
-        let key = "game-battery-warned.\(game.id).\(Int(game.started?.timeIntervalSince1970 ?? 0))"
+        let key = "\(batteryPrefix)\(game.id).\(Int(game.started?.timeIntervalSince1970 ?? 0))"
         guard env.services.kv.data(key) == nil else { return }
         env.services.kv.set(key, data: Data([1]))
         let language = env.services.appSettings.uiLanguage
-        env.notify(format: "A la consola le queda %lld %% de batería.", percent, tone: .warn)
+        env.notify(format: "A la consola le queda %lld %%", percent, detail: "Conéctala antes de que se apague", tone: .warn)
         notify(id: key, title: Strings.tr("Batería baja en la consola", language: language),
                body: String(format: Strings.tr("Le queda %lld %%: conéctala antes de que se apague.", language: language), percent), at: nil)
     }

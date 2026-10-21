@@ -243,59 +243,80 @@ struct FlowChips: Layout {
 /// El aviso de la app (una sola familia): arriba, en vidrio, con su glifo de color, el texto y, si la tiene, una acción
 /// («Deshacer», «Ver»). Se va solo; tocarlo lo cierra.
 struct Toast: View {
-    let symbol: String
-    let color: Color
+    let tone: DSNotice.Tone
     let title: Text
     var detail: Text?
     var actionTitle: LocalizedStringKey?
-    var action: (() -> Void)?
-    /// Una acción que se hace ahí mismo («Deshacer»): botón en su cápsula, sin «›» (la flecha es para ir a otro lado, «Ver ›»).
-    var actionInPlace = false
     var actionSymbol: String?
-    var seconds: UInt64 = DS.Timing.banner
+    var action: (() -> Void)?
+    /// Otro ícono y color que el del tono (el de pasar a la TV: la tele en el color de Orbital).
+    var symbol: String?
+    var color: Color?
+    /// nil: se queda hasta que lo toques o lo deslices (el que te necesita); si no, lo que dure según traiga salida o no.
+    var seconds: UInt64?
     let dismiss: () -> Void
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
 
+    /// Cuánto se queda según el tono y si trae salida: solo informa, 4 s; con salida, 8 s; si te necesita, hasta que lo toques.
+    static func duration(_ tone: DSNotice.Tone, hasAction: Bool) -> UInt64? {
+        if hasAction, tone == .warn || tone == .error { return nil }
+        return hasAction ? DS.Timing.toastAction : DS.Timing.banner
+    }
+
+    static func symbol(_ tone: DSNotice.Tone) -> String {
+        switch tone { case .info: "info.circle"; case .success: "checkmark.circle"; case .warn: "exclamationmark.triangle"; case .error: "exclamationmark.circle" }
+    }
+
+    static func color(_ tone: DSNotice.Tone) -> Color {
+        switch tone { case .info: DS.textMuted; case .success: DS.brandMoon; case .warn: DS.warning; case .error: DS.danger }
+    }
+
+    /// Lo que hay que hacer (Conectar, Reintentar) va en la cápsula clara; lo opcional (Otra, Ver, Deshacer), en la gris.
+    private var prominent: Bool { tone == .warn || tone == .error }
+
     var body: some View {
-        // Una píldora chica y discreta (como los avisos de iOS): el ícono en su color, el texto en una línea y «Ver ›» como enlace.
-        HStack(spacing: DS.Space.s2) {
-            Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(color)
+        // Una píldora (como los avisos de iOS): el ícono en su tono, lo que pasó y su dato, y a la derecha la salida en su cápsula
+        // (sin «›»: la flecha es para ir a otra pantalla).
+        HStack(spacing: DS.Space.s3) {
+            Image(systemName: symbol ?? Self.symbol(tone)).font(DS.TextRecipe.body.font.weight(.semibold)).foregroundStyle(color ?? Self.color(tone))
             VStack(alignment: .leading, spacing: 0) {
                 title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
-                if let detail { detail.recipe(.caption).lineLimit(1) }
+                // El dato en dos renglones si hace falta (en un iPhone angosto se cortaba justo lo que importa).
+                if let detail { detail.recipe(.caption).lineLimit(2).fixedSize(horizontal: false, vertical: true) }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             if let actionTitle, let action {
                 Button { action(); dismiss() } label: {
-                    if actionInPlace {
-                        HStack(spacing: DS.Space.s1) {
-                            if let actionSymbol { Image(systemName: actionSymbol).font(DS.TextRecipe.caption.font.weight(.bold)) }
-                            Text(actionTitle).fontWeight(.semibold)
-                        }
-                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text)
-                        .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Toast.actionHeight)
-                        .background(DS.fillStrong, in: Capsule())
-                        .contentShape(Capsule())
-                    } else {
-                        HStack(spacing: DS.Space.s1) { Text(actionTitle).fontWeight(.semibold); Image(systemName: "chevron.right").font(DS.TextRecipe.caption.font.weight(.bold)) }
-                            .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.accent)
+                    HStack(spacing: DS.Space.s1) {
+                        if let actionSymbol { Image(systemName: actionSymbol).font(DS.TextRecipe.caption.font.weight(.bold)) }
+                        Text(actionTitle).fontWeight(.semibold)
                     }
+                    .font(DS.TextRecipe.footnote.font).foregroundStyle(prominent ? DS.bg : DS.text)
+                    .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Toast.actionHeight)
+                    .background(prominent ? DS.solidPrimary : DS.fillStrong, in: Capsule())
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .padding(.leading, actionInPlace ? DS.Space.s2 : DS.Space.s1)
+                .fixedSize()
             }
         }
-        .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+        .padding(.leading, DS.Space.s4).padding(.trailing, action == nil ? DS.Space.s4 : DS.Space.s2).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular, in: Capsule())
+        .overlay { if prominent { Capsule().strokeBorder(Self.color(tone).opacity(DS.Toast.toneStroke), lineWidth: DS.Toast.strokeWidth) } }
         .contentShape(Capsule())
         .onTapGesture(perform: dismiss)
-        .frame(maxWidth: .infinity)   // al centro, del ancho de lo que dice
-        .padding(.horizontal, DS.Space.s4)
-        // Con VoiceOver se anuncia y no se va solo (si no, «Deshacer» desaparecía antes de poder llegar a él).
+        // Deslizar hacia abajo lo quita (el que te necesita no se va solo).
+        .gesture(DragGesture(minimumDistance: DS.Toast.swipe).onEnded { if $0.translation.height > 0 { dismiss() } })
+        .frame(maxWidth: DS.Toast.maxWidth)
+        .padding(.horizontal, DS.Space.s3)
+        // Con VoiceOver se anuncia y no se va solo (si no, la salida desaparecía antes de poder llegar a ella).
         .task {
-            if voiceOver { UIAccessibility.post(notification: .layoutChanged, argument: nil); return }   // VoiceOver lo encuentra y se queda
+            if voiceOver { UIAccessibility.post(notification: .layoutChanged, argument: nil); return }
+            guard let seconds else { return }
             try? await Task.sleep(nanoseconds: seconds); dismiss()
         }
         .accessibilityElement(children: .contain)
+        .accessibilityAction(named: Text("Cerrar"), dismiss)
     }
 }
 
@@ -684,7 +705,7 @@ struct PlayerFailureView: View {
     private var title: Text {
         switch failure {
         case .noSources: Text("Todavía no hay dónde verlo")
-        case .noneWorked: Text("No pudimos reproducirlo")
+        case .noneWorked: Text("No pude reproducirlo")
         case .sourceDied: Text("Se cortó el video")
         case .network: Text("Sin conexión")
         case .localFile: Text("No se puede abrir la descarga")

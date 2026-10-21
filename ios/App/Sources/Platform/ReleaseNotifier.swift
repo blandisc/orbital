@@ -11,8 +11,10 @@ enum ReleaseNotifier {
     /// Debe coincidir con `BGTaskSchedulerPermittedIdentifiers` de `project.yml`.
     static let identifier = "mx.iracheta.orbital.releases"
     static let category = "orbital.release"
+    /// Varios juntos: «Ver el primero» y «Bajar todos».
+    static let groupCategory = "orbital.release.group"
     static let thread = "estrenos"
-    enum Action { static let watch = "release.watch", tv = "release.tv", download = "release.download" }
+    enum Action { static let watch = "release.watch", tv = "release.tv", download = "release.download", downloadAll = "release.download-all" }
     /// Tres o más a la vez: uno solo con la lista.
     static let groupFrom = 3
 
@@ -42,8 +44,12 @@ enum ReleaseNotifier {
         ]
         let release = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
                                              hiddenPreviewsBodyPlaceholder: Strings.tr("Un estreno ya está para ver", language: language), options: [])
+        let group = UNNotificationCategory(identifier: groupCategory, actions: [
+            UNNotificationAction(identifier: Action.watch, title: Strings.tr("Ver el primero", language: language), options: [.foreground], icon: UNNotificationActionIcon(systemImageName: "play.fill")),
+            UNNotificationAction(identifier: Action.downloadAll, title: Strings.tr("Bajar todos", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "arrow.down.circle")),
+        ], intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: Strings.tr("Un estreno ya está para ver", language: language), options: [])
         UNUserNotificationCenter.current().getNotificationCategories { existing in
-            UNUserNotificationCenter.current().setNotificationCategories(existing.filter { $0.identifier != category }.union([release]))
+            UNUserNotificationCenter.current().setNotificationCategories(existing.filter { $0.identifier != category && $0.identifier != groupCategory }.union([release, group]))
         }
     }
 
@@ -74,7 +80,9 @@ enum ReleaseNotifier {
             content.body = due.map { "\($0.show) · " + Strings.episode(season: $0.season, episode: $0.episode, language: language) }.joined(separator: "\n")
             content.threadIdentifier = thread
             content.sound = .default
-            content.userInfo = ["kind": "series", "id": due[0].metaID, "video": due[0].id, "title": due[0].show]
+            content.categoryIdentifier = groupCategory
+            content.userInfo = ["kind": "series", "id": due[0].metaID, "video": due[0].id, "title": due[0].show,
+                                "all": due.map { ["id": $0.metaID, "video": $0.id, "title": $0.show, "episode": Strings.episode(season: $0.season, episode: $0.episode, language: language)] }]
             if let image = await attachment(due[0].art, id: "group") { content.attachments = [image] }
             try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "release.group.\(due.map(\.id).joined(separator: ","))", content: content, trigger: trigger))
             return
@@ -117,6 +125,13 @@ enum ReleaseNotifier {
         switch response.actionIdentifier {
         case Action.tv:
             await env.playOnTV(kind: kind, metaID: id, videoID: video, title: title)
+        case Action.downloadAll:
+            for entry in info["all"] as? [[String: String]] ?? [] {
+                guard let metaID = entry["id"], let video = entry["video"] else { continue }
+                let show = entry["title"] ?? ""
+                _ = await env.services.queueDownload(kind: "series", metaID: metaID, videoID: video, title: show, originalTitle: show,
+                                                     subtitle: entry["episode"] ?? "", poster: String(format: ForYou.metahubPoster, metaID))
+            }
         case Action.download:
             _ = await env.services.queueDownload(kind: kind, metaID: id, videoID: video ?? id, title: title, originalTitle: title, subtitle: "",
                                                  poster: String(format: ForYou.metahubPoster, id))

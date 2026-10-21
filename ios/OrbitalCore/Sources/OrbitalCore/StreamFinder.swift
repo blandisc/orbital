@@ -3,7 +3,7 @@ import Foundation
 /// Ningún complemento contestó (sin internet, o tus complementos caídos): no es lo mismo que «no hay fuentes».
 public enum StreamFinderError: Error, Sendable, CustomStringConvertible {
     case unreachable
-    public var description: String { "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet." }
+    public var description: String { "Sin conexión: no pude preguntar por fuentes. Revisa tu internet." }
 }
 
 /// Pide fuentes a los complementos que las dan (en paralelo) y las recuerda unos minutos.

@@ -83,7 +83,7 @@ struct TitleView: View {
             if Demo.isOn, Demo.open == "download-tap" { await downloadRecommended(model) }
             if Demo.isOn, Demo.open == "save" { saving = true }   // `-demo-open save`: la hoja «Guardar en…», para capturas
             if Demo.isOn, Demo.open == "versions", let v = model.downloadTarget {   // `-demo-open versions`: la hoja «Ya la tienes»
-                await report(model.download([v]), model)
+                await report(model.download([v]), model, videoID: v)
                 await model.loadBestSource()
                 if let source = model.bestSource, let existing = await model.existingDownload(v) { replacing = Replacement(source: source, videoID: v, existing: existing) }
             }
@@ -302,7 +302,7 @@ struct TitleView: View {
             env.notify("Guardada en Mi lista", detail: "Stremio", actionTitle: "Cambiar") { saving = true }
         } else if model.inLibrary && !model.inWatchlist && !model.inSomeList && !(model.lists ?? []).contains(where: \.contains) {
             await model.toggleLibrary()
-            env.notify("Quitada de Mi lista", tone: .info, actionTitle: "Deshacer") { Task { await model.toggleLibrary() } }
+            env.notify("Quitada de Mi lista", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { Task { await model.toggleLibrary() } }
         } else {
             saving = true   // está en varias listas: que elijas de cuál quitarla
         }
@@ -363,7 +363,7 @@ struct TitleView: View {
     private func downloadRecommended(_ model: TitleModel, videoID: String? = nil) async {
         guard let target = videoID ?? model.downloadTarget else { return }
         let outcome = await model.download([target])
-        guard case .queued = outcome else { return await report(outcome, model) }
+        guard case .queued = outcome else { return await report(outcome, model, videoID: target) }
         let item = await model.existingDownload(target)
         let size = item?.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) }
         let detail = [item?.quality, size].compactMap { $0 }.joined(separator: " · ")
@@ -568,8 +568,8 @@ struct TitleView: View {
     /// «Ver»: si ya se sabe que no hay fuentes (o no hay red), lo dice aquí en vez de abrir un reproductor que va a fallar.
     private func play(_ model: TitleModel) {
         switch model.sourceCheck {
-        case .none: env.notify("Real-Debrid aún no lo tiene. Los estrenos suelen aparecer unas horas después.", tone: .info)
-        case .offline: env.notify("Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet.")
+        case .none: env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+        case .offline: env.notify("Sin internet", detail: "No pude preguntar por fuentes", tone: .warn, actionTitle: "Reintentar") { play(model) }
         default: start(model, videoID: nil)
         }
     }
@@ -588,7 +588,7 @@ struct TitleView: View {
             // Ya hay una copia (o se está bajando): una sola por película o episodio, así que se pregunta si cambiarla.
             Task {
                 if let existing = await model.existingDownload(videoID) { replacing = Replacement(source: source, videoID: videoID, existing: existing); return }
-                await report(model.download([videoID], source: source), model)   // la fuente que elegiste
+                await report(model.download([videoID], source: source), model, videoID: videoID)   // la fuente que elegiste
             }
         }
     }
@@ -610,14 +610,12 @@ struct TitleView: View {
         return (label.isEmpty ? source.addon : label, Text(verbatim: [size, source.addon.isEmpty ? nil : source.addon].compactMap { $0 }.joined(separator: " · ")))
     }
 
-    private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel) async {
+    private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel, videoID: String? = nil) async {
         switch outcome {
         // Una sola: lo dice el botón o el renglón (su avance), sin aviso encima. Varias: un aviso breve.
         case .queued(let n): if n > 1 { env.notify(format: "Descargando %lld episodios", n, tone: .success, action: .downloads) }
-        case .noSources: env.notify("No hay fuentes de Real-Debrid para descargar.")
-        case .notEnoughSpace(let text): env.notify(text)
-        case .already: env.notify("Ya está descargado.", tone: .info)
-        case .failed(let text): env.notify(text)
+        // «Ya está descargada · Ver»: la copia del iPhone, sin red.
+        default: env.report(outcome, downloaded: videoID.map { (model.metaID, $0) })
         }
         await model.refreshState()
     }

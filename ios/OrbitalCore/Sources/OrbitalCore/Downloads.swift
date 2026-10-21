@@ -139,7 +139,7 @@ public enum DownloadError: Error, Sendable, Equatable, CustomStringConvertible {
     case unsafePath
     public var description: String {
         switch self {
-        case .notEnoughSpace(let needed, let free): return "No hay espacio: hacen falta \(needed / 1_000_000) MB y hay \(free / 1_000_000) MB libres."
+        case .notEnoughSpace(let needed, let free): return "Hacen falta \(needed / 1_000_000) MB y hay \(free / 1_000_000) MB libres."
         case .alreadyDownloaded: return "Ya está descargado."
         case .noURL: return "Esta fuente no tiene un enlace para descargar."
         case .unsafePath: return "El nombre de este título no sirve para guardarlo."

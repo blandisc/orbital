@@ -61,24 +61,64 @@ final class AppEnvironment: ObservableObject {
     }
     struct Banner: Equatable {
         var text: String; var tone: DSNotice.Tone; var action: BannerAction?
-        /// Un segundo renglón («1080p · 2.4 GB») y el nombre del botón (por omisión, «Ver»).
+        /// Un segundo renglón («1080p · 2.4 GB») y el nombre del botón (por omisión, «Ver»), con su ícono si lo lleva.
         var detail: String? = nil
         var actionTitle: String? = nil
+        var actionSymbol: String? = nil
+        /// Su número: cada aviso es otro aunque diga lo mismo (para animar el cambio y quitar justo ese).
+        var serial = 0
     }
     /// Lo que hace el botón de un aviso: ir a Descargas, o lo que pidió quien avisó (`perform`, con su número).
     enum BannerAction: Equatable { case downloads, perform(Int) }
-    /// Lo que corre el botón de un aviso con `.perform` (solo el del aviso a la vista).
-    private(set) var bannerPerform: (() -> Void)?
+    /// Lo que corre el botón de cada aviso con `.perform` (el de la vista y los que esperan).
+    private var performs: [Int: () -> Void] = [:]
+    /// Los que esperan: uno con salida («Deshacer») no se pisa; el siguiente sale cuando ese se va.
+    private var bannerQueue: [Banner] = []
     private var bannerSerial = 0
 
     /// Un aviso con un botón propio: «Guardada en Mi lista · Cambiar», «Bajando la recomendada · Otra».
-    func notify(_ text: String, detail: String? = nil, tone: DSNotice.Tone = .success, actionTitle: String, perform: @escaping () -> Void) {
+    func notify(_ text: String, detail: String? = nil, tone: DSNotice.Tone = .success, actionTitle: String, actionSymbol: String? = nil,
+                perform: @escaping () -> Void) {
         let language = services.appSettings.uiLanguage
         bannerSerial += 1
-        bannerPerform = perform
-        banner = Banner(text: Strings.message(text, language: language), tone: tone, action: .perform(bannerSerial),
-                        detail: detail.map { Strings.message($0, language: language) }, actionTitle: Strings.tr(actionTitle, language: language))
+        performs[bannerSerial] = perform
+        show(Banner(text: Strings.message(text, language: language), tone: tone, action: .perform(bannerSerial),
+                    detail: detail.map { Strings.message($0, language: language) }, actionTitle: Strings.tr(actionTitle, language: language),
+                    actionSymbol: actionSymbol))
     }
+
+    /// Pone el aviso, o lo forma detrás del que está si ese trae salida (así no se pierde un «Deshacer»).
+    func show(_ new: Banner) {
+        var new = new
+        if new.serial == 0 { bannerSerial += 1; new.serial = bannerSerial }
+        if let current = banner, current.action != nil, current.text != new.text {
+            bannerQueue.removeAll { $0.text == new.text }
+            bannerQueue.append(new)
+            while bannerQueue.count > DS.Toast.queueLimit { forget(bannerQueue.removeFirst()) }
+            return
+        }
+        if let current = banner { forget(current) }
+        banner = new
+    }
+
+    /// Se fue (se acabó su tiempo, lo tocaste o lo deslizaste): sale el siguiente que esperaba.
+    func dismissBanner(_ serial: Int) {
+        guard let current = banner, current.serial == serial else { return }
+        forget(current)
+        banner = bannerQueue.isEmpty ? nil : bannerQueue.removeFirst()
+    }
+
+    /// Su salida: ir a Descargas o lo que pidió quien avisó.
+    func runBannerAction(_ banner: Banner) {
+        switch banner.action {
+        case .downloads: openTab = Self.downloadsTab
+        case .perform(let n): performs[n]?()
+        case nil: break
+        }
+    }
+
+    private func forget(_ banner: Banner) { if case .perform(let n)? = banner.action { performs[n] = nil } }
+
     /// Una pestaña que un aviso pide abrir («Ver» en «Descargando…»).
     var openTab: Int? { get { ui.openTab } set { ui.openTab = newValue } }
     static let downloadsTab = 3
@@ -89,14 +129,45 @@ final class AppEnvironment: ObservableObject {
     }
 
     /// Un aviso: lo que arma la app en español se traduce aquí, una sola vez (el aviso ya se pinta tal cual).
-    func notify(_ text: String, tone: DSNotice.Tone = .error, action: BannerAction? = nil) {
-        banner = Banner(text: Strings.message(text, language: services.appSettings.uiLanguage), tone: tone, action: action)
+    /// Neutral si nadie dice otra cosa: el ámbar es para lo que te necesita y el rojo, para cuando algo se perdió.
+    func notify(_ text: String, detail: String? = nil, tone: DSNotice.Tone = .info, action: BannerAction? = nil, actionTitle: String? = nil) {
+        let language = services.appSettings.uiLanguage
+        show(Banner(text: Strings.message(text, language: language), tone: tone, action: action,
+                    detail: detail.map { Strings.message($0, language: language) }, actionTitle: actionTitle.map { Strings.tr($0, language: language) }))
     }
     /// Un texto armado en español por un modelo (error o aviso), listo para `Text`/`DSNotice` en el idioma de la app.
     func message(_ text: String) -> String { Strings.message(text, language: services.appSettings.uiLanguage) }
     /// Un aviso con datos: la clave («… %@») se traduce primero y luego se llena (`LocalizedStringKey` no encuentra un texto ya armado).
-    func notify(format key: String, _ args: CVarArg..., tone: DSNotice.Tone = .error, action: BannerAction? = nil) {
-        banner = Banner(text: String(format: Strings.tr(key, language: services.appSettings.uiLanguage), arguments: args), tone: tone, action: action)
+    func notify(format key: String, _ args: CVarArg..., detail: String? = nil, tone: DSNotice.Tone = .info, action: BannerAction? = nil) {
+        let language = services.appSettings.uiLanguage
+        show(Banner(text: String(format: Strings.tr(key, language: language), arguments: args), tone: tone, action: action,
+                    detail: detail.map { Strings.message($0, language: language) }))
+    }
+
+    /// Lo que bajaste de ese video, sin red (si ya no está, a Descargas).
+    func playDownloaded(metaID: String, videoID: String) async {
+        guard let item = await services.downloads.item(DownloadItem.makeID(metaID: metaID, videoID: videoID)), item.state == .done else {
+            openTab = Self.downloadsTab; return
+        }
+        play(await DownloadsModel(services, freeSpace: { DiskSpace.freeBytes() }).playRequest(item))
+    }
+
+    /// Lo que pasó al pedir una descarga, dicho igual en toda la app (la ficha, Para ti, Mi media y lo que manda la TV).
+    /// `.queued` lo dice quien la pidió (cada uno a su manera: el anillo, «Bajando la recomendada»).
+    func report(_ outcome: TitleModel.DownloadOutcome, downloaded video: (metaID: String, videoID: String)? = nil) {
+        switch outcome {
+        case .queued: break
+        case .noSources: notify("No hay una versión para bajar", detail: "Real-Debrid no tiene un archivo de este título")
+        case .notEnoughSpace(let text): notify("No cabe en el iPhone", detail: text, tone: .warn, action: .downloads, actionTitle: "Descargas")
+        case .already:
+            if let video {
+                notify("Ya está descargada", detail: "En el iPhone, para ver sin conexión", tone: .info, actionTitle: "Ver", actionSymbol: "play.fill") { [weak self] in
+                    Task { await self?.playDownloaded(metaID: video.metaID, videoID: video.videoID) }
+                }
+            }
+            else { notify("Ya está descargada", detail: "En el iPhone, para ver sin conexión", action: .downloads, actionTitle: "Descargas") }
+        case .failed(let text): notify("No pude preparar la descarga", detail: text, tone: .warn)
+        }
     }
 
     /// Un solo entorno para toda la app (las vistas lo comparten sin armar otro).
@@ -138,7 +209,7 @@ final class AppEnvironment: ObservableObject {
         // Trakt cerró la sesión: se avisa una vez, con un botón a Ajustes (antes se desconectaba en silencio).
         traktObserver = NotificationCenter.default.addObserver(forName: Trakt.sessionLost, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.notify("Tu sesión de Trakt se cerró", detail: "Conéctala otra vez para tus recomendaciones y lo que viste.", tone: .warn,
+                self?.notify("Tu sesión de Trakt se cerró", detail: "Sin ella no llegan tus recomendaciones", tone: .warn,
                              actionTitle: "Conectar") { self?.ui.openSettings = true }
             }
         }
@@ -160,6 +231,8 @@ final class AppEnvironment: ObservableObject {
         let settings = services.settings
         liveActivity.language = { settings.value.uiLanguage }
         Task { await liveActivity.follow(services.downloads) }
+        // Una descarga que se detiene con la app cerrada se avisa (antes la actividad solo desaparecía).
+        Task { for await items in services.downloads.makeUpdates() { DownloadFailureNotifier.observe(items, language: settings.value.uiLanguage) } }
     }
 
     private static func makeServices(_ transport: BackgroundDownloadTransport) -> Services {
@@ -194,13 +267,13 @@ final class AppEnvironment: ObservableObject {
     /// El aviso (con háptica, por el tono del aviso) de lo que pasó con lo que mandó la TV.
     private func announce(_ event: InboxModel.Event) {
         switch event {
-        case .downloading(let name): notify(format: "Descargando %@ (desde la TV)", name, tone: .success, action: .downloads)
-        case .received(let name): notify(format: "Desde la TV: %@", name, tone: .info)
+        case .downloading(let name): notify(format: "La TV te mandó «%@»", name, detail: "Bajando en el iPhone", tone: .success, action: .downloads)
+        case .received(let name): notify(format: "La TV te mandó «%@»", name)
         case .downloadFailed(let name, let reason):
             switch reason {
-            case .noSources: notify(format: "No encontré una fuente para descargar %@ (desde la TV)", name)
-            case .notEnoughSpace: notify(format: "No hay espacio para descargar %@ (desde la TV)", name)
-            case .other: notify(format: "No pude descargar %@ (desde la TV)", name)
+            case .noSources: notify(format: "No pude bajar «%@»", name, detail: "Real-Debrid no tiene un archivo de este título")
+            case .notEnoughSpace: notify(format: "«%@» no cabe en el iPhone", name, detail: "Libera espacio en Descargas", tone: .warn, action: .downloads)
+            case .other: notify(format: "No pude bajar «%@»", name, detail: "Lo mandó la TV: intenta desde su ficha")
             }
         case .played:
             break   // Se cerró un juego en la consola: sin resumen ni aviso (se sentía como un regaño por el tiempo jugado).
@@ -251,7 +324,12 @@ final class AppEnvironment: ObservableObject {
             catch { unreachable = error is StreamFinderError }
         }
         guard let url = chosen?.playbackURL else {
-            return notify(unreachable ? "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet." : "Real-Debrid aún no tiene este título.")
+            if unreachable {
+                return notify("Sin internet", detail: "No pude preguntar por fuentes", tone: .warn, actionTitle: "Reintentar") { [weak self] in
+                    Task { await self?.playExternal(request, source: source) }
+                }
+            }
+            return notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
         }
         // Apagados en este título (o en Ajustes): Infuse los recibe apagados (antes mandaba los de Ajustes de todos modos).
         let subtitle = langs.subtitles.isEmpty ? nil : await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles).first
@@ -263,7 +341,7 @@ final class AppEnvironment: ObservableObject {
         let runtime = request.meta.map { CinemetaParsing.runtimeSeconds(CinemetaParsing.describe($0).runtime) } ?? 0
         external = ExternalSession(request: request, startedAt: Date(), startPosition: position, duration: runtime)
         let opened = await UIApplication.shared.open(infuseURL)
-        if !opened { external = nil; notify("No pude abrir Infuse. ¿Está instalado?") }
+        if !opened { external = nil; notify("No pude abrir Infuse", detail: "¿Está instalado?", tone: .warn) }
     }
 
     /// Infuse volvió (`orbital-ios://infuse-done?...`): se guarda dónde te quedaste. Infuse ya avisa a Trakt por su cuenta.
@@ -278,8 +356,12 @@ final class AppEnvironment: ObservableObject {
         defer { external = nil; watchedSomething += 1 }
         guard let session = external else { return }
         switch result {
-        case .failed(_, let message, _):
-            if let message { notify(format: "Infuse no pudo reproducirlo: %@", stripURLs(message)) } else { notify("Infuse no pudo reproducirlo.") }
+        case .failed:
+            // Sin el texto técnico de Infuse: qué hacer, y la salida de verla aquí.
+            let request = session.request
+            notify("Infuse no pudo con esta versión", detail: "Prueba otra fuente o ábrela aquí", tone: .warn, actionTitle: "Ver aquí") { [weak self] in
+                self?.play(request)
+            }
         case .closed:
             guard let seconds = Infuse.seconds(from: result, knownDuration: session.duration) else { return }
             let r = session.request
@@ -307,7 +389,7 @@ final class AppEnvironment: ObservableObject {
                 // Lo que llega por AirDrop o «Abrir con…» queda en Documents/Inbox: se mueve (no se queda una segunda copia de gigas).
                 if url.path.contains("/Inbox/") { try FileManager.default.moveItem(at: url, to: target) }
                 else { try FileManager.default.copyItem(at: url, to: target) }
-            } catch { notify("No pude abrir ese archivo."); return }
+            } catch { notify("No pude abrir ese archivo", tone: .warn); return }
         }
         // Fuera del respaldo de iCloud (como las descargas) y con la fecha de hoy (de ella se cuentan los días para borrarlo).
         var values = URLResourceValues(); values.isExcludedFromBackup = true
@@ -387,8 +469,13 @@ final class AppEnvironment: ObservableObject {
         do {
             let got = try await services.connectOrbital(address: address, token: token)
             let brought = got.joined(separator: services.appSettings.uiLanguage == "en" ? " and " : " y ")
-            if got.isEmpty { notify("Conectado con tu Orbital.", tone: .success) } else { notify(format: "Conectado con tu Orbital: %@ ya están aquí.", brought, tone: .success) }
-        } catch { notify((error as? OrbitalRemote.Failure)?.description ?? "\(error)") }
+            if got.isEmpty { notify("Conectado con tu Orbital", tone: .success) } else { notify(format: "Conectado con tu Orbital: %@ ya están aquí.", brought, tone: .success) }
+        } catch { notifyOrbital(error) }
+    }
+
+    /// Tu Orbital no hizo lo que se le pidió: lo que dijo (no contesta, el token, actualizar), nunca el texto técnico.
+    func notifyOrbital(_ error: Error) {
+        notify((error as? OrbitalRemote.Failure)?.description ?? "Tu Orbital no contestó.", tone: .warn)
     }
 
     /// «Ver en la TV»: tu Orbital pone el título (la fuente recomendada, donde ibas; el avance vive en Stremio).
@@ -405,14 +492,14 @@ final class AppEnvironment: ObservableObject {
     /// Elige uno y arma la tira de la ruleta (otros al azar y, al final, el elegido).
     func drawSimpsons(reelLength: Int, quiet: Bool = false) async -> SimpsonsDraw? {
         let id = Self.simpsons
-        guard let meta = try? await services.cinemeta.meta(kind: "series", id: id) else { if !quiet { notify("No pude traer los episodios de Los Simpson.") }; return nil }
+        guard let meta = try? await services.cinemeta.meta(kind: "series", id: id) else { if !quiet { notify("No pude traer los episodios de Los Simpson", detail: "Revisa tu internet") }; return nil }
         // Leer ~700 episodios cuesta: fuera del hilo principal (si no, la animación de la tele se trababa).
         let seasons = Self.simpsonsSeasons
         let pool = await Task.detached(priority: .userInitiated) {
             CinemetaParsing.seasons(meta).filter { seasons.contains($0.season) }
                 .flatMap { season in season.episodes.map { (season: season.season, episode: $0) } }
         }.value
-        guard pool.count > 1, let chosen = pool.randomElement() else { if !quiet { notify("No pude traer los episodios de Los Simpson.") }; return nil }
+        guard pool.count > 1, let chosen = pool.randomElement() else { if !quiet { notify("No pude traer los episodios de Los Simpson", detail: "Revisa tu internet") }; return nil }
         let others = (0..<max(0, reelLength - 1)).compactMap { _ in pool.randomElement() }
         return SimpsonsDraw(meta: meta, name: meta["name"]?.string ?? "The Simpsons", reel: others + [chosen])
     }
@@ -456,8 +543,8 @@ final class AppEnvironment: ObservableObject {
     func playOnTV(kind: String, metaID: String, videoID: String?, title: String) async {
         do {
             try await services.orbital.play(kind: kind, metaID: metaID, videoID: videoID, title: title)
-            notify("Poniéndolo en la TV.", tone: .success)
-        } catch { notify((error as? OrbitalRemote.Failure)?.description ?? "\(error)") }
+            notify("En tu Orbital", detail: title, tone: .success)
+        } catch { notifyOrbital(error) }
     }
 
     /// Del reproductor del iPhone a tu Orbital, en el mismo punto: la TV sigue donde ibas y la app enseña el aviso.
@@ -465,7 +552,7 @@ final class AppEnvironment: ObservableObject {
         do {
             try await services.orbital.play(kind: request.kind, metaID: request.metaID, videoID: request.videoID, title: request.displayTitle)
             handoff = TVHandoff(request: request, position: position)
-        } catch { notify((error as? OrbitalRemote.Failure)?.description ?? "\(error)") }
+        } catch { notifyOrbital(error) }
     }
 
     /// «Deshacer»: la TV se detiene y sigues en el iPhone donde ibas (el avance ya se guardó al cerrar).
@@ -501,10 +588,10 @@ final class AppEnvironment: ObservableObject {
     func addToLibrary(_ s: Suggestion) async {
         do {
             try await services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: true)
-            notify("Guardada en Mi lista", detail: "Stremio", actionTitle: "Deshacer") { [weak self] in
+            notify("Guardada en Mi lista", detail: "Stremio", actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { [weak self] in
                 Task { try? await self?.services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: false) }
             }
-        } catch { notify(format: "No pude cambiar tu lista de Stremio: %@", message("\(error)")) }   // la causa, también traducida
+        } catch { notify("No pude cambiar tu lista de Stremio", detail: "\(error)", tone: .warn) }   // la causa, traducida
     }
 
     /// «Descargar» desde Para ti (la fuente recomendada).
@@ -516,11 +603,8 @@ final class AppEnvironment: ObservableObject {
             let item = await services.downloads.item(DownloadItem.makeID(metaID: s.imdb, videoID: videoID(for: s)))
             let size = item?.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) }
             let detail = [item?.quality, size].compactMap { $0 }.joined(separator: " · ")
-            banner = Banner(text: Strings.message("Bajando la recomendada", language: services.appSettings.uiLanguage), tone: .success, action: .downloads,
-                            detail: detail.isEmpty ? nil : detail)
-        case .noSources: notify("No hay fuentes de Real-Debrid para descargar.")
-        case .notEnoughSpace(let text), .failed(let text): notify(text)
-        case .already: notify("Ya está descargado.", tone: .info)
+            notify("Bajando la recomendada", detail: detail.isEmpty ? nil : detail, tone: .success, action: .downloads)
+        default: report(outcome, downloaded: (s.imdb, videoID(for: s)))
         }
     }
 
@@ -531,7 +615,7 @@ final class AppEnvironment: ObservableObject {
     }
 
     private func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?, at position: Double? = nil) async {
-        guard let videoID, let meta = try? await services.cinemeta.meta(kind: kind, id: metaID) else { return notify("No pude abrir ese título.") }
+        guard let videoID, let meta = try? await services.cinemeta.meta(kind: kind, id: metaID) else { return notify(format: "No pude abrir «%@»", title, detail: "Revisa tu internet") }
         var request = PlayRequest(kind: kind, metaID: metaID, videoID: videoID, originalTitle: originalTitle, displayTitle: title,
                                   episodeLabel: episodeLabel, poster: poster, meta: meta)
         request.startPosition = position   // «Seguir en el iPhone»: el segundo exacto de la TV
@@ -548,6 +632,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         InboxBackgroundTask.register()
         ReleaseNotifier.register()
         ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
+        DownloadFailureNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.
         UNUserNotificationCenter.current().delegate = self
         return true
@@ -555,6 +640,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // La batería baja ya la dice el aviso de la app: con la app abierta no sale también el de iOS (salían los dos).
+        if notification.request.identifier.hasPrefix(CompanionAlerts.batteryPrefix) { return completionHandler([]) }
         completionHandler([.banner, .sound])
     }
 
@@ -562,7 +649,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
         Task { @MainActor in
-            await ReleaseNotifier.handle(response)
+            if await !DownloadFailureNotifier.handle(response) { await ReleaseNotifier.handle(response) }
             completionHandler()
         }
     }

@@ -622,8 +622,14 @@ enum DS {
 
     /// Los avisos (`Toast`).
     enum Toast {
-        /// El alto de la cápsula de una acción que se hace ahí mismo («Deshacer»).
-        static let actionHeight: CGFloat = 30
+        /// El alto de la cápsula de la salida («Deshacer», «Reintentar»).
+        static let actionHeight: CGFloat = 32
+        /// El borde del que te necesita (ámbar) o del que avisa que algo se perdió (rojo): su color, tenue.
+        static let toneStroke = 0.4, strokeWidth: CGFloat = 1
+        /// Lo que hay que deslizar hacia abajo para quitarlo, y lo más ancho que se pone (en iPad u horizontal no cruza la pantalla).
+        static let swipe: CGFloat = 12, maxWidth: CGFloat = 520
+        /// Cuántos avisos esperan detrás del que tiene salida (los de más se descartan: ya no vienen al caso).
+        static let queueLimit = 3
         /// Antes de esto (segundos), el aviso de pasar a la TV dice «desde el principio» y no «desde 0:12».
         static let fromStartUnder: Double = 30
     }
@@ -637,8 +643,8 @@ enum DS {
         /// Cuánto espera una confirmación («¿Ver en la TV?») antes de cerrarse sola.
         static let confirm: UInt64 = 3_500_000_000
         static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)
-        /// Cuánto se queda el aviso «Sigue en tu Orbital» (con «Deshacer»).
-        static let handoff = UInt64(8 * 1e9)
+        /// Cuánto se queda un aviso con salida («Sigue en tu Orbital · Deshacer», «Bajando · Otra»).
+        static let toastAction = UInt64(8 * 1e9)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
         static let longPressDelay = DesignTokens.Timing.longPressDelay
         /// Cada cuánto, como pronto, le pide iOS a la app mirar en segundo plano lo que dejó la TV (iOS decide si y cuándo corre).

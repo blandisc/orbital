@@ -402,8 +402,8 @@ struct DownloadSubtitlesSheet: View {
         saving = code
         let ok = await model.saveSubtitle(item, options[next])
         saving = nil
-        if ok { saved[code, default: 0] += 1; env.notify("Subtítulos guardados con la descarga.", tone: .success) }
-        else { env.notify("No pude bajar ese subtítulo: prueba otro.") }
+        if ok { saved[code, default: 0] += 1; env.notify("Subtítulos guardados con la descarga", tone: .success) }
+        else { env.notify("No pude bajar ese subtítulo", detail: "Prueba otro") }
     }
 
     /// El idioma de la app primero; luego, los que más tienen.

@@ -34,7 +34,7 @@ struct DownloadSpeedTestView: View {
                 .disabled(test.running)
                 .accessibilityIdentifier("speed-test-start")
                 if !test.running, test.rows.contains(where: { $0.bytesPerSecond != nil }) {
-                    Button("Copiar resultados") { UIPasteboard.general.string = test.report; env.notify("Copiado", tone: .success) }
+                    Button("Copiar resultados") { UIPasteboard.general.string = test.report }
                 }
             }
             .listRowBackground(DS.surface)

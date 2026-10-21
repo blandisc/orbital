@@ -287,7 +287,7 @@ public final class PlayerModel: ObservableModel {
                 else if failedSources.isEmpty, !request.fromStart, let key = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID)?.source,
                         let pick = sourceChoices.first(where: { $0.key == key }) { found = pick }
                 else { found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: request.binge, skip: failedSources) }
-            } catch { guard mine == generation else { return }; return fail("Sin conexión: no pudimos preguntar por fuentes.", .network) }
+            } catch { guard mine == generation else { return }; return fail("Sin conexión: no pude preguntar por fuentes.", .network) }
             guard mine == generation, !closing else { return }
             guard let found else { return failedSources.isEmpty ? fail("No hay fuentes de Real-Debrid para este título.", .noSources) : fail("Ninguna fuente funcionó.", .noneWorked) }
             source = found

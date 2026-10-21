@@ -33,6 +33,23 @@ enum Demo {
 
     /// `-demo-handoff <segundos>`: el aviso «Sigue en tu Orbital» al abrir, como si acabaras de pasar algo a la TV en ese punto.
     static var handoff: Double? { value(after: "-demo-handoff").flatMap(Double.init) }
+    /// `-demo-notice ya|bajando|trakt|cola|perdido`: un aviso de ejemplo al abrir (para verlos en el simulador).
+    static var notice: String? { value(after: "-demo-notice") }
+
+    @MainActor static func showNotice(_ env: AppEnvironment) {
+        switch notice {
+        case "ya": env.notify("Ya está descargada", detail: "En el iPhone, para ver sin conexión", tone: .info, actionTitle: "Ver", actionSymbol: "play.fill") {}
+        case "bajando": env.notify("Bajando la recomendada", detail: "1080p · 2.4 GB", tone: .success, actionTitle: "Otra") {}
+        case "trakt": env.notify("Tu sesión de Trakt se cerró", detail: "Sin ella no llegan tus recomendaciones", tone: .warn, actionTitle: "Conectar") {}
+        case "cola":
+            env.notify("Quitada de Mi lista", detail: "Oppenheimer", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {}
+            env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+        case "perdido": env.notify("No cabe en el iPhone", detail: "Hacen falta 2400 MB y hay 1100 MB libres.", tone: .error, action: .downloads, actionTitle: "Descargas")
+        case "neutral": env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+        default: break
+        }
+    }
+
     static let handoffRequest = PlayRequest(kind: "series", metaID: "tt0386676", videoID: "tt0386676:2:5", originalTitle: "The Office",
                                             displayTitle: "La Oficina", episodeLabel: "T2 · E5")
 

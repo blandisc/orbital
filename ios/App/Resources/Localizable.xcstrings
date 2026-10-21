@@ -408,6 +408,17 @@
         }
       }
     },
+    "A la consola le queda %lld %%": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The console has %lld %% left"
+          }
+        }
+      }
+    },
     "A la consola le queda %lld %% de batería.": {
       "extractionState": "manual",
       "localizations": {
@@ -657,6 +668,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Refresh"
+          }
+        }
+      }
+    },
+    "Actívalos en Ajustes del iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn them on in iPhone Settings"
           }
         }
       }
@@ -1233,6 +1255,17 @@
         }
       }
     },
+    "Bajando en el iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading on the iPhone"
+          }
+        }
+      }
+    },
     "Bajando la recomendada": {
       "extractionState": "manual",
       "localizations": {
@@ -1284,6 +1317,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download season"
+          }
+        }
+      }
+    },
+    "Bajar todos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download all"
           }
         }
       }
@@ -2520,6 +2564,17 @@
         }
       }
     },
+    "Conectado con tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected to your Orbital"
+          }
+        }
+      }
+    },
     "Conectado con tu Orbital.": {
       "extractionState": "manual",
       "localizations": {
@@ -2703,6 +2758,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remote control"
+          }
+        }
+      }
+    },
+    "Conéctala antes de que se apague": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plug it in before it turns off"
           }
         }
       }
@@ -4313,6 +4379,17 @@
         }
       }
     },
+    "En el iPhone, para ver sin conexión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the iPhone, to watch offline"
+          }
+        }
+      }
+    },
     "En espera": {
       "extractionState": "manual",
       "localizations": {
@@ -4452,6 +4529,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "On your OneDrive"
+          }
+        }
+      }
+    },
+    "En tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On your Orbital"
           }
         }
       }
@@ -5303,6 +5391,17 @@
         }
       }
     },
+    "Hacen falta %@ MB y hay %@ MB libres.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ MB needed and %@ MB free."
+          }
+        }
+      }
+    },
     "Hecho para tu copia": {
       "extractionState": "manual",
       "localizations": {
@@ -5387,6 +5486,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No ranking for this service today."
+          }
+        }
+      }
+    },
+    "Iba en %lld %%. Puedes reintentar o elegir otra fuente.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It was at %lld %%. You can retry or pick another source."
           }
         }
       }
@@ -5501,6 +5611,17 @@
         }
       }
     },
+    "Infuse no pudo con esta versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Infuse couldn't play this version"
+          }
+        }
+      }
+    },
     "Infuse no pudo reproducirlo.": {
       "extractionState": "manual",
       "localizations": {
@@ -5552,6 +5673,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Intense"
+          }
+        }
+      }
+    },
+    "Intenta de nuevo en un momento.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again in a moment."
           }
         }
       }
@@ -5618,6 +5750,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "JustWatch · today"
+          }
+        }
+      }
+    },
+    "La TV te mandó «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV sent “%@”"
           }
         }
       }
@@ -5717,6 +5860,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Best for iPhone: balanced quality and size"
+          }
+        }
+      }
+    },
+    "La misma versión que estás viendo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The same version you're watching"
           }
         }
       }
@@ -5860,6 +6014,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld %% left: plug it in before it shuts down."
+          }
+        }
+      }
+    },
+    "Libera espacio en Descargas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free up space in Downloads"
           }
         }
       }
@@ -6146,6 +6311,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The basics in English too."
+          }
+        }
+      }
+    },
+    "Lo mandó la TV: intenta desde su ficha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The TV sent it: try from its page"
           }
         }
       }
@@ -6520,6 +6696,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last watched"
+          }
+        }
+      }
+    },
+    "Los avisos están apagados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are off"
+          }
+        }
+      }
+    },
+    "Los estrenos suelen llegar unas horas después": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New releases usually show up a few hours later"
           }
         }
       }
@@ -7382,6 +7580,17 @@
         }
       }
     },
+    "No cabe en el iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It doesn't fit on the iPhone"
+          }
+        }
+      }
+    },
     "No encontré %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -7389,6 +7598,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I did not find %@."
+          }
+        }
+      }
+    },
+    "No encontré ese archivo en tu OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find that file in your OneDrive"
           }
         }
       }
@@ -7547,17 +7767,6 @@
         }
       }
     },
-    "No hay espacio: hacen falta %@ MB y hay %@ MB libres.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not enough space: %@ MB needed and %@ MB free."
-          }
-        }
-      }
-    },
     "No hay fuentes de Real-Debrid para descargar.": {
       "extractionState": "manual",
       "localizations": {
@@ -7635,6 +7844,17 @@
         }
       }
     },
+    "No hay una versión para bajar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There's no version to download"
+          }
+        }
+      }
+    },
     "No los reconocí por su nombre: elige cuál es.": {
       "extractionState": "manual",
       "localizations": {
@@ -7657,6 +7877,17 @@
         }
       }
     },
+    "No pude abrir Infuse": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't open Infuse"
+          }
+        }
+      }
+    },
     "No pude abrir Infuse. ¿Está instalado?": {
       "extractionState": "manual",
       "localizations": {
@@ -7675,6 +7906,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't open the downloaded file."
+          }
+        }
+      }
+    },
+    "No pude abrir ese archivo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't open that file"
           }
         }
       }
@@ -7712,6 +7954,39 @@
         }
       }
     },
+    "No pude abrir «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't open “%@”"
+          }
+        }
+      }
+    },
+    "No pude armar tu mosaico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't build your mosaic"
+          }
+        }
+      }
+    },
+    "No pude bajar ese subtítulo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't download that subtitle"
+          }
+        }
+      }
+    },
     "No pude bajar ese subtítulo: prueba otro.": {
       "extractionState": "manual",
       "localizations": {
@@ -7719,6 +7994,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't download that subtitle: try another one."
+          }
+        }
+      }
+    },
+    "No pude bajar «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't download “%@”"
+          }
+        }
+      }
+    },
+    "No pude buscar fuentes. Intenta de nuevo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't search for sources. Try again."
+          }
+        }
+      }
+    },
+    "No pude buscar subtítulos. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't search for subtitles. Check your connection."
+          }
+        }
+      }
+    },
+    "No pude cambiar tu lista de Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't change your Stremio list"
           }
         }
       }
@@ -7752,6 +8071,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't change your Trakt watchlist: %@"
+          }
+        }
+      }
+    },
+    "No pude cargar la ficha. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't load this title. Check your connection."
           }
         }
       }
@@ -7855,6 +8185,17 @@
         }
       }
     },
+    "No pude pedir el archivo a OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't get the file from OneDrive"
+          }
+        }
+      }
+    },
     "No pude pedir el archivo a OneDrive.": {
       "extractionState": "manual",
       "localizations": {
@@ -7877,6 +8218,61 @@
         }
       }
     },
+    "No pude preguntar por fuentes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't look for sources"
+          }
+        }
+      }
+    },
+    "No pude preparar la descarga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't prepare the download"
+          }
+        }
+      }
+    },
+    "No pude preparar la descarga. Intenta de nuevo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't prepare the download. Try again."
+          }
+        }
+      }
+    },
+    "No pude reproducirlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't play it"
+          }
+        }
+      }
+    },
+    "No pude revisar tu OneDrive. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't check your OneDrive. Check your connection."
+          }
+        }
+      }
+    },
     "No pude traer a esta persona de TMDB.": {
       "extractionState": "manual",
       "localizations": {
@@ -7884,6 +8280,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Couldn't load this person from TMDB."
+          }
+        }
+      }
+    },
+    "No pude traer los episodios de Los Simpson": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't get The Simpsons episodes"
           }
         }
       }
@@ -7899,79 +8306,13 @@
         }
       }
     },
-    "No pudimos armar tu mosaico": {
+    "No pudo empezar. Puedes reintentar o elegir otra fuente.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We couldn't build your mosaic"
-          }
-        }
-      }
-    },
-    "No pudimos buscar fuentes. Intenta de nuevo.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We couldn't search for sources. Try again."
-          }
-        }
-      }
-    },
-    "No pudimos buscar subtítulos. Revisa tu conexión.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We couldn't search for subtitles. Check your connection."
-          }
-        }
-      }
-    },
-    "No pudimos cargar la ficha. Revisa tu conexión.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We couldn't load this title. Check your connection."
-          }
-        }
-      }
-    },
-    "No pudimos preparar la descarga. Intenta de nuevo.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We couldn't prepare the download. Try again."
-          }
-        }
-      }
-    },
-    "No pudimos reproducirlo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We couldn't play it"
-          }
-        }
-      }
-    },
-    "No pudimos revisar tu OneDrive. Revisa tu conexión.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We couldn't check your OneDrive. Check your connection."
+            "value": "It couldn't start. You can retry or pick another source."
           }
         }
       }
@@ -9054,6 +9395,28 @@
         }
       }
     },
+    "Prueba otra fuente o ábrela aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another source or open it here"
+          }
+        }
+      }
+    },
+    "Prueba otro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another one"
+          }
+        }
+      }
+    },
     "Prueba quitando un filtro.": {
       "extractionState": "manual",
       "localizations": {
@@ -9274,6 +9637,17 @@
         }
       }
     },
+    "Real-Debrid aún no lo tiene": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't have it yet"
+          }
+        }
+      }
+    },
     "Real-Debrid aún no lo tiene. Los estrenos suelen aparecer unas horas después.": {
       "extractionState": "manual",
       "localizations": {
@@ -9336,6 +9710,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Real-Debrid limits each connection: with several at once it's much faster. That can be fixed in Orbital with more connections."
+          }
+        }
+      }
+    },
+    "Real-Debrid no tiene un archivo de este título": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid has no file for this title"
           }
         }
       }
@@ -9681,6 +10066,17 @@
         }
       }
     },
+    "Revisa tu internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your internet"
+          }
+        }
+      }
+    },
     "Revisada %@": {
       "extractionState": "manual",
       "localizations": {
@@ -9897,6 +10293,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Time's up"
+          }
+        }
+      }
+    },
+    "Se detuvo «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” stopped"
           }
         }
       }
@@ -10418,7 +10825,7 @@
         }
       }
     },
-    "Sin conexión: no pudimos preguntar por fuentes.": {
+    "Sin conexión: no pude preguntar por fuentes.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -10429,7 +10836,7 @@
         }
       }
     },
-    "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet.": {
+    "Sin conexión: no pude preguntar por fuentes. Revisa tu internet.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -10447,6 +10854,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Offline: showing what I saved last."
+          }
+        }
+      }
+    },
+    "Sin ella no llegan tus recomendaciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without it, your recommendations stop"
           }
         }
       }
@@ -10491,6 +10909,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No sources yet"
+          }
+        }
+      }
+    },
+    "Sin internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No internet"
           }
         }
       }
@@ -10810,6 +11239,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Subtitles later"
+          }
+        }
+      }
+    },
+    "Subtítulos guardados con la descarga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles saved with the download"
           }
         }
       }
@@ -11760,6 +12200,17 @@
         }
       }
     },
+    "Tu Orbital no contestó.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Orbital didn't respond."
+          }
+        }
+      }
+    },
     "Tu Orbital no tiene sugerencias todavía.": {
       "extractionState": "manual",
       "localizations": {
@@ -12365,6 +12816,17 @@
         }
       }
     },
+    "Ver el primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch the first"
+          }
+        }
+      }
+    },
     "Ver en Descargas": {
       "extractionState": "manual",
       "localizations": {
@@ -12757,6 +13219,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Then, when asked, the command. Direct: “Hey Siri, pause Orbital”."
+          }
+        }
+      }
+    },
+    "Ya está descargada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already downloaded"
           }
         }
       }
@@ -13168,6 +13641,17 @@
         }
       }
     },
+    "«%@» no cabe en el iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” doesn't fit on the iPhone"
+          }
+        }
+      }
+    },
     "«%@» no tiene ficha de IMDb: Trakt no lo puede registrar.": {
       "extractionState": "manual",
       "localizations": {
@@ -13263,6 +13747,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Disconnect Trakt?"
+          }
+        }
+      }
+    },
+    "¿Está instalado?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Is it installed?"
           }
         }
       }

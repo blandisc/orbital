@@ -140,7 +140,7 @@ public final class TitleModel: ObservableModel {
             credits = CinemetaParsing.credits(local)
             seasons = CinemetaParsing.seasons(local)
             error = nil
-        } catch where !Task.isCancelled { self.error = "No pudimos cargar la ficha. Revisa tu conexión." } catch {}   // cancelado al salir: sin error falso
+        } catch where !Task.isCancelled { self.error = "No pude cargar la ficha. Revisa tu conexión." } catch {}   // cancelado al salir: sin error falso
         await refreshState(prefetched: await state.value)
     }
 

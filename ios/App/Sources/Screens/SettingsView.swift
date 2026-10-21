@@ -295,7 +295,9 @@ struct SettingsView: View {
                 guard v else { return }
                 Task {
                     if await ReleaseNotifier.requestPermission() { await ReleaseNotifier.check() }
-                    else { model.update { $0.releaseAlerts = false }; env.notify("Activa los avisos de Orbital en Ajustes del iPhone.", tone: .warn) }
+                    else { model.update { $0.releaseAlerts = false }; env.notify("Los avisos están apagados", detail: "Actívalos en Ajustes del iPhone", tone: .warn, actionTitle: "Abrir Ajustes") {
+                        if let url = URL(string: UIApplication.openNotificationSettingsURLString) { UIApplication.shared.open(url) }
+                    } }
                 }
             }))
             .tint(DS.switchOn)

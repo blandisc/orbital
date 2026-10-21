@@ -79,6 +79,13 @@ struct PlayerScreen: View {
     @State private var zoomToast: VideoZoom?
     /// «Subtítulos desactivados» o «Español · 1 de 4», un momento, al apagar o prender con el botón.
     @State private var subtitleToast: String?
+    /// Lo que pasó al pedir «Descargar» (el mismo aviso que en el resto de la app, arriba: abajo están los controles).
+    @State private var notice: PlayerNotice?
+    struct PlayerNotice: Equatable {
+        var title: String, detail: String?, tone: DSNotice.Tone
+        var showsDownloads = false
+        let id = UUID()
+    }
     /// Subtítulos rápidos (el panel chico sobre el video) y su lista de idiomas.
     @State private var subtitleDock = false
     @State private var dockLanguages = false
@@ -453,6 +460,19 @@ struct PlayerScreen: View {
         if isFastForwarding {
             VStack { DSSpeedPill(); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
         }
+        if let notice {
+            VStack {
+                Toast(tone: notice.tone, title: Text(verbatim: notice.title), detail: notice.detail.map { Text(verbatim: $0) },
+                      actionTitle: notice.showsDownloads ? "Ver" : nil,
+                      action: notice.showsDownloads ? { Task { await close(); env.openTab = AppEnvironment.downloadsTab } } : nil,
+                      seconds: Toast.duration(notice.tone, hasAction: notice.showsDownloads) ?? DS.Timing.toastAction,
+                      dismiss: { withAnimation(DS.Motion.base(reduceMotion)) { if self.notice?.id == notice.id { self.notice = nil } } })
+                    .id(notice.id)
+                Spacer()
+            }
+            .padding(.top, DS.Space.s14)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
         if let subtitleToast {
             VStack { DSToastPill(text: LocalizedStringKey(subtitleToast)); Spacer() }.padding(.top, DS.Space.s14)
                 .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
@@ -714,7 +734,7 @@ struct PlayerScreen: View {
     private func downloadRow(_ before: @escaping () -> Void = {}) -> some View {
         PlayerMenuRow(title: inDownloads ? "Descargada" : "Descargar", symbol: inDownloads ? "checkmark.circle" : "arrow.down.circle") {
             before()
-            Task { if inDownloads { await toast(Strings.tr("Ya está en Descargas", language: env.services.appSettings.uiLanguage)) } else { await downloadCurrent() } }
+            Task { if inDownloads { alreadyDownloaded() } else { await downloadCurrent() } }
         }
         .accessibilityIdentifier("player-download")
         .task(id: current.videoID) { await refreshInDownloads() }
@@ -730,15 +750,28 @@ struct PlayerScreen: View {
         let outcome = await env.services.queueDownload(kind: r.kind, metaID: r.metaID, videoID: r.videoID, title: r.displayTitle, originalTitle: r.originalTitle,
                                                        subtitle: subtitle, poster: r.poster, source: holder.model.source)
         let tr = { (k: String) in Strings.tr(k, language: language) }
+        let message = { (k: String) in Strings.message(k, language: language) }
         switch outcome {
         case .queued:
             inDownloads = true
             // La misma versión que estás viendo; se sigue bajando aunque cierres el reproductor.
-            await toast(String(format: tr("Bajando %@ · la misma versión"), subtitle.isEmpty ? r.displayTitle : subtitle))
-        case .already: inDownloads = true; await toast(tr("Ya está en Descargas"))
-        case .noSources: await toast(tr("No hay fuentes de Real-Debrid para descargar."))
-        case .notEnoughSpace(let text), .failed(let text): await toast(text)
+            show(PlayerNotice(title: String(format: tr("Bajando %@"), subtitle.isEmpty ? r.displayTitle : subtitle), detail: tr("La misma versión que estás viendo"),
+                              tone: .success, showsDownloads: true))
+        case .already: inDownloads = true; alreadyDownloaded()
+        case .noSources: show(PlayerNotice(title: tr("No hay una versión para bajar"), detail: tr("Real-Debrid no tiene un archivo de este título"), tone: .info))
+        case .notEnoughSpace(let text): show(PlayerNotice(title: tr("No cabe en el iPhone"), detail: message(text), tone: .warn, showsDownloads: true))
+        case .failed(let text): show(PlayerNotice(title: tr("No pude preparar la descarga"), detail: message(text), tone: .warn))
         }
+    }
+
+    private func alreadyDownloaded() {
+        let tr = { (k: String) in Strings.tr(k, language: env.services.appSettings.uiLanguage) }
+        show(PlayerNotice(title: tr("Ya está en Descargas"), detail: tr("En el iPhone, para ver sin conexión"), tone: .info, showsDownloads: true))
+    }
+
+    private func show(_ new: PlayerNotice) {
+        UIAccessibility.post(notification: .announcement, argument: new.title)
+        withAnimation(DS.Motion.base(reduceMotion)) { notice = new }
     }
 
     /// Un video que te pasaron (sin reconocer) no lo puede poner la TV.
@@ -1481,7 +1514,7 @@ struct VideoSettingsPanel: View {
             if versions.isEmpty {
                 if model.searchingSubtitles { Text("Buscando versiones en internet…").recipe(.footnote) }
                 else if model.subtitleSearchFailed {
-                    DSNotice(text: "No pudimos buscar subtítulos. Revisa tu conexión.", tone: .warn)
+                    DSNotice(text: "No pude buscar subtítulos. Revisa tu conexión.", tone: .warn)
                     PanelChip(title: Text("Volver a buscar"), selected: false, symbol: "magnifyingglass") { Task { await model.searchSubtitles() } }
                         .accessibilityIdentifier("player-search-subtitles")
                 } else { Text("No hay subtítulos en este idioma.").recipe(.footnote) }
