@@ -386,6 +386,16 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.titlePrefs.checkedAudio(castilian.key), [AudioLanguage("en", .checked), AudioLanguage("es-ES", .checked)], "quedó comprobada")
     }
 
+    /// «Continuar» en el siguiente episodio: la misma versión (su familia `bingeGroup`), no la que se recomendaría de cero.
+    func testNextEpisodeKeepsTheVersionFamilyYouWereWatching() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A2.json"] = ["streams": [
+            rig.stream("best", size: "💾 2 GB", binge: "group-b"), rig.stream("mine", size: "💾 2.2 GB", name: "T\n1080p [RD+]", binge: "group-a")]]
+        rig.titlePrefs.remember(metaID: "tt0386676", choice: ResumeChoice(videoID: "tt0386676:1:1", source: "Torrentio|old|1", binge: "group-a"))
+        await rig.model.begin(rig.request(video: "tt0386676:1:2"))
+        XCTAssertEqual(rig.engine.loads.first?.url.absoluteString, "https://rd.example/mine.mkv", "la misma familia que el episodio anterior")
+    }
+
     func testWarnsWhenNoAudioTrackIsYourLanguage() async throws {
         let rig = try twoSources()
         rig.settings.update { $0.audio = "es" }

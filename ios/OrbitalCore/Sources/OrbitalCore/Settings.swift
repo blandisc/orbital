@@ -205,8 +205,11 @@ public struct ResumeChoice: Codable, Equatable, Sendable {
     public var source: String?
     public var audio: Track?
     public var subtitle: Track?
-    public init(videoID: String, source: String? = nil, audio: Track? = nil, subtitle: Track? = nil) {
-        self.videoID = videoID; self.source = source; self.audio = audio; self.subtitle = subtitle
+    /// La «familia» de la versión (`bingeGroup`: mismo grupo, calidad e idioma en cada episodio): con ella el siguiente
+    /// episodio sigue en la misma versión, no solo en el mismo idioma.
+    public var binge: String?
+    public init(videoID: String, source: String? = nil, audio: Track? = nil, subtitle: Track? = nil, binge: String? = nil) {
+        self.videoID = videoID; self.source = source; self.audio = audio; self.subtitle = subtitle; self.binge = binge
     }
 }
 

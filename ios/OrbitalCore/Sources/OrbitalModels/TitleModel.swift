@@ -170,8 +170,15 @@ public final class TitleModel: ObservableModel {
             let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
             guard !Task.isCancelled else { return }
             bestSource = Source.best(found)
-            recommendedSource = found.first
-            recommendedLanguage = found.first.flatMap { Streams.playingLanguage($0, prefs)?.code }
+            // «Ver» dice lo que de verdad va a sonar: la versión con que lo dejaste (ese video), o la de su misma familia en el
+            // siguiente episodio; si no, la recomendada (lo mismo que elige el reproductor).
+            let resume = services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.source
+            let family = services.titlePrefs.lastChoice(metaID: metaID)?.binge
+            let first = found.first
+            recommendedSource = resume.flatMap { key in found.first { $0.key == key } }
+                ?? family.flatMap { f in found.first { $0.binge == f && $0.score > (first?.score ?? 0) - 700 } }
+                ?? first
+            recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
             sourceCheck = found.isEmpty ? .none : .available
         } catch {
             if !Task.isCancelled { sourceCheck = error is StreamFinderError ? .offline : .unknown }

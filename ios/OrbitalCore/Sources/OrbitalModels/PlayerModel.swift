@@ -289,7 +289,11 @@ public final class PlayerModel: ObservableModel {
                 // «Continuar»: la fuente con la que lo dejaste, si sigue ahí (como en la TV).
                 else if failedSources.isEmpty, !request.fromStart, let key = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID)?.source,
                         let pick = sourceChoices.first(where: { $0.key == key }) { found = pick }
-                else { found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: request.binge, skip: failedSources) }
+                // Otro episodio: la misma familia de versión con que dejaste la serie (no solo el mismo idioma).
+                else {
+                    let family = request.binge ?? (request.fromStart ? nil : titlePrefs.lastChoice(metaID: request.metaID)?.binge)
+                    found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: family, skip: failedSources)
+                }
             } catch { guard mine == generation else { return }; return fail("Sin conexión: no pude preguntar por fuentes.", .network) }
             guard mine == generation, !closing else { return }
             guard let found else { return failedSources.isEmpty ? fail("No hay fuentes de Real-Debrid para este título.", .noSources) : fail("Ninguna fuente funcionó.", .noneWorked) }
@@ -534,7 +538,7 @@ public final class PlayerModel: ObservableModel {
         }
         let audio = pick(snapshot.audioTracks, snapshot.selectedAudio).flatMap { $0.off ? nil : $0 }
         return ResumeChoice(videoID: request.videoID, source: source?.key, audio: audio,
-                            subtitle: pick(snapshot.subtitleTracks, snapshot.selectedSubtitle))
+                            subtitle: pick(snapshot.subtitleTracks, snapshot.selectedSubtitle), binge: source?.binge)
     }
 
     /// Junto a «dónde ibas»: la fuente y las pistas que tienes puestas (para «Continuar»).
