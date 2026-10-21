@@ -241,7 +241,7 @@ public final class PlayerModel: ObservableModel {
         notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []
         acceptingSnapshots = false; retrying = false; nextLocal = nil; choicesAt = .distantPast
         // Lo encontrado «En internet» y el mapa de sustos eran del video anterior.
-        foundSubtitles = nil; addedSubtitleURLs = []; subtitleSearchFailed = false; scares = nil
+        foundSubtitles = nil; addedSubtitleURLs = []; subtitleSearchFailed = false; searchTask = nil; scares = nil
         addedTracks = [:]; pendingSubtitleURL = nil; tryingSubtitles = nil
         Task { [weak self] in await self?.loadScares() }
     }
@@ -596,7 +596,19 @@ public final class PlayerModel: ObservableModel {
     }
     public private(set) var searchingSubtitles = false { didSet { changed() } }
 
+    /// Busca en internet. La búsqueda es del modelo, no de la vista que la pidió: antes corría en el `.task` del panel y
+    /// cerrarlo la cancelaba, la búsqueda cancelada se tomaba como «no hay nada» y ya no se volvía a buscar en ese video.
+    /// Si ya hay una en camino, se espera esa (antes se salía al momento y elegir un idioma no hacía nada).
     public func searchSubtitles() async {
+        if let running = searchTask { return await running.value }
+        let task = Task { await self.runSubtitleSearch() }
+        searchTask = task
+        await task.value
+        if searchTask == task { searchTask = nil }
+    }
+    private var searchTask: Task<Void, Never>?
+
+    private func runSubtitleSearch() async {
         guard let request, !searchingSubtitles else { return }
         let mine = generation
         searchingSubtitles = true
@@ -684,7 +696,7 @@ public final class PlayerModel: ObservableModel {
 
     /// Busca en internet una sola vez por video (sin tocar «Buscar»).
     public func ensureSubtitleSearch() async {
-        guard foundSubtitles == nil, !searchingSubtitles, !subtitleSearchFailed else { return }
+        guard foundSubtitles == nil, !subtitleSearchFailed else { return }
         await searchSubtitles()
     }
 
@@ -778,7 +790,8 @@ public final class PlayerModel: ObservableModel {
     public func chooseLanguage(_ language: String) async -> Bool {
         var versions = subtitleVersions(language: language)
         if versions.isEmpty {
-            await ensureSubtitleSearch()
+            // Lo pediste tú: se busca aunque la anterior no haya encontrado nada (o se espera la que va en camino).
+            if foundSubtitles == nil { await searchSubtitles() }
             versions = subtitleVersions(language: language)
         }
         guard let best = versions.first else { return false }

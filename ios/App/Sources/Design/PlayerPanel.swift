@@ -625,7 +625,7 @@ struct LanguageSearchList: View {
                                 HStack {
                                     Text(verbatim: name(a.code)).foregroundStyle(DS.text)
                                     Spacer()
-                                    Text("\(a.count) versiones").recipe(.footnote)
+                                    (a.count == 1 ? Text("1 versión") : Text("\(a.count) versiones")).recipe(.footnote)
                                 }
                             }
                         }
