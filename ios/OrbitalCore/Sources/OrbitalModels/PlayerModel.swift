@@ -50,6 +50,8 @@ public enum PlayerNotice: Sendable, Equatable {
     case otherVersionHasYourLanguage(language: String, have: [String], sourceIndex: Int)
     /// La versión que elegiste no abrió: se volvió a la que veías, en el mismo segundo.
     case switchFailedBack
+    /// Real-Debrid aún no tiene esa versión (mandó su video corto de «descargando» en lugar de la película).
+    case notReadyOnRealDebrid
 }
 
 /// Un idioma de audio que solo trae otra versión (otro archivo): a cuál iría y qué tan seguro es que lo trae.
@@ -183,6 +185,11 @@ public final class PlayerModel: ObservableModel {
     private var tracksApplied = false
     /// Rearmando el mismo video en pausa al volver de segundo plano (en pausa ya cuenta como «está»).
     private var restoringInPlace = false
+    /// Cambiaste de versión a mano: a cuál y a qué segundo volver si la nueva no llega a sonar (falla después de abrir, se
+    /// acaba el plazo o es el aviso de Real-Debrid). Antes caía a cualquier otra fuente.
+    private var switchBack: (source: Source, position: Double)?
+    /// Lo más que dura el video de aviso de Real-Debrid («la estamos bajando»): uno así en un título largo no es el título.
+    static let placeholderMaxSeconds: Double = 120, placeholderTitleMinSeconds: Double = 600
     /// Lo más que el reproductor espera a que se pongan el audio y los subtítulos antes de seguir atendiendo al video.
     static let trackSetupWait: Double = 1
     /// Cuántas versiones de subtítulos se han pedido: si eliges otra antes de que llegue la anterior, la anterior ya no se recuerda.
@@ -384,11 +391,20 @@ public final class PlayerModel: ObservableModel {
         if case .failed(let message) = s.state {
             // Una fuente que se corta (antes o después de empezar) se cambia por otra en el mismo punto, como en Orbital.
             // El cambio corre aparte: así los avisos repetidos del mismo fallo, que ya están en cola, se descartan mientras se carga la otra.
+            // La que elegiste a mano y no llegó a sonar: se vuelve a la tuya.
             _ = message
-            retryWithAnotherSource()
+            if !goBackAfterSwitch() { retryWithAnotherSource() }
             return
         }
-        if s.state == .playing && !hasPlayed { hasPlayed = true; startupDeadline = nil; phase = .playing }
+        // El aviso de Real-Debrid (una versión que aún no tiene): no es el título. Nunca cuenta como visto, terminado ni pasa
+        // al siguiente episodio; se vuelve a la tuya (si la cambiaste a mano) o se prueba otra.
+        if !hasPlayed, isPlaceholder(s) {
+            if let source { failedSources.insert(source.index) }
+            notice = .notReadyOnRealDebrid
+            if !goBackAfterSwitch() { retryWithAnotherSource() }
+            return
+        }
+        if s.state == .playing && !hasPlayed { hasPlayed = true; startupDeadline = nil; phase = .playing; switchBack = nil }
         // Rearmando el mismo video en pausa (al volver de segundo plano): en pausa también es «ya está». Antes se esperaba a que
         // sonara, se quedaba en «preparando» sin botones y a los 45 s cambiaba de fuente y arrancaba solo.
         if restoringInPlace, !hasPlayed, s.state == .paused, s.duration > 0 {
@@ -434,7 +450,10 @@ public final class PlayerModel: ObservableModel {
         let now = clock()
         defer { lastTick = now }
         if foregroundCheck != nil { await checkForegroundStall(now: now) }
-        if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying { return await retryWithAnotherSource()?.value ?? () }
+        if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying {
+            if goBackAfterSwitch() { return }
+            return await retryWithAnotherSource()?.value ?? ()
+        }
         // En pausa la cuenta de «Siguiente» también se detiene (antes, al seguir, saltaba de golpe).
         if snapshot.state != .playing, upNext != nil, let deadline = upNextDeadline {
             upNextDeadline = deadline.addingTimeInterval(now.timeIntervalSince(lastTick ?? now))
@@ -1019,22 +1038,50 @@ public final class PlayerModel: ObservableModel {
         guard mine == generation, !closing, let choice = sourceChoices.first(where: { $0.index == index }) ?? sourceChoices.first(where: { $0.release == source?.release && $0.index == index }),
               let url = choice.playbackURL else { acceptingSnapshots = true; return }
         self.request?.sourceIndex = index
+        let subtitlesWereOn = snapshot.selectedSubtitle != nil
         source = choice; phase = .preparing
         startLoading()
+        if let previous { switchBack = (previous, position) }
         forgetSubtitleSearch()   // otro archivo: «coincide con tu copia» se vuelve a calcular con su huella
+        if subtitlesWereOn { askInSync = true }   // otro archivo, la sincronía empieza en 0: «¿Va a tiempo?»
         do {
             try await loadVideo(url, at: position)
             if let language { titlePrefs.remember(metaID: request.metaID, audioTrack: language) }
         } catch {
             guard mine == generation else { return }
             failedSources.insert(index)
-            guard let previous, let back = previous.playbackURL else { await retryWithAnotherSource()?.value; return }
-            self.request?.sourceIndex = previous.index
-            source = previous
-            startLoading()
-            notice = .switchFailedBack
-            do { try await loadVideo(back, at: position) } catch { guard mine == generation else { return }; await retryWithAnotherSource()?.value }
+            if !goBackAfterSwitch() { await retryWithAnotherSource()?.value }
         }
+    }
+
+    /// Vuelve a la versión que veías antes de cambiar a mano, en el mismo segundo. false si no hay a cuál volver.
+    @discardableResult
+    private func goBackAfterSwitch() -> Bool {
+        guard let back = switchBack, let url = back.source.playbackURL, !closing else { return false }
+        switchBack = nil
+        if let source, source.index != back.source.index { failedSources.insert(source.index) }
+        generation += 1
+        let mine = generation
+        acceptingSnapshots = false
+        request?.sourceIndex = back.source.index
+        source = back.source
+        phase = .preparing
+        if notice != .notReadyOnRealDebrid { notice = .switchFailedBack }
+        transition = Task { [weak self] in
+            guard let self else { return }
+            await engine.stop()
+            guard mine == generation else { return }
+            startLoading()
+            do { try await loadVideo(url, at: back.position) } catch { guard mine == generation else { return }; await retryWithAnotherSource()?.value }
+        }
+        return true
+    }
+
+    /// El aviso corto que Real-Debrid manda en lugar de una versión que aún no tiene.
+    private func isPlaceholder(_ s: EngineSnapshot) -> Bool {
+        guard request?.localFile == nil, s.duration > 0, s.duration < Self.placeholderMaxSeconds else { return false }
+        let expected = request?.meta.map { CinemetaParsing.runtimeSeconds(CinemetaParsing.describe($0).runtime) } ?? 0
+        return expected == 0 || expected >= Self.placeholderTitleMinSeconds
     }
 
     /// Los idiomas de audio que solo traen otras versiones, para ofrecerlos junto a los del archivo. Sin grabaciones de cine,

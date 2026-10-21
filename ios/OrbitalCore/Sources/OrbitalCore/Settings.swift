@@ -216,7 +216,10 @@ public struct ResumeChoice: Codable, Equatable, Sendable {
 
 /// Cada serie o película recuerda el audio y los subtítulos que elegiste viéndola (como en Orbital).
 public final class TitlePreferences: @unchecked Sendable {
-    struct Saved: Codable { var audio: String?; var subtitles: String? }
+    struct Saved: Codable { var audio: String?; var subtitles: String?
+        /// El español de ese título («es-419» latino, «es-ES» castellano), si lo elegiste viéndolo: así «los siguientes
+        /// episodios, en latino» es cierto aunque en Ajustes no tengas la variante.
+        var spanish: String? }
     static let key = "title-prefs"
     private let kv: KeyValueStore
     private let lock = NSLock()
@@ -266,6 +269,7 @@ public final class TitlePreferences: @unchecked Sendable {
         let saved = lock.withLock { all[metaID] }
         var prefs = settings.preferences(onCellular: onCellular)
         if let audio = saved?.audio, !audio.isEmpty { prefs.audio = audio }
+        if prefs.audio == "es", let variant = saved?.spanish, !variant.isEmpty { prefs.spanish = variant }
         // Este título lo pusiste en español aunque tu audio de siempre sea otro: la variante que elegiste en Ajustes vale igual.
         if prefs.audio == "es", prefs.spanish.isEmpty { prefs.spanish = settings.latinSpanish ? "es-419" : settings.castilianSpanish ? "es-ES" : "" }
         return (prefs, saved?.subtitles ?? settings.subtitles)
@@ -292,7 +296,10 @@ public final class TitlePreferences: @unchecked Sendable {
     public func remember(metaID: String, audioTrack: String? = nil, subtitleTrack: String? = nil) {
         lock.withLock {
             var saved = all[metaID] ?? Saved()
-            if let audioTrack, let lang = PlaybackRules.languageCode(audioTrack), !lang.isEmpty { saved.audio = lang }
+            if let audioTrack, let lang = PlaybackRules.languageCode(audioTrack), !lang.isEmpty {
+                saved.audio = lang
+                if audioTrack == "es-419" || audioTrack == "es-ES" { saved.spanish = audioTrack } else if lang != "es" { saved.spanish = nil }
+            }
             // Cualquier idioma (antes solo español e inglés: elegir francés no se recordaba). "" = apagados.
             if let subtitleTrack { saved.subtitles = subtitleTrack.isEmpty ? "" : (SubtitleLanguage.code(subtitleTrack) ?? PlaybackRules.languageCode(subtitleTrack) ?? subtitleTrack) }
             all[metaID] = saved
