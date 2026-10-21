@@ -74,9 +74,9 @@ struct RootView: View {
         .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
         .animation(DS.Motion.base(reduceMotion), value: ui.banner)
         .task {
-            if Demo.isOn, let at = Demo.handoff {
-                env.handoff = .init(request: Demo.handoffRequest, position: at)
-            }
+            #if DEBUG
+            if Demo.isOn, let at = Demo.handoff { env.handoff = .init(request: Demo.handoffRequest, position: at) }
+            #endif
             _ = await env.services.watch.flushPending()
             // Con tu Orbital conectada: lo nuevo de la consola (otra clave, Trakt recién conectado allá) llega solo.
             if env.services.orbital.isConfigured { _ = try? await env.services.connectOrbital() }
