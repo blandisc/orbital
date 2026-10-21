@@ -563,13 +563,16 @@ final class AppEnvironment: ObservableObject {
     }
 
     /// El elegido, en el iPhone y desde el principio.
-    func playSimpsons(_ draw: SimpsonsDraw) {
+    func playSimpsons(_ draw: SimpsonsDraw) { play(simpsonsRequest(draw)) }
+
+    /// Lo que se reproduce de un Simpson elegido (la ruleta lo abre ella misma, encima: entre las dos no se ve Inicio).
+    func simpsonsRequest(_ draw: SimpsonsDraw) -> PlayRequest {
         let (season, episode) = draw.chosen
         let label = Strings.episode(season: season, episode: episode.episode, language: services.appSettings.uiLanguage) + (episode.hasTitle ? " · \(episode.title)" : "")
         var request = PlayRequest(kind: "series", metaID: Self.simpsons, videoID: episode.id, originalTitle: draw.name, displayTitle: draw.name, episodeLabel: label,
                                   poster: String(format: ForYou.metahubPoster, Self.simpsons), meta: draw.meta, fromStart: true)
         request.startPortrait = true   // sale de la tele de pie: el video entra en vertical, sin girar
-        play(request)
+        return request
     }
 
     /// La imagen de un episodio (metahub).
