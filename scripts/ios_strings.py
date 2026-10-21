@@ -513,6 +513,21 @@ TRANSLATIONS = {
     "No pudo empezar. Puedes reintentar o elegir otra fuente.": "It couldn't start. You can retry or pick another source.",
     "Otra fuente": "Another source", "Ver el primero": "Watch the first", "Bajar todos": "Download all",
     "Descargando «%@»": "Downloading “%@”", "Empezando…": "Starting…",
+    # «Elegir versión» (las mismas palabras que la TV).
+    "Buscando versión…": "Finding a version…", "Cambiar a %@": "Switch to %@", "El nombre del archivo dice el idioma:": "The file name says the language:",
+    "Elegir versión": "Choose version", "Elegir versión…": "Choose version…", "Es el original": "It's the original",
+    "Español (cualquiera)": "Spanish (any)", "Español de España": "Castilian Spanish", "Esta versión no trae %@": "This version doesn't have %@",
+    "Hay pistas, pero no seguras (muchas banderas o solo «español»).": "There are hints, but not sure ones (many flags or just “Spanish”).",
+    "Lo dice el nombre": "The name says so", "Lo dice el sitio": "The site says so",
+    "Nada en el nombre lo dice: es el idioma original del título.": "Nothing in the name says it: it's the title's original language.",
+    "Nada lo dice y no se sabe el idioma original: suponemos inglés.": "Nothing says it and the original language is unknown: we assume English.",
+    "No dice idioma": "No language info", "No dice si latino o castellano": "Doesn't say Latin American or Castilian",
+    "Otras %lld en %@ %@": "%lld more in %@ %@", "Otros idiomas · ": "Other languages · ", "Por idioma y calidad · toca una": "By language and quality · tap one",
+    "Sus pistas: %@": "Its tracks: %@", "Tal vez": "Maybe", "También trae: ": "Also has: ", "Viene de %@, que solo sube %@.": "From %@, which only uploads %@.",
+    "Ya la viste: son las pistas de audio del archivo.": "You've watched it: these are the file's audio tracks.", "¿Otro título?": "Another title?",
+    "¿Otro título? El nombre dice otro año: puede ser otra película.": "Another title? The name says another year: it may be a different movie.",
+    "1 oculta: grabada en el cine o tráiler": "1 hidden: a theater recording or trailer",
+    " y ": " and ", "Tu idioma": "Your language", "Original": "Original", "Comprobado": "Checked", "Versión": "Version",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",

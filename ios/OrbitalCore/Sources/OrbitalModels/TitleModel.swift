@@ -60,6 +60,8 @@ public final class TitleModel: ObservableModel {
     /// La que va a sonar al tocar «Ver»: la recomendada (idioma, calidad y tamaño; la primera de «Elegir la fuente»). Su
     /// calidad es la que dice el botón (antes decía la mejor, 4K, y luego sonaba la recomendada en 1080p).
     public private(set) var recommendedSource: Source? { didSet { changed() } }
+    /// En qué idioma va a sonar la recomendada («es-419»): «Ver» dice «Latino · 1080p» (nada a escondidas).
+    public private(set) var recommendedLanguage: String? { didSet { changed() } }
     /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
     public private(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
     /// La calificación de Trakt (0–10), si alguien votó.
@@ -169,6 +171,7 @@ public final class TitleModel: ObservableModel {
             guard !Task.isCancelled else { return }
             bestSource = Source.best(found)
             recommendedSource = found.first
+            recommendedLanguage = found.first.flatMap { Streams.playingLanguage($0, prefs)?.code }
             sourceCheck = found.isEmpty ? .none : .available
         } catch {
             if !Task.isCancelled { sourceCheck = error is StreamFinderError ? .offline : .unknown }

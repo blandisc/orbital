@@ -366,6 +366,26 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertTrue(rig.engine.subs.isEmpty)
     }
 
+    /// Quieres latino y la versión que suena trae inglés y castellano (comprobado por sus pistas); otra dice «LATINO»: se ofrece
+    /// cambiar a esa. Y las pistas quedan «comprobadas» para la próxima vez.
+    func testOffersTheVersionInYourSpanishWhenThisOneDoesNotHaveIt() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [
+            .object(["name": "T\n1080p [RD+]", "title": "Show.S01E01.1080p.LATINO\n💾 2 GB", "url": "https://rd.example/latino.mkv"]),
+            .object(["name": "T\n1080p [RD+]", "title": "Show.S01E01.1080p.ENG.CASTELLANO\n💾 2 GB", "url": "https://rd.example/castellano.mkv"]),
+        ]]
+        rig.settings.update { $0.audio = "es"; $0.latinSpanish = true }
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.engine.loads.first?.url.absoluteString, "https://rd.example/latino.mkv", "la latina primero")
+        let castilian = try XCTUnwrap(rig.model.sourceChoices.first { $0.release.contains("CASTELLANO") })
+        let latino = try XCTUnwrap(rig.model.sourceChoices.first { $0.release.contains("LATINO") })
+        await rig.model.switchSource(to: castilian.index)
+        let spain = MediaTrack(id: 2, kind: .audio, language: "spa", title: "Castellano")
+        await rig.model.handle(rig.playing(0, audio: [eng, spain], subs: [], selectedAudio: 2))
+        XCTAssertEqual(rig.model.notice, .otherVersionHasYourLanguage(language: "es-419", have: ["en", "es-ES"], sourceIndex: latino.index))
+        XCTAssertEqual(rig.titlePrefs.checkedAudio(castilian.key), [AudioLanguage("en", .checked), AudioLanguage("es-ES", .checked)], "quedó comprobada")
+    }
+
     func testWarnsWhenNoAudioTrackIsYourLanguage() async throws {
         let rig = try twoSources()
         rig.settings.update { $0.audio = "es" }

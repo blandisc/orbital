@@ -30,6 +30,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var onlyForcedSubtitles = false
     /// Audio en español latino (no de España) cuando un video trae los dos.
     public var latinSpanish = false
+    /// Español de España (castellano) antes que el latino; con `latinSpanish` en falso y este también, cualquiera.
+    public var castilianSpanish = false
     public var quality = "1080p"               // calidad al ver: «4K», «1080p», «720p»
     public var cellularQuality = "1080p"       // calidad máxima con datos móviles
     public var wifiOnlyDownloads = true
@@ -68,6 +70,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         subtitles = try c.decodeIfPresent(String.self, forKey: .subtitles) ?? subtitles
         onlyForcedSubtitles = try c.decodeIfPresent(Bool.self, forKey: .onlyForcedSubtitles) ?? onlyForcedSubtitles
         latinSpanish = try c.decodeIfPresent(Bool.self, forKey: .latinSpanish) ?? latinSpanish
+        castilianSpanish = try c.decodeIfPresent(Bool.self, forKey: .castilianSpanish) ?? castilianSpanish
         quality = try c.decodeIfPresent(String.self, forKey: .quality) ?? quality
         cellularQuality = try c.decodeIfPresent(String.self, forKey: .cellularQuality) ?? cellularQuality
         wifiOnlyDownloads = try c.decodeIfPresent(Bool.self, forKey: .wifiOnlyDownloads) ?? wifiOnlyDownloads
@@ -99,7 +102,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
-        case homeDeck, homeTime, avatar, displayName, latinSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom
+        case homeDeck, homeTime, avatar, displayName, latinSpanish, castilianSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom
         case subtitleBackground, subtitlePosition, subtitlesOnSkipBack, forcedForForeignAudio, subtitleSystemStyle
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
@@ -111,7 +114,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public func preferences(onCellular: Bool = false) -> Preferences {
         var q = quality
         if onCellular, let want = ["4K", "1080p", "720p", "480p"].firstIndex(of: cellularQuality), let have = ["4K", "1080p", "720p", "480p"].firstIndex(of: q), have < want { q = cellularQuality }
-        return Preferences(audio: audio, quality: q)
+        return Preferences(audio: audio, quality: q, spanish: spanishVariant)
+    }
+
+    /// La variante de español que prefieres: «es-419» (latino), «es-ES» (castellano) o "" (cualquiera).
+    public var spanishVariant: String {
+        guard audio == "es" else { return "" }
+        return latinSpanish ? "es-419" : castilianSpanish ? "es-ES" : ""
     }
 }
 
@@ -212,10 +221,35 @@ public final class TitlePreferences: @unchecked Sendable {
     static let resumeKey = "resume-choices"
     private var resumes: [String: ResumeChoice]
 
+    /// «Comprobado»: las pistas de audio reales de cada versión que ya viste (por su huella `Source.key`, la misma de la TV).
+    static let checkedKey = "checked-audio", checkedLimit = 2000
+    private var checked: [String: [AudioLanguage]]
+
     public init(_ kv: KeyValueStore) {
         self.kv = kv
         all = kv.data(Self.key).flatMap { try? JSONDecoder().decode([String: Saved].self, from: $0) } ?? [:]
         resumes = kv.data(Self.resumeKey).flatMap { try? JSONDecoder().decode([String: ResumeChoice].self, from: $0) } ?? [:]
+        checked = kv.data(Self.checkedKey).flatMap { try? JSONDecoder().decode([String: [AudioLanguage]].self, from: $0) } ?? [:]
+    }
+
+    /// El audio comprobado de una versión, si ya la viste.
+    public func checkedAudio(_ key: String) -> [AudioLanguage]? { lock.withLock { checked[key] } }
+
+    /// Se abrió una versión: se anotan sus pistas de audio reales. true si cambió algo (lo ordenado ya no vale).
+    @discardableResult public func rememberChecked(key: String, tracks: [MediaTrack]) -> Bool {
+        var codes: [String] = []
+        for track in tracks where track.kind == .audio {
+            if let code = TrackChooser.audioCode(track), !codes.contains(code) { codes.append(code) }
+        }
+        guard !codes.isEmpty, !key.isEmpty else { return false }
+        let value = codes.map { AudioLanguage($0, .checked) }
+        return lock.withLock {
+            guard checked[key] != value else { return false }
+            if checked.count >= Self.checkedLimit, let any = checked.keys.first { checked[any] = nil }
+            checked[key] = value
+            kv.set(Self.checkedKey, data: try? JSONEncoder().encode(checked))
+            return true
+        }
     }
 
     /// Idioma de audio y subtítulos para un título: el que elegiste viéndolo o, si nunca cambiaste, el de Ajustes.

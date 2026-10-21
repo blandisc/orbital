@@ -45,6 +45,9 @@ public struct UpNext: Sendable, Equatable {
 public enum PlayerNotice: Sendable, Equatable {
     case triedAnotherSource(attempt: Int)
     case audioNotInYourLanguage
+    /// Esta versión no trae el idioma que quieres (o no su variante: latino) y otra sí: se ofrece cambiar sin perder el punto.
+    /// `language` es el código que quieres («es-419»); `have`, lo que trae esta («en», «es-ES»).
+    case otherVersionHasYourLanguage(language: String, have: [String], sourceIndex: Int)
 }
 
 /// El siguiente episodio ya descargado (para seguir viendo sin conexión).
@@ -441,9 +444,32 @@ public final class PlayerModel: ObservableModel {
     }
 
     // MARK: pistas
+    /// Las pistas reales de esta versión: quedan «comprobadas» (la próxima vez se sabe su idioma sin adivinar).
+    private func rememberCheckedAudio(_ s: EngineSnapshot) {
+        guard let source, titlePrefs.rememberChecked(key: source.key, tracks: s.audioTracks) else { return }
+        let finder = finder
+        Task { await finder.forgetSorted() }
+    }
+
+    /// Lo que trae esta versión no es lo que quieres (inglés y castellano, y quieres latino) y otra versión sí lo trae seguro:
+    /// se ofrece cambiar a esa, en el mismo segundo.
+    func offerVersionInYourLanguage(_ s: EngineSnapshot, prefs: Preferences) {
+        let have = s.audioTracks.compactMap(TrackChooser.audioCode)
+        let want = prefs.wanted
+        guard !have.isEmpty, !have.contains(where: { $0 == want || (want.count == 2 && $0.hasPrefix(want)) }), let current = source else { return }
+        let better = sourceChoices.first { choice in
+            choice.index != current.index && choice.playbackURL != nil && choice.audio.contains { $0.code == want && $0.evidence.solid }
+        }
+        guard let better else { return }
+        var unique: [String] = []
+        for code in have where !unique.contains(code) { unique.append(code) }
+        notice = .otherVersionHasYourLanguage(language: want, have: unique, sourceIndex: better.index)
+    }
+
     private func applyTracksOnce(_ s: EngineSnapshot) async {
         guard !tracksApplied, !s.audioTracks.isEmpty || !s.subtitleTracks.isEmpty, let request else { return }
         tracksApplied = true
+        rememberCheckedAudio(s)
         // Apagados en este título: eso gana a todo lo recordado.
         let subtitlesOff = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).subtitles.isEmpty
         // La versión que elegiste en este título: el subtítulo más parecido (gana a «Continuar» y a la regla).
@@ -452,9 +478,10 @@ public final class PlayerModel: ObservableModel {
         // También en el siguiente episodio de la serie (antes solo en el mismo episodio exacto).
         if !picked, !request.fromStart, let choice = titlePrefs.lastChoice(metaID: request.metaID), await applyResumeTracks(choice, s) { return }
         let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
-        let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio, latin: settings.value.latinSpanish)
+        let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio, latin: langs.prefs.spanish == "es-419", castilian: langs.prefs.spanish == "es-ES")
         if let audio, audio.id != s.selectedAudio { await engine.selectAudio(audio.id) }
         if TrackChooser.wrongAudio(s.audioTracks, language: langs.prefs.audio) { notice = .audioNotInYourLanguage }
+        offerVersionInYourLanguage(s, prefs: langs.prefs)
         let audioLanguage = PlaybackRules.languageCode(audio?.language) ?? langs.prefs.audio
         if picked { return }
         let mode: SubtitleMode = settings.value.onlyForcedSubtitles ? .forced : SubtitleMode(settings: langs.subtitles, onlyForced: false)

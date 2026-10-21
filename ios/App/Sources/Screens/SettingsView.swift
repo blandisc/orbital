@@ -222,10 +222,11 @@ struct SettingsView: View {
             Picker("Idioma de la app y de las fichas", selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } })) {
                 Text("Español").tag("es"); Text("English").tag("en")
             }
-            // «Español latino» es español, prefiriendo la pista latina cuando el video trae las dos.
-            Picker("Audio", selection: Binding(get: { s.audio == "es" && s.latinSpanish ? "es-419" : s.audio },
-                                               set: { v in model.update { $0.audio = v == "es-419" ? "es" : v; $0.latinSpanish = v == "es-419" } })) {
-                Text("Español").tag("es"); Text("Español latino").tag("es-419"); Text("English").tag("en")
+            // Latino o castellano: la versión y la pista de ese español primero; «cualquiera», el que haya. Las versiones que no
+            // dicen cuál van después de las que sí (y «Ver» en la ficha dice cuál va a sonar).
+            Picker("Audio", selection: Binding(get: { s.audio == "es" ? (s.latinSpanish ? "es-419" : s.castilianSpanish ? "es-ES" : "es") : s.audio },
+                                               set: { v in model.update { $0.audio = v.hasPrefix("es") ? "es" : v; $0.latinSpanish = v == "es-419"; $0.castilianSpanish = v == "es-ES" } })) {
+                Text("Español latino").tag("es-419"); Text("Español de España").tag("es-ES"); Text("Español (cualquiera)").tag("es"); Text("English").tag("en")
             }
         }
         .listRowBackground(DS.surface)

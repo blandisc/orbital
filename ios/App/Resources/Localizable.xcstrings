@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    " y ": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " and "
+          }
+        }
+      }
+    },
     "%@ GB libres": {
       "extractionState": "manual",
       "localizations": {
@@ -382,6 +393,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 h"
+          }
+        }
+      }
+    },
+    "1 oculta: grabada en el cine o tráiler": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 hidden: a theater recording or trailer"
           }
         }
       }
@@ -1563,6 +1585,17 @@
         }
       }
     },
+    "Buscando versión…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding a version…"
+          }
+        }
+      }
+    },
     "Buscando…": {
       "extractionState": "manual",
       "localizations": {
@@ -1856,6 +1889,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Change"
+          }
+        }
+      }
+    },
+    "Cambiar a %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch to %@"
           }
         }
       }
@@ -2274,6 +2318,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Efficient compression: looks the same, takes less space."
+          }
+        }
+      }
+    },
+    "Comprobado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checked"
           }
         }
       }
@@ -4137,6 +4192,17 @@
         }
       }
     },
+    "El nombre del archivo dice el idioma:": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file name says the language:"
+          }
+        }
+      }
+    },
     "El servidor de la fuente falló. Se vuelve a intentar.": {
       "extractionState": "manual",
       "localizations": {
@@ -4221,6 +4287,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose the source…"
+          }
+        }
+      }
+    },
+    "Elegir versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose version"
+          }
+        }
+      }
+    },
+    "Elegir versión…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose version…"
           }
         }
       }
@@ -4775,6 +4863,17 @@
         }
       }
     },
+    "Es el original": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's the original"
+          }
+        }
+      }
+    },
     "Escribe este código en %@": {
       "extractionState": "manual",
       "localizations": {
@@ -4870,6 +4969,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Storage"
+          }
+        }
+      }
+    },
+    "Español (cualquiera)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spanish (any)"
+          }
+        }
+      }
+    },
+    "Español de España": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Castilian Spanish"
           }
         }
       }
@@ -4980,6 +5101,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "This week in Mexico"
+          }
+        }
+      }
+    },
+    "Esta versión no trae %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This version doesn't have %@"
           }
         }
       }
@@ -5431,6 +5563,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ MB needed and %@ MB free."
+          }
+        }
+      }
+    },
+    "Hay pistas, pero no seguras (muchas banderas o solo «español»).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There are hints, but not sure ones (many flags or just “Spanish”)."
           }
         }
       }
@@ -6344,6 +6487,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "The basics in English too."
+          }
+        }
+      }
+    },
+    "Lo dice el nombre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The name says so"
+          }
+        }
+      }
+    },
+    "Lo dice el sitio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The site says so"
           }
         }
       }
@@ -7470,6 +7635,17 @@
         }
       }
     },
+    "Nada en el nombre lo dice: es el idioma original del título.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing in the name says it: it's the title's original language."
+          }
+        }
+      }
+    },
     "Nada en la TV ahora": {
       "extractionState": "manual",
       "localizations": {
@@ -7499,6 +7675,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing this day"
+          }
+        }
+      }
+    },
+    "Nada lo dice y no se sabe el idioma original: suponemos inglés.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing says it and the original language is unknown: we assume English."
           }
         }
       }
@@ -7620,6 +7807,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "It doesn't fit on the iPhone"
+          }
+        }
+      }
+    },
+    "No dice idioma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No language info"
+          }
+        }
+      }
+    },
+    "No dice si latino o castellano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doesn't say Latin American or Castilian"
           }
         }
       }
@@ -8680,6 +8889,17 @@
         }
       }
     },
+    "Original": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original"
+          }
+        }
+      }
+    },
     "Oscuro": {
       "extractionState": "manual",
       "localizations": {
@@ -8746,6 +8966,17 @@
         }
       }
     },
+    "Otras %lld en %@ %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more in %@ %@"
+          }
+        }
+      }
+    },
     "Otras apps": {
       "extractionState": "manual",
       "localizations": {
@@ -8786,6 +9017,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Other languages"
+          }
+        }
+      }
+    },
+    "Otros idiomas · ": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other languages · "
           }
         }
       }
@@ -9237,6 +9479,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "By genre"
+          }
+        }
+      }
+    },
+    "Por idioma y calidad · toca una": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By language and quality · tap one"
           }
         }
       }
@@ -11342,6 +11595,17 @@
         }
       }
     },
+    "Sus pistas: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Its tracks: %@"
+          }
+        }
+      }
+    },
     "Sus rankings": {
       "extractionState": "manual",
       "localizations": {
@@ -11463,6 +11727,17 @@
         }
       }
     },
+    "Tal vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maybe"
+          }
+        }
+      }
+    },
     "Tamaño": {
       "extractionState": "manual",
       "localizations": {
@@ -11492,6 +11767,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You also had"
+          }
+        }
+      }
+    },
+    "También trae: ": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also has: "
           }
         }
       }
@@ -13113,6 +13399,17 @@
         }
       }
     },
+    "Viene de %@, que solo sube %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From %@, which only uploads %@."
+          }
+        }
+      }
+    },
     "Viene dentro del archivo": {
       "extractionState": "manual",
       "localizations": {
@@ -13406,6 +13703,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You already downloaded it"
+          }
+        }
+      }
+    },
+    "Ya la viste: son las pistas de audio del archivo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've watched it: these are the file's audio tracks."
           }
         }
       }
@@ -13868,6 +14176,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Out of sync or looks wrong? Tap Next to try another."
+          }
+        }
+      }
+    },
+    "¿Otro título?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another title?"
+          }
+        }
+      }
+    },
+    "¿Otro título? El nombre dice otro año: puede ser otra película.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another title? The name says another year: it may be a different movie."
           }
         }
       }

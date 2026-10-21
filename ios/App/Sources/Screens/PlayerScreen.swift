@@ -84,6 +84,9 @@ struct PlayerScreen: View {
     struct PlayerNotice: Equatable {
         var title: String, detail: String?, tone: DSNotice.Tone
         var showsDownloads = false
+        /// «Cambiar a latino»: otra versión que sí trae tu idioma (su índice), en el mismo segundo.
+        var switchTo: Int? = nil
+        var switchTitle: String? = nil
         let id = UUID()
     }
     /// Subtítulos rápidos (el panel chico sobre el video) y su lista de idiomas.
@@ -286,6 +289,16 @@ struct PlayerScreen: View {
             if phase == .active { Task { await model.appDidBecomeActive() } }
         }
         .onChange(of: model.phase) { _, phase in if phase == .closed { finish() } }
+        // Esta versión no trae tu idioma (o no el latino) y otra sí: se ofrece cambiar sin perder el punto.
+        .onChange(of: model.notice) { _, value in
+            guard case .otherVersionHasYourLanguage(let want, let have, let index)? = value else { return }
+            let ui = env.services.appSettings.uiLanguage, tr = { (k: String) in Strings.tr(k, language: ui) }
+            let wanted = Streams.versionLanguageName(want, in: ui)
+            let tracks = have.map { Streams.versionLanguageName($0, in: ui).lowercased() }.joined(separator: tr(" y "))
+            show(PlayerNotice(title: String(format: tr("Esta versión no trae %@"), wanted.lowercased()),
+                              detail: String(format: tr("Sus pistas: %@"), tracks), tone: .warn,
+                              switchTo: index, switchTitle: String(format: tr("Cambiar a %@"), wanted.lowercased())))
+        }
         // El video ya llegó (o pasó un momento): el pulgar vuelve a seguir el avance real.
         .onChange(of: model.snapshot.position) { _, position in
             if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
@@ -463,9 +476,10 @@ struct PlayerScreen: View {
         if let notice {
             VStack {
                 Toast(tone: notice.tone, title: Text(verbatim: notice.title), detail: notice.detail.map { Text(verbatim: $0) },
-                      actionTitle: notice.showsDownloads ? "Ver" : nil,
-                      action: notice.showsDownloads ? { Task { await close(); env.openTab = AppEnvironment.downloadsTab } } : nil,
-                      seconds: Toast.duration(notice.tone, hasAction: notice.showsDownloads) ?? DS.Timing.toastAction,
+                      actionTitle: notice.switchTitle.map { LocalizedStringKey($0) } ?? (notice.showsDownloads ? "Ver" : nil),
+                      action: notice.switchTo.map { index in { Task { await holder.model.switchSource(to: index) } } }
+                        ?? (notice.showsDownloads ? { Task { await close(); env.openTab = AppEnvironment.downloadsTab } } : nil),
+                      seconds: Toast.duration(notice.tone, hasAction: notice.showsDownloads || notice.switchTo != nil) ?? DS.Timing.toastAction,
                       dismiss: { withAnimation(DS.Motion.base(reduceMotion)) { if self.notice?.id == notice.id { self.notice = nil } } })
                     .id(notice.id)
                 Spacer()

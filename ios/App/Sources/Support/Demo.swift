@@ -541,6 +541,30 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             return HTTPResponse(status: 200, data: JSON.object(["streams": [["name": "[RD+] Demo\n1080p", "title": "Archivo.Grande.1080p.WEB-DL.mkv\n💾 125 MB 🇪🇸",
                                                                              "url": "https://proof.ovh.net/files/1Gb.dat"]]]).serialized())
         }
+        // `-demo-versions`: las versiones reales de Intensa-Mente 2 (nombres de Torrentio, octubre de 2026), con videos de prueba,
+        // para ver «Elegir versión» con latino, castellano, el original y los demás.
+        if ProcessInfo.processInfo.arguments.contains("-demo-versions") {
+            let video = "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_30MB.mp4"
+            let rows: [(String, String, String, String)] = [
+                ("[RD+] Torrentio\n4k DV | HDR", "Inside.Out.2.2024.2160p.WEB-DL.DV.HDR10.PLUS.ENG.LATINO.DDP5.1.Atmos.H265-BEN.THE.MEN", "17.72 GB", "TorrentGalaxy\n🇬🇧 🇲🇽"),
+                ("[RD+] Torrentio\n1080p", "IntensaMente.2.2024.1080p-Dual-Lat", "2.93 GB", "Cinecalidad\n🇲🇽"),
+                ("[RD+] Torrentio\n1080p", "IntensaMente 2 (2024) 1080p WEBDL LAT - ZeiZ", "12.32 GB", "Cinecalidad\n🇲🇽"),
+                ("[RD+] Torrentio\n1080p", "Inside.Out.2.2024.1080p.WEB-DL.ENG.LATINO.DDP5.1.Atmos.H264-BEN.THE.MEN", "7.5 GB", "TorrentGalaxy\n🇬🇧 🇪🇸 🇲🇽"),
+                ("[RD+] Torrentio\n4k DV | HDR", "Inside.Out.2.2024.2160p.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-FLUX[TGx]", "16.65 GB", "TorrentGalaxy"),
+                ("[RD+] Torrentio\n1080p", "Inside Out 2 2024 1080p BluRay", "1.78 GB", "YTS"),
+                ("[RD download] Torrentio\n720p", "Inside Out 2 2024 720p BluRay", "886.99 MB", "YTS"),
+                ("[RD+] Torrentio\n1080p", "Del reves 2 (Inside Out 2) (2024) [Bluray 1080p][Esp]", "6.73 GB", "Wolfmax4k\n🇪🇸"),
+                ("[RD download] Torrentio\n720p", "Del reves 2 (Inside Out 2) (2024) [Bluray 720p][Esp]", "4.73 GB", "Wolfmax4k\n🇪🇸"),
+                ("[RD download] Torrentio\n4k HDR", "Inside Out 2 2024 Bluray 2160p AV1 HDR10 EN/FR/ES OPUS 7.1-UH [UserHEVC]", "6.43 GB", "1337x\n🇬🇧 🇪🇸 🇫🇷"),
+                ("[RD+] Torrentio\n1080p", "Izvrnuto.obrnuto.2.(2024).1080p.x265.4Mbps.2CH.224.crtani.film.hrvatski", "3.03 GB", "1337x\n🇭🇷"),
+                ("[RD+] Torrentio\nTeleSync", "Inside Out 2 (Intensa-mente 2) (2024) ts-hq lat.mp4", "1.94 GB", "Cinecalidad\n🇲🇽"),
+            ]
+            let streams = rows.enumerated().map { i, r -> JSON in
+                let parts = r.3.components(separatedBy: "\n")
+                return ["name": .string(r.0), "title": .string("\(r.1)\n👤 \(40 - i) 💾 \(r.2) ⚙️ \(parts[0])\n\(parts.count > 1 ? parts[1] : "")"), "url": .string(video + "?v=\(i)")]
+            }
+            return HTTPResponse(status: 200, data: JSON.object(["streams": .array(streams)]).serialized())
+        }
         let streams: [JSON] = [
             // MKV con varias pistas de subtítulos SRT (archivo de prueba oficial de Matroska): lo abre AetherEngine por su vía propia.
             ["name": "[RD+] Demo\n1080p", "title": "Elephants.Dream.1080p.WEB-DL.MKV.Multi.Subs\n💾 2.4 GB 🇬🇧 🇪🇸 🇫🇷",

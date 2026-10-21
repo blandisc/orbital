@@ -210,7 +210,7 @@ struct TitleView: View {
                         .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
                 }
                 Button { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } } label: {
-                    ActionTileLabel(title: Text("Fuente"), symbol: "list.bullet.rectangle", tint: artAccent)
+                    ActionTileLabel(title: Text("Versión"), symbol: "list.bullet.rectangle", tint: artAccent)
                 }
                 .buttonStyle(.plain).frame(maxWidth: .infinity).disabled(model.continueVideoID == nil).accessibilityIdentifier("title-sources")
             }
@@ -221,7 +221,9 @@ struct TitleView: View {
     /// Lo de adentro de «Ver»: ▶ Ver (o «Continuar · quedan 42 min») y, abajo, la calidad de la recomendada (la que va a sonar)
     /// («4K · Dolby Vision · Atmos»; nada si aún no se sabe). Con avance, una barrita al pie. Mientras carga, «Cargando».
     @ViewBuilder private func primaryButtonLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> some View {
-        let quality = model.recommendedSource?.qualitySummary ?? []
+        // «Latino · 1080p · Dolby Vision»: en qué idioma y con qué calidad va a sonar.
+        let language = model.recommendedLanguage.map { Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage) }
+        let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
         VStack(spacing: DS.Space.s1) {
             if model.continueVideoID == nil && !model.isLoading {
                 // Ya cargó y no hay qué ver: sin red, o una serie que aún no tiene episodios.
@@ -253,6 +255,10 @@ struct TitleView: View {
                     Text(verbatim: quality.joined(separator: " · ")).font(DS.TextRecipe.caption.font.weight(.medium))
                         .opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                         .accessibilityLabel(Text("Se va a ver en: \(quality.joined(separator: ", "))"))
+                } else {
+                    // Su lugar apartado mientras se busca (antes el botón crecía al llegar la versión).
+                    Text("Buscando versión…").font(DS.TextRecipe.caption.font.weight(.medium))
+                        .opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1)
                 }
             }
         }
@@ -343,7 +349,7 @@ struct TitleView: View {
                 }
             default:
                 Menu {
-                    Button("Elegir la fuente…", systemImage: "list.bullet") { if let target { sourcesFor = SourcesTarget(videoID: target, purpose: .download) } }
+                    Button("Elegir versión…", systemImage: "list.bullet") { if let target { sourcesFor = SourcesTarget(videoID: target, purpose: .download) } }
                     if model.kind == "series" {
                         Button("Los siguientes \(DS.Size.downloadNext)", systemImage: "square.stack.3d.down.right") { Task { await report(model.downloadNext(DS.Size.downloadNext), model) } }
                     }

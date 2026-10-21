@@ -114,6 +114,11 @@ public final class Services: ObservableModel {
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "") }, clock: clock)
         self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
+        // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
+        let origins = OriginBook(tmdb: { Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "") }, cinemeta: cinemeta)
+        let prefs = titlePrefs
+        Task { await finder.configure(origin: { kind, metaID in await origins.origin(kind: kind, metaID: metaID) },
+                                      checked: { key in prefs.checkedAudio(key) }) }
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs, library: oneDriveLibrary),
                                    otherSource: Services.otherSource(finder: finder, settings: settings, titlePrefs: titlePrefs),
@@ -245,5 +250,27 @@ public final class Services: ObservableModel {
         await forYou.clearCache()
         await forYouRemote.clearCache()
         generation += 1
+    }
+}
+
+/// De dónde es cada título (idioma original y país), una vez por título: el audio de las versiones que no lo dicen.
+actor OriginBook {
+    private let tmdb: @Sendable () -> Tmdb
+    private let cinemeta: Cinemeta
+    private var known: [String: TitleOrigin] = [:]
+    init(tmdb: @escaping @Sendable () -> Tmdb, cinemeta: Cinemeta) { self.tmdb = tmdb; self.cinemeta = cinemeta }
+
+    func origin(kind: String, metaID: String) async -> TitleOrigin? {
+        if let hit = known[metaID] { return hit }
+        guard metaID.hasPrefix("tt") else { return nil }
+        let client = tmdb()
+        async let language = client.configured ? (try? await client.originalLanguage(imdb: metaID, kind: kind)) : nil
+        async let meta = try? await cinemeta.meta(kind: kind, id: metaID)
+        let info = await meta
+        // El año solo en películas (una serie dura años: sus episodios no dicen el del estreno).
+        let year = kind == "movie" ? (info?["year"]?.string ?? info?["releaseInfo"]?.string).flatMap { Int($0.prefix(4)) } : nil
+        let found = TitleOrigin(language: await language ?? nil, country: info?["country"]?.nonEmptyString, year: year)
+        if found.language != nil || found.country != nil { known[metaID] = found }
+        return found
     }
 }

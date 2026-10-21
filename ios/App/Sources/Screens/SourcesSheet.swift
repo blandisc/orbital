@@ -2,8 +2,10 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// La lista de fuentes de Real-Debrid, una sola: en cada una se ve o se descarga, sin cambiar de pestaña. La recomendada va
-/// arriba con sus dos botones del mismo tamaño; la más ligera para guardar se marca. Mantener presionada da lo demás.
+/// «Elegir versión» (como la TV): una fila por idioma de audio —el tuyo, el original y las variantes de español; los demás,
+/// aparte— y en cada una solo las calidades que existen, la mejor de cada una. Tocar una calidad abre su tarjeta: qué es,
+/// cómo sabemos el idioma, «Ver» y «Descargar», y las otras de esa fila y calidad con su nombre técnico. Las grabadas en el
+/// cine y los tráileres no se ofrecen. «Ver» en la ficha sigue arrancando sola con la recomendada (la marcada aquí).
 struct SourcesSheet: View {
     @StateObject private var observer: ModelObserver<SourcesModel>
     /// La fuente elegida y para qué (ver o descargar).
@@ -19,14 +21,19 @@ struct SourcesSheet: View {
     }
 
     @State private var showsGlossary = false
+    @State private var showsMore = false
+    @State private var picked: PickedVersion?
+
+    struct PickedVersion: Identifiable { let row: LanguageRow; let option: VersionOption; var id: String { "\(row.code)-\(option.id)" } }
 
     var body: some View {
         let model = observer.model
+        let ui = env.services.appSettings.uiLanguage
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text("Fuente").recipe(.title)
-                    Text("Toca una para verla · ↓ para guardarla").recipe(.footnote)
+                    Text("Elegir versión").recipe(.title)
+                    Text("Por idioma y calidad · toca una").recipe(.footnote)
                 }
                 Spacer()
                 // Qué quiere decir cada etiqueta (4K, DV, REMUX, Al instante…).
@@ -40,16 +47,32 @@ struct SourcesSheet: View {
                 VStack(spacing: DS.Space.s2) {
                     if model.isLoading { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s6) }
                     if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
-                    // La recomendada arriba, con su porqué; luego el resto agrupado por calidad (4K, 1080p, 720p, otras).
-                    if let best = model.rows.first(where: \.recommended) { recommendedCard(best, model) }
-                    ForEach(groups(model.rows.filter { !$0.recommended }), id: \.0) { group, rows in
-                        Text(LocalizedStringKey(group)).recipe(.caption, color: DS.textFaint).fontWeight(.semibold)
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.top, DS.Space.s2)
-                        ForEach(rows) { sourceRow($0, model) }
+                    ForEach(model.languageRows) { row in
+                        VersionLanguageRow(row: row, uiLanguage: ui) { picked = PickedVersion(row: row, option: $0) }
+                    }
+                    if !model.moreLanguages.isEmpty {
+                        DisclosureGroup(isExpanded: $showsMore) {
+                            VStack(spacing: DS.Space.s2) {
+                                ForEach(model.moreLanguages) { row in
+                                    VersionLanguageRow(row: row, uiLanguage: ui) { picked = PickedVersion(row: row, option: $0) }
+                                }
+                            }
+                            .padding(.top, DS.Space.s2)
+                        } label: {
+                            Text("Otros idiomas · ") + Text(verbatim: model.moreLanguages.map { Streams.versionLanguageName($0.code, in: ui).lowercased() }.joined(separator: ", "))
+                        }
+                        .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
+                        .padding(DS.Space.s3)
+                        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                        .tint(DS.textMuted)
+                    }
+                    if model.hiddenCount > 0 {
+                        (model.hiddenCount == 1 ? Text("1 oculta: grabada en el cine o tráiler") : Text("\(model.hiddenCount) ocultas: grabadas en el cine o tráileres"))
+                            .recipe(.caption, color: DS.textFaint)
+                            .frame(maxWidth: .infinity).padding(.top, DS.Space.s1)
                     }
                 }
             }
-            // Aire a los lados y arriba: el contorno de la recomendada no se corta contra la orilla.
             .contentMargins(.horizontal, DS.Space.s4, for: .scrollContent)
             .contentMargins(.vertical, DS.Space.s1, for: .scrollContent)
             if env.connectivity.isCellular {
@@ -59,37 +82,90 @@ struct SourcesSheet: View {
         .padding(.vertical, DS.Space.s4)
         .task { await model.load(onCellular: env.connectivity.isCellular) }
         .sheet(isPresented: $showsGlossary) { SourcesGlossary().fittedSheet().presentationDragIndicator(.visible) }
-    }
-
-    /// La recomendada: sus datos y «Ver» / «Descargar», del mismo tamaño.
-    private func recommendedCard(_ row: SourceRow, _ model: SourcesModel) -> some View {
-        SourceRowView(row: row, watch: { pick(row, .watch, model) }, download: row.downloadable ? { pick(row, .download, model) } : nil, featured: true)
-            .contextMenu { menu(row, model) }
-    }
-
-    /// Tocar la fuente la pone; ↓ la baja; mantener presionada da el nombre del archivo y las otras formas de usarla.
-    private func sourceRow(_ row: SourceRow, _ model: SourcesModel) -> some View {
-        SourceRowView(row: row, watch: { pick(row, .watch, model) }, download: row.downloadable ? { pick(row, .download, model) } : nil)
-            .contextMenu { menu(row, model) }
-    }
-
-    private func pick(_ row: SourceRow, _ purpose: Purpose, _ model: SourcesModel) {
-        if let source = model.source(row.id) { choose(source, purpose) }
-    }
-
-    @ViewBuilder private func menu(_ row: SourceRow, _ model: SourcesModel) -> some View {
-        if !row.release.isEmpty { Text(verbatim: row.release) }
-        Button("Ver aquí", systemImage: "play.fill") { pick(row, .watch, model) }
-        if row.downloadable { Button("Descargar", systemImage: "arrow.down.circle") { pick(row, .download, model) } }
-        if let infuse { Button("Abrir con Infuse", systemImage: "arrow.up.forward.app") { if let s = model.source(row.id) { infuse(s) } } }
-    }
-
-    /// Los grupos de calidad en orden, sin los vacíos.
-    private func groups(_ rows: [SourceRow]) -> [(String, [SourceRow])] {
-        ["4K", "1080p", "720p", "Otras"].compactMap { g in
-            let found = rows.filter { $0.group == g }
-            return found.isEmpty ? nil : (g, found)
+        .sheet(item: $picked) { p in
+            VersionCard(row: p.row, option: p.option, others: model.others(of: p.option, in: p.row), uiLanguage: ui,
+                        act: { id, purpose in
+                            picked = nil
+                            if let source = model.source(id) { choose(source, purpose) }
+                        },
+                        infuse: infuse.map { open in { id in picked = nil; if let s = model.source(id) { open(s) } } })
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
+    }
+}
+
+/// La tarjeta de una versión: «Latino · 1080p», su tamaño y si arranca al instante, cómo sabemos el idioma, «Ver» y
+/// «Descargar», y las otras de ese idioma y calidad (con su nombre técnico, solo aquí).
+struct VersionCard: View {
+    let row: LanguageRow
+    let option: VersionOption
+    let others: [VersionOption]
+    let uiLanguage: String
+    let act: (Int, Purpose) -> Void
+    var infuse: ((Int) -> Void)?
+    @State private var showsOthers = false
+
+    var body: some View {
+        let language = Streams.versionLanguageName(row.code, in: uiLanguage)
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text(verbatim: "\(language) · \(option.quality)").recipe(.title)
+                    (Text(verbatim: [VersionChip.size(option), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")].compactMap { $0 }.joined(separator: " · ") + " · ")
+                     + (option.cached ? Text("Al instante") : Text("Tarda en empezar"))).recipe(.secondary)
+                }
+                if option.otherTitle {
+                    DSNotice(text: "¿Otro título? El nombre dice otro año: puede ser otra película.", tone: .warn)
+                }
+                VersionEvidence(evidence: option.evidence, language: language, release: option.release, site: option.site)
+                if !option.alsoHas.isEmpty {
+                    (Text("También trae: ") + Text(verbatim: option.alsoHas.map { Streams.versionLanguageName($0, in: uiLanguage) }.joined(separator: ", ")))
+                        .recipe(.footnote)
+                }
+                HStack(spacing: DS.Space.s2) {
+                    Button { act(option.id, .watch) } label: { Label("Ver", systemImage: "play.fill").frame(maxWidth: .infinity) }
+                        .dsPrimaryButton().controlSize(.large).accessibilityIdentifier("version-watch")
+                    if option.downloadable {
+                        Button { act(option.id, .download) } label: { Label("Descargar", systemImage: "arrow.down").frame(maxWidth: .infinity) }
+                            .buttonStyle(.glass).controlSize(.large).accessibilityIdentifier("version-download")
+                    }
+                }
+                if let infuse {
+                    Button("Abrir con Infuse", systemImage: "arrow.up.forward.app") { infuse(option.id) }
+                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).buttonStyle(.plain)
+                }
+                if !others.isEmpty {
+                    DisclosureGroup(isExpanded: $showsOthers) {
+                        VStack(spacing: DS.Space.s2) { ForEach(others) { other in otherRow(other) } }.padding(.top, DS.Space.s2)
+                    } label: {
+                        Text("Otras \(others.count) en \(language.lowercased()) \(option.quality)").recipe(.secondary, color: DS.text)
+                    }
+                    .tint(DS.textMuted)
+                }
+            }
+            .padding(DS.Space.s5)
+        }
+    }
+
+    /// Otra del mismo idioma y calidad: su tamaño, cómo sabemos el idioma y su nombre técnico, con ▶ y ↓.
+    private func otherRow(_ other: VersionOption) -> some View {
+        HStack(alignment: .top, spacing: DS.Space.s2) {
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                (Text(verbatim: VersionChip.facts(other) + " · ") + (other.cached ? Text("Al instante") : Text("Tarda en empezar"))).recipe(.footnote, color: DS.text)
+                Text(verbatim: other.release).font(DS.TextRecipe.caption.font.monospaced()).foregroundStyle(DS.textMuted).lineLimit(2)
+                if other.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button { act(other.id, .watch) } label: { Image(systemName: "play.fill").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }
+                .buttonStyle(.plain).foregroundStyle(DS.text).accessibilityLabel(Text("Ver"))
+            if other.downloadable {
+                Button { act(other.id, .download) } label: { Image(systemName: "arrow.down").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }
+                    .buttonStyle(.plain).foregroundStyle(DS.text).accessibilityLabel(Text("Descargar"))
+            }
+        }
+        .padding(DS.Space.s2)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
     }
 }
 
@@ -122,74 +198,5 @@ struct SourcesGlossary: View {
             }
         }
         .padding(DS.Space.s5)
-    }
-}
-
-struct SourceRowView: View {
-    let row: SourceRow
-    let watch: () -> Void
-    /// nil: no se puede bajar (una lista HLS).
-    let download: (() -> Void)?
-    /// La recomendada: «Ver» y «Descargar» abajo, del mismo tamaño (las demás: ▶ y ↓ a la derecha).
-    var featured = false
-    @State private var taps = 0
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .center, spacing: DS.Space.s2) {
-                info
-                    .contentShape(Rectangle())
-                    .onTapGesture { taps += 1; watch() }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityAction { watch() }
-                if !featured {
-                    round("play.fill", label: "Ver", action: watch)
-                    if let download { round("arrow.down", label: "Descargar", action: download).accessibilityIdentifier("source-download") }
-                }
-            }
-            if featured {
-                HStack(spacing: DS.Space.s2) {
-                    Button(action: watch) { Label("Ver", systemImage: "play.fill").frame(maxWidth: .infinity) }.dsPrimaryButton().controlSize(.large)
-                    if let download {
-                        Button(action: download) { Label("Descargar", systemImage: "arrow.down").frame(maxWidth: .infinity) }
-                            .buttonStyle(.glass).controlSize(.large)
-                            .accessibilityIdentifier("source-download")
-                    }
-                }
-            }
-        }
-        .padding(DS.Space.s3)
-        .background(featured ? DS.fillStrong : DS.fill, in: shape)
-        .overlay(shape.strokeBorder(featured ? DS.accent : DS.hairline, lineWidth: DS.Size.hairline))   // dentro del borde: no se corta
-        .sensoryFeedback(.selection, trigger: taps)
-    }
-
-    private var info: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            Text(row.headline).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
-            if row.recommended { Text("La elegimos por tu idioma, la calidad y el tamaño").recipe(.caption) }
-            // Las que no caben pasan al siguiente renglón (antes se deslizaban de lado y la última quedaba cortada).
-            FlowChips(spacing: DS.Space.s1) {
-                if row.recommended { DSChip(text: "Recomendada", tone: .good) }
-                if row.bestToSave { DSChip(text: "Ligera para guardar", tone: .good) }
-                if row.cached { DSChip(text: "Al instante", tone: .good) }
-                if let gb = row.sizeGB { DSChipText(text: gb >= 1 ? String(format: "%.1f GB", gb) : String(format: "%.0f MB", gb * 1000), tone: row.heavy ? .warn : .normal) }
-                ForEach(QualityBadges.items(resolution: row.resolution, hdr: row.hdr, audio: row.audio), id: \.self) { QualityBadges(items: [$0]) }
-                ForEach(row.tags, id: \.self) { DSChipText(text: $0) }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func round(_ symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
-                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-                .background(DS.fillStrong, in: Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(label))
     }
 }

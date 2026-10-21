@@ -132,6 +132,12 @@ enum DS {
         static let pastOpacity: Double = 0.55
     }
 
+    /// «Elegir versión»: lo más angosto que queda una calidad (dos por renglón en cualquier iPhone: con tres se cortaba el texto), el punto de
+    /// «Al instante» y el borde de la recomendada.
+    enum Version {
+        static let chipMinimum: CGFloat = 136, dot: CGFloat = 8, pickedStroke: CGFloat = 1.5
+    }
+
     enum TitleAction {
         /// Cuánto se oscurece el color del arte en el modo claro (para que se lea sobre el papel).
         static let lightDeepen: Double = 0.45
