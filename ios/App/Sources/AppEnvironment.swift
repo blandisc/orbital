@@ -228,7 +228,7 @@ final class AppEnvironment: ObservableObject {
             Task {
                 try? FileManager.default.removeItem(at: DownloadTimeline.file)
                 // El camino de siempre de «Descargar» (la fuente recomendada; si no da el video, la cola prueba otra).
-                let outcome = await services.queueDownload(kind: "movie", metaID: imdb, videoID: imdb, title: "Prueba de descarga", originalTitle: "Prueba",
+                let outcome = await services.queueDownload(kind: "movie", metaID: imdb, videoID: imdb, title: Demo.diagTitle, originalTitle: Demo.diagTitle,
                                                            subtitle: "", poster: nil)
                 NSLog("Orbital diag: %@", String(describing: outcome))
             }

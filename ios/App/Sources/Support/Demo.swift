@@ -32,6 +32,8 @@ enum Demo {
     static var inbox: String? { value(after: "-demo-inbox") }
 
     /// `-demo-handoff <segundos>`: el aviso «Sigue en tu Orbital» al abrir, como si acabaras de pasar algo a la TV en ese punto.
+    /// El nombre de la descarga de prueba de `-diag-download`.
+    static let diagTitle = "Prueba de descarga"
     static var handoff: Double? { value(after: "-demo-handoff").flatMap(Double.init) }
     /// `-demo-notice ya|bajando|trakt|cola|perdido`: un aviso de ejemplo al abrir (para verlos en el simulador).
     static var notice: String? { value(after: "-demo-notice") }
