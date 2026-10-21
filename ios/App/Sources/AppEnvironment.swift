@@ -9,6 +9,8 @@ import OrbitalModels
 final class AppEnvironment: ObservableObject {
     let services: Services
     let transport: BackgroundDownloadTransport
+    /// Mantiene la app viva en segundo plano mientras baja algo que pediste (iOS 26, `BGContinuedProcessingTask`).
+    let downloadContinuation = DownloadContinuation()
     /// Una sola sesión para toda la app (la pantalla de Ajustes y la raíz ven el mismo estado al cerrar sesión).
     private(set) var session: SessionModel!
     /// «Viendo en la TV» y lo que la TV le deja al iPhone («Enviar» / «Descargar en el iPhone»): un solo sondeo para toda la app,
@@ -25,8 +27,9 @@ final class AppEnvironment: ObservableObject {
     private var traktObserver: NSObjectProtocol?
     /// La actividad en vivo de las descargas: en segundo plano su barra avanza sola con lo estimado.
     func setDownloadsBackgrounded(_ value: Bool) async {
-        // Con la app a la vista, las descargas por pedazos van por el carril rápido; al irte, pasan a segundo plano.
-        await transport.setForeground(!value)
+        // Con la app a la vista, las descargas por pedazos van por el carril rápido; al irte, pasan a segundo plano, salvo que
+        // la tarea continua de iOS siga viva (entonces siguen igual de rápido).
+        await transport.setForeground(!value || downloadContinuation.isRunning)
         await liveActivity.setBackgrounded(value)
     }
 
@@ -236,7 +239,17 @@ final class AppEnvironment: ObservableObject {
         liveActivity.language = { settings.value.uiLanguage }
         Task { await liveActivity.follow(services.downloads) }
         // Una descarga que se detiene con la app cerrada se avisa (antes la actividad solo desaparecía).
-        Task { for await items in services.downloads.makeUpdates() { DownloadFailureNotifier.observe(items, language: settings.value.uiLanguage) } }
+        // La tarea continua de iOS: que sigan a toda velocidad aunque salgas de la app.
+        let lanes = self.transport
+        downloadContinuation.language = { settings.value.uiLanguage }
+        downloadContinuation.onStarted = { await lanes.setForeground(true) }
+        downloadContinuation.onExpired = { if UIApplication.shared.applicationState != .active { await lanes.setForeground(false) } }
+        Task {
+            for await items in services.downloads.makeUpdates() {
+                DownloadFailureNotifier.observe(items, language: settings.value.uiLanguage)
+                downloadContinuation.update(items)
+            }
+        }
     }
 
     private static func makeServices(_ transport: BackgroundDownloadTransport) -> Services {

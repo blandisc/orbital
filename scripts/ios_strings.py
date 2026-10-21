@@ -512,7 +512,7 @@ TRANSLATIONS = {
     "Se detuvo «%@»": "“%@” stopped", "Iba en %lld %%. Puedes reintentar o elegir otra fuente.": "It was at %lld %%. You can retry or pick another source.",
     "No pudo empezar. Puedes reintentar o elegir otra fuente.": "It couldn't start. You can retry or pick another source.",
     "Otra fuente": "Another source", "Ver el primero": "Watch the first", "Bajar todos": "Download all",
-    "Baja mucho más rápido con Orbital abierta; al salir, sigue sola.": "Downloads much faster with Orbital open; when you leave, it keeps going.",
+    "Descargando «%@»": "Downloading “%@”", "Empezando…": "Starting…",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",

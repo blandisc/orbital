@@ -1222,17 +1222,6 @@
         }
       }
     },
-    "Baja mucho más rápido con Orbital abierta; al salir, sigue sola.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloads much faster with Orbital open; when you leave, it keeps going."
-          }
-        }
-      }
-    },
     "Bajando %@": {
       "extractionState": "manual",
       "localizations": {
@@ -3499,6 +3488,17 @@
         }
       }
     },
+    "Descargando «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading “%@”"
+          }
+        }
+      }
+    },
     "Descargando. Lo verás en Descargas.": {
       "extractionState": "manual",
       "localizations": {
@@ -4287,6 +4287,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Emmy"
+          }
+        }
+      }
+    },
+    "Empezando…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting…"
           }
         }
       }
