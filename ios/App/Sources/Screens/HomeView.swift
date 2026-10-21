@@ -326,12 +326,11 @@ struct HomeView: View {
         }
     }
 
-    /// Por qué está en el carrusel. Lo de tendencia no lleva nada: ya lo dice el título de la sección («En tendencia»).
+    /// Por qué está en el carrusel. Lo de tendencia y lo popular no lleva nada: ya lo dice el título de la sección («En tendencia»).
     private func reasonText(_ reason: SuggestionReason) -> Text? {
         switch reason {
-        case .trending: nil
+        case .trending, .popular: nil
         case .recommended: Text("Para ti")
-        case .popular: Text("Popular")
         default: Text("Destacado")
         }
     }
