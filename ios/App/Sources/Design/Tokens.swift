@@ -475,6 +475,8 @@ enum DS {
         static let stackPoster: CGFloat = 40, stackWidth: CGFloat = 54, stackAngle: Double = 8
         /// «Porque viste»: el póster de lo que viste y los relacionados.
         static let seedPoster: CGFloat = 104, relatedPoster: CGFloat = 92
+        /// «Porque viste»: cuántos pósters vacíos ocupan el lugar de las relacionadas mientras llegan.
+        static let relatedPlaceholders = 4
         /// «Porque viste» en mini pósters: el tamaño de cada uno, el elegido (crece) y qué tan apagados los demás.
         /// «Porque viste» en mazo: la carta de arriba, cuánto se corre y gira cada una de abajo, y cuánto hay que arrastrar.
         static let deckPoster: CGFloat = 112, deckShift: CGFloat = 7, deckTurn: Double = 3, deckShrink: CGFloat = 0.05, deckThrow: CGFloat = 40, deckDepth = 3

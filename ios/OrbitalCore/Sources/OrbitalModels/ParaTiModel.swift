@@ -53,13 +53,62 @@ public final class ParaTiModel: ObservableModel {
     /// Lo último que viste: para elegir «Porque vi…».
     public private(set) var becauseSeeds: [TraktEntry] = [] { didSet { changed() } }
 
+    /// El título arriba del mazo. Cambia en cuanto lo eliges (antes el mazo esperaba a Trakt, un segundo o más, y se sentía
+    /// trabado); sus relacionadas llegan en `because`, al momento si ya se trajeron de antemano.
+    public private(set) var becauseSelected: String? { didSet { changed() } }
+    /// Las relacionadas de cada título de lo último que viste, traídas de antemano (empezando por los vecinos del que se ve).
+    public private(set) var becausePreloaded: [String: [Suggestion]] = [:]
+    private var preloadingBecause: Task<Void, Never>?
+
     /// El que elegiste (nil: cambia solo cada día).
     private var chosenSeed: String?
 
-    /// «Porque vi esto»: las relacionadas con el que elijas.
+    /// «Porque vi esto»: las relacionadas con el que elijas. El mazo se mueve ya; si ya estaban traídas, también ellas.
     public func chooseBecause(_ seed: TraktEntry) async {
         chosenSeed = seed.imdb
-        if let found = await services.forYou.related(to: seed) { because = found }
+        becauseSelected = seed.imdb
+        if let ready = becausePreloaded[seed.imdb] { because = (seed, ready); return }
+        let found = await services.forYou.related(to: seed)
+        // Pasaste a otro mientras llegaba: esta respuesta ya no es la que se ve.
+        guard becauseSelected == seed.imdb else { return }
+        because = (seed, found?.items ?? [])   // sin relacionadas: la tarjeta lo dice (antes se quedaban las del anterior)
+        if let items = found?.items { becausePreloaded[seed.imdb] = items }
+    }
+
+    /// Con la tarjeta ya a la vista: las relacionadas de los demás títulos, de una en una y empezando por los vecinos del que
+    /// se ve (lo siguiente que vas a tocar), para que pasar de uno a otro sea inmediato.
+    private func preloadBecause() {
+        guard let current = because?.seed.imdb ?? becauseSelected else { return }
+        if let items = because?.items, !items.isEmpty { becausePreloaded[current] = items }
+        let seeds = becauseSeeds
+        guard let at = seeds.firstIndex(where: { $0.imdb == current }) else { return }
+        let order = (1..<max(1, seeds.count)).flatMap { d in [seeds[(at + d) % seeds.count], seeds[(at - d + seeds.count) % seeds.count]] }
+        var seen = Set([current])
+        let queue = order.filter { seen.insert($0.imdb).inserted }
+        let forYou = services.forYou
+        preloadingBecause?.cancel()
+        preloadingBecause = Task { [weak self] in
+            for seed in queue {
+                if Task.isCancelled { return }
+                if self?.becausePreloaded[seed.imdb] != nil { continue }
+                if let found = await forYou.related(to: seed) { self?.becausePreloaded[seed.imdb] = found.items }
+            }
+        }
+    }
+
+    /// Pruebas: como si nada se hubiera traído de antemano.
+    func forgetPreloadedForTesting() { preloadingBecause?.cancel(); becausePreloaded = [:] }
+
+    /// Lo que llegó al cargar Para ti: el título de arriba y, por detrás, las relacionadas de los demás.
+    private func settleBecause(_ found: (seed: TraktEntry, items: [Suggestion])?, seeds: [TraktEntry]) {
+        because = found
+        becauseSeeds = seeds
+        if becauseSelected == nil || !seeds.contains(where: { $0.imdb == becauseSelected }) { becauseSelected = found?.seed.imdb }
+        else if becauseSelected != found?.seed.imdb, let pick = seeds.first(where: { $0.imdb == becauseSelected }),
+                let ready = becausePreloaded[pick.imdb] {
+            because = (pick, ready)   // al recargar seguías en otro título: se queda ese
+        }
+        preloadBecause()
     }
     /// «Nuevo en tus plataformas» (TMDB): series con episodios recientes y películas recién llegadas, de tus plataformas.
     public private(set) var newOnPlatforms: [Suggestion] = [] { didSet { changed() } }
@@ -234,8 +283,7 @@ public final class ParaTiModel: ObservableModel {
             airings = fetched; airingDays = ForYou.calendarDays
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno» también con la consola
         }
-        because = await fetchedBecause
-        becauseSeeds = await forYou.recentSeeds()
+        settleBecause(await fetchedBecause, seeds: await forYou.recentSeeds())
         await shelvesLoaded
         await platformsLoaded
         rebuildBadges()
@@ -300,8 +348,8 @@ public final class ParaTiModel: ObservableModel {
     }
 
     private func phoneBecause(_ forYou: ForYou) async {
-        because = await forYou.becauseYouWatched(seed: chosenSeed)
-        becauseSeeds = await forYou.recentSeeds()
+        let found = await forYou.becauseYouWatched(seed: chosenSeed)
+        settleBecause(found, seeds: await forYou.recentSeeds())
     }
 
     /// Con pocas sugerencias el mosaico repetía la misma portada en toda la pantalla: se completa con lo que ya
@@ -529,6 +577,8 @@ public final class ParaTiModel: ObservableModel {
         mosaic.removeAll { $0.imdb == s.imdb }
         railItems = railItems.mapValues { $0.filter { $0.imdb != s.imdb } }
         airings.removeAll { $0.series.imdb == s.imdb }
+        if let current = because { because = (current.seed, current.items.filter { $0.imdb != s.imdb }) }
+        becausePreloaded = becausePreloaded.mapValues { $0.filter { $0.imdb != s.imdb } }
     }
 
     /// El botón «Actualizar»: limpia la caché (de la consola o local, según de dónde viniera) y vuelve a cargar.

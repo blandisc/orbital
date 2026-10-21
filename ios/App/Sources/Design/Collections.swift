@@ -142,13 +142,19 @@ struct BecauseSeed: Identifiable, Equatable {
     let id: String
     let title: String
     let poster: String?
+    /// Qué es y cuándo lo viste: «Serie · la viste hace 3 días».
+    var detail: String = ""
 }
+
+/// Las relacionadas del título de arriba: ya están, vienen en camino (el mazo ya cambió) o Trakt no tiene ninguna.
+enum BecauseRelated: Equatable { case ready, loading, none }
 
 /// «Porque viste X, te recomendamos»: el mazo de cartas de lo último que viste (la de arriba es el título elegido; se
 /// avienta a un lado o con ‹ › para pasar al siguiente) y abajo lo que Trakt relaciona con él. Sin elegir, cambia solo cada día.
 struct BecauseCard<Related: View>: View {
     let seeds: [BecauseSeed]
     let selected: String
+    var state: BecauseRelated = .ready
     var choose: (String) -> Void = { _ in }
     @ViewBuilder var related: () -> Related
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -159,9 +165,28 @@ struct BecauseCard<Related: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             deckHeader
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: DS.Space.s2) { related() }
-                    .environment(\.posterCaptions, false)
+            // Siempre del mismo alto: mientras llegan, unos pósters vacíos en su lugar (la tarjeta no brinca ni parece trabada).
+            Group {
+                switch state {
+                case .ready:
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: DS.Space.s2) { related() }
+                            .environment(\.posterCaptions, false)
+                    }
+                case .loading:
+                    HStack(spacing: DS.Space.s2) {
+                        ForEach(0..<DS.Collections.relatedPlaceholders, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.fill)
+                                .frame(width: DS.Collections.relatedPoster, height: DS.Collections.relatedPoster / DS.Poster.aspect)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .clipped()
+                    .accessibilityElement().accessibilityLabel(Text("Buscando recomendaciones"))
+                case .none:
+                    Text("Trakt aún no relaciona nada con este título. Prueba con otro.").recipe(.footnote)
+                        .frame(maxWidth: .infinity, minHeight: DS.Collections.relatedPoster / DS.Poster.aspect, alignment: .leading)
+                }
             }
             .id(selected)   // otro título: las relacionadas entran desde el principio
             .transition(.opacity)
@@ -187,6 +212,9 @@ struct BecauseCard<Related: View>: View {
                     .recipe(.secondary).monospacedDigit().lineLimit(1)
                 Text(verbatim: current?.title ?? "").recipe(.title)
                     .lineLimit(2, reservesSpace: true).minimumScaleFactor(DS.Collections.becauseTitleScale).allowsTightening(true)
+                    .contentTransition(.opacity)
+                // Qué es y cuándo lo viste: el porqué de la recomendación (antes ese lugar quedaba vacío).
+                Text(verbatim: current?.detail ?? "").recipe(.footnote).lineLimit(2, reservesSpace: true)
                     .contentTransition(.opacity)
                 Spacer(minLength: DS.Space.s2)
                 if seeds.count > 1 {

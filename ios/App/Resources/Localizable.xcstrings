@@ -1640,6 +1640,17 @@
         }
       }
     },
+    "Buscando recomendaciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding recommendations"
+          }
+        }
+      }
+    },
     "Buscando subtítulos…": {
       "extractionState": "manual",
       "localizations": {
@@ -12486,6 +12497,17 @@
         }
       }
     },
+    "Trakt aún no relaciona nada con este título. Prueba con otro.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt doesn't relate anything to this title yet. Try another one."
+          }
+        }
+      }
+    },
     "Trakt cerró tu sesión: vuelve a conectarla en Ajustes.": {
       "extractionState": "manual",
       "localizations": {
@@ -14022,6 +14044,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ left"
+          }
+        }
+      }
+    },
+    "la viste %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "watched %@"
           }
         }
       }

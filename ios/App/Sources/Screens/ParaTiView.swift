@@ -487,16 +487,39 @@ struct ListsView: View {
 
     /// «Porque viste X»: una tarjeta propia (no una fila más) con lo que viste y lo relacionado.
     private func becauseCard(_ because: (seed: TraktEntry, items: [Suggestion])) -> some View {
-        let fromHistory = model.becauseSeeds.map { BecauseSeed(id: $0.imdb, title: $0.title, poster: String(format: ForYou.metahubPoster, $0.imdb)) }
-        let seeds = fromHistory.contains { $0.id == because.seed.imdb } ? fromHistory
-            : [BecauseSeed(id: because.seed.imdb, title: because.seed.title, poster: String(format: ForYou.metahubPoster, because.seed.imdb))] + fromHistory
-        return BecauseCard(seeds: seeds, selected: because.seed.imdb,
+        let fromHistory = model.becauseSeeds.map(becauseSeed)
+        let seeds = fromHistory.contains { $0.id == because.seed.imdb } ? fromHistory : [becauseSeed(because.seed)] + fromHistory
+        // El mazo sigue a lo que elegiste al momento; las relacionadas son las del título de arriba o, si aún no llegan, su lugar.
+        let selected = model.becauseSelected ?? because.seed.imdb
+        let state: BecauseRelated = because.seed.imdb != selected ? .loading : because.items.isEmpty ? .none : .ready
+        return BecauseCard(seeds: seeds, selected: selected, state: state,
                            choose: { id in if let seed = model.becauseSeeds.first(where: { $0.imdb == id }) { Task { await model.chooseBecause(seed) } } }) {
             ForEach(because.items) { s in
                 ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], width: DS.Collections.relatedPoster) { dismissed in Task { await model.dismiss(dismissed) } }
             }
         }
         .padding(.horizontal, DS.Space.gutter)
+        // Los pósters de los vecinos (lo siguiente que vas a tocar), de antemano: al cambiar ya están y no salen de a poco.
+        .task(id: "\(selected)-\(model.becausePreloaded.count)") {
+            guard let at = seeds.firstIndex(where: { $0.id == selected }), seeds.count > 1 else { return }
+            let neighbors = [seeds[(at + 1) % seeds.count].id, seeds[(at - 1 + seeds.count) % seeds.count].id]
+            ImagePipeline.shared.prefetchPosters(neighbors.flatMap { (model.becausePreloaded[$0] ?? []).prefix(DS.Collections.relatedPlaceholders + 1).map(\.poster) })
+        }
+    }
+
+    /// Un título de lo que viste, para el mazo: qué es y cuándo lo viste («Serie · la viste hace 3 días»; el año, solo si no
+    /// se sabe cuándo: junto a la fecha no cabía y es lo que menos dice).
+    private func becauseSeed(_ e: TraktEntry) -> BecauseSeed {
+        let language = env.services.appSettings.uiLanguage
+        var parts = [Strings.tr(e.kind == "movie" ? "Película" : "Serie", language: language)]
+        if e.watchedAt == nil, let year = e.year { parts.append(String(year)) }
+        if let at = e.watchedAt {
+            let formatter = RelativeDateTimeFormatter()
+            formatter.locale = Locale(identifier: language == "en" ? "en" : "es-MX")
+            formatter.dateTimeStyle = .named
+            parts.append(String(format: Strings.tr("la viste %@", language: language), formatter.localizedString(for: at, relativeTo: .now)))
+        }
+        return BecauseSeed(id: e.imdb, title: e.title, poster: String(format: ForYou.metahubPoster, e.imdb), detail: parts.joined(separator: " · "))
     }
 
     /// Un grupo de listas (de Trakt o de Stremio): tarjetas de dos en dos que abren la lista completa.

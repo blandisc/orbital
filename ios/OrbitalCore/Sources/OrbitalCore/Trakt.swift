@@ -45,6 +45,8 @@ public struct TraktEntry: Sendable, Equatable, Identifiable {
     public var genres: [String] = []
     /// La calificación de Trakt (0 a 10), con `extended=full`.
     public var rating: Double?
+    /// Cuándo lo viste (solo en el historial: «Porque viste» dice «la viste hace 3 días»).
+    public var watchedAt: Date?
     public var id: String { imdb }
 
     public static func == (a: TraktEntry, b: TraktEntry) -> Bool {
@@ -490,7 +492,8 @@ public actor Trakt {
         let rows = try await get("/sync/history", [("limit", "40"), ("extended", "full")])?.array ?? []
         var seen = Set<String>(), out: [TraktEntry] = []
         for row in rows {
-            let entry = row["type"]?.string == "movie" ? TraktParsing.entry(row["movie"], kind: "movie") : TraktParsing.entry(row["show"], kind: "series")
+            var entry = row["type"]?.string == "movie" ? TraktParsing.entry(row["movie"], kind: "movie") : TraktParsing.entry(row["show"], kind: "series")
+            entry?.watchedAt = row["watched_at"]?.string.flatMap(TraktParsing.date)   // el historial viene del más nuevo al más viejo
             if let entry, seen.insert(entry.imdb).inserted { out.append(entry) }
             if out.count >= limit { break }
         }

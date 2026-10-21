@@ -201,7 +201,11 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         // OpenSubtitles de mentira: varias versiones por idioma (con copia, descargas, y unas SDH/forzadas que se esconden).
         if url.host == "opensubtitles-v3.strem.io" { return HTTPResponse(status: 200, data: Self.subtitlesDemo.serialized()) }
         if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
-        if url.host == "api.trakt.tv", Demo.because, let found = Self.becauseDemo(url.path) { return HTTPResponse(status: 200, data: found.serialized()) }
+        if url.host == "api.trakt.tv", Demo.because, let found = Self.becauseDemo(url.path) {
+            // Los relacionados tardan lo que tarda Trakt de verdad (para medir qué tan fluido se siente cambiar de título).
+            if url.path.hasSuffix("/related") { try? await Task.sleep(nanoseconds: 1_200_000_000) }   // ds-exception: demora de red simulada (solo modo demo)
+            return HTTPResponse(status: 200, data: found.serialized())
+        }
         // La calificación de la comunidad de Trakt (la ficha la enseña con su logo junto a IMDb y TMDB).
         if url.host == "api.trakt.tv", url.path.hasSuffix("/ratings") { return HTTPResponse(status: 200, data: JSON.object(["rating": .double(8.4), "votes": 52_310]).serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
@@ -249,7 +253,12 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     static func becauseDemo(_ path: String) -> JSON? {
         func show(_ id: String, _ title: String) -> JSON { ["title": .string(title), "year": 2020, "ids": ["imdb": .string(id), "trakt": 1]] }
         if path == "/sync/history" {
-            return .array(becauseShows.map { ["type": "episode", "show": show($0.0, $0.1)] })
+            // Vistas hace 2, 5, 9, 16 y 30 días (para «la viste hace…»).
+            let days = [2, 5, 9, 16, 30]
+            return .array(becauseShows.enumerated().map { i, s in
+                let at = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-Double(days[i % days.count]) * 86_400))
+                return ["type": "episode", "show": show(s.0, s.1), "watched_at": .string(at)]
+            })
         }
         if path.hasPrefix("/shows/"), path.hasSuffix("/related"), let found = becauseShows.first(where: { path.contains($0.0) }) {
             return .array(found.2.map { show($0.0, $0.1) })
