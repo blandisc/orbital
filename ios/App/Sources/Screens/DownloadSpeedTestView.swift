@@ -20,7 +20,7 @@ struct DownloadSpeedTestView: View {
                     } label: { Text(LocalizedStringKey(DownloadSpeedTest.title(row.kind))) }
                 }
             } header: {
-                if let name = test.sourceName { Text(verbatim: name) }
+                if let status = test.status { Text(LocalizedStringKey(status)) } else if let name = test.sourceName { Text(verbatim: name) }
             } footer: {
                 Text("Unos segundos cada una, sin guardar nada. Hazla con Wi‑Fi y con la app abierta.")
             }

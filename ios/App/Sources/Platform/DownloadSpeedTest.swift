@@ -21,6 +21,8 @@ final class DownloadSpeedTest: ObservableObject {
     /// La fuente con que se probó («Shawshank · 1080p · 2.4 GB»), o por qué no se pudo.
     @Published private(set) var sourceName: String?
     @Published private(set) var problem: String?
+    /// Qué está haciendo entre medidas («Buscando una fuente…»), para que no parezca trabada.
+    @Published private(set) var status: String?
 
     /// Cuánto mide cada prueba (se descarta el arranque: la conexión tarda en tomar velocidad).
     static let seconds = 10.0, warmUp = 2.0
@@ -28,28 +30,50 @@ final class DownloadSpeedTest: ObservableObject {
     static let testTitle = "tt0111161"
     /// Cuántas fuentes se intentan y lo mínimo que mide un archivo para ser la película (no el video de aviso).
     static let maxTries = 6, minimumBytes: Int64 = 100_000_000
+    /// Lo más que se espera a que los complementos digan qué fuentes hay (segundos).
+    static let searchLimit = 30.0
+
+    /// `work`, o nil si tarda más de `seconds`.
+    static func within<T: Sendable>(_ seconds: Double, _ work: @escaping @Sendable () async -> T) async -> T? {
+        await withTaskGroup(of: T?.self) { group in
+            group.addTask { await work() }
+            group.addTask { try? await Task.sleep(nanoseconds: UInt64(seconds * 1e9)); return nil }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
+    }
     static let internetURL = URL(string: "https://proof.ovh.net/files/1Gb.dat")!
     static let backgroundIdentifier = "com.example.orbital.ios.speedtest"
 
     func run(services: Services) async {
         guard !running else { return }
-        running = true; problem = nil; sourceName = nil
+        running = true; problem = nil; sourceName = nil; status = nil
         rows = Row.Kind.allCases.map { Row(kind: $0) }
-        defer { running = false; for i in rows.indices { rows[i].running = false } }
+        defer { running = false; status = nil; for i in rows.indices { rows[i].running = false } }
 
         await measure(.internet) { await Self.parallel(url: Self.internetURL, connections: 1, total: nil) }
 
         // La primera fuente que dé el archivo de verdad: si Torrentio no consigue el enlace, redirige a un video corto de aviso
         // (unos KB) que termina antes de empezar a medir; esas se saltan.
         let prefs = services.appSettings.preferences(onCellular: false)
-        let sources = (try? await services.finder.find(kind: "movie", videoID: Self.testTitle, prefs: prefs, purpose: .download)) ?? []
-        var picked: (source: Source, target: (url: URL, total: Int64))?
-        var skipped = 0
-        for source in sources.prefix(Self.maxTries) {
-            guard let link = source.playbackURL, let target = await Self.resolve(link) else { skipped += 1; continue }
-            if target.total < Self.minimumBytes { skipped += 1; continue }
-            picked = (source, target); break
+        status = "Buscando una fuente de Real-Debrid…"
+        let finder = services.finder
+        let sources = await Self.within(Self.searchLimit) { (try? await finder.find(kind: "movie", videoID: Self.testTitle, prefs: prefs, purpose: .download)) ?? [] } ?? []
+        // Las primeras fuentes se prueban a la vez (una por una, con su espera cada una, parecía trabado); gana la mejor que sirva.
+        let tries = Array(sources.prefix(Self.maxTries))
+        if !tries.isEmpty { status = "Probando \(tries.count) fuentes…" }
+        let resolved = await withTaskGroup(of: (Int, (url: URL, total: Int64)?).self) { group in
+            for (i, source) in tries.enumerated() {
+                group.addTask { (i, await source.playbackURL.asyncMap { await Self.resolve($0) } ?? nil) }
+            }
+            var all: [Int: (url: URL, total: Int64)] = [:]
+            for await (i, target) in group { if let target, target.total >= Self.minimumBytes { all[i] = target } }
+            return all
         }
+        status = nil
+        let skipped = resolved.keys.min() ?? tries.count
+        let picked = resolved.keys.min().flatMap { i in resolved[i].map { (tries[i], $0) } }
         guard let (source, target) = picked else {
             problem = sources.isEmpty ? "No encontré fuentes para probar." : "Ninguna de \(min(sources.count, Self.maxTries)) fuentes dio el archivo (Torrentio o Real-Debrid mandaron un aviso en vez del video)."
             for kind in [Row.Kind.single, .eight, .background] { set(kind) { $0.failed = "Sin enlace" } }
@@ -101,7 +125,7 @@ final class DownloadSpeedTest: ObservableObject {
 
     /// El enlace final (Torrentio redirige a Real-Debrid) y cuánto mide.
     private static func resolve(_ url: URL) async -> (url: URL, total: Int64)? {
-        var request = URLRequest(url: url, timeoutInterval: 20)
+        var request = URLRequest(url: url, timeoutInterval: 15)
         request.setValue("bytes=0-0", forHTTPHeaderField: "Range")
         guard let (_, response) = try? await URLSession(configuration: .ephemeral).data(for: request),
               let http = response as? HTTPURLResponse, http.statusCode == 206, let final = http.url,
@@ -170,5 +194,12 @@ final class DownloadSpeedTest: ObservableObject {
         func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
             try? FileManager.default.removeItem(at: location)
         }
+    }
+}
+
+private extension Optional {
+    func asyncMap<U>(_ transform: (Wrapped) async -> U) async -> U? {
+        guard let self else { return nil }
+        return await transform(self)
     }
 }
