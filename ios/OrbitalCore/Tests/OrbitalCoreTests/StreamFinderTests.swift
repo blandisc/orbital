@@ -67,9 +67,14 @@ final class StreamFinderTests: XCTestCase {
     func testNetworkFailureIsNotRememberedAsEmpty() async throws {
         let http = FakeHTTP(), clock = Clock()
         let finder = makeFinder(http, clock: clock)
-        // Los dos complementos fallan (404 = sin JSON): lista vacía pero no se recuerda como «no hay»
-        let first = try await finder.find(kind: "movie", videoID: "tt9", prefs: Preferences())
-        XCTAssertTrue(first.isEmpty)
+        // Sin red (ningún complemento contesta): se dice que es la red, no «no hay», y no se recuerda.
+        http.failing = ["https://a.example/stream/movie/tt9.json", "https://b.example/stream/movie/tt9.json"]
+        do { _ = try await finder.find(kind: "movie", videoID: "tt9", prefs: Preferences()); XCTFail("sin red debe avisar") }
+        catch { XCTAssertTrue(error is StreamFinderError) }
+        http.failing = []
+        // Un 404 sí es «no tiene ese video»: lista vacía, sin error.
+        let none = try await finder.find(kind: "movie", videoID: "tt8", prefs: Preferences())
+        XCTAssertTrue(none.isEmpty)
         http.json["https://a.example/stream/movie/tt9.json"] = ["streams": [["name": "T", "url": "https://rd.example/z"]]]
         clock.now.addTimeInterval(StreamFinder.retryFailed + 1)
         let second = try await finder.find(kind: "movie", videoID: "tt9", prefs: Preferences())
@@ -101,5 +106,36 @@ final class FileFingerprintTests: XCTestCase {
         let small = FileManager.default.temporaryDirectory.appendingPathComponent("fp-small.bin")
         try Data(count: 10).write(to: small)
         XCTAssertNil(FileFingerprint.of(small))
+    }
+
+    /// El video en línea: la misma huella con dos pedidos chicos (el principio y el final), sin bajarlo.
+    func testRemoteFingerprintMatchesLocalWithTwoRangeRequests() async throws {
+        var data = Data(count: 200_000)
+        data[0] = 1; data[199_992] = 2
+        let http = RangeHTTP(data)
+        let remote = await FileFingerprint.ofRemote(URL(string: "https://cdn.example/v.mkv")!, http: http)
+        let fp = try XCTUnwrap(remote)
+        XCTAssertEqual(fp.size, 200_000)
+        XCTAssertEqual(fp.hash, String(format: "%016llx", UInt64(200_000 + 1 + 2)))
+        XCTAssertEqual(http.ranges, ["bytes=0-65535", "bytes=134464-199999"])
+        // Un servidor sin pedidos por partes (200): no hay huella, y no se baja el video entero.
+        http.honorsRange = false
+        let none = await FileFingerprint.ofRemote(URL(string: "https://cdn.example/v.mkv")!, http: http)
+        XCTAssertNil(none)
+    }
+}
+
+/// Un servidor que contesta pedidos por partes (Range) de unos bytes fijos.
+final class RangeHTTP: HTTPClient, @unchecked Sendable {
+    let data: Data
+    var ranges: [String] = []
+    var honorsRange = true
+    init(_ data: Data) { self.data = data }
+    func send(_ request: HTTPRequest) async throws -> HTTPResponse {
+        let range = request.headers["Range"] ?? ""
+        ranges.append(range)
+        guard honorsRange, let spec = range.split(separator: "=").last?.split(separator: "-"), spec.count == 2,
+              let a = Int(spec[0]), let b = Int(spec[1]) else { return HTTPResponse(status: 200, data: Data()) }
+        return HTTPResponse(status: 206, data: data.subdata(in: a..<(b + 1)), headers: ["content-range": "bytes \(a)-\(b)/\(data.count)"])
     }
 }

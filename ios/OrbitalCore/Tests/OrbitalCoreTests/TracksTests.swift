@@ -19,6 +19,25 @@ final class TracksTests: XCTestCase {
         XCTAssertNil(TrackChooser.audio([], language: "es"))
     }
 
+    func testSubtitleWithoutYourLanguageIsNotAnotherLanguagesDefault() {
+        let english: [MediaTrack] = [.init(id: 20, kind: .subtitle, language: "eng", isDefault: true)]
+        XCTAssertNil(TrackChooser.subtitle(english, mode: .language("es"), audioLanguage: "en"),
+                     "sin español: nada (y entonces se busca en internet), no el inglés por defecto")
+    }
+
+    func testRememberedSubtitlesForgetAndAnyLanguage() {
+        let kv = InMemoryKeyValueStore()
+        let picks = SubtitlePicks(kv)
+        picks.remember(metaID: "tt1", SubtitlePick(language: "es", group: "NTb"))
+        picks.forget(metaID: "tt1")
+        XCTAssertNil(SubtitlePicks(kv).pick(metaID: "tt1"), "apagar olvida la versión elegida")
+        let prefs = TitlePreferences(kv)
+        prefs.remember(metaID: "tt1", subtitleTrack: "fr")
+        XCTAssertEqual(prefs.languages(for: "tt1", settings: AppSettings()).subtitles, "fr", "francés también se recuerda")
+        prefs.remember(metaID: "tt1", subtitleTrack: "")
+        XCTAssertEqual(prefs.languages(for: "tt1", settings: AppSettings()).subtitles, "", "apagados se recuerda")
+    }
+
     func testSubtitleModes() {
         XCTAssertNil(TrackChooser.subtitle(tracks, mode: .off, audioLanguage: "es"))
         XCTAssertEqual(TrackChooser.subtitle(tracks, mode: .language("es"), audioLanguage: "en")?.id, 12, "completos antes que forzados")
@@ -46,7 +65,7 @@ final class TracksTests: XCTestCase {
         XCTAssertEqual(TrackChooser.label(tracks[2]), "Español latino · AAC 2.0")
         XCTAssertEqual(TrackChooser.label(tracks[4]), "Español · forzados")
         XCTAssertEqual(TrackChooser.label(tracks[0], locale: Locale(identifier: "en")), "English · EAC3 5.1")
-        XCTAssertEqual(TrackChooser.label(MediaTrack(id: 0, kind: .audio, language: nil, title: "Track 1 (aac)", codec: "aac")), "Pista 1 · AAC", "el nombre genérico del motor no ayuda")
+        XCTAssertEqual(TrackChooser.label(MediaTrack(id: 0, kind: .audio, language: nil, title: "Track 1 (aac)", codec: "aac")), "Audio 1 (AAC)", "el nombre genérico del motor no ayuda")
         XCTAssertEqual(TrackChooser.label(MediaTrack(id: 3, kind: .audio, language: "eng", title: "Director's Commentary", codec: "ac3")), "Inglés · Director's Commentary · AC3")
         XCTAssertEqual(TrackChooser.label(MediaTrack(id: 2, kind: .subtitle, language: "eng", title: "English")), "Inglés", "el título que repite el idioma sobra")
         XCTAssertEqual(TrackChooser.label(MediaTrack(id: 4, kind: .subtitle, language: "eng", title: "English SDH")), "Inglés · English SDH")

@@ -24,6 +24,8 @@ public final class MiMediaModel: ObservableModel {
     /// Los videos que ya están (o se están bajando) en el iPhone: videoID → avance (1 = listo).
     public private(set) var onPhone: [String: Double] = [:] { didSet { changed() } }
     public private(set) var sagas: [Saga] = [] { didSet { changed() } }
+    /// Los nombres en el idioma de la app (TMDB: es-MX, si no otra variante del español, si no el de Cinemeta): imdb → nombre.
+    public private(set) var localizedNames: [String: String] = [:] { didSet { changed() } }
     public var filter: Filter = .all { didSet { changed() } }
     public var sort: Sort = .added { didSet { changed() } }
 
@@ -57,7 +59,7 @@ public final class MiMediaModel: ObservableModel {
         }
         switch sort {
         case .added: return filtered
-        case .name: return filtered.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        case .name: return filtered.sorted { name($0).localizedCaseInsensitiveCompare(name($1)) == .orderedAscending }
         }
     }
 
@@ -65,6 +67,22 @@ public final class MiMediaModel: ObservableModel {
     public var recent: [OneDriveLibrary.Title] {
         let now = services.now()
         return Array(all.filter { ($0.added.map { now.timeIntervalSince($0) < Self.newFor }) ?? false }.prefix(12))
+    }
+
+    /// El nombre que se enseña: el traducido si lo hay.
+    public func name(_ title: OneDriveLibrary.Title) -> String { localizedNames[title.imdb] ?? title.name }
+
+    /// Pide a TMDB (por el mismo `Localizer` de las fichas) los nombres de tu biblioteca en el idioma de la app.
+    public func localizeNames() async {
+        var found: [String: String] = [:]
+        for kind in ["movie", "series"] {
+            let metas: [JSON] = all.filter { $0.kind == kind && $0.imdb.hasPrefix("tt") }.map { JSON.object(["id": .string($0.imdb), "name": .string($0.name)]) }
+            guard !metas.isEmpty else { continue }
+            for meta in await services.localizer.catalog(kind: kind, metas: metas) {
+                if let id = meta["id"]?.string, let name = meta["name"]?.string { found[id] = name }
+            }
+        }
+        if found != localizedNames { localizedNames = found }
     }
 
     public func isNew(_ title: OneDriveLibrary.Title) -> Bool {
@@ -140,7 +158,7 @@ public final class MiMediaModel: ObservableModel {
         defer { scanning = false }
         do { _ = try await services.oneDriveLibrary.scan(); reload(); await loadSagas() }
         catch let e as OneDriveError { error = e.description }
-        catch { self.error = "\(error)" }
+        catch { self.error = "No pudimos revisar tu OneDrive. Revisa tu conexión." }
     }
 
     /// Sagas (TMDB): cada película se pregunta una vez y se recuerda; solo salen las que tienen dos o más tuyas.

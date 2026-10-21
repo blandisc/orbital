@@ -95,6 +95,9 @@ struct SettingsView: View {
         }
         .tint(DS.accent)   // interruptores, selectores y botones del formulario: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop())
+        // Sin el hueco grande de arriba del primer grupo y con aire abajo: el último grupo no queda bajo la barra flotante.
+        .contentMargins(.top, DS.Space.s2, for: .scrollContent)
+        .contentMargins(.bottom, DS.Space.s10, for: .scrollContent)
         .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("¿Cerrar sesión de Stremio?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Cerrar sesión", role: .destructive) { Task { await session.model.signOut() } }
@@ -226,12 +229,28 @@ struct SettingsView: View {
             }
         }
         .listRowBackground(DS.surface)
-        Section("Subtítulos") {
-            Picker("Subtítulos", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Sin subtítulos").tag("") }
+        Section {
+            SubtitlePreview(look: SubtitleLook(settings: s)).listRowInsets(EdgeInsets(top: DS.Space.s3, leading: DS.Space.s4, bottom: DS.Space.s3, trailing: DS.Space.s4))
+            Picker("Idioma de siempre", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Apagados").tag("") }
             Toggle("Solo subtítulos forzados", isOn: Binding(get: { s.onlyForcedSubtitles }, set: { v in model.update { $0.onlyForcedSubtitles = v } }))
-            Picker("Tamaño de subtítulos", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
+            Picker("Tamaño", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
                 Text("Chico").tag("small"); Text("Mediano").tag("medium"); Text("Grande").tag("large")
             }
+            Picker("Fondo", selection: Binding(get: { s.subtitleBackground }, set: { v in model.update { $0.subtitleBackground = v } })) {
+                Text("Contorno").tag("outline"); Text("Caja oscura").tag("box"); Text("Translúcido").tag("translucent")
+            }
+            .disabled(s.subtitleSystemStyle)
+            Picker("Posición", selection: Binding(get: { s.subtitlePosition }, set: { v in model.update { $0.subtitlePosition = v } })) {
+                Text("Normal").tag("normal"); Text("Más arriba").tag("raised")
+            }
+        } header: { Text("Subtítulos") }
+        .listRowBackground(DS.surface)
+        Section {
+            Toggle("Mostrarlos al regresar 10 s", isOn: Binding(get: { s.subtitlesOnSkipBack }, set: { v in model.update { $0.subtitlesOnSkipBack = v } }))
+            Toggle("Carteles en tu idioma si el audio es otro", isOn: Binding(get: { s.forcedForForeignAudio }, set: { v in model.update { $0.forcedForForeignAudio = v } }))
+            Toggle("Usar el estilo del iPhone", isOn: Binding(get: { s.subtitleSystemStyle }, set: { v in model.update { $0.subtitleSystemStyle = v } }))
+        } footer: {
+            Text("El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.")
         }
         .listRowBackground(DS.surface)
     }
@@ -258,6 +277,13 @@ struct SettingsView: View {
             Toggle("Borrar al terminar de verlo", isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
         }
         .listRowBackground(DS.surface)
+        Section {
+            NavigationLink { DownloadSpeedTestView() } label: { Label("Probar la velocidad", systemImage: "speedometer") }
+                .accessibilityIdentifier("speed-test")
+        } footer: {
+            Text("Si las descargas van lentas: mide tu internet, Real-Debrid y la forma en que baja la app.")
+        }
+        .listRowBackground(DS.surface)
     }
 
     /// «Ya está para ver»: un aviso cuando un episodio de lo que sigues en Trakt ya tiene fuente (no a la hora en que sale).
@@ -272,6 +298,7 @@ struct SettingsView: View {
                     else { model.update { $0.releaseAlerts = false }; env.notify("Activa los avisos de Orbital en Ajustes del iPhone.", tone: .warn) }
                 }
             }))
+            .tint(DS.switchOn)
             .accessibilityIdentifier("release-alerts")
         } footer: {
             Text("De las series que sigues en Trakt. Te avisa cuando ya hay fuente en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.")

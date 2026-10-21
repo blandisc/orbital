@@ -33,6 +33,18 @@ struct MiMediaView<Top: View>: View {
                     }
                 } else {
                     header(model).padding(.horizontal, DS.Space.gutter)
+                    // Antes este error nunca se veía (se quedaba «Nada reconocido» o la lista vieja).
+                    if let error = model.error, !model.scanning {
+                        VStack(alignment: .leading, spacing: DS.Space.s2) {
+                            DSNotice(verbatim: env.message(error), tone: .warn)
+                            if error.localizedCaseInsensitiveContains("caduc") || error.localizedCaseInsensitiveContains("sesión") {
+                                NavigationLink { OneDriveSettings() } label: { Label("Volver a conectar", systemImage: "cloud") }.buttonStyle(.glass)
+                            } else {
+                                Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.rescan() } }.buttonStyle(.glass)
+                            }
+                        }
+                        .padding(.horizontal, DS.Space.gutter)
+                    }
                     DSSegmented(options: [(MiMediaModel.Filter.all, LocalizedStringKey("Todo")), (.movies, "Películas"), (.series, "Series"), (.unwatched, "Sin ver")],
                                 selection: Binding(get: { model.filter }, set: { model.filter = $0 }))
                         .padding(.horizontal, DS.Space.gutter)
@@ -59,7 +71,8 @@ struct MiMediaView<Top: View>: View {
             .padding(.vertical, DS.Space.s4)
         }
         .refreshable { await model.rescan() }
-        .task { await model.load() }
+        .task { await model.load(); await model.localizeNames() }
+        .onChange(of: model.all.map(\.imdb)) { Task { await model.localizeNames() } }
         .task { await model.followDownloads() }
         .sheet(item: $fixing) { file in FixMatchSheet(info: file.info, fileName: file.name, model: model) }
     }
@@ -85,8 +98,7 @@ struct MiMediaView<Top: View>: View {
                 NavigationLink { OneDriveSettings() } label: { Label("Ajustes de OneDrive", systemImage: "gearshape") }
             }
         }
-        .padding(DS.Space.s3)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .padding(.vertical, DS.Space.s1)   // sin tarjeta: el texto alinea con el margen de los pósters y del filtro
     }
 
     private func grid(_ model: MiMediaModel) -> some View {
@@ -107,15 +119,15 @@ struct MiMediaView<Top: View>: View {
     private func poster(_ t: OneDriveLibrary.Title, _ model: MiMediaModel, fill: Bool = false) -> some View {
         NavigationLink(value: MiMediaTitleRoute(id: t.id)) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                PosterView(url: t.poster, title: t.name)
-                    .overlay(alignment: .topLeading) { if model.isNew(t) { DSChip(text: "Nuevo", tone: .good).padding(DS.Space.s1) } }
+                PosterView(url: t.poster, title: model.name(t))
+                    .overlay(alignment: .topLeading) { if model.isNew(t) { DSBadge(text: "Nuevo").padding(DS.Space.s2) } }   // placa sólida como en Inicio: se lee sobre cualquier póster
                     .overlay(alignment: .bottomTrailing) {
                         if model.onPhoneCount(t) > 0 {
                             Image(systemName: "arrow.down.circle.fill").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.good, DS.backdropDeep)
                                 .padding(DS.Space.s1).accessibilityLabel(Text("En el iPhone"))
                         }
                     }
-                Text(verbatim: t.name).recipe(.footnote, color: DS.text).lineLimit(1)
+                Text(verbatim: model.name(t)).recipe(.footnote, color: DS.text).lineLimit(1)
                 DataLine(parts: [t.bestResolution, t.kind == "series" ? count("%lld episodios", t.entries.count) : (t.entries.count > 1 ? count("%lld versiones", t.entries.count) : "")])
             }
             .frame(width: fill ? nil : DS.Poster.railWidth)
@@ -170,7 +182,7 @@ struct MiMediaTitleView: View {
             if let t = model.all.first(where: { $0.id == id }) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: DS.Space.s5) {
-                        hero(t)
+                        hero(t, name: model.name(t))
                         actions(t, model)
                         if t.kind == "series" { episodes(t, model) } else { versions(t, model) }
                         fixRow(t)
@@ -187,7 +199,7 @@ struct MiMediaTitleView: View {
                 .task { await tint.load(String(format: ForYou.metahubBackground, t.imdb)) }
                 .sheet(item: $findingSource) { missing in
                     if let tm = titleModel {
-                        SourcesSheet(model: tm, videoID: missing.id, purpose: .watch) { source, purpose in
+                        SourcesSheet(model: tm, videoID: missing.id) { source, purpose in
                             findingSource = nil
                             Task { await useSource(source, purpose: purpose, videoID: missing.id, tm) }
                         }
@@ -212,13 +224,13 @@ struct MiMediaTitleView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func hero(_ t: OneDriveLibrary.Title) -> some View {
+    private func hero(_ t: OneDriveLibrary.Title, name: String) -> some View {
         HStack(alignment: .bottom, spacing: DS.Space.s4) {
-            PosterView(url: t.poster, title: t.name).frame(width: DS.Poster.railWidth)
+            PosterView(url: t.poster, title: name).frame(width: DS.Poster.railWidth)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("En tu OneDrive").recipe(.eyebrow, color: DS.eyebrow)
-                Text(verbatim: t.name).recipe(.title).lineLimit(3)
-                DataLine(parts: [Strings.kind(t.kind, language: env.services.appSettings.uiLanguage), t.year ?? "", ByteCountFormatter.string(fromByteCount: Int64(t.bytes), countStyle: .file)])
+                Text(verbatim: name).recipe(.title).lineLimit(3)
+                DataLine(parts: [Strings.kind(t.kind, language: env.services.appSettings.uiLanguage), t.year ?? "", ByteSize.text(Int64(t.bytes), locale: env.uiLocale)])
             }
         }
     }

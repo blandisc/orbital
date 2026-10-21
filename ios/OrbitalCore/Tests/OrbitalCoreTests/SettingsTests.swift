@@ -40,4 +40,20 @@ final class SettingsTests: XCTestCase {
         prefs.remember(metaID: "tt1", audioTrack: "fra")
         XCTAssertEqual(prefs.languages(for: "tt1", settings: AppSettings()).prefs.audio, "es")
     }
+
+    /// El botón de zoom recorre los cuatro modos y vuelve al primero; pellizcar va entre Ajustar y Recortar; se recuerda.
+    func testVideoZoomCyclesPinchesAndPersists() {
+        XCTAssertEqual(VideoZoom.fit.next, .fitSafeArea)
+        XCTAssertEqual(VideoZoom.fitSafeArea.next, .fill)
+        XCTAssertEqual(VideoZoom.fill.next, .stretch)
+        XCTAssertEqual(VideoZoom.stretch.next, .fit)
+        XCTAssertEqual(VideoZoom.pinched(magnification: 1.4), .fill)
+        XCTAssertEqual(VideoZoom.pinched(magnification: 0.7), .fit)
+        XCTAssertEqual(VideoZoom(stored: "???"), .fit)
+        let kv = InMemoryKeyValueStore()
+        let store = SettingsStore(kv)
+        XCTAssertEqual(VideoZoom(stored: store.value.videoZoom), .fit)
+        store.update { $0.videoZoom = VideoZoom.stretch.rawValue }
+        XCTAssertEqual(VideoZoom(stored: SettingsStore(kv).value.videoZoom), .stretch)
+    }
 }

@@ -14,7 +14,12 @@ public struct EpisodeRow: Equatable, Identifiable {
     public var timeLeft: String
     public var leftMinutes: Int
     public var download: DownloadState?
+    /// Todavía no sale: cuándo (nil = ya salió o no se sabe). Se ve con su fecha y no se puede reproducir ni bajar.
+    public var airs: Date? = nil
 }
+
+/// Lo que se sabe de las fuentes del video de «Ver» antes de abrir el reproductor.
+public enum SourceCheck: Equatable, Sendable { case unknown, available, none, offline }
 
 /// La ficha de una película o serie: datos en tu idioma, temporadas y episodios con su estado (visto, a medias,
 /// descargado), Mi lista (Stremio), watchlist (Trakt) y las acciones de ver y descargar.
@@ -50,7 +55,13 @@ public final class TitleModel: ObservableModel {
     /// La ficha rica de TMDB (elenco con foto, saga, tráiler…); nil sin clave de TMDB o mientras llega.
     public private(set) var extras: TitleExtras? { didSet { changed() } }
     /// «Lo mejor disponible» entre las fuentes del episodio o película que toca (como el encabezado de Infuse).
+    /// Lo mejor que hay (para «Disponible: 4K · Dolby Vision» en los detalles).
     public private(set) var bestSource: Source? { didSet { changed() } }
+    /// La que va a sonar al tocar «Ver»: la recomendada (idioma, calidad y tamaño; la primera de «Elegir la fuente»). Su
+    /// calidad es la que dice el botón (antes decía la mejor, 4K, y luego sonaba la recomendada en 1080p).
+    public private(set) var recommendedSource: Source? { didSet { changed() } }
+    /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
+    public private(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
     /// La calificación de Trakt (0–10), si alguien votó.
     public private(set) var traktRating: Double? { didSet { changed() } }
 
@@ -72,13 +83,30 @@ public final class TitleModel: ObservableModel {
     }
 
     private func applyDownloads(_ items: [DownloadItem]) {
-        let mine = items.filter { $0.metaID == metaID }
-        let states = Dictionary(uniqueKeysWithValues: mine.map { ($0.videoID, $0.state) })
-        let progress = Dictionary(uniqueKeysWithValues: mine.compactMap { item in item.progress.map { (item.videoID, $0) } })
+        // Puede haber dos versiones del mismo video («Bajar también esta»): por video se enseña la que más importa (la que
+        // está bajando antes que la terminada). Antes se armaba con claves únicas y con dos versiones la app se cerraba.
+        var chosen: [String: DownloadItem] = [:]
+        for item in items where item.metaID == metaID {
+            if let current = chosen[item.videoID], Self.rank(current.state) <= Self.rank(item.state) { continue }
+            chosen[item.videoID] = item
+        }
+        let states = chosen.mapValues(\.state)
+        let progress = chosen.compactMapValues(\.progress)
         guard states != downloadStates || progress != downloadProgress else { return }
         let stateChanged = states != downloadStates
         downloadStates = states; downloadProgress = progress
         if stateChanged { buildRows() } else { changed() }
+    }
+
+    /// Qué versión de un video se enseña en la ficha: la que bajando, luego en cola, en pausa, lista y, al final, la fallida.
+    static func rank(_ state: DownloadState) -> Int {
+        switch state {
+        case .downloading: 0
+        case .queued: 1
+        case .paused: 2
+        case .done: 3
+        case .failed: 4
+        }
     }
 
     public init(_ services: Services, kind: String, metaID: String, hint: (title: String, poster: String?)? = nil) {
@@ -112,7 +140,7 @@ public final class TitleModel: ObservableModel {
             credits = CinemetaParsing.credits(local)
             seasons = CinemetaParsing.seasons(local)
             error = nil
-        } catch where !Task.isCancelled { self.error = "\(error)" } catch {}   // cancelado al salir: sin error falso
+        } catch where !Task.isCancelled { self.error = "No pudimos cargar la ficha. Revisa tu conexión." } catch {}   // cancelado al salir: sin error falso
         await refreshState(prefetched: await state.value)
     }
 
@@ -133,11 +161,18 @@ public final class TitleModel: ObservableModel {
 
     /// Busca las fuentes del video que toca (el mismo pedido que «Elegir fuente», así luego sale de la caché) y se queda con
     /// la mejor para el encabezado. Sin fuentes o sin red, no se enseña nada.
-    public func loadBestSource() async {
+    public func loadBestSource(onCellular: Bool = false) async {
         guard let videoID = continueVideoID else { return }
-        let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings).prefs
-        guard let found = try? await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch), !Task.isCancelled else { return }
-        bestSource = Source.best(found)
+        let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings, onCellular: onCellular).prefs
+        do {
+            let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
+            guard !Task.isCancelled else { return }
+            bestSource = Source.best(found)
+            recommendedSource = found.first
+            sourceCheck = found.isEmpty ? .none : .available
+        } catch {
+            if !Task.isCancelled { sourceCheck = error is StreamFinderError ? .offline : .unknown }
+        }
     }
 
     /// Un título de TMDB (recomendación, saga, filmografía) → su id de IMDb, para abrir su ficha.
@@ -196,7 +231,8 @@ public final class TitleModel: ObservableModel {
             return EpisodeRow(id: ep.id, season: seasonNumber, number: ep.episode, title: ep.title, hasTitle: ep.hasTitle, overview: ep.overview, thumbnail: ep.thumbnail,
                               watched: watched.contains(ep.id), progress: ongoing ? min(1, Double(offset) / Double(duration)) : nil,
                               timeLeft: ongoing ? PlaybackRules.timeLeft(Double(duration - offset) / 1000) : "",
-                              leftMinutes: ongoing ? PlaybackRules.minutesLeft(Double(duration - offset) / 1000) : 0, download: downloadStates[ep.id])
+                              leftMinutes: ongoing ? PlaybackRules.minutesLeft(Double(duration - offset) / 1000) : 0, download: downloadStates[ep.id],
+                              airs: Self.airDate(ep.released))
         }
     }
 
@@ -248,6 +284,18 @@ public final class TitleModel: ObservableModel {
         return PlayRequest(kind: kind, metaID: metaID, videoID: video, originalTitle: originalTitle, displayTitle: title, episodeLabel: label,
                            poster: poster, year: info.year, meta: meta, fromStart: fromStart)
     }
+
+    /// La fecha de estreno si todavía no llega («2026-10-23T02:00:00.000Z»).
+    static func airDate(_ released: String?, now: Date = Date()) -> Date? {
+        guard let released else { return nil }
+        let iso = ISO8601DateFormatter(); iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        guard let date = iso.date(from: released) ?? plain.date(from: released), date > now else { return nil }
+        return date
+    }
+
+    /// El video de «Ver» todavía no sale: cuándo.
+    public var continueAirs: Date? { continueVideoID.flatMap { episode($0)?.1.released }.flatMap { Self.airDate($0) } }
 
     private func episode(_ id: String) -> (Int, Episode)? {
         for season in seasons { if let ep = season.episodes.first(where: { $0.id == id }) { return (season.season, ep) } }
@@ -327,12 +375,12 @@ public final class TitleModel: ObservableModel {
 
     /// Descarga uno o varios episodios con la fuente que mejor sirve para guardar (1080p, moderada).
     @discardableResult
-    public func download(_ videoIDs: [String], source: Source? = nil, replace: Bool = false) async -> DownloadOutcome {
+    public func download(_ videoIDs: [String], source: Source? = nil, replace: Bool = false, keepBoth: Bool = false) async -> DownloadOutcome {
         var queued = 0
         for video in videoIDs {
             var label = ""
             if let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
-            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster, source: source, replace: replace) {
+            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster, source: source, replace: replace, keepBoth: keepBoth) {
             case .queued: queued += 1
             case .noSources: if queued == 0 { return .noSources } else { continue }
             case .already: if videoIDs.count == 1 { return .already } else { continue }

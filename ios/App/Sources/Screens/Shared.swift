@@ -90,6 +90,8 @@ struct TitleLink: View {
     var width: CGFloat = DS.Poster.railWidth
     /// Un renglón más debajo del nombre («2021 · Película»): distingue títulos que se llaman igual.
     var detail: Text?
+    /// Cuántos renglones puede ocupar `detail` (2 con letra de accesibilidad en Buscar).
+    var detailLines = 1
     /// Con el reflejo del póster debajo (los renglones de Inicio y Para ti).
     var reflected = false
     @Environment(\.posterCaptions) private var captions
@@ -106,7 +108,7 @@ struct TitleLink: View {
                 // En una tira (Editorial) el póster habla solo; en una cuadrícula (resultados, géneros) el nombre ayuda a distinguir.
                 if captions {
                     Text(route.title).recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
-                    if let detail { detail.recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading) }
+                    if let detail { detail.recipe(.footnote).lineLimit(detailLines).frame(width: width, alignment: .leading) }
                 }
             }
         }
@@ -175,7 +177,7 @@ struct NowPlayingCard: View {
             Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv")
                 .font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
-                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
+                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect, whole: true).frame(width: DS.Poster.nowPlayingWidth)
                 info
                 Spacer(minLength: 0)
             }

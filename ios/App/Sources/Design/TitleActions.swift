@@ -57,3 +57,63 @@ struct ActionTileLabel: View {
         .contentShape(shape)
     }
 }
+
+/// «Ya la tienes»: al descargar una fuente de algo que ya tienes (o que se está bajando). Una hoja con estilo de la app, no un
+/// diálogo del sistema: las dos versiones lado a lado y tres salidas — bajar también esta (quedan las dos), cambiarla, o dejarla.
+struct DownloadVersionSheet: View {
+    /// La que tienes: calidad y peso (o «Bajando 40 %»).
+    let current: (label: String, detail: Text)
+    /// La que elegiste.
+    let new: (label: String, detail: Text)
+    let keepBoth: () -> Void
+    let replace: () -> Void
+    let cancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s4) {
+            HStack(spacing: DS.Space.s3) {
+                Image(systemName: "checkmark.circle.fill").font(DS.TextRecipe.section.font).foregroundStyle(DS.good)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Ya la tienes").recipe(.section)
+                    Text("Puedes guardar varias versiones del mismo título.").recipe(.footnote)
+                }
+            }
+            HStack(spacing: DS.Space.s2) {
+                version(Text("La que tienes"), current)
+                Image(systemName: "arrow.right").font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(DS.textFaint)
+                version(Text("La que elegiste"), new)
+            }
+            .fixedSize(horizontal: false, vertical: true)   // las dos tarjetas del mismo alto, aunque una diga más
+            VStack(spacing: DS.Space.s2) {
+                // Las dos opciones del mismo tamaño (alto fijo, no el que cada estilo le da).
+                Button(action: keepBoth) { option(Label("Bajar también esta", systemImage: "plus.square.on.square"), fill: DS.primary, ink: DS.onPrimary) }
+                    .buttonStyle(.plain)
+                Button(action: replace) { option(Label("Cambiarla por esta", systemImage: "arrow.triangle.2.circlepath"), fill: DS.fillStrong, ink: DS.text) }
+                    .buttonStyle(.plain)
+                Button(action: cancel) { Text("Dejar la que tengo").frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget) }
+                    .buttonStyle(.plain).foregroundStyle(DS.textMuted)
+            }
+            .font(DS.TextRecipe.secondary.font.weight(.semibold))
+        }
+        .padding(DS.Space.gutter)
+    }
+
+    /// Una opción: la misma cápsula para las dos (solo cambia el color).
+    private func option(_ label: Label<Text, Image>, fill: Color, ink: Color) -> some View {
+        label.foregroundStyle(ink)
+            .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeight)
+            .background(fill, in: Capsule())
+            .contentShape(Capsule())
+    }
+
+    private func version(_ title: Text, _ v: (label: String, detail: Text)) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            title.recipe(.caption)
+            Text(verbatim: v.label).recipe(.cardTitle).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            v.detail.recipe(.footnote).lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(DS.Space.s3)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+    }
+}

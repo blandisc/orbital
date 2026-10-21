@@ -182,9 +182,9 @@ struct TVAccessory: View {
     private var info: some View {
         HStack(spacing: DS.Space.s3) {
             // El póster como póster (vertical, esquinas suaves); el logo de un canal en vivo, cuadrado. Nunca en círculo.
-            PosterView(url: now.art, title: now.title, aspect: now.live ? 1 : DS.Poster.aspect)
+            // Completo, con su propia forma: el arte de la TV no siempre es vertical y antes se recortaba.
+            PosterView(url: now.art, title: now.title, aspect: now.live ? 1 : DS.Poster.aspect, whole: true)
                 .frame(height: DS.Size.accessoryArt)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             VStack(alignment: .leading, spacing: 0) {
                 Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
                 if placement != .inline {
@@ -339,7 +339,23 @@ private struct FittedSheet: ViewModifier {
     }
 }
 
+/// Como `FittedSheet` pero para una hoja cuya raíz es un `ScrollView`: la altura sale del contenido de la lista, sin
+/// `fixedSize`. Con `fixedSize` la lista larga medía más que la pantalla, la hoja se topaba y lo de abajo quedaba fuera
+/// sin poder recorrerse (p. ej. «Fuente» en el reproductor). Así, si no cabe, la hoja llega al tope y la lista se desplaza.
+private struct FittedScrollSheet: ViewModifier {
+    @State private var height: CGFloat = DS.Size.touchTarget * 6
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height + $0.contentInsets.top + $0.contentInsets.bottom } action: { _, h in height = h }
+            .presentationDetents([.height(height)])
+            .presentationDragIndicator(.visible)
+    }
+}
+
 extension View {
+    /// Receta: hoja a la medida de su lista, que se desplaza si no cabe (ver `FittedScrollSheet`). Va sobre el `ScrollView`.
+    func fittedScrollSheet() -> some View { modifier(FittedScrollSheet()) }
     /// Receta: hoja a la medida de su contenido (ver `FittedSheet`).
     func fittedSheet() -> some View { modifier(FittedSheet()) }
 }

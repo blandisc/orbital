@@ -171,6 +171,18 @@ public struct Tmdb: Sendable {
         return try await details(kind: kind, tmdbID: id)
     }
 
+    /// De `/translations` (envuelto en `translations`): la traducción de otro país del mismo idioma que sí tiene sinopsis.
+    static func sameLanguage(_ raw: JSON, language: String) -> (title: String, overview: String)? {
+        let base = language.split(separator: "-").first.map { String($0).lowercased() } ?? language
+        for t in raw["translations"]?["translations"]?.array ?? [] where t["iso_639_1"]?.string?.lowercased() == base {
+            let overview = (t["data"]?["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !overview.isEmpty else { continue }
+            let title = (t["data"]?["title"]?.nonEmptyString ?? t["data"]?["name"]?.nonEmptyString ?? "").trimmingCharacters(in: .whitespaces)
+            return (title, overview)
+        }
+        return nil
+    }
+
     /// Título, sinopsis, géneros y (en series) los episodios en ese idioma.
     public func translation(kind: String, tmdbID: Int, language: String, episodes: Bool = false) async throws -> Translation {
         let raw = try await get("/\(Tmdb.kinds[kind] ?? "movie")/\(tmdbID)", [("language", language)])
@@ -178,6 +190,12 @@ public struct Tmdb: Sendable {
             title: (raw["title"]?.nonEmptyString ?? raw["name"]?.nonEmptyString ?? "").trimmingCharacters(in: .whitespaces),
             overview: (raw["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
             genres: Array((raw["genres"]?.array ?? []).compactMap { $0["name"]?.string }.prefix(3)))
+        // Sin sinopsis en «es-MX», la de otro país del mismo idioma (la de España) antes que el inglés de Cinemeta.
+        if found.overview.isEmpty, let all = try? await get("/\(Tmdb.kinds[kind] ?? "movie")/\(tmdbID)/translations"),
+           let other = Tmdb.sameLanguage(["translations": all], language: language) {
+            found.overview = other.overview
+            if !other.title.isEmpty { found.title = other.title }
+        }
         guard episodes, kind == "series" else { return found }
         let numbers = (raw["seasons"]?.array ?? []).compactMap { $0["season_number"]?.intValue }.filter { $0 >= 0 }
         for start in stride(from: 0, to: numbers.count, by: 20) {  // TMDB: 20 por consulta
@@ -277,6 +295,19 @@ public actor Localizer {
         cache[key] = (clock().addingTimeInterval(result == nil ? Localizer.retrySeconds : Localizer.cacheSeconds), value)
         if !episodes, let value { remember(key, value) }
         return value
+    }
+
+    /// Los nombres en tu idioma que ya se tienen (memoria o disco), sin pedir nada: así una búsqueda se ve traducida desde
+    /// el primer momento en lo ya conocido, en vez de salir en inglés y cambiar al rato.
+    public func knownTitles(kind: String, ids: [String]) -> [String: String] {
+        guard let lang = active else { return [:] }
+        var names: [String: String] = [:]
+        for id in ids {
+            let key = "\(lang)|\(id)|\(kind)|false"
+            let found = cache[key].flatMap { clock() < $0.expires ? $0.value : nil } ?? saved(key)
+            if let title = found?.title, !title.isEmpty { names[id] = title }
+        }
+        return names
     }
 
     /// La ficha en tu idioma (una copia; la original no se toca).

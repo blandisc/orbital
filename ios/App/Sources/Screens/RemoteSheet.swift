@@ -7,6 +7,7 @@ import OrbitalModels
 /// (`TouchPad`), sus teclas (`RemoteKey`) y «Escribir» cuando la TV tiene dónde.
 struct RemoteSheet: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @ObservedObject var tvNow: ModelObserver<TVNowModel>
     @Binding var large: Bool
     let onContinueHere: (OrbitalRemote.NowPlaying) -> Void
@@ -32,7 +33,7 @@ struct RemoteSheet: View {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
                 header(model)
                     // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !large { compactHeight = min($0 + DS.Space.s6 + DS.Space.s10, UIScreen.main.bounds.height * DS.Remote.maxShare) } }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !large { compactHeight = min($0 + DS.Space.s6 + DS.Space.s10, UIScreen.main.bounds.height * DS.Remote.maxShareFitted) } }
                 if large { full(model).transition(.opacity.combined(with: .move(edge: .bottom))) }
                 else {
                     Label("Estira hacia arriba para el control completo", systemImage: "chevron.compact.up")
@@ -40,9 +41,9 @@ struct RemoteSheet: View {
                 }
             }
             .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { fullHeight = min($0, UIScreen.main.bounds.height * DS.Remote.maxShare) } }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { fullHeight = min($0, UIScreen.main.bounds.height * DS.Remote.maxShareFitted) } }
         }
-        .scrollDisabled(!large && compactHeight < UIScreen.main.bounds.height * DS.Remote.maxShare)   // corta y sin caber (letra grande): se desliza
+        .scrollDisabled(!large && compactHeight < UIScreen.main.bounds.height * DS.Remote.maxShareFitted)   // corta y sin caber (letra grande): se desliza
         .scrollBounceBehavior(.basedOnSize)
         // Sin nada en la TV la hoja corta no tiene qué enseñar (quedaba «Tu Orbital» y un hueco, y bajarla se atoraba ahí):
         // solo la altura completa, y bajarla la cierra.
@@ -62,7 +63,7 @@ struct RemoteSheet: View {
         // Los botones de volumen del iPhone suben y bajan la TV mientras el control está abierto (como el del Apple TV).
         .background { if model.isConfigured { HardwareVolumeButtons { up in Task { await model.changeVolume(by: up ? 5 : -5) } } } }
         #if DEBUG
-        .task { if Demo.isOn, Demo.open == "voice-guide" { showsGuide = true } }   // -demo-open voice-guide: la guía, para capturas
+        .task { if Demo.isOn, Demo.open == "voice-guide" { showsGuide = true }; if Demo.isOn, Demo.open == "remote-pad" { showsPad = true } }   // -demo-open voice-guide: la guía, para capturas
         #endif
         .sheet(isPresented: $showsGuide) {
             NavigationStack {
@@ -118,13 +119,20 @@ struct RemoteSheet: View {
         if large, let now = model.now {
             // Estirada: lo que se ve en la TV en un renglón (póster, nombre y pausa); el resto del alto es para el control.
             HStack(spacing: DS.Space.s3) {
-                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Size.thumbSmall)
+                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect, whole: true).frame(width: DS.Size.thumbSmall)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
                     Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
                 }
                 Spacer(minLength: DS.Space.s2)
-                if !now.live {
+                if model.context == .player || model.context == .live {
+                    // Reproduciendo o en vivo (la pausa ya está en sus teclas): el pad, para moverte por la TV cuando quieras.
+                    DSIconButton(symbol: showsPad ? "play.rectangle" : "hand.point.up.left", label: showsPad ? (model.context == .live ? LocalizedStringKey("Volver a los canales") : LocalizedStringKey("Volver al reproductor")) : LocalizedStringKey("Moverte por la TV"),
+                                 prominent: !showsPad) {
+                        withAnimation(DS.Motion.base(reduceMotion)) { showsPad.toggle() }
+                    }
+                    .accessibilityIdentifier("remote-pad-button")
+                } else if !now.live {
                     DSIconButton(symbol: now.paused ? "play.fill" : "pause.fill", label: now.paused ? "Continuar" : "Pausa", prominent: true) {
                         Task { await model.control("toggle") }
                     }
@@ -148,6 +156,29 @@ struct RemoteSheet: View {
                     .accessibilityIdentifier("remote-scares")
                 }
             }
+        } else if model.tokenProblem {
+            // La TV ya no reconoce este iPhone (cambió su token): sin esto el control quedaba muerto sin decir por qué.
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                Label("Tu Orbital ya no reconoce este iPhone", systemImage: "lock.trianglebadge.exclamationmark").recipe(.cardTitle)
+                Text("Vuelve a conectarlos: en tu TV abre Ajustes › iPhone y escanea el código.").recipe(.footnote)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else if model.unreachable && !model.answered || model.unreachable && model.now == nil {
+            // Apagada u otra red: lo dice y deja reintentar (antes «Conectando…» se quedaba girando para siempre).
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Label("Tu Orbital no contesta", systemImage: "tv.slash").recipe(.cardTitle)
+                    Text("Revisa que la consola esté prendida y en la misma red que tu iPhone.").recipe(.footnote)
+                }
+                Button { Task { await model.retryNow() } } label: {
+                    Text("Intentar de nuevo").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                        .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
+                        .background(DS.fill, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("remote-retry")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         } else if !model.answered {
             // La TV todavía no contesta (recién abierta la app): no se dice «nada sonando» antes de saberlo.
             HStack(spacing: DS.Space.s3) {
@@ -182,14 +213,20 @@ struct RemoteSheet: View {
                     .transition(.opacity)
             }
             switch model.context {
+            // Reproduciendo o en vivo, el pad no se suma abajo (no cabía y repetía pausa, ±10, volumen, pistas y salir):
+            // reemplaza lo de arriba cuando hace falta moverse por un panel de la TV (episodios, fuentes, la guía).
             case .player:
-                if let now = model.now { playerDeck(model, now) }
-                volume(model)
-                foldedPad(model)
+                if showsPad { padMode(model) }
+                else {
+                    if let now = model.now { playerDeck(model, now) }
+                    volume(model)
+                }
             case .live:
-                liveDeck(model)
-                volume(model)
-                foldedPad(model)
+                if showsPad { padMode(model) }
+                else {
+                    liveDeck(model)
+                    volume(model)
+                }
             case .typing:
                 typing(model, autoFocus: true)
                 navigation(model)
@@ -201,6 +238,8 @@ struct RemoteSheet: View {
             }
         }
         .animation(DS.Motion.base(reduceMotion), value: model.context)
+        .animation(DS.Motion.base(reduceMotion), value: showsPad)
+        .onChange(of: model.context) { _, _ in showsPad = false }   // otra pantalla en la TV: vuelve a lo suyo
     }
 
     private func voice(_ model: TVNowModel) -> some View {
@@ -209,15 +248,17 @@ struct RemoteSheet: View {
             VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
                             heardNothing: speech.heardNothing, asking: asking) { listen(model) }
             // Lo que puedes decir: donde surge la duda (como el resto de las teclas).
+            // Del mismo alto que «Dile a Orbital» (que crece con su texto): antes quedaba más bajito a su lado.
             Button { showsGuide = true } label: {
                 Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text)
-                    .frame(width: DS.Remote.keyHeight, height: DS.Remote.keyHeight)
+                    .frame(width: DS.Remote.keyHeightFitted).frame(maxHeight: .infinity)
                     .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text("Lo que puedes decir"))
             .accessibilityIdentifier("remote-voice-guide")
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     @ViewBuilder private func volume(_ model: TVNowModel) -> some View {
@@ -230,25 +271,62 @@ struct RemoteSheet: View {
 
     /// Reproduciendo: la línea de tiempo (o el mapa de sustos), los botones del reproductor y sus pistas.
     @ViewBuilder private func playerDeck(_ model: TVNowModel, _ now: OrbitalRemote.NowPlaying) -> some View {
-        if let scares = model.scares {
-            ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares)
-        } else {
-            TimelineView(.periodic(from: model.fetchedAt, by: DS.NowPlaying.progressTick)) { context in
-                let position = now.position(at: context.date, since: model.fetchedAt)
+        let series = now.kind == "series"
+        TimelineView(.periodic(from: model.fetchedAt, by: DS.NowPlaying.progressTick)) { context in
+            let position = now.position(at: context.date, since: model.fetchedAt)
+            if let scares = model.scares, showsScares {
+                VStack(spacing: DS.Space.s2) {
+                    ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares)
+                    Button { withAnimation(DS.Motion.base(reduceMotion)) { showsScares = false } } label: {
+                        Label("Ocultar los sustos", systemImage: "chevron.up").recipe(.footnote, color: DS.textMuted).frame(minHeight: DS.Size.touchTarget)
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else if let scares = model.scares {
+                // Los sustos en un renglón (la barra y cuánto falta para el siguiente); un toque abre el detalle.
+                Button { withAnimation(DS.Motion.base(reduceMotion)) { showsScares = true } } label: {
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        ScareTimeline(position: position, duration: now.duration, scares: scares)
+                        nextScare(scares, position: position)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("remote-scares")
+            } else {
                 ScareTimeline(position: position, duration: now.duration)
             }
         }
         HStack(spacing: DS.Space.s2) {
+            if series { RemoteKey(symbol: "backward.end.fill", title: Text("Anterior")) { Task { await model.press(.pageleft) } } }
             RemoteKey(symbol: "gobackward.10", title: Text("−10 s")) { Task { await model.control("skip", delta: -10) } }
             RemoteKey(symbol: now.paused ? "play.fill" : "pause.fill", title: now.paused ? Text("Continuar") : Text("Pausa")) { Task { await model.control("toggle") } }
             RemoteKey(symbol: "goforward.10", title: Text("+10 s")) { Task { await model.control("skip", delta: 10) } }
-            if now.kind == "series" { RemoteKey(symbol: "forward.end.fill", title: Text("Siguiente")) { Task { await model.control("next") } } }
+            if series { RemoteKey(symbol: "forward.end.fill", title: Text("Siguiente")) { Task { await model.control("next") } } }
         }
-        // Las pistas: si la consola las manda, se eligen aquí; si no, X y Y con lo que la TV diga que hacen.
+        // Las pistas: si la consola las manda, se eligen aquí; si no, X (audio y subtítulos en la TV). Episodios o Fuentes
+        // abre ese panel en la TV y cambia el control al pad para moverte por él.
         HStack(spacing: DS.Space.s2) {
             trackMenu(model, title: Text("Subtítulos"), symbol: "captions.bubble", action: "subtitles", tracks: now.subtitleTracks, fallback: .alt, legendKey: "alt")
-            trackMenu(model, title: Text("Audio"), symbol: "waveform", action: "audio", tracks: now.audioTracks, fallback: .options, legendKey: "options")
+            trackMenu(model, title: Text("Audio"), symbol: "waveform", action: "audio", tracks: now.audioTracks, fallback: .alt, legendKey: "alt")
+            RemoteKey(symbol: series ? "list.bullet" : "square.stack", title: model.legend["options"].map { Text(verbatim: $0) } ?? (series ? Text("Episodios") : Text("Fuentes"))) {
+                Task { await model.press(.options) }
+                withAnimation(DS.Motion.base(reduceMotion)) { showsPad = true }
+            }
+            .accessibilityIdentifier("remote-options")
             RemoteKey(symbol: "xmark", title: Text("Salir")) { Task { await model.control("stop") } }
+        }
+    }
+
+    /// «0:53 para el siguiente susto» (o que ya no quedan).
+    private func nextScare(_ scares: [JumpScare], position: Double) -> some View {
+        let next = scares.first { $0.time > position }
+        let text = next.map { Text("\(Duration.seconds(Int($0.time - position)).formatted(.time(pattern: .minuteSecond))) para el siguiente susto") }
+            ?? Text("Ya no quedan sustos")
+        return HStack(spacing: DS.Space.s1) {
+            text.recipe(.footnote, color: DS.textMuted).monospacedDigit().lineLimit(1)
+            Spacer(minLength: DS.Space.s2)
+            Image(systemName: "chevron.down").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textFaint)
         }
     }
 
@@ -269,12 +347,15 @@ struct RemoteSheet: View {
                     }
                 }
             } label: {
+                // Como las demás teclas: el ícono a la misma altura (antes «Salir» quedaba más abajo) y solo lo primero de la
+                // pista («Inglés», no «Inglés · Subtítulos · de…» cortado); el nombre completo está en el menú.
                 VStack(spacing: DS.Space.s1) {
-                    Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font)
-                    (tracks.first(where: \.selected).map { Text(verbatim: $0.label) } ?? Text("Sin subtítulos")).recipe(.caption, color: DS.textMuted).lineLimit(1)
+                    Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).frame(height: DS.Remote.keyIcon)
+                    (tracks.first(where: \.selected).map { Text(verbatim: Self.shortTrack($0.label)) } ?? Text("Sin subtítulos"))
+                        .recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 }
                 .foregroundStyle(DS.text)
-                .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeight)
+                .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted)
                 .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .accessibilityLabel(title)
@@ -282,26 +363,36 @@ struct RemoteSheet: View {
         }
     }
 
+    /// Lo primero del nombre de una pista («Inglés · Subtítulos · de Netflix» → «Inglés»).
+    static func shortTrack(_ label: String) -> String {
+        label.components(separatedBy: " · ").first.map { $0.trimmingCharacters(in: .whitespaces) }.flatMap { $0.isEmpty ? nil : $0 } ?? label
+    }
+
     /// En vivo: canal anterior y siguiente, grandes, y silencio.
     private func liveDeck(_ model: TVNowModel) -> some View {
         HStack(spacing: DS.Space.s2) {
             RemoteKey(symbol: "chevron.up", title: Text("Canal siguiente")) { Task { await model.control("channel_up") } }
             RemoteKey(symbol: "chevron.down", title: Text("Canal anterior")) { Task { await model.control("channel_down") } }
-            RemoteKey(symbol: "list.bullet.rectangle", title: Text("Guía")) { Task { await model.control("guide") } }
+            RemoteKey(symbol: "list.bullet.rectangle", title: Text("Guía")) {
+                Task { await model.control("guide") }
+                withAnimation(DS.Motion.base(reduceMotion)) { showsPad = true }   // la guía se recorre con el pad
+            }
         }
     }
 
-    /// El pad plegado (reproduciendo o en vivo): un renglón que lo abre para moverte por los menús de la TV.
-    @ViewBuilder private func foldedPad(_ model: TVNowModel) -> some View {
-        Button { withAnimation(DS.Motion.base(reduceMotion)) { showsPad.toggle() } } label: {
-            Label(showsPad ? "Ocultar el pad" : "Moverte por la TV", systemImage: showsPad ? "chevron.up" : "hand.point.up.left")
-                .recipe(.footnote, color: DS.text).fontWeight(.semibold)
-                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                .background(DS.fill, in: Capsule())
+    /// El pad en lugar de lo de arriba (reproduciendo o en vivo): para moverte por la TV o por el panel que abriste
+    /// (episodios, fuentes, la guía). Cabe en una pantalla: el pad y Atrás · Inicio · Menú · Buscar.
+    @ViewBuilder private func padMode(_ model: TVNowModel) -> some View {
+        // Se vuelve con el botón de arriba a la derecha (el mismo que abre el pad).
+        TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
+            .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
+            .frame(height: DS.Remote.padHeightFitted)
+        HStack(spacing: DS.Space.s2) {
+            key(model, "chevron.backward", "B", "back", Text("Atrás"), .back, hold: .home)
+            key(model, "house", nil, nil, Text("Inicio"), .home)
+            key(model, "line.3.horizontal", nil, "menu", Text("Menú"), .menu)
+            key(model, "magnifyingglass", nil, "search", Text("Buscar"), .search)
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("remote-pad-toggle")
-        if showsPad { navigation(model).transition(.opacity.combined(with: .move(edge: .top))) }
     }
 
     /// Navegar la interfaz de la TV: las secciones (LB / RB), el pad (A al tocar) y las teclas con lo que hace cada una.
@@ -309,27 +400,33 @@ struct RemoteSheet: View {
         HStack(spacing: DS.Space.s2) {
             key(model, "chevron.left.2", "LB", nil, Text("Anterior"), .prevsection)
             if let section = model.section {
-                Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize()
+                // Un renglón siempre: con letra grande se achica (antes se partía en «Pelícu-las y s…» entre las teclas).
+                Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1)
+                    .minimumScaleFactor(DS.Size.statScale).multilineTextAlignment(.center)
+                    .fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: false)   // con letra grande cede: «Ante…» no cabía
             }
             key(model, "chevron.right.2", "RB", nil, Text("Siguiente"), .nextsection)
         }
         TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
             // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
-            .frame(height: max(DS.Remote.padHeight, UIScreen.main.bounds.height * DS.Remote.padShare))
+            .frame(height: DS.Remote.padHeightFitted)   // en un SE, más bajito: las teclas de abajo y «Escribir» caben
         HStack(spacing: DS.Space.s2) {
             key(model, "chevron.backward", "B", "back", Text("Atrás"), .back, hold: .home)   // mantener: al inicio
-            key(model, "square.on.square", "X", "alt", Text("Acción X"), .alt)
+            key(model, "bolt", "X", "alt", Text("Atajo"), .alt)   // lo que haga X en esa pantalla lo dice la leyenda
             key(model, "ellipsis", "Y", "options", Text("Opciones"), .options)
         }
         HStack(spacing: DS.Space.s2) {
-            key(model, "backward.end", "LT", "page", Text("−5"), .pageleft)
+            key(model, "backward.end", narrowGlyph("LT"), "page", Text("−5"), .pageleft)
             key(model, "house", nil, nil, Text("Inicio"), .home)
-            key(model, "line.3.horizontal", "☰", "menu", Text("Menú"), .menu)
-            key(model, "magnifyingglass", "⧉", "search", Text("Buscar"), .search)
-            key(model, "forward.end", "RT", "page", Text("+5"), .pageright)
+            key(model, "line.3.horizontal", nil, "menu", Text("Menú"), .menu)
+            key(model, "magnifyingglass", nil, "search", Text("Buscar"), .search)
+            key(model, "forward.end", narrowGlyph("RT"), "page", Text("+5"), .pageright)
         }
     }
+
+    /// En la fila de cinco teclas de un teléfono bajito no cabe la letra del mando junto al ícono: se quita.
+    private func narrowGlyph(_ glyph: String) -> String? { DS.Remote.isShortScreen ? nil : glyph }
 
     /// Escribir en la TV: si no tiene un campo abierto, abre su búsqueda con ese texto.
     private func typing(_ model: TVNowModel, autoFocus: Bool) -> some View {

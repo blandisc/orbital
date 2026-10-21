@@ -14,6 +14,9 @@ struct BrowseView: View {
     @State private var query = ""
     /// Los resultados: todo, solo películas o solo series.
     @State private var kind: String = ""
+    /// «Ver todo» de lo más popular hoy.
+    @State private var showPopular = false
+    @Environment(\.dynamicTypeSize) private var typeSize
     /// Los colores del n.º 1 de hoy: el fondo de la pantalla y las cifras del Top 10 toman su tono (como Inicio).
     @StateObject private var tint: ArtTint
     /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
@@ -36,6 +39,8 @@ struct BrowseView: View {
             .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
             .padding(.bottom, DS.Space.s8)
         }
+        // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
+        .environment(\.dynamicTypeSize, typeSize)
         .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
@@ -53,6 +58,7 @@ struct BrowseView: View {
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }
+        .navigationDestination(isPresented: $showPopular) { PopularGridView(model: catalog.model) }
         .task(id: query) {
             if query.count >= 2 { Perf.begin("search") }
             try? await Task.sleep(nanoseconds: DS.Timing.searchDebounce)    // espera a que termines de escribir
@@ -63,9 +69,14 @@ struct BrowseView: View {
             #if DEBUG
             if Demo.isOn, let text = Demo.search { query = text }
             #endif
+            async let warm: Void = env.services.cinemeta.warmUp()   // la conexión con Cinemeta lista antes de la primera letra
             if catalog.model.popular.isEmpty { await catalog.model.load() }   // ya se pidió al abrir la app
+            await warm
         }
         .refreshable { await catalog.model.load() }
+        // ds-exception: el campo de búsqueda del sistema se dibuja vacío con letra de accesibilidad (el texto sí está):
+        // se topa en el tamaño más grande que sí pinta.
+        .dynamicTypeSize(...DS.Typeface.searchFieldMax)
     }
 
     // MARK: resultados
@@ -95,22 +106,20 @@ struct BrowseView: View {
         if answered, !model.results.isEmpty, shown.isEmpty {
             DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada de ese tipo"), message: Text("Prueba con «Todo»."))
         }
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-            if !answered && model.results.isEmpty && model.error == nil {
-                // Mientras llega: pósters vacíos en su lugar (antes, una ruedita sobre la barra de arriba).
-                ForEach(0..<9, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: DS.Radius.md).fill(DS.fill).aspectRatio(DS.Poster.aspect, contentMode: .fit)
-                }
-                .accessibilityHidden(true)
+        if !answered && model.results.isEmpty && model.error == nil {
+            // Mientras llega: pósters vacíos en su lugar (antes, una ruedita sobre la barra de arriba).
+            DSPosterGrid(items: DSPosterSlot.slots(9)) { _, width in
+                RoundedRectangle(cornerRadius: DS.Radius.md).fill(DS.fill).frame(width: width).aspectRatio(DS.Poster.aspect, contentMode: .fit)
             }
-            ForEach(shown.first?.metaID.hasPrefix("tt") == true ? Array(shown.dropFirst()) : shown) { r in
-                TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: DS.Poster.gridMinimum,
-                          detail: yearAndKind(year: r.year, kind: r.kind))
-                    .perfTag("search.grid")
-                    .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
-            }
+            .accessibilityHidden(true)
         }
-        .padding(.horizontal, DS.Space.gutter)
+        DSPosterGrid(items: shown.first?.metaID.hasPrefix("tt") == true ? Array(shown.dropFirst()) : shown) { r, width in
+            // Con letra de accesibilidad, el año y el tipo en dos renglones (en uno se cortaban).
+            TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: width,
+                      detail: yearAndKind(year: r.year, kind: r.kind), detailLines: typeSize.isAccessibilitySize ? 2 : 1)
+                .perfTag("search.grid")
+                .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
+        }
     }
 
     // MARK: sin escribir
@@ -144,7 +153,8 @@ struct BrowseView: View {
     /// tus plataformas). Películas y series alternadas, de Cinemeta.
     private func popular(_ model: CatalogModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Lo más popular hoy", meta: Text("Lo que más se ve hoy en Stremio, películas y series"), source: .stremio)
+            DSSectionHead(title: "Lo más popular hoy", action: { showPopular = true }, chevron: true,
+                          meta: Text("Lo que más se ve hoy en Stremio, películas y series"), source: .stremio)
                 .padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) {
@@ -193,22 +203,42 @@ struct GenreView: View {
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                ForEach(items) { item in
-                    TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster), width: DS.Poster.gridMinimum,
-                              detail: yearAndKind(year: item.year, kind: item.kind))
-                }
+            // Con el mismo ordenar y filtrar que todo «Ver todo».
+            SortableGrid(listID: "genre:\(genre)", items: items.map(Self.suggestion), loading: !loaded) { s, width in
+                TitleLink(route: TitleRoute(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster.isEmpty ? nil : s.poster), width: width,
+                          detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s8)
-            .overlay { if !loaded { ProgressView() } }
+            .padding(.top, DS.Space.s3)
+            .padding(.bottom, DS.Space.s8)
         }
         .background(Backdrop())
         .navigationTitle(Text(verbatim: Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre))
-        .toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .navigationBarTitleDisplayMode(.inline)   // como toda pantalla de adentro
         .task {
             // Primero lo de Cinemeta (se ve ya); luego los mismos títulos en tu idioma.
             await model.genre(genre) { items = $0; loaded = true }
             loaded = true
         }
+    }
+
+    static func suggestion(_ item: CatalogItem) -> Suggestion {
+        Suggestion(kind: item.kind, imdb: item.metaID, title: item.title, year: Int(item.year.prefix(4)), poster: item.poster ?? "", wide: "", reason: .popular)
+    }
+}
+
+/// «Lo más popular hoy» completo (desde su «Ver todo»): con el mismo ordenar y filtrar que toda lista.
+struct PopularGridView: View {
+    let model: CatalogModel
+
+    var body: some View {
+        ScrollView {
+            SortableGrid(listID: "popular", items: model.popular.map(GenreView.suggestion), loading: model.isLoading) { s, width in
+                TitleLink(route: s.route, width: width, detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
+            }
+            .padding(.top, DS.Space.s3)
+            .padding(.bottom, DS.Space.s8)
+        }
+        .background(Backdrop())
+        .navigationTitle("Lo más popular hoy").navigationBarTitleDisplayMode(.inline)
     }
 }

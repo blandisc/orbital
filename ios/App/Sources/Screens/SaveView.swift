@@ -23,15 +23,17 @@ struct SaveView: View {
                 if m.traktAvailable {
                     CheckRow(title: Text("Tu watchlist") + Text(verbatim: " (Trakt)").foregroundStyle(DS.textMuted), symbol: "bookmark", color: DS.ListTint.bookmark, checked: m.inWatchlist) { Task { await m.toggleWatchlist() } }
                     PanelGroupTitle(title: "Tus listas de Trakt")
-                    if let lists = m.lists {
+                    if let lists = m.lists, lists.isEmpty {
+                        Text("Aún no tienes listas en Trakt.").recipe(.footnote).padding(.vertical, DS.Space.s1)
+                    } else if let lists = m.lists {
                         ForEach(lists) { list in
                             CheckRow(title: Text(verbatim: list.name), symbol: "list.bullet", color: DS.ListTint.list, checked: list.contains) { Task { await m.toggleList(list.id) } }
                         }
                     } else {
                         ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s3)
                     }
-                    Button { naming = true } label: { Label("Nueva lista…", systemImage: "plus") }
-                        .buttonStyle(.glass).controlSize(.large).padding(.top, DS.Space.s2)
+                    Button { naming = true } label: { Label("Nueva lista…", systemImage: "plus").frame(maxWidth: .infinity) }
+                        .buttonStyle(.glass).controlSize(.large).padding(.top, DS.Space.s1)
                 }
                 if let message = m.message { DSNotice(verbatim: env.message(message), tone: .error) }
             }

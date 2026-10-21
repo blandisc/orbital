@@ -28,6 +28,14 @@ public final class TVNowModel: ObservableModel {
     public private(set) var section: String? { didSet { if oldValue != section { changed() } } }
     /// Ya contestó la TV desde que la app se abrió: antes de eso «nada sonando» no se sabe (el control dice «Conectando…»).
     public private(set) var answered = false { didSet { if oldValue != answered { changed() } } }
+    /// La TV no contesta (apagada, otra red): el control lo dice en vez de quedarse en «Conectando…» para siempre.
+    public private(set) var unreachable = false { didSet { if oldValue != unreachable { changed() } } }
+
+    /// «Intentar de nuevo» del control: pregunta ya, sin esperar el siguiente sondeo.
+    public func retryNow() async {
+        unreachable = false
+        await tick()
+    }
     /// La pantalla de la TV al frente (la manda la consola; nil en versiones viejas): el control se arma según ella.
     public private(set) var screen: String? { didSet { if oldValue != screen { changed() } } }
     /// Los sustos de la película que suena en la TV (Where's The Jump); nil: no hay mapa (o no es película).
@@ -142,6 +150,7 @@ public final class TVNowModel: ObservableModel {
             failures = 0
             fetchedAt = Date()
             answered = true
+            unreachable = false
             tokenProblem = false
             if !snapshot.inbox.isEmpty { await inbox?.process(snapshot.inbox) }
             // Mientras hay juego, cómo está la consola (cada medio minuto; sin juego no se pide).
@@ -158,6 +167,7 @@ public final class TVNowModel: ObservableModel {
             // Sin red, la consola apagada o una versión vieja: la tarjeta se va sin ruido (se reintenta solo), pero no por un
             // solo tropiezo (un sondeo lento que vence a los 12 s tampoco cuenta doble).
             failures += 1
+            if failures >= 2 { unreachable = true }
             let stale = Date().timeIntervalSince(fetchedAt) > Self.hideAfter
             // Unos tropiezos seguidos (Wi‑Fi que se duerme) no lo esconden; pero si lo último que se supo ya es viejo (volviste a
             // la app horas después, la TV apagada), con el primero basta: no se enseña lo de ayer.

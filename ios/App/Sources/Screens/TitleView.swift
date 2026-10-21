@@ -21,6 +21,10 @@ struct TitleView: View {
 
     struct Replacement { var source: Source; var videoID: String; var existing: DownloadItem }
     @State private var saving = false
+    /// Lo que mide la pantalla visible (sin la barra de pestañas) y lo que hay bajo el arte hasta las acciones: el arte
+    /// se ajusta para que «Ver», Guardar, Descargar y Fuente queden a la vista al abrir, en un SE y en un Pro.
+    @State private var viewport: CGSize = .zero
+    @State private var belowHero: CGFloat = 0
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var id: String { "\(videoID)-\(purpose)" } }
 
@@ -34,11 +38,21 @@ struct TitleView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 hero(model)
-                VStack(alignment: .leading, spacing: DS.Space.s5) {
-                    facts(model)
-                    actions(model)
+                VStack(alignment: .leading, spacing: DS.Space.s6) {
+                    VStack(alignment: .leading, spacing: DS.Space.s6) {
+                        facts(model)
+                        actions(model)
+                    }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
                     if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
-                    if let error = model.error, model.overview.isEmpty { DSNotice(verbatim: env.message(error), tone: .warn) }
+                    if let error = model.error, !model.isLoading {
+                        // No cargó (sin red, Cinemeta caído): lo dice y deja reintentar (antes «Cargando» se quedaba para siempre).
+                        VStack(alignment: .leading, spacing: DS.Space.s2) {
+                            DSNotice(verbatim: env.message(error), tone: .warn)
+                            Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.load() } }
+                                .buttonStyle(.glass).accessibilityIdentifier("title-retry")
+                        }
+                    }
                     synopsis(model)
                     creditLine(model)
                     if model.kind == "series" { episodes(model) }
@@ -49,6 +63,7 @@ struct TitleView: View {
                 .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: los datos no se le pegan
             }
         }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
         .background(Backdrop(tint: tint.colors))
         .navigationBarTitleDisplayMode(.inline)
@@ -60,17 +75,23 @@ struct TitleView: View {
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .task {
             await model.load()
-            Task { await model.loadBestSource() }   // aparte: las fuentes tardan y no detienen el color del fondo
+            Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) }   // aparte: las fuentes tardan y no detienen el color del fondo
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
             if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
             if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
             if Demo.isOn, Demo.open == "download-tap" { await downloadRecommended(model) }
+            if Demo.isOn, Demo.open == "save" { saving = true }   // `-demo-open save`: la hoja «Guardar en…», para capturas
+            if Demo.isOn, Demo.open == "versions", let v = model.downloadTarget {   // `-demo-open versions`: la hoja «Ya la tienes»
+                await report(model.download([v]), model)
+                await model.loadBestSource()
+                if let source = model.bestSource, let existing = await model.existingDownload(v) { replacing = Replacement(source: source, videoID: v, existing: existing) }
+            }
             #endif
             await tint.load(model.background ?? model.poster)
         }
         .sheet(item: $sourcesFor) { target in
-            SourcesSheet(model: model, videoID: target.videoID, purpose: target.purpose, choose: { source, purpose in
+            SourcesSheet(model: model, videoID: target.videoID, choose: { source, purpose in
                 sourcesFor = nil
                 handle(source: source, videoID: target.videoID, purpose: purpose, model: model)   // lo que quedó en el selector de la hoja
             }, infuse: { source in
@@ -80,21 +101,38 @@ struct TitleView: View {
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
-        .confirmationDialog("Ya la tienes descargada", isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } }), titleVisibility: .visible, presenting: replacing) { r in
-            Button("Cambiarla por esta fuente") { Task { await report(model.download([r.videoID], source: r.source, replace: true), model) } }
-            Button("Dejar la que tengo", role: .cancel) {}
-        } message: { r in
-            let what = r.existing.quality ?? (r.existing.addon.isEmpty ? nil : r.existing.addon)
-            if let what { Text("Guardamos una sola copia. La que tienes es \(what); si la cambias, se borra y se baja la nueva.") }
-            else { Text("Guardamos una sola copia: si la cambias, se borra la que tienes y se baja la nueva.") }
+        .sheet(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
+            if let r = replacing {
+                DownloadVersionSheet(current: describe(r.existing), new: describe(r.source),
+                    keepBoth: { replacing = nil; Task { await report(model.download([r.videoID], source: r.source, keepBoth: true), model) } },
+                    replace: { replacing = nil; Task { await report(model.download([r.videoID], source: r.source, replace: true), model) } },
+                    cancel: { replacing = nil })
+                .fittedSheet()
+            }
         }
     }
 
     // MARK: partes
+    /// Ancho / alto del arte: el de siempre si cabe; si no, más ancho (más bajito) hasta que las acciones queden sobre la
+    /// barra de pestañas. Antes de medir, la proporción fija de los teléfonos bajitos.
+    private var heroAspect: CGFloat {
+        let fallback = UIScreen.main.bounds.height < DS.TitleAction.shortScreen ? DS.TitleAction.heroAspectShort : DS.TitleAction.heroAspect
+        guard viewport.width > 0, belowHero > 0 else { return fallback }
+        let padding = scheme == .dark ? 0 : DS.Space.s4
+        // `viewport` ya es el alto entre la barra de arriba y la de pestañas, y el contenido empieza bajo la de arriba (el arte
+        // solo se extiende detrás de ella): lo libre es eso menos lo de abajo del arte. Antes se sumaba el margen de arriba y
+        // la segunda fila de acciones quedaba debajo de las pestañas.
+        let room = viewport.height - belowHero - padding - DS.Space.s3
+        let width = viewport.width - (scheme == .dark ? 0 : DS.Space.gutter * 2)
+        guard room > 0 else { return typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax }
+        let cap = typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax
+        return min(cap, max(DS.TitleAction.heroAspect, width / room))
+    }
+
     /// El arte a sangre, más alto, con el logo (o el nombre) al centro y la frase de la película debajo, como un cartel de cine.
     private func hero(_ model: TitleModel) -> some View {
         BleedArt(url: model.background ?? model.poster, title: model.title,
-                 aspect: UIScreen.main.bounds.height < DS.TitleAction.shortScreen ? DS.TitleAction.heroAspectShort : DS.TitleAction.heroAspect) {
+                 aspect: heroAspect) {
             VStack(spacing: DS.Space.s2) {
                 TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, dark: model.logoIsDark, centered: true)
                     .containerRelativeFrame(.horizontal) { width, _ in width * DS.TitleAction.logoWidth }
@@ -108,16 +146,19 @@ struct TitleView: View {
         .ignoresSafeArea(edges: .top)
     }
 
-    /// Bajo el arte, al centro: qué es, año, géneros y duración; lo mejor disponible (4K · HDR · Atmos) y las calificaciones.
+    /// Bajo el arte, al centro, un solo renglón: año · géneros · duración («2 h 25 min») y la clasificación («B») como insignia
+    /// con contorno al final; debajo, las calificaciones. La calidad de la que va a sonar (la recomendada) vive dentro de «Ver».
     private func facts(_ model: TitleModel) -> some View {
         let language = env.services.appSettings.uiLanguage
-        let facts = [Strings.kind(model.kind, language: language)] + [model.extras?.certification].compactMap { $0 }
-            + Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: model.info.runtime, rating: "")
-        return VStack(spacing: DS.Space.s3) {
-            Text(verbatim: Vocabulary.factLine(facts)).recipe(.footnote).multilineTextAlignment(.center).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
-            if let best = model.bestSource {
-                QualityBadges(items: QualityBadges.items(resolution: best.resolution, hdr: best.hdr, audio: best.audioBadges))
-                    .accessibilityLabel(Text("Lo mejor disponible"))
+        let minutes = Int(CinemetaParsing.runtimeSeconds(model.info.runtime) / 60)
+        let runtime = Vocabulary.runtimeText(minutes: minutes > 0 ? minutes : nil) ?? model.info.runtime
+        let facts = Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: runtime, rating: "")
+        return VStack(spacing: DS.Space.s4) {
+            HStack(spacing: DS.Space.s2) {
+                Text(verbatim: Vocabulary.factLine(facts)).recipe(.footnote).multilineTextAlignment(.center).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+                if let certification = model.extras?.certification {
+                    QualityBadges(items: [certification]).fixedSize().accessibilityLabel(Text("Clasificación \(certification)"))
+                }
             }
             RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating, centered: true)
         }
@@ -142,20 +183,16 @@ struct TitleView: View {
 
     private var artAccent: Color { tint.colors?.accent ?? DS.accent }
 
-    /// El botón principal (con el color del arte), la línea de lo que llevas visto y, debajo, cuatro círculos: Guardar,
-    /// Descargar, Tráiler y Fuente. Cada círculo cambia en su lugar (Guardada, el anillo de la descarga): nada brinca.
+    /// El botón principal sólido (negro en claro, blanco en oscuro) con la calidad de lo que va a sonar en un segundo renglón
+    /// y, si ibas a medias, cuánto falta y su barrita; debajo, cuatro acciones del mismo tamaño: Guardar, Descargar, Tráiler y
+    /// Fuente. Cada una cambia en su lugar (Guardada, el anillo de la descarga): nada brinca.
     private func actions(_ model: TitleModel) -> some View {
         let label = model.continueLabel
         return VStack(spacing: DS.Space.s4) {
             VStack(spacing: DS.Space.s2) {
-                Button { start(model, videoID: nil) } label: {
-                    Label { primaryLabel(label, model).lineLimit(typeSize.isAccessibilitySize ? 2 : 1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
-                }
-                .dsArtButton(tint.colors).controlSize(.large).disabled(model.continueVideoID == nil)   // el color del arte, como en la TV
-                .accessibilityIdentifier("title-play")
-                if let fraction = model.resumeFraction {
-                    DSProgress(fraction: fraction).padding(.horizontal, DS.Space.s5).accessibilityHidden(true)
-                }
+                Button { play(model) } label: { primaryButtonLabel(label, model) }
+                    .dsSolidPrimaryButton().disabled(model.continueVideoID == nil || model.continueAirs != nil)
+                    .accessibilityIdentifier("title-play")
                 // «Desde el principio» (como la TV, `core/watch.js`), discreto: solo si ibas a medias.
                 if label.isResume {
                     Button("Desde el principio", systemImage: "arrow.counterclockwise") { start(model, videoID: nil, fromStart: true) }
@@ -163,7 +200,9 @@ struct TitleView: View {
                         .accessibilityIdentifier("title-restart")
                 }
             }
-            HStack(alignment: .top, spacing: DS.Space.s2) {   // rectángulos que llenan el renglón (antes círculos con hueco)
+            // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize ? 2 : (model.extras?.trailer?.url == nil ? 3 : 4)),
+                      spacing: DS.Space.s2) {
                 saveAction(model).frame(maxWidth: .infinity)
                 downloadAction(model).frame(maxWidth: .infinity)
                 if let url = model.extras?.trailer?.url {
@@ -171,12 +210,66 @@ struct TitleView: View {
                         .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
                 }
                 Button { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } } label: {
-                    ActionTileLabel(title: Text("Fuente"), symbol: "list.bullet", tint: artAccent)
+                    ActionTileLabel(title: Text("Fuente"), symbol: "list.bullet.rectangle", tint: artAccent)
                 }
                 .buttonStyle(.plain).frame(maxWidth: .infinity).disabled(model.continueVideoID == nil).accessibilityIdentifier("title-sources")
             }
             .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
         }
+    }
+
+    /// Lo de adentro de «Ver»: ▶ Ver (o «Continuar · quedan 42 min») y, abajo, la calidad de la recomendada (la que va a sonar)
+    /// («4K · Dolby Vision · Atmos»; nada si aún no se sabe). Con avance, una barrita al pie. Mientras carga, «Cargando».
+    @ViewBuilder private func primaryButtonLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> some View {
+        let quality = model.recommendedSource?.qualitySummary ?? []
+        VStack(spacing: DS.Space.s1) {
+            if model.continueVideoID == nil && !model.isLoading {
+                // Ya cargó y no hay qué ver: sin red, o una serie que aún no tiene episodios.
+                (model.error != nil ? Text("Sin conexión") : Text("Aún sin episodios")).font(DS.TextRecipe.body.font.weight(.semibold))
+            } else if model.continueVideoID == nil {
+                HStack(spacing: DS.Space.s2) {
+                    ProgressView().tint(DS.onSolidPrimary)
+                    Text("Cargando")
+                }
+                .font(DS.TextRecipe.body.font.weight(.semibold))
+            } else if let airs = model.continueAirs {
+                // Todavía no sale: la fecha en lugar de «Ver» (antes abría un reproductor que fallaba).
+                Label { Text("Sale el \(airs, format: .dateTime.day().month(.wide))") } icon: { Image(systemName: "calendar") }
+                    .font(DS.TextRecipe.body.font.weight(.semibold)).lineLimit(1)
+            } else {
+                Label {
+                    if label.isResume, let left = Vocabulary.runtimeText(minutes: model.minutesToFinish) {
+                        primaryLabel(label, model) + Text(verbatim: " · ") + Text("quedan \(left)")
+                    } else {
+                        primaryLabel(label, model)
+                    }
+                } icon: { Image(systemName: "play.fill") }
+                .font(DS.TextRecipe.body.font.weight(.semibold))
+                .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+                if model.sourceCheck == .none || model.sourceCheck == .offline {
+                    (model.sourceCheck == .none ? Text("Sin fuentes por ahora") : Text("Sin conexión"))
+                        .font(DS.TextRecipe.caption.font.weight(.medium)).opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1)
+                } else if !quality.isEmpty {
+                    Text(verbatim: quality.joined(separator: " · ")).font(DS.TextRecipe.caption.font.weight(.medium))
+                        .opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                        .accessibilityLabel(Text("Se va a ver en: \(quality.joined(separator: ", "))"))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: DS.TitleAction.primaryHeight - DS.Space.s3 * 2)
+        .overlay(alignment: .bottom) {
+            if let fraction = model.resumeFraction, model.continueVideoID != nil {
+                GeometryReader { box in
+                    Capsule().fill(DS.onSolidPrimary.opacity(DesignTokens.Opacity.track))
+                        .overlay(alignment: .leading) { Capsule().fill(DS.onSolidPrimary).frame(width: box.size.width * fraction) }
+                }
+                .frame(height: DS.TitleAction.primaryProgress)
+                .padding(.horizontal, DS.Space.s4)
+                .offset(y: DS.Space.s1)
+                .accessibilityHidden(true)
+            }
+        }
+        .padding(.vertical, DS.Space.s3 - DS.Space.s2)
     }
 
     /// Guardar: un toque la guarda en Mi lista (con un aviso que deja cambiar); mantener presionado elige dónde.
@@ -192,7 +285,7 @@ struct TitleView: View {
                 Button("Tus listas de Trakt…", systemImage: "list.bullet") { saving = true }
             }
         } label: {
-            ActionTileLabel(title: model.isSaved ? Text("Guardada") : Text("Guardar"), symbol: model.isSaved ? "checkmark" : "plus", active: model.isSaved, tint: artAccent)
+            ActionTileLabel(title: model.isSaved ? Text("Guardada") : Text("Guardar"), symbol: model.isSaved ? "checkmark.circle.fill" : "plus.circle", active: model.isSaved, tint: artAccent)
         } primaryAction: {
             Task { await quickSave(model) }
         }
@@ -246,7 +339,7 @@ struct TitleView: View {
                     Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
                     Button("Borrar la descarga", systemImage: "trash", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
                 } label: {
-                    ActionTileLabel(title: Text("Descargada"), symbol: "checkmark", active: true, tint: artAccent)
+                    ActionTileLabel(title: Text("Descargada"), symbol: "arrow.down.circle.fill", active: true, tint: artAccent)
                 }
             default:
                 Menu {
@@ -312,7 +405,7 @@ struct TitleView: View {
         }
         LazyVStack(spacing: 0) {   // perezosa: una serie larga no arma (ni pide imágenes de) todos sus episodios a la vez
             ForEach(model.rows) { row in
-                EpisodeRowView(row: row, play: { start(model, videoID: row.id) }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
+                EpisodeRowView(row: row, play: { if row.airs == nil { start(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
                                markWatched: { Task { await model.markWatched(row.id) } }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
                                resumeDownload: { Task { await model.resumeDownload(row.id) } },
                                downloadFraction: model.downloadFraction(row.id),
@@ -324,7 +417,11 @@ struct TitleView: View {
 
     /// La sinopsis en tres renglones y «más» para leerla completa.
     @ViewBuilder private func synopsis(_ model: TitleModel) -> some View {
-        if !model.overview.isEmpty {
+        if model.overview.isEmpty, model.isLoading {
+            // Esqueleto: el lugar de la sinopsis mientras llega (antes la ficha se veía vacía la primera vez).
+            Text(verbatim: String(repeating: "placeholder ", count: 24)).recipe(.secondary).lineLimit(DS.TitleAction.synopsisLines)
+                .redacted(reason: .placeholder).accessibilityHidden(true)
+        } else if !model.overview.isEmpty {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(model.overview).recipe(.secondary, color: DS.text).lineLimit(fullSynopsis ? nil : DS.TitleAction.synopsisLines)
                 if model.overview.count > DS.Size.synopsisFold {
@@ -468,6 +565,15 @@ struct TitleView: View {
     }
 
     // MARK: acciones
+    /// «Ver»: si ya se sabe que no hay fuentes (o no hay red), lo dice aquí en vez de abrir un reproductor que va a fallar.
+    private func play(_ model: TitleModel) {
+        switch model.sourceCheck {
+        case .none: env.notify("Real-Debrid aún no lo tiene. Los estrenos suelen aparecer unas horas después.", tone: .info)
+        case .offline: env.notify("Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet.")
+        default: start(model, videoID: nil)
+        }
+    }
+
     private func start(_ model: TitleModel, videoID: String?, source: Source? = nil, fromStart: Bool = false) {
         guard var request = model.playRequest(videoID: videoID) else { return }
         request.sourceIndex = source?.index
@@ -485,6 +591,23 @@ struct TitleView: View {
                 await report(model.download([videoID], source: source), model)   // la fuente que elegiste
             }
         }
+    }
+
+    /// «4K · Dolby Vision» y «12.3 GB · Torrentio» (o «Bajando 40 % · Torrentio») para la hoja «Ya la tienes».
+    private func describe(_ item: DownloadItem) -> (label: String, detail: Text) {
+        let size = item.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? ""
+        let tail = item.addon.isEmpty ? "" : " · \(item.addon)"
+        if item.state != .done, let expected = item.expectedBytes, expected > 0 {
+            let percent = "\(Int(Double(item.writtenBytes) / Double(expected) * 100)) %"
+            return (item.quality ?? item.addon, Text("Bajando \(percent)") + Text(verbatim: tail))
+        }
+        return (item.quality ?? item.addon, Text(verbatim: size + tail))
+    }
+
+    private func describe(_ source: Source) -> (label: String, detail: Text) {
+        let label = ([source.resolution] + source.hdr).filter { !$0.isEmpty }.joined(separator: " · ")
+        let size = source.size > 0 ? ByteCountFormatter.string(fromByteCount: Int64(source.size), countStyle: .file) : nil
+        return (label.isEmpty ? source.addon : label, Text(verbatim: [size, source.addon.isEmpty ? nil : source.addon].compactMap { $0 }.joined(separator: " · ")))
     }
 
     private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel) async {
@@ -541,24 +664,29 @@ struct EpisodeRowView: View {
             stateIcon.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
         }
         .padding(.vertical, DS.Space.s3)
+        .opacity(row.airs == nil ? 1 : DesignTokens.Opacity.faint)
         .contextMenu {
+            if row.airs == nil {
             Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
             Button("Descargar", systemImage: "arrow.down.circle", action: download)
             Button("Elegir la fuente…", systemImage: "list.bullet", action: chooseSource)
             if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
+            }
         }
     }
 
-    private var hasStatus: Bool { row.watched || row.leftMinutes > 0 || row.download == .done }
+    private var hasStatus: Bool { row.airs != nil || row.watched || row.leftMinutes > 0 || row.download == .done }
 
     @ViewBuilder private var status: some View {
-        if row.watched { Text("Visto") }
+        if let airs = row.airs { Text("Sale el \(airs, format: .dateTime.day().month(.abbreviated))") }
+        else if row.watched { Text("Visto") }
         else if row.leftMinutes > 0 { Text(timeLeftText(minutes: row.leftMinutes)) }
         else if row.download == .done { Text("Descargado") }
     }
 
     @ViewBuilder private var stateIcon: some View {
-        if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Visto")) }
+        if row.airs != nil { Image(systemName: "calendar").foregroundStyle(DS.textFaint).accessibilityLabel(Text("Todavía no sale")) }
+        else if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Visto")) }
         else if row.download == .done { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Descargado")) }
         else if row.download == .downloading || row.download == .queued {
             // El mismo anillo que el círculo de Descargar de la ficha.

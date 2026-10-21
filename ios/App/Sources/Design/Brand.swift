@@ -15,8 +15,7 @@ struct OrbitalMark: View {
         ZStack {
             MarkPlanet().stroke(lineWidth: DS.Brand.planetStroke * unit)
             MarkRing().trim(from: 0, to: drawn || !animated || reduceMotion ? 1 : 0)
-                .stroke(style: StrokeStyle(lineWidth: DS.Brand.ringStroke * unit, lineCap: .round))
-                .opacity(DS.Brand.ringOpacity)
+                .stroke(style: StrokeStyle(lineWidth: DS.Brand.ringStroke * unit, lineCap: .round))   // sólido (antes semitransparente)
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)

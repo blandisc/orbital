@@ -1,5 +1,6 @@
 import ActivityKit
 import SwiftUI
+import ImageIO
 import WidgetKit
 
 @main
@@ -7,7 +8,6 @@ struct OrbitalWidgets: WidgetBundle {
     var body: some Widget {
         NextUpWidget()
         DownloadLiveActivity()
-        RemoteControlButton()
     }
 }
 
@@ -27,8 +27,8 @@ struct DownloadLiveActivity: Widget {
                     if !context.state.detail.isEmpty {
                         Text(verbatim: context.state.detail).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
                     }
-                    ProgressView(value: context.state.fraction).tint(context.state.done ? DS.good : DS.paper)
-                    Text(subtitle(context.state)).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
+                    bar(context.state).tint(context.state.done ? DS.good : DS.paper)
+                    subtitleText(context.state).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
                 }
             }
             .padding()
@@ -57,8 +57,8 @@ struct DownloadLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        ProgressView(value: context.state.fraction).tint(context.state.done ? DS.good : nil)
-                        Text(subtitle(context.state)).font(DS.font(.sm)).foregroundStyle(.secondary).lineLimit(1)
+                        bar(context.state).tint(context.state.done ? DS.good : nil)
+                        subtitleText(context.state).font(DS.font(.sm)).foregroundStyle(.secondary).lineLimit(1)
                     }
                     .padding(.horizontal, DS.Space.s1)
                     .environment(\.locale, Locale(identifier: context.state.language))
@@ -66,17 +66,59 @@ struct DownloadLiveActivity: Widget {
             } compactLeading: {
                 ActivityPoster(file: context.state.poster, width: DS.Space.s5)
             } compactTrailing: {
-                Gauge(value: context.state.fraction) { EmptyView() }.gaugeStyle(.accessoryCircularCapacity).tint(context.state.done ? DS.good : DS.paper)
+                // Un anillo chico y blanco que se llena (con la app en segundo plano, solo hasta la hora estimada); al terminar,
+                // la palomita. Antes: el porcentaje, que en segundo plano se volvía una cuenta regresiva que estiraba la isla.
+                compactProgress(context.state)
             } minimal: {
-                Gauge(value: context.state.fraction) { Image(systemName: context.state.done ? "checkmark" : "arrow.down") }.gaugeStyle(.accessoryCircularCapacity)
+                Image(systemName: context.state.done ? "checkmark" : "arrow.down").font(DS.font(.sm, weight: .bold))
+                    .foregroundStyle(context.state.done ? DS.good : DS.paper)
             }
         }
+    }
+
+    /// La barra: con la app en segundo plano avanza sola hasta la hora estimada; si no, la fracción que mandó la app.
+    @ViewBuilder private func bar(_ state: DownloadActivityAttributes.ContentState) -> some View {
+        if !state.done, let start = state.estimateStart, let end = state.estimateEnd, end > start {
+            ProgressView(timerInterval: start...end, countsDown: false) { EmptyView() } currentValueLabel: { EmptyView() }
+        } else {
+            ProgressView(value: state.fraction)
+        }
+    }
+
+    /// «Termina como a las 10:42» mientras avanza sola; si no, lo de siempre.
+    private func subtitleText(_ state: DownloadActivityAttributes.ContentState) -> Text {
+        if !state.done, let end = state.estimateEnd {
+            return Text("Termina como a las \(end.formatted(Date.FormatStyle(locale: Locale(identifier: state.language)).hour().minute()))")
+        }
+        return Text(subtitle(state))
     }
 
     private func percent(_ state: DownloadActivityAttributes.ContentState) -> some View {
         Group {
             if state.done { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good) }
+            // En segundo plano, lo que falta en cuenta regresiva (el porcentaje se quedaría congelado), con ancho fijo.
+            else if let end = state.estimateEnd, end > .now {
+                Text(timerInterval: Date.now...end, countsDown: true).monospacedDigit().multilineTextAlignment(.trailing)
+                    .frame(width: DS.Widget.timerWidth, alignment: .trailing)
+            }
             else { Text(state.fraction, format: .percent.precision(.fractionLength(0))).monospacedDigit() }
+        }
+    }
+
+    @ViewBuilder private func compactProgress(_ state: DownloadActivityAttributes.ContentState) -> some View {
+        if state.done {
+            Image(systemName: "checkmark.circle.fill").font(DS.font(.sm, weight: .bold)).foregroundStyle(DS.good)
+        } else {
+            Group {
+                if let start = state.estimateStart, let end = state.estimateEnd, end > start {
+                    ProgressView(timerInterval: start...end, countsDown: false) { EmptyView() } currentValueLabel: { EmptyView() }
+                } else {
+                    ProgressView(value: state.fraction)
+                }
+            }
+            .progressViewStyle(.circular)
+            .tint(DS.paper)
+            .frame(width: DS.Widget.compactRing, height: DS.Widget.compactRing)
         }
     }
 
@@ -92,13 +134,24 @@ struct ActivityPoster: View {
     let file: String?
     let width: CGFloat
 
+    @Environment(\.displayScale) private var scale
+
     var body: some View {
-        if let file, let url = WidgetStore.imageURL(file), let image = UIImage(contentsOfFile: url.path) {
+        // Reducida al tamaño exacto de donde va: una imagen más grande que su lugar (la de 240 px en la isla compacta, de
+        // 20 pt) hace que iOS no dibuje la actividad y enseñe solo bloques grises.
+        if let file, let url = WidgetStore.imageURL(file), let image = Self.thumbnail(url, maxPixel: width / DS.Poster.aspect * scale) {
             Image(uiImage: image).resizable().scaledToFill()
                 .frame(width: width, height: width / DS.Poster.aspect)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Widget.posterRadius, style: .continuous))
         } else {
             Image(systemName: "arrow.down.circle.fill").font(DS.font(.lg)).foregroundStyle(DS.paper).frame(width: width)
         }
+    }
+
+    static func thumbnail(_ url: URL, maxPixel: CGFloat) -> UIImage? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
+                                        kCGImageSourceThumbnailMaxPixelSize: max(1, Int(maxPixel.rounded(.up)))]
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary).map { UIImage(cgImage: $0) }
     }
 }

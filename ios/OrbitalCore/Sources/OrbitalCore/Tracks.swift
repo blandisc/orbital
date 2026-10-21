@@ -73,7 +73,9 @@ public enum TrackChooser {
             let inLanguage = subs.filter { matches($0, lang) }
             // Completos antes que forzados: los forzados solo traen los carteles.
             if let full = inLanguage.first(where: { !$0.isForced }) ?? inLanguage.first { return full }
-            return subs.first(where: \.isDefault) ?? subs.first(where: \.isForced)  // sin los tuyos: el por defecto o el forzado
+            // Sin los tuyos: solo los carteles (forzados) del idioma del audio. Antes caía en la pista «por defecto» de otro idioma
+            // (inglés con todo en español) y entonces ya no se buscaba tu idioma en internet.
+            return subs.first { $0.isForced && matches($0, audioLanguage) }
         }
     }
 
@@ -103,6 +105,13 @@ public enum TrackChooser {
                 .compactMap { $0?.lowercased() }
             if let title, !names.contains(title.lowercased()) { parts.append(title) }
         } else if let title { parts.append(title) }
+        else if track.kind == .audio {
+            // Sin idioma ni nombre: «Audio 2 (AAC)» (no «Pista 2 · AAC», que parece un dato técnico más).
+            let tech = Self.technical(track)
+            parts.append(technical && !tech.isEmpty ? "Audio \(track.id + 1) (\(tech))" : "Audio \(track.id + 1)")
+            if track.isForced { parts.append(english ? "forced" : "forzados") }
+            return parts.joined(separator: " · ")
+        }
         else { parts.append(english ? "Track \(track.id + 1)" : "Pista \(track.id + 1)") }
         let tech = Self.technical(track)
         if technical, !tech.isEmpty { parts.append(tech) }

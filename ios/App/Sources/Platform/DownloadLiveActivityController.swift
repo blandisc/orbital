@@ -17,6 +17,19 @@ final class DownloadLiveActivityController {
     private var seenState: ActivityState?
     /// Cuándo empezó la tanda de ahora (para decir «Descargado» solo de lo que terminó en ella).
     private var batchStarted: Double?
+    /// La velocidad (bytes/s, suavizada) y la última muestra, para estimar cuándo termina con la app en segundo plano.
+    private var rate: Double = 0
+    private var sample: (bytes: Int64, at: Date)?
+    private var backgrounded = false
+    private var latest: [DownloadItem] = []
+
+    /// La app se va a segundo plano (o vuelve): iOS no la deja mandar avances mientras tanto, así que la barra pasa a avanzar
+    /// sola hasta la hora estimada; al volver, los avances de verdad.
+    func setBackgrounded(_ value: Bool) async {
+        backgrounded = value
+        last = nil
+        await update(latest)
+    }
 
     func follow(_ downloads: Downloads) async {
         // Si iOS cerró la app con una actividad viva (las descargas siguen en segundo plano), se retoma esa en vez de
@@ -29,6 +42,7 @@ final class DownloadLiveActivityController {
     }
 
     func update(_ items: [DownloadItem]) async {
+        latest = items
         let pending = items.filter { $0.state == .downloading || $0.state == .queued || $0.state == .paused }
         guard !pending.isEmpty else { return await finish(items) }
         if batchStarted == nil { batchStarted = Date().timeIntervalSince1970 }
@@ -36,13 +50,26 @@ final class DownloadLiveActivityController {
         let current = pending.first { $0.state == .downloading } ?? pending[0]
         let written = pending.reduce(Int64(0)) { $0 + $1.writtenBytes }
         let expected = pending.reduce(Int64(0)) { $0 + max($1.expectedBytes ?? 0, $1.writtenBytes) }
-        let state = DownloadActivityAttributes.ContentState(
+        let now = Date()
+        if !backgrounded {
+            if let s = sample, now.timeIntervalSince(s.at) >= 2 {
+                let r = max(0, Double(written - s.bytes) / now.timeIntervalSince(s.at))
+                rate = rate == 0 ? r : rate * 0.6 + r * 0.4
+                sample = (written, now)
+            } else if sample == nil || written < sample!.bytes { sample = (written, now) }
+        }
+        var state = DownloadActivityAttributes.ContentState(
             title: current.title,
             fraction: expected > 0 ? min(1, Double(written) / Double(expected)) : 0,
             remaining: pending.count, waiting: !pending.contains { $0.state == .downloading && !$0.waitingForNetwork }, language: language(),
             detail: current.subtitle, poster: await posterFile(current))
+        if backgrounded, rate > 0, expected > written, pending.contains(where: { $0.state == .downloading }) {
+            state.estimateStart = now.addingTimeInterval(-Double(written) / rate)
+            state.estimateEnd = now.addingTimeInterval(Double(expected - written) / rate)
+        }
         if let last, last.title == state.title, last.detail == state.detail, last.poster == state.poster, last.remaining == state.remaining,
-           last.waiting == state.waiting, last.language == state.language, abs(last.fraction - state.fraction) < 0.01 { return }
+           last.waiting == state.waiting, last.language == state.language, abs(last.fraction - state.fraction) < 0.01,
+           (last.estimateEnd == nil) == (state.estimateEnd == nil) { return }
         last = state
         let content = ActivityContent(state: state, staleDate: nil)
         if let current = activity {

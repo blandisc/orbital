@@ -4,7 +4,7 @@ import OrbitalCore
 /// «Un Simpson al azar» como un cambio de canal en la tele de la sala de Los Simpson (≈1.2 s): la tele (morada, con su antena
 /// de conejo chueca, perillas, bocina y patitas) aparece con un rebote; estática y tres clics de canal con su número en
 /// verde; se queda en el elegido, la pantalla se ilumina, el nombre aparece y la imagen del episodio crece desde la pantalla
-/// hasta llenar el iPhone, donde empieza. Con «Reducir movimiento», directo al elegido.
+/// hasta el lugar del video en el reproductor vertical (a lo ancho), donde empieza. Con «Reducir movimiento», directo al elegido.
 struct SimpsonsRoulette: View {
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
@@ -16,18 +16,21 @@ struct SimpsonsRoulette: View {
     @State private var shown = false
     @State private var landed = false
     @State private var glow = false
-    /// La imagen del episodio sale de la pantalla de la tele y crece hasta llenar el iPhone.
+    /// La imagen del episodio sale de la pantalla de la tele y crece hasta el lugar del video en vertical.
     @State private var expanded = false
     /// Dónde está la pantalla de la tele (de ahí sale la imagen al crecer).
     @State private var screenRect: CGRect = .zero
     @State private var clicks = 0
     @State private var run: Task<Void, Never>?
+    /// Dónde va el video en el reproductor vertical: la imagen crece hasta ahí (no a toda la pantalla).
+    @AppStorage(PlayerScreen.portraitCenterKey) private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
 
     var body: some View {
         ZStack {
-                DS.backdropDeep.ignoresSafeArea()
+                // Al crecer, el fondo se vuelve el negro del reproductor (la imagen queda como el video, no flotando en la sala).
+                (expanded ? DS.video : DS.backdropDeep).ignoresSafeArea()
                 RadialGradient(colors: [DS.Simpsons.amarillo.opacity(DesignTokens.Opacity.faint), .clear], center: .center, startRadius: 0, endRadius: DS.Simpsons.glow)
-                    .ignoresSafeArea().opacity(landed ? 1 : DS.Simpsons.ghost)
+                    .ignoresSafeArea().opacity(expanded ? 0 : landed ? 1 : DS.Simpsons.ghost)
                 VStack(spacing: DS.Space.s6) {
                     Spacer(minLength: 0)
                     tv
@@ -36,11 +39,13 @@ struct SimpsonsRoulette: View {
                     Button("Cancelar") { run?.cancel(); dismiss() }.buttonStyle(.glass).opacity(expanded ? 0 : 1)
                 }
                 .padding(.vertical, DS.Space.s8)
-                // El episodio, justo encima de la pantalla de la tele; al crecer, de ese rectángulo a toda la pantalla.
+                // El episodio, justo encima de la pantalla de la tele; al crecer, de ese rectángulo al lugar del video en el
+                // reproductor vertical (a lo ancho, en su proporción): el episodio empieza justo donde quedó la imagen.
                 if landed, let still, screenRect != .zero {
                     GeometryReader { geo in
-                        let full = CGRect(origin: .zero, size: geo.size)
-                        let rect = expanded ? full : screenRect
+                        let inset = PlayerScreen.windowSafeArea
+                        let safe = CGSize(width: geo.size.width, height: max(0, geo.size.height - inset.top - inset.bottom))
+                        let rect = expanded ? PlayerScreen.portraitVideoRect(in: safe, center: portraitCenter).offsetBy(dx: 0, dy: inset.top) : screenRect
                         PosterView(url: still, title: "", aspect: nil, bleed: true)
                             .frame(width: rect.width, height: rect.height)
                             .clipShape(RoundedRectangle(cornerRadius: expanded ? 0 : DS.Simpsons.screenRadius, style: .continuous))
@@ -173,9 +178,15 @@ struct SimpsonsRoulette: View {
             withAnimation(.easeOut(duration: DS.Simpsons.settle).delay(DS.Simpsons.flashOff)) { glow = false }
             await wait(DS.Simpsons.hold)
             guard !Task.isCancelled else { return }
-            // La imagen crece desde la pantalla hasta llenar el iPhone.
-            withAnimation(.timingCurve(0.65, 0, 0.35, 1, duration: DS.Simpsons.zoom)) { expanded = true }
-            await wait(DS.Simpsons.zoom)
+            #if DEBUG
+            if Demo.isOn, Demo.open == "simpsons" { return }   // `-demo-open simpsons`: la ruleta se queda en el canal elegido (capturas)
+            #endif
+            // La imagen crece desde la pantalla hasta donde va el video en vertical.
+            withAnimation(DS.Simpsons.zoomCurve) { expanded = true }
+            await wait(DS.Simpsons.zoom + DS.Simpsons.zoomRest)
+            #if DEBUG
+            if Demo.isOn, Demo.open == "simpsons-zoom" { return }   // `-demo-open simpsons-zoom`: se queda ya crecida (capturas)
+            #endif
             if !Task.isCancelled { start() }
         }
     }

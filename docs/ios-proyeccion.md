@@ -87,6 +87,14 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `Glyphs/donut` (catálogo de imágenes) | La dona de Los Simpson, con el trazo de los íconos propios (solo iPhone; los de `Icons/` vienen de la TV) | Inicio › un Simpson al azar (el dado es «¿Qué vemos?») |
 | `DSKindFilter` | El filtro de tipo de toda la app: Todo · Películas · Series (o Películas · Series). Segmentado a lo ancho; `compact`, el switch chico junto al título (dos opciones, Top 10); `menu`, la lista que se despliega en cápsula (tres opciones junto al título: En tendencia, Destacado) | Inicio (destacado y Top 10), Para ti › Listas, plataforma, colección por año, Buscar (con cuántas), «¿Qué vemos?» |
 | `DSCapsuleLabel` / `SeeAllLabel` | La cápsula tenue a la derecha del título de una sección, a la altura del título: «Ver todo ›», «📅 Octubre», «Todo ⌄» | Todo encabezado con «Ver todo», Sale hoy (calendario), los filtros desplegables |
+| `DownloadVersionSheet` | «Ya la tienes»: la versión que tienes y la que elegiste lado a lado (mismo alto) y tres salidas del mismo tamaño: bajar también esta, cambiarla o dejarla | Descargar una fuente de algo que ya tienes (ficha) |
+| `PlayerFailureView` | Cuando el reproductor no puede: ícono, qué pasó desde tu lado y solo las salidas que sirven (sin fuentes: Cerrar; ninguna sirvió o se cortó: Intentar de nuevo, Infuse, Cerrar; sin red: Intentar de nuevo). Reemplaza los controles | Reproductor |
+| `SubtitleButton` | El botón de subtítulos del reproductor: con subtítulos, el idioma en corto («ES») en una placa sólida dentro del círculo (como el «CC»); apagados, la burbuja vacía; un toque abre los subtítulos rápidos (`SubtitleDock`), mantener presionado los apaga o prende | Barra del reproductor |
+| `SubtitleDock` | Subtítulos rápidos: un panel chico sobre el video (abajo en vertical, arriba en horizontal para que se vean los subtítulos) con idioma (Apagados · Español · Inglés · Otro…), versión con ‹ ›, su etiqueta honesta («Hecho para tu copia» por el nombre de la copia, «Misma fuente», «Del video», descargas) y «N de M»; al cambiar de versión, «¿Va a tiempo? Sí, va bien / Probar otra» con las probadas tachadas; Tiempo «− Antes · A tiempo · Después +», «Sincronizar con una línea», Tamaño y Listo. Tocar la versión abre la media hoja con todas | Reproductor |
+| `SubtitleSyncView` | «Sincronizar con una línea»: tres frases que vienen; tocas la que oyes y el tiempo se ajusta solo (se recuerda por versión); «¿Ya van bien? Sí / Otra vez» | Reproductor (dentro del panel de subtítulos) |
+| `DownloadSpeedTestView` | «Probar la velocidad»: tu internet, Real-Debrid con 1 y con 8 conexiones, y como baja la app en segundo plano; qué quiere decir y «Copiar resultados» | Ajustes › Descargas |
+| `SubtitlePreview` | Una escena de muestra con «— Así se van a ver.» dibujada con tu estilo (fondo, tamaño, posición, estilo del iPhone) | Ajustes › Idioma y subtítulos |
+| `subtitleLook(_:size:)` | El estilo de una línea de subtítulo: contorno oscuro o caja (oscura, translúcida o la del iPhone); lo comparten el reproductor y la muestra de Ajustes | `AetherSubtitleOverlay`, `SubtitlePreview` |
 | `CalendarDayCell` | Un día del calendario de estrenos, pintado con el color del arte de lo que sale; dos el mismo día, la casilla partida; más, «+N» | Sale hoy › el mes |
 | `DSEmptyState` | Un área entera vacía: el vacío nativo con ícono, qué pasa y qué hacer. Regla: área vacía → esto; renglón vacío → texto chico; error → `DSNotice` | Descargas, Buscar, listas con filtros, Próximos estrenos, Inicio, «¿Qué vemos?», Tu año, Para ti |
 | `DSMoreMenu` | «Más»: el mismo menú en toda la app, círculo con «…» (vidrio, sólido donde no se lleva) | Destacado de Para ti, «¿Qué vemos?», pie del mosaico, «Viendo en la TV» |
@@ -115,7 +123,8 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `StorageBar` | El espacio del iPhone: series, películas, otras apps y libre (ámbar con poco espacio) | Descargas |
 | `SettingsRow`, `ProfileCard` | Renglón de Ajustes con su ícono de color y su valor actual; tu perfil arriba (el avatar con lápiz) | Ajustes |
 | `StyleOption`, `DeckStylePreview`, `TimeStylePreview` | Elegir un estilo viéndolo: el carrusel que se mueve solo y cuánto falta sobre una tarjeta | Ajustes › Inicio |
-| `PlayerLabelButton` | Botón del reproductor con su nombre («En la TV», «Ventana», «Audio y subtítulos»); si no cabe, solo el ícono | Reproductor |
+| `PlayerCircleButton`, `PlayerMenuRow` | «Barra limpia», la misma en vertical y en horizontal: arriba ✕, el nombre, subtítulos, AirPlay y «⋯»; el «⋯» abre un globo con un renglón por acción (Audio y subtítulos, Zoom con el puesto a la derecha, Ventana, Ver en la TV, Descargar y, aparte, Bloquear pantalla) | Reproductor |
+| `PlayerScrubBar`, `PlayPauseButton`, `SkipButton` | La barra de avance fina con las horas a los lados (lo visto en el color de Orbital, intro/resumen/créditos marcados, perilla que crece al arrastrar); el botón grande de vidrio (el único con círculo) y ±10 como flecha en círculo sin fondo; «Saltar intro», cápsula sólida | Reproductor |
 | `PlatformPill` | Una plataforma en cápsula (logo chico y nombre); la elegida con su color tenue y su borde | Inicio › Top 10 (elegir de qué servicio) |
 | `PanelRow`, `PanelIcon`, `PanelChip`, `PanelGroupTitle`, `FlowChips`, `SpeedStepper` | El panel «Ajustes del video»: renglones con su valor (ícono del sistema solo en su color, como Ajustes), opciones en cápsula (con glifo opcional) y la velocidad − 1× + | Reproductor, «Decide por mí» (a la derecha en horizontal, hoja ajustada en vertical) |
 | `Toast` | El único aviso pasajero: arriba, en vidrio, glifo de color, texto y su acción («Pasó a tu Orbital · Deshacer», «Descargando… · Ver»); las notas fijas de una pantalla siguen siendo `DSNotice` | Toda la app |
@@ -123,7 +132,8 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `ListCard`, `SourceBadge` | Una lista tuya (pila de pósters, nombre, sello y cuántos) y el sello de origen (Trakt, Stremio, Orbital) junto a un título | Para ti › Listas |
 | `BecauseCard` | «Porque viste X»: el póster de lo que viste y lo relacionado al lado | Para ti › Listas |
 | `YearCard` | Un año con cuatro de sus películas y el número grande | Para ti › Por año |
-| `SortableGrid` | Una lista abierta con ordenar y filtrar (series o películas, género, ocultar lo visto) arriba a la derecha | Listas, premios, años |
+| `SortableGrid` | Una lista abierta con ordenar y filtrar (series o películas, género, calificación, década, ocultar lo visto) arriba a la derecha; con su vacío, su carga al centro y, si la pantalla ya trae `DSKindFilter`, sin repetirlo (`showsKindFilter`) | Listas, premios, años, géneros, «Ver todo» |
+| `DSPosterGrid` | La cuadrícula de pósters de toda la app: columnas fijas que llenan el ancho (`DS.Poster.gridColumns` 3; 4 en pantallas anchas; 2 con letra de accesibilidad), separación `DS.Space.s3`, bordes en el margen; cada celda recibe el ancho de su columna | `SortableGrid`, Buscar (resultados), Persona (filmografía), Top 10 abierto |
 | `StudioEmblem` | El logo del estudio en blanco (como la TV); sin logo, su nombre en cápsula | Para ti › Estudios |
 | `GameNowCard`, `CompanionPanel`, `ConsoleStatePanel`, `GuidePanel`, `NotesPanel`, `TimerPanel`, `ControlsPanel` | Modo acompañante: el juego en la consola (volver, inicio, cerrar) y su carrusel (la consola, guía, notas, temporizador, controles de emulador) | Inicio, mientras juegas |
 | `AppMark` | El logotipo como en la TV y la computadora (`OrbitalWordmark`: planeta, «orbital» y su luna) en lugar del saludo | Inicio |
@@ -135,12 +145,11 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `PersonPhoto`, `PersonFace` | La cara de alguien (o sus iniciales), con nombre y personaje | Ficha › Reparto y equipo, Persona |
 | `VideoClipCard` | Tráiler o extra de YouTube con ▶ | Ficha |
 | `BrandLogos`, `TmdbPoster` | Dónde verlo; un título de TMDB (saga, «Más como esto», filmografía) que abre su ficha | Ficha, Persona |
-| `SourcesGlossary`, `SourceRowView` | Qué significa cada etiqueta de las fuentes (Al instante, DV, REMUX…); un renglón de fuente que se toca y cuyas etiquetas se deslizan | Fuentes |
+| `SourcesGlossary`, `SourceRowView` | Qué significa cada etiqueta de las fuentes (Al instante, DV, REMUX…); un renglón de fuente: tocarlo la pone, ▶ y ↓ a la derecha (la recomendada: «Ver» y «Descargar» del mismo tamaño abajo), «Ligera para guardar» en la que más conviene bajar, etiquetas que se deslizan | Fuentes (una sola lista, sin pestañas) |
 | `WatchlistCard` | Un pendiente de tu watchlist: póster chico, año y género, nombre y sinopsis (dos renglones que se deslizan juntos) | Inicio › Tu watchlist |
 | `posterReflection(_:title:width:)` | El reflejo de solo el póster (no de la tarjeta con su texto ni su zoom) | Inicio y Para ti › renglones |
 | `ScareTimeline`, `ScareMarks`, `ScarePanel`, `ScareWatcher`, `scareWarning(…)` | El mapa de sustos (Where's The Jump): la línea con cada susto (rojo los fuertes), el siguiente con su cuenta, «Avisarme» y la vibración unos segundos antes | Control (corto y estirado), reproductor |
 | `VolumeControl`, `RemoteKey`, `TouchPad`, `VoiceCommandBar` | El control de la TV: todas sus piezas con el mismo relleno, esquinas y alto | Control |
-| `GameSessionSummary` | Al cerrar un juego: cuánto jugaste esta vez y en total, capturas y si se cerró solo | Hoja al terminar |
 | `ActivityPoster` | El póster en la actividad en vivo de las descargas (del App Group) | Pantalla bloqueada, Dynamic Island |
 | `DownloadedFile` | Un archivo descargado para compartir (AirDrop, Archivos) con su nombre legible | Descargas › mantener |
 

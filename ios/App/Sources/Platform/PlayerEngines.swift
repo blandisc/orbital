@@ -1,4 +1,5 @@
 import AVFoundation
+import MediaAccessibility
 import SwiftUI
 import OrbitalCore
 import OrbitalModels
@@ -10,14 +11,102 @@ protocol VideoPlayerEngine: PlayerEngine {
     var name: String { get }
     /// Lo que se puede llevar a una ventana de PiP ahora (cambia con cada fuente; nil antes de cargar).
     @MainActor var pictureInPicture: PictureInPictureContent? { get }
-    /// Pellizcar: el video llena la pantalla (recorta los bordes) o se ve completo con franjas.
-    @MainActor func setFillsScreen(_ fill: Bool)
+    /// El zoom del video (botón y pellizco, como Infuse). «Ajustar al área segura» es ajustar: el recuadro más chico lo pone `PlayerScreen`.
+    @MainActor func setZoom(_ zoom: VideoZoom)
     /// La ventana de PiP se abrió o se cerró (el motor sigue decodificando video en segundo plano mientras tanto).
     @MainActor func setPictureInPictureActive(_ active: Bool)
     /// Los subtítulos encima del video, si el motor no los pinta solo (AVPlayer sí; AetherEngine no).
-    @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView
-    /// Si los subtítulos los dibuja la app (y por eso se pueden adelantar o atrasar).
+    @MainActor func subtitleOverlay(lifted: Bool, look: SubtitleLook, delay: Double) -> AnyView
+    /// Si los subtítulos los dibuja la app (y por eso se pueden adelantar o atrasar, y cambiar de estilo).
     var drawsSubtitles: Bool { get }
+    /// «Sincronizar con una línea»: las frases de texto del subtítulo puesto desde ese segundo del archivo (vacío si no hay
+    /// texto, p. ej. un PGS de imagen) y el segundo del cuadro que se ve ahora.
+    @MainActor func subtitleLines(from seconds: Double, count: Int) -> [SubtitleLine]
+    @MainActor var shownTime: Double { get }
+}
+
+/// Una frase del subtítulo puesto, con el segundo en que el archivo la pone.
+struct SubtitleLine: Identifiable, Equatable {
+    let start: Double
+    let text: String
+    var id: Double { start }
+}
+
+extension View {
+    /// Una línea de subtítulo con su estilo: contorno oscuro (cuatro copias desplazadas, sin desenfoque, más una sombra
+    /// suave: se lee sobre nieve y sobre negro) o, con «Caja oscura» / «Translúcido» / el estilo del iPhone, una caja detrás.
+    @ViewBuilder func subtitleLook(_ look: SubtitleLook, size: CGFloat) -> some View {
+        if let box = look.box {
+            padding(.horizontal, size * DS.Subtitle.boxPaddingH).padding(.vertical, size * DS.Subtitle.boxPaddingV)
+                .background(box, in: RoundedRectangle(cornerRadius: size * DS.Subtitle.boxRadius, style: .continuous))
+        } else {
+            let outline = size * DS.Subtitle.outlineWidth
+            shadow(color: DS.subtitleShadow, radius: 0, x: -outline, y: 0)
+                .shadow(color: DS.subtitleShadow, radius: 0, x: outline, y: 0)
+                .shadow(color: DS.subtitleShadow, radius: 0, x: 0, y: -outline)
+                .shadow(color: DS.subtitleShadow, radius: 0, x: 0, y: outline)
+                .shadow(color: DS.subtitleShadow, radius: size * DS.Subtitle.shadowRadius)
+        }
+    }
+}
+
+/// Cómo se ven los subtítulos que dibuja la app (Ajustes › Subtítulos): tamaño, fondo, posición y, si lo pides, el estilo
+/// de Accesibilidad del iPhone (su color de letra, de fondo y su tamaño).
+struct SubtitleLook: Equatable {
+    enum Background: String { case outline, box, translucent }
+    var heightFraction: Double
+    var background: Background = .outline
+    var raised = false
+    var text: Color = DS.subtitleText
+    /// El fondo del estilo del iPhone (reemplaza la caja oscura).
+    var systemBox: Color?
+
+    init(heightFraction: Double, background: Background = .outline, raised: Bool = false) {
+        self.heightFraction = heightFraction; self.background = background; self.raised = raised
+    }
+
+    init(settings: AppSettings) {
+        self.init(heightFraction: settings.subtitleHeightFraction, background: Background(rawValue: settings.subtitleBackground) ?? .outline,
+                  raised: settings.subtitlePosition == "raised")
+        guard settings.subtitleSystemStyle else { return }
+        text = Color(cgColor: MACaptionAppearanceCopyForegroundColor(.user, nil).takeRetainedValue())   // ds-exception: el color lo eliges en Accesibilidad
+        let opacity = MACaptionAppearanceGetBackgroundOpacity(.user, nil)
+        if opacity > 0 {
+            systemBox = Color(cgColor: MACaptionAppearanceCopyBackgroundColor(.user, nil).takeRetainedValue()).opacity(opacity)   // ds-exception: ídem
+            background = .box
+        } else { background = .outline }
+        heightFraction *= max(0.5, min(2, MACaptionAppearanceGetRelativeCharacterSize(.user, nil)))
+    }
+
+    /// El fondo detrás de cada línea (nil: contorno, sin caja).
+    var box: Color? {
+        switch background {
+        case .outline: nil
+        case .box: systemBox ?? DS.subtitleBox
+        case .translucent: DS.subtitleTranslucent
+        }
+    }
+}
+
+extension VideoZoom {
+    /// Cómo pinta la capa del video cada modo.
+    var gravity: AVLayerVideoGravity {
+        switch self {
+        case .fit, .fitSafeArea: .resizeAspect
+        case .fill: .resizeAspectFill
+        case .stretch: .resize
+        }
+    }
+
+    /// El ícono del botón de zoom (muestra el modo actual).
+    var symbol: String {
+        switch self {
+        case .fit: "arrow.left.and.right"
+        case .fitSafeArea: "rectangle.inset.filled"
+        case .fill: "arrow.up.left.and.arrow.down.right"
+        case .stretch: "arrow.left.and.right.square"
+        }
+    }
 }
 
 /// Reparte cada «foto» del motor a quien la pida (`snapshots` entrega un flujo nuevo en cada acceso).
@@ -73,10 +162,12 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
 
     @MainActor var surface: AnyView { AnyView(AVPlayerSurface(view: layerView).ignoresSafeArea()) }
     @MainActor var pictureInPicture: PictureInPictureContent? { player.currentItem == nil ? nil : .playerLayer(layerView.playerLayer) }
-    @MainActor func setFillsScreen(_ fill: Bool) { layerView.playerLayer.videoGravity = fill ? .resizeAspectFill : .resizeAspect }
+    @MainActor func setZoom(_ zoom: VideoZoom) { layerView.playerLayer.videoGravity = zoom.gravity }
     @MainActor func setPictureInPictureActive(_ active: Bool) {}
-    @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
+    @MainActor func subtitleOverlay(lifted: Bool, look: SubtitleLook, delay: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
     var drawsSubtitles: Bool { false }
+    @MainActor func subtitleLines(from seconds: Double, count: Int) -> [SubtitleLine] { [] }
+    @MainActor var shownTime: Double { player.currentTime().seconds }
 
     init() {
         player.automaticallyWaitsToMinimizeStalling = true
@@ -115,6 +206,14 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     }
 
     func play() async { await MainActor.run { player.play() } }
+    /// AVPlayer se rearma solo; lo que no recupera es un elemento que falló (la conexión se cortó estando suspendida).
+    func restoreAfterBackground(resume: Bool) async -> Bool {
+        await MainActor.run {
+            guard let item = player.currentItem, item.status != .failed, player.error == nil else { return false }
+            if resume { player.play() }
+            return true
+        }
+    }
     func setRate(_ rate: Float) async {
         await MainActor.run {
             player.defaultRate = rate                       // la que usa `play()` desde ahora

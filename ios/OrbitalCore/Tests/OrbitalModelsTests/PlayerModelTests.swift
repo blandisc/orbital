@@ -258,6 +258,22 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertNil(model.skipIntroTo)
     }
 
+    /// IntroDB que no responde a la primera: se reintenta, y el botón sale en cuanto llegan las marcas (sin otro aviso del motor).
+    func testCommunityMarksAreRetriedAndShowTheButtonAsSoonAsTheyArrive() async throws {
+        let rig = try twoSources()
+        final class Calls: @unchecked Sendable { var n = 0 }
+        let calls = Calls()
+        let model = PlayerModel(engine: rig.engine, finder: rig.finder, watch: rig.watch, titlePrefs: rig.titlePrefs, settings: rig.settings, clock: { rig.clock.now },
+                                skipSegments: { _ in calls.n += 1; return calls.n == 1 ? nil : SkipSegments(intro: 0...31) })
+        model.segmentRetryDelays = [0.01]
+        await model.begin(rig.request())
+        await model.handle(rig.playing(5))
+        XCTAssertNil(model.skipIntroTo)
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(calls.n, 2, "la primera falla y se pide otra vez")
+        XCTAssertEqual(model.skipIntroTo, 31, "sin esperar el siguiente aviso del motor")
+    }
+
     func testAsksYourAddonsForSubtitlesWhenTheVideoHasNone() async throws {
         let rig = try twoSources()
         rig.settings.update { $0.audio = "en"; $0.subtitles = "es" }
@@ -267,6 +283,79 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.subs.map(\.absoluteString), ["https://s.example/es.srt"])
         await rig.model.handle(rig.playing(1, audio: [eng], subs: [subEn, MediaTrack(id: 12, kind: .subtitle, language: "spa")], selectedAudio: 1))
         XCTAssertTrue(rig.engine.calls.contains("sub 12"), "el subtítulo nuevo se activa")
+    }
+
+    /// «Este va bien» en una serie: en el siguiente episodio se pone el de la misma copia (grupo), aunque el video traiga uno.
+    func testThisOneWorksPicksTheSameReleaseNextEpisode() async throws {
+        let rig = try twoSources()
+        rig.model.subtitlePicks = SubtitlePicks(rig.kv)
+        rig.settings.update { $0.audio = "en"; $0.subtitles = "es" }
+        let subs: JSON = ["subtitles": [["url": "https://s.example/a.srt", "lang": "spa", "release": "Show.HDTV-LOL", "downloads": 900],
+                                        ["url": "https://s.example/b.srt", "lang": "spa", "release": "Show.WEB-DL-NTb", "downloads": 5],
+                                        ["url": "https://s.example/sdh.srt", "lang": "spa", "release": "Show.WEB-DL-NTb", "hearing_impaired": true]]]
+        rig.http.json["https://a.example/subtitles/series/tt0386676%3A1%3A1.json"] = subs
+        rig.http.json["https://a.example/subtitles/series/tt0386676%3A1%3A2.json"] = subs
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs], selectedAudio: 1))
+        await rig.model.ensureSubtitleSearch()
+        let versions = rig.model.subtitleVersions(language: "es")
+        XCTAssertEqual(versions.count, 3, "la del video y dos de internet (sin la de sordos)")
+        await rig.model.selectVersion(versions[2], trying: true)   // Show.WEB-DL-NTb
+        XCTAssertEqual(rig.model.tryingSubtitles, "es")
+        await rig.model.handle(rig.playing(1, audio: [eng], subs: [subEn, subEs, MediaTrack(id: 20, kind: .subtitle, language: "spa")], selectedAudio: 1, selectedSubtitle: 20))
+        XCTAssertEqual(rig.model.selectedVersionID, "https://s.example/b.srt")
+        rig.model.confirmSubtitle()
+        XCTAssertNil(rig.model.tryingSubtitles)
+        XCTAssertEqual(SubtitlePicks(rig.kv).pick(metaID: "tt0386676")?.group, "ntb")
+        await rig.model.begin(rig.request(video: "tt0386676:1:2"))
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs], selectedAudio: 1))
+        XCTAssertEqual(rig.engine.subs.last?.absoluteString, "https://s.example/b.srt", "la misma copia, no la del video")
+    }
+
+    /// El ajuste de tiempo se recuerda por versión: cambias a otra (se pregunta «¿Va a tiempo?») y al volver se pone solo.
+    func testSubtitleOffsetIsRememberedPerVersionAndTriedOnesAreMarked() async throws {
+        let rig = try twoSources()
+        rig.model.subtitleOffsets = SubtitleOffsets(rig.kv)
+        rig.settings.update { $0.audio = "en"; $0.subtitles = "es" }
+        let subEs2 = MediaTrack(id: 12, kind: .subtitle, language: "spa", title: "Castellano")
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs, subEs2], selectedAudio: 1, selectedSubtitle: 11))
+        rig.model.nudgeSubtitles(by: 1.5)
+        XCTAssertEqual(SubtitleOffsets(rig.kv).offset(metaID: "tt0386676", versionID: "track-11"), 1.5)
+        let other = try XCTUnwrap(rig.model.subtitleVersions(language: "es").first { $0.id == "track-12" })
+        await rig.model.selectVersion(other)
+        XCTAssertEqual(rig.model.subtitleDelay, 0, "otra versión, sin ajuste")
+        XCTAssertTrue(rig.model.askInSync)
+        XCTAssertEqual(rig.model.triedVersionIDs, ["track-11"])
+        await rig.model.handle(rig.playing(1, audio: [eng], subs: [subEn, subEs, subEs2], selectedAudio: 1, selectedSubtitle: 12))
+        await rig.model.tryAnotherVersion()   // la única sin probar ya es la 11: vuelve, con su ajuste
+        XCTAssertTrue(rig.engine.calls.contains("sub 11"))
+        XCTAssertEqual(rig.model.subtitleDelay, 1.5)
+        XCTAssertEqual(rig.model.restoredDelay, 1.5)
+        rig.model.confirmInSync()
+        XCTAssertFalse(rig.model.askInSync)
+        // Otro día: arranca con esa versión y el ajuste se pone solo.
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.model.subtitleDelay, 0)
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs, subEs2], selectedAudio: 1, selectedSubtitle: 11))
+        XCTAssertEqual(rig.model.subtitleDelay, 1.5)
+    }
+
+    /// Regresar 10 s con los subtítulos apagados los enseña un momento (sin recordarlos como elegidos).
+    func testSkipBackShowsSubtitlesBriefly() async throws {
+        let rig = try twoSources()
+        rig.settings.update { $0.audio = "en"; $0.subtitles = "" ; $0.uiLanguage = "es" }
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(100, audio: [eng], subs: [subEn, subEs], selectedAudio: 1))
+        XCTAssertFalse(rig.engine.calls.contains("sub 11"))
+        await rig.model.skip(-10)
+        XCTAssertTrue(rig.engine.calls.contains("sub 11"), "se ven al regresar")
+        rig.settings.update { $0.subtitlesOnSkipBack = false }
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(100, audio: [eng], subs: [subEn, subEs], selectedAudio: 1))
+        let before = rig.engine.calls.filter { $0 == "sub 11" }.count
+        await rig.model.skip(-10)
+        XCTAssertEqual(rig.engine.calls.filter { $0 == "sub 11" }.count, before, "apagado en Ajustes")
     }
 
     func testDoesNotFetchSubtitlesWhenAudioAlreadyInYourLanguage() async throws {
@@ -440,6 +529,27 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(request)
         XCTAssertEqual(rig.engine.loads.map(\.url.path), ["/tmp/video.mkv"])
         XCTAssertFalse(rig.http.calls.contains { $0.contains("/stream/") })
+    }
+
+    func testScrubThenReleaseSeeksOnceToTheLastPointInOrder() async throws {
+        let rig = try Rig()
+        await rig.model.begin(rig.request())
+        let before = rig.engine.calls.count
+        rig.model.scrub(to: 100); rig.model.scrub(to: 200); rig.model.scrub(to: 300)
+        await rig.model.seek(to: 320)
+        try await Task.sleep(nanoseconds: 2 * PlaybackRules.streamScrubInterval)
+        XCTAssertEqual(Array(rig.engine.calls.dropFirst(before)), ["seek 320"], "solo el último punto, una vez, y nada viejo después")
+    }
+
+    func testScrubKeepsTheLatestPointWhileASeekIsInFlight() async throws {
+        let rig = try Rig()
+        await rig.model.begin(rig.request())
+        let before = rig.engine.calls.count
+        rig.model.scrub(to: 100)
+        await Task.yield(); await Task.yield()
+        rig.model.scrub(to: 150); rig.model.scrub(to: 180)
+        try await Task.sleep(nanoseconds: 3 * PlaybackRules.streamScrubInterval)
+        XCTAssertEqual(rig.engine.calls.dropFirst(before).last, "seek 180", "el punto final del arrastre no se pierde")
     }
 }
 

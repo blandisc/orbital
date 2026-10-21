@@ -43,15 +43,23 @@ struct RootView: View {
             Button("No", role: .cancel) { env.askFinished = nil }
         } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }
         // Los avisos, siempre arriba y del mismo tipo (`Toast`): «Pasó a tu Orbital · Deshacer» gana sobre los demás.
+        // Debajo del renglón de botones de arriba (atrás, TV, compartir, perfil): en esa franja se les encimaba.
         .overlay(alignment: .top) {
-            if let h = ui.handoff {
-                Toast(symbol: "tv", color: DS.accent, title: Text("Pasó a tu Orbital"),
-                      detail: Text("\(h.request.displayTitle) · sigue en \(Duration.seconds(h.position).formatted(.time(pattern: h.position >= 3600 ? .hourMinuteSecond : .minuteSecond)))"),
-                      actionTitle: "Deshacer", action: { Task { await env.undoHandoff() } }, seconds: DS.Timing.handoff, dismiss: { env.handoff = nil })
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            } else {
-                BannerView()
+            Group {
+                if let h = ui.handoff {
+                    Toast(symbol: "tv", color: DS.accent, title: Text("Pasó a tu Orbital"),
+                          detail: Text("\(h.request.displayTitle) · sigue en \(Duration.seconds(h.position).formatted(.time(pattern: h.position >= 3600 ? .hourMinuteSecond : .minuteSecond)))"),
+                          actionTitle: "Deshacer", action: { Task { await env.undoHandoff() } }, seconds: DS.Timing.handoff, dismiss: { env.handoff = nil })
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                } else {
+                    BannerView()
+                }
             }
+            .padding(.top, DS.Size.touchTarget + DS.Space.s2)
+        }
+        // Los que traen botón, abajo, sobre la barra de pestañas: cambiar o deshacer sin estirar el dedo hasta arriba.
+        .overlay(alignment: .bottom) {
+            BannerView(withAction: true).padding(.bottom, DS.Size.tabBarClearance)
         }
         .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
         .animation(DS.Motion.base(reduceMotion), value: ui.banner)
@@ -89,6 +97,16 @@ struct RootView: View {
             if phase == .active { DemoHTTPClient.postReleaseAlert(language: env.services.appSettings.uiLanguage) }
             #endif
             if phase == .background { InboxBackgroundTask.schedule(); ReleaseNotifier.schedule() }
+            // Las descargas en cola se crean antes de irse (en segundo plano iOS las posterga): ver `Downloads.setBackgrounded`.
+            if phase == .background || phase == .active {
+                let background = phase == .background
+                let id = background ? UIApplication.shared.beginBackgroundTask(withName: "orbital.downloads") : .invalid
+                Task {
+                    await env.services.downloads.setBackgrounded(background)
+                    await env.setDownloadsBackgrounded(background)
+                    if id != .invalid { UIApplication.shared.endBackgroundTask(id) }
+                }
+            }
         }
     }
 }
@@ -111,6 +129,8 @@ struct MainTabs: View {
     /// La hoja del control estirada (el control completo) o corta.
     @State private var remoteLarge = false
     @State private var tab: Int
+    /// Cuántas descargas siguen bajando o en pausa: el globito de la pestaña Descargas.
+    @State private var pendingDownloads = 0
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
 
     init() {
@@ -124,15 +144,32 @@ struct MainTabs: View {
         _tab = State(initialValue: initial)
     }
 
+    /// Abrir el control (si hay TV configurada); aparte para que el compilador no se ahogue con el cuerpo.
+    private var openRemoteAction: (() -> Void)? {
+        guard tvNow.model.isConfigured else { return nil }
+        return { remoteLarge = tvNow.model.now == nil; showRemote = true }
+    }
+
     var body: some View {
         TabView(selection: $tab) {
             Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
             Tab("Para ti", image: OrbitalIcon.spark.asset, value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() }.tint(DS.primary) }
-            Tab("Descargas", systemImage: "arrow.down.circle", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
+            // «arrow.down.to.line» no tiene versión rellena: queda de contorno como las demás (el círculo salía siempre relleno).
+            Tab("Descargas", systemImage: "arrow.down.to.line", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
+                .badge(pendingDownloads)
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
-        .tabBarMinimizeBehavior(.onScrollDown)
+        // En Buscar la barra no se encoge al bajar: con ella se escondía el campo de búsqueda.
+        .tabBarMinimizeBehavior(tab == 2 ? .never : .onScrollDown)
+        .task {
+            let downloads = env.services.downloads
+            pendingDownloads = await downloads.all.filter { $0.state != .done }.count
+            for await items in downloads.makeUpdates() {
+                let count = items.filter { $0.state != .done }.count
+                if count != pendingDownloads { pendingDownloads = count }
+            }
+        }
         // El accesorio mientras la TV reproduce algo o corre un juego, en cualquier pantalla (antes se iba al entrar a una
         // ficha y parecía que a veces no salía). Sin nada en la TV, el control se abre con el botón junto al avatar.
         .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.game != nil) {
@@ -143,13 +180,13 @@ struct MainTabs: View {
                 TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = false; showRemote = true })
             }
         }
-        .environment(\.openRemote, tvNow.model.isConfigured ? { remoteLarge = tvNow.model.now == nil; showRemote = true } : nil)
+        .environment(\.openRemote, openRemoteAction)
         // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).
         // (Estirado, el control completo sirve aunque no haya video: se queda.)
         .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped, !remoteLarge { showRemote = false } }
         #if DEBUG
         .onChange(of: tvNow.model.now == nil) { _, stopped in   // `-demo-open remote` (corta) o `remote-full` (estirada)
-            if !stopped, Demo.isOn, ["remote", "remote-full", "voice-guide"].contains(Demo.open) { remoteLarge = Demo.open != "remote"; showRemote = true }
+            if !stopped, Demo.isOn, ["remote", "remote-full", "remote-pad", "voice-guide"].contains(Demo.open) { remoteLarge = Demo.open != "remote"; showRemote = true }
         }
         .task { if Demo.isOn, Demo.open == "remote-idle" { remoteLarge = true; showRemote = true } }   // el control sin nada en la TV
         #endif
@@ -170,9 +207,6 @@ struct MainTabs: View {
         .onChange(of: tvNow.model.game?.id) { _, id in if id != nil, Demo.isOn, Demo.open == "game" { showGame = true } }   // `-demo-open game`
         #endif
         // Se cerró un juego en la consola: su resumen.
-        .sheet(item: $ui.played) { item in
-            GameSessionSummary(item: item) { ui.played = nil }.fittedSheet().presentationDragIndicator(.visible)
-        }
         .sheet(isPresented: $showRemote) {
             RemoteSheet(tvNow: tvNow, large: $remoteLarge, onContinueHere: { now in showRemote = false; openNowPlaying(now) })
         }
@@ -181,6 +215,11 @@ struct MainTabs: View {
         .onAppear(perform: openPendingTitle)
         .onChange(of: ui.pendingTitle) { openPendingTitle() }
         .onChange(of: ui.openTab) { _, new in if let new { tab = new; env.openTab = nil } }
+        .onChange(of: ui.openSettings) { _, open in
+            guard open else { return }
+            ui.openSettings = false
+            paths[tab].append(SettingsRoute())
+        }
         .onChange(of: ui.openRemote, initial: true) { _, wants in
             guard wants else { return }
             ui.openRemote = false
@@ -231,9 +270,11 @@ struct MainTabs: View {
 struct BannerView: View {
     @EnvironmentObject private var env: AppEnvironment
     @ObservedObject private var ui = AppEnvironment.shared.ui
+    /// Arriba los avisos sin botón; abajo (al alcance del pulgar) los que traen uno («Guardada en Mi lista · Cambiar»).
+    var withAction = false
 
     var body: some View {
-        if let banner = ui.banner {
+        if let banner = ui.banner, (banner.action != nil) == withAction {
             Toast(symbol: symbol(banner.tone), color: color(banner.tone), title: Text(verbatim: banner.text), detail: banner.detail.map { Text(verbatim: $0) },
                   actionTitle: banner.action == nil ? nil : banner.actionTitle.map { LocalizedStringKey($0) } ?? "Ver", action: banner.action.map { a in { run(a) } },
                   dismiss: { env.banner = nil })

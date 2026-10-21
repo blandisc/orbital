@@ -221,9 +221,13 @@ struct PosterView: View {
     var bleed = false
     /// El lado más largo, en puntos, al que se reduce la imagen al bajarla (no se decodifica a tamaño completo).
     var maxPoints: CGFloat = DS.Image.card
+    /// La imagen completa, con su propia forma (sin recortar): el arte que manda la TV no siempre es un póster vertical.
+    /// `aspect` queda solo para el lugar que ocupa mientras carga.
+    var whole = false
 
     var body: some View {
-        if bleed { art.clipped().accessibilityLabel(Text(title)) }
+        if whole { wholeArt.accessibilityLabel(Text(title)) }
+        else if bleed { art.clipped().accessibilityLabel(Text(title)) }
         else {
             art
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -244,6 +248,17 @@ struct PosterView: View {
                     }
                 } else { placeholder }
             }
+    }
+
+    @ViewBuilder private var wholeArt: some View {
+        if let url, let u = URL(string: url) {
+            RemoteImage(url: u, maxPoints: maxPoints) { phase in
+                switch phase {
+                case .success(let image): image.resizable().scaledToFit()   // sin redondear: las esquinas del arte se ven completas
+                default: frame.clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                }
+            }
+        } else { frame.clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)) }
     }
 
     /// El fondo marca el tamaño: con proporción, la del póster; sin ella, todo lo que le den.
@@ -445,6 +460,13 @@ extension View {
     /// El botón principal de un título con arte (Ver, Continuar): toma el color claro del arte, con texto oscuro, como
     /// `--color-primary-art` en la TV. Sin colores, el neutro casi papel de la TV.
     func dsArtButton(_ colors: ArtColors?) -> some View { modifier(ArtButton(colors: colors)) }
+
+    /// El botón principal de la ficha: sólido, a todo lo ancho, negro en claro y blanco en oscuro (`DS.solidPrimary`), con
+    /// esquinas de tarjeta. El nativo `.borderedProminent` con otro tinte: sin estilo propio.
+    func dsSolidPrimaryButton() -> some View {
+        buttonStyle(.borderedProminent).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg))
+            .tint(DS.solidPrimary).foregroundStyle(DS.onSolidPrimary)
+    }
 }
 
 /// Botones sólidos (sin vidrio) en lo que se gira en 3D: el carrusel de Inicio en coverflow deformaba el vidrio.
@@ -458,13 +480,10 @@ extension EnvironmentValues {
 
 private struct ArtButton: ViewModifier {
     let colors: ArtColors?
-    @Environment(\.solidButtons) private var solid
     func body(content: Content) -> some View {
-        if solid {
-            content.buttonStyle(.borderedProminent).buttonBorderShape(.capsule).tint((colors ?? .neutral).accent).foregroundStyle(DS.backdropDeep)
-        } else {
-            content.buttonStyle(.glassProminent).tint((colors ?? .neutral).accent).foregroundStyle(DS.backdropDeep)
-        }
+        // Sólido siempre: el vidrio dejaba pasar el arte y el botón se veía deslavado (texto oscuro sobre un tono pálido y
+        // translúcido). Lleno, el color del arte con el texto oscuro guarda el contraste mínimo.
+        content.buttonStyle(.borderedProminent).buttonBorderShape(.capsule).tint((colors ?? .neutral).accent).foregroundStyle(DS.backdropDeep)
     }
 }
 
@@ -743,6 +762,21 @@ struct DSSpeedPill: View {
     }
 }
 
+/// Un aviso breve en una cápsula de vidrio (p. ej. el modo de zoom del reproductor al cambiarlo).
+/// `detail`: un segundo renglón más tenue (p. ej. por qué está ahí esa versión de subtítulos).
+struct DSToastPill: View {
+    let text: LocalizedStringKey
+    var detail: Text? = nil
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(text).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).contentTransition(.numericText())
+            if let detail { detail.recipe(.caption).lineLimit(1) }
+        }
+            .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+            .glassEffect(.regular, in: Capsule())
+    }
+}
+
 /// Los dos colores de lo que está al frente (`ArtPalette`, la misma cuenta que la TV): el oscuro tiñe el fondo y el claro es el
 /// botón principal y los acentos (`--art-tint` / `--art-accent`).
 struct ArtColors: Equatable {
@@ -936,6 +970,18 @@ extension UIImage {
         var pixel = [UInt8](repeating: 0, count: 4)
         CIContext().render(output, toBitmap: &pixel, rowBytes: 4, bounds: CGRect(x: 0, y: 0, width: 1, height: 1), format: .RGBA8, colorSpace: nil)
         return UIColor(red: CGFloat(pixel[0]) / 255, green: CGFloat(pixel[1]) / 255, blue: CGFloat(pixel[2]) / 255, alpha: 1)  // ds-exception: el color sale de los píxeles del póster, no es un valor de diseño
+    }
+}
+
+/// Un tamaño de archivo con un solo formato en toda la app: GB y TB con un decimal, MB y KB sin decimales
+/// («2,4 GB», «350 MB»). Así la leyenda del espacio y las secciones de Descargas dicen lo mismo.
+enum ByteSize {
+    static func text(_ n: Int64, locale: Locale) -> String {
+        let units: [(Double, String)] = [(1e12, "TB"), (1e9, "GB"), (1e6, "MB"), (1e3, "KB")]
+        let value = Double(max(0, n))
+        guard let (size, unit) = units.first(where: { value >= $0.0 }) else { return "0 KB" }
+        let digits = size >= 1e9 ? 1 : 0
+        return "\((value / size).formatted(.number.precision(.fractionLength(digits)).locale(locale))) \(unit)"
     }
 }
 

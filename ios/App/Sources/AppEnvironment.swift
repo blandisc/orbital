@@ -22,6 +22,9 @@ final class AppEnvironment: ObservableObject {
     private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
     private let liveActivity = DownloadLiveActivityController()
+    private var traktObserver: NSObjectProtocol?
+    /// La actividad en vivo de las descargas: en segundo plano su barra avanza sola con lo estimado.
+    func setDownloadsBackgrounded(_ value: Bool) async { await liveActivity.setBackgrounded(value) }
 
     /// El estado que solo pinta la raíz (el reproductor, los avisos, la pestaña que se pide abrir) vive aparte, en `ui`:
     /// así un aviso o el reproductor que se abre no vuelven a pintar Inicio, Para ti y la ficha (que observan `env`).
@@ -132,7 +135,26 @@ final class AppEnvironment: ObservableObject {
         tvNow.inbox = inbox
         catalog = CatalogModel(services)
         inbox.onEvent = { [weak self] event in self?.announce(event) }
+        // Trakt cerró la sesión: se avisa una vez, con un botón a Ajustes (antes se desconectaba en silencio).
+        traktObserver = NotificationCenter.default.addObserver(forName: Trakt.sessionLost, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.notify("Tu sesión de Trakt se cerró", detail: "Conéctala otra vez para tus recomendaciones y lo que viste.", tone: .warn,
+                             actionTitle: "Conectar") { self?.ui.openSettings = true }
+            }
+        }
         Task { await services.downloads.start() }
+        #if DEBUG
+        // `-demo-real-download <url>`: una descarga de verdad (con el transporte real, por pedazos) para medir el motor.
+        if Demo.isOn, let raw = Demo.value(after: "-demo-real-download"), let url = URL(string: raw) {
+            Task {
+                let item = DownloadItem(id: "tt0000001|tt0000001", kind: "movie", metaID: "tt0000001", videoID: "tt0000001", title: "Prueba de velocidad",
+                                        originalTitle: "Prueba", subtitle: "", poster: nil, addon: "Demo", sourceIndex: 0, expectedBytes: nil,
+                                        relativePath: DownloadFiles.relativePath(metaID: "tt0000001", videoID: "tt0000001", ext: "bin"),
+                                        createdAt: Date().timeIntervalSince1970)
+                try? await services.downloads.enqueue(item, url: url)
+            }
+        }
+        #endif
         DownloadsModel.clearShared()   // los enlaces de «Compartir» de la vez pasada
         Task.detached(priority: .background) { AppEnvironment.pruneImported() }
         let settings = services.settings
@@ -180,13 +202,8 @@ final class AppEnvironment: ObservableObject {
             case .notEnoughSpace: notify(format: "No hay espacio para descargar %@ (desde la TV)", name)
             case .other: notify(format: "No pude descargar %@ (desde la TV)", name)
             }
-        case .played(let item):
-            // El resumen de la sesión, en su hoja; un momento después, por si la hoja del juego se está cerrando (dos hojas en
-            // el mismo cambio: la segunda no salía).
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: DS.Timing.sheetHandoff)
-                self.ui.played = item
-            }
+        case .played:
+            break   // Se cerró un juego en la consola: sin resumen ni aviso (se sentía como un regaño por el tiempo jugado).
         }
     }
 
@@ -228,9 +245,16 @@ final class AppEnvironment: ObservableObject {
         let position = request.fromStart ? 0 : await services.watch.resumePosition(metaID: request.metaID, videoID: request.videoID)
         let langs = services.titlePrefs.languages(for: request.metaID, settings: services.appSettings)
         var chosen = source
-        if chosen == nil { chosen = try? await services.finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs) }
-        guard let url = chosen?.playbackURL else { return notify("No hay fuentes de Real-Debrid para este título.") }
-        let subtitle = await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles.isEmpty ? services.appSettings.subtitles : langs.subtitles).first
+        var unreachable = false
+        if chosen == nil {
+            do { chosen = try await services.finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs) }
+            catch { unreachable = error is StreamFinderError }
+        }
+        guard let url = chosen?.playbackURL else {
+            return notify(unreachable ? "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet." : "Real-Debrid aún no tiene este título.")
+        }
+        // Apagados en este título (o en Ajustes): Infuse los recibe apagados (antes mandaba los de Ajustes de todos modos).
+        let subtitle = langs.subtitles.isEmpty ? nil : await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles).first
         var season: Int?, episode: Int?
         let parts = request.videoID.split(separator: ":")
         if request.kind == "series", parts.count >= 3 { season = Int(parts[parts.count - 2]); episode = Int(parts[parts.count - 1]) }
@@ -417,8 +441,10 @@ final class AppEnvironment: ObservableObject {
     func playSimpsons(_ draw: SimpsonsDraw) {
         let (season, episode) = draw.chosen
         let label = Strings.episode(season: season, episode: episode.episode, language: services.appSettings.uiLanguage) + (episode.hasTitle ? " · \(episode.title)" : "")
-        play(PlayRequest(kind: "series", metaID: Self.simpsons, videoID: episode.id, originalTitle: draw.name, displayTitle: draw.name, episodeLabel: label,
-                         poster: String(format: ForYou.metahubPoster, Self.simpsons), meta: draw.meta, fromStart: true))
+        var request = PlayRequest(kind: "series", metaID: Self.simpsons, videoID: episode.id, originalTitle: draw.name, displayTitle: draw.name, episodeLabel: label,
+                                  poster: String(format: ForYou.metahubPoster, Self.simpsons), meta: draw.meta, fromStart: true)
+        request.startPortrait = true   // sale de la tele de pie: el video entra en vertical, sin girar
+        play(request)
     }
 
     /// La imagen de un episodio (metahub).
@@ -550,6 +576,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
         // Puede llegar antes de que exista ninguna vista: se arma el entorno (que reconecta la sesión de descargas) y se guarda aquí.
+        // Solo la sesión de las descargas (la de «Probar la velocidad» se cancela al terminar: no hay nada que entregar).
+        guard identifier == BackgroundDownloadTransport.identifier else { return completionHandler() }
         AppEnvironment.shared.transport.backgroundCompletion = completionHandler
     }
 }
@@ -562,9 +590,9 @@ final class AppUI: ObservableObject {
     @Published var askFinished: PlayRequest?
     @Published var banner: AppEnvironment.Banner?
     @Published var handoff: AppEnvironment.TVHandoff?
-    /// Se cerró un juego en la consola: su resumen (una hoja).
-    @Published var played: OrbitalRemote.InboxItem?
     @Published var openTab: Int?
     /// El Centro de control pidió el control de tu Orbital.
     @Published var openRemote = false
+    /// Abrir Ajustes (desde un aviso, como «Tu sesión de Trakt se cerró · Conectar»).
+    @Published var openSettings = false
 }

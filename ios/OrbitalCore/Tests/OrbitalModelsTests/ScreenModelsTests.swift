@@ -109,6 +109,42 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(SearchModel(rig.services).recent, ["DUNE", "Severance"], "se guarda")
     }
 
+    func testSearchCountsAreTheRealOnesNotNineAndNine() async throws {
+        let rig = try ServicesRig()
+        func metas(_ prefix: String, _ n: Int) -> JSON {
+            .array((0..<n).map { .object(["id": .string("tt\(prefix)\($0)"), "name": .string("Star \($0)"), "poster": .string("https://images.metahub.space/poster/medium/tt\(prefix)\($0)/img")]) })
+        }
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top/search=star.json"] = ["metas": metas("1", 15)]
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/series/top/search=star.json"] = ["metas": metas("2", 12)]
+        let search = SearchModel(rig.services)
+        await search.search("star")
+        XCTAssertEqual(search.results.filter { $0.kind == "movie" }.count, 15, "antes salían 15 películas como 9 (18 en total, alternando)")
+        XCTAssertEqual(search.results.filter { $0.kind == "series" }.count, 12)
+    }
+
+    func testSearchShowsEachKindAsItArrivesAndKeepsOneWhenTheOtherFails() async throws {
+        let rig = try ServicesRig()
+        let movies = try Fixtures.json("cinemeta/search_movie_dune.json"), series = try Fixtures.json("cinemeta/search_series_dune.json")
+        let movieURL = "https://v3-cinemeta.strem.io/catalog/movie/top/search=dune.json", seriesURL = "https://v3-cinemeta.strem.io/catalog/series/top/search=dune.json"
+        rig.http.json[movieURL] = ["metas": movies]
+        rig.http.json[seriesURL] = ["metas": series]
+        rig.http.delays = [seriesURL: 400]
+        let search = SearchModel(rig.services)
+        let running = Task { await search.search("dune") }
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertTrue(!search.results.isEmpty && search.results.allSatisfy { $0.kind == "movie" }, "las películas no esperan a las series")
+        await running.value
+        XCTAssertTrue(search.results.contains { $0.kind == "series" }, "las series se suman al llegar")
+
+        // Series falla (las dos veces): las películas se quedan y no hay error.
+        rig.http.json[seriesURL.replacingOccurrences(of: "dune", with: "duna")] = nil
+        rig.http.json[movieURL.replacingOccurrences(of: "dune", with: "duna")] = ["metas": movies]
+        rig.http.delays = [:]
+        await search.search("duna")
+        XCTAssertNil(search.error)
+        XCTAssertTrue(!search.results.isEmpty && search.results.allSatisfy { $0.kind == "movie" })
+    }
+
     // MARK: ficha
     func titleRig() throws -> ServicesRig {
         let rig = try ServicesRig()
@@ -229,6 +265,26 @@ final class ScreenModelsTests: XCTestCase {
         let json = String(data: try JSONEncoder().encode(await rig.services.downloads.all), encoding: .utf8) ?? ""
         XCTAssertFalse(json.contains("SECRET"))
         XCTAssertEqual(title.rows.first { $0.id == "tt0386676:1:3" }?.download, .downloading)
+    }
+
+    /// «Bajar también esta»: dos versiones del mismo episodio. La ficha que las sigue no se cierra (antes armaba un
+    /// diccionario con claves únicas por video y la app tronaba).
+    func testTwoVersionsOfTheSameVideoDoNotCrashTheTitle() async throws {
+        let rig = try titleRig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A3.json"] = ["streams": [
+            ["name": "T\n1080p [RD+]", "title": "Show S01E03 1080p WEB-DL\n💾 0.5 GB", "url": "https://rd.example/one.mkv"]]]
+        let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await title.load()
+        let following = Task { await title.followDownloads() }
+        defer { following.cancel() }
+        let first = await title.download(["tt0386676:1:3"])
+        XCTAssertEqual(first, .queued(1))
+        let second = await title.download(["tt0386676:1:3"], keepBoth: true)
+        XCTAssertEqual(second, .queued(1))
+        try await Task.sleep(nanoseconds: 100_000_000)
+        let all = await rig.services.downloads.all
+        XCTAssertEqual(all.filter { $0.videoID == "tt0386676:1:3" }.count, 2)
+        XCTAssertNotNil(title.downloadState("tt0386676:1:3"))
     }
 
     func testDownloadWithoutSourcesOrWithoutSpace() async throws {
@@ -508,19 +564,22 @@ final class CatalogAndSourcesTests: XCTestCase {
         XCTAssertNotNil(none.error)
     }
 
-    func testSourcesAreOrderedDifferentlyForWatchingAndDownloading() async throws {
+    /// Una sola lista (ordenada para ver) y en ella se marca la que más conviene guardar.
+    func testOneSourceListMarksTheBestToSave() async throws {
         let rig = try ServicesRig()
         rig.http.json["https://a.example/stream/movie/tt1.json"] = ["streams": [
             ["name": "T\n2160p [RD+]", "title": "Peli 2160p REMUX HDR\n👤 200 💾 40 GB 🇬🇧", "url": "https://rd.example/big"],
-            ["name": "T\n1080p [RD+]", "title": "Peli 1080p WEB-DL x265\n👤 100 💾 2 GB 🇬🇧", "url": "https://rd.example/small"]]]
+            ["name": "T\n1080p [RD+]", "title": "Peli 1080p WEB-DL x265\n👤 100 💾 2 GB 🇬🇧", "url": "https://rd.example/small"],
+            ["name": "T\n1080p [RD+]", "title": "Peli 1080p HLS\n👤 100 💾 2 GB 🇬🇧", "url": "https://rd.example/list.m3u8"]]]
         rig.services.settings.update { $0.audio = "en"; $0.quality = "4K" }
         let model = SourcesModel(rig.services, kind: "movie", metaID: "tt1", videoID: "tt1")
-        await model.load(.watch)
+        await model.load()
         XCTAssertTrue(model.rows[0].recommended)
-        XCTAssertEqual(model.rows[0].sizeGB ?? 0, 40, accuracy: 0.01)
-        XCTAssertEqual(model.source(model.rows[0].id)?.playbackURL?.absoluteString, "https://rd.example/big")
-        await model.load(.download)
-        XCTAssertEqual(model.source(model.rows[0].id)?.playbackURL?.absoluteString, "https://rd.example/small", "para guardar: 1080p moderado primero")
+        XCTAssertEqual(model.source(model.rows[0].id)?.playbackURL?.absoluteString, "https://rd.example/big", "para ver: la recomendada")
+        let save = try XCTUnwrap(model.rows.first(where: \.bestToSave))
+        XCTAssertEqual(model.source(save.id)?.playbackURL?.absoluteString, "https://rd.example/small", "para guardar: 1080p moderado")
+        XCTAssertEqual(model.rows.filter(\.bestToSave).count, 1)
+        XCTAssertFalse(model.rows.first { model.source($0.id)?.playbackURL?.pathExtension == "m3u8" }?.downloadable ?? true, "una lista HLS no se baja")
         XCTAssertTrue(model.rows.first { $0.sizeGB == 40 }?.heavy == true, "más de 5 GB: aviso con datos móviles")
         XCTAssertFalse(model.rows.contains { $0.headline.isEmpty })
     }
@@ -536,6 +595,30 @@ final class CatalogAndSourcesTests: XCTestCase {
         var chosen = second.request(); chosen.sourceIndex = other.index
         await second.model.begin(chosen)
         XCTAssertEqual(second.engine.loads.first?.url.absoluteString, "https://rd.example/other.mkv")
+    }
+
+    func testUnairedEpisodesKnowTheirDate() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        XCTAssertNotNil(TitleModel.airDate("2030-01-01T02:00:00.000Z", now: now), "todavía no sale")
+        XCTAssertNil(TitleModel.airDate("2020-01-01T02:00:00.000Z", now: now), "ya salió")
+        XCTAssertNotNil(TitleModel.airDate("2030-01-01T02:00:00Z", now: now), "sin milisegundos también")
+        XCTAssertNil(TitleModel.airDate(nil, now: now))
+    }
+
+    func testDownloadSpeedAndTimeLeft() throws {
+        let rig = try ServicesRig()
+        let model = DownloadsModel(rig.services, freeSpace: { 0 })
+        var d = DownloadItem(id: "tt1|tt1", kind: "movie", metaID: "tt1", videoID: "tt1", title: "A", originalTitle: "A", subtitle: "", poster: nil,
+                             addon: "", sourceIndex: 0, expectedBytes: 100_000_000, relativePath: "", createdAt: 0)
+        d.state = .downloading
+        let t0 = Date(timeIntervalSince1970: 1000)
+        d.writtenBytes = 10_000_000; model.measure([d], at: t0)
+        XCTAssertNil(model.speeds[d.id], "con una sola muestra todavía no hay velocidad")
+        d.writtenBytes = 30_000_000; model.measure([d], at: t0.addingTimeInterval(2))
+        XCTAssertEqual(model.speeds[d.id] ?? 0, 10_000_000, accuracy: 1, "20 MB en 2 s")
+        XCTAssertEqual(model.secondsLeft(d) ?? 0, 7, accuracy: 0.01, "70 MB a 10 MB/s")
+        d.state = .paused; model.measure([d], at: t0.addingTimeInterval(3))
+        XCTAssertNil(model.speeds[d.id], "en pausa no hay velocidad")
     }
 
     func testReadyDownloadsAreGroupedByTitleInArrivalOrder() {

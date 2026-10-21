@@ -159,7 +159,6 @@ struct BecauseCard<Related: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             deckHeader
-            Text("te recomendamos:").recipe(.body, color: DS.textMuted)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: DS.Space.s2) { related() }
                     .environment(\.posterCaptions, false)
@@ -186,9 +185,9 @@ struct BecauseCard<Related: View>: View {
                 if seeds.count > 1 {
                     Text("Avienta la carta para cambiar").recipe(.footnote)
                     HStack(spacing: DS.Space.s2) {
-                        Button { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) } label: { Image(systemName: "chevron.left") }
+                        Button { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) } label: { Image(systemName: "chevron.left").font(.system(size: DS.Collections.deckNavGlyph, weight: .semibold)).frame(width: DS.Collections.deckNav, height: DS.Collections.deckNav) }   // ds-exception: la flecha se mide con su círculo, no con Dynamic Type
                             .accessibilityLabel(Text("Anterior"))
-                        Button { choose(seeds[(index + 1) % seeds.count].id) } label: { Image(systemName: "chevron.right") }
+                        Button { choose(seeds[(index + 1) % seeds.count].id) } label: { Image(systemName: "chevron.right").font(.system(size: DS.Collections.deckNavGlyph, weight: .semibold)).frame(width: DS.Collections.deckNav, height: DS.Collections.deckNav) }   // ds-exception: la flecha se mide con su círculo, no con Dynamic Type
                             .accessibilityLabel(Text("Siguiente"))
                     }
                     .buttonStyle(.glass).buttonBorderShape(.circle)

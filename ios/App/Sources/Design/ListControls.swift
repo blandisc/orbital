@@ -3,30 +3,46 @@ import OrbitalCore
 
 /// Cómo se ordena una lista abierta.
 enum ListSort: String, CaseIterable {
-    case added, imdb, trakt, newest, oldest, title
+    case added, best, imdb, trakt, newest, oldest, title, shortest
     var label: LocalizedStringKey {
         switch self {
-        case .added: "Como viene la lista"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"
+        case .added: "Como viene la lista"; case .best: "Mejor calificadas (IMDb y Trakt)"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"
+        case .shortest: "Más cortas primero"
         case .newest: "Año (lo más nuevo primero)"; case .oldest: "Año: más viejas"; case .title: "A–Z"
         }
     }
 }
 
-/// Lo que se filtra en una lista abierta: series o películas, un género, y ocultar lo que ya viste.
+/// Lo que se filtra en una lista abierta: series o películas, un género, una calificación mínima, una década y ocultar lo
+/// que ya viste. El mismo filtro en todo «Ver todo».
 struct ListFilter: Equatable {
     var kind: String?
     var genre: String?
+    /// «De 7 para arriba»: la calificación unida (IMDb y Trakt) mínima.
+    var minRating: Double?
+    /// «Los 90»: el primer año de la década.
+    var decade: Int?
     var hideWatched = false
-    var isActive: Bool { kind != nil || genre != nil || hideWatched }
+    var isActive: Bool { kind != nil || genre != nil || minRating != nil || decade != nil || hideWatched }
+
+    /// La calificación de un título juntando los servicios que la tengan (el promedio de IMDb y Trakt); nil si ninguno.
+    static func rating(_ s: Suggestion, imdb: [String: Double]) -> Double? {
+        let found = [imdb[s.imdb], s.traktRating].compactMap { $0 }.filter { $0 > 0 }
+        return found.isEmpty ? nil : found.reduce(0, +) / Double(found.count)
+    }
 
     func apply(_ items: [Suggestion], sort: ListSort, watched: Set<String>, imdb: [String: Double] = [:]) -> [Suggestion] {
         let kept = items.filter { s in
             (kind == nil || s.kind == kind)
                 && (genre == nil || s.genres.contains { $0.lowercased() == genre })
+                && (minRating == nil || (Self.rating(s, imdb: imdb) ?? 0) >= minRating!)
+                && (decade == nil || s.year.map { $0 / 10 * 10 == decade } == true)
                 && (!hideWatched || !watched.contains(s.imdb))
         }
         switch sort {
         case .added: return kept
+        case .best: return kept.sorted { (Self.rating($0, imdb: imdb) ?? 0) > (Self.rating($1, imdb: imdb) ?? 0) }
+        case .shortest: return kept.sorted { ($0.runtime ?? Int.max) < ($1.runtime ?? Int.max) }
         case .imdb: return kept.sorted { (imdb[$0.imdb] ?? 0) > (imdb[$1.imdb] ?? 0) }
         case .trakt: return kept.sorted { ($0.traktRating ?? 0) > ($1.traktRating ?? 0) }
         case .newest: return kept.sorted { ($0.year ?? 0) > ($1.year ?? 0) }
@@ -43,7 +59,8 @@ struct ListFilter: Equatable {
 }
 
 /// Una lista abierta en cuadrícula de pósters, con el botón de ordenar y filtrar arriba a la derecha y lo filtrado en
-/// cápsulas que se quitan con ✕. Cada lista recuerda su orden.
+/// cápsulas que se quitan con ✕. Cada lista recuerda su orden. Es el único «Ver todo»: lo visto y las calificaciones de
+/// IMDb salen solos de las colecciones de la app, así que toda lista tiene los mismos órdenes y filtros.
 struct SortableGrid<Cell: View>: View {
     let listID: String
     let items: [Suggestion]
@@ -51,7 +68,12 @@ struct SortableGrid<Cell: View>: View {
     var watched: (() async -> Set<String>)?
     /// Las calificaciones de IMDb (se piden al elegir ese orden).
     var imdbRatings: (([Suggestion]) async -> [String: Double])?
-    @ViewBuilder var cell: (Suggestion) -> Cell
+    /// Sin «Series o películas» en el menú: la pantalla ya trae su propio `DSKindFilter` (un año de «Por año»).
+    var showsKindFilter = true
+    /// La lista todavía viene en camino: la ruedita al centro en lugar del vacío.
+    var loading = false
+    /// Cada póster recibe el ancho de su columna (`DSPosterGrid`).
+    @ViewBuilder var cell: (Suggestion, CGFloat) -> Cell
     @State private var sort: ListSort
     @State private var filter = ListFilter()
     @State private var seen: Set<String> = []
@@ -59,8 +81,13 @@ struct SortableGrid<Cell: View>: View {
     @State private var rating = false
 
     init(listID: String, items: [Suggestion], watched: (() async -> Set<String>)? = nil,
-         imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, @ViewBuilder cell: @escaping (Suggestion) -> Cell) {
-        self.listID = listID; self.items = items; self.watched = watched; self.imdbRatings = imdbRatings; self.cell = cell
+         imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, showsKindFilter: Bool = true, loading: Bool = false,
+         @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
+        let shared = ListsView.sharedCollections
+        self.listID = listID; self.items = items; self.cell = cell
+        self.showsKindFilter = showsKindFilter; self.loading = loading
+        self.watched = watched ?? { await shared.watchedIDs() }
+        self.imdbRatings = imdbRatings ?? { items in await shared.imdbRatings(items.map { ($0.kind, $0.imdb) }) }
         _sort = State(initialValue: UserDefaults.standard.string(forKey: "list-sort.\(listID)").flatMap(ListSort.init(rawValue:)) ?? .added)
     }
 
@@ -68,23 +95,37 @@ struct SortableGrid<Cell: View>: View {
         let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb)
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             if filter.isActive { activeChips }
-            if rating { ProgressView().frame(maxWidth: .infinity) }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                ForEach(shown) { s in cell(s) }
+            if items.isEmpty {
+                // Mientras llega, la ruedita al centro; ya llegada y sin nada, el vacío de la app (no una pantalla en blanco).
+                if loading { ProgressView().frame(maxWidth: .infinity).padding(.vertical, DS.Space.s14) }
+                else { DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"), message: Text("Esta lista todavía no tiene títulos.")) }
+            } else if shown.isEmpty {
+                DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Cambia el orden o lo que ocultas."))
+            } else {
+                DSPosterGrid(items: shown) { s, width in cell(s, width) }
             }
-            .padding(.horizontal, DS.Space.gutter)
-            if shown.isEmpty, !items.isEmpty { DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Cambia el orden o lo que ocultas.")) }
         }
         .toolbar { ToolbarItem(placement: .topBarTrailing) { menu } }
         .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }
         .task(id: filter.hideWatched) { if filter.hideWatched, let watched { seen = await watched() } }
-        .task(id: sort) {
-            guard sort == .imdb, let imdbRatings else { return }
+        // También cuando llega la lista: si entraste con el orden de IMDb guardado, la lista todavía venía vacía.
+        .task(id: needsIMDb ? items.count : -1) {
+            guard needsIMDb, let imdbRatings, !items.isEmpty else { rating = false; return }
             rating = true
+            defer { rating = false }
             imdb = await imdbRatings(items)
-            rating = false
         }
     }
+
+    /// IMDb se pide solo si el orden o la calificación mínima la usan.
+    private var needsIMDb: Bool { sort == .best || sort == .imdb || filter.minRating != nil }
+
+    /// Las décadas que hay en la lista, de la más nueva a la más vieja.
+    private var decades: [Int] { Array(Set(items.compactMap { $0.year.map { $0 / 10 * 10 } })).sorted(by: >) }
+
+    private func decadeName(_ d: Int) -> Text { Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s") }
+
+    private func ratingName(_ r: Double) -> Text { Text("De \(Int(r)) para arriba") }
 
     private var genres: [String] {
         var counts: [String: Int] = [:]
@@ -98,6 +139,7 @@ struct SortableGrid<Cell: View>: View {
             switch s {
             case .imdb: imdbRatings != nil
             case .trakt: items.contains { $0.traktRating != nil }
+            case .shortest: items.contains { $0.runtime != nil }
             // Como la TV: sin «Como viene» (sin orden elegido, la lista va como llega) ni «más viejas».
             case .added, .oldest: false
             default: true
@@ -115,12 +157,14 @@ struct SortableGrid<Cell: View>: View {
                     }
                 }
             } label: { Label("Ordenar", systemImage: "arrow.up.arrow.down") }
-            Picker(selection: $filter.kind) {
-                Text("Todo").tag(String?.none)
-                Text("Series").tag(String?.some("series"))
-                Text("Películas").tag(String?.some("movie"))
-            } label: { Label("Series o películas", systemImage: "film.stack") }
-            .pickerStyle(.menu)
+            if showsKindFilter {
+                Picker(selection: $filter.kind) {
+                    Text("Todo").tag(String?.none)
+                    Text("Series").tag(String?.some("series"))
+                    Text("Películas").tag(String?.some("movie"))
+                } label: { Label("Series o películas", systemImage: "film.stack") }
+                .pickerStyle(.menu)
+            }
             if !genres.isEmpty {
                 Picker(selection: $filter.genre) {
                     Text("Todos").tag(String?.none)
@@ -128,9 +172,23 @@ struct SortableGrid<Cell: View>: View {
                 } label: { Label("Género", systemImage: "theatermasks") }
                 .pickerStyle(.menu)
             }
-            if watched != nil { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
+            Picker(selection: $filter.minRating) {
+                Text("Cualquiera").tag(Double?.none)
+                ForEach([6.0, 7.0, 8.0], id: \.self) { ratingName($0).tag(Double?.some($0)) }
+            } label: { Label("Calificación", systemImage: "star") }
+            .pickerStyle(.menu)
+            if decades.count > 1 {
+                Picker(selection: $filter.decade) {
+                    Text("Todas").tag(Int?.none)
+                    ForEach(decades, id: \.self) { decadeName($0).tag(Int?.some($0)) }
+                } label: { Label("Década", systemImage: "calendar") }
+                .pickerStyle(.menu)
+            }
+            if AppEnvironment.shared.services.trakt?.linked == true { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
         } label: {
-            Image(systemName: filter.isActive || sort != .added ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+            // Mientras llegan las calificaciones de IMDb, la ruedita va en el botón (la cuadrícula no se mueve).
+            if rating { ProgressView() }
+            else { Image(systemName: filter.isActive || sort != .added ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle") }
         }
         .accessibilityLabel(Text("Ordenar y filtrar"))
         .accessibilityIdentifier("list-controls")
@@ -141,6 +199,8 @@ struct SortableGrid<Cell: View>: View {
             HStack(spacing: DS.Space.s2) {
                 if let kind = filter.kind { chip(kind == "movie" ? Text("Películas") : Text("Series")) { filter.kind = nil } }
                 if let genre = filter.genre { chip(Text(verbatim: genreName(genre))) { filter.genre = nil } }
+                if let min = filter.minRating { chip(ratingName(min)) { filter.minRating = nil } }
+                if let decade = filter.decade { chip(decadeName(decade)) { filter.decade = nil } }
                 if filter.hideWatched { chip(Text("Sin lo que ya vi")) { filter.hideWatched = false } }
             }
         }
@@ -156,4 +216,42 @@ struct SortableGrid<Cell: View>: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+/// La cuadrícula de pósters de toda la app: columnas fijas que llenan el ancho (3; 4 en pantallas anchas; 2 con letra de
+/// accesibilidad), separadas por `DS.Space.s3` y con los bordes en el margen de la pantalla. Cada celda recibe el ancho de su
+/// columna para que el póster (2:3) la llene: antes, `.adaptive` con celdas fijas de 100 dejaba huecos de 27 y los pósters
+/// metidos del margen.
+struct DSPosterGrid<Data: RandomAccessCollection, Cell: View>: View where Data.Element: Identifiable {
+    let items: Data
+    var rowSpacing: CGFloat = DS.Space.s4
+    @ViewBuilder var cell: (Data.Element, CGFloat) -> Cell
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var width: CGFloat = 0
+
+    private var columns: Int {
+        if typeSize.isAccessibilitySize { return DS.Poster.gridColumnsLarge }
+        return width >= DS.Poster.gridWideWidth ? DS.Poster.gridColumnsWide : DS.Poster.gridColumns
+    }
+
+    private var cellWidth: CGFloat {
+        let inner = width - DS.Space.gutter * 2 - DS.Space.s3 * CGFloat(columns - 1)
+        return max(0, (inner / CGFloat(columns)).rounded(.down))
+    }
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3, alignment: .topLeading), count: columns),
+                  alignment: .leading, spacing: rowSpacing) {
+            if width > 0 { ForEach(items) { cell($0, cellWidth) } }
+        }
+        .padding(.horizontal, DS.Space.gutter)
+        .frame(maxWidth: .infinity)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+    }
+}
+
+/// Un lugar vacío de `DSPosterGrid` mientras llegan los resultados.
+struct DSPosterSlot: Identifiable {
+    let id: Int
+    static func slots(_ count: Int) -> [DSPosterSlot] { (0..<count).map(DSPosterSlot.init) }
 }

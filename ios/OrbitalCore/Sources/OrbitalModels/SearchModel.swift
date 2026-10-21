@@ -8,11 +8,12 @@ public final class SearchModel: ObservableModel {
         public var kind: String, metaID: String, title: String, originalTitle: String, poster: String?, year: String
     }
 
-    public private(set) var results: [Result] = [] { didSet { changed() } }
-    public private(set) var isSearching = false { didSet { changed() } }
-    public private(set) var error: String? { didSet { changed() } }
+    // Solo se avisa si cambió de verdad (antes, cada letra mandaba cuatro avisos aunque nada cambiara).
+    public private(set) var results: [Result] = [] { didSet { if results != oldValue { changed() } } }
+    public private(set) var isSearching = false { didSet { if isSearching != oldValue { changed() } } }
+    public private(set) var error: String? { didSet { if error != oldValue { changed() } } }
     /// Lo que se buscó para los `results` de ahora: hasta que la búsqueda nueva contesta, la pantalla no dice «Sin resultados».
-    public private(set) var searchedQuery: String? { didSet { changed() } }
+    public private(set) var searchedQuery: String? { didSet { if searchedQuery != oldValue { changed() } } }
     public private(set) var recent: [String] { didSet { changed() } }
     private let services: Services
     private var latest = 0
@@ -24,8 +25,8 @@ public final class SearchModel: ObservableModel {
     }
 
     /// Busca películas y series; la última búsqueda manda (si escribes rápido, las viejas se descartan).
-    /// Los resultados de Cinemeta se ven en cuanto llegan; los nombres en tu idioma (TMDB, uno por título) se ponen
-    /// después, sin hacerte esperar. Lo ya buscado (borrar una letra, volver a escribirla) sale al instante de memoria.
+    /// Películas y series se ven cada una en cuanto llega (no se espera a la más lenta), con los nombres en tu idioma que ya
+    /// se conocen; los que faltan (TMDB, uno por título) se ponen después. Lo ya buscado sale al instante de memoria.
     public func search(_ text: String) async {
         let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
         latest += 1
@@ -37,17 +38,23 @@ public final class SearchModel: ObservableModel {
         error = nil   // un error de la búsqueda anterior no tapa lo que está cargando
         defer { if ticket == latest { isSearching = false } }
         do {
-            let found = try await find(query)
+            let found = try await find(query) { [weak self] partial in
+                guard let self, ticket == self.latest else { return }
+                let known = await self.knownNames(partial)
+                guard ticket == self.latest else { return }
+                self.results = partial.map { Result(kind: $0.kind, metaID: $0.metaID, title: known[$0.metaID] ?? $0.title, originalTitle: $0.title,
+                                                    poster: $0.poster, year: $0.year) }
+                self.error = nil
+                self.searchedQuery = query
+            }
             guard ticket == latest else { return }
-            results = found.map { Result(kind: $0.kind, metaID: $0.metaID, title: $0.title, originalTitle: $0.title, poster: $0.poster, year: $0.year) }
-            error = nil
-            searchedQuery = query
             isSearching = false
             // Los nombres en tu idioma, a la vez (películas y series), y solo si la búsqueda sigue siendo esta.
             async let movieNames = names(found, kind: "movie")
             async let seriesNames = names(found, kind: "series")
             let names = await movieNames.merging(seriesNames) { a, _ in a }
-            let localized = results.map { r in var r = r; r.title = names[r.metaID] ?? r.title; return r }
+            let localized = found.map { r in Result(kind: r.kind, metaID: r.metaID, title: names[r.metaID] ?? r.title, originalTitle: r.title,
+                                                    poster: r.poster, year: r.year) }
             // Solo se recuerda si la traducción terminó (cancelada por otra letra, se habrían guardado los nombres en inglés).
             if !Task.isCancelled { remember(results: localized, for: key) }
             guard ticket == latest else { return }
@@ -59,19 +66,73 @@ public final class SearchModel: ObservableModel {
         }
     }
 
-    /// Cinemeta, con un reintento (a veces contesta con un error pasajero, como un 550); si sigue sin contestar, Trakt
-    /// (si está configurado). Solo si los dos fallan se dice que no se pudo.
-    private func find(_ query: String) async throws -> [SearchResult] {
-        do { return try await services.cinemeta.searchAll(query) } catch where !Task.isCancelled {
-            try? await Task.sleep(nanoseconds: Self.retryDelay)
-            do { return try await services.cinemeta.searchAll(query) } catch where !Task.isCancelled {
-                guard let trakt = services.trakt, trakt.configured, let found = try? await trakt.search(query), !found.isEmpty else { throw error }
-                return found.map { SearchResult(kind: $0.kind, metaID: $0.imdb, title: $0.title, poster: String(format: ForYou.metahubPoster, $0.imdb), year: $0.year.map(String.init) ?? "") }
+    /// Una pieza de la búsqueda: un tipo de Cinemeta (nil = falló dos veces) o lo que contestó Trakt.
+    private enum Piece: Sendable { case kind(String, [JSON]?), trakt([SearchResult]) }
+
+    /// Películas y series de Cinemeta por separado: cada una se enseña (`show`) en cuanto llega, y si una falla, se
+    /// reintenta solo esa (antes, un error de una tiraba también la otra). Si en `hedgeDelay` no ha llegado nada, se le
+    /// pregunta también a Trakt (si está configurado), sin cancelar a Cinemeta: lo que llegue primero se ve; Cinemeta, en
+    /// cuanto llega, toma su lugar. Solo si todo falla se dice que no se pudo.
+    private func find(_ query: String, show: @escaping @MainActor ([SearchResult]) async -> Void) async throws -> [SearchResult] {
+        let cinemeta = services.cinemeta, trakt = services.trakt
+        var parts: [String: [JSON]] = [:], failed = Set<String>(), fromTrakt: [SearchResult]?, shown: [SearchResult] = []
+        await withTaskGroup(of: Piece.self) { group in
+            for kind in ["movie", "series"] {
+                group.addTask {
+                    for attempt in 0..<2 {
+                        if attempt > 0 { try? await Task.sleep(nanoseconds: Self.retryDelay) }
+                        if Task.isCancelled { break }
+                        if let found = try? await cinemeta.search(kind, query: query) { return .kind(kind, found) }
+                    }
+                    return .kind(kind, nil)
+                }
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: Self.hedgeDelay)
+                guard !Task.isCancelled, let trakt, trakt.configured, let found = try? await trakt.search(query) else { return .trakt([]) }
+                return .trakt(found.map { SearchResult(kind: $0.kind, metaID: $0.imdb, title: $0.title,
+                                                       poster: String(format: ForYou.metahubPoster, $0.imdb), year: $0.year.map(String.init) ?? "") })
+            }
+            for await piece in group {
+                switch piece {
+                case .kind(let kind, let found?): parts[kind] = found
+                case .kind(let kind, nil): failed.insert(kind)
+                case .trakt(let found): fromTrakt = found
+                }
+                let settled = parts.count + failed.count == 2
+                var now: [SearchResult] = []
+                if !parts.isEmpty {
+                    now = CinemetaParsing.searchResults(query: query, movies: parts["movie"] ?? [], series: parts["series"] ?? [], limit: Self.resultLimit)
+                    // Del tipo que Cinemeta no ha dado (o no pudo), lo que haya traído Trakt.
+                    let ids = Set(now.map(\.metaID))
+                    now += (fromTrakt ?? []).filter { parts[$0.kind] == nil && !ids.contains($0.metaID) }
+                } else if let fromTrakt { now = fromTrakt }
+                if !now.isEmpty, now != shown { shown = now; await show(now) }
+                // Listo cuando contestaron los dos tipos (y, si ninguno pudo, también Trakt).
+                if settled && (!parts.isEmpty || fromTrakt != nil) { group.cancelAll(); break }
             }
         }
+        if Task.isCancelled { throw CancellationError() }
+        if parts.isEmpty && shown.isEmpty && failed.count == 2 { throw CinemetaError.network("Cinemeta no contestó") }
+        return shown
+    }
+
+    /// Los nombres en tu idioma que ya se conocen (sin pedir nada).
+    private func knownNames(_ found: [SearchResult]) async -> [String: String] {
+        var names: [String: String] = [:]
+        for kind in ["movie", "series"] {
+            let ids = found.filter { $0.kind == kind }.map(\.metaID)
+            if !ids.isEmpty { names.merge(await services.localizer.knownTitles(kind: kind, ids: ids)) { a, _ in a } }
+        }
+        return names
     }
 
     static let retryDelay: UInt64 = 600_000_000
+    /// Todo lo que contesta Cinemeta (hasta 100 por tipo). Antes eran 18 en total, alternando tipos: el filtro decía
+    /// siempre «Películas 9 · Series 9» aunque hubiera más de uno y menos del otro.
+    static let resultLimit = 200
+    /// Si Cinemeta no ha contestado nada en este tiempo, también se le pregunta a Trakt.
+    static let hedgeDelay: UInt64 = 1_200_000_000
 
     /// Lo buscado en esta sesión (las últimas `memoryLimit` búsquedas), por texto en minúsculas.
     private var memory: [String: [Result]] = [:]

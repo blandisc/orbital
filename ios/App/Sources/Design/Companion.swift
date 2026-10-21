@@ -55,7 +55,10 @@ struct CompanionPanel<Content: View>: View {
             Spacer(minLength: 0)
         }
         .padding(DS.Space.s4)
-        .frame(width: DS.Companion.panelWidth, height: DS.Companion.panelHeight, alignment: .topLeading)
+        .frame(height: DS.Companion.panelHeight, alignment: .topLeading)
+        // Casi todo el ancho (`width` ya descuenta los márgenes del carrusel): la siguiente solo asoma su orilla, `peek`
+        // (antes asomaba media tarjeta con el texto cortado a media palabra).
+        .containerRelativeFrame(.horizontal) { width, _ in width + DS.Space.gutter - DS.Space.s3 - DS.Companion.peek }
         .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 }
@@ -240,53 +243,5 @@ struct GameAccessory: View {
         .buttonStyle(.plain)
         .accessibilityHint(Text("Abre el acompañante del juego"))
         .accessibilityIdentifier("game-accessory")
-    }
-}
-
-/// Al cerrar un juego en la consola: el resumen de la sesión. El arte, cuánto jugaste esta vez y en total, las capturas y, si
-/// se cerró solo o por falta de memoria, el aviso (para que sepas que no fuiste tú).
-struct GameSessionSummary: View {
-    let item: OrbitalRemote.InboxItem
-    let done: () -> Void
-
-    var body: some View {
-        let session = item.played ?? .init(seconds: 0)
-        VStack(alignment: .leading, spacing: DS.Space.s4) {
-            ZStack(alignment: .bottomLeading) {
-                PosterView(url: session.art, title: "", aspect: DS.Poster.stillAspect)   // sin arte, liso (el nombre ya va encima)
-                LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Eyebrow(text: Text("Sesión terminada"), accent: true, onArt: true)
-                    Text(verbatim: item.title).recipe(.title, color: DS.paper).lineLimit(2)
-                }
-                .padding(DS.Space.s4)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            // En renglón; con letra grande, uno debajo del otro (las cifras no se parten).
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s5) { stats(session) }
-                VStack(alignment: .leading, spacing: DS.Space.s2) { stats(session) }
-            }
-            if session.crashed { DSNotice(text: "El juego se cerró solo: no fuiste tú. Si se repite, revisa sus ajustes en la consola.", tone: .warn) }
-            else if session.lowMemory { DSNotice(text: "Se cerró por falta de memoria: cierra otras apps de la consola antes de volver a jugar.", tone: .warn) }
-            Button(action: done) { Text("Listo").frame(maxWidth: .infinity) }.dsPrimaryButton().controlSize(.large)
-        }
-        .padding(DS.Space.s5)
-    }
-
-    @ViewBuilder private func stats(_ session: OrbitalRemote.InboxItem.Session) -> some View {
-        stat(Text(verbatim: Strings.duration(Int(session.seconds / 60))), Text("esta vez"))
-        if let total = session.totalSeconds, total > session.seconds {
-            stat(Text(verbatim: Strings.duration(Int(total / 60))), Text("en total"))
-        }
-        if session.captures > 0 { stat(Text(verbatim: "\(session.captures)"), Text("capturas")) }
-    }
-
-    private func stat(_ value: Text, _ label: Text) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            value.recipe(.title).monospacedDigit().fixedSize()
-            label.recipe(.caption, color: DS.textMuted)
-        }
-        .accessibilityElement(children: .combine)
     }
 }

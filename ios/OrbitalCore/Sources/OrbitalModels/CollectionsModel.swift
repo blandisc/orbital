@@ -91,24 +91,32 @@ public final class CollectionsModel: ObservableModel {
 
     /// La calificación de IMDb de cada título (de Cinemeta, 12 a la vez), para «Mejor calificadas en IMDb»; se recuerda.
     public func imdbRatings(_ ids: [(kind: String, imdb: String)]) async -> [String: Double] {
-        let missing = ids.filter { imdbCache[$0.imdb] == nil }
+        // Una ventana de pedidos a la vez (al terminar uno entra el siguiente). Antes iban en tandas de 12 que esperaban a la
+        // más lenta: una watchlist de cientos de títulos dejaba el botón de ordenar cargando minutos.
+        var seen = Set<String>()
+        let missing = ids.filter { imdbCache[$0.imdb] == nil && seen.insert($0.imdb).inserted }
         let cinemeta = services.cinemeta
-        for chunk in stride(from: 0, to: missing.count, by: 12).map({ Array(missing[$0..<min($0 + 12, missing.count)]) }) {
-            let found = await withTaskGroup(of: (String, Double?).self) { group in
-                for item in chunk {
-                    group.addTask {
-                        let meta = try? await cinemeta.meta(kind: item.kind, id: item.imdb)
-                        return (item.imdb, (meta?["imdbRating"]?.string).flatMap(Double.init) ?? meta?["imdbRating"]?.doubleValue)
-                    }
+        let found = await withTaskGroup(of: (String, Double?).self) { group in
+            var next = 0, out: [(String, Double?)] = []
+            func add() {
+                guard next < missing.count, !Task.isCancelled else { return }
+                let item = missing[next]
+                next += 1
+                group.addTask {
+                    let meta = try? await cinemeta.meta(kind: item.kind, id: item.imdb)
+                    return (item.imdb, (meta?["imdbRating"]?.string).flatMap(Double.init) ?? meta?["imdbRating"]?.doubleValue)
                 }
-                var out: [(String, Double?)] = []
-                for await r in group { out.append(r) }
-                return out
             }
-            for (id, rating) in found { imdbCache[id] = rating ?? 0 }
+            for _ in 0..<Self.ratingConcurrency { add() }
+            for await r in group { out.append(r); add() }
+            return out
         }
+        // Lo que no llegó por cancelación se vuelve a pedir la próxima vez (no se guarda como «sin calificación»).
+        for (id, rating) in found where rating != nil || !Task.isCancelled { imdbCache[id] = rating ?? 0 }
         return imdbCache.filter { $0.value > 0 }
     }
+
+    static let ratingConcurrency = 16
 
     private var imdbCache: [String: Double] = [:]
 

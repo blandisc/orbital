@@ -1,5 +1,11 @@
 import Foundation
 
+/// Ningún complemento contestó (sin internet, o tus complementos caídos): no es lo mismo que «no hay fuentes».
+public enum StreamFinderError: Error, Sendable, CustomStringConvertible {
+    case unreachable
+    public var description: String { "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet." }
+}
+
 /// Pide fuentes a los complementos que las dan (en paralelo) y las recuerda unos minutos.
 /// Los enlaces de Real-Debrid caducan: una caché vieja no se usa para reproducir.
 public actor StreamFinder {
@@ -30,6 +36,8 @@ public actor StreamFinder {
         do {
             let streams = try await http.getJSON(url, timeout: 15)?["streams"]?.array ?? []
             return streams.filter { $0.object != nil && ($0["url"]?.nonEmptyString != nil || $0["infoHash"]?.nonEmptyString != nil) }
+        } catch let error as NetworkError where error.description.hasPrefix("HTTP 4") {
+            return []   // contestó (no tiene ese video): eso es «no hay», no un fallo de red
         } catch { return nil }
     }
 
@@ -53,6 +61,8 @@ public actor StreamFinder {
             }
         }
         let ranked = Streams.rank(sources, prefs: prefs, kind: kind, purpose: purpose)
+        // Nadie contestó: es la red, no que no haya fuentes (antes se decía «No hay fuentes» sin internet).
+        if !results.isEmpty, results.allSatisfy({ $0 == nil }), ranked.isEmpty { throw StreamFinderError.unreachable }
         if failed && ranked.isEmpty { return ranked }  // la red falló y no hay nada: no se recuerda
         if cache.count >= Self.cacheMax { for k in cache.sorted(by: { $0.value.expires < $1.value.expires }).prefix(Self.cacheMax / 2).map(\.key) { cache[k] = nil } }
         cache[key] = (clock().addingTimeInterval(failed ? Self.retryFailed : Self.cacheSeconds), ranked)
@@ -100,6 +110,9 @@ public actor StreamFinder {
 
     /// La fuente recomendada; en una serie, mejor la del mismo grupo que el episodio anterior (misma calidad
     /// e idioma: así lo hace Stremio con bingeGroup). `skip`: fuentes que ya fallaron.
+    /// La huella de un video en línea (para pedir subtítulos de esa copia exacta).
+    public func fingerprint(of url: URL) async -> FileFingerprint? { await FileFingerprint.ofRemote(url, http: http) }
+
     public func best(kind: String, videoID: String, prefs: Preferences, binge: String? = nil, skip: Set<Int> = [], purpose: Purpose = .watch) async throws -> Source? {
         let found = try await find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose).filter { !skip.contains($0.index) }
         guard let first = found.first else { return nil }
@@ -131,7 +144,12 @@ public actor StreamFinder {
                     return subs.compactMap { sub in
                         guard let text = sub["url"]?.string, let u = URL(string: text), ["http", "https"].contains(u.scheme?.lowercased() ?? ""),
                               let lang = sub["lang"]?.string else { return nil }
-                        return SubtitleOption(url: u, language: lang)
+                        // Lo que algunos complementos cuentan de más (OpenSubtitles por su API): la copia, las descargas, si es para sordos o forzado.
+                        let release = sub["release"]?.string ?? sub["releaseName"]?.string ?? sub["release_name"]?.string ?? sub["title"]?.string
+                        let downloads = sub["downloads"]?.intValue ?? sub["download_count"]?.intValue
+                        let hi = sub["hearing_impaired"]?.bool ?? sub["hearingImpaired"]?.bool ?? false
+                        let forced = sub["foreign_parts_only"]?.bool ?? sub["forced"]?.bool ?? false
+                        return SubtitleOption(url: u, language: lang, release: release, downloads: downloads, hearingImpaired: hi, foreignOnly: forced)
                     }
                 }
             }
@@ -146,8 +164,15 @@ public actor StreamFinder {
 public struct SubtitleOption: Sendable, Equatable, Identifiable {
     public var url: URL
     public var language: String
+    public var release: String?          // el nombre de la copia para la que se hizo («…WEB-DL-NTb»)
+    public var downloads: Int?
+    public var hearingImpaired = false   // SDH/CC
+    public var foreignOnly = false       // forzado: solo carteles o partes en otro idioma
     public var id: URL { url }
-    public init(url: URL, language: String) { self.url = url; self.language = language }
+    public init(url: URL, language: String, release: String? = nil, downloads: Int? = nil, hearingImpaired: Bool = false, foreignOnly: Bool = false) {
+        self.url = url; self.language = language; self.release = release; self.downloads = downloads
+        self.hearingImpaired = hearingImpaired; self.foreignOnly = foreignOnly
+    }
 }
 
 /// La huella de OpenSubtitles de un archivo (su tamaño más la suma de los primeros y últimos 64 KB): encuentra los
@@ -174,6 +199,28 @@ public struct FileFingerprint: Sendable, Equatable {
         guard let tail = try? handle.read(upToCount: chunk) else { return nil }
         add(tail)
         return FileFingerprint(hash: String(format: "%016llx", sum), size: Int64(end))
+    }
+
+    /// La misma huella (la de OpenSubtitles) de un video en línea, con dos pedidos de 64 KB (el principio y el final): así
+    /// también lo que ves sin bajar encuentra los subtítulos hechos para esa copia exacta.
+    public static func compute(head: Data, tail: Data, size: Int64) -> FileFingerprint? {
+        guard head.count == 65_536, tail.count == 65_536, size >= 65_536 else { return nil }
+        var sum = UInt64(size)
+        for data in [head, tail] {
+            data.withUnsafeBytes { raw in
+                for i in stride(from: 0, to: raw.count - 7, by: 8) { sum = sum &+ raw.loadUnaligned(fromByteOffset: i, as: UInt64.self).littleEndian }
+            }
+        }
+        return FileFingerprint(hash: String(format: "%016llx", sum), size: size)
+    }
+
+    public static func ofRemote(_ url: URL, http: HTTPClient) async -> FileFingerprint? {
+        let chunk: Int64 = 65_536
+        guard let first = try? await http.send(HTTPRequest(url: url, headers: ["Range": "bytes=0-\(chunk - 1)"], timeout: 10)), first.status == 206,
+              let total = first.headers["content-range"]?.split(separator: "/").last.flatMap({ Int64($0) }), total >= chunk,
+              let last = try? await http.send(HTTPRequest(url: url, headers: ["Range": "bytes=\(total - chunk)-\(total - 1)"], timeout: 10)), last.status == 206
+        else { return nil }
+        return compute(head: first.data, tail: last.data, size: total)
     }
 }
 

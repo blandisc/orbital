@@ -83,6 +83,8 @@ final class DownloadsTests: XCTestCase {
         transport.emit(.finished(id: "tt1|tt1:1:1"))
         await settle("hecha") { await d.item("tt1|tt1:1:1")?.state == .done }
         XCTAssertNil(secrets.get(SecretKey.download("tt1|tt1:1:1")))
+        // Los subtítulos se bajan aparte, después de anotarla como hecha (la cola no los espera).
+        await settle("subtítulos") { await d.item("tt1|tt1:1:1")?.subtitleFiles.isEmpty == false }
         let done = await d.item("tt1|tt1:1:1")
         XCTAssertEqual(done?.subtitleFiles, ["subs/es.srt"])
         let sub = await d.fileURL(done!).deletingLastPathComponent().appendingPathComponent("subs/es.srt")

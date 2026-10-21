@@ -20,7 +20,9 @@ public struct HTTPRequest: Sendable {
 public struct HTTPResponse: Sendable {
     public var status: Int
     public var data: Data
-    public init(status: Int, data: Data) { self.status = status; self.data = data }
+    /// Encabezados, con el nombre en minúsculas («content-range»).
+    public var headers: [String: String]
+    public init(status: Int, data: Data, headers: [String: String] = [:]) { self.status = status; self.data = data; self.headers = headers }
 }
 
 public protocol HTTPClient: Sendable {
@@ -38,6 +40,15 @@ public struct URLSessionHTTPClient: HTTPClient {
     static let maxBody = 16 * 1024 * 1024      // como Orbital: 16 MB
     /// Sesión efímera: no guarda en disco las respuestas (las direcciones de los complementos llevan tu clave de Real-Debrid).
     public init(session: URLSession = URLSession(configuration: .ephemeral)) { self.session = session }
+
+    /// Para servicios públicos sin claves en la dirección (Cinemeta): respeta lo que el servidor deja guardar, en disco.
+    public static func publicCache(_ name: String, megabytes: Int = 40) -> URLSessionHTTPClient {
+        let config = URLSessionConfiguration.default
+        config.urlCache = URLCache(memoryCapacity: 4 << 20, diskCapacity: megabytes << 20, directory: FileManager.default
+            .urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent(name, isDirectory: true))
+        config.requestCachePolicy = .useProtocolCachePolicy
+        return URLSessionHTTPClient(session: URLSession(configuration: config))
+    }
 
     public func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         var urlRequest = URLRequest(url: request.url, timeoutInterval: request.timeout)
@@ -57,7 +68,10 @@ public struct URLSessionHTTPClient: HTTPClient {
                     let (data, response) = try await session.data(for: urlRequest)
                     if response.expectedContentLength > Int64(URLSessionHTTPClient.maxBody) { throw NetworkError("La respuesta es demasiado grande") }
                     guard data.count <= URLSessionHTTPClient.maxBody else { throw NetworkError("La respuesta es demasiado grande") }
-                    return HTTPResponse(status: (response as? HTTPURLResponse)?.statusCode ?? 0, data: data)
+                    let http = response as? HTTPURLResponse
+                    var headers: [String: String] = [:]
+                    for (key, value) in http?.allHeaderFields ?? [:] { if let k = key as? String, let v = value as? String { headers[k.lowercased()] = v } }
+                    return HTTPResponse(status: http?.statusCode ?? 0, data: data, headers: headers)
                 }
                 group.addTask { try await Task.sleep(nanoseconds: UInt64(deadline * 1e9)); throw NetworkError("Tiempo agotado") }
                 defer { group.cancelAll() }
