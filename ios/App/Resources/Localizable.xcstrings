@@ -12,6 +12,17 @@
         }
       }
     },
+    " · otra versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · another version"
+          }
+        }
+      }
+    },
     "%@ GB libres": {
       "extractionState": "manual",
       "localizations": {
@@ -7004,6 +7015,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hold"
+          }
+        }
+      }
+    },
+    "Mantén presionado para apagar o prender los subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch and hold to turn subtitles on or off"
           }
         }
       }

@@ -191,6 +191,7 @@ struct PlayerScreen: View {
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
             let controlsShown = controlsVisible && !locked && !panel && !failed(model) && !subtitleDock
             if controlsShown { controls(model).transition(.opacity) }
+            if controlsShown && moreOpen { moreLayer(model) }
             if subtitleDock && !locked && !panel { subtitleDockLayer(model).transition(.move(edge: .bottom).combined(with: .opacity)) }
             // «Saltar intro» no depende de los controles (se esconden a los pocos segundos y con ellos se iba el botón):
             // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse. Con los controles a la
@@ -749,10 +750,27 @@ struct PlayerScreen: View {
                 .accessibilityIdentifier("player-next-subtitle")
             AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
                 .accessibilityLabel(Text("AirPlay"))
-            // Un globo (no un `Menu` del sistema): así se sabe cuándo está abierto y los controles no se esconden debajo de él.
-            PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") { hideTask?.cancel(); moreOpen = true }
-                .accessibilityIdentifier("player-more")
-                .popover(isPresented: $moreOpen) { moreMenu(model).presentationCompactAdaptation(.popover) }
+            // Un globo propio (no un `Menu` del sistema): así se sabe cuándo está abierto y los controles no se esconden debajo de
+            // él. Se dibuja en `moreLayer` (antes un `popover`: la esquina junto a su colita quedaba recta y las otras tres no).
+            PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") {
+                hideTask?.cancel(); withAnimation(DS.Motion.base(reduceMotion)) { moreOpen.toggle() }
+            }
+            .accessibilityIdentifier("player-more")
+        }
+    }
+
+    /// El globo del «⋯», debajo de su botón: las cuatro esquinas iguales, en vidrio. Tocar fuera lo cierra.
+    private func moreLayer(_ model: PlayerModel) -> some View {
+        ZStack(alignment: .topTrailing) {
+            Color.clear.contentShape(Rectangle()).ignoresSafeArea()
+                .onTapGesture { withAnimation(DS.Motion.base(reduceMotion)) { moreOpen = false } }
+                .accessibilityHidden(true)
+            moreMenu(model)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+                .padding(.top, (landscape ? DS.Space.s6 : DS.Space.s2) + DS.Size.touchTarget + DS.Space.s2)
+                .padding(.trailing, landscape ? DS.Space.s6 : DS.Space.gutter)
+                .accessibilityAction(.escape) { withAnimation(DS.Motion.base(reduceMotion)) { moreOpen = false } }
+                .transition(.scale(scale: DS.PlayerPanel.lockScale, anchor: .topTrailing).combined(with: .opacity))
         }
     }
 
@@ -976,7 +994,26 @@ struct PlayerScreen: View {
             let next = at.map { (($0 + d) % versions.count + versions.count) % versions.count } ?? 0
             Task { await model.selectVersion(versions[next]) }
         }
+        // El audio: las pistas de este archivo (sin repetir idioma) y los idiomas que solo trae otra versión (seguro).
+        let ui = settings.uiLanguage
+        let audioTracks = model.snapshot.audioTracks.filter { $0.kind == .audio }
+        var seenAudio = Set<String>()
+        let audio: [SubtitleDock.Language] = audioTracks.compactMap { t in
+            let code = TrackChooser.audioCode(t) ?? "t\(t.id)"
+            guard seenAudio.insert(code).inserted else { return nil }
+            let title = TrackChooser.audioCode(t).map { Streams.versionLanguageName($0, in: ui) } ?? TrackChooser.label(t, locale: Locale(identifier: ui), technical: false)
+            return .init(id: String(t.id), title: title, selected: model.snapshot.selectedAudio == t.id)
+        }
+        var otherSeen = seenAudio
+        let others: [SubtitleDock.Language] = model.sourceChoices.compactMap { choice in
+            guard choice.index != model.source?.index, choice.playbackURL != nil,
+                  let lang = choice.audio.first(where: { $0.evidence.solid && !otherSeen.contains($0.code) && $0.code != "es" }) else { return nil }
+            otherSeen.insert(lang.code)
+            return .init(id: String(choice.index), title: Streams.versionLanguageName(lang.code, in: ui), selected: false)
+        }.prefix(DS.PlayerPanel.otherVersionsShown).map { $0 }
         return SubtitleDock(
+            audio: audio, pickAudio: { id in if let n = Int(id) { Task { await model.selectAudio(n) } } },
+            otherVersions: others, pickVersion: { id in if let n = Int(id) { Task { await model.switchSource(to: n) } } },
             languages: languages,
             pickLanguage: { code in Task { if code.isEmpty { await model.selectSubtitle(nil) } else { await model.chooseLanguage(code) } } },
             otherLanguage: { dockLanguages = true },

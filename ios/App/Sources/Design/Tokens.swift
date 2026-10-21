@@ -300,6 +300,8 @@ enum DS {
         /// su aire) y lo que deja libre abajo para los controles (la barra, «Saltar intro», ±10, el botón grande y la pista).
         static let portraitTopClearance: CGFloat = 60, portraitControlsReserve: CGFloat = 260
         /// La agarradera del video en vertical: la rayita, la franja de abajo que la toma (y lo que se mete sobre el video).
+        /// «Audio y subtítulos»: cuántos idiomas de otra versión se ofrecen junto a las pistas de este archivo.
+        static let otherVersionsShown = 2
         static let handleWidth: CGFloat = 40, handleHeight: CGFloat = 5, handleZone: CGFloat = 34, handleReach: CGFloat = 12
         /// Cuántas funciones se dice «Arrastra para mover» junto a la agarradera.
         static let moveHintTimes = 3

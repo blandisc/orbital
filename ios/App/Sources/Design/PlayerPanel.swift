@@ -576,18 +576,12 @@ struct SubtitleButton: View {
     let toggle: () -> Void
 
     var body: some View {
-        // Prendidos: el idioma («ES») en una placa sólida, como el «CC» de los reproductores, dentro del círculo (antes era
-        // una etiqueta en la esquina que se salía). Apagados: la burbuja vacía.
+        // «Audio y subtítulos»: la burbuja de iOS (la de su reproductor); llena con subtítulos prendidos, vacía si no.
         ZStack {
             if loading { ProgressView().tint(DS.text) }
-            else if let code {
-                Text(verbatim: code.uppercased()).font(DS.TextRecipe.caption.font.weight(.heavy)).foregroundStyle(DS.onSolidPrimary)
-                    .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                    .padding(.horizontal, DS.Space.s1)
-                    .frame(minWidth: DS.Size.touchTarget / 2)
-                    .background(DS.solidPrimary, in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
-            } else {
-                Image(systemName: "captions.bubble").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+            else {
+                Image(systemName: code == nil ? "text.bubble" : "text.bubble.fill").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+                    .contentTransition(.symbolEffect(.replace))
             }
         }
         .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
@@ -598,9 +592,9 @@ struct SubtitleButton: View {
         .sensoryFeedback(.selection, trigger: code)
         .accessibilityElement()
         .accessibilityAddTraits(.isButton)
-        .accessibilityLabel(Text("Subtítulos"))
+        .accessibilityLabel(Text("Audio y subtítulos"))
         .accessibilityValue(Text(verbatim: state))
-        .accessibilityHint(Text("Mantén presionado para apagarlos o prenderlos"))
+        .accessibilityHint(Text("Mantén presionado para apagar o prender los subtítulos"))
         .accessibilityAction(.default, open)
         .accessibilityAction(named: code == nil ? Text("Prender subtítulos") : Text("Apagar subtítulos"), toggle)
     }
@@ -754,6 +748,11 @@ struct SubtitleDock: View {
         case inSync                // «¿Va a tiempo?» después de cambiar de versión
         case restored(Double)      // «Usamos tu ajuste de +1.5 s» al volver a una versión que ya ajustaste
     }
+    /// El audio: las pistas de este archivo y, aparte, los idiomas que solo están en otra versión («Latino · otra versión»).
+    var audio: [Language] = []
+    var pickAudio: (String) -> Void = { _ in }
+    var otherVersions: [Language] = []
+    var pickVersion: (String) -> Void = { _ in }
     let languages: [Language]
     let pickLanguage: (String) -> Void
     let otherLanguage: () -> Void
@@ -788,15 +787,32 @@ struct SubtitleDock: View {
         VStack(alignment: .leading, spacing: compact ? DS.Space.s2 : DS.Space.s3) {
             if !compact {
                 HStack {
-                    Text("Subtítulos").recipe(.cardTitle)
+                    Text("Audio y subtítulos").recipe(.cardTitle)
                     Spacer()
                     doneButton
                 }
             }
-            HStack(spacing: DS.Space.s1) {
-                ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected) { pickLanguage(l.id) } }
-                pill(Text("Otro…"), selected: false, action: otherLanguage).accessibilityIdentifier("subtitle-dock-other")
-                if compact { doneButton }
+            // El audio primero (con un solo idioma y sin otra versión, no hay nada que elegir: no sale).
+            if audio.count > 1 || !otherVersions.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text("Audio").recipe(.caption)
+                    FlowChips(spacing: DS.Space.s1) {
+                        ForEach(audio) { a in pill(Text(verbatim: a.title), selected: a.selected) { pickAudio(a.id) } }
+                        ForEach(otherVersions) { v in
+                            pill(Text(verbatim: v.title) + Text(" · otra versión"), selected: false) { pickVersion(v.id) }
+                        }
+                    }
+                    .id(audio.map { "\($0.id)\($0.selected)" }.joined() + otherVersions.map(\.id).joined())   // que se redibuje al elegir (ver `FlowChips`)
+                }
+                .accessibilityElement(children: .contain)
+            }
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                if audio.count > 1 || !otherVersions.isEmpty { Text("Subtítulos").recipe(.caption) }
+                HStack(spacing: DS.Space.s1) {
+                    ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected) { pickLanguage(l.id) } }
+                    pill(Text("Otro…"), selected: false, action: otherLanguage).accessibilityIdentifier("subtitle-dock-other")
+                    if compact { doneButton }
+                }
             }
             if let version {
                 if compact {

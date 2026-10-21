@@ -527,7 +527,7 @@ TRANSLATIONS = {
     "Ya la viste: son las pistas de audio del archivo.": "You've watched it: these are the file's audio tracks.", "¿Otro título?": "Another title?",
     "¿Otro título? El nombre dice otro año: puede ser otra película.": "Another title? The name says another year: it may be a different movie.",
     "1 oculta: grabada en el cine o tráiler": "1 hidden: a theater recording or trailer",
-    "Arrastra para mover": "Drag to move", "Arrastra para mover el video": "Drag to move the video",
+    "Arrastra para mover": "Drag to move", "Mantén presionado para apagar o prender los subtítulos": "Touch and hold to turn subtitles on or off", " · otra versión": " · another version", "Audio": "Audio", "Arrastra para mover el video": "Drag to move the video",
     " y ": " and ", "Tu idioma": "Your language", "Original": "Original", "Comprobado": "Checked", "Versión": "Version",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
