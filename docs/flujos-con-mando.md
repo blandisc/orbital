@@ -11,7 +11,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 |---|---|---|
 | Encender la Legion Go y llegar a Orbital | Acceso directo de inicio (`pythonw -m orbital`) | ✅ |
 | Moverse entre juegos y filas | D-pad / stick; LT/RT saltan de 5 en 5 | ✅ |
-| Cambiar de sección (Para ti, Inicio, Juegos, Películas y series, TV en vivo, Apps) | LB / RB (en TV en vivo, primero pasan de categoría: ver más abajo) | ✅ |
+| Cambiar de sección (Para ti, Inicio, Juegos, Películas y series, TV en vivo, Apps) | LB / RB (también en TV en vivo: las categorías se cambian con LT / RT o con ↑↓ en su lista) | ✅ |
 | Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar". Teclado grande: A escribe, X borra, Y espacio, **B vuelve**; Borrar todo (se vuelve Deshacer), Atrás, Dictar y Buscar. Con la caja vacía, tus búsquedas recientes. Resultados por grupo: En tu consola (juegos y apps), Películas, Series. Con un teclado físico se escribe directo | ✅ |
 | Películas y series | Abre en "Seguir viendo" ("T8 E23 · quedan 10 min"; A pone el episodio en el que ibas, directo; Y → Ver la ficha o Quitar de Seguir viendo); los catálogos debajo abren la ficha | ✅ |
 | Inicio | "Continuar": tus juegos y videos juntos, por fecha; lo que está abierto va primero con la píldora "Abierto" | ✅ (nuevo) |
@@ -19,7 +19,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Cada fila recuerda su último juego | automático | ✅ |
 | Llegar al final de una fila | la tarjeta rebota y el mando vibra | ✅ |
 | Mantener la cruceta o el stick | Repite y, tras un momento, acelera; el rebote y la vibración del final de la fila solo en la pulsación. El stick usa el eje dominante (nunca fila y columna a la vez) | ✅ |
-| Menús dentro de menús (☰ → Apagado, Ajustes…) | B regresa un nivel; la ruta se ve arriba del menú (Orbital › Ajustes) | ✅ |
+| Menús dentro de menús (☰ → Apagar, Ajustes…) | B regresa un nivel; la ruta se ve arriba del menú (Orbital › Ajustes) | ✅ |
 | Si la ventana de Orbital se cierra sola | se reabre (máx. 3 veces por minuto) | ✅ |
 
 ## Jugar
@@ -44,7 +44,7 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 
 | Situación | Qué pasa | Estado |
 |---|---|---|
-| Abres un juego de un emulador | Orbital se queda ENCIMA desde antes de abrir el emulador (nunca se asoma). Pantalla de carga: la portada en órbita sobre estrellas que avanzan. Cuando el juego está listo **y en pantalla completa** (espera hasta 4 s a que deje de cambiar de tamaño), salto a velocidad luz y Orbital se funde sobre el juego: sin brincos. B la salta | ✅ (nuevo) |
+| Abres un juego de un emulador | Orbital se queda ENCIMA desde antes de abrir el emulador (nunca se asoma). Pantalla de carga: la portada en órbita sobre el arte del juego (difuminado mientras llega el nítido; sin arte, las estrellas de la marca y la inicial del título). Cada imagen entra ya decodificada, nunca a medias; si tarda de más, dice «Está tardando más de lo normal». Cuando el juego está listo **y en pantalla completa** (espera hasta 4 s a que deje de cambiar de tamaño), salto a velocidad luz y Orbital se funde sobre el juego: sin brincos. B la salta | ✅ (nuevo) |
 | Abres otra cosa con un juego abierto | Te pregunta "¿Cerrar X?": "Volver a X" (primero) o "Cerrar y abrir". Un video se cierra sin preguntar (su avance queda guardado) | ✅ (nuevo) |
 | Dejas un video en pausa | A los 15 min se cierra solo; sigues donde te quedaste (`sessions.video_idle_minutes`) | ✅ (nuevo) |
 | Dejas un juego congelado (saliste con Home) | A la hora se cierra solo y te avisa; lo no guardado se pierde (`sessions.game_idle_minutes`, 0 = nunca) | ✅ (nuevo) |
@@ -98,8 +98,8 @@ y qué se midió).
 | Flujo | Cómo | Estado |
 |---|---|---|
 | Llegar a la sección | LB / RB hasta «TV en vivo» (entre Películas y series y Apps). Muestra los canales, con su logo y su número, por categorías | ✅ (nuevo) |
-| Cambiar de categoría | **LB / RB** pasan de una categoría a otra (Todos · General · Noticias · Deportes…). En la primera o la última siguen a la sección de al lado, así nunca te quedas atrapado. Las categorías con menos de 3 canales se juntan en «Otros» | ✅ (nuevo) |
-| Moverse por los canales | D-pad / stick; LT/RT saltan una pantalla (3 filas). La barra de arriba dice en qué canal vas («5 de 40»). ↑ desde la primera fila llega a las categorías | ✅ (nuevo) |
+| Cambiar de categoría | Las categorías están siempre a la vista a la izquierda: **↑↓** en la lista (o **LT / RT**, o deslizar de lado) pasan de una a otra (Todos · General · Noticias · Deportes…) y → entra a sus canales; **LB / RB** cambian de sección, así nunca te quedas atrapado. Las categorías con menos de 3 canales se juntan en «Otros» | ✅ (nuevo) |
+| Moverse por los canales | D-pad / stick; LT/RT saltan una pantalla (3 filas). La barra de arriba dice en qué canal vas («5 de 40»). ← desde la primera columna llega a las categorías | ✅ (nuevo) |
 | Logos | Cada canal con su logo, **parejo**: Orbital lo baja una vez, lo recorta y, si es oscuro, lo pone sobre una placa clara para que se lea sobre el fondo oscuro; queda guardado (funciona sin Internet y la TV no le pide imágenes a internet). Sin logo, las letras del nombre | ✅ (nuevo) |
 | Canales que fallaron una vez | Salen **al final** de su categoría, atenuados y con «Sin señal reciente»; el encabezado los cuenta («174 canales · 51 sin señal reciente»). Con un segundo fallo se ocultan | ✅ (nuevo) |
 | Ver un canal | **A**. Pantalla de carga («Sintonizando») y, con la primera imagen, el canal a pantalla completa (~2 s). Si había un juego abierto, antes pregunta «¿Cerrar X?» | ✅ (nuevo) |
@@ -138,7 +138,7 @@ Todo funciona igual con toques o con el control; Orbital cambia solo según lo q
 |---|---|---|
 | Actualizar biblioteca, sonidos, mostrar ocultos | ☰ | ✅ |
 | Salir al escritorio y volver | ☰ → Salir al escritorio; Home para volver | ✅ |
-| Suspender, reiniciar, apagar | ☰ → Apagado. Reiniciar y Apagar piden confirmar (Cancelar primero) y avisan si hay un juego abierto | ✅ |
+| Suspender, reiniciar, apagar | ☰ → Apagar. Reiniciar y Apagar piden confirmar (Cancelar primero) y avisan si hay un juego abierto | ✅ |
 | Tu consola | La primera vez (y en ☰ → Ajustes → Mantenimiento → Tu consola): qué encontró Orbital (Steam, emuladores, ES-DE, Stremio, reproductor, Alexa) y cómo resolver lo que falta | ✅ (nuevo) |
 | Conectar Stremio | ☰ → Ajustes → Cuentas → Stremio: correo y contraseña con el teclado en pantalla (Y muestra la contraseña, LT/RT cambian de campo). Ya no hace falta la PC | ✅ (nuevo) |
 | Ajustes | ☰ → Ajustes: Reproducción (idioma del audio, subtítulos, calidad, tamaño de subtítulos), Pantalla (tamaño del texto, márgenes de la TV, reducir movimiento), Sonido y vibración, Cuentas. A o ◀/▶ cambian el valor sin cerrar el menú | ✅ (nuevo) |

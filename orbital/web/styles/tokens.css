@@ -40,6 +40,8 @@
   --radius-sm: .45rem;
   --radius-md: .6rem;
   --radius-lg: .8rem;
+  --radius-xl: 1.1rem;
+  --radius-2xl: 1.4rem;
   --radius-pill: 999px;
 
   /* Tipografía: la de Windows, usando sus ejes de tamaño óptico */
@@ -62,8 +64,10 @@
   --text-display: calc(3.7rem * var(--text-scale));
   /* Recetas de texto: los mismos nombres que el iPhone (design/tokens.json → «type»), sobre esta escala.
      Una pieza nueva usa la receta; el peso va con ella (section y title en negrita, cardTitle y eyebrow medium). */
+  --type-hero: var(--text-display); /* el título del héroe de Películas y series y Apps (solo la TV) */
   --type-display: var(--text-3xl);
   --type-title: var(--text-2xl);
+  --type-heading: var(--text-xl); /* un encabezado de zona (Inicio, hojas, el mosaico), entre section y title (solo la TV) */
   --type-section: var(--text-lg);
   --type-card-title: var(--text-md);
   --type-body: var(--text-md);
@@ -75,10 +79,22 @@
   --weight-regular: 400;
   --weight-medium: 600;
   --weight-bold: 700;
+  /* Interlineado: seis pasos. none = una línea suelta (reloj, glifos); tight = títulos grandes; snug = datos y títulos medianos;
+     title = texto chico con «…» o line-clamp (el recorte corta en el renglón y con menos de ~1.3 se comía la cola de g, p, j, y);
+     normal = textos cortos; relaxed = párrafos. Un título GRANDE con line-clamp no sube el interlineado: deja asomar la cola con
+     `overflow: clip` + `overflow-clip-margin: var(--clip-tail)`. */
+  --clip-tail: .2em; /* lo que un título recortado (line-clamp) deja asomar bajo su último renglón: la cola de g, p, j, y */
+  --leading-none: 1;
+  --leading-tight: 1.1;
+  --leading-snug: 1.2;
+  --leading-title: 1.3;
+  --leading-normal: 1.35;
+  --leading-relaxed: 1.5;
   --tracking-display: -.035em;
   --tracking-tight: -.015em;
   --tracking-label: .025em; /* letras chicas y en negrita: glifos, «Abierto» */
-  --tracking-secret: .12em; /* los puntos de una contraseña */
+  --tracking-digits: .12em; /* cifras y puntos que se leen uno a uno: los de una contraseña, el número tecleado de un canal */
+  --tracking-wordmark: .32em; /* «orbital» al arrancar: la marca bien abierta */
   --tracking-rank: -.08em; /* la cifra grande del Top 10: el «10» no se abre de más */
   --blur-case: 32px; /* el fondo del estuche: la portada de una caja, tan desenfocada que solo queda su color */
   --blur-glass: 14px; /* vidrio: lo que flota sobre el arte (íconos del mosaico, el selector, Atrás táctil) */
@@ -106,14 +122,15 @@
   --duration-breathe: 1.4s; /* algo que espera: dictando */
   --duration-drift: 1.5s; /* el fondo sigue al foco (parallax) */
   --duration-alive: 9s; /* «cobra vida»: quieto en una pieza, su arte se acerca despacio */
+  --duration-boot-drift: 14s; /* el arranque: las estrellas derivan hasta que la biblioteca está lista */
+  --duration-notice: 4s; /* un aviso a la vista (el mismo del iPhone: design/tokens.json) */
+  --duration-notice-long: 6.5s; /* un error: se lee de lejos, en el sillón (solo la TV) */
   /* Pantalla de carga (cinemática: más lenta a propósito) */
   --duration-launch-travel: 5.5s;
-  --duration-launch-travel-near: 3.2s;
   --duration-launch-orbit: 3.4s; /* una vuelta pausada: con 2.6 s se sentía ansiosa */
   --duration-launch-sweep: 1.6s;
   --duration-launch-reveal: 700ms;
   --duration-launch-out: 420ms;
-  --duration-launch-drift: 26s; /* el arte del juego avanza despacio mientras carga */
   --duration-launch-draw: 1.1s; /* la órbita se dibuja al entrar */
   --duration-launch-float: 9s; /* portada y órbita flotan apenas, como en ingravidez */
   --duration-launch-trail: 110ms; /* cada punto de la estela del satélite, detrás del anterior */
@@ -131,7 +148,9 @@
   --z-overlay: 5;
   --z-hints: 6; /* el pie de controles sigue visible sobre búsqueda y episodios */
   --z-launch: 7;
+  --z-touch-back: 8; /* «Atrás» y «Menú» con el dedo: encima de la pantalla de carga */
   --z-toast: 10;
+  --z-boot: 20; /* el arranque tapa todo, avisos incluidos */
 
   /* Layout de consola: el lienzo mide al menos 80 × 50 rem. Escala con el ancho, pero
      sin pasarse del alto: así 16:10 (Legion Go) y 16:9 (TV) caben sin encimarse.
@@ -150,20 +169,41 @@
   --row-heading-height: 3.2rem; /* título + espacio para la elevación y el anillo del foco */
   --row-height: calc(var(--row-heading-height) + var(--card-height) * var(--card-focus-scale) + var(--space-5));
   --row-peek: 2.6rem; /* cuánto asoma la fila siguiente */
-  --control-height: 3rem;
+  --hints-room: calc(3.4rem + var(--space-4) + var(--safe-y)); /* lo que deja libre el pie de controles abajo */
+  --control-height: 3rem; /* un botón, un aviso, la barra de arriba */
+  --control-sm: 2.75rem; /* una pestaña de la barra de arriba, una tecla del riel */
+  --menu-row-height: 3.6rem; /* una fila de un menú y el pie de controles */
+  --touch-target: 2.9rem; /* con el dedo: al menos ~44 px */
+  --pill-height: 2.5rem; /* una píldora que se elige: filtro, pestaña, búsqueda reciente */
   --glyph-size: 1.75rem;
+  /* Íconos de línea dentro de un texto o un botón (los contenedores —círculos, marcas, casillas— llevan su propia medida). */
+  --icon-xs: .85rem;
+  --icon-sm: 1rem;
+  --icon-md: 1.25rem;
+  --icon-lg: 1.4rem;
+  --icon-xl: 1.8rem;
+  /* Grosor del trazo de un ícono (viewBox 24): fino por omisión; más grueso en lo chico (una palomita, la marca de una plataforma). */
+  --stroke-fine: 1.75;
+  --stroke-regular: 2;
+  --stroke-bold: 2.5;
+  --stroke-heavy: 3.2;
   --progress-height: .25rem;
   --sheet-width: 29rem;
   --keyboard-width: 54rem;
   /* Tiles (pantallas nuevas: Inicio): radio grande, foco que crece poco, vecinos atenuados. */
-  --radius-xl: 1.1rem;
-  --radius-2xl: 1.4rem;
   --tile-radius: var(--radius-xl);
   --tile-focus-scale: 1.03;
   /* El realce al enfocar: lo de dentro (la consola, el logo, la miniatura) crece y se levanta un poco, con resorte. */
   --pop-transform: scale(1.06) translateY(-.1rem);
   --pop-zoom: scale(1.04); /* el arte a sangre detrás del logo: se acerca, sin salirse */
   --tile-dim-opacity: .8;
+  /* Opacidad por lo que significa: apagado (sin internet, lo que otra capa tapa), fuera del foco (otra zona, lo que ya pasó o aún
+     no sale), lo que acompaña a lo enfocado, adornos (separadores, encabezados de filas ajenas) y el texto secundario sobre arte. */
+  --opacity-off: .4;
+  --opacity-away: .6;
+  --opacity-near: .72;
+  --opacity-faint: .5;
+  --opacity-text: .86;
   --tile-gap: 1.1rem;
   /* Márgenes de una tarjeta (docs/sistema-de-diseno.md · «Tarjetas»): del borde a lo que lleva dentro, igual en los cuatro
      lados, y lo que va en una esquina (píldora, insignia, número) usa el mismo, así su borde se alinea con el texto. */
@@ -182,13 +222,14 @@
   --decide-poster-height: 16rem;
   --console-name-fit: 15cqi; /* el nombre de una consola en su tarjeta, como mucho este tanto de su ancho (8 letras caben) */
   --because-stage-width: 30rem; /* «Porque viste»: el escenario fijo de la izquierda */
-  --because-seed-height: 5.4rem; /* sus miniaturas (tus últimos títulos) */ /* ¿Qué vemos?: los tres carteles */
+  --because-seed-height: 5.4rem; /* sus miniaturas (tus últimos títulos) */
   --year-top-height: 8.6rem; /* Tu año: los pósters de «Lo que más viste» (caben bajo el mapa) */
   --key-height: 3.2rem;
   --tv-rail-width: 15rem; /* TV en vivo: la lista de categorías */
   --tv-preview-width: 30rem; /* TV en vivo: la miniatura en vivo del canal enfocado */
   --tile-channel-width: 14.5rem; /* un canal de TV en vivo: ancho mínimo; las columnas se reparten el resto */
   --focus-outline: 3px; /* contorno de :focus-visible (teclado y ratón) */
+  --press-scale: .96; /* al tocar un botón, una tecla o una pista del pie: se hunde un poco */
   --inverse-scale: 1.06; /* teclas, chips y opciones enfocadas crecen un poco */
 }
 

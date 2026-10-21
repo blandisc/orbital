@@ -48,6 +48,11 @@ FADE_TO_BLACK = .75  # s de la salida de la pantalla de carga (el "salto" al jue
 # La entrada de la pantalla de carga (la portada vuela, el anillo se dibuja) dura casi 2 s. xemu abre a pantalla completa
 # desde el primer instante y contaba como listo en 1 s: la salida cortaba la entrada a medias y se veía trabada.
 MIN_LOADING = 2.0
+# Una película en caché abre en ~2 s y el fondo (600–800 KB de metahub) tardaba más en llegar: la pantalla de carga se iba
+# antes de que se viera. Si la interfaz avisó que su arte venía en camino, la salida espera a que se vea ART_DWELL s, con
+# tope ART_WAIT s después de listo (sin internet o con un arte que nunca llega, no se queda atorada).
+ART_WAIT = 3.0
+ART_DWELL = 1.2
 # xemu arranca la consola en negro varios segundos antes de la primera imagen del juego (2,5–5 s medidos): con su ventana ya
 # a pantalla completa contaba como listo y se veía ese negro. Con estos, se espera a que su ventana tenga imagen (con tope).
 PICTURE_RUNNERS = ("xemu",)
@@ -130,7 +135,7 @@ def keep_game_in_front(launcher: Launcher, item_id: str, win, user_returned=lamb
 def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runner: str | None = None,
                         notify=None, skip: threading.Event | None = None, timeout: float = READY_TIMEOUT,
                         win=None, sleep=time.sleep, pinned: int | None = None, ready_check=None,
-                        user_returned=None, clock=time.time) -> bool:
+                        user_returned=None, clock=time.time, art_wait=None) -> bool:
     """Pantalla de carga hasta que el juego esté listo, y luego un fundido de Orbital al juego.
 
     Mientras el emulador abre se ven sus ventanas feas (la lista de juegos de Eden, una consola…).
@@ -140,7 +145,8 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
     frente DEBAJO de Orbital y Orbital se funde hasta desaparecer: del cohete al juego, sin cortes.
     Si ya estás en otra cosa, no se pelea por el foco. `skip`: B en la pantalla de carga.
     `pinned`: la ventana de Orbital ya fijada encima antes de lanzar (pin_orbital).
-    `ready_check()`: otra señal de "listo" (el reproductor: hasta la primera imagen, no una ventana negra)."""
+    `ready_check()`: otra señal de "listo" (el reproductor: hasta la primera imagen, no una ventana negra).
+    `art_wait()`: cuántos segundos más espera el arte de la pantalla de carga para verse (0 = ya; ver Sessions.art_wait)."""
     if win is None:
         if sys.platform != "win32":
             return False
@@ -203,6 +209,10 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
             early = MIN_LOADING - (clock() - started)
             if early > 0 and not (skip and skip.is_set()):
                 sleep(early)  # que la entrada termine antes de la salida
+            if art_wait is not None:  # que el arte alcance a verse (con tope)
+                cap = clock() + ART_WAIT
+                while not (skip and skip.is_set()) and clock() < cap and (left := art_wait()) > 0:
+                    sleep(min(max(left, .05), .2))  # nunca esperas diminutas (con un resto de 1e-16 no avanzaba)
             notify({"type": "launch-ready", "id": item_id})  # la pantalla de carga hace su salida
             sleep(FADE_TO_BLACK)
             if target and win.foreground() != target:

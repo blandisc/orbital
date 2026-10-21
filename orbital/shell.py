@@ -518,8 +518,8 @@ class ConsoleShell:
                 self._idle_warned = True
                 running = self.catalog.launcher.status()
                 if running:
-                    self.notify({"type": "toast", "message": f"{running['title']} se cerrará en {IDLE_WARNING // 60} min si no "
-                                                        "vuelves (Home). Lo no guardado se pierde."})
+                    self.notify({"type": "toast", "tone": "warn", "message": f"{running['title']} se cerrará en {IDLE_WARNING // 60} min",
+                                 "detail": "Si no vuelves (Home). Lo no guardado se pierde"})
             return False
         self._idle_warned = False
         running = self.catalog.launcher.status()
@@ -530,7 +530,7 @@ class ConsoleShell:
             for pid in pids:
                 subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True,
                                creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]
-        self.notify({"type": "toast", "message": f"Cerré {title}: llevaba {limit // 60} min en pausa."})
+        self.notify({"type": "toast", "message": f"Cerré {title}", "detail": f"Llevaba {limit // 60} min en pausa"})
         return True
 
     def unpin_orbital(self) -> None:

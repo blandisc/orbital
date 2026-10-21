@@ -22,6 +22,10 @@ class LaunchRequest(BaseModel):
     keep: bool = False  # abrir sin cerrar lo que estaba abierto
 
 
+class ArtRequest(BaseModel):
+    shown: bool
+
+
 def humane_error(exc: Exception, what: str = "") -> str:
     """Errores de Windows/Python en palabras de persona (lo técnico se queda en el log)."""
     if isinstance(exc, FileNotFoundError):
@@ -57,6 +61,12 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(500, humane_error(exc, found.title if found else ""))
         # `reveal`: la pantalla de carga espera el evento launch-ready (el juego ya está listo).
         return {"ok": True, "title": item.title, "reveal": catalog.revealing}
+
+    @r.post("/api/launch/art")
+    def launch_art(body: ArtRequest) -> dict:
+        """La pantalla de carga avisa de su arte (viene en camino / ya se ve): la salida espera a que se vea."""
+        catalog.sessions.art(body.shown)
+        return {"ok": True}
 
     @r.post("/api/launch/reveal")
     def launch_reveal() -> dict:

@@ -219,7 +219,7 @@ class Downloads:
                 return
             job.update(status="done", error=None)
             log.info("Descargado: %s (%s)", job["title"], job.get("file"))
-            self.publish({"type": "toast", "message": f"Listo para ver sin internet: {job['title']}"})
+            self.publish({"type": "toast", "tone": "success", "message": job["title"], "detail": "Listo para ver sin internet"})
         except Exception as exc:  # noqa: BLE001 - una descarga que falla no tumba la cola
             if job["id"] in self._cancel:
                 return

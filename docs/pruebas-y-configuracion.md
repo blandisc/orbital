@@ -63,6 +63,8 @@
 ### Pantalla de carga y sesiones
 - [ ] Al abrir un juego de Eden no se ven la lista de juegos ni ventanas de Eden: la pantalla de Orbital se queda hasta que el juego arranca, se funde a negro y aparece el juego.
 - [ ] B en la pantalla de carga la salta.
+- [ ] El arte de la pantalla de carga entra completo (nunca por pedazos) y no se traba mientras el juego abre; sin internet, las estrellas y la inicial del título en la tarjeta.
+- [ ] Una película en caché: alcanzas a ver su fondo antes de que empiece.
 - [ ] Con un juego abierto, abrir otro pregunta "¿Cerrar…?" y "Volver a…" regresa al juego.
 - [ ] Un video en pausa 15 min se cierra solo; al reabrirlo sigue donde te quedaste.
 

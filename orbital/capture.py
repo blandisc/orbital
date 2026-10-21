@@ -151,4 +151,4 @@ def take_and_describe(title: str = "") -> dict:
     path = take(title)
     if path is None:
         return {"type": "toast", "ok": False, "message": "No pude hacer la captura"}
-    return {"type": "toast", "message": f"Captura guardada en {path.parent.name}", "capture": path.name}
+    return {"type": "toast", "tone": "success", "message": f"Captura guardada en {path.parent.name}", "capture": path.name}

@@ -97,6 +97,9 @@ class Sessions:
         # Antes de abrir algo, cerrar lo que estaba abierto (lo pone el servidor: shell.close_previous).
         self.before_launch: Callable[[str], None] | None = None
         self._reveal_skip = threading.Event()
+        # El arte de la pantalla de carga (lo avisa la interfaz): cuándo empezó a esperarlo y cuándo ya se vio.
+        self._art_pending_at: float | None = None
+        self._art_shown_at: float | None = None
         # Por hilo: cada petición sabe si SU lanzamiento tiene pantalla de carga (antes era un solo
         # valor compartido y un lanzamiento por voz en segundo plano podía pisar el de la interfaz).
         self._local = threading.local()
@@ -256,10 +259,28 @@ class Sessions:
 
         threading.Thread(target=reveal, args=(self.launcher, item_id, title, runner),
                          kwargs={"notify": self.events.publish, "skip": self._reveal_skip, "pinned": pinned,
-                                 "ready_check": ready, "timeout": timeout,
+                                 "ready_check": ready, "timeout": timeout, "art_wait": self.art_wait,
                                  "user_returned": lambda: self.returned_at > launched},
                          daemon=True, name="to-front").start()
         return True
+
+    def art(self, shown: bool) -> None:
+        """La pantalla de carga avisa de su arte: `False` viene en camino, `True` ya se ve (o ya no hace falta)."""
+        if shown:
+            self._art_shown_at = time.monotonic() if self._art_pending_at is not None else None
+            self._art_pending_at = None
+        else:
+            self._art_pending_at, self._art_shown_at = time.monotonic(), None
+
+    def art_wait(self, now: float | None = None) -> float:
+        """Cuánto más espera la salida para que el arte se vea un momento. 0 sin aviso de la interfaz (desde el iPhone o
+        por voz no hay pantalla de carga que esperar) o si el aviso es viejo."""
+        now = time.monotonic() if now is None else now
+        if self._art_pending_at is not None:
+            return .2 if now - self._art_pending_at < 90 else 0.0
+        if self._art_shown_at is not None:
+            return max(0.0, self._art_shown_at + focus.ART_DWELL - now)
+        return 0.0
 
     def reveal_now(self) -> None:
         """B en la pantalla de carga: deja de esperar y muestra lo que haya."""

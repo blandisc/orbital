@@ -4,6 +4,8 @@ import subprocess
 import threading
 import time
 
+import pytest
+
 from orbital import focus as focus_mod
 from orbital import launcher as launcher_mod
 from orbital import player
@@ -369,6 +371,49 @@ def test_instant_ready_still_lets_the_loading_screen_finish_its_entrance():
     assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Star Wars: Battlefront II", "xemu",
                                notify=notify, timeout=5, win=win, sleep=sleep, pinned=1, clock=lambda: now[0])
     assert events == [({"type": "launch-ready", "id": "x"}, focus_mod.MIN_LOADING)]
+
+
+def _reveal_with_art(art_wait):
+    """Un juego listo al instante; devuelve a qué segundo llegó launch-ready."""
+    win = FocusWindows()
+    win.open(3, "xemu | v0.8.137", fullscreen=True)
+    now, events = [100.0], []
+
+    def sleep(seconds):
+        now[0] += seconds
+
+    bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Dune", "xemu", notify=lambda e: events.append(now[0] - 100),
+                        timeout=5, win=win, sleep=sleep, pinned=1, clock=lambda: now[0], art_wait=lambda: art_wait(now[0] - 100))
+    return events[0]
+
+
+def test_loading_screen_waits_until_its_art_has_been_seen():
+    """Una película en caché abría en 2 s y el fondo llegaba después: la pantalla se iba sin que se viera."""
+    shown_at = 2.6  # el fondo se pintó a los 2.6 s: se queda ART_DWELL más
+    ready = _reveal_with_art(lambda t: .2 if t < shown_at else max(0.0, shown_at + focus_mod.ART_DWELL - t))
+    assert shown_at + focus_mod.ART_DWELL <= ready < shown_at + focus_mod.ART_DWELL + .3
+
+
+def test_art_that_never_arrives_does_not_hold_the_loading_screen_forever():
+    ready = _reveal_with_art(lambda t: .2)
+    assert ready == pytest.approx(focus_mod.MIN_LOADING + focus_mod.ART_WAIT, abs=.3)
+
+
+def test_no_art_notice_means_no_extra_wait():
+    assert _reveal_with_art(lambda t: 0.0) == focus_mod.MIN_LOADING
+
+
+def test_sessions_art_wait():
+    from orbital.sessions import Sessions
+    s = Sessions.__new__(Sessions)
+    s._art_pending_at = s._art_shown_at = None
+    assert s.art_wait(now=10) == 0  # sin aviso de la interfaz (iPhone, voz): no espera
+    s.art(False)
+    s._art_pending_at = 10.0
+    assert s.art_wait(now=11) > 0 and s.art_wait(now=200) == 0  # un aviso viejo no cuenta
+    s.art(True)
+    s._art_shown_at = 11.0
+    assert s.art_wait(now=11.5) == pytest.approx(focus_mod.ART_DWELL - .5) and s.art_wait(now=13) == 0
 
 
 def test_guard_respects_home_and_closed_games():

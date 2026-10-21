@@ -17,7 +17,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     if (state.online !== false) return false;
     sound.play("error");
     rumble("edge");
-    ui.toast.show(`Sin internet: ${title || "esto"} necesita conexión. Tus juegos siguen aquí.`, { error: true });
+    ui.toast.show("Sin internet", { error: true, detail: `${title || "Esto"} necesita conexión · Tus juegos siguen aquí` });
     return true;
   }
 
@@ -65,7 +65,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       const res = await Promise.race([request, new Promise((resolve) => setTimeout(() => resolve(SLOW), 40_000))]);
       if (res === SLOW) {
         ui.launch.hide();
-        ui.toast.show(`${title} está tardando. Se abrirá solo en cuanto esté listo.`);
+        ui.toast.show(`${title} está tardando`, { detail: "Se abrirá solo en cuanto esté listo" });
         const release = () => { if (state.launchingTitle === title) { state.launchingTitle = null; state.launchLockedUntil = 0; } };
         const giveUp = setTimeout(release, 180_000);
         request.then(() => pollStatus(), (err) => { sound.play("error"); ui.toast.show(err.message, { error: true }); })
@@ -136,7 +136,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       const res = await api.resume();
       if (res.ok === false) { // la ventana ya no existe (se cerró por su cuenta): no dejar A muerto
         sound.play("error");
-        ui.toast.show(`No encuentro la ventana de ${state.running?.title || "lo que estaba abierto"}. Ábrelo otra vez.`, { error: true });
+        ui.toast.show(`No encuentro la ventana de ${state.running?.title || "lo que estaba abierto"}`, { error: true, detail: "Ábrelo otra vez" });
         pollStatus();
       }
     } catch (err) {

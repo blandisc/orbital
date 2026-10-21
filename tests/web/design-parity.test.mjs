@@ -106,6 +106,13 @@ test("espacios, radios y duraciones: los mismos números", () => {
   }
 });
 
+test("un aviso dura lo mismo en la TV y en el iPhone", () => {
+  // El iPhone lo llama Timing.banner (segundos); la TV, --duration-notice (los errores duran más solo en la TV: se leen
+  // desde el sillón).
+  assert.equal(ms("--duration-notice"), Math.round(swiftEnum("Timing").banner * 1000), "TV --duration-notice = iPhone Timing.banner");
+  assert.ok(ms("--duration-notice-long") > ms("--duration-notice"));
+});
+
 test("capas translúcidas y el tono del arte: las mismas opacidades", () => {
   const opacity = swiftEnum("Opacity");
   for (const [name, { value, tv: variable }] of entries(TOKENS.opacity)) {
@@ -134,6 +141,16 @@ test("las recetas de texto se llaman igual en los dos lados", () => {
     assert.ok(line.includes(`.system(.${spec.ios},`), `iPhone .${recipe}: ${spec.ios} (es ${line.trim()})`);
     const weight = line.match(/\.weight\(\.(\w+)\)/)?.[1] ?? (spec.ios === "headline" ? "semibold" : "regular");
     assert.equal(weight, spec.peso, `iPhone .${recipe}: peso`);
+  }
+});
+
+test("el color de cada plataforma es el mismo en la TV y en el iPhone", () => {
+  // Halo de su tarjeta y cifras de su Top 10 (design/tokens.json › platforms; `otra` = --platform-other).
+  const swift = Object.fromEntries([...SWIFT_TOKENS.match(/enum Platform \{[\s\S]*?hex: \[String: String\] = \[([\s\S]*?)\]/)[1]
+    .matchAll(/"(\w+)":\s*"(#[0-9a-f]{6})"/gi)].map((m) => [m[1], m[2].toLowerCase()]));
+  for (const [name, value] of entries(TOKENS.platforms)) {
+    assert.equal(tvValue(`--platform-${name === "otra" ? "other" : name}`).toLowerCase(), value.toLowerCase(), `TV --platform-${name}`);
+    assert.equal(swift[name], value.toLowerCase(), `iPhone Platform.hex[${name}]`);
   }
 });
 

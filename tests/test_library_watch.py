@@ -55,7 +55,7 @@ def test_a_game_copied_with_orbital_open_appears_and_the_tv_is_told(library):
     new = library.rescan_for_new()
     assert [i.title for i in new] == ["Earthbound"]
     assert {"type": "library-changed"} in events
-    assert any(e.get("type") == "toast" and "Earthbound" in e.get("message", "") for e in events)
+    assert any(e.get("type") == "toast" and "Earthbound" in e.get("detail", "") for e in events)  # «Nuevo en tu biblioteca» · los nombres
     assert library.rescan_for_new() == []  # sin cambios: no avisa otra vez
 
 
