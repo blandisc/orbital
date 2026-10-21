@@ -31,6 +31,11 @@ enum Demo {
     /// con `download` se ve la descarga de prueba y el aviso; con `open`, la tarjeta «Desde la TV» en Inicio.
     static var inbox: String? { value(after: "-demo-inbox") }
 
+    /// `-demo-handoff <segundos>`: el aviso «Sigue en tu Orbital» al abrir, como si acabaras de pasar algo a la TV en ese punto.
+    static var handoff: Double? { value(after: "-demo-handoff").flatMap(Double.init) }
+    static let handoffRequest = PlayRequest(kind: "series", metaID: "tt0386676", videoID: "tt0386676:2:5", originalTitle: "The Office",
+                                            displayTitle: "La Oficina", episodeLabel: "T2 · E5")
+
     /// `-demo-scrobble`: Trakt «conectado» con un último scrobble de mentira (para ver la fila de Ajustes › Trakt en el simulador).
     static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
     /// `-demo-because`: Trakt de mentira con historial y relacionados, para ver «Porque viste» en Para ti.

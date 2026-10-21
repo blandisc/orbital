@@ -620,6 +620,14 @@ enum DS {
         static let immersiveGlowRadius: CGFloat = 520
     }
 
+    /// Los avisos (`Toast`).
+    enum Toast {
+        /// El alto de la cápsula de una acción que se hace ahí mismo («Deshacer»).
+        static let actionHeight: CGFloat = 30
+        /// Antes de esto (segundos), el aviso de pasar a la TV dice «desde el principio» y no «desde 0:12».
+        static let fromStartUnder: Double = 30
+    }
+
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
     enum Timing {
         /// Cuánto espera una lista abierta (un premio) antes de dar por hecho que no llegará y mostrar el vacío.
@@ -629,7 +637,7 @@ enum DS {
         /// Cuánto espera una confirmación («¿Ver en la TV?») antes de cerrarse sola.
         static let confirm: UInt64 = 3_500_000_000
         static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)
-        /// Cuánto se queda el aviso «Pasó a tu Orbital» (con «Deshacer»).
+        /// Cuánto se queda el aviso «Sigue en tu Orbital» (con «Deshacer»).
         static let handoff = UInt64(8 * 1e9)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
         static let longPressDelay = DesignTokens.Timing.longPressDelay

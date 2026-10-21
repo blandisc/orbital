@@ -249,6 +249,9 @@ struct Toast: View {
     var detail: Text?
     var actionTitle: LocalizedStringKey?
     var action: (() -> Void)?
+    /// Una acción que se hace ahí mismo («Deshacer»): botón en su cápsula, sin «›» (la flecha es para ir a otro lado, «Ver ›»).
+    var actionInPlace = false
+    var actionSymbol: String?
     var seconds: UInt64 = DS.Timing.banner
     let dismiss: () -> Void
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
@@ -263,11 +266,22 @@ struct Toast: View {
             }
             if let actionTitle, let action {
                 Button { action(); dismiss() } label: {
-                    HStack(spacing: DS.Space.s1) { Text(actionTitle).fontWeight(.semibold); Image(systemName: "chevron.right").font(DS.TextRecipe.caption.font.weight(.bold)) }
-                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.accent)
+                    if actionInPlace {
+                        HStack(spacing: DS.Space.s1) {
+                            if let actionSymbol { Image(systemName: actionSymbol).font(DS.TextRecipe.caption.font.weight(.bold)) }
+                            Text(actionTitle).fontWeight(.semibold)
+                        }
+                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text)
+                        .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Toast.actionHeight)
+                        .background(DS.fillStrong, in: Capsule())
+                        .contentShape(Capsule())
+                    } else {
+                        HStack(spacing: DS.Space.s1) { Text(actionTitle).fontWeight(.semibold); Image(systemName: "chevron.right").font(DS.TextRecipe.caption.font.weight(.bold)) }
+                            .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.accent)
+                    }
                 }
                 .buttonStyle(.plain)
-                .padding(.leading, DS.Space.s1)
+                .padding(.leading, actionInPlace ? DS.Space.s2 : DS.Space.s1)
             }
         }
         .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)

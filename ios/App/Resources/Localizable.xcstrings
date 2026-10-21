@@ -100,17 +100,6 @@
         }
       }
     },
-    "%@ · sigue en %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · continues at %@"
-          }
-        }
-      }
-    },
     "%@. Revisa tu conexión e intenta de nuevo.": {
       "extractionState": "manual",
       "localizations": {
@@ -8570,17 +8559,6 @@
         }
       }
     },
-    "Pasó a tu Orbital": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moved to your Orbital"
-          }
-        }
-      }
-    },
     "Pausa": {
       "extractionState": "manual",
       "localizations": {
@@ -10282,6 +10260,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Continuing here."
+          }
+        }
+      }
+    },
+    "Sigue en tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now on your Orbital"
           }
         }
       }
@@ -12955,6 +12944,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "from “%@”"
+          }
+        }
+      }
+    },
+    "desde %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "from %@"
+          }
+        }
+      }
+    },
+    "desde el principio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "from the start"
           }
         }
       }

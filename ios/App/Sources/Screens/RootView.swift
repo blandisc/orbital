@@ -28,6 +28,14 @@ struct RootView: View {
         _services = StateObject(wrappedValue: ModelObserver(env.services))
     }
 
+    /// Desde dónde sigue en la TV: «desde 12:34», o «desde el principio» si apenas empezaba.
+    /// (Un `Text`, no un `String`: así sale en el idioma de la app y no en el del sistema.)
+    static func handoffFrom(_ position: Double) -> Text {
+        guard position >= DS.Toast.fromStartUnder else { return Text("desde el principio") }
+        let time = Duration.seconds(position).formatted(.time(pattern: position >= 3600 ? .hourMinuteSecond : .minuteSecond))
+        return Text("desde \(time)")
+    }
+
     var body: some View {
         Group {
             switch session.model.state {
@@ -47,9 +55,11 @@ struct RootView: View {
         .overlay(alignment: .top) {
             Group {
                 if let h = ui.handoff {
-                    Toast(symbol: "tv", color: DS.accent, title: Text("Pasó a tu Orbital"),
-                          detail: Text("\(h.request.displayTitle) · sigue en \(Duration.seconds(h.position).formatted(.time(pattern: h.position >= 3600 ? .hourMinuteSecond : .minuteSecond)))"),
-                          actionTitle: "Deshacer", action: { Task { await env.undoHandoff() } }, seconds: DS.Timing.handoff, dismiss: { env.handoff = nil })
+                    // «Sigue en tu Orbital · Minions & Monstruos · desde 12:34»; si iba al principio, lo dice así (no «en 0:00»).
+                    Toast(symbol: "tv", color: DS.brandMoon, title: Text("Sigue en tu Orbital"),
+                          detail: Text(verbatim: "\(h.request.displayTitle) · ") + Self.handoffFrom(h.position),
+                          actionTitle: "Deshacer", action: { Task { await env.undoHandoff() } }, actionInPlace: true, actionSymbol: "arrow.uturn.backward",
+                          seconds: DS.Timing.handoff, dismiss: { env.handoff = nil })
                         .transition(.move(edge: .top).combined(with: .opacity))
                 } else {
                     BannerView()
@@ -64,6 +74,9 @@ struct RootView: View {
         .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
         .animation(DS.Motion.base(reduceMotion), value: ui.banner)
         .task {
+            if Demo.isOn, let at = Demo.handoff {
+                env.handoff = .init(request: Demo.handoffRequest, position: at)
+            }
             _ = await env.services.watch.flushPending()
             // Con tu Orbital conectada: lo nuevo de la consola (otra clave, Trakt recién conectado allá) llega solo.
             if env.services.orbital.isConfigured { _ = try? await env.services.connectOrbital() }
