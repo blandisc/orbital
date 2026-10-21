@@ -19,6 +19,9 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Modo iPod": "iPod mode", "Blanco": "White", "Negro": "Black", "Reproduciendo": "Now Playing",
+    "Menú: cerrar el reproductor": "Menu: close the player", "Atrás 10 segundos": "Back 10 seconds",
+    "Adelante 10 segundos": "Forward 10 seconds", "Reproducir o pausar": "Play or pause",
     "Elige uno o varios · el número es cuántas hay": "Pick one or more · the number is how many there are",
     "Buscando opciones…": "Finding options…",
     "de «%@»": "from “%@”",

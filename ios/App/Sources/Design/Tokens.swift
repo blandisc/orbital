@@ -341,6 +341,41 @@ enum DS {
         static let topScrimHeight: CGFloat = 170
     }
 
+    /// «Modo iPod» del reproductor vertical: un iPod Classic blanco o negro (la caja, la pantalla con su marco y la rueda).
+    /// Colores fijos a propósito: son los del aparato, no cambian con el modo claro u oscuro (se elige la cara).
+    enum IPod {
+        // La caja.
+        static let whiteTop = Color(red: 0.96, green: 0.96, blue: 0.95), whiteBottom = Color(red: 0.88, green: 0.88, blue: 0.87)
+        static let blackTop = Color(red: 0.17, green: 0.17, blue: 0.18), blackBottom = Color(red: 0.05, green: 0.05, blue: 0.06)
+        // La pantalla: el marco negro, el fondo claro, la barra «Reproduciendo» y el avance azul.
+        static let bezelColor = Color(red: 0.06, green: 0.06, blue: 0.06)
+        static let lcd = Color(red: 0.97, green: 0.97, blue: 0.97)
+        static let lcdText = Color(red: 0.07, green: 0.07, blue: 0.07), lcdMuted = Color(red: 0.28, green: 0.28, blue: 0.28)
+        static let barTop = Color(red: 0.99, green: 0.99, blue: 0.99), barBottom = Color(red: 0.79, green: 0.81, blue: 0.84)
+        static let barLine = Color(red: 0.55, green: 0.59, blue: 0.63)
+        static let fillTop = Color(red: 0.56, green: 0.76, blue: 0.96), fillBottom = Color(red: 0.18, green: 0.5, blue: 0.82)
+        /// La pantalla del iPod negro: todo oscuro (para ver de noche), con las letras claras.
+        static let lcdDark = Color(red: 0.09, green: 0.09, blue: 0.1)
+        static let lcdDarkText = Color(red: 0.93, green: 0.93, blue: 0.93), lcdDarkMuted = Color(red: 0.66, green: 0.66, blue: 0.68)
+        static let barDarkTop = Color(red: 0.24, green: 0.24, blue: 0.26), barDarkBottom = Color(red: 0.12, green: 0.12, blue: 0.13)
+        static let barDarkLine = Color(red: 0.3, green: 0.3, blue: 0.32)
+        // La rueda: la cara, su orilla, el botón del centro y las letras (MENU, ⏮ ⏭ ▶❚❚), en blanco y en negro.
+        static let wheelWhiteTop = Color(red: 1, green: 1, blue: 1), wheelWhiteBottom = Color(red: 0.91, green: 0.91, blue: 0.9)
+        static let wheelWhiteEdge = Color(red: 0.8, green: 0.8, blue: 0.79), labelWhite = Color(red: 0.45, green: 0.45, blue: 0.45)
+        static let centerWhiteTop = Color(red: 0.92, green: 0.92, blue: 0.91), centerWhiteBottom = Color(red: 0.98, green: 0.98, blue: 0.97)
+        static let wheelBlackTop = Color(red: 0.23, green: 0.23, blue: 0.24), wheelBlackBottom = Color(red: 0.13, green: 0.13, blue: 0.14)
+        static let wheelBlackEdge = Color(red: 0.03, green: 0.03, blue: 0.03), labelBlack = Color(red: 0.8, green: 0.8, blue: 0.8)
+        static let centerBlackTop = Color(red: 0.08, green: 0.08, blue: 0.09), centerBlackBottom = Color(red: 0.18, green: 0.18, blue: 0.19)
+        // Medidas: margen a los lados, marco, esquinas, la barra de arriba, lo de abajo del video y la rueda.
+        static let inset: CGFloat = 22, bezel: CGFloat = 10, bezelRadius: CGFloat = 18, lcdRadius: CGFloat = 8
+        static let statusHeight: CGFloat = 26, infoHeight: CGFloat = 92, progressHeight: CGFloat = 10, line: CGFloat = 1
+        /// La rueda: qué parte del ancho ocupa, el botón del centro (parte del diámetro) y dónde van las letras (desde la orilla).
+        static let wheelShare: CGFloat = 0.74, centerShare: CGFloat = 0.38, labelReach: CGFloat = 0.11
+        /// Cada muesca de la rueda (en grados) busca 10 s; girando rápido (muescas a menos de `fastNotch` s), un minuto.
+        static let notchDegrees: Double = 30, fastNotch: Double = 0.06, fastStep: Double = 60
+        static let menuTracking: CGFloat = 1.5
+    }
+
     /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.
     enum Editorial {
         /// La tarjeta de un pendiente de tu watchlist (dos renglones que se deslizan juntos).

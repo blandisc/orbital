@@ -72,6 +72,11 @@ struct PlayerScreen: View {
     @AppStorage(PlayerScreen.portraitCenterKey) private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
     @State private var portraitDrag: Double?
     @State private var portraitAtDragStart: Double = 0
+    /// «Modo iPod» (vertical): "" apagado, "white" o "black". Se queda para la próxima.
+    @AppStorage("player-ipod") private var ipodFace = ""
+    /// Girando la rueda del iPod: a dónde vas (se va al soltar) y cuándo fue la última muesca (rápido = de a minuto).
+    @State private var wheelTarget: Double?
+    @State private var lastNotch: Date?
     /// El zoom del video (botón de arriba y pellizco, como Infuse); se recuerda en ajustes. `zoomToast`: el aviso con su nombre.
     @State private var zoom: VideoZoom = .fit
     /// Cada toque en la tira de probar subtítulos reinicia su tiempo para irse.
@@ -134,11 +139,12 @@ struct PlayerScreen: View {
     var body: some View {
         let model = holder.model
         ZStack {
-            DS.video.ignoresSafeArea()
+            if let face = ipod { Rectangle().fill(face.body).ignoresSafeArea() } else { DS.video.ignoresSafeArea() }
             // En vertical con el panel abierto, el video sube a la parte de arriba (la hoja ocupa la de abajo).
             GeometryReader { geo in
                 let rect = videoRect(in: geo.size)
                 ZStack {
+                    if ipod != nil { DS.video }   // la pantalla del iPod: negro detrás del video
                     holder.engine.surface
                     if dragAxis != .horizontal && !fillsPortrait {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
@@ -189,14 +195,16 @@ struct PlayerScreen: View {
             }
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
-            let controlsShown = controlsVisible && !locked && !panel && !failed(model) && !subtitleDock
+            let controlsShown = controlsVisible && !locked && !panel && !failed(model) && !subtitleDock && ipod == nil
             if controlsShown { controls(model).transition(.opacity) }
-            if controlsShown && moreOpen { moreLayer(model) }
+            // El iPod no se esconde (es el aparato): con la pantalla bloqueada se ve pero no se toca.
+            if let face = ipod, !failed(model) { ipodChrome(model, face: face).transition(.opacity) }
+            if (controlsShown || (ipod != nil && !locked)) && moreOpen { moreLayer(model) }
             if subtitleDock && !locked && !panel { subtitleDockLayer(model).transition(.move(edge: .bottom).combined(with: .opacity)) }
             // «Saltar intro» no depende de los controles (se esconden a los pocos segundos y con ellos se iba el botón):
             // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse. Con los controles a la
             // vista (en pausa, o con la ventana de PiP afuera) ya va dentro de ellos: antes salía dos veces.
-            else if !controlsShown && !locked && !panel && model.skipIntroTo != nil {
+            else if !controlsShown && !locked && !panel && ipod == nil && model.skipIntroTo != nil {
                 VStack { Spacer(); HStack { Spacer(); skipIntro(model) } }.padding(landscape ? DS.Space.s6 : DS.Space.gutter).transition(.opacity)
             }
             // Probando subtítulos (elegidos en el panel): la tira al pie del video (en vertical nunca tapa los controles,
@@ -217,6 +225,13 @@ struct PlayerScreen: View {
                     VStack { Spacer(); HStack { Spacer(); upNextCard(model, up) } }
                         .padding(.horizontal, DS.Space.s6)
                         .padding(.bottom, controlsVisible ? DS.Space.s6 + DS.Size.touchTarget * 2 : DS.Space.s6)
+                } else if ipod != nil {
+                    // En el iPod, sobre lo de abajo de la pantalla (el nombre y el avance), como un aviso del aparato.
+                    GeometryReader { geo in
+                        let screen = IPodLayout(in: geo.size).screen
+                        upNextCard(model, up).padding(.horizontal, DS.Space.gutter)
+                            .frame(width: geo.size.width, height: screen.maxY - DS.Space.s2, alignment: .bottom)
+                    }
                 } else if !controlsVisible {
                     GeometryReader { geo in
                         upNextCard(model, up).padding(.horizontal, DS.Space.gutter)
@@ -238,6 +253,7 @@ struct PlayerScreen: View {
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
         .animation(DS.Motion.base(reduceMotion), value: panel)
         .animation(DS.Motion.base(reduceMotion), value: dragAxis)
+        .animation(DS.Motion.base(reduceMotion), value: ipodFace)
         .task {
             // Abre como tienes el teléfono (Los Simpson, siempre vertical); boca arriba o sin saberlo, horizontal.
             #if DEBUG
@@ -259,6 +275,7 @@ struct PlayerScreen: View {
             zoom = VideoZoom(stored: env.services.appSettings.videoZoom)
             #if DEBUG
             if Demo.isOn, let raw = Demo.value(after: "-demo-zoom") { zoom = VideoZoom(stored: raw) }   // `-demo-zoom fill`: para capturas
+            if Demo.isOn, let face = Demo.value(after: "-demo-ipod") { ipodFace = face == "off" ? "" : face }   // `-demo-ipod black`
             #endif
             engine.setZoom(zoom)
             pip.onActiveChange = { engine.setPictureInPictureActive($0) }
@@ -428,7 +445,7 @@ struct PlayerScreen: View {
                     // En vertical: arrastrar sobre el video es brillo (izquierda) o volumen (derecha), como en horizontal y en
                     // Infuse; desde la agarradera de abajo o lo negro de fuera, mueve el video (antes todo arrastre lo movía y
                     // se perdían el brillo y el volumen).
-                    case .vertical where !landscape && !fillsPortrait && !panel
+                    case .vertical where !landscape && !fillsPortrait && !panel && ipod == nil
                                           && !videoRect(in: size).insetBy(dx: 0, dy: -DS.PlayerPanel.handleReach).contains(value.startLocation)
                                           || startsOnHandle(value.startLocation, size: size):
                         movingVideo = true
@@ -609,7 +626,7 @@ struct PlayerScreen: View {
 
     /// La agarradera: una franja a lo ancho justo debajo del video (fácil de agarrar aunque la rayita sea chica).
     private func startsOnHandle(_ point: CGPoint, size: CGSize) -> Bool {
-        guard !landscape, !fillsPortrait, !panel else { return false }
+        guard !landscape, !fillsPortrait, !panel, ipod == nil else { return false }
         let rect = videoRect(in: size)
         return point.y >= rect.maxY - DS.PlayerPanel.handleReach && point.y <= rect.maxY + DS.PlayerPanel.handleZone
     }
@@ -784,6 +801,15 @@ struct PlayerScreen: View {
             PlayerMenuRow(title: "Zoom", symbol: zoom.symbol, detail: Text(verbatim: Strings.tr(zoom.title, language: language))) { setZoom(nextZoom) }
                 .accessibilityHint(Text("Cambia el zoom del video"))
                 .accessibilityIdentifier("player-zoom")
+            if !landscape {
+                // Prender o apagar el iPod (y su color): no → blanco → negro → no.
+                PlayerMenuRow(title: "Modo iPod", symbol: "ipod", detail: Text(verbatim: Strings.tr(IPodFace.name(ipodFace), language: language))) {
+                    // Al apagarlo vuelven los controles de siempre (con el globo abierto, para seguir cambiando si quieres).
+                    hideTask?.cancel(); controlsVisible = true
+                    ipodFace = IPodFace.next(after: ipodFace)
+                }
+                .accessibilityIdentifier("player-ipod")
+            }
             if pip.isPossible { PlayerMenuRow(title: "Ventana (PiP)", symbol: "pip.enter") { moreOpen = false; pip.toggle() } }
             if canHandOffToTV(model) {
                 PlayerMenuRow(title: "Ver en la TV", symbol: "tv") { moreOpen = false; Task { await continueOnTV() } }
@@ -795,6 +821,87 @@ struct PlayerScreen: View {
         }
         .padding(.vertical, DS.Space.s2)
         .frame(width: DS.PlayerPanel.menuWidth)
+    }
+
+    // MARK: modo iPod
+    /// El iPod: arriba ✕, AirPlay y «⋯» (los de siempre); la pantalla con el video, el nombre, la versión y el avance; la rueda.
+    private func ipodChrome(_ model: PlayerModel, face: IPodFace) -> some View {
+        GeometryReader { geo in
+            let layout = IPodLayout(in: geo.size)
+            let shown = wheelTarget ?? (dragAxis == .horizontal ? seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
+            let state = model.snapshot.state
+            ZStack(alignment: .topLeading) {
+                HStack(spacing: DS.Space.s3) {
+                    PlayerCircleButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
+                        .accessibilityIdentifier("player-close")
+                    Spacer()
+                    AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
+                        .accessibilityLabel(Text("AirPlay"))
+                    PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") {
+                        withAnimation(DS.Motion.base(reduceMotion)) { moreOpen.toggle() }
+                    }
+                    .accessibilityIdentifier("player-more")
+                }
+                .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+                .frame(width: geo.size.width)
+                IPodScreen(face: face, status: state == .playing ? "Reproduciendo" : state == .loading || state == .buffering || model.phase == .preparing ? "Cargando" : "En pausa",
+                           playing: state == .playing, title: current.displayTitle, detail: ipodDetail(model),
+                           position: shown, duration: model.snapshot.duration)
+                    .frame(width: layout.screen.width, height: layout.screen.height)
+                    .offset(x: layout.screen.minX, y: layout.screen.minY)
+                    .allowsHitTesting(false)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAdjustableAction { d in
+                        Task { await model.skip(d == .increment ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
+                    }
+                // «Saltar intro», en la esquina del video.
+                skipIntro(model).padding(DS.Space.s2)
+                    .frame(width: layout.video.width, height: layout.video.height, alignment: .bottomTrailing)
+                    .offset(x: layout.video.minX, y: layout.video.minY)
+                IPodWheel(face: face,
+                          menu: { Task { await close() } },
+                          hold: { lock() },
+                          back: { Task { await model.skip(-PlaybackRules.skipSeconds) } },
+                          forward: { Task { await model.skip(PlaybackRules.skipSeconds) } },
+                          playPause: { Task { await model.togglePlay() } },
+                          center: { withAnimation(DS.Motion.base(reduceMotion)) { moreOpen = false; subtitleDock = true } },
+                          turn: { turnWheel($0, model) },
+                          turned: { releaseWheel(model) })
+                    .frame(width: layout.wheel.width, height: layout.wheel.height)
+                    .offset(x: layout.wheel.minX, y: layout.wheel.minY)
+                    .disabled(model.phase == .preparing)
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+        }
+        .environment(\.colorScheme, face.scheme)
+        .allowsHitTesting(!locked)
+    }
+
+    /// Una muesca de la rueda: 10 s (de a minuto si giras rápido); el avance enseña a dónde vas.
+    private func turnWheel(_ notches: Int, _ model: PlayerModel) {
+        let now = Date()
+        let fast = lastNotch.map { now.timeIntervalSince($0) < DS.IPod.fastNotch } ?? false
+        lastNotch = now
+        let start = wheelTarget ?? model.snapshot.position
+        let target = min(max(0, start + Double(notches) * (fast ? DS.IPod.fastStep : PlaybackRules.skipSeconds)), max(0, model.snapshot.duration))
+        wheelTarget = target
+        model.scrub(to: target)
+    }
+
+    private func releaseWheel(_ model: PlayerModel) {
+        lastNotch = nil
+        guard let target = wheelTarget else { return }
+        wheelTarget = nil; pendingSeek = target
+        Task { await model.seek(to: target) }
+    }
+
+    /// Bajo el nombre: el episodio («T5 · E12») o, en una película, la versión («Latino · 1080p»).
+    private func ipodDetail(_ model: PlayerModel) -> String {
+        if !current.episodeLabel.isEmpty { return current.episodeLabel }
+        guard let src = model.source else { return "" }
+        let ui = env.services.appSettings.uiLanguage
+        let language = Streams.playingLanguage(src, env.services.appSettings.preferences()).map { Streams.versionLanguageName($0.code, in: ui) }
+        return ([language].compactMap { $0 } + src.qualitySummary).joined(separator: " · ")
     }
 
     // MARK: descargar
@@ -1249,6 +1356,7 @@ struct PlayerScreen: View {
         }
         if landscape { return CGRect(x: 0, y: 0, width: size.width, height: size.height) }
         if panel { return CGRect(x: 0, y: 0, width: size.width, height: size.height * DS.PlayerPanel.videoShare) }
+        if ipod != nil { return IPodLayout(in: size).video }   // dentro de la pantalla del iPod
         // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
@@ -1277,7 +1385,10 @@ struct PlayerScreen: View {
     static let portraitCenterKey = "player-portrait-center"
 
     /// Vertical con «Recortar»: el video a pantalla completa.
-    private var fillsPortrait: Bool { !landscape && !panel && (zoom == .fill || zoom == .stretch) }
+    private var fillsPortrait: Bool { !landscape && !panel && ipod == nil && (zoom == .fill || zoom == .stretch) }
+
+    /// El iPod se ve en vertical y sin el panel abierto (con el panel, el video sube a la mitad de arriba como siempre).
+    private var ipod: IPodFace? { landscape || panel ? nil : IPodFace(rawValue: ipodFace) }
 
     /// Los márgenes seguros de la ventana (el video en horizontal ignora el área segura, así que no los trae su `GeometryReader`).
     static var windowSafeArea: UIEdgeInsets {

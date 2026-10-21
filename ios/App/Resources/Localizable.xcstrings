@@ -738,6 +738,17 @@
         }
       }
     },
+    "Adelante 10 segundos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forward 10 seconds"
+          }
+        }
+      }
+    },
     "Afinemos": {
       "extractionState": "manual",
       "localizations": {
@@ -1134,6 +1145,17 @@
         }
       }
     },
+    "Atrás 10 segundos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back 10 seconds"
+          }
+        }
+      }
+    },
     "Audio": {
       "extractionState": "manual",
       "localizations": {
@@ -1449,6 +1471,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "OK"
+          }
+        }
+      }
+    },
+    "Blanco": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White"
           }
         }
       }
@@ -7283,6 +7316,17 @@
         }
       }
     },
+    "Menú: cerrar el reproductor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu: close the player"
+          }
+        }
+      }
+    },
     "Mes anterior": {
       "extractionState": "manual",
       "localizations": {
@@ -7400,6 +7444,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mode"
+          }
+        }
+      }
+    },
+    "Modo iPod": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPod mode"
           }
         }
       }
@@ -7807,6 +7862,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing out"
+          }
+        }
+      }
+    },
+    "Negro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Black"
           }
         }
       }
@@ -10363,6 +10429,17 @@
         }
       }
     },
+    "Reproduciendo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now Playing"
+          }
+        }
+      }
+    },
     "Reproducir": {
       "extractionState": "manual",
       "localizations": {
@@ -10381,6 +10458,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Play S%lld E%lld"
+          }
+        }
+      }
+    },
+    "Reproducir o pausar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play or pause"
           }
         }
       }
