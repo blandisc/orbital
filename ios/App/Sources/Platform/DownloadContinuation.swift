@@ -22,6 +22,8 @@ final class DownloadContinuation {
     /// (lo que falta pasa al carril de segundo plano).
     var onStarted: () async -> Void = {}
     var onExpired: () async -> Void = {}
+    /// Se acabó (terminó, la cancelaste o iOS la cortó): la actividad de Orbital puede volver.
+    var onEnded: () async -> Void = {}
     var language: () -> String = { "es" }
 
     /// ¿Está corriendo? (la app al irse a segundo plano no suelta el carril rápido). Pedida pero sin arrancar no cuenta: si iOS
@@ -62,6 +64,7 @@ final class DownloadContinuation {
                 guard let self, self.task != nil else { return }
                 self.task = nil
                 await self.onExpired()
+                await self.onEnded()
                 task.setTaskCompleted(success: false)
             }
         }
@@ -75,6 +78,7 @@ final class DownloadContinuation {
         task.progress.completedUnitCount = task.progress.totalUnitCount
         task.setTaskCompleted(success: success)
         self.task = nil
+        Task { await onEnded() }
     }
 
     /// El avance de la tanda en la actividad de iOS («Descargando «Dune»» · «62 % · 5.3 GB de 8.5 GB»). Que avance de verdad

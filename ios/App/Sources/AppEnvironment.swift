@@ -242,7 +242,12 @@ final class AppEnvironment: ObservableObject {
         // La tarea continua de iOS: que sigan a toda velocidad aunque salgas de la app.
         let lanes = self.transport
         downloadContinuation.language = { settings.value.uiLanguage }
-        downloadContinuation.onStarted = { await lanes.setForeground(true) }
+        let liveActivity = liveActivity
+        downloadContinuation.onStarted = {
+            await lanes.setForeground(true)
+            await liveActivity.setSuppressed(true)   // una sola actividad: la de iOS mientras dura la tarea
+        }
+        downloadContinuation.onEnded = { await liveActivity.setSuppressed(false) }
         downloadContinuation.onExpired = { if UIApplication.shared.applicationState != .active { await lanes.setForeground(false) } }
         Task {
             for await items in services.downloads.makeUpdates() {
