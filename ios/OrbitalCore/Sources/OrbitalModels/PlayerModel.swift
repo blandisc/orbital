@@ -1126,11 +1126,12 @@ public final class PlayerModel: ObservableModel {
         let resume = resumeOnForeground
         let position = snapshot.position
         let mine = generation
-        reconnecting = true
+        // Sin aviso al volver: casi siempre el video sigue donde estaba. Solo si de verdad hay que pedirlo otra vez
+        // (el motor no pudo rearmarlo, o no avanzó en el plazo) se dice que está cargando.
         let restored = await engine.restoreAfterBackground(resume: resume)
         guard mine == generation, !closing else { return }
         if !restored { return await reloadCurrentSource(at: position, resume: resume) }
-        if resume { foregroundCheck = (clock().addingTimeInterval(Self.foregroundStallSeconds), position) } else { reconnecting = false }
+        if resume { foregroundCheck = (clock().addingTimeInterval(Self.foregroundStallSeconds), position) }
     }
 
     /// El plazo tras volver: el video tenía que avanzar y no lo hizo (negro o congelado) → se pide de nuevo.

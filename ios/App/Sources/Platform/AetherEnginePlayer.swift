@@ -25,6 +25,9 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
 
     init() {
         engine = try! AetherEngine()
+        // En pausa y en segundo plano el motor suelta el video tras este plazo; al volver hay que rearmarlo (un instante de
+        // negro). iOS da ~30 s y soltarlo tarda ~3.5 s: con 25 s casi cualquier vuelta rápida a otra app regresa sin rearmar.
+        engine.backgroundTeardownGraceSeconds = PlayerTiming.backgroundGrace
         // Cada cambio relevante vuelve a armar la «foto» completa.
         let changes: [AnyPublisher<Void, Never>] = [
             engine.$state.map { _ in () }.eraseToAnyPublisher(),
@@ -293,3 +296,8 @@ final class AetherSampleBufferPiP: NSObject, AVPictureInPictureSampleBufferPlayb
     }
 }
 #endif
+
+/// Plazos del motor de video (fuera de la vista: el motor no importa el sistema de diseño).
+enum PlayerTiming {
+    static let backgroundGrace: Double = 25
+}

@@ -603,6 +603,8 @@ struct PlayerScreen: View {
     // MARK: estados
     @ViewBuilder private func statusOverlays(_ model: PlayerModel) -> some View {
         switch model.phase {
+        // Volviendo a abrir el mismo video (al regresar a la app): solo la ruedita, sin letrero (antes «Reconectando…»).
+        case .preparing where model.reconnecting: QuietSpinner()
         case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
         case .failed(let message):
             // Una pantalla por cada caso (sin fuentes, ninguna sirvió, sin red…), sobre los controles, que se esconden.
@@ -612,15 +614,23 @@ struct PlayerScreen: View {
                               close: { Task { await close() } })
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:
-            if model.reconnecting { VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text("Reconectando…").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) } }
+            if model.reconnecting { QuietSpinner() }
             else if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
+        }
+    }
+
+    /// La ruedita sola, y solo si tarda más de un instante (lo normal es que el video vuelva antes y no se vea nada).
+    private struct QuietSpinner: View {
+        @State private var shown = false
+        var body: some View {
+            ProgressView().tint(DS.text).opacity(shown ? 1 : 0)
+                .task { try? await Task.sleep(nanoseconds: DS.Timing.quietSpinnerDelay); shown = true }
         }
     }
 
     private func failed(_ model: PlayerModel) -> Bool { if case .failed = model.phase { true } else { false } }
 
     private func preparingText(_ model: PlayerModel) -> LocalizedStringKey {
-        if model.reconnecting { return "Reconectando…" }
         if case .triedAnotherSource(let n)? = model.notice { return "Probando otra fuente (\(n))…" }
         return "Buscando la mejor fuente…"
     }
