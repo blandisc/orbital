@@ -3532,6 +3532,28 @@
         }
       }
     },
+    "Del video · forzados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the video · forced"
+          }
+        }
+      }
+    },
+    "Del video · para sordos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the video · SDH"
+          }
+        }
+      }
+    },
     "Derecha": {
       "extractionState": "manual",
       "localizations": {

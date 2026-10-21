@@ -312,6 +312,8 @@ enum DS {
         static let moveNudge: Double = 0.025
         /// Al arrastrarlo: se levanta (un poco más chico, con esquinas y sombra).
         static let liftScale: CGFloat = 0.97, liftRadius: CGFloat = 14, liftShadow: CGFloat = 24
+        /// VoiceOver: cuánto sube o baja el video cada vez (parte del alto).
+        static let voiceOverStep: Double = 0.1
         /// Subtítulos rápidos: ancho máximo del panel (horizontal) y hasta dónde puede bajar su borde de arriba (vertical).
         static let dockWidth: CGFloat = 560, dockPortraitMaxTop: CGFloat = 0.55
         /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).

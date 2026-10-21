@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Del video · forzados": "From the video · forced", "Del video · para sordos": "From the video · SDH",
     "Arriba": "Top", "Centro": "Middle", "Abajo": "Bottom", "Mover el video": "Move the video",
     "Arrastra hacia arriba o hacia abajo": "Drag up or down", "Subir el video": "Move the video up", "Bajar el video": "Move the video down",
     "Más del episodio": "More for this episode",

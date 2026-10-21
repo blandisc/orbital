@@ -667,7 +667,7 @@ public final class PlayerModel: ObservableModel {
     }
 
     public func subtitleVersions(language: String) -> [SubtitleVersion] {
-        SubtitleVersions.ranked(language: language, tracks: videoTracks, found: foundSubtitles ?? [], release: currentRelease)
+        SubtitleVersions.ranked(language: language, tracks: videoTracks, found: foundSubtitles ?? [], release: currentRelease, playing: snapshot.selectedSubtitle)
     }
 
     /// El video trae (sin contar SDH ni forzados) subtítulos en ese idioma.
