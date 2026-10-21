@@ -40,21 +40,41 @@ export function createShelf({ onPick, onSwipe }) {
   };
 
   /**
-   * El escenario de «Porque viste»: el arte de lo que viste, su logo (o su nombre con estilo si no hay), una línea que dice qué
-   * hacer con tus últimos títulos y, al lado de ellos, hacia dónde sigue (las sugeridas, con RT).
+   * El escenario de «Porque viste»: un carrusel contenido de tus últimos títulos. Se ve uno a la vez (su arte y su logo,
+   * o su nombre con estilo si no hay), con un punto por título; ◀ ▶ pasa al siguiente y, al lado, hacia dónde sigue (las
+   * sugeridas, con RT). Las tarjetas de tus títulos siguen en la fila (son las que se enfocan), pero no se ven.
    */
-  function Stage(info, seedEls, { more }) {
-    const name = h("strong", { class: "shelf__stage-title" }, info.title);
+  function Stage(info, seedItems, seedEls, { more }) {
+    const art = h("span", { class: "shelf__stage-art" });
+    const name = h("strong", { class: "shelf__stage-title" });
+    const logo = h("img", { class: "shelf__stage-logo", alt: "", hidden: true, decoding: "async" });
     // Su logo, como en el héroe (Orbital lo guarda recortado); sin logo, o si falla, el nombre en texto.
-    const logo = info.meta_id && h("img", { class: "shelf__stage-logo", src: logoUrl(info.meta_id), alt: info.title, hidden: true, decoding: "async" });
-    logo?.addEventListener("load", () => { logo.hidden = false; name.hidden = true; });
-    logo?.addEventListener("error", () => { logo.hidden = true; name.hidden = false; });
-    return h("div", { class: "shelf__stage" },
-      h("span", { class: "shelf__stage-art", style: { backgroundImage: cssUrl(info.image) } }),
-      h("span", { class: "shelf__stage-hint" }, seedEls.length > 1 ? "◀ ▶ Elige otro título que viste" : "Lo último que viste"),
-      logo, name,
-      h("span", { class: "shelf__stage-seeds", role: "group", "aria-label": "Tus últimos títulos" }, seedEls,
-        more && h("span", { class: "shelf__stage-next", "aria-hidden": "true" }, "Sugeridas ›")));
+    logo.addEventListener("load", () => { logo.hidden = false; name.hidden = true; });
+    logo.addEventListener("error", () => { logo.hidden = true; name.hidden = false; });
+    const dots = seedEls.length > 1 && h("span", { class: "shelf__dots shelf__stage-dots", "aria-hidden": "true" }, seedEls.map(() => h("i")));
+    const el = h("div", { class: "shelf__stage" }, art, logo, name,
+      h("span", { class: "shelf__stage-foot" }, dots,
+        more && h("span", { class: "shelf__stage-next", "aria-hidden": "true" }, "Sugeridas ›")),
+      h("span", { class: "visually-hidden", role: "group", "aria-label": "Tus últimos títulos" }, seedEls));
+    const chosen = Math.max(0, seedItems.findIndex((item) => item.chosen));
+    let shown = -1;
+    /** Muestra el título i (sin i: el elegido); focused: el foco está en tus títulos. */
+    const show = (i = chosen, focused = false) => {
+      el.classList.toggle("shelf__stage--focused", focused);
+      if (i === shown) return;
+      shown = i;
+      const item = seedItems[i] || info;
+      const id = item.seed || item.meta_id;
+      art.style.backgroundImage = cssUrl(item.hero || info.image);
+      name.textContent = item.title;
+      name.hidden = false;
+      logo.hidden = true;
+      logo.alt = item.title;
+      if (id) logo.src = logoUrl(id);
+      dots && [...dots.children].forEach((dot, d) => dot.classList.toggle("on", d === i));
+    };
+    show();
+    return { el, show };
   }
 
   /** Una fila armada: su título, su sello y sus tarjetas (o el escenario de «Porque viste»). */
@@ -75,7 +95,7 @@ export function createShelf({ onPick, onSwipe }) {
     // las primeras tarjetas de la fila) y lo relacionado a la derecha, que se recorre sin tapar el escenario.
     const seeds = row.stage ? Math.min(row.stage.seeds, els.length) : 0;
     const track = h("div", { class: "shelf__track", role: "group" }, els.slice(seeds));
-    const stage = row.stage && Stage(row.stage, els.slice(0, seeds), { more: els.length > seeds });
+    const stage = row.stage && Stage(row.stage, row.items.slice(0, seeds), els.slice(0, seeds), { more: els.length > seeds });
     const rest = stage && h("div", { class: "shelf__stage-rest" }, track);
     const count = h("span", { class: "shelf__count" }, String(row.items.length - seeds));
     // Destacados: puntos en vez del contador (uno por pieza; el actual, alargado), como el carrusel del iPhone.
@@ -86,8 +106,8 @@ export function createShelf({ onPick, onSwipe }) {
     // De dónde viene (Trakt, Stremio, tu Orbital): el sello junto al título, como en el iPhone.
     const seal = row.seal ? SourceBadge(row.seal) : null;
     const rowEl = h("div", { class: ["shelf__row", row.centered && "shelf__row--centered"] },
-      h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count), stage ? h("div", { class: "shelf__stage-row" }, stage, rest) : track);
-    return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered, seeds, rest };
+      h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count), stage ? h("div", { class: "shelf__stage-row" }, stage.el, rest) : track);
+    return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered, seeds, rest, stage };
   }
 
   function setRows(rows, { emptyTitle, emptyText, popId } = {}) {
@@ -115,8 +135,10 @@ export function createShelf({ onPick, onSwipe }) {
     if (!rowEls.length) return;
     if (!metrics) measure();
     rowsEl.style.transform = `translateY(${-r * metrics.rowHeight}px)`;
-    rowEls.forEach(({ rowEl, track, cards, count, dots, seeds }, index) => {
+    rowEls.forEach(({ rowEl, track, cards, count, dots, seeds, stage }, index) => {
       const isCurrent = index === r;
+      // «Porque viste»: con el foco en tus títulos, el escenario muestra ese; fuera de ahí, el elegido.
+      stage?.show(isCurrent && c < seeds ? c : undefined, isCurrent && c < seeds);
       rowEl.classList.toggle("shelf__row--current", isCurrent);
       // En la fila actual, en cuál vas: "3 / 15" (solo si hay más de uno; en «Porque viste», entre lo relacionado).
       const shown = cards.length - seeds;
@@ -177,8 +199,10 @@ export function createShelf({ onPick, onSwipe }) {
 
   /** Portada enfocada (posición en pantalla y proporción): de aquí sale la transición al abrir. */
   function focused() {
-    const card = rowEls[focus.r]?.cards[focus.c];
-    return card ? { rect: card.getBoundingClientRect(), ratio: Number(card.dataset.ratio) } : null;
+    const row = rowEls[focus.r];
+    const card = focus.c < (row?.seeds ?? 0) ? row.stage.el : row?.cards[focus.c]; // tus títulos: el escenario
+    const rect = card?.getBoundingClientRect();
+    return card ? { rect, ratio: Number(card.dataset.ratio) || rect.width / rect.height } : null;
   }
 
   /** Animación al cambiar de sección (dirección: 1 = a la derecha). */
