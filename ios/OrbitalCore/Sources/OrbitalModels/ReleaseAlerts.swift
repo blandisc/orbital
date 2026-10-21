@@ -136,7 +136,7 @@ public final class ReleaseAlerts {
 }
 
 /// Quién llegó primero (la búsqueda o el tope): solo uno contesta.
-private final class Once: @unchecked Sendable {
+final class Once: @unchecked Sendable {
     private let lock = NSLock()
     private var taken = false
     func claim() -> Bool { lock.withLock { defer { taken = true }; return !taken } }

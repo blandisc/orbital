@@ -321,7 +321,8 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs, subEs2], selectedAudio: 1, selectedSubtitle: 11))
         rig.model.nudgeSubtitles(by: 1.5)
-        XCTAssertEqual(SubtitleOffsets(rig.kv).offset(metaID: "tt0386676", versionID: "track-11"), 1.5)
+        XCTAssertEqual(SubtitleOffsets(rig.kv).offset(metaID: "tt0386676", versionID: rig.model.offsetKey("track-11")), 1.5)
+        XCTAssertTrue(rig.model.offsetKey("track-11").hasSuffix("|track-11"), "por subtítulo y por archivo (la misma pista es otra en otro archivo)")
         let other = try XCTUnwrap(rig.model.subtitleVersions(language: "es").first { $0.id == "track-12" })
         await rig.model.selectVersion(other)
         XCTAssertEqual(rig.model.subtitleDelay, 0, "otra versión, sin ajuste")
@@ -366,8 +367,8 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertTrue(rig.engine.subs.isEmpty)
     }
 
-    /// Quieres latino y la versión que suena trae inglés y castellano (comprobado por sus pistas); otra dice «LATINO»: se ofrece
-    /// cambiar a esa. Y las pistas quedan «comprobadas» para la próxima vez.
+    /// Quieres latino y cambias A MANO a la que dice castellano: trae inglés y castellano (comprobado por sus pistas). La
+    /// elegiste tú: no se insiste con «cambiar a latino». Y las pistas quedan «comprobadas» para la próxima vez.
     func testOffersTheVersionInYourSpanishWhenThisOneDoesNotHaveIt() async throws {
         let rig = try Rig()
         rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [
@@ -382,7 +383,9 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.switchSource(to: castilian.index)
         let spain = MediaTrack(id: 2, kind: .audio, language: "spa", title: "Castellano")
         await rig.model.handle(rig.playing(0, audio: [eng, spain], subs: [], selectedAudio: 2))
-        XCTAssertEqual(rig.model.notice, .otherVersionHasYourLanguage(language: "es-419", have: ["en", "es-ES"], sourceIndex: latino.index))
+        XCTAssertNil(rig.model.notice, "la elegiste tú: no se ofrece volver a cambiar")
+        XCTAssertEqual(rig.model.request?.sourceIndex, castilian.index)
+        _ = latino
         XCTAssertEqual(rig.titlePrefs.checkedAudio(castilian.key), [AudioLanguage("en", .checked), AudioLanguage("es-ES", .checked)], "quedó comprobada")
     }
 
