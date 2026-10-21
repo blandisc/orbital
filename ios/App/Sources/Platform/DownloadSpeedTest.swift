@@ -26,6 +26,8 @@ final class DownloadSpeedTest: ObservableObject {
     static let seconds = 10.0, warmUp = 2.0
     /// Una película popular que casi siempre está «Al instante» en Real-Debrid.
     static let testTitle = "tt0111161"
+    /// Cuántas fuentes se intentan y lo mínimo que mide un archivo para ser la película (no el video de aviso).
+    static let maxTries = 6, minimumBytes: Int64 = 100_000_000
     static let internetURL = URL(string: "https://proof.ovh.net/files/1Gb.dat")!
     static let backgroundIdentifier = "com.example.orbital.ios.speedtest"
 
@@ -37,15 +39,25 @@ final class DownloadSpeedTest: ObservableObject {
 
         await measure(.internet) { await Self.parallel(url: Self.internetURL, connections: 1, total: nil) }
 
+        // La primera fuente que dé el archivo de verdad: si Torrentio no consigue el enlace, redirige a un video corto de aviso
+        // (unos KB) que termina antes de empezar a medir; esas se saltan.
         let prefs = services.appSettings.preferences(onCellular: false)
-        guard let source = try? await services.finder.best(kind: "movie", videoID: Self.testTitle, prefs: prefs, purpose: .download),
-              let link = source.playbackURL, let target = await Self.resolve(link) else {
-            problem = "No pude conseguir un enlace de Real-Debrid para probar."
+        let sources = (try? await services.finder.find(kind: "movie", videoID: Self.testTitle, prefs: prefs, purpose: .download)) ?? []
+        var picked: (source: Source, target: (url: URL, total: Int64))?
+        var skipped = 0
+        for source in sources.prefix(Self.maxTries) {
+            guard let link = source.playbackURL, let target = await Self.resolve(link) else { skipped += 1; continue }
+            if target.total < Self.minimumBytes { skipped += 1; continue }
+            picked = (source, target); break
+        }
+        guard let (source, target) = picked else {
+            problem = sources.isEmpty ? "No encontré fuentes para probar." : "Ninguna de \(min(sources.count, Self.maxTries)) fuentes dio el archivo (Torrentio o Real-Debrid mandaron un aviso en vez del video)."
             for kind in [Row.Kind.single, .eight, .background] { set(kind) { $0.failed = "Sin enlace" } }
             return
         }
         sourceName = [source.resolution, source.cached ? "Al instante" : "No está al instante",
-                      ByteCountFormatter.string(fromByteCount: target.total, countStyle: .file)].joined(separator: " · ")
+                      ByteCountFormatter.string(fromByteCount: target.total, countStyle: .file), target.url.host ?? "",
+                      skipped > 0 ? "\(skipped) sin archivo antes" : nil].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
         await measure(.single) { await Self.parallel(url: target.url, connections: 1, total: target.total) }
         await measure(.eight) { await Self.parallel(url: target.url, connections: 8, total: target.total) }
         await measure(.background) { await BackgroundMeter().run(url: target.url, total: target.total, parts: BackgroundDownloadTransport.parts) }
