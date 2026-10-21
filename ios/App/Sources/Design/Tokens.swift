@@ -430,6 +430,10 @@ enum DS {
         static let deckFly: Double = 0.22, deckFlyDistance: CGFloat = 340, deckSettle: Double = 0.28
         /// Los botones de anterior y siguiente del mazo: el glifo y el círculo (≥ 44 pt para tocar).
         static let deckNavGlyph: CGFloat = 22, deckNav: CGFloat = 48
+        /// El alto del mazo (la carta y lo que se asoman las de abajo): la columna del nombre mide eso, sea corto o largo.
+        static let deckHeight: CGFloat = deckPoster / DesignTokens.Aspect.poster + deckShift * CGFloat(deckDepth - 1)
+        /// Lo más que se achica un nombre largo para caber en sus dos renglones.
+        static let becauseTitleScale: CGFloat = 0.6
         /// «Por año»: la tarjeta (cuatro pósters) y su número.
         static let yearWidth: CGFloat = 150, yearHeight: CGFloat = 150
         /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.

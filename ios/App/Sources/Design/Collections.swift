@@ -179,11 +179,17 @@ struct BecauseCard<Related: View>: View {
                 guard !seeds.isEmpty else { return }
                 choose(seeds[(index + step + seeds.count) % seeds.count].id)
             }
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                Text("Porque viste").recipe(.secondary)
-                Text(verbatim: current?.title ?? "").recipe(.title).lineLimit(3)
+            // La columna mide siempre lo del mazo (el nombre tiene su lugar de dos renglones y las flechas van abajo): antes un
+            // nombre largo la estiraba y la tarjeta, con todo lo de abajo, cambiaba de alto al pasar de un título a otro.
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                // «Porque viste · 3 de 8»: en qué carta vas, en el mismo renglón (junto a las flechas no cabía en un iPhone angosto).
+                (Text("Porque viste") + (seeds.count > 1 ? Text(verbatim: " · ") + Text("\(index + 1) de \(seeds.count)") : Text(verbatim: "")))
+                    .recipe(.secondary).monospacedDigit().lineLimit(1)
+                Text(verbatim: current?.title ?? "").recipe(.title)
+                    .lineLimit(2, reservesSpace: true).minimumScaleFactor(DS.Collections.becauseTitleScale).allowsTightening(true)
+                    .contentTransition(.opacity)
+                Spacer(minLength: DS.Space.s2)
                 if seeds.count > 1 {
-                    Text("Avienta la carta para cambiar").recipe(.footnote)
                     HStack(spacing: DS.Space.s2) {
                         Button { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) } label: { Image(systemName: "chevron.left").font(.system(size: DS.Collections.deckNavGlyph, weight: .semibold)).frame(width: DS.Collections.deckNav, height: DS.Collections.deckNav) }   // ds-exception: la flecha se mide con su círculo, no con Dynamic Type
                             .accessibilityLabel(Text("Anterior"))
@@ -193,6 +199,7 @@ struct BecauseCard<Related: View>: View {
                     .buttonStyle(.glass).buttonBorderShape(.circle)
                 }
             }
+            .frame(minHeight: DS.Collections.deckHeight, alignment: .topLeading)
             Spacer(minLength: 0)
         }
     }
