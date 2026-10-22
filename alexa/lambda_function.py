@@ -204,8 +204,9 @@ def _handle(event: dict) -> dict:
         return speak("Hasta luego.")
     if name == "AMAZON.FallbackIntent":
         # Alexa no da el texto, pero la consola lo anota (voz.log) y lo avisa en la tele: antes no quedaba rastro.
-        answer = call_orbital("FallbackIntent")
-        return speak(answer["speech"] if answer["speech"] != "Listo." else FALLBACK, end=False)
+        # Lo que dice es siempre el de aquí (una consola sin actualizar contestaría «Ese comando todavía no está disponible»).
+        call_orbital("FallbackIntent")
+        return speak(FALLBACK, end=False)
     if name in ("FreeTextIntent", "CommandIntent"):
         # Lo que Alexa no supo acomodar en otro intent («por favor pon…», «pausa en Orbital»): la frase tal cual a la
         # consola, que la entiende con el mismo intérprete del iPhone (antes Alexa decía «No entendí» sin preguntarle).

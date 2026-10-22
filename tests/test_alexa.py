@@ -461,6 +461,7 @@ def test_what_alexa_did_not_understand_reaches_the_console_log(skill, orbital):
     out = skill.lambda_handler(intent_event("AMAZON.FallbackIntent"))
     assert orbital[0]["body"] == {"intent": "FallbackIntent", "slots": {}}
     assert out["response"]["shouldEndSession"] is False  # sigue escuchando para que lo vuelvas a decir
+    assert out["response"]["outputSpeech"]["text"] == skill.FALLBACK  # el de la skill, aunque la consola sea vieja
 
 
 def test_the_model_sends_anything_it_does_not_place_to_the_console():
