@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { episodeStates, titleActions } from "../../orbital/web/js/core/watch.js";
+import { episodeStates, episodesLed, titleActions } from "../../orbital/web/js/core/watch.js";
 
 const seasons = [
   { season: 1, episodes: [{ id: "s:1:1", episode: 1, title: "Piloto" }, { id: "s:1:2", episode: 2, title: "Dos" }] },
@@ -17,16 +17,16 @@ test("película: Ver, o Continuar con lo que queda y Desde el principio", () => 
   assert.ok(half[0].primary);
 });
 
-test("serie: el foco empieza en el episodio en el que ibas (o el siguiente)", () => {
-  const going = titleActions({ kind: "series", seasons, resume: { video_id: "s:2:1", label: "T2 E1", position: 600, duration: 1800 } });
-  assert.equal(going[0].label, "Continuar T2 E1");
-  assert.equal(going[0].video_id, "s:2:1");
-  assert.ok(going.some((a) => a.id === "restart"));
-  const next = titleActions({ kind: "series", seasons, resume: { video_id: "s:1:2", label: "T1 E2", episode_title: "Dos", position: 0 } });
-  assert.equal(next[0].label, "Ver T1 E2");
-  assert.ok(!next.some((a) => a.id === "restart"));
-  const fresh = titleActions({ kind: "series", seasons, resume: null });
-  assert.deepEqual([fresh[0].label, fresh[0].video_id], ["Ver T1 E1", "s:1:1"]);
+test("serie con episodios: se ve desde la lista; a la izquierda solo lo de la serie", () => {
+  const going = { kind: "series", seasons, trailer: "x", resume: { video_id: "s:2:1", label: "T2 E1", position: 600, duration: 1800 } };
+  assert.ok(episodesLed(going));
+  // Sin «Continuar» aparte ni «Versión»/«Descargar» (son del episodio enfocado: A, Y, X).
+  assert.deepEqual(titleActions(going, { download: null }).map((a) => a.id), ["mylist", "trailer"]);
+  assert.deepEqual(titleActions(going, { phone: true }).map((a) => a.id), ["mylist", "trailer", "phone-download", "phone-open"]);
+  // Sin episodios en la lista (Cinemeta no los trae): el botón de siempre, con el que ibas.
+  const bare = titleActions({ kind: "series", seasons: [], resume: { video_id: "s:2:1", label: "T2 E1", position: 600 } });
+  assert.ok(!episodesLed({ kind: "series", seasons: [] }));
+  assert.deepEqual([bare[0].label, bare[0].video_id], ["Continuar T2 E1", "s:2:1"]);
 });
 
 test("sin conexión: un solo botón, Reintentar", () => {
@@ -71,9 +71,8 @@ test("tráiler y Mi lista en la ficha", async () => {
   assert.deepEqual(labels, ["Ver", "Guardada", "Tráiler", "Elegir versión"]);
 });
 
-test("serie sin episodios: sin «Elegir fuente» (no había nada que elegir)", () => {
+test("serie sin episodios: sin «Elegir versión» (no había nada que elegir)", () => {
   assert.deepEqual(titleActions({ kind: "series", seasons: [], resume: null }).map((a) => a.id), ["mylist"]);
-  assert.ok(titleActions({ kind: "series", seasons, resume: null }).some((a) => a.id === "sources"));
 });
 
 test("ficha: «Enviar al iPhone» y «Descargar en el iPhone» solo con un iPhone conectado", () => {

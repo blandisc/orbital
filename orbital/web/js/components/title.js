@@ -1,5 +1,5 @@
 import { api } from "../core/api.js";
-import { Chip, Pill, Progress } from "./ui.js";
+import { Badge, Chip, Pill, Progress } from "./ui.js";
 import { Card } from "./card.js";
 import { PersonChip } from "./people.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
@@ -9,15 +9,15 @@ import { ICONS } from "../core/icons.js";
 import { Glyph } from "./glyph.js";
 import { flight, motion, reducedMotion } from "../core/motion.js";
 import { tokenPx } from "../core/tokens.js";
-import { actionStep, availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
+import { actionStep, availability, episodeStates, episodesLed, titleActions, titleProgress } from "../core/watch.js";
 
 /**
  * La ficha de una película o serie, a pantalla completa y con el mando (como Netflix o Apple TV):
- *   · el foco empieza en lo más probable: "Continuar T3 E5 · quedan 22 min" o "Ver";
- *   · ◀/▶ entre botones (Continuar, Desde el principio, Fuentes); ↓ a los episodios;
- *   · episodios: ↑/↓ episodio, LB/RB temporada; abre en la que ibas; vistos con ✓, el que ibas
- *     con su barra, los que no se han estrenado atenuados con su fecha;
- *   · A ve (Orbital elige la mejor fuente y arranca) · Y elige la fuente · B vuelve.
+ *   · película: el foco empieza en "Continuar" o "Ver"; ◀/▶ entre botones (Guardar, Versión…);
+ *   · serie: el foco empieza en la lista, en el episodio que sigue (marcado «Continuar» o «Sigue»): no hay un
+ *     «Continuar» aparte; ← a los botones de la serie (Guardar, Tráiler…); ↑/↓ episodio, LB/RB temporada; vistos
+ *     con ✓, el que ibas con su barra, los que no se han estrenado atenuados con su fecha;
+ *   · A ve (Orbital elige la mejor versión y arranca) · Y elige la versión · B vuelve.
  */
 const touching = () => document.body.dataset.input === "touch";
 
@@ -46,7 +46,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   const moreRow = h("div", { class: "title__more-row", role: "group" });
   const moreHead = h("h2", { class: "title__more-head" }, "Más como esto");
   // …y debajo, las caras del reparto y de quien la hizo (como el iPhone): A abre a la persona y su filmografía.
-  const castRow = h("div", { class: "title__more-row", role: "group" });
+  const castRow = h("div", { class: ["title__more-row", "title__more-row--cast"], role: "group" });
   const castHead = h("h2", { class: "title__more-head" }, "Reparto");
   const more = h("div", { class: "title__more", hidden: true }, moreHead, moreRow, castHead, castRow);
   // El orden del iPhone: logo y frase; qué es (Serie · clasificación · año · géneros · duración); lo disponible; las
@@ -77,6 +77,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   logo.addEventListener("error", () => { logo.hidden = true; logo.removeAttribute("src"); name.hidden = false; });
 
   const kindOf = () => details?.kind || item?.kind;
+  const led = () => episodesLed(details, kindOf()); // serie con episodios: se ve desde la lista
   const seasons = () => details?.seasons ?? [];
   const episode = () => seasons()[season]?.episodes[index] ?? null;
 
@@ -264,6 +265,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
         st.watched && h("span", { class: "episode__check", "aria-label": "Visto" }, svg(ICONS.check)),
         Progress(st.progress, { className: "episode__progress" })),
       h("span", { class: "episode__text" },
+        ep.id === details?.resume?.video_id && Badge(details.resume.position > 0 ? "Continuar" : "Sigue", { className: "episode__next" }),
         h("strong", { class: "episode__title" }, ep.title),
         own && !st.upcoming && (own.have.has(ep.id) ? Chip("En tu carpeta", { tone: "good" }) : Chip("No está en tu carpeta")),
         downloadChip(downloadOf(ep.id)),
@@ -456,6 +458,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
       const at = seasons().findIndex((s) => s.episodes.some((e) => e.id === resumeId));
       season = at >= 0 ? at : Math.max(0, seasons().findIndex((s) => s.season !== 0));
       index = Math.max(0, seasons()[season]?.episodes.findIndex((e) => e.id === resumeId) ?? 0);
+      if (!quiet && led()) zone = "episodes"; // una serie abre en el episodio que sigue, en la lista
       status.hidden = true;
       if (kind === "series" && !seasons().length) {
         status.textContent = "Esta serie todavía no tiene episodios.";
@@ -568,7 +571,9 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     if (act === "search") { close(); return false; } // S: buscar otra cosa (la ficha se cierra y se abre Buscar)
     if (act === "back") {
       // Con el mando, B primero sube de los episodios a los botones; con el dedo, «Atrás» cierra (ese paso no se veía).
-      if ((zone === "episodes" || zone === "more" || zone === "cast") && !touching()) { zone = "actions"; onMove?.(); render(); return true; }
+      // En una serie la lista es el punto de partida: de Más como esto o el reparto se vuelve a ella y, desde ella, B cierra.
+      if ((zone === "more" || zone === "cast") && !touching()) { zone = led() ? "episodes" : "actions"; onMove?.(); render(); return true; }
+      if (zone === "episodes" && !led() && !touching()) { zone = "actions"; onMove?.(); render(); return true; }
       close();
       return true;
     }
@@ -578,7 +583,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     if (zone === "more") {
       if (act === "left" && moreIndex > 0) { moreIndex--; moved = true; }
       else if (act === "right" && moreIndex < moreItems.length - 1) { moreIndex++; moved = true; }
-      else if (act === "up") { zone = "actions"; moved = true; render(); }
+      else if (act === "up") { zone = led() ? "episodes" : "actions"; moved = true; render(); }
       else if (act === "down" && castItems.length) { zone = "cast"; moved = true; }
       else if (act === "select") openMore();
       if (moved) { paintMore(); el.dataset.zone = zone; onMove?.(); }
@@ -587,12 +592,17 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     if (zone === "cast") {
       if (act === "left" && castIndex > 0) { castIndex--; moved = true; }
       else if (act === "right" && castIndex < castItems.length - 1) { castIndex++; moved = true; }
-      else if (act === "up") { zone = moreItems.length ? "more" : "actions"; moved = true; if (zone === "actions") render(); }
+      else if (act === "up") { zone = moreItems.length ? "more" : led() ? "episodes" : "actions"; moved = true; if (zone !== "more") render(); }
       else if (act === "select") openPerson();
       if (moved) { paintMore(); el.dataset.zone = zone; onMove?.(); }
       return true;
     }
     if (zone === "actions") {
+      // Serie: los botones son una fila (sin principal): ↓ a Más como esto / Reparto, → (desde el último) a la lista.
+      if (led() && (act === "up" || act === "down")) {
+        if (act === "down" && panelZone()) { zone = panelZone(); onMove?.(); render(); }
+        return true;
+      }
       if (["left", "right", "up", "down"].includes(act)) {
         const next = actionStep(buttons.length, action, act);
         // ↓ desde los botones de abajo: «Más como esto»; → desde el último: los episodios (están a la derecha).
@@ -615,7 +625,11 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     } else {
       if (act === "up") {
         if (index === 0) { zone = "actions"; moved = true; render(); } else moved = setIndex(index - 1);
-      } else if (act === "down") moved = setIndex(index + 1);
+      } else if (act === "down") {
+        moved = setIndex(index + 1);
+        // Del último episodio, a Más como esto y el reparto (en una serie, la lista es de donde se parte).
+        if (!moved && led() && panelZone()) { zone = panelZone(); moved = true; render(); }
+      }
       // ← regresa a los botones, que están a la izquierda (antes cambiaba de temporada; para eso están LB/RB).
       else if (act === "left") { zone = "actions"; moved = true; render(); }
       else if (act === "prevsection") moved = setSeason(season - 1);
@@ -646,12 +660,14 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     : zone === "cast"
     ? [{ glyph: g.select, label: "Ver a la persona" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "episodes"
-    ? [episode() && { glyph: g.select, label: own && !own.have.has(episode().id) ? "Buscar fuente" : "Ver" }, episode() && { glyph: g.options, label: "Elegir fuente" },
+    ? [episode() && { glyph: g.select, label: own && !own.have.has(episode().id) ? "Buscar fuente"
+      : episode().id === details?.resume?.video_id && details.resume.position > 0 ? "Continuar" : "Ver" },
+      episode() && { glyph: g.options, label: "Elegir versión" },
       episode() && onDownload && { glyph: g.alt, label: downloadOf(episode().id) ? "Descarga" : "Descargar" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
-    : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && { glyph: g.options, label: "Elegir fuente" },
+    : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && !led() && { glyph: g.options, label: "Elegir versión" },
       moreItems.length ? { glyph: g.rows, label: "Más como esto" } : castItems.length ? { glyph: g.rows, label: "Reparto" } : kindOf() === "series" && seasons().length && { glyph: g.rows, label: "Episodios" },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));

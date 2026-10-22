@@ -41,11 +41,31 @@ export function downloadAction(job) {
   return { id: "download", icon: "download", label: pct != null ? `Descargando ${pct} %` : "En espera", short: pct != null ? `${pct} %` : "En espera" };
 }
 
+/** Una serie con episodios se maneja desde su lista: la ficha abre ahí, en el que sigue. */
+export const episodesLed = (details, kind = "movie") =>
+  !!details && !details.error && (details.kind || kind) === "series" && (details.seasons || []).some((s) => s.episodes?.length);
+
 export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null } = {}) {
   if (!details) return [];
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
   const out = [];
+  // Serie con episodios: lo que se ve vive en la lista (abre en el que sigue, marcado «Continuar» o «Sigue»; A lo ve,
+  // Y elige su versión, X lo descarga). Aquí solo lo que es de la serie. Antes había un «Continuar T3 E5» a la izquierda
+  // y los episodios a la derecha (lo mismo dos veces), y «Versión» y «Descargar» de un episodio que no se veía cuál era.
+  if (episodesLed(details, kind)) {
+    out.push(details.in_library
+      ? { id: "mylist", icon: "check", label: "Guardada", active: true }
+      : { id: "mylist", icon: "plus", label: "Guardar" });
+    if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
+    if (phone) {
+      out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" },
+        { id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
+    }
+    if (own?.versions > 1) out.push({ id: "versions", icon: "cover", label: `Versiones en tu carpeta (${own.versions})`, short: "Versiones" });
+    if (own) out.push({ id: "fix", icon: "search", label: "¿No es esta serie? Corregir ficha", short: "Corregir ficha" });
+    return out;
+  }
   // Como el iPhone: el principal y, debajo, Guardar · Descargar · Tráiler · Fuente; luego lo de la tele (Desde el inicio,
   // que en el iPhone es un enlace bajo «Continuar», y Al iPhone).
   let restart = null;

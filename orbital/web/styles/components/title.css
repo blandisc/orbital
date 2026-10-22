@@ -54,6 +54,11 @@
 .title__more-head { margin: 0; font-size: var(--type-section); font-weight: var(--weight-bold); }
 .title__more-row { display: flex; gap: var(--card-gap); overflow-x: auto; scrollbar-width: none; padding: var(--space-3) var(--space-2); align-items: flex-end; }
 .title__more-row > .card { flex: none; }
+/* Las portadas crecen hacia arriba al enfocarlas (desde la esquina de abajo): arriba les queda ese lugar (antes el anillo
+   de la enfocada se cortaba). */
+.title__more-row:not(.title__more-row--cast) { padding-top: calc(var(--card-height) * (var(--card-focus-scale) - 1) + .35rem + var(--space-2)); }
+/* Las caras, alineadas arriba: un nombre de dos renglones («Patricia Arquette») ya no sube su foto sobre las demás. */
+.title__more-row--cast { align-items: flex-start; }
 @media (max-height: 820px) {
   [data-text-size="xlarge"] .title__name, [data-text-size="xlarge"] .title__description { -webkit-line-clamp: 2; }
   [data-text-size="xlarge"] .title__people { display: none; }
@@ -175,6 +180,7 @@
   box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
 .episode__number { position: absolute; left: var(--inset-poster); bottom: var(--inset-poster); }
+.episode__thumb:has(.episode__progress) .episode__number { bottom: calc(var(--inset-poster) + var(--space-3)); } /* sobre la barra, no encima de ella */
 .episode__check {
   position: absolute; right: var(--space-2); top: var(--space-2); display: grid; place-items: center;
   width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--color-badge-bg); color: var(--color-live);
@@ -182,6 +188,7 @@
 .episode__check .icon { width: var(--icon-sm); height: var(--icon-sm); stroke-width: var(--stroke-bold); }
 .episode__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); --progress-width: auto; }
 .episode__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.episode__next { align-self: flex-start; } /* «Continuar» / «Sigue»: el que abre la ficha y ve A, sin el «Continuar» aparte de antes */
 .episode__title { font-size: var(--type-section); font-weight: var(--weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .episode__overview {
   color: var(--color-text-muted); font-size: var(--type-secondary); line-height: var(--leading-relaxed);
