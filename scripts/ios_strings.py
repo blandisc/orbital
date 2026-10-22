@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Abierto": "Open",
     "%lld semillas": "%lld seeders",
     "Sin ajuste": "No offset", "Buscar…": "Search…", "en Real-Debrid": "on Real-Debrid", "Real-Debrid aún no la tiene": "Real-Debrid doesn't have it yet",
     "se supone": "assumed", "Descarga en el iPhone": "Download on iPhone", "Abre otra versión del video en el mismo punto": "Opens another version of the video at the same point",

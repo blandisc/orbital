@@ -166,16 +166,28 @@ struct VersionCard: View {
                         .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).buttonStyle(.plain)
                 }
                 if !others.isEmpty {
-                    DisclosureGroup(isExpanded: $showsOthers) {
-                        VStack(spacing: DS.Space.s2) { ForEach(others) { other in otherRow(other) } }.padding(.top, DS.Space.s2)
-                    } label: {
-                        Text("Otras \(others.count) en \(VersionLanguageRow.inline(language, uiLanguage)) \(option.quality)").recipe(.secondary, color: DS.text)
+                    // Un botón y la lista debajo (no un `DisclosureGroup`: cerrado guardaba ~40 pt vacíos al pie de la tarjeta).
+                    Button { withAnimation(DS.Motion.base(false)) { showsOthers.toggle() } } label: {
+                        HStack {
+                            Text("Otras \(others.count) en \(VersionLanguageRow.inline(language, uiLanguage)) \(option.quality)").recipe(.secondary, color: DS.text)
+                            Spacer(minLength: DS.Space.s2)
+                            Image(systemName: showsOthers ? "chevron.down" : "chevron.right").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                        }
+                        .frame(minHeight: DS.Size.touchTarget)
+                        .contentShape(Rectangle())
                     }
-                    .tint(DS.textMuted)
+                    .buttonStyle(.plain)
+                    .accessibilityValue(showsOthers ? Text("Abierto") : Text("Cerrado"))
+                    if showsOthers {
+                        VStack(spacing: DS.Space.s2) { ForEach(others) { other in otherRow(other) } }
+                    }
                 }
             }
             .padding(DS.Space.s5)
         }
+        // La hoja flota con sus esquinas redondas y la barra de inicio va encima de su borde: reservarle sus 34 pt además del
+        // margen dejaba espacio muerto al pie de la tarjeta. El margen de abajo ya la separa de la barra.
+        .ignoresSafeArea(.container, edges: .bottom)
     }
 
     /// «2.9 GB · DV · Al instante»: los datos y, si se sabe, qué tan rápido arranca.
