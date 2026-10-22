@@ -253,6 +253,24 @@ def gradient(y0: float, y1: float, top_alpha: int, bottom_alpha: int, steps: int
     return "\n".join(out)
 
 
+def side_gradient(x1: float, left_alpha: int, steps: int = 28) -> str:
+    """Velo negro desde la orilla izquierda (`left_alpha`, 255 = transparente) que se desvanece hasta `x1`: lo oscuro
+    «sangra» sobre el video, sin borde. Las capas se apilan desde la orilla, como `gradient`."""
+    def clear(t: float) -> float:  # transparencia total en t (0 = la orilla, 1 = x1)
+        eased = t * t * (3 - 2 * t)
+        return (left_alpha + (255 - left_alpha) * eased) / 255
+
+    out, step, before = [], x1 / steps, clear(1)
+    for i in range(steps, 0, -1):  # de lo claro (x1) a lo oscuro (la orilla)
+        now = clear((i - 1) / steps)
+        layer = 1 - now / before if before > 0 else 1
+        before = now
+        a = max(0, min(255, round(255 * (1 - layer))))
+        if a < 255:
+            out.append(_shape(rrect_path(0, 0, i * step, H, 0), SHADE, f"{a:02X}", blur=3))
+    return "\n".join(out)
+
+
 def text(x: float, y: float, value: str, size: int, color: str = TEXT, *, weight: str = "regular", align: int = 7,
          alpha: str = "00") -> str:
     """Texto ya escapado (o con etiquetas). weight: regular | semi | bold."""
@@ -483,7 +501,10 @@ def paused_ass(hud: Hud) -> str:
     """En pausa: el video se oscurece y a la izquierda, lo esencial y los botones."""
     targets["hud"] = []
     placed.pop("logo", None)
-    lines = [rrect(0, 0, W, H, 0, SHADE, "88"), gradient(420, H, 255, 70), gradient(0, 200, 140, 255, 14)]
+    # Más oscuro que antes (88) y con la sombra que entra desde la izquierda, donde va el título: el video se ve, pero
+    # el logo y el texto descansan sobre negro, como el arte de la ficha.
+    lines = [rrect(0, 0, W, H, 0, SHADE, "70"), side_gradient(W * .62, 90), gradient(420, H, 255, 60),
+             gradient(0, 200, 140, 255, 14)]
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
     if hud.pip:

@@ -1,4 +1,4 @@
-import { h, hideAfterExit, mount, svg } from "../core/dom.js";
+import { h, hideAfterExit, mount } from "../core/dom.js";
 import { flight, reducedMotion } from "../core/motion.js";
 import { KeyHint } from "./ui.js";
 
@@ -92,24 +92,14 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
   // El satélite gira con transformaciones (las dibuja la GPU): con offset-path lo animaba el hilo principal y, mientras
   // Orbital abría el juego, se trababa. Una pista cuadrada aplastada a la forma de la elipse gira, y el satélite gira al
   // revés y se «desaplasta» para seguir redondo.
-  // La estela: dos puntos más chicos y tenues que van detrás del satélite (cada uno con su retraso), como un cometa.
-  const TRAIL = { 1: ["launch__spinner--trail-1", "launch__satellite--trail-1"], 2: ["launch__spinner--trail-2", "launch__satellite--trail-2"] };
-  const spinner = (trail) => h("span", { class: ["launch__spinner", TRAIL[trail]?.[0]] },
-    h("span", { class: ["launch__satellite", TRAIL[trail]?.[1]] }));
-  const satellite = () => h("span", { class: "launch__track" }, spinner(2), spinner(1), spinner(0));
-  // El anillo es un trazo (no un borde) que se dibuja solo al entrar. Se mide a la órbita en píxeles (fitRings): estirado
-  // con preserveAspectRatio + non-scaling-stroke, Chrome medía el guion sin estirar y solo pintaba un tercio de la vuelta.
-  const ring = () => svg('<svg class="launch__ring" aria-hidden="true"><ellipse pathLength="100"/></svg>');
-  const rings = [ring(), ring()];
-  const fitRings = (width, height) => rings.forEach((r) => {
-    r.setAttribute("viewBox", `0 0 ${width} ${height}`);
-    const e = r.firstElementChild;
-    [["cx", width / 2], ["cy", height / 2], ["rx", width / 2], ["ry", height / 2]].forEach(([k, v]) => e.setAttribute(k, String(v)));
-  });
-  const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, rings[0], satellite());
+  // La órbita no está dibujada: el satélite la va pintando, una luz que se apaga detrás de él (`launch__tail`, un arco con
+  // degradado que gira con el mismo reloj que el satélite: nunca se separan).
+  const satellite = () => h("span", { class: "launch__track" },
+    h("span", { class: "launch__spinner" }, h("span", { class: "launch__tail" }), h("span", { class: "launch__satellite" })));
+  const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, satellite());
   // El arco de enfrente lleva su propio satélite, al compás del de atrás: así el punto también cruza
   // por delante de la portada (antes siempre pasaba por detrás).
-  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, rings[1], satellite());
+  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, satellite());
   const label = h("div", { class: "launch__label" }, "Abriendo");
   const title = h("div", { class: "launch__title" });
   const subtitle = h("div", { class: "launch__subtitle" });
@@ -216,7 +206,6 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
     front.style.setProperty("--ratio", String(ratio));
     requestAnimationFrame(() => { // cuánto se aplasta la pista para ser la elipse (alto / ancho de la órbita)
       const squash = orbit.offsetWidth ? orbit.offsetHeight / orbit.offsetWidth : .3;
-      if (orbit.offsetWidth) fitRings(orbit.offsetWidth, orbit.offsetHeight);
       el.style.setProperty("--orbit-squash", String(squash));
       el.style.setProperty("--orbit-unsquash", String(1 / squash));
     });
