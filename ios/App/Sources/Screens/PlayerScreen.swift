@@ -145,6 +145,11 @@ struct PlayerScreen: View {
     @State private var touchStartX: CGFloat?
     /// El ícono que aparece un momento al centro tras un doble toque (pausa, ±10 s).
     @State private var flashSymbol: String?
+    /// Dobles toques en una orilla: cuántos segundos llevan sumados y de qué lado (la burbuja va de ese lado).
+    @State private var skipChain: (forward: Bool, seconds: Int, at: Date)?
+    @State private var skipChainTask: Task<Void, Never>?
+    /// ×2: lo que lleva el anillo antes de quedarse fijo.
+    @State private var fastForwardProgress: Double = 0
     @State private var flashTask: Task<Void, Never>?
     @State private var rateBeforeFastForward: Float = 1
 
@@ -446,11 +451,11 @@ struct PlayerScreen: View {
             // Como Infuse: doble toque al centro pausa o sigue; en las orillas, ±10 s.
             HStack(spacing: 0) {
                 Color.clear.contentShape(Rectangle()).frame(width: geo.size.width * DS.Gesture.edgeShare)
-                    .onTapGesture(count: 2) { Task { await model.skip(-PlaybackRules.skipSeconds) }; flash("gobackward.10") }
+                    .onTapGesture(count: 2) { skip(model, forward: false) }
                 Color.clear.contentShape(Rectangle())
                     .onTapGesture(count: 2) { Task { await model.togglePlay() }; flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
                 Color.clear.contentShape(Rectangle()).frame(width: geo.size.width * DS.Gesture.edgeShare)
-                    .onTapGesture(count: 2) { Task { await model.skip(PlaybackRules.skipSeconds) }; flash("goforward.10") }
+                    .onTapGesture(count: 2) { skip(model, forward: true) }
             }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -575,7 +580,7 @@ struct PlayerScreen: View {
             seekBubble(target: target, start: start)
         }
         if isFastForwarding {
-            VStack { DSSpeedPill(locked: fastForwardLocked); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
+            VStack { DSSpeedPill(locked: fastForwardLocked, progress: fastForwardProgress); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
         }
         if let notice {
             VStack {
@@ -588,7 +593,8 @@ struct PlayerScreen: View {
                     .id(notice.id)
                 Spacer()
             }
-            .padding(.top, DS.Space.s14)
+            // Bajo la barra de arriba con aire (antes quedaba pegado a ella).
+            .padding(.top, DS.Space.s14 + DS.Space.s4)
             .transition(.move(edge: .top).combined(with: .opacity))
         }
         if let subtitleToast {
@@ -610,6 +616,23 @@ struct PlayerScreen: View {
                 }
                 .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
             }
+        }
+        if let chain = skipChain {
+            // La burbuja del lado que tocaste, con lo que llevas sumado («+20 s»), como YouTube.
+            GeometryReader { geo in
+                let rect = videoRect(in: geo.size)
+                VStack(spacing: DS.Space.s1) {
+                    Image(systemName: chain.forward ? "goforward" : "gobackward").font(DS.TextRecipe.cardTitle.font.weight(.bold))
+                    Text(verbatim: "\(chain.forward ? "+" : "−")\(chain.seconds) s").font(DS.TextRecipe.footnote.font.weight(.bold)).monospacedDigit()
+                        .contentTransition(.numericText())
+                }
+                .foregroundStyle(DS.text)
+                .frame(width: DS.Size.touchTarget * 2, height: DS.Size.touchTarget * 2)
+                .glassEffect(.regular, in: Circle())
+                // Sobre el video, al centro del tercio que tocaste (en vertical el video no llena la pantalla).
+                .position(x: chain.forward ? rect.maxX - rect.width / 6 : rect.minX + rect.width / 6, y: rect.midY)
+            }
+            .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
         if let flashSymbol, !controlsVisible {
             Image(systemName: flashSymbol).font(DS.TextRecipe.display.font).foregroundStyle(DS.text)
@@ -647,6 +670,9 @@ struct PlayerScreen: View {
         rateBeforeFastForward = model.rate
         withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = true }
         Task { await model.setRate(PlaybackRules.fastForwardRate) }
+        // El anillo de la píldora se llena mientras mantienes: al completarse, vibra y se queda fijo.
+        fastForwardProgress = 0
+        withAnimation(.linear(duration: DS.Timing.fastForwardLock)) { fastForwardProgress = 1 }
         fastForwardLockTask?.cancel()
         fastForwardLockTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(DS.Timing.fastForwardLock))
@@ -660,6 +686,7 @@ struct PlayerScreen: View {
         fastForwardLockTask?.cancel(); fastForwardLockTask = nil
         guard isFastForwarding, force || !fastForwardLocked else { return }
         withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = false; fastForwardLocked = false }
+        fastForwardProgress = 0
         Task { await model.setRate(rateBeforeFastForward) }
     }
 
@@ -692,6 +719,23 @@ struct PlayerScreen: View {
     }
 
     /// Un ícono grande que aparece y se va (el doble toque se nota sin abrir los controles).
+    /// Doble toque en una orilla: ±10 s; seguidos del mismo lado se suman y la burbuja lo dice («+30 s»).
+    private func skip(_ model: PlayerModel, forward: Bool) {
+        let step = Int(PlaybackRules.skipSeconds)
+        let now = Date()
+        let chained = skipChain.map { $0.forward == forward && now.timeIntervalSince($0.at) < DS.Gesture.skipChain } ?? false
+        withAnimation(DS.Motion.base(reduceMotion)) {
+            skipChain = (forward, (chained ? skipChain?.seconds ?? 0 : 0) + step, now)
+        }
+        Task { await model.skip(forward ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
+        skipChainTask?.cancel()
+        skipChainTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(DS.Gesture.skipChain))
+            guard !Task.isCancelled else { return }
+            withAnimation(DS.Motion.base(reduceMotion)) { skipChain = nil }
+        }
+    }
+
     private func flash(_ symbol: String) {
         flashTask?.cancel()
         withAnimation(DS.Motion.base(reduceMotion)) { flashSymbol = symbol }

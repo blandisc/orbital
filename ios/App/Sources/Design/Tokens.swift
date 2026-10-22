@@ -181,7 +181,10 @@ enum DS {
     /// `PlayerGestures`, la aritmética pura) y el tamaño del indicador.
     enum Gesture {
         /// La franja de cada orilla donde el doble toque salta ±10 s (al centro, pausa o sigue).
-        static let edgeShare: CGFloat = 0.28
+        /// Doble toque: tres zonas parejas (izquierda −10 s, centro pausa, derecha +10 s), como YouTube.
+        static let edgeShare: CGFloat = 1.0 / 3.0
+        /// Dobles toques seguidos del mismo lado se suman (+10, +20, +30 s) mientras no pase este rato.
+        static let skipChain: TimeInterval = 0.9
         /// A cuántos segundos del destino ya se da por llegado un salto (el pulgar vuelve a seguir el avance).
         static let seekArrived: Double = 2
         static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)

@@ -257,7 +257,8 @@ struct Toast: View {
                 .fixedSize()
             }
         }
-        .padding(.leading, DS.Space.s4).padding(.trailing, action == nil ? DS.Space.s4 : DS.Space.s2).padding(.vertical, DS.Space.s2)
+        // Más aire por dentro (antes el texto y «Cambiar» casi tocaban el borde).
+        .padding(.leading, DS.Space.s4).padding(.trailing, action == nil ? DS.Space.s4 : DS.Space.s3).padding(.vertical, DS.Space.s3)
         .glassEffect(.regular, in: Capsule())
         .overlay { if prominent { Capsule().strokeBorder(Self.color(tone).opacity(DS.Toast.toneStroke), lineWidth: DS.Toast.strokeWidth) } }
         .contentShape(Capsule())
@@ -265,7 +266,7 @@ struct Toast: View {
         // Deslizar hacia abajo lo quita (el que te necesita no se va solo).
         .gesture(DragGesture(minimumDistance: DS.Toast.swipe).onEnded { if $0.translation.height > 0 { dismiss() } })
         .frame(maxWidth: DS.Toast.maxWidth)
-        .padding(.horizontal, DS.Space.s3)
+        .padding(.horizontal, DS.Space.gutter)   // el mismo margen que la barra de arriba del reproductor y que las pantallas
         // Con VoiceOver se anuncia y no se va solo (si no, la salida desaparecía antes de poder llegar a ella).
         .task {
             if voiceOver { UIAccessibility.post(notification: .layoutChanged, argument: nil); return }
