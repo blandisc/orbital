@@ -14,10 +14,28 @@ struct SourcesSheet: View {
     var infuse: ((Source) -> Void)?
     @EnvironmentObject private var env: AppEnvironment
 
-    init(model: TitleModel, videoID: String, choose: @escaping (Source, Purpose) -> Void, infuse: ((Source) -> Void)? = nil) {
+    /// Un episodio: ¿esta versión es solo para él o la serie sigue así? («Solo este episodio | Desde aquí», como la TV).
+    private let episode: Bool
+    private let metaID: String
+    @State private var fromHere: Bool
+
+    init(model: TitleModel, videoID: String, fromHere: Bool = false, choose: @escaping (Source, Purpose) -> Void, infuse: ((Source) -> Void)? = nil) {
         _observer = StateObject(wrappedValue: ModelObserver(SourcesModel(AppEnvironment.shared.services, kind: model.kind, metaID: model.metaID, videoID: videoID)))
         self.choose = choose
         self.infuse = infuse
+        episode = model.kind == "series" && videoID.contains(":")
+        metaID = model.metaID
+        _fromHere = State(initialValue: fromHere)
+    }
+
+    /// «Desde aquí»: la serie recuerda el idioma (y el latino o castellano) de la versión elegida; vale también en la TV.
+    private func pick(_ source: Source, _ purpose: Purpose) {
+        if episode && fromHere {
+            let prefs = env.services.titlePrefs.languages(for: metaID, settings: env.services.appSettings).prefs
+            let code = source.audio.first(where: { $0.base == prefs.audio && $0.evidence.solid })?.code ?? source.audio.first?.code
+            if let code { env.services.titlePrefs.remember(metaID: metaID, audioTrack: code) }
+        }
+        choose(source, purpose)
     }
 
     @State private var showsGlossary = false
@@ -42,7 +60,7 @@ struct SourcesSheet: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text("Elegir versión").recipe(.title)
+                    Text("Versión").recipe(.title)
                     (showsAll ? Text("Todas, por calidad · toca una") : Text("Por idioma y calidad · toca una")).recipe(.footnote)
                 }
                 Spacer()
@@ -60,6 +78,15 @@ struct SourcesSheet: View {
             .pickerStyle(.segmented)
             .padding(.horizontal, DS.Space.s4)
             .accessibilityIdentifier("sources-mode")
+            if episode {
+                Picker("Para", selection: $fromHere) {
+                    Text("Solo este episodio").tag(false)
+                    Text("Desde aquí").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, DS.Space.s4)
+                .accessibilityIdentifier("sources-scope")
+            }
             ScrollView {
                 VStack(spacing: DS.Space.s2) {
                     if model.isLoading { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s6) }
@@ -67,7 +94,7 @@ struct SourcesSheet: View {
                     if showsAll {
                         if !model.ranked.isEmpty {
                             AllSourcesList(sources: model.ranked, current: model.recommendedIndex,
-                                           primary: ("Ver", { choose($0, .watch) }), secondary: ("Descargar", { choose($0, .download) }),
+                                           primary: ("Ver", { pick($0, .watch) }), secondary: ("Descargar", { pick($0, .download) }),
                                            uiLanguage: ui, offersSecondary: { s in s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false })
                         }
                     } else {
@@ -88,7 +115,7 @@ struct SourcesSheet: View {
             VersionCard(row: p.row, option: p.option, others: model.others(of: p.option, in: p.row), uiLanguage: ui,
                         act: { id, purpose in
                             picked = nil
-                            if let source = model.source(id) { choose(source, purpose) }
+                            if let source = model.source(id) { pick(source, purpose) }
                         },
                         infuse: infuse.map { open in { id in picked = nil; if let s = model.source(id) { open(s) } } })
                 .fittedScrollSheet()   // del alto de lo que dice (sin espacio muerto); al abrir «Otras», crece

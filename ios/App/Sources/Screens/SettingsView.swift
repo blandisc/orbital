@@ -254,6 +254,11 @@ struct SettingsView: View {
             Text("El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.")
         }
         .listRowBackground(DS.surface)
+        Section {
+            NavigationLink { RememberedTitlesView() } label: { Text("Lo que recuerda cada título") }
+                .accessibilityIdentifier("settings-remembered")
+        }
+        .listRowBackground(DS.surface)
     }
 
     @ViewBuilder private func playback(_ model: SettingsModel) -> some View {
@@ -464,3 +469,69 @@ struct SettingsView: View {
         return formatter.localizedString(for: date, relativeTo: now)
     }
 }
+
+/// Lo que recuerda cada título: el audio (latino, castellano…) y los subtítulos que elegiste viéndolo; vale aquí y en tu
+/// Orbital. Deslizar lo olvida (vuelve a lo de Ajustes, en los dos lados).
+struct RememberedTitlesView: View {
+    @EnvironmentObject private var env: AppEnvironment
+    @State private var rows: [Row] = []
+    @State private var names: [String: String] = [:]
+
+    struct Row: Identifiable, Equatable { let id: String; let line: String }
+
+    var body: some View {
+        List {
+            Section {
+                if rows.isEmpty {
+                    Text("Ningún título recuerda nada todavía").recipe(.secondary)
+                }
+                ForEach(rows) { row in
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        Text(verbatim: names[row.id] ?? row.id).recipe(.body)
+                        Text(verbatim: row.line).recipe(.footnote)
+                    }
+                    .swipeActions { Button("Olvidar", role: .destructive) { forget(row.id) } }
+                }
+            } footer: {
+                Text("Lo que elegiste viendo cada uno; vale aquí y en tu Orbital. Desliza para olvidarlo.")
+            }
+            .listRowBackground(DS.surface)
+        }
+        .scrollContentBackground(.hidden).background(Backdrop())
+        .navigationTitle(Text("Lo que recuerda cada título"))
+        .task { reload(); await loadNames() }
+    }
+
+    private func reload() {
+        let ui = env.services.appSettings.uiLanguage
+        rows = env.services.titlePrefs.remembered().map { id, value in
+            var parts: [String] = []
+            if let audio = value.audio {
+                let code = audio == "es" ? (value.spanish ?? "es") : audio
+                parts.append(code == "es" ? Strings.tr("Español", language: ui) : Streams.versionLanguageName(code, in: ui))
+            }
+            if let subs = value.subtitles {
+                parts.append(subs.isEmpty ? Strings.tr("Sin subtítulos", language: ui)
+                             : String(format: Strings.tr("Subtítulos: %@", language: ui), Streams.versionLanguageName(subs, in: ui)))
+            }
+            return Row(id: id, line: parts.joined(separator: " · "))
+        }
+        .sorted { $0.id < $1.id }
+    }
+
+    /// El nombre de cada título (Cinemeta, de caché casi siempre); sin él, su id.
+    private func loadNames() async {
+        for row in rows where names[row.id] == nil {
+            let cinemeta = env.services.cinemeta
+            var meta = try? await cinemeta.meta(kind: "series", id: row.id)
+            if meta?["name"]?.string == nil { meta = try? await cinemeta.meta(kind: "movie", id: row.id) }
+            if let name = meta?["name"]?.string { names[row.id] = name }
+        }
+    }
+
+    private func forget(_ id: String) {
+        env.services.titlePrefs.forget(metaID: id)
+        reload()
+    }
+}
+

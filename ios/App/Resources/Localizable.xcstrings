@@ -4181,6 +4181,17 @@
         }
       }
     },
+    "Desde aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From here on"
+          }
+        }
+      }
+    },
     "Desde el principio": {
       "extractionState": "manual",
       "localizations": {
@@ -7415,6 +7426,17 @@
         }
       }
     },
+    "Lo que elegiste viendo cada uno; vale aquí y en tu Orbital. Desliza para olvidarlo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you picked while watching each one; it applies here and on your Orbital. Swipe to forget it."
+          }
+        }
+      }
+    },
     "Lo que encontré": {
       "extractionState": "manual",
       "localizations": {
@@ -7466,6 +7488,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you can say"
+          }
+        }
+      }
+    },
+    "Lo que recuerda cada título": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What each title remembers"
           }
         }
       }
@@ -8636,6 +8669,17 @@
         }
       }
     },
+    "Ningún título recuerda nada todavía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No title remembers anything yet"
+          }
+        }
+      }
+    },
     "No": {
       "extractionState": "manual",
       "localizations": {
@@ -9714,6 +9758,17 @@
         }
       }
     },
+    "Olvidar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forget"
+          }
+        }
+      }
+    },
     "OneDrive": {
       "extractionState": "manual",
       "localizations": {
@@ -10029,6 +10084,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Screen and rotation locked"
+          }
+        }
+      }
+    },
+    "Para": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For"
           }
         }
       }
@@ -12849,6 +12915,17 @@
         }
       }
     },
+    "Solo este episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just this episode"
+          }
+        }
+      }
+    },
     "Solo las que ya están en Real-Debrid": {
       "extractionState": "manual",
       "localizations": {
@@ -13098,6 +13175,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Subtitles saved with the download."
+          }
+        }
+      }
+    },
+    "Subtítulos: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles: %@"
           }
         }
       }
@@ -15001,6 +15089,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Previous version"
+          }
+        }
+      }
+    },
+    "Versión de este episodio…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version for this episode…"
+          }
+        }
+      }
+    },
+    "Versión de la serie: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Series version: %@"
           }
         }
       }

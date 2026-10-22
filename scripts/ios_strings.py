@@ -19,6 +19,16 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Subtítulos: %@": "Subtitles: %@",
+    "Solo este episodio": "Just this episode",
+    "Desde aquí": "From here on",
+    "Para": "For",
+    "Versión de la serie: %@": "Series version: %@",
+    "Versión de este episodio…": "Version for this episode…",
+    "Lo que recuerda cada título": "What each title remembers",
+    "Olvidar": "Forget",
+    "Lo que elegiste viendo cada uno; vale aquí y en tu Orbital. Desliza para olvidarlo.": "What you picked while watching each one; it applies here and on your Orbital. Swipe to forget it.",
+    "Ningún título recuerda nada todavía": "No title remembers anything yet",
     "Buscando la mejor versión…": "Finding the best version…",
     "Buscar versión": "Find a version",
     "Con datos móviles te avisamos antes de usar versiones de más de %lld GB.": "On cellular we'll ask before using versions over %lld GB.",

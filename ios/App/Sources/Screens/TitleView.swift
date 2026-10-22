@@ -26,7 +26,7 @@ struct TitleView: View {
     @State private var viewport: CGSize = .zero
     @State private var belowHero: CGFloat = 0
 
-    struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var id: String { "\(videoID)-\(purpose)" } }
+    struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var fromHere = false; var id: String { "\(videoID)-\(purpose)" } }
 
     init(route: TitleRoute) {
         self.route = route
@@ -91,7 +91,7 @@ struct TitleView: View {
             await tint.load(model.background ?? model.poster)
         }
         .sheet(item: $sourcesFor) { target in
-            SourcesSheet(model: model, videoID: target.videoID, choose: { source, purpose in
+            SourcesSheet(model: model, videoID: target.videoID, fromHere: target.fromHere, choose: { source, purpose in
                 sourcesFor = nil
                 handle(source: source, videoID: target.videoID, purpose: purpose, model: model)   // lo que quedó en el selector de la hoja
             }, infuse: { source in
@@ -397,6 +397,21 @@ struct TitleView: View {
                 DSOptionMenu(items: chips, label: label, selection: selection)
             }
         }
+        // La versión de la serie (lo que recuerda: latino, castellano, inglés…); tocarla elige otra «desde aquí».
+        if let next = model.continueVideoID {
+            let wanted = env.services.titlePrefs.languages(for: model.metaID, settings: env.services.appSettings).prefs.wanted
+            Button { sourcesFor = SourcesTarget(videoID: next, purpose: .watch, fromHere: true) } label: {
+                HStack(spacing: DS.Space.s1) {
+                    // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
+                    Text("Versión de la serie: \(wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage) : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage))")
+                    Image(systemName: "chevron.down")
+                }
+                .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text)
+            }
+            .buttonStyle(.borderless)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier("series-version")
+        }
         // Cuántos llevas de esta temporada y marcarla completa (como en Infuse y Trakt).
         let progress = model.seasonProgress
         if progress.total > 0 {
@@ -675,7 +690,7 @@ struct EpisodeRowView: View {
     /// Lo que se puede hacer con un episodio: en el «⋯» de su renglón (a la vista) y al mantenerlo presionado.
     @ViewBuilder private func actions(download withDownload: Bool) -> some View {
         if withDownload { Button("Descargar", systemImage: "arrow.down.circle", action: download) }
-        Button("Elegir versión…", systemImage: "slider.horizontal.3", action: chooseSource)
+        Button("Versión de este episodio…", systemImage: "slider.horizontal.3", action: chooseSource)
         Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
         if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
     }
