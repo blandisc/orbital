@@ -118,7 +118,7 @@ struct SourcesSheet: View {
                             if let source = model.source(id) { pick(source, purpose) }
                         },
                         infuse: infuse.map { open in { id in picked = nil; if let s = model.source(id) { open(s) } } })
-                .fittedScrollSheet()   // del alto de lo que dice (sin espacio muerto); al abrir «Otras», crece
+                // Mide lo que dice (sin espacio muerto); al abrir «Otras», crece y, si no cabe, se desplaza.
         }
     }
 
@@ -161,6 +161,14 @@ struct VersionCard: View {
     let act: (Int, Purpose) -> Void
     var infuse: ((Int) -> Void)?
     @State private var showsOthers = false
+    /// El alto de lo que dice la tarjeta: la hoja mide eso (medida por la zona desplazable dejaba un hueco al pie).
+    @State private var contentHeight: CGFloat = DS.Size.touchTarget * 8
+    /// El margen de la barra de inicio: iOS lo suma por su cuenta al alto que se le pide a la hoja (pides 200, mide ~234), y
+    /// la tarjeta ya llega hasta abajo (`ignoresSafeArea`): sin restarlo quedaba ese hueco al pie.
+    private var windowBottomInset: CGFloat {
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+        return scene?.keyWindow?.safeAreaInsets.bottom ?? 0
+    }
 
     var body: some View {
         let language = Streams.versionLanguageName(row.code, in: uiLanguage)
@@ -210,10 +218,14 @@ struct VersionCard: View {
                 }
             }
             .padding(DS.Space.s5)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
         }
+        .scrollBounceBehavior(.basedOnSize)
         // La hoja flota con sus esquinas redondas y la barra de inicio va encima de su borde: reservarle sus 34 pt además del
         // margen dejaba espacio muerto al pie de la tarjeta. El margen de abajo ya la separa de la barra.
         .ignoresSafeArea(.container, edges: .bottom)
+        .presentationDetents([.height(max(DS.Size.touchTarget * 4, contentHeight - windowBottomInset))])
+        .presentationDragIndicator(.visible)
     }
 
     /// «2.9 GB · DV · Al instante»: los datos y, si se sabe, qué tan rápido arranca.
