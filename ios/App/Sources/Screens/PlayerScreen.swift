@@ -1224,7 +1224,9 @@ struct PlayerScreen: View {
             return SubtitleDock.Version(title: dockVersionTitle(v, index: i), badge: badge, strong: v.match >= 2,
                                         position: String(format: tr("%lld de %lld"), i + 1, versions.count))
         } ?? SubtitleDock.Version(title: tr("Cargando…"), badge: nil, strong: false, position: "")
-        let check: SubtitleDock.Check? = model.askInSync ? .inSync : model.restoredDelay.map { .restored($0) }
+        // Sin «¿Va a tiempo? Sí, va bien / Probar otra»: el subtítulo se cambia con las flechas ‹ › y la elección ya se
+        // recuerda sola al cambiarlo. Solo queda el aviso de un ajuste de tiempo recordado.
+        let check: SubtitleDock.Check? = model.restoredDelay.map { .restored($0) }
         let tried = versions.enumerated().filter { model.triedVersionIDs.contains($0.element.id) && $0.element.id != model.selectedVersionID }
             .map { dockVersionTitle($0.element, index: $0.offset) }
         // Un subtítulo de imagen (PGS) no trae frases: la vista de sincronizar lo dice y deja Antes/Después.
