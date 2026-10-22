@@ -255,7 +255,7 @@ test("guía rápida: paso a paso, con el atajo del mando que tienes", () => {
 
 test("Alexa: ejemplos que no hacen nada al elegirlos", () => {
   const menu = alexaMenu();
-  assert.match(menu.subtitle, /pídele a Orbital/);
+  assert.match(menu.subtitle, /pídele a mi consola/);
   assert.ok(menu.options.length >= 5);
   assert.ok(menu.options.every((o) => o.command.type === "stay" && o.label.startsWith("«")));
 });
@@ -365,7 +365,7 @@ test("Pantalla y sonido: el protector de pantalla (el mosaico) con su tiempo", a
 
 test("Lo que puedes decir: la guía del iPhone (cómo decirlo, cada tema y si no funciona)", async () => {
   const { alexaMenu, voiceGroupMenu, voiceHelpMenu } = await import("../../orbital/web/js/core/menus.js");
-  const guide = { how: [{ say: "Alexa, abre Orbital", note: "Y luego lo dices" }],
+  const guide = { how: [{ say: "Alexa, abre mi consola", note: "Y luego lo dices" }],
     groups: [{ title: "Juegos", icon: "gamecontroller", commands: [{ say: "abre Hollow Knight", note: "Cualquier juego" }] }] };
   const menu = alexaMenu(guide);
   assert.equal(menu.title, "Lo que puedes decir");

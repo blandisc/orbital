@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "orbital",
+      "invocationName": "mi consola",
       "modelConfiguration": {
         "fallbackIntentSensitivity": {
           "level": "LOW"

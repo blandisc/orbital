@@ -19,7 +19,7 @@ se controla con la voz a través de **Alexa**.
  │                       Tailscale Funnel (HTTPS, gratis)          │
  └─────────────────────────────────────────────┼───────────────────┘
                                                │
- "Alexa, pídele a Orbital que abra Hades" ─▶ Skill (alojada por Amazon)
+ "Alexa, pídele a mi consola que abra Hades" ─▶ Skill (alojada por Amazon)
 ```
 
 ## Qué hace
@@ -167,7 +167,7 @@ Cómo funciona:
 ## Alexa
 
 ```
-"Alexa, pídele a Orbital que abra Zelda"
+"Alexa, pídele a mi consola que abra Zelda"
    │  Alexa (nube de Amazon) → LaunchGameIntent, game="zelda"
    ▼
 Skill alojada por Amazon (alexa/lambda_function.py, gratis, sin cuenta de AWS)
@@ -225,55 +225,55 @@ entorno `ORBITAL_URL`, `ORBITAL_TOKEN` y `ALEXA_SKILL_ID` (tienen prioridad sobr
 ### 3. Probar
 
 En la consola de Alexa, pestaña *Test* → activa *Development*, y escribe o di:
-"abre Orbital" y luego "abre zelda". Como la skill queda en modo desarrollo, funciona en todos
+"abre mi consola" y luego "abre zelda". Como la skill queda en modo desarrollo, funciona en todos
 los Echo de tu cuenta sin publicarla.
 
 ### Frases
 
 | Di… | Hace |
 |---|---|
-| "Alexa, abre Orbital" | Prende la tele en la entrada de Orbital (ver [La tele](#la-tele)), muestra Orbital y pregunta qué quieres |
-| "Alexa, pídele a Orbital que prenda la consola" / "…que encienda Orbital" | Prende la tele en la entrada de Orbital y muestra la consola |
-| "Alexa, pídele a Orbital que abra Hollow Knight" | Abre el juego |
-| "Alexa, pídele a Orbital que abra Zelda con Eden" | Abre con el emulador alternativo |
-| "Alexa, pídele a Orbital que abra Fortnite en la nube" | Abre tu juego de GeForce NOW |
-| "Alexa, pídele a Orbital que ponga Interstellar" / "…que quiero ver Dune" | Lo pone en el reproductor de Orbital con la fuente recomendada (si hay varias coincidencias, abre Buscar) |
-| "Alexa, pídele a Orbital que siga viendo" / "…que continúe The Office" | Retoma donde te quedaste |
-| "Alexa, pídele a Orbital que pause" / "…que reanude el video" | Pausa / sigue |
-| "Alexa, pídele a Orbital que adelante 5 minutos" / "…que regrese un minuto" | Adelanta / regresa |
-| "Alexa, pídele a Orbital que salte la intro" / "…que salte el resumen" | Salta la intro (si el video marca dónde termina; si no, te dice que pidas «adelanta noventa segundos») |
-| "Alexa, pídele a Orbital que ponga subtítulos en español" / "…que quite los subtítulos" | Subtítulos (los del video o, si no trae, los de tu addon) |
-| "Alexa, pídele a Orbital que cambie el audio a inglés" / "…que cambie el idioma a castellano" | Audio en otro idioma, si el video lo trae (español, inglés, francés, portugués, italiano, alemán, japonés, coreano) |
-| "Alexa, pídele a Orbital que ponga el siguiente episodio" / "…el episodio anterior" | Siguiente / anterior episodio |
-| "Alexa, pídele a Orbital que ponga el capítulo 5" / "…el episodio 3 de la temporada 2" | Ese episodio de la serie que estás viendo |
-| "Alexa, pídele a Orbital que ponga la telenovela" / "…mi serie" | Lo que estabas viendo |
-| "Alexa, pídele a Orbital que ponga la temporada 2" / "…que ponga Los Simpson temporada dos" | Desde el primer episodio de esa temporada |
-| "Alexa, pídele a Orbital que busque Dune" | Abre Buscar con lo que dijiste |
-| "Alexa, pídele a Orbital que vaya a juegos" / "…a películas y series" | Abre esa sección |
-| "Alexa, pídele a Orbital que silencie la tele" / "…que quite el silencio" | Sin sonido / con sonido |
-| "Alexa, pídele a Orbital que le suba al volumen" / "…que le baje tantito" / "…que ponga el volumen en 30" | Volumen |
-| "Alexa, pídele a Orbital que me ponga Los Simpson" / "…que le quite los subtítulos" / "…que se regrese diez segundos" | También se entiende como se dice en México (con «le», «me», «se») |
-| "Alexa, pídele a Orbital que cierre el juego" | Cierra el emulador o el video en curso |
-| "Alexa, pídele a Orbital que salga al escritorio" / "…que muestre la consola" | Sale / vuelve |
-| "Alexa, dile a Orbital que se mueva a la derecha" | Mueve la selección |
-| "Alexa, pregúntale a Orbital qué está abierto" | Te dice qué está corriendo |
+| "Alexa, abre mi consola" | Prende la tele en la entrada de Orbital (ver [La tele](#la-tele)), muestra Orbital y pregunta qué quieres |
+| "Alexa, pídele a mi consola que prenda la consola" / "…que encienda la consola" | Prende la tele en la entrada de Orbital y muestra la consola |
+| "Alexa, pídele a mi consola que abra Hollow Knight" | Abre el juego |
+| "Alexa, pídele a mi consola que abra Zelda con Eden" | Abre con el emulador alternativo |
+| "Alexa, pídele a mi consola que abra Fortnite en la nube" | Abre tu juego de GeForce NOW |
+| "Alexa, pídele a mi consola que ponga Interstellar" / "…que quiero ver Dune" | Lo pone en el reproductor de Orbital con la fuente recomendada (si hay varias coincidencias, abre Buscar) |
+| "Alexa, pídele a mi consola que siga viendo" / "…que continúe The Office" | Retoma donde te quedaste |
+| "Alexa, pídele a mi consola que pause" / "…que reanude el video" | Pausa / sigue |
+| "Alexa, pídele a mi consola que adelante 5 minutos" / "…que regrese un minuto" | Adelanta / regresa |
+| "Alexa, pídele a mi consola que salte la intro" / "…que salte el resumen" | Salta la intro (si el video marca dónde termina; si no, te dice que pidas «adelanta noventa segundos») |
+| "Alexa, pídele a mi consola que ponga subtítulos en español" / "…que quite los subtítulos" | Subtítulos (los del video o, si no trae, los de tu addon) |
+| "Alexa, pídele a mi consola que cambie el audio a inglés" / "…que cambie el idioma a castellano" | Audio en otro idioma, si el video lo trae (español, inglés, francés, portugués, italiano, alemán, japonés, coreano) |
+| "Alexa, pídele a mi consola que ponga el siguiente episodio" / "…el episodio anterior" | Siguiente / anterior episodio |
+| "Alexa, pídele a mi consola que ponga el capítulo 5" / "…el episodio 3 de la temporada 2" | Ese episodio de la serie que estás viendo |
+| "Alexa, pídele a mi consola que ponga la telenovela" / "…mi serie" | Lo que estabas viendo |
+| "Alexa, pídele a mi consola que ponga la temporada 2" / "…que ponga Los Simpson temporada dos" | Desde el primer episodio de esa temporada |
+| "Alexa, pídele a mi consola que busque Dune" | Abre Buscar con lo que dijiste |
+| "Alexa, pídele a mi consola que vaya a juegos" / "…a películas y series" | Abre esa sección |
+| "Alexa, pídele a mi consola que silencie la tele" / "…que quite el silencio" | Sin sonido / con sonido |
+| "Alexa, pídele a mi consola que le suba al volumen" / "…que le baje tantito" / "…que ponga el volumen en 30" | Volumen |
+| "Alexa, pídele a mi consola que me ponga Los Simpson" / "…que le quite los subtítulos" / "…que se regrese diez segundos" | También se entiende como se dice en México (con «le», «me», «se») |
+| "Alexa, pídele a mi consola que cierre el juego" | Cierra el emulador o el video en curso |
+| "Alexa, pídele a mi consola que salga al escritorio" / "…que muestre la consola" | Sale / vuelve |
+| "Alexa, dile a mi consola que se mueva a la derecha" | Mueve la selección |
+| "Alexa, pregúntale a mi consola qué está abierto" | Te dice qué está corriendo |
 
-Con la skill abierta ("Alexa, abre Orbital") también sirven "pausa", "continúa" y "siguiente".
+Con la skill abierta ("Alexa, abre mi consola") también sirven "pausa", "continúa" y "siguiente".
 
 ### Atajos con Rutinas (frases cortas)
 
-Las skills propias siempre necesitan "pídele a Orbital que…". Para frases cortas usa las Rutinas
+Las skills propias siempre necesitan "pídele a mi consola que…". Para frases cortas usa las Rutinas
 de la app Alexa: *Más → Rutinas → +* → *Cuando esto ocurra: Voz* → "a jugar Zelda" → *Agregar
-acción → Personalizado* → `pídele a Orbital que abra zelda`. Ideas: "modo película" →
-`pídele a Orbital que siga viendo`; "apaga la consola" → `pídele a Orbital que salga al escritorio`;
-**"prende la consola" → `pídele a Orbital que prenda la consola`** (prende la tele, pone la entrada y muestra Orbital).
+acción → Personalizado* → `pídele a mi consola que abra zelda`. Ideas: "modo película" →
+`pídele a mi consola que siga viendo`; "apaga la consola" → `pídele a mi consola que salga al escritorio`;
+**"prende la consola" → `pídele a mi consola que prenda la consola`** (prende la tele, pone la entrada y muestra Orbital).
 
 La lista completa de frases (la que enseñan la app de iPhone y Ajustes › Voz en la tele) está en
 [`alexa/commands.json`](alexa/commands.json); una prueba comprueba que cada una llega a un comando.
 
 ### La tele
 
-Si tu tele es una **Roku TV**, «abre Orbital» y «prende la consola» la prenden y la cambian a la entrada
+Si tu tele es una **Roku TV**, «abre mi consola» y «prende la consola» la prenden y la cambian a la entrada
 de la Legion Go, por la red de la casa (sin la skill de Roku). Una sola vez, con la tele prendida en la
 entrada de Orbital:
 

@@ -35,7 +35,7 @@ test("frase para Alexa según lo enfocado", async () => {
   const { alexaTip, shortTitle } = await import("../../orbital/web/js/core/hints.js");
   assert.equal(shortTitle("The Legend of Zelda: Tears of the Kingdom"), "The Legend of Zelda");
   assert.equal(shortTitle("Apex Legends™"), "Apex Legends");
-  assert.equal(alexaTip({ id: "steam:1", title: "Hades", source: "steam" }), "«Alexa, pídele a Orbital que abra Hades»");
+  assert.equal(alexaTip({ id: "steam:1", title: "Hades", source: "steam" }), "«Alexa, pídele a mi consola que abra Hades»");
   assert.match(alexaTip({ id: "e", title: "Zelda", source: "switch", runner: "r", runners: [{ id: "r" }, { id: "e2", name: "Eden" }] }), /abra Zelda con Eden/);
   assert.match(alexaTip({ id: "gfn:1", title: "Fortnite", source: "geforcenow" }), /abra Fortnite en la nube/);
   assert.match(alexaTip({ id: "stremio:tt1", title: "Dune", source: "stremio", progress: .4 }), /siga viendo/);

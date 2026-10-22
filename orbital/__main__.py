@@ -253,7 +253,7 @@ def tv_command(args, config) -> int:
         return 1
     tv = showing[0]
     roku.save(config.source or default_config_path(), tv)
-    print(f"\nListo: {tv.name}, entrada {tv.input}. Reinicia Orbital y di «Alexa, abre Orbital».")
+    print(f"\nListo: {tv.name}, entrada {tv.input}. Reinicia Orbital y di «Alexa, abre mi consola».")
     return 0
 
 
@@ -318,7 +318,7 @@ def main(argv: list[str] | None = None) -> None:
     al.add_argument("text", nargs="?", default="qué está abierto", help="el comando para 'say'")
     al.add_argument("--url", help="dirección pública del túnel (si no se detecta Tailscale)")
     al.add_argument("--skill-id", help="ID de tu skill (amzn1.ask.skill…): la skill rechaza peticiones de otras")
-    tv = sub.add_parser("tv", help="La tele (Roku TV) que prende «Alexa, abre Orbital»")
+    tv = sub.add_parser("tv", help="La tele (Roku TV) que prende «Alexa, abre mi consola»")
     tv.add_argument("action", choices=["setup", "on"],
                     help="setup: busca la tele donde se ve Orbital y la guarda · on: la prende en la entrada de Orbital")
     args = parser.parse_args(argv)

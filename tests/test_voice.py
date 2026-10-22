@@ -88,7 +88,7 @@ def test_time_left_needs_something_playing(library):
 
 
 def test_what_people_say_after_a_courtesy_is_understood():
-    """«Alexa, pídele a Orbital que por favor…», «quiero que abras…», «¿puedes subir el volumen?»: el subjuntivo de tú y los
+    """«Alexa, pídele a mi consola que por favor…», «quiero que abras…», «¿puedes subir el volumen?»: el subjuntivo de tú y los
     infinitivos después de una cortesía no se entendían (sí «ponga»), y Alexa los manda tal cual por el texto libre."""
     from orbital.voice import parse_text
 
