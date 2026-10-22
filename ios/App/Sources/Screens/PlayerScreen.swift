@@ -1244,10 +1244,12 @@ struct PlayerScreen: View {
         // mismo grupo), no una huella confirmada.
         let version: SubtitleDock.Version? = off ? nil : at.map { i in
             let v = versions[i]
-            let badge: String? = v.match >= 2 ? tr("Hecho para tu copia") : v.match == 1 ? tr("Misma versión") : v.fromVideo ? tr("Viene dentro del archivo")
+            let badge: String? = v.match >= 2 ? tr("Hecho para tu copia") : v.match == 1 ? tr("Misma versión")
+                // «Del video» ya lo dice el título: sin «Viene dentro del archivo» debajo (era lo mismo dos veces).
+                : v.fromVideo ? nil
                 : v.downloads.flatMap { $0 > 0 ? String(format: tr("%@ descargas"), $0.formatted(.number.notation(.compactName).locale(Locale(identifier: settings.uiLanguage)))) : nil }
             return SubtitleDock.Version(title: dockVersionTitle(v, index: i), badge: badge, strong: v.match >= 2,
-                                        position: String(format: tr("%lld de %lld"), i + 1, versions.count))
+                                        position: String(format: tr("Subtítulo %lld de %lld"), i + 1, versions.count))
         } ?? SubtitleDock.Version(title: tr("Cargando…"), badge: nil, strong: false, position: "")
         // Sin «¿Va a tiempo? Sí, va bien / Probar otra»: el subtítulo se cambia con las flechas ‹ › y la elección ya se
         // recuerda sola al cambiarlo. Solo queda el aviso de un ajuste de tiempo recordado.

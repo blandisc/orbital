@@ -13047,6 +13047,17 @@
         }
       }
     },
+    "Subtítulo %lld de %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle %lld of %lld"
+          }
+        }
+      }
+    },
     "Subtítulo anterior": {
       "extractionState": "manual",
       "localizations": {

@@ -166,7 +166,8 @@ struct FlowChips: Layout {
             if x > 0, x + size.width > width { x = 0; y += line + spacing; line = 0 }
             x += size.width + spacing; line = max(line, size.height); widest = max(widest, x - spacing)
         }
-        return CGSize(width: min(widest, width), height: y + line)
+        // Todo el ancho que le dan (si se lo dan): así un renglón lleno puede estirarse hasta la orilla (ver `placeSubviews`).
+        return CGSize(width: width.isFinite ? width : widest, height: y + line)
     }
     /// Cada renglón centra sus piezas a lo alto (una insignia con borde, más baja que una cápsula, ya no queda arriba).
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
@@ -178,12 +179,18 @@ struct FlowChips: Layout {
             lines[lines.count - 1].append((view, size)); x += size.width + spacing
         }
         var y = bounds.minY
-        for line in lines {
+        for (n, line) in lines.enumerated() {
             let height = line.map(\.1.height).max() ?? 0
+            // Un renglón lleno (o el único) se estira a todo lo ancho, repartiendo lo que sobra entre sus piezas: sin hueco a la
+            // derecha (antes «Apagados · Español · Inglés · Buscar…» ocupaban tres cuartos y el panel iba de orilla a orilla).
+            // El último de varios no se estira: una cápsula sola a todo lo ancho parecería un botón.
+            let used = line.map(\.1.width).reduce(0, +) + spacing * CGFloat(max(0, line.count - 1))
+            let extra = (lines.count == 1 || n < lines.count - 1) && !line.isEmpty ? max(0, bounds.width - used) / CGFloat(line.count) : 0
             var lineX = bounds.minX
             for (view, size) in line {
-                view.place(at: CGPoint(x: lineX, y: y + (height - size.height) / 2), proposal: ProposedViewSize(size))
-                lineX += size.width + spacing
+                let width = size.width + extra
+                view.place(at: CGPoint(x: lineX, y: y + (height - size.height) / 2), proposal: ProposedViewSize(width: width, height: size.height))
+                lineX += width + spacing
             }
             y += height + spacing
         }
@@ -664,11 +671,14 @@ struct SubtitleDock: View {
         // sentía cargado). Lo mismo en vertical y en horizontal.
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             if showsHeader {
+                // Con el mismo margen que los nombres y las flechitas de los renglones: el título arriba de «Audio», «Listo»
+                // arriba de las flechitas.
                 HStack {
                     Text("Audio y subtítulos").recipe(.cardTitle)
                     Spacer()
                     doneButton
                 }
+                .padding(.horizontal, DS.Space.s3)
             }
             // La pregunta va arriba, a la vista aunque su renglón esté cerrado.
             if let check, version != nil { checkCard(check) }
@@ -681,10 +691,22 @@ struct SubtitleDock: View {
                     .id(audio.map { "\($0.id)\($0.selected)" }.joined() + otherVersions.map(\.id).joined())   // que se redibuje al elegir (ver `FlowChips`)
                 }
             }
-            section(.subtitles, title: "Subtítulos", value: subtitleValue) {
-                FlowChips(spacing: DS.Space.s1) {
-                    ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected) { pickLanguage(l.id) } }
-                    pill(Text("Buscar…"), selected: false, action: otherLanguage).accessibilityIdentifier("subtitle-dock-other")
+            // Abierto, el renglón dice solo el idioma: el «N de M» ya va abajo, en el selector (no dos veces).
+            section(.subtitles, title: "Subtítulos", value: open == .subtitles ? (subtitleValue.components(separatedBy: " · ").first ?? subtitleValue) : subtitleValue) {
+                // Los idiomas llenan el renglón; «Buscar» (una acción, no una opción) es la lupa redonda al final, con contorno.
+                HStack(alignment: .top, spacing: DS.Space.s1) {
+                    FlowChips(spacing: DS.Space.s1) {
+                        ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected) { pickLanguage(l.id) } }
+                    }
+                    Button(action: otherLanguage) {
+                        Image(systemName: "magnifyingglass").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                            .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                            .overlay(Circle().strokeBorder(DS.hairline))
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Buscar…"))
+                    .accessibilityIdentifier("subtitle-dock-other")
                 }
                 .id(languages.map { "\($0.id)\($0.selected)" }.joined())
                 if let version { versionRow(version) }
