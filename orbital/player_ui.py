@@ -466,7 +466,7 @@ def hud_ass(hud: Hud) -> str:
     # solo se descubrían en pausa). Si no caben (4:3), se quitan primero los de menos uso.
     lines.append(text(MARGIN, 878, esc(fit(info_line(hud), 22, min(1300, W - 2 * MARGIN), "semi")), 22, MUTED, weight="semi"))
     # A primero, como en todo Orbital; luego lo que se descubre (◀▶, LT/RT) y B al final.
-    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes"),
+    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Versión"),
              ("◀ ▶", "Adelantar"), *([("LT RT", "Mantén: episodio")] if hud.series else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
         items.pop(-2)  # si no caben (4:3): primero LT/RT, luego ◀▶
@@ -505,7 +505,7 @@ def paused_ass(hud: Hud) -> str:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
-    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
+    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Versión")], MARGIN, y))
     bar, _ = progress_bar(hud)
     more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Mantén: episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
@@ -565,7 +565,7 @@ def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
     if paused:
         return [("−10 s", "left"), ("+10 s", "right"), ("Salir", "quit")]
     return [("−10 s", "left"), ("Pausa", "a"), ("+10 s", "right"), ("Audio y subtítulos", "x"),
-            ("Episodios" if hud.series else "Fuentes", "y"), ("Salir", "quit")]
+            ("Episodios" if hud.series else "Versión", "y"), ("Salir", "quit")]
 
 
 def pills_width(items: Sequence[tuple[str, object]], gap: float = 16, size: int = 24) -> float:
@@ -579,7 +579,7 @@ def _touch_bar(hud: Hud, y: float, *, paused: bool) -> str:
     return pills(items, y, right=W - MARGIN, h=66) if paused else pills(items, y, center=W / 2, h=66)
 
 
-# --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Fuentes · Episodios) ------------------------------------
+# --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Episodios · Versión) ------------------------------------
 @dataclass
 class Column:
     key: str  # "audio" | "sub" | "size" | "episodes" | "source" | "playback"
@@ -611,7 +611,7 @@ class Panel:
 
 
 TAB_NAMES = {"audio": "Audio", "sub": "Subtítulos", "size": "Tamaño de los subtítulos", "sync": "Sincronía", "episodes": "Episodios",
-             "source": "Fuentes", "playback": "Reproducción", "category": "Categoría", "channels": "Canales",
+             "source": "Versión", "playback": "Reproducción", "category": "Categoría", "channels": "Canales",
              "seek": "Adelantar", "volume": "Volumen", "episode": "Episodio"}
 PANEL_ROWS = 6  # filas visibles por columna; el resto se desplaza con el foco
 
@@ -742,10 +742,10 @@ def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | 
 
 def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None = None,
                back_to: float | None = None, iphone: bool = False, channel: bool = False) -> Panel:
-    """Y: Episodios (series) · Fuentes · Reproducción (Desde el principio / Volver a… y, con un iPhone conectado, mandarlo o
+    """Y: Episodios (series) · Versión · Reproducción (Desde el principio / Volver a… y, con un iPhone conectado, mandarlo o
     descargarlo allá). El iPhone va dentro de Reproducción: como cuarta columna todo se cortaba («2…», «Desde el prin…»)."""
     columns = []
-    # Episodios primero (en una serie es lo que más se busca), luego Fuentes y Reproducción.
+    # Episodios primero (en una serie es lo que más se busca), luego Versión y Reproducción.
     if episodes:
         columns.append(_column("episodes", [
             {"label": e["label"], "action": ("episode", e["id"]), "current": bool(e.get("current")),

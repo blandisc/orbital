@@ -5,7 +5,8 @@
     { "texto": "Continuar", "en": ["tv", "ios"], "nota": "Solo un video a medias. Un juego abierto: «Volver al juego»." },
     { "texto": "Ver la serie", "en": ["tv", "ios"], "evitar": ["Ver serie"] },
     { "texto": "Guardada", "en": ["tv"], "nota": "El botón cuando ya está guardada (la película, la serie)." },
-    { "texto": "Elegir fuente", "en": ["tv", "ios"], "evitar": ["Elegir Fuente", "Escoger fuente"] },
+    { "texto": "Elegir versión", "en": ["tv"], "evitar": ["Elegir Versión", "Escoger versión"], "nota": "La TV ya elige por idioma y calidad (versión); el iPhone sigue con «Elegir fuente» hasta que se le pase el mismo selector." },
+    { "texto": "Elegir fuente", "en": ["ios"], "evitar": ["Elegir Fuente", "Escoger fuente"] },
     { "texto": "Ver en la TV", "en": ["ios"], "evitar": ["Ver en TV", "Ver en la tele", "Mandar a la TV"] },
     { "texto": "Guardar", "en": ["tv", "ios"], "nota": "La acción de un título (botón «Guardar» / «Guardado»: Mi lista, tu watchlist o tus listas). «Mi lista» es el lugar, no el botón." }
   ],

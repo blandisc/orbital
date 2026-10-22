@@ -83,15 +83,61 @@ def player_source_label(source: streams.Source) -> str:
     return " · ".join(p for p in (langs, source_label(source), size) if p)
 
 
-def player_source_row(source: streams.Source) -> dict:
-    """Una fila de Y › Fuentes: «Español · 1080p WEB-DL» y, a la derecha, «Al instante · 1.2 GB». Antes iba
-    todo en una línea que se cortaba y varias filas se veían idénticas."""
-    langs = " + ".join(streams.LANG_NAMES.get(lang, lang) for lang in source.languages[:2])
-    quality = " ".join(p for p in (source.resolution or "SD", *source.hdr[:1]) if p)
-    kind = next((t for t in source.tags if t in ("REMUX", "BluRay", "WEB-DL", "x265", "AV1", "CAM")), "")
-    size = f"{source.size / 1e9:.1f} GB" if source.size else ""
-    return {"label": " · ".join(p for p in (langs, f"{quality} {kind}".strip()) if p),
-            "hint": " · ".join(p for p in ("Al instante" if source.cached else source.addon, size) if p)}
+VERSION_RES = ("4K", "1080p", "720p", "SD")
+JUNK_TAGS = {"CAM", "Tráiler", "3D"}
+
+
+def _sure(how: str) -> bool:
+    return streams.EVIDENCE.get(how, 0) >= streams.EVIDENCE["original"]
+
+
+def version_rows(found: list[streams.Source], prefs: streams.Preferences, current: int | None = None) -> list[dict]:
+    """Y › Versión en el reproductor, lo mismo que «Elegir versión» de la ficha (core/watch.js versionRows): por cada
+    idioma de audio, solo las calidades que hay y la mejor de cada una («Latino · 1080p»), tu idioma primero, luego el
+    original, el español que quede y los demás. Antes era la lista entera de fuentes (40+, casi iguales). La puesta se
+    marca en su idioma y calidad. Sin grabaciones de cine, tráileres ni 3D (salvo que no haya otra cosa)."""
+    usable = [s for s in found if not JUNK_TAGS & set(s.tags)] or found
+    rows: dict[str, dict] = {}
+    for src in usable:  # ya van de mejor a peor
+        langs = src.audio_langs or {code: "assumed" for code in src.languages} or {"": "maybe"}
+        res = src.resolution if src.resolution in VERSION_RES else "SD"
+        for code, how in langs.items():
+            row = rows.setdefault(code, {"code": code, "original": False, "cells": {}, "size": 0})
+            row["original"] |= how == "original"
+            row["size"] += 1
+            cell = row["cells"].setdefault(res, {"source": src, "how": how, "all": []})
+            if (not _sure(cell["how"]) and _sure(how)) or (cell["source"].other_title and not src.other_title):
+                cell.update(source=src, how=how)
+            cell["all"].append(src.index)
+    dub = {"latino": "es-419", "castellano": "es-ES"}.get(prefs.dub)
+    mine = ([dub] if dub else ["es-419", "es-ES"]) if prefs.audio == "es" else [prefs.audio]
+    wanted = [*mine, "es", "es-419", "es-ES"] if prefs.audio == "es" else mine
+
+    def rank(row: dict) -> tuple[int, int]:
+        code = row["code"]
+        if code in wanted:
+            first = wanted.index(code)
+        elif row["original"]:
+            first = 10
+        else:
+            first = 11 + streams.SPANISH.index(code) if code in streams.SPANISH else 20
+        return first, -row["size"]
+
+    out = []
+    for row in sorted(rows.values(), key=rank):
+        name = streams.LANG_NAMES.get(row["code"], row["code"]) if row["code"] else "Sin idioma"
+        for res in VERSION_RES:
+            cell = row["cells"].get(res)
+            if cell is None:
+                continue
+            src = cell["source"]
+            quality = " ".join(p for p in (res, *src.hdr[:1]) if p)
+            size = f"{src.size / 1e9:.1f} GB" if src.size else ""
+            doubt = "Idioma dudoso" if cell["how"] == "maybe" else ""
+            out.append({"id": src.index, "label": f"{name} · {quality}",
+                        "hint": " · ".join(p for p in (doubt, "Al instante" if src.cached else "Hay que bajarla", size) if p),
+                        "current": current is not None and current in cell["all"]})
+    return out
 
 
 def time_left(seconds: float) -> str:
@@ -802,12 +848,15 @@ class Watch:
                                         ready=lambda: bool(self.player.segment and self.player.segment.playing))
 
     def _load_in_player(self, kind: str, meta_id: str, video_id: str, title: str, source: streams.Source,
-                        start: float = 0, message: str | None = None, tried: list[int] | None = None, own: bool = False) -> bool:
+                        start: float = 0, message: str | None = None, tried: list[int] | None = None, own: bool = False,
+                        back_to: int | None = None) -> bool:
         url = self._url_for(source)
         if not url:
             return False
         meta = self._media_meta(kind, meta_id, video_id, title, source)
         meta["tried"] = sorted(set(tried or []) | {source.index})
+        if back_to is not None and back_to != source.index:
+            meta["back_to"] = back_to  # si la que elegiste a mano no abre, de vuelta a esta
         if own:
             meta["own"] = True
         prefs, subtitles = self.language_for(meta_id)  # el audio y los subtítulos que esta serie recuerda
@@ -817,6 +866,16 @@ class Watch:
     def _source_failed(self, meta: dict, position: float, alive: bool) -> bool:
         """Una fuente no arrancó o se cortó: la siguiente mejor, en el mismo punto. True si se intenta."""
         title = meta.get("title") or "esto"
+        back_to = meta.get("back_to")
+        if alive and back_to is not None:
+            # Cambiaste de versión a mano y esa no abrió: de vuelta a la que estabas viendo, en el mismo segundo (antes
+            # brincaba a «otra fuente» que no habías elegido, y parecía que el cambio había fallado).
+            previous = self._source_by_index(meta, back_to, self.language_for(meta["meta_id"])[0])
+            if previous is not None:
+                log.info("La versión elegida de %s no abrió: de vuelta a %s", title, source_label(previous))
+                if self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], title, previous, start=position,
+                                        message="Esa versión no abrió · sigues con la de antes", tried=meta.get("tried")):
+                    return True
         if alive and meta.get("source") is not None:
             tried = set(meta.get("tried") or [meta["source"]])
             prefs = self.language_for(meta["meta_id"])[0]
@@ -840,7 +899,7 @@ class Watch:
                 meta = {**meta, "tried": sorted(tried)}
                 return self._source_failed(meta, position, alive)  # esa tampoco abrió: la siguiente
         self.events.publish({"type": "toast", "ok": False,
-                      "message": f"No pude reproducir {title}. Prueba otra fuente desde la ficha (Y)."})
+                      "message": f"No pude reproducir {title}. Prueba otra versión desde la ficha (Y)."})
         return False
 
     def _title_facts(self, kind: str, video_id: str) -> dict | None:
@@ -919,22 +978,35 @@ class Watch:
         return out[:4]
 
     def _player_sources(self, meta: dict) -> list[dict]:
-        """Pestaña Fuentes del reproductor: TODAS las del título, las mejores primero y la actual marcada
-        (antes solo las 12 primeras: con la serie en inglés, las de español no salían)."""
+        """Y › Versión del reproductor: por idioma y calidad, como «Elegir versión» de la ficha (version_rows)."""
         if meta.get("source") is None:
             return []
-        found = self.stream_sources(meta["kind"], meta["video_id"], self.language_for(meta["meta_id"])[0])
-        return [{"id": s.index, **player_source_row(s), "current": s.index == meta["source"]} for s in found]
+        prefs = self.language_for(meta["meta_id"])[0]
+        return version_rows(self.stream_sources(meta["kind"], meta["video_id"], prefs), prefs, meta["source"])
+
+    def _source_by_index(self, meta: dict, index: int, prefs: streams.Preferences) -> streams.Source | None:
+        """Una fuente por su número (estable entre búsquedas), de la lista ya buscada; si ya caducó (10 min: llevabas
+        rato viendo), se busca otra vez. Antes, pasados 10 min, cambiar de versión decía «No pude cambiar de fuente»."""
+        source = self.streams.get(meta["kind"], meta["video_id"], prefs, index)
+        if source is None:
+            try:
+                found = self.stream_sources(meta["kind"], meta["video_id"], prefs)
+            except stremio_api.StremioError:
+                return None
+            source = next((s for s in found if s.index == index), None)
+        return source
 
     def _switch_source(self, meta: dict, index: int, position: float) -> bool:
         """False si no se pudo (el reproductor lo avisa). Una fuente de un solo idioma distinto (la de
-        español en una serie que estaba en inglés): la serie lo recuerda para los siguientes episodios."""
+        español en una serie que estaba en inglés): la serie lo recuerda para los siguientes episodios. Si la elegida
+        no abre, se regresa a la que estabas viendo (back_to), en el mismo segundo."""
         prefs = self.language_for(meta["meta_id"])[0]
-        source = self.streams.get(meta["kind"], meta["video_id"], prefs, index)
+        source = self._source_by_index(meta, index, prefs)
         if source is None:
             return False
+        back_to = None if meta.get("own") else meta.get("source")
         ok = self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], meta.get("title") or "",
-                                  source, start=position, message=f"Cambiando a {source_label(source)}…")
+                                  source, start=position, message=f"Cambiando a {source_label(source)}…", back_to=back_to)
         if ok and len(source.languages) == 1 and source.languages[0] != prefs.audio:
             self._remember_language(meta, "audio", source.languages[0])
         sure = [c for c in ("es-419", "es-ES") if streams.EVIDENCE[source.audio_langs.get(c, "maybe")] >= streams.EVIDENCE["original"]]

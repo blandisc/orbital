@@ -195,9 +195,9 @@ def test_panels_subtitle_size_and_more():
     assert p.menu.column.key == "sync"
     p.press("y")  # dentro de un panel, X y Y lo cierran (no saltan al otro)
     assert p.menu is None
-    p.press("y")  # Y: Fuentes (y Reproducción)
+    p.press("y")  # Y: Versión (y Reproducción)
     assert p.menu.kind == "more" and [c.key for c in p.menu.columns] == ["source", "playback"]
-    assert "Fuentes" in mpv.overlays[2] and "Desde el principio" in mpv.overlays[2]
+    assert "Versión" in mpv.overlays[2] and "Desde el principio" in mpv.overlays[2]
     p.press("down")
     p.press("a")
     import time
@@ -284,24 +284,56 @@ def test_player_ui_pieces():
 
 
 
-def test_player_sources_show_all_with_language_first():
-    """Todas las fuentes (antes 12: con la serie en inglés, las de español no salían), el idioma primero."""
+def test_player_versions_are_language_and_quality_like_the_ficha():
+    """Y › Versión: una fila por idioma y calidad (la mejor de cada una), tu idioma primero y la puesta marcada en su
+    casilla; antes era la lista entera de fuentes (40+, casi iguales). Sin grabaciones de cine."""
     from types import SimpleNamespace
 
     from orbital import watch
 
-    def src(i, langs):
+    def src(i, langs, res="1080p", tags=()):
         s = streams.Source(index=i, addon="Torrentio", stream={}, transport_url="")
-        s.languages, s.resolution, s.cached = langs, "1080p", True
+        s.audio_langs, s.resolution, s.cached, s.tags = langs, res, True, list(tags)
+        s.languages = list(langs)
         return s
 
-    found = [src(i, ["en"]) for i in range(15)] + [src(20, ["es"]), src(21, ["es"])]
-    fake = SimpleNamespace(language_for=lambda meta_id: (streams.Preferences(audio="en"), "es"),
+    found = [src(i, {"en": "original"}) for i in range(15)] + [src(15, {"en": "original"}, "4K"),
+             src(20, {"es-419": "name"}), src(21, {"es-419": "name", "en": "name"}, "720p"), src(30, {"es-419": "name"}, "SD", ["CAM"])]
+    fake = SimpleNamespace(language_for=lambda meta_id: (streams.Preferences(audio="es", dub="latino"), "es"),
                            stream_sources=lambda kind, video, prefs: found)
     options = watch.Watch._player_sources(fake, {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1", "source": 14})
-    ids = [o["id"] for o in options]
-    assert ids == [*range(15), 20, 21] and [o["id"] for o in options if o["current"]] == [14]
-    assert next(o for o in options if o["id"] == 20)["label"].startswith("Español")
+    assert [o["label"] for o in options] == ["Latino · 1080p", "Latino · 720p", "Inglés · 4K", "Inglés · 1080p", "Inglés · 720p"]
+    assert [o["id"] for o in options] == [20, 21, 15, 0, 21]
+    assert [o["label"] for o in options if o["current"]] == ["Inglés · 1080p"]  # la 14 es de esa casilla
+    assert options[0]["hint"] == "Al instante"
+
+
+def test_a_chosen_version_that_does_not_open_goes_back_to_the_one_playing():
+    """Cambiar de versión a mano: si la elegida no abre, de vuelta a la que estabas viendo, en el mismo segundo (antes
+    brincaba a otra fuente que no habías elegido). Y pasados 10 min (la lista caducó) se busca otra vez en vez de fallar."""
+    from types import SimpleNamespace
+
+    from orbital import watch
+
+    def src(i):
+        return streams.Source(index=i, addon="Torrentio", stream={"url": f"http://rd/{i}"}, transport_url="")
+
+    found = {i: src(i) for i in (1, 2, 3)}
+    loaded = []
+    fake = SimpleNamespace(
+        language_for=lambda meta_id: (streams.Preferences(), "es"),
+        streams=SimpleNamespace(get=lambda kind, video, prefs, index: None),  # la lista ya caducó
+        stream_sources=lambda kind, video, prefs: list(found.values()),
+        _load_in_player=lambda *a, **k: loaded.append((a[4].index, k)) or True,
+        _remember_language=lambda *a: None, state=SimpleNamespace(set_pref=lambda *a: None))
+    fake._source_by_index = lambda meta, index, prefs: watch.Watch._source_by_index(fake, meta, index, prefs)
+    meta = {"kind": "movie", "meta_id": "tt1", "video_id": "tt1", "title": "Peli", "source": 1}
+    assert watch.Watch._switch_source(fake, meta, 2, 600.0) is True
+    assert loaded[-1][0] == 2 and loaded[-1][1]["back_to"] == 1 and loaded[-1][1]["start"] == 600.0
+    failed = {**meta, "source": 2, "back_to": 1, "tried": [2]}
+    assert watch.Watch._source_failed(fake, failed, 610.0, True) is True
+    assert loaded[-1][0] == 1 and loaded[-1][1]["start"] == 610.0
+    assert "sigues con la de antes" in loaded[-1][1]["message"]
 
 
 def _wait_for(cond):

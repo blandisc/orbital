@@ -331,9 +331,9 @@ class PlayerScreen:
             if option.get("current") or self.current is None:
                 return
             position = self.mpv.get("time-pos")
-            self.toast("Cambiando de fuente…", 4)
+            self.toast("Cambiando de versión…", 4)
             if self.on_switch_source:
-                self._in_background(self.on_switch_source, meta, value, float(position or 0), failed="No pude cambiar de fuente")
+                self._in_background(self.on_switch_source, meta, value, float(position or 0), failed="No pude cambiar de versión")
         else:  # aid / sid
             self.mpv.command("set_property", prop, value)
             kind = "Audio" if prop == "aid" else "Subtítulos"
@@ -785,7 +785,7 @@ class PlayerScreen:
         meta = (segment.meta if segment is not None else None) or getattr(self.current, "meta", None) or {}
         series = meta.get("kind") == "series" and self.on_episode is not None
         legend = {"select": "Continuar" if self._value("pause") else "Pausa", "alt": "Audio y subtítulos",
-                  "options": "Episodios" if series else "Fuentes", "left": "Atrasar", "right": "Adelantar",
+                  "options": "Episodios" if series else "Versión", "left": "Atrasar", "right": "Adelantar",
                   "up": "Subir volumen", "down": "Bajar volumen", "back": "Salir"}
         if series:
             legend |= {"pageleft": "Episodio anterior", "pageright": "Episodio siguiente"}

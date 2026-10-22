@@ -791,7 +791,8 @@ class OrbitalPlayer(PlayerScreen):
         log.info("La fuente de %s %s", segment.title, "se cortó" if segment.playing else "no arrancó")
         retrying = False
         if self.on_failed:
-            self.toast("Esa fuente falló · probando otra…", 6)
+            self.toast("Esa versión no abrió · regreso a la de antes…" if segment.meta.get("back_to") is not None
+                       else "Esa fuente falló · probando otra…", 6)
             retrying = bool(self._safe(self.on_failed, segment.meta, segment.position, True))
         if not retrying:
             self.toast("No pude reproducir esto con ninguna fuente", 4)
