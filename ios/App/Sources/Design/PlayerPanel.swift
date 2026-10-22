@@ -2,7 +2,7 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-// Piezas del panel «Ajustes del video» y de los botones con nombre del reproductor.
+// Piezas del reproductor: los botones con nombre, «Audio y subtítulos» (`SubtitleDock`) y sus partes.
 
 /// Un botón redondo de la barra de arriba del reproductor: todos del mismo diámetro (el del toque mínimo).
 struct PlayerCircleButton: View {
@@ -115,61 +115,6 @@ struct PanelIcon: View {
     var body: some View {
         Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(color)
             .frame(width: DS.PlayerPanel.icon).accessibilityHidden(true)
-    }
-}
-
-/// La velocidad en un solo control: − 1× + (un toque, el paso siguiente; el valor siempre a la vista).
-struct SpeedStepper: View {
-    let rates: [Float]
-    let rate: Float
-    let set: (Float) -> Void
-
-    var body: some View {
-        let index = rates.firstIndex(of: rate) ?? rates.firstIndex(of: 1) ?? 0
-        HStack(spacing: 0) {
-            step("minus", enabled: index > 0) { set(rates[index - 1]) }.accessibilityLabel(Text("Más lento"))
-            Text(verbatim: rate == 1 ? "1×" : String(format: "%g×", rate)).font(DS.TextRecipe.secondary.font.weight(.semibold)).monospacedDigit()
-                .foregroundStyle(DS.text).frame(minWidth: DS.PlayerPanel.speedValue)
-                .contentTransition(.numericText())
-            step("plus", enabled: index < rates.count - 1) { set(rates[index + 1]) }.accessibilityLabel(Text("Más rápido"))
-        }
-        .background(DS.fill, in: Capsule())
-        .sensoryFeedback(.selection, trigger: rate)
-        .accessibilityElement(children: .contain)
-        .accessibilityValue(Text(verbatim: String(format: "%g×", rate)))
-    }
-
-    private func step(_ symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.bold))
-                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget * 3 / 4)
-        }
-        .buttonStyle(.plain).foregroundStyle(enabled ? DS.text : DS.textFaint).disabled(!enabled)
-    }
-}
-
-/// Un renglón del panel: ícono, nombre y cómo está ahora; con `action`, lleva a su página (chevron).
-struct PanelRow<Value: View>: View {
-    let title: LocalizedStringKey
-    let symbol: String
-    let color: Color
-    var action: (() -> Void)?
-    @ViewBuilder var value: () -> Value
-
-    var body: some View {
-        let row = HStack(spacing: DS.Space.s3) {
-            PanelIcon(symbol: symbol, color: color)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(title).recipe(.secondary, color: DS.text).fontWeight(.semibold)
-                value()
-            }
-            Spacer(minLength: DS.Space.s2)
-            if action != nil { Image(systemName: "chevron.right").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textFaint) }
-        }
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s3)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
-        .contentShape(Rectangle())
-        if let action { Button(action: action) { row }.buttonStyle(.plain) } else { row }
     }
 }
 
@@ -320,36 +265,6 @@ struct Toast: View {
     }
 }
 
-/// El ícono de Infuse (el de su app, de la App Store; se busca una vez y se recuerda). Sin red, el de «abrir en otra app».
-struct InfuseIcon: View {
-    @AppStorage("infuse-icon-url") private var url = ""
-
-    var body: some View {
-        Group {
-            if let u = URL(string: url), !url.isEmpty {
-                RemoteImage(url: u, maxPoints: DS.PlayerPanel.icon) { phase in
-                    if case .success(let image) = phase { image.resizable().scaledToFit() } else { fallback }
-                }
-            } else { fallback }
-        }
-        .frame(width: DS.PlayerPanel.appIcon, height: DS.PlayerPanel.appIcon)
-        .clipShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.appIcon * DS.PlayerPanel.appIconCorner, style: .continuous))
-        .task { if url.isEmpty { url = await Self.lookup() ?? "" } }
-        .accessibilityHidden(true)
-    }
-
-    private var fallback: some View { Image(systemName: "arrow.up.forward.app").resizable().scaledToFit() }
-
-    /// El ícono que la App Store publica para Infuse (com.firecore.infuse).
-    static func lookup() async -> String? {
-        guard let url = URL(string: "https://itunes.apple.com/lookup?bundleId=com.firecore.infuse"),
-              let (data, _) = try? await URLSession.shared.data(from: url),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let first = (json["results"] as? [[String: Any]])?.first else { return nil }
-        return (first["artworkUrl100"] ?? first["artworkUrl60"]) as? String
-    }
-}
-
 /// Reproducir o pausar: el botón grande del centro, el único con círculo (de vidrio), entre ±10.
 struct PlayPauseButton: View {
     let playing: Bool
@@ -457,23 +372,6 @@ struct PlayerMenuRow: View {
     }
 }
 
-/// El idioma de los subtítulos en un solo renglón que abre un menú: «Español · 7 opciones ▾».
-struct PanelMenuLabel: View {
-    let title: String
-    let detail: Text
-    var body: some View {
-        HStack(spacing: DS.Space.s2) {
-            Text(verbatim: title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
-            detail.recipe(.footnote).lineLimit(1)
-            Spacer(minLength: DS.Space.s2)
-            Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
-        }
-        .padding(DS.Space.s3)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
-        .contentShape(Rectangle())
-    }
-}
-
 /// Una versión de subtítulos en la lista: el círculo de elegir, el nombre (de la copia o la pista) y sus marcas
 /// («Del video», «Coincide con tu copia», las descargas).
 struct SubtitleVersionRow: View {
@@ -513,54 +411,6 @@ struct SubtitleVersionRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-/// La tira para probar subtítulos sobre el video: ‹ › cambian de versión (sin pausar), el nombre y por qué está ahí,
-/// la sincronía (−0.5 / +0.5) y ✓ «Este va bien».
-struct SubtitleTryStrip: View {
-    let title: String
-    let reason: Text
-    let delay: Double
-    let step: Double
-    let previous: () -> Void
-    let next: () -> Void
-    let nudge: (Double) -> Void
-    let confirm: () -> Void
-
-    var body: some View {
-        HStack(spacing: DS.Space.s2) {
-            arrow("chevron.left", label: Text("Subtítulo anterior"), action: previous)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(verbatim: title).recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1).contentTransition(.numericText())
-                reason.recipe(.caption).lineLimit(1)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            arrow("chevron.right", label: Text("Subtítulo siguiente"), action: next)
-            Button { nudge(-step) } label: { Text(verbatim: String(format: "−%g s", step)).monospacedDigit().lineLimit(1) }
-                .buttonStyle(.glass).accessibilityLabel(Text("Subtítulos antes"))
-                .accessibilityHint(Text("Adelantar medio segundo"))
-            Button { nudge(step) } label: { Text(verbatim: String(format: "+%g s", step)).monospacedDigit().lineLimit(1) }
-                .buttonStyle(.glass).accessibilityLabel(Text("Subtítulos después"))
-                .accessibilityHint(Text("Atrasar medio segundo"))
-                .accessibilityValue(Text(verbatim: String(format: "%+.1f s", delay)))
-            Button(action: confirm) { Image(systemName: "checkmark").fontWeight(.bold).foregroundStyle(DS.onPrimary) }
-                .buttonStyle(.glassProminent).tint(DS.success)
-                .accessibilityLabel(Text("Este va bien"))
-        }
-        .font(DS.TextRecipe.footnote.font)
-        .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s2)
-        .glassEffect(.regular, in: Capsule())
-        .frame(maxWidth: DS.PlayerPanel.tryStripMaxWidth)
-        .accessibilityElement(children: .contain)
-    }
-
-    private func arrow(_ symbol: String, label: Text, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.bold)).foregroundStyle(DS.text)
-                .frame(width: DS.Size.touchTarget * 3 / 4, height: DS.Size.touchTarget)
-        }
-        .buttonStyle(.plain).accessibilityLabel(label)
     }
 }
 

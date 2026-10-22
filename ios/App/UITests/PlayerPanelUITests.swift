@@ -1,8 +1,8 @@
 import XCTest
 
-/// El reproductor: botones con nombre y el panel «Ajustes del video» (renglones que llevan a su página y vuelven).
+/// El reproductor: botones con nombre y la hoja «Audio y subtítulos» (con su pestaña «Versión»).
 final class PlayerPanelUITests: XCTestCase {
-    func testTheVideoSettingsPanelOpensItsPagesAndComesBack() {
+    func testAudioAndSubtitlesOpensFromTheMenuWithItsVersionTab() {
         let app = XCUIApplication()
         app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play"]
         XCUIDevice.shared.orientation = .landscapeLeft
@@ -14,15 +14,31 @@ final class PlayerPanelUITests: XCTestCase {
         let settings = app.buttons["player-settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 5), "el renglón dice qué hace")
         settings.tap()
-        XCTAssertTrue(app.staticTexts["Ajustes del video"].waitForExistence(timeout: 5), "abre el panel")
-        app.buttons["panel-subtitles"].tap()
-        XCTAssertTrue(app.staticTexts["Subtítulos"].waitForExistence(timeout: 5), "su página")
-        XCTAssertTrue(app.buttons["player-subtitle-language"].exists, "con su idioma arriba")
-        app.buttons["panel-back"].tap()
-        XCTAssertTrue(app.buttons["panel-audio"].waitForExistence(timeout: 5), "y vuelve")
+        // En horizontal, a la derecha con dos pestañas fijas: «Audio y subtítulos» y «Versión».
+        let versionTab = app.buttons["Versión"]
+        XCTAssertTrue(versionTab.waitForExistence(timeout: 5), "abre «Audio y subtítulos» con su pestaña «Versión»")
+        XCTAssertTrue(app.buttons["Audio y subtítulos"].exists)
+        versionTab.tap()
+        XCTAssertTrue(app.buttons["Por idioma"].waitForExistence(timeout: 5), "la pestaña «Versión», por idioma o todas las fuentes")
+        app.buttons["Audio y subtítulos"].tap()
+        XCTAssertTrue(app.buttons["Listo"].waitForExistence(timeout: 5))
+        app.buttons["Listo"].tap()
+        XCTAssertTrue(versionTab.waitForNonExistence(timeout: 5), "«Listo» la cierra")
         XCUIDevice.shared.orientation = .portrait
-        sleep(2)
-        XCTAssertTrue(app.staticTexts["Ajustes del video"].waitForExistence(timeout: 5), "en vertical sigue, como hoja")
+    }
+
+    /// En vertical (abierta con `-demo-player audio`): bajo el video, con su título y «Listo», que la cierra.
+    func testAudioAndSubtitlesInPortrait() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
+                               "-demo-player-portrait", "-demo-player", "audio"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        let done = app.buttons["subtitle-dock-done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 20), "abre «Audio y subtítulos» bajo el video")
+        XCTAssertTrue(app.staticTexts["Audio y subtítulos"].exists, "con su título")
+        done.tap()
+        XCTAssertTrue(done.waitForNonExistence(timeout: 5), "«Listo» la cierra")
     }
 
     /// Bloqueado: tocar solo enseña «Desbloquear»; ese botón desbloquea. La tarjeta de «Siguiente episodio» no se ve.
