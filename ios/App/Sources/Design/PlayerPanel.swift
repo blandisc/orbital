@@ -1046,7 +1046,9 @@ struct SubtitleDock: View {
 
     // MARK: piezas
     private var doneButton: some View {
-        Button(action: done) { Text("Listo").fontWeight(.semibold) }.buttonStyle(.glassProminent).tint(DS.primary).foregroundStyle(DS.onPrimary)
+        // Chico: es una salida, no la acción del panel (antes, del tamaño de un botón principal, pesaba más que lo que cierra).
+        Button(action: done) { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
+            .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
             .accessibilityIdentifier("subtitle-dock-done")
     }
 

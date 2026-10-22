@@ -1103,8 +1103,8 @@ struct PlayerScreen: View {
                                 Text("Versión").tag(true)
                             } label: { Text("Ver") }
                             .pickerStyle(.segmented)
-                            Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media } } label: { Text("Listo").fontWeight(.semibold) }
-                                .buttonStyle(.glassProminent).tint(DS.primary).foregroundStyle(DS.onPrimary)
+                            Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
+                                .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
                         }
                         dock
                     }
