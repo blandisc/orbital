@@ -6,11 +6,13 @@
   display: grid; grid-template-rows: auto auto 1fr; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); overflow: hidden;
   /* Portadas y teclas un poco más compactas que en el resto: resultados + teclado + pie caben siempre
      en la pantalla (antes el teclado bajaba hasta las pistas del pie). */
-  --card-height: min(13rem, 17vh); --key-height: min(2.85rem, 4.9vh); /* resultados + teclado caben a 1080 y a 800 de alto (con 18.5vh / 5.3vh el pie de los resultados quedaba bajo las teclas) */
+  /* Teclado más grande (se acierta mejor desde el sillón: teclas ~10 % más altas y 15 % más anchas) y la portada cede un poco;
+     resultados + teclado + pie caben a 1080, 800 y 720 de alto (medido: el pie de la enfocada no toca las teclas). */
+  --card-height: min(11.5rem, 15vh); --key-height: min(3.1rem, 5.2vh); --keyboard-width: 62rem;
 }
 /* Letra más grande = pies de resultado más altos: la portada cede para que el teclado no los tape. */
 [data-text-size="large"] .search, [data-text-size="xlarge"] .search {
-  --card-height: min(12rem, 16.5vh); --key-height: min(2.85rem, 4.8vh); gap: var(--space-3);
+  --card-height: min(11rem, 14.5vh); --key-height: min(3rem, 4.9vh); gap: var(--space-3);
   padding-top: calc(var(--space-6) + var(--safe-y));
 }
 
@@ -58,6 +60,7 @@
 /* Sin portada (el nombre va encima del ícono de su consola): en la portada chica de Buscar, dos renglones y la letra que
    cabe; con letra grande, «Kirby Amazing Mirror» en tres renglones se subía sobre el ícono. */
 .search .card--no-art .card__title { -webkit-line-clamp: 2; font-size: min(var(--type-secondary), calc(var(--card-height) * .115)); }
+.search .card--no-art .card__placeholder { inset: 0 0 55% 0; } /* el ícono arriba: el nombre (dos renglones) y la consola caben debajo sin encimarse */
 
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va. */
 .search .keyboard { align-self: end; justify-self: center; min-height: 0; }

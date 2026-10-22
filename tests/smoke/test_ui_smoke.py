@@ -257,4 +257,4 @@ def test_search_with_results(page):
     page.keyboard.press("s")
     page.keyboard.type("hol")
     page.locator(".search button.card").first.wait_for(timeout=5000)
-    page.locator(".hints", has_text="Resultados").wait_for(timeout=5000)
+    page.locator(".hints", has_text="Buscar").wait_for(timeout=5000)

@@ -19,7 +19,7 @@ import { Pill } from "./ui.js";
  *   · con un teclado físico se escribe directo;
  *   · dictado: decirlo en voz alta (reconocimiento de voz de Edge, español de México).
  */
-const layout = (cleared, dictateGlyph = "", listening = false) => [
+const layout = (cleared, dictateGlyph = "", listening = false, goGlyph = "") => [
   [..."1234567890"],
   [..."QWERTYUIOP"],
   [..."ASDFGHJKLÑ"],
@@ -29,7 +29,8 @@ const layout = (cleared, dictateGlyph = "", listening = false) => [
   // Acciones claras con dedo o con mando: salir, dictar y ver los resultados.
   [{ key: "back", label: "Atrás", span: 2, tone: "action" }, // Escuchando: la tecla se ilumina y lo dice (antes no cambiaba y no se sabía si te oía).
     { key: "dictate", label: listening ? "Escuchando…" : "Dictar", span: 3, icon: "mic", glyph: dictateGlyph, on: listening },
-    { key: "go", label: "Buscar", span: 5, tone: "go" }],
+    // «Buscar» enseña su atajo (RT / AvPág), como Dictar: se pulsa desde cualquier tecla, sin ir hasta abajo.
+    { key: "go", label: "Buscar", span: 5, tone: "go", glyph: goGlyph }],
 ];
 const MIN_CHARS = 2;
 const MAX_CHARS = 120; // lo mismo que corta el servidor
@@ -83,6 +84,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
 
   let shownCleared = false; // la tecla «Borrar todo» dice «Deshacer» justo después de usarla
   let dictateGlyph = ""; // el botón del mando que dicta (☰, o M con teclado): se ve en la tecla
+  let goGlyph = ""; // el que busca ya (RT, o AvPág con teclado): se ve en la tecla «Buscar»
   keyboard.setLayout(layout(false));
 
   function render() {
@@ -93,7 +95,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     if (undo !== shownCleared || !!listening !== shownListening) {
       shownCleared = undo;
       shownListening = !!listening;
-      keyboard.setLayout(layout(undo, dictateGlyph, shownListening));
+      keyboard.setLayout(layout(undo, dictateGlyph, shownListening, goGlyph));
     }
     keyboard.active = zone === "keys";
     focusables.forEach((node, i) => node.classList.toggle(node.classList.contains("card") ? "card--focused" : "pill--focused",
@@ -262,9 +264,12 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     rec.lang = "es-MX";
     rec.interimResults = true;
     rec.maxAlternatives = 1;
+    // Dictar otra vez sigue escribiendo después de lo que ya había (antes lo borraba y empezaba de cero).
+    const before = text.trimEnd();
     rec.onresult = (event) => {
       // Sin el punto que Edge le pone al final («Severance.»): se busca lo que dijiste, no una frase.
-      text = [...event.results].map((r) => r[0].transcript).join("").trim().replace(/[.。]+$/u, "").slice(0, MAX_CHARS);
+      const said = [...event.results].map((r) => r[0].transcript).join("").trim().replace(/[.。]+$/u, "");
+      text = [before, said].filter(Boolean).join(" ").slice(0, MAX_CHARS);
       render();
       schedule();
     };
@@ -376,19 +381,20 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   // (borrar, espacio) siguen como atajos sin llenar el pie.
   const hints = (pad) => {
     const g = typingGlyphs(pad);
-    if (g.menu !== dictateGlyph) { // el mando cambió (Legion, Xbox, teclado): la tecla Dictar enseña su botón
-      dictateGlyph = g.menu || "";
-      keyboard.setLayout(layout(shownCleared, dictateGlyph, !!listening));
-    }
     const page = String(pad?.page || "").split(" "); // LT RT con mando, RePág AvPág con teclado
     const go = page[1];
+    if (g.menu !== dictateGlyph || (go || "") !== goGlyph) { // el mando cambió (Legion, Xbox, teclado): las teclas enseñan su botón
+      dictateGlyph = g.menu || "";
+      goGlyph = go || "";
+      keyboard.setLayout(layout(shownCleared, dictateGlyph, !!listening, goGlyph));
+    }
     return [
       { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
       // Buscar, Dictar y Espacio ya están en el teclado con su botón: no se repiten en el pie (como mucho cinco pistas).
-      zone === "keys" && go && !items.length && { glyph: go, label: "Buscar", offscreen: true },
+      // Siempre a la vista: el atajo para buscar desde cualquier tecla (antes solo salía sin resultados y escondido).
+      zone === "keys" && go && { glyph: go, label: "Buscar" },
       g.menu && { glyph: g.menu, label: "Dictar", offscreen: true }, // otra vez: deja de escuchar
-      // RT salta a los resultados (antes había que subir seis filas del teclado sin saberlo) y LT regresa al teclado: como el manejador.
-      zone === "keys" && items.length && go && { glyph: go, label: "Resultados" },
+      // RT busca y salta a los resultados (antes había que subir seis filas del teclado sin saberlo) y LT regresa al teclado.
       zone === "results" && page[0] && { glyph: page[0], label: "Teclado" },
       zone === "keys" && { glyph: g.alt, label: "Borrar", secondary: true },
       zone === "keys" && { glyph: g.options, label: "Espacio", offscreen: true },
