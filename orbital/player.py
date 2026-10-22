@@ -21,7 +21,7 @@ Además, como un servicio de streaming de verdad:
     que no abre se marca y se pasa al siguiente.
 
 Piezas: mpv.py (la tubería con mpv), playback.py (comando, idiomas, capítulos, datos de lo que se
-ve), player_screen.py (barra, tarjetas, menús y botones) y aquí el reproductor que lo junta: arrancar,
+ve), player_screen.py (barra, tarjetas, menús y botones), player_subs.py («Probar otros» subtítulos) y aquí el reproductor que lo junta: arrancar,
 vigilar, guardar el avance, fuentes que fallan y el siguiente episodio.
 """
 
@@ -238,6 +238,7 @@ class OrbitalPlayer(PlayerScreen):
         self.on_send_iphone = None  # (meta, "open" | "download") -> aviso en palabras (o lanza ValueError con el motivo)
         self.system_volume = None  # (leer, escribir) del volumen de Windows: un solo volumen (ver player_screen._muted)
         self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
+        self.on_sub_kept = None  # (meta): «Probar otros» › «Este va bien»: recordar ya esos subtítulos (y su sincronía)
         self.spanish_provider = None  # (meta) -> "es-419" | "es-ES" | "": el doblaje que va con ese título
         self.on_audio_tracks = None  # (meta, pistas): al abrir, el audio real de esa versión (se anota)
         # TV en vivo (ver tv.py): el reproductor solo pregunta y avisa, no sabe de listas ni de salud.
@@ -289,6 +290,9 @@ class OrbitalPlayer(PlayerScreen):
         self._quiet_episodes = 0
         self._subs_lang, self._fallback_subs = subtitles, fallback_subs
         self._sub_pick, self._last_sub = sub_pick, None  # «Continuar»: los subtítulos que tenías (ver _apply_sub_pick)
+        self._try_end()  # «Probar otros» era del video anterior
+        self._subs_lifted, self._keep_delay = None, False  # un mpv nuevo: los subtítulos en su lugar de siempre
+        self.sub_delay = 0.0  # …y a tiempo (la sincronía era del video anterior)
         self._audio_lang = options.get("audio", "en")
         self._want.clear()
         self._restart_from = None
@@ -344,6 +348,9 @@ class OrbitalPlayer(PlayerScreen):
         if self.menu is not None:  # el panel era del episodio anterior
             self.menu = None
             self._overlay(2, None)
+        self._lift_subs(False)
+        self._try_end()  # «Probar otros» era del archivo anterior
+        self._keep_delay = False
         self._hide_card()
         # Siempre los del archivo nuevo (None = «sin subtítulos» o «solo forzados»): antes se quedaban
         # los del episodio anterior y al siguiente le ponían los subtítulos de otro.
@@ -388,6 +395,8 @@ class OrbitalPlayer(PlayerScreen):
         if self.menu is not None:  # la guía era de la lista anterior
             self.menu = None
             self._overlay(2, None)
+        self._lift_subs(False)
+        self._try_end()
         self._hide_card()
         self._zap_view = None
         self._want.clear()
@@ -570,6 +579,8 @@ class OrbitalPlayer(PlayerScreen):
         self.pip = True
         self.menu = None
         self._card = None
+        self._lift_subs(False)
+        self._try_end()
         for overlay in (1, 2, 4):  # la barra, el panel y la tarjeta no caben en la esquina
             self._overlay(overlay, None)
         threading.Thread(target=self._to_corner, args=(current,), daemon=True, name="pip").start()
@@ -1029,6 +1040,10 @@ class OrbitalPlayer(PlayerScreen):
             else:
                 self._last_sub = {"off": False, "lang": str(chosen.get("lang") or ""), "title": str(chosen.get("title") or ""),
                                   "url": self._sub_url(chosen) if chosen.get("external") else ""}
+                if self._keep_delay and abs(self.sub_delay) >= .05:  # «Este va bien» con su sincronía, para esta versión
+                    segment = self.segment
+                    self._last_sub |= {"delay": self.sub_delay,
+                                       "delay_source": str((segment.meta if segment else {}).get("source_key") or "")}
         return getattr(self, "_last_sub", None)
 
     def current_audio(self) -> dict | None:
@@ -1069,6 +1084,13 @@ class OrbitalPlayer(PlayerScreen):
         if pick.get("off"):
             self.mpv.command("set_property", "sid", "no")
             return True
+        delay = pick.get("delay")
+        segment = self.segment
+        here = str((segment.meta if segment else {}).get("source_key") or "")
+        if isinstance(delay, (int, float)) and not isinstance(delay, bool) and math.isfinite(delay) \
+                and (not pick.get("delay_source") or pick["delay_source"] == here):
+            self._set_sub_delay(float(delay))  # la sincronía que dejaste en «Probar otros», con esta misma versión
+            self._keep_delay = True
         # La pista exacta; si no, los mismos de tu complemento (su dirección); si no, otros del mismo idioma.
         same = self._same_track(tracks, "sub", pick, exact_only=bool(pick.get("url")))
         if same is not None:
