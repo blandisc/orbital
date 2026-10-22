@@ -55,25 +55,26 @@ struct UpNextCard: View {
     let cancel: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Space.s3) {
-            if let thumb = card.thumbnail.flatMap(URL.init(string:)) {
-                RemoteImage(url: thumb, maxPoints: DS.PlayerPanel.upNextThumb) { phase in
-                    if case .success(let image) = phase { image.resizable().scaledToFill() } else { DS.fill }
+        // Arriba la imagen y cuál es; abajo los dos botones lado a lado, del mismo ancho y a todo lo ancho (antes iban uno
+        // bajo el otro junto a la imagen y dejaban un hueco debajo de ella).
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            HStack(alignment: .center, spacing: DS.Space.s3) {
+                if let thumb = card.thumbnail.flatMap(URL.init(string:)) {
+                    RemoteImage(url: thumb, maxPoints: DS.PlayerPanel.upNextThumb) { phase in
+                        if case .success(let image) = phase { image.resizable().scaledToFill() } else { DS.fill }
+                    }
+                    .frame(width: DS.PlayerPanel.upNextThumb, height: DS.PlayerPanel.upNextThumb / DS.Poster.stillAspect)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius / 2, style: .continuous))
+                    .accessibilityHidden(true)
                 }
-                .frame(width: DS.PlayerPanel.upNextThumb, height: DS.PlayerPanel.upNextThumb / DS.Poster.stillAspect)
-                .clipShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius / 2, style: .continuous))
-                .accessibilityHidden(true)
-            }
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                Text("Siguiente episodio").recipe(.caption)
-                Text(verbatim: [card.label, card.title].filter { !$0.isEmpty }.joined(separator: " · "))
-                    .recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
-                // Si no caben lado a lado (vertical, SE), uno bajo el otro.
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: DS.Space.s2) { upNextButtons }
-                    VStack(alignment: .leading, spacing: DS.Space.s2) { upNextButtons }
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text("Siguiente episodio").recipe(.caption)
+                    Text(verbatim: [card.label, card.title].filter { !$0.isEmpty }.joined(separator: " · "))
+                        .recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            HStack(spacing: DS.Space.s2) { upNextButtons }
         }
         .padding(DS.Space.s4).frame(maxWidth: DS.Size.cardMax, alignment: .leading)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
@@ -86,11 +87,15 @@ struct UpNextCard: View {
                 if card.secondsLeft > 0 { countdown }
                 Text("Ver ahora").lineLimit(1)
             }
-            .fixedSize()
+            .font(DS.TextRecipe.secondary.font.weight(.semibold))
+            .frame(maxWidth: .infinity)
         }
         .dsPrimaryButton()
         .accessibilityValue(card.secondsLeft > 0 ? Text("Empieza en \(card.secondsLeft) s") : Text(verbatim: ""))
-        Button(action: cancel) { Text("Ahora no").lineLimit(1).fixedSize() }.buttonStyle(.glass)
+        Button(action: cancel) {
+            Text("Ahora no").lineLimit(1).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.glass)
     }
 
     /// El anillo que se llena hasta que empieza solo, con los segundos dentro.
