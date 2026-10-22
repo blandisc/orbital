@@ -6,7 +6,10 @@
   padding-top: calc(var(--space-14) + var(--safe-y)); /* un poco más de aire arriba que el marco común (.screen) */
   animation-duration: var(--duration-fast); /* el arte aparece casi de inmediato y se queda quieto */
 }
-.title--series { grid-template-rows: minmax(0, 1fr) auto; }
+.title--series { grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-3); }
+/* En una serie el alto se reparte con la fila de episodios: menos aire bajo los botones (el nombre del redondo enfocado
+   cabe igual) y episodios un poco más chicos, para que el logo no tenga que encogerse. */
+.title--series .title__actions { margin-bottom: var(--space-6); }
 /* El arte casi entero: solo se funde a la izquierda y abajo, donde va el texto (antes iba al 55 % y se perdía). */
 .title__backdrop {
   position: absolute; inset: 0; z-index: var(--z-behind); background-size: cover; background-position: center 25%;
@@ -37,6 +40,9 @@
 .title__info > .title__actions, .title__info > .title__status { animation-delay: var(--delay-3); }
 /* Nada se encoge: un título o una sinopsis encogidos se rebanaban a media línea (con letra grande). */
 .title__info > * { flex-shrink: 0; }
+/* …salvo el logo: si no cabe todo (una serie, con su fila de episodios abajo, y la letra grande), el logo se hace más chico
+   en vez de empujar lo demás por arriba de la pantalla (se «comía» el logo). */
+.title__info > .title__logo { flex-shrink: 1; min-height: 3rem; }
 
 .title__logo { max-width: min(100%, 32rem); max-height: 10rem; width: auto; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); margin-bottom: var(--space-2); }
 .title--series .title__logo { max-height: 7.5rem; }
@@ -139,7 +145,7 @@
 .title__tabs--more-left { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem); }
 .title__tabs--more-left.title__tabs--more-right { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); }
 .title__episodes {
-  --episode-width: 18rem;
+  --episode-width: 16rem;
   display: flex; gap: var(--space-5); overflow-x: auto; scrollbar-width: none;
   /* Arriba y a los lados, el lugar del anillo y del crecer del enfocado (si no, se cortaban). */
   padding: var(--space-4) var(--space-3) var(--space-2); margin: 0 calc(-1 * var(--space-3));

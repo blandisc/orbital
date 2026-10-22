@@ -126,10 +126,10 @@ test("cada imagen se pide al tamaño en que se ve", async () => {
   assert.equal(sized("img/placeholders/a.jpg", 240, 1), "img/placeholders/a.jpg");
 });
 
-test("Películas y series: Seguir viendo hasta arriba, luego Destacados y lo de Para ti en su orden, sin «Multimedia»", async () => {
+test("Películas y series: Destacados, debajo Seguir viendo y luego lo de Para ti en su orden, sin «Multimedia»", async () => {
   const { sectionRows } = await import("../../orbital/web/js/core/library.js");
   const rows = [{ id: "media" }, { id: "continue" }, { id: "curated:recs" }, { id: "curated:platforms" }, { id: "curated:spotlight" }, { id: "movies" }];
-  assert.deepEqual(sectionRows(rows, "media").map((r) => r.id), ["continue", "curated:spotlight", "curated:recs", "curated:platforms"]);
+  assert.deepEqual(sectionRows(rows, "media").map((r) => r.id), ["curated:spotlight", "continue", "curated:recs", "curated:platforms"]);
 });
 
 test("Por género: tarjetas con arte que llevan a su estante, y el destacado no las trata como juego", async () => {

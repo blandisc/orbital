@@ -145,10 +145,10 @@ export const SECTIONS = [
   // «Listas de Stremio». Sin la fila «Multimedia» (Buscar, Stremio, YouTube): el usuario ya no la usa; Buscar es ⧉.
   // Siempre en la barra (como TV): la curaduría llega unos segundos después y la pestaña aparecía tarde (y la barra se
   // recorría al llegar). Mientras, la sección dice que está cargando (main.js · emptyFor).
-  // «Seguir viendo» (lo que dejaste a medias en Stremio, lo más reciente primero) va hasta arriba: lo tuyo antes que lo
-  // popular. También sigue en el Inicio, mezclado con los juegos.
+  // «Seguir viendo» (lo que dejaste a medias en Stremio, lo más reciente primero) va justo debajo de Destacados: lo tuyo
+  // antes que lo popular. También sigue en el Inicio, mezclado con los juegos.
   { id: "media", title: "Películas y series", rows: (id) => id === "continue" || id.startsWith("curated:"),
-    order: ["continue", "curated:spotlight", "curated:*"], always: true },
+    order: ["curated:spotlight", "continue", "curated:*"], always: true },
   // TV en vivo: los canales de México (su propia vista, sin filas de biblioteca). Siempre a la vista: aunque
   // la lista aún no llegue, la sección dice qué está pasando en vez de desaparecer de la barra.
   { id: "tv", title: "TV en vivo", rows: () => false, always: true },
