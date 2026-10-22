@@ -23,7 +23,15 @@ struct SourcesSheet: View {
     @State private var showsGlossary = false
     @State private var showsMore = false
     /// «Por idioma» (las filas de siempre) o «Todas» (la lista completa y plana).
-    @State private var showsAll = Demo.isOn && Demo.open == "sources-all"
+    @State private var showsAll = SourcesSheet.demoShowsAll
+    /// `-demo-open sources-all`: la hoja ya en «Todas» (solo en las compilaciones de prueba; `Demo` no existe en la de tienda).
+    private static var demoShowsAll: Bool {
+        #if DEBUG
+        Demo.isOn && Demo.open == "sources-all"
+        #else
+        false
+        #endif
+    }
     @State private var picked: PickedVersion?
 
     struct PickedVersion: Identifiable { let row: LanguageRow; let option: VersionOption; var id: String { "\(row.code)-\(option.id)" } }
