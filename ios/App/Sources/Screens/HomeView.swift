@@ -192,11 +192,8 @@ struct HomeView: View {
         await tint.load(currentHero?.wide)
     }
 
-    /// El título con la barra encogida: lo más útil que haya.
-    private var scrolledTitle: Text {
-        if let airing = home.model.airingToday { return Text("Sale hoy: \(airing.series.title)") }
-        return Text(verbatim: "")   // sin nada que decir, solo el logotipo
-    }
+    /// El título con la barra encogida: nada, solo el logotipo (antes decía «Sale hoy: …» y no se quería ahí).
+    private var scrolledTitle: Text { Text(verbatim: "") }
 
     /// Solo cuando hay algo que decir: «N cambios por subir» (lo que viste sin internet). Al día, nada (no hace falta decirlo).
     private var syncText: Text? {
