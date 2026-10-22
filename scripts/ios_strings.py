@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Guardado en el iPhone: llega a Trakt en cuanto haya conexión.": "Saved on your iPhone: it reaches Trakt as soon as there's a connection.",
     "Desliza para fijar": "Slide to lock", "Desliza para quitar": "Slide to unlock",
     "Subtítulo %lld de %lld": "Subtitle %lld of %lld",
     "Toca para quitar": "Tap to stop",

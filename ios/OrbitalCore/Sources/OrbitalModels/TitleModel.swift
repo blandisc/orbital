@@ -221,7 +221,9 @@ public final class TitleModel: ObservableModel {
         watched = StremioLibrary.parseWatched(raw?["state"]?["watched"]?.string, videoIDs: ids)
         inLibrary = StremioLibrary.isInLibrary(raw)
         traktAvailable = await linked
-        inWatchlist = await keys.contains(metaID)
+        // Lo pendiente de mandar (guardado sin conexión) manda sobre lo que Trakt aún dice.
+        let onTrakt = await keys.contains(metaID)
+        inWatchlist = services.traktOutbox.pending(target: TraktOutbox.watchlist, imdb: metaID) ?? onTrakt
         inSomeList = await listed.contains(metaID)
         applyDownloads(await queue)
         if let state = StremioLibrary.state(of: raw)["video_id"]?.string, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
@@ -327,6 +329,10 @@ public final class TitleModel: ObservableModel {
         do {
             try await trakt.setWatchlist(imdb: metaID, series: kind == "series", add: want)
             await services.forYou.clearCache()
+        } catch where TraktOutbox.retryable(error) {
+            // Sin conexión o con tu Orbital apagada: se queda guardado aquí y se manda en cuanto se pueda (no se pierde).
+            services.traktOutbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: metaID, series: kind == "series", add: want))
+            message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
         } catch { inWatchlist = !want; message = "No pude cambiar tu watchlist de Trakt: \(error)" }
     }
 
@@ -336,7 +342,14 @@ public final class TitleModel: ObservableModel {
         guard let trakt = services.trakt, trakt.linked, metaID.hasPrefix("tt") else { lists = []; return }
         loadingLists = true
         defer { loadingLists = false }
-        let all = (try? await trakt.lists()) ?? []
+        // Sin conexión: las listas que ya conocías (y lo pendiente encima), para poder elegir igual.
+        let outbox = services.traktOutbox
+        guard let all = try? await trakt.lists() else {
+            let id = metaID
+            lists = outbox.cachedLists.map { SavedList(id: $0.id, name: $0.name, contains: outbox.pending(target: $0.id, imdb: id) ?? false) }
+            return
+        }
+        outbox.remember(lists: all)
         let id = metaID
         lists = await withTaskGroup(of: (Int, SavedList).self) { group in
             for (i, l) in all.enumerated() {
@@ -356,6 +369,9 @@ public final class TitleModel: ObservableModel {
         do {
             try await trakt.setListItem(listID: listID, imdb: metaID, series: kind == "series", add: want)
             await services.forYou.clearCache()
+        } catch where TraktOutbox.retryable(error) {
+            services.traktOutbox.enqueue(.init(target: listID, imdb: metaID, series: kind == "series", add: want))
+            message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
         } catch {
             if var back = lists, let j = back.firstIndex(where: { $0.id == listID }) { back[j].contains = !want; lists = back }
             message = "No pude cambiar tu lista de Trakt: \(error)"

@@ -10,6 +10,8 @@ public final class Services: ObservableModel {
     public let kv: KeyValueStore
     public let settings: SettingsStore
     public let titlePrefs: TitlePreferences
+    /// Lo que guardaste en Trakt y aún no llega (sin conexión, o con tu Orbital apagada): se manda en cuanto se pueda.
+    public let traktOutbox: TraktOutbox
     public let pending: PendingStore
     /// Lo último que se le contó a Trakt (o el problema): vive aquí, no en `WatchService`, porque `reconfigure()` lo rearma.
     public let scrobbleLog: ScrobbleLog
@@ -99,6 +101,7 @@ public final class Services: ObservableModel {
         let settings = SettingsStore(kv)
         self.settings = settings
         self.titlePrefs = TitlePreferences(kv)
+        self.traktOutbox = TraktOutbox(kv)
         let stremio = StremioAPI(http: http)
         self.stremio = stremio
         let registry = AddonRegistry(http: http, account: stremio, auth: { secrets.get(SecretKey.stremioAuth) },

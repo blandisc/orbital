@@ -6029,6 +6029,17 @@
         }
       }
     },
+    "Guardado en el iPhone: llega a Trakt en cuanto haya conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved on your iPhone: it reaches Trakt as soon as there's a connection."
+          }
+        }
+      }
+    },
     "Guardamos una sola copia. La que tienes es %@; si la cambias, se borra y se baja la nueva.": {
       "extractionState": "manual",
       "localizations": {

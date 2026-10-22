@@ -360,7 +360,9 @@ public actor Trakt {
             secrets.set(SecretKey.traktTokens, nil)
             throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.")
         }
-        guard let fresh = await borrow(), fresh.accessToken != old.access_token else {
+        // La consola no contestó (apagada, sin red): no es que Trakt cerrara tu sesión; se reintenta luego.
+        guard let fresh = await borrow() else { throw TraktError.network("tu Orbital no contesta para renovar la sesión") }
+        guard fresh.accessToken != old.access_token else {
             throw TraktError.auth("Trakt no acepta la sesión de tu Orbital: reconecta Trakt en la TV (Ajustes › Cuentas).")
         }
         adopt(fresh)
