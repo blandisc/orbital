@@ -142,8 +142,11 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     /// Hay cuadro en pantalla y el motor no quedó esperando a que lo rearmen.
     var showsVideo: Bool { !rearming && engine.hasFirstFrameReadyForDisplay && !engine.needsForegroundVideoRestore }
     private var rearming = false
+    /// La ventana de PiP se abrió mientras la app estaba fuera: el video siguió dibujándose (no hace falta pedirlo al volver).
+    private var pipDuringBackground = false
     func setPictureInPictureActive(_ active: Bool) {
         engine.pictureInPictureActive = active
+        if active { pipDuringBackground = true }
         if active, needsNativeSubtitleReload, engine.sessionReloadRefusal == nil {
             needsNativeSubtitleReload = false
             let rate = currentRate
@@ -187,8 +190,15 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         if case .error = engine.state { broken = true }
         guard engine.needsForegroundVideoRestore || broken else {
             if resume, engine.state == .paused { engine.play() }
+            // Siguió sonando en segundo plano (sin ventana de PiP): el motor dejó de dibujar y, al volver, esperaba al siguiente
+            // cuadro clave para enseñar imagen (en un MKV, varios segundos con la imagen congelada). Pedir el punto actual otra
+            // vez la trae al instante desde el cuadro clave anterior.
+            let wasInPiP = pipDuringBackground
+            pipDuringBackground = false
+            if engine.state == .playing, !wasInPiP { await engine.seek(to: engine.currentTime) }
             return true
         }
+        pipDuringBackground = false
         guard engine.sessionReloadRefusal == nil else { return false }
         // Mientras se rearma, «hay video» es mentira: la marca del primer cuadro se queda puesta de antes (no la baja soltar
         // el video en segundo plano) y la pantalla quitaba el cuadro guardado antes de tiempo (y se veía negro).
@@ -358,8 +368,8 @@ final class AetherSampleBufferPiP: NSObject, AVPictureInPictureSampleBufferPlayb
 /// Plazos del motor de video (fuera de la vista: el motor no importa el sistema de diseño).
 enum PlayerTiming {
     /// En pausa en segundo plano, cuánto se queda armado el video: volver antes es instantáneo (después hay que pedirlo otra
-    /// vez y tarda). Antes 25 s: un vistazo a otra app ya obligaba a recargar.
-    static let backgroundGrace: Double = 300
+    /// vez). El motor no pasa de 60 s y iOS da unos 30 s de tiempo en segundo plano sin sonido: más no sirve.
+    static let backgroundGrace: Double = 60
     /// Tras rearmar el video al volver de segundo plano: lo que se espera a que el primer cuadro esté en pantalla.
     static let firstFrameSettle: UInt64 = 250_000_000
     /// Leer el cuadro de AVPlayer: cuántas veces y cada cuánto (en pausa sale a la primera; sonando, en unos 300 ms).
