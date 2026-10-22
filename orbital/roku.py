@@ -1,6 +1,6 @@
 """La tele (Roku TV): encenderla y ponerla en la entrada de Orbital, por la red local (ECP, puerto 8060).
 
-«Alexa, abre Orbital» prende la tele, cambia a la entrada del Legion Go y muestra la consola. Nada corre en
+«Alexa, abre mi consola» prende la tele, cambia a la entrada del Legion Go y muestra la consola. Nada corre en
 segundo plano: solo se habla con la tele cuando se pide. `orbital tv setup` la encuentra y guarda cuál es.
 """
 
@@ -163,7 +163,7 @@ class RokuTv:
 
 
 def tv_section(found: Found) -> str:
-    return (f"\ntv:\n  # La tele (Roku TV) que Orbital prende con «Alexa, abre Orbital». La escribió `orbital tv setup`.\n"
+    return (f"\ntv:\n  # La tele (Roku TV) que Orbital prende con «Alexa, abre mi consola». La escribió `orbital tv setup`.\n"
             f"  host: {found.host}\n  serial: {found.serial}\n  mac: \"{found.mac}\"\n  input: {found.input}\n")
 
 

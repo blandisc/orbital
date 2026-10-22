@@ -73,7 +73,7 @@
 - [ ] Tras jugar algo de Steam, sus horas se actualizan en Orbital (unos segundos después de cerrar).
 
 ### Voz (cuando Alexa esté configurada)
-- [ ] "Alexa, pídele a Orbital que abra Zelda".
+- [ ] "Alexa, pídele a mi consola que abra Zelda".
 - [ ] "…que quiero ver The Office" → episodios en Orbital.
 - [ ] "…que busque Dune" → búsqueda de Orbital ya escrita.
 - [ ] "…que salga al escritorio" / "…que abra la consola".

@@ -29,7 +29,7 @@ def test_every_phrase_in_the_guide_reaches_a_command(said):
 
 def test_the_ways_to_ask_alexa_also_work():
     for how in COMMANDS["how"]:
-        rest = re.sub(r"^Alexa, (?:pídele|dile|pide) a Orbital que ", "", how["say"])
+        rest = re.sub(r"^Alexa, (?:pídele|dile|pide) a mi consola que ", "", how["say"])
         if rest != how["say"]:
             assert parse_text(rest) is not None, how["say"]
 

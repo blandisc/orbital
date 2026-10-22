@@ -23,8 +23,8 @@ struct VoiceGuideView: View {
                                       detail: Text("Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas."))
                             WhereCard(symbol: "waveform", tint: DS.ListTint.bookmark, title: Text("Con Siri"), starter: "Oye Siri, habla con Orbital",
                                       detail: Text("Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital» o «Oye Siri, prende Orbital»."))
-                            WhereCard(symbol: "homepod.fill", tint: DS.ListTint.library, title: Text("Con Alexa"), starter: "Alexa, pídele a Orbital que…",
-                                      detail: Text("Sin «pídele a Orbital», Alexa intenta hacerlo ella sola."))
+                            WhereCard(symbol: "homepod.fill", tint: DS.ListTint.library, title: Text("Con Alexa"), starter: "Alexa, pídele a mi consola que…",
+                                      detail: Text("Sin «pídele a mi consola», Alexa intenta hacerlo ella sola."))
                         }
                         // Los temas, para saltar sin bajar todo.
                         ScrollView(.horizontal, showsIndicators: false) {

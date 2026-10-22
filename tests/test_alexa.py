@@ -101,7 +101,7 @@ def test_bad_token_message(skill, monkeypatch):
 # --------------------------------------------------------------------- modelo de voz
 def test_interaction_model_is_valid():
     lm = MODEL["interactionModel"]["languageModel"]
-    assert lm["invocationName"] == "orbital"  # Alexa: el nombre con que se invoca va en minúsculas
+    assert lm["invocationName"] == "mi consola"  # Alexa: el nombre con que se invoca va en minúsculas
     types = {t["name"] for t in lm["types"]}
     seen = {}
     slot_types = {}  # Regla de Alexa: un nombre de slot = un solo tipo en todo el modelo
@@ -404,7 +404,7 @@ def test_every_voice_request_is_written_down_to_find_what_fails(public, tmp_path
 
 
 def test_what_alexa_could_not_fit_goes_to_the_console_as_free_text(skill, monkeypatch):
-    """«Alexa, pídele a Orbital que por favor ponga Interstellar»: antes caía en «No entendí» sin preguntarle a la consola."""
+    """«Alexa, pídele a mi consola que por favor ponga Interstellar»: antes caía en «No entendí» sin preguntarle a la consola."""
     sent = []
 
     def fake_urlopen(req, timeout):

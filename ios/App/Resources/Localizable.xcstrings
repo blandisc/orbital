@@ -804,13 +804,13 @@
         }
       }
     },
-    "Alexa, pídele a Orbital que…": {
+    "Alexa, pídele a mi consola que…": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Alexa, ask Orbital to…"
+            "value": "Alexa, ask my console to…"
           }
         }
       }
@@ -4258,13 +4258,13 @@
         }
       }
     },
-    "Empieza con «Alexa, pídele a Orbital que…»: sin eso, Alexa intenta hacerlo ella sola.": {
+    "Empieza con «Alexa, pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Start with “Alexa, pídele a Orbital que…”: without it, Alexa tries to do it herself."
+            "value": "Start with “Alexa, pídele a mi consola que…”: without it, Alexa tries to do it herself."
           }
         }
       }
@@ -10495,13 +10495,13 @@
         }
       }
     },
-    "Si Alexa dice que no puede, empieza con «pídele a Orbital que…»: sin eso, Alexa intenta hacerlo ella sola.": {
+    "Si Alexa dice que no puede, empieza con «pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "If Alexa says she can't, start with “pídele a Orbital que…” (ask Orbital to…): without it, Alexa tries to do it herself."
+            "value": "If Alexa says she can't, start with “pídele a mi consola que…” (ask my console to…): without it, Alexa tries to do it herself."
           }
         }
       }
@@ -10946,13 +10946,13 @@
         }
       }
     },
-    "Sin «pídele a Orbital», Alexa intenta hacerlo ella sola.": {
+    "Sin «pídele a mi consola», Alexa intenta hacerlo ella sola.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Without “ask Orbital”, Alexa tries to do it herself."
+            "value": "Without “ask my console”, Alexa tries to do it herself."
           }
         }
       }

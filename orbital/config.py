@@ -148,7 +148,7 @@ class ParaTiConfig:
 
 @dataclass
 class TvConfig:
-    """La tele (Roku TV): «Alexa, abre Orbital» la prende y la pone en la entrada de Orbital.
+    """La tele (Roku TV): «Alexa, abre mi consola» la prende y la pone en la entrada de Orbital.
 
     Sin `host` no se toca. `orbital tv setup` la encuentra y escribe esta sección.
     """

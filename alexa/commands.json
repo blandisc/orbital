@@ -1,9 +1,9 @@
 {
   "how": [
-    {"say": "Alexa, pídele a Orbital que ponga Interstellar", "note": "Todo de una vez: «pídele a Orbital que…» y lo que quieras."},
-    {"say": "Alexa, abre Orbital", "note": "Prende la tele en la entrada de la consola, y luego lo dices sin repetir «Orbital» (Alexa se queda escuchando)."},
-    {"say": "Alexa, pídele a Orbital que prenda la consola", "note": "Prende la tele, la pone en la consola y termina. Ponlo en una rutina de Alexa para decir solo «Alexa, prende la consola»."},
-    {"say": "Alexa, dile a Orbital que pause", "note": "«dile a Orbital», «pide a Orbital»: también sirven."},
+    {"say": "Alexa, pídele a mi consola que ponga Interstellar", "note": "Todo de una vez: «pídele a mi consola que…» y lo que quieras."},
+    {"say": "Alexa, abre mi consola", "note": "Prende la tele en la entrada de la consola, y luego lo dices sin repetir «mi consola» (Alexa se queda escuchando)."},
+    {"say": "Alexa, pídele a mi consola que prenda la consola", "note": "Prende la tele, la pone en la consola y termina. Ponlo en una rutina de Alexa para decir solo «Alexa, prende la consola»."},
+    {"say": "Alexa, dile a mi consola que pause", "note": "«dile a mi consola», «pide a mi consola»: también sirven."},
     {"say": "Oye Siri, prende Orbital", "note": "Lo mismo desde el iPhone, sin abrir la app."},
     {"say": "pon Dune · ponga Dune · quiero ver Dune", "note": "Habla como quieras: de tú o de usted, «quiero que…», «¿puedes…?» y «por favor» también se entienden."},
     {"say": "temporada cinco episodio tres · 5x3 · T5 E3", "note": "Los números, con letra o con cifras; «la quinta temporada» también."}
@@ -12,10 +12,10 @@
     {"title": "Prender la consola", "icon": "power", "commands": [
       {"say": "prende la consola", "note": "Prende la tele, la pone en la entrada de Orbital y muestra la consola."},
       {"say": "enciende Orbital", "note": "Igual: «prende Orbital», «encienda la consola»."},
-      {"say": "abre Orbital", "note": "También prende la tele si está apagada."},
+      {"say": "muestra la consola", "note": "También prende la tele si está apagada."},
       {"say": "vuelve a la consola", "note": "Si saliste al escritorio o estás en otra entrada de la tele."},
       {"say": "muestra la consola", "note": "Igual que «vuelve a la consola»."},
-      {"say": "sal al escritorio", "note": "Esconde Orbital (sigue escuchando: «abre Orbital» la regresa)."},
+      {"say": "sal al escritorio", "note": "Esconde Orbital (sigue escuchando: «muestra la consola» la regresa)."},
       {"say": "cierra Orbital", "note": "Lo mismo que salir al escritorio."}
     ]},
     {"title": "Juegos", "icon": "gamecontroller", "commands": [

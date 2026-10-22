@@ -1,4 +1,4 @@
-"""La tele (Roku TV): «Alexa, abre Orbital» la prende y la pone en la entrada de Orbital. Una Roku de mentira."""
+"""La tele (Roku TV): «Alexa, abre mi consola» la prende y la pone en la entrada de Orbital. Una Roku de mentira."""
 
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer

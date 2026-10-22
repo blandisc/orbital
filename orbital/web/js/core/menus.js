@@ -94,7 +94,7 @@ export function artMenu(item) {
 
 /**
  * Qué pedirle a Alexa: ejemplos reales (los entiende orbital/voice.py), por tema.
- * Todas empiezan igual: «Alexa, pídele a Orbital que…».
+ * Todas empiezan igual: «Alexa, pídele a mi consola que…».
  */
 export const ALEXA_EXAMPLES = [
   { icon: "gamepad", label: "«abra Zelda»", hint: "Abre un juego de cualquier consola" },
@@ -116,7 +116,7 @@ export function alexaMenu(guide = null) {
   if (!guide?.groups?.length) {
     return {
       title: "Pídeselo a Alexa",
-      subtitle: "Empieza con «Alexa, pídele a Orbital que…» y sigue con lo que quieras:",
+      subtitle: "Empieza con «Alexa, pídele a mi consola que…» y sigue con lo que quieras:",
       options: ALEXA_EXAMPLES.map((e) => ({ ...e, command: { type: "stay" } })),
     };
   }
@@ -142,7 +142,7 @@ const GUIDE_ICONS = { gamecontroller: "gamepad", film: "movie", "play.rectangle"
 /** Un tema de la guía: todas sus frases, con lo que hace cada una. */
 export function voiceGroupMenu(group) {
   return {
-    title: group.title, crumb: group.title, subtitle: "Empieza con «Alexa, pídele a Orbital que…»",
+    title: group.title, crumb: group.title, subtitle: "Empieza con «Alexa, pídele a mi consola que…»",
     options: group.commands.map((c) => ({ icon: "assistant", label: `«${c.say}»`, hint: c.note, command: { type: "stay" } })),
   };
 }
@@ -152,7 +152,7 @@ export function voiceHelpMenu() {
   return {
     title: "Si no funciona", crumb: "Si no funciona",
     options: [
-      { icon: "assistant", label: "Empieza con «pídele a Orbital que…»", hint: "Sin eso, Alexa intenta hacerlo ella sola", command: { type: "stay" } },
+      { icon: "assistant", label: "Empieza con «pídele a mi consola que…»", hint: "Sin eso, Alexa intenta hacerlo ella sola", command: { type: "stay" } },
       { icon: "search", label: "Revisa lo que entendió", hint: "Abajo sale «No entendí…» con lo que escuchó: dilo más despacio o búscalo", command: { type: "stay" } },
       { icon: "grid", label: "Cuando hay varias", hint: "Si pides «pon Dune» y hay más de una, salen en la tele para elegir", command: { type: "stay" } },
       { icon: "wifi", label: "Si Alexa no encuentra tu consola", hint: "Orbital tiene que estar encendida y con Internet", command: { type: "stay" } },
@@ -849,7 +849,7 @@ export function tourMenu(step, { legion = false, gamesir = false } = {}) {
       ? "☰ → Panel rápido: volumen, brillo, modo de energía, batería y capturas."
       : "Mantén Home y pulsa LB (o ☰ → Panel rápido): volumen, brillo, energía y batería. Home + RB toma una captura." },
     { title: "Buscar y ver", text: "El botón Vista ⧉ busca juegos, películas y series. En Películas y series, A sigue donde te quedaste." },
-    { title: "Con la voz", text: "«Alexa, pídele a Orbital que abra Hades», «…que ponga Los Simpson temporada 3 episodio 2», «…cuánto le falta»." },
+    { title: "Con la voz", text: "«Alexa, pídele a mi consola que abra Hades», «…que ponga Los Simpson temporada 3 episodio 2», «…cuánto le falta»." },
   ];
   const current = steps[step];
   const last = step === steps.length - 1;
