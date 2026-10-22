@@ -7,7 +7,8 @@
 /* Esquinas limpias: el arte (que se acerca al enfocar) y su sombra curvan igual que la tarjeta, y la orilla fina va encima.
    Antes, en Edge, la capa del arte a veces se salía del recorte redondeado y dejaba una sombra en las esquinas. */
 .tile--feature > .tile__art, .tile--feature > .tile__shade { border-radius: inherit; }
-.tile--feature > .tile__art { object-position: center 25%; } /* ancha y bajita: el recorte se toma arriba (donde suelen ir las caras), como la ficha y los estantes; del centro salía la barbilla */
+.tile--feature-video > .tile__art { object-position: center 25%; } /* película o serie, ancha y bajita: el recorte se toma arriba
+   (donde van las caras), como la ficha; del centro salía la barbilla. Los juegos no: su arte va pensado al centro. */
 .tile--feature::after {
   content: ""; position: absolute; inset: 0; z-index: var(--z-raised); border-radius: inherit; pointer-events: none;
   box-shadow: inset 0 0 0 1px var(--color-hairline);

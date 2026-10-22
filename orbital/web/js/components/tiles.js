@@ -91,7 +91,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
     : alternativeRunner(item) && `Con ${alternativeRunner(item).name}`;
   const press = (action) => (event) => { event.stopPropagation(); onAction?.(action); };
   const boxed = stageKind(item) === "case";
-  return tile(focusId, ["tile--feature", boxed && "tile--feature-case", !boxed && item.extra?.placeholder_hero && "tile--placeholder",
+  return tile(focusId, ["tile--feature", isWatchable(item) && "tile--feature-video", boxed && "tile--feature-case", !boxed && item.extra?.placeholder_hero && "tile--placeholder",
     !boxed && item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
     boxed ? caseArt(item) : art(item.hero || item.image),
     h("span", { class: "tile__shade tile--feature__shade" }),
