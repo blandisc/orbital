@@ -720,6 +720,9 @@ enum DS {
         static let toastAction = UInt64(8 * 1e9)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
         static let longPressDelay = DesignTokens.Timing.longPressDelay
+        /// ×2: cuánto mantener el dedo para que arranque (casi al instante, como YouTube) y cuánto más para que se quede fijo
+        /// (vibra; ya puedes soltar).
+        static let fastForwardStart = 0.3, fastForwardLock = 1.2
         /// Cada cuánto, como pronto, le pide iOS a la app mirar en segundo plano lo que dejó la TV (iOS decide si y cuándo corre).
         static let inboxRefresh: TimeInterval = 15 * 60
         /// Cada cuánto (como mínimo) iOS despierta la app para ver si un estreno ya se puede ver.

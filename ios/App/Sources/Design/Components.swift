@@ -754,11 +754,19 @@ struct DSSeekBubble: View {
 
 /// La píldora «2×» mientras mantienes el dedo (como YouTube/Infuse): sobre vidrio, arriba al centro.
 struct DSSpeedPill: View {
+    /// Se quedó fijo en ×2 (mantuviste el dedo hasta que vibró): dice cómo quitarlo.
+    var locked = false
     var body: some View {
-        Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold)).foregroundStyle(DS.text)
-            .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
-            .glassEffect(.regular, in: Capsule())
-            .accessibilityHidden(true)
+        HStack(spacing: DS.Space.s2) {
+            if locked { Image(systemName: "lock.fill").font(DS.TextRecipe.footnote.font.weight(.bold)) }
+            Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold))
+            if locked { Text("Toca para quitar").font(DS.TextRecipe.footnote.font) }
+        }
+        .foregroundStyle(DS.text)
+        .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+        .glassEffect(.regular, in: Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(locked ? "speed-pill-locked" : "speed-pill")
     }
 }
 

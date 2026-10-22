@@ -13608,6 +13608,17 @@
         }
       }
     },
+    "Toca para quitar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to stop"
+          }
+        }
+      }
+    },
     "Toca para terminar": {
       "extractionState": "manual",
       "localizations": {

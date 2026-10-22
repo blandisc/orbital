@@ -139,6 +139,11 @@ struct PlayerScreen: View {
     @State private var seekPositionAtDragStart: Double?
     @State private var seekPreview: Double?
     @State private var isFastForwarding = false
+    /// ×2 fijo: mantuviste el dedo hasta que vibró; sigue al soltar y un toque lo quita.
+    @State private var fastForwardLocked = false
+    @State private var fastForwardLockTask: Task<Void, Never>?
+    /// Dónde empezó el toque (el ×2 es del lado derecho, como YouTube).
+    @State private var touchStartX: CGFloat?
     /// El ícono que aparece un momento al centro tras un doble toque (pausa, ±10 s).
     @State private var flashSymbol: String?
     @State private var flashTask: Task<Void, Never>?
@@ -450,6 +455,8 @@ struct PlayerScreen: View {
             }
             .contentShape(Rectangle())
             .onTapGesture {
+                // ×2 fijo: el toque lo quita (y nada más).
+                if fastForwardLocked { endFastForward(model, force: true); return }
                 // Con los subtítulos rápidos abiertos, tocar el video los cierra (y nada más).
                 if subtitleDock { withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false }; return }
                 controlsVisible.toggle(); if controlsVisible { scheduleHide() }
@@ -475,9 +482,18 @@ struct PlayerScreen: View {
                     if controlsVisible { scheduleHide() }
                 }
             }
-            .onLongPressGesture(minimumDuration: DS.Timing.longPressDelay, maximumDistance: DS.Gesture.axisThreshold,
-                                 perform: { startFastForward(model) }, onPressingChanged: { pressing in if !pressing { endFastForward(model) } })
+            // Dónde empieza el dedo, sin quitarle nada a los demás gestos.
+            // Y cuándo lo levantas de verdad: el `onPressingChanged` de la pulsación larga avisa «ya no» en cuanto la reconoce
+            // (no al soltar), y el ×2 se prendía y se apagaba casi a la vez.
+            .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { value in
+                if touchStartX == nil { touchStartX = value.startLocation.x }
+            }.onEnded { _ in touchStartX = nil; endFastForward(model) })
+            // ×2 del lado derecho: casi al instante; si sigues, vibra y se queda fijo (sueltas antes: vuelve a ×1).
+            // Simultánea: como gesto normal competía con los dobles toques de las orillas y casi nunca ganaba.
+            .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.fastForwardStart, maximumDistance: DS.Gesture.axisThreshold)
+                .onEnded { _ in if (touchStartX ?? geo.size.width) >= geo.size.width / 2 { startFastForward(model) } })
             .sensoryFeedback(.impact, trigger: isFastForwarding)
+            .sensoryFeedback(.success, trigger: fastForwardLocked) { _, locked in locked }
         }
         .accessibilityHidden(true)
     }
@@ -560,7 +576,7 @@ struct PlayerScreen: View {
             seekBubble(target: target, start: start)
         }
         if isFastForwarding {
-            VStack { DSSpeedPill(); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
+            VStack { DSSpeedPill(locked: fastForwardLocked); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
         }
         if let notice {
             VStack {
@@ -632,11 +648,19 @@ struct PlayerScreen: View {
         rateBeforeFastForward = model.rate
         withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = true }
         Task { await model.setRate(PlaybackRules.fastForwardRate) }
+        fastForwardLockTask?.cancel()
+        fastForwardLockTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(DS.Timing.fastForwardLock))
+            guard !Task.isCancelled, isFastForwarding else { return }
+            withAnimation(DS.Motion.base(reduceMotion)) { fastForwardLocked = true }   // vibra (sensoryFeedback): ya puedes soltar
+        }
     }
 
-    private func endFastForward(_ model: PlayerModel) {
-        guard isFastForwarding else { return }
-        withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = false }
+    /// Al soltar: vuelve a la velocidad de antes, salvo que se haya quedado fijo (entonces solo un toque, `force`, lo quita).
+    private func endFastForward(_ model: PlayerModel, force: Bool = false) {
+        fastForwardLockTask?.cancel(); fastForwardLockTask = nil
+        guard isFastForwarding, force || !fastForwardLocked else { return }
+        withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = false; fastForwardLocked = false }
         Task { await model.setRate(rateBeforeFastForward) }
     }
 
