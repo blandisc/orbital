@@ -153,6 +153,8 @@ def test_al_terminar_sigue_el_siguiente_de_la_vuelta_y_si_falla_otra_fuente():
     meta = {"channel_id": CHANNEL.id, "cycle": cycle, "place": place, "tried": [0], "video_id": here}
     assert tv.failed(meta) is True  # la fuente falló: la otra del mismo episodio
     assert pl.loaded[-1][0] == "http://rd/1" and pl.loaded[-1][2]["tried"] == [0, 1]
+    # La de respaldo entra en el minuto que va al aire (antes empezaba el episodio de cero).
+    assert pl.loaded[-1][3]["start"] == (offset if offset > 10 else 0)
     assert tv.failed({**meta, "tried": [0, 1]}) is True  # ya no hay otra: el siguiente episodio
     assert pl.loaded[-1][2]["video_id"] == nxt and pl.loaded[-1][2]["skips"] == 1
     assert tv.ended(meta) is True  # terminó: el siguiente, desde el principio

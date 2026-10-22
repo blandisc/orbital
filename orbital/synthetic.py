@@ -460,10 +460,14 @@ class SyntheticTV:
             picked = self._pick(channel, cycle, place, skip=tried, skips=skips) if len(tried) < MAX_SOURCES else None
             if picked is not None and (picked[2], picked[3]) != (cycle, place):
                 tried, skips = set(), skips + 1  # ya es otro episodio
+            episodes = self._episodes(channel)
             if picked is None and skips + 1 < MAX_SKIPS:
-                count = len(self._episodes(channel))
-                picked = self._pick(channel, *following(count, cycle, place), skips=skips + 1)
+                picked = self._pick(channel, *following(len(episodes), cycle, place), skips=skips + 1)
                 tried, skips = set(), skips + 1
+            # La otra fuente entra en el minuto que va al aire, no desde el principio: al prender el canal, la primera
+            # fuente a veces no trae el latino y la de respaldo empezaba el episodio de cero (dejaba de ser «en vivo»).
+            on_cycle, on_place, offset = self._on_air(channel, episodes, self.clock()) if episodes else (-1, -1, 0.0)
+            start = offset if picked is not None and (picked[2], picked[3]) == (on_cycle, on_place) else 0.0
         except (cinemeta.CinemetaError, stremio_api.StremioError, KeyError, ValueError) as exc:
             log.warning("%s: no pude cambiar de fuente: %s", channel.name, exc)
             return False
@@ -471,4 +475,5 @@ class SyntheticTV:
             self.coverage.save()
         if picked is None or skips >= MAX_SKIPS:
             return False  # varios episodios seguidos sin abrir: algo más pasa (Internet, los complementos)
-        return self._load(channel, picked, sorted(tried | {picked[1].index}), f"{channel.name} · probando otra fuente", skips)
+        return self._load(channel, picked, sorted(tried | {picked[1].index}), f"{channel.name} · probando otra fuente", skips,
+                          start=start)
