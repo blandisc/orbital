@@ -2,18 +2,17 @@ import XCTest
 
 /// El reproductor: botones con nombre y la hoja «Audio y subtítulos» (con su pestaña «Versión»).
 final class PlayerPanelUITests: XCTestCase {
-    func testAudioAndSubtitlesOpensFromTheMenuWithItsVersionTab() {
+    func testAudioAndSubtitlesOpensFromTheSubtitleButtonWithItsVersionTab() {
         let app = XCUIApplication()
         app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play"]
         XCUIDevice.shared.orientation = .landscapeLeft
         app.launch()
         sleep(9)
-        if !app.buttons["player-more"].waitForExistence(timeout: 3) { app.tap() }
-        XCTAssertTrue(app.buttons["player-more"].waitForExistence(timeout: 10), "Audio y subtítulos, zoom, ventana, la TV y bloquear van en el «⋯»")
-        app.buttons["player-more"].tap()
-        let settings = app.buttons["player-settings"]
-        XCTAssertTrue(settings.waitForExistence(timeout: 5), "el renglón dice qué hace")
-        settings.tap()
+        // Una sola entrada: el botón de subtítulos de la barra (ya no hay «Audio y subtítulos» en el «⋯»).
+        let subtitles = app.buttons["player-next-subtitle"]
+        if !subtitles.waitForExistence(timeout: 3) { app.tap() }
+        XCTAssertTrue(subtitles.waitForExistence(timeout: 10), "el botón de subtítulos está en la barra")
+        subtitles.tap()
         // En horizontal, a la derecha con dos pestañas fijas: «Audio y subtítulos» y «Versión».
         let versionTab = app.buttons["Versión"]
         XCTAssertTrue(versionTab.waitForExistence(timeout: 5), "abre «Audio y subtítulos» con su pestaña «Versión»")
@@ -89,5 +88,20 @@ final class PlayerPanelUITests: XCTestCase {
         zoom.tap()
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = "player-zoom-toast"; shot.lifetime = .keepAlways; add(shot)
         XCUIDevice.shared.orientation = .portrait
+    }
+
+    /// El «⋯» ya no repite «Audio y subtítulos» (era la misma hoja que el botón de subtítulos).
+    func testTheMoreMenuDoesNotRepeatAudioAndSubtitles() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play", "-demo-player-portrait"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        sleep(8)
+        let more = app.buttons["player-more"]
+        if !more.isHittable { app.tap() }
+        XCTAssertTrue(more.waitForExistence(timeout: 10))
+        more.tap()
+        XCTAssertTrue(app.buttons["player-lock"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["player-settings"].exists)
     }
 }

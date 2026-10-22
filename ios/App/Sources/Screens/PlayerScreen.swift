@@ -108,7 +108,6 @@ struct PlayerScreen: View {
     /// Una versión que Real-Debrid aún no tiene: se pregunta antes de abrirla (puede tardar o no abrir).
     @State private var slowPick: Int?
     /// Lo que mide la hoja (para que en vertical ocupe lo suyo y, si no cabe, se recorra).
-    @State private var dockContentHeight: CGFloat = 0
     @State private var dockLanguages = false
     /// «Todas las versiones» desde el panel chico: media hoja (el video sigue a la vista arriba).
     @State private var dockVersions = false
@@ -891,8 +890,7 @@ struct PlayerScreen: View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: 0) {
             // La misma hoja que el botón de subtítulos (antes abría otra, «Ajustes del video», que hacía la mitad).
-            PlayerMenuRow(title: "Audio y subtítulos", symbol: "slider.horizontal.3") { openDock(.audio) }
-                .accessibilityIdentifier("player-settings")
+            // «Audio y subtítulos» ya no va aquí: se abre con el botón de subtítulos de la barra (era la misma hoja dos veces).
             if model.sourceChoices.count > 1 {
                 PlayerMenuRow(title: "Versión", symbol: "square.stack", detail: Text(verbatim: videoVersionShort(model))) { openDock(nil, version: true) }
                     .accessibilityIdentifier("player-versions")
@@ -1110,11 +1108,12 @@ struct PlayerScreen: View {
                 if let syncLines { subtitleSyncView(model, lines: syncLines) }
                 else if dockPage == .version { versionPage(model) }
                 else {
-                    ScrollView {
-                        subtitleDockView(model).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { dockContentHeight = $0 }
+                    // Si cabe, sin desplazarse ni rebotar (antes siempre iba en un ScrollView: en vertical se movía y al jalarlo
+                    // hacia abajo parecía «actualizar»); solo si un renglón abierto ya no cabe, se desplaza.
+                    ViewThatFits(in: .vertical) {
+                        subtitleDockView(model)
+                        ScrollView { subtitleDockView(model) }.scrollBounceBehavior(.basedOnSize)
                     }
-                    .scrollBounceBehavior(.basedOnSize)
-                    .frame(maxHeight: dockContentHeight > 0 ? dockContentHeight : nil)
                 }
             }
             if landscape {
