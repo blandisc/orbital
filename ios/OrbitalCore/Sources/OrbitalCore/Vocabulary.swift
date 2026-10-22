@@ -56,18 +56,35 @@ public enum Vocabulary {
 
     /// Géneros de Cinemeta (en inglés) en español, con la misma tabla que `genres` de `core/format.js` en la TV; los
     /// desconocidos se dejan igual. Con la clave de TMDB los géneros ya llegan traducidos y pasan sin cambio.
+    /// Cinemeta los da con su nombre («Science Fiction», «Sci-Fi») y Trakt como clave en minúsculas («science-fiction»,
+    /// «superhero»): antes solo se reconocían los de Cinemeta y en Para ti salía «science-fiction» tal cual.
     public static func genres(_ list: [String], language: String) -> [String] {
-        guard language.hasPrefix("es") else { return list }
-        return list.map { spanishGenres[$0] ?? $0 }
+        list.map { genre in
+            let key = genreKey(genre)
+            if language.hasPrefix("es") { return spanishGenres[key] ?? genre }
+            // En inglés, la clave de Trakt se escribe como nombre («science-fiction» → «Science Fiction»).
+            return genre == genre.lowercased() ? key.split(separator: " ").map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: " ") : genre
+        }
+    }
+
+    /// «Science Fiction», «Sci-Fi», «science-fiction» → «science fiction» / «sci fi».
+    static func genreKey(_ genre: String) -> String {
+        genre.lowercased().replacingOccurrences(of: "-", with: " ").replacingOccurrences(of: "_", with: " ").trimmingCharacters(in: .whitespaces)
     }
 
     private static let spanishGenres: [String: String] = [
-        "Action": "Acción", "Adventure": "Aventura", "Animation": "Animación", "Biography": "Biografía", "Comedy": "Comedia",
-        "Crime": "Crimen", "Documentary": "Documental", "Drama": "Drama", "Family": "Familiar", "Fantasy": "Fantasía",
-        "History": "Historia", "Horror": "Terror", "Music": "Música", "Musical": "Musical", "Mystery": "Misterio", "Romance": "Romance",
-        "Sci-Fi": "Ciencia ficción", "Science Fiction": "Ciencia ficción", "Sport": "Deportes", "Thriller": "Suspenso",
-        "War": "Bélica", "Western": "Western", "Reality-TV": "Reality", "Talk-Show": "Talk show", "Game-Show": "Concurso",
-        "News": "Noticias", "Short": "Corto",
+        "action": "Acción", "adventure": "Aventura", "animation": "Animación", "biography": "Biografía", "comedy": "Comedia",
+        "crime": "Crimen", "documentary": "Documental", "drama": "Drama", "family": "Familiar", "fantasy": "Fantasía",
+        "history": "Historia", "horror": "Terror", "music": "Música", "musical": "Musical", "mystery": "Misterio", "romance": "Romance",
+        "sci fi": "Ciencia ficción", "science fiction": "Ciencia ficción", "sport": "Deportes", "sports": "Deportes", "thriller": "Suspenso",
+        "war": "Bélica", "western": "Western", "reality tv": "Reality", "reality": "Reality", "talk show": "Talk show", "game show": "Concurso",
+        "news": "Noticias", "short": "Corto",
+        // Los de Trakt.
+        "superhero": "Superhéroes", "anime": "Anime", "suspense": "Suspenso", "holiday": "Festivo", "children": "Infantil",
+        "indie": "Independiente", "mini series": "Miniserie", "soap": "Telenovela", "sporting events": "Eventos deportivos",
+        "special interest": "Interés especial", "home and garden": "Hogar y jardín", "donghua": "Donghua", "fan film": "Hecha por fans",
+        "war & politics": "Guerra y política", "action & adventure": "Acción y aventura", "sci fi & fantasy": "Ciencia ficción y fantasía",
+        "kids": "Infantil",
     ]
 
     /// «Buenos días / Buenas tardes / Buenas noches» (`greeting` de `core/home.js`): de 5 a 12 h, de 12 a 20 h y el resto.
