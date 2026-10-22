@@ -197,7 +197,8 @@ final class AppEnvironment: ObservableObject {
             timeLeft: { Strings.timeLeft(minutes: $0, language: store.value.uiLanguage) },
             nextUp: { String(format: Strings.tr("Sigue: %@", language: store.value.uiLanguage), $0) })
         // Los mismos títulos le enseñan a Siri los nombres de «Seguir viendo» («Oye Siri, pon The Office en Orbital»).
-        services.onWidgetSnapshot = { WidgetPublisher.publish($0); SiriTitles.save($0.items.map(\.title)) }
+        services.onWidgetSnapshot = { WidgetPublisher.publish($0) }
+        services.onSiriTitles = { SiriTitles.save($0) }
         #if DEBUG
         // Demostración: el widget enseña un snapshot de ejemplo (o vacío con `-demo-widget empty`); con `-demo-widget live`, el de verdad.
         if Demo.isOn, Demo.widget != "live" {
@@ -678,6 +679,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         ImagePipeline.shared.preconnect()   // lo primero: la conexión con las imágenes, mientras arranca lo demás
         InboxBackgroundTask.register()
         ReleaseNotifier.register()
+        OrbitalShortcuts.updateAppShortcutParameters()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)
         ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         DownloadFailureNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.

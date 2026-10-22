@@ -61,6 +61,9 @@ public final class Services: ObservableModel {
     /// Quién publica el snapshot del widget (la app: baja y reduce las imágenes, lo escribe en el App Group y recarga el widget).
     /// `HomeModel` lo llama al terminar de actualizar Inicio.
     public var onWidgetSnapshot: (@MainActor (WidgetSnapshot) -> Void)?
+    /// Los títulos que Siri debe reconocer («Oye Siri, pon Los Simpson en Orbital»): cada uno con su nombre original (el que se
+    /// le pide a la consola) y, si es otro, su nombre en español. `HomeModel` los pasa al terminar de actualizar Inicio.
+    public var onSiriTitles: (@MainActor ([[String]]) -> Void)?
     private var widgetContinue: [HomeItem] = []
     private var widgetAirings: [Airing] = []
     /// Arma y publica el snapshot del widget con lo último que se sabe de «Seguir viendo» (Inicio) y de «Próximos estrenos»

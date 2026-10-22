@@ -130,7 +130,9 @@ struct OrbitalTitle: AppEntity {
     /// Como se dice en español: «The Simpsons» también es «Los Simpson», «Los Simpsons» y «Simpson» (antes solo el nombre en
     /// inglés de Stremio, y «pon Los Simpson» no coincidía).
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(id)", synonyms: Self.spokenNames(id).map { "\($0)" })
+        let names = SiriTitles.aliases(id).flatMap { [$0] + Self.spokenNames($0) } + Self.spokenNames(id)
+        var seen = Set([id.lowercased()])
+        return DisplayRepresentation(title: "\(id)", synonyms: names.filter { seen.insert($0.lowercased()).inserted }.map { "\($0)" })
     }
 
     static func spokenNames(_ title: String) -> [String] {
@@ -151,22 +153,32 @@ struct OrbitalTitleQuery: EntityStringQuery {
         let name = string.trimmingCharacters(in: .whitespacesAndNewlines)
         return name.isEmpty ? [] : [OrbitalTitle(id: name)]
     }
-    func suggestedEntities() async throws -> [OrbitalTitle] { SiriTitles.load().map { OrbitalTitle(id: $0) } }
+    func suggestedEntities() async throws -> [OrbitalTitle] { SiriTitles.load().compactMap { $0.first.map { OrbitalTitle(id: $0) } } }
 }
 
-/// Los títulos que Siri reconoce: los de «Seguir viendo» (los mismos del widget), guardados en el iPhone.
+/// Los títulos que Siri reconoce: los de «Seguir viendo» y tu lista (más Los Simpson, siempre), guardados en el iPhone. Cada
+/// uno es [nombre original, nombre en español]: se le pide a la consola el original y Siri acepta los dos.
 enum SiriTitles {
-    private static let key = "siri.titles"
-    private static let limit = 30
+    private static let key = "siri.titles.v2"
+    private static let limit = 60
+    /// Los Simpson tienen su propio lugar en la app (la ruleta): Siri los conoce aunque no estén en tu lista.
+    private static let always: [[String]] = [["The Simpsons", "Los Simpson"]]
 
-    static func load() -> [String] { UserDefaults.standard.stringArray(forKey: key) ?? [] }
+    static func load() -> [[String]] { (UserDefaults.standard.array(forKey: key) as? [[String]]) ?? always }
+
+    /// Los otros nombres de un título (el de español), para que Siri los acepte.
+    static func aliases(_ id: String) -> [String] { load().first { $0.first == id }.map { Array($0.dropFirst()) } ?? [] }
 
     /// Si cambiaron, se guardan y Siri vuelve a leerlos (aprende a reconocer los nombres nuevos).
-    static func save(_ titles: [String]) {
+    static func save(_ titles: [[String]]) {
         var seen = Set<String>()
-        let unique = Array(titles.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty && seen.insert($0.lowercased()).inserted }.prefix(limit))
-        guard !unique.isEmpty, unique != load() else { return }
+        let clean = (titles + always).compactMap { names -> [String]? in
+            let n = names.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            guard let first = n.first, seen.insert(first.lowercased()).inserted else { return nil }
+            return [first] + n.dropFirst().filter { $0.lowercased() != first.lowercased() }
+        }
+        let unique = Array(clean.prefix(limit))
+        guard !unique.isEmpty, unique != (UserDefaults.standard.array(forKey: key) as? [[String]]) else { return }
         UserDefaults.standard.set(unique, forKey: key)
         OrbitalShortcuts.updateAppShortcutParameters()
     }
