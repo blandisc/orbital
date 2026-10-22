@@ -375,6 +375,16 @@ _ADDRESS = re.compile(r"^(?:(?:oye|hey|ok|okay|eh)\s+)?(?:(?:orbital|consola|mi 
                       r"(?:(?:dile|digale|pidele|pidale|pide)\s+(?:a\s+)?(?:orbital|la consola|mi consola)\s+que\s+)?")
 _POLITE = re.compile(r"\s+(?:por favor|porfa|porfis|porfavor|please|ahora|ya|ahorita)$|^(?:por favor|porfa)\s+")
 _WHERE = re.compile(r"\s+en\s+(?:la\s+)?(?:tele|television|tv|pantalla|consola|orbital|la sala)$")
+# «Alexa, pausa en Orbital», «Alexa, pon Dune con Orbital»: Alexa deja el nombre de la skill pegado a la frase y a veces lo
+# oye junto («norbital»). Nada coincidía («dune norbital») y Alexa contestaba «No entendí» sin preguntarle a la consola.
+_INVOKED = re.compile(r"\s+(?:(?:en|con|desde|a)\s+(?:la\s+)?orbital|n\s?orbital)$")
+# Lo mismo en un slot de Alexa, que llega sin normalizar («Dune en Orbital», «la película norbital»).
+_INVOKED_SLOT = re.compile(r"\s+(?:(?:en|con|desde|a)\s+(?:la\s+)?|n\s?)?[oó]rbit[aá]l[.?!]?$", re.IGNORECASE)
+
+
+def slot_text(value: str) -> str:
+    """Un slot de Alexa sin el nombre de la skill que se le pegó al final."""
+    return _INVOKED_SLOT.sub("", value).strip()
 # Verbos que la gente usa y no estaban: se llevan a los que ya se entienden.
 _SAY_AS = [
     (re.compile(r"^(?:quisiera|me gustaria|quiero|vamos a|voy a|deseo)\s+(?:ver|mirar)\s+"), "quiero ver "),
@@ -410,7 +420,7 @@ def tidy(clean: str) -> str:
     tele»); los verbos y las formas de episodio que la gente usa, llevados a los que se entienden. `clean` ya normalizado."""
     text = _ADDRESS.sub("", clean, count=1).strip()
     for _ in range(2):  # «… por favor en la tele» y «… en la tele por favor»
-        text = _WHERE.sub("", _POLITE.sub("", text)).strip()
+        text = _INVOKED.sub("", _WHERE.sub("", _POLITE.sub("", text))).strip()
     for pattern, said in _SAY_AS:
         text = pattern.sub(said, text, count=1)
     if re.search(r"temporada|episodio|capitulo|\bs\d|\bt\s*\d|\dx\d", text):
@@ -508,7 +518,8 @@ class VoiceController:
         return result
 
     def handle_intent(self, intent: str, slots: dict[str, str] | None = None) -> VoiceResult:
-        slots = {k: v for k, v in (slots.items() if isinstance(slots, dict) else ()) if v}
+        slots = {k: slot_text(v) if isinstance(v, str) else v for k, v in (slots.items() if isinstance(slots, dict) else ()) if v}
+        slots = {k: v for k, v in slots.items() if v}
         log.info("Voz: %s %s", intent, slots)
         # Solo los manejadores de intents (`_algo_intent`): el nombre viene de fuera (Alexa, el túnel).
         name = "_" + re.sub(r"(?<!^)(?=[A-Z])", "_", str(intent or "")).lower()
@@ -530,6 +541,11 @@ class VoiceController:
         return result
 
     # --- intents -------------------------------------------------------------
+    def _fallback_intent(self, slots: dict) -> VoiceResult:
+        """Alexa no acomodó lo dicho en ningún intent (y no manda el texto): la skill lo avisa para que quede en voz.log y
+        en la tele (antes contestaba sola y no quedaba rastro de qué falló)."""
+        return VoiceResult("No entendí eso. Prueba con: pausa, pon Dune o sube el volumen.", ok=False)
+
     def _launch_game_intent(self, slots: dict) -> VoiceResult:
         name = slots.get("game", "")
         if not name:
@@ -708,7 +724,10 @@ class VoiceController:
         return []
 
     def _continue_watching_intent(self, slots: dict) -> VoiceResult:
-        show = slots.get("show", "")
+        # «continúa viendo la película» llega a Alexa como «continúa {show}» con show «viendo la película»: es seguir viendo.
+        show = re.sub(r"^(?:viendo|con)\s+", "", slots.get("show", "").strip(), flags=re.IGNORECASE)
+        if normalize(show) in THE_USUAL | {"la pelicula", "la peli", "la serie", "el video", "el capitulo", "el episodio"}:
+            show = ""
         if not show and self.catalog.player.playing:  # «continúa» con un video abierto: quitarle la pausa
             return self._resume_intent({})
         if show and (episode := episode_request(show)) is not None:
@@ -917,6 +936,10 @@ class VoiceController:
         """Lo que Alexa no supo acomodar en otro intent («por favor pon…»): la frase tal cual, con el intérprete de texto
         (la skill la manda como `text`; esto es por si llega como intent)."""
         return self.handle_text(slots.get("query") or "")
+
+    def _command_intent(self, slots: dict) -> VoiceResult:
+        """El comodín de Alexa (la frase entera, sin frase de apoyo): igual, al intérprete de texto."""
+        return self.handle_text(slots.get("command") or "")
 
     def _upcoming_intent(self, slots: dict) -> VoiceResult:
         """«¿Qué sale hoy?»: lo que sale de las series que sigues (Trakt), hoy y los próximos días."""
