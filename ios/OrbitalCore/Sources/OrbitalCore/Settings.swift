@@ -223,6 +223,22 @@ public final class TitlePreferences: @unchecked Sendable {
     static let key = "title-prefs"
     private let kv: KeyValueStore
     private let lock = NSLock()
+
+    /// Lo que se sincroniza con tu Orbital (el audio, la variante y los subtítulos de cada título valen en los dos lados).
+    struct SyncState: Codable {
+        /// La última revisión de tu Orbital que se vio (0: nunca se sincronizó: la primera vez solo suma).
+        var rev = 0
+        var synced = false
+        /// La revisión de cada título que conoce el iPhone (la base de lo que manda).
+        var revs: [String: Int] = [:]
+        /// Lo que se eligió aquí y tu Orbital aún no sabe (sobrevive sin conexión).
+        var pending: [String: OrbitalRemote.ChoiceChange] = [:]
+    }
+    static let syncKey = "choices-sync"
+    private var sync: SyncState
+    private var syncing = false
+    /// Algo nuevo para mandar a tu Orbital (la app sincroniza al rato).
+    public var onPendingChoice: (@Sendable () -> Void)?
     private var all: [String: Saved]
 
     static let resumeKey = "resume-choices"
@@ -237,6 +253,7 @@ public final class TitlePreferences: @unchecked Sendable {
         all = kv.data(Self.key).flatMap { try? JSONDecoder().decode([String: Saved].self, from: $0) } ?? [:]
         resumes = kv.data(Self.resumeKey).flatMap { try? JSONDecoder().decode([String: ResumeChoice].self, from: $0) } ?? [:]
         checked = kv.data(Self.checkedKey).flatMap { try? JSONDecoder().decode([String: [AudioLanguage]].self, from: $0) } ?? [:]
+        sync = kv.data(Self.syncKey).flatMap { try? JSONDecoder().decode(SyncState.self, from: $0) } ?? SyncState()
     }
 
     /// El audio comprobado de una versión, si ya la viste.
@@ -302,8 +319,92 @@ public final class TitlePreferences: @unchecked Sendable {
             }
             // Cualquier idioma (antes solo español e inglés: elegir francés no se recordaba). "" = apagados.
             if let subtitleTrack { saved.subtitles = subtitleTrack.isEmpty ? "" : (SubtitleLanguage.code(subtitleTrack) ?? PlaybackRules.languageCode(subtitleTrack) ?? subtitleTrack) }
+            let before = all[metaID]
             all[metaID] = saved
             kv.set(Self.key, data: try? JSONEncoder().encode(all))
+            queue(metaID, from: before, to: saved)
+        }
+        onPendingChoice?()
+    }
+
+    /// «Lo que recuerda cada título» › Olvidar: vuelve a lo de Ajustes, aquí y en tu Orbital.
+    public func forget(metaID: String) {
+        lock.withLock {
+            guard all[metaID] != nil else { return }
+            all[metaID] = nil
+            kv.set(Self.key, data: try? JSONEncoder().encode(all))
+            var change = sync.pending[metaID] ?? OrbitalRemote.ChoiceChange(base: sync.revs[metaID] ?? 0)
+            change.audio = nil; change.spanish = nil; change.subtitles = nil
+            change.forget = ["audio", "spanish", "subtitles"]
+            sync.pending[metaID] = change
+            saveSync()
+        }
+        onPendingChoice?()
+    }
+
+    /// Lo que recuerda cada título (para Ajustes): {id: (audio, variante, subtítulos)}.
+    public func remembered() -> [String: (audio: String?, spanish: String?, subtitles: String?)] {
+        lock.withLock { all.mapValues { ($0.audio, $0.spanish, $0.subtitles) }.filter { $0.value.audio != nil || $0.value.subtitles != nil } }
+    }
+
+    // MARK: sincronizar con tu Orbital
+
+    private func queue(_ metaID: String, from before: Saved?, to saved: Saved) {
+        var change = sync.pending[metaID] ?? OrbitalRemote.ChoiceChange(base: sync.revs[metaID] ?? 0)
+        if saved.audio != before?.audio, let v = saved.audio { change.audio = v; change.forget.removeAll { $0 == "audio" } }
+        if saved.spanish != before?.spanish, let v = saved.spanish { change.spanish = v; change.forget.removeAll { $0 == "spanish" } }
+        if saved.subtitles != before?.subtitles, let v = saved.subtitles { change.subtitles = v; change.forget.removeAll { $0 == "subtitles" } }
+        guard change != OrbitalRemote.ChoiceChange(base: change.base) else { return }
+        sync.pending[metaID] = change
+        saveSync()
+    }
+
+    private func saveSync() { kv.set(Self.syncKey, data: try? JSONEncoder().encode(sync)) }
+
+    /// Un intento de sincronizar: manda lo pendiente y aplica lo que cambió en la TV. La primera vez solo suma: lo que un
+    /// lado tiene y el otro no, pasa; si los dos eligieron distinto para el mismo título, gana la TV. Sin conexión o con
+    /// una Orbital de antes, nada se pierde (lo pendiente espera).
+    public func syncChoices(with remote: OrbitalRemote) async {
+        guard lock.withLock({ syncing ? false : { syncing = true; return true }() }) else { return }   // uno a la vez
+        defer { lock.withLock { syncing = false } }
+        if !(lock.withLock { sync.synced }) {
+            guard let first = try? await remote.syncChoices(since: 0, changes: [:]) else { return }
+            lock.withLock {
+                for (id, theirs) in first.changed {
+                    var mine = all[id] ?? Saved()
+                    var missing = OrbitalRemote.ChoiceChange(base: theirs.rev)
+                    if let v = theirs.audio { mine.audio = v } else if let v = mine.audio { missing.audio = v }
+                    if let v = theirs.spanish { mine.spanish = v } else if let v = mine.spanish { missing.spanish = v }
+                    if let v = theirs.subtitles { mine.subtitles = v } else if let v = mine.subtitles { missing.subtitles = v }
+                    all[id] = mine
+                    sync.revs[id] = theirs.rev
+                    if missing != OrbitalRemote.ChoiceChange(base: theirs.rev) { sync.pending[id] = missing }
+                }
+                for (id, mine) in all where first.changed[id] == nil && (mine.audio != nil || mine.subtitles != nil) {
+                    sync.pending[id] = OrbitalRemote.ChoiceChange(audio: mine.audio, spanish: mine.spanish, subtitles: mine.subtitles, base: 0)
+                }
+                sync.rev = first.rev
+                sync.synced = true
+                kv.set(Self.key, data: try? JSONEncoder().encode(all))
+                saveSync()
+            }
+        }
+        let (since, sent) = lock.withLock { (sync.rev, sync.pending) }
+        guard let reply = try? await remote.syncChoices(since: since, changes: sent) else { return }
+        lock.withLock {
+            for (id, change) in sent where sync.pending[id] == change { sync.pending[id] = nil }   // lo que cambió mientras, se manda la próxima
+            for (id, theirs) in reply.changed {
+                sync.revs[id] = theirs.rev
+                if sync.pending[id] != nil { continue }   // aquí hay algo más nuevo: va en la siguiente
+                let value = Saved(audio: theirs.audio, subtitles: theirs.subtitles, spanish: theirs.spanish)
+                all[id] = value.audio == nil && value.subtitles == nil && value.spanish == nil ? nil : value
+            }
+            sync.rev = reply.rev
+            kv.set(Self.key, data: try? JSONEncoder().encode(all))
+            saveSync()
         }
     }
+
+    /// Lo que falta mandar (pruebas y diagnóstico).
+    public var pendingChoices: [String: OrbitalRemote.ChoiceChange] { lock.withLock { sync.pending } }
 }

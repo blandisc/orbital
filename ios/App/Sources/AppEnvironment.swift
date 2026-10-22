@@ -263,6 +263,7 @@ final class AppEnvironment: ObservableObject {
             await liveActivity.setSuppressed(true)   // una sola actividad: la de iOS mientras dura la tarea
         }
         downloadContinuation.onEnded = { await liveActivity.setSuppressed(false) }
+        services.titlePrefs.onPendingChoice = { [weak self] in Task { @MainActor in self?.scheduleChoiceSync() } }
         downloadContinuation.onExpired = { if UIApplication.shared.applicationState != .active { await lanes.setForeground(false) } }
         Task {
             for await items in services.downloads.makeUpdates() {
@@ -320,6 +321,23 @@ final class AppEnvironment: ObservableObject {
 
     /// En segundo plano (iOS lo permite cuando quiere): se mira lo que dejó la TV y se encolan las descargas, que siguen en la
     /// sesión de fondo. Lo seguro es abrir la app; esto es de mejor esfuerzo.
+    /// El audio, la variante y los subtítulos de cada título valen en la TV y aquí: se manda lo que cambió y se trae lo de
+    /// la TV (al abrir la app y unos segundos después de elegir algo). Sin tu Orbital, nada se pierde: espera.
+    func syncChoices() async {
+        guard services.orbital.isConfigured else { return }
+        await services.titlePrefs.syncChoices(with: services.orbital)
+    }
+
+    private var choiceSync: Task<Void, Never>?
+    func scheduleChoiceSync() {
+        choiceSync?.cancel()
+        choiceSync = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(3))   // varias elecciones seguidas (audio y subtítulos) van juntas
+            guard !Task.isCancelled else { return }
+            await self?.syncChoices()
+        }
+    }
+
     func checkTVInbox() async {
         guard services.orbital.isConfigured, let snapshot = try? await services.orbital.snapshot() else { return }
         await inbox.process(snapshot.inbox)
