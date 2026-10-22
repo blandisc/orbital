@@ -13,6 +13,7 @@ log = logging.getLogger(__name__)
 
 
 MAX_DISMISSED = 2000  # «No me interesa» guardados (los más viejos se olvidan)
+MAX_CHECKED = 2000  # versiones cuyo audio real ya se vio (como el iPhone, `TitlePreferences.checkedLimit`)
 _NUMBER = "número"
 # Qué tipo lleva cada ajuste: un «abc» en video_idle_minutes impedía arrancar (int("abc")).
 SETTING_TYPES = {"audio": str, "subtitles": str, "quality": str, "text_size": str, "sub_scale": _NUMBER,
@@ -39,8 +40,9 @@ class State:
         # "dismissed": sugerencias de «Para ti» que dijiste «No me interesa» (clave → cuándo).
         # "inbox": lo que la TV le manda al iPhone y él aún no recoge (id → pendiente; ver companion.py).
         # "opened": cuándo entraste por última vez a cada consola (fila → cuándo): lo nuevo deja de anunciarse.
+        # "checked": las pistas de audio reales de cada versión que ya se abrió (huella → ["es-419", "en"]).
         self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}, "dismissed": {}, "inbox": {},
-                            "opened": {}}
+                            "opened": {}, "checked": {}}
         self._frozen = False  # no se pudo leer el archivo: se vive en memoria y NO se pisa
         if path and path.exists():
             self._load(path)
@@ -93,6 +95,8 @@ class State:
         self._data["dismissed"] = {k: number(v) for k, v in self._data["dismissed"].items()}
         self._data["settings"] = {k: v for k, v in self._data["settings"].items() if _setting_ok(k, v)}
         self._data["inbox"] = {k: v for k, v in self._data["inbox"].items() if isinstance(v, dict) and v.get("action") in ("open", "download")}
+        self._data["checked"] = {k: v for k, v in self._data["checked"].items()
+                                 if isinstance(v, list) and v and all(isinstance(c, str) and c for c in v)}
 
     def _save(self) -> None:
         """Escritura atómica (no se corrompe si se apaga la consola). Si Windows no deja escribir (un
@@ -203,6 +207,27 @@ class State:
                 for old in sorted(dismissed, key=dismissed.get)[:len(dismissed) - MAX_DISMISSED]:
                     del dismissed[old]
             self._save()
+
+    def checked_audio(self, key: str) -> list[str] | None:
+        """El audio real de una versión que ya se abrió («es-419», «en»…), o None si nunca se vio."""
+        with self._lock:
+            codes = self._data["checked"].get(key)
+            return list(codes) if codes else None
+
+    def remember_checked(self, key: str, codes: list[str]) -> bool:
+        """Se abrió una versión: sus pistas de audio reales. True si cambió algo (lo ordenado ya no vale)."""
+        if not key or not codes:
+            return False
+        with self._lock:
+            checked = self._data["checked"]
+            if checked.get(key) == codes:
+                return False
+            checked.pop(key, None)
+            checked[key] = list(codes)  # al final: las más viejas se van primero
+            while len(checked) > MAX_CHECKED:
+                del checked[next(iter(checked))]
+            self._save()
+            return True
 
     def dismissed(self) -> set[str]:
         with self._lock:

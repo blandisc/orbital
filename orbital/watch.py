@@ -26,6 +26,7 @@ from .launcher import Launcher
 from .library import addons, cinemeta, localize, streams, stremio_api
 from .library import tmdb as tmdb_api
 from .library.models import LibraryItem
+from .playback import track_variant
 from .scrobble import TraktScrobbler
 from .sessions import Sessions
 from .state import State
@@ -63,6 +64,32 @@ def spanish_variant(code: str | None) -> str:
     if not code.startswith("es-"):
         return ""
     return "es-ES" if code == "es-es" else "es-419"
+
+
+# ISO 639-2 (como etiqueta mpv las pistas) → el código de dos letras de las fuentes.
+TRACK_LANGS = {"eng": "en", "spa": "es", "esl": "es", "esp": "es", "fre": "fr", "fra": "fr", "ita": "it", "ger": "de",
+               "deu": "de", "por": "pt", "jpn": "ja", "kor": "ko", "chi": "zh", "zho": "zh", "rus": "ru", "pol": "pl",
+               "cze": "cs", "ces": "cs", "hun": "hu", "tur": "tr", "ara": "ar", "hin": "hi", "ukr": "uk", "dut": "nl",
+               "nld": "nl", "swe": "sv"}
+
+
+def audio_codes(tracks: list, dub: str = "") -> list[str]:
+    """Las pistas de audio de un archivo como idiomas de versión: «es-419» / «es-ES» si la pista lo dice; si dice solo
+    «spa» y el nombre de la fuente decía el doblaje (`dub`), ese. Sin idiomas que se entiendan (und), nada."""
+    out: list[str] = []
+    for t in tracks or []:
+        if not isinstance(t, dict) or t.get("type") != "audio":
+            continue
+        lang = str(t.get("lang") or "").lower().replace("_", "-")
+        base = TRACK_LANGS.get(lang) or (lang.split("-")[0] if len(lang.split("-")[0]) == 2 else "")
+        if not base:
+            continue
+        code = base
+        if base == "es":
+            code = track_variant(lang, str(t.get("title") or "")) or streams.DUB_CODES.get(dub, "") or "es"
+        if code not in out:
+            out.append(code)
+    return out
 
 
 SUBTITLE_LINES = {"": "Sin subtítulos", "forced": "Solo traducciones en pantalla"}
@@ -247,6 +274,7 @@ class Watch:
                                             lambda: self.setting("language", config.ui.language))
         self.cinemeta.localize = self.localizer.meta
         self.streams = streams.StreamFinder(self.addons)
+        self.streams.checked = self.state.checked_audio  # lo que ya se vio ordena con sus pistas reales
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
             on_idle=lambda title, minutes, live=False: self.events.publish({
@@ -489,6 +517,15 @@ class Watch:
                 self.state.set_pref(f"stremio:{meta['meta_id']}", "spanish", spanish_variant(code))
             log.info("%s recordará %s: %s", meta.get("title") or meta["meta_id"], kind, lang or "sin subtítulos")
 
+    def _remember_checked(self, meta: dict, tracks: list) -> None:
+        """Se abrió una versión: el audio que trae de verdad queda anotado por su huella (como el iPhone), y la ficha y
+        la lista dejan de adivinarlo por el nombre."""
+        if not meta.get("source_key") or meta.get("synthetic"):
+            return
+        codes = audio_codes(tracks, meta.get("source_dub") or "")
+        if self.state.remember_checked(meta["source_key"], codes):
+            self.streams.forget(meta.get("kind") or "movie", meta.get("video_id") or "")
+
     def stream_sources(self, kind: str, video_id: str, prefs: streams.Preferences | None = None) -> list[streams.Source]:
         """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada). Tu OneDrive ya no va aquí
         (como el iPhone): tu copia se ve desde Mi media (play_own)."""
@@ -536,6 +573,7 @@ class Watch:
         p.on_send_iphone = self._send_to_phone
         p.idle_seconds = int(self.setting("video_idle_minutes", self.config.sessions.video_idle_minutes)) * 60
         p.on_language = self._remember_language
+        p.on_audio_tracks = self._remember_checked
         p.spanish_provider = lambda meta: self.language_for(meta["meta_id"])[0].spanish if meta.get("meta_id") else ""
         p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
@@ -588,7 +626,7 @@ class Watch:
         return {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title, "detail": detail,
                 "facts": facts, "description": description, "poster": poster,
                 "source": source.index, "source_label": source_label(source), "binge": source.binge,
-                "source_key": source.key, "tried": [source.index]}
+                "source_key": source.key, "source_dub": source.dub, "tried": [source.index]}
 
     def best_source(self, kind: str, video_id: str, binge: str | None = None,
                     skip: set[int] | None = None, prefs: streams.Preferences | None = None) -> streams.Source | None:

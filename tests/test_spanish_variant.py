@@ -140,3 +140,39 @@ def test_ver_y_la_ficha_eligen_la_misma(library, monkeypatch):
     assert w.choose_source("movie", "tt1", prefs) is found[0]
     assert w.choose_source("movie", "tt1", prefs, {"video_id": "tt1", "source": found[1].key}) is found[1]  # «Continuar»
     assert w.choose_source("movie", "tt1", prefs, {"video_id": "tt1", "source": "ya-no-está"}) is found[0]
+
+
+def test_al_abrir_una_version_se_anota_su_audio_real_y_ordena_con_el(library):
+    """Como el iPhone («Comprobado»): lo que ya se vio deja de adivinarse por el nombre."""
+    w = library.watch
+    tracks = [{"id": 1, "type": "audio", "lang": "spa", "title": "Latino"}, {"id": 2, "type": "audio", "lang": "eng"},
+              {"id": 3, "type": "sub", "lang": "spa"}, {"id": 4, "type": "audio", "lang": "und"}]
+    assert watch.audio_codes(tracks) == ["es-419", "en"]
+    assert watch.audio_codes([{"type": "audio", "lang": "spa"}], dub="castellano") == ["es-ES"]  # el nombre lo decía
+    assert watch.audio_codes([{"type": "audio", "lang": "spa"}]) == ["es"]
+    assert watch.audio_codes([{"type": "audio"}]) == []  # sin idiomas: no se anota nada
+    spanish = source(0, SPANISH)
+    meta = {"kind": "series", "video_id": "tt1:1:1", "source_key": spanish.key, "source_dub": spanish.dub}
+    w._remember_checked(meta, tracks)
+    assert w.state.checked_audio(spanish.key) == ["es-419", "en"]
+    w.streams.checked = w.state.checked_audio
+    real = source(0, SPANISH)
+    streams.apply_checked(real, w.state.checked_audio(real.key))
+    assert (real.languages, real.dub, real.checked, real.tags[0]) == (["es", "en"], "latino", True, "Latino")
+    # Una pista «spa» que no dice cuál no borra el doblaje que decía el nombre.
+    lat = source(1, LATINO)
+    streams.apply_checked(lat, ["es"])
+    assert lat.dub == "latino" and lat.languages == ["es"]
+    eng = source(2, LATINO)
+    streams.apply_checked(eng, ["en"])  # decía latino y en realidad es inglés
+    assert eng.dub == "" and eng.languages == ["en"] and "Latino" not in eng.tags
+
+
+def test_lo_anotado_se_guarda_y_tiene_tope(tmp_path):
+    from orbital import state as state_mod
+    s = state_mod.State(tmp_path / "state.json")
+    assert s.remember_checked("a", ["es-419"]) and not s.remember_checked("a", ["es-419"])
+    assert state_mod.State(tmp_path / "state.json").checked_audio("a") == ["es-419"]
+    for i in range(state_mod.MAX_CHECKED + 5):
+        s.remember_checked(f"k{i}", ["en"])
+    assert s.checked_audio("a") is None and s.checked_audio(f"k{state_mod.MAX_CHECKED + 4}") == ["en"]

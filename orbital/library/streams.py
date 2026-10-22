@@ -101,6 +101,7 @@ class Source:
     score: float = 0.0
     binge: str | None = None  # behaviorHints.bingeGroup: misma calidad/idioma en el siguiente episodio
     dub: str = ""  # en español: "latino", "castellano" o "" si no lo dice (con los dos, "latino": trae esa pista)
+    checked: bool = False  # el idioma no sale del nombre: ya se abrió y estas son sus pistas
 
     @property
     def key(self) -> str:
@@ -211,6 +212,19 @@ def parse(stream: dict, addon: str, transport_url: str, index: int) -> Source:
     return src
 
 
+def apply_checked(src: Source, codes: list[str]) -> None:
+    """Las pistas reales de una versión que ya se vio mandan sobre lo que dice su nombre («es-419» → latino). Una pista
+    «spa» que no dice cuál no borra el doblaje que el nombre sí decía."""
+    bases = list(dict.fromkeys(c.split("-")[0] for c in codes))
+    if not bases:
+        return
+    dub = "latino" if "es-419" in codes else "castellano" if "es-ES" in codes else src.dub if "es" in bases else ""
+    src.tags = [t for t in src.tags if t not in ("Latino", "Castellano")]
+    if dub:
+        src.tags.insert(0, dub.capitalize())
+    src.languages, src.dub, src.checked = bases, dub, True
+
+
 def spanish_dub(text: str) -> str:
     """"latino", "castellano" o "" según lo que diga el título de la fuente. Si dice los dos, "latino" (trae esa pista)."""
     if LATINO.search(text) or LATINO_STRICT.search(text):
@@ -305,6 +319,7 @@ class StreamFinder:
         self.timeout = timeout
         self._cache: dict[str, tuple[float, list[Source]]] = {}
         self._down: dict[str, float] = {}
+        self.checked = None  # (huella) -> ["es-419", "en"] | None: el audio real de lo que ya se vio
         self.outcome: dict[str, str] = {}  # kind:video -> "ok" | "offline" | "no-addons" (para decir por qué no hay)  # complemento -> hasta cuándo no se le pregunta (no respondió)
         self._lock = threading.Lock()
 
@@ -374,7 +389,11 @@ class StreamFinder:
                 while index in seen:  # el mismo enlace dos veces: la segunda, el número siguiente
                     index = (index + 1) % 2**31
                 try:
-                    sources.append(parse(stream, addon.name, addon.url, index))
+                    src = parse(stream, addon.name, addon.url, index)
+                    real = self.checked(src.key) if self.checked else None
+                    if real:
+                        apply_checked(src, real)
+                    sources.append(src)
                 except PARSE_ERRORS as exc:  # una fuente con datos raros se salta, no tumba la lista
                     log.info("Fuente rara de %s: %s", addon.name, exc)
                     continue
@@ -391,6 +410,12 @@ class StreamFinder:
             stamp = time.time() - (CACHE_SECONDS - RETRY_FAILED if failed else 0)
             self._cache[key] = (stamp, ranked)
         return ranked
+
+    def forget(self, kind: str, video_id: str) -> None:
+        """Lo ordenado de ese video ya no vale (se supo su audio real): la próxima vez se vuelve a ordenar."""
+        with self._lock:
+            for key in [k for k in self._cache if k.startswith(f"{kind}:{video_id}:")]:
+                del self._cache[key]
 
     def get(self, kind: str, video_id: str, prefs: Preferences, index: int) -> Source | None:
         hit = self._cache.get(cache_key(kind, video_id, prefs))

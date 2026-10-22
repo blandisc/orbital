@@ -239,6 +239,7 @@ class OrbitalPlayer(PlayerScreen):
         self.system_volume = None  # (leer, escribir) del volumen de Windows: un solo volumen (ver player_screen._muted)
         self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
         self.spanish_provider = None  # (meta) -> "es-419" | "es-ES" | "": el doblaje que va con ese título
+        self.on_audio_tracks = None  # (meta, pistas): al abrir, el audio real de esa versión (se anota)
         # TV en vivo (ver tv.py): el reproductor solo pregunta y avisa, no sabe de listas ni de salud.
         self.channels_provider = None  # (meta, categoría | None) -> {"category", "categories", "channels"}
         self.on_play_channel = None  # (meta, id_del_canal, categoría | None): sintonizar ese canal
@@ -736,6 +737,8 @@ class OrbitalPlayer(PlayerScreen):
             self.toast("Esta fuente no trae audio en tu idioma · Y › Fuente para elegir otra", 6)
         elif segment.start > 5:
             self.toast("Sigues donde te quedaste · ◀ regresa", 3.5)
+        if self.on_audio_tracks and not segment.live:
+            self._safe(self.on_audio_tracks, segment.meta, tracks)
         self._pick_dub(segment, tracks)
         if not self._apply_sub_pick(tracks):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
