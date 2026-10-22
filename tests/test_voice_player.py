@@ -48,9 +48,9 @@ class FakePlayer:
     def toast(self, text, seconds=1.6): self.calls.append(("toast", text))
     def add_subtitles(self, url, lang): self.calls.append(("add-subs", url, lang))
 
-    def select_language(self, kind, lang):
-        if lang in self.tracks:
-            self.calls.append((kind, lang))
+    def select_language(self, kind, lang, variant=""):
+        if (variant or lang) in self.tracks:
+            self.calls.append((kind, variant or lang))
             return True
         return False
 
@@ -279,8 +279,9 @@ def test_persona_phrases(text, expected):
 
 
 def test_more_languages(voice):
-    voice.catalog.player.tracks = ("es", "fr")
-    assert voice.handle_intent("AudioLanguageIntent", {"language": "castellano"}).speech == "Audio en español."
+    voice.catalog.player.tracks = ("es", "es-ES", "fr")
+    assert voice.handle_intent("AudioLanguageIntent", {"language": "castellano"}).speech == "Audio en castellano."
+    assert voice.handle_intent("AudioLanguageIntent", {"language": "español"}).speech == "Audio en español."
     assert voice.handle_intent("SubtitlesIntent", {"language": "fr"}).speech == "Subtítulos en francés."
     unknown = voice.handle_intent("SubtitlesIntent", {"language": "klingon"})
     assert not unknown.ok and "klingon" in unknown.speech

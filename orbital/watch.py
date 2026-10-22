@@ -535,6 +535,41 @@ class Watch:
         subtitles = saved.get("subtitles")
         return prefs, subtitles if isinstance(subtitles, str) else self.subtitles_lang
 
+    def asked_language(self, meta: dict) -> tuple[streams.Preferences, str]:
+        """El idioma de este video: el que se pidió por voz solo para esta vez (`meta["asked"]`: «pon Los Simpson en
+        latino») encima del que recuerda el título. Lo usan el respaldo, otra versión y el siguiente episodio."""
+        prefs, subtitles = self.language_for(meta["meta_id"]) if meta.get("meta_id") else (self.stream_prefs, self.subtitles_lang)
+        asked = meta.get("asked")
+        asked = asked if isinstance(asked, dict) else {}
+        if isinstance(asked.get("audio"), str) and asked["audio"]:
+            variant = asked.get("spanish") if asked.get("spanish") in streams.SPANISH_VARIANTS else ""
+            prefs = replace(prefs, audio=asked["audio"], spanish=variant or (prefs.spanish if asked["audio"] == "es" else ""))
+        if isinstance(asked.get("subtitles"), str):
+            subtitles = asked["subtitles"]
+        return prefs, subtitles
+
+    def remember_title_language(self, meta_id: str, audio: str | None = None, spanish: str | None = None,
+                                subtitles: str | None = None) -> None:
+        """«… siempre en latino», «… siempre con subtítulos en inglés»: ese título lo recuerda (audio, doblaje y
+        subtítulos). Lo dicho por voz sin «siempre» es solo para esta vez y no pasa por aquí."""
+        key = f"stremio:{meta_id}"
+        if audio:
+            self.state.set_pref(key, "audio", audio)
+            if spanish is not None or audio != "es":
+                self.state.set_pref(key, "spanish", spanish if audio == "es" and spanish in streams.SPANISH_VARIANTS else "")
+        if subtitles is not None:
+            self.state.set_pref(key, "subtitles", subtitles)
+        log.info("%s recordará audio %s%s, subtítulos %s", meta_id, audio, f" ({spanish})" if spanish else "", subtitles)
+
+    def _spanish_for(self, meta: dict) -> str:
+        """El doblaje del español de este video (para elegir la pista latina o castellana): el pedido para esta vez o el
+        del título."""
+        asked = meta.get("asked")
+        asked = asked if isinstance(asked, dict) else {}
+        if asked.get("spanish") in streams.SPANISH_VARIANTS:
+            return asked["spanish"]
+        return self.language_for(meta["meta_id"])[0].spanish if meta.get("meta_id") else ""
+
     def _remember_language(self, meta: dict, kind: str, code: str) -> None:
         """Cambiaste el audio o los subtítulos en el reproductor: esa serie (o película) lo recuerda."""
         lang = language_code(code)
@@ -602,7 +637,7 @@ class Watch:
         p.on_language = self._remember_language
         p.on_sub_kept = self._safe_remember  # «Probar otros» › «Este va bien»: esos subtítulos (y su sincronía), ya
         p.on_audio_tracks = self._remember_checked
-        p.spanish_provider = lambda meta: self.language_for(meta["meta_id"])[0].spanish if meta.get("meta_id") else ""
+        p.spanish_provider = self._spanish_for
         p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
         player_ui.set_text_size(self.setting("text_size", "normal"))  # la letra del reproductor sigue a Ajustes
@@ -745,10 +780,12 @@ class Watch:
 
     def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str, keep: bool = False,
                     from_start: bool = False, prefs: streams.Preferences | None = None,
-                    subtitles: str | None = None, sub_pick: dict | None = None, start_at: float | None = None) -> str:
+                    subtitles: str | None = None, sub_pick: dict | None = None, start_at: float | None = None,
+                    asked: dict | None = None) -> str:
         """Reproduce la fuente elegida: en el reproductor de Orbital (mpv, con el mando) o, si no
         está o así se configuró, directo en el de Stremio (sin su lista de fuentes).
-        `prefs`/`subtitles`: idioma pedido para esta vez ("…en español"); si no, el de Ajustes."""
+        `prefs`/`subtitles`: idioma pedido para esta vez ("…en español"); si no, el de Ajustes. `asked`: lo pedido por voz
+        para esta vez (audio, doblaje, subtítulos), que siguen el respaldo, otra versión y el siguiente episodio."""
         self.sessions.revealing = False
         saved_prefs, saved_subs = self.language_for(meta_id)
         prefs = prefs or saved_prefs
@@ -771,7 +808,7 @@ class Watch:
         if mpv_exe and url:
             self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep, source=source,
                              from_start=from_start, audio=prefs.audio, subtitles=subtitles, sub_pick=sub_pick,
-                             start_at=start_at)
+                             start_at=start_at, asked=asked)
             return "orbital"
         uri = streams.player_link(source, cinemeta.MANIFEST, kind, meta_id, video_id)
         self.sessions.open_stremio(uri, title)
@@ -831,7 +868,7 @@ class Watch:
     def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
                     keep: bool = False, source: streams.Source | None = None, from_start: bool = False,
                     audio: str | None = None, subtitles: str | None = None, sub_pick: dict | None = None,
-                    own: bool = False, start_at: float | None = None) -> None:
+                    own: bool = False, start_at: float | None = None, asked: dict | None = None) -> None:
         """mpv a pantalla completa, desde donde te quedaste (según Stremio); con `start_at`, desde ese segundo (el que
         venía viendo el iPhone)."""
         if not from_start and self.player.starting(video_id, source.key if source else None):
@@ -849,6 +886,8 @@ class Watch:
             {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title}
         if own:
             meta["own"] = True  # desde Mi media: el siguiente episodio también de tu carpeta
+        if asked:
+            meta["asked"] = asked  # «pon Los Simpson en latino»: solo para esta vez (el título no lo recuerda)
         # Lo que estaba abierto se cierra justo antes de abrir el video, no antes de buscar sus datos por
         # internet (si algo fallaba, tu juego ya se había cerrado para nada).
         if self.sessions.before_launch and not keep:
@@ -872,7 +911,8 @@ class Watch:
                                         ready=lambda: bool(self.player.segment and self.player.segment.playing))
 
     def _load_in_player(self, kind: str, meta_id: str, video_id: str, title: str, source: streams.Source,
-                        start: float = 0, message: str | None = None, tried: list[int] | None = None, own: bool = False) -> bool:
+                        start: float = 0, message: str | None = None, tried: list[int] | None = None, own: bool = False,
+                        asked: dict | None = None) -> bool:
         url = self._url_for(source)
         if not url:
             return False
@@ -880,7 +920,9 @@ class Watch:
         meta["tried"] = sorted(set(tried or []) | {source.index})
         if own:
             meta["own"] = True
-        prefs, subtitles = self.language_for(meta_id)  # el audio y los subtítulos que esta serie recuerda
+        if asked:
+            meta["asked"] = asked
+        prefs, subtitles = self.asked_language(meta)  # el audio y los subtítulos que esta serie recuerda (o los de esta vez)
         return self.player.load(url, title, meta, start=start, message=message, subtitles=subtitles, audio=prefs.audio,
                                 fallback_subs=self._fallback_subs(kind, video_id, subtitles))
 
@@ -889,7 +931,7 @@ class Watch:
         title = meta.get("title") or "esto"
         if alive and meta.get("source") is not None:
             tried = set(meta.get("tried") or [meta["source"]])
-            prefs = self.language_for(meta["meta_id"])[0]
+            prefs = self.asked_language(meta)[0]
             try:
                 source = self.best_source(meta["kind"], meta["video_id"], meta.get("binge"), skip=tried, prefs=prefs)
                 # El respaldo no cae en una grabación de cine ni en un tráiler sin que lo elijas tú.
@@ -903,7 +945,8 @@ class Watch:
                 other = prefs.audio not in source.languages  # otro idioma: se dice cuál
                 label = player_source_label(source) if other else source_label(source)
                 ok = self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], title, source,
-                                          start=position, message=f"Probando otra versión · {label}", tried=list(tried))
+                                          start=position, message=f"Probando otra versión · {label}", tried=list(tried),
+                                          asked=meta.get("asked"))
                 if ok:
                     return True
                 tried.add(source.index)
@@ -918,18 +961,18 @@ class Watch:
         (antes solo las 12 primeras: con la serie en inglés, las de español no salían)."""
         if meta.get("source") is None:
             return []
-        found = self.stream_sources(meta["kind"], meta["video_id"], self.language_for(meta["meta_id"])[0])
+        found = self.stream_sources(meta["kind"], meta["video_id"], self.asked_language(meta)[0])
         return [{"id": s.index, **player_source_row(s), "current": s.index == meta["source"]} for s in found]
 
     def _switch_source(self, meta: dict, index: int, position: float) -> bool:
         """False si no se pudo (el reproductor lo avisa). Una fuente de un solo idioma distinto (la de
         español en una serie que estaba en inglés): la serie lo recuerda para los siguientes episodios."""
-        prefs = self.language_for(meta["meta_id"])[0]
+        prefs = self.asked_language(meta)[0]
         source = self.streams.get(meta["kind"], meta["video_id"], prefs, index)
         if source is None:
             return False
         ok = self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], meta.get("title") or "",
-                                  source, start=position, message=f"Cambiando a {source_label(source)}…")
+                                  source, start=position, message=f"Cambiando a {source_label(source)}…", asked=meta.get("asked"))
         if ok and len(source.languages) == 1 and source.languages[0] != prefs.audio:
             self._remember_language(meta, "audio", source.languages[0])
         return ok
@@ -947,26 +990,29 @@ class Watch:
             return None
         title, detail = self._episode_title(info, meta["meta_id"], next_id)
         try:
-            self.stream_sources("series", next_id, self.language_for(meta["meta_id"])[0])  # que al llegar el momento ya esté buscada
+            self.stream_sources("series", next_id, self.asked_language(meta)[0])  # que al llegar el momento ya esté buscada
         except stremio_api.StremioError:
             pass
         label, name = self._episode_label(info, next_id)
         return {"label": label, "title": name,
-                "play": lambda: self._play_episode(meta["meta_id"], next_id, title, meta.get("binge"), own=bool(meta.get("own")))}
+                "play": lambda: self._play_episode(meta["meta_id"], next_id, title, meta.get("binge"), own=bool(meta.get("own")),
+                                                   asked=meta.get("asked"))}
 
     def _play_episode(self, meta_id: str, video_id: str, title: str, binge: str | None = None,
-                      start: float = 0, own: bool = False) -> bool | None:
+                      start: float = 0, own: bool = False, asked: dict | None = None) -> bool | None:
         """Otro episodio en el mismo reproductor (sin volver a Orbital). False: no cargó; None: ya se avisó. Desde Mi
         media (`own`), de tu carpeta si está."""
         mine = self.onedrive.source("series", video_id) if own and self.onedrive is not None else None
         if mine is not None:
-            return self._load_in_player("series", meta_id, video_id, title, mine, start=start, own=True)
-        # El idioma que esta serie recuerda (antes: el de Ajustes, y el siguiente episodio salía en otro idioma).
-        source = self.best_source("series", video_id, binge, prefs=self.language_for(meta_id)[0])
+            return self._load_in_player("series", meta_id, video_id, title, mine, start=start, own=True, asked=asked)
+        # El idioma que esta serie recuerda (antes: el de Ajustes, y el siguiente episodio salía en otro idioma); el pedido
+        # por voz para esta vez sigue mientras no cierres el reproductor.
+        prefs = self.asked_language({"meta_id": meta_id, "asked": asked})[0]
+        source = self.best_source("series", video_id, binge, prefs=prefs)
         if source is None:
             self.player.toast("No encontré dónde ver ese episodio", 4)
             return None
-        return self._load_in_player("series", meta_id, video_id, title, source, start=start)
+        return self._load_in_player("series", meta_id, video_id, title, source, start=start, asked=asked)
 
     def _step_episode(self, meta: dict, delta: int) -> bool | None:
         """LT/RT en el reproductor: episodio anterior o siguiente."""
@@ -980,7 +1026,8 @@ class Watch:
             return
         title, _ = self._episode_title(info, meta["meta_id"], episodes[i])
         return self._play_episode(meta["meta_id"], episodes[i], title, meta.get("binge"),
-                                  start=self.resume_position(meta["meta_id"], episodes[i]), own=bool(meta.get("own")))
+                                  start=self.resume_position(meta["meta_id"], episodes[i]), own=bool(meta.get("own")),
+                                  asked=meta.get("asked"))
 
     def _season_episodes(self, meta: dict) -> list[dict]:
         """Y › Episodios en el reproductor: los de la temporada que estás viendo."""
@@ -1000,7 +1047,8 @@ class Watch:
         title, _ = self._episode_title(info, meta["meta_id"], video_id)
         # None: _play_episode ya avisó (no hay fuente); False sí es «no pude» y lo avisa el reproductor.
         return self._play_episode(meta["meta_id"], video_id, title, meta.get("binge"),
-                                  start=self.resume_position(meta["meta_id"], video_id), own=bool(meta.get("own")))
+                                  start=self.resume_position(meta["meta_id"], video_id), own=bool(meta.get("own")),
+                                  asked=meta.get("asked"))
 
     @property
     def native_player(self) -> bool:
@@ -1008,7 +1056,8 @@ class Watch:
         return self.config.stremio.player == "orbital" and self.has_addons and player.find_mpv() is not None
 
     def play_title(self, kind: str, meta_id: str, video_id: str, title: str, audio: str | None = None,
-                   wait: float = 0.0, from_start: bool = False) -> str | None:
+                   wait: float = 0.0, from_start: bool = False, spanish: str = "", subtitles: str | None = None,
+                   remember: bool = False) -> str | None:
         """Para la voz: pone algo sin preguntar, con la fuente recomendada. Buscar fuentes tarda
         unos segundos (Alexa corta a los ~8 s), así que se hace en segundo plano.
 
@@ -1016,15 +1065,27 @@ class Watch:
         encontré dónde ver…») en vez de «Poniendo…» y luego un aviso que solo se ve en la pantalla.
         Devuelve el problema (texto) si ya se sabe, o None (se está poniendo, o sigue buscando).
 
-        `audio`: idioma pedido ("…en español"). Si ninguna fuente lo trae, se pone la mejor en tu
-        idioma de siempre con subtítulos en el pedido, y se avisa."""
+        `audio`: idioma pedido ("…en español"; «es-419» / «es-ES» traen el doblaje). `spanish`: el doblaje («en
+        latino»: "es-419"; «en castellano»: "es-ES"; "" cualquiera): la versión elegida y la pista que suena lo respetan.
+        Si ninguna fuente trae el audio, se pone la mejor en tu idioma de siempre con subtítulos en el pedido, y se avisa.
+        `subtitles`: «… con subtítulos en inglés» ("" sin subtítulos). Todo es solo para esta vez (el respaldo, otra
+        versión y el siguiente episodio lo siguen mientras no cierres el reproductor); con `remember` («… siempre en
+        latino») el título lo recuerda."""
+        if audio and spanish_variant(audio):  # «es-419»: español latino
+            spanish, audio = spanish or spanish_variant(audio), "es"
+        spanish = spanish if audio == "es" and spanish in streams.SPANISH_VARIANTS else ""
         if not self.native_player:
             self.sessions.play_stremio(kind, meta_id, video_id, title)
+            if remember:
+                self.remember_title_language(meta_id, audio, spanish if audio else None, subtitles)
             return None
         searched = threading.Event()
         problem: list[str] = []
         # Sin idioma pedido: el que recuerda ese título (el mismo con el que se listan sus fuentes).
-        prefs = replace(self.stream_prefs, audio=audio) if audio else self.language_for(meta_id)[0]
+        prefs = self.language_for(meta_id)[0]
+        if audio:
+            prefs = replace(prefs, audio=audio, spanish=spanish or (prefs.spanish if audio == "es" else ""))
+        asked_subs = subtitles
 
         def run() -> None:
             try:
@@ -1036,22 +1097,27 @@ class Watch:
                     self.events.publish({"type": "toast", "message": message, "ok": False})
                     return
                 searched.set()
-                subtitles = None
+                subs = None
                 if audio and audio != self.stream_prefs.audio:
                     if audio in source.languages:
-                        subtitles = ""  # lo pediste doblado: sin subtítulos encima
+                        subs = ""  # lo pediste doblado: sin subtítulos encima
                     else:
-                        subtitles = audio
+                        subs = audio
                         name = {"es": "español", "en": "inglés"}.get(audio, audio)
                         self.events.publish({"type": "toast", "tone": "warn", "message": f"No hay audio en {name} para {title}",
                                              "detail": f"Va con subtítulos en {name}"})
-                self.play_source(kind, meta_id, video_id, source.index, title, prefs=prefs, subtitles=subtitles, from_start=from_start)
-                if audio:  # lo pediste en voz alta: el siguiente episodio y el respaldo siguen igual
-                    key = f"stremio:{meta_id}"
-                    if audio in source.languages:
-                        self.state.set_pref(key, "audio", audio)
-                    if subtitles is not None:
-                        self.state.set_pref(key, "subtitles", subtitles)
+                if spanish and audio in source.languages and streams.DUB_CODES.get(source.dub, spanish) != spanish:
+                    wanted, got = ("latino", "castellano") if spanish == "es-419" else ("castellano", "latino")
+                    self.events.publish({"type": "toast", "tone": "warn", "message": f"No hay versión en {wanted} para {title}",
+                                         "detail": f"Va en {got}"})
+                if asked_subs is not None:
+                    subs = asked_subs  # «… con subtítulos en inglés»: lo dicho manda
+                asked = {k: v for k, v in (("audio", audio or None), ("spanish", spanish or None), ("subtitles", subs))
+                         if v is not None}
+                self.play_source(kind, meta_id, video_id, source.index, title, prefs=prefs, subtitles=subs, from_start=from_start,
+                                 asked=asked or None)
+                if remember:  # «… siempre en latino»: el título lo recuerda (el siguiente episodio, «Ver», el iPhone…)
+                    self.remember_title_language(meta_id, audio, spanish if audio else None, subs)
             except Exception as exc:  # noqa: BLE001 - se avisa en pantalla
                 log.exception("No pude poner %s", title)
                 message = f"No pude poner {title}: {exc}"

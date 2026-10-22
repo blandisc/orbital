@@ -5017,6 +5017,17 @@
         }
       }
     },
+    "En castellano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Castilian Spanish"
+          }
+        }
+      }
+    },
     "En cola": {
       "extractionState": "manual",
       "localizations": {
@@ -5123,6 +5134,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "On the TV: Settings › Accounts › iPhone"
+          }
+        }
+      }
+    },
+    "En latino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Latin American Spanish"
           }
         }
       }
@@ -10396,6 +10418,28 @@
         }
       }
     },
+    "Pon el audio en castellano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch the audio to Castilian Spanish"
+          }
+        }
+      }
+    },
+    "Pon el audio en latino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch the audio to Latin American Spanish"
+          }
+        }
+      }
+    },
     "Pon el siguiente episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -10462,6 +10506,17 @@
         }
       }
     },
+    "Pon subtítulos en inglés": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on English subtitles"
+          }
+        }
+      }
+    },
     "Pone en tu Orbital una película o una serie, donde ibas.": {
       "extractionState": "manual",
       "localizations": {
@@ -10495,6 +10550,17 @@
         }
       }
     },
+    "Ponga subtítulos en inglés": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on English subtitles"
+          }
+        }
+      }
+    },
     "Poniendo %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -10524,6 +10590,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Give the list a name"
+          }
+        }
+      }
+    },
+    "Ponlo en castellano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put it in Castilian Spanish"
+          }
+        }
+      }
+    },
+    "Ponlo en latino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put it in Latin American Spanish"
           }
         }
       }
@@ -10953,6 +11041,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Glass pill"
+          }
+        }
+      }
+    },
+    "Póngalo en castellano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put it in Castilian Spanish"
+          }
+        }
+      }
+    },
+    "Póngalo en latino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put it in Latin American Spanish"
           }
         }
       }
@@ -13153,6 +13263,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Subtitles later"
+          }
+        }
+      }
+    },
+    "Subtítulos en inglés": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English subtitles"
           }
         }
       }

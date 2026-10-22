@@ -296,7 +296,7 @@ def test_player_sources_show_all_with_language_first():
         return s
 
     found = [src(i, ["en"]) for i in range(15)] + [src(20, ["es"]), src(21, ["es"])]
-    fake = SimpleNamespace(language_for=lambda meta_id: (streams.Preferences(audio="en"), "es"),
+    fake = SimpleNamespace(asked_language=lambda meta: (streams.Preferences(audio="en"), "es"),
                            stream_sources=lambda kind, video, prefs: found)
     options = watch.Watch._player_sources(fake, {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1", "source": 14})
     ids = [o["id"] for o in options]

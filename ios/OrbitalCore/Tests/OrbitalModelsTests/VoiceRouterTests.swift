@@ -57,6 +57,17 @@ final class VoiceRouterTests: XCTestCase {
         XCTAssertEqual(VoiceRouter.route("Subtitles in English"), .console("subtitulos en ingles"))
         XCTAssertEqual(VoiceRouter.route("Search for Dune"), .console("busca dune"))
     }
+
+    func testLatinAndCastilianSpanishBecomeTheDub() {
+        XCTAssertEqual(VoiceRouter.route("In Latin Spanish"), .console("en latino"))
+        XCTAssertEqual(VoiceRouter.route("Audio in Castilian"), .console("en castellano"))
+        XCTAssertEqual(VoiceRouter.route("In Spanish"), .console("en espanol"), "«español» a secas: cualquiera de los dos")
+        XCTAssertEqual(VoiceRouter.route("Subtitles in Spanish"), .console("subtitulos en espanol"))
+        XCTAssertEqual(VoiceRouter.route("Subtitles in latino"), .console("subtitulos en latino"))
+        XCTAssertEqual(VoiceRouter.route("Play The Simpsons in Castilian Spanish"), .console("pon the simpsons en castellano"))
+        XCTAssertEqual(VoiceRouter.route("Play Into the Woods"), .console("pon into the woods"), "«in» dentro del título no es un idioma")
+        XCTAssertEqual(VoiceRouter.route("Pon Los Simpson siempre en latino"), .console("Pon Los Simpson siempre en latino"))
+    }
 }
 
 @MainActor

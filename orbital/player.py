@@ -1176,11 +1176,26 @@ class OrbitalPlayer(PlayerScreen):
         self.mpv.command("seek", seconds, "relative")
         self.show_hud()
 
-    def select_language(self, kind: str, lang: str) -> bool:
-        """Cambia a la pista de audio o subtítulos en ese idioma, si el video la trae."""
+    def select_language(self, kind: str, lang: str, variant: str = "") -> bool:
+        """Cambia a la pista de audio o subtítulos en ese idioma, si el video la trae. `variant` («es-419» / «es-ES»,
+        «pon el audio en latino»): la pista de ese doblaje (con las dos «spa», no la primera); False si solo trae la
+        del otro. Es solo para esta vez: si este video cambia de versión, la nueva sigue en ese doblaje."""
+        tracks = self.mpv.get("track-list") or []
+        if kind == "audio" and variant in ("es-419", "es-ES"):
+            pick = dub_track(tracks, "latino" if variant == "es-419" else "castellano")
+            if pick is False:
+                return False
+            if isinstance(pick, int) and not isinstance(pick, bool):
+                self.mpv.command("set_property", "aid", pick)
+                segment = self.segment
+                if segment is not None:
+                    asked = segment.meta.get("asked")
+                    asked = asked if isinstance(asked, dict) else {}
+                    segment.meta["asked"] = {**asked, "audio": "es", "spanish": variant}
+                self.toast(f"Audio: {'Latino' if variant == 'es-419' else 'Castellano'}")
+                return True
         codes = {c.lower() for c in build_lang_list(lang)}
-        track = next((t for t in self.mpv.get("track-list") or []
-                      if t.get("type") == kind and str(t.get("lang") or "").lower() in codes), None)
+        track = next((t for t in tracks if t.get("type") == kind and str(t.get("lang") or "").lower() in codes), None)
         if track is None:
             return False
         self.mpv.command("set_property", "aid" if kind == "audio" else "sid", track["id"])

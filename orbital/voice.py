@@ -35,13 +35,17 @@ CHANNEL_NEXT = {"next", "siguiente", "sube", "suba", "adelante", "otro"}
 CHANNEL_PREVIOUS = {"previous", "anterior", "baja", "baje", "atras", "el anterior"}
 QUICK_LOOKUP = 3.5  # s: Alexa corta a los ~8 s; si Trakt tarda, se enseña en pantalla y se dice que ahí está
 
+# «En latino» y «en castellano» piden el doblaje («es-419» / «es-ES»); «en español» es cualquiera de los dos. Alexa manda
+# el valor de su slot ya resuelto («es-419» llega como «es 419» al normalizarlo).
 LANGUAGES = {
     "ingles": "en", "english": "en", "en": "en",
-    "espanol": "es", "spanish": "es", "castellano": "es", "latino": "es", "es": "es",
+    "espanol": "es", "spanish": "es", "es": "es",
+    "latino": "es-419", "espanol latino": "es-419", "latin spanish": "es-419", "es 419": "es-419",
+    "castellano": "es-ES", "espanol de espana": "es-ES", "castilian": "es-ES", "es es": "es-ES",
     "frances": "fr", "french": "fr", "fr": "fr", "portugues": "pt", "brasileno": "pt", "pt": "pt",
     "italiano": "it", "it": "it", "aleman": "de", "de": "de", "japones": "ja", "ja": "ja", "coreano": "ko", "ko": "ko",
 }
-LANGUAGE_NAMES = {"en": "inglés", "es": "español", "fr": "francés", "pt": "portugués", "it": "italiano",
+LANGUAGE_NAMES = {"en": "inglés", "es": "español", "es-419": "latino", "es-ES": "castellano", "fr": "francés", "pt": "portugués", "it": "italiano",
                   "de": "alemán", "ja": "japonés", "ko": "coreano"}
 VAGUE_MEDIA = {"una pelicula", "una serie", "algo", "peliculas", "series", "una peli", "pelis", "algo bueno",
                "una telenovela", "una novela", "telenovelas", "novelas", "una caricatura", "caricaturas",
@@ -175,11 +179,50 @@ def episode_request(text: str) -> dict | None:
     for pattern in _EPISODE_ONLY:
         m = pattern.match(clean)
         if m:
-            return {k.rstrip("2"): v for k, v in m.groupdict().items() if v}
+            found = {k.rstrip("2"): v for k, v in m.groupdict().items() if v and k != "tail"}
+            return {**found, **_media_tail(m.group("tail"))}
     return None
 
 
-_LANGS = r"(?:espanol|ingles|frances|portugues|italiano|aleman|japones|coreano|original|latino|castellano)"
+_LANGS = (r"(?:espanol latino|espanol de espana|espanol|ingles|frances|portugues|italiano|aleman|japones|coreano|original"
+          r"|latino|castellano)")
+# Lo que va después del episodio: «… en latino», «… con subtítulos (en inglés)», en cualquier orden (`_media_tail`).
+_TAIL = rf"(?P<tail>(?:\s+(?:en\s+(?:{_LANGS}|\w+)|con\s+subtitulos(?:\s+en\s+(?:{_LANGS}|\w+))?))*)"
+
+
+def _media_tail(tail: str) -> dict[str, str]:
+    """« en latino con subtitulos en ingles» → {"language": "latino", "subtitles": "ingles"} («con subtítulos» solo: "1")."""
+    out: dict[str, str] = {}
+    for m in re.finditer(rf"con\s+subtitulos(?:\s+en\s+(?P<sub>{_LANGS}|\w+))?|en\s+(?P<lang>{_LANGS}|\w+)", tail or ""):
+        if m.group(0).startswith("con"):
+            out["subtitles"] = m.group("sub") or "1"
+        else:
+            out["language"] = m.group("lang")
+    return out
+
+
+# «Ponlo siempre en latino», «pon Los Simpson en latino siempre», «pon siempre subtítulos en inglés»: lo dicho por voz es
+# solo para esta vez; con «siempre» el título lo recuerda. («Lo de siempre» no: es lo que estabas viendo.)
+_ALWAYS_BEFORE = re.compile(r"(?:^|\s)(?:para\s+)?siempre\s+(?=(?:en|con|el\s+audio|el\s+idioma|los\s+subtitulos|subtitulos)\b)")
+_ALWAYS_AFTER = re.compile(rf"\b({_LANGS}|subtitulos)\s+(?:para\s+)?siempre$")
+
+
+def always_said(clean: str) -> tuple[str, bool]:
+    """La frase sin el «siempre» que va con el idioma o los subtítulos, y si lo dijo. `clean` ya normalizado."""
+    m = _ALWAYS_BEFORE.search(clean)
+    if m and not re.search(r"\bde\s*$", clean[:m.start() + 1]):
+        return re.sub(r"\s+", " ", clean[:m.start()] + " " + clean[m.end():]).strip(), True
+    m = _ALWAYS_AFTER.search(clean)
+    if m:
+        return clean[:m.start()] + m.group(1), True
+    return clean, False
+
+
+def split_language(code: str | None) -> tuple[str | None, str]:
+    """«es-419» → ("es", "es-419"); «en» → ("en", ""); None → (None, "")."""
+    if code in ("es-419", "es-ES"):
+        return "es", code
+    return code, ""
 
 _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     # --- el video que se está viendo, dicho en corto (el corpus del iPhone) ---
@@ -206,11 +249,12 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     (re.compile(r"^(?:pon|ponme|quiero ver|ver|sigue con|continua con)?\s*(?:lo\s+que\s+(?:estaba|estabamos|estuve)\s+viendo"
                 r"|lo\s+ultimo\s+que\s+vi|donde\s+me\s+quede|donde\s+nos\s+quedamos)$"), "ContinueWatchingIntent", None),
     # Episodios: «la temporada 2 de X», «el primer capítulo de X», «el último episodio de X», «temporada 2 capítulo 3»
-    (re.compile(r"^(?:pon|ponga|quiero ver|ver)\s+(?:la\s+)?temporada\s+(?P<season>\d+)\s+de\s+(?P<series>.+)$"),
+    (re.compile(rf"^(?:pon|ponga|quiero ver|ver)\s+(?:la\s+)?temporada\s+(?P<season>\d+)\s+de\s+(?P<series>.+?){_TAIL}$"),
      "WatchEpisodeIntent", None, {"episode": "1"}),
-    (re.compile(r"^(?:pon|ponga|quiero ver|ver)\s+(?:el\s+)?(?:episodio|capitulo)\s+(?P<episode>\d+)\s+de\s+(?!la\s+temporada)(?P<series>.+)$"),
+    (re.compile(rf"^(?:pon|ponga|quiero ver|ver)\s+(?:el\s+)?(?:episodio|capitulo)\s+(?P<episode>\d+)\s+de\s+(?!la\s+temporada)"
+                rf"(?P<series>.+?){_TAIL}$"),
      "WatchEpisodeIntent", None, {"season": "1"}),
-    (re.compile(r"^(?:pon|ponga|quiero ver|ver)\s+(?:el\s+)?(?:ultimo|nuevo)\s+(?:episodio|capitulo)\s+de\s+(?P<series>.+)$"),
+    (re.compile(rf"^(?:pon|ponga|quiero ver|ver)\s+(?:el\s+)?(?:ultimo|nuevo)\s+(?:episodio|capitulo)\s+de\s+(?P<series>.+?){_TAIL}$"),
      "WatchEpisodeIntent", None, {"latest": "1"}),
     (re.compile(r"^(?:pon\s+)?(?:la\s+)?temporada\s+(?P<season>\d+)\s*,?\s+(?:episodio|capitulo|cap)\s+(?P<episode>\d+)$"),
      "PlayEpisodeIntent", None),
@@ -222,13 +266,13 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
                 r"(?:episodio|capitulo|cap)\s+(?P<episode>\d+)(?:\s+de\s+la\s+temporada\s+(?P<season>\d+))?$"),
      "PlayEpisodeIntent", None),
     # "quiero ver los simpson temporada 5 episodio 3 en español"
-    (re.compile(rf"^(?:quiero ver|pon|ponga|ver|reproduce)\s+(?:el\s+)?(?P<series>.+?)\s*,?\s+{_EPISODE}"
-                r"(?:\s+en\s+(?P<language>\w+))?$"), "WatchEpisodeIntent", None),
+    (re.compile(rf"^(?:quiero ver|pon|ponga|ver|reproduce)\s+(?:el\s+)?(?P<series>.+?)\s*,?\s+{_EPISODE}{_TAIL}$"),
+     "WatchEpisodeIntent", None),
     # «pon Los Simpson temporada dos»: desde su primer episodio
     (re.compile(r"^(?:quiero ver|pon|ponga|ver|reproduce)\s+(?:el\s+)?(?P<series>.+?)\s*,?\s+temporada\s+(?P<season>\d+|[a-z]+)$"),
      "WatchEpisodeIntent", None, {"episode": "1"}),
-    (re.compile(rf"^(?:quiero ver|pon|ponga|ver)\s+(?:el\s+)?{_EPISODE}\s+de\s+(?P<series>.+?)"
-                r"(?:\s+en\s+(?P<language>\w+))?$"), "WatchEpisodeIntent", None),
+    (re.compile(rf"^(?:quiero ver|pon|ponga|ver)\s+(?:el\s+)?{_EPISODE}\s+de\s+(?P<series>.+?){_TAIL}$"),
+     "WatchEpisodeIntent", None),
     # Reproductor de Orbital (van primero: "pon subtítulos" no es abrir un juego llamado así).
     # Sin slot fijo: los grupos con nombre son los slots.
     (re.compile(r"^(?:pausa|pause|pon pausa|ponle pausa|ponga pausa|para|deten)(?:\s+(?:el video|la pelicula|la serie))?$"),
@@ -238,11 +282,11 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     (re.compile(r"^(?P<seek>adelanta|adelante|avanza|avance|salta|salte|pasa|regresa|regrese|retrocede|retroceda|atrasa|atrase)"
                 r"(?:\s+el video)?\s+(?:(?P<amount>\d+|media|medio)|un|una)\s+(?P<unit>minutos?|segundos?|horas?)$"), "SeekIntent", None),
     (re.compile(r"^(?:(?:pon|ponga|ponle|ponles|activa|active|cambia|cambie)(?:\s+los)?\s+)?subtitulos"
-                r"(?:\s+(?:en|a)\s+(?P<language>\w+))?$"), "SubtitlesIntent", None),
+                rf"(?:\s+(?:en|a)\s+(?P<language>{_LANGS}|\w+))?$"), "SubtitlesIntent", None),
     (re.compile(r"^(?:quita|quite|apaga|apague)\s+(?:los\s+)?subtitulos$|^sin subtitulos$"), "SubtitlesOffIntent", None),
-    (re.compile(r"^(?:(?:pon|ponga|cambia|cambie)(?:\s+el)?\s+)?(?:audio|idioma)\s+(?:en|a)\s+(?P<language>\w+)$"),
+    (re.compile(rf"^(?:(?:pon|ponga|cambia|cambie)(?:\s+el)?\s+)?(?:audio|idioma)\s+(?:en|a)\s+(?P<language>{_LANGS}|\w+)$"),
      "AudioLanguageIntent", None),
-    (re.compile(r"^(?:ponlo|pongalo|ponla|pongala|ponmelo|cambialo|cambiala)\s+(?:en|a)\s+(?P<language>\w+)$"),
+    (re.compile(rf"^(?:ponlo|pongalo|ponla|pongala|ponmelo|cambialo|cambiala)\s+(?:en|a)\s+(?P<language>{_LANGS}|\w+)$"),
      "AudioLanguageIntent", None),
     (re.compile(r"^(?:salta|salte|saltate|saltar|brinca|brinque|brincate|omite|omita|quita|quite)(?:\s+(?:la|el))?\s+"
                 r"(?:intro|introduccion|entrada|presentacion|opening|resumen)$"), "SkipIntroIntent", None),
@@ -312,11 +356,12 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
 
 
 _EPISODE_ONLY = [
-    re.compile(rf"^(?:el\s+)?(?P<series>.+?)\s*,?\s+{_EPISODE}(?:\s+en\s+(?P<language>\w+))?$"),
-    re.compile(rf"^(?:el\s+)?{_EPISODE}\s+de\s+(?P<series>.+?)(?:\s+en\s+(?P<language>\w+))?$"),
+    re.compile(rf"^(?:el\s+)?(?P<series>.+?)\s*,?\s+{_EPISODE}{_TAIL}$"),
+    re.compile(rf"^(?:el\s+)?{_EPISODE}\s+de\s+(?P<series>.+?){_TAIL}$"),
 ]
 
 
+MEDIA_OPTIONS = ("language", "subtitles", "from_start", "always")  # lo que va pegado a un título: «… en latino siempre»
 NUMERIC = {"VolumeIntent", "SeekIntent", "PlayEpisodeIntent", "BrightnessIntent", "LiveTvIntent", "WatchEpisodeIntent"}  # «pon el volumen a cincuenta»: el número en palabras
 
 
@@ -444,7 +489,7 @@ def kind_hint(name: str) -> tuple[str, str | None]:
 
 
 def parse_text(text: str) -> tuple[str, dict[str, str]] | None:
-    clean = tidy(normalize(text))
+    clean, always = always_said(tidy(normalize(text)))
     if not clean:
         return None
     found = _parse(clean)
@@ -454,6 +499,8 @@ def parse_text(text: str) -> tuple[str, dict[str, str]] | None:
         plain = _plain(clean)
         if plain and plain != clean:
             found = _parse(tidy(plain))
+    if found is not None and always:
+        found[1]["always"] = "1"
     return found
 
 
@@ -464,9 +511,8 @@ _TITLE_TAIL = [
 ]
 
 
-def _title_slots(title: str) -> dict[str, str]:
-    """«la película de Dune en inglés con subtítulos desde el principio» → title «dune», kind, language, subtitles,
-    from_start: lo que va pegado al título se vuelve opciones (antes se buscaba todo como si fuera el nombre)."""
+def title_tail(title: str) -> tuple[str, dict[str, str]]:
+    """«dune en ingles con subtitulos desde el principio» → ("dune", {language, subtitles, from_start}). `title` normalizado."""
     out: dict[str, str] = {}
     for _ in range(3):  # en cualquier orden
         for key, pattern in _TITLE_TAIL:
@@ -474,6 +520,13 @@ def _title_slots(title: str) -> dict[str, str]:
             if m:
                 out[key] = (m.groupdict().get("lang") or "1") if key != "language" else m.group("lang")
                 title = title[:m.start()].strip()
+    return title, out
+
+
+def _title_slots(title: str) -> dict[str, str]:
+    """«la película de Dune en inglés con subtítulos desde el principio» → title «dune», kind, language, subtitles,
+    from_start: lo que va pegado al título se vuelve opciones (antes se buscaba todo como si fuera el nombre)."""
+    title, out = title_tail(title)
     title, kind = kind_hint(title)
     if kind:
         out["kind"] = kind
@@ -487,7 +540,8 @@ def _parse(clean: str) -> tuple[str, dict[str, str]] | None:
         m = pattern.match(numeric if intent in NUMERIC else clean)
         if m:
             if fixed:
-                return intent, {**{k: v for k, v in m.groupdict().items() if v}, **fixed[0]}
+                found = {k: v for k, v in m.groupdict().items() if v and k != "tail"}
+                return intent, {**found, **_media_tail(m.groupdict().get("tail") or ""), **fixed[0]}
             if slot:
                 if not m.group("v"):
                     return intent, {}
@@ -495,7 +549,9 @@ def _parse(clean: str) -> tuple[str, dict[str, str]] | None:
                     extra = _title_slots(m.group("v"))
                     return intent, {slot: extra.pop("title"), **extra}
                 return intent, {slot: m.group("v")}
-            found = {k.rstrip("23"): v for k, v in m.groupdict().items() if v}
+            found = {k.rstrip("23"): v for k, v in m.groupdict().items() if v and k != "tail"}
+            if m.groupdict().get("tail"):
+                found.update(_media_tail(m.group("tail")))
             return intent, found
     return None
 
@@ -550,11 +606,11 @@ class VoiceController:
         name = slots.get("game", "")
         if not name:
             return VoiceResult("¿Qué juego quieres abrir?", ok=False)
+        name, media = self._media_options(name, slots)  # Alexa manda «Los Simpson en latino» en el mismo slot
         if (episode := episode_request(name)) is not None:  # "pon Los Simpson temporada 5 episodio 3"
-            return self._watch_episode_intent(episode)
+            return self._watch_episode_intent({**media, **episode})
         name, hinted = kind_hint(name)
         kind = slots.get("kind") or hinted
-        media = {k: slots[k] for k in ("language", "subtitles", "from_start") if slots.get(k)}
         if kind in ("movie", "series") or media:  # «pon la película Dune», «pon Dune en inglés»: ni juegos ni apps
             return self._search_media_intent({"query": name, "kind": kind if kind in ("movie", "series") else None, **media})
         if (vague := self._vague(name)) is not None:  # «pon la telenovela», «pon una película»
@@ -618,12 +674,12 @@ class VoiceController:
         query, kind = slots.get("query", ""), slots.get("kind")
         if not query:
             return VoiceResult("¿Qué quieres ver?", ok=False)
+        query, options = self._media_options(query, slots)
         if kind is None:
             query, kind = kind_hint(query)
             kind = kind if kind in ("movie", "series") else None
-        self._options = {k: slots[k] for k in ("language", "subtitles", "from_start") if slots.get(k)}
         if (episode := episode_request(query)) is not None:  # "quiero ver Los Simpson temporada 5…"
-            return self._watch_episode_intent(episode)
+            return self._watch_episode_intent({**options, **episode})
         if (vague := self._vague(query)) is not None:  # "quiero ver una película": no es un título
             return vague
         if (section := self._section(query)) is not None:  # «pon la tele», «quiero ver Para ti»
@@ -633,9 +689,9 @@ class VoiceController:
         # Si ya está en tu biblioteca de Stremio, se abre directo.
         item = self.catalog.find(query, source="stremio")
         if item is not None:
-            return self._watch_item(item)
+            return self._watch_item(item, options)
         try:
-            exact = self._watch_exact(query, kind)
+            exact = self._watch_exact(query, kind, options)
         except cinemeta.CinemetaError:  # sin catálogo: la búsqueda de Stremio
             self.catalog.sessions.search_media(query)
             return VoiceResult(f"Buscando {query} en Stremio.")
@@ -643,6 +699,55 @@ class VoiceController:
             return exact
         # Varias opciones: la búsqueda de Orbital ya escrita, para elegir con el mando.
         return VoiceResult(f"Buscando {query}. Elige con el control.", events=[self._show_view({"buscar": query}, f"Buscando «{query}»")])
+
+    @staticmethod
+    def _media_options(name: str, slots: dict) -> tuple[str, dict]:
+        """El título sin lo que va pegado («Los Simpson siempre en latino con subtítulos») y esas opciones (language,
+        subtitles, from_start, always). El texto libre ya llega separado; Alexa lo manda todo en el slot del título."""
+        options = {k: slots[k] for k in MEDIA_OPTIONS if slots.get(k)}
+        said, always = always_said(normalize(name))
+        title, extra = title_tail(said)
+        if not always and not extra:
+            return name, options
+        if always:
+            options.setdefault("always", "1")
+        for key, value in extra.items():
+            options.setdefault(key, value)
+        return title, options
+
+    def _subtitles_option(self, said: str | None) -> str | None:
+        """«con subtítulos» ("1"): los de Ajustes (o en español); «con subtítulos en inglés»: "en". None: no se pidió."""
+        if not said:
+            return None
+        if said == "1":
+            return self.catalog.watch.subtitles_lang or "es"
+        return split_language(LANGUAGES.get(normalize(said)))[0]
+
+    def _media_request(self, options: dict) -> tuple[dict, str]:
+        """Las opciones dichas → los argumentos de `play_title` (audio, spanish, subtitles, remember) y cómo se dicen
+        («en latino con subtítulos en inglés»)."""
+        code = LANGUAGES.get(normalize(options.get("language") or ""))
+        audio, spanish = split_language(code)
+        subtitles = self._subtitles_option(options.get("subtitles"))
+        kwargs: dict = {}
+        if audio:
+            kwargs["audio"] = audio
+        if spanish:
+            kwargs["spanish"] = spanish
+        if subtitles is not None:
+            kwargs["subtitles"] = subtitles
+        if options.get("always") and (audio or subtitles is not None):
+            kwargs["remember"] = True
+        how = (f" en {LANGUAGE_NAMES.get(code, code)}" if code else "") + \
+            (f" con subtítulos en {LANGUAGE_NAMES.get(subtitles, subtitles)}" if subtitles else "")
+        return kwargs, how
+
+    def _remember_title(self, meta_id: str, title: str, kwargs: dict) -> None:
+        """«… siempre en latino» sin poner nada (una serie: se elige el episodio): el título lo recuerda ya."""
+        audio = kwargs.get("audio")
+        self.catalog.watch.remember_title_language(meta_id, audio, kwargs.get("spanish", "") if audio else None,
+                                                   kwargs.get("subtitles"))
+        log.info("Voz: %s recordará %s", title, kwargs)
 
     def _vague(self, name: str) -> VoiceResult | None:
         """No es un título: «la telenovela» es lo que estabas viendo; «una película», a elegir."""
@@ -673,7 +778,7 @@ class VoiceController:
             self.kiosk.open()
         return {"type": "open-view", "view": view, "message": message}
 
-    def _watch_exact(self, query: str, kind: str | None = None) -> VoiceResult | None:
+    def _watch_exact(self, query: str, kind: str | None = None, options: dict | None = None) -> VoiceResult | None:
         """Cualquier película o serie, esté o no en tu biblioteca: la película se pone directo y la serie abre sus
         episodios en Orbital. Varias igual de buenas: a elegir en pantalla. None si no hay nada claro."""
         matches = self._resolve_title(query, kind)
@@ -682,16 +787,20 @@ class VoiceController:
         match = matches[0] if matches else None
         if match is None:
             return None
-        options = getattr(self, "_options", {}) or {}
+        options = options or {}
+        kwargs, how = self._media_request(options)
+        memo = f" {match['title']} quedará{how}." if kwargs.get("remember") else ""
         if match["kind"] == "movie":
-            lang = LANGUAGES.get(options.get("language", ""))
             problem = self.catalog.watch.play_title("movie", match["meta_id"], match["meta_id"], match["title"], wait=VOICE_WAIT,
-                                                    audio=lang, from_start=bool(options.get("from_start")))
+                                                    from_start=bool(options.get("from_start")), **kwargs)
             if problem:
                 return VoiceResult(problem, ok=False)
-            how = "".join([f" en {LANGUAGE_NAMES.get(lang, lang)}" if lang else "", " desde el principio" if options.get("from_start") else ""])
-            return VoiceResult(f"Poniendo {match['title']}{how}.")
-        return VoiceResult(f"Abriendo {match['title']}. Elige el episodio.", events=[self._show_view({"serie": match["meta_id"]}, f"Abriendo {match['title']}")])
+            start = " desde el principio" if options.get("from_start") else ""
+            return VoiceResult(f"Poniendo {match['title']}{how}{start}.{memo}")
+        if memo:  # una serie: se elige el episodio en pantalla; con «siempre», ya lo recuerda
+            self._remember_title(match["meta_id"], match["title"], kwargs)
+        return VoiceResult(f"Abriendo {match['title']}. Elige el episodio.{memo}",
+                           events=[self._show_view({"serie": match["meta_id"]}, f"Abriendo {match['title']}")])
 
     def _resolve_title(self, query: str, kind: str | None = None) -> list[dict]:
         """Lo dicho → la película o serie que es. Cinemeta guarda el título en inglés: «El viaje de Chihiro» llega como
@@ -749,16 +858,25 @@ class VoiceController:
             result.speech = f"Continuando {item.title}{', ' + detail if detail else ''}."
         return result
 
-    def _watch_item(self, item) -> VoiceResult:
+    def _watch_item(self, item, options: dict | None = None) -> VoiceResult:
         """Algo de tu biblioteca de Stremio: el episodio o la película donde ibas; una serie sin
-        episodio pendiente abre sus episodios en Orbital."""
+        episodio pendiente abre sus episodios en Orbital. `options`: «… en latino con subtítulos (siempre)»."""
         extra = item.extra or {}
         kind, meta_id, video_id = extra.get("kind"), extra.get("meta_id"), extra.get("video_id")
+        options = options or {}
+        kwargs, how = self._media_request(options)
+        memo = f" {item.title} quedará{how}." if kwargs.get("remember") else ""
         if kind in ("movie", "series") and meta_id and video_id:
-            problem = self.catalog.watch.play_title(kind, meta_id, video_id, item.title, wait=VOICE_WAIT)
-            return VoiceResult(problem, ok=False) if problem else VoiceResult(f"Poniendo {item.title}.")
+            if options.get("from_start"):
+                kwargs["from_start"] = True
+            problem = self.catalog.watch.play_title(kind, meta_id, video_id, item.title, wait=VOICE_WAIT, **kwargs)
+            start = " desde el principio" if options.get("from_start") else ""
+            return VoiceResult(problem, ok=False) if problem else VoiceResult(f"Poniendo {item.title}{how}{start}.{memo}")
         if kind == "series" and meta_id:
-            return VoiceResult(f"Abriendo {item.title}. Elige el episodio.", events=[self._show_view({"serie": meta_id}, f"Abriendo {item.title}")])
+            if memo:
+                self._remember_title(meta_id, item.title, kwargs)
+            return VoiceResult(f"Abriendo {item.title}. Elige el episodio.{memo}",
+                               events=[self._show_view({"serie": meta_id}, f"Abriendo {item.title}")])
         self.catalog.sessions.launch(item.id)
         return VoiceResult(f"Abriendo {item.title} en Stremio.")
 
@@ -1145,11 +1263,24 @@ class VoiceController:
         if asked and self._language(slots) is None:
             return VoiceResult(f"No conozco el idioma {asked}. Prueba con español, inglés, francés o portugués.", ok=False,
                                events=[NO_TOAST])
-        lang = self._language(slots) or self.catalog.config.stremio.subtitles or "en"
+        lang = split_language(self._language(slots))[0] or self.catalog.config.stremio.subtitles or "en"
         name = LANGUAGE_NAMES.get(lang, lang)
         if self.catalog.watch.player_subtitles(lang):
-            return VoiceResult(f"Subtítulos en {name}.", events=[NO_TOAST])
+            memo = self._remember_playing(f"con subtítulos en {name}", subtitles=lang) if slots.get("always") else ""
+            return VoiceResult(f"Subtítulos en {name}.{memo}", events=[NO_TOAST])
         return VoiceResult(f"No encontré subtítulos en {name} para esto.", ok=False, events=[NO_TOAST])
+
+    def _remember_playing(self, how: str, **language) -> str:
+        """«… siempre»: lo que se ve lo recuerda (audio, doblaje o subtítulos) y se avisa encima del video («Los Simpson
+        quedará en latino»). "" si no es un título que pueda recordarlo (un canal)."""
+        current = self.catalog.player.current
+        meta = getattr(current, "meta", None) or {}
+        if not meta.get("meta_id") or meta.get("synthetic") or meta.get("live"):
+            return ""
+        self.catalog.watch.remember_title_language(meta["meta_id"], **language)
+        title = str(meta.get("title") or getattr(current, "title", "") or "").split(" · ")[0] or "Este título"
+        self.catalog.player.toast(f"{title} quedará {how}", 4)
+        return f" {title} quedará {how}."
 
     def _subtitles_off_intent(self, slots: dict) -> VoiceResult:
         if (idle := self._playing()) is not None:
@@ -1160,12 +1291,17 @@ class VoiceController:
     def _audio_language_intent(self, slots: dict) -> VoiceResult:
         if (idle := self._playing()) is not None:
             return idle
-        lang = self._language(slots)
-        if lang is None:
+        code = self._language(slots)
+        if code is None:
             return VoiceResult("¿En qué idioma? Por ejemplo: pon el audio en español.", ok=False)
-        name = LANGUAGE_NAMES.get(lang, lang)
-        if self.catalog.player.select_language("audio", lang):
-            return VoiceResult(f"Audio en {name}.", events=[NO_TOAST])
+        lang, variant = split_language(code)
+        lang = lang or code
+        name = LANGUAGE_NAMES.get(code, code)
+        player = self.catalog.player
+        # «en latino»: la pista latina (con las dos «spa», no la primera). Solo para esta vez; con «siempre», el título.
+        if player.select_language("audio", lang, variant) if variant else player.select_language("audio", lang):
+            memo = self._remember_playing(f"en {name}", audio=lang, spanish=variant) if slots.get("always") else ""
+            return VoiceResult(f"Audio en {name}.{memo}", events=[NO_TOAST])
         return VoiceResult(f"Este video no trae audio en {name}.", ok=False, events=[NO_TOAST])
 
     def _next_episode_intent(self, slots: dict) -> VoiceResult:
@@ -1243,11 +1379,11 @@ class VoiceController:
         name = meta.get("name") or match["name"]
         if video is None:
             return VoiceResult(f"{name} no tiene temporada {season} episodio {episode}.", ok=False)
-        lang = self._language(slots)
+        kwargs, how = self._media_request(slots)
         label = f"{name} · T{season} E{episode}"
         # Aquí ya se buscó la serie en Cinemeta (unos segundos): se espera menos a la fuente.
-        problem = self.catalog.watch.play_title("series", match["id"], video["id"], label, audio=lang, wait=VOICE_WAIT - 2)
+        problem = self.catalog.watch.play_title("series", match["id"], video["id"], label, wait=VOICE_WAIT - 2, **kwargs)
         if problem:
             return VoiceResult(problem, ok=False)
-        in_lang = f" en {LANGUAGE_NAMES.get(lang, lang)}" if lang else ""
-        return VoiceResult(f"Poniendo {name}, temporada {season}, episodio {episode}{in_lang}.")
+        memo = f" {name} quedará{how}." if kwargs.get("remember") else ""
+        return VoiceResult(f"Poniendo {name}, temporada {season}, episodio {episode}{how}.{memo}")
