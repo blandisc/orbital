@@ -18,7 +18,9 @@ import logging
 import re
 import threading
 import time
+import unicodedata
 import zlib
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from urllib.parse import quote
@@ -31,27 +33,37 @@ log = logging.getLogger(__name__)
 CACHE_SECONDS = 600
 REQUEST_TIMEOUT = 15
 
-# Banderas e indicios de idioma en los títulos de Torrentio y compañía.
+# Banderas e indicios de idioma en los títulos de Torrentio y compañía. Torrentio solo pone 🇲🇽 cuando el nombre dice
+# latino; 🇪🇸 la pone a cualquier «Spanish»: no dice cuál de los dos («es» = español sin saber cuál).
 FLAG_LANG = {
-    "🇬🇧": "en", "🇺🇸": "en", "🇲🇽": "es", "🇪🇸": "es", "🇦🇷": "es", "🇫🇷": "fr", "🇮🇹": "it", "🇩🇪": "de",
+    "🇬🇧": "en", "🇺🇸": "en", "🇲🇽": "es-419", "🇪🇸": "es", "🇦🇷": "es-419", "🇫🇷": "fr", "🇮🇹": "it", "🇩🇪": "de",
     "🇵🇹": "pt", "🇧🇷": "pt", "🇷🇺": "ru", "🇯🇵": "ja", "🇰🇷": "ko", "🇨🇳": "zh", "🇮🇳": "hi", "🇵🇱": "pl",
     "🇹🇷": "tr", "🇺🇦": "uk", "🇳🇱": "nl", "🇨🇿": "cs", "🇸🇰": "sk", "🇭🇺": "hu", "🇬🇷": "el", "🇸🇪": "sv",
     "🇩🇰": "da", "🇳🇴": "no", "🇫🇮": "fi", "🇷🇴": "ro", "🇧🇬": "bg", "🇭🇷": "hr", "🇷🇸": "sr", "🇮🇱": "he",
     "🇸🇦": "ar", "🇹🇭": "th", "🇻🇳": "vi", "🇮🇩": "id", "🇱🇹": "lt", "🇱🇻": "lv", "🇪🇪": "et",
 }
 WORD_LANG = [
-    (re.compile(r"\b(latino|castellano|spanish|español|espanol)\b", re.I), "es"),
     # «LAT», «CAST», «ESP» solo en mayúsculas: en minúsculas son palabras del título («Cast.Away»).
-    (re.compile(r"\b(LAT|CAST|ESP)\b"), "es"),
-    (re.compile(r"\b(french|vff|vf|vfq|truefrench)\b", re.I), "fr"),
+    (re.compile(r"\b(latino|latam|es-?419|spa-la|hispanoam[eé]rica(no)?|latinoam[eé]rica(no)?|latin[ ._-]?american)\b|"
+                r"dual[-. ]?lat\b", re.I), "es-419"),
+    (re.compile(r"\bLAT\b"), "es-419"),
+    (re.compile(r"\b(castellano|castilian|es-es)\b", re.I), "es-ES"),
+    (re.compile(r"\bCAST\b"), "es-ES"),
+    (re.compile(r"\b(spanish|español|espanol|spa)\b", re.I), "es"),
+    (re.compile(r"\bESP\b|\[Esp\]|(?<=/)ES\b|\bES(?=/)"), "es"),  # «EN/FR/ES»
+    (re.compile(r"\b(eng|english|ingles)\b|(?<![A-Za-z])EN(?=/)", re.I), "en"),
+    (re.compile(r"\b(jpn|japanese)\b", re.I), "ja"),
+    (re.compile(r"(?i:\b(mvo|dvo|avo)\b)|[А-Яа-яЁё]{4,}"), "ru"),  # voces rusas; un nombre en cirílico es un lanzamiento ruso
+    (re.compile(r"(?i:\b(french|fre|vff|vf|vf2|vfq|truefrench)\b)|(?<![-\w])FR\b"), "fr"),
     (re.compile(r"\b(ita|italian)\b", re.I), "it"),
     (re.compile(r"\b(german|deutsch|ger)\b", re.I), "de"),
     (re.compile(r"\b(rus|russian)\b", re.I), "ru"),
     (re.compile(r"\b(hindi)\b", re.I), "hi"),
     # "CZ dabing", "SK dabing", "PL lektor", "dublado": doblajes que antes pasaban por inglés.
-    (re.compile(r"\b(cz|cze|czech|cesky|český|dabing)\b", re.I), "cs"),
-    (re.compile(r"\b(sk|slovak|slovensky|slovenský)\b", re.I), "sk"),
-    (re.compile(r"\b(pl|polish|polski|lektor)\b", re.I), "pl"),
+    # «CZ», «SK», «PL» solo en mayúsculas y no tras un guion: «x264-pl» es el grupo que lo subió, no polaco.
+    (re.compile(r"(?i:\b(cze|czech|cesky|český|dabing)\b)|(?<![-\w])CZ\b"), "cs"),
+    (re.compile(r"(?i:\b(slovak|slovensky|slovenský)\b)|(?<![-\w])SK\b"), "sk"),
+    (re.compile(r"(?i:\b(polish|polski|lektor)\b)|(?<![-\w])PL\b"), "pl"),
     (re.compile(r"\b(hun|hungarian|magyar)\b", re.I), "hu"),
     (re.compile(r"\b(ptbr|pt-br|dublado|portuguese|portugues|português)\b", re.I), "pt"),
     (re.compile(r"\b(ukr|ukrainian)\b", re.I), "uk"),
@@ -60,12 +72,22 @@ WORD_LANG = [
     (re.compile(r"\b(korean|kor)\b", re.I), "ko"),
     (re.compile(r"\b(nordic|swedish|danish|norwegian|finnish)\b", re.I), "sv"),
 ]
-# El español viene en dos doblajes que no se parecen (Los Simpson, sobre todo): latino y castellano. «Lat» y «LAT» con
-# mayúscula (en «Dual-Lat»); en minúsculas puede ser parte de otra palabra.
-LATINO = re.compile(r"\b(latino|latam|latinoam[eé]rica(no)?|es-?419|hispanoam[eé]rica)\b|🇲🇽|🇦🇷|🇨🇴|🇨🇱|🇵🇪|🇻🇪", re.I)
-LATINO_STRICT = re.compile(r"\b(Lat|LAT)\b")
-CASTELLANO = re.compile(r"(?i:\b(castellano|castilian|es-es)\b)|\bCAST\b|🇪🇸")
-LANG_NAMES = {"en": "Inglés", "es": "Español", "fr": "Francés", "it": "Italiano", "de": "Alemán", "pt": "Portugués",
+# Sitios de un solo idioma: lo que suben ahí va doblado a ese idioma (MejorTorrent = castellano, Cinecalidad = latino).
+SITE_LANG = {"mejortorrent": "es-ES", "wolfmax4k": "es-ES", "cinecalidad": "es-419", "ilcorsaronero": "it",
+             "rutor": "ru", "rutracker": "ru", "torrent9": "fr", "comando": "pt", "bludv": "pt", "besttorrents": "pl"}
+# Lo que va después de esto en un nombre es la lista de SUBTÍTULOS, no de audio: «[Multiple Subtitle] [ENG][SPA-LA]»,
+# «sub ita.eng», «Lektor i napisy PL».
+SUBS_FROM = re.compile(
+    r"\b(eng|english|spa|spanish|esp|español|espanol|fre|french|ita|italian|ger|german|por|pt-?br|pl|lat|latino|"
+    r"castellano)[ ._-]*(subs?|subtitles?|subtitulos|subtítulos)\b|multi[ ._-]?subs?|multiple[ ._-]?subtitles?|subt[ií]t\w*|"
+    r"\bsubs\b|[a-z]+subs?\b|\bsub[ ._-]+(ita|eng|esp|spa|fr|pl|lat|forzados)\b|\bvostfr\b|\bnapisy\b|\bsubbed\b|"
+    r"\bsoft[ ._-]?subs?\b", re.I)
+SCRIPT_FREE = re.compile(r"[Ѐ-ӿ぀-ヿ一-鿿가-힯]")  # cirílico, japonés, chino, coreano
+# Qué tan seguro es el idioma de una pista de audio (de más a menos). La interfaz lo dice con palabras.
+EVIDENCE = {"seen": 5, "name": 4, "site": 4, "original": 3, "assumed": 2, "maybe": 1}
+# El español viene en dos doblajes que no se parecen (Los Simpson, sobre todo): latino y castellano.
+SPANISH = ("es-419", "es-ES", "es")
+LANG_NAMES = {"en": "Inglés", "es": "Español", "es-419": "Latino", "es-ES": "Castellano", "fr": "Francés", "it": "Italiano", "de": "Alemán", "pt": "Portugués",
               "ru": "Ruso", "ja": "Japonés", "ko": "Coreano", "zh": "Chino", "hi": "Hindi", "pl": "Polaco",
               "tr": "Turco", "uk": "Ucraniano", "nl": "Neerlandés", "cs": "Checo", "sk": "Eslovaco",
               "hu": "Húngaro", "el": "Griego", "sv": "Nórdico", "da": "Danés", "no": "Noruego", "fi": "Finés",
@@ -100,6 +122,10 @@ class Source:
     score: float = 0.0
     binge: str | None = None  # behaviorHints.bingeGroup: misma calidad/idioma en el siguiente episodio
     dub: str = ""  # en español: "latino", "castellano" o "" si no lo dice (con los dos, "latino": trae esa pista)
+    # Las pistas de audio y qué tan seguro es cada una: {"es-419": "name", "en": "original"} (ver EVIDENCE). Español en
+    # tres: "es-419" (latino), "es-ES" (castellano) y "es" (no dice cuál). `languages` es lo mismo sin el doblaje.
+    audio_langs: dict[str, str] = field(default_factory=dict)
+    other_title: bool = False  # el nombre no menciona el título: Torrentio a veces trae otro («La casa de la pradera»)
 
     @property
     def key(self) -> str:
@@ -118,6 +144,10 @@ class Source:
             "size": self.size, "seeders": self.seeders, "site": self.site, "cached": self.cached,
             "debrid": self.debrid, "languages": [LANG_NAMES.get(l, l) for l in self.languages],
             "release": self.release, "tags": self.tags, "audio": self.audio_label,
+            # Para «Elegir versión»: cada idioma con su código, su nombre y cómo lo sabemos.
+            "audio_langs": [{"code": code, "name": LANG_NAMES.get(code, code), "proof": how}
+                            for code, how in self.audio_langs.items()],
+            "other_title": self.other_title,
         }
 
     @property
@@ -159,7 +189,8 @@ def stable_index(addon_url: str, stream: dict) -> int:
 PARSE_ERRORS = (ValueError, TypeError, AttributeError, OverflowError, IndexError, KeyError)
 
 
-def parse(stream: dict, addon: str, transport_url: str, index: int) -> Source:
+def parse(stream: dict, addon: str, transport_url: str, index: int, original: str | None = None) -> Source:
+    """`original`: el idioma original del título según TMDB ("en", "ja", "es-ES"…); None si no se sabe."""
     name = str(stream.get("name") or "")
     text = str(stream.get("title") or stream.get("description") or "")
     blob = f"{name}\n{text}"
@@ -187,40 +218,158 @@ def parse(stream: dict, addon: str, transport_url: str, index: int) -> Source:
         src.seeders = int(m.group(1))
     if (m := SITE.search(text)):
         src.site = m.group(1).strip()
-    langs = [FLAG_LANG[f] for f in FLAG_LANG if f in text]
-    for pattern, lang in WORD_LANG:
-        if pattern.search(first) or pattern.search(filename):
-            langs.append(lang)
-    dub = spanish_dub(f"{text}\n{filename}")
-    if dub and "es" not in langs:
-        langs.append("es")  # «Dual-Lat», «[Castellano]»: español aunque no traiga bandera
-    if re.search(r"\bdual\b", blob, re.I) and "en" not in langs:
-        langs.append("en")  # "dual": casi siempre el original en inglés + el doblaje
-    if re.search(r"\bmulti\b", blob, re.I) and "en" not in langs:
-        langs.append("en")
-    src.languages = list(dict.fromkeys(langs)) or ["en"]  # sin banderas: el idioma original
+    # Torrentio: nombre del torrent, archivo (en paquetes), «👤 💾 ⚙️» y, al final, banderas y marcas («Dual Audio»).
+    lines = text.split("\n")
+    marks = lines[-1] if len(lines) > 1 and (FLAG_RE.search(lines[-1]) or MARKS.search(lines[-1])) else ""
+    words = "\n".join([line for line in lines[:-1 if marks else None] if not SIZE.search(line) and not SEEDERS.search(line)]
+                      + [filename])
+    set_languages(src, audio_languages(words, marks, src.site, original))
     src.release = first
-    src.dub = dub
     src.tags = [t for t, p in (("REMUX", r"\bremux\b"), ("BluRay", r"\bblu-?ray\b"), ("WEB-DL", r"\bweb-?(dl|rip)\b"),
                                 ("x265", r"\b(x265|hevc|h\.?265)\b"), ("AV1", r"\bav1\b"), ("Atmos", r"\batmos\b"),
-                                ("5.1", r"\b(5\.1|ddp?5|dts)"), ("Tráiler", r"\btrailer\b"), ("CAM", r"\b(cam|hdcam|ts|telesync)\b"))
+                                ("5.1", r"\b(5\.1|ddp?5|dts)"), ("Tráiler", r"\btrailer\b"), ("CAM", r"\b(cam|hdcam|ts|telesync)\b"),
+                                ("3D", r"\b3D\b|\bSBS\b"), ("Reescalada", r"\bupscaled?\b|\bai[-. ]?enhanced\b"))
                 if re.search(p, blob, re.I)]
     if src.dub:
         src.tags.insert(0, src.dub.capitalize())  # «Latino» / «Castellano» en la lista de fuentes
     return src
 
 
+FLAG_RE = re.compile("|".join(map(re.escape, FLAG_LANG)))
+MARKS = re.compile(r"\b(Dubbed|Dual Audio|Multi Audio|Multi Subs)\b")
+
+
+def audio_languages(words: str, marks: str = "", site: str = "", original: str | None = None) -> dict[str, str]:
+    """Los idiomas de AUDIO de una fuente y cómo lo sabemos (EVIDENCE), de lo que dicen el nombre, el sitio y las marcas de
+    Torrentio. Reglas sacadas de 405 fuentes reales (tests/fixtures/streams): las banderas de Torrentio mezclan audio y
+    subtítulos; un nombre que lista subtítulos no habla del audio; «Dual» es el original más un doblaje."""
+    found: dict[str, str] = {}
+
+    def put(code: str, how: str) -> None:
+        if EVIDENCE[how] > EVIDENCE.get(found.get(code, ""), 0):
+            found[code] = how
+
+    audio_words = "\n".join(SUBS_FROM.split(line, 1)[0] for line in words.split("\n"))
+    subtitled = audio_words != words
+    for pattern, code in WORD_LANG:
+        if pattern.search(audio_words):
+            put(code, "name")
+    if (lang := SITE_LANG.get(re.sub(r"\W", "", site).lower())) and not (subtitled and lang not in found):
+        put(lang, "site")
+    flags = list(dict.fromkeys(FLAG_LANG[f] for f in FLAG_RE.findall(marks)))
+    dubbed = bool(re.search(r"\b(Dubbed|Multi Audio|Dual Audio)\b", marks))
+    dual = "Dual Audio" in marks or bool(re.search(r"\bdual\b", audio_words, re.I))
+    if len(flags) >= 5:  # muchas banderas: con doblaje, alguna es pista (no se sabe cuál); sin él, son subtítulos
+        for code in flags if dubbed else ():
+            put(code, "maybe")
+    elif dubbed or "Multi Subs" not in marks:
+        for code in flags:
+            # 🇲🇽 solo sale cuando el nombre dice latino; con «Dual Audio» y una o dos banderas, esas son las pistas.
+            put(code, "name" if code == "es-419" or ("Dual Audio" in marks and len(flags) <= 2) else "maybe")
+    if dual:
+        # «Dual»: el original y un doblaje (en anime, japonés + inglés). Sin saber el original, inglés supuesto.
+        put(original or "en", "name" if original else "assumed")
+        if original and original != "en" and not any(c != original and EVIDENCE[h] >= EVIDENCE["name"] for c, h in found.items()):
+            put("en", "name")
+    if "es" in found and any(EVIDENCE.get(found.get(v, ""), 0) >= EVIDENCE[found["es"]] for v in ("es-419", "es-ES")):
+        found.pop("es")  # «SPANiSH.LATiNO»: ya se sabe cuál
+    if "es" in found and original in ("es-419", "es-ES"):  # «Spanish» en una serie española: es su castellano
+        put(original, found.pop("es"))
+    if not any(EVIDENCE[how] >= EVIDENCE["name"] for how in found.values()):
+        put(original or "en", "original" if original else "assumed")  # nada lo dice: casi siempre el original
+    return dict(sorted(found.items(), key=lambda kv: -EVIDENCE[kv[1]]))
+
+
+def set_languages(src: Source, langs: dict[str, str]) -> None:
+    """`audio_langs` y lo que sale de ahí: `languages` (sin el doblaje) y `dub` (solo si es seguro, para los canales)."""
+    src.audio_langs = langs
+    src.languages = list(dict.fromkeys("es" if code in SPANISH else code for code in langs)) or ["en"]
+    sure = {code for code, how in langs.items() if EVIDENCE[how] >= EVIDENCE["original"]}
+    src.dub = "latino" if "es-419" in sure else "castellano" if "es-ES" in sure else ""
+
+
+TRACK_LANG = {"eng": "en", "spa": "es", "fre": "fr", "fra": "fr", "ger": "de", "deu": "de", "ita": "it", "por": "pt",
+              "rus": "ru", "jpn": "ja", "kor": "ko", "chi": "zh", "zho": "zh", "pol": "pl", "ukr": "uk", "hin": "hi",
+              "tur": "tr", "hun": "hu", "cze": "cs", "ces": "cs", "dut": "nl", "nld": "nl", "swe": "sv", "ara": "ar",
+              "esl": "es", "esp": "es", "cat": "ca", "dan": "da", "nor": "no", "nob": "no", "fin": "fi", "gre": "el",
+              "ell": "el", "heb": "he", "tha": "th", "vie": "vi", "ind": "id", "rum": "ro", "ron": "ro", "bul": "bg"}
+LATIN_REGIONS = {"419", "mx", "ar", "us", "co", "cl", "pe", "ve", "uy", "ec", "gt", "cr", "pr", "bo", "py", "do", "hn", "sv", "ni", "pa", "cu"}
+LATINO_TRACK = re.compile(r"\blatin|\blat\b|419|latam|m[eé]xic|hispanoam", re.I)
+CASTELLANO_TRACK = re.compile(r"castellano|castilian|espa[ñn]a|spain|\bes-es\b|europe|ib[eé]ric", re.I)
+
+
+def track_languages(tracks: list[dict]) -> list[str]:
+    """Los idiomas de las pistas de audio que dio mpv al reproducir ("es-419", "en"…): lo comprobado. Vacío si alguna
+    pista no dice su idioma (entonces no se sabe qué trae)."""
+    out = []
+    for t in tracks or []:
+        if not isinstance(t, dict) or t.get("type") != "audio":
+            continue
+        raw = str(t.get("lang") or "").lower()
+        if not raw or raw in ("und", "mul", "zxx"):
+            return []
+        base, _, region = raw.replace("_", "-").partition("-")
+        code = TRACK_LANG.get(base, base if len(base) in (2, 3) and base.isalpha() else "")
+        if not code:
+            return []
+        if code == "es":
+            label = f"{raw} {t.get('title') or ''}"
+            code = ("es-419" if region in LATIN_REGIONS or LATINO_TRACK.search(label) else
+                    "es-ES" if region == "es" or CASTELLANO_TRACK.search(label) else "es")
+        out.append(code)
+    return list(dict.fromkeys(out))
+
+
+def heard(src: Source, tracks: list[dict]) -> bool:
+    """Lo que Orbital vio al reproducirla reemplaza lo que decía el nombre. False si las pistas no dicen su idioma."""
+    langs = track_languages(tracks)
+    if not langs:
+        return False
+    set_languages(src, {code: "seen" for code in langs})
+    src.tags = [t for t in src.tags if t not in ("Latino", "Castellano")]
+    if src.dub:
+        src.tags.insert(0, src.dub.capitalize())
+    return True
+
+
+STOPWORDS = {"the", "and", "los", "las", "del", "une", "les", "der", "die", "das", "una"}
+
+
+def _plain(text: str) -> str:
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", text).split())
+
+
+def mentions_title(titles: list[str], text: str) -> bool:
+    """¿El nombre de la fuente menciona alguno de los títulos (en cualquier idioma)? Lo que está en otra escritura
+    (cirílico, japonés…) se da por bueno: no hay cómo compararlo."""
+    if not titles or SCRIPT_FREE.search(text):
+        return True
+    # Basta la palabra más distintiva (la más larga) de algún título: «Dune - Parte due» (italiano) es Dune; pedir todas
+    # las palabras marcaba como otro título a 12 de 121. «La casa de la pradera» no dice «papel» ni «heist».
+    haystack = _plain(text).replace(" ", "")
+    for title in titles:
+        words = [w for w in _plain(title).split() if w not in STOPWORDS]
+        longest = max((len(w) for w in words), default=0)
+        if longest < 3:
+            return True  # «Up», «It», «Pi»: caben dentro de cualquier palabra; con ese nombre no se puede decidir
+        if any(len(w) == longest and w in haystack for w in words):
+            return True
+    return False
+
+
 def spanish_dub(text: str) -> str:
-    """"latino", "castellano" o "" según lo que diga el título de la fuente. Si dice los dos, "latino" (trae esa pista)."""
-    if LATINO.search(text) or LATINO_STRICT.search(text):
-        return "latino"
-    return "castellano" if CASTELLANO.search(text) else ""
+    """"latino", "castellano" o "" según lo que diga el título de la fuente. Si dice los dos, "latino" (trae esa pista).
+    🇪🇸 sola no lo dice: Torrentio la pone a cualquier «Spanish»."""
+    langs = audio_languages(text, " / ".join(FLAG_RE.findall(text)))
+    return "latino" if "es-419" in langs else "castellano" if "es-ES" in langs else ""
 
 
 @dataclass
 class Preferences:
     audio: str = "en"  # idioma de audio preferido
     quality: str = "1080p"  # resolución preferida ("4K" en la TV si quieres)
+    dub: str = ""  # con audio "es": "latino", "castellano" o "" (cualquiera de los dos)
 
 
 def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
@@ -229,13 +378,7 @@ def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
         s += 1000  # arranca al instante
     elif src.debrid:
         s -= 400  # Real-Debrid aún tiene que descargarla
-    # Idioma: solo el preferido es lo mejor; "dual" con el preferido, aceptable; sin él, al fondo.
-    if src.languages == [prefs.audio]:
-        s += 300
-    elif prefs.audio in src.languages:
-        s += 120
-    else:
-        s -= 600
+    s += language_score(src, prefs)
     order = ["4K", "1080p", "720p", "480p", ""]
     want = order.index(prefs.quality) if prefs.quality in order else 1
     have = order.index(src.resolution) if src.resolution in order else len(order) - 1
@@ -251,8 +394,40 @@ def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
         s -= 200  # Dolby Vision sin HDR de respaldo: colores raros en pantallas sin DV
     if "Tráiler" in src.tags or "CAM" in src.tags:
         s -= 2000
+    if "3D" in src.tags:
+        s -= 1500
+    if "Reescalada" in src.tags:
+        s -= 150
+    if src.other_title:
+        s -= 500  # el nombre no menciona el título: puede ser otro (no se esconde: a veces es el nombre en otro país)
     s += min(src.seeders, 500) / 10
     return s
+
+
+# Cuánto vale el idioma que quieres según qué tan seguro es: lo comprobado, lo que se dice y el original van arriba;
+# «tal vez», apenas; sin él, al fondo. Antes «solo inglés» supuesto le ganaba a una dual que sí decía inglés.
+LANG_POINTS = {"seen": 340, "name": 300, "site": 300, "original": 300, "assumed": 260, "maybe": 60}
+# Otro idioma pesa más que arrancar al instante (+1000): una en ruso lista no le gana a una en tu idioma que tarda.
+WRONG_LANGUAGE = -1600
+
+
+def language_score(src: Source, prefs: Preferences) -> float:
+    langs = src.audio_langs or {code: "name" for code in src.languages}
+    if prefs.audio != "es":
+        how = langs.get(prefs.audio)
+        return LANG_POINTS[how] if how else WRONG_LANGUAGE
+    wanted = {"latino": "es-419", "castellano": "es-ES"}.get(prefs.dub)
+    best = float(WRONG_LANGUAGE)
+    for code in SPANISH:
+        if code not in langs:
+            continue
+        points = LANG_POINTS[langs[code]]
+        if wanted and code == "es":
+            points -= 100  # español sin saber cuál: después del que pediste, antes que otro idioma
+        elif wanted and code != wanted:
+            points -= 250  # el otro doblaje
+        best = max(best, points)
+    return best
 
 
 def rank(sources: list[Source], prefs: Preferences, kind: str = "movie") -> list[Source]:
@@ -288,6 +463,11 @@ class StreamFinder:
         self._down: dict[str, float] = {}
         self.outcome: dict[str, str] = {}  # kind:video -> "ok" | "offline" | "no-addons" (para decir por qué no hay)  # complemento -> hasta cuándo no se le pregunta (no respondió)
         self._lock = threading.Lock()
+        # Lo que se sabe del título y de cada fuente fuera de los complementos (los pone Watch):
+        # facts(kind, video_id) -> {"original": "en" | "ja" | "es-ES"…, "titles": [...]} (de TMDB/Cinemeta);
+        # tracks(key) -> las pistas de audio que mpv vio al reproducir esa fuente, o None.
+        self.facts: Callable[[str, str], dict | None] = lambda kind, video_id: None
+        self.tracks: Callable[[str], list[dict] | None] = lambda key: None
 
     def addons(self) -> list[addons.Addon]:
         return self.registry.addons()
@@ -323,7 +503,7 @@ class StreamFinder:
         return urls
 
     def find(self, kind: str, video_id: str, prefs: Preferences) -> list[Source]:
-        key = f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}"
+        key = f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}:{prefs.dub}"
         with self._lock:
             hit = self._cache.get(key)
             if hit and time.time() - hit[0] < CACHE_SECONDS:
@@ -349,13 +529,25 @@ class StreamFinder:
             results.append((addon, streams))
         sources, seen = [], set()
         failed = skipped or any(streams is None for _, streams in results)
+        try:
+            facts = self.facts(kind, video_id) or {}
+        except Exception as exc:  # noqa: BLE001 - sin TMDB, las fuentes salen igual (sin el idioma original)
+            log.info("Sin datos del título para las fuentes: %s", exc)
+            facts = {}
+        original = facts.get("original") if isinstance(facts.get("original"), str) else None
+        titles = [x for x in facts.get("titles") or [] if isinstance(x, str) and x.strip()]
         for addon, streams in results:
             for stream in streams or []:
                 index = stable_index(addon.url, stream)
                 while index in seen:  # el mismo enlace dos veces: la segunda, el número siguiente
                     index = (index + 1) % 2**31
                 try:
-                    sources.append(parse(stream, addon.name, addon.url, index))
+                    src = parse(stream, addon.name, addon.url, index, original)
+                    hints = stream.get("behaviorHints") if isinstance(stream.get("behaviorHints"), dict) else {}
+                    src.other_title = not mentions_title(titles, f"{src.release} {hints.get('filename') or ''}")
+                    if (tracks := self.tracks(src.key)):
+                        heard(src, tracks)
+                    sources.append(src)
                 except PARSE_ERRORS as exc:  # una fuente con datos raros se salta, no tumba la lista
                     log.info("Fuente rara de %s: %s", addon.name, exc)
                     continue
@@ -373,8 +565,26 @@ class StreamFinder:
             self._cache[key] = (stamp, ranked)
         return ranked
 
+    def cached(self, kind: str, video_id: str, prefs: Preferences) -> list[Source]:
+        """Las que ya se buscaron (sin ir a internet): para el reproductor, que no puede esperar. Si se buscaron con
+        otras preferencias (acabas de elegir latino), sirven igual: los números de fuente no cambian."""
+        hit = self._cache.get(f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}:{prefs.dub}")
+        if hit and time.time() - hit[0] < CACHE_SECONDS:
+            return hit[1]
+        fresh = [v for k, v in list(self._cache.items())
+                 if k.startswith(f"{kind}:{video_id}:") and time.time() - v[0] < CACHE_SECONDS]
+        other = max(fresh, key=lambda v: v[0], default=None)
+        # Ordenadas para estas preferencias sin tocar su `score` (la otra lista las comparte).
+        return sorted(other[1], key=lambda s: score(s, prefs, kind), reverse=True) if other else []
+
+    def forget(self, kind: str, video_id: str) -> None:
+        """Se aprendió algo de una fuente (sus pistas): la próxima búsqueda la vuelve a clasificar."""
+        with self._lock:
+            for key in [k for k in self._cache if k.startswith(f"{kind}:{video_id}:")]:
+                del self._cache[key]
+
     def get(self, kind: str, video_id: str, prefs: Preferences, index: int) -> Source | None:
-        hit = self._cache.get(f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}")
-        if not hit or time.time() - hit[0] >= CACHE_SECONDS:
+        found = self.cached(kind, video_id, prefs)
+        if not found:
             return None  # caducó (los enlaces de Real-Debrid vencen): quien llama busca otra vez
-        return next((s for s in hit[1] if s.index == index), None)
+        return next((s for s in found if s.index == index), None)

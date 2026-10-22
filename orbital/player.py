@@ -229,6 +229,8 @@ class OrbitalPlayer(PlayerScreen):
         self.on_failed = None  # (meta, posición, sigue_abierto) -> True si se intenta con otra fuente
         self.next_provider = None  # (meta) -> {"label", "title", "play"} | None
         self.sources_provider = None  # (meta) -> [{"id", "label", "current"}]
+        self.on_tracks = None  # (meta, track-list) -> aviso si no trae tu idioma (y lo recuerda: «Comprobado»)
+        self.versions_provider = None  # (meta) -> [{"id", "label", "hint"}]: tu idioma en otra versión (X › Audio)
         self.on_switch_source = None  # (meta, id_fuente, posición)
         self.on_episode = None  # (meta, ±1): episodio anterior / siguiente
         self.episodes_provider = None  # (meta) -> [{"id", "label", "current", "progress"?}] de la temporada
@@ -730,7 +732,10 @@ class OrbitalPlayer(PlayerScreen):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
             self.show_hud()
             return
-        if wrong_audio(tracks, self._audio_lang) and not segment.meta.get("synthetic"):
+        note = self._safe(self.on_tracks, segment.meta, tracks) if self.on_tracks else None
+        if isinstance(note, str) and note:
+            self.toast(note, 7)  # «Esta versión no trae latino: sus pistas son inglés y castellano · X › Audio…»
+        elif wrong_audio(tracks, self._audio_lang):
             # El archivo dice ser de otro idioma (un doblaje mal etiquetado): avisa en vez de callar.
             self.toast("Esta fuente no trae audio en tu idioma · Y › Fuente para elegir otra", 6)
         elif segment.start > 5:

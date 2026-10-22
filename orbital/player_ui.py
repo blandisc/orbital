@@ -727,11 +727,15 @@ def sync_options(delay: float) -> list[dict]:
 
 
 def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | None = None, focus: str = "audio",
-                 sub_delay: float = 0.0) -> Panel:
-    """X: Audio · Subtítulos · Tamaño · Sincronía de los subtítulos, en columnas (el video sigue)."""
+                 sub_delay: float = 0.0, versions: list[dict] | None = None) -> Panel:
+    """X: Audio · Subtítulos · Tamaño · Sincronía de los subtítulos, en columnas (el video sigue). En Audio, después de
+    las pistas de esta versión, tu idioma en otra («Latino · en otra versión  4K · al instante»): cambia de fuente
+    y sigue donde ibas."""
     sizes = [{"label": name, "action": ("subscale", value), "current": abs(value - sub_scale) < .01}
              for value, name in SUB_SCALES]
-    columns = [_column("audio", track_options("audio", tracks)), _column("sub", track_options("sub", tracks, extra_subs)),
+    other = [{"label": v["label"], "hint": v.get("hint", ""), "action": ("source", v["id"]), "current": False}
+             for v in versions or []]
+    columns = [_column("audio", track_options("audio", tracks, other)), _column("sub", track_options("sub", tracks, extra_subs)),
                _column("size", sizes), _column("sync", sync_options(sub_delay))]
     return Panel("tracks", columns, next((i for i, c in enumerate(columns) if c.key == focus), 0))
 

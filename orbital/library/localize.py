@@ -47,6 +47,12 @@ class Localizer:
     def active(self) -> str | None:
         return tmdb_language(self.language()) if self.tmdb.configured else None
 
+    def facts(self, kind: str, imdb: str) -> dict | None:
+        """Idioma original y nombres del título (tmdb.original), recordados un día: para el idioma de las fuentes."""
+        if not self.tmdb.configured or kind not in ("movie", "series") or not imdb.startswith("tt"):
+            return None
+        return self._remember(("facts", imdb, kind), lambda: self.tmdb.original(imdb, kind))
+
     def _remember(self, key: tuple, fetch: Callable[[], dict | None]) -> dict | None:
         with self._lock:
             hit = self._cache.get(key)

@@ -266,6 +266,24 @@ class Tmdb:
 
         return {"posters": pick(raw.get("posters"), "w500"), "backgrounds": pick(raw.get("backdrops"), "w1280")}
 
+    def original(self, imdb: str, kind: str) -> dict:
+        """El idioma original de un título y sus nombres, para saber en qué idioma viene una fuente que no lo dice:
+        {"original": "en" | "ja" | "es-ES" | "es-419"…, "titles": [...]}. El español, con su país (Roma es mexicana;
+        La casa de papel, española)."""
+        data = self._get(f"/find/{imdb}", external_source="imdb_id")
+        rows = data.get("movie_results" if kind == "movie" else "tv_results") or []
+        row = rows[0] if isinstance(rows, list) and rows and isinstance(rows[0], dict) else {}
+        lang = str(row.get("original_language") or "").lower()
+        titles = [str(row.get(k) or "").strip() for k in ("title", "original_title", "name", "original_name")]
+        if lang == "es":
+            countries = row.get("origin_country") or []
+            if not countries and kind == "movie" and _positive(row.get("id")):
+                countries = self._get(f"/movie/{int(row['id'])}").get("origin_country") or []
+            countries = [c for c in countries if isinstance(c, str)]
+            lang = "es-ES" if countries[:1] == ["ES"] else "es-419" if countries else "es"
+        lang = {"xx": "", "cn": "zh"}.get(lang, lang)  # «xx»: sin idioma (mudas, música); «cn»: cantonés
+        return {"original": lang or None, "titles": list(dict.fromkeys(t for t in titles if t))}
+
     def find_id(self, imdb: str, kind: str) -> int | None:
         """El id de TMDB de un título de IMDb (None si TMDB no lo tiene)."""
         data = self._get(f"/find/{imdb}", external_source="imdb_id")

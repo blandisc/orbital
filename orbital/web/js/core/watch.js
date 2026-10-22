@@ -80,7 +80,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   if (playable && phone) out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" });
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
   // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
-  if (playable) out.push({ id: "sources", icon: "list", label: "Elegir fuente", short: "Fuente" });
+  if (playable) out.push({ id: "sources", icon: "list", label: "Elegir versión", short: "Versión" });
   if (restart) out.push(restart);
   if (playable && phone) out.push({ id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
   // Desde Mi media (tu OneDrive), como el iPhone: elegir cuál de tus versiones ver y corregir la ficha si no es esta.
@@ -144,24 +144,108 @@ export function actionStep(count, index, act) {
   return null;
 }
 
-/** La hoja de Fuente, como el iPhone: la recomendada sola arriba y el resto por calidad (4K, 1080p, 720p, Otras),
- * cada grupo en el orden de tus preferencias. Devuelve los grupos y `order`: las fuentes en el orden en que se ven. */
 /** Tu copia en OneDrive (el servidor la pone primero): se dice así, como el iPhone, y no «Idioma desconocido». */
 export const OWN_SOURCE = "Tu OneDrive";
 export const isOwnSource = (src) => src?.addon === OWN_SOURCE;
 
-export function sourceGroups(sources = []) {
-  if (!sources.length) return { groups: [], order: [] };
-  const [best, ...rest] = sources;
-  const note = isOwnSource(best) ? "Tu copia en OneDrive" : "La elegimos por tu idioma, la calidad y el tamaño";
-  const groups = [{ id: "best", title: "Recomendada", note, items: [best] }];
-  for (const res of ["4K", "1080p", "720p"]) {
-    const items = rest.filter((s) => s.resolution === res);
-    if (items.length) groups.push({ id: res, title: res, items });
+/** Cómo sabemos el idioma de una pista (streams.EVIDENCE), en palabras. */
+export const PROOF_LABELS = {
+  seen: "Comprobado", name: "Lo dice el nombre", site: "Lo dice el sitio", original: "Es el original",
+  assumed: "No dice idioma", maybe: "Tal vez",
+};
+const VERSION_RES = ["4K", "1080p", "720p", "SD"];
+const PROOF_RANK = { seen: 5, name: 4, site: 4, original: 3, assumed: 2, maybe: 1 };
+const versionRes = (src) => (["4K", "1080p", "720p"].includes(src.resolution) ? src.resolution : "SD");
+const JUNK = ["CAM", "Tráiler", "3D"];
+
+/**
+ * «Elegir versión»: una fila por IDIOMA DE AUDIO y, en cada una, solo las calidades que hay (la mejor de cada una,
+ * en el orden del servidor). Sin casillas vacías ni contadores. Primero tu idioma (en español, el doblaje que
+ * prefieres, luego «Español (no dice cuál)» y luego el otro), luego el original, luego el español que quede y luego
+ * los demás.
+ * Una fuente con varias pistas sale en cada fila de sus idiomas. Grabadas en el cine, tráileres y 3D no salen
+ * (salvo que no haya otra cosa). `prefs`: { audio: "en" | "es", dub: "latino" | "castellano" | "" }.
+ * Devuelve [{ code, name, role, options: [{ res, source, proof, all }] }]; `all`: las de esa fila y calidad (X).
+ */
+export function versionRows(sources = [], prefs = {}) {
+  const usable = sources.filter((s) => !(s.tags || []).some((t) => JUNK.includes(t)));
+  const pool = usable.length ? usable : sources;
+  const rows = new Map();
+  for (const src of pool) {
+    const langs = src.audio_langs?.length ? src.audio_langs
+      : [{ code: isOwnSource(src) ? "own" : "other", name: isOwnSource(src) ? OWN_SOURCE : "Sin idioma", proof: "" }];
+    for (const lang of langs) {
+      const row = rows.get(lang.code) || { code: lang.code, name: lang.name, original: false, cells: new Map() };
+      row.original ||= lang.proof === "original";
+      const res = versionRes(src);
+      const cell = row.cells.get(res) || { res, source: src, proof: lang.proof, all: [] };
+      // La primera del servidor (la mejor para ti), salvo que su idioma sea dudoso y haya otra que lo diga seguro.
+      // Tampoco una que parece de otro título («La casa de la pradera») si hay una que sí es.
+      const sure = (proof) => (PROOF_RANK[proof] || 0) >= PROOF_RANK.original;
+      if ((!sure(cell.proof) && sure(lang.proof)) || (cell.source.other_title && !src.other_title)) {
+        Object.assign(cell, { source: src, proof: lang.proof });
+      }
+      cell.all.push(src);
+      row.cells.set(res, cell);
+      rows.set(lang.code, row);
+    }
   }
-  const other = rest.filter((s) => !["4K", "1080p", "720p"].includes(s.resolution));
-  if (other.length) groups.push({ id: "other", title: "Otras", items: other });
-  return { groups, order: groups.flatMap((g) => g.items) };
+  const dub = { latino: "es-419", castellano: "es-ES" }[prefs.dub];
+  const mine = prefs.audio === "es" ? (dub ? [dub] : ["es-419", "es-ES"]) : [prefs.audio || "en"];
+  const wanted = prefs.audio === "es" ? [...mine, "es", "es-419", "es-ES"] : mine;
+  const spanish = ["es-419", "es-ES", "es"];
+  const rank = (row) => {
+    const i = wanted.filter(Boolean).indexOf(row.code);
+    if (i >= 0) return i;
+    if (row.code === "own") return -1;
+    // Luego el original y, como Orbital es en español, latino, castellano y «Español (no dice cuál)» antes que los demás.
+    return row.original ? 10 : spanish.includes(row.code) ? 11 + spanish.indexOf(row.code) : 20;
+  };
+  const size = (row) => [...row.cells.values()].reduce((n, c) => n + c.all.length, 0);
+  return [...rows.values()]
+    .sort((a, b) => rank(a) - rank(b) || size(b) - size(a))
+    .map((row) => ({
+      code: row.code, name: row.name,
+      role: mine.includes(row.code) ? "Tu idioma" : row.code === "es" ? "No dice si latino o castellano" : row.original ? "Original" : "",
+      options: VERSION_RES.filter((r) => row.cells.has(r)).map((r) => row.cells.get(r)),
+    }));
+}
+
+/** Los idiomas de una versión en una línea: los seguros con su prueba y los «tal vez» resumidos (una de Crunchyroll trae
+ * nueve banderas). `focus`: el idioma de la fila enfocada, que se nombra aunque sea «tal vez». */
+export function languageLine(src, focus = null) {
+  const langs = src?.audio_langs || [];
+  const sure = langs.filter((l) => l.proof !== "maybe").map((l) => `${l.name} (${(PROOF_LABELS[l.proof] || "").toLowerCase()})`);
+  const maybe = langs.filter((l) => l.proof === "maybe");
+  const mine = maybe.find((l) => l.code === focus);
+  const rest = maybe.length - (mine ? 1 : 0);
+  const tail = mine ? `${mine.name} tal vez${rest ? `, entre ${rest} más` : ""}` : rest ? `${rest} más tal vez` : "";
+  return [sure.join(" + "), tail].filter(Boolean).join(" · ");
+}
+
+/** Dónde empieza el foco: la opción de la recomendada (la primera del servidor) en la primera fila que la tenga. */
+export function versionStart(rows, recommended) {
+  for (let r = 0; r < rows.length; r++) {
+    const c = rows[r].options.findIndex((o) => o.source === recommended);
+    if (c >= 0) return { row: r, col: c };
+  }
+  return { row: 0, col: 0 };
+}
+
+/** ↑↓ cambian de fila (idioma) y se quedan en la misma calidad si la hay; ◀ ▶ cambian de calidad. */
+export function versionStep(rows, at, action) {
+  const { row, col } = at;
+  if (!rows?.[row]?.options.length) return at;
+  if (action === "left" || action === "right") {
+    const next = col + (action === "right" ? 1 : -1);
+    return next >= 0 && next < rows[row].options.length ? { row, col: next } : at;
+  }
+  if (action !== "up" && action !== "down") return at;
+  const r = row + (action === "down" ? 1 : -1);
+  if (r < 0 || r >= rows.length) return at;
+  const res = rows[row].options[col]?.res;
+  const same = rows[r].options.findIndex((o) => o.res === res);
+  return { row: r, col: same >= 0 ? same : Math.max(0, Math.min(col, rows[r].options.length - 1)) };
 }
 
 export function availability(sources = [], { top = 12 } = {}) {

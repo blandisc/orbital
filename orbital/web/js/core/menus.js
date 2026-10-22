@@ -389,6 +389,7 @@ export function powerConfirmMenu(action, running = null) {
 // Cada ajuste: sus valores de menos a más (▶ sube, ◀ baja; A pasa al siguiente y da la vuelta) y cómo se llaman.
 export const SETTING_VALUES = {
   audio: [["en", "Inglés"], ["es", "Español"]],
+  dub: [["latino", "Latino"], ["castellano", "Castellano"], ["", "Cualquiera"]],
   subtitles: [["en", "Inglés"], ["es", "Español"], ["forced", "Solo traducciones en pantalla"], ["", "Sin subtítulos"]],
   quality: [["720p", "720p"], ["1080p", "1080p"], ["4K", "4K"]],
   sub_scale: [[.85, "Pequeño"], [1, "Normal"], [1.25, "Grande"], [1.5, "Muy grande"]],
@@ -440,14 +441,15 @@ function edgeAware(key, value, step, page) {
 
 /** Un ícono por ajuste (antes, todos los de la página con el mismo). */
 const SETTING_ICONS = {
-  audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
+  audio: "sound", dub: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", haptics: "gamepad", game_idle_minutes: "gamepad",
   video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide",
 };
 
 const SETTING_PAGES = {
   playback: { title: "Películas y series", icon: "play", hint: "Idioma, subtítulos y calidad", options: [
-    ["audio", "Idioma", "En qué idioma prefieres oírlas"], ["subtitles", "Subtítulos", null], ["quality", "Calidad", null],
+    ["audio", "Idioma", "En qué idioma prefieres oírlas"], ["dub", "Español", "Cuando sea en español: qué doblaje"],
+    ["subtitles", "Subtítulos", null], ["quality", "Calidad", null],
     ["sub_scale", "Letra de los subtítulos", null]] },
   display: { title: "Pantalla y sonido", icon: "display", hint: "Texto, márgenes, sonidos y vibración", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],

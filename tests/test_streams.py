@@ -44,7 +44,8 @@ def test_parse_reads_quality_size_seeders_languages():
 
 def test_rank_english_1080p_skips_latino_remux_dv_and_trailer():
     best = rank(parsed(INTERSTELLAR), Preferences(audio="en", quality="1080p"), "movie")
-    assert best[0].release == "Interstellar.2014.IMAX.1080p.BluRay.x265-RARBG"  # inglés, 1080p, 3 GB, lista
+    # En inglés, 1080p y lista. Una dual que dice inglés vale lo mismo que una que no dice nada (antes perdía).
+    assert "en" in best[0].languages and best[0].resolution == "1080p" and best[0].cached
     assert best[-1].tags == ["Tráiler"] or "Tráiler" in best[-1].tags
     top3 = [b.release for b in best[:3]]
     assert not any("lat" in r.lower() or "LAT" in r for r in top3)

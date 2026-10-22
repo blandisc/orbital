@@ -205,7 +205,8 @@ def router(d: Deps) -> APIRouter:
                     **cinemeta.describe_meta(meta)}
         except cinemeta.CinemetaError:
             info = {}
-        return {"sources": [s.public() for s in found], "audio": prefs.audio, "quality": prefs.quality, "meta": info}
+        return {"sources": [s.public() for s in found], "audio": prefs.audio, "dub": prefs.dub, "quality": prefs.quality,
+                "meta": info}
 
     @r.post("/play")
     def play(body: PlayRequest) -> dict:
