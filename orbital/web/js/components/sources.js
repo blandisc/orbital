@@ -3,7 +3,7 @@ import { motion } from "../core/motion.js";
 import { Badge, Chip } from "./ui.js";
 import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
-import { isOwnSource, sourceGroups } from "../core/watch.js";
+import { isOwnSource, sourceGroups, sourceLanguages } from "../core/watch.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 
 /**
@@ -13,7 +13,7 @@ import { h, hideAfterExit, mount } from "../core/dom.js";
  * el complemento), solo si lo pides con X, como el iPhone.
  *   ↑/↓ fuente · A ver · X detalles · B volver a la ficha
  */
-const AUDIO_NAMES = { en: "inglés", es: "español" };
+const AUDIO_NAMES = { en: "inglés", es: "español", "es-419": "español latino", "es-ES": "castellano" };
 
 export function createSources({ onPlay, onMove, onClose, onChange }) {
   const heading = h("div", { class: "sources__heading" }, "Elegir fuente");
@@ -29,6 +29,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     onClick: (e) => e.target === el && close() }, panel);
 
   let request = null; // { kind, id, video_id, title, item }
+  let recommended = null; // la que pone «Ver» (el servidor lo dice: con «Continuar», la de antes)
   let found = [];
   let index = 0;
   let token = 0;
@@ -42,14 +43,14 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     return [
       src.cached ? Chip("Al instante", { tone: "good" })
         : src.debrid ? Chip("Tarda en empezar", { tone: "warn" }) : null,
-      Chip(src.languages.join(" + ") || "Idioma desconocido"),
+      Chip(sourceLanguages(src).join(" + ") || "Idioma desconocido"),
       ...src.hdr.map((t) => Chip(t === "DV" ? "Dolby Vision" : t)),
       src.audio && Chip(src.audio === "Atmos" ? "Dolby Atmos" : `Sonido ${src.audio}`),
     ].filter(Boolean);
   }
 
   function render() {
-    const { groups, order } = sourceGroups(found);
+    const { groups, order } = sourceGroups(found, recommended);
     found = order;
     let i = 0;
     rows = [];
@@ -115,8 +116,9 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       if (mine !== token) return;
       if (!Array.isArray(data?.sources)) throw new Error("No pude leer las fuentes. Intenta de nuevo.");
       found = data.sources;
+      recommended = data.recommended?.id ?? null;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
-      subtitle.textContent = (isOwnSource(found[0]) ? "Tu OneDrive primero; luego, por calidad. " : "") + `Primero las de audio en ${AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
+      subtitle.textContent = (isOwnSource(found[0]) ? "Tu OneDrive primero; luego, por calidad. " : "") + `Primero las de audio en ${AUDIO_NAMES[data.spanish] || AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
         + "La recomendada es la que pone «Ver». «Al instante»: arranca en segundos; «Tarda en empezar»: primero se descarga.";
       status.hidden = !!found.length;
       status.textContent = found.length ? "" : "No encontré dónde ver esto: tus complementos de Stremio no lo tienen.";

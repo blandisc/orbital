@@ -95,7 +95,10 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   const page = settingsPage("playback", { audio: "en", subtitles: "forced", quality: "1080p", sub_scale: 1 });
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
     ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"]]);
-  assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es", page: "playback" });
+  assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es-419", page: "playback" });
+  // Latino, de España o cualquiera (como el iPhone); quien ya tenía «es» sigue en «cualquiera».
+  assert.equal(settingsPage("playback", { audio: "es" }).options[0].value, "Español (cualquiera)");
+  assert.equal(settingsPage("playback", { audio: "es-ES" }).options[0].value, "Español de España");
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
   const accounts = settingsPage("accounts", { stremio_linked: false });
   assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Stremio", "Conectar"], ["iPhone", "Conectar"]]);

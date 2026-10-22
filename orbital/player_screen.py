@@ -20,7 +20,7 @@ import threading
 import time
 
 from . import player_ui
-from .playback import CHAPTER_SEEK, UPNEXT_COUNTDOWN, seek_step
+from .playback import CHAPTER_SEEK, UPNEXT_COUNTDOWN, seek_step, track_variant
 from .text import clock
 
 log = logging.getLogger(__name__)
@@ -336,6 +336,8 @@ class PlayerScreen:
             self.toast(f"{kind}: {option['label'].split(' · ')[0]}")
             if self.on_language and self.current is not None:  # que la serie lo recuerde
                 lang = "" if value == "no" else option.get("lang")
+                if prop == "aid" and lang is not None:  # «spa · Latino»: que la serie recuerde el doblaje, no solo «español»
+                    lang = track_variant(lang, option.get("label") or "") or lang
                 if lang is not None:
                     self._safe(self.on_language, meta, "audio" if prop == "aid" else "subtitles", lang)
 

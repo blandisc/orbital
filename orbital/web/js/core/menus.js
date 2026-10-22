@@ -388,7 +388,7 @@ export function powerConfirmMenu(action, running = null) {
 // --- Ajustes ------------------------------------------------------------------------------
 // Cada ajuste: sus valores de menos a más (▶ sube, ◀ baja; A pasa al siguiente y da la vuelta) y cómo se llaman.
 export const SETTING_VALUES = {
-  audio: [["en", "Inglés"], ["es", "Español"]],
+  audio: [["en", "Inglés"], ["es-419", "Español latino"], ["es-ES", "Español de España"], ["es", "Español (cualquiera)"]],
   subtitles: [["en", "Inglés"], ["es", "Español"], ["forced", "Solo traducciones en pantalla"], ["", "Sin subtítulos"]],
   quality: [["720p", "720p"], ["1080p", "1080p"], ["4K", "4K"]],
   sub_scale: [[.85, "Pequeño"], [1, "Normal"], [1.25, "Grande"], [1.5, "Muy grande"]],

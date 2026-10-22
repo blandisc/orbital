@@ -64,7 +64,8 @@ WORD_LANG = [
 # mayúscula (en «Dual-Lat»); en minúsculas puede ser parte de otra palabra.
 LATINO = re.compile(r"\b(latino|latam|latinoam[eé]rica(no)?|es-?419|hispanoam[eé]rica)\b|🇲🇽|🇦🇷|🇨🇴|🇨🇱|🇵🇪|🇻🇪", re.I)
 LATINO_STRICT = re.compile(r"\b(Lat|LAT)\b")
-CASTELLANO = re.compile(r"(?i:\b(castellano|castilian|es-es)\b)|\bCAST\b|🇪🇸")
+# 🇪🇸 no: muchos complementos la ponen para cualquier español (el iPhone la toma igual, `Streams.swift`).
+CASTELLANO = re.compile(r"(?i:\b(castellano|castilian|es-es)\b)|\bCAST\b")
 LANG_NAMES = {"en": "Inglés", "es": "Español", "fr": "Francés", "it": "Italiano", "de": "Alemán", "pt": "Portugués",
               "ru": "Ruso", "ja": "Japonés", "ko": "Coreano", "zh": "Chino", "hi": "Hindi", "pl": "Polaco",
               "tr": "Turco", "uk": "Ucraniano", "nl": "Neerlandés", "cs": "Checo", "sk": "Eslovaco",
@@ -117,7 +118,7 @@ class Source:
             "id": self.index, "addon": self.addon, "resolution": self.resolution, "hdr": self.hdr,
             "size": self.size, "seeders": self.seeders, "site": self.site, "cached": self.cached,
             "debrid": self.debrid, "languages": [LANG_NAMES.get(l, l) for l in self.languages],
-            "release": self.release, "tags": self.tags, "audio": self.audio_label,
+            "release": self.release, "tags": self.tags, "audio": self.audio_label, "dub": self.dub,
         }
 
     @property
@@ -217,10 +218,29 @@ def spanish_dub(text: str) -> str:
     return "castellano" if CASTELLANO.search(text) else ""
 
 
+# El doblaje de una fuente y la variante que se pide en Ajustes (los códigos del iPhone).
+DUB_CODES = {"latino": "es-419", "castellano": "es-ES"}
+SPANISH_VARIANTS = ("es-419", "es-ES")
+
+
 @dataclass
 class Preferences:
     audio: str = "en"  # idioma de audio preferido
     quality: str = "1080p"  # resolución preferida ("4K" en la TV si quieres)
+    spanish: str = ""  # con audio en español: "es-419" (latino), "es-ES" (castellano) o "" (cualquiera)
+
+
+def language_score(src: Source, prefs: Preferences) -> float:
+    """Cuánto suma el idioma (las mismas cuentas que `Streams.languageScore` del iPhone). Solo el preferido es lo mejor;
+    «dual» con el preferido, aceptable; sin él, al fondo. Con una variante de español elegida: el doblaje pedido primero,
+    luego el español que no dice cuál y al final la otra variante."""
+    if prefs.audio not in src.languages:
+        return -600
+    if prefs.audio == "es" and prefs.spanish in SPANISH_VARIANTS:
+        dub = DUB_CODES.get(src.dub, "")
+        best = 300 if dub == prefs.spanish else 180 if not dub else 60
+        return best if len(src.languages) == 1 else best - 80
+    return 300 if src.languages == [prefs.audio] else 120
 
 
 def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
@@ -229,13 +249,7 @@ def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
         s += 1000  # arranca al instante
     elif src.debrid:
         s -= 400  # Real-Debrid aún tiene que descargarla
-    # Idioma: solo el preferido es lo mejor; "dual" con el preferido, aceptable; sin él, al fondo.
-    if src.languages == [prefs.audio]:
-        s += 300
-    elif prefs.audio in src.languages:
-        s += 120
-    else:
-        s -= 600
+    s += language_score(src, prefs)
     order = ["4K", "1080p", "720p", "480p", ""]
     want = order.index(prefs.quality) if prefs.quality in order else 1
     have = order.index(src.resolution) if src.resolution in order else len(order) - 1
@@ -276,6 +290,11 @@ def player_link(src: Source, meta_transport: str, kind: str, meta_id: str, video
     """Abre el reproductor de Stremio directo con esa fuente (sin su lista de fuentes)."""
     parts = [encode_stream(src.stream), src.transport_url, meta_transport, kind, meta_id, video_id]
     return "stremio:///player/" + "/".join(_encode_component(p) for p in parts)
+
+
+def cache_key(kind: str, video_id: str, prefs: Preferences) -> str:
+    """La lista ordenada depende del idioma, la variante y la calidad: cada combinación se recuerda aparte."""
+    return f"{kind}:{video_id}:{prefs.audio}:{prefs.spanish}:{prefs.quality}"
 
 
 class StreamFinder:
@@ -323,7 +342,7 @@ class StreamFinder:
         return urls
 
     def find(self, kind: str, video_id: str, prefs: Preferences) -> list[Source]:
-        key = f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}"
+        key = cache_key(kind, video_id, prefs)
         with self._lock:
             hit = self._cache.get(key)
             if hit and time.time() - hit[0] < CACHE_SECONDS:
@@ -374,7 +393,7 @@ class StreamFinder:
         return ranked
 
     def get(self, kind: str, video_id: str, prefs: Preferences, index: int) -> Source | None:
-        hit = self._cache.get(f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}")
+        hit = self._cache.get(cache_key(kind, video_id, prefs))
         if not hit or time.time() - hit[0] >= CACHE_SECONDS:
             return None  # caducó (los enlaces de Real-Debrid vencen): quien llama busca otra vez
         return next((s for s in hit[1] if s.index == index), None)

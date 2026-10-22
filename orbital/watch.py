@@ -15,6 +15,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from pathlib import Path
 
 from . import companion, player, player_ui
@@ -54,6 +55,26 @@ def language_code(code: str | None) -> str | None:
     if code.startswith("en"):
         return "en"
     return None
+
+
+def spanish_variant(code: str | None) -> str:
+    """El doblaje de una pista o de un ajuste: «es-419» (latino: es-MX, es-419, es-LA…), «es-ES» (castellano) o ""."""
+    code = (code or "").lower().replace("_", "-")
+    if not code.startswith("es-"):
+        return ""
+    return "es-ES" if code == "es-es" else "es-419"
+
+
+SUBTITLE_LINES = {"": "Sin subtítulos", "forced": "Solo traducciones en pantalla"}
+
+
+def version_line(source: streams.Source, prefs: streams.Preferences, subtitles: str) -> str:
+    """Lo que va a sonar con «Ver», en palabras: «Latino · 1080p · Sin subtítulos». El doblaje solo si el nombre de la
+    fuente lo dice (si no, «Español»); el idioma que pediste si la fuente lo trae, si no el que trae."""
+    lang = prefs.audio if prefs.audio in source.languages else (source.languages or [""])[0]
+    name = source.dub.capitalize() if lang == "es" and source.dub else streams.LANG_NAMES.get(lang, lang)
+    subs = SUBTITLE_LINES.get(subtitles) or f"Subtítulos en {streams.LANG_NAMES.get(subtitles, subtitles).lower()}"
+    return " · ".join(p for p in (name, source.resolution, subs) if p)
 
 
 def handoff_pick(handoff: dict) -> dict | None:
@@ -436,7 +457,10 @@ class Watch:
 
     @property
     def stream_prefs(self) -> streams.Preferences:
-        return streams.Preferences(audio=self.setting("audio", self.config.stremio.audio),
+        """Ajustes › Idioma: «en», «es» (cualquier español), «es-419» (latino) o «es-ES» (castellano)."""
+        audio = str(self.setting("audio", self.config.stremio.audio) or "en")
+        variant = spanish_variant(audio)
+        return streams.Preferences(audio="es" if variant else audio, spanish=variant,
                                    quality=self.setting("quality", self.config.stremio.quality))
 
     @property
@@ -450,7 +474,9 @@ class Watch:
         prefs = self.stream_prefs
         # Solo texto: un valor raro en state.json («audio»: ["x"]) impedía reproducir ese título.
         if isinstance(saved.get("audio"), str) and saved["audio"]:
-            prefs = streams.Preferences(audio=saved["audio"], quality=prefs.quality)
+            prefs = replace(prefs, audio=saved["audio"])
+        if prefs.audio == "es" and saved.get("spanish") in streams.SPANISH_VARIANTS:
+            prefs = replace(prefs, spanish=saved["spanish"])  # elegiste la pista latina (o castellana) de esta serie
         subtitles = saved.get("subtitles")
         return prefs, subtitles if isinstance(subtitles, str) else self.subtitles_lang
 
@@ -459,6 +485,8 @@ class Watch:
         lang = language_code(code)
         if meta.get("meta_id") and lang is not None:
             self.state.set_pref(f"stremio:{meta['meta_id']}", kind, lang)
+            if kind == "audio" and lang == "es" and spanish_variant(code):  # la pista latina: los siguientes, en latino
+                self.state.set_pref(f"stremio:{meta['meta_id']}", "spanish", spanish_variant(code))
             log.info("%s recordará %s: %s", meta.get("title") or meta["meta_id"], kind, lang or "sin subtítulos")
 
     def stream_sources(self, kind: str, video_id: str, prefs: streams.Preferences | None = None) -> list[streams.Source]:
@@ -508,6 +536,7 @@ class Watch:
         p.on_send_iphone = self._send_to_phone
         p.idle_seconds = int(self.setting("video_idle_minutes", self.config.sessions.video_idle_minutes)) * 60
         p.on_language = self._remember_language
+        p.spanish_provider = lambda meta: self.language_for(meta["meta_id"])[0].spanish if meta.get("meta_id") else ""
         p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
         player_ui.set_text_size(self.setting("text_size", "normal"))  # la letra del reproductor sigue a Ajustes
@@ -576,6 +605,16 @@ class Watch:
                 return same
         return found[0]
 
+    def choose_source(self, kind: str, video_id: str, prefs: streams.Preferences,
+                      resume: dict | None = None) -> streams.Source | None:
+        """La que pone «Ver»: la fuente con la que lo dejaste («Continuar»), si sigue ahí; si no, la recomendada. La misma
+        cuenta para reproducir y para decir en la ficha qué va a sonar (antes la ficha describía otra)."""
+        if resume and resume.get("source"):
+            same = next((s for s in self.stream_sources(kind, video_id, prefs) if s.key == resume["source"]), None)
+            if same is not None:
+                return same
+        return self.best_source(kind, video_id, prefs=prefs)
+
     def no_sources_message(self, kind: str, video_id: str) -> str:
         """Por qué no hay dónde verlo, con qué hacer: sin Internet, sin complementos o de verdad no hay."""
         why = self.streams.outcome.get(f"{kind}:{video_id}")
@@ -603,18 +642,16 @@ class Watch:
             resume = {**resume, "sub": {**(resume.get("sub") or {}), "audio": resume["audio"]}}
         if handoff:
             resume = {"video_id": video_id, "source": handoff.get("source"), "sub": pick}
-            audio = language_code((handoff.get("audio") or {}).get("lang"))
-            if audio:  # el idioma del audio del iPhone: también para elegir fuente si la suya no está
-                prefs = streams.Preferences(audio=audio, quality=prefs.quality)
+            code = (handoff.get("audio") or {}).get("lang")
+            audio = language_code(code)
+            if audio:  # el idioma del audio del iPhone (con su variante): también para elegir fuente si la suya no está
+                prefs = replace(prefs, audio=audio, spanish=spanish_variant(code) or (prefs.spanish if audio == "es" else ""))
             sub = handoff.get("subtitle") or {}
             if sub.get("off"):
                 subtitles = ""
             elif language_code(sub.get("lang")):
                 subtitles = language_code(sub.get("lang")) or subtitles
-        source = None
-        if resume and resume.get("source"):  # «Continuar»: la fuente con la que lo dejaste, si sigue ahí
-            source = next((s for s in self.stream_sources(kind, video_id, prefs) if s.key == resume["source"]), None)
-        source = source or self.best_source(kind, video_id, prefs=prefs)
+        source = self.choose_source(kind, video_id, prefs, resume)
         if source is None:
             raise LookupError(self.no_sources_message(kind, video_id))
         self.play_source(kind, meta_id, video_id, source.index, title, keep=keep, from_start=from_start,
@@ -902,7 +939,7 @@ class Watch:
         searched = threading.Event()
         problem: list[str] = []
         # Sin idioma pedido: el que recuerda ese título (el mismo con el que se listan sus fuentes).
-        prefs = streams.Preferences(audio=audio, quality=self.stream_prefs.quality) if audio else self.language_for(meta_id)[0]
+        prefs = replace(self.stream_prefs, audio=audio) if audio else self.language_for(meta_id)[0]
 
         def run() -> None:
             try:

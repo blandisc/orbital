@@ -238,6 +238,7 @@ class OrbitalPlayer(PlayerScreen):
         self.on_send_iphone = None  # (meta, "open" | "download") -> aviso en palabras (o lanza ValueError con el motivo)
         self.system_volume = None  # (leer, escribir) del volumen de Windows: un solo volumen (ver player_screen._muted)
         self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
+        self.spanish_provider = None  # (meta) -> "es-419" | "es-ES" | "": el doblaje que va con ese título
         # TV en vivo (ver tv.py): el reproductor solo pregunta y avisa, no sabe de listas ni de salud.
         self.channels_provider = None  # (meta, categoría | None) -> {"category", "categories", "channels"}
         self.on_play_channel = None  # (meta, id_del_canal, categoría | None): sintonizar ese canal
@@ -735,9 +736,24 @@ class OrbitalPlayer(PlayerScreen):
             self.toast("Esta fuente no trae audio en tu idioma · Y › Fuente para elegir otra", 6)
         elif segment.start > 5:
             self.toast("Sigues donde te quedaste · ◀ regresa", 3.5)
+        self._pick_dub(segment, tracks)
         if not self._apply_sub_pick(tracks):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
         self.show_hud()  # al empezar: qué estás viendo y qué hace cada botón
+
+    def _pick_dub(self, segment: Segment, tracks: list) -> None:
+        """Un archivo con dos pistas en español (latino y castellano, las dos «spa»): la del doblaje que quieres. mpv elige
+        por idioma y no sabe cuál es cuál; el título de la pista sí lo dice. «Continuar» (el audio con que lo dejaste) va
+        después y manda."""
+        if self._audio_lang != "es" or self.spanish_provider is None:
+            return
+        variant = self._safe(self.spanish_provider, segment.meta)
+        if variant not in ("es-419", "es-ES"):
+            return
+        pick = dub_track(tracks, "latino" if variant == "es-419" else "castellano")
+        selected = next((t.get("id") for t in tracks if t.get("type") == "audio" and t.get("selected")), None)
+        if isinstance(pick, int) and not isinstance(pick, bool) and pick != selected:
+            self.mpv.command("set_property", "aid", pick)
 
     def _synthetic_tick(self, segment: Segment, now: float, paused: bool) -> None:
         """Un canal de Orbital va al aire aunque no lo veas: tras una pausa de más de un minuto, al seguir, regresa a lo

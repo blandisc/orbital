@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from .. import player_ui
+from .. import player_ui, watch
 from ..library import cinemeta, stremio_api
 from .deps import Deps
 
@@ -189,7 +189,7 @@ def router(d: Deps) -> APIRouter:
         """Fuentes ordenadas por tus preferencias; la primera es la recomendada. Sin URLs."""
         if kind not in ("movie", "series"):
             raise HTTPException(400, "Tipo inválido")
-        prefs, _ = catalog.watch.language_for(id)  # el idioma que recuerda este título, igual que al reproducir
+        prefs, subtitles = catalog.watch.language_for(id)  # el idioma que recuerda este título, igual que al reproducir
         try:
             found = catalog.watch.stream_sources(kind, video or id, prefs)
         except stremio_api.StremioError as exc:
@@ -205,7 +205,14 @@ def router(d: Deps) -> APIRouter:
                     **cinemeta.describe_meta(meta)}
         except cinemeta.CinemetaError:
             info = {}
-        return {"sources": [s.public() for s in found], "audio": prefs.audio, "quality": prefs.quality, "meta": info}
+        # La que pondría «Ver» (con «Continuar», la de antes) y cómo va a sonar: la ficha lo dice bajo el botón.
+        chosen = catalog.watch.choose_source(kind, video or id, prefs, catalog.watch.resume_choice(id, video or id))
+        recommended = {"id": chosen.index, "line": watch.version_line(chosen, prefs, subtitles)} if chosen else None
+        downloads = catalog.watch.downloads
+        if recommended and downloads is not None and downloads.file_for(video or id):
+            recommended["line"] = "Tu descarga · sin internet"  # «Ver» la pone del disco
+        return {"sources": [s.public() for s in found], "audio": prefs.audio, "spanish": prefs.spanish,
+                "quality": prefs.quality, "meta": info, "recommended": recommended}
 
     @r.post("/play")
     def play(body: PlayRequest) -> dict:

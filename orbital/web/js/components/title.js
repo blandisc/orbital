@@ -58,6 +58,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
 
   let item = null;
   let details = null;
+  let plays = null; // { video_id, line }: cómo va a sonar «Ver» (lo dice el servidor)
   let buttons = [];
   let zone = "actions"; // "actions" | "episodes" | "more" | "cast"
   let action = 0;
@@ -195,7 +196,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   function renderActions() {
     const t = details && !details.error ? target() : null;
     buttons = titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone(),
-      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length } });
+      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays });
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // El principal lleva el botón del mando que lo hace (A / Enter), como todo Orbital; los demás, su ícono en una caja y su
     // nombre corto debajo, siempre a la vista (antes solo ícono, y el nombre aparecía al enfocarlo).
@@ -484,6 +485,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
    */
   async function prefetch(mine) {
     avail.hidden = true;
+    plays = null;
     const t = canPrefetch() && target();
     if (!t) return;
     // Mientras busca, el renglón ya ocupa su lugar (antes los chips llegaban tarde y el título brincaba).
@@ -493,6 +495,8 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
       const data = await api.stremioSources(t.kind, t.id, t.video_id);
       if (mine !== token) return;
       const chips = availability(Array.isArray(data?.sources) ? data.sources : []);
+      plays = data?.recommended?.line ? { video_id: t.video_id, line: data.recommended.line } : null;
+      renderActions();  // «Ver» dice cómo va a sonar
       mount(avail, chips.length ? chips.map((c) => Chip(c, { tone: c === "Al instante" ? "good" : null }))
         : h("span", { class: "title__avail-none" }, "Sin fuentes por ahora"));
     } catch (err) {

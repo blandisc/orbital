@@ -35,6 +35,21 @@ final class StreamsTests: XCTestCase {
         }
     }
 
+    /// Latino, castellano o cualquiera: el mismo orden y los mismos puntos que la TV (`streams.language_score`).
+    func testSpanishVariantRankMatchesPython() throws {
+        for c in try XCTUnwrap(Fixtures.json("ios/streams_spanish.json").array) {
+            let prefs = Preferences(audio: c["audio"]!.string!, quality: c["quality"]!.string!, spanish: c["spanish"]!.string!)
+            let kind = c["kind"]!.string!
+            let samples = try XCTUnwrap(c["streams"]?.array)
+            let sources = samples.enumerated().map { Streams.parse($1, addon: "Torrentio", transportURL: "https://t.example/manifest.json", index: $0) }
+            let ranked = Streams.rank(sources, prefs: prefs, kind: kind)
+            XCTAssertEqual(ranked.map(\.index), c["order"]?.array?.compactMap(\.intValue), "orden \(prefs) \(kind)")
+            for s in ranked {
+                XCTAssertEqual(s.score, number(c["scores"]?[String(s.index)]), accuracy: 1e-9, "puntaje \(s.index) \(prefs) \(kind)")
+            }
+        }
+    }
+
     func testStableIndexMatchesPython() throws {
         for c in try XCTUnwrap(Fixtures.json("ios/streams.json")["hashes"]?.array) {
             XCTAssertEqual(Streams.stableIndex(addonURL: c["addon_url"]!.string!, stream: c["stream"]!), c["index"]?.intValue)
