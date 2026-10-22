@@ -218,7 +218,7 @@ public final class PlayerModel: ObservableModel {
     private var preloadedNext = false
     private var upNextDeadline: Date?
     private var lastTick: Date?
-    /// El panel de ajustes del video está abierto (la tarjeta de «Siguiente» no se ve).
+    /// «Audio y subtítulos» está abierto (la tarjeta de «Siguiente» no se ve y su cuenta se detiene).
     public var panelOpen = false
     private var upNextDismissed = false
     /// Modo demostración: el estado puesto a mano no lo recalcula el avance.

@@ -870,17 +870,6 @@
         }
       }
     },
-    "Adelantar medio segundo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Half a second earlier"
-          }
-        }
-      }
-    },
     "Adelante 10 segundos": {
       "extractionState": "manual",
       "localizations": {
@@ -1009,17 +998,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "OneDrive settings"
-          }
-        }
-      }
-    },
-    "Ajustes del video": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Video settings"
           }
         }
       }
@@ -1189,17 +1167,6 @@
         }
       }
     },
-    "Archivo descargado": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloaded file"
-          }
-        }
-      }
-    },
     "Arco orbital": {
       "extractionState": "manual",
       "localizations": {
@@ -1295,17 +1262,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Atmos · 5.1"
-          }
-        }
-      }
-    },
-    "Atrasar medio segundo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Half a second later"
           }
         }
       }
@@ -3895,17 +3851,6 @@
         }
       }
     },
-    "Desactivar": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turn off"
-          }
-        }
-      }
-    },
     "Descarga en el iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -5739,17 +5684,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "This title isn't on Stremio."
-          }
-        }
-      }
-    },
-    "Este va bien": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This one works"
           }
         }
       }
@@ -8317,28 +8251,6 @@
         }
       }
     },
-    "Más idiomas…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "More languages…"
-          }
-        }
-      }
-    },
-    "Más lento": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Slower"
-          }
-        }
-      }
-    },
     "Más opciones": {
       "extractionState": "manual",
       "localizations": {
@@ -8346,17 +8258,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "More options"
-          }
-        }
-      }
-    },
-    "Más rápido": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Faster"
           }
         }
       }
@@ -9160,17 +9061,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "We couldn't search for sources. Try again."
-          }
-        }
-      }
-    },
-    "No pude buscar subtítulos. Revisa tu conexión.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We couldn't search for subtitles. Check your connection."
           }
         }
       }
@@ -12013,28 +11903,6 @@
         }
       }
     },
-    "Se recuerda para esta película.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remembered for this movie."
-          }
-        }
-      }
-    },
-    "Se recuerda para toda la serie.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remembered for the whole show."
-          }
-        }
-      }
-    },
     "Se va a ver en: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -12486,17 +12354,6 @@
         }
       }
     },
-    "Siguiente ›": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next ›"
-          }
-        }
-      }
-    },
     "Silencia": {
       "extractionState": "manual",
       "localizations": {
@@ -12713,17 +12570,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "No options with that"
-          }
-        }
-      }
-    },
-    "Sin pistas de audio": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No audio tracks"
           }
         }
       }
@@ -13472,17 +13318,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Timing"
-          }
-        }
-      }
-    },
-    "Tiempo y tamaño…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Timing and size…"
           }
         }
       }
@@ -15093,17 +14928,6 @@
         }
       }
     },
-    "Volver a buscar": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Search again"
-          }
-        }
-      }
-    },
     "Volver a como venían": {
       "extractionState": "manual",
       "localizations": {
@@ -15903,17 +15727,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not this show?"
-          }
-        }
-      }
-    },
-    "¿No va a tiempo o se ve mal? Toca Siguiente para probar otra.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Out of sync or looks wrong? Tap Next to try another."
           }
         }
       }

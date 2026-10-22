@@ -305,7 +305,7 @@ enum DS {
         static let personPhoto: CGFloat = 120, bioLines = 5
     }
 
-    /// El panel «Ajustes del video» del reproductor: a la derecha en horizontal, hoja ajustada en vertical.
+    /// El reproductor: el video en vertical, «Audio y subtítulos» (a la derecha en horizontal, bajo el video en vertical) y los controles.
     enum PlayerPanel {
         /// El video en vertical, al arrastrarlo: lo más arriba que sube (debajo de la barra de ✕ y el nombre: botón de 44 y
         /// su aire) y lo que deja libre abajo para los controles (la barra, «Saltar intro», ±10, el botón grande y la pista).
@@ -330,17 +330,11 @@ enum DS {
         static let portraitFillControlsShare: CGFloat = 0.3
         /// El candado de «Pantalla bloqueada» entra creciendo desde este tamaño.
         static let lockScale: CGFloat = 0.9
-        /// El ícono de una app (Infuse) junto a su botón: tamaño y redondeo como los íconos de iOS.
-        static let appIcon: CGFloat = 20, appIconCorner: CGFloat = 0.225
         static let width: CGFloat = 420, radius: CGFloat = 30, rowRadius: CGFloat = 16, icon: CGFloat = 32
-        /// El ancho del valor de la velocidad («1.25×») entre − y +.
-        static let speedValue: CGFloat = 52
         /// El ancho del nombre del tamaño de subtítulos («Mediano») entre − y +: no brinca al cambiar.
         static let sizeValue: CGFloat = 72
         /// Tamaños de letra de muestra («Aa») para chico, mediano y grande.
         static let sampleSizes: [String: CGFloat] = ["small": 12, "medium": 15, "large": 19]
-        /// En vertical con el panel abierto, la parte de arriba de la pantalla que queda para el video.
-        static let videoShare: CGFloat = 0.5
         /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando) y entre qué límites.
         static let portraitCenter: CGFloat = 0.32, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
         /// En vertical sin controles a la vista, el video se centra.
@@ -352,8 +346,6 @@ enum DS {
         static let scrubTrack: CGFloat = 4, scrubKnob: CGFloat = 14, scrubKnobActive: CGFloat = 26, scrubHit: CGFloat = 32
         /// El menú del «⋯»: su ancho.
         static let menuWidth: CGFloat = 272
-        /// La tira para probar subtítulos sobre el video: lo más ancha que se pone.
-        static let tryStripMaxWidth: CGFloat = 480
         /// «Siguiente episodio»: el ancho de la imagen del episodio y el anillo de la cuenta atrás en «Ver ahora».
         static let upNextThumb: CGFloat = 96, ring: CGFloat = 22, ringWidth: CGFloat = 2.5
         /// El degradado oscuro de arriba (detrás del nombre y el episodio), para leerlos sobre un video claro.
