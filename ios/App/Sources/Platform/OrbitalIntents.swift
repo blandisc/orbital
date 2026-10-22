@@ -39,8 +39,8 @@ struct AskOrbitalIntent: AppIntent {
 /// Las órdenes de todos los días, en una sola frase: «Oye Siri, pausa en Orbital», «sube el volumen en Orbital».
 enum OrbitalCommand: String, AppEnum {
     case pause, resume, nextEpisode, previousEpisode, skipIntro, restart, forward, back, volumeUp, volumeDown, mute, unmute,
-         subtitlesOn, subtitlesOff, timeLeft, stopVideo, continueWatching, liveTV, nextChannel, previousChannel, upcoming,
-         recommend, whatsOpen, closeGame, home, capture
+         subtitlesOn, subtitlesOff, englishSubtitles, latinSpanish, castilianSpanish, timeLeft, stopVideo, continueWatching,
+         liveTV, nextChannel, previousChannel, upcoming, recommend, whatsOpen, closeGame, home, capture
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Orden"
     /// Cada orden también como se dice después de «que» («Dile a Orbital que pause», «… que le suba»).
@@ -59,6 +59,10 @@ enum OrbitalCommand: String, AppEnum {
         .unmute: DisplayRepresentation(title: "Quita el silencio", synonyms: ["Quite el silencio", "Regrese el sonido", "Regresa el sonido"]),
         .subtitlesOn: DisplayRepresentation(title: "Pon subtítulos", synonyms: ["Ponga subtítulos", "Active los subtítulos", "Activa los subtítulos"]),
         .subtitlesOff: DisplayRepresentation(title: "Quita los subtítulos", synonyms: ["Quite los subtítulos", "Apague los subtítulos", "Apaga los subtítulos"]),
+        .englishSubtitles: DisplayRepresentation(title: "Subtítulos en inglés", synonyms: ["Ponga subtítulos en inglés", "Pon subtítulos en inglés"]),
+        // El doblaje de lo que se ve, solo esta vez («ponlo siempre en latino» lo guarda: eso se dice con «Pídele a Orbital…»).
+        .latinSpanish: DisplayRepresentation(title: "En latino", synonyms: ["Pon el audio en latino", "Póngalo en latino", "Ponlo en latino"]),
+        .castilianSpanish: DisplayRepresentation(title: "En castellano", synonyms: ["Pon el audio en castellano", "Póngalo en castellano", "Ponlo en castellano"]),
         .timeLeft: DisplayRepresentation(title: "Cuánto falta", synonyms: ["Cuánto le queda"]),
         .stopVideo: DisplayRepresentation(title: "Sal del video", synonyms: ["Salga del video", "Quite el video", "Quita el video", "Detén el video"]),
         .continueWatching: DisplayRepresentation(title: "Sigue viendo", synonyms: ["Siga viendo", "Ponga lo que estaba viendo", "Pon lo que estaba viendo"]),
@@ -90,6 +94,9 @@ enum OrbitalCommand: String, AppEnum {
         case .unmute: "quita el silencio"
         case .subtitlesOn: "pon subtítulos"
         case .subtitlesOff: "quita los subtítulos"
+        case .englishSubtitles: "subtítulos en inglés"
+        case .latinSpanish: "en latino"
+        case .castilianSpanish: "en castellano"
         case .timeLeft: "cuánto falta"
         case .stopVideo: "sal del video"
         case .continueWatching: "sigue viendo"

@@ -19,6 +19,12 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Subtítulos en inglés": "English subtitles", "Pon subtítulos en inglés": "Turn on English subtitles",
+    "Ponga subtítulos en inglés": "Turn on English subtitles",
+    "En latino": "In Latin American Spanish", "Pon el audio en latino": "Switch the audio to Latin American Spanish",
+    "Ponlo en latino": "Put it in Latin American Spanish", "Póngalo en latino": "Put it in Latin American Spanish",
+    "En castellano": "In Castilian Spanish", "Pon el audio en castellano": "Switch the audio to Castilian Spanish",
+    "Ponlo en castellano": "Put it in Castilian Spanish", "Póngalo en castellano": "Put it in Castilian Spanish",
     "Buscando la mejor versión…": "Finding the best version…",
     "Buscar versión": "Find a version",
     "Con datos móviles te avisamos antes de usar versiones de más de %lld GB.": "On cellular we'll ask before using versions over %lld GB.",
