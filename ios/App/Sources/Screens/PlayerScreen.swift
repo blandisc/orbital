@@ -125,6 +125,7 @@ struct PlayerScreen: View {
 
     // MARK: gestos como Infuse (brillo, volumen, buscar arrastrando, 2×)
     @State private var dragAxis: GestureAxis = .undecided
+    @GestureState private var dragging = false
     @State private var verticalKind: VerticalGesture?
     @State private var brightnessAtDragStart: Double = 1
     @State private var volumeAtDragStart: Double = 0
@@ -461,6 +462,19 @@ struct PlayerScreen: View {
             })
             .sensoryFeedback(.impact, trigger: zoom)
             .simultaneousGesture(dragGesture(model, size: geo.size))
+            .onChange(of: dragging) { _, now in
+                // Un arrastre cancelado (sin `onEnded`): se limpia todo sin buscar ni mover nada. Un momento después, para que
+                // un arrastre normal termine primero con `onEnded` (que sí busca) y aquí ya no haya nada que limpiar.
+                guard !now else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(80))
+                    guard !dragging, dragAxis != .undecided || seekPreview != nil || portraitDrag != nil else { return }
+                    portraitDrag = nil; movingVideo = false
+                    dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil
+                    scheduleIndicatorHide()
+                    if controlsVisible { scheduleHide() }
+                }
+            }
             .onLongPressGesture(minimumDuration: DS.Timing.longPressDelay, maximumDistance: DS.Gesture.axisThreshold,
                                  perform: { startFastForward(model) }, onPressingChanged: { pressing in if !pressing { endFastForward(model) } })
             .sensoryFeedback(.impact, trigger: isFastForwarding)
@@ -473,6 +487,9 @@ struct PlayerScreen: View {
     /// medias ni de golpe): el reloj que los esconde solo se reanuda al soltar.
     private func dragGesture(_ model: PlayerModel, size: CGSize) -> some Gesture {
         DragGesture(minimumDistance: DS.Gesture.axisThreshold)
+            // Vuelve a false sola si iOS cancela el arrastre (otro gesto, una llamada, el centro de control): ahí `onEnded`
+            // no llega y la burbuja de buscar se quedaba pegada en pantalla. Ver `.onChange(of: dragging)`.
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
                 let dx = Double(value.translation.width), dy = Double(value.translation.height)
                 if dragAxis == .undecided {

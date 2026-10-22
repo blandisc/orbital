@@ -305,8 +305,8 @@ struct SkipButton: View {
     }
 }
 
-/// La barra de avance fina (la misma en vertical y en horizontal): el riel, la intro, el resumen y los créditos marcados
-/// más claros, lo visto en el color de Orbital y una perilla chica que crece mientras la arrastras.
+/// La barra de avance fina (la misma en vertical y en horizontal): el riel, lo visto en el color de Orbital y una perilla
+/// chica que crece mientras la arrastras; al arrastrar, la intro, el resumen y los créditos se marcan más claros.
 struct PlayerScrubBar: View {
     let value: Double
     let duration: Double
@@ -322,7 +322,9 @@ struct PlayerScrubBar: View {
             let x = { (t: Double) in CGFloat(min(max(t / max(duration, 1), 0), 1)) * width }
             ZStack(alignment: .leading) {
                 Capsule().fill(DS.track).frame(height: DS.PlayerPanel.scrubTrack)
-                ForEach(Array(marks.enumerated()), id: \.offset) { _, mark in
+                // Solo mientras arrastras (para no caer en la intro o los créditos): quieta, la marca de los créditos al final
+                // de la barra parecía una rayita gris suelta.
+                ForEach(Array((dragging ? marks : []).enumerated()), id: \.offset) { _, mark in
                     Rectangle().fill(DS.textFaint)
                         .frame(width: max(0, x(mark.upperBound) - x(mark.lowerBound)), height: DS.PlayerPanel.scrubTrack)
                         .offset(x: x(mark.lowerBound))
