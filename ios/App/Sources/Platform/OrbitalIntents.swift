@@ -120,30 +120,25 @@ struct OrbitalCommandIntent: AppIntent {
     }
 }
 
-/// Un título para decirlo en la misma frase: «Oye Siri, pon The Office en Orbital». Siri reconoce los de «Seguir viendo»
-/// (`SiriTitles`); otro nombre lo pregunta y se busca igual en la consola.
+/// Un título para decirlo en la misma frase: «Oye Siri, pon Los Simpson en Orbital». Cada nombre que se puede decir es su
+/// propio título (`id` = el nombre dicho): Siri arma la frase con el nombre principal y no usa los sinónimos (con «The
+/// Simpsons» y «Los Simpson» como sinónimo, «pon Los Simpson» no coincidía). A la consola se le pide el nombre original.
 struct OrbitalTitle: AppEntity {
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Título"
     static let defaultQuery = OrbitalTitleQuery()
 
     let id: String
-    /// Como se dice en español: «The Simpsons» también es «Los Simpson», «Los Simpsons» y «Simpson» (antes solo el nombre en
-    /// inglés de Stremio, y «pon Los Simpson» no coincidía).
-    var displayRepresentation: DisplayRepresentation {
-        let names = SiriTitles.aliases(id).flatMap { [$0] + Self.spokenNames($0) } + Self.spokenNames(id)
-        var seen = Set([id.lowercased()])
-        return DisplayRepresentation(title: "\(id)", synonyms: names.filter { seen.insert($0.lowercased()).inserted }.map { "\($0)" })
-    }
+    var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(id)") }
+    /// Lo que se le pide a la consola: el nombre original de ese título (o lo dicho, si no se conoce).
+    var asked: String { SiriTitles.original(for: id) ?? id }
 
-    static func spokenNames(_ title: String) -> [String] {
-        var base = title
-        for article in ["The ", "A ", "An ", "El ", "La ", "Los ", "Las "] where base.hasPrefix(article) { base = String(base.dropFirst(article.count)) }
-        var names = [base]
-        if base.hasSuffix("s"), base.count > 3 { names.append(String(base.dropLast())) }
-        let plural = title.hasPrefix("The ") && base.hasSuffix("s")
-        for n in Array(names) { names.append((plural ? "Los " : "") + n) }
-        var seen = Set([title.lowercased()])
-        return names.filter { !$0.isEmpty && seen.insert($0.lowercased()).inserted }
+    /// Los nombres que se pueden decir de un título: el original, el de español y el original sin artículo («Simpsons»).
+    static func spokenNames(_ names: [String]) -> [String] {
+        guard let original = names.first else { return [] }
+        var base = original
+        for article in ["The ", "A ", "An "] where base.hasPrefix(article) { base = String(base.dropFirst(article.count)) }
+        var seen = Set<String>()
+        return (names + [base]).filter { !$0.isEmpty && seen.insert($0.lowercased()).inserted }
     }
 }
 
@@ -153,7 +148,7 @@ struct OrbitalTitleQuery: EntityStringQuery {
         let name = string.trimmingCharacters(in: .whitespacesAndNewlines)
         return name.isEmpty ? [] : [OrbitalTitle(id: name)]
     }
-    func suggestedEntities() async throws -> [OrbitalTitle] { SiriTitles.load().compactMap { $0.first.map { OrbitalTitle(id: $0) } } }
+    func suggestedEntities() async throws -> [OrbitalTitle] { SiriTitles.load().flatMap { OrbitalTitle.spokenNames($0) }.map { OrbitalTitle(id: $0) } }
 }
 
 /// Los títulos que Siri reconoce: los de «Seguir viendo» y tu lista (más Los Simpson, siempre), guardados en el iPhone. Cada
@@ -166,8 +161,10 @@ enum SiriTitles {
 
     static func load() -> [[String]] { (UserDefaults.standard.array(forKey: key) as? [[String]]) ?? always }
 
-    /// Los otros nombres de un título (el de español), para que Siri los acepte.
-    static func aliases(_ id: String) -> [String] { load().first { $0.first == id }.map { Array($0.dropFirst()) } ?? [] }
+    /// El nombre original de un nombre dicho («Los Simpson» → «The Simpsons»).
+    static func original(for spoken: String) -> String? {
+        load().first { OrbitalTitle.spokenNames($0).contains { $0.caseInsensitiveCompare(spoken) == .orderedSame } }?.first
+    }
 
     /// Si cambiaron, se guardan y Siri vuelve a leerlos (aprende a reconocer los nombres nuevos).
     static func save(_ titles: [[String]]) {
@@ -194,7 +191,7 @@ struct PlayTitleIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        .result(dialog: IntentDialog(stringLiteral: await answer("pon \(show.id)")))
+        .result(dialog: IntentDialog(stringLiteral: await answer("pon \(show.asked)")))
     }
 }
 
