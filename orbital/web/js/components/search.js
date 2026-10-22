@@ -138,9 +138,12 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       caption: true, onPress: () => { zone = "results"; resultIndex = recent.length + i; open(); },
     }));
     focusables = [...chips, ...cards];
+    // Como los resultados: cada grupo con su nombre encima (antes «Populares» iba a un lado, a media altura de las portadas).
     mount(results, [
-      chips.length > 0 && h("span", { class: "search__group" }, "Recientes"), ...chips,
-      cards.length > 0 && h("span", { class: "search__group" }, "Populares"), ...cards,
+      chips.length > 0 && h("div", { class: ["search__set", "search__set--pills"] },
+        h("span", { class: "search__group", "aria-hidden": "true" }, "Recientes"), h("div", { class: "search__set-cards" }, chips)),
+      cards.length > 0 && h("div", { class: "search__set" },
+        h("span", { class: "search__group", "aria-hidden": "true" }, "Populares"), h("div", { class: "search__set-cards" }, cards)),
     ]);
     results.classList.toggle("search__results--recent", !cards.length);
     if (!items.length && zone === "results") zone = "keys";

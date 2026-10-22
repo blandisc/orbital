@@ -39,18 +39,25 @@
 
 /* Resultados: la misma tarjeta que en el inicio, en una fila con desplazamiento. */
 .search__results {
-  display: flex; align-items: flex-end; gap: var(--card-gap);
+  display: flex; align-items: flex-start; gap: var(--card-gap); /* los nombres de los grupos en una línea (también «Recientes» junto a «Populares») */
   min-height: calc(var(--card-height) * var(--card-focus-scale) + var(--space-4));
   /* Arriba: lo que crece, lo que sube (translateY .35rem del foco) y el anillo. */
   /* Abajo: el pie de la enfocada entero (título en dos líneas + tipo, escalado como la portada). Antes 4.6rem fijos
      cortaban la última línea; calculado desde la letra, también vale con letra grande. */
   --caption-room: calc((.55rem + .2rem + 3 * var(--caption-size) * var(--leading-normal)) * var(--card-focus-scale));
-  padding: calc(var(--focus-grow) + .2rem) calc(var(--focus-grow) / 2 + var(--space-2)) var(--caption-room); /* arriba ya da aire el nombre del grupo */
-  margin: 0 calc(-1 * var(--space-2)); scroll-padding-inline: calc(var(--focus-grow) / 2 + var(--space-2));
+  /* Arriba solo el aire del anillo: lo que crece la enfocada ya lo aparta cada grupo entre su nombre y sus portadas (antes
+     se apartaba dos veces y los resultados quedaban tan abajo que el teclado tapaba sus pies). A la izquierda, lo mismo:
+     la enfocada crece desde su esquina de abajo a la izquierda, hacia la derecha; así la primera portada y el nombre del
+     grupo quedan en la misma línea que el campo de arriba y las pistas del pie (antes, 18 px más adentro). */
+  padding: var(--space-2) calc(var(--focus-grow) / 2 + var(--space-2)) var(--caption-room) var(--space-2);
+  margin: 0 calc(-1 * var(--space-2)); scroll-padding-inline: var(--space-2) calc(var(--focus-grow) / 2 + var(--space-2));
   overflow-x: auto; scrollbar-width: none;
 }
 /* Todas enseñan el título en dos líneas (antes solo la enfocada: «Hollow Kni…» sobraba lugar): «Harry Potter and the Deat…» ×2 no se distinguían. */
 .search .card:not(.card--no-art, .card--named) .card__caption strong { display: -webkit-box; white-space: normal; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* Sin portada (el nombre va encima del ícono de su consola): en la portada chica de Buscar, dos renglones y la letra que
+   cabe; con letra grande, «Kirby Amazing Mirror» en tres renglones se subía sobre el ícono. */
+.search .card--no-art .card__title { -webkit-line-clamp: 2; font-size: min(var(--type-secondary), calc(var(--card-height) * .115)); }
 
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va. */
 .search .keyboard { align-self: end; justify-self: center; min-height: 0; }
@@ -61,6 +68,7 @@
 
 /* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
 /* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */
+.search__set + .search__set { margin-left: var(--space-6); } /* entre grupos, más aire que entre portadas: se ve dónde empieza cada uno */
 .search__set { flex: none; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow) + .35rem); } /* + lo que sube la enfocada: el anillo rozaba el nombre */
 .search__set-cards { display: flex; align-items: flex-end; gap: var(--card-gap); }
 .search__group {
@@ -68,9 +76,10 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Los títulos de los resultados, legibles desde el sillón (antes en letra de pie de foto). */
 .search { --caption-size: var(--type-secondary); }
-/* Caja vacía: búsquedas recientes como píldoras. */
-.search__results--recent { align-items: center; min-height: 0; padding-bottom: var(--space-4); }
-.search__results--recent .search__group { align-self: center; padding: 0 var(--space-2) 0 0; }
+/* Caja vacía, solo búsquedas recientes (sin portadas): las píldoras, sin el lugar de las portadas. */
+.search__results--recent { min-height: 0; padding-bottom: var(--space-4); }
+.search__set--pills { gap: var(--space-3); }
+.search__set--pills .search__set-cards { align-items: center; gap: var(--space-3); }
 
 @media (max-height: 640px) {
   .search { gap: var(--space-3); }
