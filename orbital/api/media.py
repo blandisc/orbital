@@ -31,6 +31,7 @@ class PlayRequest(BaseModel):
     source: int | None = None  # None: Orbital elige la recomendada y arranca
     keep: bool = False
     from_start: bool = False  # "Desde el principio"
+    remember: bool = False  # «Versión» › «Desde aquí»: la serie sigue con el idioma de esta versión
     touch: bool = False  # lo abriste con el dedo: el reproductor empieza con botones táctiles, no glifos del mando
     keyboard: bool = False  # lo abriste con el teclado: la barra enseña las teclas
     # «Ver en la TV» desde el reproductor del iPhone: lo que venías viendo ahí, para seguir igual en la TV.
@@ -184,6 +185,19 @@ def router(d: Deps) -> APIRouter:
         catalog.apply_art(body.meta_id[:20])
         return {"ok": True, "art": art}
 
+    @r.get("/remembered")
+    def remembered() -> dict:
+        """Lo que recuerda cada título (el idioma y los subtítulos que elegiste viéndolo; vale aquí y en el iPhone)."""
+        return {"titles": catalog.watch.remembered()}
+
+    @r.post("/remembered/forget")
+    def forget_remembered(body: dict) -> dict:
+        meta_id = body.get("id") if isinstance(body, dict) else None
+        if not isinstance(meta_id, str) or not 0 < len(meta_id) <= 80:
+            raise HTTPException(400, "Título inválido")
+        catalog.state.forget_choices(meta_id)
+        return {"titles": catalog.watch.remembered()}
+
     @r.get("/sources")
     def sources(kind: str, id: str, video: str | None = None) -> dict:
         """Fuentes ordenadas por tus preferencias; la primera es la recomendada. Sin URLs."""
@@ -207,7 +221,8 @@ def router(d: Deps) -> APIRouter:
             info = {}
         # La que pondría «Ver» (con «Continuar», la de antes) y cómo va a sonar: la ficha lo dice bajo el botón.
         chosen = catalog.watch.choose_source(kind, video or id, prefs, catalog.watch.resume_choice(id, video or id))
-        recommended = {"id": chosen.index, "line": watch.version_line(chosen, prefs, subtitles)} if chosen else None
+        recommended = {"id": chosen.index, "line": watch.version_line(chosen, prefs, subtitles),
+                       "note": watch.version_note(chosen, prefs)} if chosen else None
         downloads = catalog.watch.downloads
         if recommended and downloads is not None and downloads.file_for(video or id):
             recommended["line"] = "Tu descarga · sin internet"  # «Ver» la pone del disco
@@ -234,6 +249,8 @@ def router(d: Deps) -> APIRouter:
             if body.source is not None and video_id:
                 catalog.watch.play_source(kind, meta_id, video_id, body.source, title, keep=body.keep,
                                     from_start=body.from_start)
+                if body.remember:
+                    catalog.watch.remember_version(kind, meta_id, video_id, body.source)
                 return {"ok": True, "reveal": catalog.revealing}
             if video_id and catalog.native_player:
                 chosen = catalog.watch.play_best(kind, meta_id, video_id, title, keep=body.keep, from_start=body.from_start,

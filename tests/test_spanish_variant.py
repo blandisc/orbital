@@ -176,3 +176,23 @@ def test_lo_anotado_se_guarda_y_tiene_tope(tmp_path):
     for i in range(state_mod.MAX_CHECKED + 5):
         s.remember_checked(f"k{i}", ["en"])
     assert s.checked_audio("a") is None and s.checked_audio(f"k{state_mod.MAX_CHECKED + 4}") == ["en"]
+
+
+def test_se_avisa_solo_cuando_se_sale_de_lo_pedido():
+    latino = streams.Preferences(audio="es", spanish="es-419")
+    assert watch.version_note(source(0, LATINO), latino) is None
+    assert watch.version_note(source(0, SPANISH), latino) is None  # no dice cuál: no se inventa un aviso
+    assert watch.version_note(source(0, CASTELLANO), latino) == "Solo en castellano: no hay latino"
+    assert watch.version_note(source(0, ENGLISH), latino) == "No hay en latino: va en inglés"
+    assert watch.version_note(source(0, SPANISH), streams.Preferences(audio="en")) == "No hay en inglés: va en español"
+
+
+def test_desde_aqui_la_serie_sigue_con_esa_version(library, monkeypatch):
+    w = library.watch
+    cast = source(5, CASTELLANO)
+    monkeypatch.setattr(w.streams, "get", lambda kind, video_id, prefs, index: cast if index == 5 else None)
+    w.remember_version("series", "tt0096697", "tt0096697:5:13", 5)
+    prefs = w.language_for("tt0096697")[0]
+    assert (prefs.audio, prefs.spanish) == ("es", "es-ES")
+    w.remember_version("series", "tt0096697", "tt0096697:5:13", 99)  # ya no está: nada cambia
+    assert w.language_for("tt0096697")[0].spanish == "es-ES"

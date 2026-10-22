@@ -652,14 +652,29 @@ export function settingsPage(page, settings) {
   }
   const def = Object.hasOwn(SETTING_PAGES, page) ? SETTING_PAGES[page] : null;
   if (!def) return settingsMenu(); // una página que no existe: los Ajustes, no una excepción
+  // Películas y series: además de lo de siempre, lo que cada título recuerda (y olvidarlo).
+  const extra = page === "playback"
+    ? [{ icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } }]
+    : [];
   return {
     title: def.title, crumb: def.title,
-    options: def.options.map(([key, label, hint]) => ({
+    options: [...def.options.map(([key, label, hint]) => ({
       icon: SETTING_ICONS[key] || def.icon, label, hint, value: settingLabel(key, settings[key]),
       command: { type: "setting", key, value: nextSetting(key, settings[key]), page },
       // ◀ baja y ▶ sube (antes las dos avanzaban)
       adjust: { left: edgeAware(key, settings[key], -1, page), right: edgeAware(key, settings[key], 1, page) },
-    })),
+    })), ...extra],
+  };
+}
+
+/** Lo que recuerda cada título: el idioma y los subtítulos que elegiste viéndolo. A lo olvida (vuelve a lo de Ajustes). */
+export function rememberedMenu(titles = []) {
+  return {
+    title: "Lo que recuerda cada título",
+    subtitle: "Lo que elegiste viendo cada uno; vale aquí y en tu iPhone. A lo olvida y vuelve a lo de Ajustes.",
+    options: titles.length
+      ? titles.map((t) => ({ icon: "play", label: t.title, value: t.line, command: { type: "remembered-forget", id: t.id, title: t.title } }))
+      : [{ icon: "info", label: "Ningún título recuerda nada todavía", hint: "Se llena al elegir audio o subtítulos viendo algo", inert: true }],
   };
 }
 

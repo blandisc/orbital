@@ -9,7 +9,7 @@ import { createInput, ERASE_WORD, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -1744,6 +1744,14 @@ async function runCommand(command, context = null) {
         traktFrom = { context };
         ui.traktLink.open("onedrive");
         return renderHints();
+      case "remembered":
+        return openMenu(rememberedMenu((await api.remembered()).titles || []), nested(context));
+      case "remembered-forget": {
+        const res = await api.forgetRemembered(command.id);
+        sound.play("select");
+        ui.toast.show(`${command.title} vuelve a lo de Ajustes`, { tone: "success" });
+        return openMenu(rememberedMenu(res.titles || []), context);
+      }
       case "onedrive-account":
         return openMenu(onedriveMenu(await api.onedrive()), nested(context));
       case "onedrive-folder": { // recorrer tus carpetas para elegir la de tus videos (solo las que tú abres)

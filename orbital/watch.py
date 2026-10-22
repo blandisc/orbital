@@ -104,6 +104,33 @@ def version_line(source: streams.Source, prefs: streams.Preferences, subtitles: 
     return " · ".join(p for p in (name, source.resolution, subs) if p)
 
 
+WANTED_NAMES = {"es-419": "latino", "es-ES": "castellano"}
+
+
+def version_note(source: streams.Source, prefs: streams.Preferences) -> str | None:
+    """Si lo que va a sonar se sale de lo que pediste para ese título: «Solo en castellano: no hay latino», «No hay en
+    inglés: va en español». None si es lo pedido (lo normal no se anuncia)."""
+    lang = (source.languages or [""])[0]
+    have = source.dub if lang == "es" and source.dub else streams.LANG_NAMES.get(lang, lang).lower()
+    if prefs.audio not in source.languages:
+        want = WANTED_NAMES.get(prefs.spanish) if prefs.audio == "es" and prefs.spanish else streams.LANG_NAMES.get(prefs.audio, prefs.audio).lower()
+        return f"No hay en {want}: va en {have}"
+    if prefs.audio == "es" and prefs.spanish in WANTED_NAMES and source.dub and streams.DUB_CODES.get(source.dub) != prefs.spanish:
+        return f"Solo en {source.dub}: no hay {WANTED_NAMES[prefs.spanish]}"
+    return None
+
+
+def choice_line(fields: dict) -> str:
+    """Lo que recuerda un título, en palabras: «Latino · Sin subtítulos», «Inglés · Subtítulos en español»."""
+    audio = fields.get("audio")
+    name = WANTED_NAMES.get(fields.get("spanish") or "", "").capitalize() if audio == "es" else ""
+    parts = [name or (streams.LANG_NAMES.get(audio, audio) if audio else "")]
+    if isinstance(fields.get("subtitles"), str):
+        subs = fields["subtitles"]
+        parts.append(SUBTITLE_LINES.get(subs) or f"Subtítulos en {streams.LANG_NAMES.get(subs, subs).lower()}")
+    return " · ".join(p for p in parts if p)
+
+
 def handoff_pick(handoff: dict) -> dict | None:
     """Las pistas que venía usando el iPhone, como las recuerda la TV («Continuar»): los subtítulos (o sin) y el audio."""
     sub, audio = handoff.get("subtitle"), handoff.get("audio")
@@ -642,6 +669,25 @@ class Watch:
             if same:
                 return same
         return found[0]
+
+    def remembered(self, limit: int = 60) -> list[dict]:
+        """Ajustes › «Lo que recuerda cada título»: el nombre (de tu biblioteca, si está) y lo que eligió."""
+        names = {i.id.split(":", 1)[-1]: i.title for i in self.stremio_items}
+        return [{"id": meta_id, "title": names.get(meta_id) or meta_id, "line": choice_line(fields)}
+                for meta_id, fields in self.state.remembered_titles()[:limit]]
+
+    def remember_version(self, kind: str, meta_id: str, video_id: str, index: int) -> None:
+        """«Versión» › «Desde aquí»: la serie sigue con el idioma (y el doblaje) de la versión que elegiste. «Solo este
+        episodio» no llama aquí: el siguiente vuelve a lo de siempre."""
+        source = self.streams.get(kind, video_id, self.language_for(meta_id)[0], index)
+        if source is None or not source.languages:
+            return
+        prefs = self.language_for(meta_id)[0]
+        lang = prefs.audio if prefs.audio in source.languages and len(source.languages) > 1 else source.languages[0]
+        key = f"stremio:{meta_id}"
+        self.state.set_pref(key, "audio", lang)
+        if lang == "es" and source.dub in streams.DUB_CODES:
+            self.state.set_pref(key, "spanish", streams.DUB_CODES[source.dub])
 
     def choose_source(self, kind: str, video_id: str, prefs: streams.Preferences,
                       resume: dict | None = None) -> streams.Source | None:

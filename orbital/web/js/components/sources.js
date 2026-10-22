@@ -19,17 +19,20 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   const heading = h("div", { class: "sources__heading" }, "Versión");
   const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
+  // Un episodio: ¿esta versión es solo para él o la serie sigue así? (LB/RB; como «Solo este | Desde aquí» del iPhone).
+  const scopeRow = h("div", { class: "sources__scope", hidden: true });
   const list = h("div", { class: "sources__list", role: "group" });
   const status = h("div", { class: "sources__status", role: "status" });
   const retry = h("div", { class: "sources__retry", hidden: true },
     Button({ label: "Reintentar", variant: "primary", onPress: () => request && open(request) }));
   const panel = h("div", { class: ["side-panel__panel", "sources__panel"] },
-    h("div", { class: "sources__head" }, heading, title, subtitle), status, retry, list);
+    h("div", { class: "sources__head" }, heading, title, subtitle, scopeRow), status, retry, list);
   const el = h("section", { class: ["side-panel", "sources"], hidden: true, "aria-label": "Versión",
     onClick: (e) => e.target === el && close() }, panel);
 
   let request = null; // { kind, id, video_id, title, item }
   let recommended = null; // la que pone «Ver» (el servidor lo dice: con «Continuar», la de antes)
+  let fromHere = false; // «Desde aquí»: la serie sigue con el idioma de la versión que elijas
   let found = [];
   let index = 0;
   let token = 0;
@@ -87,13 +90,23 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   function play() {
     const src = found[index];
     if (!src || !request) return;
-    onPlay({ ...request, source: src.id });
+    onPlay({ ...request, source: src.id, remember: isEpisode() && fromHere });
   }
 
   let failed = false; // sin fuentes o con error: A reintenta y el pie lo dice
 
+  const isEpisode = () => request?.kind === "series" && !!request?.video_id;
+
+  function renderScope() {
+    scopeRow.hidden = !isEpisode();
+    const option = (on, label) => (on ? Badge(label) : Chip(label));
+    mount(scopeRow, isEpisode() ? [option(!fromHere, "Solo este episodio"), option(fromHere, "Desde aquí")] : []);
+  }
+
   async function open(req) {
     request = req;
+    fromHere = false;
+    renderScope();
     failed = false;
     const mine = ++token;
     cancelExit();
@@ -148,6 +161,11 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     if (el.hidden || el.classList.contains("side-panel--leaving")) return false;
     if (action === "menu") return false; // ☰ abre el menú desde cualquier pantalla
     if (action === "back" || action === "options") close();
+    else if ((action === "prevsection" || action === "nextsection") && isEpisode()) {
+      fromHere = action === "nextsection";
+      renderScope();
+      onChange?.();
+    }
     else if (action === "up") setIndex(index - 1);
     else if (action === "down") setIndex(index + 1);
     else if (action === "pageleft") setIndex(index - 5);
@@ -168,6 +186,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   const hints = (g) => (found.length
     ? [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra versión" },
       { glyph: g.alt, label: details ? "Menos detalles" : "Detalles", secondary: true },
+      isEpisode() && { glyph: g.section, label: fromHere ? "Desde aquí" : "Solo este episodio", secondary: true },
       found.length > 7 && { glyph: g.page, label: "Saltar 5", secondary: true, offscreen: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 

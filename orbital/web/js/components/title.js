@@ -495,9 +495,11 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
       const data = await api.stremioSources(t.kind, t.id, t.video_id);
       if (mine !== token) return;
       const chips = availability(Array.isArray(data?.sources) ? data.sources : []);
+      // Lo que se sale de lo que pediste para esta serie («Solo en castellano: no hay latino»), antes que lo demás.
+      if (data?.recommended?.note) chips.unshift({ warn: data.recommended.note });
       plays = data?.recommended?.line ? { video_id: t.video_id, line: data.recommended.line } : null;
       renderActions();  // «Ver» dice cómo va a sonar
-      mount(avail, chips.length ? chips.map((c) => Chip(c, { tone: c === "Al instante" ? "good" : null }))
+      mount(avail, chips.length ? chips.map((c) => (c.warn ? Chip(c.warn, { tone: "warn" }) : Chip(c, { tone: c === "Al instante" ? "good" : null })))
         : h("span", { class: "title__avail-none" }, "Sin versiones por ahora"));
     } catch (err) {
       if (mine === token) {

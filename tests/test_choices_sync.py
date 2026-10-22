@@ -75,3 +75,18 @@ def test_el_iphone_sincroniza_por_la_app_publica(public):  # noqa: F811
     assert "subtitles" not in state.prefs("stremio:tt0386676")
     big = {"since": 0, "changes": {f"tt{i}": {"audio": "en"} for i in range(101)}}
     assert client.post("/api/companion/choices", json=big, headers=AUTH).status_code == 422  # no más de 100 a la vez
+
+
+def test_ajustes_dice_lo_que_recuerda_cada_titulo_y_lo_olvida(library):
+    from orbital import watch as watch_mod
+    w = library.watch
+    w.state.set_pref("stremio:tt0096697", "audio", "es")
+    w.state.set_pref("stremio:tt0096697", "spanish", "es-419")
+    w.state.set_pref("stremio:tt0096697", "subtitles", "")
+    w.state.set_pref("stremio:tt0386676", "audio", "en")
+    w.state.set_pref("stremio:tt0386676", "subtitles", "es")
+    rows = w.remembered()
+    assert [r["line"] for r in rows] == ["Inglés · Subtítulos en español", "Latino · Sin subtítulos"]  # el más reciente arriba
+    assert watch_mod.choice_line({"audio": "es"}) == "Español"
+    w.state.forget_choices("tt0386676")
+    assert [r["id"] for r in w.remembered()] == ["tt0096697"]

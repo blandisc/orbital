@@ -36,7 +36,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
   }
 
   async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null, keep = false, from_start: fromStart = false,
-    own = false, file_id: fileId = null }) {
+    own = false, file_id: fileId = null, remember = false }) {
     const local = !!videoId && !!state.downloaded?.has(videoId); // lo descargaste: del disco, también sin internet
     if (!local && offlineBlock(title)) return;
     if (!takeLaunchLock(state)) return;
@@ -60,7 +60,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       // Mi media: tu copia de OneDrive (con Real-Debrid de respaldo en el servidor si no abre).
       const request = own && !local
         ? api.onedrivePlay({ kind, meta_id: id, video_id: videoId, title, file_id: fileId, keep, from_start: fromStart })
-        : api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart,
+        : api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart, remember,
           touch: state.modality === "touch", keyboard: state.modality === "keyboard" });
       const res = await Promise.race([request, new Promise((resolve) => setTimeout(() => resolve(SLOW), 40_000))]);
       if (res === SLOW) {
