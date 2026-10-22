@@ -118,7 +118,8 @@ final class AppEnvironment: ObservableObject {
             episode: { Strings.episode(season: $0, episode: $1, language: store.value.uiLanguage) },
             timeLeft: { Strings.timeLeft(minutes: $0, language: store.value.uiLanguage) },
             nextUp: { String(format: Strings.tr("Sigue: %@", language: store.value.uiLanguage), $0) })
-        services.onWidgetSnapshot = { WidgetPublisher.publish($0) }
+        // Los mismos títulos le enseñan a Siri los nombres de «Seguir viendo» («Oye Siri, pon The Office en Orbital»).
+        services.onWidgetSnapshot = { WidgetPublisher.publish($0); SiriTitles.save($0.items.map(\.title)) }
         #if DEBUG
         // Demostración: el widget enseña un snapshot de ejemplo (o vacío con `-demo-widget empty`); con `-demo-widget live`, el de verdad.
         if Demo.isOn, Demo.widget != "live" {

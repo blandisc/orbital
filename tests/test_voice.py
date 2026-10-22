@@ -1,6 +1,6 @@
 import pytest
 
-from orbital.voice import VoiceController, parse_text
+from orbital.voice import VoiceController, VoiceResult, parse_text
 
 
 @pytest.mark.parametrize("text,expected", [
@@ -108,3 +108,65 @@ def test_what_people_say_after_a_courtesy_is_understood():
     }
     for said, expected in cases.items():
         assert parse_text(said) == expected, said
+
+
+# «Alexa, pausa en Orbital»: Alexa deja el nombre de la skill pegado (a veces junto: «norbital»). Así llegaba al registro
+# («continúa viendo la película norbital») y nada coincidía.
+@pytest.mark.parametrize("text, expected", [
+    ("pausa en orbital", ("PauseIntent", {})),
+    ("pausa norbital", ("PauseIntent", {})),
+    ("sube el volumen con orbital", ("VolumeIntent", {"volume": "sube"})),
+    ("pon dune n orbital", ("LaunchGameIntent", {"game": "dune"})),
+    ("abre orbital", ("OpenOrbitalIntent", {})),  # el nombre a secas sigue siendo abrir la consola
+])
+def test_the_skill_name_stuck_to_the_phrase_is_dropped(text, expected):
+    found = parse_text(text)
+    assert found is not None and (found[0], {k: v for k, v in found[1].items() if k in expected[1]}) == expected
+
+
+@pytest.mark.parametrize("value, expected", [
+    ("Dune en Orbital", "Dune"), ("the office norbital", "the office"), ("Hades con Orbital.", "Hades"),
+    ("viendo la película n orbital", "viendo la película"), ("Hades", "Hades"),
+])
+def test_alexa_slots_lose_the_skill_name(value, expected):
+    from orbital.voice import slot_text
+
+    assert slot_text(value) == expected
+
+
+def test_a_slot_with_the_skill_name_still_finds_the_game(library):
+    result = VoiceController(library).handle_intent("LaunchGameIntent", {"game": "hades norbital"})
+    assert result.ok and result.speech == "Abriendo Hades."
+
+
+def test_continue_watching_the_movie_is_just_continue(library, monkeypatch):
+    voice = VoiceController(library)
+    seen = []
+    monkeypatch.setattr(voice, "_resume_intent", lambda slots: seen.append(slots) or VoiceResult("Sigue."))
+    monkeypatch.setattr(type(library.player), "playing", property(lambda self: True), raising=False)
+    assert voice.handle_intent("ContinueWatchingIntent", {"show": "viendo la película norbital"}).speech == "Sigue."
+    assert seen == [{}]
+
+
+def test_what_alexa_did_not_understand_is_reported(library):
+    result = VoiceController(library).handle_intent("FallbackIntent")
+    assert not result.ok and result.speech.startswith("No entendí")
+
+
+def _siri_commands() -> list[str]:
+    import re
+    from pathlib import Path
+
+    swift = (Path(__file__).resolve().parent.parent / "ios/App/Sources/Platform/OrbitalIntents.swift").read_text(encoding="utf-8")
+    body = swift[swift.index("var said: String"):]
+    return re.findall(r'case \.\w+: "([^"]+)"', body[:body.index("\n    }\n}")])
+
+
+def test_siri_quick_commands_are_all_listed():
+    assert len(_siri_commands()) >= 20
+
+
+@pytest.mark.parametrize("said", _siri_commands())
+def test_every_siri_quick_command_reaches_a_command(said):
+    """«Oye Siri, pausa en Orbital»: lo que `OrbitalCommand` le dice a la consola, ella lo entiende."""
+    assert parse_text(said) is not None, f"«{said}» no llega a ningún comando"

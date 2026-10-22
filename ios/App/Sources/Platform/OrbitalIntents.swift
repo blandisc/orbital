@@ -1,10 +1,25 @@
 import AppIntents
+import Foundation
 import OrbitalCore
 import OrbitalModels
 
 // Siri y Atajos: «Oye Siri, habla con Orbital» pregunta la orden y la atiende como el micrófono del control
 // (`VoiceAssistant`): descargar en el iPhone lo hace el teléfono, lo demás tu Orbital como si fuera Alexa (`/api/voice`).
 // Siri dice en voz alta lo que contestó. No abre la app.
+//
+// Siri no acepta texto libre dentro de la frase: «Oye Siri, pausa en Orbital» o «pon The Office en Orbital» no coincidían
+// con nada y Siri contestaba «Orbital no puede hacer eso». Por eso lo de todos los días va como lista (`OrbitalCommand`) y
+// los títulos de «Seguir viendo» como entidades (`OrbitalTitle`): las dos se dicen en la misma frase, sin que Siri pregunte.
+
+/// Lo que se dice: la consola lo entiende con el mismo intérprete que Alexa; regresa lo que Siri dice en voz alta.
+@MainActor
+private func answer(_ said: String) async -> String {
+    let env = AppEnvironment.shared
+    let outcome = await VoiceAssistant(services: env.services, tvNow: env.tvNow).handle(said)
+    // Seguir aquí necesita la pantalla: Siri no abre el reproductor.
+    let text = outcome.continueHere ? "Abre Orbital y toca «Seguir aquí»." : outcome.speech
+    return text.isEmpty ? String(localized: "Listo.") : Strings.message(text, language: env.services.appSettings.uiLanguage)
+}
 
 /// «Dile a Orbital que ponga The Office»: la orden en texto libre.
 struct AskOrbitalIntent: AppIntent {
@@ -17,17 +32,146 @@ struct AskOrbitalIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let env = AppEnvironment.shared
-        let outcome = await VoiceAssistant(services: env.services, tvNow: env.tvNow).handle(command)
-        let language = env.services.appSettings.uiLanguage
-        // Seguir aquí necesita la pantalla: Siri no abre el reproductor.
-        let said = outcome.continueHere ? "Abre Orbital y toca «Seguir aquí»." : outcome.speech
-        let speech = said.isEmpty ? String(localized: "Listo.") : Strings.message(said, language: language)
-        return .result(dialog: IntentDialog(stringLiteral: speech))
+        .result(dialog: IntentDialog(stringLiteral: await answer(command)))
     }
 }
 
-/// «Pausa la TV con Orbital» / «Sigue la TV con Orbital»: lo de todos los días, sin decir la orden.
+/// Las órdenes de todos los días, en una sola frase: «Oye Siri, pausa en Orbital», «sube el volumen en Orbital».
+enum OrbitalCommand: String, AppEnum {
+    case pause, resume, nextEpisode, previousEpisode, skipIntro, restart, forward, back, volumeUp, volumeDown, mute, unmute,
+         subtitlesOn, subtitlesOff, timeLeft, stopVideo, continueWatching, liveTV, nextChannel, previousChannel, upcoming,
+         recommend, whatsOpen, closeGame, home, capture
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Orden"
+    static let caseDisplayRepresentations: [OrbitalCommand: DisplayRepresentation] = [
+        .pause: DisplayRepresentation(title: "Pausa", synonyms: ["Pon pausa", "Pausa la tele", "Espera"]),
+        .resume: DisplayRepresentation(title: "Reanuda", synonyms: ["Quita la pausa", "Dale play", "Continúa"]),
+        .nextEpisode: DisplayRepresentation(title: "Siguiente episodio", synonyms: ["Siguiente capítulo", "Pon el siguiente episodio"]),
+        .previousEpisode: DisplayRepresentation(title: "Episodio anterior", synonyms: ["Capítulo anterior"]),
+        .skipIntro: DisplayRepresentation(title: "Salta la intro", synonyms: ["Sáltate la intro", "Brinca la intro"]),
+        .restart: DisplayRepresentation(title: "Desde el principio", synonyms: ["Empieza de nuevo", "Vuelve a empezar"]),
+        .forward: DisplayRepresentation(title: "Adelanta", synonyms: ["Adelántale", "Adelanta treinta segundos"]),
+        .back: DisplayRepresentation(title: "Regresa", synonyms: ["Regrésale", "Regresa treinta segundos"]),
+        .volumeUp: DisplayRepresentation(title: "Sube el volumen", synonyms: ["Súbele", "Más fuerte"]),
+        .volumeDown: DisplayRepresentation(title: "Baja el volumen", synonyms: ["Bájale", "Más bajo"]),
+        .mute: DisplayRepresentation(title: "Silencia", synonyms: ["Silencio", "Quita el sonido"]),
+        .unmute: DisplayRepresentation(title: "Quita el silencio", synonyms: ["Regresa el sonido"]),
+        .subtitlesOn: DisplayRepresentation(title: "Pon subtítulos", synonyms: ["Activa los subtítulos"]),
+        .subtitlesOff: DisplayRepresentation(title: "Quita los subtítulos", synonyms: ["Apaga los subtítulos"]),
+        .timeLeft: DisplayRepresentation(title: "Cuánto falta", synonyms: ["Cuánto le queda"]),
+        .stopVideo: DisplayRepresentation(title: "Sal del video", synonyms: ["Quita el video", "Detén el video"]),
+        .continueWatching: DisplayRepresentation(title: "Sigue viendo", synonyms: ["Pon lo que estaba viendo"]),
+        .liveTV: DisplayRepresentation(title: "Pon la tele", synonyms: ["Pon la tele en vivo"]),
+        .nextChannel: DisplayRepresentation(title: "Siguiente canal", synonyms: ["Cambia de canal"]),
+        .previousChannel: DisplayRepresentation(title: "Canal anterior"),
+        .upcoming: DisplayRepresentation(title: "Qué sale hoy", synonyms: ["Qué estrenos hay"]),
+        .recommend: DisplayRepresentation(title: "Qué me recomiendas", synonyms: ["Recomiéndame algo"]),
+        .whatsOpen: DisplayRepresentation(title: "Qué está abierto", synonyms: ["Qué estoy viendo", "Qué estoy jugando"]),
+        .closeGame: DisplayRepresentation(title: "Cierra el juego", synonyms: ["Sal del juego"]),
+        .home: DisplayRepresentation(title: "Ve a inicio", synonyms: ["Ve al inicio"]),
+        .capture: DisplayRepresentation(title: "Toma una captura", synonyms: ["Captura la pantalla"]),
+    ]
+
+    /// Lo que se le dice a la consola (frases que su intérprete entiende; `tests/test_voice.py` las prueba).
+    var said: String {
+        switch self {
+        case .pause: "pausa"
+        case .resume: "reanuda"
+        case .nextEpisode: "siguiente episodio"
+        case .previousEpisode: "episodio anterior"
+        case .skipIntro: "salta la intro"
+        case .restart: "desde el principio"
+        case .forward: "adelanta 30 segundos"
+        case .back: "regresa 30 segundos"
+        case .volumeUp: "sube el volumen"
+        case .volumeDown: "baja el volumen"
+        case .mute: "silencia"
+        case .unmute: "quita el silencio"
+        case .subtitlesOn: "pon subtítulos"
+        case .subtitlesOff: "quita los subtítulos"
+        case .timeLeft: "cuánto falta"
+        case .stopVideo: "sal del video"
+        case .continueWatching: "sigue viendo"
+        case .liveTV: "pon la tele"
+        case .nextChannel: "siguiente canal"
+        case .previousChannel: "canal anterior"
+        case .upcoming: "qué sale hoy"
+        case .recommend: "qué me recomiendas"
+        case .whatsOpen: "qué está abierto"
+        case .closeGame: "cierra el juego"
+        case .home: "ve a inicio"
+        case .capture: "toma una captura"
+        }
+    }
+}
+
+struct OrbitalCommandIntent: AppIntent {
+    static let title: LocalizedStringResource = "Orden rápida"
+    static let description = IntentDescription("Pausa, volumen, siguiente episodio y lo de todos los días, en una sola frase.")
+    static let openAppWhenRun = false
+
+    @Parameter(title: "Orden")
+    var command: OrbitalCommand
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        .result(dialog: IntentDialog(stringLiteral: await answer(command.said)))
+    }
+}
+
+/// Un título para decirlo en la misma frase: «Oye Siri, pon The Office en Orbital». Siri reconoce los de «Seguir viendo»
+/// (`SiriTitles`); otro nombre lo pregunta y se busca igual en la consola.
+struct OrbitalTitle: AppEntity {
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Título"
+    static let defaultQuery = OrbitalTitleQuery()
+
+    let id: String
+    var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(id)") }
+}
+
+struct OrbitalTitleQuery: EntityStringQuery {
+    func entities(for identifiers: [String]) async throws -> [OrbitalTitle] { identifiers.map { OrbitalTitle(id: $0) } }
+    func entities(matching string: String) async throws -> [OrbitalTitle] {
+        let name = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? [] : [OrbitalTitle(id: name)]
+    }
+    func suggestedEntities() async throws -> [OrbitalTitle] { SiriTitles.load().map { OrbitalTitle(id: $0) } }
+}
+
+/// Los títulos que Siri reconoce: los de «Seguir viendo» (los mismos del widget), guardados en el iPhone.
+enum SiriTitles {
+    private static let key = "siri.titles"
+    private static let limit = 30
+
+    static func load() -> [String] { UserDefaults.standard.stringArray(forKey: key) ?? [] }
+
+    /// Si cambiaron, se guardan y Siri vuelve a leerlos (aprende a reconocer los nombres nuevos).
+    static func save(_ titles: [String]) {
+        var seen = Set<String>()
+        let unique = Array(titles.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && seen.insert($0.lowercased()).inserted }.prefix(limit))
+        guard !unique.isEmpty, unique != load() else { return }
+        UserDefaults.standard.set(unique, forKey: key)
+        OrbitalShortcuts.updateAppShortcutParameters()
+    }
+}
+
+struct PlayTitleIntent: AppIntent {
+    static let title: LocalizedStringResource = "Poner en la TV"
+    static let description = IntentDescription("Pone en tu Orbital una película o una serie, donde ibas.")
+    static let openAppWhenRun = false
+
+    @Parameter(title: "Título", requestValueDialog: IntentDialog("¿Qué pongo en la TV?"))
+    var show: OrbitalTitle
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        .result(dialog: IntentDialog(stringLiteral: await answer("pon \(show.id)")))
+    }
+}
+
+/// «Pausa la TV con Orbital» / «Sigue la TV con Orbital»: lo de todos los días, sin decir la orden. (Las frases ya las cubre
+/// `OrbitalCommandIntent`; estas se quedan para los atajos que ya los usan.)
 struct PauseTVIntent: AppIntent {
     static let title: LocalizedStringResource = "Pausar la TV"
     static let openAppWhenRun = false
@@ -58,30 +202,29 @@ struct TurnOnConsoleIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let env = AppEnvironment.shared
-        let outcome = await VoiceAssistant(services: env.services, tvNow: env.tvNow).handle("prende la consola")
-        let speech = outcome.speech.isEmpty ? String(localized: "Listo.")
-            : Strings.message(outcome.speech, language: env.services.appSettings.uiLanguage)
-        return .result(dialog: IntentDialog(stringLiteral: speech))
+        .result(dialog: IntentDialog(stringLiteral: await answer("prende la consola")))
     }
 }
 
 /// Las frases que Siri reconoce sin configurar nada (aparecen solas en Atajos).
 struct OrbitalShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
-        // Sin «Dile a…»: Siri lo toma como mandar un mensaje a un contacto. Y la orden no va en la frase (los atajos de
-        // una app no aceptan texto libre ahí): Siri la pregunta después («¿Qué le digo a Orbital?»).
+        // Sin «Dile a…»: Siri lo toma como mandar un mensaje a un contacto. Texto libre no cabe en la frase: «Habla con
+        // Orbital» lo pregunta después («¿Qué le digo a Orbital?»); lo de todos los días y los títulos sí van en la frase.
+        AppShortcut(intent: OrbitalCommandIntent(), phrases: [
+            "\(\.$command) en \(.applicationName)", "\(\.$command) con \(.applicationName)", "\(\.$command) \(.applicationName)",
+            "\(.applicationName) \(\.$command)",
+        ], shortTitle: "Orden rápida", systemImageName: "playpause.fill")
+        AppShortcut(intent: PlayTitleIntent(), phrases: [
+            "Pon \(\.$show) en \(.applicationName)", "Pon \(\.$show) con \(.applicationName)",
+            "Quiero ver \(\.$show) en \(.applicationName)", "Reproduce \(\.$show) en \(.applicationName)",
+            "Sigue viendo \(\.$show) en \(.applicationName)", "Poner en la TV con \(.applicationName)",
+        ], shortTitle: "Poner en la TV", systemImageName: "tv")
         AppShortcut(intent: AskOrbitalIntent(), phrases: [
             "Habla con \(.applicationName)", "Orden para \(.applicationName)", "Usa \(.applicationName)", "\(.applicationName)",
         ], shortTitle: "Habla con Orbital", systemImageName: "waveform")
         AppShortcut(intent: TurnOnConsoleIntent(), phrases: [
             "Prende \(.applicationName)", "Enciende \(.applicationName)", "Prende la consola con \(.applicationName)",
         ], shortTitle: "Prender la consola", systemImageName: "power")
-        AppShortcut(intent: PauseTVIntent(), phrases: [
-            "Pausa la TV con \(.applicationName)", "Pausa \(.applicationName)",
-        ], shortTitle: "Pausar la TV", systemImageName: "pause.fill")
-        AppShortcut(intent: ResumeTVIntent(), phrases: [
-            "Sigue la TV con \(.applicationName)", "Reanuda \(.applicationName)",
-        ], shortTitle: "Seguir en la TV", systemImageName: "play.fill")
     }
 }
