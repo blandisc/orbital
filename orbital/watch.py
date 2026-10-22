@@ -714,7 +714,7 @@ class Watch:
             self.stream_sources(kind, video_id, prefs)
             source = self.streams.get(kind, video_id, prefs, index)
         if source is None:
-            raise ValueError("Esa fuente ya no está disponible; vuelve a cargar las fuentes")
+            raise ValueError("Esa versión ya no está disponible; vuelve a abrir la lista")
         mpv_exe = player.find_mpv() if self.config.stremio.player == "orbital" else None
         # «Tu OneDrive»: Microsoft da una dirección temporal del archivo (se pide al momento de ver).
         url = self.onedrive.stream_url(source) if source.stream.get("onedrive") and self.onedrive is not None \
@@ -856,14 +856,14 @@ class Watch:
                 other = prefs.audio not in source.languages  # otro idioma: se dice cuál
                 label = player_source_label(source) if other else source_label(source)
                 ok = self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], title, source,
-                                          start=position, message=f"Probando otra fuente · {label}", tried=list(tried))
+                                          start=position, message=f"Probando otra versión · {label}", tried=list(tried))
                 if ok:
                     return True
                 tried.add(source.index)
                 meta = {**meta, "tried": sorted(tried)}
                 return self._source_failed(meta, position, alive)  # esa tampoco abrió: la siguiente
         self.events.publish({"type": "toast", "ok": False,
-                      "message": f"No pude reproducir {title}. Prueba otra fuente desde la ficha (Y)."})
+                      "message": f"No pude reproducir {title}. Prueba otra versión desde la ficha (Y)."})
         return False
 
     def _player_sources(self, meta: dict) -> list[dict]:

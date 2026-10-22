@@ -466,7 +466,7 @@ def hud_ass(hud: Hud) -> str:
     # solo se descubrían en pausa). Si no caben (4:3), se quitan primero los de menos uso.
     lines.append(text(MARGIN, 878, esc(fit(info_line(hud), 22, min(1300, W - 2 * MARGIN), "semi")), 22, MUTED, weight="semi"))
     # A primero, como en todo Orbital; luego lo que se descubre (◀▶, LT/RT) y B al final.
-    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes"),
+    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Versión"),
              ("◀ ▶", "Adelantar"), *([("LT RT", "Mantén: episodio")] if hud.series else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
         items.pop(-2)  # si no caben (4:3): primero LT/RT, luego ◀▶
@@ -505,7 +505,7 @@ def paused_ass(hud: Hud) -> str:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
-    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
+    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Versión")], MARGIN, y))
     bar, _ = progress_bar(hud)
     more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Mantén: episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
@@ -565,7 +565,7 @@ def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
     if paused:
         return [("−10 s", "left"), ("+10 s", "right"), ("Salir", "quit")]
     return [("−10 s", "left"), ("Pausa", "a"), ("+10 s", "right"), ("Audio y subtítulos", "x"),
-            ("Episodios" if hud.series else "Fuentes", "y"), ("Salir", "quit")]
+            ("Episodios" if hud.series else "Versión", "y"), ("Salir", "quit")]
 
 
 def pills_width(items: Sequence[tuple[str, object]], gap: float = 16, size: int = 24) -> float:
@@ -611,7 +611,7 @@ class Panel:
 
 
 TAB_NAMES = {"audio": "Audio", "sub": "Subtítulos", "size": "Tamaño de los subtítulos", "sync": "Sincronía", "episodes": "Episodios",
-             "source": "Fuentes", "playback": "Reproducción", "category": "Categoría", "channels": "Canales",
+             "source": "Versión", "playback": "Reproducción", "category": "Categoría", "channels": "Canales",
              "seek": "Adelantar", "volume": "Volumen", "episode": "Episodio"}
 PANEL_ROWS = 6  # filas visibles por columna; el resto se desplaza con el foco
 

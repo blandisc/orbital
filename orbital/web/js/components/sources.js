@@ -16,7 +16,7 @@ import { h, hideAfterExit, mount } from "../core/dom.js";
 const AUDIO_NAMES = { en: "inglés", es: "español", "es-419": "español latino", "es-ES": "castellano" };
 
 export function createSources({ onPlay, onMove, onClose, onChange }) {
-  const heading = h("div", { class: "sources__heading" }, "Elegir fuente");
+  const heading = h("div", { class: "sources__heading" }, "Versión");
   const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
   const list = h("div", { class: "sources__list", role: "group" });
@@ -25,7 +25,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     Button({ label: "Reintentar", variant: "primary", onPress: () => request && open(request) }));
   const panel = h("div", { class: ["side-panel__panel", "sources__panel"] },
     h("div", { class: "sources__head" }, heading, title, subtitle), status, retry, list);
-  const el = h("section", { class: ["side-panel", "sources"], hidden: true, "aria-label": "Fuentes",
+  const el = h("section", { class: ["side-panel", "sources"], hidden: true, "aria-label": "Versión",
     onClick: (e) => e.target === el && close() }, panel);
 
   let request = null; // { kind, id, video_id, title, item }
@@ -114,7 +114,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     try {
       const data = await api.stremioSources(req.kind, req.id, req.video_id);
       if (mine !== token) return;
-      if (!Array.isArray(data?.sources)) throw new Error("No pude leer las fuentes. Intenta de nuevo.");
+      if (!Array.isArray(data?.sources)) throw new Error("No pude leer las versiones. Intenta de nuevo.");
       found = data.sources;
       recommended = data.recommended?.id ?? null;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
@@ -166,7 +166,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
 
   /** Pistas del pie mientras la lista de fuentes está abierta. */
   const hints = (g) => (found.length
-    ? [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
+    ? [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra versión" },
       { glyph: g.alt, label: details ? "Menos detalles" : "Detalles", secondary: true },
       found.length > 7 && { glyph: g.page, label: "Saltar 5", secondary: true, offscreen: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));

@@ -82,7 +82,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   if (playable && phone) out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" });
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
   // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
-  if (playable) out.push({ id: "sources", icon: "list", label: "Elegir fuente", short: "Fuente" });
+  if (playable) out.push({ id: "sources", icon: "list", label: "Versión", short: "Versión" });
   if (restart) out.push(restart);
   if (playable && phone) out.push({ id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
   // Desde Mi media (tu OneDrive), como el iPhone: elegir cuál de tus versiones ver y corregir la ficha si no es esta.

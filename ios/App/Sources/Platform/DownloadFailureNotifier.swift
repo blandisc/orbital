@@ -17,7 +17,7 @@ enum DownloadFailureNotifier {
         let actions = [
             UNNotificationAction(identifier: Action.retry, title: Strings.tr("Reintentar", language: language), options: [],
                                  icon: UNNotificationActionIcon(systemImageName: "arrow.clockwise")),
-            UNNotificationAction(identifier: Action.title, title: Strings.tr("Otra fuente", language: language), options: [.foreground],
+            UNNotificationAction(identifier: Action.title, title: Strings.tr("Otra versión", language: language), options: [.foreground],
                                  icon: UNNotificationActionIcon(systemImageName: "list.bullet")),
         ]
         let failed = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [], options: [])
@@ -42,9 +42,9 @@ enum DownloadFailureNotifier {
         content.title = String(format: Strings.tr("Se detuvo «%@»", language: language), item.title)
         if !item.subtitle.isEmpty { content.subtitle = item.subtitle }
         if let progress = item.progress, progress > 0 {
-            content.body = String(format: Strings.tr("Iba en %lld %%. Puedes reintentar o elegir otra fuente.", language: language), Int64(progress * 100))
+            content.body = String(format: Strings.tr("Iba en %lld %%. Puedes reintentar o elegir otra versión.", language: language), Int64(progress * 100))
         } else {
-            content.body = Strings.tr("No pudo empezar. Puedes reintentar o elegir otra fuente.", language: language)
+            content.body = Strings.tr("No pudo empezar. Puedes reintentar o elegir otra versión.", language: language)
         }
         content.categoryIdentifier = category
         content.threadIdentifier = "descargas"

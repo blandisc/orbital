@@ -430,12 +430,12 @@ def test_old_watcher_does_not_touch_the_new_video():
 def test_background_task_returning_false_shows_the_failure():
     import time as _t
     p, mpv = make_player()
-    p._in_background(lambda: False, failed="No pude cambiar de fuente")
+    p._in_background(lambda: False, failed="No pude cambiar de versión")
     for _ in range(50):
         if mpv.overlays.get(3) and "No pude" in mpv.overlays[3]:
             break
         _t.sleep(.02)
-    assert "No pude cambiar de fuente" in mpv.overlays[3]
+    assert "No pude cambiar de versión" in mpv.overlays[3]
 
 
 def test_switching_source_then_quitting_before_it_loads_keeps_the_progress():

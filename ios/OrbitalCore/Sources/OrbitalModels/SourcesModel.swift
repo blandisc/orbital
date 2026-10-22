@@ -71,7 +71,7 @@ public final class SourcesModel: ObservableModel {
         do { found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch) }
         catch where !Task.isCancelled {
             sources = []; rows = []; languageRows = []; moreLanguages = []; hiddenCount = 0
-            self.error = (error as? StreamFinderError)?.description ?? "No pude buscar fuentes. Intenta de nuevo."
+            self.error = (error as? StreamFinderError)?.description ?? "No pude buscar versiones. Intenta de nuevo."
             return
         }
         catch { return }

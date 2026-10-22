@@ -90,7 +90,7 @@ def test_failures_say_so_and_can_be_retried(tmp_path, monkeypatch):
     dl.add("movie", "tt1", "tt1", "Nada")
     dl.run(dl._next())
     failed = dl.list()[0]
-    assert failed["status"] == "failed" and "fuente directa" in failed["error"]
+    assert failed["status"] == "failed" and "versión directa" in failed["error"]
     assert dl.retry(failed["id"]) and dl.list()[0]["status"] == "queued"
 
 

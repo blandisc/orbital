@@ -363,7 +363,7 @@ final class AppEnvironment: ObservableObject {
         }
         guard let url = chosen?.playbackURL else {
             if unreachable {
-                return notify("Sin internet", detail: "No pude preguntar por fuentes", tone: .warn, actionTitle: "Reintentar") { [weak self] in
+                return notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { [weak self] in
                     Task { await self?.playExternal(request, source: source) }
                 }
             }
@@ -397,7 +397,7 @@ final class AppEnvironment: ObservableObject {
         case .failed:
             // Sin el texto técnico de Infuse: qué hacer, y la salida de verla aquí.
             let request = session.request
-            notify("Infuse no pudo con esta versión", detail: "Prueba otra fuente o ábrela aquí", tone: .warn, actionTitle: "Ver aquí") { [weak self] in
+            notify("Infuse no pudo con esta versión", detail: "Prueba otra versión o ábrela aquí", tone: .warn, actionTitle: "Ver aquí") { [weak self] in
                 self?.play(request)
             }
         case .closed:

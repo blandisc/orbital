@@ -488,7 +488,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                        "position": .double(1300 + nowPlayingPosition), "duration": .double(6180), "paused": .bool(nowPlayingPaused),
                                        "tracks": ["audio": [["id": "1", "label": "Inglés 5.1", "selected": true], ["id": "2", "label": "Español", "selected": false]],
                                                   "subtitles": [["id": "0", "label": "Sin subtítulos", "selected": false], ["id": "3", "label": "Español", "selected": true]]]])
-            let playerUI: JSON = ["screen": "player", "text_field": false, "section": "Películas y series", "legend": ["select": "Pausa", "alt": "Audio y subtítulos", "options": "Fuentes", "back": "Salir"],
+            let playerUI: JSON = ["screen": "player", "text_field": false, "section": "Películas y series", "legend": ["select": "Pausa", "alt": "Audio y subtítulos", "options": "Versión", "back": "Salir"],
                                   "volume": ["level": .int(demoVolume), "muted": .bool(demoMuted)]]
             return HTTPResponse(status: 200, data: JSON.object(["playing": movie, "inbox": .array(inbox), "ui": playerUI]).serialized())
         }

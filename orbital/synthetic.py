@@ -471,4 +471,4 @@ class SyntheticTV:
             self.coverage.save()
         if picked is None or skips >= MAX_SKIPS:
             return False  # varios episodios seguidos sin abrir: algo más pasa (Internet, los complementos)
-        return self._load(channel, picked, sorted(tried | {picked[1].index}), f"{channel.name} · probando otra fuente", skips)
+        return self._load(channel, picked, sorted(tried | {picked[1].index}), f"{channel.name} · probando otra versión", skips)

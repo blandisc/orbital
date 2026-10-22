@@ -734,7 +734,7 @@ class OrbitalPlayer(PlayerScreen):
             return
         if wrong_audio(tracks, self._audio_lang) and not segment.meta.get("synthetic"):
             # El archivo dice ser de otro idioma (un doblaje mal etiquetado): avisa en vez de callar.
-            self.toast("Esta fuente no trae audio en tu idioma · Y › Fuente para elegir otra", 6)
+            self.toast("Esta versión no trae audio en tu idioma · Y para elegir otra", 6)
         elif segment.start > 5:
             self.toast("Sigues donde te quedaste · ◀ regresa", 3.5)
         if self.on_audio_tracks and not segment.live:
@@ -805,10 +805,10 @@ class OrbitalPlayer(PlayerScreen):
         log.info("La fuente de %s %s", segment.title, "se cortó" if segment.playing else "no arrancó")
         retrying = False
         if self.on_failed:
-            self.toast("Esa fuente falló · probando otra…", 6)
+            self.toast("Esa versión falló · probando otra…", 6)
             retrying = bool(self._safe(self.on_failed, segment.meta, segment.position, True))
         if not retrying:
-            self.toast("No pude reproducir esto con ninguna fuente", 4)
+            self.toast("No pude reproducir esto con ninguna versión", 4)
             timer = threading.Timer(4, lambda: self.segment is segment and self._quit())
             timer.daemon = True
             timer.start()

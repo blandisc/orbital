@@ -1838,6 +1838,17 @@
         }
       }
     },
+    "Buscando la mejor versión…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding the best version…"
+          }
+        }
+      }
+    },
     "Buscando opciones…": {
       "extractionState": "manual",
       "localizations": {
@@ -1948,17 +1959,6 @@
         }
       }
     },
-    "Buscar fuente": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Find a source"
-          }
-        }
-      }
-    },
     "Buscar idioma": {
       "extractionState": "manual",
       "localizations": {
@@ -1999,6 +1999,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search a phrase"
+          }
+        }
+      }
+    },
+    "Buscar versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find a version"
           }
         }
       }
@@ -2791,6 +2802,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "On cellular data we warn you before using sources over 5 GB."
+          }
+        }
+      }
+    },
+    "Con datos móviles te avisamos antes de usar versiones de más de %lld GB.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On cellular we'll ask before using versions over %lld GB."
           }
         }
       }
@@ -3682,6 +3704,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "For the shows you follow on Trakt. It tells you once there's a Real-Debrid source, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; several on the same day arrive together."
+          }
+        }
+      }
+    },
+    "De las series que sigues en Trakt. Te avisa cuando ya se puede ver en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the shows you follow on Trakt. It tells you once it can be watched on Real-Debrid, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; several on the same day arrive together."
           }
         }
       }
@@ -4588,6 +4621,17 @@
         }
       }
     },
+    "El enlace de esta versión caducó o ya no existe. Toca ▶ para buscar otro.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This version's link expired or no longer exists. Tap ▶ to find another."
+          }
+        }
+      }
+    },
     "El enlace de la fuente caducó o ya no existe. Toca ▶ para buscar otro.": {
       "extractionState": "manual",
       "localizations": {
@@ -4676,6 +4720,28 @@
         }
       }
     },
+    "El servidor falló. Se vuelve a intentar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server failed. Trying again."
+          }
+        }
+      }
+    },
+    "El servidor pidió esperar un poco. Se vuelve a intentar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server asked to wait a bit. Trying again."
+          }
+        }
+      }
+    },
     "Elegidas": {
       "extractionState": "manual",
       "localizations": {
@@ -4705,17 +4771,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose folder"
-          }
-        }
-      }
-    },
-    "Elegir fuente": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose source"
           }
         }
       }
@@ -5435,6 +5490,17 @@
         }
       }
     },
+    "Ese complemento no responde o no da videos ni fichas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That add-on isn't responding or doesn't provide videos or details."
+          }
+        }
+      }
+    },
     "Ese correo no tiene cuenta de Stremio.": {
       "extractionState": "manual",
       "localizations": {
@@ -5618,6 +5684,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "This week in Mexico"
+          }
+        }
+      }
+    },
+    "Esta versión no tiene un enlace para descargar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This version has no download link."
           }
         }
       }
@@ -6249,6 +6326,17 @@
         }
       }
     },
+    "Iba en %lld %%. Puedes reintentar o elegir otra versión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It was at %lld %%. You can retry or pick another version."
+          }
+        }
+      }
+    },
     "Id. de aplicación (cliente)": {
       "extractionState": "manual",
       "localizations": {
@@ -6707,6 +6795,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The saga"
+          }
+        }
+      }
+    },
+    "La versión dejó de responder. Al intentar de nuevo seguimos donde ibas, con otra si hace falta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The version stopped responding. Trying again picks up where you were, with another one if needed."
           }
         }
       }
@@ -7965,6 +8064,17 @@
         }
       }
     },
+    "Misma versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Same version"
+          }
+        }
+      }
+    },
     "Modo": {
       "extractionState": "manual",
       "localizations": {
@@ -8504,6 +8614,17 @@
         }
       }
     },
+    "Ninguna versión funcionó.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No version worked."
+          }
+        }
+      }
+    },
     "Ninguno": {
       "extractionState": "manual",
       "localizations": {
@@ -8713,6 +8834,17 @@
         }
       }
     },
+    "No encontré una versión para descargar %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find a version to download %@."
+          }
+        }
+      }
+    },
     "No está en tu carpeta": {
       "extractionState": "manual",
       "localizations": {
@@ -8834,6 +8966,17 @@
         }
       }
     },
+    "No hay versiones en Real-Debrid para este título.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There are no Real-Debrid versions for this title."
+          }
+        }
+      }
+    },
     "No los reconocí por su nombre: elige cuál es.": {
       "extractionState": "manual",
       "localizations": {
@@ -8933,6 +9076,17 @@
         }
       }
     },
+    "No pude abrir este video. La versión dejó de responder.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't open this video. The version stopped responding."
+          }
+        }
+      }
+    },
     "No pude abrir «%@»": {
       "extractionState": "manual",
       "localizations": {
@@ -8988,6 +9142,17 @@
         }
       }
     },
+    "No pude buscar dónde verlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't look for where to watch it"
+          }
+        }
+      }
+    },
     "No pude buscar fuentes. Intenta de nuevo.": {
       "extractionState": "manual",
       "localizations": {
@@ -9006,6 +9171,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "We couldn't search for subtitles. Check your connection."
+          }
+        }
+      }
+    },
+    "No pude buscar versiones. Intenta de nuevo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't look for versions. Try again."
           }
         }
       }
@@ -9292,6 +9468,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "It couldn't start. You can retry or pick another source."
+          }
+        }
+      }
+    },
+    "No pudo empezar. Puedes reintentar o elegir otra versión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It couldn't start. You can retry or pick another version."
           }
         }
       }
@@ -9670,24 +9857,13 @@
         }
       }
     },
-    "Otra fuente": {
+    "Otra versión": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Another source"
-          }
-        }
-      }
-    },
-    "Otra fuente…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Another source…"
+            "value": "Another version"
           }
         }
       }
@@ -10495,6 +10671,17 @@
         }
       }
     },
+    "Probamos las versiones que hay y ninguna respondió. A veces es momentáneo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We tried the available versions and none responded. Sometimes it's temporary."
+          }
+        }
+      }
+    },
     "Probando otra fuente (%lld)…": {
       "extractionState": "manual",
       "localizations": {
@@ -10502,6 +10689,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trying another source (%lld)…"
+          }
+        }
+      }
+    },
+    "Probando otra versión (%lld)…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trying another version (%lld)…"
           }
         }
       }
@@ -10590,6 +10788,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Try another source or open it here"
+          }
+        }
+      }
+    },
+    "Prueba otra versión o ábrela aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another version or open it here"
           }
         }
       }
@@ -12365,6 +12574,17 @@
         }
       }
     },
+    "Sin conexión: no pude buscar dónde verlo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline: I couldn't look for where to watch it."
+          }
+        }
+      }
+    },
     "Sin conexión: no pude preguntar por fuentes.": {
       "extractionState": "manual",
       "localizations": {
@@ -12559,6 +12779,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unwatched"
+          }
+        }
+      }
+    },
+    "Sin versiones por ahora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No versions yet"
           }
         }
       }
@@ -12768,6 +12999,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Volume up"
+          }
+        }
+      }
+    },
+    "Subtítulo %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle %lld"
+          }
+        }
+      }
+    },
+    "Subtítulo anterior": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous subtitle"
+          }
+        }
+      }
+    },
+    "Subtítulo siguiente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next subtitle"
           }
         }
       }
@@ -13362,6 +13626,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "All (%lld)"
+          }
+        }
+      }
+    },
+    "Todas las fuentes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All sources"
           }
         }
       }

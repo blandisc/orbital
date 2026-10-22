@@ -249,7 +249,7 @@ struct TitleView: View {
                 .font(DS.TextRecipe.body.font.weight(.semibold))
                 .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                 if model.sourceCheck == .none || model.sourceCheck == .offline {
-                    (model.sourceCheck == .none ? Text("Sin fuentes por ahora") : Text("Sin conexión"))
+                    (model.sourceCheck == .none ? Text("Sin versiones por ahora") : Text("Sin conexión"))
                         .font(DS.TextRecipe.caption.font.weight(.medium)).opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1)
                 } else if !quality.isEmpty {
                     Text(verbatim: quality.joined(separator: " · ")).font(DS.TextRecipe.caption.font.weight(.medium))
@@ -575,7 +575,7 @@ struct TitleView: View {
     private func play(_ model: TitleModel) {
         switch model.sourceCheck {
         case .none: env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
-        case .offline: env.notify("Sin internet", detail: "No pude preguntar por fuentes", tone: .warn, actionTitle: "Reintentar") { play(model) }
+        case .offline: env.notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { play(model) }
         default: start(model, videoID: nil)
         }
     }

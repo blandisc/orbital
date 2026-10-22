@@ -59,7 +59,7 @@ final class PlayerModelTests: XCTestCase {
     func testNoSourcesShowsAClearError() async throws {
         let rig = try Rig()
         await rig.model.begin(rig.request())
-        XCTAssertEqual(rig.model.phase, .failed("No hay fuentes de Real-Debrid para este título."))
+        XCTAssertEqual(rig.model.phase, .failed("No hay versiones en Real-Debrid para este título."))
         XCTAssertTrue(rig.engine.loads.isEmpty)
     }
 
@@ -87,7 +87,7 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.handle(rig.playing(100))
         await rig.model.handle(rig.playing(100, state: .failed("se cortó")))
         await rig.model.waitForTransition()
-        XCTAssertEqual(rig.model.phase, .failed("Ninguna fuente funcionó."), "ya no quedan más fuentes")
+        XCTAssertEqual(rig.model.phase, .failed("Ninguna versión funcionó."), "ya no quedan más fuentes")
         XCTAssertEqual(rig.engine.loads.count, 2)
     }
 
@@ -133,7 +133,7 @@ final class PlayerModelTests: XCTestCase {
         rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": .array((1...8).map { rig.stream("s\($0)", size: "💾 \($0) GB") })]
         for n in 1...8 { rig.engine.failing.insert("https://rd.example/s\(n).mkv") }
         await rig.model.begin(rig.request())
-        XCTAssertEqual(rig.model.phase, .failed("Ninguna fuente funcionó."))
+        XCTAssertEqual(rig.model.phase, .failed("Ninguna versión funcionó."))
         XCTAssertEqual(rig.engine.loads.count, PlaybackRules.maxSourceRetries + 1)
     }
 

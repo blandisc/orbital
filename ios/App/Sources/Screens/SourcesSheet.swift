@@ -39,7 +39,6 @@ struct SourcesSheet: View {
     var body: some View {
         let model = observer.model
         let ui = env.services.appSettings.uiLanguage
-        let allCount = AllSources.count(model.ranked).shown   // «Todas (N)»: sin grabaciones de cine ni tráileres
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -56,7 +55,7 @@ struct SourcesSheet: View {
             .padding(.horizontal, DS.Space.s4)
             Picker("Mostrar", selection: $showsAll) {
                 Text("Por idioma").tag(false)
-                Text("Todas (\(allCount))").tag(true)
+                Text("Todas las fuentes").tag(true)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, DS.Space.s4)
@@ -79,7 +78,7 @@ struct SourcesSheet: View {
             .contentMargins(.horizontal, DS.Space.s4, for: .scrollContent)
             .contentMargins(.vertical, DS.Space.s1, for: .scrollContent)
             if env.connectivity.isCellular {
-                Text("Con datos móviles te avisamos antes de usar fuentes de más de \(Int(env.services.appSettings.warnCellularOverGB)) GB.").recipe(.caption, color: DS.textFaint).padding(.horizontal, DS.Space.s4)
+                Text("Con datos móviles te avisamos antes de usar versiones de más de \(Int(env.services.appSettings.warnCellularOverGB)) GB.").recipe(.caption, color: DS.textFaint).padding(.horizontal, DS.Space.s4)
             }
         }
         .padding(.vertical, DS.Space.s4)

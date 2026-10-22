@@ -636,7 +636,7 @@ export function settingsPage(page, settings) {
         { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
           ok: !!settings.stremio_linked,
           command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
-          hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
+          hint: settings.stremio_linked ? "Seguir viendo y complementos" : "Para películas y series" },
         settings.trakt?.configured ? { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
           ok: !!settings.trakt.linked,
           command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
@@ -769,7 +769,7 @@ export function keysMenu(service) {
 export function stremioAccountMenu() {
   return {
     title: "Cuenta de Stremio",
-    subtitle: "Dejarás de ver Seguir viendo y tus fuentes.",
+    subtitle: "Dejarás de ver Seguir viendo y tus complementos.",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
@@ -881,7 +881,7 @@ const KEYBOARD_ROWS = [["Ir a Orbital · volver al juego", "Ctrl + Inicio"], ["V
 export const SHORTCUTS = {
   orbital: [["Abrir", "A"], ["Atrás", "B"], ["Opciones", "Y"], ["Otro emulador o la ficha", "X"],
     ["Cambiar de sección", "LB / RB"], ["Buscar", "Vista ⧉"], ["Menú", "☰"]],
-  player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y fuente", "Y"],
+  player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y versión", "Y"],
     ["Capítulo · episodio", "LB/RB · mantén LT/RT"], ["Volumen", "▲ ▼"], ["Salir", "Mantén B"]],
 };
 

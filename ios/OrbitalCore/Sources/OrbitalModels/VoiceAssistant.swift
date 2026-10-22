@@ -100,7 +100,7 @@ public final class VoiceAssistant {
         switch outcome {
         case .queued: Outcome(ok: true, speech: "Descargando \(name) en el iPhone.")
         case .already: Outcome(ok: true, speech: "\(name) ya está descargado.")
-        case .noSources: Outcome(ok: false, speech: "No encontré una fuente para descargar \(name).")
+        case .noSources: Outcome(ok: false, speech: "No encontré una versión para descargar \(name).")
         case .notEnoughSpace(let message), .failed(let message): Outcome(ok: false, speech: message)
         }
     }

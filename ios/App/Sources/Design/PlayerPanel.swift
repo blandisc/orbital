@@ -530,13 +530,13 @@ struct SubtitleTryStrip: View {
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            arrow("chevron.left", label: Text("Versión anterior"), action: previous)
+            arrow("chevron.left", label: Text("Subtítulo anterior"), action: previous)
             VStack(alignment: .leading, spacing: 0) {
                 Text(verbatim: title).recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1).contentTransition(.numericText())
                 reason.recipe(.caption).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            arrow("chevron.right", label: Text("Versión siguiente"), action: next)
+            arrow("chevron.right", label: Text("Subtítulo siguiente"), action: next)
             Button { nudge(-step) } label: { Text(verbatim: String(format: "−%g s", step)).monospacedDigit().lineLimit(1) }
                 .buttonStyle(.glass).accessibilityLabel(Text("Subtítulos antes"))
                 .accessibilityHint(Text("Adelantar medio segundo"))
@@ -710,8 +710,8 @@ struct PlayerFailureView: View {
         switch failure {
         case .noSources: isEpisode ? Text("Real-Debrid aún no tiene este episodio. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
             : Text("Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
-        case .noneWorked: Text("Probamos las fuentes que hay y ninguna respondió. A veces es momentáneo.")
-        case .sourceDied: Text("La fuente dejó de responder. Al intentar de nuevo seguimos donde ibas, con otra si hace falta.")
+        case .noneWorked: Text("Probamos las versiones que hay y ninguna respondió. A veces es momentáneo.")
+        case .sourceDied: Text("La versión dejó de responder. Al intentar de nuevo seguimos donde ibas, con otra si hace falta.")
         case .network: Text("Revisa tu conexión a internet e intenta de nuevo.")
         case .localFile: Text("El archivo descargado no se puede leer. Bórralo en Descargas y bájalo otra vez.")
         }
@@ -924,7 +924,7 @@ struct SubtitleDock: View {
     // MARK: renglones
     private func versionRow(_ version: Version) -> some View {
         HStack(spacing: DS.Space.s2) {
-            stepButton("chevron.left", label: "Versión anterior", enabled: canStep, action: previous)
+            stepButton("chevron.left", label: "Subtítulo anterior", enabled: canStep, action: previous)
             Button(action: allVersions) {
                 VStack(spacing: DS.Space.s1) {
                     HStack(spacing: DS.Space.s1) {
@@ -948,7 +948,7 @@ struct SubtitleDock: View {
             .buttonStyle(.plain)
             .accessibilityHint(Text("Ver todas las versiones"))
             .accessibilityIdentifier("subtitle-dock-versions")
-            stepButton("chevron.right", label: "Versión siguiente", enabled: canStep, action: next)
+            stepButton("chevron.right", label: "Subtítulo siguiente", enabled: canStep, action: next)
                 .accessibilityIdentifier("subtitle-dock-next")
         }
     }

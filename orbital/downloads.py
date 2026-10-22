@@ -213,7 +213,7 @@ class Downloads:
         try:
             url, release = self.resolve(job)
             if not url:
-                raise ValueError("No encontré una fuente directa para bajar esto (las de torrent sin Real-Debrid no se pueden).")
+                raise ValueError("No encontré una versión directa para bajar esto (las de torrent sin Real-Debrid no se pueden).")
             self._fetch(job, url, release)
             if job["id"] in self._cancel:
                 return

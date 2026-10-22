@@ -112,10 +112,10 @@ public enum DownloadMessages {
     /// Lo que se le dice a la persona cuando el servidor contesta con un error (nunca «HTTP 403» a secas).
     public static func forStatus(_ status: Int) -> String {
         switch status {
-        case 401, 403, 404, 410: "El enlace de la fuente caducó o ya no existe. Toca ▶ para buscar otro."
+        case 401, 403, 404, 410: "El enlace de esta versión caducó o ya no existe. Toca ▶ para buscar otro."
         case 416: "Lo bajado no cuadra con el archivo: se empieza de nuevo."
-        case 429: "La fuente pidió esperar un poco. Se vuelve a intentar."
-        case 500...599: "El servidor de la fuente falló. Se vuelve a intentar."
+        case 429: "El servidor pidió esperar un poco. Se vuelve a intentar."
+        case 500...599: "El servidor falló. Se vuelve a intentar."
         default: "La descarga falló (código \(status))."
         }
     }
@@ -144,7 +144,7 @@ public enum DownloadError: Error, Sendable, Equatable, CustomStringConvertible {
         switch self {
         case .notEnoughSpace(let needed, let free): return "Hacen falta \(needed / 1_000_000) MB y hay \(free / 1_000_000) MB libres."
         case .alreadyDownloaded: return "Ya está descargado."
-        case .noURL: return "Esta fuente no tiene un enlace para descargar."
+        case .noURL: return "Esta versión no tiene un enlace para descargar."
         case .unsafePath: return "El nombre de este título no sirve para guardarlo."
         }
     }

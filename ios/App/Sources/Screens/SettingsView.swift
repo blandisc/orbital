@@ -304,7 +304,7 @@ struct SettingsView: View {
             .tint(DS.switchOn)
             .accessibilityIdentifier("release-alerts")
         } footer: {
-            Text("De las series que sigues en Trakt. Te avisa cuando ya hay fuente en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.")
+            Text("De las series que sigues en Trakt. Te avisa cuando ya se puede ver en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.")
         }
         .listRowBackground(DS.surface)
         .disabled(!env.services.appSettings.traktEnabled)

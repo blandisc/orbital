@@ -735,11 +735,11 @@ struct PlayerScreen: View {
     private func failed(_ model: PlayerModel) -> Bool { if case .failed = model.phase { true } else { false } }
 
     private func preparingText(_ model: PlayerModel) -> LocalizedStringKey {
-        if case .triedAnotherSource(let n)? = model.notice { return "Probando otra fuente (\(n))…" }
+        if case .triedAnotherSource(let n)? = model.notice { return "Probando otra versión (\(n))…" }
         // Ya sabe qué abrir: la versión que elegiste o tu descarga. «Buscando la mejor fuente» ahí no era cierto.
         if current.localFile != nil { return "Abriendo tu descarga…" }
         if current.sourceIndex != nil { return "Abriendo la versión que elegiste…" }
-        return "Buscando la mejor fuente…"
+        return "Buscando la mejor versión…"
     }
 
     // MARK: controles
@@ -1199,7 +1199,7 @@ struct PlayerScreen: View {
             let forced = track.isForced || (track.title ?? "").range(of: #"forc|forz|sign|song|carteles"#, options: [.regularExpression, .caseInsensitive]) != nil
             return tr(forced ? "Del video · forzados" : "Del video · para sordos")
         }
-        return v.fromVideo ? tr("Del video") : (named.isEmpty ? String(format: tr("Versión %lld"), index + 1) : named)
+        return v.fromVideo ? tr("Del video") : (named.isEmpty ? String(format: tr("Subtítulo %lld"), index + 1) : named)
     }
 
     private func subtitleDockView(_ model: PlayerModel) -> some View {
@@ -1219,7 +1219,7 @@ struct PlayerScreen: View {
         // mismo grupo), no una huella confirmada.
         let version: SubtitleDock.Version? = off ? nil : at.map { i in
             let v = versions[i]
-            let badge: String? = v.match >= 2 ? tr("Hecho para tu copia") : v.match == 1 ? tr("Misma fuente") : v.fromVideo ? tr("Viene dentro del archivo")
+            let badge: String? = v.match >= 2 ? tr("Hecho para tu copia") : v.match == 1 ? tr("Misma versión") : v.fromVideo ? tr("Viene dentro del archivo")
                 : v.downloads.flatMap { $0 > 0 ? String(format: tr("%@ descargas"), $0.formatted(.number.notation(.compactName).locale(Locale(identifier: settings.uiLanguage)))) : nil }
             return SubtitleDock.Version(title: dockVersionTitle(v, index: i), badge: badge, strong: v.match >= 2,
                                         position: String(format: tr("%lld de %lld"), i + 1, versions.count))
@@ -1325,7 +1325,7 @@ struct PlayerScreen: View {
             }
             Picker(selection: $versionShowsAll) {
                 Text("Por idioma").tag(false)
-                Text(String(format: Strings.tr("Todas (%lld)", language: ui), AllSources.count(model.sourceChoices, filter: AllSources.Filter()).shown)).tag(true)
+                Text("Todas las fuentes").tag(true)
             } label: { Text("Ver") }
             .pickerStyle(.segmented)
             ScrollView {
@@ -1827,7 +1827,7 @@ struct VideoSettingsPanel: View {
             trackValue(s.subtitleTracks.first { $0.id == s.selectedSubtitle }, empty: Text("Sin subtítulos"))
         }
         .accessibilityIdentifier("panel-subtitles")
-        PanelRow(title: "Fuente", symbol: "list.bullet", color: DS.ListTint.flame, action: model.sourceChoices.count > 1 ? { page = .source } : nil) {
+        PanelRow(title: "Versión", symbol: "list.bullet", color: DS.ListTint.flame, action: model.sourceChoices.count > 1 ? { page = .source } : nil) {
             if let src = model.source { sourceValue(src) } else { Text("Archivo descargado").recipe(.footnote) }
         }
         .accessibilityIdentifier("panel-source")
@@ -2014,7 +2014,7 @@ struct VideoSettingsPanel: View {
         }
         let parts = [version.traits.source, Self.resolution(version.name)].compactMap { $0 }
         if !parts.isEmpty { return parts.joined(separator: " · ") }
-        return String(format: tr("Versión %lld"), index + 1)
+        return String(format: tr("Subtítulo %lld"), index + 1)
     }
 
     /// «1080p», «720p», «2160p» del nombre de la copia.
@@ -2033,7 +2033,7 @@ struct VideoSettingsPanel: View {
     @ViewBuilder private var source: some View {
         let current = model.source
         let rest = model.sourceChoices.filter { $0.index != current?.index }
-        header("Fuente", back: true)
+        header("Versión", back: true)
         if let current {
             PanelGroupTitle(title: "La que tienes")
             sourceRow(current, selected: true)

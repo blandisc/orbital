@@ -343,7 +343,7 @@ struct MiMediaTitleView: View {
             .disabled(row.missing)
             .accessibilityHint(row.missing ? Text("No está en tu carpeta") : Text("Ver"))
             if row.missing {
-                Button("Buscar fuente") {
+                Button("Buscar versión") {
                     if titleModel == nil { titleModel = TitleModel(env.services, kind: "series", metaID: t.imdb, hint: (t.name, t.poster)) }
                     findingSource = MissingEpisode(id: row.id)
                 }

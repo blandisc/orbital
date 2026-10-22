@@ -79,7 +79,7 @@ def test_when_no_source_works_it_says_so_and_closes():
     p, mpv = series_player(**{"time-pos": None, "duration": None})
     p.on_failed = lambda *a: False
     p.tick(p.segment, p.segment.loaded + player.STARTUP_TIMEOUT + 1, False)
-    assert "ninguna fuente" in mpv.overlays[3]
+    assert "ninguna versión" in mpv.overlays[3]
 
 
 def test_progress_is_saved_every_minute_not_only_at_the_end():
@@ -197,7 +197,7 @@ def test_panels_subtitle_size_and_more():
     assert p.menu is None
     p.press("y")  # Y: Fuentes (y Reproducción)
     assert p.menu.kind == "more" and [c.key for c in p.menu.columns] == ["source", "playback"]
-    assert "Fuentes" in mpv.overlays[2] and "Desde el principio" in mpv.overlays[2]
+    assert "Versión" in mpv.overlays[2] and "Desde el principio" in mpv.overlays[2]
     p.press("down")
     p.press("a")
     import time
