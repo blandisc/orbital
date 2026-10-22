@@ -838,16 +838,27 @@ struct PlayerScreen: View {
 
     /// El globo del «⋯», debajo de su botón: las cuatro esquinas iguales, en vidrio. Tocar fuera lo cierra.
     private func moreLayer(_ model: PlayerModel) -> some View {
-        ZStack(alignment: .topTrailing) {
-            Color.clear.contentShape(Rectangle()).ignoresSafeArea()
-                .onTapGesture { withAnimation(DS.Motion.base(reduceMotion)) { moreOpen = false } }
-                .accessibilityHidden(true)
-            moreMenu(model)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-                .padding(.top, (landscape ? DS.Space.s6 : DS.Space.s2) + DS.Size.touchTarget + DS.Space.s2)
+        let top = (landscape ? DS.Space.s6 : DS.Space.s2) + DS.Size.touchTarget + DS.Space.s2
+        return GeometryReader { geo in
+            ZStack(alignment: .topTrailing) {
+                Color.clear.contentShape(Rectangle()).ignoresSafeArea()
+                    .onTapGesture { withAnimation(DS.Motion.base(reduceMotion)) { moreOpen = false } }
+                    .accessibilityHidden(true)
+                // Nunca más alto que lo que queda de pantalla: en horizontal los nueve renglones no caben y el globo crecía,
+                // empujaba la barra de arriba fuera de la pantalla y se cortaba abajo. Si no cabe, se desplaza por dentro.
+                let room = max(0, geo.size.height - top - DS.Space.s4)
+                let glass = RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                ViewThatFits(in: .vertical) {
+                    moreMenu(model).glassEffect(.regular, in: glass)
+                    ScrollView { moreMenu(model) }.scrollBounceBehavior(.basedOnSize).frame(height: room).glassEffect(.regular, in: glass)
+                }
+                .frame(maxHeight: room, alignment: .top)
+                .padding(.top, top)
                 .padding(.trailing, landscape ? DS.Space.s6 : DS.Space.gutter)
                 .accessibilityAction(.escape) { withAnimation(DS.Motion.base(reduceMotion)) { moreOpen = false } }
                 .transition(.scale(scale: DS.PlayerPanel.lockScale, anchor: .topTrailing).combined(with: .opacity))
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topTrailing)
         }
     }
 
