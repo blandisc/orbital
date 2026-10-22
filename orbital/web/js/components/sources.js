@@ -7,7 +7,7 @@ import { isOwnSource, languageLine, versionRows, versionStart, versionStep } fro
 import { h, hideAfterExit, mount } from "../core/dom.js";
 
 /**
- * «Elegir versión» (Y en la ficha): un panel a la derecha, encima de la ficha. Lo normal es no necesitarlo: «Ver»
+ * «Elegir versión» (Y en la ficha): un panel que sube desde abajo, encima de la ficha. Lo normal es no necesitarlo: «Ver»
  * arranca solo con la recomendada. Aquí, una fila por IDIOMA DE AUDIO (tu idioma primero, luego el original y los
  * demás) y en cada una solo las calidades que hay, la mejor de cada una. Abajo, en una línea, cómo sabemos el idioma
  * de la enfocada (lo dice el nombre, el sitio, es el original, tal vez, comprobado). X enseña todas las de esa fila y
@@ -25,7 +25,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     Button({ label: "Reintentar", variant: "primary", onPress: () => request && open(request) }));
   const panel = h("div", { class: ["side-panel__panel", "sources__panel"] },
     h("div", { class: "sources__head" }, heading, title, subtitle), status, retry, list, why);
-  const el = h("section", { class: ["side-panel", "sources"], hidden: true, "aria-label": "Elegir versión",
+  const el = h("section", { class: ["side-panel", "side-panel--bottom", "sources"], hidden: true, "aria-label": "Elegir versión",
     onClick: (e) => e.target === el && close() }, panel);
 
   let request = null; // { kind, id, video_id, title, item }

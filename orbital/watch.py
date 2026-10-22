@@ -92,10 +92,19 @@ def _sure(how: str) -> bool:
 
 
 def version_rows(found: list[streams.Source], prefs: streams.Preferences, current: int | None = None) -> list[dict]:
-    """Y › Versión en el reproductor, lo mismo que «Elegir versión» de la ficha (core/watch.js versionRows): por cada
-    idioma de audio, solo las calidades que hay y la mejor de cada una («Latino · 1080p»), tu idioma primero, luego el
-    original, el español que quede y los demás. Antes era la lista entera de fuentes (40+, casi iguales). La puesta se
-    marca en su idioma y calidad. Sin grabaciones de cine, tráileres ni 3D (salvo que no haya otra cosa)."""
+    """Las versiones en una lista («Latino · 1080p», con «Al instante · 2.1 GB» a la derecha): version_grid, renglón por
+    renglón."""
+    return [{"id": cell["id"], "label": f"{row['label']} · {cell['label']}",
+             "hint": " · ".join(p for p in (cell["doubt"], cell["hint"], cell["size"]) if p), "current": cell["current"]}
+            for row in version_grid(found, prefs, current) for cell in row["cells"]]
+
+
+def version_grid(found: list[streams.Source], prefs: streams.Preferences, current: int | None = None) -> list[dict]:
+    """Y › Versión en el reproductor, lo mismo que «Elegir versión» de la ficha (core/watch.js versionRows): un renglón
+    por idioma de audio con solo las calidades que hay y la mejor de cada una, tu idioma primero, luego el original, el
+    español que quede y los demás. Antes era la lista entera de fuentes (40+, casi iguales). La puesta se marca en su
+    idioma y calidad. Sin grabaciones de cine, tráileres ni 3D (salvo que no haya otra cosa).
+    [{"label": "Latino", "cells": [{"id", "label": "1080p", "hint": "Al instante", "size", "doubt", "current"}]}]"""
     usable = [s for s in found if not JUNK_TAGS & set(s.tags)] or found
     rows: dict[str, dict] = {}
     for src in usable:  # ya van de mejor a peor
@@ -126,17 +135,18 @@ def version_rows(found: list[streams.Source], prefs: streams.Preferences, curren
     out = []
     for row in sorted(rows.values(), key=rank):
         name = streams.LANG_NAMES.get(row["code"], row["code"]) if row["code"] else "Sin idioma"
+        cells = []
         for res in VERSION_RES:
             cell = row["cells"].get(res)
             if cell is None:
                 continue
             src = cell["source"]
-            quality = " ".join(p for p in (res, *src.hdr[:1]) if p)
-            size = f"{src.size / 1e9:.1f} GB" if src.size else ""
-            doubt = "Idioma dudoso" if cell["how"] == "maybe" else ""
-            out.append({"id": src.index, "label": f"{name} · {quality}",
-                        "hint": " · ".join(p for p in (doubt, "Al instante" if src.cached else "Hay que bajarla", size) if p),
-                        "current": current is not None and current in cell["all"]})
+            cells.append({"id": src.index, "label": " ".join(p for p in (res, *src.hdr[:1]) if p),
+                          "hint": "Al instante" if src.cached else "Hay que bajarla",
+                          "size": f"{src.size / 1e9:.1f} GB" if src.size else "",
+                          "doubt": "Idioma dudoso" if cell["how"] == "maybe" else "",
+                          "current": current is not None and current in cell["all"]})
+        out.append({"label": name, "cells": cells})
     return out
 
 
@@ -982,7 +992,7 @@ class Watch:
         if meta.get("source") is None:
             return []
         prefs = self.language_for(meta["meta_id"])[0]
-        return version_rows(self.stream_sources(meta["kind"], meta["video_id"], prefs), prefs, meta["source"])
+        return version_grid(self.stream_sources(meta["kind"], meta["video_id"], prefs), prefs, meta["source"])
 
     def _source_by_index(self, meta: dict, index: int, prefs: streams.Preferences) -> streams.Source | None:
         """Una fuente por su número (estable entre búsquedas), de la lista ya buscada; si ya caducó (10 min: llevabas

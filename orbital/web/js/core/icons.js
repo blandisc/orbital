@@ -60,6 +60,7 @@ export const ICONS = {
   hd: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M7 9v6M10.5 9v6M7 12h3.5M14 9v6h1.2a3 3 0 0 0 0-6Z"/></svg>',
   plus: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
   minus: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>',
+  more: '<svg class="icon icon--fill" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.5" cy="12" r="1.9"/></svg>',
   cover: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="3" width="11" height="18" rx="2"/></svg>',
   wide: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/></svg>',
   assistant: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a8 8 0 1 1-4.3 14.75L4 19.5l1.25-3.7A8 8 0 0 1 12 3.5z"/></svg>',

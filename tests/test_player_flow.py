@@ -301,11 +301,48 @@ def test_player_versions_are_language_and_quality_like_the_ficha():
              src(20, {"es-419": "name"}), src(21, {"es-419": "name", "en": "name"}, "720p"), src(30, {"es-419": "name"}, "SD", ["CAM"])]
     fake = SimpleNamespace(language_for=lambda meta_id: (streams.Preferences(audio="es", dub="latino"), "es"),
                            stream_sources=lambda kind, video, prefs: found)
-    options = watch.Watch._player_sources(fake, {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1", "source": 14})
-    assert [o["label"] for o in options] == ["Latino · 1080p", "Latino · 720p", "Inglés · 4K", "Inglés · 1080p", "Inglés · 720p"]
-    assert [o["id"] for o in options] == [20, 21, 15, 0, 21]
-    assert [o["label"] for o in options if o["current"]] == ["Inglés · 1080p"]  # la 14 es de esa casilla
-    assert options[0]["hint"] == "Al instante"
+    grid = watch.Watch._player_sources(fake, {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1", "source": 14})
+    assert [(r["label"], [c["label"] for c in r["cells"]]) for r in grid] == [("Latino", ["1080p", "720p"]),
+                                                                           ("Inglés", ["4K", "1080p", "720p"])]
+    assert [c["id"] for r in grid for c in r["cells"]] == [20, 21, 15, 0, 21]
+    assert [(r["label"], c["label"]) for r in grid for c in r["cells"] if c["current"]] == [("Inglés", "1080p")]  # la 14 es de esa casilla
+    assert grid[0]["cells"][0]["hint"] == "Al instante"
+    # La lista de siempre (version_rows) sale de la misma cuadrícula.
+    flat = watch.version_rows(found, streams.Preferences(audio="es", dub="latino"), 14)
+    assert [o["label"] for o in flat] == ["Latino · 1080p", "Latino · 720p", "Inglés · 4K", "Inglés · 1080p", "Inglés · 720p"]
+
+
+def test_player_version_grid_moves_by_language_and_quality():
+    """Y › Versión en el reproductor, como la ficha: ↑ ↓ idioma, ◀ ▶ calidad (del borde, a la columna de al lado) y A
+    cambia a esa casilla. Abre en la que ves."""
+    import time
+    p, mpv = series_player()
+    grid = [{"label": "Latino", "cells": [{"id": 20, "label": "1080p", "hint": "Al instante", "size": "2.1 GB", "doubt": "", "current": False},
+                                          {"id": 21, "label": "720p", "hint": "Hay que bajarla", "size": "", "doubt": "", "current": False}]},
+            {"label": "Inglés", "cells": [{"id": 15, "label": "4K", "hint": "Al instante", "size": "", "doubt": "", "current": False},
+                                          {"id": 0, "label": "1080p", "hint": "Al instante", "size": "", "doubt": "", "current": True}]}]
+    p.sources_provider = lambda meta: grid
+    p.episodes_provider = None
+    switched = []
+    p.on_switch_source = lambda meta, sid, pos: switched.append(sid)
+    p.open_more()
+    column = p.menu.find("source")
+    assert column is not None and column.grid and (column.index, column.cell) == (1, 1)  # la que ves
+    assert "Inglés · 1080p" in mpv.overlays[2] and "la que ves" in mpv.overlays[2]
+    p.menu.col = p.menu.columns.index(column)
+    p.press("left")
+    assert column.cell == 0  # ◀: 4K
+    p.press("up")
+    assert column.index == 0 and column.chosen["id"] == 20  # ↑: Latino, en la misma calidad (la primera)
+    p.press("right")
+    p.press("right")  # ya era la última calidad de Latino: a Reproducción
+    assert p.menu.column.key == "playback"
+    p.press("left")  # de vuelta a la cuadrícula, en Latino · 720p
+    p.press("a")
+    deadline = time.monotonic() + 2
+    while not switched and time.monotonic() < deadline:
+        time.sleep(.01)
+    assert switched == [21] and p.menu is None
 
 
 def test_a_chosen_version_that_does_not_open_goes_back_to_the_one_playing():

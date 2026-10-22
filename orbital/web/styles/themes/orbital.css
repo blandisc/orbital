@@ -90,7 +90,6 @@
   /* Sobre el arte: placas oscuras para números, insignias y «Abierto»; sombras de texto y logos. */
   --color-badge-bg: color-mix(in oklab, var(--palette-ink-1000) 80%, transparent);
   --color-chip-bg: rgba(255, 255, 255, .09);
-  --color-chip-on-art: rgba(0, 0, 0, .35); /* chip sobre una imagen (la ficha) */
   --gradient-art-base: linear-gradient(transparent, color-mix(in oklab, var(--palette-ink-1000) 85%, transparent));
   --shadow-text: 0 2px 30px rgba(0, 0, 0, .45);
   --shadow-text-strong: 0 1px 14px rgba(0, 0, 0, .75);

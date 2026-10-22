@@ -1,30 +1,30 @@
-/* Title: la ficha de una película o serie, a pantalla completa sobre su arte (como Netflix o Apple TV). El marco es .screen.
-   Izquierda: identidad, datos y los botones (el foco empieza en Continuar / Ver).
-   Derecha (series): temporadas y episodios. */
+/* Title: la ficha de una película o serie, a pantalla completa sobre su arte (como Apple TV). El marco es .screen.
+   Lo que manda es la imagen: a sangre y casi entera; abajo a la izquierda, lo esencial y los botones en un renglón.
+   En una serie, abajo, las temporadas (píldoras) y los episodios en una fila de imágenes. */
 .title {
-  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: var(--space-10);
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: var(--space-6);
   padding-top: calc(var(--space-14) + var(--safe-y)); /* un poco más de aire arriba que el marco común (.screen) */
   animation-duration: var(--duration-fast); /* el arte aparece casi de inmediato y se queda quieto */
 }
-.title--series { grid-template-columns: minmax(0, 36fr) minmax(0, 44fr); }
+.title--series { grid-template-rows: minmax(0, 1fr) auto; }
+/* El arte casi entero: solo se funde a la izquierda y abajo, donde va el texto (antes iba al 55 % y se perdía). */
 .title__backdrop {
   position: absolute; inset: 0; z-index: var(--z-behind); background-size: cover; background-position: center 25%;
-  opacity: .55; filter: saturate(1.1);
-  -webkit-mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 35%, transparent) 0%, var(--mask-solid) 55%), linear-gradient(0deg, transparent 0%, var(--mask-solid) 45%);
+  opacity: .92; filter: saturate(1.08);
+  -webkit-mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 22%, transparent) 0%, color-mix(in srgb, var(--mask-solid) 70%, transparent) 32%, var(--mask-solid) 58%), linear-gradient(0deg, transparent 0%, color-mix(in srgb, var(--mask-solid) 60%, transparent) 22%, var(--mask-solid) 50%);
   -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 35%, transparent) 0%, var(--mask-solid) 55%), linear-gradient(0deg, transparent 0%, var(--mask-solid) 45%);
+  mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 22%, transparent) 0%, color-mix(in srgb, var(--mask-solid) 70%, transparent) 32%, var(--mask-solid) 58%), linear-gradient(0deg, transparent 0%, color-mix(in srgb, var(--mask-solid) 60%, transparent) 22%, var(--mask-solid) 50%);
   mask-composite: intersect;
 }
-/* En una serie, la lista va sobre fondo limpio: el arte vive detrás de la identidad. */
+/* En una serie la fila de episodios ocupa el tercio de abajo: el arte se funde antes. */
 .title--series .title__backdrop {
-  opacity: .42;
-  -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) 0%, color-mix(in srgb, var(--mask-solid) 55%, transparent) 30%, transparent 52%);
-  mask-image: linear-gradient(90deg, var(--mask-solid) 0%, color-mix(in srgb, var(--mask-solid) 55%, transparent) 30%, transparent 52%);
+  -webkit-mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 22%, transparent) 0%, color-mix(in srgb, var(--mask-solid) 70%, transparent) 32%, var(--mask-solid) 58%), linear-gradient(0deg, transparent 18%, color-mix(in srgb, var(--mask-solid) 60%, transparent) 40%, var(--mask-solid) 66%);
+  mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 22%, transparent) 0%, color-mix(in srgb, var(--mask-solid) 70%, transparent) 32%, var(--mask-solid) 58%), linear-gradient(0deg, transparent 18%, color-mix(in srgb, var(--mask-solid) 60%, transparent) 40%, var(--mask-solid) 66%);
 }
 
-/* Izquierda: identidad y botones */
+/* Lo esencial, abajo a la izquierda: logo, un renglón de datos, la sinopsis, y los botones. */
 .title__info {
-  display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-4); min-width: 0; max-width: 46rem;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-4); min-width: 0; min-height: 0; max-width: 44rem;
   text-shadow: var(--shadow-text-strong);
 }
 /* Al abrir, como Game Glance: el arte no se mueve; el título, los datos y los botones llegan a su lugar uno tras otro. */
@@ -32,15 +32,150 @@
 .title__info > * { animation: title-settle var(--duration-enter) var(--ease-out) backwards; }
 /* El logo que viaja desde la tarjeta (title.js · flyIn) no entra además desde abajo. */
 .title__info > .title__logo--flying { animation: none; transform-origin: top left; }
-.title__info > .title__facts, .title__info > .title__avail, .title__info > .title__description { animation-delay: var(--delay-1); }
-.title__info > .title__people, .title__info > .title__progress { animation-delay: var(--delay-2); }
+.title__info > .title__meta, .title__info > .title__episode, .title__info > .title__description { animation-delay: var(--delay-1); }
+.title__info > .title__avail, .title__info > .title__progress { animation-delay: var(--delay-2); }
 .title__info > .title__actions, .title__info > .title__status { animation-delay: var(--delay-3); }
 /* Nada se encoge: un título o una sinopsis encogidos se rebanaban a media línea (con letra grande). */
 .title__info > * { flex-shrink: 0; }
-/* La frase de la película, bajo el logo (como el iPhone): en cursiva y discreta. */
-.title__tagline { margin: calc(-1 * var(--space-2)) 0 0; color: var(--color-text-muted); font-size: var(--type-body); font-style: italic;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-/* «Más como esto»: al bajar desde los botones, sube desde abajo sobre la ficha (solo eso: las sugerencias). */
+
+.title__logo { max-width: min(100%, 32rem); max-height: 10rem; width: auto; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); margin-bottom: var(--space-2); }
+.title--series .title__logo { max-height: 7.5rem; }
+.title__name {
+  font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); text-wrap: balance;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0; }
+
+/* Un renglón: qué es (Película · clasificación · año · géneros · duración) y, a su lado, las calificaciones. */
+.title__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); font-size: var(--type-body); font-variant-numeric: tabular-nums; }
+.title__facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); color: var(--color-text); }
+.title__fact { display: inline-flex; gap: var(--space-3); min-width: 0; }
+.title__sep { opacity: var(--opacity-faint); }
+.title__fact--start .title__sep { display: none; } /* empieza renglón: sin punto delante */
+/* Calificaciones (RatingsRow del iPhone): cada servicio con su logotipo en sus colores de marca y su número. */
+.title__ratings { display: flex; align-items: center; gap: var(--space-4); min-height: 1.5rem; }
+.title__ratings:empty { display: none; }
+.title__rating { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); }
+.title__rating-mark { display: block; height: 1.3rem; width: auto; }
+.title__rating-mark--trakt { height: 1.4rem; } /* el círculo se ve más chico que las cajas a la misma altura */
+
+/* Serie, con el foco en la fila: cuál episodio es («T2 · E3 · Su nombre»). Guarda su renglón aunque esté vacío. */
+.title__episode {
+  min-height: 1lh; font-size: var(--type-section); font-weight: var(--weight-bold); line-height: var(--leading-title);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.title__description {
+  max-width: 38rem; color: var(--color-text); opacity: var(--opacity-text); font-size: var(--type-body); line-height: var(--leading-relaxed);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+/* En una serie, la sinopsis cambia con el episodio enfocado: siempre mide tres renglones (nada brinca). */
+.title--series .title__description { min-height: 3lh; }
+
+/* Lo que hay para ver, en un renglón tenue (antes eran chips): 4K · HDR · Inglés, Español · Al instante. */
+.title__avail { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--type-secondary); }
+.title__avail-item + .title__avail-item::before { content: "·"; margin-right: var(--space-2); opacity: var(--opacity-faint); }
+.title__avail-item--good { color: var(--color-live); font-weight: var(--weight-medium); }
+.title__avail-none { color: var(--color-text-muted); }
+
+.title__status { color: var(--color-text-muted); font-size: var(--type-body); }
+/* Error al cargar: una píldora con su ícono y la franja roja (como los avisos), legible sobre el arte. */
+.title__status--error {
+  display: inline-flex; align-items: center; gap: var(--space-4); align-self: flex-start; max-width: 40rem;
+  padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border-radius: var(--radius-lg); text-shadow: none;
+  background: var(--color-surface-raised); box-shadow: var(--shadow-overlay), inset 0 0 0 1px var(--color-hairline), inset .3rem 0 0 var(--color-danger);
+  animation: rise-in var(--duration-enter) var(--ease-out);
+}
+.title__status-icon { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-fill); color: var(--color-danger); }
+.title__status-icon .icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--stroke-regular); }
+.title__status-text { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
+.title__status-text strong { color: var(--color-text); font-weight: var(--weight-bold); }
+
+/* Dónde ibas: una barra corta y cuánto falta. */
+.title__progress { display: flex; align-items: center; gap: var(--space-4); color: var(--color-text); font-size: var(--type-secondary); }
+.title__progress-bar { flex: none; width: 9rem; }
+.title__progress-label { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Los botones en un renglón, como Apple TV: «Ver» / «Continuar» con su botón del mando y, a su lado, los demás redondos.
+   Abajo queda el lugar del nombre del redondo enfocado (sale ahí, sin mover nada). */
+.title__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); min-width: 0; margin: var(--space-3) 0 var(--space-8); }
+.title__action {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  min-height: var(--control-height); border-radius: var(--radius-pill); flex: none; text-shadow: none;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-spring);
+}
+.title__action .icon { width: var(--icon-md); height: var(--icon-md); flex: none; }
+.title__action--primary {
+  min-width: 13rem; max-width: 100%; padding: 0 var(--space-8) 0 var(--space-5);
+  background: var(--color-fill); font-size: var(--type-section); font-weight: var(--weight-medium);
+}
+.title__action--primary > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* «Continuar T12 E8» nunca parte el botón */
+.title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-regular); }
+/* Los redondos: solo el ícono; su nombre, debajo, solo al enfocarlo. */
+.title__action--icon { width: var(--control-height); padding: 0; color: var(--color-text); }
+.title__action-tile {
+  display: grid; place-items: center; width: var(--control-height); height: var(--control-height); border-radius: 50%; background: var(--color-fill);
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.title__action-name {
+  position: absolute; top: calc(100% + var(--space-2)); left: 50%; transform: translateX(-50%);
+  white-space: nowrap; color: var(--color-text); font-size: var(--type-footnote); font-weight: var(--weight-medium); text-shadow: var(--shadow-text-strong);
+  opacity: 0; transition: opacity var(--duration-fast) var(--ease-out);
+}
+/* Prendido («Guardada»): el redondo con el color del arte, como en el iPhone. */
+.title__action--on .title__action-tile { background: var(--color-primary-art); color: var(--inverse-fg); }
+/* Foco invertido (como el menú): se ve desde el sofá. «Ver» toma el color del arte (como el Jugar de Game Glance). */
+.title__action--primary.title__action--focused { background: var(--color-primary-art); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); box-shadow: var(--shadow-lifted); }
+.title__action--focused small { color: inherit; opacity: var(--opacity-near); }
+.title__action--icon.title__action--focused { transform: scale(var(--inverse-scale)); }
+.title__action--icon.title__action--focused .title__action-tile { background: var(--inverse-bg); color: var(--inverse-fg); }
+.title__action--icon.title__action--focused .title__action-name { opacity: 1; }
+.title__action--icon:hover .title__action-tile { background: var(--color-fill-hover); }
+
+/* Abajo (series): temporadas (LB/RB) y la fila de episodios (◀ ▶). */
+.title__browser { display: none; flex-direction: column; gap: var(--space-2); min-width: 0; animation: rise-in var(--duration-enter) var(--ease-out) var(--delay-1) backwards; }
+.title--series .title__browser { display: flex; }
+.title__tabs { flex: none; display: flex; gap: var(--space-2); overflow-x: auto; scrollbar-width: none; }
+/* Más temporadas fuera de la vista: el borde de ese lado se desvanece (se nota que hay más). */
+.title__tabs--more-right { -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 4rem), transparent); mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 4rem), transparent); }
+.title__tabs--more-left { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem); }
+.title__tabs--more-left.title__tabs--more-right { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); }
+.title__episodes {
+  --episode-width: 18rem;
+  display: flex; gap: var(--space-5); overflow-x: auto; scrollbar-width: none;
+  /* Arriba y a los lados, el lugar del anillo y del crecer del enfocado (si no, se cortaban). */
+  padding: var(--space-4) var(--space-3) var(--space-2); margin: 0 calc(-1 * var(--space-3));
+  position: relative; /* offsetLeft de los episodios, relativo a la fila */
+  -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 6rem), transparent);
+  mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 6rem), transparent);
+}
+/* Mientras el foco está en los botones, la fila se queda en segundo plano. */
+.title[data-zone="actions"] .title__episodes { opacity: var(--opacity-away); transition: opacity var(--duration-base) var(--ease-out); }
+
+.episode { flex: none; display: flex; flex-direction: column; gap: var(--space-2); width: var(--episode-width); text-align: left; }
+.episode__thumb {
+  position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--card-radius); overflow: hidden;
+  background: var(--gradient-card) center / cover;
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
+  transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-fast) var(--ease-out);
+}
+.episode__next { position: absolute; left: var(--inset-poster); top: var(--inset-poster); } /* «Continuar» / «Sigue»: el que ve A al abrir */
+.episode__number { position: absolute; left: var(--inset-poster); bottom: var(--inset-poster); }
+.episode__thumb:has(.episode__progress) .episode__number { bottom: calc(var(--inset-poster) + var(--space-3)); } /* sobre la barra, no encima de ella */
+.episode__check {
+  position: absolute; right: var(--inset-poster); top: var(--inset-poster); display: grid; place-items: center;
+  width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--color-badge-bg); color: var(--color-live);
+}
+.episode__check .icon { width: var(--icon-sm); height: var(--icon-sm); stroke-width: var(--stroke-bold); }
+.episode__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); --progress-width: auto; }
+.episode__text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); min-width: 0; padding-inline: var(--space-1); }
+.episode__title { max-width: 100%; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); line-height: var(--leading-title); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.episode__date { color: var(--color-warning); font-size: var(--type-footnote); }
+.episode--watched .episode__thumb { filter: saturate(.75); }
+.episode--upcoming { opacity: var(--opacity-away); }
+/* Foco: como las portadas (anillo y crece un poco); su nombre a todo color. */
+.episode--focused .episode__thumb { transform: scale(1.05); box-shadow: var(--ring-focus); }
+.episode--focused .episode__title { color: var(--color-text); }
+.episode:hover .episode__title { color: var(--color-text); }
+
+/* «Más como esto» y el reparto: al bajar, suben desde abajo sobre la ficha. */
 .title__more {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-raised);
   display: grid; gap: var(--space-3);
@@ -59,164 +194,28 @@
 .title__more-row:not(.title__more-row--cast) { padding-top: calc(var(--card-height) * (var(--card-focus-scale) - 1) + .35rem + var(--space-2)); }
 /* Las caras, alineadas arriba: un nombre de dos renglones («Patricia Arquette») ya no sube su foto sobre las demás. */
 .title__more-row--cast { align-items: flex-start; }
+
 @media (max-height: 820px) {
+  .title__logo { max-height: 7rem; }
+  .title--series .title__logo { max-height: 5rem; }
+  .title__episodes { --episode-width: 15rem; }
   [data-text-size="xlarge"] .title__name, [data-text-size="xlarge"] .title__description { -webkit-line-clamp: 2; }
-  [data-text-size="xlarge"] .title__people { display: none; }
+  [data-text-size="xlarge"] .title--series .title__description { min-height: 2lh; }
 }
-.title__logo { max-width: min(100%, 30rem); max-height: 9rem; width: auto; object-fit: contain; object-position: left center; filter: var(--shadow-logo); }
-.title__name {
-  font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); text-wrap: balance;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0; }
-.title__facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); color: var(--color-text); font-size: var(--type-body); font-variant-numeric: tabular-nums; }
-.title__fact { display: inline-flex; gap: var(--space-3); min-width: 0; }
-/* Calificaciones (RatingsRow del iPhone): cada servicio con su logotipo en sus colores de marca y su número. */
-.title__ratings { display: flex; align-items: center; gap: var(--space-5); min-height: 1.6rem; font-size: var(--type-body); font-variant-numeric: tabular-nums; }
-.title__rating { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); }
-.title__rating-mark { display: block; height: 1.5rem; width: auto; }
-.title__rating-mark--trakt { height: 1.6rem; } /* el círculo se ve más chico que las cajas a la misma altura */
-.title__sep { opacity: var(--opacity-faint); }
-.title__fact--start .title__sep { display: none; } /* empieza renglón: sin punto delante */
-/* Lo que hay para ver (antes de elegir): 4K · HDR · Inglés, Español · Al instante. */
-.title__avail { display: flex; flex-wrap: wrap; gap: var(--space-2); text-shadow: none; }
-.title__avail { --chip-bg: var(--color-chip-on-art); --chip-shadow: inset 0 0 0 1px var(--color-hairline-strong); } /* los chips sobre el arte de la ficha */
-.title__avail-none { display: inline-flex; align-items: center; min-height: 1.6rem; color: var(--color-text-muted); font-size: var(--type-secondary); } /* la altura de un chip */
-.title__description {
-  max-width: 40rem; color: var(--color-text); opacity: var(--opacity-text); font-size: var(--type-body); line-height: var(--leading-relaxed);
-  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
-}
-.title__people { display: flex; flex-direction: column; gap: var(--space-1); color: var(--color-text-muted); font-size: var(--type-secondary); }
-.title__people em { font-style: normal; color: var(--color-text-faint-strong); }
-.title__status { color: var(--color-text-muted); font-size: var(--type-body); }
-/* Error al cargar: una píldora con su ícono y la franja roja (como los avisos), legible sobre el arte. */
-.title__status--error {
-  display: inline-flex; align-items: center; gap: var(--space-4); align-self: flex-start; max-width: 40rem;
-  padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border-radius: var(--radius-lg); text-shadow: none;
-  background: var(--color-surface-raised); box-shadow: var(--shadow-overlay), inset 0 0 0 1px var(--color-hairline), inset .3rem 0 0 var(--color-danger);
-  animation: rise-in var(--duration-enter) var(--ease-out);
-}
-.title__status-icon { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-fill); color: var(--color-danger); }
-.title__status-icon .icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--stroke-regular); }
-.title__status-text { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
-.title__status-text strong { color: var(--color-text); font-weight: var(--weight-bold); }
-
-/* Dónde ibas: fuera de los botones (así caben en un renglón), con su barra. */
-.title__progress { display: flex; align-items: center; gap: var(--space-4); color: var(--color-text); font-size: var(--type-body); }
-.title__progress-bar { flex: none; width: 9rem; }
-.title__progress-label { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-/* Como el iPhone: «Ver» / «Continuar» en su renglón, a todo lo ancho; abajo los demás en partes iguales, llenando el renglón
-   (siempre caben en la columna: antes, con siete, la fila se metía debajo de los episodios). */
-.title__actions {
-  display: grid; grid-template-columns: repeat(var(--title-actions, 4), minmax(0, 1fr)); gap: var(--space-3) var(--space-2);
-  min-width: 0; margin-top: var(--space-4);
-}
-.title__actions > .title__action--primary { grid-column: 1 / -1; justify-content: center; }
-.title__action {
-  display: inline-flex; align-items: center; gap: var(--space-3);
-  min-height: var(--control-height); padding: 0 var(--space-6) 0 var(--space-5); border-radius: var(--radius-md);
-  flex: none; min-width: 0; max-width: 100%;
-  background: var(--color-fill); font-size: var(--type-section); font-weight: var(--weight-medium); text-shadow: none;
-  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-spring);
-}
-.title__action .icon { width: var(--icon-md); height: var(--icon-md); flex: none; }
-.title__action span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.title__action--primary { flex: none; } /* el principal nunca se corta: ceden los de al lado */
-.title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-regular); }
-.title__action--primary { padding-inline: var(--space-6) var(--space-8); }
-/* Los secundarios (Desde el inicio, Tráiler, Mi lista, Fuente…): su ícono en una caja y su nombre corto debajo, siempre a
-   la vista (antes solo ícono, y el nombre salía en otra línea al enfocarlo). Miden lo mismo enfocados o no. */
-.title__actions { align-items: flex-start; }
-.title__action--icon {
-  min-width: 0; flex-direction: column; gap: var(--space-2); min-height: 0; padding: 0; background: none;
-  font-size: var(--type-secondary); color: var(--color-text-muted);
-}
-/* Prendido («Guardada»): la caja con el color del arte, como en el iPhone. */
-.title__action--on .title__action-tile { background: var(--color-primary-art); color: var(--inverse-fg); }
-.title__action-tile {
-  display: grid; place-items: center; width: 100%; height: var(--control-height); border-radius: var(--radius-md); background: var(--color-fill);
-  color: var(--color-text); transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
-}
-/* Entero: si no cabe en un renglón, dos (nunca «Al iPho…»). Con la clase del botón delante: «.title__action span» (una
-   línea con «…», para los textos del principal) le ganaba y salía «Bajar al iPho…». */
-.title__action .title__action-name { max-width: 100%; text-align: center; line-height: var(--leading-title); font-size: var(--type-footnote); text-wrap: balance; overflow-wrap: anywhere; white-space: normal;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-[data-input="touch"] .title__action--primary { flex-shrink: 0; }
-/* Foco invertido (como el menú): se ve desde el sofá. */
-.title__action--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
-.title__action--icon.title__action--focused { background: none; color: var(--color-text); }
-.title__action--icon.title__action--focused .title__action-tile { background: var(--inverse-bg); color: var(--inverse-fg); }
-.title__action--focused small { color: inherit; opacity: var(--opacity-near); }
-/* «Ver» / «Continuar» con el color del arte del título (como el Jugar de Game Glance). */
-/* El principal ocupa todo el ancho: enfocado no crece (se salía de la columna, más ancho que los botones de abajo y el texto). */
-.title__action--primary.title__action--focused { background: var(--color-primary-art); transform: none; box-shadow: var(--shadow-lifted); }
-
-/* Derecha: temporadas (LB/RB) y episodios (↑/↓) */
-.title__browser { display: none; flex-direction: column; min-height: 0; overflow: hidden; animation: rise-in var(--duration-enter) var(--ease-out) var(--delay-1) backwards; }
-.title--series .title__browser { display: flex; }
-.title__tabs { flex: none; display: flex; gap: var(--space-2); padding-bottom: var(--space-5); overflow-x: auto; scrollbar-width: none; }
-/* Más temporadas fuera de la vista: el borde de ese lado se desvanece (se nota que hay más). */
-.title__tabs--more-right { -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 4rem), transparent); mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 4rem), transparent); }
-.title__tabs--more-left { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem); }
-.title__tabs--more-left.title__tabs--more-right { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); }
-.title__episodes {
-  display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; overflow-y: auto; scrollbar-width: none;
-  padding: var(--space-6) var(--space-2) var(--space-2); margin: 0 calc(-1 * var(--space-2));
-  position: relative; /* offsetTop de los episodios, relativo a la lista */
-  /* Fundido arriba y abajo: lo que sigue se insinúa en vez de cortarse en seco bajo las pestañas. */
-  -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) var(--space-8), var(--mask-solid) 85%, transparent);
-  mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) var(--space-8), var(--mask-solid) 85%, transparent);
-}
-/* Mientras el foco está en los botones, la lista se queda en segundo plano. */
-.title[data-zone="actions"] .title__episodes { opacity: var(--opacity-away); transition: opacity var(--duration-base) var(--ease-out); }
-
-.episode {
-  position: relative; display: flex; align-items: center; gap: var(--space-5); width: 100%; padding: var(--space-3);
-  border-radius: var(--radius-lg); text-align: left;
-  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
-}
-.episode:hover { background: var(--color-fill); }
-.episode__thumb {
-  position: relative; flex: none; width: 11.5rem; aspect-ratio: 16 / 9; border-radius: var(--radius-md); overflow: hidden;
-  background: var(--gradient-card) center / cover;
-  box-shadow: inset 0 0 0 1px var(--color-hairline);
-}
-.episode__number { position: absolute; left: var(--inset-poster); bottom: var(--inset-poster); }
-.episode__thumb:has(.episode__progress) .episode__number { bottom: calc(var(--inset-poster) + var(--space-3)); } /* sobre la barra, no encima de ella */
-.episode__check {
-  position: absolute; right: var(--space-2); top: var(--space-2); display: grid; place-items: center;
-  width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--color-badge-bg); color: var(--color-live);
-}
-.episode__check .icon { width: var(--icon-sm); height: var(--icon-sm); stroke-width: var(--stroke-bold); }
-.episode__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); --progress-width: auto; }
-.episode__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
-.episode__next { align-self: flex-start; } /* «Continuar» / «Sigue»: el que abre la ficha y ve A, sin el «Continuar» aparte de antes */
-.episode__title { font-size: var(--type-section); font-weight: var(--weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.episode__overview {
-  color: var(--color-text-muted); font-size: var(--type-secondary); line-height: var(--leading-relaxed);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.episode__date { color: var(--color-warning); font-size: var(--type-secondary); }
-.episode--watched .episode__title { color: var(--color-text-muted); }
-.episode--upcoming { opacity: var(--opacity-away); }
-/* Foco: fila invertida (texto oscuro sobre claro), visible desde el sofá; antes era un velo al 10 %. */
-/* El episodio enfocado se resalta sin volverse una losa blanca: un relleno y su texto a todo color. */
-.episode--focused, .episode--focused:hover { background: var(--color-fill-hover); }
-.episode--focused .episode__title { color: var(--color-text); }
-.episode--focused .episode__overview { color: var(--color-text-muted); }
-
-/* Angosta o vertical: la identidad arriba (compacta) y los episodios debajo. */
+/* Angosta o vertical: los episodios más chicos. */
 @media (max-width: 820px), (max-aspect-ratio: 1/1) {
-  .title--series { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: var(--space-5); }
-  .title__info { justify-content: flex-start; }
+  .title__episodes { --episode-width: 12rem; }
   .title__description { -webkit-line-clamp: 2; }
-  .title__people { display: none; }
-  .episode__thumb { width: 8.5rem; }
+  .title--series .title__description { min-height: 2lh; }
 }
 @media (max-height: 620px) {
   .title { padding-top: calc(var(--space-6) + var(--safe-y)); }
-  .title__logo { max-height: 5rem; }
+  .title__logo, .title--series .title__logo { max-height: 4rem; }
   .title__description { -webkit-line-clamp: 2; }
-  .title__people { display: none; }
+  .title--series .title__description { min-height: 2lh; }
 }
-/* Con el dedo: «Atrás» no tapa las temporadas y el botón principal no necesita el lugar del glifo (queda centrado). */
+/* Con el dedo: «Atrás» no tapa las temporadas, y los redondos dicen su nombre siempre (no hay foco que lo enseñe). */
 [data-input="touch"] .title__tabs { padding-right: var(--touch-back-room); }
-[data-input="touch"] .title__action--primary { padding-inline: var(--space-8); }
+[data-input="touch"] .title__actions { align-items: flex-start; margin-bottom: var(--space-3); }
+[data-input="touch"] .title__action--icon { width: 5.5rem; flex-direction: column; gap: var(--space-1); }
+[data-input="touch"] .title__action-name { position: static; transform: none; opacity: 1; max-width: 100%; white-space: normal; text-align: center; color: var(--color-text-muted); }

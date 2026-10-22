@@ -405,11 +405,15 @@ class PlayerScreen:
                 self._draw_panel()
         elif button in ("left", "right"):
             step = -1 if button == "left" else 1
-            if 0 <= panel.col + step < len(panel.columns):
+            cells = len(column.options[column.index]["cells"]) if column.grid else 0
+            if column.grid and 0 <= min(column.cell, cells - 1) + step < cells:  # Versión: de calidad en calidad
+                column.cell = min(column.cell, cells - 1) + step
+                self._draw_panel()
+            elif 0 <= panel.col + step < len(panel.columns):  # del borde de la cuadrícula, a la columna de al lado
                 panel.col += step
                 self._draw_panel()
-        elif button == "a" and column.options:
-            self._choose(column.options[column.index])
+        elif button == "a" and column.chosen:
+            self._choose(column.chosen)
         elif button == "b":
             self.close_menu()
         elif button in ("x", "y"):
@@ -480,6 +484,11 @@ class PlayerScreen:
                 _, col, index = action
                 self.menu.col = col
                 self.menu.columns[col].index = index
+                self._menu_press("a")
+            elif isinstance(action, tuple) and action[0] == "cell":  # una casilla de Versión
+                _, col, index, cell = action
+                self.menu.col = col
+                self.menu.columns[col].index, self.menu.columns[col].cell = index, cell
                 self._menu_press("a")
             elif isinstance(action, tuple) and action[0] == "column":
                 self.menu.col = action[1]

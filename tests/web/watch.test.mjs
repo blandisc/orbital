@@ -134,16 +134,14 @@ test("Elegir versión: una fila por idioma con solo las calidades que hay; tu id
   assert.equal(versionRows([s("x", "1080p", [en], { tags: ["CAM"] })], { audio: "en" }).length, 1);
 });
 
-test("la ficha: «Ver» arriba a todo lo ancho, los demás abajo; ← → los recorre y al final se pasa a los episodios", async () => {
+test("la ficha: los botones en un renglón; ← → los recorre y ↑ ↓ salen de él", async () => {
   const { actionStep } = await import("../../orbital/web/js/core/watch.js");
-  assert.equal(actionStep(5, 0, "down"), 1); // del principal, a los de abajo
-  assert.equal(actionStep(5, 3, "up"), 0);
   assert.equal(actionStep(5, 2, "right"), 3);
-  assert.equal(actionStep(5, 4, "right"), "episodes"); // del último, a los episodios (a la derecha)
-  assert.equal(actionStep(5, 2, "down"), "episodes");
+  assert.equal(actionStep(5, 4, "right"), null); // el último: rebota
   assert.equal(actionStep(5, 0, "left"), null);
-  assert.equal(actionStep(5, 0, "up"), null);
-  assert.equal(actionStep(1, 0, "down"), "episodes"); // solo «Ver»
+  assert.equal(actionStep(5, 3, "left"), 2);
+  assert.equal(actionStep(5, 2, "down"), "down"); // a los episodios o a «Más como esto»
+  assert.equal(actionStep(5, 0, "up"), "up");
 });
 
 test("Descargar en la ficha dice cómo va (para ver sin internet), como el iPhone", async () => {

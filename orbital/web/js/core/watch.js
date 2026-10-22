@@ -151,16 +151,14 @@ const RES_ORDER = ["4K", "1080p", "720p", "480p"];
  * ver de verdad (las primeras fuentes, ya ordenadas por tus preferencias).
  */
 /**
- * A dónde va el foco entre los botones de la ficha: el principal («Ver», «Continuar») en su renglón, a todo lo ancho, y
- * abajo los demás repartidos (como el iPhone). ↓ del principal baja a los de abajo; ↑ de ellos sube al principal; ← → los
- * recorre; y del último a la derecha (o ↓ desde abajo) se pasa a los episodios, que están a la derecha.
- * Devuelve el índice nuevo, "episodes" o null (no hay a dónde: el foco rebota).
+ * A dónde va el foco entre los botones de la ficha: todos en un renglón («Ver» y, a su lado, los redondos), como Apple TV.
+ * ← → los recorre; ↑ y ↓ salen del renglón (↓ a los episodios o a «Más como esto», ↑ en una serie a nada).
+ * Devuelve el índice nuevo, "up" / "down" (sale del renglón) o null (no hay a dónde: el foco rebota).
  */
 export function actionStep(count, index, act) {
-  if (act === "right") return index < count - 1 ? index + 1 : "episodes";
+  if (act === "right") return index < count - 1 ? index + 1 : null;
   if (act === "left") return index > 0 ? index - 1 : null;
-  if (act === "down") return index === 0 && count > 1 ? 1 : "episodes";
-  if (act === "up") return index > 0 ? 0 : null;
+  if (act === "down" || act === "up") return act;
   return null;
 }
 
