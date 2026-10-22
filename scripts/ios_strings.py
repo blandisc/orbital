@@ -19,6 +19,14 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "%lld semillas": "%lld seeders",
+    "Sin ajuste": "No offset", "Buscar…": "Search…", "en Real-Debrid": "on Real-Debrid", "Real-Debrid aún no la tiene": "Real-Debrid doesn't have it yet",
+    "se supone": "assumed", "Descarga en el iPhone": "Download on iPhone", "Abre otra versión del video en el mismo punto": "Opens another version of the video at the same point",
+    "Abrir": "Open", "Por idioma": "By language", "Todas (%lld)": "All (%lld)", "Cambiar a esta": "Switch to this one", "Velocidad": "Speed",
+    "Esa versión no abrió": "That version didn't open", "Volviste a la que veías, en el mismo punto.": "You're back on the one you were watching, at the same point.",
+    "Mandó su aviso de «descargando». Puede tardar; prueba más tarde u otra versión.": "It sent its “downloading” notice. It may take a while; try later or another version.",
+    "Real-Debrid aún no tiene esta versión": "Real-Debrid doesn't have this version yet", "Abrirla de todos modos": "Open it anyway", "Mejor no": "Never mind",
+    "Empieza a bajarla y puede tardar minutos u horas. Si manda su aviso de «descargando», vuelves a la que ves en el mismo punto.": "It starts downloading it and may take minutes or hours. If it sends its “downloading” notice, you go back to the one you're watching at the same point.",
     "Del video · forzados": "From the video · forced", "Del video · para sordos": "From the video · SDH",
     "Arriba": "Top", "Centro": "Middle", "Abajo": "Bottom", "Mover el video": "Move the video",
     "Arrastra hacia arriba o hacia abajo": "Drag up or down", "Subir el video": "Move the video up", "Bajar el video": "Move the video down",
@@ -539,6 +547,15 @@ TRANSLATIONS = {
     "1 oculta: grabada en el cine o tráiler": "1 hidden: a theater recording or trailer",
     "Arrastra para mover": "Drag to move", "Llena la pantalla deformando la imagen": "Fills the screen by stretching the picture", "Ajuste de aspecto": "Aspect Fit", "Recortar": "Crop", "Estirar": "Stretch", "Mantén presionado para apagar o prender los subtítulos": "Touch and hold to turn subtitles on or off", " · otra versión": " · another version", "Audio": "Audio", "Arrastra para mover el video": "Drag to move the video",
     " y ": " and ", "Tu idioma": "Your language", "Original": "Original", "Comprobado": "Checked", "Versión": "Version",
+    # «Todas las fuentes» (AllSourcesList) y la velocidad honesta de «Elegir versión».
+    "Filtrar": "Filter", "Filtrar · %lld": "Filter · %lld", "Más chicas primero": "Smallest first", "Más semillas primero": "Most seeders first",
+    "Solo las que ya están en Real-Debrid": "Only those already on Real-Debrid", "Grabaciones de cine y tráileres": "Theater recordings and trailers",
+    "Real-Debrid aún no la tiene: puede tardar en abrir": "Real-Debrid doesn't have it yet: it may take a while to open",
+    "Ya está en Real-Debrid": "Already on Real-Debrid", "Quitar filtros": "Clear filters", "+%lld más": "+%lld more", "+%lld más en %@": "+%lld more in %@",
+    "%lld ocultas: grabadas en el cine o tráileres": "%lld hidden: theater recordings or trailers",
+    "Toca para ver los detalles": "Tap to see the details", "Toca para cerrar los detalles": "Tap to close the details", "Copiar nombre": "Copy name",
+    "Grabada en el cine": "Theater recording", "La que ves": "Playing now", "comprobado": "checked", "lo dice el nombre": "the name says so",
+    "lo dice el sitio": "the site says so", "Todas, por calidad · toca una": "All, by quality · tap one",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",

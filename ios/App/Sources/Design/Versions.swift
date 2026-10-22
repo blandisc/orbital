@@ -63,9 +63,12 @@ struct VersionChip: View {
                     if option.recommended { Image(systemName: "sparkles").font(DS.TextRecipe.caption.font).foregroundStyle(DS.brandMoon) }
                 }
                 Text(verbatim: Self.facts(option)).recipe(.caption).lineLimit(1)
-                HStack(spacing: DS.Space.s1) {
-                    Circle().fill(option.cached ? DS.brandMoon : DS.warning).frame(width: DS.Version.dot, height: DS.Version.dot)
-                    (option.cached ? Text("Al instante") : Text("Tarda en empezar")).recipe(.caption).lineLimit(1)
+                // Solo lo que se sabe: al instante si Real-Debrid ya la tiene; si aún no, se dice; si no se sabe, nada.
+                if let speed = Self.speedText(option.speed), let color = Self.speedColor(option.speed) {
+                    HStack(spacing: DS.Space.s1) {
+                        Circle().fill(color).frame(width: DS.Version.dot, height: DS.Version.dot)
+                        speed.recipe(.caption).lineLimit(1)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -76,9 +79,26 @@ struct VersionChip: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(verbatim: [language, option.quality, Self.size(option)].compactMap { $0 }.joined(separator: ", "))
-                            + Text(verbatim: ", ") + (option.cached ? Text("Al instante") : Text("Tarda en empezar"))
+                            + (Self.speedText(option.speed).map { Text(verbatim: ", ") + $0 } ?? Text(verbatim: ""))
                             + (option.recommended ? Text(verbatim: ", ") + Text("Recomendada") : Text(verbatim: "")))
         .accessibilityIdentifier("version-\(option.quality)")
+    }
+
+    /// Qué tan rápido arranca, en palabras: «Al instante» (ya está en Real-Debrid), «Real-Debrid aún no la tiene» o nada.
+    static func speedText(_ speed: SourceSpeed) -> Text? {
+        switch speed {
+        case .inRealDebrid: Text("Al instante")
+        case .realDebridMustDownload: Text("Real-Debrid aún no la tiene")
+        case .unknown: nil
+        }
+    }
+
+    static func speedColor(_ speed: SourceSpeed) -> Color? {
+        switch speed {
+        case .inRealDebrid: DS.brandMoon
+        case .realDebridMustDownload: DS.warning
+        case .unknown: nil
+        }
     }
 
     static func size(_ option: VersionOption) -> String? {

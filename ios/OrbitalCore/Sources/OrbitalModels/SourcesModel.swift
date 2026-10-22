@@ -97,6 +97,11 @@ public final class SourcesModel: ObservableModel {
 
     /// La fuente elegida, para reproducir o descargar.
     public func source(_ id: Int) -> Source? { sources.first { $0.index == id } }
+
+    /// Todas, en el orden de la recomendación (incluidas las ocultas): «Todas las fuentes».
+    public var ranked: [Source] { sources }
+    /// La recomendada (la primera que no es de cine ni tráiler; si todas lo son, la primera).
+    public var recommendedIndex: Int? { (sources.first { !Self.hidden($0) } ?? sources.first)?.index }
 }
 
 // MARK: «Elegir versión»: por idioma y calidad
@@ -121,6 +126,10 @@ public struct VersionOption: Identifiable, Equatable, Sendable {
     public var others: [Int]
     /// «¿Otro título?»: el nombre dice otro año.
     public var otherTitle: Bool
+    /// Pasa por Real-Debrid (si no está en `cached`, Real-Debrid aún la tiene que bajar).
+    public var debrid = false
+    /// Qué tan rápido arranca, sin prometer de más.
+    public var speed: SourceSpeed { cached ? .inRealDebrid : debrid ? .realDebridMustDownload : .unknown }
 }
 
 /// Una fila de «Elegir versión»: un idioma con sus calidades (solo las que existen).
@@ -161,7 +170,7 @@ extension SourcesModel {
                       alsoHas: s.audio.map(rowCode).filter { $0 != code }, release: s.release, site: s.site,
                       downloadable: s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false,
                       heavy: Double(s.size) / 1e9 > limitGB, recommended: recommended, others: others,
-                      otherTitle: s.tags.contains(Streams.otherTitleTag))
+                      otherTitle: s.tags.contains(Streams.otherTitleTag), debrid: s.debrid)
     }
 
     /// Las demás versiones de ese idioma y calidad («Otras 2 en latino 1080p»), en orden.

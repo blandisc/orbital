@@ -22,6 +22,8 @@ struct SourcesSheet: View {
 
     @State private var showsGlossary = false
     @State private var showsMore = false
+    /// «Por idioma» (las filas de siempre) o «Todas» (la lista completa y plana).
+    @State private var showsAll = Demo.isOn && Demo.open == "sources-all"
     @State private var picked: PickedVersion?
 
     struct PickedVersion: Identifiable { let row: LanguageRow; let option: VersionOption; var id: String { "\(row.code)-\(option.id)" } }
@@ -29,11 +31,12 @@ struct SourcesSheet: View {
     var body: some View {
         let model = observer.model
         let ui = env.services.appSettings.uiLanguage
+        let allCount = AllSources.count(model.ranked).shown   // «Todas (N)»: sin grabaciones de cine ni tráileres
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Elegir versión").recipe(.title)
-                    Text("Por idioma y calidad · toca una").recipe(.footnote)
+                    (showsAll ? Text("Todas, por calidad · toca una") : Text("Por idioma y calidad · toca una")).recipe(.footnote)
                 }
                 Spacer()
                 // Qué quiere decir cada etiqueta (4K, DV, REMUX, Al instante…).
@@ -43,33 +46,25 @@ struct SourcesSheet: View {
                     .accessibilityIdentifier("sources-info")
             }
             .padding(.horizontal, DS.Space.s4)
+            Picker("Mostrar", selection: $showsAll) {
+                Text("Por idioma").tag(false)
+                Text("Todas (\(allCount))").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, DS.Space.s4)
+            .accessibilityIdentifier("sources-mode")
             ScrollView {
                 VStack(spacing: DS.Space.s2) {
                     if model.isLoading { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s6) }
                     if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
-                    ForEach(model.languageRows) { row in
-                        VersionLanguageRow(row: row, uiLanguage: ui) { picked = PickedVersion(row: row, option: $0) }
-                    }
-                    if !model.moreLanguages.isEmpty {
-                        DisclosureGroup(isExpanded: $showsMore) {
-                            VStack(spacing: DS.Space.s2) {
-                                ForEach(model.moreLanguages) { row in
-                                    VersionLanguageRow(row: row, uiLanguage: ui) { picked = PickedVersion(row: row, option: $0) }
-                                }
-                            }
-                            .padding(.top, DS.Space.s2)
-                        } label: {
-                            Text("Otros idiomas · ") + Text(verbatim: model.moreLanguages.map { VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui) }.joined(separator: ", "))
+                    if showsAll {
+                        if !model.ranked.isEmpty {
+                            AllSourcesList(sources: model.ranked, current: model.recommendedIndex,
+                                           primary: ("Ver", { choose($0, .watch) }), secondary: ("Descargar", { choose($0, .download) }),
+                                           uiLanguage: ui, offersSecondary: { s in s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false })
                         }
-                        .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
-                        .padding(DS.Space.s3)
-                        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                        .tint(DS.textMuted)
-                    }
-                    if model.hiddenCount > 0 {
-                        (model.hiddenCount == 1 ? Text("1 oculta: grabada en el cine o tráiler") : Text("\(model.hiddenCount) ocultas: grabadas en el cine o tráileres"))
-                            .recipe(.caption, color: DS.textFaint)
-                            .frame(maxWidth: .infinity).padding(.top, DS.Space.s1)
+                    } else {
+                        byLanguage(model, ui)
                     }
                 }
             }
@@ -92,6 +87,34 @@ struct SourcesSheet: View {
                 .fittedScrollSheet()   // del alto de lo que dice (sin espacio muerto); al abrir «Otras», crece
         }
     }
+
+    /// «Por idioma»: una fila por idioma de audio, los demás idiomas plegados y cuántas se esconden.
+    @ViewBuilder private func byLanguage(_ model: SourcesModel, _ ui: String) -> some View {
+        ForEach(model.languageRows) { row in
+            VersionLanguageRow(row: row, uiLanguage: ui) { picked = PickedVersion(row: row, option: $0) }
+        }
+        if !model.moreLanguages.isEmpty {
+            DisclosureGroup(isExpanded: $showsMore) {
+                VStack(spacing: DS.Space.s2) {
+                    ForEach(model.moreLanguages) { row in
+                        VersionLanguageRow(row: row, uiLanguage: ui) { picked = PickedVersion(row: row, option: $0) }
+                    }
+                }
+                .padding(.top, DS.Space.s2)
+            } label: {
+                Text("Otros idiomas · ") + Text(verbatim: model.moreLanguages.map { VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui) }.joined(separator: ", "))
+            }
+            .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
+            .padding(DS.Space.s3)
+            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .tint(DS.textMuted)
+        }
+        if model.hiddenCount > 0 {
+            (model.hiddenCount == 1 ? Text("1 oculta: grabada en el cine o tráiler") : Text("\(model.hiddenCount) ocultas: grabadas en el cine o tráileres"))
+                .recipe(.caption, color: DS.textFaint)
+                .frame(maxWidth: .infinity).padding(.top, DS.Space.s1)
+        }
+    }
 }
 
 /// La tarjeta de una versión: «Latino · 1080p», su tamaño y si arranca al instante, cómo sabemos el idioma, «Ver» y
@@ -111,8 +134,8 @@ struct VersionCard: View {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(verbatim: "\(language) · \(option.quality)").recipe(.title)
-                    (Text(verbatim: [VersionChip.size(option), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")].compactMap { $0 }.joined(separator: " · ") + " · ")
-                     + (option.cached ? Text("Al instante") : Text("Tarda en empezar"))).recipe(.secondary)
+                    let facts = [VersionChip.size(option), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")].compactMap { $0 }.joined(separator: " · ")
+                    VersionCard.withSpeed(facts, option.speed).recipe(.secondary)
                 }
                 if option.otherTitle {
                     DSNotice(text: "¿Otro título? El nombre dice otro año: puede ser otra película.", tone: .warn)
@@ -147,11 +170,17 @@ struct VersionCard: View {
         }
     }
 
+    /// «2.9 GB · DV · Al instante»: los datos y, si se sabe, qué tan rápido arranca.
+    static func withSpeed(_ facts: String, _ speed: SourceSpeed) -> Text {
+        guard let words = VersionChip.speedText(speed) else { return Text(verbatim: facts) }
+        return facts.isEmpty ? words : Text(verbatim: facts + " · ") + words
+    }
+
     /// Otra del mismo idioma y calidad: su tamaño, cómo sabemos el idioma y su nombre técnico, con ▶ y ↓.
     private func otherRow(_ other: VersionOption) -> some View {
         HStack(alignment: .top, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                (Text(verbatim: VersionChip.facts(other) + " · ") + (other.cached ? Text("Al instante") : Text("Tarda en empezar"))).recipe(.footnote, color: DS.text)
+                VersionCard.withSpeed(VersionChip.facts(other), other.speed).recipe(.footnote, color: DS.text)
                 Text(verbatim: other.release).font(DS.TextRecipe.caption.font.monospaced()).foregroundStyle(DS.textMuted).lineLimit(2)
                 if other.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
             }

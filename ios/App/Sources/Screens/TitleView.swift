@@ -78,7 +78,7 @@ struct TitleView: View {
             Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) }   // aparte: las fuentes tardan y no detienen el color del fondo
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
-            if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
+            if Demo.isOn, Demo.open == "sources" || Demo.open == "sources-all", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
             if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
             if Demo.isOn, Demo.open == "download-tap" { await downloadRecommended(model) }
             if Demo.isOn, Demo.open == "save" { saving = true }   // `-demo-open save`: la hoja «Guardar en…», para capturas

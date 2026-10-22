@@ -136,6 +136,17 @@ enum DS {
     /// «Al instante» y el borde de la recomendada.
     enum Version {
         static let chipMinimum: CGFloat = 136, dot: CGFloat = 8, pickedStroke: CGFloat = 1.5
+        /// Un idioma que se supone (no lo dice el nombre ni se comprobó): borde punteado.
+        static let guessLine: CGFloat = 1, guessDash: CGFloat = 4
+    }
+
+    /// «Todas las fuentes» (`AllSourcesList`): el punto de qué tan rápido arranca (turquesa: ya está en Real-Debrid; ámbar:
+    /// Real-Debrid aún no la tiene), cuántas se ven por calidad antes de «+N más» y lo atenuadas que van las ocultas.
+    enum AllSourcesList {
+        static let dot: CGFloat = 8
+        static let ready = DS.brandMoon, mustDownload = DS.warning
+        static let shownPerGroup = 3
+        static let hiddenOpacity = DesignTokens.Opacity.faint
     }
 
     enum TitleAction {
@@ -304,7 +315,6 @@ enum DS {
         static let otherVersionsShown = 2
         /// La agarradera va dentro del borde de abajo del video (sobre un velo): la rayita, a cuánto del borde, el alto del velo, la
         /// franja que la toma (dentro del video, desde abajo, y un poco por fuera) y el aire hasta la barra de avance.
-        static let handleWidth: CGFloat = 44, handleHeight: CGFloat = 5, handleInset: CGFloat = 10, handleScrim: CGFloat = 44
         static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap: CGFloat = 20
         static let handleReach: CGFloat = 12
         /// Cuántas funciones da el video un brinquito (hacia abajo y de regreso) para enseñar que se mueve, y de qué tamaño (parte del alto).

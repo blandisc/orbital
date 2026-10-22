@@ -740,7 +740,14 @@ private struct ScrollIfNeeded: ViewModifier {
 /// tu copia», «Del video», descargas) y «N de M», la pregunta «¿Va a tiempo?» al cambiar de versión, el tiempo
 /// («− Antes · A tiempo · Después +»), «Sincronizar con una línea» y el tamaño. En horizontal, tres renglones arriba.
 struct SubtitleDock: View {
-    struct Language: Identifiable { let id: String; let title: String; let selected: Bool }
+    struct Language: Identifiable {
+        let id: String; let title: String; let selected: Bool
+        /// Un idioma de otra versión: a qué va («↻ 1080p · en Real-Debrid») y si es una suposición («se supone»).
+        var detail: String? = nil
+        var guessed = false
+    }
+    /// Los renglones que se abren (uno a la vez).
+    enum Section: Hashable { case audio, subtitles, sync, size }
     /// La versión puesta: su nombre, su etiqueta (`strong`: hecha para tu copia, en verde) y «2 de 9».
     struct Version { let title: String; let badge: String?; let strong: Bool; let position: String }
     /// Lo que se pregunta o se avisa debajo de la versión.
@@ -782,69 +789,136 @@ struct SubtitleDock: View {
     var compact = false
     /// El idioma de la app (para los textos armados con números).
     var language = "es"
+    /// Lo que dice cada renglón cerrado: el audio puesto, los subtítulos («Español · 2 de 6» o «Apagados»).
+    var audioValue = ""
+    var subtitleValue = ""
+    /// La versión del video («Inglés · 1080p · 12.3 GB») y abrir su página (nil: no hay otras, p. ej. una descarga sin red).
+    var videoVersion = ""
+    var openVersion: (() -> Void)?
+    /// Sin el título «Audio y subtítulos» (en horizontal lo dicen las pestañas de arriba).
+    var showsHeader = true
+    /// El renglón abierto al aparecer (el botón de subtítulos abre Subtítulos).
+    var initiallyOpen: Section? = .subtitles
+    @State private var open: Section?
+    @State private var opened = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: compact ? DS.Space.s2 : DS.Space.s3) {
-            if !compact {
+        // Renglones que dicen lo que tienes puesto y se abren uno a la vez (antes todo a la vista: en horizontal no cabía y se
+        // sentía cargado). Lo mismo en vertical y en horizontal.
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            if showsHeader {
                 HStack {
                     Text("Audio y subtítulos").recipe(.cardTitle)
                     Spacer()
                     doneButton
                 }
             }
-            // El audio primero (con un solo idioma y sin otra versión, no hay nada que elegir: no sale).
+            // La pregunta va arriba, a la vista aunque su renglón esté cerrado.
+            if let check, version != nil { checkCard(check) }
             if audio.count > 1 || !otherVersions.isEmpty {
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text("Audio").recipe(.caption)
+                section(.audio, title: "Audio", value: audioValue) {
                     FlowChips(spacing: DS.Space.s1) {
                         ForEach(audio) { a in pill(Text(verbatim: a.title), selected: a.selected) { pickAudio(a.id) } }
-                        ForEach(otherVersions) { v in
-                            pill(Text(verbatim: v.title) + Text(" · otra versión"), selected: false) { pickVersion(v.id) }
-                        }
+                        ForEach(otherVersions) { v in otherPill(v) }
                     }
                     .id(audio.map { "\($0.id)\($0.selected)" }.joined() + otherVersions.map(\.id).joined())   // que se redibuje al elegir (ver `FlowChips`)
                 }
-                .accessibilityElement(children: .contain)
             }
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                if audio.count > 1 || !otherVersions.isEmpty { Text("Subtítulos").recipe(.caption) }
-                HStack(spacing: DS.Space.s1) {
+            section(.subtitles, title: "Subtítulos", value: subtitleValue) {
+                FlowChips(spacing: DS.Space.s1) {
                     ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected) { pickLanguage(l.id) } }
-                    pill(Text("Otro…"), selected: false, action: otherLanguage).accessibilityIdentifier("subtitle-dock-other")
-                    if compact { doneButton }
+                    pill(Text("Buscar…"), selected: false, action: otherLanguage).accessibilityIdentifier("subtitle-dock-other")
                 }
-            }
-            if let version {
-                if compact {
-                    HStack(spacing: DS.Space.s2) {
-                        versionRow(version)
-                        if delay != nil { Divider().frame(height: DS.Size.touchTarget); timeRow }
-                    }
-                } else {
-                    versionRow(version)
-                }
-                // Con la pregunta abierta solo se ve la pregunta (lo demás vuelve al contestar).
-                if let check {
-                    checkCard(check)
-                } else {
-                    if compact {
-                        HStack(spacing: DS.Space.s2) {
-                            if delay != nil, let sync { syncButton(sync) }
-                            sizeRow
-                        }
-                    } else {
-                        // En vertical cada cosa en su renglón: en un iPhone chico no caben juntas.
-                        if delay != nil { timeRow }
-                        if delay != nil, let sync { syncButton(sync) }
-                        sizeRow
-                    }
-                }
+                .id(languages.map { "\($0.id)\($0.selected)" }.joined())
+                if let version { versionRow(version) }
                 if !tried.isEmpty, check != nil { triedLine }
             }
+            if delay != nil, version != nil {
+                section(.sync, title: "Sincronía", value: delayValue) {
+                    timeRow
+                    if let sync { syncButton(sync) }
+                }
+            }
+            if version != nil {
+                section(.size, title: "Tamaño", value: sizeName) { sizeRow }
+            }
+            versionLink
         }
-        .padding(compact ? DS.Space.s3 : DS.Space.s4)
+        .padding(DS.Space.s4)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
         .accessibilityElement(children: .contain)
+        .onAppear { if !opened { opened = true; open = initiallyOpen } }
+        .animation(DS.Motion.base(false), value: open)
+    }
+
+    private var delayValue: String {
+        let value = delay ?? 0
+        // Lo que la app sabe es el ajuste, no si va a tiempo: «Sin ajuste» o el valor.
+        return value == 0 ? Strings.tr("Sin ajuste", language: language) : String(format: "%+.1f s", value)
+    }
+
+    /// Un renglón: su nombre y lo que tiene puesto; al tocarlo se abre (y se cierra el que estaba abierto).
+    private func section<Content: View>(_ id: Section, title: LocalizedStringKey, value: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Button { open = open == id ? nil : id } label: {
+                HStack(spacing: DS.Space.s2) {
+                    Text(title).recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                    Spacer(minLength: DS.Space.s2)
+                    Text(verbatim: value).recipe(.footnote).lineLimit(1)
+                    Image(systemName: open == id ? "chevron.up" : "chevron.down").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                }
+                .frame(minHeight: DS.Size.touchTarget)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(Text(verbatim: value))
+            .accessibilityHint(open == id ? Text("Cerrar") : Text("Abrir"))
+            if open == id { content() }
+        }
+        .padding(.horizontal, DS.Space.s3)
+        .padding(.bottom, open == id ? DS.Space.s3 : 0)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+    }
+
+    /// «Versión · Inglés · 1080p · 12.3 GB ›»: abre la página de versiones (por idioma o todas).
+    @ViewBuilder private var versionLink: some View {
+        if !videoVersion.isEmpty {
+            Button { openVersion?() } label: {
+                HStack(spacing: DS.Space.s2) {
+                    Text("Versión").recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                    Spacer(minLength: DS.Space.s2)
+                    Text(verbatim: videoVersion).recipe(.footnote).lineLimit(1)
+                    if openVersion != nil { Image(systemName: "chevron.right").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted) }
+                }
+                .padding(.horizontal, DS.Space.s3)
+                .frame(minHeight: DS.Size.touchTarget)
+                .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(openVersion == nil)
+            .accessibilityIdentifier("player-version")
+        }
+    }
+
+    /// Un idioma que solo trae otra versión: «Latino» y, abajo, a qué va («↻ 1080p · en Real-Debrid»); si es una suposición,
+    /// con borde punteado y «se supone».
+    private func otherPill(_ v: Language) -> some View {
+        Button { pickVersion(v.id) } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: v.title).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                if let detail = v.detail { Text(verbatim: detail).recipe(.caption, color: v.guessed ? DS.warning : DS.primary) }
+            }
+            .lineLimit(1).fixedSize()
+            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
+            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
+            .background(DS.fill, in: Capsule())
+            .overlay(Capsule().strokeBorder(v.guessed ? DS.warning : .clear, style: StrokeStyle(lineWidth: DS.Version.guessLine, dash: [DS.Version.guessDash])))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: v.title + ", " + (v.detail ?? "")))
+        .accessibilityHint(Text("Abre otra versión del video en el mismo punto"))
     }
 
     // MARK: renglones
