@@ -141,11 +141,14 @@ export const SECTIONS = [
   // Lo tuyo primero (Seguir viendo). Buscar es un atajo (botón Vista o la píldora de arriba), así
   // que la fila de apps (Buscar, YouTube…) va al final.
   // Con la curaduría de Para ti (core/curation.js) entre lo tuyo y lo popular: Top 10, plataformas, tus listas.
-  // Como Para ti › Listas del iPhone (core/media-plan.js): el mismo orden y los mismos nombres. «Seguir viendo» vive en el
-  // Inicio y Mi lista en «Listas de Stremio». Sin la fila «Multimedia» (Buscar, Stremio, YouTube): el usuario ya no la usa; Buscar es ⧉.
+  // Como Para ti › Listas del iPhone (core/media-plan.js): el mismo orden y los mismos nombres. Mi lista vive en
+  // «Listas de Stremio». Sin la fila «Multimedia» (Buscar, Stremio, YouTube): el usuario ya no la usa; Buscar es ⧉.
   // Siempre en la barra (como TV): la curaduría llega unos segundos después y la pestaña aparecía tarde (y la barra se
   // recorría al llegar). Mientras, la sección dice que está cargando (main.js · emptyFor).
-  { id: "media", title: "Películas y series", rows: (id) => id.startsWith("curated:"), order: ["curated:spotlight", "curated:*"], always: true },
+  // «Seguir viendo» (lo que dejaste a medias en Stremio, lo más reciente primero) va hasta arriba: lo tuyo antes que lo
+  // popular. También sigue en el Inicio, mezclado con los juegos.
+  { id: "media", title: "Películas y series", rows: (id) => id === "continue" || id.startsWith("curated:"),
+    order: ["continue", "curated:spotlight", "curated:*"], always: true },
   // TV en vivo: los canales de México (su propia vista, sin filas de biblioteca). Siempre a la vista: aunque
   // la lista aún no llegue, la sección dice qué está pasando en vez de desaparecer de la barra.
   { id: "tv", title: "TV en vivo", rows: () => false, always: true },

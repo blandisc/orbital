@@ -33,6 +33,20 @@ def percent(position: float, duration: float) -> float | None:
         return None
 
 
+# Un video mucho más corto que lo que debería ser no es la película ni el episodio: es un relleno de la fuente («este
+# archivo no está disponible», 30 s). El 22 de octubre uno de 30 s «terminó» Hope (2 h 36 min): Orbital le dijo a Trakt
+# que ya la habías visto y a Stremio que la quitara de Seguir viendo, y se perdió dónde ibas.
+TOO_SHORT = {"movie": 20 * 60, "series": 3 * 60}  # s
+
+
+def not_the_video(meta: dict, duration: float) -> bool:
+    """¿Lo que suena dura tan poco que no puede ser esta película o este episodio? (Entonces no cuenta como avance.)"""
+    try:
+        return bool(duration) and 0 < float(duration) < TOO_SHORT.get(str(meta.get("kind")), 0)
+    except (TypeError, ValueError):
+        return False
+
+
 def label(meta: dict) -> str:
     """«The Office T2 · E5» o «Dune»: cómo se dice lo último que se mandó."""
     title = str(meta.get("title") or meta.get("meta_id") or "").strip()
@@ -64,6 +78,9 @@ class TraktScrobbler:
             kind, meta_id = meta.get("kind"), meta.get("meta_id")
             if kind not in ("movie", "series") or not isinstance(meta_id, str):
                 return  # TV en vivo, juegos…: nada que contarle a Trakt
+            if not_the_video(meta, duration):
+                log.info("Trakt: no aviso de «%s»: el video dura %d s (no es el título, es un relleno de la fuente)", label(meta), duration)
+                return
             target = trakt_api.scrobble_target(kind, meta_id, meta.get("video_id"))
             progress = percent(position, duration)
             if target is None or progress is None:

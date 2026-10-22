@@ -61,6 +61,19 @@ def test_saving_progress_remembers_the_source(library):
     assert watch.resume_choice("tt1", "tt1:1:2")["source"] == "Torrentio|abc|0"
 
 
+def test_a_filler_clip_is_not_saved_as_progress(library):
+    """Un relleno de 30 s de la fuente no pisa dónde ibas (ni da la película por terminada en Stremio)."""
+    watch = library.watch
+    saved = []
+    watch._save_progress_now = lambda *args: saved.append(args)
+    watch.credentials = type("Creds", (), {"get": lambda self, key: "sesion"})()  # con Stremio conectado
+    meta = {"kind": "movie", "meta_id": "tt27369017", "video_id": "tt27369017", "title": "Hope", "source_key": "x"}
+    watch._save_progress(meta, 30, 30, 30, refresh=True)
+    assert saved == []
+    watch._save_progress(meta, 600, 9406, 60, refresh=False)
+    assert len(saved) == 1
+
+
 # --- Entre el iPhone y la TV: el mismo segundo, la misma fuente, el mismo audio y los mismos subtítulos -------------------
 
 def test_the_player_matches_tracks_from_the_iphone_by_language():

@@ -25,7 +25,7 @@ from .launcher import Launcher
 from .library import addons, cinemeta, localize, streams, stremio_api
 from .library import tmdb as tmdb_api
 from .library.models import LibraryItem
-from .scrobble import TraktScrobbler
+from .scrobble import TraktScrobbler, not_the_video
 from .sessions import Sessions
 from .state import State
 from .store import ItemStore
@@ -1347,6 +1347,9 @@ class Watch:
     def _save_progress(self, meta: dict, position: float, duration: float, watched: float, refresh: bool) -> None:
         """Guarda en tu cuenta de Stremio dónde te quedaste (Seguir viendo, en Orbital y en Stremio).
         Se llama cada minuto, al pausar y al terminar; `watched` son los segundos vistos desde la vez anterior."""
+        if not_the_video(meta, duration):  # un relleno de 30 s no «termina» una película de dos horas
+            log.info("No guardo avance de %s: el video dura %d s (no es el título)", meta.get("video_id"), duration)
+            return
         if position >= 60:  # con qué fuente y subtítulos lo dejaste (para «Continuar»)
             self._safe_remember(meta)
         auth = self.credentials.get(STREMIO_KEY)
