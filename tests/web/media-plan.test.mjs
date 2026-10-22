@@ -127,8 +127,14 @@ test("filas centradas: la enfocada al centro, sin hueco a la izquierda ni pasars
   const { centeredOffset } = await import("../../orbital/web/js/core/library.js");
   const widths = Array(8).fill(100);
   assert.equal(centeredOffset(widths, 0, { gap: 10, visible: 400 }), 0); // la primera, pegada a la izquierda
-  assert.equal(centeredOffset(widths, 4, { gap: 10, visible: 400 }), 440 + 50 - 200); // en medio, al centro
-  assert.equal(centeredOffset(widths, 7, { gap: 10, visible: 400 }), 870 - 400); // la última, sin aire de más
+  // En medio: el arranque de tarjeta más cerca del centro ideal (290): la de 330; nunca una tarjeta cortada a la izquierda.
+  assert.equal(centeredOffset(widths, 4, { gap: 10, visible: 400 }), 330);
+  assert.equal(centeredOffset(widths, 7, { gap: 10, visible: 400 }), 550); // la última: entera y con la fila arrancando en una tarjeta
+  for (let c = 0; c < 8; c++) {
+    const x = centeredOffset(widths, c, { gap: 10, visible: 400 });
+    assert.equal(x % 110, 0, `la fila arranca en una tarjeta (enfocada ${c})`);
+    assert.ok(c * 110 >= x && c * 110 + 100 <= x + 400, `la enfocada ${c} se ve entera`);
+  }
   assert.equal(centeredOffset([100, 100], 1, { gap: 10, visible: 400 }), 0); // si caben todas, no se mueve
 });
 

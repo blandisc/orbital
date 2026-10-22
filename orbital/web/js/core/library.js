@@ -67,15 +67,22 @@ export function rowOffset(widths, c, { gap, grow = 0, visible }) {
   return Math.min(lefts[Math.max(0, c - 1)] ?? 0, max);
 }
 
-/** Fila centrada (Tus plataformas, Premios…): la enfocada al centro de lo visible, como el carrusel centrado del iPhone,
- *  pero sin hueco: las primeras arrancan pegadas a la izquierda y las últimas no se pasan del final (antes la primera
- *  quedaba al centro con un espacio muerto a la izquierda). La enfocada crece desde su centro. */
+/** Fila centrada (Tus plataformas, Premios…): la enfocada lo más cerca del centro de lo visible, como el carrusel centrado
+ *  del iPhone, pero la fila siempre arranca con una tarjeta entera en el margen (antes la de la izquierda quedaba cortada a
+ *  la mitad, «comida»): se elige el arranque de tarjeta más cercano al centro ideal. Las primeras arrancan pegadas a la
+ *  izquierda y al final no se pasa de la última. La enfocada crece desde su centro. */
 export function centeredOffset(widths, c, { gap, grow = 0, visible }) {
-  let left = 0;
-  for (let i = 0; i < c; i++) left += (widths[i] ?? 0) + gap;
-  const total = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(0, widths.length - 1) + grow;
-  const centered = left + grow / 2 + (widths[c] ?? 0) / 2 - visible / 2;
-  return Math.min(Math.max(0, centered), Math.max(0, total - visible));
+  const lefts = [];
+  let x = 0;
+  for (const w of widths) { lefts.push(x); x += w + gap; }
+  const total = Math.max(0, x - gap) + grow;
+  if (total <= visible) return 0; // caben todas
+  const focusLeft = lefts[c] ?? 0;
+  const need = focusLeft + (widths[c] ?? 0) + grow - visible; // desde aquí, la enfocada cabe entera a la derecha
+  const ideal = Math.min(focusLeft + grow / 2 + (widths[c] ?? 0) / 2 - visible / 2, total - visible);
+  const fits = lefts.filter((left) => left <= focusLeft && left >= need);
+  if (!fits.length) return Math.max(0, Math.min(focusLeft, total - visible));
+  return fits.reduce((best, left) => (Math.abs(left - ideal) < Math.abs(best - ideal) ? left : best));
 }
 
 /** El emulador alternativo (p. ej. Eden cuando el predeterminado es Ryujinx). */
