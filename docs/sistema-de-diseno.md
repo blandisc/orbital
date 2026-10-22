@@ -211,7 +211,7 @@ y el panel de columnas (`Panel`/`Column`). Los tamaños se escriben «como en CS
 | Estado | Qué se ve | Botones |
 |---|---|---|
 | Al tocar un botón | Título, barra partida por capítulos con su punto, tiempo y «termina a las…», idioma y fuente | A Pausa · X Audio y subtítulos · Y Versión (en una serie, «Episodios y versión») · B (mantener) Salir; en pausa también ◀▶ Adelantar · ↑↓ Volumen · LT RT Episodio |
-| En pausa | Video oscurecido; título grande, datos, sinopsis y botones | Los mismos |
+| En pausa | Video oscurecido; el **logo del título** (el mismo recortado de la ficha, en blanco si es oscuro; mpv lo pone encima con `overlay-add` en el lugar que deja `paused_ass`, `placed["logo"]`, y se prepara por detrás al pausar) o, sin logo, su nombre grande; datos, sinopsis y botones | Los mismos |
 | Adelantando (◀ ▶, LB/RB) | Solo la barra y, sobre el punto, la hora, cuánto salta y el capítulo | Mantén: más rápido |
 | X | Panel abajo: Audio · Subtítulos · Tamaño (el video sigue). En Audio, tras las pistas de esta versión, tu idioma (y los que no trae) en otra: «Latino» con «En otra · 4K» a la derecha (corto: la columna es angosta); elegirla cambia de fuente y sigue donde ibas | ◀ ▶ columna · A elegir · B cerrar |
 | Y | Panel «Más»: Episodios (series) · **Versión** · Reproducción. Versión es la cuadrícula de «Elegir versión» de la ficha (`watch.version_grid`, `_grid_rows`): un renglón por idioma y sus calidades en casillas («1080p» y debajo «Al instante» en `--color-live`); abre en la que ves (con contorno) y abajo dice la enfocada en palabras | ↑↓ idioma · ◀ ▶ calidad (del borde, a la columna de al lado) · A cambiar (sigue donde ibas) · B cerrar |

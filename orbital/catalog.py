@@ -186,6 +186,8 @@ class Catalog:
         self.watch.localizer.on_name = self.names.remember
         self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
         self.watch.scrobbler.trakt = lambda: self.foryou.trakt  # lo que ves, a Trakt (se pide en cada aviso)
+        # En pausa, el título estilizado: el mismo logo recortado de la ficha (en blanco si es oscuro).
+        self.watch.player.logo_provider = lambda meta: self.foryou.trimmed_logo(str(meta.get("meta_id") or ""))
         self.tv = LiveTV(config, self)  # «TV en vivo»: canales y su salud (no sale a internet hasta que arranca)
         self.events.subscribe(self._on_event)
 

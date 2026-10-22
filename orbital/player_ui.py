@@ -37,6 +37,9 @@ KEYBOARD = False  # con teclado: los glifos dicen la tecla, no el botón del man
 KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LB RB": "RePág AvPág", "Home": "Ctrl Inicio"}
 # Dónde quedó cada cosa tocable, por capa: (x, y, ancho, alto, acción). Se rehace al dibujar la capa.
 targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": []}
+# Dónde va lo que no es ASS (el logo del título en pausa: una imagen que mpv pone encima): (x, y, ancho, alto) en el lienzo.
+placed: dict[str, tuple[float, float, float, float]] = {}
+LOGO_BOX = (860, 190)  # lo más que mide el logo en pausa, en el lienzo
 
 
 def set_input(mode: str) -> bool:
@@ -372,6 +375,7 @@ class Hud:
     description: str = ""  # sinopsis (en pausa)
     seeking: str = ""  # "+10 s" / "−1 min" mientras adelantas: solo la barra y la burbuja
     pip: bool = False  # Home lo pone en pequeño (Ajustes): se dice arriba, que si no nadie lo descubre
+    logo: tuple[float, float] | None = None  # en pausa, el logo del título (ancho, alto en el lienzo) en vez de su nombre
 
 
 def info_line(hud: Hud) -> str:
@@ -478,6 +482,7 @@ def hud_ass(hud: Hud) -> str:
 def paused_ass(hud: Hud) -> str:
     """En pausa: el video se oscurece y a la izquierda, lo esencial y los botones."""
     targets["hud"] = []
+    placed.pop("logo", None)
     lines = [rrect(0, 0, W, H, 0, SHADE, "88"), gradient(420, H, 255, 70), gradient(0, 200, 140, 255, 14)]
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
@@ -486,15 +491,20 @@ def paused_ass(hud: Hud) -> str:
     # El bloque va abajo, apoyado sobre la barra (como en las TV), no a media pantalla: se mide primero
     # y se coloca para que los botones queden justo encima de la barra de progreso.
     width = min(1180, W - 2 * MARGIN)
-    title_lines = wrap(hud.title, 64, width, 2)
+    # Con logo, el título va estilizado (la imagen la pone mpv encima, en `placed`); sin él, su nombre en texto.
+    title_lines = [] if hud.logo else wrap(hud.title, 64, width, 2)
+    title_h = hud.logo[1] + 28 if hud.logo else 92 * len(title_lines)
     meta = " · ".join(p for p in (hud.detail, hud.facts) if p)
     about = wrap(hud.description, 26, min(1000, width), 3)
-    height = 54 + 92 * len(title_lines) + (52 if meta else 0) + 40 * len(about) + 30 + 62
+    height = 54 + title_h + (52 if meta else 0) + 40 * len(about) + 30 + 62
     y = max(110, BAR_Y - 56 - height)
     # «‖ En pausa»: el ícono dibujado (dos barras) y la palabra, sin mayúsculas.
     lines += [rrect(MARGIN, y + 5, 6, 22, 2, TEXT), rrect(MARGIN + 12, y + 5, 6, 22, 2, TEXT),
               text(MARGIN + 30, y, "En pausa", 26, weight="semi")]
     y += 54
+    if hud.logo:
+        placed["logo"] = (MARGIN, y - 10, *hud.logo)
+        y += title_h
     for line in title_lines:
         lines.append(text(MARGIN, y, esc(line), 64, weight="bold"))
         y += 92

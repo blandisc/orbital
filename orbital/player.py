@@ -229,6 +229,7 @@ class OrbitalPlayer(PlayerScreen):
         self.on_failed = None  # (meta, posición, sigue_abierto) -> True si se intenta con otra fuente
         self.next_provider = None  # (meta) -> {"label", "title", "play"} | None
         self.sources_provider = None  # (meta) -> [{"id", "label", "current"}]
+        self.logo_provider = None  # (meta) -> PNG del logo del título (en pausa, el título estilizado) | None
         self.on_tracks = None  # (meta, track-list) -> aviso si no trae tu idioma (y lo recuerda: «Comprobado»)
         self.versions_provider = None  # (meta) -> [{"id", "label", "hint"}]: tu idioma en otra versión (X › Audio)
         self.on_switch_source = None  # (meta, id_fuente, posición)
