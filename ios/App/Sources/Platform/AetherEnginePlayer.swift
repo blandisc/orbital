@@ -357,7 +357,9 @@ final class AetherSampleBufferPiP: NSObject, AVPictureInPictureSampleBufferPlayb
 
 /// Plazos del motor de video (fuera de la vista: el motor no importa el sistema de diseño).
 enum PlayerTiming {
-    static let backgroundGrace: Double = 25
+    /// En pausa en segundo plano, cuánto se queda armado el video: volver antes es instantáneo (después hay que pedirlo otra
+    /// vez y tarda). Antes 25 s: un vistazo a otra app ya obligaba a recargar.
+    static let backgroundGrace: Double = 300
     /// Tras rearmar el video al volver de segundo plano: lo que se espera a que el primer cuadro esté en pantalla.
     static let firstFrameSettle: UInt64 = 250_000_000
     /// Leer el cuadro de AVPlayer: cuántas veces y cada cuánto (en pausa sale a la primera; sonando, en unos 300 ms).

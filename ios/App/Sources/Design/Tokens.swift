@@ -185,6 +185,8 @@ enum DS {
         static let edgeShare: CGFloat = 1.0 / 3.0
         /// Dobles toques seguidos del mismo lado se suman (+10, +20, +30 s) mientras no pase este rato.
         static let skipChain: TimeInterval = 0.9
+        /// ×2: cuánto deslizar hacia arriba sin soltar para fijarlo (o quitarlo).
+        static let fastForwardLockDrag: CGFloat = 90
         /// Lo que llevas saltado tras 1, 2, 3… dobles toques seguidos: cada toque salta más que el anterior.
         static let skipTotals = [10, 20, 40, 60, 90, 120]
         /// A cuántos segundos del destino ya se da por llegado un salto (el pulgar vuelve a seguir el avance).
@@ -727,7 +729,7 @@ enum DS {
         static let longPressDelay = DesignTokens.Timing.longPressDelay
         /// ×2: cuánto mantener el dedo para que arranque (casi al instante, como YouTube) y cuánto más para que se quede fijo
         /// (vibra; ya puedes soltar).
-        static let fastForwardStart = 0.3, fastForwardLock = 1.2
+        static let fastForwardStart = 0.3
         /// Cada cuánto, como pronto, le pide iOS a la app mirar en segundo plano lo que dejó la TV (iOS decide si y cuándo corre).
         static let inboxRefresh: TimeInterval = 15 * 60
         /// Cada cuánto (como mínimo) iOS despierta la app para ver si un estreno ya se puede ver.

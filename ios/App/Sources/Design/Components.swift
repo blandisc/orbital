@@ -756,11 +756,15 @@ struct DSSeekBubble: View {
 struct DSSpeedPill: View {
     /// Se quedó fijo en ×2 (mantuviste el dedo hasta que vibró): dice cómo quitarlo.
     var locked = false
-    /// Mientras mantienes: el anillo se llena hasta que se queda fijo (0…1).
+    /// Mientras mantienes: el anillo se llena al deslizar hacia arriba (0…1).
     var progress: Double = 0
+    /// El dedo sigue puesto: dice qué hace deslizar.
+    var holding = false
+    /// Ya iba fijo: deslizar lo quita.
+    var unlocks = false
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            if locked {
+            if locked && !holding {
                 Image(systemName: "lock.fill").font(DS.TextRecipe.footnote.font.weight(.bold)).transition(.scale.combined(with: .opacity))
             } else {
                 ZStack {
@@ -771,7 +775,12 @@ struct DSSpeedPill: View {
                 .frame(width: DS.PlayerPanel.ring * 0.75, height: DS.PlayerPanel.ring * 0.75)
             }
             Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold))
-            if locked { Text("Toca para quitar").font(DS.TextRecipe.footnote.font) }
+            if holding {
+                (Text(Image(systemName: "arrow.up")) + Text(" ") + (unlocks ? Text("Desliza para quitar") : Text("Desliza para fijar")))
+                    .font(DS.TextRecipe.footnote.font)
+            } else if locked {
+                Text("Toca para quitar").font(DS.TextRecipe.footnote.font)
+            }
         }
         .foregroundStyle(DS.text)
         .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)

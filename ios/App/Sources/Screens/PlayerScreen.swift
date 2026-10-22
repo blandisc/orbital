@@ -140,7 +140,11 @@ struct PlayerScreen: View {
     @State private var isFastForwarding = false
     /// ×2 fijo: mantuviste el dedo hasta que vibró; sigue al soltar y un toque lo quita.
     @State private var fastForwardLocked = false
-    @State private var fastForwardLockTask: Task<Void, Never>?
+    /// El dedo sigue puesto después de la pulsación larga (el ×2 dura lo que dure el dedo, como TikTok).
+    @State private var fastForwardHolding = false
+    /// Cómo estaba al empezar a mantener: deslizar hacia arriba lo cambia (fijo ↔ no fijo) una vez por pulsación.
+    @State private var fastForwardLockedAtStart = false
+    @State private var fastForwardToggledThisHold = false
     /// Dónde empezó el toque (el ×2 es del lado derecho, como YouTube).
     @State private var touchStartX: CGFloat?
     /// El ícono que aparece un momento al centro tras un doble toque (pausa, ±10 s).
@@ -448,19 +452,18 @@ struct PlayerScreen: View {
     // MARK: gestos
     private func gestureLayer(_ model: PlayerModel) -> some View {
         GeometryReader { geo in
-            // Como Infuse: doble toque al centro pausa o sigue; en las orillas, ±10 s.
-            HStack(spacing: 0) {
-                Color.clear.contentShape(Rectangle()).frame(width: geo.size.width * DS.Gesture.edgeShare)
-                    .onTapGesture(count: 2) { skip(model, forward: false) }
-                Color.clear.contentShape(Rectangle())
-                    .onTapGesture(count: 2) { Task { await model.togglePlay() }; flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
-                Color.clear.contentShape(Rectangle()).frame(width: geo.size.width * DS.Gesture.edgeShare)
-                    .onTapGesture(count: 2) { skip(model, forward: true) }
-            }
+            // Un solo doble toque en toda la pantalla (también en lo negro de arriba y abajo) y lo que hace depende de dónde:
+            // tercio izquierdo −10 s, centro pausa o sigue, tercio derecho +10 s. Antes cada zona tenía su gesto y a veces el
+            // toque caía en otra capa.
+            Color.clear
             .contentShape(Rectangle())
+            .onTapGesture(count: 2) { location in
+                let third = geo.size.width * DS.Gesture.edgeShare
+                if location.x < third { skip(model, forward: false) }
+                else if location.x > geo.size.width - third { skip(model, forward: true) }
+                else { Task { await model.togglePlay() }; flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
+            }
             .onTapGesture {
-                // ×2 fijo: el toque lo quita (y nada más).
-                if fastForwardLocked { endFastForward(model, force: true); return }
                 // Con los subtítulos rápidos abiertos, tocar el video los cierra (y nada más).
                 if subtitleDock { withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false }; return }
                 controlsVisible.toggle(); if controlsVisible { scheduleHide() }
@@ -491,13 +494,14 @@ struct PlayerScreen: View {
             // (no al soltar), y el ×2 se prendía y se apagaba casi a la vez.
             .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { value in
                 if touchStartX == nil { touchStartX = value.startLocation.x }
-            }.onEnded { _ in touchStartX = nil; endFastForward(model) })
+                if fastForwardHolding { fastForwardDrag(up: -value.translation.height) }
+            }.onEnded { _ in touchStartX = nil; releaseFastForward(model) })
             // ×2 del lado derecho: casi al instante; si sigues, vibra y se queda fijo (sueltas antes: vuelve a ×1).
             // Simultánea: como gesto normal competía con los dobles toques de las orillas y casi nunca ganaba.
             .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.fastForwardStart, maximumDistance: DS.Gesture.axisThreshold)
-                .onEnded { _ in if (touchStartX ?? geo.size.width) >= geo.size.width / 2 { startFastForward(model) } })
+                .onEnded { _ in if (touchStartX ?? geo.size.width) >= geo.size.width / 2 { holdFastForward(model) } })
             .sensoryFeedback(.impact, trigger: isFastForwarding)
-            .sensoryFeedback(.success, trigger: fastForwardLocked) { _, locked in locked }
+            .sensoryFeedback(.success, trigger: fastForwardLocked)
         }
         .accessibilityHidden(true)
     }
@@ -511,6 +515,7 @@ struct PlayerScreen: View {
             // no llega y la burbuja de buscar se quedaba pegada en pantalla. Ver `.onChange(of: dragging)`.
             .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
+                if fastForwardHolding { return }   // con el ×2 puesto, deslizar es para fijarlo, no brillo ni volumen
                 let dx = Double(value.translation.width), dy = Double(value.translation.height)
                 if dragAxis == .undecided {
                     hideTask?.cancel()
@@ -579,8 +584,17 @@ struct PlayerScreen: View {
         if dragAxis == .horizontal, let target = seekPreview, let start = seekPositionAtDragStart {
             seekBubble(target: target, start: start)
         }
-        if isFastForwarding {
-            VStack { DSSpeedPill(locked: fastForwardLocked, progress: fastForwardProgress); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
+        // Mientras mantienes, siempre; fijo, solo con los controles a la vista (sonando no estorba). Tocarla fija lo quita.
+        if isFastForwarding && (fastForwardHolding || controlsVisible) {
+            VStack {
+                Button { if !fastForwardHolding { endFastForward(holder.model, force: true) } } label: {
+                    DSSpeedPill(locked: fastForwardLocked, progress: fastForwardProgress, holding: fastForwardHolding,
+                                unlocks: fastForwardLockedAtStart)
+                }
+                .buttonStyle(.plain)
+                Spacer()
+            }
+            .padding(.top, DS.Space.s14).transition(.opacity)
         }
         if let notice {
             VStack {
@@ -665,25 +679,36 @@ struct PlayerScreen: View {
         }
     }
 
-    private func startFastForward(_ model: PlayerModel) {
-        guard !isFastForwarding, dragAxis == .undecided else { return }
+    /// ×2 como TikTok: mantener el dedo lo pone mientras dure; deslizar hacia arriba sin soltar lo fija (y lo mismo lo quita).
+    private func holdFastForward(_ model: PlayerModel) {
+        guard dragAxis == .undecided else { return }
+        fastForwardHolding = true
+        fastForwardLockedAtStart = fastForwardLocked
+        fastForwardToggledThisHold = false
+        fastForwardProgress = 0
+        guard !isFastForwarding else { return }   // ya iba fijo: mantener solo deja deslizar para quitarlo
         rateBeforeFastForward = model.rate
         withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = true }
         Task { await model.setRate(PlaybackRules.fastForwardRate) }
-        // El anillo de la píldora se llena mientras mantienes: al completarse, vibra y se queda fijo.
-        fastForwardProgress = 0
-        withAnimation(.linear(duration: DS.Timing.fastForwardLock)) { fastForwardProgress = 1 }
-        fastForwardLockTask?.cancel()
-        fastForwardLockTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(DS.Timing.fastForwardLock))
-            guard !Task.isCancelled, isFastForwarding else { return }
-            withAnimation(DS.Motion.base(reduceMotion)) { fastForwardLocked = true }   // vibra (sensoryFeedback): ya puedes soltar
-        }
     }
 
-    /// Al soltar: vuelve a la velocidad de antes, salvo que se haya quedado fijo (entonces solo un toque, `force`, lo quita).
+    /// Lo que llevas deslizado hacia arriba con el dedo puesto: llena el anillo y, al completarlo, fija o quita el ×2 (vibra).
+    private func fastForwardDrag(up: CGFloat) {
+        fastForwardProgress = Double(min(1, max(0, up / DS.Gesture.fastForwardLockDrag)))
+        guard fastForwardProgress >= 1, !fastForwardToggledThisHold else { return }
+        fastForwardToggledThisHold = true
+        withAnimation(DS.Motion.base(reduceMotion)) { fastForwardLocked = !fastForwardLockedAtStart }
+    }
+
+    /// Al soltar: si quedó fijo sigue en ×2 (y la píldora se va con los controles); si no, vuelve a la velocidad de antes.
+    private func releaseFastForward(_ model: PlayerModel) {
+        guard fastForwardHolding else { return }
+        fastForwardHolding = false
+        fastForwardProgress = 0
+        if !fastForwardLocked { endFastForward(model, force: true) }
+    }
+
     private func endFastForward(_ model: PlayerModel, force: Bool = false) {
-        fastForwardLockTask?.cancel(); fastForwardLockTask = nil
         guard isFastForwarding, force || !fastForwardLocked else { return }
         withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = false; fastForwardLocked = false }
         fastForwardProgress = 0
@@ -697,7 +722,7 @@ struct PlayerScreen: View {
         case "brightness": verticalKind = .brightness; indicator = (.brightness, "sun.max.fill", 0.65); indicatorVisible = true
         case "volume": verticalKind = .volume; indicator = (.volume, "speaker.wave.2.fill", 0.4); indicatorVisible = true
         case "seek": dragAxis = .horizontal; seekPositionAtDragStart = model.snapshot.position; seekPreview = model.snapshot.position + 80
-        case "fastforward": startFastForward(model)
+        case "fastforward": holdFastForward(model)
         default: break
         }
     }

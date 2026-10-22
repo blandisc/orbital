@@ -4247,6 +4247,17 @@
         }
       }
     },
+    "Desliza para fijar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slide to lock"
+          }
+        }
+      }
+    },
     "Desliza para moverte; toca para %@": {
       "extractionState": "manual",
       "localizations": {
@@ -4265,6 +4276,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Swipe to move; tap to select"
+          }
+        }
+      }
+    },
+    "Desliza para quitar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slide to unlock"
           }
         }
       }

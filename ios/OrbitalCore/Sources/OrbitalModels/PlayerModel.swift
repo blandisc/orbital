@@ -1138,6 +1138,9 @@ public final class PlayerModel: ObservableModel {
     /// «Saltar intro» / «Saltar resumen»: primero los capítulos del archivo; si no los trae, las marcas de la comunidad.
     private func updateSkipIntro(_ s: EngineSnapshot) {
         if demoPinned { return }
+        // Cargando o rearmando al volver de segundo plano, la posición pasa un momento por 0 (o por el inicio): ahí no
+        // aplica (salía «Saltar intro» a media película al regresar a la app).
+        if s.state == .loading || reconnecting || backgrounded { skipIntroTo = nil; return }
         let sorted = s.chapters.sorted { $0.time < $1.time }
         for (i, chapter) in sorted.enumerated() where PlaybackRules.chapterKind(chapter.title) == .intro {
             let end = i + 1 < sorted.count ? sorted[i + 1].time : s.duration
