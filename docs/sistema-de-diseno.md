@@ -213,7 +213,8 @@ y el panel de columnas (`Panel`/`Column`). Los tamaños se escriben «como en CS
 | Al tocar un botón | Título, barra partida por capítulos con su punto, tiempo y «termina a las…», idioma y fuente | A Pausa · X Audio y subtítulos · Y Fuentes · B (mantener) Salir; en pausa también ◀▶ Adelantar · ↑↓ Volumen · LT RT Episodio |
 | En pausa | Video oscurecido; título grande, datos, sinopsis y botones | Los mismos |
 | Adelantando (◀ ▶, LB/RB) | Solo la barra y, sobre el punto, la hora, cuánto salta y el capítulo | Mantén: más rápido |
-| X | Panel abajo: Audio · Subtítulos · Tamaño (el video sigue) | ◀ ▶ columna · A elegir · B cerrar |
+| X | Panel abajo: Audio · Subtítulos · Tamaño · Sincronía (el video sigue). Elegir audio o subtítulos **no lo cierra**; mientras está abierto, los subtítulos suben (`sub-pos`) para verse encima | ◀ ▶ columna · A elegir · B cerrar |
+| Probar otros (X › Subtítulos) | Franja arriba (`sub_trial_ass`, 96 px): «Español · Subtítulo 2 de 5», del video o de tu complemento, la sincronía y, a la derecha, qué pasa (bajando, sin internet, no hay más) | ◀▶ Otro subtítulo · ↑↓ Adelantar o atrasar · A Este va bien · B Dejar el de antes |
 | Y | Panel «Más»: Episodios (series) · Fuente · Desde el principio | Igual |
 | Tarjetas | «Saltar intro» (botón claro), «Siguiente episodio» (anillo de cuenta atrás), «¿Sigues viendo?» | A / B |
 
