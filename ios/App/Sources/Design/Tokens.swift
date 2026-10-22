@@ -185,6 +185,8 @@ enum DS {
         static let edgeShare: CGFloat = 1.0 / 3.0
         /// Dobles toques seguidos del mismo lado se suman (+10, +20, +30 s) mientras no pase este rato.
         static let skipChain: TimeInterval = 0.9
+        /// Lo que llevas saltado tras 1, 2, 3… dobles toques seguidos: cada toque salta más que el anterior.
+        static let skipTotals = [10, 20, 40, 60, 90, 120]
         /// A cuántos segundos del destino ya se da por llegado un salto (el pulgar vuelve a seguir el avance).
         static let seekArrived: Double = 2
         static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)

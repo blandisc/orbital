@@ -719,15 +719,16 @@ struct PlayerScreen: View {
     }
 
     /// Un ícono grande que aparece y se va (el doble toque se nota sin abrir los controles).
-    /// Doble toque en una orilla: ±10 s; seguidos del mismo lado se suman y la burbuja lo dice («+30 s»).
+    /// Doble toque en una orilla: ±10 s; seguidos del mismo lado cada uno salta más (10 → 20 → 40 → 60 → 90 → 120 s en
+    /// total) y la burbuja dice el total. Así tres toques ya son 40 s, no 30.
     private func skip(_ model: PlayerModel, forward: Bool) {
-        let step = Int(PlaybackRules.skipSeconds)
         let now = Date()
         let chained = skipChain.map { $0.forward == forward && now.timeIntervalSince($0.at) < DS.Gesture.skipChain } ?? false
-        withAnimation(DS.Motion.base(reduceMotion)) {
-            skipChain = (forward, (chained ? skipChain?.seconds ?? 0 : 0) + step, now)
-        }
-        Task { await model.skip(forward ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
+        let before = chained ? skipChain?.seconds ?? 0 : 0
+        let total = DS.Gesture.skipTotals.first { $0 > before } ?? before + DS.Gesture.skipTotals.last! - DS.Gesture.skipTotals.dropLast().last!
+        withAnimation(DS.Motion.base(reduceMotion)) { skipChain = (forward, total, now) }
+        let step = Double(total - before)
+        Task { await model.skip(forward ? step : -step) }
         skipChainTask?.cancel()
         skipChainTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(DS.Gesture.skipChain))

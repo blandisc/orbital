@@ -349,7 +349,7 @@ struct TitleView: View {
                 }
             default:
                 Menu {
-                    Button("Elegir versión…", systemImage: "list.bullet") { if let target { sourcesFor = SourcesTarget(videoID: target, purpose: .download) } }
+                    Button("Elegir versión…", systemImage: "list.bullet.rectangle") { if let target { sourcesFor = SourcesTarget(videoID: target, purpose: .download) } }
                     if model.kind == "series" {
                         Button("Los siguientes \(DS.Size.downloadNext)", systemImage: "square.stack.3d.down.right") { Task { await report(model.downloadNext(DS.Size.downloadNext), model) } }
                     }
@@ -690,7 +690,7 @@ struct EpisodeRowView: View {
     /// Lo que se puede hacer con un episodio: en el «⋯» de su renglón (a la vista) y al mantenerlo presionado.
     @ViewBuilder private func actions(download withDownload: Bool) -> some View {
         if withDownload { Button("Descargar", systemImage: "arrow.down.circle", action: download) }
-        Button("Versión de este episodio…", systemImage: "slider.horizontal.3", action: chooseSource)
+        Button("Versión de este episodio…", systemImage: "list.bullet.rectangle", action: chooseSource)   // el mismo ícono que «Versión» de la ficha
         Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
         if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
     }
