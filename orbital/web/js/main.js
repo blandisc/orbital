@@ -2179,14 +2179,21 @@ document.body.dataset.input = state.modality;
 ui.foryou.setGlyphs(glyphs());
 ui.tv.setGlyphs(glyphs());
 // Los controles de la Legion Go, sueltos, a veces llegan en modo DInput o «Dual DInput»: Windows no los da como control de
-// Xbox y nada los usa (Orbital tampoco: sus ejes no sirven). Si no hay otro control que sirva, se dice cómo cambiarlos
+// Xbox y nada los usa (Orbital tampoco: sus ejes no sirven). Al despertar suelen llegar así unos segundos y Legion Space los
+// pasa solo a XInput (entrada.log: 6 s): se espera y, si siguen así sin otro control que sirva, se dice cómo cambiarlos
 // (lo que enseña Legion Space), una vez.
 let legionTip = false;
+const legionStuck = () => {
+  const pads = [...(navigator.getGamepads?.() || [])].filter(Boolean);
+  return !pads.some(usablePad) && pads.some((pad) => /legion/i.test(pad.id || ""));
+};
 window.addEventListener("gamepadconnected", ({ gamepad }) => {
   if (legionTip || usablePad(gamepad) || !/legion/i.test(gamepad.id || "")) return;
-  if ([...(navigator.getGamepads?.() || [])].some(usablePad)) return;
-  legionTip = true;
-  ui.toast.show("Tus controles Legion están en modo DInput: mantén Legion L + RB un segundo para pasarlos a XInput");
+  setTimeout(() => {
+    if (legionTip || !legionStuck()) return;
+    legionTip = true;
+    ui.toast.show("Tus controles Legion están en modo DInput: mantén Legion L + RB un segundo para pasarlos a XInput");
+  }, 10_000);
 });
 setInterval(pollStatus, 60_000); // red de seguridad: el estado llega por SSE al cambiar
 setInterval(pollSystem, 30_000);
