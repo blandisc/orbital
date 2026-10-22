@@ -30,7 +30,7 @@ body {
 /* Manteniendo una flecha (main.js): todo lo que se desliza va al paso de la repetición. */
 body[data-holding] { --duration-slow: var(--duration-fast); }
 
-/* El cursor solo mientras se mueve el ratón (input.js pone data-pointer y lo quita a los 3 s); también sobre botones. */
+/* El cursor solo mientras se mueve el ratón (input.js pone data-pointer y lo quita a los 1,5 s o con una tecla o el mando); también sobre botones. */
 body:not([data-pointer]), body:not([data-pointer]) * { cursor: none; }
 
 button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }

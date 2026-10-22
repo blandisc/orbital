@@ -13,7 +13,6 @@
   --card-height: min(12rem, 16.5vh); --key-height: min(2.85rem, 4.8vh); gap: var(--space-3);
   padding-top: calc(var(--space-6) + var(--safe-y));
 }
-[data-text-size="xlarge"] .search__results { padding-bottom: 5.6rem; } /* el pie de la enfocada, más alto */
 
 .search__top { min-width: 0; display: flex; align-items: baseline; gap: var(--space-6); }
 .search__field {
@@ -43,7 +42,10 @@
   display: flex; align-items: flex-end; gap: var(--card-gap);
   min-height: calc(var(--card-height) * var(--card-focus-scale) + var(--space-4));
   /* Arriba: lo que crece, lo que sube (translateY .35rem del foco) y el anillo. */
-  padding: calc(var(--focus-grow) + .2rem) calc(var(--focus-grow) / 2 + var(--space-2)) 4.6rem; /* abajo: el pie (la enfocada, en dos líneas); arriba ya da aire el nombre del grupo */
+  /* Abajo: el pie de la enfocada entero (título en dos líneas + tipo, escalado como la portada). Antes 4.6rem fijos
+     cortaban la última línea; calculado desde la letra, también vale con letra grande. */
+  --caption-room: calc((.55rem + .2rem + 3 * var(--caption-size) * var(--leading-normal)) * var(--card-focus-scale));
+  padding: calc(var(--focus-grow) + .2rem) calc(var(--focus-grow) / 2 + var(--space-2)) var(--caption-room); /* arriba ya da aire el nombre del grupo */
   margin: 0 calc(-1 * var(--space-2)); scroll-padding-inline: calc(var(--focus-grow) / 2 + var(--space-2));
   overflow-x: auto; scrollbar-width: none;
 }
@@ -59,7 +61,7 @@
 
 /* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
 /* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */
-.search__set { flex: none; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow)); }
+.search__set { flex: none; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow) + .35rem); } /* + lo que sube la enfocada: el anillo rozaba el nombre */
 .search__set-cards { display: flex; align-items: flex-end; gap: var(--card-gap); }
 .search__group {
   flex: none; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); line-height: var(--leading-title);
