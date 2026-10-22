@@ -53,8 +53,10 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   // Serie con episodios: lo que se ve vive en la lista (abre en el que sigue, marcado «Continuar» o «Sigue»; A lo ve,
   // Y elige su versión, X lo descarga). Aquí solo lo que es de la serie. Antes había un «Continuar T3 E5» a la izquierda
   // y los episodios a la derecha (lo mismo dos veces), y «Versión» y «Descargar» de un episodio que no se veía cuál era.
+  // «Guardada» si está en Mi lista o en tu watchlist / una de tus listas de Trakt (como el iPhone).
+  const saved = details.in_library || details.saved_elsewhere;
   if (episodesLed(details, kind)) {
-    out.push(details.in_library
+    out.push(saved
       ? { id: "mylist", icon: "check", label: "Guardada", active: true }
       : { id: "mylist", icon: "plus", label: "Guardar" });
     if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
@@ -89,7 +91,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   }
   // + para agregar y ✓ cuando ya está, como el iPhone (la ★ en Juegos es «favorito»: dos cosas con el mismo ícono).
   // «Guardar» es la acción y «Mi lista» el lugar (design/vocabulario.json), como el iPhone.
-  out.push(details.in_library
+  out.push(saved
     ? { id: "mylist", icon: "check", label: "Guardada", active: true }
     : { id: "mylist", icon: "plus", label: "Guardar" });
   // Una serie sin episodios (ni uno en el que ibas) no tiene fuente que elegir: el botón no hacía nada.

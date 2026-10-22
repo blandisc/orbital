@@ -291,6 +291,33 @@ class Trakt:
         if status not in (200, 201, 409):
             raise TraktError(f"Trakt respondió HTTP {status}")
 
+    # --- guardar (como «Guardar en…» del iPhone) -------------------------------------------------
+    def _send(self, method: str, path: str, body: dict | None = None):
+        """Un cambio en tu cuenta: un 401 renueva la sesión una vez y reintenta."""
+        status, data = self._call(method, path, body=body)
+        if status == 401:
+            self._renew()
+            status, data = self._call(method, path, body=body)
+        if status == 401:
+            raise TraktAuthError("Trakt no acepta tu sesión: vuelve a conectarla en Ajustes › Cuentas.")
+        if status not in (200, 201, 204):
+            raise TraktError(f"Trakt respondió HTTP {status}")
+        return data
+
+    @staticmethod
+    def _one(kind: str, imdb: str) -> dict:
+        if kind not in KINDS or not str(imdb).startswith("tt"):
+            raise TraktError("Título inválido")
+        return {KINDS[kind]: [{"ids": {"imdb": imdb}}]}
+
+    def set_watchlist(self, kind: str, imdb: str, add: bool) -> None:
+        self._send("POST", "/sync/watchlist" + ("" if add else "/remove"), self._one(kind, imdb))
+
+    def set_list_item(self, list_id: str, kind: str, imdb: str, add: bool) -> None:
+        if not str(list_id).isdigit():
+            raise TraktError("Lista inválida")
+        self._send("POST", f"/users/me/lists/{list_id}/items" + ("" if add else "/remove"), self._one(kind, imdb))
+
     # --- listas ------------------------------------------------------------------------------
     def username(self) -> str:
         data = self._get("/users/settings")

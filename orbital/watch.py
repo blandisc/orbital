@@ -1309,8 +1309,12 @@ class Watch:
         item = stremio_api.library_toggled(raw, meta_id=meta_id, kind=kind, name=info.get("name") or meta_id,
                                            poster=info.get("poster"), add=add, now=time.time())
         self.stremio_client.save_library_item(auth, item)
-        self.refresh_stremio()
-        self.events.publish({"type": "library-changed"})
+        # La biblioteca entera se vuelve a leer por detrás: la ficha ya cambió su botón (antes esperaba esta recarga,
+        # varios segundos, y «Guardar» parecía trabado).
+        def refresh() -> None:
+            self.refresh_stremio()
+            self.events.publish({"type": "library-changed"})
+        threading.Thread(target=refresh, daemon=True, name="mi-lista").start()
 
     def play_trailer(self, kind: str, meta_id: str) -> str:
         """El tráiler en YouTube para TV (se maneja con el mando; Home vuelve a Orbital)."""

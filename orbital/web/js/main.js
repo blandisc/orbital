@@ -118,6 +118,7 @@ const ui = {
   title: createTitle({
     onPlay: (play) => watch(play),
     onSources: (play) => openSources(play),
+    onSave: (info) => openSave(info),
     onPerson: (person) => openPerson(person),
     onDownload: (body, job) => downloadTitle(body, job),
     onVersions: (play, versions) => openMenu(versionsMenu(play, versions)),
@@ -1020,6 +1021,65 @@ function openMiMedia() {
 }
 
 /** «Versiones en tu carpeta» (como el iPhone): resolución, HDR, audio, idiomas y tamaño; A ve esa. */
+// --- «Guardar en…» (como el iPhone): en qué listas va un título, varias a la vez ---------------------------------------
+let saving = null; // { kind, id, title, library, trakt: null (buscando) | { trakt, watchlist, lists }, error }
+
+function saveMenu(s) {
+  const row = (label, hint, on, where) => ({ icon: on ? "check" : "plus", label, hint, value: on ? "✓" : "", ok: on,
+    command: { type: "save-toggle", where } });
+  const options = [row("Mi lista", "Stremio", s.library, "library")];
+  if (s.error) options.push({ icon: "info", label: s.error, command: { type: "stay" } });
+  else if (!s.trakt) options.push({ icon: "refresh", label: "Buscando tus listas de Trakt…", command: { type: "stay" } });
+  else if (s.trakt.trakt) {
+    options.push(row("Tu watchlist", "Trakt", s.trakt.watchlist, "watchlist"), { heading: true, label: "Tus listas de Trakt" });
+    if (!s.trakt.lists.length) options.push({ icon: "info", label: "Aún no tienes listas en Trakt", command: { type: "stay" } });
+    for (const l of s.trakt.lists) options.push(row(l.name, "", l.contains, `list:${l.id}`));
+  }
+  return { title: "Guardar en…", subtitle: s.title, options, save: true };
+}
+
+/** La hoja abierta, con lo nuevo y en la misma opción (si sigue abierta). */
+function refreshSave() {
+  if (!saving) return;
+  const elsewhere = !!saving.trakt && (saving.trakt.watchlist || saving.trakt.lists.some((l) => l.contains));
+  ui.title.saved(saving.id, { library: saving.library, elsewhere });
+  if (ui.sheet.isOpen && ui.sheet.menu?.save) ui.sheet.open(saveMenu(saving), { index: ui.sheet.index, stack: ui.sheet.stack });
+}
+
+function openSave({ kind, id, title, library }) {
+  const mine = saving = { kind, id, title, library, trakt: null, error: null };
+  openMenu(saveMenu(saving));
+  api.savedIn(kind, id)
+    .then((res) => { mine.trakt = res; })
+    .catch((err) => { mine.error = err.message || "No pude leer tus listas de Trakt"; })
+    .finally(() => { if (saving === mine) refreshSave(); });
+}
+
+/** Una casilla de «Guardar en…»: cambia al instante (sin esperar a Stremio ni a Trakt) y, si falla, regresa y lo dice. */
+function toggleSave(where) {
+  const s = saving;
+  if (!s) return;
+  const list = where.startsWith("list:") ? s.trakt?.lists.find((l) => `list:${l.id}` === where) : null;
+  const get = () => (where === "library" ? s.library : where === "watchlist" ? s.trakt?.watchlist : list?.contains);
+  const set = (value) => {
+    if (where === "library") s.library = value;
+    else if (where === "watchlist" && s.trakt) s.trakt.watchlist = value;
+    else if (list) list.contains = value;
+  };
+  const add = !get();
+  set(add);
+  sound.play("select");
+  refreshSave();
+  const call = where === "library" ? api.setInLibrary(s.kind, s.id, add) : api.saveTo(s.kind, s.id, where, add);
+  // (Mi lista: el servidor vuelve a leer tu biblioteca por detrás y avisa con «library-changed».)
+  call.catch((err) => {
+      set(!add);
+      refreshSave();
+      sound.play("error");
+      ui.toast.show(err.message || "No pude guardarlo", { error: true });
+    });
+}
+
 function versionsMenu(play, versions) {
   const lang = { es: "Español", en: "Inglés" };
   const gb = (b) => (b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${Math.round(b / 1e6)} MB`);
@@ -1773,6 +1833,9 @@ async function runCommand(command, context = null) {
         return ui.toast.show("No te lo vuelvo a sugerir", { tone: "success" });
       case "stay":
         if (context && stillThere(context)) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
+        return renderHints();
+      case "save-toggle": // «Guardar en…»: se queda abierta, con la casilla ya cambiada
+        toggleSave(command.where);
         return renderHints();
       case "back": { // «Cancelar» en una pregunta: al menú de antes, donde estabas
         const previous = context?.stack?.at(-1);

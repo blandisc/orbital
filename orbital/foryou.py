@@ -635,6 +635,40 @@ class ForYou:
         with ThreadPoolExecutor(max_workers=12) as pool:
             return {imdb: rating for imdb, rating in pool.map(one, pairs) if rating}
 
+    def saved_in(self, kind: str, imdb: str) -> dict:
+        """«Guardar en…» (como el iPhone): si el título está en tu watchlist y en cuáles de tus listas de Trakt. Se
+        pregunta a Trakt al momento (no a lo guardado en caché): lo que cambiaste en el iPhone ya cuenta."""
+        t = self.trakt
+        if not t.linked or not imdb.startswith("tt"):
+            return {"trakt": False, "watchlist": False, "lists": []}
+        lists = t.lists()
+
+        def members(list_id: str) -> list[dict] | None:
+            try:
+                return t.list_items(list_id)
+            except SERVICE_ERRORS:  # una lista que no responde no tumba las demás
+                return None
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            watch = pool.submit(t.watchlist)
+            found = [pool.submit(members, row["id"]) for row in lists]
+            in_watch = any(e["imdb"] == imdb for e in watch.result())
+            out = [{**row, "contains": any(e["imdb"] == imdb for e in f.result() or [])}
+                   for row, f in zip(lists, found, strict=True) if f.result() is not None]
+        return {"trakt": True, "watchlist": in_watch, "lists": out}
+
+    def save_to(self, kind: str, imdb: str, where: str, add: bool) -> None:
+        """Añadir o quitar de tu watchlist («watchlist») o de una de tus listas de Trakt («list:123»). Las filas de esa
+        lista se vuelven a pedir (en la TV y en Para ti)."""
+        if where == "watchlist":
+            self.trakt.set_watchlist(kind, imdb, add)
+            self.cache.clear("trakt:watchlist")
+        elif where.startswith("list:") and where[5:].isdigit():
+            self.trakt.set_list_item(where[5:], kind, imdb, add)
+            self.cache.clear(f"trakt:list:{where[5:]}")
+        else:
+            raise ValueError("¿Guardar dónde?")
+
     def title_extras(self, kind: str, imdb: str) -> dict:
         """La ficha como el iPhone: frase, clasificación, quién la hizo (TMDB) y «Más como esto» (lo que Trakt relaciona, ya
         con IMDb para abrirlo). Lo que no se pueda (sin clave, sin red) queda vacío; se recuerda (también sin internet)."""

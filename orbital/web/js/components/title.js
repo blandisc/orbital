@@ -24,7 +24,7 @@ import { actionStep, availability, episodeStates, episodesLed, titleActions, tit
  */
 const touching = () => document.body.dataset.input === "touch";
 
-export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload = null, downloadOf = () => null,
+export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = () => {}, onDownload = null, downloadOf = () => null,
   onVersions = () => {}, onFix = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
@@ -388,7 +388,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     if (button.id === "play") play(episodeById(button.video_id));
     else if (button.id === "restart") play(episodeById(button.video_id), { fromStart: true });
     else if (button.id === "sources") sources();
-    else if (button.id === "mylist") toggleList();
+    else if (button.id === "mylist") save();
     else if (button.id.startsWith("phone-")) sendPhone(button.id.slice(6), episodeById(button.video_id));
     else if (button.id === "trailer") trailer();
     else if (button.id === "download") download();
@@ -415,18 +415,10 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     if (t) onSendPhone({ action, kind: t.kind, metaId: t.id, videoId: t.video_id, title: details?.title || item.title });
   }
 
-  async function toggleList() {
-    // Se recuerda de qué ficha era: si respondía lento y ya abriste otra, no se marcaba la otra.
-    const [mine, d, kind] = [token, details, kindOf()];
-    const add = !d.in_library;
-    try {
-      await api.setInLibrary(kind, d.id, add);
-      d.in_library = add;
-      if (mine === token) { renderActions(); onChange(); }
-      onNotice(add ? `Guardé ${d.title} en Mi lista` : `Quité ${d.title} de Mi lista`);
-    } catch (err) {
-      onNotice(err.message, true);
-    }
+  /** «Guardar en…» (como el iPhone): Mi lista de Stremio, tu watchlist y tus listas de Trakt, en una hoja. */
+  function save() {
+    if (!details || details.error) return;
+    onSave({ kind: kindOf(), id: details.id || item.meta_id, title: details.title || item.title, library: !!details.in_library });
   }
 
   async function trailer() {
@@ -687,6 +679,14 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); },
     get current() { return item; },
+    /** Cambió dónde está guardado (desde «Guardar en…»): el botón dice «Guardar» o «Guardada» sin esperar a nadie. */
+    saved(id, { library, elsewhere }) {
+      if (!details || details.error || (details.id || item?.meta_id) !== id) return;
+      details.in_library = library;
+      details.saved_elsewhere = elsewhere;
+      renderActions();
+      onChange();
+    },
     /** Dónde está el foco (para volver a él al regresar de una persona). */
     get focusState() { return { zone, castIndex }; },
     /** Vuelve a pedir la ficha (al regresar de ver algo: «Continuar T3 E6», los ✓, el progreso). */
