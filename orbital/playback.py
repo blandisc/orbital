@@ -238,9 +238,10 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
                   referrer: str | None = None) -> list[str]:
     """`live`: un canal de TV (caché corta, reconexión, sin posición que recordar). `user_agent` y `referrer`
     son los del canal; los canales siguientes los llevan en su propio `loadfile` (ver OrbitalPlayer.tune)."""
-    # Por delante 400 MiB (adelantar sin esperar) y hacia atrás 50 MiB, escrito aquí para que una versión nueva de
-    # mpv no cambie el valor de fábrica sin que se note: el búfer no puede pasar de ~450 MiB.
-    cache = LIVE_ARGS if live else ["--cache=yes", "--demuxer-max-bytes=400MiB", "--demuxer-max-back-bytes=50MiB"]
+    # Por delante 200 MiB y hacia atrás 25 MiB, escrito aquí para que una versión nueva de mpv no cambie el valor de
+    # fábrica sin que se note. Antes 400 + 50: con Los Simpson al aire mpv llegaba a 1 GB en una consola de 12 GB que
+    # también corre los juegos. 200 MiB siguen siendo ~3 min de un 1080p y ~30 s de un 4K remux por delante.
+    cache = LIVE_ARGS if live else ["--cache=yes", "--demuxer-max-bytes=200MiB", "--demuxer-max-back-bytes=25MiB"]
     cmd = [
         mpv, f"--input-ipc-server={PIPE}", "--fullscreen", "--force-window=immediate",
         # keep-open: al terminar se queda en el último cuadro (Orbital decide: siguiente episodio o

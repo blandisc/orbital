@@ -659,7 +659,7 @@ def test_the_memory_watchdog_reopens_a_channel_and_only_warns_in_a_video():
 
 def test_the_video_buffer_has_a_cap_both_ways():
     cmd = player.build_command("mpv.exe", "u", "t")
-    assert "--demuxer-max-bytes=400MiB" in cmd and "--demuxer-max-back-bytes=50MiB" in cmd
+    assert "--demuxer-max-bytes=200MiB" in cmd and "--demuxer-max-back-bytes=25MiB" in cmd
 
 
 def test_paused_with_the_finger_has_one_play_button_and_the_bar_does_not_cover_the_info():
