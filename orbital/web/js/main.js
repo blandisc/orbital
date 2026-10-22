@@ -5,7 +5,7 @@
 import { api } from "./core/api.js";
 import { markFocus } from "./core/focus-mark.js";
 import { closedSummary, crashMessage } from "./core/format.js";
-import { createInput, ERASE_WORD, GLYPHS } from "./core/input.js";
+import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
@@ -2178,6 +2178,16 @@ document.addEventListener("visibilitychange", () => {
 document.body.dataset.input = state.modality;
 ui.foryou.setGlyphs(glyphs());
 ui.tv.setGlyphs(glyphs());
+// Los controles de la Legion Go, sueltos, a veces llegan en modo DInput o «Dual DInput»: Windows no los da como control de
+// Xbox y nada los usa (Orbital tampoco: sus ejes no sirven). Si no hay otro control que sirva, se dice cómo cambiarlos
+// (lo que enseña Legion Space), una vez.
+let legionTip = false;
+window.addEventListener("gamepadconnected", ({ gamepad }) => {
+  if (legionTip || usablePad(gamepad) || !/legion/i.test(gamepad.id || "")) return;
+  if ([...(navigator.getGamepads?.() || [])].some(usablePad)) return;
+  legionTip = true;
+  ui.toast.show("Tus controles Legion están en modo DInput: mantén Legion L + RB un segundo para pasarlos a XInput");
+});
 setInterval(pollStatus, 60_000); // red de seguridad: el estado llega por SSE al cambiar
 setInterval(pollSystem, 30_000);
 pollStatus();
