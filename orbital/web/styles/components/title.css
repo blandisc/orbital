@@ -66,8 +66,8 @@
   max-width: 38rem; color: var(--color-text); opacity: var(--opacity-text); font-size: var(--type-body); line-height: var(--leading-relaxed);
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
-/* En una serie, la sinopsis cambia con el episodio enfocado: siempre mide tres renglones (nada brinca). */
-.title--series .title__description { min-height: 3lh; }
+/* En una serie, la sinopsis cambia con el episodio enfocado: siempre mide dos renglones (nada brinca, sin hueco de más). */
+.title--series .title__description { min-height: 2lh; -webkit-line-clamp: 2; }
 
 /* Lo que hay para ver, en un renglón tenue (antes eran chips): 4K · HDR · Inglés, Español · Al instante. */
 .title__avail { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--type-secondary); }
@@ -103,6 +103,7 @@
 }
 .title__action .icon { width: var(--icon-md); height: var(--icon-md); flex: none; }
 .title__action--primary {
+  transform-origin: left center; /* enfocado crece hacia la derecha: no se sale del margen */
   min-width: 13rem; max-width: 100%; padding: 0 var(--space-8) 0 var(--space-5);
   background: var(--color-fill); font-size: var(--type-section); font-weight: var(--weight-medium);
 }
@@ -200,7 +201,6 @@
   .title--series .title__logo { max-height: 5rem; }
   .title__episodes { --episode-width: 15rem; }
   [data-text-size="xlarge"] .title__name, [data-text-size="xlarge"] .title__description { -webkit-line-clamp: 2; }
-  [data-text-size="xlarge"] .title--series .title__description { min-height: 2lh; }
 }
 /* Angosta o vertical: los episodios más chicos. */
 @media (max-width: 820px), (max-aspect-ratio: 1/1) {
