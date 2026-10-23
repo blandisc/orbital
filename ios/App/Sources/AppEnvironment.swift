@@ -584,15 +584,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
 /// Lo que solo pinta la raíz de la app: el reproductor a pantalla completa, los avisos y lo que se pide abrir.
 @MainActor
-final class AppUI: ObservableObject {
-    @Published var playing: PlayRequest?
-    @Published var pendingTitle: TitleRoute?
-    @Published var askFinished: PlayRequest?
-    @Published var banner: AppEnvironment.Banner?
-    @Published var handoff: AppEnvironment.TVHandoff?
-    @Published var openTab: Int?
+/// `@Observable`: cada vista se vuelve a pintar solo con lo que lee (el aviso no redibuja el reproductor).
+@Observable
+final class AppUI {
+    var playing: PlayRequest?
+    var pendingTitle: TitleRoute?
+    var askFinished: PlayRequest?
+    var banner: AppEnvironment.Banner?
+    var handoff: AppEnvironment.TVHandoff?
+    var openTab: Int?
     /// El Centro de control pidió el control de tu Orbital.
-    @Published var openRemote = false
+    var openRemote = false
     /// Abrir Ajustes (desde un aviso, como «Tu sesión de Trakt se cerró · Conectar»).
-    @Published var openSettings = false
+    var openSettings = false
 }
