@@ -2,7 +2,7 @@ import XCTest
 @testable import OrbitalCore
 
 /// QA de «Elegir versión» (octubre 2026): cada prueba es un fallo encontrado con nombres reales de Torrentio/Peerflix.
-/// Cada una fallaba antes del arreglo.
+/// Dicen lo que DEBERÍA pasar: hoy fallan.
 final class VersionQAFindingsTests: XCTestCase {
     let american = TitleOrigin(language: "en", country: "United States", year: 2000)
 

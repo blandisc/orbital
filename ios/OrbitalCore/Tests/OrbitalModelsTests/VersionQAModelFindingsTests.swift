@@ -2,7 +2,7 @@ import XCTest
 @testable import OrbitalCore
 @testable import OrbitalModels
 
-/// QA de «Elegir versión» (octubre 2026): la hoja por idiomas y el aviso del reproductor. Cada una fallaba antes del arreglo.
+/// QA de «Elegir versión» (octubre 2026): la hoja por idiomas y el aviso del reproductor. Dicen lo que DEBERÍA pasar: hoy fallan.
 @MainActor
 final class VersionQAModelFindingsTests: XCTestCase {
     func source(_ i: Int, name: String, _ first: String, gb: Double = 2.5, site: String = "1337x", flags: String = "", origin: TitleOrigin = TitleOrigin(language: "en", country: "United States", year: 2023)) -> Source {
