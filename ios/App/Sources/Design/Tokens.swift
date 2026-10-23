@@ -375,6 +375,8 @@ enum DS {
         /// La agarradera del video en vertical: la rayita, la franja de abajo que la toma (y lo que se mete sobre el video).
         /// «Audio y subtítulos»: cuántos idiomas de otra versión se ofrecen junto a las pistas de este archivo.
         static let otherVersionsShown = 2
+        /// Sin conexión, cuántos idiomas más (de los que sí hay) salen junto a Español e Inglés en Subtítulos.
+        static let offlineExtraLanguages = 2
         /// La agarradera va dentro del borde de abajo del video (sobre un velo): la rayita, a cuánto del borde, el alto del velo, la
         /// franja que la toma (dentro del video, desde abajo, y un poco por fuera) y el aire hasta la barra de avance.
         static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap: CGFloat = 20

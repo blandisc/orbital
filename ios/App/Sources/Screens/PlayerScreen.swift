@@ -316,6 +316,11 @@ struct PlayerScreen: View {
                     default: break
                     }
                 }
+                // `-demo-player-pick es`: como tocar ese idioma en «Subtítulos» (para capturarlo sin tocar la pantalla).
+                if Demo.isOn, let code = Demo.playerPick {
+                    try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
+                    await pickSubtitleLanguage(code, model)
+                }
                 if Demo.isOn, let state = Demo.playerState {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
                     if state == "locked" { lock() } else { model.demoState(state) }
@@ -1286,7 +1291,7 @@ struct PlayerScreen: View {
                         }
                     }
                     if versions.isEmpty {
-                        Text(model.searchingSubtitles ? "Buscando versiones en internet…" : "No hay subtítulos en este idioma.").recipe(.footnote)
+                        Text(model.searchingSubtitles ? "Buscando versiones en internet…" : model.subtitlesOffline ? "Sin conexión: no hay subtítulos guardados en este idioma." : "No hay subtítulos en este idioma.").recipe(.footnote)
                     }
                 }
                 .padding(DS.Space.gutter)
@@ -1320,8 +1325,11 @@ struct PlayerScreen: View {
         let off = model.snapshot.selectedSubtitle == nil
         var codes = ["es", "en"]
         if let on, !codes.contains(on) { codes.append(on) }
+        // Sin conexión: también los idiomas que sí hay (los del video y los guardados con la descarga), y los que no, apagados.
+        let offline = model.subtitlesOffline
+        if offline { codes += model.subtitleLanguages.map(\.code).filter { !codes.contains($0) }.prefix(DS.PlayerPanel.offlineExtraLanguages) }
         var languages = [SubtitleDock.Language(id: "", title: Strings.tr("Apagados", language: settings.uiLanguage), selected: off)]
-        languages += codes.map { SubtitleDock.Language(id: $0, title: name($0), selected: !off && on == $0) }
+        languages += codes.map { SubtitleDock.Language(id: $0, title: name($0), selected: !off && on == $0, unavailable: offline && !model.hasSubtitles(language: $0)) }
         let versions = on.map { model.subtitleVersions(language: $0) } ?? []
         let at = versions.firstIndex { $0.id == model.selectedVersionID }
         let tr = { (k: String) in Strings.tr(k, language: settings.uiLanguage) }
@@ -1377,7 +1385,7 @@ struct PlayerScreen: View {
             audio: audio, pickAudio: { id in if let n = Int(id) { Task { await model.selectAudio(n) } } },
             otherVersions: others, pickVersion: { id in if let n = Int(id) { pickSource(n, model, language: otherLanguage[id]) } },
             languages: languages,
-            pickLanguage: { code in Task { if code.isEmpty { await model.selectSubtitle(nil) } else { await model.chooseLanguage(code) } } },
+            pickLanguage: { code in Task { if code.isEmpty { await model.selectSubtitle(nil) } else { await pickSubtitleLanguage(code, model) } } },
             otherLanguage: { dockLanguages = true },
             version: version, loading: at == nil && !off, canStep: versions.count > 1,
             previous: { step(-1) }, next: { step(1) },
@@ -1394,7 +1402,17 @@ struct PlayerScreen: View {
             compact: false, language: settings.uiLanguage,
             audioValue: currentAudio, subtitleValue: subtitleValue,
             videoVersion: videoVersionText(model), openVersion: model.sourceChoices.count > 1 ? { withAnimation(DS.Motion.base(reduceMotion)) { dockPage = .version } } : nil,
-            showsHeader: !landscape, initiallyOpen: dockOpens)
+            showsHeader: !landscape,
+            offlineNote: model.subtitlesOffline ? tr(current.localFile != nil ? "Sin conexión: solo los subtítulos del video y los guardados con la descarga." : "Sin conexión: solo los subtítulos del video.") : nil,
+            initiallyOpen: dockOpens)
+    }
+
+    /// Tocar un idioma: pone su mejor versión; si no hay (sin red, o no existe), lo dice en vez de quedarse callado.
+    private func pickSubtitleLanguage(_ code: String, _ model: PlayerModel) async {
+        guard !(await model.chooseLanguage(code)) else { return }
+        let ui = env.services.appSettings.uiLanguage
+        let name = Locale(identifier: ui).localizedString(forLanguageCode: code)?.capitalized ?? code
+        await toast(String(format: Strings.tr(model.subtitlesOffline ? "Sin conexión: no hay subtítulos en %@ en esta descarga" : "No encontré subtítulos en %@", language: ui), name))
     }
 
     /// «Inglés · 1080p · 12.3 GB», la versión que suena (o «Descarga en el iPhone»).

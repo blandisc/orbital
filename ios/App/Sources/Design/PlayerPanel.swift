@@ -630,6 +630,8 @@ struct SubtitleDock: View {
         /// Un idioma de otra versión: a qué va («↻ 1080p · en Real-Debrid») y si es una suposición («se supone»).
         var detail: String? = nil
         var guessed = false
+        /// Sin conexión y sin subtítulos de ese idioma en el video ni guardados con la descarga: se ve apagado y lo dice.
+        var unavailable = false
     }
     /// Los renglones que se abren (uno a la vez).
     enum Section: Hashable { case audio, subtitles, sync, size }
@@ -682,6 +684,8 @@ struct SubtitleDock: View {
     var openVersion: (() -> Void)?
     /// Sin el título «Audio y subtítulos» (en horizontal lo dicen las pestañas de arriba).
     var showsHeader = true
+    /// Sin conexión: qué subtítulos hay (los del video y los guardados con la descarga); nil con red.
+    var offlineNote: String?
     /// El renglón abierto al aparecer (el botón de subtítulos abre Subtítulos).
     var initiallyOpen: Section? = .subtitles
     @State private var open: Section?
@@ -717,7 +721,7 @@ struct SubtitleDock: View {
                 // Los idiomas llenan el renglón; «Buscar» (una acción, no una opción) es la lupa redonda al final, con contorno.
                 HStack(alignment: .top, spacing: DS.Space.s1) {
                     FlowChips(spacing: DS.Space.s1) {
-                        ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected) { pickLanguage(l.id) } }
+                        ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected, unavailable: l.unavailable) { pickLanguage(l.id) } }
                     }
                     Button(action: otherLanguage) {
                         Image(systemName: "magnifyingglass").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
@@ -729,7 +733,12 @@ struct SubtitleDock: View {
                     .accessibilityLabel(Text("Buscar…"))
                     .accessibilityIdentifier("subtitle-dock-other")
                 }
-                .id(languages.map { "\($0.id)\($0.selected)" }.joined())
+                .id(languages.map { "\($0.id)\($0.selected)\($0.unavailable)" }.joined())
+                if let offlineNote {
+                    Label { Text(verbatim: offlineNote) } icon: { Image(systemName: "wifi.slash") }
+                        .recipe(.caption).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("subtitle-dock-offline")
+                }
                 if let version { versionRow(version) }
                 if !tried.isEmpty, check != nil { triedLine }
             }
@@ -952,10 +961,11 @@ struct SubtitleDock: View {
             .accessibilityIdentifier("subtitle-dock-done")
     }
 
-    private func pill(_ title: Text, selected: Bool, action: @escaping () -> Void) -> some View {
+    private func pill(_ title: Text, selected: Bool, unavailable: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             title.font(DS.TextRecipe.footnote.font.weight(.semibold)).lineLimit(1).fixedSize()
-                .foregroundStyle(selected ? DS.onPrimary : DS.text)
+                .strikethrough(unavailable && !selected)
+                .foregroundStyle(selected ? DS.onPrimary : unavailable ? DS.textFaint : DS.text)
                 // Cada cápsula mide lo de su nombre más aire a los lados (antes todas iguales: «Apagados» quedaba justo o se
                 // encogía); lo que sobra se reparte.
                 .padding(.horizontal, DS.Space.s3)
@@ -965,6 +975,7 @@ struct SubtitleDock: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityValue(unavailable ? Text("No disponible sin conexión") : Text(verbatim: ""))
     }
 
     private func capsule(_ title: Text, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {

@@ -150,6 +150,8 @@ enum Demo {
     /// `-demo-play-download tt1160419`: al abrir, reproduce esa descarga (con `-demo-downloads`; el video se copia antes a
     /// `tmp/demo-downloads/<metaID>/<videoID>.mkv` del simulador, y sus subtítulos a `subs/` junto a él).
     static var playDownload: String? { value(after: "-demo-play-download") }
+    /// `-demo-player-pick es`: ya en el reproductor, elige ese idioma de subtítulos como si lo tocaras.
+    static var playerPick: String? { value(after: "-demo-player-pick") }
 
     /// `-demo-search dune`: escribe eso en Buscar (pestaña Ver).
     static var search: String? { value(after: "-demo-search") }
