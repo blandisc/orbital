@@ -17,7 +17,7 @@ struct RootView: View {
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// El reproductor y los avisos: solo la raíz se vuelve a pintar cuando cambian.
-    @ObservedObject private var ui = AppEnvironment.shared.ui
+    private let ui = AppEnvironment.shared.ui
     @StateObject private var session: ModelObserver<SessionModel>
     @StateObject private var services: ModelObserver<Services>
     @Environment(\.scenePhase) private var scenePhase
@@ -131,7 +131,7 @@ extension PlayRequest: @retroactive Identifiable { public var id: String { "\(me
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
 struct MainTabs: View {
     @EnvironmentObject private var env: AppEnvironment
-    @ObservedObject private var ui = AppEnvironment.shared.ui   // la ficha o la pestaña que se pide abrir
+    private let ui = AppEnvironment.shared.ui   // la ficha o la pestaña que se pide abrir
     @StateObject private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
     @State private var showRemote = false
     /// El acompañante del juego abierto en la consola.
@@ -279,7 +279,7 @@ struct MainTabs: View {
 /// Un aviso de la app (sin Infuse, sin fuentes, descargando…), arriba como todos: se va solo; tocarlo lo cierra.
 struct BannerView: View {
     @EnvironmentObject private var env: AppEnvironment
-    @ObservedObject private var ui = AppEnvironment.shared.ui
+    private let ui = AppEnvironment.shared.ui
 
     var body: some View {
         if let banner = ui.banner {

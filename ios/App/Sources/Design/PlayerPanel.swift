@@ -350,7 +350,9 @@ struct PlayerScrubBar: View {
                     .animation(.snappy, value: dragging)
             }
             .frame(width: width, height: DS.PlayerPanel.scrubHit)
-            .contentShape(Rectangle())
+            // Ocupa 32 pt (no se mueve nada), pero se toca en 44: la zona sobresale lo mismo arriba y abajo.
+            .contentShape(Rectangle().size(width: width, height: DS.Size.touchTarget)
+                .offset(y: (DS.PlayerPanel.scrubHit - DS.Size.touchTarget) / 2))
             .gesture(DragGesture(minimumDistance: 0)
                 .onChanged { g in
                     if !dragging { dragging = true; editing(true) }

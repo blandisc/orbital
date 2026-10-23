@@ -186,7 +186,7 @@ struct OrbitArc: View {
                 Text(verbatim: "\(minutes)").recipe(.cardTitle).fontWeight(.heavy)
                 Text("min").recipe(.caption, color: DS.onArtSecondary)
             }
-            .shadow(color: DS.scrim, radius: DS.Space.s1)
+            .shadow(DS.Elevation.low)
             .padding(DS.Space.s3)
         }
         .onArt()

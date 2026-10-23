@@ -117,7 +117,7 @@ struct ListCard: View {
                     PosterView(url: url, title: name).frame(width: DS.Collections.stackPoster)
                         .rotationEffect(.degrees(i == 1 ? -DS.Collections.stackAngle : 0))
                         .offset(x: i == 1 ? 0 : DS.Space.s3, y: i == 1 ? DS.Space.s1 : 0)
-                        .shadow(color: DS.scrim, radius: DS.Space.s1, y: DS.Space.s1)
+                        .shadow(DS.Elevation.low.drop(DS.Space.s1))
                 }
             }
             .frame(width: DS.Collections.stackWidth, alignment: .leading)
@@ -258,7 +258,7 @@ struct BecauseDeck: View {
                 let top = depth == 0
                 PosterView(url: seed.poster, title: seed.title)
                     .frame(width: DS.Collections.deckPoster)
-                    .shadow(color: DS.scrim, radius: DS.Space.s2, y: DS.Space.s1)
+                    .shadow(DS.Elevation.medium)
                     .scaleEffect(1 - CGFloat(depth) * DS.Collections.deckShrink)
                     .rotationEffect(.degrees(Double(depth) * DS.Collections.deckTurn + (top ? Double(drag) / Double(DS.Collections.deckThrow) * DS.Collections.deckTurn * 2 : 0)))
                     .offset(x: CGFloat(depth) * DS.Collections.deckShift + (top ? drag : 0), y: CGFloat(depth) * DS.Collections.deckShift)
@@ -354,7 +354,7 @@ struct StudioEmblem: View {
                 nameText.padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())
             }
         }
-        .shadow(color: DS.scrimStrong, radius: DS.Space.s2)
+        .shadow(DS.Elevation.high.drop(0))
         .padding(.horizontal, DS.Space.s2)
         .accessibilityHidden(true)
     }

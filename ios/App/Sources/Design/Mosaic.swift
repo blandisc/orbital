@@ -573,7 +573,7 @@ private struct MosaicTileCell: View {
             .padding(DS.Space.s1)
             // Sin enfoque, solo el glifo con una sombra suave (con 20 piezas a la vista una caja en cada una domina).
             .background { if focused { Circle().fill(DS.primary) } }
-            .shadow(color: focused ? .clear : DS.scrim, radius: DS.Space.s1)
+            .shadow(DS.Elevation.low.color(focused ? .clear : DS.scrim))
     }
 }
 

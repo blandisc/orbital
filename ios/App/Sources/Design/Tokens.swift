@@ -19,21 +19,28 @@ enum DS {
         }
     }
 
-    /// Un color que cambia con el modo claro u oscuro (`DesignTokens.Role`).
-    static func role(_ role: DesignTokens.Role) -> Color { adaptive(dark: role.hex.dark, light: role.hex.light) }
+    /// Un color que cambia con el modo claro u oscuro y con «Aumentar contraste» (`DesignTokens.Role`).
+    static func role(_ role: DesignTokens.Role) -> Color {
+        adaptive(dark: role.hex.dark, light: role.hex.light, highDark: role.highContrastHex.dark, highLight: role.highContrastHex.light)
+    }
 
     /// Una capa translúcida sobre el color de texto de cada modo (blanco en oscuro, negro en claro).
     static func overlay(_ opacity: Double) -> Color {
         adaptive(dark: DesignTokens.Ink.darkOverlay, light: DesignTokens.Ink.lightOverlay, opacity: opacity)
     }
 
-    private static func adaptive(dark: String, light: String, opacity: Double = 1) -> Color {
+    /// Con «Aumentar contraste» usa `highDark`/`highLight` (si no se dan, los mismos de siempre).
+    private static func adaptive(dark: String, light: String, highDark: String? = nil, highLight: String? = nil, opacity: Double = 1) -> Color {
         func ui(_ hex: String) -> UIColor {
             let c = rgb(hex: hex) ?? (0, 0, 0)
             return UIColor(red: c.r, green: c.g, blue: c.b, alpha: opacity)
         }
         let (d, l) = (ui(dark), ui(light))
-        return Color(uiColor: UIColor { $0.userInterfaceStyle == .light ? l : d })
+        let (hd, hl) = (ui(highDark ?? dark), ui(highLight ?? light))
+        return Color(uiColor: UIColor { traits in
+            let high = traits.accessibilityContrast == .high
+            return traits.userInterfaceStyle == .light ? (high ? hl : l) : (high ? hd : d)
+        })
     }
 
     // MARK: Papeles (cambian solos con el modo)
@@ -211,6 +218,21 @@ enum DS {
         static let seekBubbleBottomInset: CGFloat = 108
     }
 
+    // MARK: Elevación (sombras)
+    /// Las sombras de las piezas sobre el contenido: color, difuminado y cuánto bajan. Se usan con `.shadow(DS.Elevation.low)`.
+    struct Elevation {
+        var color: Color, radius: CGFloat, y: CGFloat = 0
+        /// Un borde apenas despegado (texto, logos y tarjetas sobre el arte).
+        static let low = Elevation(color: DS.scrim, radius: DS.Space.s1)
+        /// Una pieza levantada que proyecta hacia abajo.
+        static let medium = Elevation(color: DS.scrim, radius: DS.Space.s2, y: DS.Space.s1)
+        /// Lo mismo, más marcado.
+        static let high = Elevation(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+        /// La misma sombra con otro color (o `.clear` para quitarla sin mover nada) o con otra caída.
+        func color(_ color: Color) -> Elevation { Elevation(color: color, radius: radius, y: y) }
+        func drop(_ y: CGFloat) -> Elevation { Elevation(color: color, radius: radius, y: y) }
+    }
+
     // MARK: Espacio y forma
     enum Space {
         static let s1 = CGFloat(DesignTokens.Space.s1), s2 = CGFloat(DesignTokens.Space.s2), s3 = CGFloat(DesignTokens.Space.s3)
@@ -362,7 +384,8 @@ enum DS {
         static let playButton: CGFloat = 76, playGlyph: CGFloat = 30, sideButton: CGFloat = 56
         /// ±10: la flecha en círculo, sin fondo (el botón grande es el único con círculo).
         static let skipGlyph: CGFloat = 32
-        /// La barra de avance fina: el riel, la perilla (crece al arrastrar) y el alto que se puede tocar.
+        /// La barra de avance fina: el riel, la perilla (crece al arrastrar) y el alto que ocupa (se toca en
+        /// `DS.Size.touchTarget`: la zona táctil sobresale arriba y abajo).
         static let scrubTrack: CGFloat = 4, scrubKnob: CGFloat = 14, scrubKnobActive: CGFloat = 26, scrubHit: CGFloat = 32
         /// El menú del «⋯»: su ancho.
         static let menuWidth: CGFloat = 272
@@ -572,20 +595,24 @@ enum DS {
     }
 
     /// El color de cada lista (su ícono en Inicio y Para ti): fijo, el mismo siempre, para encontrarla de un vistazo. Tonos de
-    /// brillo parecido para que ninguno grite más que los demás.
+    /// brillo parecido para que ninguno grite más que los demás. En claro, el mismo tono más oscuro (`DesignTokens.ListTint`).
     enum ListTint {
-        static let watching = Color(red: 1, green: 0.71, blue: 0.28)        // ámbar
-        static let library = Color(red: 0.35, green: 0.78, blue: 0.98)      // azul cielo
-        static let bookmark = Color(red: 1, green: 0.44, blue: 0.68)        // rosa
-        static let spark = Color(red: 0.71, green: 0.55, blue: 1)           // violeta
-        static let calendar = Color(red: 0.18, green: 0.77, blue: 0.65)     // verde agua
-        static let series = Color(red: 0.48, green: 0.64, blue: 1)          // azul
-        static let trend = Color(red: 1, green: 0.48, blue: 0.35)           // coral
-        static let flame = Color(red: 1, green: 0.62, blue: 0.04)           // naranja
-        static let list = Color(red: 0.62, green: 0.82, blue: 0.42)         // verde
-        static let addon = Color(red: 0.79, green: 0.63, blue: 1)           // lila
-        static let chart = Color(red: 1, green: 0.37, blue: 0.49)           // frambuesa
-        static let trophy = Color(red: 1, green: 0.82, blue: 0.4)           // oro
+        private static func tint(_ name: String) -> Color {
+            guard let hex = DesignTokens.ListTint.hex[name] else { return .clear }
+            return adaptive(dark: hex.dark, light: hex.light)
+        }
+        static let watching = tint("watching")   // ámbar
+        static let library = tint("library")     // azul cielo
+        static let bookmark = tint("bookmark")   // rosa
+        static let spark = tint("spark")         // violeta
+        static let calendar = tint("calendar")   // verde agua
+        static let series = tint("series")       // azul
+        static let trend = tint("trend")         // coral
+        static let flame = tint("flame")         // naranja
+        static let list = tint("list")           // verde
+        static let addon = tint("addon")         // lila
+        static let chart = tint("chart")         // frambuesa
+        static let trophy = tint("trophy")       // oro
     }
 
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).
@@ -819,5 +846,12 @@ enum DS {
         static let driftPerSecond = CGFloat(DesignTokens.Mosaic.driftPerSecond)
         static let buffer = CGFloat(DesignTokens.Mosaic.bufferHeight)
         static let focusedRowRatio = DesignTokens.Mosaic.focusedRowRatio
+    }
+}
+
+extension View {
+    /// Una sombra del sistema de diseño (`DS.Elevation`).
+    func shadow(_ elevation: DS.Elevation) -> some View {
+        shadow(color: elevation.color, radius: elevation.radius, y: elevation.y)
     }
 }

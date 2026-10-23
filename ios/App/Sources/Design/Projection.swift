@@ -45,7 +45,7 @@ struct Eyebrow: View {
 
     var body: some View {
         text.recipe(.eyebrow, color: accent ? DS.accent : onArt ? DS.onArtSecondary : nil).lineLimit(1)
-            .shadow(color: onArt ? DS.scrim : .clear, radius: DS.Space.s1)   // sobre la parte clara del arte, como el logo
+            .shadow(DS.Elevation.low.color(onArt ? DS.scrim : .clear))   // sobre la parte clara del arte, como el logo
     }
 }
 
