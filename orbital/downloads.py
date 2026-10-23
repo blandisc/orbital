@@ -84,6 +84,7 @@ class Downloads:
         self.opener = opener
         self._jobs: dict[str, dict] = {}
         self._lock = threading.Lock()
+        self._save_lock = threading.Lock()  # una escritura del índice a la vez (comparten el .tmp)
         self._wake = threading.Event()
         self._cancel: set[str] = set()
         self._load()
@@ -107,15 +108,16 @@ class Downloads:
                 self._jobs[job["id"]] = job
 
     def _save(self) -> None:
-        with self._lock:
-            data = json.dumps(list(self._jobs.values()), ensure_ascii=False, indent=1)
-        try:
-            self.folder.mkdir(parents=True, exist_ok=True)
-            tmp = self.index_path.with_suffix(".tmp")
-            tmp.write_text(data, encoding="utf-8")
-            tmp.replace(self.index_path)
-        except OSError as exc:
-            log.warning("No pude guardar la lista de descargas: %s", exc)
+        with self._save_lock:
+            with self._lock:
+                data = json.dumps(list(self._jobs.values()), ensure_ascii=False, indent=1)
+            try:
+                self.folder.mkdir(parents=True, exist_ok=True)
+                tmp = self.index_path.with_suffix(".tmp")
+                tmp.write_text(data, encoding="utf-8")
+                tmp.replace(self.index_path)
+            except OSError as exc:
+                log.warning("No pude guardar la lista de descargas: %s", exc)
 
     # --- lo que pide la interfaz --------------------------------------------------------------------------------------
     def public(self, job: dict) -> dict:
