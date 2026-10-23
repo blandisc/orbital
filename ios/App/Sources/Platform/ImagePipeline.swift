@@ -34,6 +34,10 @@ final class ImagePipeline: @unchecked Sendable {
     }()
 
     private let memory = NSCache<NSString, UIImage>()
+    /// Los bytes recién bajados, unos cuantos: `URLCache` los escribe a disco después (y en memoria no guarda nada de más de
+    /// ~400 KB), así que otro tamaño de la misma imagen pedido justo después la volvía a bajar entera.
+    private let recentBytes = NSCache<NSURL, NSData>()
+    private static let recentBytesLimit = 24 * 1024 * 1024
     private let session: URLSession
     private let cache: URLCache
     private let lock = NSLock()
@@ -47,6 +51,7 @@ final class ImagePipeline: @unchecked Sendable {
 
     init() {
         memory.totalCostLimit = Self.memoryBytes
+        recentBytes.totalCostLimit = Self.recentBytesLimit
         // Carpeta propia: antes compartía el `Cache.db` de la app (y su límite) con las respuestas de Cinemeta y TMDB.
         let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("Imagenes", isDirectory: true)
         cache = URLCache(memoryCapacity: Self.urlMemoryBytes, diskCapacity: Self.diskBytes, directory: folder)
@@ -168,6 +173,10 @@ final class ImagePipeline: @unchecked Sendable {
         // Solo una respuesta buena con contenido: el caché también guarda las redirecciones (las miniaturas de episodio de
         // metahub mandan un 301 a TMDB) y ese 301 vacío no es la imagen.
         let start = Perf.now()
+        if let recent = recentBytes.object(forKey: url as NSURL) {
+            Perf.net(kind: "imgcache", url: url, start: start, end: Perf.now(), bytes: recent.length, status: 200)
+            return recent as Data
+        }
         if let stored = cache.cachedResponse(for: request), !stored.data.isEmpty,
            ((stored.response as? HTTPURLResponse)?.statusCode ?? 200) < 300 {
             Perf.net(kind: "imgcache", url: url, start: start, end: Perf.now(), bytes: stored.data.count,
@@ -180,6 +189,7 @@ final class ImagePipeline: @unchecked Sendable {
             fresh.task = Task.detached(priority: .userInitiated) { [self] in
                 defer { lock.withLock { if downloads[url] === fresh { downloads[url] = nil } } }
                 if !urgent { guard await network.acquire() else { return nil } }
+                lock.withLock { fresh.started = true }
                 defer { if !urgent { Task { await network.release() } } }
                 let start = Perf.now()
                 let result = try? await session.data(for: request)
@@ -191,6 +201,7 @@ final class ImagePipeline: @unchecked Sendable {
                 if http.value(forHTTPHeaderField: "Cache-Control") == nil {
                     cache.storeCachedResponse(CachedURLResponse(response: response, data: fresh, userInfo: nil, storagePolicy: .allowed), for: request)
                 }
+                if !fresh.isEmpty { recentBytes.setObject(fresh as NSData, forKey: url as NSURL, cost: fresh.count) }
                 return fresh
             }
             downloads[url] = fresh
@@ -200,7 +211,8 @@ final class ImagePipeline: @unchecked Sendable {
     }
 
     /// Espera un trabajo compartido. Si quien espera se cancela y era el último, el trabajo se cancela y deja de estar
-    /// en camino (la próxima petición empieza de nuevo en vez de heredar uno cancelado). Contar y olvidar van bajo el mismo
+    /// en camino — salvo una descarga que ya empezó: esa termina y queda en caché (la pieza que reaparece al deslizar o al
+    /// redibujarse se une a ella en vez de bajarla otra vez) (la próxima petición empieza de nuevo en vez de heredar uno cancelado). Contar y olvidar van bajo el mismo
     /// candado: nadie puede unirse a un trabajo justo cuando se está cancelando. `forget` corre con el candado puesto.
     private func wait<T>(_ job: Shared<T>, forget: @escaping @Sendable () -> Void) async -> T {
         await withTaskCancellationHandler {
@@ -208,7 +220,7 @@ final class ImagePipeline: @unchecked Sendable {
         } onCancel: { [lock] in
             let last = lock.withLock { () -> Bool in
                 job.waiters -= 1
-                guard job.waiters == 0 else { return false }
+                guard job.waiters == 0, !job.started else { return false }
                 forget()
                 return true
             }
@@ -243,6 +255,8 @@ final class ImagePipeline: @unchecked Sendable {
     private final class Shared<T: Sendable>: @unchecked Sendable {
         var task: Task<T, Never>!
         var waiters = 1
+        /// Una descarga que ya tiene lugar en la fila (bajo el candado).
+        var started = false
     }
 
     /// Un semáforo asíncrono que atiende primero al último en llegar (lo que acaba de aparecer en pantalla) y suelta
