@@ -76,6 +76,18 @@ final class DesignTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.danger), hex(background)), 4.5, "\(mode): el error se lee sobre \(background)")
             }
             XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.onPrimary), hex(.primary)), 7, "\(mode): texto del botón principal")
+            // «Aumentar contraste»: cada texto contrasta más que en el modo normal y el fondo se separa más de la superficie.
+            func high(_ role: R) -> String { mode == "dark" ? role.highContrastHex.dark : role.highContrastHex.light }
+            for background in [R.background, .surface] {
+                for role in [R.label, .secondaryLabel, .tertiaryLabel, .accent, .live, .warning, .danger] {
+                    XCTAssertGreaterThan(DesignTokens.contrast(high(role), high(background)), DesignTokens.contrast(hex(role), hex(background)),
+                                         "\(mode) con alto contraste: \(role) sobre \(background)")
+                }
+                XCTAssertGreaterThanOrEqual(DesignTokens.contrast(high(.secondaryLabel), high(background)), 7, "\(mode) con alto contraste: texto secundario sobre \(background)")
+            }
+            XCTAssertGreaterThan(DesignTokens.contrast(high(.background), high(.surface)), DesignTokens.contrast(hex(.background), hex(.surface)),
+                                 "\(mode) con alto contraste: el fondo se separa más de la superficie")
+            XCTAssertGreaterThanOrEqual(DesignTokens.contrast(high(.onPrimary), high(.primary)), 7, "\(mode) con alto contraste: texto del botón principal")
             // Los íconos de las listas (no son texto: 3:1).
             for (name, tint) in DesignTokens.ListTint.hex {
                 for background in [R.background, .surface] {

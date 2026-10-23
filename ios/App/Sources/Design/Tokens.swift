@@ -19,21 +19,28 @@ enum DS {
         }
     }
 
-    /// Un color que cambia con el modo claro u oscuro (`DesignTokens.Role`).
-    static func role(_ role: DesignTokens.Role) -> Color { adaptive(dark: role.hex.dark, light: role.hex.light) }
+    /// Un color que cambia con el modo claro u oscuro y con «Aumentar contraste» (`DesignTokens.Role`).
+    static func role(_ role: DesignTokens.Role) -> Color {
+        adaptive(dark: role.hex.dark, light: role.hex.light, highDark: role.highContrastHex.dark, highLight: role.highContrastHex.light)
+    }
 
     /// Una capa translúcida sobre el color de texto de cada modo (blanco en oscuro, negro en claro).
     static func overlay(_ opacity: Double) -> Color {
         adaptive(dark: DesignTokens.Ink.darkOverlay, light: DesignTokens.Ink.lightOverlay, opacity: opacity)
     }
 
-    private static func adaptive(dark: String, light: String, opacity: Double = 1) -> Color {
+    /// Con «Aumentar contraste» usa `highDark`/`highLight` (si no se dan, los mismos de siempre).
+    private static func adaptive(dark: String, light: String, highDark: String? = nil, highLight: String? = nil, opacity: Double = 1) -> Color {
         func ui(_ hex: String) -> UIColor {
             let c = rgb(hex: hex) ?? (0, 0, 0)
             return UIColor(red: c.r, green: c.g, blue: c.b, alpha: opacity)
         }
         let (d, l) = (ui(dark), ui(light))
-        return Color(uiColor: UIColor { $0.userInterfaceStyle == .light ? l : d })
+        let (hd, hl) = (ui(highDark ?? dark), ui(highLight ?? light))
+        return Color(uiColor: UIColor { traits in
+            let high = traits.accessibilityContrast == .high
+            return traits.userInterfaceStyle == .light ? (high ? hl : l) : (high ? hd : d)
+        })
     }
 
     // MARK: Papeles (cambian solos con el modo)

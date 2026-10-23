@@ -54,6 +54,26 @@ public enum DesignTokens {
             case .danger: (palette["red-400"]!, "#c4362c")
             }
         }
+
+        /// «#rrggbb» de cada modo con «Aumentar contraste»: el texto más contrastado y el fondo más separado de las superficies.
+        public var highContrastHex: (dark: String, light: String) {
+            switch self {
+            case .background: ("#000000", "#ecebe5")
+            case .surface: (palette["ink-800"]!, "#ffffff")
+            case .surfaceRaised: (palette["ink-700"]!, "#dddbd4")
+            case .label: ("#ffffff", "#000000")
+            case .secondaryLabel: ("#d4d4da", "#3a3a40")
+            case .tertiaryLabel: ("#b4b4bb", "#48484f")
+            case .decorative: ("#6e6e76", "#85858c")
+            case .primary: ("#ffffff", "#000000")
+            case .onPrimary: ("#000000", "#ffffff")
+            case .accent: ("#ffffff", "#000000")
+            case .live: ("#99f6e4", "#065a51")
+            case .brandMoon: hex
+            case .warning: ("#fde68a", "#6e4600")
+            case .danger: ("#fca5a5", "#9b2219")
+            }
+        }
     }
 
     /// Las capas translúcidas (líneas, rellenos, velos) se calculan sobre el color de texto de cada modo: blanco en oscuro y
