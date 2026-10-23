@@ -36,13 +36,25 @@ struct RootView: View {
         return Text("desde \(time)")
     }
 
+    /// `-demo -demo-proposal serie|pelicula`: la maqueta de la ficha propuesta (solo en esta rama experimental).
+    private static var proposal: String? {
+        #if DEBUG
+        Demo.isOn ? Demo.value(after: "-demo-proposal") : nil
+        #else
+        nil
+        #endif
+    }
+
     var body: some View {
         @Bindable var env = env
         let _ = services.model   // cualquier cambio de los servicios (idioma, cuenta) vuelve a pintar la raíz
         Group {
-            switch session.model.state {
-            case .signedIn: MainTabs().onAppear { Perf.mark("app.tabs") }
-            default: LoginView(session: session.model)
+            if let proposal = Self.proposal { DetailProposal(movie: proposal == "pelicula") }   // maqueta (exp/pagina-detalle)
+            else {
+                switch session.model.state {
+                case .signedIn: MainTabs().onAppear { Perf.mark("app.tabs") }
+                default: LoginView(session: session.model)
+                }
             }
         }
         .background(DS.bg.ignoresSafeArea())
