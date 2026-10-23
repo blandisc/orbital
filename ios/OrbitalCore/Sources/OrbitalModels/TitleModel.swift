@@ -132,6 +132,9 @@ public final class TitleModel: ObservableModel {
         // ni al resto de la ficha. `loadBestSource` luego se une a esta misma petición (o la encuentra ya guardada).
         let cinemeta = services.cinemeta, kind = kind
         Task {
+            // Película: el video es ella misma (salvo un `video_id` raro guardado), así que no espera a lo tuyo. Serie: el
+            // episodio sale de lo tuyo y adivinarlo sería pedir fuentes de otro episodio.
+            if kind == "movie" { Task { await finder.warm(kind: kind, videoID: id) } }
             let raw = await state.value
             var video = Self.continueVideo(raw: raw, kind: kind, metaID: id, seasons: [])
             if video == nil, let meta = try? await cinemeta.meta(kind: kind, id: id) {
