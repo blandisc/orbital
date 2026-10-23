@@ -10,6 +10,11 @@ enum AppFiles {
         return url
     }
 
+    /// Lo último que se vio (catálogos, Inicio, Para ti) para pintarlo al abrir mientras llega lo nuevo. iOS puede borrarlo.
+    static var swrCache: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("Orbital-SWR", isDirectory: true)
+    }
+
     static var downloadsRoot: URL {
         var url = support.appendingPathComponent("Downloads", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

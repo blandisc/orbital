@@ -80,6 +80,8 @@ public final class Services: ObservableModel {
     /// pintar. Antes nadie se enteraba y el modo oscuro o el carrusel no cambiaban hasta reabrir la app.
     public func settingsDidChange() { changed() }
 
+    /// Carpeta de lo que se guarda para enseñarlo al instante al abrir (stale-while-revalidate). nil = sin disco (pruebas).
+    let cacheRoot: URL?
     private let downloadTransport: DownloadTransport
     private let downloadsRoot: URL
     let freeSpace: @Sendable () -> Int64
@@ -87,8 +89,9 @@ public final class Services: ObservableModel {
     private let onDownloadsChange: @Sendable ([DownloadItem]) -> Void
 
     public init(http: HTTPClient, secrets: SecretsStore, kv: KeyValueStore, pending: PendingStore, downloadTransport: DownloadTransport,
-                downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64,
+                downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64, cacheRoot: URL? = nil,
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in }) {
+        self.cacheRoot = cacheRoot
         self.http = http; self.secrets = secrets; self.kv = kv; self.pending = pending; self.downloadTransport = downloadTransport
         self.downloadsRoot = downloadsRoot; self.freeSpace = freeSpace; self.clock = clock; self.onDownloadsChange = onDownloadsChange
         let scrobbleLog = ScrobbleLog(kv: kv)
@@ -101,7 +104,9 @@ public final class Services: ObservableModel {
         let registry = AddonRegistry(http: http, account: stremio, auth: { secrets.get(SecretKey.stremioAuth) },
                                      own: { (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init) }, clock: clock)
         let cinemeta = Cinemeta(http: http, cached: http is URLSessionHTTPClient ? URLSessionHTTPClient.publicCache("cinemeta") : nil,
-                                registry: registry, clock: clock)
+                                registry: registry,
+                                disk: cacheRoot?.appendingPathComponent("cinemeta"),
+                                clock: clock)
         let oneDrive = OneDrive(http: http, secrets: secrets, clientID: { settings.value.oneDriveClientID }, clock: clock)
         let oneDriveLibrary = OneDriveLibrary(drive: oneDrive, cinemeta: cinemeta, kv: kv, folder: { settings.value.oneDriveFolder }, clock: clock)
         let finder = StreamFinder(http: http, registry: registry, clock: clock)

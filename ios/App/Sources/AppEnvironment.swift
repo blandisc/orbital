@@ -179,7 +179,8 @@ final class AppEnvironment: ObservableObject {
             Demo.prefillScrobble(kv)
             let services = Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
                                     downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads"),
-                                    savedDownloads: Demo.downloads, freeSpace: { DiskSpace.freeBytes() })
+                                    savedDownloads: Demo.downloads, freeSpace: { DiskSpace.freeBytes() },
+                                    cacheRoot: Demo.persist ? AppFiles.swrCache.appendingPathComponent("demo") : nil)
             services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira
             return services
         }
@@ -188,7 +189,7 @@ final class AppEnvironment: ObservableObject {
             http: Perf.isOn ? PerfHTTPClient(inner: URLSessionHTTPClient()) : URLSessionHTTPClient(), secrets: KeychainSecrets(service: Bundle.main.bundleIdentifier ?? "com.example.orbital.ios"),
             kv: UserDefaultsKeyValueStore(), pending: FilePendingStore(url: AppFiles.pendingWork), downloadTransport: transport,
             downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
-            onDownloadsChange: { DownloadIndex.save($0) })
+            cacheRoot: AppFiles.swrCache, onDownloadsChange: { DownloadIndex.save($0) })
     }
 
     /// El aviso (con háptica, por el tono del aviso) de lo que pasó con lo que mandó la TV.

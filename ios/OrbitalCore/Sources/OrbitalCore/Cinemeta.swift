@@ -81,10 +81,15 @@ public actor Cinemeta {
     private let registry: AddonRegistry?
     private let clock: @Sendable () -> Date
     private var cache: [URL: (expires: Date, json: JSON)] = [:]
+    /// Lo que ya se está pidiendo: dos pantallas que piden lo mismo a la vez comparten la petición.
+    private var inflight: [URL: Task<JSON, Error>] = [:]
+    /// Carpeta donde se guardan los catálogos grandes (stale-while-revalidate): se enseña lo guardado al instante
+    /// y, si tiene más de `cacheSeconds`, se revalida en segundo plano. nil = sin disco (pruebas).
+    private let disk: URL?
 
     public init(http: HTTPClient, cached: HTTPClient? = nil, base: URL = Cinemeta.base, registry: AddonRegistry? = nil,
-                clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.cached = cached; self.root = base; self.registry = registry; self.clock = clock
+                disk: URL? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.http = http; self.cached = cached; self.root = base; self.registry = registry; self.disk = disk; self.clock = clock
     }
 
     /// Cuánto se espera una búsqueda (el doble como plazo total): Cinemeta a veces se cuelga con una búsqueda nueva, y
@@ -96,19 +101,62 @@ public actor Cinemeta {
         _ = try? await (cached ?? http).send(HTTPRequest(url: root.appendingPathComponent("manifest.json"), method: "HEAD", timeout: 5))
     }
 
-    private func get(_ url: URL, timeout: TimeInterval = 10) async throws -> JSON {
+    private func get(_ url: URL, timeout: TimeInterval = 10, persist: Bool = false) async throws -> JSON {
         let now = clock()
         if let hit = cache[url], now < hit.expires { return hit.json }
-        let json: JSON?
+        if persist, let saved = readDisk(url) {
+            let fresh = now.timeIntervalSince(saved.date) < Self.cacheSeconds
+            // Viejo: se enseña igual y se revalida aparte (un minuto en memoria para no relanzarlo en cada llamada).
+            remember(url, saved.json, expires: fresh ? saved.date.addingTimeInterval(Self.cacheSeconds) : now.addingTimeInterval(60))
+            if !fresh { Task { _ = try? await self.fetch(url, timeout: timeout, persist: true) } }
+            return saved.json
+        }
+        return try await fetch(url, timeout: timeout, persist: persist)
+    }
+
+    private func fetch(_ url: URL, timeout: TimeInterval, persist: Bool) async throws -> JSON {
+        if let running = inflight[url] { return try await running.value }
         let client = url.host == root.host ? (cached ?? http) : http
-        do { json = try await client.getJSON(url, timeout: timeout) } catch { throw CinemetaError.network("\(error)") }
-        guard let json, json.object != nil else { throw CinemetaError.unexpected }
-        if cache.count >= Self.cacheMax {  // la caché no crece sin tope
+        let task = Task<JSON, Error> {
+            let json: JSON?
+            do { json = try await client.getJSON(url, timeout: timeout) } catch { throw CinemetaError.network("\(error)") }
+            guard let json, json.object != nil else { throw CinemetaError.unexpected }
+            return json
+        }
+        inflight[url] = task
+        defer { inflight[url] = nil }
+        let json = try await task.value
+        remember(url, json, expires: clock().addingTimeInterval(Self.cacheSeconds))
+        if persist { writeDisk(url, json) }
+        return json
+    }
+
+    private func remember(_ url: URL, _ json: JSON, expires: Date) {
+        let now = clock()
+        if cache[url] == nil, cache.count >= Self.cacheMax {  // la caché no crece sin tope
             for key in cache.filter({ now >= $0.value.expires }).keys { cache[key] = nil }
             if cache.count >= Self.cacheMax { for key in cache.sorted(by: { $0.value.expires < $1.value.expires }).prefix(Self.cacheMax / 4).map(\.key) { cache[key] = nil } }
         }
-        cache[url] = (now.addingTimeInterval(Self.cacheSeconds), json)
-        return json
+        cache[url] = (expires, json)
+    }
+
+    private func diskFile(_ url: URL) -> URL? {
+        guard let disk else { return nil }
+        let name = url.path.split(separator: "/").joined(separator: "_").replacingOccurrences(of: ":", with: "-")
+        return disk.appendingPathComponent(name)
+    }
+
+    private func readDisk(_ url: URL) -> (date: Date, json: JSON)? {
+        guard let file = diskFile(url), let data = try? Data(contentsOf: file), let json = JSON.parse(data), json.object != nil,
+              let date = (try? FileManager.default.attributesOfItem(atPath: file.path))?[.modificationDate] as? Date else { return nil }
+        return (date, json)
+    }
+
+    private func writeDisk(_ url: URL, _ json: JSON) {
+        guard let disk, let file = diskFile(url) else { return }
+        try? FileManager.default.createDirectory(at: disk, withIntermediateDirectories: true)
+        try? json.serialized().write(to: file, options: .atomic)
+        try? FileManager.default.setAttributes([.modificationDate: clock()], ofItemAtPath: file.path)
     }
 
     private func url(_ path: String, base: String? = nil) -> URL? { URL(string: (base ?? root.absoluteString) + path) }
@@ -117,7 +165,7 @@ public actor Cinemeta {
     public func catalog(_ kind: String, genre: String? = nil) async throws -> [JSON] {
         let path = genre.map { "/catalog/\(kind)/top/genre=\(uriComponent($0)).json" } ?? "/catalog/\(kind)/top.json"
         guard let url = url(path) else { throw CinemetaError.unexpected }
-        return CinemetaParsing.usable(try await get(url)["metas"]?.array)
+        return CinemetaParsing.usable(try await get(url, persist: genre == nil)["metas"]?.array)
     }
 
     /// Búsqueda tolerante a errores («ofice» encuentra The Office); 2-3 letras suelen bastar.
