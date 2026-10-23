@@ -23,6 +23,8 @@ TRANSLATIONS = {
     "Desliza para fijar": "Slide to lock", "Desliza para quitar": "Slide to unlock",
     "Subtítulo %lld de %lld": "Subtitle %lld of %lld",
     "Toca para quitar": "Tap to stop",
+    "Continuar T%@ E%lld": "Continue S%@ E%lld", "Ver T%@ E%lld": "Watch S%@ E%lld",
+    "Marcar como vista": "Mark as watched", "Versión de la serie": "Series version",
     "Subtítulos: %@": "Subtitles: %@",
     "Solo este episodio": "Just this episode",
     "Desde aquí": "From here on",

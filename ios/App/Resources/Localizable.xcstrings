@@ -3114,6 +3114,17 @@
         }
       }
     },
+    "Continuar T%@ E%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue S%@ E%lld"
+          }
+        }
+      }
+    },
     "Continuar T%lld E%lld": {
       "extractionState": "manual",
       "localizations": {
@@ -7796,6 +7807,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mark as watched"
+          }
+        }
+      }
+    },
+    "Marcar temporada como vista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark season as watched"
           }
         }
       }
@@ -14862,6 +14884,17 @@
         }
       }
     },
+    "Ver T%@ E%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch S%@ E%lld"
+          }
+        }
+      }
+    },
     "Ver T%lld E%lld": {
       "extractionState": "manual",
       "localizations": {
@@ -15122,6 +15155,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Series version"
+          }
+        }
+      }
+    },
+    "Versión de la serie: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Series version: %@"
           }
         }
       }
