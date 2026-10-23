@@ -6964,6 +6964,17 @@
         }
       }
     },
+    "Lista de Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt list"
+          }
+        }
+      }
+    },
     "Lista de subtítulos": {
       "extractionState": "manual",
       "localizations": {
