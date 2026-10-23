@@ -737,7 +737,7 @@ struct EpisodeRowView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            stateIcon.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            stateIcon.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget, alignment: .trailing)
         }
         .padding(.vertical, DS.Space.s3)
         .opacity(row.airs == nil ? 1 : DesignTokens.Opacity.faint)
