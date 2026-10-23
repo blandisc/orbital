@@ -293,7 +293,7 @@ final class AppEnvironment {
             }
             Demo.prefillScrobble(kv)
             let services = Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
-                                    downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads"),
+                                    downloadTransport: transport, downloadsRoot: Demo.demoDownloadsRoot,
                                     savedDownloads: Demo.downloads, freeSpace: { DiskSpace.freeBytes() },
                                     cacheRoot: Demo.persist ? AppFiles.swrCache.appendingPathComponent("demo") : nil)
             services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira

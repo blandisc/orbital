@@ -274,6 +274,7 @@ struct MainTabs: View {
         if Demo.open == "settings" || Demo.open == "year" { paths[tab].append(SettingsRoute()) }
         if let title = Demo.title { paths[tab].append(TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)) }
         if let id = Demo.mediaTitle { paths[tab].append(MiMediaTitleRoute(id: id)) }
+        if let id = Demo.playDownload { Task { await env.playDownloaded(metaID: String(id.split(separator: ":").first ?? ""), videoID: id) } }
         #endif
     }
 }

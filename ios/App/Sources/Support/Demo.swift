@@ -132,6 +132,9 @@ enum Demo {
                                  subtitle: sub, poster: "https://images.metahub.space/poster/medium/\(meta)/img", addon: "Torrentio", release: release,
                                  sourceIndex: 0, expectedBytes: 2_400_000_000, relativePath: "\(meta)/\(video).mkv", createdAt: 0)
             d.state = state; d.writtenBytes = state == .done ? 2_400_000_000 : 900_000_000
+            // Los subtítulos que de verdad estén junto al video (`-demo-play-download`), como los deja una descarga.
+            let subs = demoDownloadsRoot.appendingPathComponent(meta).appendingPathComponent("subs")
+            d.subtitleFiles = ((try? FileManager.default.contentsOfDirectory(atPath: subs.path)) ?? []).sorted().map { "subs/\($0)" }
             return d
         }
         return [item("movie", "tt1160419", "tt1160419", "Dune", "", .done, "Dune.2021.1080p.WEB-DL"),
@@ -139,6 +142,14 @@ enum Demo {
                 item("series", "tt0386676", "tt0386676:2:5", "The Office", "T2 · E5", .done, "The.Office.S02E05.720p"),
                 item("series", "tt0386676", "tt0386676:2:6", "The Office", "T2 · E6", .done, "The.Office.S02E06.720p")]
     }
+
+    /// La carpeta de descargas del modo demostración.
+    static var demoDownloadsRoot: URL { FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads") }
+    /// `-demo-offline`: como en modo avión: toda petición falla con «sin conexión» (las de mentira también).
+    static var offline: Bool { ProcessInfo.processInfo.arguments.contains("-demo-offline") }
+    /// `-demo-play-download tt1160419`: al abrir, reproduce esa descarga (con `-demo-downloads`; el video se copia antes a
+    /// `tmp/demo-downloads/<metaID>/<videoID>.mkv` del simulador, y sus subtítulos a `subs/` junto a él).
+    static var playDownload: String? { value(after: "-demo-play-download") }
 
     /// `-demo-search dune`: escribe eso en Buscar (pestaña Ver).
     static var search: String? { value(after: "-demo-search") }
@@ -208,6 +219,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
 
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         let start = Perf.now()
+        if Demo.offline { throw URLError(.notConnectedToInternet) }
         do {
             let response: HTTPResponse
             if let fake = try await fake(request) {
