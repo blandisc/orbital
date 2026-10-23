@@ -128,6 +128,9 @@ públicos y Cinemeta de verdad. Nada toca tu Keychain ni tus ajustes. Para abrir
 | `-demo-tv-now` | algo sonando en la TV (el accesorio «En la TV») |
 | `-demo-title series:tt0386676` | una ficha |
 | `-demo-open settings` · `sources` · `play` · `download` | Ajustes, la hoja de fuentes, el reproductor o una descarga (sobre la ficha) |
+| `-demo-open save` | con `-demo-title`, la ficha con la hoja «Guardar en…» abierta (prende `-demo-trakt`) |
+| `-demo-trakt` | Trakt «conectado» de mentira: watchlist y cinco listas propias (unas recientes, otras viejas) que tardan ~1,5 s en llegar; guardar, quitar y «Nueva lista…» funcionan sin salir a internet |
+| `-demo-scroll 240` | con `-demo-title`, la ficha abre ya desplazada esos puntos (el arte a medio recoger) |
 | `-demo-search dune` | una búsqueda en Ver |
 | `-demo-mode lists` | en Para ti, abre en Listas (con `-demo-console`, el feed completo de estantes) |
 | `-demo-lang en` | la app en inglés |
