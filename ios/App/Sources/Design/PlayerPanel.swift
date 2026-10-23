@@ -143,6 +143,9 @@ struct SpeedStepper: View {
         Button(action: action) {
             Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.bold))
                 .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget * 3 / 4)
+                // Se ve de 44 × 33 (la cápsula no crece), pero se toca en 44 × 44.
+                .contentShape(Rectangle().size(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                    .offset(y: -DS.Size.touchTarget / 8))
         }
         .buttonStyle(.plain).foregroundStyle(enabled ? DS.text : DS.textFaint).disabled(!enabled)
     }
@@ -385,7 +388,9 @@ struct PlayerScrubBar: View {
                     .animation(.snappy, value: dragging)
             }
             .frame(width: width, height: DS.PlayerPanel.scrubHit)
-            .contentShape(Rectangle())
+            // Ocupa 32 pt (no se mueve nada), pero se toca en 44: la zona sobresale lo mismo arriba y abajo.
+            .contentShape(Rectangle().size(width: width, height: DS.Size.touchTarget)
+                .offset(y: (DS.PlayerPanel.scrubHit - DS.Size.touchTarget) / 2))
             .gesture(DragGesture(minimumDistance: 0)
                 .onChanged { g in
                     if !dragging { dragging = true; editing(true) }
@@ -524,6 +529,9 @@ struct SubtitleTryStrip: View {
         Button(action: action) {
             Image(systemName: symbol).font(DS.TextRecipe.secondary.font.weight(.bold)).foregroundStyle(DS.text)
                 .frame(width: DS.Size.touchTarget * 3 / 4, height: DS.Size.touchTarget)
+                // Se ve de 33 × 44 (la tira no se ensancha), pero se toca en 44 × 44.
+                .contentShape(Rectangle().size(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                    .offset(x: -DS.Size.touchTarget / 8))
         }
         .buttonStyle(.plain).accessibilityLabel(label)
     }

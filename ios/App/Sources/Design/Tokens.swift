@@ -319,7 +319,8 @@ enum DS {
         static let playButton: CGFloat = 76, playGlyph: CGFloat = 30, sideButton: CGFloat = 56
         /// ±10: la flecha en círculo, sin fondo (el botón grande es el único con círculo).
         static let skipGlyph: CGFloat = 32
-        /// La barra de avance fina: el riel, la perilla (crece al arrastrar) y el alto que se puede tocar.
+        /// La barra de avance fina: el riel, la perilla (crece al arrastrar) y el alto que ocupa (se toca en
+        /// `DS.Size.touchTarget`: la zona táctil sobresale arriba y abajo).
         static let scrubTrack: CGFloat = 4, scrubKnob: CGFloat = 14, scrubKnobActive: CGFloat = 26, scrubHit: CGFloat = 32
         /// El menú del «⋯»: su ancho.
         static let menuWidth: CGFloat = 272
