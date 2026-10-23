@@ -6,13 +6,13 @@ import OrbitalModels
 struct TitleView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let route: TitleRoute
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.colorScheme) private var scheme
     @Environment(\.openURL) private var openURL
-    @StateObject private var observer: ModelObserver<TitleModel>
-    @StateObject private var tint = ArtTint()
+    @State private var observer: ModelObserver<TitleModel>
+    @State private var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
     /// La sinopsis completa (tocar «más»).
     @State private var fullSynopsis = false
@@ -33,7 +33,7 @@ struct TitleView: View {
 
     init(route: TitleRoute) {
         self.route = route
-        _observer = StateObject(wrappedValue: ModelObserver(TitleModel(AppEnvironment.shared.services, kind: route.kind, metaID: route.metaID, hint: (route.title, route.poster))))
+        _observer = State(wrappedValue: ModelObserver(TitleModel(AppEnvironment.shared.services, kind: route.kind, metaID: route.metaID, hint: (route.title, route.poster))))
     }
 
     var body: some View {

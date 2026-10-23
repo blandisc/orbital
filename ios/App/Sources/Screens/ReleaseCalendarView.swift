@@ -5,8 +5,8 @@ import OrbitalModels
 /// Sale hoy › el mes: cada día con el color de lo que sale de las series que sigues (dos el mismo día: la casilla partida).
 /// Tocar un día enseña abajo qué sale; tocar una serie abre su ficha.
 struct ReleaseCalendarView: View {
-    @StateObject private var observer = ModelObserver(ReleaseCalendarModel(AppEnvironment.shared.services))
-    @EnvironmentObject private var env: AppEnvironment
+    @State private var observer = ModelObserver(ReleaseCalendarModel(AppEnvironment.shared.services))
+    @Environment(AppEnvironment.self) private var env
     let open: (TitleRoute) -> Void
 
     var body: some View {

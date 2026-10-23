@@ -6,18 +6,18 @@ import OrbitalModels
 /// Descargas: lo que se está bajando (con su avance), lo listo para ver sin conexión agrupado por título y la descarga
 /// inteligente. El espacio va en el subtítulo de la barra; el fondo toma el color de lo que se está bajando.
 struct DownloadsView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var observer: ModelObserver<DownloadsModel>
-    @StateObject private var tint = ArtTint()
+    @Environment(AppEnvironment.self) private var env
+    @State private var observer: ModelObserver<DownloadsModel>
+    @State private var tint = ArtTint()
     /// La descarga a la que se le buscan subtítulos.
     @State private var subtitlesFor: DownloadItem?
     /// Mi media (tu OneDrive como biblioteca) junto a lo que ya está en el iPhone.
-    @StateObject private var media = ModelObserver(MiMediaModel(AppEnvironment.shared.services))
+    @State private var media = ModelObserver(MiMediaModel(AppEnvironment.shared.services))
     enum Part: Hashable { case phone, media }
     @State private var part: Part = .phone
 
     init() {
-        _observer = StateObject(wrappedValue: ModelObserver(DownloadsModel(AppEnvironment.shared.services, freeSpace: { DiskSpace.freeBytes() })))
+        _observer = State(wrappedValue: ModelObserver(DownloadsModel(AppEnvironment.shared.services, freeSpace: { DiskSpace.freeBytes() })))
     }
 
     /// «En el iPhone | Mi media» siempre arriba: sin OneDrive, Mi media explica cómo conectarlo (antes no se veía en absoluto).
@@ -142,7 +142,7 @@ struct DownloadsView: View {
 
     /// Un ajuste de Descargas como interruptor (se guarda al momento, igual que en Ajustes).
     private func setting(_ key: WritableKeyPath<AppSettings, Bool>) -> Binding<Bool> {
-        Binding(get: { env.services.appSettings[keyPath: key] }, set: { value in env.services.settings.update { $0[keyPath: key] = value }; observer.objectWillChange.send() })
+        Binding(get: { env.services.appSettings[keyPath: key] }, set: { value in env.services.settings.update { $0[keyPath: key] = value }; observer.invalidate() })
     }
 
     /// Lo que se está bajando: póster, nombre, datos en SF Mono, el avance y pausar o seguir.
@@ -291,8 +291,8 @@ struct DownloadSeasonRoute: Hashable { var metaID: String; var season: Int }
 
 /// Una serie descargada: con varias temporadas, una fila por temporada; con una sola, directo sus episodios.
 struct DownloadSeriesView: View {
-    @ObservedObject var observer: ModelObserver<DownloadsModel>
-    @EnvironmentObject private var env: AppEnvironment
+    var observer: ModelObserver<DownloadsModel>
+    @Environment(AppEnvironment.self) private var env
     let metaID: String
 
     var body: some View {
@@ -327,8 +327,8 @@ struct DownloadSeriesView: View {
 
 /// Los episodios descargados de una temporada: tocar uno lo reproduce; deslizar lo borra.
 struct DownloadSeasonView: View {
-    @ObservedObject var observer: ModelObserver<DownloadsModel>
-    @EnvironmentObject private var env: AppEnvironment
+    var observer: ModelObserver<DownloadsModel>
+    @Environment(AppEnvironment.self) private var env
     @State private var subtitlesFor: DownloadItem?
     let metaID: String
     let season: Int
@@ -375,7 +375,7 @@ struct DownloadSeasonView: View {
 struct DownloadSubtitlesSheet: View {
     let item: DownloadItem
     let model: DownloadsModel
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.locale) private var locale
     @State private var found: [SubtitleOption]?
     @State private var saved: [String: Int] = [:]

@@ -5,8 +5,8 @@ import OrbitalCore
 /// Ajustes › Descargas › «Probar la velocidad»: las cuatro medidas de `DownloadSpeedTest`, qué quieren decir y un botón para
 /// copiarlas.
 struct DownloadSpeedTestView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var test = DownloadSpeedTest()
+    @Environment(AppEnvironment.self) private var env
+    @State private var test = DownloadSpeedTest()
 
     var body: some View {
         Form {

@@ -5,9 +5,9 @@ import OrbitalModels
 /// Ajustes: tu perfil arriba (el avatar se toca) y dos grupos de renglones que llevan a su página, cada uno con cómo
 /// está ahora: lo tuyo (apariencia, Inicio, idioma, reproducción, descargas) y las conexiones (Orbital, Trakt…).
 struct SettingsView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var settings: ModelObserver<SettingsModel>
-    @StateObject private var session: ModelObserver<SessionModel>
+    @Environment(AppEnvironment.self) private var env
+    @State private var settings: ModelObserver<SettingsModel>
+    @State private var session: ModelObserver<SessionModel>
     @State private var tmdbKey = ""
     @State private var newAddon = ""
     @State private var secret = ""
@@ -19,8 +19,8 @@ struct SettingsView: View {
 
     init() {
         let services = AppEnvironment.shared.services
-        _settings = StateObject(wrappedValue: ModelObserver(SettingsModel(services)))
-        _session = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.session))
+        _settings = State(wrappedValue: ModelObserver(SettingsModel(services)))
+        _session = State(wrappedValue: ModelObserver(AppEnvironment.shared.session))
     }
 
     var body: some View {
@@ -473,7 +473,7 @@ struct SettingsView: View {
 /// Lo que recuerda cada título: el audio (latino, castellano…) y los subtítulos que elegiste viéndolo; vale aquí y en tu
 /// Orbital. Deslizar lo olvida (vuelve a lo de Ajustes, en los dos lados).
 struct RememberedTitlesView: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @State private var rows: [Row] = []
     @State private var names: [String: String] = [:]
 

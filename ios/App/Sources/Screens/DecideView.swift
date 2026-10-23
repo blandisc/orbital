@@ -9,8 +9,8 @@ import OrbitalModels
 /// de ahí «De qué listas», que aguanta muchas (buscar, por origen, las usadas hace poco). Si nada cumple, qué quitar.
 struct DecideView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @StateObject private var observer: ModelObserver<DecideModel>
-    @EnvironmentObject private var env: AppEnvironment
+    @State private var observer: ModelObserver<DecideModel>
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     enum Page: Hashable { case more, lists }
@@ -22,7 +22,7 @@ struct DecideView: View {
     let open: (TitleRoute) -> Void
 
     init(pool: [Suggestion], sources: [DecideModel.Source] = [], open: @escaping (TitleRoute) -> Void) {
-        _observer = StateObject(wrappedValue: ModelObserver(DecideModel(AppEnvironment.shared.services, pool: pool, sources: sources)))
+        _observer = State(wrappedValue: ModelObserver(DecideModel(AppEnvironment.shared.services, pool: pool, sources: sources)))
         self.open = open
     }
 
@@ -367,12 +367,12 @@ struct DecideMoreFilters: View {
     let model: DecideModel
     let openLists: () -> Void
     let done: () -> Void
-    @StateObject private var observer: ModelObserver<DecideModel>
-    @EnvironmentObject private var env: AppEnvironment
+    @State private var observer: ModelObserver<DecideModel>
+    @Environment(AppEnvironment.self) private var env
 
     init(model: DecideModel, openLists: @escaping () -> Void, done: @escaping () -> Void) {
         self.model = model; self.openLists = openLists; self.done = done
-        _observer = StateObject(wrappedValue: ModelObserver(model))
+        _observer = State(wrappedValue: ModelObserver(model))
     }
 
     private var language: String { env.services.appSettings.uiLanguage }
@@ -476,7 +476,7 @@ struct DecideListPicker: View {
     @State private var selection: Set<String>
     @State private var query = ""
     @State private var origin: String?
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
 
     init(model: DecideModel, done: @escaping () -> Void) {
         self.model = model; self.done = done

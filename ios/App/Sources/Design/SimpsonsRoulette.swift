@@ -7,7 +7,7 @@ import OrbitalCore
 /// verde; se queda en el elegido, la pantalla se ilumina, el nombre aparece y la imagen del episodio crece desde la pantalla
 /// hasta el lugar del video en el reproductor vertical (a lo ancho), donde empieza. Con «Reducir movimiento», directo al elegido.
 struct SimpsonsRoulette: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draw: AppEnvironment.SimpsonsDraw?

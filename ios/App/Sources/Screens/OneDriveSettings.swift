@@ -5,8 +5,8 @@ import OrbitalModels
 /// Ajustes › OneDrive: tus películas y series de OneDrive como una fuente más (como en la TV). Se conecta con un código
 /// en microsoft.com/link, se elige la carpeta y sus videos salen primero en «Fuente» de su película o episodio.
 struct OneDriveSettings: View {
-    @StateObject private var observer = ModelObserver(AppEnvironment.shared.oneDriveSetup)
-    @EnvironmentObject private var env: AppEnvironment
+    @State private var observer = ModelObserver(AppEnvironment.shared.oneDriveSetup)
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.openURL) private var openURL
     @State private var confirmUnlink = false
     @State private var draftID = ""
@@ -112,7 +112,7 @@ struct OneDriveFolderPicker: View {
     let model: OneDriveModel
     /// Cierra el selector entero (no solo esta carpeta).
     let done: () -> Void
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @State private var folders: [OneDriveFolder]?
     @State private var error: String?
 

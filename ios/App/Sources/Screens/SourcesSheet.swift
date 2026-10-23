@@ -7,12 +7,12 @@ import OrbitalModels
 /// cómo sabemos el idioma, «Ver» y «Descargar», y las otras de esa fila y calidad con su nombre técnico. Las grabadas en el
 /// cine y los tráileres no se ofrecen. «Ver» en la ficha sigue arrancando sola con la recomendada (la marcada aquí).
 struct SourcesSheet: View {
-    @StateObject private var observer: ModelObserver<SourcesModel>
+    @State private var observer: ModelObserver<SourcesModel>
     /// La fuente elegida y para qué (ver o descargar).
     let choose: (Source, Purpose) -> Void
     /// Abrir una fuente con Infuse (mantener presionada), si quien abre la hoja lo permite.
     var infuse: ((Source) -> Void)?
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
 
     /// Un episodio: ¿esta versión es solo para él o la serie sigue así? («Solo este episodio | Desde aquí», como la TV).
     private let episode: Bool
@@ -20,7 +20,7 @@ struct SourcesSheet: View {
     @State private var fromHere: Bool
 
     init(model: TitleModel, videoID: String, fromHere: Bool = false, choose: @escaping (Source, Purpose) -> Void, infuse: ((Source) -> Void)? = nil) {
-        _observer = StateObject(wrappedValue: ModelObserver(SourcesModel(AppEnvironment.shared.services, kind: model.kind, metaID: model.metaID, videoID: videoID)))
+        _observer = State(wrappedValue: ModelObserver(SourcesModel(AppEnvironment.shared.services, kind: model.kind, metaID: model.metaID, videoID: videoID)))
         self.choose = choose
         self.infuse = infuse
         episode = model.kind == "series" && videoID.contains(":")

@@ -4,9 +4,9 @@ import OrbitalModels
 
 /// «Para ti»: el mosaico (como en la TV, solo películas y series) y las listas (Trakt y plataformas).
 struct ParaTiView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var model: ModelObserver<ParaTiModel>
-    @StateObject private var tint = ArtTint()
+    @Environment(AppEnvironment.self) private var env
+    @State private var model: ModelObserver<ParaTiModel>
+    @State private var tint = ArtTint()
     /// El arte de la pieza enfocada del mosaico: el fondo de toda la pantalla toma su tono (nil en el ambiente o en Listas).
     @State private var focusedArt: String?
     /// La sugerencia enfocada del mosaico (su información va bajo él).
@@ -21,7 +21,7 @@ struct ParaTiView: View {
     /// Un iPhone de 375 pt o menos (SE, mini): la barra de arriba no da para todo junto al título.
     static var narrow: Bool { UIScreen.main.bounds.width < DS.Size.compactWidth }
 
-    init() { _model = StateObject(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
+    init() { _model = State(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
 
     var body: some View {
         let m = model.model
@@ -153,7 +153,7 @@ struct ParaTiView: View {
 
 /// Las acciones de una sugerencia (mantener el dedo sobre un póster, o «Más» en el destacado): ver, Mi lista, descargar, la TV y «No me interesa».
 struct SuggestionActions: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     let suggestion: Suggestion
     var includeWatch = true
     let onDismiss: (Suggestion) -> Void
@@ -257,19 +257,19 @@ enum KindFilter: String { case all, series, movie }
 
 /// «Para ti › Listas»: el filtro Todo · Series · Películas, un destacado y los estantes (cada uno dice de dónde viene).
 struct ListsView: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
+    var observer: ModelObserver<ParaTiModel>
     /// «Decide por mí» (en un iPhone angosto vive en el índice de arriba).
     var onDecide: () -> Void = {}
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var openTitle: TitleRoute?
     /// Los colores del arte del destacado: su «Ver» toma el color claro, como en la TV.
-    @StateObject private var featuredTint = ArtTint()
+    @State private var featuredTint = ArtTint()
     /// La posición del carrusel del destacado (vuelta infinita: la tarjeta es la posición módulo cuántas hay).
     @State private var featuredSlot: Int?
     /// Premios, tus listas de Trakt y «Por año».
     /// Uno para toda la app: cambiar entre mosaico y listas ya no lo vuelve a pedir todo (Mi lista, años, estudios).
-    @StateObject private var collections = ModelObserver(Self.sharedCollections)
+    @State private var collections = ModelObserver(Self.sharedCollections)
     @MainActor static let sharedCollections = CollectionsModel(AppEnvironment.shared.services)
     /// El grupo que estás viendo (el índice de arriba lo marca).
     @State private var activeSection: CollectionSection = .forYou
@@ -698,8 +698,8 @@ struct ListsView: View {
 
 /// La lista completa de un estante, en cuadrícula (el mismo título y logo del encabezado que se tocó).
 struct ListGridView: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
-    @ObservedObject var collections: ModelObserver<CollectionsModel>
+    var observer: ModelObserver<ParaTiModel>
+    var collections: ModelObserver<CollectionsModel>
     let shelfID: String
     private var model: ParaTiModel { observer.model }
 
@@ -741,7 +741,7 @@ struct ListGridView: View {
 
 /// El calendario completo («Por día» · «Semana»): la vista de Próximos estrenos de siempre, abierta desde el encabezado del estante.
 struct UpcomingScreen: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
+    var observer: ModelObserver<ParaTiModel>
 
     var body: some View {
         ScrollView { UpcomingView(observer: observer).padding(.bottom, DS.Space.s14) }
@@ -757,7 +757,7 @@ struct PlatformRoute: Hashable { var brand: String }
 /// Los rankings de una plataforma: su logo con su brillo arriba y, por ranking (Top 10 de Netflix, tendencia de JustWatch;
 /// series y películas), los pósters con su número grande en el color de la plataforma. Tocar uno abre su ficha.
 struct PlatformRankingsView: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
+    var observer: ModelObserver<ParaTiModel>
     let hub: PlatformHub
     private var model: ParaTiModel { observer.model }
     /// «Series» o «Películas» (pestañas grandes) y cuál de sus listas (pestañas de texto con el subrayado de la marca).

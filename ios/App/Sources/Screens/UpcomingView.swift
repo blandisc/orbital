@@ -7,7 +7,7 @@ import OrbitalModels
 ///   · Semana: una tira con los siete días (como la guía de la TV); al tocar uno, lo que sale ese día.
 /// Varios episodios el mismo día van juntos («T2 E4–E6»); lo de madrugada dice «Desde la madrugada». Pulsar abre la serie.
 struct UpcomingView: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
+    var observer: ModelObserver<ParaTiModel>
     @State private var picked: Date?
     @Environment(\.locale) private var locale
     private var model: ParaTiModel { observer.model }

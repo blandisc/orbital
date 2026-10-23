@@ -5,7 +5,7 @@ import OrbitalModels
 /// «Tu año» (Ajustes, bajo tu perfil): lo que viste este año según tu historial de Trakt — horas, racha más larga, tu
 /// género, el mapa de calor día por día (películas, series o las dos) y lo que más viste.
 struct YearView: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @State private var review: YearInReview?
     @State private var loading = true
     /// El día que tocaste en el mapa (al abrir: el último con algo visto).

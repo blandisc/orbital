@@ -48,7 +48,7 @@ struct CollectionRoute: Hashable {
 /// Una colección en cuadrícula de pósters (con ordenar y filtrar): los ganadores de un premio (con el año del premio), Mi
 /// lista de Stremio, o lo más popular de un año (películas o series).
 struct CollectionGridView: View {
-    @ObservedObject var collections: ModelObserver<CollectionsModel>
+    var collections: ModelObserver<CollectionsModel>
     let route: CollectionRoute
     @State private var kind = "movie"
     @State private var yearItems: [Suggestion] = []

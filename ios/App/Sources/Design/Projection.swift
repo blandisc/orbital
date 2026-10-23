@@ -312,7 +312,7 @@ struct MosaicCaption<More: View>: View {
 struct WithArtColors<Content: View>: View {
     let url: String?
     @ViewBuilder let content: (ArtColors?) -> Content
-    @StateObject private var tint = ArtTint()
+    @State private var tint = ArtTint()
 
     var body: some View { content(tint.colors).task(id: url) { await tint.load(url) } }
 }

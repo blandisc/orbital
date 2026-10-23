@@ -6,25 +6,28 @@ import OrbitalModels
 
 /// Lo que la app necesita en todas partes: los servicios, quién reproduce y qué hacer cuando Infuse vuelve.
 @MainActor
-final class AppEnvironment: ObservableObject {
-    let services: Services
+@Observable
+final class AppEnvironment {
+    /// Cambiar el idioma (o una clave) vuelve a pintar toda la app: quien lee `services` mientras se pinta sigue sus cambios.
+    var services: Services { core.track(); return core }
+    private let core: Services
     let transport: BackgroundDownloadTransport
     /// Mantiene la app viva en segundo plano mientras baja algo que pediste (iOS 26, `BGContinuedProcessingTask`).
     let downloadContinuation = DownloadContinuation()
     /// Una sola sesión para toda la app (la pantalla de Ajustes y la raíz ven el mismo estado al cerrar sesión).
-    private(set) var session: SessionModel!
+    @ObservationIgnored private(set) var session: SessionModel!
     /// «Viendo en la TV» y lo que la TV le deja al iPhone («Enviar» / «Descargar en el iPhone»): un solo sondeo para toda la app,
     /// no uno por pantalla (así una descarga mandada desde la TV arranca aunque estés en otra pestaña).
-    private(set) var tvNow: TVNowModel!
+    @ObservationIgnored private(set) var tvNow: TVNowModel!
     /// Lo popular de Buscar: uno para toda la app, pedido al abrirla (Buscar ya lo encuentra listo, con su color).
-    private(set) var catalog: CatalogModel!
-    private(set) var inbox: InboxModel!
+    @ObservationIgnored private(set) var catalog: CatalogModel!
+    @ObservationIgnored private(set) var inbox: InboxModel!
     /// Conectar OneDrive: uno para toda la app (si sales de Ajustes mientras escribes el código, al volver sigue esperando).
-    lazy var oneDriveSetup = OneDriveModel(services)
-    private var servicesSubscription: ObservableModel.Subscription?
+    @ObservationIgnored lazy var oneDriveSetup = OneDriveModel(services)
+    @ObservationIgnored private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
     private let liveActivity = DownloadLiveActivityController()
-    private var traktObserver: NSObjectProtocol?
+    @ObservationIgnored private var traktObserver: NSObjectProtocol?
     /// La actividad en vivo de las descargas: en segundo plano su barra avanza sola con lo estimado.
     func setDownloadsBackgrounded(_ value: Bool) async {
         // Con la app a la vista, las descargas por pedazos van por el carril rápido; al irte, pasan a segundo plano, salvo que
@@ -50,11 +53,11 @@ final class AppEnvironment: ObservableObject {
         }
     }
     /// Cambia cada vez que termina una reproducción (aquí o en Infuse): Inicio y la ficha se ponen al día.
-    @Published private(set) var watchedSomething = 0
+    private(set) var watchedSomething = 0
     /// Una ficha que pidió abrir un enlace (el widget): `MainTabs` la empuja en Inicio y la vacía.
     var pendingTitle: TitleRoute? { get { ui.pendingTitle } set { ui.pendingTitle = newValue } }
     /// Lo que se abrió en Infuse y está esperando a que vuelva (no se pinta).
-    private var external: ExternalSession?
+    @ObservationIgnored private var external: ExternalSession?
     /// Infuse volvió sin duración y no se sabe si terminaste: se pregunta.
     var askFinished: PlayRequest? { get { ui.askFinished } set { ui.askFinished = newValue } }
     /// Un aviso: lo que pasó («Descargando…») o lo que salió mal.
@@ -78,10 +81,10 @@ final class AppEnvironment: ObservableObject {
     /// Lo que hace el botón de un aviso: ir a Descargas, o lo que pidió quien avisó (`perform`, con su número).
     enum BannerAction: Equatable { case downloads, perform(Int) }
     /// Lo que corre el botón de cada aviso con `.perform` (el de la vista y los que esperan).
-    private var performs: [Int: () -> Void] = [:]
+    @ObservationIgnored private var performs: [Int: () -> Void] = [:]
     /// Los que esperan: uno con salida («Deshacer») no se pisa; el siguiente sale cuando ese se va.
-    private var bannerQueue: [Banner] = []
-    private var bannerSerial = 0
+    @ObservationIgnored private var bannerQueue: [Banner] = []
+    @ObservationIgnored private var bannerSerial = 0
 
     /// Un aviso con un botón propio: «Guardada en Mi lista · Cambiar», «Bajando la recomendada · Otra».
     func notify(_ text: String, detail: String? = nil, tone: DSNotice.Tone = .success, actionTitle: String, actionSymbol: String? = nil,
@@ -186,7 +189,7 @@ final class AppEnvironment: ObservableObject {
         let transport = BackgroundDownloadTransport()
         self.transport = transport
         let services = Self.makeServices(transport)
-        self.services = services
+        self.core = services
         let store = services.settings   // el almacén es seguro entre hilos: los cierres no tocan nada aislado al hilo principal
         transport.allowsCellular = { !store.value.wifiOnlyDownloads }
         services.episodeLabel = { Strings.episode(season: $0, episode: $1, language: store.value.uiLanguage) }
@@ -206,8 +209,8 @@ final class AppEnvironment: ObservableObject {
             WidgetPublisher.publish(Demo.widget == "empty" ? .empty : Demo.widgetSnapshot)
         }
         #endif
-        // Cambiar el idioma (o una clave) vuelve a pintar toda la app.
-        servicesSubscription = services.onChange { [weak self] in self?.objectWillChange.send(); self?.applyAppearance(); self?.shareConsoleWithImages() }
+        // Cambiar el idioma (o una clave) vuelve a pintar toda la app (por Observation, ver `services`); aquí, la apariencia y las imágenes.
+        servicesSubscription = services.onChange { [weak self] in self?.applyAppearance(); self?.shareConsoleWithImages() }
         shareConsoleWithImages()
         session = SessionModel(services)
         inbox = InboxModel(services)
@@ -329,7 +332,7 @@ final class AppEnvironment: ObservableObject {
         await services.titlePrefs.syncChoices(with: services.orbital)
     }
 
-    private var choiceSync: Task<Void, Never>?
+    @ObservationIgnored private var choiceSync: Task<Void, Never>?
     func scheduleChoiceSync() {
         choiceSync?.cancel()
         choiceSync = Task { [weak self] in
@@ -570,7 +573,7 @@ final class AppEnvironment: ObservableObject {
         await ImagePipeline.shared.warmPosters(draw.reel.map { Self.simpsonsStill(season: $0.season, episode: $0.episode.episode) })
         nextSimpsons = draw
     }
-    private var nextSimpsons: SimpsonsDraw?
+    @ObservationIgnored private var nextSimpsons: SimpsonsDraw?
     nonisolated static let simpsonsRefill: Double = 15
     /// El que ya estaba listo (y se prepara el siguiente), o uno nuevo.
     func takeSimpsons() async -> SimpsonsDraw? {

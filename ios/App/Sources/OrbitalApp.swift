@@ -4,7 +4,7 @@ import AVFoundation
 @main
 struct OrbitalApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
-    @StateObject private var env = AppEnvironment.shared
+    @State private var env = AppEnvironment.shared
 
     init() {
         // Video con sonido aunque el teléfono esté en silencio (como cualquier reproductor).
@@ -14,7 +14,7 @@ struct OrbitalApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environmentObject(env)
+                .environment(env)
                 .environment(\.locale, env.uiLocale)
                 .onAppear { env.applyAppearance() }   // Ajustes › Apariencia (por omisión, la del iPhone), en la ventana
                 .tint(DS.primary)

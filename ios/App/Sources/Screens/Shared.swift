@@ -36,7 +36,7 @@ extension EnvironmentValues {
 
 /// Arriba a la derecha de cada pestaña: tu avatar, que abre Ajustes (en todas igual: siempre se sabe dónde están).
 struct ProfileButton: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     var avatar: String?
     var body: some View {
         NavigationLink(value: SettingsRoute()) { AvatarImage(id: avatar ?? env.services.appSettings.avatar) }

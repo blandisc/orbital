@@ -3,11 +3,11 @@ import OrbitalCore
 import OrbitalModels
 
 struct HomeView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var home: ModelObserver<HomeModel>
-    @StateObject private var tvNow: ModelObserver<TVNowModel>
-    @StateObject private var inbox: ModelObserver<InboxModel>
-    @StateObject private var tint = ArtTint()
+    @Environment(AppEnvironment.self) private var env
+    @State private var home: ModelObserver<HomeModel>
+    @State private var tvNow: ModelObserver<TVNowModel>
+    @State private var inbox: ModelObserver<InboxModel>
+    @State private var tint = ArtTint()
     @State private var pendingCount = 0
     @State private var openTitle: TitleRoute?
     /// La tarjeta al frente del carrusel: su lugar en la vuelta infinita (`slot % cuántas`).
@@ -30,10 +30,10 @@ struct HomeView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
-        _home = StateObject(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services)))
+        _home = State(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services)))
         // El sondeo es de toda la app (arranca en RootView): aquí solo se ve.
-        _tvNow = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.tvNow))
-        _inbox = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.inbox))
+        _tvNow = State(wrappedValue: ModelObserver(AppEnvironment.shared.tvNow))
+        _inbox = State(wrappedValue: ModelObserver(AppEnvironment.shared.inbox))
     }
 
     var body: some View {

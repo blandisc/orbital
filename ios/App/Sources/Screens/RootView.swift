@@ -14,18 +14,18 @@ struct TitleRoute: Hashable {
 }
 
 struct RootView: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// El reproductor y los avisos: solo la raíz se vuelve a pintar cuando cambian.
     private let ui = AppEnvironment.shared.ui
-    @StateObject private var session: ModelObserver<SessionModel>
-    @StateObject private var services: ModelObserver<Services>
+    @State private var session: ModelObserver<SessionModel>
+    @State private var services: ModelObserver<Services>
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let env = AppEnvironment.shared
-        _session = StateObject(wrappedValue: ModelObserver(env.session))
-        _services = StateObject(wrappedValue: ModelObserver(env.services))
+        _session = State(wrappedValue: ModelObserver(env.session))
+        _services = State(wrappedValue: ModelObserver(env.services))
     }
 
     /// Desde dónde sigue en la TV: «desde 12:34», o «desde el principio» si apenas empezaba.
@@ -37,6 +37,8 @@ struct RootView: View {
     }
 
     var body: some View {
+        @Bindable var env = env
+        let _ = services.model   // cualquier cambio de los servicios (idioma, cuenta) vuelve a pintar la raíz
         Group {
             switch session.model.state {
             case .signedIn: MainTabs().onAppear { Perf.mark("app.tabs") }
@@ -130,9 +132,9 @@ extension PlayRequest: @retroactive Identifiable { public var id: String { "\(me
 
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
 struct MainTabs: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     private let ui = AppEnvironment.shared.ui   // la ficha o la pestaña que se pide abrir
-    @StateObject private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
+    @State private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
     @State private var showRemote = false
     /// El acompañante del juego abierto en la consola.
     @State private var showGame = false
@@ -278,7 +280,7 @@ struct MainTabs: View {
 
 /// Un aviso de la app (sin Infuse, sin fuentes, descargando…), arriba como todos: se va solo; tocarlo lo cierra.
 struct BannerView: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     private let ui = AppEnvironment.shared.ui
 
     var body: some View {

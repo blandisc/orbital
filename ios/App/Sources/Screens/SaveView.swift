@@ -5,8 +5,8 @@ import OrbitalModels
 /// «Guardar en…»: en qué listas va un título, varias a la vez — Mi lista (Stremio), tu watchlist y tus listas de Trakt
 /// (las mismas que ves en la TV y en «Tus listas»); abajo, una lista nueva.
 struct SaveView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @ObservedObject var observer: ModelObserver<TitleModel>
+    @Environment(AppEnvironment.self) private var env
+    var observer: ModelObserver<TitleModel>
     @State private var naming = false
     @State private var newName = ""
 

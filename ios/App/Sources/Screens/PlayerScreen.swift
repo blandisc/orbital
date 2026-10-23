@@ -3,19 +3,28 @@ import AVFoundation
 import OrbitalCore
 import OrbitalModels
 
-/// Guarda el motor y el modelo juntos (el motor se arma una sola vez por reproducción).
+/// Guarda el motor y el modelo juntos (el motor se arma una sola vez por reproducción). Vive en un `@State`, que evalúa su
+/// valor inicial en cada `init` de la vista: por eso el motor y el modelo se arman la primera vez que se piden, no al crearlo.
 @MainActor
-final class PlayerHolder: ObservableObject {
-    let engine: VideoPlayerEngine
-    let model: PlayerModel
-    private var subscription: ObservableModel.Subscription?
+final class PlayerHolder {
+    private var parts: (engine: VideoPlayerEngine, model: PlayerModel)?
 
-    init() {
+    var engine: VideoPlayerEngine { built.engine }
+    /// La vista que lee el modelo mientras se pinta se vuelve a pintar con cada cambio suyo (Observation).
+    var model: PlayerModel { let model = built.model; model.track(); return model }
+
+    private var built: (engine: VideoPlayerEngine, model: PlayerModel) {
+        if let parts { return parts }
+        let made = Self.make()
+        parts = made
+        return made
+    }
+
+    private static func make() -> (engine: VideoPlayerEngine, model: PlayerModel) {
         let services = AppEnvironment.shared.services
         let engine = PlayerEngines.make()
-        self.engine = engine
         let library = services.oneDriveLibrary
-        model = PlayerModel(engine: engine, finder: services.finder, watch: services.watch, titlePrefs: services.titlePrefs, settings: services.settings,
+        let model = PlayerModel(engine: engine, finder: services.finder, watch: services.watch, titlePrefs: services.titlePrefs, settings: services.settings,
                             onCellular: { Connectivity.shared.isCellular }, episodeLabel: services.episodeLabel,
                             localEpisode: { metaID, videoID in
                                 // El siguiente episodio ya descargado (para seguir viendo sin conexión).
@@ -28,7 +37,6 @@ final class PlayerHolder: ObservableObject {
         model.subtitlePicks = SubtitlePicks(services.kv)   // «Este va bien»: el subtítulo que elegiste para la serie
         model.subtitleOffsets = SubtitleOffsets(services.kv)   // la sincronía de cada versión (antes no se conectaba y se perdía)
         model.ownSource = { videoID, preferred in await library.source(videoID, purpose: .watch, preferring: preferred) }   // Mi media: tu copia primero
-        subscription = model.onChange { [weak self] in self?.objectWillChange.send() }
         // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
         model.onFinishedLocal = { finished in
             Task {
@@ -36,19 +44,20 @@ final class PlayerHolder: ObservableObject {
                 await DownloadsModel(services, freeSpace: { DiskSpace.freeBytes() }).afterWatching(item)
             }
         }
+        return (engine, model)
     }
 }
 
 /// El reproductor a pantalla completa, con gestos: un toque muestra los controles, doble toque a los lados salta ±10 s.
 struct PlayerScreen: View {
     let request: PlayRequest
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Con VoiceOver los controles no se esconden solos (si no, no queda nada que tocar).
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
-    @StateObject private var holder = PlayerHolder()
+    @State private var holder = PlayerHolder()
     @State private var controlsVisible = true
     /// «Bloquear» (como Netflix): sin controles y la pantalla no responde a toques ni deslizamientos (para no pausar o adelantar
     /// sin querer). Un toque enseña el candado unos segundos; tocarlo desbloquea.
@@ -66,7 +75,7 @@ struct PlayerScreen: View {
     @State private var pendingSeek: Double?
     @AppStorage("scare-warnings") private var scareWarnings = true
     @State private var finished = false
-    @StateObject private var pip = PictureInPicture()
+    @State private var pip = PictureInPicture()
     @State private var nowPlaying = NowPlaying()
     /// En vertical, a qué altura va el video (lo mueves arrastrándolo; se recuerda) y su valor mientras arrastras.
     @AppStorage(PlayerScreen.portraitCenterKey) private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)

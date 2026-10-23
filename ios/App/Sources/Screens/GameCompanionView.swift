@@ -8,9 +8,9 @@ import OrbitalModels
 /// la guía, tus notas, el temporizador y, en juegos de emulador, sus controles. Avisa en el iPhone cuando la batería de la
 /// consola baja, cuando se cumple el temporizador y 10 minutos antes de que un juego en pausa se cierre solo.
 struct GameCompanionView: View {
-    @ObservedObject var tvNow: ModelObserver<TVNowModel>
+    var tvNow: ModelObserver<TVNowModel>
     let game: OrbitalRemote.Game
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @State private var notes = ""
     @State private var timerEnds: Date?
 

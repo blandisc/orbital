@@ -8,7 +8,7 @@ import OrbitalModels
 struct RemoteSheet: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
-    @ObservedObject var tvNow: ModelObserver<TVNowModel>
+    var tvNow: ModelObserver<TVNowModel>
     @Binding var large: Bool
     let onContinueHere: (OrbitalRemote.NowPlaying) -> Void
     @State private var compactHeight: CGFloat = DS.Remote.padHeight
@@ -18,14 +18,14 @@ struct RemoteSheet: View {
     @State private var text = ""
     /// Lo que ya tiene la TV de lo que escribiste (para mandar solo la diferencia).
     @State private var sentText = ""
-    @StateObject private var speech = SpeechInput()
+    @State private var speech = SpeechInput()
     @State private var reply: OrbitalRemote.VoiceReply?
     @State private var asking = false
     @State private var showsGuide = false
     @State private var showsScares = false
     /// En el reproductor o la TV en vivo, el pad va plegado (lo de arriba es lo que se usa); se abre a mano.
     @State private var showsPad = false
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
 
     var body: some View {
         let model = tvNow.model
