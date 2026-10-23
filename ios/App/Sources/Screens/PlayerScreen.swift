@@ -550,7 +550,7 @@ struct PlayerScreen: View {
                                           && !videoRect(in: size).insetBy(dx: 0, dy: -DS.PlayerPanel.handleReach).contains(value.startLocation)
                                           || startsOnHandle(value.startLocation, size: size):
                         movingVideo = true
-                        portraitAtDragStart = portraitCenter
+                        portraitAtDragStart = Self.resolvedCenter(portraitCenter, in: size)   // en vertical, arrastrar arriba o abajo mueve el video
                         controlsVisible = true                 // se mueve a la altura de los controles (sin ellos va al centro)
                     case .vertical:
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
@@ -1700,11 +1700,17 @@ struct PlayerScreen: View {
         let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
         return Double((top + height / 2) / size.height)...Double((lowest + height / 2) / size.height)
     }
+    /// El centro del video como fracción del alto: el que dejaste, o (negativo: sin mover) el de lo más arriba, donde
+    /// `portraitVideoRect` lo pinta. Sin esto, arrastrar o mover con VoiceOver partía de -1 y el video no bajaba.
+    static func resolvedCenter(_ stored: Double, in size: CGSize) -> Double {
+        if stored >= 0 || size.height <= 0 { return stored }
+        return portraitLimits(in: size).lowerBound
+    }
 
     /// VoiceOver: subir o bajar el video un tramo.
     private func stepVideo(_ step: Int, size: CGSize) {
         let limits = Self.portraitLimits(in: size)
-        let next = min(max(portraitCenter + Double(step) * DS.PlayerPanel.voiceOverStep, limits.lowerBound), limits.upperBound)
+        let next = min(max(Self.resolvedCenter(portraitCenter, in: size) + Double(step) * DS.PlayerPanel.voiceOverStep, limits.lowerBound), limits.upperBound)
         withAnimation(DS.Motion.base(reduceMotion)) { portraitCenter = next }
     }
 
