@@ -137,12 +137,13 @@ struct CheckRow: View {
     let color: Color
     let checked: Bool
     let action: () -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: DS.Space.s3) {
                 PanelIcon(symbol: symbol, color: color)
-                title.recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                title.recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(typeSize.isAccessibilitySize ? 3 : 1)   // con letra grande no se corta
                 Spacer(minLength: DS.Space.s2)
                 Image(systemName: checked ? "checkmark.circle.fill" : "circle")
                     .font(DS.TextRecipe.title.font.weight(.regular))
