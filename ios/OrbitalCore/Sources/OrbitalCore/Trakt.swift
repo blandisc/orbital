@@ -393,10 +393,23 @@ public actor Trakt {
     }
 
     public func lists() async throws -> [(id: String, name: String)] {
+        try await ownLists().map { ($0.id, $0.name) }
+    }
+
+    /// Una de tus listas, con cuándo cambió por última vez («Guardar en…» pone arriba las recientes).
+    public struct OwnList: Equatable, Sendable {
+        public var id: String
+        public var name: String
+        public var updatedAt: Date?
+        public init(id: String, name: String, updatedAt: Date? = nil) { self.id = id; self.name = name; self.updatedAt = updatedAt }
+    }
+
+    /// Tus listas tal como las acomodaste en Trakt, con su fecha de cambio (`updated_at`, o `created_at` si no viene).
+    public func ownLists() async throws -> [OwnList] {
         let rows = try await get("/users/me/lists")
         return (rows?.array ?? []).compactMap { row in
             guard let name = row["name"]?.string?.trimmingCharacters(in: .whitespaces), !name.isEmpty, let id = row["ids"]?["trakt"]?.intValue else { return nil }
-            return (String(id), name)
+            return OwnList(id: String(id), name: name, updatedAt: (row["updated_at"]?.string ?? row["created_at"]?.string).flatMap(TraktParsing.date))
         }
     }
 

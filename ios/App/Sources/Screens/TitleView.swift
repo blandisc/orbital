@@ -328,18 +328,18 @@ struct TitleView: View {
         .padding(.vertical, DS.Space.s3 - DS.Space.s2)
     }
 
-    /// Guardar: un toque la guarda en Mi lista (con un aviso que deja cambiar); mantener presionado elige dónde.
+    /// Guardar: un toque la guarda en la lista por omisión (tu watchlist con Trakt, si no Mi lista; `SaveDestination`), con un
+    /// aviso que deja cambiar; mantener presionado elige dónde (la de por omisión primero).
     private func saveAction(_ model: TitleModel) -> some View {
         Menu {
-            Button { Task { await model.toggleLibrary() } } label: {
-                Label { Text("Mi lista") + Text(verbatim: " (Stremio)") } icon: { Image(systemName: model.inLibrary ? "checkmark" : "rectangle.stack") }
-            }
-            if model.traktAvailable {
-                Button { Task { await model.toggleWatchlist() } } label: {
-                    Label { Text("Tu watchlist") + Text(verbatim: " (Trakt)") } icon: { Image(systemName: model.inWatchlist ? "checkmark" : "bookmark") }
+            ForEach(model.fixedDestinations, id: \.self) { destination in
+                Button { Task { await model.toggle(destination) } } label: {
+                    Label { SaveDestinationName.text(destination) } icon: {
+                        Image(systemName: model.isSaved(in: destination) ? "checkmark" : SaveDestinationName.symbol(destination))
+                    }
                 }
-                Button("Tus listas de Trakt…", systemImage: "list.bullet") { saving = true }
             }
+            if model.traktAvailable { Button("Tus listas de Trakt…", systemImage: "list.bullet") { saving = true } }
         } label: {
             ActionTileLabel(title: model.isSaved ? Text("Guardada") : Text("Guardar"), symbol: model.isSaved ? "checkmark.circle.fill" : "plus.circle", active: model.isSaved, tint: artAccent)
         } primaryAction: {
@@ -352,14 +352,15 @@ struct TitleView: View {
     }
 
     private func quickSave(_ model: TitleModel) async {
-        if !model.isSaved {
-            await model.toggleLibrary()
-            guard model.inLibrary else { return }   // falló: lo dice el mensaje de la ficha
-            env.notify("Guardada en Mi lista", detail: "Stremio", actionTitle: "Cambiar") { saving = true }
-        } else if model.inLibrary && !model.inWatchlist && !model.inSomeList && !(model.lists ?? []).contains(where: \.contains) {
-            await model.toggleLibrary()
-            env.notify("Quitada de Mi lista", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { Task { await model.toggleLibrary() } }
-        } else {
+        switch model.quickSave {
+        case .add(let destination):
+            await model.toggle(destination)
+            guard model.isSaved(in: destination) else { return }   // falló: lo dice el mensaje de la ficha
+            env.notify(saved: destination) { saving = true }
+        case .remove(let destination):
+            await model.toggle(destination)
+            env.notify(removed: destination) { Task { await model.toggle(destination) } }
+        case .choose:
             saving = true   // está en varias listas: que elijas de cuál quitarla
         }
     }

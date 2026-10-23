@@ -143,7 +143,9 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `AppMark` | El logotipo como en la TV y la computadora (`OrbitalWordmark`: planeta, «orbital» y su luna) en lugar del saludo | Inicio |
 | `CenteredCarousel`, `reflected()` | Tira centrada (la del medio al frente, las de los lados más chicas) y el reflejo que da peso | Para ti › Plataformas, Premios, Estudios, Por año |
 | `ConfirmIconButton` | Botón de ícono que se abre para confirmar («¿Ver en la TV?») | Inicio › carrusel |
-| `CheckRow` | Renglón con ✓ para elegir varias (en qué listas va un título) | Ficha › Guardar en… |
+| `CheckRow` | Renglón con ✓ para elegir varias (en qué listas va un título); todo el renglón se toca y mide al menos `DS.Size.touchTarget` | Ficha › Guardar en… |
+| `CheckRowSkeleton` | El lugar de un `CheckRow` que todavía no llega: el mismo renglón en modo marcador (`redacted`), sin interacción y oculto a VoiceOver (la zona dice «Cargando tus listas de Trakt») | Ficha › Guardar en… |
+| `SaveDestinationName` | El nombre de una lista fija con su servicio en gris («Tu watchlist (Trakt)», «Mi lista (Stremio)»), su símbolo y su tono | Menú de «Guardar» de la ficha, Guardar en… |
 | `QualityBadges` | Insignias con contorno: 4K · DV · HDR10+ · ATMOS · TRUEHD | Fuentes (ficha y reproductor) |
 | `RatingsRow`, `RatingMark` | IMDb · TMDB · Trakt con el logotipo de cada servicio en sus colores (guarda su alto: no brinca) | Ficha |
 | `PersonPhoto`, `PersonFace` | La cara de alguien (o sus iniciales), con nombre y personaje | Ficha › Reparto y equipo, Persona |

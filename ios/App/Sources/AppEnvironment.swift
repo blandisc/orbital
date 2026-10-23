@@ -683,14 +683,45 @@ final class AppEnvironment {
                    episodeLabel: label, poster: s.poster, meta: start.meta)
     }
 
-    /// «Guardar» desde el menú de un póster: lo mismo que el círculo de la ficha (Mi lista, con un aviso que se deshace).
-    func addToLibrary(_ s: Suggestion) async {
+    /// «Guardar» desde el menú de un póster: lo mismo que un toque en «Guardar» de la ficha — a la lista por omisión
+    /// (`SaveDestination`: tu watchlist con Trakt, si no Mi lista), con un aviso que se deshace.
+    func save(_ s: Suggestion) async {
+        let destination = SaveDestination.preferred(traktLinked: services.trakt?.linked ?? false, metaID: s.imdb)
         do {
-            try await services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: true)
-            notify("Guardada en Mi lista", detail: "Stremio", actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { [weak self] in
-                Task { try? await self?.services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: false) }
+            try await setSaved(s, in: destination, add: true)
+            notify(saved: destination, undo: true) { [weak self] in Task { try? await self?.setSaved(s, in: destination, add: false) } }
+        } catch {
+            let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar tu lista de Stremio"
+            notify(failure, detail: "\(error)", tone: .warn)   // la causa, traducida
+        }
+    }
+
+    /// Pone o quita un póster de una de las listas fijas. Trakt sin conexión: queda pendiente en el iPhone (como en la ficha).
+    private func setSaved(_ s: Suggestion, in destination: SaveDestination, add: Bool) async throws {
+        switch destination {
+        case .stremioLibrary:
+            try await services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: add)
+        case .traktWatchlist:
+            guard let trakt = services.trakt else { return }
+            do { try await trakt.setWatchlist(imdb: s.imdb, series: s.kind == "series", add: add) }
+            catch where TraktOutbox.retryable(error) {
+                services.traktOutbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: s.imdb, series: s.kind == "series", add: add))
             }
-        } catch { notify("No pude cambiar tu lista de Stremio", detail: "\(error)", tone: .warn) }   // la causa, traducida
+            await services.forYou.clearCache()
+        }
+    }
+
+    /// El aviso de «Guardar» (la ficha y los pósters): dónde quedó y, a la mano, cambiarlo (o deshacerlo).
+    func notify(saved destination: SaveDestination, undo: Bool = false, perform: @escaping () -> Void) {
+        let (text, detail) = destination == .traktWatchlist ? ("Guardada en tu watchlist", "Trakt") : ("Guardada en Mi lista", "Stremio")
+        if undo { notify(text, detail: detail, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", perform: perform) }
+        else { notify(text, detail: detail, actionTitle: "Cambiar", perform: perform) }
+    }
+
+    /// El aviso al quitar con un toque: de dónde salió, con «Deshacer».
+    func notify(removed destination: SaveDestination, undo: @escaping () -> Void) {
+        notify(destination == .traktWatchlist ? "Quitada de tu watchlist" : "Quitada de Mi lista", tone: .info, actionTitle: "Deshacer",
+               actionSymbol: "arrow.uturn.backward", perform: undo)
     }
 
     /// «Descargar» desde Para ti (la fuente recomendada).
