@@ -363,7 +363,7 @@ struct TitleLogo: View {
                 // Su alto real (por su proporción, con el tope de siempre): una caja más alta que el logo dejaba un hueco
                 // entre el rótulo y el logo.
                 .frame(maxWidth: DS.Size.cardMax, maxHeight: fittedHeight, alignment: centered ? .bottom : .bottomLeading)
-                .shadow(color: DS.scrim, radius: DS.Space.s1)
+                .shadow(DS.Elevation.low)
                 .task(id: url) {
                     trimmed = LogoTrim.cached(u)
                     if trimmed == nil {

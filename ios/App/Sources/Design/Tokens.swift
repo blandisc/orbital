@@ -184,6 +184,21 @@ enum DS {
         static let seekBubbleBottomInset: CGFloat = 108
     }
 
+    // MARK: Elevación (sombras)
+    /// Las sombras de las piezas sobre el contenido: color, difuminado y cuánto bajan. Se usan con `.shadow(DS.Elevation.low)`.
+    struct Elevation {
+        var color: Color, radius: CGFloat, y: CGFloat = 0
+        /// Un borde apenas despegado (texto, logos y tarjetas sobre el arte).
+        static let low = Elevation(color: DS.scrim, radius: DS.Space.s1)
+        /// Una pieza levantada que proyecta hacia abajo.
+        static let medium = Elevation(color: DS.scrim, radius: DS.Space.s2, y: DS.Space.s1)
+        /// Lo mismo, más marcado.
+        static let high = Elevation(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+        /// La misma sombra con otro color (o `.clear` para quitarla sin mover nada) o con otra caída.
+        func color(_ color: Color) -> Elevation { Elevation(color: color, radius: radius, y: y) }
+        func drop(_ y: CGFloat) -> Elevation { Elevation(color: color, radius: radius, y: y) }
+    }
+
     // MARK: Espacio y forma
     enum Space {
         static let s1 = CGFloat(DesignTokens.Space.s1), s2 = CGFloat(DesignTokens.Space.s2), s3 = CGFloat(DesignTokens.Space.s3)
@@ -697,5 +712,12 @@ enum DS {
         static let driftPerSecond = CGFloat(DesignTokens.Mosaic.driftPerSecond)
         static let buffer = CGFloat(DesignTokens.Mosaic.bufferHeight)
         static let focusedRowRatio = DesignTokens.Mosaic.focusedRowRatio
+    }
+}
+
+extension View {
+    /// Una sombra del sistema de diseño (`DS.Elevation`).
+    func shadow(_ elevation: DS.Elevation) -> some View {
+        shadow(color: elevation.color, radius: elevation.radius, y: elevation.y)
     }
 }
