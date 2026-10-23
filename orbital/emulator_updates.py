@@ -305,9 +305,9 @@ def install_zip(zip_path: Path, exe: Path, version: str) -> None:
                     saved.append((copy, target))
             for member, target in plan:
                 target.parent.mkdir(parents=True, exist_ok=True)
+                written.append(target)  # antes de escribir: si falla a medias, también se quita
                 with archive.open(member) as src, open(target, "wb") as out:
                     shutil.copyfileobj(src, out)
-                written.append(target)
         except Exception as exc:
             for target in written:  # lo nuevo fuera…
                 target.unlink(missing_ok=True)
