@@ -17,18 +17,19 @@ enum PictureInPictureContent {
 
 /// Imagen dentro de imagen: el botón del reproductor y, al salir de la app con el video sonando, la ventana sola.
 @MainActor
-final class PictureInPicture: NSObject, ObservableObject, AVPictureInPictureControllerDelegate {
-    @Published private(set) var isPossible = false
-    @Published private(set) var isActive = false
+@Observable
+final class PictureInPicture: NSObject, AVPictureInPictureControllerDelegate {
+    private(set) var isPossible = false
+    private(set) var isActive = false
     /// El motor necesita saberlo (AetherEngine mantiene el video vivo en segundo plano y cambia de episodio sin cerrar la ventana).
-    var onActiveChange: (Bool) -> Void = { _ in }
+    @ObservationIgnored var onActiveChange: (Bool) -> Void = { _ in }
     /// Al volver de la ventana a la app: el reproductor vuelve a pantalla completa.
-    var onRestore: () -> Void = {}
+    @ObservationIgnored var onRestore: () -> Void = {}
 
-    private var controller: AVPictureInPictureController?
-    private var sampleDelegate: AVPictureInPictureSampleBufferPlaybackDelegate?
-    private weak var layer: CALayer?
-    private var possible: NSKeyValueObservation?
+    @ObservationIgnored private var controller: AVPictureInPictureController?
+    @ObservationIgnored private var sampleDelegate: AVPictureInPictureSampleBufferPlaybackDelegate?
+    @ObservationIgnored private weak var layer: CALayer?
+    @ObservationIgnored private var possible: NSKeyValueObservation?
 
     static var isSupported: Bool { AVPictureInPictureController.isPictureInPictureSupported() }
 

@@ -855,14 +855,15 @@ extension View {
 
 /// Los colores del arte de lo que está al frente (`ArtPalette`, como la TV): se calculan de una miniatura y se recuerdan.
 @MainActor
-final class ArtTint: ObservableObject {
+@Observable
+final class ArtTint {
     /// nil: no hay arte (el fondo es el liso del modo y el botón principal, el de siempre).
-    @Published private(set) var colors: ArtColors?
+    private(set) var colors: ArtColors?
     private static var cache: [String: ArtColors] = [:]
     private static let cacheLimit = 64
 
     /// Lo último que se pidió: gana siempre (un arte anterior que llega tarde no pinta encima del de ahora).
-    private var requested: String?
+    @ObservationIgnored private var requested: String?
 
     init() {}
     /// Con el color ya sabido de ese arte (si se calculó antes, en esta sesión o en otra): la pantalla aparece ya pintada,

@@ -6,7 +6,8 @@ import OrbitalModels
 /// tu internet sin Real-Debrid (un archivo de prueba de OVH, en Francia como los servidores de Real-Debrid), Real-Debrid con una conexión, con ocho (como baja la app abierta), y con la app cerrada (la sesión de
 /// segundo plano de iOS, con sus cuatro pedazos). Con eso se sabe si el tope es tu red, Real-Debrid o iOS.
 @MainActor
-final class DownloadSpeedTest: ObservableObject {
+@Observable
+final class DownloadSpeedTest {
     struct Row: Identifiable, Equatable {
         enum Kind: String, CaseIterable { case internet, single, eight, background }
         let kind: Kind
@@ -16,13 +17,13 @@ final class DownloadSpeedTest: ObservableObject {
         var id: String { kind.rawValue }
     }
 
-    @Published private(set) var rows: [Row] = Row.Kind.allCases.map { Row(kind: $0) }
-    @Published private(set) var running = false
+    private(set) var rows: [Row] = Row.Kind.allCases.map { Row(kind: $0) }
+    private(set) var running = false
     /// La fuente con que se probó («Shawshank · 1080p · 2.4 GB»), o por qué no se pudo.
-    @Published private(set) var sourceName: String?
-    @Published private(set) var problem: String?
+    private(set) var sourceName: String?
+    private(set) var problem: String?
     /// Qué está haciendo entre medidas («Buscando una fuente…»), para que no parezca trabada.
-    @Published private(set) var status: String?
+    private(set) var status: String?
 
     /// Cuánto mide cada prueba (se descarta el arranque: la conexión tarda en tomar velocidad).
     static let seconds = 10.0, warmUp = 2.0

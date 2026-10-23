@@ -5,24 +5,26 @@ import SwiftUI
 /// El micrófono del control de tu Orbital: escucha una orden en español (o inglés, según la app), la va escribiendo mientras
 /// hablas y se detiene sola cuando dejas de hablar. Luego dice en voz alta lo que contestó la consola.
 @MainActor
-final class SpeechInput: ObservableObject {
-    @Published private(set) var transcript = ""
-    @Published private(set) var listening = false
+@Observable
+final class SpeechInput {
+    private(set) var transcript = ""
+    private(set) var listening = false
     /// Sin permiso de micrófono o de dictado: se avisa en vez del botón.
-    @Published private(set) var denied = false
+    private(set) var denied = false
     /// No se oyó nada (o el reconocimiento falló): se dice, en vez de quedarse callado.
-    @Published private(set) var heardNothing = false
+    private(set) var heardNothing = false
 
-    private let engine = AVAudioEngine()
-    private var request: SFSpeechAudioBufferRecognitionRequest?
-    private var task: SFSpeechRecognitionTask?
-    private var silence: Task<Void, Never>?
-    private var onFinish: ((String) -> Void)?
-    private let voice = AVSpeechSynthesizer()
+    // Perezosos: vive en un `@State`, que arma uno nuevo (y lo tira) en cada `init` de la vista; solo el que se queda los crea.
+    @ObservationIgnored private lazy var engine = AVAudioEngine()
+    @ObservationIgnored private var request: SFSpeechAudioBufferRecognitionRequest?
+    @ObservationIgnored private var task: SFSpeechRecognitionTask?
+    @ObservationIgnored private var silence: Task<Void, Never>?
+    @ObservationIgnored private var onFinish: ((String) -> Void)?
+    @ObservationIgnored private lazy var voice = AVSpeechSynthesizer()
     /// Al terminar de hablar se suelta el «bajar la música» (`duckOthers`): se avisa para que el control vuelva a mezclar.
-    private let spoken = SpokenWatcher()
+    @ObservationIgnored private lazy var spoken = SpokenWatcher()
     /// Pidiendo permisos: un segundo toque en ese rato no arranca otra vez (instalaría dos veces el micrófono y truena).
-    private var starting = false
+    @ObservationIgnored private var starting = false
 
     /// Cuánto silencio cierra la orden (s), y cuánto se espera a que empieces a hablar.
     static let silenceSeconds = 1.4
