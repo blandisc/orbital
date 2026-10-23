@@ -150,6 +150,14 @@ enum DS {
     }
 
     enum TitleAction {
+        /// Al deslizar la ficha: el arte va más lento que el contenido (parallax), se encoge, se difumina y se desvanece.
+        static let heroParallax: CGFloat = 0.45, heroShrink: CGFloat = 0.08, heroBlur: CGFloat = 14, heroFadeSpeed: CGFloat = 1.3
+        /// El nombre en la barra no pasa por debajo del ‹ ni de los botones de la derecha.
+        static let barTitleInset: CGFloat = 110
+        /// El desvanecido bajo la barra de arriba (además de la barra) y a qué parte del arte ya está completo.
+        static let topFade: CGFloat = 36, fadeAt: CGFloat = 0.85
+        /// El nombre en la barra: empieza a salir a esta parte del arte y termina de salir en este tramo.
+        static let titleFrom: CGFloat = 0.7, titleSpan: CGFloat = 0.25
         /// Cuánto se oscurece el color del arte en el modo claro (para que se lea sobre el papel).
         static let lightDeepen: Double = 0.45
         static let tile: CGFloat = 64, ring: CGFloat = 3, ringSmall: CGFloat = 26, ringSmallLine: CGFloat = 2.5

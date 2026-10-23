@@ -7778,7 +7778,7 @@
         }
       }
     },
-    "Marcar como visto": {
+    "Marcar como vista": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7789,13 +7789,13 @@
         }
       }
     },
-    "Marcar temporada como vista": {
+    "Marcar como visto": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mark season as watched"
+            "value": "Mark as watched"
           }
         }
       }
@@ -15115,13 +15115,13 @@
         }
       }
     },
-    "Versión de la serie: %@": {
+    "Versión de la serie": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Series version: %@"
+            "value": "Series version"
           }
         }
       }

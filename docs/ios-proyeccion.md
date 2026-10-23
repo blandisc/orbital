@@ -103,7 +103,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `PageDots` | Puntos de un carrusel | Inicio |
 | `MovementBadge` | ▲ ▼ / Nuevo bajo un puesto | Rankings de plataformas (Buscar › Lo más popular usa `RankedPosterCard`) |
 | `ArtTile` | Mosaico con arte y nombre | Buscar › Explora (géneros) |
-| `DSOptionMenu` | Menú nativo para elegir entre muchas opciones | Temporadas (más de `DS.Size.seasonChipsMax`) |
+| `DSOptionMenu` | Menú nativo para elegir entre muchas opciones; `compact`, del alto de un control para ir en un renglón junto a otra cápsula | Ficha › temporada (compacto, a la izquierda; la versión de la serie, la cápsula gemela a la derecha) |
 | `TouchPad`, `RemoteKey`, `RemoteTextField` | El control completo de tu Orbital: pad (deslizar = flechas, tocar = A), teclas de la consola y escribir en la TV | `RemoteSheet` (la hoja del accesorio, estirada) |
 | `VoiceCommandBar`, `VoiceChoices` | La voz del control: el micrófono con lo que oyó, la respuesta y lo que entendió; y, si tu Orbital no supo cuál, las opciones para tocar (`VoiceAssistant.choose`) | `RemoteSheet` |
 | `VoiceGuideView` | «Lo que puedes decir»: dónde hablarle (control, Siri, Alexa), lo que solo hace el iPhone, las frases de la consola (alexa/commands.json) y qué hacer si no funciona | Ajustes › Voz y el «?» junto al micrófono del control |
@@ -177,11 +177,12 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 |---|---|
 | Mosaico | Sube solo tras 3 s quieto (arranca suave, como la TV), cada columna a su ritmo (`DesignTokens.Mosaic.driftPattern`, el mismo de la TV); las columnas se igualan en ambiente; «cobra vida» acerca la pieza en 9 s |
 | Póster → ficha | `navigationTransition(.zoom)` |
+| Deslizar la ficha | El arte se recoge: va más lento que el contenido, se encoge, se difumina y se funde con el fondo (`DS.TitleAction.hero…`); lo que sube se desvanece bajo la barra de arriba y el nombre aparece entre ‹ y los botones. Jalar hacia abajo estira el arte desde arriba. Siempre se puede recoger (el contenido mide al menos la pantalla) |
 | Color del arte | Fundido de 0.7 s al cambiar lo que está al frente (las duraciones son las de la TV: 140 · 220 · 320 · 520 · 700 ms) |
 | Empezar a ver | Toque háptico suave |
 | Selección (carrusel, temporadas, Mi lista) | `sensoryFeedback(.selection)` |
 
-Con «Reducir movimiento»: sin ambiente, sin acercamiento, sin fundidos.
+Con «Reducir movimiento»: sin ambiente, sin acercamiento, sin fundidos; la ficha solo se desvanece (sin parallax, encogerse, difuminado ni estirarse).
 
 ## 5b. Una sola experiencia con la TV
 
