@@ -123,7 +123,7 @@ class Downloads:
     def public(self, job: dict) -> dict:
         out = {k: job.get(k) for k in ("id", "kind", "meta_id", "video_id", "title", "detail", "poster", "status", "size",
                                         "done", "error", "added", "season", "episode", "quality")}
-        out["progress"] = round(job["done"] / job["size"], 3) if job.get("size") else None
+        out["progress"] = round((job.get("done") or 0) / job["size"], 3) if job.get("size") else None
         return out
 
     def list(self) -> list[dict]:
