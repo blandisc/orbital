@@ -55,3 +55,16 @@ jobs:
               assert needed in names, f"falta {needed} en el paquete"
           print("ok:", len(names), "archivos")
           EOF
+
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seleccionar el Xcode más reciente
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+
+      - name: Pruebas del paquete y del sistema de diseño del iPhone
+        working-directory: ios/OrbitalCore
+        run: swift test
