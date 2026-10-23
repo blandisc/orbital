@@ -65,7 +65,7 @@ class RemoteInput:
 
     def _alive(self, code: str) -> Pending | None:
         p = self._pending
-        if p is None or not code or not secrets.compare_digest(p.code, str(code)):
+        if p is None or not code or not str(code).isascii() or not secrets.compare_digest(p.code, str(code)):
             return None
         if self._clock() > p.expires:
             self._pending = None
