@@ -125,6 +125,17 @@ public final class TitleModel: ObservableModel {
         // Lo tuyo en Stremio (avance, vistos) se pide a la vez que la ficha: no espera a Cinemeta ni a la traducción.
         let watch = services.watch, id = metaID
         let state = Task { await watch.rawItem(metaID: id) }
+        // Las fuentes, en cuanto se sabe qué video toca (película: ya; serie: con lo tuyo o la ficha): no esperan a la traducción
+        // ni al resto de la ficha. `loadBestSource` luego se une a esta misma petición (o la encuentra ya guardada).
+        let cinemeta = services.cinemeta, finder = services.finder, kind = kind
+        Task {
+            let raw = await state.value
+            var video = Self.continueVideo(raw: raw, kind: kind, metaID: id, seasons: [])
+            if video == nil, let meta = try? await cinemeta.meta(kind: kind, id: id) {
+                video = Self.continueVideo(raw: raw, kind: kind, metaID: id, seasons: CinemetaParsing.seasons(meta))
+            }
+            if let video { await finder.warm(kind: kind, videoID: video) }
+        }
         do {
             let original = try await services.cinemeta.meta(kind: kind, id: metaID)
             meta = original
@@ -238,7 +249,9 @@ public final class TitleModel: ObservableModel {
 
     // MARK: ver
     /// El video con el que sigue el botón principal: donde ibas, o el primer episodio.
-    public var continueVideoID: String? {
+    public var continueVideoID: String? { Self.continueVideo(raw: raw, kind: kind, metaID: metaID, seasons: seasons) }
+
+    nonisolated static func continueVideo(raw: JSON?, kind: String, metaID: String, seasons: [Season]) -> String? {
         let state = StremioLibrary.state(of: raw)
         if let video = state["video_id"]?.nonEmptyString, asInt(state["timeOffset"]) > 0 || kind == "series" { return video }
         if kind == "movie" { return metaID }

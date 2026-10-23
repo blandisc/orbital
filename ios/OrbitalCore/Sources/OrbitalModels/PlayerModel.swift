@@ -216,6 +216,7 @@ public final class PlayerModel: ObservableModel {
         resetForNewVideo()
         phase = .preparing
         startConsuming()
+        loadSegmentsIfNeeded()   // IntroDB solo depende del video: a la vez que las fuentes, no después
         if request.localFile != nil, request.kind == "series", let next = nextEpisodeIDIgnoringLocal() { nextLocal = await localEpisode(request.metaID, next) }
         guard mine == generation, !closing else { return }
         await prepare(startAt: nil, generation: mine)
@@ -256,9 +257,13 @@ public final class PlayerModel: ObservableModel {
     /// Elige fuente y la carga. `startAt` solo se pasa al reintentar con otra fuente (se sigue en el mismo punto).
     private func prepare(startAt: Double?, generation mine: Int) async {
         guard let request else { return }
+        // Dónde ibas se pregunta ya, a la vez que las fuentes (antes esperaba a que llegaran).
+        let watch = watch
+        let resume: Task<Double, Never>? = startAt == nil && !request.fromStart && request.startPosition == nil
+            ? Task { await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } : nil
         if let file = request.localFile {
             var start = startAt ?? 0
-            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } }
+            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resume?.value ?? 0 } }
             guard mine == generation, !closing else { return }
             startLoading()
             do { try await loadVideo(file, at: start) } catch { fail("No pude abrir el archivo descargado.", .localFile) }
@@ -272,7 +277,7 @@ public final class PlayerModel: ObservableModel {
                 guard mine == generation, !closing else { return }
                 source = own
                 var start = startAt ?? 0
-                if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } }
+                if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resume?.value ?? 0 } }
                 guard mine == generation, !closing, let url = own.playbackURL else { failedSources.insert(own.index); continue }
                 startLoading()
                 do { try await loadVideo(url, at: start); return }
@@ -292,7 +297,7 @@ public final class PlayerModel: ObservableModel {
             guard let found else { return failedSources.isEmpty ? fail("No hay fuentes de Real-Debrid para este título.", .noSources) : fail("Ninguna fuente funcionó.", .noneWorked) }
             source = found
             var start = startAt ?? 0
-            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } }
+            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resume?.value ?? 0 } }
             guard mine == generation, !closing else { return }
             guard let url = found.playbackURL else { failedSources.insert(found.index); continue }
             startLoading()

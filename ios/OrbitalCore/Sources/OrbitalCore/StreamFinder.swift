@@ -69,6 +69,9 @@ public actor StreamFinder {
         return ranked
     }
 
+    /// Pregunta ya a los complementos por ese video (sin ordenar nada): el `find` que venga después se une o lo encuentra guardado.
+    public func warm(kind: String, videoID: String) async { _ = try? await ask(kind: kind, videoID: videoID, fresh: false) }
+
     /// Lo que contestaron los complementos para un video: de lo guardado (si no ha caducado y no se pide `fresh`), de una
     /// petición que ya va en camino, o se pregunta a todos a la vez.
     private func ask(kind: String, videoID: String, fresh: Bool) async throws -> Answers {
