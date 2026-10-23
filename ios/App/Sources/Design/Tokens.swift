@@ -175,6 +175,12 @@ enum DS {
         static let riseMin: Double = 0.001
     }
 
+    /// «Guardar en…»: cuántos renglones de tus listas se ven sin desplazar (más, se desplazan dentro de su zona) y cuántos
+    /// se apartan la primera vez (sin saber cuántas tienes).
+    enum SaveSheet {
+        static let visibleRows = 5, fallbackRows = 3
+    }
+
     enum TitleAction {
         /// El nombre en la barra no pasa por debajo del ‹ ni de los botones de la derecha.
         static let barTitleInset: CGFloat = 110

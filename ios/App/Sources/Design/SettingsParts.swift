@@ -150,6 +150,7 @@ struct CheckRow: View {
                     .contentTransition(.symbolEffect(.replace))
             }
             .padding(DS.Space.s3)
+            .frame(minHeight: DS.Size.touchTarget)   // todo el renglón se toca, nunca menos que un objetivo táctil
             .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
             .contentShape(Rectangle())
         }

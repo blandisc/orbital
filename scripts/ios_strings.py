@@ -19,6 +19,10 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # «Guardar»: la watchlist de Trakt por omisión y la hoja «Guardar en…».
+    "Guardada en tu watchlist": "Saved to your watchlist", "Quitada de tu watchlist": "Removed from your watchlist",
+    "No pude cambiar tu watchlist de Trakt": "Couldn't change your Trakt watchlist",
+    "Principales": "Main lists", "Cargando tus listas de Trakt": "Loading your Trakt lists",
     "Guardado en el iPhone: llega a Trakt en cuanto haya conexión.": "Saved on your iPhone: it reaches Trakt as soon as there's a connection.",
     "Desliza para fijar": "Slide to lock", "Desliza para quitar": "Slide to unlock",
     "Subtítulo %lld de %lld": "Subtitle %lld of %lld",

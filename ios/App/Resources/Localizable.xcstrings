@@ -2344,6 +2344,17 @@
         }
       }
     },
+    "Cargando tus listas de Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading your Trakt lists"
+          }
+        }
+      }
+    },
     "Cargando…": {
       "extractionState": "manual",
       "localizations": {
@@ -6029,6 +6040,17 @@
         }
       }
     },
+    "Guardada en tu watchlist": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved to your watchlist"
+          }
+        }
+      }
+    },
     "Guardado": {
       "extractionState": "manual",
       "localizations": {
@@ -9230,6 +9252,17 @@
         }
       }
     },
+    "No pude cambiar tu watchlist de Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't change your Trakt watchlist"
+          }
+        }
+      }
+    },
     "No pude cambiar tu watchlist de Trakt: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -10759,6 +10792,17 @@
         }
       }
     },
+    "Principales": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main lists"
+          }
+        }
+      }
+    },
     "Probamos las fuentes que hay y ninguna respondió. A veces es momentáneo.": {
       "extractionState": "manual",
       "localizations": {
@@ -11096,6 +11140,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Removed from My list"
+          }
+        }
+      }
+    },
+    "Quitada de tu watchlist": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removed from your watchlist"
           }
         }
       }

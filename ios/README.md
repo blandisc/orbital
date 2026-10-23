@@ -53,7 +53,20 @@ plataformas `jw:*` (el respaldo de TMDB solo si no hay `jw:` ni Top 10 de esa ma
 complementos. «Seguir viendo» y «Mi lista» de Stremio viven en Inicio. Un estante vacío o que falla no se pinta; sin ninguna fuente:
 destacado + «Lo más popular en Stremio» + un botón «Conecta Trakt o tu Orbital».
 
-Cada póster: tocar abre la ficha (háptica suave); mantener abre el menú (Ver, Mi lista, Descargar, En la TV, No me interesa).
+Cada póster: tocar abre la ficha (háptica suave); mantener abre el menú (Ver, Guardar, Descargar, En la TV, No me interesa).
+
+### Guardar: la watchlist de Trakt por omisión
+
+Con Trakt conectado, «Guardar» sin elegir lista va a **tu watchlist de Trakt**; sin Trakt (o un título sin IMDb), a Mi lista de
+Stremio. La regla vive en un solo lugar (`OrbitalModels/SaveDestination.swift`, con pruebas en `SaveRulesTests`) y la usan: tocar
+«Guardar» en la ficha (y su aviso «Guardada en tu watchlist · Cambiar»), el menú de mantener «Guardar» (la de por omisión primero),
+«Guardar» en el menú de un póster (`AppEnvironment.save`, con «Deshacer»; sin conexión queda pendiente como en la ficha) y la hoja
+«Guardar en…». Los widgets y los atajos no guardan nada.
+
+«Guardar en…» (`SaveView`): arriba tus listas de Trakt, las que cambiaron más reciente primero (una nueva entra arriba); abajo, en
+«Principales», tu watchlist y Mi lista, siempre en el mismo lugar. Su zona de listas aparta su alto al abrir (las que tenías la
+última vez, o 3; hasta 5 sin desplazar) con renglones esqueleto del mismo alto: al llegar las listas nada salta, nada se recorre y
+la hoja no cambia de tamaño (`SaveSheetPlan`, y `SaveSheetUITests` lo comprueba con los frames de las fijas).
 En modo demostración, `-demo-console` simula un overview con varios estantes y `-demo-mode lists` abre en Listas.
 
 ### Gestos del reproductor (como Infuse)

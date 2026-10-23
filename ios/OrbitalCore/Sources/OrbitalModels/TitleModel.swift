@@ -116,6 +116,9 @@ public final class TitleModel: ObservableModel {
         super.init()
         // El título que se muestra puede venir traducido: el ORIGINAL (lo que se guarda en Stremio) solo sale de Cinemeta, al cargar.
         if let hint { title = hint.title; poster = hint.poster }
+        // Si Trakt está conectado se sabe ya (sin red): «Guardar» va a tu watchlist desde el primer toque, no a Mi lista
+        // mientras llega `refreshState`.
+        traktAvailable = services.trakt?.linked ?? false
         // El fondo de metahub se conoce por el id: el arte empieza a bajar al abrir, no después de Cinemeta y la traducción
         // (3 a 5 viajes de red en una serie). Si Cinemeta trae otro, se cambia al llegar.
         if metaID.hasPrefix("tt") { background = String(format: ForYou.metahubBackground, metaID) }
@@ -336,6 +339,25 @@ public final class TitleModel: ObservableModel {
     }
 
     // MARK: Mi lista y watchlist
+    /// Adónde va «Guardar» sin elegir (`SaveDestination.preferred`: tu watchlist con Trakt, si no Mi lista).
+    public var saveDestination: SaveDestination { .preferred(traktLinked: traktAvailable, metaID: metaID) }
+    /// Las fijas de «Guardar en…» y del menú de «Guardar», la de por omisión primero.
+    public var fixedDestinations: [SaveDestination] { SaveDestination.fixed(traktLinked: traktAvailable, metaID: metaID) }
+    /// Qué hace un toque en «Guardar».
+    public var quickSave: QuickSave {
+        QuickSave.decide(preferred: saveDestination, inLibrary: inLibrary, inWatchlist: inWatchlist,
+                         inOtherLists: lists.map { $0.contains(where: \.contains) } ?? inSomeList)
+    }
+
+    public func isSaved(in destination: SaveDestination) -> Bool { destination == .traktWatchlist ? inWatchlist : inLibrary }
+
+    public func toggle(_ destination: SaveDestination) async {
+        switch destination {
+        case .traktWatchlist: await toggleWatchlist()
+        case .stremioLibrary: await toggleLibrary()
+        }
+    }
+
     public func toggleLibrary() async {
         let target = !inLibrary
         inLibrary = target
@@ -365,22 +387,28 @@ public final class TitleModel: ObservableModel {
         defer { loadingLists = false }
         // Sin conexión: las listas que ya conocías (y lo pendiente encima), para poder elegir igual.
         let outbox = services.traktOutbox
-        guard let all = try? await trakt.lists() else {
+        guard let all = try? await trakt.ownLists() else {
+            // Se recuerdan ya ordenadas (recientes primero): sin conexión salen en el mismo orden que la última vez.
             let id = metaID
             lists = outbox.cachedLists.map { SavedList(id: $0.id, name: $0.name, contains: outbox.pending(target: $0.id, imdb: id) ?? false) }
             return
         }
-        outbox.remember(lists: all)
         let id = metaID
-        lists = await withTaskGroup(of: (Int, SavedList).self) { group in
+        let found = await withTaskGroup(of: (Int, SavedList).self) { group in
             for (i, l) in all.enumerated() {
-                group.addTask { (i, SavedList(id: l.id, name: l.name, contains: ((try? await trakt.listMembers(l.id)) ?? []).contains(id))) }
+                group.addTask { (i, SavedList(id: l.id, name: l.name, contains: ((try? await trakt.listMembers(l.id)) ?? []).contains(id), updatedAt: l.updatedAt)) }
             }
             var out: [(Int, SavedList)] = []
             for await r in group { out.append(r) }
             return out.sorted { $0.0 < $1.0 }.map(\.1)
         }
+        let ordered = SaveSheetPlan.order(found)
+        outbox.remember(lists: ordered.map { ($0.id, $0.name) })
+        lists = ordered
     }
+
+    /// Cuántas listas esperar en «Guardar en…» antes de que lleguen (las de la última vez): sus esqueletos apartan su lugar.
+    public var expectedListCount: Int { lists?.count ?? services.traktOutbox.cachedLists.count }
 
     public func toggleList(_ listID: String) async {
         guard let trakt = services.trakt, var all = lists, let i = all.firstIndex(where: { $0.id == listID }) else { return }
@@ -404,7 +432,8 @@ public final class TitleModel: ObservableModel {
         guard let trakt = services.trakt, trakt.linked else { return }
         do {
             let made = try await trakt.createList(name: name)
-            lists = (lists ?? []) + [SavedList(id: made.id, name: made.name, contains: false)]
+            // Recién hecha: va arriba de tus listas (las fijas, abajo, no se mueven).
+            lists = SaveSheetPlan.order((lists ?? []) + [SavedList(id: made.id, name: made.name, contains: false, updatedAt: Date())])
             await toggleList(made.id)
         } catch { message = "No pude crear la lista: \(error)" }
     }
@@ -484,4 +513,10 @@ public struct SavedList: Identifiable, Equatable, Sendable {
     public let id: String
     public let name: String
     public var contains: Bool
+    /// Cuándo cambió en Trakt (las recientes van arriba en «Guardar en…»); nil sin conexión o si Trakt no lo dijo.
+    public var updatedAt: Date? = nil
+
+    public init(id: String, name: String, contains: Bool, updatedAt: Date? = nil) {
+        self.id = id; self.name = name; self.contains = contains; self.updatedAt = updatedAt
+    }
 }
