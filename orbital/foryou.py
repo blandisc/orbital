@@ -230,6 +230,7 @@ class Cache:
         with self._lock:
             for key in [k for k in self._data if k.startswith(prefix)]:
                 del self._data[key]
+        self._save()  # de inmediato: si no, lo borrado regresa del disco al reiniciar
 
     def peek(self, key: str) -> Any:
         """Lo último que se trajo para `key` (aunque ya venció), sin salir a internet; None si nunca."""
