@@ -14,34 +14,38 @@ struct MosaicFocus: Equatable, Hashable { var col: Int; var row: Int }
 enum MosaicMode: Equatable { case focus, ambient }
 
 /// El motor del mosaico: guarda las columnas y qué está enfocado, y llama a `OrbitalModels.MosaicGeometry`
-/// para acomodar, llenar y podar. Una instancia por pantalla (vive en el `@StateObject` de `Mosaic`).
+/// para acomodar, llenar y podar. Una instancia por pantalla (vive en el `@State` de `Mosaic`).
 /// El desplazamiento de una columna, solo eso: lo observa únicamente la vista de esa columna, así el ambiente y el
 /// arrastre mueven un `offset` sin volver a evaluar el mosaico entero (CEN-49).
 @MainActor
-final class MosaicColumnScroll: ObservableObject {
-    @Published fileprivate(set) var offset: Double = 0
+@Observable
+final class MosaicColumnScroll {
+    fileprivate(set) var offset: Double = 0
 }
 
 @MainActor
-final class MosaicRuntime: ObservableObject {
-    /// Las columnas NO son `@Published`: cambian en cada fotograma del arrastre (su `offset`), y solo debe
-    /// reevaluarse el mosaico cuando cambia su estructura (piezas, marcos, foco) —ver `commit`—.
-    private(set) var columns: [MosaicColumn] = []
+@Observable
+final class MosaicRuntime {
+    /// Las columnas NO se observan: cambian en cada fotograma del arrastre (su `offset`), y solo debe
+    /// reevaluarse el mosaico cuando cambia su estructura (piezas, marcos, foco) —ver `commit` y `structure`—.
+    @ObservationIgnored private(set) var columns: [MosaicColumn] = []
     /// Un objeto de desplazamiento por columna y qué piezas de cada una se pintan (a la vista más un colchón).
-    private(set) var scrolls: [MosaicColumnScroll] = []
-    private(set) var rendered: [Range<Int>] = []
-    private var signature: [Int] = []
-    @Published private(set) var focus: MosaicFocus?
-    @Published private(set) var mode: MosaicMode = .focus
-    @Published var aliveTileID: String?
+    @ObservationIgnored private(set) var scrolls: [MosaicColumnScroll] = []
+    @ObservationIgnored private(set) var rendered: [Range<Int>] = []
+    @ObservationIgnored private var signature: [Int] = []
+    /// Sube cada vez que `commit` decide que cambió la estructura: el mosaico la lee para volver a evaluarse entonces.
+    private(set) var structure = 0
+    private(set) var focus: MosaicFocus?
+    private(set) var mode: MosaicMode = .focus
+    var aliveTileID: String?
 
-    private var geometry = MosaicGeometry(columnCount: 1, gap: 0, ring: 0, growRatio: 1)
-    private var pool = MosaicPool(items: [])
-    private var serial = 0
-    private var size: (width: Double, height: Double) = (0, 0)
-    private var columnCount = 1
+    @ObservationIgnored private var geometry = MosaicGeometry(columnCount: 1, gap: 0, ring: 0, growRatio: 1)
+    @ObservationIgnored private var pool = MosaicPool(items: [])
+    @ObservationIgnored private var serial = 0
+    @ObservationIgnored private var size: (width: Double, height: Double) = (0, 0)
+    @ObservationIgnored private var columnCount = 1
     /// Lo que le falta subir a cada columna para el escalón del ambiente (se consume con la deriva).
-    private var pendingLift: [Double] = []
+    @ObservationIgnored private var pendingLift: [Double] = []
 
     var isEmpty: Bool { pool.items.isEmpty }
     var current: Suggestion? {
@@ -68,7 +72,7 @@ final class MosaicRuntime: ObservableObject {
         }
         let changed = sig != signature || ranges != rendered
         rendered = ranges; signature = sig
-        if force || changed { objectWillChange.send() }
+        if force || changed { structure &+= 1 }
     }
 
     /// Lo nuevo del servidor (o la primera carga): se vuelve a armar desde cero.
@@ -262,7 +266,7 @@ struct Mosaic: View {
     var loading = true
     var retry: (() -> Void)?
 
-    @StateObject private var runtime = MosaicRuntime()
+    @State private var runtime = MosaicRuntime()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var lastDragTranslation: Double = 0
@@ -279,6 +283,7 @@ struct Mosaic: View {
         #if DEBUG
         let _ = MosaicBench.tick("Mosaic")
         #endif
+        let _ = runtime.structure   // se vuelve a evaluar cuando cambia la estructura (no en cada fotograma del arrastre)
         GeometryReader { geo in
             let columnCount = Self.columnCount(width: geo.size.width, horizontalSizeClass: horizontalSizeClass)
             ZStack(alignment: .topLeading) {
@@ -436,7 +441,7 @@ struct Mosaic: View {
 /// Una columna: solo mueve su `offset` cuando cambia el desplazamiento (`MosaicColumnScroll`); sus piezas
 /// (`MosaicColumnLayer`) no se reevalúan mientras no cambien.
 private struct MosaicColumnView: View {
-    @ObservedObject var scroll: MosaicColumnScroll
+    let scroll: MosaicColumnScroll
     let layer: MosaicColumnLayer
 
     var body: some View {
