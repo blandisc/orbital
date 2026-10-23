@@ -343,6 +343,7 @@ struct ListsView: View {
                         if !slides.isEmpty { featuredCarousel(slides).perfTag("paraTi.hero") }
                       }
                     }
+                    if slides.isEmpty, model.shelves.isEmpty, model.isLoading { FeedSkeleton() }   // la primera vez, mientras llega
                     if let because = model.because { becauseCard(because) }
                     ForEach(generalShelves) { plan in shelf(plan).id(plan.id).perfTag("paraTi.shelf") }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.

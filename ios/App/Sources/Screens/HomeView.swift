@@ -86,6 +86,9 @@ struct HomeView: View {
                             }
                         }
                 }
+                if model.spotlight.isEmpty, model.continueWatching.isEmpty, model.isLoading {
+                    FeedSkeleton()   // la primera vez: el lugar ya reservado mientras llega
+                }
                 if !model.continueWatching.isEmpty {
                     continueRail(model).perfTag("home.rail")
                 } else if !model.isLoading, model.spotlight.isEmpty {
