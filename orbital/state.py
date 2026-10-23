@@ -104,7 +104,7 @@ class State:
             try:
                 self.path.parent.mkdir(parents=True, exist_ok=True)
                 tmp = self.path.with_suffix(".tmp")
-                tmp.write_text(json.dumps(self._data, ensure_ascii=False, indent=1), encoding="utf-8")
+                tmp.write_text(json.dumps(self._data, ensure_ascii=False, indent=1), encoding="utf-8", errors="replace")
                 tmp.replace(self.path)
                 return
             except OSError as exc:
