@@ -207,6 +207,16 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertFalse(title.inLibrary)
     }
 
+    /// «¿Qué vemos?» › Ver: la misma cuenta que «Continuar» de la ficha, sin abrirla — el capítulo en que vas o el primero de
+    /// verdad (los especiales no cuentan como primero).
+    func testContinueVideoWithoutOpeningTheTitle() throws {
+        let seasons = CinemetaParsing.seasons(try Fixtures.json("cinemeta/meta_series_tt0386676.json"))
+        let going: JSON = ["state": ["video_id": "tt0386676:2:5", "timeOffset": 0]]
+        XCTAssertEqual(TitleModel.continueVideoID(kind: "series", metaID: "tt0386676", raw: going, seasons: seasons), "tt0386676:2:5")
+        XCTAssertEqual(TitleModel.continueVideoID(kind: "series", metaID: "tt0386676", raw: nil, seasons: seasons), "tt0386676:1:1")
+        XCTAssertEqual(TitleModel.continueVideoID(kind: "movie", metaID: "tt0816692", raw: nil, seasons: []), "tt0816692")
+    }
+
     func testMyListToggleWritesOnlyLibraryFlagsToStremioAndRollsBackOnError() async throws {
         let rig = try titleRig()
         let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")

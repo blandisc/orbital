@@ -17,6 +17,8 @@ struct DecideView: View {
     @State private var path: [Page] = []
     /// El alto de la hoja corta: el de su contenido, medido (sin hueco abajo).
     @State private var quickHeight: CGFloat = DS.Decide.quickHeight
+    /// Si la elegida es una serie, el capítulo con que empieza «Ver» (el que vas o el primero), para decirlo en el botón.
+    @State private var seriesStart: AppEnvironment.SeriesStart?
     let open: (TitleRoute) -> Void
 
     init(pool: [Suggestion], sources: [DecideModel.Source] = [], open: @escaping (TitleRoute) -> Void) {
@@ -49,6 +51,10 @@ struct DecideView: View {
             if m.pick == nil { await m.quick() }
         }
         .onDisappear { m.stop() }
+        .task(id: m.pick?.imdb) {
+            guard let s = m.pick, s.kind == "series" else { return seriesStart = nil }
+            seriesStart = await env.seriesStart(s)
+        }
         #if DEBUG
         .task { if Demo.isOn, let l = Demo.value(after: "-demo-decide-level") { path = l == "3" ? [.more, .lists] : l == "2" ? [.more] : [] } }
         #endif
@@ -102,7 +108,8 @@ struct DecideView: View {
             HStack(spacing: DS.Space.s3) {
                 ForEach(m.picks) { option in
                     let chosen = option.imdb == s.imdb
-                    Button { withAnimation(DS.Motion.base(reduceMotion)) { m.select(option) } } label: {
+                    // Tocar otro cartel lo elige; tocar el elegido abre su ficha (la de la serie o la película).
+                    Button { if chosen { dismiss(); open(option.route) } else { withAnimation(DS.Motion.base(reduceMotion)) { m.select(option) } } } label: {
                         PosterView(url: option.poster, title: option.title)
                             .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                                 .strokeBorder(chosen ? DS.accent : .clear, lineWidth: DS.Decide.chosenStroke))
@@ -112,7 +119,9 @@ struct DecideView: View {
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
                     .accessibilityLabel(Text(verbatim: option.title))
+                    .accessibilityHint(chosen ? Text("Abre la ficha") : Text(verbatim: ""))
                     .accessibilityAddTraits(chosen ? .isSelected : [])
+                    .accessibilityIdentifier(chosen ? "decide-chosen" : "decide-option")
                 }
                 ForEach(m.picks.count..<max(m.picks.count, DecideModel.trio), id: \.self) { _ in
                     Color.clear.aspectRatio(DS.Poster.aspect, contentMode: .fit).frame(maxWidth: .infinity).accessibilityHidden(true)
@@ -129,17 +138,28 @@ struct DecideView: View {
             // Lado a lado y del mismo tamaño; con letra de accesibilidad, uno debajo del otro.
             let buttonsLayout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: DS.Space.s2)) : AnyLayout(HStackLayout(spacing: DS.Space.s3))
             buttonsLayout {
+                // Ver ahora: la película, o en una serie el capítulo en que vas (el primero si no la has empezado). La ficha,
+                // tocando el cartel o el nombre.
+                let start = seriesStart?.metaID == s.imdb ? seriesStart : nil
                 Button {
                     dismiss()
-                    if s.kind == "series" { open(s.route) } else { Task { await env.play(s) } }
+                    Task { await env.play(s, from: start) }
                 } label: {
-                    ViewThatFits(in: .horizontal) {
-                        if s.kind == "series" { Label("Ver la serie", systemImage: "play.fill").lineLimit(1).fixedSize() }
-                        Label("Ver", systemImage: "play.fill").lineLimit(1)
+                    Group {
+                        // Como «Ver» de la ficha: «Ver T1 E1» o «Continuar T2 E5» (en un iPhone angosto se achica un poco, no se
+                        // esconde el capítulo).
+                        if let start, let season = start.season, let episode = start.episode {
+                            Label { start.isResume ? Text("Continuar T\(season) E\(episode)") : Text("Ver T\(season) E\(episode)") } icon: { Image(systemName: "play.fill") }
+                        } else {
+                            Label("Ver", systemImage: "play.fill")
+                        }
                     }
+                    .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                     .frame(maxWidth: .infinity)
+                    .contentTransition(.opacity)
                 }
                 .dsPrimaryButton().controlSize(.large)
+                .accessibilityIdentifier("decide-watch")
                 // Lo que se espera (rara vez: los siguientes ya están listos) se ve en el botón, no encima de los carteles.
                 Button { Task { await m.next() } } label: {
                     HStack(spacing: DS.Space.s2) {

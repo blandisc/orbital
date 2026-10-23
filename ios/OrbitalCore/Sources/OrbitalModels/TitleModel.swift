@@ -250,7 +250,11 @@ public final class TitleModel: ObservableModel {
 
     // MARK: ver
     /// El video con el que sigue el botón principal: donde ibas, o el primer episodio.
-    public var continueVideoID: String? {
+    public var continueVideoID: String? { Self.continueVideoID(kind: kind, metaID: metaID, raw: raw, seasons: seasons) }
+
+    /// La misma cuenta sin abrir la ficha (lo usa «¿Qué vemos?» para que «Ver» ponga el capítulo en que vas): con lo tuyo en
+    /// Stremio (`raw`) y las temporadas de Cinemeta.
+    public static func continueVideoID(kind: String, metaID: String, raw: JSON?, seasons: [Season]) -> String? {
         let state = StremioLibrary.state(of: raw)
         if let video = state["video_id"]?.nonEmptyString, asInt(state["timeOffset"]) > 0 || kind == "series" { return video }
         if kind == "movie" { return metaID }

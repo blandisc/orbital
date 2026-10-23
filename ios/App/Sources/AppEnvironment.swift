@@ -641,10 +641,42 @@ final class AppEnvironment: ObservableObject {
         return s.kind == "movie" ? s.imdb : "\(s.imdb):1:1"
     }
 
-    /// «Ver» desde Para ti: reproduce donde ibas (o desde el principio).
-    func play(_ s: Suggestion) async {
-        let label = s.next.map { Strings.episode(season: $0.season, episode: $0.episode, language: services.appSettings.uiLanguage) } ?? ""
-        await play(kind: s.kind, metaID: s.imdb, videoID: videoID(for: s), title: s.title, originalTitle: s.title, episodeLabel: label, poster: s.poster)
+    /// Por dónde empieza una serie sugerida: el capítulo en que vas según Stremio (el mismo que «Continuar» de la ficha); si no
+    /// la has empezado, el que trae la sugerencia o el primero de verdad (no «1:1» a ciegas: hay series sin temporada 1).
+    struct SeriesStart {
+        var metaID: String, videoID: String, season: Int?, episode: Int?
+        /// Ibas a medias en ese capítulo: «Continuar T2 E5» en vez de «Ver T2 E5».
+        var isResume: Bool
+        var meta: JSON
+    }
+
+    func seriesStart(_ s: Suggestion) async -> SeriesStart? {
+        let watch = services.watch, id = s.imdb
+        async let raw = watch.rawItem(metaID: id)
+        guard let meta = try? await services.cinemeta.meta(kind: s.kind, id: s.imdb) else { return nil }
+        let seasons = CinemetaParsing.seasons(meta), mine = await raw
+        let state = StremioLibrary.state(of: mine)
+        let current = state["video_id"]?.nonEmptyString
+        let suggested = s.next.map { "\(s.imdb):\($0.season):\($0.episode)" }
+        guard let video = current != nil ? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, raw: mine, seasons: seasons)
+                                         : suggested ?? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, raw: nil, seasons: seasons) else { return nil }
+        let numbers = StremioLibrary.episodeNumbers(videoID: video, metaID: s.imdb)
+        return SeriesStart(metaID: s.imdb, videoID: video, season: numbers.season, episode: numbers.episode,
+                           isResume: current == video && asInt(state["timeOffset"]) > 1, meta: meta)
+    }
+
+    /// «Ver» desde Para ti o «¿Qué vemos?»: reproduce donde ibas (o desde el principio); una serie, por `seriesStart` (si ya se
+    /// calculó, `known`, sin volver a preguntar).
+    func play(_ s: Suggestion, from known: SeriesStart? = nil) async {
+        guard s.kind == "series" else {
+            return await play(kind: s.kind, metaID: s.imdb, videoID: videoID(for: s), title: s.title, originalTitle: s.title, episodeLabel: "", poster: s.poster)
+        }
+        var start = known?.metaID == s.imdb ? known : nil
+        if start == nil { start = await seriesStart(s) }
+        guard let start else { return notify(format: "No pude abrir «%@»", s.title, detail: "Revisa tu internet") }
+        let label = start.episode.map { Strings.episode(season: start.season, episode: $0, language: services.appSettings.uiLanguage) } ?? ""
+        await play(kind: s.kind, metaID: s.imdb, videoID: start.videoID, title: s.title, originalTitle: start.meta["name"]?.string ?? s.title,
+                   episodeLabel: label, poster: s.poster, meta: start.meta)
     }
 
     /// «Guardar» desde el menú de un póster: lo mismo que el círculo de la ficha (Mi lista, con un aviso que se deshace).
@@ -680,8 +712,10 @@ final class AppEnvironment: ObservableObject {
                    episodeLabel: services.tvEpisodeLabel(item.season, item.episode, item.episodeLabel), poster: item.poster, at: item.position)
     }
 
-    private func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?, at position: Double? = nil) async {
-        guard let videoID, let meta = try? await services.cinemeta.meta(kind: kind, id: metaID) else { return notify(format: "No pude abrir «%@»", title, detail: "Revisa tu internet") }
+    private func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?, at position: Double? = nil, meta known: JSON? = nil) async {
+        var fetched = known
+        if fetched == nil { fetched = try? await services.cinemeta.meta(kind: kind, id: metaID) }
+        guard let videoID, let meta = fetched else { return notify(format: "No pude abrir «%@»", title, detail: "Revisa tu internet") }
         var request = PlayRequest(kind: kind, metaID: metaID, videoID: videoID, originalTitle: originalTitle, displayTitle: title,
                                   episodeLabel: episodeLabel, poster: poster, meta: meta)
         request.startPosition = position   // «Seguir en el iPhone»: el segundo exacto de la TV
