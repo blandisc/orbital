@@ -91,6 +91,15 @@ final class CinemetaTests: XCTestCase {
         XCTAssertFalse(http.calls.contains { $0.contains("cinemeta") }, "un id de kitsu no se le pregunta primero a Cinemeta")
     }
 
+    func testImdbMetaDoesNotWaitForAddons() async throws {
+        let http = FakeHTTP()
+        http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
+        http.json["https://anime.example/manifest.json"] = ["name": "Anime", "resources": ["meta"], "types": ["series"], "idPrefixes": ["tt"]]
+        let registry = AddonRegistry(http: http, account: nil, own: { ["https://anime.example"] })
+        _ = try await Cinemeta(http: http, registry: registry).meta(kind: "series", id: "tt0386676")
+        XCTAssertEqual(http.calls, ["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"], "Cinemeta respondió: los complementos ni se piden")
+    }
+
     func testSimultaneousCatalogRequestsShareOneFetch() async throws {
         let http = FakeHTTP()
         let url = "https://v3-cinemeta.strem.io/catalog/movie/top.json"

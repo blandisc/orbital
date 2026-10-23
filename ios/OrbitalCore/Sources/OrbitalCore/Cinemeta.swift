@@ -190,14 +190,21 @@ public actor Cinemeta {
     }
 
     /// La ficha ORIGINAL (sin traducir).
-    public func meta(kind: String, id: String) async throws -> JSON {
+    /// `persist`: la de Cinemeta también se guarda en disco (stale-while-revalidate), para fichas grandes que se piden al abrir.
+    public func meta(kind: String, id: String, persist: Bool = false) async throws -> JSON {
         let path = "/meta/\(uriComponent(kind))/\(uriComponent(id, safe: ":")).json"
         var failure: Error = CinemetaError.notFound
-        for source in await metaSources(kind: kind, metaID: id) {
-            guard let url = url(path, base: source) else { continue }
-            do {
-                if let meta = try await get(url)["meta"], meta.object != nil { return meta }
-            } catch { failure = error }
+        // Un id de IMDb va primero a Cinemeta: se pide ya, sin esperar a saber los complementos (que solo hacen falta si falla).
+        let cinemetaFirst = id.hasPrefix("tt")
+        for pass in 0..<2 {
+            let sources: [String?] = pass == 0 ? (cinemetaFirst ? [nil] : [])
+                : await metaSources(kind: kind, metaID: id).dropFirst(cinemetaFirst ? 1 : 0).map { $0 }
+            for source in sources {
+                guard let url = url(path, base: source) else { continue }
+                do {
+                    if let meta = try await get(url, persist: persist && source == nil)["meta"], meta.object != nil { return meta }
+                } catch { failure = error }
+            }
         }
         throw failure
     }

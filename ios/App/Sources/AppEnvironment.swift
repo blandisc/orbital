@@ -406,7 +406,7 @@ final class AppEnvironment: ObservableObject {
     /// Elige uno y arma la tira de la ruleta (otros al azar y, al final, el elegido).
     func drawSimpsons(reelLength: Int, quiet: Bool = false) async -> SimpsonsDraw? {
         let id = Self.simpsons
-        guard let meta = try? await services.cinemeta.meta(kind: "series", id: id) else { if !quiet { notify("No pude traer los episodios de Los Simpson.") }; return nil }
+        guard let meta = try? await services.cinemeta.meta(kind: "series", id: id, persist: true) else { if !quiet { notify("No pude traer los episodios de Los Simpson.") }; return nil }
         // Leer ~700 episodios cuesta: fuera del hilo principal (si no, la animación de la tele se trababa).
         let seasons = Self.simpsonsSeasons
         let pool = await Task.detached(priority: .userInitiated) {

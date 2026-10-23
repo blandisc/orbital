@@ -130,10 +130,14 @@ struct HomeView: View {
                 .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .task(priority: .utility) {
-            await env.prefetchSimpsons()
             #if DEBUG
-            if Demo.isOn, Demo.open?.hasPrefix("simpsons") == true { rollingSimpsons = true }   // `-demo-open simpsons`: la ruleta sola
+            if Demo.isOn, Demo.open?.hasPrefix("simpsons") == true {   // `-demo-open simpsons`: la ruleta sola
+                await env.prefetchSimpsons(); rollingSimpsons = true; return
+            }
             #endif
+            // La ficha de Los Simpson (~650 KB) fuera del arranque: primero Inicio y sus imágenes; si tocas la dona antes, la pide ella.
+            try? await Task.sleep(for: .seconds(DS.Simpsons.prefetchDelay))
+            await env.prefetchSimpsons()
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
