@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import CoreImage
 import OrbitalCore
+import OrbitalModels
 
 // Las piezas del catálogo de Orbital para iPhone. Una pantalla se arma con estas; si falta una, se agrega aquí.
 // Equivalencias con la TV: Chip, Badge, Progress, SectionHead, Card (PosterCard), FeatureTile (HeroCard), Mosaic (`Design/Mosaic.swift` ↔ `foryou-mosaic`), Button, Sheet.
@@ -307,22 +308,40 @@ struct BleedArt<Content: View>: View {
     /// Sin proporción llena el espacio que le den (con un mínimo, como el destacado); con ella, esa relación (la de la ficha).
     var aspect: CGFloat?
     var minHeight: CGFloat = 0
+    /// Dentro de un `ScrollView` (la ficha): al desplazar, el arte se recoge hacia este color (el del fondo detrás del arte,
+    /// `Backdrop.tone`). Ver `DS.TitleHero` y `OrbitalModels.HeroCollapse`. nil: arte quieto (el destacado de Inicio).
+    var collapse: Color? = nil
     @ViewBuilder var content: () -> Content
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         // En oscuro el arte se funde con el fondo de borde a borde; en claro es una tarjeta con esquinas (la sala oscura no se
         // funde con el papel: el texto claro de encima dejaría de leerse).
         ZStack(alignment: .bottomLeading) {
-            if scheme == .dark {
-                art.mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
-                                                .init(color: .black, location: DS.Backdrop.artFadeStart),
-                                                .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
-            } else {
-                art.clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+            Group {
+                if scheme == .dark {
+                    art.mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
+                                                    .init(color: .black, location: DS.Backdrop.artFadeStart),
+                                                    .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
+                } else {
+                    art.clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+                }
             }
+            // Al recogerse: se queda un poco atrás, se encoge apenas, se difumina al final y se desvanece. Todo con
+            // `visualEffect` (en el render, sin volver a medir ni a dibujar la imagen); al jalar hacia abajo se estira desde abajo.
+            .visualEffect { [on = collapse != nil, still = reduceMotion] view, proxy in
+                let s = Self.collapseState(proxy, on: on, still: still)
+                return view.offset(y: s.offset).scaleEffect(s.scale, anchor: .bottom).blur(radius: s.blur).opacity(s.artOpacity)
+            }
+            // El logo y la frase se van con el contenido (sin parallax) y antes que el arte: no se quedan detrás de los datos.
             content().onArt().padding(.horizontal, DS.Space.gutter).padding(.bottom, scheme == .dark ? DS.Space.s3 : DS.Space.s5)
+                .visualEffect { [on = collapse != nil, still = reduceMotion] view, proxy in
+                    let s = Self.collapseState(proxy, on: on, still: still)
+                    return view.scaleEffect(s.contentScale, anchor: .bottom).opacity(s.contentOpacity)
+                }
         }
+        .coordinateSpace(.named(Self.space))
         .frame(minHeight: minHeight)      // con letra grande crece en vez de encimar el texto
         .padding(.horizontal, scheme == .dark ? 0 : DS.Space.gutter)
         .accessibilityElement(children: .contain)
@@ -333,6 +352,37 @@ struct BleedArt<Content: View>: View {
             // El velo sube hasta donde empieza el texto: rótulo, logo y datos se leen aunque el arte sea claro.
             .overlay(LinearGradient(stops: [.init(color: .clear, location: DS.Backdrop.scrimStart), .init(color: DS.scrim, location: DS.Backdrop.scrimMid),
                                             .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom))
+            .overlay { if let collapse { veil(collapse) } }
+    }
+
+    /// Al recogerse, el arte se oscurece hacia el color del fondo: un velo parejo que crece poco a poco y un degradado que
+    /// sube desde abajo (como Apple TV y Música). Solo cambian su opacidad y su alto, en el render.
+    private func veil(_ color: Color) -> some View {
+        ZStack {
+            color.visualEffect { [still = reduceMotion] view, proxy in view.opacity(Self.collapseState(proxy, on: true, still: still).dim) }
+            LinearGradient(stops: [.init(color: color.opacity(DS.TitleHero.riseTopOpacity), location: 0), .init(color: color.opacity(DS.TitleHero.riseSolidOpacity), location: DS.TitleHero.riseSolidAt),
+                                   .init(color: color, location: 1)], startPoint: .top, endPoint: .bottom)
+                .visualEffect { [still = reduceMotion] view, proxy in
+                    let rise = Self.collapseState(proxy, on: true, still: still).rise
+                    return view.scaleEffect(x: 1, y: max(rise, DS.TitleHero.riseMin), anchor: .bottom).opacity(rise > 0 ? 1 : 0)
+                }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private nonisolated static var space: String { "bleed-art" }
+
+    /// Cuánto se ha recogido el arte entero (no la capa que pregunta): su lugar en el desplazamiento y su alto salen del
+    /// espacio con nombre del arte, así el logo, el velo y el arte usan la misma cuenta.
+    private nonisolated static func collapseState(_ proxy: GeometryProxy, on: Bool, still: Bool) -> HeroCollapse {
+        let tuning = HeroCollapse.Tuning(parallax: DS.TitleHero.parallax, shrink: DS.TitleHero.shrink, blur: DS.TitleHero.blur, blurFrom: DS.TitleHero.blurFrom,
+                                         dim: DS.TitleHero.dim, riseEnd: DS.TitleHero.riseEnd, fadeFrom: DS.TitleHero.fadeFrom,
+                                         contentFadeEnd: DS.TitleHero.contentFadeEnd, contentShrink: DS.TitleHero.contentShrink)
+        guard on, let hero = proxy.bounds(of: .named(space)) else { return HeroCollapse.at(minY: 0, height: 1, reduceMotion: true, tuning: tuning) }
+        // `bounds(of:)` es el arte entero visto desde esta capa: su origen es lo que esta capa está corrida dentro del arte.
+        let top = proxy.frame(in: .scrollView).minY + hero.minY
+        return HeroCollapse.at(minY: top, height: hero.height, reduceMotion: still, tuning: tuning)
     }
 }
 
@@ -836,8 +886,7 @@ struct Backdrop: View {
             if immersive, let tint {
                 LinearGradient(colors: [tint.tint, tint.tint.mix(with: DS.backdropDeep, by: DS.Backdrop.immersiveDeep)], startPoint: .top, endPoint: .bottom)
                 RadialGradient(colors: [tint.accent.opacity(DS.Backdrop.immersiveGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.immersiveGlowRadius)
-            } else if let tint {
-                let tone = scheme == .dark ? tint.tint : tint.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix)
+            } else if let tone = Self.tone(tint, scheme: scheme) {
                 LinearGradient(stops: [.init(color: tone, location: 0), .init(color: DS.bg, location: DS.Backdrop.fadeTo)], startPoint: .top, endPoint: .bottom)
                 RadialGradient(colors: [tone.opacity(DS.Backdrop.lowGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.lowGlowRadius)
             }
@@ -845,6 +894,13 @@ struct Backdrop: View {
         .ignoresSafeArea()
         .animation(DS.Motion.tint(reduceMotion), value: tint)
         .accessibilityHidden(true)
+    }
+
+    /// El color de arriba del fondo (detrás del arte): el tono del arte en oscuro, ese tono muy claro sobre el papel en claro;
+    /// nil sin arte. El arte de la ficha se recoge hacia él (`BleedArt(collapse:)`).
+    static func tone(_ tint: ArtColors?, scheme: ColorScheme) -> Color? {
+        guard let tint else { return nil }
+        return scheme == .dark ? tint.tint : tint.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix)
     }
 }
 

@@ -40,22 +40,8 @@ struct TitleView: View {
         let model = observer.model
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                // Al deslizar, el arte se recoge (`BleedArt(collapse:)`): ver `hero`.
                 hero(model)
-                    // Al deslizar, el arte se queda atrás (va más lento que el contenido), se encoge un poco, se difumina y se
-                    // funde con el fondo: se recoge en vez de irse de golpe con todo, y queda un rato como un resplandor detrás de
-                    // los datos. Al jalar hacia abajo arriba del todo, se estira desde arriba (no deja un hueco sobre el arte).
-                    .visualEffect { [still = reduceMotion] content, proxy in
-                        // Con «Reducir movimiento», solo se desvanece: sin parallax, encogerse, difuminarse ni estirarse.
-                        let top = proxy.frame(in: .scrollView).minY, y = still ? 0 : top
-                        let height = max(proxy.size.height, 1)
-                        let p = min(1, max(0, -y / height))
-                        let shown = 1 - min(1, max(0, -top / height) * DS.TitleAction.heroFadeSpeed)
-                        return content
-                            .offset(y: y < 0 ? -y * DS.TitleAction.heroParallax : 0)
-                            .scaleEffect(y > 0 ? 1 + y / height : 1 - p * DS.TitleAction.heroShrink, anchor: .bottom)
-                            .blur(radius: p * DS.TitleAction.heroBlur)
-                            .opacity(shown)
-                    }
                     .perfTag("title.hero").onAppear { Perf.mark("title.shown") }
                 VStack(alignment: .leading, spacing: DS.Space.s6) {
                     VStack(alignment: .leading, spacing: DS.Space.s6) {
@@ -186,9 +172,11 @@ struct TitleView: View {
     }
 
     /// El arte a sangre, más alto, con el logo (o el nombre) al centro y la frase de la película debajo, como un cartel de cine.
+    /// Al deslizar se recoge como en Apple TV: se queda un poco atrás, se oscurece hacia el color del fondo con un degradado que
+    /// sube desde abajo, se difumina al final; el logo se va antes. Con «Reducir movimiento», solo se oscurece y se desvanece.
     private func hero(_ model: TitleModel) -> some View {
         BleedArt(url: model.background ?? model.poster, title: model.title,
-                 aspect: heroAspect) {
+                 aspect: heroAspect, collapse: Backdrop.tone(tint.colors, scheme: scheme) ?? DS.bg) {
             VStack(spacing: DS.Space.s2) {
                 TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, dark: model.logoIsDark, centered: true)
                     .containerRelativeFrame(.horizontal) { width, _ in width * DS.TitleAction.logoWidth }

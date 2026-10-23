@@ -158,9 +158,24 @@ enum DS {
         static let hiddenOpacity = DesignTokens.Opacity.faint
     }
 
+    /// Al deslizar la ficha, el arte se recoge (`BleedArt(collapse:)`, aritmética en `OrbitalModels.HeroCollapse`): se queda un
+    /// poco atrás, se encoge apenas, se oscurece hacia el color del fondo con un degradado que sube desde abajo, se difumina
+    /// al final y se desvanece; el logo y la frase se van antes (no se quedan detrás de los datos).
+    enum TitleHero {
+        /// Parallax (parte del desplazamiento que se queda atrás), cuánto se encoge y el desenfoque máximo (desde qué progreso).
+        static let parallax: Double = 0.4, shrink: Double = 0.05, blur: Double = 10, blurFrom: Double = 0.3
+        /// El velo parejo ya recogido, a qué progreso el degradado de abajo cubre todo y desde cuándo se desvanece el arte.
+        static let dim: Double = 0.55, riseEnd: Double = 0.8, fadeFrom: Double = 0.6
+        /// El logo y la frase: a qué progreso ya se fueron y cuánto se encogen mientras.
+        static let contentFadeEnd: Double = 0.35, contentShrink: Double = 0.06
+        /// El degradado que sube: transparente arriba (el mismo color sin opacidad, para que no se agrise), casi sólido a esta
+        /// altura y sólido al pie.
+        static let riseTopOpacity: Double = 0, riseSolidAt: Double = 0.65, riseSolidOpacity: Double = 0.9
+        /// Lo mínimo que mide el degradado (una escala de 0 no se puede invertir).
+        static let riseMin: Double = 0.001
+    }
+
     enum TitleAction {
-        /// Al deslizar la ficha: el arte va más lento que el contenido (parallax), se encoge, se difumina y se desvanece.
-        static let heroParallax: CGFloat = 0.45, heroShrink: CGFloat = 0.08, heroBlur: CGFloat = 14, heroFadeSpeed: CGFloat = 1.3
         /// El nombre en la barra no pasa por debajo del ‹ ni de los botones de la derecha.
         static let barTitleInset: CGFloat = 110
         /// El desvanecido bajo la barra de arriba (además de la barra) y a qué parte del arte ya está completo.
