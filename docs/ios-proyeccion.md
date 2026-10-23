@@ -79,7 +79,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | Pieza | Qué es | Dónde |
 |---|---|---|
 | `Backdrop(tint:)` | Fondo con el color del arte | Todas las pantallas |
-| `BleedArt` / `HeroCard` | Arte a sangre con rótulo, logo, `DataLine`, acciones y avance | Inicio (carrusel), Para ti › Listas, ficha |
+| `BleedArt` / `HeroCard` | Arte a sangre con rótulo, logo, `DataLine`, acciones y avance; con `collapse:` (dentro de un `ScrollView`) se recoge al desplazar hacia ese color (ver «Movimiento») | Inicio (carrusel), Para ti › Listas, ficha (`collapse`) |
 | `DataLine` | Datos con números tabulares (no una monoespaciada); quita del final lo que no cabe | Destacados, ficha, descargas |
 | `Eyebrow` | Rótulo pequeño (acento o sobre el arte) | Destacados |
 | `HeroActions` | Las acciones de un destacado en un renglón; si no caben (letra grande, iPhone SE), apiladas | Inicio (carrusel), Para ti › Listas |
@@ -177,12 +177,12 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 |---|---|
 | Mosaico | Sube solo tras 3 s quieto (arranca suave, como la TV), cada columna a su ritmo (`DesignTokens.Mosaic.driftPattern`, el mismo de la TV); las columnas se igualan en ambiente; «cobra vida» acerca la pieza en 9 s |
 | Póster → ficha | `navigationTransition(.zoom)` |
-| Deslizar la ficha | El arte se recoge: va más lento que el contenido, se encoge, se difumina y se funde con el fondo (`DS.TitleAction.hero…`); lo que sube se desvanece bajo la barra de arriba y el nombre aparece entre ‹ y los botones. Jalar hacia abajo estira el arte desde arriba. Siempre se puede recoger (el contenido mide al menos la pantalla) |
+| Deslizar la ficha | El arte se recoge como en Apple TV (`BleedArt(collapse:)`, tokens `DS.TitleHero`, curvas en `OrbitalModels/HeroCollapse.swift` con pruebas): todo sale del progreso (cuánto subió el arte / su alto) con curvas suaves (smoothstep). El arte se queda un poco atrás (parallax 0.4), se encoge apenas (5 %), se oscurece hacia el color del fondo (`Backdrop.tone`: un velo parejo y un degradado que sube desde abajo), se difumina solo al final y se desvanece; el logo y la frase se van con el contenido y antes que el arte (ya no quedan detrás de los datos). Todo en `visualEffect`, sin volver a dibujar la imagen. Lo que sube se desvanece bajo la barra de arriba y el nombre aparece entre ‹ y los botones. Jalar hacia abajo estira el arte desde abajo. Siempre se puede recoger (el contenido mide al menos la pantalla). `-demo-scroll N` abre la ficha desplazada para capturarlo |
 | Color del arte | Fundido de 0.7 s al cambiar lo que está al frente (las duraciones son las de la TV: 140 · 220 · 320 · 520 · 700 ms) |
 | Empezar a ver | Toque háptico suave |
 | Selección (carrusel, temporadas, Mi lista) | `sensoryFeedback(.selection)` |
 
-Con «Reducir movimiento»: sin ambiente, sin acercamiento, sin fundidos; la ficha solo se desvanece (sin parallax, encogerse, difuminado ni estirarse).
+Con «Reducir movimiento»: sin ambiente, sin acercamiento, sin fundidos; la ficha solo se oscurece y se desvanece (sin parallax, encogerse, difuminado, degradado que sube ni estirarse).
 
 ## 5b. Una sola experiencia con la TV
 
