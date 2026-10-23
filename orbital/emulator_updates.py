@@ -157,6 +157,8 @@ def manifest_version(exe: Path) -> str | None:
         data = json.loads((exe.parent / MANIFEST).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
+    if not isinstance(data, dict) or not isinstance(data.get("exe", exe.name), str):
+        return None
     if data.get("exe", exe.name).lower() != exe.name.lower():
         return None
     return data.get("version") if isinstance(data.get("version"), str) else None
