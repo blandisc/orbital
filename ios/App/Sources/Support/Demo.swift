@@ -170,7 +170,29 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     private var inboxAcked = false
     private var demoVolume = 40, demoMuted = false
 
+    /// `-net-latency`: las respuestas de mentira tardan 80–150 ms, como un servidor de verdad.
+    private static let netLatency = ProcessInfo.processInfo.arguments.contains("-net-latency")
+
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
+        let start = Perf.now()
+        do {
+            let response: HTTPResponse
+            if let fake = try await fake(request) {
+                if Self.netLatency { try? await Task.sleep(for: .milliseconds(Int.random(in: 80...150))) }
+                response = fake
+            } else {
+                response = try await real.send(request)
+            }
+            Perf.net(kind: "api", url: request.url, method: request.method, start: start, end: Perf.now(), bytes: response.data.count, status: response.status)
+            return response
+        } catch {
+            Perf.net(kind: "api", url: request.url, method: request.method, start: start, end: Perf.now(), bytes: 0, status: -1)
+            throw error
+        }
+    }
+
+    /// La respuesta de mentira, o nada si la petición va a la red de verdad.
+    private func fake(_ request: HTTPRequest) async throws -> HTTPResponse? {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
@@ -195,7 +217,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             if url.path.hasPrefix("/api/foryou") { return Demo.console ? foryouDemo(url) : HTTPResponse(status: 404, data: Data()) }
             return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized())
         }
-        return try await real.send(request)
+        return nil
     }
 
     /// `-demo-release-alert`: pide permiso y manda el aviso de ejemplo unos segundos después (para verlo con la app cerrada).

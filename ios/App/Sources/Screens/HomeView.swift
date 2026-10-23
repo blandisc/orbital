@@ -187,6 +187,7 @@ struct HomeView: View {
     /// Lo de Stremio, lo pendiente por subir y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo).
     private func reload(ifStale: Bool = false) async {
         if ifStale { await home.model.refreshIfStale() } else { await home.model.refresh() }
+        Perf.mark("home.done")
         let work = env.services.pending.load()      // una sola lectura por actualización, no una por cada pintado
         pendingCount = work.progress.count + work.traktWatched.count
         await tint.load(currentHero?.wide)

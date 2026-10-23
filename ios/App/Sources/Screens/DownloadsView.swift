@@ -116,6 +116,7 @@ struct DownloadsView: View {
                 DSEmptyState(symbol: "arrow.down.circle", title: Text("Nada descargado"), message: Text("En una ficha, toca Descargar y lo ves aquí sin conexión."))
             }
         }
+        .perfTag("downloads")   // «downloads.shown» con la lista (o el vacío), «downloads.image» con la primera imagen
         .listRowSpacing(DS.Space.s2)
         // El espacio va pegado al selector (la lista agrupada dejaba un hueco grande arriba de su primera sección).
         .contentMargins(.top, DS.Space.s2, for: .scrollContent)

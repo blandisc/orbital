@@ -37,7 +37,7 @@ struct TitleView: View {
         let model = observer.model
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                hero(model)
+                hero(model).perfTag("title.hero").onAppear { Perf.mark("title.shown") }
                 VStack(alignment: .leading, spacing: DS.Space.s6) {
                     VStack(alignment: .leading, spacing: DS.Space.s6) {
                         facts(model)
@@ -71,11 +71,11 @@ struct TitleView: View {
         .toolbar { topBar(model) }
         .task { await model.followDownloads() }
         .task { await model.loadConsoleDetails() }
-        .task { await model.loadExtras() }     // la ficha rica: elenco con foto, saga, tráiler, frase y detalles (TMDB)
+        .task { await model.loadExtras(); if model.extras != nil { Perf.mark("title.extras") } }     // la ficha rica: elenco con foto, saga, tráiler, frase y detalles (TMDB)
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .task {
             await model.load()
-            Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) }   // aparte: las fuentes tardan y no detienen el color del fondo
+            Task { await model.loadBestSource(onCellular: env.connectivity.isCellular); if model.bestSource != nil { Perf.mark("title.sources") } }   // aparte: las fuentes tardan y no detienen el color del fondo
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
             if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }

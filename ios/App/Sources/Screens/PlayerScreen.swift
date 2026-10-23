@@ -222,6 +222,8 @@ struct PlayerScreen: View {
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
         .animation(DS.Motion.base(reduceMotion), value: panel)
         .animation(DS.Motion.base(reduceMotion), value: dragAxis)
+        .onAppear { Perf.mark("player.shown") }
+        .onChange(of: model.snapshot.state) { if model.snapshot.state == .playing { Perf.mark("player.firstFrame") } }
         .task {
             // Abre como tienes el teléfono (Los Simpson, siempre vertical); boca arriba o sin saberlo, horizontal.
             #if DEBUG

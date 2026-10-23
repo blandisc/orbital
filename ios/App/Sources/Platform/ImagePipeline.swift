@@ -167,8 +167,13 @@ final class ImagePipeline: @unchecked Sendable {
         }
         // Solo una respuesta buena con contenido: el caché también guarda las redirecciones (las miniaturas de episodio de
         // metahub mandan un 301 a TMDB) y ese 301 vacío no es la imagen.
+        let start = Perf.now()
         if let stored = cache.cachedResponse(for: request), !stored.data.isEmpty,
-           ((stored.response as? HTTPURLResponse)?.statusCode ?? 200) < 300 { return stored.data }
+           ((stored.response as? HTTPURLResponse)?.statusCode ?? 200) < 300 {
+            Perf.net(kind: "imgcache", url: url, start: start, end: Perf.now(), bytes: stored.data.count,
+                     status: (stored.response as? HTTPURLResponse)?.statusCode ?? 200)
+            return stored.data
+        }
         let job: Shared<Data?> = lock.withLock {
             if let existing = downloads[url] { existing.waiters += 1; return existing }
             let fresh = Shared<Data?>()
@@ -176,7 +181,11 @@ final class ImagePipeline: @unchecked Sendable {
                 defer { lock.withLock { if downloads[url] === fresh { downloads[url] = nil } } }
                 if !urgent { guard await network.acquire() else { return nil } }
                 defer { if !urgent { Task { await network.release() } } }
-                guard let (fresh, response) = try? await session.data(for: request),
+                let start = Perf.now()
+                let result = try? await session.data(for: request)
+                Perf.net(kind: "img", url: url, start: start, end: Perf.now(), bytes: result?.0.count ?? 0,
+                         status: (result?.1 as? HTTPURLResponse)?.statusCode ?? -1)
+                guard let (fresh, response) = result,
                       let http = response as? HTTPURLResponse, http.statusCode < 400 else { return nil }
                 // `URLSession` ya guarda lo que trae cabeceras de caché (metahub manda 60 días); solo se fuerza si no las trae.
                 if http.value(forHTTPHeaderField: "Cache-Control") == nil {

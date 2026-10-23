@@ -185,7 +185,7 @@ final class AppEnvironment: ObservableObject {
         }
         #endif
         return Services(
-            http: URLSessionHTTPClient(), secrets: KeychainSecrets(service: Bundle.main.bundleIdentifier ?? "com.example.orbital.ios"),
+            http: Perf.isOn ? PerfHTTPClient(inner: URLSessionHTTPClient()) : URLSessionHTTPClient(), secrets: KeychainSecrets(service: Bundle.main.bundleIdentifier ?? "com.example.orbital.ios"),
             kv: UserDefaultsKeyValueStore(), pending: FilePendingStore(url: AppFiles.pendingWork), downloadTransport: transport,
             downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
             onDownloadsChange: { DownloadIndex.save($0) })
