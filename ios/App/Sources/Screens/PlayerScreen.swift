@@ -178,7 +178,7 @@ struct PlayerScreen: View {
                         // quedaba a media imagen).
                         holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
                             // Con la tarjeta de «Siguiente episodio» (abajo a la derecha, en horizontal) la línea sube sobre ella.
-                            .offset(y: landscape && model.upNext != nil && !panel && !locked && !subtitleDock ? -(upNextHeight + DS.Space.s6) : 0)
+                            .offset(y: landscape && model.upNext != nil && !locked && !subtitleDock ? -(upNextHeight + DS.Space.s6) : 0)
                             .transition(.opacity)
                     }
                 }
