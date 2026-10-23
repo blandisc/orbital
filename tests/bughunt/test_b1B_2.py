@@ -1,6 +1,8 @@
 import pytest
+
 from orbital import emulator_updates as eu
 from orbital.emulator_updates import download as real_download
+
 
 class _Cut:
     _sent = False

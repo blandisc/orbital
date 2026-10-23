@@ -74,13 +74,13 @@ TRANSLATIONS = {
     "%lld semillas": "%lld seeders",
     "Sin ajuste": "No offset", "Buscar…": "Search…", "en Real-Debrid": "on Real-Debrid", "Real-Debrid aún no la tiene": "Real-Debrid doesn't have it yet",
     "se supone": "assumed", "Descarga en el iPhone": "Download on iPhone", "Abre otra versión del video en el mismo punto": "Opens another version of the video at the same point",
-    "Abrir": "Open", "Por idioma": "By language", "Todas (%lld)": "All (%lld)", "Cambiar a esta": "Switch to this one", "Velocidad": "Speed",
+    "Abrir": "Open", "Por idioma": "By language", "Todas (%lld)": "All (%lld)", "Cambiar a esta": "Switch to this one", 
     "Esa versión no abrió": "That version didn't open", "Volviste a la que veías, en el mismo punto.": "You're back on the one you were watching, at the same point.",
     "Mandó su aviso de «descargando». Puede tardar; prueba más tarde u otra versión.": "It sent its “downloading” notice. It may take a while; try later or another version.",
     "Real-Debrid aún no tiene esta versión": "Real-Debrid doesn't have this version yet", "Abrirla de todos modos": "Open it anyway", "Mejor no": "Never mind",
     "Empieza a bajarla y puede tardar minutos u horas. Si manda su aviso de «descargando», vuelves a la que ves en el mismo punto.": "It starts downloading it and may take minutes or hours. If it sends its “downloading” notice, you go back to the one you're watching at the same point.",
     "Del video · forzados": "From the video · forced", "Del video · para sordos": "From the video · SDH",
-    "Arriba": "Top", "Centro": "Middle", "Abajo": "Bottom", "Mover el video": "Move the video",
+    "Centro": "Middle", "Mover el video": "Move the video",
     "Arrastra hacia arriba o hacia abajo": "Drag up or down", "Subir el video": "Move the video up", "Bajar el video": "Move the video down",
     "Más del episodio": "More for this episode",
     "Abriendo tu descarga…": "Opening your download…", "Abriendo la versión que elegiste…": "Opening the version you picked…",
@@ -93,9 +93,9 @@ TRANSLATIONS = {
     "Buscando opciones…": "Finding options…",
     "de «%@»": "from “%@”",
     "de %lld listas": "from %lld lists",
-    "Antes": "Earlier",
+    
     "Ninguna con estos filtros": "None with these filters",
-    "Calificación": "Rating",
+    
     "Según (basta una)": "According to (any one)",
     "TMDB (falta su clave)": "TMDB (key missing)",
     "Más filtros · %lld": "More filters · %lld",
@@ -125,23 +125,23 @@ TRANSLATIONS = {
     "Ánimo": "Mood",
     "%lld opción": "%lld option",
     "%lld opciones": "%lld options",
-    "Lo que sea": "Anything",
-    "Películas y series": "Movies and series",
-    "Todo": "All",
-    "Películas": "Movies",
-    "Series": "Series",
+    
+    
+    
+    
+    
     "%lld lista": "%lld list",
     "%lld listas": "%lld lists",
     "de %lld": "of %lld",
     "%lld título": "%lld title",
-    "%lld títulos": "%lld titles",
+    
     "Elegidas": "Chosen",
-    "Sugerencias": "Suggestions",
-    "Tiempo": "Time",
-    "Qué": "What",
+    
+    
+    
     "%lld puestos": "%lld set",
-    "Hoy no": "Not today",
-    "Cualquiera": "Any",
+    
+    
     "Bloquear pantalla": "Lock screen",
     "Ventana (PiP)": "Window (PiP)",
     "Ligera para guardar": "Light to save",
@@ -171,7 +171,7 @@ TRANSLATIONS = {
     "Ya está en Descargas": "Already in Downloads",
     "Ya está en Descargas.": "Already in Downloads.",
     "Descargar este video": "Download this video",
-    "Descargar": "Download",
+    
     "Viene dentro del archivo": "Comes inside the file",
     "Caja oscura": "Dark box",
     "Carteles en tu idioma si el audio es otro": "Signs in your language when the audio is another",
@@ -219,7 +219,7 @@ TRANSLATIONS = {
     "Sin fuentes por ahora": "No sources yet", "Todavía no sale": "Not out yet", "Real-Debrid aún no lo tiene. Los estrenos suelen aparecer unas horas después.": "Real-Debrid doesn't have it yet. New releases usually show up a few hours later.",
     "Termina como a las %@": "Done around %@",
     "faltan %@": "%@ left", "Real-Debrid aún no tiene este título. Los estrenos suelen aparecer unas horas después.": "Real-Debrid doesn't have this title yet. New releases usually show up a few hours later.", "Sin conexión: no pude preguntar por fuentes. Revisa tu internet.": "No connection: we couldn't ask for sources. Check your internet.", "No pude buscar fuentes. Intenta de nuevo.": "We couldn't search for sources. Try again.", "Real-Debrid aún no tiene este título.": "Real-Debrid doesn't have this title yet.", "No pude preparar la descarga. Intenta de nuevo.": "We couldn't prepare the download. Try again.", "Sin conexión: no pude preguntar por fuentes.": "No connection: we couldn't ask for sources.",
-    "Ajustar tiempo": "Adjust timing", "Apagar subtítulos": "Turn subtitles off", "Buscando versiones en internet…": "Searching online for versions…", "Mantén presionado para apagarlos o prenderlos": "Touch and hold to turn them off or on", "Prender subtítulos": "Turn subtitles on", "Subtítulos desactivados": "Subtitles off", "Versión": "Version", "¿Las letras salen antes que la voz? Toca +.": "Do the words show up before the voice? Tap +.", "Desactivados": "Off",
+    "Ajustar tiempo": "Adjust timing", "Apagar subtítulos": "Turn subtitles off", "Buscando versiones en internet…": "Searching online for versions…", "Mantén presionado para apagarlos o prenderlos": "Touch and hold to turn them off or on", "Prender subtítulos": "Turn subtitles on", "Subtítulos desactivados": "Subtitles off", "¿Las letras salen antes que la voz? Toca +.": "Do the words show up before the voice? Tap +.", "Desactivados": "Off",
     "Llena la pantalla y recorta los lados": "Fills the screen and crops the sides",
     "Prueba de velocidad": "Speed test",
     "El archivo descargado no se puede leer. Bórralo en Descargas y bájalo otra vez.": "The downloaded file can't be read. Delete it in Downloads and download it again.", "Intentar de nuevo": "Try again", "La fuente dejó de responder. Al intentar de nuevo seguimos donde ibas, con otra si hace falta.": "The source stopped responding. Try again and we'll pick up where you were, with another source if needed.", "No pude reproducirlo": "We couldn't play it", "No se puede abrir la descarga": "The download can't be opened", "Probamos las fuentes que hay y ninguna respondió. A veces es momentáneo.": "We tried the available sources and none responded. Sometimes it's temporary.", "Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.": "Real-Debrid doesn't have this movie yet. New releases usually show up a few hours later; try again later.", "Real-Debrid aún no tiene este episodio. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.": "Real-Debrid doesn't have this episode yet. New releases usually show up a few hours later; try again later.", "Revisa tu conexión a internet e intenta de nuevo.": "Check your internet connection and try again.", "Se cortó el video": "The video stopped", "Sin conexión": "No connection", "Todavía no hay dónde verlo": "Nowhere to watch it yet",
@@ -235,7 +235,7 @@ TRANSLATIONS = {
     "Elegir carpeta": "Choose folder", "Elige la carpeta de tus películas": "Choose the folder with your movies", "Películas: %@ · Series: %@": "Movies: %@ · Shows: %@", "Películas: %lld · Series: %lld": "Movies: %lld · Shows: %lld", "Solo se mira esa carpeta y sus subcarpetas.": "Only that folder and its subfolders are read.", "Toca el del centro para volver a como venían.": "Tap the middle one to go back to how they came.", "«Ver» usa la mejor; «Descargar», la de 1080p.": "“Watch” uses the best one; “Download”, the 1080p one.",
     "A tiempo": "In sync", "Ajustes de OneDrive": "OneDrive settings", "Antes": "Earlier", "Bajar esta": "Download this one", "Bajar temporada": "Download season", "Busca el título": "Search for the title", "Cada video se reconoce por su nombre: «Dune Part Two (2024).mkv», «Severance S01E03.mkv».": "Each video is recognized by its name: “Dune Part Two (2024).mkv”, “Severance S01E03.mkv”.", "Conecta tu OneDrive": "Connect your OneDrive", "Corregir": "Fix", "Corregir ficha": "Fix match", "Corregir ficha: búscala por nombre": "Fix match: search for it by name", "De Mi media": "From My media", "Después": "Later", "El archivo": "The file", "En el iPhone": "On iPhone", "Episodio %@": "Episode %@", "Esta carpeta está vacía.": "This folder is empty.", "Lo último que subiste": "The latest you uploaded", "Mi media": "My media", "Mi media se vacía. Lo que ya bajaste al iPhone se queda.": "My media is cleared. What you already downloaded to the iPhone stays.", "Nada reconocido todavía": "Nothing recognized yet", "No encontré ese archivo en tu OneDrive.": "I couldn't find that file on your OneDrive.", "No está en tu carpeta": "Not in your folder", "No los reconocí por su nombre: elige cuál es.": "I didn't recognize them by name: choose which one it is.", "No pude pedir el archivo a OneDrive.": "I couldn't get the file from OneDrive.", "Para ver se usa la mejor; para bajar, la de 1080p. Mantén presionada una para elegirla.": "The best one is used for watching; the 1080p one for downloading. Press and hold one to choose it.", "Por nombre": "By name", "Recién agregado": "Recently added", "Revisando tu carpeta…": "Checking your folder…", "Revisando…": "Checking…", "Saga": "Collection", "Sin ficha": "No match", "Sin resultados: prueba con el título en inglés.": "No results: try the English title.", "Sin ver": "Unwatched", "Sincronía": "Sync", "Tu OneDrive · %@": "Your OneDrive · %@", "Tus películas y series de OneDrive, aquí: se ven al instante y se bajan al iPhone.": "Your OneDrive movies and shows, here: they play instantly and download to the iPhone.", "Tus películas y series salen en Descargas › Mi media: se ven al instante y se bajan al iPhone.": "Your movies and shows appear in Downloads › My media: they play instantly and download to the iPhone.", "Ver carpetas": "Browse folders", "Ver esta": "Watch this one", "Versiones en tu carpeta": "Versions in your folder", "Ya no está en tu carpeta": "No longer in your folder", "¿No es esta película?": "Not this movie?", "¿No es esta serie?": "Not this show?", "%lld versiones": "%lld versions", "%lld películas · %lld series · %@": "%lld movies · %lld shows · %@", "Agregada": "Added",
     "%@ sin ficha: revisa que su nombre diga el título (y el año).": "%@ without a match: check that the file name says the title (and the year).", "Aparece un código para escribir en microsoft.com/link. Solo pide leer tus archivos.": "A code appears to type at microsoft.com/link. It only asks to read your files.", "Conectar OneDrive": "Connect OneDrive", "Copiar el código y abrir Microsoft": "Copy the code and open Microsoft", "Desconectar OneDrive": "Disconnect OneDrive", "Dónde están tus películas": "Where your movies are", "Elige una": "Choose one", "En tu OneDrive": "On your OneDrive", "Episodios": "Episodes", "Escribe este código en %@": "Type this code at %@", "Id. de aplicación (cliente)": "Application (client) ID", "Lo que encontré": "What I found", "Microsoft no aceptó el código.": "Microsoft didn't accept the code.", "No hay más carpetas aquí.": "No more folders here.", "OneDrive": "OneDrive", "OneDrive conectado": "OneDrive connected", "Orbital solo lee: nunca cambia ni borra nada": "Orbital only reads: it never changes or deletes anything", "Rechazaste la conexión en Microsoft.": "You declined the connection at Microsoft.", "Revisada %@": "Checked %@", "Revisar ahora": "Check now", "Se ven al instante y se pueden descargar": "They play instantly and can be downloaded", "Solo mira la carpeta que elijas después": "It only looks at the folder you choose next", "Solo se mira esa carpeta y sus subcarpetas. Cada video se reconoce por su nombre («Dune Part Two (2024).mkv», «Severance S01E03.mkv»).": "Only that folder and its subfolders are read. Each video is recognized by its name (“Dune Part Two (2024).mkv”, “Severance S01E03.mkv”).", "Tu OneDrive": "Your OneDrive", "Tu OneDrive primero; luego Real-Debrid, por calidad": "Your OneDrive first; then Real-Debrid, by quality", "Tu copia en OneDrive": "Your copy on OneDrive", "Tus videos de OneDrive dejan de salir como fuente. Lo descargado se queda.": "Your OneDrive videos stop showing up as sources. Downloads stay.", "Tus videos salen primero en «Fuente» de su película o episodio: se ven al instante y se pueden descargar.": "Your videos show up first under “Source” for their movie or episode: they play instantly and can be downloaded.", "Tus videos se ven directo, sin bajarlos completos": "Your videos play directly, without downloading them fully", "Usa la misma de la TV. Si aún no la tienes: en entra.microsoft.com › Registros de aplicaciones › Nuevo registro, ponle «Orbital», elige «Cuentas personales de Microsoft» y créala. En «Autenticación» activa «Permitir flujos de clientes públicos». Copia su «Id. de aplicación (cliente)».": "Use the same one as the TV. If you don't have it yet: at entra.microsoft.com › App registrations › New registration, name it “Orbital”, choose “Personal Microsoft accounts” and create it. Under “Authentication”, turn on “Allow public client flows”. Copy its “Application (client) ID”.", "Usar esta carpeta": "Use this folder", "¿Desconectar OneDrive?": "Disconnect OneDrive?",
-    "Horas, tus días más intensos, lo que más viste y tu mapa de calor": "Hours, your busiest days, what you watched most and your heat map", "Lo más visto en tu país esta semana": "Most watched in your country this week", "Lo que todo el mundo está viendo": "What everyone is watching", "Lo que viste, día por día": "What you watched, day by day", "No pude traer los episodios de Los Simpson.": "I couldn't get The Simpsons episodes.", "Recomendadas con lo que ves": "Recommended from what you watch", "Top 10 en Netflix": "Top 10 on Netflix", "Tu año en Orbital": "Your year on Orbital", "Un Simpson al azar": "A random Simpsons", "Un Simpson al azar (T5–T15)": "A random Simpsons (S5–S15)", "Ver aquí": "Watch here",
+    "Horas, tus días más intensos, lo que más viste y tu mapa de calor": "Hours, your busiest days, what you watched most and your heat map", "Lo más visto en tu país esta semana": "Most watched in your country this week", "Lo que todo el mundo está viendo": "What everyone is watching", "Lo que viste, día por día": "What you watched, day by day", "No pude traer los episodios de Los Simpson.": "I couldn't get The Simpsons episodes.", "Recomendadas con lo que ves": "Recommended from what you watch", "Top 10 en Netflix": "Top 10 on Netflix", "Tu año en Orbital": "Your year on Orbital", "Un Simpson al azar": "A random Simpsons", "Un Simpson al azar (T5–T15)": "A random Simpsons (S5–S15)", 
     "Desliza hacia arriba o abajo para ir de un día con algo visto a otro": "Swipe up or down to move between days you watched something", "Día anterior con algo visto": "Previous day you watched something", "Día siguiente con algo visto": "Next day you watched something", "Elige otro título para recomendarte por él": "Pick another title to get recommendations from", "Ese día no viste nada.": "You didn't watch anything that day.", "Recomiéndame por…": "Recommend based on…", "Toca el nombre para elegir otro de lo que viste": "Tap the name to pick something else you watched",
     "Hoy no hay ranking de este servicio.": "No ranking for this service today.", "Lo más visto hoy · JustWatch": "Most watched today · JustWatch",
     "Abrir con Infuse": "Open with Infuse", "Activa los avisos de Orbital en Ajustes del iPhone.": "Turn on Orbital notifications in iPhone Settings.", "Apagados": "Off", "Avienta la carta para cambiar": "Flick the card to change", "Bajando %@": "Downloading %@", "Bajando la recomendada": "Downloading the recommended one", "Borrar la descarga": "Delete the download", "Cancelar la descarga": "Cancel the download", "Clasificación": "Rating", "Con": "With", "Conecta Trakt para saber qué series sigues.": "Connect Trakt so we know which shows you follow.", "Creada por": "Created by", "Cuando un estreno ya está para ver": "When a new episode is ready to watch", "Cómo eliges, en Para ti, de qué título quieres recomendaciones.": "How you pick, in For You, which title to get recommendations from.", "De Real-Debrid · por calidad, la recomendada primero": "From Real-Debrid · by quality, recommended first", "De las series que sigues en Trakt. Te avisa cuando ya hay fuente en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.": "For the shows you follow on Trakt. It tells you once there's a Real-Debrid source, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; several on the same day arrive together.", "Descargada": "Downloaded", "Desliza hacia arriba o abajo para cambiar el título": "Swipe up or down to change the title", "Detalles": "Details", "Duración": "Runtime", "Elegir la fuente…": "Choose the source…", "Estrenos": "New episodes", "Fuente": "Source", "Guardada": "Saved", "Guardada en Mi lista": "Saved to My list", "Inicio y Para ti": "Home and For You", "La elegimos por tu idioma, la calidad y el tamaño": "Picked for your language, quality and size", "Lleva %lld %": "%lld % done", "Los siguientes %@": "The next %@", "Mantén presionado para elegir en qué lista": "Touch and hold to choose which list", "Mazo de cartas": "Card deck", "Mini pósters": "Mini posters", "Primer episodio": "First episode", "Quitada de Mi lista": "Removed from My list", "Reintentar": "Retry", "Tus listas de Trakt…": "Your Trakt lists…", "Ver en Descargas": "See in Downloads", "Ver sin internet": "Watch offline", "Un estreno ya está para ver": "A new episode is ready to watch", "%lld estrenos ya para ver": "%lld new episodes ready to watch", "Ya está para ver": "Ready to watch", "Ya está para ver · «%@»": "Ready to watch · “%@”", "Cambiar": "Change", "Avisos": "Notifications", "Estudio": "Studio", "Cadena": "Network", "Disponible": "Available", "Estreno": "Release", "menos": "less", "más": "more",
@@ -317,7 +317,7 @@ TRANSLATIONS = {
     "Lo mejor disponible": "Best available",
     "Sale pronto": "Coming up", "Ver todo": "See all",
     "La que tienes": "Current", "Sigue en tu Orbital": "Now on your Orbital",
-    "Tamaño": "Size", "Tarda en empezar": "Slow to start", "Tu idioma": "Your language", "Ventana": "Window", "Idiomas": "Languages", "Otros": "Others",
+    "Tamaño": "Size", "Tarda en empezar": "Slow to start", "Ventana": "Window", "Idiomas": "Languages", "Otros": "Others",
     "Otras": "Others", "desde el principio": "from the start", "desde %@": "from %@", "Deshacer": "Undo",
     "Creación": "Created by", "Dónde verlo": "Where to watch", "Este título no está en Stremio.": "This title isn't on Stremio.", "Filmografía": "Filmography",
     "La saga": "The saga", "Marcar temporada como vista": "Mark season as watched", "Más como esto": "More like this",
@@ -352,7 +352,7 @@ TRANSLATIONS = {
     "Lo siguiente para ti": "Up next for you", "Sigue viendo donde ibas.": "Keep watching where you left off.", "Nada pendiente": "Nothing pending",
     "Abrir Orbital": "Open Orbital", "Próximo estreno": "Next premiere", "Sigue: %@": "Next up: %@",
     # Para ti › Listas como feed de estantes (CEN-50)
-    "Lo que sale de las series que sigues": "What is coming out from the shows you follow", "Abrir Ajustes": "Open Settings", "Agregada a tu lista.": "Added to your list.", "Conecta Trakt o tu Orbital": "Connect Trakt or your Orbital",
+    "Lo que sale de las series que sigues": "What is coming out from the shows you follow", "Agregada a tu lista.": "Added to your list.", "Conecta Trakt o tu Orbital": "Connect Trakt or your Orbital",
     "De todos los tiempos": "All time", "Lo más popular en Stremio": "Most popular on Stremio", "Lo más visto esta semana": "Most watched this week",
     "Lo que dejaste pendiente": "What you left for later", "Lo tuyo": "Yours", "N.º %lld en %@": "No. %lld on %@", "Por lo que has visto": "Based on what you've watched",
     "Recomendada por Trakt": "Recommended by Trakt", "Sin Trakt ni Orbital, esto es lo que ve todo el mundo": "Without Trakt or Orbital, this is what everyone is watching",
@@ -367,7 +367,7 @@ TRANSLATIONS = {
     "Próximos estrenos": "Upcoming episodes", "Por día": "By day", "Semana": "Week", "Hoy": "Today", "Mañana": "Tomorrow",
     "Sale hoy": "Out today", "Desde la madrugada": "Overnight", "Nada este día": "Nothing this day",
     "No sale nada en los próximos 14 días de las series que sigues.": "Nothing comes out in the next 14 days from the shows you follow.",
-    "Agregar complemento": "Add add-on", "Ajustes": "Settings", "Al instante": "Instant", "Audio": "Audio", "Audio y subtítulos": "Audio and subtitles",
+    "Agregar complemento": "Add add-on", "Ajustes": "Settings", "Al instante": "Instant", "Audio y subtítulos": "Audio and subtitles",
     "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.":
         "A code appears to enter at trakt.tv/activate. With Trakt connected, what you watch is reported and your watchlist and lists show up.",
     "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.": "What you're watching shows up here, on iPhone and on Orbital.",
@@ -396,7 +396,7 @@ TRANSLATIONS = {
     "Conectar Trakt": "Connect Trakt", "Continuar": "Continue", "Continuar T%lld E%lld": "Continue S%lld E%lld", "Contraseña": "Password",
     "Correo de Stremio": "Stremio email", "Cuando descargues algo, aparece aquí.": "When you download something, it shows up here.", "Cuenta": "Account",
      "Descargando": "Downloading", "Descargar": "Download", "Descargar con la fuente recomendada": "Download with the recommended source",
-    "Descargar solo con Wi‑Fi": "Download only on Wi‑Fi", "Descargas": "Downloads", "Desconectar Trakt": "Disconnect Trakt", "Descubrir": "Discover",
+    "Descargar solo con Wi‑Fi": "Download only on Wi‑Fi", "Desconectar Trakt": "Disconnect Trakt", "Descubrir": "Discover",
     "Descargando. Lo verás en Descargas.": "Downloading. You'll see it in Downloads.", "Dirección": "Directed by",
     "El código caducó. Vuelve a intentarlo.": "The code expired. Try again.",
     "Elegir la fuente de este episodio": "Choose this episode's source", "Empieza en %lld s": "Starts in %lld s", "En cola": "Queued", "En pausa": "Paused",

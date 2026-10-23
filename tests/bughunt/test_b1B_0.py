@@ -1,5 +1,9 @@
-import pathlib, threading, time
+import pathlib
+import threading
+import time
+
 from orbital import downloads
+
 
 def test_a_concurrent_save_cannot_lose_a_download(tmp_path, monkeypatch):
     dl = downloads.Downloads(tmp_path, resolve=lambda j: ('', ''), publish=lambda e: None, autostart=False)

@@ -1,5 +1,8 @@
-import io, shutil
+import io
+import shutil
+
 from orbital import downloads
+
 
 def _ok(request, timeout=0):
     res = io.BytesIO(b'video')

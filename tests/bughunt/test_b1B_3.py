@@ -1,6 +1,10 @@
-import shutil, zipfile
+import shutil
+import zipfile
+
 import pytest
+
 from orbital import emulator_updates as eu
+
 
 def test_a_failed_install_removes_a_half_written_new_file(tmp_path, monkeypatch):
     folder = tmp_path / 'xemu'

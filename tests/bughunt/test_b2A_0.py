@@ -1,5 +1,6 @@
 def test_public_foryou_list_hides_tv_only_lists(library):
     from fastapi.testclient import TestClient
+
     from orbital.server import create_app, create_public_app
 
     main = create_app(library.config, library)
