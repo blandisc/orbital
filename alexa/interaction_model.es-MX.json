@@ -1,7 +1,12 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "orbital",
+      "invocationName": "mi consola",
+      "modelConfiguration": {
+        "fallbackIntentSensitivity": {
+          "level": "LOW"
+        }
+      },
       "intents": [
         {
           "name": "AMAZON.CancelIntent",
@@ -48,6 +53,19 @@
             "me gustaría {query}",
             "hazme el favor de {query}",
             "te pido que {query}"
+          ]
+        },
+        {
+          "name": "CommandIntent",
+          "slots": [
+            {
+              "name": "command",
+              "type": "ORBITAL_COMMAND"
+            }
+          ],
+          "samples": [
+            "{command}",
+            "que {command}"
           ]
         },
         {
@@ -364,6 +382,10 @@
             {
               "name": "language",
               "type": "LANGUAGE"
+            },
+            {
+              "name": "always",
+              "type": "ALWAYS"
             }
           ],
           "samples": [
@@ -380,7 +402,11 @@
             "ponga los subtítulos en {language}",
             "ponle subtítulos",
             "ponle subtítulos en {language}",
-            "subtítulos"
+            "subtítulos",
+            "pon subtítulos en {language} {always}",
+            "pon {always} subtítulos en {language}",
+            "pon los subtítulos {always} en {language}",
+            "pon los subtítulos en {language} {always}"
           ]
         },
         {
@@ -403,6 +429,10 @@
             {
               "name": "language",
               "type": "LANGUAGE"
+            },
+            {
+              "name": "always",
+              "type": "ALWAYS"
             }
           ],
           "samples": [
@@ -418,7 +448,13 @@
             "ponla en {language}",
             "pónmelo en {language}",
             "cámbialo a {language}",
-            "idioma en {language}"
+            "idioma en {language}",
+            "ponlo {always} en {language}",
+            "pon el audio {always} en {language}",
+            "pon el audio en {language} {always}",
+            "ponlo en {language} {always}",
+            "cambia el audio a {language} {always}",
+            "pónmelo {always} en {language}"
           ]
         },
         {
@@ -999,8 +1035,28 @@
                 "value": "es",
                 "synonyms": [
                   "español",
+                  "spanish"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "es-419",
+                "synonyms": [
+                  "latino",
+                  "español latino",
+                  "español de México",
+                  "latin spanish"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "es-ES",
+                "synonyms": [
                   "castellano",
-                  "latino"
+                  "español de España",
+                  "castilian"
                 ]
               }
             },
@@ -1386,6 +1442,599 @@
                   "anterior",
                   "de antes",
                   "pasado"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ORBITAL_COMMAND",
+          "values": [
+            {
+              "name": {
+                "value": "prende la consola"
+              }
+            },
+            {
+              "name": {
+                "value": "enciende orbital"
+              }
+            },
+            {
+              "name": {
+                "value": "abre orbital"
+              }
+            },
+            {
+              "name": {
+                "value": "vuelve a la consola"
+              }
+            },
+            {
+              "name": {
+                "value": "muestra la consola"
+              }
+            },
+            {
+              "name": {
+                "value": "sal al escritorio"
+              }
+            },
+            {
+              "name": {
+                "value": "cierra orbital"
+              }
+            },
+            {
+              "name": {
+                "value": "abre hollow knight"
+              }
+            },
+            {
+              "name": {
+                "value": "juega hades"
+              }
+            },
+            {
+              "name": {
+                "value": "quiero jugar mario kart"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el juego celeste"
+              }
+            },
+            {
+              "name": {
+                "value": "abre zelda con ryujinx"
+              }
+            },
+            {
+              "name": {
+                "value": "abre fortnite en la nube"
+              }
+            },
+            {
+              "name": {
+                "value": "abre steam"
+              }
+            },
+            {
+              "name": {
+                "value": "cierra el juego"
+              }
+            },
+            {
+              "name": {
+                "value": "qué estoy jugando"
+              }
+            },
+            {
+              "name": {
+                "value": "quiero ver interstellar"
+              }
+            },
+            {
+              "name": {
+                "value": "pon la película dune"
+              }
+            },
+            {
+              "name": {
+                "value": "pon la serie the office"
+              }
+            },
+            {
+              "name": {
+                "value": "reproduce coco"
+              }
+            },
+            {
+              "name": {
+                "value": "busca dune"
+              }
+            },
+            {
+              "name": {
+                "value": "busca dune en stremio"
+              }
+            },
+            {
+              "name": {
+                "value": "pon dune en inglés"
+              }
+            },
+            {
+              "name": {
+                "value": "pon dune con subtítulos en español"
+              }
+            },
+            {
+              "name": {
+                "value": "pon dune desde el principio"
+              }
+            },
+            {
+              "name": {
+                "value": "pon dune en inglés desde el principio"
+              }
+            },
+            {
+              "name": {
+                "value": "pon algo de terror"
+              }
+            },
+            {
+              "name": {
+                "value": "quiero ver una serie de comedia"
+              }
+            },
+            {
+              "name": {
+                "value": "recomiéndame algo de acción"
+              }
+            },
+            {
+              "name": {
+                "value": "abre stremio"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson temporada 5 episodio 3"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson 5x3"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el episodio 3 de la temporada 5 de los simpson"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson temporada 5 episodio 3 en inglés"
+              }
+            },
+            {
+              "name": {
+                "value": "pon la temporada 2 de the office"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el capítulo 4 de the office"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el último episodio de the office"
+              }
+            },
+            {
+              "name": {
+                "value": "sigue viendo"
+              }
+            },
+            {
+              "name": {
+                "value": "sigue viendo the office"
+              }
+            },
+            {
+              "name": {
+                "value": "pon lo que estaba viendo"
+              }
+            },
+            {
+              "name": {
+                "value": "pon la novela"
+              }
+            },
+            {
+              "name": {
+                "value": "pausa"
+              }
+            },
+            {
+              "name": {
+                "value": "ponle pausa"
+              }
+            },
+            {
+              "name": {
+                "value": "espera"
+              }
+            },
+            {
+              "name": {
+                "value": "dale play"
+              }
+            },
+            {
+              "name": {
+                "value": "reanuda"
+              }
+            },
+            {
+              "name": {
+                "value": "adelanta cinco minutos"
+              }
+            },
+            {
+              "name": {
+                "value": "adelanta 30 segundos"
+              }
+            },
+            {
+              "name": {
+                "value": "regresa treinta segundos"
+              }
+            },
+            {
+              "name": {
+                "value": "regrésale tantito"
+              }
+            },
+            {
+              "name": {
+                "value": "ve al minuto 20"
+              }
+            },
+            {
+              "name": {
+                "value": "salta la intro"
+              }
+            },
+            {
+              "name": {
+                "value": "empieza desde el principio"
+              }
+            },
+            {
+              "name": {
+                "value": "siguiente episodio"
+              }
+            },
+            {
+              "name": {
+                "value": "episodio anterior"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el capítulo 5"
+              }
+            },
+            {
+              "name": {
+                "value": "pon la temporada 2"
+              }
+            },
+            {
+              "name": {
+                "value": "cuánto le falta"
+              }
+            },
+            {
+              "name": {
+                "value": "a qué hora termina"
+              }
+            },
+            {
+              "name": {
+                "value": "qué estoy viendo"
+              }
+            },
+            {
+              "name": {
+                "value": "cierra el video"
+              }
+            },
+            {
+              "name": {
+                "value": "sal del video"
+              }
+            },
+            {
+              "name": {
+                "value": "apaga"
+              }
+            },
+            {
+              "name": {
+                "value": "pon subtítulos en español"
+              }
+            },
+            {
+              "name": {
+                "value": "pon subtítulos"
+              }
+            },
+            {
+              "name": {
+                "value": "quita los subtítulos"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el audio en inglés"
+              }
+            },
+            {
+              "name": {
+                "value": "cambia el idioma a español"
+              }
+            },
+            {
+              "name": {
+                "value": "ponlo en inglés"
+              }
+            },
+            {
+              "name": {
+                "value": "en español"
+              }
+            },
+            {
+              "name": {
+                "value": "pon la tele"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el canal adn 40"
+              }
+            },
+            {
+              "name": {
+                "value": "pon azteca uno en vivo"
+              }
+            },
+            {
+              "name": {
+                "value": "sintoniza el canal las estrellas"
+              }
+            },
+            {
+              "name": {
+                "value": "siguiente canal"
+              }
+            },
+            {
+              "name": {
+                "value": "canal anterior"
+              }
+            },
+            {
+              "name": {
+                "value": "pon las noticias"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el canal de los simpson"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el canal de caricaturas"
+              }
+            },
+            {
+              "name": {
+                "value": "qué sale hoy"
+              }
+            },
+            {
+              "name": {
+                "value": "qué hay de nuevo"
+              }
+            },
+            {
+              "name": {
+                "value": "qué me recomiendas"
+              }
+            },
+            {
+              "name": {
+                "value": "recomiéndame algo"
+              }
+            },
+            {
+              "name": {
+                "value": "ve a para ti"
+              }
+            },
+            {
+              "name": {
+                "value": "sube el volumen"
+              }
+            },
+            {
+              "name": {
+                "value": "baja el volumen"
+              }
+            },
+            {
+              "name": {
+                "value": "más fuerte"
+              }
+            },
+            {
+              "name": {
+                "value": "sube el volumen 20"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el volumen al 30"
+              }
+            },
+            {
+              "name": {
+                "value": "volumen 40"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el volumen al máximo"
+              }
+            },
+            {
+              "name": {
+                "value": "silencio"
+              }
+            },
+            {
+              "name": {
+                "value": "quita el silencio"
+              }
+            },
+            {
+              "name": {
+                "value": "sube el brillo"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el brillo al 50"
+              }
+            },
+            {
+              "name": {
+                "value": "toma una captura"
+              }
+            },
+            {
+              "name": {
+                "value": "ve a juegos"
+              }
+            },
+            {
+              "name": {
+                "value": "ve a películas y series"
+              }
+            },
+            {
+              "name": {
+                "value": "ve a inicio"
+              }
+            },
+            {
+              "name": {
+                "value": "ve atrás"
+              }
+            },
+            {
+              "name": {
+                "value": "ve a la derecha"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson en latino"
+              }
+            },
+            {
+              "name": {
+                "value": "pon dune con subtítulos en inglés"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson siempre en latino"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson t5 e3 con subtítulos en inglés"
+              }
+            },
+            {
+              "name": {
+                "value": "pon subtítulos en inglés siempre"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el audio en latino"
+              }
+            },
+            {
+              "name": {
+                "value": "ponlo siempre en latino"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson en castellano"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson en latino siempre"
+              }
+            },
+            {
+              "name": {
+                "value": "ponlo siempre en castellano"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el audio en castellano"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el audio en latino siempre"
+              }
+            },
+            {
+              "name": {
+                "value": "pon siempre subtítulos en inglés"
+              }
+            },
+            {
+              "name": {
+                "value": "pon dune con subtítulos"
+              }
+            }
+          ]
+        },
+        {
+          "name": "ALWAYS",
+          "values": [
+            {
+              "name": {
+                "value": "siempre",
+                "synonyms": [
+                  "para siempre"
                 ]
               }
             }

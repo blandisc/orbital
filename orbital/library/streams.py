@@ -64,7 +64,8 @@ WORD_LANG = [
 # mayúscula (en «Dual-Lat»); en minúsculas puede ser parte de otra palabra.
 LATINO = re.compile(r"\b(latino|latam|latinoam[eé]rica(no)?|es-?419|hispanoam[eé]rica)\b|🇲🇽|🇦🇷|🇨🇴|🇨🇱|🇵🇪|🇻🇪", re.I)
 LATINO_STRICT = re.compile(r"\b(Lat|LAT)\b")
-CASTELLANO = re.compile(r"(?i:\b(castellano|castilian|es-es)\b)|\bCAST\b|🇪🇸")
+# 🇪🇸 no: muchos complementos la ponen para cualquier español (el iPhone la toma igual, `Streams.swift`).
+CASTELLANO = re.compile(r"(?i:\b(castellano|castilian|es-es)\b)|\bCAST\b")
 LANG_NAMES = {"en": "Inglés", "es": "Español", "fr": "Francés", "it": "Italiano", "de": "Alemán", "pt": "Portugués",
               "ru": "Ruso", "ja": "Japonés", "ko": "Coreano", "zh": "Chino", "hi": "Hindi", "pl": "Polaco",
               "tr": "Turco", "uk": "Ucraniano", "nl": "Neerlandés", "cs": "Checo", "sk": "Eslovaco",
@@ -100,6 +101,7 @@ class Source:
     score: float = 0.0
     binge: str | None = None  # behaviorHints.bingeGroup: misma calidad/idioma en el siguiente episodio
     dub: str = ""  # en español: "latino", "castellano" o "" si no lo dice (con los dos, "latino": trae esa pista)
+    checked: bool = False  # el idioma no sale del nombre: ya se abrió y estas son sus pistas
 
     @property
     def key(self) -> str:
@@ -117,7 +119,7 @@ class Source:
             "id": self.index, "addon": self.addon, "resolution": self.resolution, "hdr": self.hdr,
             "size": self.size, "seeders": self.seeders, "site": self.site, "cached": self.cached,
             "debrid": self.debrid, "languages": [LANG_NAMES.get(l, l) for l in self.languages],
-            "release": self.release, "tags": self.tags, "audio": self.audio_label,
+            "release": self.release, "tags": self.tags, "audio": self.audio_label, "dub": self.dub,
         }
 
     @property
@@ -210,6 +212,19 @@ def parse(stream: dict, addon: str, transport_url: str, index: int) -> Source:
     return src
 
 
+def apply_checked(src: Source, codes: list[str]) -> None:
+    """Las pistas reales de una versión que ya se vio mandan sobre lo que dice su nombre («es-419» → latino). Una pista
+    «spa» que no dice cuál no borra el doblaje que el nombre sí decía."""
+    bases = list(dict.fromkeys(c.split("-")[0] for c in codes))
+    if not bases:
+        return
+    dub = "latino" if "es-419" in codes else "castellano" if "es-ES" in codes else src.dub if "es" in bases else ""
+    src.tags = [t for t in src.tags if t not in ("Latino", "Castellano")]
+    if dub:
+        src.tags.insert(0, dub.capitalize())
+    src.languages, src.dub, src.checked = bases, dub, True
+
+
 def spanish_dub(text: str) -> str:
     """"latino", "castellano" o "" según lo que diga el título de la fuente. Si dice los dos, "latino" (trae esa pista)."""
     if LATINO.search(text) or LATINO_STRICT.search(text):
@@ -217,10 +232,29 @@ def spanish_dub(text: str) -> str:
     return "castellano" if CASTELLANO.search(text) else ""
 
 
+# El doblaje de una fuente y la variante que se pide en Ajustes (los códigos del iPhone).
+DUB_CODES = {"latino": "es-419", "castellano": "es-ES"}
+SPANISH_VARIANTS = ("es-419", "es-ES")
+
+
 @dataclass
 class Preferences:
     audio: str = "en"  # idioma de audio preferido
     quality: str = "1080p"  # resolución preferida ("4K" en la TV si quieres)
+    spanish: str = ""  # con audio en español: "es-419" (latino), "es-ES" (castellano) o "" (cualquiera)
+
+
+def language_score(src: Source, prefs: Preferences) -> float:
+    """Cuánto suma el idioma (las mismas cuentas que `Streams.languageScore` del iPhone). Solo el preferido es lo mejor;
+    «dual» con el preferido, aceptable; sin él, al fondo. Con una variante de español elegida: el doblaje pedido primero,
+    luego el español que no dice cuál y al final la otra variante."""
+    if prefs.audio not in src.languages:
+        return -600
+    if prefs.audio == "es" and prefs.spanish in SPANISH_VARIANTS:
+        dub = DUB_CODES.get(src.dub, "")
+        best = 300 if dub == prefs.spanish else 180 if not dub else 60
+        return best if len(src.languages) == 1 else best - 80
+    return 300 if src.languages == [prefs.audio] else 120
 
 
 def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
@@ -229,13 +263,7 @@ def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
         s += 1000  # arranca al instante
     elif src.debrid:
         s -= 400  # Real-Debrid aún tiene que descargarla
-    # Idioma: solo el preferido es lo mejor; "dual" con el preferido, aceptable; sin él, al fondo.
-    if src.languages == [prefs.audio]:
-        s += 300
-    elif prefs.audio in src.languages:
-        s += 120
-    else:
-        s -= 600
+    s += language_score(src, prefs)
     order = ["4K", "1080p", "720p", "480p", ""]
     want = order.index(prefs.quality) if prefs.quality in order else 1
     have = order.index(src.resolution) if src.resolution in order else len(order) - 1
@@ -278,6 +306,11 @@ def player_link(src: Source, meta_transport: str, kind: str, meta_id: str, video
     return "stremio:///player/" + "/".join(_encode_component(p) for p in parts)
 
 
+def cache_key(kind: str, video_id: str, prefs: Preferences) -> str:
+    """La lista ordenada depende del idioma, la variante y la calidad: cada combinación se recuerda aparte."""
+    return f"{kind}:{video_id}:{prefs.audio}:{prefs.spanish}:{prefs.quality}"
+
+
 class StreamFinder:
     """Pide fuentes a los complementos que las dan (en paralelo) y las guarda unos minutos."""
 
@@ -286,6 +319,7 @@ class StreamFinder:
         self.timeout = timeout
         self._cache: dict[str, tuple[float, list[Source]]] = {}
         self._down: dict[str, float] = {}
+        self.checked = None  # (huella) -> ["es-419", "en"] | None: el audio real de lo que ya se vio
         self.outcome: dict[str, str] = {}  # kind:video -> "ok" | "offline" | "no-addons" (para decir por qué no hay)  # complemento -> hasta cuándo no se le pregunta (no respondió)
         self._lock = threading.Lock()
 
@@ -323,7 +357,7 @@ class StreamFinder:
         return urls
 
     def find(self, kind: str, video_id: str, prefs: Preferences) -> list[Source]:
-        key = f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}"
+        key = cache_key(kind, video_id, prefs)
         with self._lock:
             hit = self._cache.get(key)
             if hit and time.time() - hit[0] < CACHE_SECONDS:
@@ -355,7 +389,11 @@ class StreamFinder:
                 while index in seen:  # el mismo enlace dos veces: la segunda, el número siguiente
                     index = (index + 1) % 2**31
                 try:
-                    sources.append(parse(stream, addon.name, addon.url, index))
+                    src = parse(stream, addon.name, addon.url, index)
+                    real = self.checked(src.key) if self.checked else None
+                    if real:
+                        apply_checked(src, real)
+                    sources.append(src)
                 except PARSE_ERRORS as exc:  # una fuente con datos raros se salta, no tumba la lista
                     log.info("Fuente rara de %s: %s", addon.name, exc)
                     continue
@@ -373,8 +411,14 @@ class StreamFinder:
             self._cache[key] = (stamp, ranked)
         return ranked
 
+    def forget(self, kind: str, video_id: str) -> None:
+        """Lo ordenado de ese video ya no vale (se supo su audio real): la próxima vez se vuelve a ordenar."""
+        with self._lock:
+            for key in [k for k in self._cache if k.startswith(f"{kind}:{video_id}:")]:
+                del self._cache[key]
+
     def get(self, kind: str, video_id: str, prefs: Preferences, index: int) -> Source | None:
-        hit = self._cache.get(f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}")
+        hit = self._cache.get(cache_key(kind, video_id, prefs))
         if not hit or time.time() - hit[0] >= CACHE_SECONDS:
             return None  # caducó (los enlaces de Real-Debrid vencen): quien llama busca otra vez
         return next((s for s in hit[1] if s.index == index), None)

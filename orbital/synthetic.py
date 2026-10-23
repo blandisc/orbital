@@ -308,7 +308,7 @@ class SyntheticTV:
         """Las fuentes en el doblaje del canal, las mejores primero: primero las que lo dicen; luego las de español sin
         decir cuál (el reproductor revisa la pista). Nunca las del otro doblaje."""
         watch = self.catalog.watch
-        prefs = streams.Preferences(audio="es", quality=watch.stream_prefs.quality)
+        prefs = streams.Preferences(audio="es", spanish="es-419", quality=watch.stream_prefs.quality)
         found = [s for s in watch.stream_sources("series", video_id, prefs)
                  if s.index not in (skip or set()) and player.stream_url(s.stream) and "es" in s.languages
                  and not {"CAM", "Tráiler"} & set(s.tags)]
@@ -471,4 +471,4 @@ class SyntheticTV:
             self.coverage.save()
         if picked is None or skips >= MAX_SKIPS:
             return False  # varios episodios seguidos sin abrir: algo más pasa (Internet, los complementos)
-        return self._load(channel, picked, sorted(tried | {picked[1].index}), f"{channel.name} · probando otra fuente", skips)
+        return self._load(channel, picked, sorted(tried | {picked[1].index}), f"{channel.name} · probando otra versión", skips)

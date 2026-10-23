@@ -94,7 +94,7 @@ export function artMenu(item) {
 
 /**
  * Qué pedirle a Alexa: ejemplos reales (los entiende orbital/voice.py), por tema.
- * Todas empiezan igual: «Alexa, pídele a Orbital que…».
+ * Todas empiezan igual: «Alexa, pídele a mi consola que…».
  */
 export const ALEXA_EXAMPLES = [
   { icon: "gamepad", label: "«abra Zelda»", hint: "Abre un juego de cualquier consola" },
@@ -116,7 +116,7 @@ export function alexaMenu(guide = null) {
   if (!guide?.groups?.length) {
     return {
       title: "Pídeselo a Alexa",
-      subtitle: "Empieza con «Alexa, pídele a Orbital que…» y sigue con lo que quieras:",
+      subtitle: "Empieza con «Alexa, pídele a mi consola que…» y sigue con lo que quieras:",
       options: ALEXA_EXAMPLES.map((e) => ({ ...e, command: { type: "stay" } })),
     };
   }
@@ -142,7 +142,7 @@ const GUIDE_ICONS = { gamecontroller: "gamepad", film: "movie", "play.rectangle"
 /** Un tema de la guía: todas sus frases, con lo que hace cada una. */
 export function voiceGroupMenu(group) {
   return {
-    title: group.title, crumb: group.title, subtitle: "Empieza con «Alexa, pídele a Orbital que…»",
+    title: group.title, crumb: group.title, subtitle: "Empieza con «Alexa, pídele a mi consola que…»",
     options: group.commands.map((c) => ({ icon: "assistant", label: `«${c.say}»`, hint: c.note, command: { type: "stay" } })),
   };
 }
@@ -152,7 +152,7 @@ export function voiceHelpMenu() {
   return {
     title: "Si no funciona", crumb: "Si no funciona",
     options: [
-      { icon: "assistant", label: "Empieza con «pídele a Orbital que…»", hint: "Sin eso, Alexa intenta hacerlo ella sola", command: { type: "stay" } },
+      { icon: "assistant", label: "Empieza con «pídele a mi consola que…»", hint: "Sin eso, Alexa intenta hacerlo ella sola", command: { type: "stay" } },
       { icon: "search", label: "Revisa lo que entendió", hint: "Abajo sale «No entendí…» con lo que escuchó: dilo más despacio o búscalo", command: { type: "stay" } },
       { icon: "grid", label: "Cuando hay varias", hint: "Si pides «pon Dune» y hay más de una, salen en la tele para elegir", command: { type: "stay" } },
       { icon: "wifi", label: "Si Alexa no encuentra tu consola", hint: "Orbital tiene que estar encendida y con Internet", command: { type: "stay" } },
@@ -388,7 +388,7 @@ export function powerConfirmMenu(action, running = null) {
 // --- Ajustes ------------------------------------------------------------------------------
 // Cada ajuste: sus valores de menos a más (▶ sube, ◀ baja; A pasa al siguiente y da la vuelta) y cómo se llaman.
 export const SETTING_VALUES = {
-  audio: [["en", "Inglés"], ["es", "Español"]],
+  audio: [["en", "Inglés"], ["es-419", "Español latino"], ["es-ES", "Español de España"], ["es", "Español (cualquiera)"]],
   subtitles: [["en", "Inglés"], ["es", "Español"], ["forced", "Solo traducciones en pantalla"], ["", "Sin subtítulos"]],
   quality: [["720p", "720p"], ["1080p", "1080p"], ["4K", "4K"]],
   sub_scale: [[.85, "Pequeño"], [1, "Normal"], [1.25, "Grande"], [1.5, "Muy grande"]],
@@ -636,7 +636,7 @@ export function settingsPage(page, settings) {
         { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
           ok: !!settings.stremio_linked,
           command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
-          hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
+          hint: settings.stremio_linked ? "Seguir viendo y complementos" : "Para películas y series" },
         settings.trakt?.configured ? { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
           ok: !!settings.trakt.linked,
           command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
@@ -652,14 +652,29 @@ export function settingsPage(page, settings) {
   }
   const def = Object.hasOwn(SETTING_PAGES, page) ? SETTING_PAGES[page] : null;
   if (!def) return settingsMenu(); // una página que no existe: los Ajustes, no una excepción
+  // Películas y series: además de lo de siempre, lo que cada título recuerda (y olvidarlo).
+  const extra = page === "playback"
+    ? [{ icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } }]
+    : [];
   return {
     title: def.title, crumb: def.title,
-    options: def.options.map(([key, label, hint]) => ({
+    options: [...def.options.map(([key, label, hint]) => ({
       icon: SETTING_ICONS[key] || def.icon, label, hint, value: settingLabel(key, settings[key]),
       command: { type: "setting", key, value: nextSetting(key, settings[key]), page },
       // ◀ baja y ▶ sube (antes las dos avanzaban)
       adjust: { left: edgeAware(key, settings[key], -1, page), right: edgeAware(key, settings[key], 1, page) },
-    })),
+    })), ...extra],
+  };
+}
+
+/** Lo que recuerda cada título: el idioma y los subtítulos que elegiste viéndolo. A lo olvida (vuelve a lo de Ajustes). */
+export function rememberedMenu(titles = []) {
+  return {
+    title: "Lo que recuerda cada título",
+    subtitle: "Lo que elegiste viendo cada uno; vale aquí y en tu iPhone. A lo olvida y vuelve a lo de Ajustes.",
+    options: titles.length
+      ? titles.map((t) => ({ icon: "play", label: t.title, value: t.line, command: { type: "remembered-forget", id: t.id, title: t.title } }))
+      : [{ icon: "info", label: "Ningún título recuerda nada todavía", hint: "Se llena al elegir audio o subtítulos viendo algo", inert: true }],
   };
 }
 
@@ -769,7 +784,7 @@ export function keysMenu(service) {
 export function stremioAccountMenu() {
   return {
     title: "Cuenta de Stremio",
-    subtitle: "Dejarás de ver Seguir viendo y tus fuentes.",
+    subtitle: "Dejarás de ver Seguir viendo y tus complementos.",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
@@ -849,7 +864,7 @@ export function tourMenu(step, { legion = false, gamesir = false } = {}) {
       ? "☰ → Panel rápido: volumen, brillo, modo de energía, batería y capturas."
       : "Mantén Home y pulsa LB (o ☰ → Panel rápido): volumen, brillo, energía y batería. Home + RB toma una captura." },
     { title: "Buscar y ver", text: "El botón Vista ⧉ busca juegos, películas y series. En Películas y series, A sigue donde te quedaste." },
-    { title: "Con la voz", text: "«Alexa, pídele a Orbital que abra Hades», «…que ponga Los Simpson temporada 3 episodio 2», «…cuánto le falta»." },
+    { title: "Con la voz", text: "«Alexa, pídele a mi consola que abra Hades», «…que ponga Los Simpson temporada 3 episodio 2», «…cuánto le falta»." },
   ];
   const current = steps[step];
   const last = step === steps.length - 1;
@@ -881,7 +896,7 @@ const KEYBOARD_ROWS = [["Ir a Orbital · volver al juego", "Ctrl + Inicio"], ["V
 export const SHORTCUTS = {
   orbital: [["Abrir", "A"], ["Atrás", "B"], ["Opciones", "Y"], ["Otro emulador o la ficha", "X"],
     ["Cambiar de sección", "LB / RB"], ["Buscar", "Vista ⧉"], ["Menú", "☰"]],
-  player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y fuente", "Y"],
+  player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y versión", "Y"],
     ["Capítulo · episodio", "LB/RB · mantén LT/RT"], ["Volumen", "▲ ▼"], ["Salir", "Mantén B"]],
 };
 

@@ -59,7 +59,7 @@ final class PlayerModelTests: XCTestCase {
     func testNoSourcesShowsAClearError() async throws {
         let rig = try Rig()
         await rig.model.begin(rig.request())
-        XCTAssertEqual(rig.model.phase, .failed("No hay fuentes de Real-Debrid para este título."))
+        XCTAssertEqual(rig.model.phase, .failed("No hay versiones en Real-Debrid para este título."))
         XCTAssertTrue(rig.engine.loads.isEmpty)
     }
 
@@ -87,7 +87,7 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.handle(rig.playing(100))
         await rig.model.handle(rig.playing(100, state: .failed("se cortó")))
         await rig.model.waitForTransition()
-        XCTAssertEqual(rig.model.phase, .failed("Ninguna fuente funcionó."), "ya no quedan más fuentes")
+        XCTAssertEqual(rig.model.phase, .failed("Ninguna versión funcionó."), "ya no quedan más fuentes")
         XCTAssertEqual(rig.engine.loads.count, 2)
     }
 
@@ -133,7 +133,7 @@ final class PlayerModelTests: XCTestCase {
         rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": .array((1...8).map { rig.stream("s\($0)", size: "💾 \($0) GB") })]
         for n in 1...8 { rig.engine.failing.insert("https://rd.example/s\(n).mkv") }
         await rig.model.begin(rig.request())
-        XCTAssertEqual(rig.model.phase, .failed("Ninguna fuente funcionó."))
+        XCTAssertEqual(rig.model.phase, .failed("Ninguna versión funcionó."))
         XCTAssertEqual(rig.engine.loads.count, PlaybackRules.maxSourceRetries + 1)
     }
 
@@ -321,7 +321,8 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs, subEs2], selectedAudio: 1, selectedSubtitle: 11))
         rig.model.nudgeSubtitles(by: 1.5)
-        XCTAssertEqual(SubtitleOffsets(rig.kv).offset(metaID: "tt0386676", versionID: "track-11"), 1.5)
+        XCTAssertEqual(SubtitleOffsets(rig.kv).offset(metaID: "tt0386676", versionID: rig.model.offsetKey("track-11")), 1.5)
+        XCTAssertTrue(rig.model.offsetKey("track-11").hasSuffix("|track-11"), "por subtítulo y por archivo (la misma pista es otra en otro archivo)")
         let other = try XCTUnwrap(rig.model.subtitleVersions(language: "es").first { $0.id == "track-12" })
         await rig.model.selectVersion(other)
         XCTAssertEqual(rig.model.subtitleDelay, 0, "otra versión, sin ajuste")
@@ -364,6 +365,38 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(0, audio: [spa], subs: [], selectedAudio: 2))
         XCTAssertTrue(rig.engine.subs.isEmpty)
+    }
+
+    /// Quieres latino y cambias A MANO a la que dice castellano: trae inglés y castellano (comprobado por sus pistas). La
+    /// elegiste tú: no se insiste con «cambiar a latino». Y las pistas quedan «comprobadas» para la próxima vez.
+    func testOffersTheVersionInYourSpanishWhenThisOneDoesNotHaveIt() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [
+            .object(["name": "T\n1080p [RD+]", "title": "Show.S01E01.1080p.LATINO\n💾 2 GB", "url": "https://rd.example/latino.mkv"]),
+            .object(["name": "T\n1080p [RD+]", "title": "Show.S01E01.1080p.ENG.CASTELLANO\n💾 2 GB", "url": "https://rd.example/castellano.mkv"]),
+        ]]
+        rig.settings.update { $0.audio = "es"; $0.latinSpanish = true }
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.engine.loads.first?.url.absoluteString, "https://rd.example/latino.mkv", "la latina primero")
+        let castilian = try XCTUnwrap(rig.model.sourceChoices.first { $0.release.contains("CASTELLANO") })
+        let latino = try XCTUnwrap(rig.model.sourceChoices.first { $0.release.contains("LATINO") })
+        await rig.model.switchSource(to: castilian.index)
+        let spain = MediaTrack(id: 2, kind: .audio, language: "spa", title: "Castellano")
+        await rig.model.handle(rig.playing(0, audio: [eng, spain], subs: [], selectedAudio: 2))
+        XCTAssertNil(rig.model.notice, "la elegiste tú: no se ofrece volver a cambiar")
+        XCTAssertEqual(rig.model.request?.sourceIndex, castilian.index)
+        _ = latino
+        XCTAssertEqual(rig.titlePrefs.checkedAudio(castilian.key), [AudioLanguage("en", .checked), AudioLanguage("es-ES", .checked)], "quedó comprobada")
+    }
+
+    /// «Continuar» en el siguiente episodio: la misma versión (su familia `bingeGroup`), no la que se recomendaría de cero.
+    func testNextEpisodeKeepsTheVersionFamilyYouWereWatching() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A2.json"] = ["streams": [
+            rig.stream("best", size: "💾 2 GB", binge: "group-b"), rig.stream("mine", size: "💾 2.2 GB", name: "T\n1080p [RD+]", binge: "group-a")]]
+        rig.titlePrefs.remember(metaID: "tt0386676", choice: ResumeChoice(videoID: "tt0386676:1:1", source: "Torrentio|old|1", binge: "group-a"))
+        await rig.model.begin(rig.request(video: "tt0386676:1:2"))
+        XCTAssertEqual(rig.engine.loads.first?.url.absoluteString, "https://rd.example/mine.mkv", "la misma familia que el episodio anterior")
     }
 
     func testWarnsWhenNoAudioTrackIsYourLanguage() async throws {

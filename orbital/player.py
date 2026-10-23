@@ -21,7 +21,7 @@ Además, como un servicio de streaming de verdad:
     que no abre se marca y se pasa al siguiente.
 
 Piezas: mpv.py (la tubería con mpv), playback.py (comando, idiomas, capítulos, datos de lo que se
-ve), player_screen.py (barra, tarjetas, menús y botones) y aquí el reproductor que lo junta: arrancar,
+ve), player_screen.py (barra, tarjetas, menús y botones), player_subs.py («Probar otros» subtítulos) y aquí el reproductor que lo junta: arrancar,
 vigilar, guardar el avance, fuentes que fallan y el siguiente episodio.
 """
 
@@ -238,6 +238,9 @@ class OrbitalPlayer(PlayerScreen):
         self.on_send_iphone = None  # (meta, "open" | "download") -> aviso en palabras (o lanza ValueError con el motivo)
         self.system_volume = None  # (leer, escribir) del volumen de Windows: un solo volumen (ver player_screen._muted)
         self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
+        self.on_sub_kept = None  # (meta): «Probar otros» › «Este va bien»: recordar ya esos subtítulos (y su sincronía)
+        self.spanish_provider = None  # (meta) -> "es-419" | "es-ES" | "": el doblaje que va con ese título
+        self.on_audio_tracks = None  # (meta, pistas): al abrir, el audio real de esa versión (se anota)
         # TV en vivo (ver tv.py): el reproductor solo pregunta y avisa, no sabe de listas ni de salud.
         self.channels_provider = None  # (meta, categoría | None) -> {"category", "categories", "channels"}
         self.on_play_channel = None  # (meta, id_del_canal, categoría | None): sintonizar ese canal
@@ -287,6 +290,9 @@ class OrbitalPlayer(PlayerScreen):
         self._quiet_episodes = 0
         self._subs_lang, self._fallback_subs = subtitles, fallback_subs
         self._sub_pick, self._last_sub = sub_pick, None  # «Continuar»: los subtítulos que tenías (ver _apply_sub_pick)
+        self._try_end()  # «Probar otros» era del video anterior
+        self._subs_lifted, self._keep_delay = None, False  # un mpv nuevo: los subtítulos en su lugar de siempre
+        self.sub_delay = 0.0  # …y a tiempo (la sincronía era del video anterior)
         self._audio_lang = options.get("audio", "en")
         self._want.clear()
         self._restart_from = None
@@ -342,6 +348,9 @@ class OrbitalPlayer(PlayerScreen):
         if self.menu is not None:  # el panel era del episodio anterior
             self.menu = None
             self._overlay(2, None)
+        self._lift_subs(False)
+        self._try_end()  # «Probar otros» era del archivo anterior
+        self._keep_delay = False
         self._hide_card()
         # Siempre los del archivo nuevo (None = «sin subtítulos» o «solo forzados»): antes se quedaban
         # los del episodio anterior y al siguiente le ponían los subtítulos de otro.
@@ -386,6 +395,8 @@ class OrbitalPlayer(PlayerScreen):
         if self.menu is not None:  # la guía era de la lista anterior
             self.menu = None
             self._overlay(2, None)
+        self._lift_subs(False)
+        self._try_end()
         self._hide_card()
         self._zap_view = None
         self._want.clear()
@@ -568,6 +579,8 @@ class OrbitalPlayer(PlayerScreen):
         self.pip = True
         self.menu = None
         self._card = None
+        self._lift_subs(False)
+        self._try_end()
         for overlay in (1, 2, 4):  # la barra, el panel y la tarjeta no caben en la esquina
             self._overlay(overlay, None)
         threading.Thread(target=self._to_corner, args=(current,), daemon=True, name="pip").start()
@@ -732,12 +745,29 @@ class OrbitalPlayer(PlayerScreen):
             return
         if wrong_audio(tracks, self._audio_lang) and not segment.meta.get("synthetic"):
             # El archivo dice ser de otro idioma (un doblaje mal etiquetado): avisa en vez de callar.
-            self.toast("Esta fuente no trae audio en tu idioma · Y › Fuente para elegir otra", 6)
+            self.toast("Esta versión no trae audio en tu idioma · Y para elegir otra", 6)
         elif segment.start > 5:
             self.toast("Sigues donde te quedaste · ◀ regresa", 3.5)
+        if self.on_audio_tracks and not segment.live:
+            self._safe(self.on_audio_tracks, segment.meta, tracks)
+        self._pick_dub(segment, tracks)
         if not self._apply_sub_pick(tracks):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
         self.show_hud()  # al empezar: qué estás viendo y qué hace cada botón
+
+    def _pick_dub(self, segment: Segment, tracks: list) -> None:
+        """Un archivo con dos pistas en español (latino y castellano, las dos «spa»): la del doblaje que quieres. mpv elige
+        por idioma y no sabe cuál es cuál; el título de la pista sí lo dice. «Continuar» (el audio con que lo dejaste) va
+        después y manda."""
+        if self._audio_lang != "es" or self.spanish_provider is None:
+            return
+        variant = self._safe(self.spanish_provider, segment.meta)
+        if variant not in ("es-419", "es-ES"):
+            return
+        pick = dub_track(tracks, "latino" if variant == "es-419" else "castellano")
+        selected = next((t.get("id") for t in tracks if t.get("type") == "audio" and t.get("selected")), None)
+        if isinstance(pick, int) and not isinstance(pick, bool) and pick != selected:
+            self.mpv.command("set_property", "aid", pick)
 
     def _synthetic_tick(self, segment: Segment, now: float, paused: bool) -> None:
         """Un canal de Orbital va al aire aunque no lo veas: tras una pausa de más de un minuto, al seguir, regresa a lo
@@ -786,10 +816,10 @@ class OrbitalPlayer(PlayerScreen):
         log.info("La fuente de %s %s", segment.title, "se cortó" if segment.playing else "no arrancó")
         retrying = False
         if self.on_failed:
-            self.toast("Esa fuente falló · probando otra…", 6)
+            self.toast("Esa versión falló · probando otra…", 6)
             retrying = bool(self._safe(self.on_failed, segment.meta, segment.position, True))
         if not retrying:
-            self.toast("No pude reproducir esto con ninguna fuente", 4)
+            self.toast("No pude reproducir esto con ninguna versión", 4)
             timer = threading.Timer(4, lambda: self.segment is segment and self._quit())
             timer.daemon = True
             timer.start()
@@ -1010,6 +1040,10 @@ class OrbitalPlayer(PlayerScreen):
             else:
                 self._last_sub = {"off": False, "lang": str(chosen.get("lang") or ""), "title": str(chosen.get("title") or ""),
                                   "url": self._sub_url(chosen) if chosen.get("external") else ""}
+                if self._keep_delay and abs(self.sub_delay) >= .05:  # «Este va bien» con su sincronía, para esta versión
+                    segment = self.segment
+                    self._last_sub |= {"delay": self.sub_delay,
+                                       "delay_source": str((segment.meta if segment else {}).get("source_key") or "")}
         return getattr(self, "_last_sub", None)
 
     def current_audio(self) -> dict | None:
@@ -1050,6 +1084,13 @@ class OrbitalPlayer(PlayerScreen):
         if pick.get("off"):
             self.mpv.command("set_property", "sid", "no")
             return True
+        delay = pick.get("delay")
+        segment = self.segment
+        here = str((segment.meta if segment else {}).get("source_key") or "")
+        if isinstance(delay, (int, float)) and not isinstance(delay, bool) and math.isfinite(delay) \
+                and (not pick.get("delay_source") or pick["delay_source"] == here):
+            self._set_sub_delay(float(delay))  # la sincronía que dejaste en «Probar otros», con esta misma versión
+            self._keep_delay = True
         # La pista exacta; si no, los mismos de tu complemento (su dirección); si no, otros del mismo idioma.
         same = self._same_track(tracks, "sub", pick, exact_only=bool(pick.get("url")))
         if same is not None:
@@ -1135,11 +1176,26 @@ class OrbitalPlayer(PlayerScreen):
         self.mpv.command("seek", seconds, "relative")
         self.show_hud()
 
-    def select_language(self, kind: str, lang: str) -> bool:
-        """Cambia a la pista de audio o subtítulos en ese idioma, si el video la trae."""
+    def select_language(self, kind: str, lang: str, variant: str = "") -> bool:
+        """Cambia a la pista de audio o subtítulos en ese idioma, si el video la trae. `variant` («es-419» / «es-ES»,
+        «pon el audio en latino»): la pista de ese doblaje (con las dos «spa», no la primera); False si solo trae la
+        del otro. Es solo para esta vez: si este video cambia de versión, la nueva sigue en ese doblaje."""
+        tracks = self.mpv.get("track-list") or []
+        if kind == "audio" and variant in ("es-419", "es-ES"):
+            pick = dub_track(tracks, "latino" if variant == "es-419" else "castellano")
+            if pick is False:
+                return False
+            if isinstance(pick, int) and not isinstance(pick, bool):
+                self.mpv.command("set_property", "aid", pick)
+                segment = self.segment
+                if segment is not None:
+                    asked = segment.meta.get("asked")
+                    asked = asked if isinstance(asked, dict) else {}
+                    segment.meta["asked"] = {**asked, "audio": "es", "spanish": variant}
+                self.toast(f"Audio: {'Latino' if variant == 'es-419' else 'Castellano'}")
+                return True
         codes = {c.lower() for c in build_lang_list(lang)}
-        track = next((t for t in self.mpv.get("track-list") or []
-                      if t.get("type") == kind and str(t.get("lang") or "").lower() in codes), None)
+        track = next((t for t in tracks if t.get("type") == kind and str(t.get("lang") or "").lower() in codes), None)
         if track is None:
             return False
         self.mpv.command("set_property", "aid" if kind == "audio" else "sid", track["id"])

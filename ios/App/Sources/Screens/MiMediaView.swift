@@ -343,7 +343,7 @@ struct MiMediaTitleView: View {
             .disabled(row.missing)
             .accessibilityHint(row.missing ? Text("No está en tu carpeta") : Text("Ver"))
             if row.missing {
-                Button("Buscar fuente") {
+                Button("Buscar versión") {
                     if titleModel == nil { titleModel = TitleModel(env.services, kind: "series", metaID: t.imdb, hint: (t.name, t.poster)) }
                     findingSource = MissingEpisode(id: row.id)
                 }
@@ -401,10 +401,8 @@ struct MiMediaTitleView: View {
     private func report(_ outcome: TitleModel.DownloadOutcome, ownCopy: Bool = true) async {
         switch outcome {
         case .queued: break   // lo dice el anillo
-        case .noSources: env.notify(ownCopy ? "No encontré ese archivo en tu OneDrive." : "No hay fuentes de Real-Debrid para descargar.")
-        case .notEnoughSpace(let text): env.notify(text)
-        case .already: env.notify("Ya está descargado.", tone: .info)
-        case .failed(let text): env.notify(text)
+        case .noSources where ownCopy: env.notify("No encontré ese archivo en tu OneDrive", tone: .warn)
+        default: env.report(outcome)
         }
     }
 }
@@ -501,6 +499,6 @@ struct MiMediaFolderView: View {
     }
 
     private func play(_ file: OneDriveFile) async {
-        do { env.play(try await observer.model.playRequest(file: file)) } catch { env.notify("No pude pedir el archivo a OneDrive.") }
+        do { env.play(try await observer.model.playRequest(file: file)) } catch { env.notify("No pude pedir el archivo a OneDrive", detail: "Revisa tu internet") }
     }
 }

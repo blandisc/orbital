@@ -41,7 +41,7 @@ export function downloadAction(job) {
   return { id: "download", icon: "download", label: pct != null ? `Descargando ${pct} %` : "En espera", short: pct != null ? `${pct} %` : "En espera" };
 }
 
-export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null } = {}) {
+export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null, plays = null } = {}) {
   if (!details) return [];
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
@@ -67,6 +67,8 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   } else {
     out.push({ id: "play", primary: true, icon: "play", label: "Ver" });
   }
+  // Bajo «Ver», cómo va a sonar («Latino · 1080p · Sin subtítulos»), si es lo que ese botón pone (el mismo episodio).
+  if (out[0] && plays?.line && (!out[0].video_id || out[0].video_id === plays.video_id)) out[0].hint = plays.line;
   // + para agregar y ✓ cuando ya está, como el iPhone (la ★ en Juegos es «favorito»: dos cosas con el mismo ícono).
   // «Guardar» es la acción y «Mi lista» el lugar (design/vocabulario.json), como el iPhone.
   out.push(details.in_library
@@ -80,7 +82,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   if (playable && phone) out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" });
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
   // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
-  if (playable) out.push({ id: "sources", icon: "list", label: "Elegir fuente", short: "Fuente" });
+  if (playable) out.push({ id: "sources", icon: "list", label: "Versión", short: "Versión" });
   if (restart) out.push(restart);
   if (playable && phone) out.push({ id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
   // Desde Mi media (tu OneDrive), como el iPhone: elegir cuál de tus versiones ver y corregir la ficha si no es esta.
@@ -150,9 +152,11 @@ export function actionStep(count, index, act) {
 export const OWN_SOURCE = "Tu OneDrive";
 export const isOwnSource = (src) => src?.addon === OWN_SOURCE;
 
-export function sourceGroups(sources = []) {
+export function sourceGroups(sources = [], recommended = null) {
   if (!sources.length) return { groups: [], order: [] };
-  const [best, ...rest] = sources;
+  // La que pone «Ver» (con «Continuar», la de antes; si no, la primera).
+  const best = sources.find((s) => s.id === recommended) || sources[0];
+  const rest = sources.filter((s) => s !== best);
   const note = isOwnSource(best) ? "Tu copia en OneDrive" : "La elegimos por tu idioma, la calidad y el tamaño";
   const groups = [{ id: "best", title: "Recomendada", note, items: [best] }];
   for (const res of ["4K", "1080p", "720p"]) {
@@ -164,12 +168,19 @@ export function sourceGroups(sources = []) {
   return { groups, order: groups.flatMap((g) => g.items) };
 }
 
+/** Los idiomas de una fuente, con el doblaje si lo dice: «Latino + Inglés» en vez de «Español + Inglés». */
+export const DUB_NAMES = { latino: "Latino", castellano: "Castellano" };
+export function sourceLanguages(src) {
+  const dub = DUB_NAMES[src?.dub];
+  return (src?.languages || []).map((l) => (dub && l === "Español" ? dub : l));
+}
+
 export function availability(sources = [], { top = 12 } = {}) {
   const list = sources.slice(0, top);
   if (!list.length) return [];
   const best = RES_ORDER.find((r) => list.some((s) => s.resolution === r));
   const hdr = list.some((s) => s.hdr?.includes("DV")) ? "Dolby Vision" : list.some((s) => s.hdr?.length) ? "HDR" : null;
   const atmos = list.some((s) => s.audio === "Atmos") ? "Dolby Atmos" : list.some((s) => s.audio === "5.1") ? "5.1" : null;
-  const languages = [...new Set(list.flatMap((s) => s.languages || []))].slice(0, 3);
+  const languages = [...new Set(list.flatMap(sourceLanguages))].slice(0, 3);
   return [best, hdr, atmos, languages.join(", "), list.some((s) => s.cached) ? "Al instante" : null].filter(Boolean);
 }

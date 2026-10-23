@@ -75,14 +75,33 @@ public enum VoiceRouter {
             "whats new": "que sale hoy",
         ]
         if let spanish = fixed[folded.replacingOccurrences(of: "'", with: "")] { return spanish }
-        if let title = capture(folded, #"^(?:play|watch|put on|i want to watch)\s+(?<t>.+)$"#) { return "pon " + title }
+        let said = #"(?<t>english|spanish|latin spanish|latin american spanish|latino|castilian(?: spanish)?|spain spanish|castellano)"#
+        if let title = capture(folded, #"^(?:play|watch|put on|i want to watch)\s+(?<t>.+)$"#) {
+            // «Play The Simpsons in Latin Spanish» → «pon the simpsons en latino»
+            if let language = capture(title, #"\s+in\s+"# + said + "$"), let name = languages[language],
+               let range = title.range(of: #"\s+in\s+[a-z ]+$"#, options: .regularExpression) {
+                return "pon \(title[..<range.lowerBound]) en \(name)"
+            }
+            return "pon " + title
+        }
         if let title = capture(folded, #"^(?:search(?:\s+for)?|find|look for)\s+(?<t>.+)$"#) { return "busca " + title }
         if let title = capture(folded, #"^(?:open|launch)\s+(?<t>.+)$"#) { return "abre " + title }
-        if let language = capture(folded, #"^(?:subtitles|turn on subtitles)(?:\s+in)?\s+(?<t>english|spanish)$"#) {
-            return "subtitulos en " + (language == "english" ? "ingles" : "espanol")
+        if let language = capture(folded, #"^(?:subtitles|turn on subtitles)(?:\s+in)?\s+"# + said + "$"), let name = languages[language] {
+            return "subtitulos en " + name
+        }
+        // «In Latin Spanish», «audio in Castilian»: el doblaje (latino o castellano), como «en latino» en la consola.
+        if let language = capture(folded, #"^(?:(?:switch\s+)?(?:the\s+)?audio\s+)?(?:in|to)\s+"# + said + "$"), let name = languages[language] {
+            return "en " + name
         }
         return text
     }
+
+    /// Los idiomas dichos en inglés (o el doblaje en español) como los dice la consola: «latino» y «castellano» piden el
+    /// doblaje; «español», cualquiera de los dos.
+    static let languages: [String: String] = [
+        "english": "ingles", "spanish": "espanol", "latin spanish": "latino", "latin american spanish": "latino", "latino": "latino",
+        "castilian": "castellano", "castilian spanish": "castellano", "spain spanish": "castellano", "castellano": "castellano",
+    ]
 
     /// Minúsculas, sin acentos ni signos (para comparar; a la consola va el texto limpio, ella hace lo suyo).
     static func fold(_ text: String) -> String {

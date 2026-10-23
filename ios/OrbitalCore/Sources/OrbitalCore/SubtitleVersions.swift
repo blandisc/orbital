@@ -118,9 +118,11 @@ public enum SubtitleVersions {
 
     /// Las versiones de un idioma, en orden: las del video primero; luego las de internet que coinciden con tu copia
     /// (mismo grupo y/o tipo de fuente); luego por descargas. Sin SDH ni forzados.
-    public static func ranked(language: String, tracks: [MediaTrack], found: [SubtitleOption], release: String?) -> [SubtitleVersion] {
+    /// `playing`: la pista del video puesta ahora. Si es de las que se esconden (para sordos, forzados) igual entra: el
+    /// archivo la trajo puesta y, fuera de la lista, el panel no sabía qué decir y se quedaba en «Cargando…» para siempre.
+    public static func ranked(language: String, tracks: [MediaTrack], found: [SubtitleOption], release: String?, playing: Int? = nil) -> [SubtitleVersion] {
         let mine = ReleaseTraits.parse(release)
-        let embedded = tracks.filter { !SubtitleFilter.hides($0) && SubtitleLanguage.code($0.language) == language }
+        let embedded = tracks.filter { (!SubtitleFilter.hides($0) || $0.id == playing) && SubtitleLanguage.code($0.language) == language }
             .sorted { $0.id < $1.id }
             .map { SubtitleVersion(origin: .embedded($0), language: language, match: 0) }
         let internet = found.enumerated()

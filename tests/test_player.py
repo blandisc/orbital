@@ -111,10 +111,15 @@ def test_audio_menu_lists_tracks_and_switches():
         "Inglés · 5.1 · E-AC3", "Español · Latino · Estéreo · AAC"]
     assert [c.key for c in p.menu.columns] == ["audio", "sub", "size", "sync"]
     assert p.menu.index == 0 and "Tamaño de los subtítulos" in mpv.overlays[2] and mpv.overlays.get(1) is None
+    assert ("set_property", "sub-pos", 50) in mpv.sent  # con el panel abierto, los subtítulos suben y se ven encima
     p.press("down")
     p.press("a")
-    assert ("set_property", "aid", 2) in mpv.sent and p.menu is None and mpv.overlays[2] is None
+    # Elegir no cierra el panel: se prueba otra pista sin volver a abrirlo (B lo cierra).
+    assert ("set_property", "aid", 2) in mpv.sent and p.menu is not None and mpv.overlays[2]
+    assert [o["current"] for o in p.menu.options] == [False, True]
     assert "Audio: Español" in mpv.overlays[3]
+    p.press("b")
+    assert p.menu is None and mpv.overlays[2] is None and mpv.sent[-1] == ("set_property", "sub-pos", 100)
 
 
 def test_subtitle_menu_has_off_and_addon_search():
@@ -430,12 +435,12 @@ def test_old_watcher_does_not_touch_the_new_video():
 def test_background_task_returning_false_shows_the_failure():
     import time as _t
     p, mpv = make_player()
-    p._in_background(lambda: False, failed="No pude cambiar de fuente")
+    p._in_background(lambda: False, failed="No pude cambiar de versión")
     for _ in range(50):
         if mpv.overlays.get(3) and "No pude" in mpv.overlays[3]:
             break
         _t.sleep(.02)
-    assert "No pude cambiar de fuente" in mpv.overlays[3]
+    assert "No pude cambiar de versión" in mpv.overlays[3]
 
 
 def test_switching_source_then_quitting_before_it_loads_keeps_the_progress():

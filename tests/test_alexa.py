@@ -101,7 +101,7 @@ def test_bad_token_message(skill, monkeypatch):
 # --------------------------------------------------------------------- modelo de voz
 def test_interaction_model_is_valid():
     lm = MODEL["interactionModel"]["languageModel"]
-    assert lm["invocationName"] == "orbital"  # Alexa: el nombre con que se invoca va en minúsculas
+    assert lm["invocationName"] == "mi consola"  # Alexa: el nombre con que se invoca va en minúsculas
     types = {t["name"] for t in lm["types"]}
     seen = {}
     slot_types = {}  # Regla de Alexa: un nombre de slot = un solo tipo en todo el modelo
@@ -404,7 +404,7 @@ def test_every_voice_request_is_written_down_to_find_what_fails(public, tmp_path
 
 
 def test_what_alexa_could_not_fit_goes_to_the_console_as_free_text(skill, monkeypatch):
-    """«Alexa, pídele a Orbital que por favor ponga Interstellar»: antes caía en «No entendí» sin preguntarle a la consola."""
+    """«Alexa, pídele a mi consola que por favor ponga Interstellar»: antes caía en «No entendí» sin preguntarle a la consola."""
     sent = []
 
     def fake_urlopen(req, timeout):
@@ -438,3 +438,38 @@ def test_the_free_text_intent_is_in_the_model_with_carrier_phrases():
     free = next(i for i in lm["intents"] if i["name"] == "FreeTextIntent")
     assert free["slots"] == [{"name": "query", "type": "AMAZON.SearchQuery"}]
     assert "por favor {query}" in free["samples"] and all("{query}" in s and s != "{query}" for s in free["samples"])
+
+
+def test_the_catch_all_sends_the_whole_phrase_as_heard(skill, monkeypatch):
+    """«Alexa, pausa en Orbital»: lo que no cabe en otro intent cae en el comodín y va entero al intérprete de la consola
+    (antes era AMAZON.FallbackIntent y la skill decía «No entendí» sola)."""
+    sent = []
+
+    def fake_urlopen(req, timeout):
+        sent.append(json.loads(req.data))
+        return io.BytesIO(json.dumps({"ok": True, "speech": "En pausa."}).encode())
+
+    monkeypatch.setattr(skill.urllib.request, "urlopen", fake_urlopen)
+    snapped = {"resolutionsPerAuthority": [{"status": {"code": "ER_SUCCESS_MATCH"}, "values": [{"value": {"name": "pausa"}}]}]}
+    out = skill.lambda_handler(intent_event("CommandIntent", {"command": {"name": "command", "value": "pausa norbital",
+                                                                            "resolutions": snapped}}))
+    assert sent == [{"text": "pausa norbital"}]  # tal cual se oyó, no el valor de la lista
+    assert out["response"]["outputSpeech"]["text"] == "En pausa."
+
+
+def test_what_alexa_did_not_understand_reaches_the_console_log(skill, orbital):
+    out = skill.lambda_handler(intent_event("AMAZON.FallbackIntent"))
+    assert orbital[0]["body"] == {"intent": "FallbackIntent", "slots": {}}
+    assert out["response"]["shouldEndSession"] is False  # sigue escuchando para que lo vuelvas a decir
+    assert out["response"]["outputSpeech"]["text"] == skill.FALLBACK  # el de la skill, aunque la consola sea vieja
+
+
+def test_the_model_sends_anything_it_does_not_place_to_the_console():
+    lm = MODEL["interactionModel"]["languageModel"]
+    assert lm["modelConfiguration"]["fallbackIntentSensitivity"]["level"] == "LOW"
+    catch_all = next(i for i in lm["intents"] if i["name"] == "CommandIntent")
+    assert catch_all["slots"] == [{"name": "command", "type": "ORBITAL_COMMAND"}] and "{command}" in catch_all["samples"]
+    values = {v["name"]["value"] for t in lm["types"] if t["name"] == "ORBITAL_COMMAND" for v in t["values"]}
+    guide = json.loads((ROOT / "alexa" / "commands.json").read_text(encoding="utf-8"))
+    missing = [c["say"] for g in guide["groups"] for c in g["commands"] if c["say"].strip().lower() not in values]
+    assert not missing, f"agrega a ORBITAL_COMMAND (le enseña a Alexa cómo suenan las órdenes): {missing}"

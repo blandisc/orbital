@@ -1,9 +1,9 @@
 {
   "how": [
-    {"say": "Alexa, pídele a Orbital que ponga Interstellar", "note": "Todo de una vez: «pídele a Orbital que…» y lo que quieras."},
-    {"say": "Alexa, abre Orbital", "note": "Prende la tele en la entrada de la consola, y luego lo dices sin repetir «Orbital» (Alexa se queda escuchando)."},
-    {"say": "Alexa, pídele a Orbital que prenda la consola", "note": "Prende la tele, la pone en la consola y termina. Ponlo en una rutina de Alexa para decir solo «Alexa, prende la consola»."},
-    {"say": "Alexa, dile a Orbital que pause", "note": "«dile a Orbital», «pide a Orbital»: también sirven."},
+    {"say": "Alexa, pídele a mi consola que ponga Interstellar", "note": "Todo de una vez: «pídele a mi consola que…» y lo que quieras."},
+    {"say": "Alexa, abre mi consola", "note": "Prende la tele en la entrada de la consola, y luego lo dices sin repetir «mi consola» (Alexa se queda escuchando)."},
+    {"say": "Alexa, pídele a mi consola que prenda la consola", "note": "Prende la tele, la pone en la consola y termina. Ponlo en una rutina de Alexa para decir solo «Alexa, prende la consola»."},
+    {"say": "Alexa, dile a mi consola que pause", "note": "«dile a mi consola», «pide a mi consola»: también sirven."},
     {"say": "Oye Siri, prende Orbital", "note": "Lo mismo desde el iPhone, sin abrir la app."},
     {"say": "pon Dune · ponga Dune · quiero ver Dune", "note": "Habla como quieras: de tú o de usted, «quiero que…», «¿puedes…?» y «por favor» también se entienden."},
     {"say": "temporada cinco episodio tres · 5x3 · T5 E3", "note": "Los números, con letra o con cifras; «la quinta temporada» también."}
@@ -12,10 +12,10 @@
     {"title": "Prender la consola", "icon": "power", "commands": [
       {"say": "prende la consola", "note": "Prende la tele, la pone en la entrada de Orbital y muestra la consola."},
       {"say": "enciende Orbital", "note": "Igual: «prende Orbital», «encienda la consola»."},
-      {"say": "abre Orbital", "note": "También prende la tele si está apagada."},
+      {"say": "muestra la consola", "note": "También prende la tele si está apagada."},
       {"say": "vuelve a la consola", "note": "Si saliste al escritorio o estás en otra entrada de la tele."},
       {"say": "muestra la consola", "note": "Igual que «vuelve a la consola»."},
-      {"say": "sal al escritorio", "note": "Esconde Orbital (sigue escuchando: «abre Orbital» la regresa)."},
+      {"say": "sal al escritorio", "note": "Esconde Orbital (sigue escuchando: «muestra la consola» la regresa)."},
       {"say": "cierra Orbital", "note": "Lo mismo que salir al escritorio."}
     ]},
     {"title": "Juegos", "icon": "gamecontroller", "commands": [
@@ -36,8 +36,10 @@
       {"say": "reproduce Coco", "note": "Igual que «quiero ver»."},
       {"say": "busca Dune", "note": "Abre la búsqueda con el texto, sin poner nada."},
       {"say": "busca Dune en Stremio", "note": "La búsqueda de Stremio."},
-      {"say": "pon Dune en inglés", "note": "Con el audio en ese idioma."},
-      {"say": "pon Dune con subtítulos en español", "note": "Y con subtítulos."},
+      {"say": "pon Dune en inglés", "note": "Con el audio en ese idioma, solo esta vez."},
+      {"say": "pon Los Simpson en latino", "note": "El doblaje latino (o «en castellano»): la versión y la pista. «En español» es cualquiera."},
+      {"say": "pon Dune con subtítulos en inglés", "note": "Y con subtítulos; «con subtítulos» solo: los de tu idioma."},
+      {"say": "pon Los Simpson siempre en latino", "note": "Con «siempre» ese título se queda así (audio y subtítulos); sin «siempre», es solo esta vez."},
       {"say": "pon Dune desde el principio", "note": "Aunque la hayas dejado a medias."},
       {"say": "pon Dune en inglés desde el principio", "note": "El idioma y desde el inicio, en la misma frase."},
       {"say": "pon algo de terror", "note": "Lo más popular de ese género, para elegir."},
@@ -50,6 +52,7 @@
       {"say": "pon Los Simpson 5x3", "note": "Lo mismo, más corto."},
       {"say": "pon el episodio 3 de la temporada 5 de Los Simpson", "note": "Al revés también."},
       {"say": "pon Los Simpson temporada 5 episodio 3 en inglés", "note": "Y en qué idioma."},
+      {"say": "pon Los Simpson T5 E3 con subtítulos en inglés", "note": "Con subtítulos, en la misma frase."},
       {"say": "pon la temporada 2 de The Office", "note": "Desde su primer episodio."},
       {"say": "pon el capítulo 4 de The Office", "note": "De la temporada en la que vas."},
       {"say": "pon el último episodio de The Office", "note": "El más reciente que ya salió."},
@@ -83,10 +86,13 @@
       {"say": "apaga", "note": "Cierra el video; no apaga la tele ni la consola."}
     ]},
     {"title": "Subtítulos e idioma", "icon": "captions.bubble", "commands": [
-      {"say": "pon subtítulos en español", "note": "O en inglés, francés, portugués…"},
+      {"say": "pon subtítulos en español", "note": "O en inglés, francés, portugués… Solo para lo que ves ahora."},
+      {"say": "pon subtítulos en inglés siempre", "note": "Con «siempre», lo que ves se queda con esos subtítulos."},
       {"say": "pon subtítulos", "note": "En tu idioma de siempre."},
       {"say": "quita los subtítulos", "note": "Sin subtítulos; también: «sin subtítulos»."},
-      {"say": "pon el audio en inglés", "note": "Cambia el idioma de lo que oyes."},
+      {"say": "pon el audio en inglés", "note": "Cambia el idioma de lo que oyes, solo esta vez."},
+      {"say": "pon el audio en latino", "note": "La pista latina si el video trae las dos en español (o «en castellano»)."},
+      {"say": "ponlo siempre en latino", "note": "Y lo que ves se queda en latino (te lo dice en la tele)."},
       {"say": "cambia el idioma a español", "note": "Igual."},
       {"say": "ponlo en inglés", "note": "Más corto."},
       {"say": "en español", "note": "Lo más corto."}

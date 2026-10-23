@@ -79,7 +79,7 @@ def test_when_no_source_works_it_says_so_and_closes():
     p, mpv = series_player(**{"time-pos": None, "duration": None})
     p.on_failed = lambda *a: False
     p.tick(p.segment, p.segment.loaded + player.STARTUP_TIMEOUT + 1, False)
-    assert "ninguna fuente" in mpv.overlays[3]
+    assert "ninguna versión" in mpv.overlays[3]
 
 
 def test_progress_is_saved_every_minute_not_only_at_the_end():
@@ -197,7 +197,7 @@ def test_panels_subtitle_size_and_more():
     assert p.menu is None
     p.press("y")  # Y: Fuentes (y Reproducción)
     assert p.menu.kind == "more" and [c.key for c in p.menu.columns] == ["source", "playback"]
-    assert "Fuentes" in mpv.overlays[2] and "Desde el principio" in mpv.overlays[2]
+    assert "Versión" in mpv.overlays[2] and "Desde el principio" in mpv.overlays[2]
     p.press("down")
     p.press("a")
     import time
@@ -296,7 +296,7 @@ def test_player_sources_show_all_with_language_first():
         return s
 
     found = [src(i, ["en"]) for i in range(15)] + [src(20, ["es"]), src(21, ["es"])]
-    fake = SimpleNamespace(language_for=lambda meta_id: (streams.Preferences(audio="en"), "es"),
+    fake = SimpleNamespace(asked_language=lambda meta: (streams.Preferences(audio="en"), "es"),
                            stream_sources=lambda kind, video, prefs: found)
     options = watch.Watch._player_sources(fake, {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1", "source": 14})
     ids = [o["id"] for o in options]

@@ -288,6 +288,8 @@ public final class HomeModel: ObservableModel {
     /// Lo que verá el widget «Lo siguiente para ti»: «Seguir viendo» tal como quedó (también la copia de la última vez, sin red).
     private func publishWidget(airings: [Airing]? = nil) {
         services.publishWidget(continueWatching: continueWatching, airings: airings)
+        // Siri: «Seguir viendo» y tu lista (antes solo «Seguir viendo»: «pon Los Simpson» fallaba si no estaba ahí).
+        services.onSiriTitles?((continueWatching + myList).map { [$0.originalTitle, $0.title] })
     }
 
     /// «Quitar de Seguir viendo».

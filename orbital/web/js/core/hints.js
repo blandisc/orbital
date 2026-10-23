@@ -42,7 +42,7 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
  * Se ve debajo de los botones del héroe: enseña la voz sin un manual.
  */
 export function alexaTip(item, { runningId = null } = {}) {
-  const ask = (rest) => `«Alexa, pídele a Orbital que ${rest}»`;
+  const ask = (rest) => `«Alexa, pídele a mi consola que ${rest}»`;
   if (!item) return ask("abra Zelda");
   const title = shortTitle(item.title);
   if (item.id === runningId) return item.id === "media:player" ? ask("pause") : ask("cierre el juego");

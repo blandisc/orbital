@@ -134,7 +134,7 @@ struct DSSectionHead: View {
                 // Un solo lugar para el porqué de una sección en toda la app: arriba del título, en ámbar (como una revista).
                 // Antes unas lo ponían arriba en ámbar y otras abajo en gris.
                 if let line = eyebrow ?? meta { line.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2).multilineTextAlignment(.leading) }
-                HStack(alignment: .center, spacing: DS.Space.s2) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
                     title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
                         // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
                         // así lo de la derecha no queda alto.
@@ -754,11 +754,39 @@ struct DSSeekBubble: View {
 
 /// La píldora «2×» mientras mantienes el dedo (como YouTube/Infuse): sobre vidrio, arriba al centro.
 struct DSSpeedPill: View {
+    /// Se quedó fijo en ×2 (mantuviste el dedo hasta que vibró): dice cómo quitarlo.
+    var locked = false
+    /// Mientras mantienes: el anillo se llena al deslizar hacia arriba (0…1).
+    var progress: Double = 0
+    /// El dedo sigue puesto: dice qué hace deslizar.
+    var holding = false
+    /// Ya iba fijo: deslizar lo quita.
+    var unlocks = false
     var body: some View {
-        Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold)).foregroundStyle(DS.text)
-            .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
-            .glassEffect(.regular, in: Capsule())
-            .accessibilityHidden(true)
+        HStack(spacing: DS.Space.s2) {
+            if locked && !holding {
+                Image(systemName: "lock.fill").font(DS.TextRecipe.footnote.font.weight(.bold)).transition(.scale.combined(with: .opacity))
+            } else {
+                ZStack {
+                    Circle().stroke(DS.track, lineWidth: DS.PlayerPanel.ringWidth)
+                    Circle().trim(from: 0, to: progress).stroke(DS.text, style: StrokeStyle(lineWidth: DS.PlayerPanel.ringWidth, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                }
+                .frame(width: DS.PlayerPanel.ring * 0.75, height: DS.PlayerPanel.ring * 0.75)
+            }
+            Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold))
+            if holding {
+                (Text(Image(systemName: "arrow.up")) + Text(" ") + (unlocks ? Text("Desliza para quitar") : Text("Desliza para fijar")))
+                    .font(DS.TextRecipe.footnote.font)
+            } else if locked {
+                Text("Toca para quitar").font(DS.TextRecipe.footnote.font)
+            }
+        }
+        .foregroundStyle(DS.text)
+        .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+        .glassEffect(.regular, in: Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(locked ? "speed-pill-locked" : "speed-pill")
     }
 }
 
@@ -1058,21 +1086,29 @@ struct DSCapsuleLabel: View {
     let title: Text
     let symbol: String
     var symbolFirst = true
+    /// Elegido (un filtro puesto): en papel, como las opciones en cápsula.
+    var selected = false
+    /// Todo el ancho que le den (varias en rejilla, todas parejas); si no, lo de su texto.
+    var stretch = false
+    /// Un glifo a la derecha además del de la izquierda (el ⌄ de un menú en una cápsula con ícono).
+    var trailing: String?
 
     var body: some View {
         HStack(spacing: DS.HeaderControl.iconGap) {
-            if symbolFirst { icon }
-            title.font(DS.TextRecipe.secondary.font.weight(.semibold))
-            if !symbolFirst { icon }
+            if symbolFirst { icon(symbol) }
+            title.font(DS.TextRecipe.secondary.font.weight(.semibold)).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            if !symbolFirst { icon(symbol) }
+            if let trailing { icon(trailing) }
         }
-        .foregroundStyle(DS.text)
+        .foregroundStyle(selected ? DS.onPrimary : DS.text)
         .padding(.horizontal, DS.HeaderControl.padding)
+        .frame(maxWidth: stretch ? .infinity : nil)
         .frame(height: DS.HeaderControl.height)
-        .background(DS.fillStrong, in: Capsule())
+        .background(selected ? DS.primary : DS.fillStrong, in: Capsule())
         .frame(minHeight: DS.Size.touchTarget)   // se ve de 32 pt; se toca en 44
         .contentShape(Rectangle())
         .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
     }
 
-    private var icon: some View { Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.bold)).imageScale(.small) }
+    private func icon(_ name: String) -> some View { Image(systemName: name).font(DS.TextRecipe.footnote.font.weight(.bold)).imageScale(.small) }
 }
