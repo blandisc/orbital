@@ -110,6 +110,21 @@ final class IntroDBTests: XCTestCase {
         let notImdb = await db.segments(videoID: "kitsu:1:1")
         XCTAssertNil(notImdb, "sin id de IMDb no se pregunta")
     }
+
+    func testWhatTheTitleAskedIsReusedByThePlayerButNotAMiss() async {
+        let http = FakeHTTP()
+        http.json["https://api.introdb.app/segments?imdb_id=tt0944947&season=1&episode=1"] = ["intro": ["start_sec": 10, "end_sec": 70]]
+        http.json["https://api.introdb.app/segments?imdb_id=tt0133093&is_movie=true"] = ["intro": .null]
+        let recent = IntroDBRecent()
+        let first = await IntroDB(http: http, recent: recent).segments(videoID: "tt0944947:1:1")
+        let again = await IntroDB(http: http, recent: recent).segments(videoID: "tt0944947:1:1")
+        XCTAssertEqual(first?.intro, 10...70)
+        XCTAssertEqual(again?.intro, 10...70)
+        _ = await IntroDB(http: http, recent: recent).segments(videoID: "tt0133093")
+        _ = await IntroDB(http: http, recent: recent).segments(videoID: "tt0133093")
+        XCTAssertEqual(http.calls.filter { $0.contains("tt0944947") }.count, 1, "la ficha lo pidió: el reproductor no vuelve a preguntar")
+        XCTAssertEqual(http.calls.filter { $0.contains("tt0133093") }.count, 2, "sin marcas se vuelve a preguntar")
+    }
 }
 
 final class LiveChannelArtTests: XCTestCase {

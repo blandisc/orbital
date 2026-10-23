@@ -130,7 +130,7 @@ public final class TitleModel: ObservableModel {
         Task { await finder.warmAddons() }
         // Las fuentes, en cuanto se sabe qué video toca (película: ya; serie: con lo tuyo o la ficha): no esperan a la traducción
         // ni al resto de la ficha. `loadBestSource` luego se une a esta misma petición (o la encuentra ya guardada).
-        let cinemeta = services.cinemeta, kind = kind
+        let cinemeta = services.cinemeta, introDB = services.introDB, kind = kind
         Task {
             // Película: el video es ella misma (salvo un `video_id` raro guardado), así que no espera a lo tuyo. Serie: el
             // episodio sale de lo tuyo y adivinarlo sería pedir fuentes de otro episodio.
@@ -140,7 +140,7 @@ public final class TitleModel: ObservableModel {
             if video == nil, let meta = try? await cinemeta.meta(kind: kind, id: id) {
                 video = Self.continueVideo(raw: raw, kind: kind, metaID: id, seasons: CinemetaParsing.seasons(meta))
             }
-            if let video { await finder.warm(kind: kind, videoID: video) }
+            if let video { introDB.warm(videoID: video); await finder.warm(kind: kind, videoID: video) }   // «Saltar intro» listo al reproducir
         }
         do {
             let original = try await services.cinemeta.meta(kind: kind, id: metaID)
