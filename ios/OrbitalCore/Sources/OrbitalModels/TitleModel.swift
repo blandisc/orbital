@@ -125,9 +125,12 @@ public final class TitleModel: ObservableModel {
         // Lo tuyo en Stremio (avance, vistos) se pide a la vez que la ficha: no espera a Cinemeta ni a la traducción.
         let watch = services.watch, id = metaID
         let state = Task { await watch.rawItem(metaID: id) }
+        // Los complementos, a la vez que la ficha y lo tuyo: las fuentes ya no esperan a `addonCollectionGet` al final.
+        let finder = services.finder
+        Task { await finder.warmAddons() }
         // Las fuentes, en cuanto se sabe qué video toca (película: ya; serie: con lo tuyo o la ficha): no esperan a la traducción
         // ni al resto de la ficha. `loadBestSource` luego se une a esta misma petición (o la encuentra ya guardada).
-        let cinemeta = services.cinemeta, finder = services.finder, kind = kind
+        let cinemeta = services.cinemeta, kind = kind
         Task {
             let raw = await state.value
             var video = Self.continueVideo(raw: raw, kind: kind, metaID: id, seasons: [])

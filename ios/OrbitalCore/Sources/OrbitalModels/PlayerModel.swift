@@ -217,6 +217,7 @@ public final class PlayerModel: ObservableModel {
         phase = .preparing
         startConsuming()
         loadSegmentsIfNeeded()   // IntroDB solo depende del video: a la vez que las fuentes, no después
+        if request.localFile == nil { let finder = finder; Task { await finder.warmAddons() } }   // los complementos, ya: no después de «dónde ibas»
         if request.localFile != nil, request.kind == "series", let next = nextEpisodeIDIgnoringLocal() { nextLocal = await localEpisode(request.metaID, next) }
         guard mine == generation, !closing else { return }
         await prepare(startAt: nil, generation: mine)

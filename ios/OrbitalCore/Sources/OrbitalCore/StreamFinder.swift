@@ -71,6 +71,8 @@ public actor StreamFinder {
 
     /// Pregunta ya a los complementos por ese video (sin ordenar nada): el `find` que venga después se une o lo encuentra guardado.
     public func warm(kind: String, videoID: String) async { _ = try? await ask(kind: kind, videoID: videoID, fresh: false) }
+    /// Pide ya la lista de complementos (`addonCollectionGet`, o la de disco y la nueva aparte) para que las fuentes no la esperen.
+    public func warmAddons() async { _ = try? await registry.addons() }
 
     /// Lo que contestaron los complementos para un video: de lo guardado (si no ha caducado y no se pide `fresh`), de una
     /// petición que ya va en camino, o se pregunta a todos a la vez.
