@@ -586,6 +586,94 @@
    "text": "Next episode",
    "phone": "console",
    "send": "siguiente episodio"
+  },
+  {
+   "text": "Pon Los Simpson en latino",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "los simpson",
+    "language": "latino"
+   }
+  },
+  {
+   "text": "Pon Los Simpson en castellano",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "los simpson",
+    "language": "castellano"
+   }
+  },
+  {
+   "text": "Pon Los Simpson siempre en latino",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "los simpson",
+    "language": "latino",
+    "always": "1"
+   }
+  },
+  {
+   "text": "Pon Dune con subtítulos en inglés",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "dune",
+    "subtitles": "ingles"
+   }
+  },
+  {
+   "text": "Pon Los Simpson T5 E3 con subtítulos en inglés",
+   "intent": "WatchEpisodeIntent",
+   "slots": {
+    "series": "los simpson",
+    "season": "5",
+    "episode": "3",
+    "subtitles": "ingles"
+   }
+  },
+  {
+   "text": "En latino",
+   "intent": "AudioLanguageIntent",
+   "slots": {
+    "language": "latino"
+   }
+  },
+  {
+   "text": "Pon el audio en castellano",
+   "intent": "AudioLanguageIntent",
+   "slots": {
+    "language": "castellano"
+   }
+  },
+  {
+   "text": "Ponlo siempre en latino",
+   "intent": "AudioLanguageIntent",
+   "slots": {
+    "language": "latino",
+    "always": "1"
+   }
+  },
+  {
+   "text": "Pon subtítulos en inglés siempre",
+   "intent": "SubtitlesIntent",
+   "slots": {
+    "language": "ingles",
+    "always": "1"
+   }
+  },
+  {
+   "text": "In Latin Spanish",
+   "phone": "console",
+   "send": "en latino"
+  },
+  {
+   "text": "Subtitles in Castilian",
+   "phone": "console",
+   "send": "subtitulos en castellano"
+  },
+  {
+   "text": "Play The Simpsons in Latin Spanish",
+   "phone": "console",
+   "send": "pon the simpsons en latino"
   }
  ]
 }

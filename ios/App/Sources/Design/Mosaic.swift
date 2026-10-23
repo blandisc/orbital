@@ -338,7 +338,7 @@ struct Mosaic: View {
             if runtime.isEmpty {
                 if loading { ProgressView() }
                 else {
-                    DSEmptyState(symbol: "square.grid.3x3", title: Text("No pudimos armar tu mosaico"), message: Text("Revisa tu conexión e intenta de nuevo.")) {
+                    DSEmptyState(symbol: "square.grid.3x3", title: Text("No pude armar tu mosaico"), message: Text("Revisa tu conexión e intenta de nuevo.")) {
                         if let retry { Button("Intentar de nuevo", action: retry) }
                     }
                 }

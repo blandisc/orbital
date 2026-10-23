@@ -3,7 +3,7 @@ import { motion } from "../core/motion.js";
 import { Badge, Chip } from "./ui.js";
 import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
-import { isOwnSource, sourceGroups } from "../core/watch.js";
+import { isOwnSource, sourceGroups, sourceLanguages } from "../core/watch.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 
 /**
@@ -13,22 +13,26 @@ import { h, hideAfterExit, mount } from "../core/dom.js";
  * el complemento), solo si lo pides con X, como el iPhone.
  *   ↑/↓ fuente · A ver · X detalles · B volver a la ficha
  */
-const AUDIO_NAMES = { en: "inglés", es: "español" };
+const AUDIO_NAMES = { en: "inglés", es: "español", "es-419": "español latino", "es-ES": "castellano" };
 
 export function createSources({ onPlay, onMove, onClose, onChange }) {
-  const heading = h("div", { class: "sources__heading" }, "Elegir fuente");
+  const heading = h("div", { class: "sources__heading" }, "Versión");
   const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
+  // Un episodio: ¿esta versión es solo para él o la serie sigue así? (LB/RB; como «Solo este | Desde aquí» del iPhone).
+  const scopeRow = h("div", { class: "sources__scope", hidden: true });
   const list = h("div", { class: "sources__list", role: "group" });
   const status = h("div", { class: "sources__status", role: "status" });
   const retry = h("div", { class: "sources__retry", hidden: true },
     Button({ label: "Reintentar", variant: "primary", onPress: () => request && open(request) }));
   const panel = h("div", { class: ["side-panel__panel", "sources__panel"] },
-    h("div", { class: "sources__head" }, heading, title, subtitle), status, retry, list);
-  const el = h("section", { class: ["side-panel", "sources"], hidden: true, "aria-label": "Fuentes",
+    h("div", { class: "sources__head" }, heading, title, subtitle, scopeRow), status, retry, list);
+  const el = h("section", { class: ["side-panel", "sources"], hidden: true, "aria-label": "Versión",
     onClick: (e) => e.target === el && close() }, panel);
 
   let request = null; // { kind, id, video_id, title, item }
+  let recommended = null; // la que pone «Ver» (el servidor lo dice: con «Continuar», la de antes)
+  let fromHere = false; // «Desde aquí»: la serie sigue con el idioma de la versión que elijas
   let found = [];
   let index = 0;
   let token = 0;
@@ -42,14 +46,14 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     return [
       src.cached ? Chip("Al instante", { tone: "good" })
         : src.debrid ? Chip("Tarda en empezar", { tone: "warn" }) : null,
-      Chip(src.languages.join(" + ") || "Idioma desconocido"),
+      Chip(sourceLanguages(src).join(" + ") || "Idioma desconocido"),
       ...src.hdr.map((t) => Chip(t === "DV" ? "Dolby Vision" : t)),
       src.audio && Chip(src.audio === "Atmos" ? "Dolby Atmos" : `Sonido ${src.audio}`),
     ].filter(Boolean);
   }
 
   function render() {
-    const { groups, order } = sourceGroups(found);
+    const { groups, order } = sourceGroups(found, recommended);
     found = order;
     let i = 0;
     rows = [];
@@ -86,13 +90,23 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   function play() {
     const src = found[index];
     if (!src || !request) return;
-    onPlay({ ...request, source: src.id });
+    onPlay({ ...request, source: src.id, remember: isEpisode() && fromHere });
   }
 
   let failed = false; // sin fuentes o con error: A reintenta y el pie lo dice
 
+  const isEpisode = () => request?.kind === "series" && !!request?.video_id;
+
+  function renderScope() {
+    scopeRow.hidden = !isEpisode();
+    const option = (on, label) => (on ? Badge(label) : Chip(label));
+    mount(scopeRow, isEpisode() ? [option(!fromHere, "Solo este episodio"), option(fromHere, "Desde aquí")] : []);
+  }
+
   async function open(req) {
     request = req;
+    fromHere = false;
+    renderScope();
     failed = false;
     const mine = ++token;
     cancelExit();
@@ -113,10 +127,11 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     try {
       const data = await api.stremioSources(req.kind, req.id, req.video_id);
       if (mine !== token) return;
-      if (!Array.isArray(data?.sources)) throw new Error("No pude leer las fuentes. Intenta de nuevo.");
+      if (!Array.isArray(data?.sources)) throw new Error("No pude leer las versiones. Intenta de nuevo.");
       found = data.sources;
+      recommended = data.recommended?.id ?? null;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
-      subtitle.textContent = (isOwnSource(found[0]) ? "Tu OneDrive primero; luego, por calidad. " : "") + `Primero las de audio en ${AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
+      subtitle.textContent = (isOwnSource(found[0]) ? "Tu OneDrive primero; luego, por calidad. " : "") + `Primero las de audio en ${AUDIO_NAMES[data.spanish] || AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
         + "La recomendada es la que pone «Ver». «Al instante»: arranca en segundos; «Tarda en empezar»: primero se descarga.";
       status.hidden = !!found.length;
       status.textContent = found.length ? "" : "No encontré dónde ver esto: tus complementos de Stremio no lo tienen.";
@@ -146,6 +161,11 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     if (el.hidden || el.classList.contains("side-panel--leaving")) return false;
     if (action === "menu") return false; // ☰ abre el menú desde cualquier pantalla
     if (action === "back" || action === "options") close();
+    else if ((action === "prevsection" || action === "nextsection") && isEpisode()) {
+      fromHere = action === "nextsection";
+      renderScope();
+      onChange?.();
+    }
     else if (action === "up") setIndex(index - 1);
     else if (action === "down") setIndex(index + 1);
     else if (action === "pageleft") setIndex(index - 5);
@@ -164,8 +184,9 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
 
   /** Pistas del pie mientras la lista de fuentes está abierta. */
   const hints = (g) => (found.length
-    ? [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
+    ? [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra versión" },
       { glyph: g.alt, label: details ? "Menos detalles" : "Detalles", secondary: true },
+      isEpisode() && { glyph: g.section, label: fromHere ? "Desde aquí" : "Solo este episodio", secondary: true },
       found.length > 7 && { glyph: g.page, label: "Saltar 5", secondary: true, offscreen: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 

@@ -399,6 +399,16 @@ LATINO_TRACK = re.compile(r"latin|\blat\b|419|latam|m[eé]xic|hispanoam", re.I)
 CASTELLANO_TRACK = re.compile(r"castellano|castilian|espa[ñn]a|spain|\bes-es\b|europe|ib[eé]ric", re.I)
 
 
+def track_variant(lang: str, label: str) -> str:
+    """El doblaje de una pista en español: «es-419» (latino), «es-ES» (castellano) o "" si no lo dice o no es español."""
+    text = f"{lang} {label}"
+    if not (SPANISH_TRACK.match(lang or "") or re.search(r"espa[ñn]ol|spanish", text, re.I)):
+        return ""
+    if LATINO_TRACK.search(text):
+        return "es-419"
+    return "es-ES" if CASTELLANO_TRACK.search(text) else ""
+
+
 def dub_track(tracks: list[dict], dub: str = "latino") -> int | None | bool:
     """La pista de audio de ese doblaje del español (los canales de Orbital). La que lo dice primero; si ninguna lo dice,
     una en español que no diga ser del otro. None si el archivo no dice nada de idiomas (se queda la que trae);

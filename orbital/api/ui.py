@@ -14,7 +14,7 @@ from .deps import Deps
 
 # Ajustes que se pueden cambiar desde la interfaz (y sus valores válidos).
 SETTINGS = {
-    "audio": {"en", "es"},
+    "audio": {"en", "es", "es-419", "es-ES"},
     "subtitles": {"en", "es", "forced", ""},
     "quality": {"4K", "1080p", "720p"},
     "sub_scale": {.85, 1.0, 1.25, 1.5},

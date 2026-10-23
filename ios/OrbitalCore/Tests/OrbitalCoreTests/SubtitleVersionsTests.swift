@@ -124,4 +124,14 @@ final class SubtitleVersionsTests: XCTestCase {
             XCTAssertFalse(["track-2", "track-3", "https://subs.example/2", "https://subs.example/3"].contains(id ?? ""))
         }
     }
+
+    /// El archivo trae puesta su única pista en inglés, para sordos («[sloshing]»): sale en la lista (con su nombre) y no se
+    /// queda «Cargando…». Las que no están puestas se siguen escondiendo.
+    func testThePlayingSDHTrackIsListedSoThePanelCanNameIt() {
+        let sdh = MediaTrack(id: 3, kind: .subtitle, language: "eng", title: "English SDH")
+        let forced = MediaTrack(id: 4, kind: .subtitle, language: "eng", title: "Forced", isForced: true)
+        XCTAssertEqual(SubtitleVersions.ranked(language: "en", tracks: [sdh, forced], found: [], release: nil).count, 0, "sin ponerla, escondida como siempre")
+        let playing = SubtitleVersions.ranked(language: "en", tracks: [sdh, forced], found: [], release: nil, playing: 3)
+        XCTAssertEqual(playing.map(\.id), ["track-3"], "la puesta sí; la forzada no")
+    }
 }

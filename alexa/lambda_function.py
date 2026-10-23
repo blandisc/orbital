@@ -138,7 +138,8 @@ def _call_orbital(intent: str | None, slots: dict[str, str] | None, text: str | 
     return {"ok": bool(data.get("ok")), "speech": speech if isinstance(speech, str) and speech.strip() else "Listo."}
 
 
-def slot_values(intent: dict) -> dict[str, str]:
+def slot_values(intent: dict, canonical: bool = True) -> dict[str, str]:
+    """Los slots dichos. `canonical`: el valor canónico si tiene sinónimos (DIRECTION); el comodín va tal cual se oyó."""
     values = {}
     slots = intent.get("slots") if isinstance(intent, dict) else None
     for name, slot in (slots.items() if isinstance(slots, dict) else ()):
@@ -147,13 +148,13 @@ def slot_values(intent: dict) -> dict[str, str]:
         resolved = (slot.get("slotValue") or {}).get("resolutions") or slot.get("resolutions") or {}
         value = slot.get("value")
         # Si el slot tiene sinónimos (DIRECTION), usa el valor canónico.
-        for auth in resolved.get("resolutionsPerAuthority") or [] if isinstance(resolved, dict) else []:
+        for auth in (resolved.get("resolutionsPerAuthority") or [] if isinstance(resolved, dict) and canonical else []):
             if not isinstance(auth, dict) or (auth.get("status") or {}).get("code") != "ER_SUCCESS_MATCH":
                 continue
             first = (auth.get("values") or [{}])[0]
-            canonical = ((first or {}).get("value") or {}).get("name") if isinstance(first, dict) else None
-            if isinstance(canonical, str) and canonical:
-                value = canonical
+            resolved_name = ((first or {}).get("value") or {}).get("name") if isinstance(first, dict) else None
+            if isinstance(resolved_name, str) and resolved_name:
+                value = resolved_name
                 break
         if isinstance(value, str) and value.strip():
             values[name] = value.strip()[:200]
@@ -202,11 +203,14 @@ def _handle(event: dict) -> dict:
     if name in ("AMAZON.StopIntent", "AMAZON.CancelIntent"):
         return speak("Hasta luego.")
     if name == "AMAZON.FallbackIntent":
-        return speak(FALLBACK, end=False)
-    if name == "FreeTextIntent":
-        # Lo que Alexa no supo acomodar en otro intent («por favor pon…», «quiero que abras…»): la frase tal cual a la
+        # Alexa no da el texto, pero la consola lo anota (voz.log) y lo avisa en la tele: antes no quedaba rastro.
+        answer = call_orbital("FallbackIntent")
+        return speak(answer["speech"] if answer["speech"] != "Listo." else FALLBACK, end=False)
+    if name in ("FreeTextIntent", "CommandIntent"):
+        # Lo que Alexa no supo acomodar en otro intent («por favor pon…», «pausa en Orbital»): la frase tal cual a la
         # consola, que la entiende con el mismo intérprete del iPhone (antes Alexa decía «No entendí» sin preguntarle).
-        query = slot_values(intent).get("query", "")
+        # CommandIntent es el comodín: la frase entera, sin frase de apoyo.
+        query = slot_values(intent, canonical=False).get("query" if name == "FreeTextIntent" else "command", "")
         if not query:
             return speak(FALLBACK, end=False)
         return speak(call_orbital(None, text=query)["speech"])

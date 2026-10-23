@@ -94,8 +94,12 @@ test("confirmar apagar: Cancelar primero y aviso si hay un juego abierto", () =>
 test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente", () => {
   const page = settingsPage("playback", { audio: "en", subtitles: "forced", quality: "1080p", sub_scale: 1 });
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
-    ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"]]);
-  assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es", page: "playback" });
+    ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"],
+    ["Lo que recuerda cada título", undefined]]);
+  assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es-419", page: "playback" });
+  // Latino, de España o cualquiera (como el iPhone); quien ya tenía «es» sigue en «cualquiera».
+  assert.equal(settingsPage("playback", { audio: "es" }).options[0].value, "Español (cualquiera)");
+  assert.equal(settingsPage("playback", { audio: "es-ES" }).options[0].value, "Español de España");
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
   const accounts = settingsPage("accounts", { stremio_linked: false });
   assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Stremio", "Conectar"], ["iPhone", "Conectar"]]);
@@ -379,4 +383,12 @@ test("abrir lo que ya está abierto: solo «Volver a…» (no «¿Cerrar X? Para
   assert.deepEqual(same.options.map((o) => o.command.type), ["resume"]);
   const other = switchMenu({ running: { title: "Hades" }, title: "Severance · T2 E2", command: { type: "watch" } });
   assert.equal(other.options.length, 2);
+});
+
+test("lo que recuerda cada título: el nombre, lo elegido, y A lo olvida", async () => {
+  const { rememberedMenu } = await import("../../orbital/web/js/core/menus.js");
+  const menu = rememberedMenu([{ id: "tt0096697", title: "Los Simpson", line: "Latino · Sin subtítulos" }]);
+  assert.deepEqual(menu.options.map((o) => [o.label, o.value]), [["Los Simpson", "Latino · Sin subtítulos"]]);
+  assert.deepEqual(menu.options[0].command, { type: "remembered-forget", id: "tt0096697", title: "Los Simpson" });
+  assert.equal(rememberedMenu([]).options[0].inert, true);
 });

@@ -12,6 +12,7 @@ import hmac
 import ipaddress
 import logging
 import os
+import re
 import threading
 import time
 from contextlib import asynccontextmanager
@@ -317,8 +318,25 @@ class CompanionSend(BaseModel):
     video_id: str | None = None  # el episodio (si falta, el que sigue)
 
 
+MEDIA_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9:_.\-]{0,79}$")  # tt0096697, kitsu:12, tmdb:…
+
+
 class CompanionAck(BaseModel):
     ids: list[str] = []
+
+
+class ChoiceChange(BaseModel):
+    """Lo que el iPhone eligió para un título: solo los campos que cambió (None = olvidar) y la última revisión que vio."""
+    audio: str | None = Field(None, max_length=3)
+    spanish: str | None = Field(None, max_length=6)
+    subtitles: str | None = Field(None, max_length=6)
+    forget: list[str] = Field(default_factory=list, max_length=3)
+    base_rev: int = Field(0, ge=0)
+
+
+class ChoicesSync(BaseModel):
+    since: int = Field(0, ge=0)
+    changes: dict[str, ChoiceChange] = Field(default_factory=dict, max_length=100)
 
 
 def _companion_routes(app: FastAPI, config: Config) -> None:
@@ -538,6 +556,27 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         if path is None:
             raise HTTPException(404, "Ese canal no tiene logo.")
         return FileResponse(path, headers={"Cache-Control": "public, max-age=86400"})
+
+    @public.post("/api/companion/choices")
+    def companion_choices(body: ChoicesSync) -> dict:
+        """El audio, la variante y los subtítulos que eligió cada título, en la TV y en el iPhone: el iPhone manda lo que
+        cambió y recibe lo que cambió aquí desde `since`. Si la TV lo cambió después de lo que el iPhone vio, gana la TV
+        (`rejected`; su valor va en `changed`). No da más que eso: ni historial ni lo que se ve."""
+        state = main_app.state.catalog.state
+        rejected = []
+        for meta_id, change in body.changes.items():
+            if not MEDIA_ID.match(meta_id):
+                continue
+            fields = {k: getattr(change, k) for k in ("audio", "spanish", "subtitles") if getattr(change, k) is not None}
+            fields.update({k: None for k in change.forget if k in ("audio", "spanish", "subtitles")})
+            if not state.apply_choice(meta_id, fields, change.base_rev):
+                rejected.append(meta_id)
+        rev, changed = state.choices_since(body.since)
+        for meta_id in rejected:  # lo que ganó la TV vuelve aunque sea viejo
+            prefs = state.prefs(f"stremio:{meta_id}")
+            changed[meta_id] = {**{k: prefs[k] for k in ("audio", "spanish", "subtitles") if isinstance(prefs.get(k), str)},
+                                "rev": prefs.get("rev") or 0}
+        return {"rev": rev, "changed": changed, "rejected": rejected}
 
     @public.post("/api/companion/inbox/ack")
     def companion_inbox_ack(body: CompanionAck) -> dict:

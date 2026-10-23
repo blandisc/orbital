@@ -25,8 +25,11 @@ struct TitleView: View {
     /// se ajusta para que «Ver», Guardar, Descargar y Fuente queden a la vista al abrir, en un SE y en un Pro.
     @State private var viewport: CGSize = .zero
     @State private var belowHero: CGFloat = 0
+    /// Cuánto has deslizado (0 arriba) y el alto de la barra de arriba: el arte se recoge y lo que sube se desvanece.
+    @State private var scrolled: CGFloat = 0
+    @State private var topInset: CGFloat = 0
 
-    struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var id: String { "\(videoID)-\(purpose)" } }
+    struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var fromHere = false; var id: String { "\(videoID)-\(purpose)" } }
 
     init(route: TitleRoute) {
         self.route = route
@@ -38,6 +41,21 @@ struct TitleView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 hero(model)
+                    // Al deslizar, el arte se queda atrás (va más lento que el contenido), se encoge un poco, se difumina y se
+                    // funde con el fondo: se recoge en vez de irse de golpe con todo, y queda un rato como un resplandor detrás de
+                    // los datos. Al jalar hacia abajo arriba del todo, se estira desde arriba (no deja un hueco sobre el arte).
+                    .visualEffect { [still = reduceMotion] content, proxy in
+                        // Con «Reducir movimiento», solo se desvanece: sin parallax, encogerse, difuminarse ni estirarse.
+                        let top = proxy.frame(in: .scrollView).minY, y = still ? 0 : top
+                        let height = max(proxy.size.height, 1)
+                        let p = min(1, max(0, -y / height))
+                        let shown = 1 - min(1, max(0, -top / height) * DS.TitleAction.heroFadeSpeed)
+                        return content
+                            .offset(y: y < 0 ? -y * DS.TitleAction.heroParallax : 0)
+                            .scaleEffect(y > 0 ? 1 + y / height : 1 - p * DS.TitleAction.heroShrink, anchor: .bottom)
+                            .blur(radius: p * DS.TitleAction.heroBlur)
+                            .opacity(shown)
+                    }
                 VStack(alignment: .leading, spacing: DS.Space.s6) {
                     VStack(alignment: .leading, spacing: DS.Space.s6) {
                         facts(model)
@@ -56,14 +74,48 @@ struct TitleView: View {
                     synopsis(model)
                     creditLine(model)
                     if model.kind == "series" { episodes(model) }
-                    if let extras = model.extras { rich(extras).padding(.horizontal, -DS.Space.gutter) } else { credits(model) }
+                    // Sin TMDB, los créditos ya van en el renglón de arriba (antes salían dos veces: «Dirección · Con» y otra vez
+                    // «Reparto · Dirección · Guion»).
+                    if let extras = model.extras { rich(extras).padding(.horizontal, -DS.Space.gutter) }
                     details(model)
                 }
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
                 .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: los datos no se le pegan
+                // Siempre se puede recoger el arte hasta que el nombre suba a la barra, aunque haya poco abajo (una película sin
+                // reparto ni saga): si no, en unas fichas se recogía y en otras no.
+                .frame(minHeight: viewport.height, alignment: .top)
             }
         }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
+        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in scrolled = y }
+        // Lo que sube por debajo de la barra de arriba se desvanece (deja ver el fondo del color del arte) en vez de chocar con
+        // el reloj y los botones. Arriba del todo no hay desvanecido: el arte llega hasta la orilla.
+        .mask {
+            VStack(spacing: 0) {
+                // Toda la barra de arriba desvanecida (nada se trasluce detrás del nombre ni de los botones) y, debajo, la
+                // transición suave hacia el contenido.
+                let total = max(topInset + DS.TitleAction.topFade, 1), kept = 1 - fade
+                LinearGradient(stops: [.init(color: .black.opacity(kept), location: 0),
+                                       .init(color: .black.opacity(kept), location: topInset / total),
+                                       .init(color: .black, location: 1)], startPoint: .top, endPoint: .bottom)
+                    .frame(height: total)
+                Color.black   // ds-exception: es una máscara, solo cuenta qué tan opaca es (no se ve el color)
+            }
+            .ignoresSafeArea()
+        }
+        // Recogido el arte, el nombre al centro de la barra, entre ‹ y los botones (como Apple TV): sigues sabiendo qué es. Se
+        // dibuja aquí y no como elemento de la barra (en la barra transparente de la ficha el sistema no lo enseñaba).
+        .overlay(alignment: .top) {
+            let shown = Double(min(1, max(0, (scrolled - heroHeight * DS.TitleAction.titleFrom) / max(heroHeight * DS.TitleAction.titleSpan, 1))))
+            Text(verbatim: model.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                .padding(.horizontal, DS.TitleAction.barTitleInset)
+                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                .offset(y: -DS.Size.touchTarget - DS.Space.s2)
+                .opacity(shown)
+                .allowsHitTesting(false)
+                .accessibilityHidden(shown < 1)
+        }
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
         .background(Backdrop(tint: tint.colors))
         .navigationBarTitleDisplayMode(.inline)
@@ -78,12 +130,12 @@ struct TitleView: View {
             Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) }   // aparte: las fuentes tardan y no detienen el color del fondo
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
-            if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
+            if Demo.isOn, Demo.open == "sources" || Demo.open == "sources-all", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
             if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
             if Demo.isOn, Demo.open == "download-tap" { await downloadRecommended(model) }
             if Demo.isOn, Demo.open == "save" { saving = true }   // `-demo-open save`: la hoja «Guardar en…», para capturas
             if Demo.isOn, Demo.open == "versions", let v = model.downloadTarget {   // `-demo-open versions`: la hoja «Ya la tienes»
-                await report(model.download([v]), model)
+                await report(model.download([v]), model, videoID: v)
                 await model.loadBestSource()
                 if let source = model.bestSource, let existing = await model.existingDownload(v) { replacing = Replacement(source: source, videoID: v, existing: existing) }
             }
@@ -91,7 +143,7 @@ struct TitleView: View {
             await tint.load(model.background ?? model.poster)
         }
         .sheet(item: $sourcesFor) { target in
-            SourcesSheet(model: model, videoID: target.videoID, choose: { source, purpose in
+            SourcesSheet(model: model, videoID: target.videoID, fromHere: target.fromHere, choose: { source, purpose in
                 sourcesFor = nil
                 handle(source: source, videoID: target.videoID, purpose: purpose, model: model)   // lo que quedó en el selector de la hoja
             }, infuse: { source in
@@ -165,6 +217,10 @@ struct TitleView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// Qué tan desvanecido va lo de arriba (0 con el arte a la vista, 1 ya recogido).
+    private var fade: Double { Double(min(1, max(0, scrolled / max(heroHeight * DS.TitleAction.fadeAt, 1)))) }
+    private var heroHeight: CGFloat { viewport.width > 0 ? viewport.width / heroAspect : 0 }
+
     /// Mi lista y En la TV: botones de ícono en la barra de arriba (con su nombre para VoiceOver).
     @ToolbarContentBuilder private func topBar(_ model: TitleModel) -> some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
@@ -210,7 +266,7 @@ struct TitleView: View {
                         .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
                 }
                 Button { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } } label: {
-                    ActionTileLabel(title: Text("Fuente"), symbol: "list.bullet.rectangle", tint: artAccent)
+                    ActionTileLabel(title: Text("Versión"), symbol: "list.bullet.rectangle", tint: artAccent)
                 }
                 .buttonStyle(.plain).frame(maxWidth: .infinity).disabled(model.continueVideoID == nil).accessibilityIdentifier("title-sources")
             }
@@ -221,7 +277,11 @@ struct TitleView: View {
     /// Lo de adentro de «Ver»: ▶ Ver (o «Continuar · quedan 42 min») y, abajo, la calidad de la recomendada (la que va a sonar)
     /// («4K · Dolby Vision · Atmos»; nada si aún no se sabe). Con avance, una barrita al pie. Mientras carga, «Cargando».
     @ViewBuilder private func primaryButtonLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> some View {
-        let quality = model.recommendedSource?.qualitySummary ?? []
+        // «Latino · 1080p · Dolby Vision»: en qué idioma y con qué calidad va a sonar.
+        // «Latino» o «Castellano» solo si se sabe; si no, «Español» a secas (no «Español (no dice cuál)», que es para la lista).
+        let language = model.recommendedLanguage.map { $0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
+                                                                  : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage) }
+        let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
         VStack(spacing: DS.Space.s1) {
             if model.continueVideoID == nil && !model.isLoading {
                 // Ya cargó y no hay qué ver: sin red, o una serie que aún no tiene episodios.
@@ -247,12 +307,16 @@ struct TitleView: View {
                 .font(DS.TextRecipe.body.font.weight(.semibold))
                 .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                 if model.sourceCheck == .none || model.sourceCheck == .offline {
-                    (model.sourceCheck == .none ? Text("Sin fuentes por ahora") : Text("Sin conexión"))
+                    (model.sourceCheck == .none ? Text("Sin versiones por ahora") : Text("Sin conexión"))
                         .font(DS.TextRecipe.caption.font.weight(.medium)).opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1)
                 } else if !quality.isEmpty {
                     Text(verbatim: quality.joined(separator: " · ")).font(DS.TextRecipe.caption.font.weight(.medium))
                         .opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                         .accessibilityLabel(Text("Se va a ver en: \(quality.joined(separator: ", "))"))
+                } else {
+                    // Su lugar apartado mientras se busca (antes el botón crecía al llegar la versión).
+                    Text("Buscando versión…").font(DS.TextRecipe.caption.font.weight(.medium))
+                        .opacity(DesignTokens.Opacity.onArtSecondary).lineLimit(1)
                 }
             }
         }
@@ -302,7 +366,7 @@ struct TitleView: View {
             env.notify("Guardada en Mi lista", detail: "Stremio", actionTitle: "Cambiar") { saving = true }
         } else if model.inLibrary && !model.inWatchlist && !model.inSomeList && !(model.lists ?? []).contains(where: \.contains) {
             await model.toggleLibrary()
-            env.notify("Quitada de Mi lista", tone: .info, actionTitle: "Deshacer") { Task { await model.toggleLibrary() } }
+            env.notify("Quitada de Mi lista", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { Task { await model.toggleLibrary() } }
         } else {
             saving = true   // está en varias listas: que elijas de cuál quitarla
         }
@@ -343,7 +407,7 @@ struct TitleView: View {
                 }
             default:
                 Menu {
-                    Button("Elegir la fuente…", systemImage: "list.bullet") { if let target { sourcesFor = SourcesTarget(videoID: target, purpose: .download) } }
+                    Button("Elegir versión…", systemImage: "list.bullet.rectangle") { if let target { sourcesFor = SourcesTarget(videoID: target, purpose: .download) } }
                     if model.kind == "series" {
                         Button("Los siguientes \(DS.Size.downloadNext)", systemImage: "square.stack.3d.down.right") { Task { await report(model.downloadNext(DS.Size.downloadNext), model) } }
                     }
@@ -363,7 +427,7 @@ struct TitleView: View {
     private func downloadRecommended(_ model: TitleModel, videoID: String? = nil) async {
         guard let target = videoID ?? model.downloadTarget else { return }
         let outcome = await model.download([target])
-        guard case .queued = outcome else { return await report(outcome, model) }
+        guard case .queued = outcome else { return await report(outcome, model, videoID: target) }
         let item = await model.existingDownload(target)
         let size = item?.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) }
         let detail = [item?.quality, size].compactMap { $0 }.joined(separator: " · ")
@@ -380,27 +444,48 @@ struct TitleView: View {
     }
 
     @ViewBuilder private func episodes(_ model: TitleModel) -> some View {
-        if model.seasons.count > 1 {
-            let chips = model.seasons.map { SeasonChip(season: $0.season, isSpecials: $0.isSpecials) }
-            let selection = Binding(get: { SeasonChip(season: model.selectedSeason, isSpecials: model.selectedSeason == 0) }, set: { model.select(season: $0.season) })
-            let label = { (season: SeasonChip) in season.isSpecials ? Text("Especiales") : Text("Temporada \(season.season)") }
-            // Hasta 4 temporadas caben como filtros a la vista; con más, un menú (como Apple TV y Netflix).
-            if chips.count <= DS.Size.seasonChipsMax {
-                DSChipRow(items: chips, label: label, selection: selection).padding(.horizontal, -DS.Space.gutter)
-            } else {
-                DSOptionMenu(items: chips, label: label, selection: selection)
+        // Un solo bloque de controles, simétrico: la temporada a la izquierda y la versión de la serie a la derecha, las dos
+        // cápsulas iguales (antes temporada, versión y avance eran tres renglones con alineaciones y tamaños distintos); abajo,
+        // el avance de la temporada de orilla a orilla.
+        let wanted = env.services.titlePrefs.languages(for: model.metaID, settings: env.services.appSettings).prefs.wanted
+        HStack(spacing: DS.Space.s2) {
+            if model.seasons.count > 1 {
+                let chips = model.seasons.map { SeasonChip(season: $0.season, isSpecials: $0.isSpecials) }
+                let selection = Binding(get: { SeasonChip(season: model.selectedSeason, isSpecials: model.selectedSeason == 0) }, set: { model.select(season: $0.season) })
+                DSOptionMenu(items: chips, label: { $0.isSpecials ? Text("Especiales") : Text("Temporada \($0.season)") }, selection: selection, compact: true)
+            } else if let only = model.seasons.first {
+                Text(only.isSpecials ? "Especiales" : "Temporada \(only.season)").recipe(.secondary, color: DS.text).fontWeight(.semibold)
+            }
+            Spacer(minLength: DS.Space.s2)
+            // La versión de la serie (lo que recuerda: latino, castellano, inglés…); tocarla elige otra «desde aquí».
+            if let next = model.continueVideoID {
+                Button { sourcesFor = SourcesTarget(videoID: next, purpose: .watch, fromHere: true) } label: {
+                    HStack(spacing: DS.Space.s2) {
+                        Image(systemName: "list.bullet.rectangle").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                        // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
+                        Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
+                             : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage)).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                        Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                    }
+                }
+                .buttonStyle(.bordered).buttonBorderShape(.capsule).tint(DS.text)
+                .accessibilityLabel(Text("Versión de la serie"))
+                .accessibilityIdentifier("series-version")
             }
         }
-        // Cuántos llevas de esta temporada y marcarla completa (como en Infuse y Trakt).
+        // Cuántos llevas de esta temporada y marcarla completa (como en Infuse y Trakt), con su barra.
         let progress = model.seasonProgress
         if progress.total > 0 {
-            HStack {
-                Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote)
-                Spacer()
-                if progress.watched < progress.total {
-                    Button("Marcar temporada como vista", systemImage: "checkmark.circle") { Task { await model.markSeasonWatched() } }
-                        .font(DS.TextRecipe.footnote.font).buttonStyle(.borderless)
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                HStack {
+                    Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote)
+                    Spacer()
+                    if progress.watched < progress.total {
+                        Button("Marcar como vista", systemImage: "checkmark.circle") { Task { await model.markSeasonWatched() } }
+                            .font(DS.TextRecipe.footnote.font).buttonStyle(.borderless)
+                    }
                 }
+                ProgressView(value: Double(progress.watched), total: Double(progress.total)).tint(DS.brandMoon)
             }
         }
         LazyVStack(spacing: 0) {   // perezosa: una serie larga no arma (ni pide imágenes de) todos sus episodios a la vez
@@ -568,8 +653,8 @@ struct TitleView: View {
     /// «Ver»: si ya se sabe que no hay fuentes (o no hay red), lo dice aquí en vez de abrir un reproductor que va a fallar.
     private func play(_ model: TitleModel) {
         switch model.sourceCheck {
-        case .none: env.notify("Real-Debrid aún no lo tiene. Los estrenos suelen aparecer unas horas después.", tone: .info)
-        case .offline: env.notify("Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet.")
+        case .none: env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+        case .offline: env.notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { play(model) }
         default: start(model, videoID: nil)
         }
     }
@@ -588,7 +673,7 @@ struct TitleView: View {
             // Ya hay una copia (o se está bajando): una sola por película o episodio, así que se pregunta si cambiarla.
             Task {
                 if let existing = await model.existingDownload(videoID) { replacing = Replacement(source: source, videoID: videoID, existing: existing); return }
-                await report(model.download([videoID], source: source), model)   // la fuente que elegiste
+                await report(model.download([videoID], source: source), model, videoID: videoID)   // la fuente que elegiste
             }
         }
     }
@@ -610,14 +695,12 @@ struct TitleView: View {
         return (label.isEmpty ? source.addon : label, Text(verbatim: [size, source.addon.isEmpty ? nil : source.addon].compactMap { $0 }.joined(separator: " · ")))
     }
 
-    private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel) async {
+    private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel, videoID: String? = nil) async {
         switch outcome {
         // Una sola: lo dice el botón o el renglón (su avance), sin aviso encima. Varias: un aviso breve.
         case .queued(let n): if n > 1 { env.notify(format: "Descargando %lld episodios", n, tone: .success, action: .downloads) }
-        case .noSources: env.notify("No hay fuentes de Real-Debrid para descargar.")
-        case .notEnoughSpace(let text): env.notify(text)
-        case .already: env.notify("Ya está descargado.", tone: .info)
-        case .failed(let text): env.notify(text)
+        // «Ya está descargada · Ver»: la copia del iPhone, sin red.
+        default: env.report(outcome, downloaded: videoID.map { (model.metaID, $0) })
         }
         await model.refreshState()
     }
@@ -665,14 +748,15 @@ struct EpisodeRowView: View {
         }
         .padding(.vertical, DS.Space.s3)
         .opacity(row.airs == nil ? 1 : DesignTokens.Opacity.faint)
-        .contextMenu {
-            if row.airs == nil {
-            Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
-            Button("Descargar", systemImage: "arrow.down.circle", action: download)
-            Button("Elegir la fuente…", systemImage: "list.bullet", action: chooseSource)
-            if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
-            }
-        }
+        .contextMenu { if row.airs == nil { actions(download: true) } }
+    }
+
+    /// Lo que se puede hacer con un episodio: en el «⋯» de su renglón (a la vista) y al mantenerlo presionado.
+    @ViewBuilder private func actions(download withDownload: Bool) -> some View {
+        if withDownload { Button("Descargar", systemImage: "arrow.down.circle", action: download) }
+        Button("Versión de este episodio…", systemImage: "list.bullet.rectangle", action: chooseSource)   // el mismo ícono que «Versión» de la ficha
+        Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
+        if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
     }
 
     private var hasStatus: Bool { row.airs != nil || row.watched || row.leftMinutes > 0 || row.download == .done }
@@ -701,6 +785,14 @@ struct EpisodeRowView: View {
             }
             .buttonStyle(.plain).accessibilityLabel(row.download == .failed ? Text("Reintentar") : Text("Reanudar"))
         }
-        else { Button(action: download) { Image(systemName: "arrow.down.circle").foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget) }.buttonStyle(.plain).accessibilityLabel(Text("Descargar")) }
+        else {
+            // «⋯» a la vista: Descargar, Elegir versión, Marcar como visto y Ver en la TV (antes solo la flecha de descargar, y
+            // elegir la versión de un episodio estaba escondido en mantenerlo presionado).
+            Menu { actions(download: true) } label: {
+                Image(systemName: "ellipsis.circle").foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            }
+            .accessibilityLabel(Text("Más del episodio"))
+            .accessibilityIdentifier("episode-more")
+        }
     }
 }

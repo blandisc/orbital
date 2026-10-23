@@ -60,6 +60,8 @@ public final class TitleModel: ObservableModel {
     /// La que va a sonar al tocar «Ver»: la recomendada (idioma, calidad y tamaño; la primera de «Elegir la fuente»). Su
     /// calidad es la que dice el botón (antes decía la mejor, 4K, y luego sonaba la recomendada en 1080p).
     public private(set) var recommendedSource: Source? { didSet { changed() } }
+    /// En qué idioma va a sonar la recomendada («es-419»): «Ver» dice «Latino · 1080p» (nada a escondidas).
+    public private(set) var recommendedLanguage: String? { didSet { changed() } }
     /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
     public private(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
     /// La calificación de Trakt (0–10), si alguien votó.
@@ -140,7 +142,7 @@ public final class TitleModel: ObservableModel {
             credits = CinemetaParsing.credits(local)
             seasons = CinemetaParsing.seasons(local)
             error = nil
-        } catch where !Task.isCancelled { self.error = "No pudimos cargar la ficha. Revisa tu conexión." } catch {}   // cancelado al salir: sin error falso
+        } catch where !Task.isCancelled { self.error = "No pude cargar la ficha. Revisa tu conexión." } catch {}   // cancelado al salir: sin error falso
         await refreshState(prefetched: await state.value)
     }
 
@@ -168,7 +170,15 @@ public final class TitleModel: ObservableModel {
             let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
             guard !Task.isCancelled else { return }
             bestSource = Source.best(found)
-            recommendedSource = found.first
+            // «Ver» dice lo que de verdad va a sonar: la versión con que lo dejaste (ese video), o la de su misma familia en el
+            // siguiente episodio; si no, la recomendada (lo mismo que elige el reproductor).
+            let resume = services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.source
+            let family = services.titlePrefs.lastChoice(metaID: metaID)?.binge
+            let first = found.first
+            recommendedSource = resume.flatMap { key in found.first { $0.key == key } }
+                ?? family.flatMap { f in found.first { $0.binge == f && $0.score > (first?.score ?? 0) - 700 } }
+                ?? first
+            recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
             sourceCheck = found.isEmpty ? .none : .available
         } catch {
             if !Task.isCancelled { sourceCheck = error is StreamFinderError ? .offline : .unknown }
@@ -211,7 +221,9 @@ public final class TitleModel: ObservableModel {
         watched = StremioLibrary.parseWatched(raw?["state"]?["watched"]?.string, videoIDs: ids)
         inLibrary = StremioLibrary.isInLibrary(raw)
         traktAvailable = await linked
-        inWatchlist = await keys.contains(metaID)
+        // Lo pendiente de mandar (guardado sin conexión) manda sobre lo que Trakt aún dice.
+        let onTrakt = await keys.contains(metaID)
+        inWatchlist = services.traktOutbox.pending(target: TraktOutbox.watchlist, imdb: metaID) ?? onTrakt
         inSomeList = await listed.contains(metaID)
         applyDownloads(await queue)
         if let state = StremioLibrary.state(of: raw)["video_id"]?.string, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
@@ -238,7 +250,11 @@ public final class TitleModel: ObservableModel {
 
     // MARK: ver
     /// El video con el que sigue el botón principal: donde ibas, o el primer episodio.
-    public var continueVideoID: String? {
+    public var continueVideoID: String? { Self.continueVideoID(kind: kind, metaID: metaID, raw: raw, seasons: seasons) }
+
+    /// La misma cuenta sin abrir la ficha (lo usa «¿Qué vemos?» para que «Ver» ponga el capítulo en que vas): con lo tuyo en
+    /// Stremio (`raw`) y las temporadas de Cinemeta.
+    public static func continueVideoID(kind: String, metaID: String, raw: JSON?, seasons: [Season]) -> String? {
         let state = StremioLibrary.state(of: raw)
         if let video = state["video_id"]?.nonEmptyString, asInt(state["timeOffset"]) > 0 || kind == "series" { return video }
         if kind == "movie" { return metaID }
@@ -317,6 +333,10 @@ public final class TitleModel: ObservableModel {
         do {
             try await trakt.setWatchlist(imdb: metaID, series: kind == "series", add: want)
             await services.forYou.clearCache()
+        } catch where TraktOutbox.retryable(error) {
+            // Sin conexión o con tu Orbital apagada: se queda guardado aquí y se manda en cuanto se pueda (no se pierde).
+            services.traktOutbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: metaID, series: kind == "series", add: want))
+            message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
         } catch { inWatchlist = !want; message = "No pude cambiar tu watchlist de Trakt: \(error)" }
     }
 
@@ -326,7 +346,14 @@ public final class TitleModel: ObservableModel {
         guard let trakt = services.trakt, trakt.linked, metaID.hasPrefix("tt") else { lists = []; return }
         loadingLists = true
         defer { loadingLists = false }
-        let all = (try? await trakt.lists()) ?? []
+        // Sin conexión: las listas que ya conocías (y lo pendiente encima), para poder elegir igual.
+        let outbox = services.traktOutbox
+        guard let all = try? await trakt.lists() else {
+            let id = metaID
+            lists = outbox.cachedLists.map { SavedList(id: $0.id, name: $0.name, contains: outbox.pending(target: $0.id, imdb: id) ?? false) }
+            return
+        }
+        outbox.remember(lists: all)
         let id = metaID
         lists = await withTaskGroup(of: (Int, SavedList).self) { group in
             for (i, l) in all.enumerated() {
@@ -346,6 +373,9 @@ public final class TitleModel: ObservableModel {
         do {
             try await trakt.setListItem(listID: listID, imdb: metaID, series: kind == "series", add: want)
             await services.forYou.clearCache()
+        } catch where TraktOutbox.retryable(error) {
+            services.traktOutbox.enqueue(.init(target: listID, imdb: metaID, series: kind == "series", add: want))
+            message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
         } catch {
             if var back = lists, let j = back.firstIndex(where: { $0.id == listID }) { back[j].contains = !want; lists = back }
             message = "No pude cambiar tu lista de Trakt: \(error)"

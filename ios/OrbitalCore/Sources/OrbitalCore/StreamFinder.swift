@@ -3,7 +3,7 @@ import Foundation
 /// Ningún complemento contestó (sin internet, o tus complementos caídos): no es lo mismo que «no hay fuentes».
 public enum StreamFinderError: Error, Sendable, CustomStringConvertible {
     case unreachable
-    public var description: String { "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet." }
+    public var description: String { "Sin conexión: no pude buscar dónde verlo. Revisa tu internet." }
 }
 
 /// Pide fuentes a los complementos que las dan (en paralelo) y las recuerda unos minutos.
@@ -30,6 +30,18 @@ public actor StreamFinder {
         self.http = http; self.registry = registry; self.clock = clock
     }
 
+    /// De dónde es un título (su idioma original y país), para el audio de lo que no lo dice; y lo comprobado al ver una
+    /// versión (sus pistas reales, por su huella `Source.key`).
+    private var origin: @Sendable (_ kind: String, _ metaID: String) async -> TitleOrigin? = { _, _ in nil }
+    private var checked: @Sendable (_ key: String) -> [AudioLanguage]? = { _ in nil }
+    public func configure(origin: @escaping @Sendable (_ kind: String, _ metaID: String) async -> TitleOrigin?,
+                          checked: @escaping @Sendable (_ key: String) -> [AudioLanguage]?) {
+        self.origin = origin; self.checked = checked
+        cache = [:]
+    }
+    /// Se comprobó el audio de una versión: lo que estaba ordenado con lo que se suponía ya no vale.
+    public func forgetSorted() { cache = [:] }
+
     private func fetch(_ addon: Addon, kind: String, videoID: String) async -> [JSON]? {
         // nil si la red falló (para no recordar «no hay» 10 minutos)
         guard let url = URL(string: "\(addon.base)/stream/\(kind)/\(uriComponent(videoID)).json") else { return nil }
@@ -44,16 +56,22 @@ public actor StreamFinder {
     /// Todas las fuentes ordenadas. `onlyPlayable`: en iOS solo sirven las de URL http(s) (Real-Debrid).
     /// `fresh`: se salta la caché (para pedir un enlace nuevo cuando el que se tenía caducó).
     public func find(kind: String, videoID: String, prefs: Preferences, purpose: Purpose = .watch, onlyPlayable: Bool = true, fresh: Bool = false) async throws -> [Source] {
-        let key = "\(kind):\(videoID):\(prefs.audio):\(prefs.quality):\(purpose):\(onlyPlayable)"
+        let key = "\(kind):\(videoID):\(prefs.wanted):\(prefs.quality):\(purpose):\(onlyPlayable)"
         if !fresh, let hit = cache[key], clock() < hit.expires { return hit.sources }
+        // De dónde es el título, a la vez que se pregunta a los complementos (no después: no se espera de más).
+        let metaID = String(videoID.split(separator: ":").first ?? Substring(videoID))
+        let lookup = origin
+        let originTask = Task { await lookup(kind, metaID) }
         let (serving, results) = try await ask(kind: kind, videoID: videoID, fresh: fresh)
         let failed = results.contains { $0 == nil }
+        let titleOrigin = await originTask.value
         var sources: [Source] = [], seen = Set<Int>()
         for (addon, streams) in zip(serving, results) {
             for stream in streams ?? [] {
                 var index = Streams.stableIndex(addonURL: addon.url, stream: stream)
                 while seen.contains(index) { index = (index + 1) % (1 << 31) }  // el mismo enlace dos veces: la segunda, el número siguiente
-                let source = Streams.parse(stream, addon: addon.name, transportURL: addon.url, index: index)
+                var source = Streams.parse(stream, addon: addon.name, transportURL: addon.url, index: index, origin: titleOrigin)
+                if let real = checked(source.key) { source.setAudio(real) }
                 if onlyPlayable && source.playbackURL == nil { continue }
                 // Una lista HLS o DASH no es un archivo: se ve, pero no se puede guardar en el teléfono.
                 if purpose == .download, let ext = source.playbackURL?.pathExtension.lowercased(), ["m3u8", "mpd"].contains(ext) { continue }

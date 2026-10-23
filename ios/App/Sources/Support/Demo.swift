@@ -31,6 +31,30 @@ enum Demo {
     /// con `download` se ve la descarga de prueba y el aviso; con `open`, la tarjeta «Desde la TV» en Inicio.
     static var inbox: String? { value(after: "-demo-inbox") }
 
+    /// `-demo-handoff <segundos>`: el aviso «Sigue en tu Orbital» al abrir, como si acabaras de pasar algo a la TV en ese punto.
+    /// El nombre de la descarga de prueba de `-diag-download`.
+    static let diagTitle = "Prueba de descarga"
+    static var handoff: Double? { value(after: "-demo-handoff").flatMap(Double.init) }
+    /// `-demo-notice ya|bajando|trakt|cola|perdido`: un aviso de ejemplo al abrir (para verlos en el simulador).
+    static var notice: String? { value(after: "-demo-notice") }
+
+    @MainActor static func showNotice(_ env: AppEnvironment) {
+        switch notice {
+        case "ya": env.notify("Ya está descargada", detail: "En el iPhone, para ver sin conexión", tone: .info, actionTitle: "Ver", actionSymbol: "play.fill") {}
+        case "bajando": env.notify("Bajando la recomendada", detail: "1080p · 2.4 GB", tone: .success, actionTitle: "Otra") {}
+        case "trakt": env.notify("Tu sesión de Trakt se cerró", detail: "Sin ella no llegan tus recomendaciones", tone: .warn, actionTitle: "Conectar") {}
+        case "cola":
+            env.notify("Quitada de Mi lista", detail: "Oppenheimer", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {}
+            env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+        case "perdido": env.notify("No cabe en el iPhone", detail: "Hacen falta 2400 MB y hay 1100 MB libres.", tone: .error, action: .downloads, actionTitle: "Descargas")
+        case "neutral": env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+        default: break
+        }
+    }
+
+    static let handoffRequest = PlayRequest(kind: "series", metaID: "tt0386676", videoID: "tt0386676:2:5", originalTitle: "The Office",
+                                            displayTitle: "La Oficina", episodeLabel: "T2 · E5")
+
     /// `-demo-scrobble`: Trakt «conectado» con un último scrobble de mentira (para ver la fila de Ajustes › Trakt en el simulador).
     static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
     /// `-demo-because`: Trakt de mentira con historial y relacionados, para ver «Porque viste» en Para ti.
@@ -60,7 +84,8 @@ enum Demo {
         guard let parts = value(after: "-demo-title")?.split(separator: ":"), parts.count == 2 else { return nil }
         return (String(parts[0]), String(parts[1]))
     }
-    /// `-demo-player panel|sources|subtitles`: ya reproduciendo, abre el panel de audio y subtítulos (o directo en Subtítulos) o el de otra fuente.
+    /// `-demo-player dock|subtitles|audio|version|close`: ya reproduciendo, abre «Audio y subtítulos» (con Subtítulos o Audio
+    /// abierto) o «Versión»; `close` cierra el reproductor.
     static var player: String? { value(after: "-demo-player") }
     /// `-demo-player-state skip-intro|error|upnext|locked`: ya reproduciendo, pone «Saltar intro», el error, la tarjeta de
     /// «Siguiente episodio» o el bloqueo (estados que el simulador no alcanza solo). `-demo-player-portrait`: abre en vertical.
@@ -111,7 +136,7 @@ enum Demo {
     static var search: String? { value(after: "-demo-search") }
     /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.
     static var open: String? { value(after: "-demo-open") }
-    /// `-demo-gesture brightness|volume|seek|fastforward|next-subtitle`: simula el gesto a medio camino (sin tocar la pantalla),
+    /// `-demo-gesture brightness|volume|seek|fastforward`: simula el gesto a medio camino (sin tocar la pantalla),
     /// para capturar su indicador en el simulador.
     static var gesture: String? { value(after: "-demo-gesture") }
     /// `-demo-console`: simula que tu Orbital de mentira sí contesta «Para ti» (con una lista de ejemplo con puesto),
@@ -177,7 +202,11 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         // OpenSubtitles de mentira: varias versiones por idioma (con copia, descargas, y unas SDH/forzadas que se esconden).
         if url.host == "opensubtitles-v3.strem.io" { return HTTPResponse(status: 200, data: Self.subtitlesDemo.serialized()) }
         if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
-        if url.host == "api.trakt.tv", Demo.because, let found = Self.becauseDemo(url.path) { return HTTPResponse(status: 200, data: found.serialized()) }
+        if url.host == "api.trakt.tv", Demo.because, let found = Self.becauseDemo(url.path) {
+            // Los relacionados tardan lo que tarda Trakt de verdad (para medir qué tan fluido se siente cambiar de título).
+            if url.path.hasSuffix("/related") { try? await Task.sleep(nanoseconds: 1_200_000_000) }   // ds-exception: demora de red simulada (solo modo demo)
+            return HTTPResponse(status: 200, data: found.serialized())
+        }
         // La calificación de la comunidad de Trakt (la ficha la enseña con su logo junto a IMDb y TMDB).
         if url.host == "api.trakt.tv", url.path.hasSuffix("/ratings") { return HTTPResponse(status: 200, data: JSON.object(["rating": .double(8.4), "votes": 52_310]).serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
@@ -225,7 +254,12 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     static func becauseDemo(_ path: String) -> JSON? {
         func show(_ id: String, _ title: String) -> JSON { ["title": .string(title), "year": 2020, "ids": ["imdb": .string(id), "trakt": 1]] }
         if path == "/sync/history" {
-            return .array(becauseShows.map { ["type": "episode", "show": show($0.0, $0.1)] })
+            // Vistas hace 2, 5, 9, 16 y 30 días (para «la viste hace…»).
+            let days = [2, 5, 9, 16, 30]
+            return .array(becauseShows.enumerated().map { i, s in
+                let at = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-Double(days[i % days.count]) * 86_400))
+                return ["type": "episode", "show": show(s.0, s.1), "watched_at": .string(at)]
+            })
         }
         if path.hasPrefix("/shows/"), path.hasSuffix("/related"), let found = becauseShows.first(where: { path.contains($0.0) }) {
             return .array(found.2.map { show($0.0, $0.1) })
@@ -455,7 +489,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                        "position": .double(1300 + nowPlayingPosition), "duration": .double(6180), "paused": .bool(nowPlayingPaused),
                                        "tracks": ["audio": [["id": "1", "label": "Inglés 5.1", "selected": true], ["id": "2", "label": "Español", "selected": false]],
                                                   "subtitles": [["id": "0", "label": "Sin subtítulos", "selected": false], ["id": "3", "label": "Español", "selected": true]]]])
-            let playerUI: JSON = ["screen": "player", "text_field": false, "section": "Películas y series", "legend": ["select": "Pausa", "alt": "Audio y subtítulos", "options": "Fuentes", "back": "Salir"],
+            let playerUI: JSON = ["screen": "player", "text_field": false, "section": "Películas y series", "legend": ["select": "Pausa", "alt": "Audio y subtítulos", "options": "Versión", "back": "Salir"],
                                   "volume": ["level": .int(demoVolume), "muted": .bool(demoMuted)]]
             return HTTPResponse(status: 200, data: JSON.object(["playing": movie, "inbox": .array(inbox), "ui": playerUI]).serialized())
         }
@@ -516,6 +550,32 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if ProcessInfo.processInfo.arguments.contains("-demo-slow") {
             return HTTPResponse(status: 200, data: JSON.object(["streams": [["name": "[RD+] Demo\n1080p", "title": "Archivo.Grande.1080p.WEB-DL.mkv\n💾 125 MB 🇪🇸",
                                                                              "url": "https://proof.ovh.net/files/1Gb.dat"]]]).serialized())
+        }
+        // `-demo-versions`: las versiones reales de Intensa-Mente 2 (nombres de Torrentio, octubre de 2026), con videos de prueba,
+        // para ver «Elegir versión» con latino, castellano, el original y los demás.
+        if ProcessInfo.processInfo.arguments.contains("-demo-versions") {
+            // Un video largo (el de prueba de Apple): con uno de 10 s el reproductor se cerraba antes de poder verlo.
+            // `-demo-video <url>`: otro video (p. ej. un MKV largo servido desde la Mac, para probar la vuelta de segundo plano).
+            let video = Demo.value(after: "-demo-video") ?? "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
+            let rows: [(String, String, String, String)] = [
+                ("[RD+] Torrentio\n4k DV | HDR", "Inside.Out.2.2024.2160p.WEB-DL.DV.HDR10.PLUS.ENG.LATINO.DDP5.1.Atmos.H265-BEN.THE.MEN", "17.72 GB", "TorrentGalaxy\n🇬🇧 🇲🇽"),
+                ("[RD+] Torrentio\n1080p", "IntensaMente.2.2024.1080p-Dual-Lat", "2.93 GB", "Cinecalidad\n🇲🇽"),
+                ("[RD+] Torrentio\n1080p", "IntensaMente 2 (2024) 1080p WEBDL LAT - ZeiZ", "12.32 GB", "Cinecalidad\n🇲🇽"),
+                ("[RD+] Torrentio\n1080p", "Inside.Out.2.2024.1080p.WEB-DL.ENG.LATINO.DDP5.1.Atmos.H264-BEN.THE.MEN", "7.5 GB", "TorrentGalaxy\n🇬🇧 🇪🇸 🇲🇽"),
+                ("[RD+] Torrentio\n4k DV | HDR", "Inside.Out.2.2024.2160p.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-FLUX[TGx]", "16.65 GB", "TorrentGalaxy"),
+                ("[RD+] Torrentio\n1080p", "Inside Out 2 2024 1080p BluRay", "1.78 GB", "YTS"),
+                ("[RD download] Torrentio\n720p", "Inside Out 2 2024 720p BluRay", "886.99 MB", "YTS"),
+                ("[RD+] Torrentio\n1080p", "Del reves 2 (Inside Out 2) (2024) [Bluray 1080p][Esp]", "6.73 GB", "Wolfmax4k\n🇪🇸"),
+                ("[RD download] Torrentio\n720p", "Del reves 2 (Inside Out 2) (2024) [Bluray 720p][Esp]", "4.73 GB", "Wolfmax4k\n🇪🇸"),
+                ("[RD download] Torrentio\n4k HDR", "Inside Out 2 2024 Bluray 2160p AV1 HDR10 EN/FR/ES OPUS 7.1-UH [UserHEVC]", "6.43 GB", "1337x\n🇬🇧 🇪🇸 🇫🇷"),
+                ("[RD+] Torrentio\n1080p", "Izvrnuto.obrnuto.2.(2024).1080p.x265.4Mbps.2CH.224.crtani.film.hrvatski", "3.03 GB", "1337x\n🇭🇷"),
+                ("[RD+] Torrentio\nTeleSync", "Inside Out 2 (Intensa-mente 2) (2024) ts-hq lat.mp4", "1.94 GB", "Cinecalidad\n🇲🇽"),
+            ]
+            let streams = rows.enumerated().map { i, r -> JSON in
+                let parts = r.3.components(separatedBy: "\n")
+                return ["name": .string(r.0), "title": .string("\(r.1)\n👤 \(40 - i) 💾 \(r.2) ⚙️ \(parts[0])\n\(parts.count > 1 ? parts[1] : "")"), "url": .string(video + "?v=\(i)")]
+            }
+            return HTTPResponse(status: 200, data: JSON.object(["streams": .array(streams)]).serialized())
         }
         let streams: [JSON] = [
             // MKV con varias pistas de subtítulos SRT (archivo de prueba oficial de Matroska): lo abre AetherEngine por su vía propia.

@@ -40,6 +40,6 @@ extension Services {
             if case .notEnoughSpace = error { return .notEnoughSpace(error.description) }
             return .failed(error.description)
         } catch let error as StreamFinderError { return .failed(error.description)
-        } catch { return .failed("No pudimos preparar la descarga. Intenta de nuevo.") }
+        } catch { return .failed("Intenta de nuevo en un momento.") }
     }
 }

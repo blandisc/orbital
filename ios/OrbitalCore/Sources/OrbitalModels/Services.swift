@@ -10,6 +10,8 @@ public final class Services: ObservableModel {
     public let kv: KeyValueStore
     public let settings: SettingsStore
     public let titlePrefs: TitlePreferences
+    /// Lo que guardaste en Trakt y aún no llega (sin conexión, o con tu Orbital apagada): se manda en cuanto se pueda.
+    public let traktOutbox: TraktOutbox
     public let pending: PendingStore
     /// Lo último que se le contó a Trakt (o el problema): vive aquí, no en `WatchService`, porque `reconfigure()` lo rearma.
     public let scrobbleLog: ScrobbleLog
@@ -61,6 +63,9 @@ public final class Services: ObservableModel {
     /// Quién publica el snapshot del widget (la app: baja y reduce las imágenes, lo escribe en el App Group y recarga el widget).
     /// `HomeModel` lo llama al terminar de actualizar Inicio.
     public var onWidgetSnapshot: (@MainActor (WidgetSnapshot) -> Void)?
+    /// Los títulos que Siri debe reconocer («Oye Siri, pon Los Simpson en Orbital»): cada uno con su nombre original (el que se
+    /// le pide a la consola) y, si es otro, su nombre en español. `HomeModel` los pasa al terminar de actualizar Inicio.
+    public var onSiriTitles: (@MainActor ([[String]]) -> Void)?
     private var widgetContinue: [HomeItem] = []
     private var widgetAirings: [Airing] = []
     /// Arma y publica el snapshot del widget con lo último que se sabe de «Seguir viendo» (Inicio) y de «Próximos estrenos»
@@ -96,6 +101,7 @@ public final class Services: ObservableModel {
         let settings = SettingsStore(kv)
         self.settings = settings
         self.titlePrefs = TitlePreferences(kv)
+        self.traktOutbox = TraktOutbox(kv)
         let stremio = StremioAPI(http: http)
         self.stremio = stremio
         let registry = AddonRegistry(http: http, account: stremio, auth: { secrets.get(SecretKey.stremioAuth) },
@@ -114,8 +120,14 @@ public final class Services: ObservableModel {
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "") }, clock: clock)
         self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
+        // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
+        let origins = OriginBook(tmdb: { Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "") }, cinemeta: cinemeta)
+        let prefs = titlePrefs
+        Task { await finder.configure(origin: { kind, metaID in await origins.origin(kind: kind, metaID: metaID) },
+                                      checked: { key in prefs.checkedAudio(key) }) }
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs, library: oneDriveLibrary),
+                                   otherSource: Services.otherSource(finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    subtitles: Services.subtitleFetcher(http: http, finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    clock: clock, onChange: onDownloadsChange)
         super.init()
@@ -146,6 +158,19 @@ public final class Services: ObservableModel {
                 ?? sources.first { !item.release.isEmpty && $0.release == item.release && (item.expectedBytes == nil || Int64($0.size) == item.expectedBytes) && ($0.addon == item.addon || item.addon.isEmpty) }
                 ?? sources.first { !item.release.isEmpty && $0.release == item.release }
             return (same ?? sources.first)?.playbackURL
+        }
+    }
+
+    /// La siguiente fuente para guardar (en el orden de siempre) que no sea una de las que ya no dieron el video.
+    static func otherSource(finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> DownloadSource? {
+        { item in
+            guard item.addon != OneDriveLibrary.addonName else { return nil }   // tu archivo de OneDrive no tiene otra fuente
+            let prefs = titlePrefs.languages(for: item.metaID, settings: settings.value).prefs
+            guard let sources = try? await finder.find(kind: item.kind, videoID: item.videoID, prefs: prefs, purpose: .download, fresh: true) else { return nil }
+            let skipped = Set(item.skippedReleases)
+            guard let next = sources.first(where: { $0.playbackURL != nil && !skipped.contains($0.release.isEmpty ? "#\($0.index)" : $0.release) }),
+                  let url = next.playbackURL else { return nil }
+            return DownloadSource(url: url, addon: next.addon, release: next.release, sourceIndex: next.index, size: next.size > 0 ? Int64(next.size) : nil)
         }
     }
 
@@ -231,5 +256,27 @@ public final class Services: ObservableModel {
         await forYou.clearCache()
         await forYouRemote.clearCache()
         generation += 1
+    }
+}
+
+/// De dónde es cada título (idioma original y país), una vez por título: el audio de las versiones que no lo dicen.
+actor OriginBook {
+    private let tmdb: @Sendable () -> Tmdb
+    private let cinemeta: Cinemeta
+    private var known: [String: TitleOrigin] = [:]
+    init(tmdb: @escaping @Sendable () -> Tmdb, cinemeta: Cinemeta) { self.tmdb = tmdb; self.cinemeta = cinemeta }
+
+    func origin(kind: String, metaID: String) async -> TitleOrigin? {
+        if let hit = known[metaID] { return hit }
+        guard metaID.hasPrefix("tt") else { return nil }
+        let client = tmdb()
+        async let language = client.configured ? (try? await client.originalLanguage(imdb: metaID, kind: kind)) : nil
+        async let meta = try? await cinemeta.meta(kind: kind, id: metaID)
+        let info = await meta
+        // El año solo en películas (una serie dura años: sus episodios no dicen el del estreno).
+        let year = kind == "movie" ? (info?["year"]?.string ?? info?["releaseInfo"]?.string).flatMap { Int($0.prefix(4)) } : nil
+        let found = TitleOrigin(language: await language ?? nil, country: info?["country"]?.nonEmptyString, year: year)
+        if found.language != nil || found.country != nil { known[metaID] = found }
+        return found
     }
 }

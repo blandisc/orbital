@@ -9,7 +9,7 @@ const seasons = [
 ];
 
 test("película: Ver, o Continuar con lo que queda y Desde el principio", () => {
-  assert.deepEqual(titleActions({ kind: "movie", resume: null }).map((a) => a.label), ["Ver", "Guardar", "Elegir fuente"]);
+  assert.deepEqual(titleActions({ kind: "movie", resume: null }).map((a) => a.label), ["Ver", "Guardar", "Versión"]);
   const half = titleActions({ kind: "movie", resume: { position: 3600, duration: 7200 } });
   assert.deepEqual(half.map((a) => a.id), ["play", "mylist", "sources", "restart"]); // el orden del iPhone
   assert.equal(half[0].label, "Continuar");
@@ -68,7 +68,7 @@ test("qué hay disponible, antes de elegir", async () => {
 test("tráiler y Mi lista en la ficha", async () => {
   const { titleActions } = await import("../../orbital/web/js/core/watch.js");
   const labels = titleActions({ kind: "movie", resume: null, trailer: "abc", in_library: true }).map((a) => a.label);
-  assert.deepEqual(labels, ["Ver", "Guardada", "Tráiler", "Elegir fuente"]);
+  assert.deepEqual(labels, ["Ver", "Guardada", "Tráiler", "Versión"]);
 });
 
 test("serie sin episodios: sin «Elegir fuente» (no había nada que elegir)", () => {
@@ -80,7 +80,7 @@ test("ficha: «Enviar al iPhone» y «Descargar en el iPhone» solo con un iPhon
   const movie = { kind: "movie", resume: null };
   assert.ok(!titleActions(movie).some((a) => a.id.startsWith("phone-")));
   assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.label),
-    ["Ver", "Guardar", "Descargar en el iPhone", "Elegir fuente", "Enviar al iPhone"]);
+    ["Ver", "Guardar", "Descargar en el iPhone", "Versión", "Enviar al iPhone"]);
   assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.id).filter((id) => id.startsWith("phone")), ["phone-download", "phone-open"]);
   // Una serie sin episodios no tiene qué mandar; con error, solo Reintentar.
   assert.ok(!titleActions({ kind: "series", seasons: [], resume: null }, { phone: true }).some((a) => a.id.startsWith("phone-")));
@@ -139,4 +139,22 @@ test("Descargar en la ficha dice cómo va (para ver sin internet), como el iPhon
   const movie = { kind: "movie", in_library: false };
   assert.ok(!titleActions(movie).some((b) => b.id === "download")); // sin descargas (el demo viejo, pruebas): no aparece
   assert.deepEqual(titleActions(movie, { download: null }).map((b) => b.id), ["play", "mylist", "download", "sources"]);
+});
+
+test("«Ver» dice cómo va a sonar, y la lista dice latino o castellano", async () => {
+  const { sourceGroups, sourceLanguages, availability } = await import("../../orbital/web/js/core/watch.js");
+  const plays = { video_id: "tt1", line: "Latino · 1080p · Sin subtítulos" };
+  assert.equal(titleActions({ kind: "movie", resume: null }, { plays })[0].hint, plays.line);
+  const seasons = [{ season: 1, episodes: [{ id: "s:1:1", episode: 1 }, { id: "s:1:2", episode: 2 }] }];
+  const going = { kind: "series", seasons, resume: { video_id: "s:1:2", label: "T1 E2", position: 0 } };
+  assert.equal(titleActions(going, { plays: { video_id: "s:1:2", line: "Latino · 720p · Sin subtítulos" } })[0].hint, "Latino · 720p · Sin subtítulos");
+  assert.equal(titleActions(going, { plays: { video_id: "s:1:1", line: "otro episodio" } })[0].hint, undefined); // otro episodio: no
+  const lat = { id: 7, resolution: "1080p", languages: ["Español", "Inglés"], dub: "latino" };
+  const spa = { id: 8, resolution: "1080p", languages: ["Español"], dub: "" };
+  assert.deepEqual(sourceLanguages(lat), ["Latino", "Inglés"]);
+  assert.deepEqual(sourceLanguages(spa), ["Español"]);
+  assert.deepEqual(availability([lat, spa]).filter((c) => c.includes("Latino")), ["Latino, Inglés, Español"]);
+  // La recomendada es la que pone «Ver» (con «Continuar», la de antes), aunque no sea la primera.
+  assert.equal(sourceGroups([spa, lat], 7).groups[0].items[0], lat);
+  assert.equal(sourceGroups([spa, lat]).groups[0].items[0], spa);
 });

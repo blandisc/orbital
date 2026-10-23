@@ -106,16 +106,19 @@ struct DSOptionMenu<Item: Hashable & Identifiable>: View {
     let items: [Item]
     let label: (Item) -> Text
     @Binding var selection: Item
+    /// Del alto de un control (en una fila con otra cápsula, como en la ficha): sin el mínimo de 44 pt encima del relleno del
+    /// estilo, que la dejaba de ~56 pt con mucho aire arriba y abajo.
+    var compact = false
 
     var body: some View {
         Menu {
             Picker(selection: $selection) { ForEach(items) { label($0).tag($0) } } label: { EmptyView() }
         } label: {
             HStack(spacing: DS.Space.s2) {
-                label(selection).recipe(.cardTitle)
+                if compact { label(selection).recipe(.secondary, color: DS.text).fontWeight(.semibold) } else { label(selection).recipe(.cardTitle) }
                 Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
             }
-            .frame(minHeight: DS.Size.touchTarget)
+            .frame(minHeight: compact ? nil : DS.Size.touchTarget)
         }
         .buttonStyle(.bordered).buttonBorderShape(.capsule).tint(DS.text)
         .sensoryFeedback(.selection, trigger: selection)

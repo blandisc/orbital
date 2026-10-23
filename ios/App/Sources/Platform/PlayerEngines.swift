@@ -11,7 +11,7 @@ protocol VideoPlayerEngine: PlayerEngine {
     var name: String { get }
     /// Lo que se puede llevar a una ventana de PiP ahora (cambia con cada fuente; nil antes de cargar).
     @MainActor var pictureInPicture: PictureInPictureContent? { get }
-    /// El zoom del video (botón y pellizco, como Infuse). «Ajustar al área segura» es ajustar: el recuadro más chico lo pone `PlayerScreen`.
+    /// El zoom del video (botón y pellizco, como Infuse). «Ajuste de aspecto» es ajustar: el recuadro más chico lo pone `PlayerScreen`.
     @MainActor func setZoom(_ zoom: VideoZoom)
     /// La ventana de PiP se abrió o se cerró (el motor sigue decodificando video en segundo plano mientras tanto).
     @MainActor func setPictureInPictureActive(_ active: Bool)
@@ -23,6 +23,16 @@ protocol VideoPlayerEngine: PlayerEngine {
     /// texto, p. ej. un PGS de imagen) y el segundo del cuadro que se ve ahora.
     @MainActor func subtitleLines(from seconds: Double, count: Int) -> [SubtitleLine]
     @MainActor var shownTime: Double { get }
+    /// Volver de segundo plano sin perder el video: el cuadro que está en pantalla (el motor suelta el video en pausa y en
+    /// segundo plano, y rearmarlo tarda). nil si el motor no sabe sacarlo.
+    @MainActor func stillFrame(maxSize: CGSize) async -> UIImage?
+    /// Ya hay video de verdad en la pantalla (nada que rearmar): se puede quitar el cuadro guardado.
+    @MainActor var showsVideo: Bool { get }
+}
+
+extension VideoPlayerEngine {
+    @MainActor func stillFrame(maxSize: CGSize) async -> UIImage? { nil }
+    @MainActor var showsVideo: Bool { true }
 }
 
 /// Una frase del subtítulo puesto, con el segundo en que el archivo la pone.

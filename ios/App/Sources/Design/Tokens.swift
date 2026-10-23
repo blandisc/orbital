@@ -132,7 +132,32 @@ enum DS {
         static let pastOpacity: Double = 0.55
     }
 
+    /// «Elegir versión»: lo más angosto que queda una calidad (dos por renglón en cualquier iPhone: con tres se cortaba el texto), el punto de
+    /// «Al instante» y el borde de la recomendada.
+    enum Version {
+        static let chipMinimum: CGFloat = 136, dot: CGFloat = 8, pickedStroke: CGFloat = 1.5
+        /// Un idioma que se supone (no lo dice el nombre ni se comprobó): borde punteado.
+        static let guessLine: CGFloat = 1, guessDash: CGFloat = 4
+    }
+
+    /// «Todas las fuentes» (`AllSourcesList`): el punto de qué tan rápido arranca (turquesa: ya está en Real-Debrid; ámbar:
+    /// Real-Debrid aún no la tiene), cuántas se ven por calidad antes de «+N más» y lo atenuadas que van las ocultas.
+    enum AllSourcesList {
+        static let dot: CGFloat = 8
+        static let ready = DS.brandMoon, mustDownload = DS.warning
+        static let shownPerGroup = 3
+        static let hiddenOpacity = DesignTokens.Opacity.faint
+    }
+
     enum TitleAction {
+        /// Al deslizar la ficha: el arte va más lento que el contenido (parallax), se encoge, se difumina y se desvanece.
+        static let heroParallax: CGFloat = 0.45, heroShrink: CGFloat = 0.08, heroBlur: CGFloat = 14, heroFadeSpeed: CGFloat = 1.3
+        /// El nombre en la barra no pasa por debajo del ‹ ni de los botones de la derecha.
+        static let barTitleInset: CGFloat = 110
+        /// El desvanecido bajo la barra de arriba (además de la barra) y a qué parte del arte ya está completo.
+        static let topFade: CGFloat = 36, fadeAt: CGFloat = 0.85
+        /// El nombre en la barra: empieza a salir a esta parte del arte y termina de salir en este tramo.
+        static let titleFrom: CGFloat = 0.7, titleSpan: CGFloat = 0.25
         /// Cuánto se oscurece el color del arte en el modo claro (para que se lea sobre el papel).
         static let lightDeepen: Double = 0.45
         static let tile: CGFloat = 64, ring: CGFloat = 3, ringSmall: CGFloat = 26, ringSmallLine: CGFloat = 2.5
@@ -164,7 +189,14 @@ enum DS {
     /// `PlayerGestures`, la aritmética pura) y el tamaño del indicador.
     enum Gesture {
         /// La franja de cada orilla donde el doble toque salta ±10 s (al centro, pausa o sigue).
-        static let edgeShare: CGFloat = 0.28
+        /// Doble toque: tres zonas parejas (izquierda −10 s, centro pausa, derecha +10 s), como YouTube.
+        static let edgeShare: CGFloat = 1.0 / 3.0
+        /// Dobles toques seguidos del mismo lado se suman (+10, +20, +30 s) mientras no pase este rato.
+        static let skipChain: TimeInterval = 0.9
+        /// ×2: cuánto deslizar hacia arriba sin soltar para fijarlo (o quitarlo).
+        static let fastForwardLockDrag: CGFloat = 90
+        /// Lo que llevas saltado tras 1, 2, 3… dobles toques seguidos: cada toque salta más que el anterior.
+        static let skipTotals = [10, 20, 40, 60, 90, 120]
         /// A cuántos segundos del destino ya se da por llegado un salto (el pulgar vuelve a seguir el avance).
         static let seekArrived: Double = 2
         static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)
@@ -232,6 +264,8 @@ enum DS {
         static func enter(_ reduce: Bool) -> Animation? { reduce ? nil : .easeOut(duration: DesignTokens.Motion.enter) }
         static func tint(_ reduce: Bool) -> Animation? { reduce ? nil : .easeInOut(duration: DesignTokens.Motion.tint) }
         static func spring(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.2) }
+        /// Un rebote más marcado y corto: elegir un mosaico («¿Qué vemos?» › Más filtros).
+        static func pop(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.base, bounce: 0.45) }
     }
 
     /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32
@@ -286,25 +320,36 @@ enum DS {
         static let personPhoto: CGFloat = 120, bioLines = 5
     }
 
-    /// El panel «Ajustes del video» del reproductor: a la derecha en horizontal, hoja ajustada en vertical.
+    /// El reproductor: el video en vertical, «Audio y subtítulos» (a la derecha en horizontal, bajo el video en vertical) y los controles.
     enum PlayerPanel {
+        /// El video en vertical, al arrastrarlo: lo más arriba que sube (debajo de la barra de ✕ y el nombre: botón de 44 y
+        /// su aire) y lo que deja libre abajo para los controles (la barra, «Saltar intro», ±10, el botón grande y la pista).
+        static let portraitTopClearance: CGFloat = 60, portraitControlsReserve: CGFloat = 260
+        /// La agarradera del video en vertical: la rayita, la franja de abajo que la toma (y lo que se mete sobre el video).
+        /// «Audio y subtítulos»: cuántos idiomas de otra versión se ofrecen junto a las pistas de este archivo.
+        static let otherVersionsShown = 2
+        /// La agarradera va dentro del borde de abajo del video (sobre un velo): la rayita, a cuánto del borde, el alto del velo, la
+        /// franja que la toma (dentro del video, desde abajo, y un poco por fuera) y el aire hasta la barra de avance.
+        static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap: CGFloat = 20
+        static let handleReach: CGFloat = 12
+        /// Cuántas funciones da el video un brinquito (hacia abajo y de regreso) para enseñar que se mueve, y de qué tamaño (parte del alto).
+        static let moveHintTimes = 3
+        static let moveNudge: Double = 0.025
+        /// Al arrastrarlo: se levanta (un poco más chico, con esquinas y sombra).
+        static let liftScale: CGFloat = 0.97, liftRadius: CGFloat = 14, liftShadow: CGFloat = 24
+        /// VoiceOver: cuánto sube o baja el video cada vez (parte del alto).
+        static let voiceOverStep: Double = 0.1
         /// Subtítulos rápidos: ancho máximo del panel (horizontal) y hasta dónde puede bajar su borde de arriba (vertical).
         static let dockWidth: CGFloat = 560, dockPortraitMaxTop: CGFloat = 0.55
         /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).
         static let portraitFillControlsShare: CGFloat = 0.3
         /// El candado de «Pantalla bloqueada» entra creciendo desde este tamaño.
         static let lockScale: CGFloat = 0.9
-        /// El ícono de una app (Infuse) junto a su botón: tamaño y redondeo como los íconos de iOS.
-        static let appIcon: CGFloat = 20, appIconCorner: CGFloat = 0.225
         static let width: CGFloat = 420, radius: CGFloat = 30, rowRadius: CGFloat = 16, icon: CGFloat = 32
-        /// El ancho del valor de la velocidad («1.25×») entre − y +.
-        static let speedValue: CGFloat = 52
         /// El ancho del nombre del tamaño de subtítulos («Mediano») entre − y +: no brinca al cambiar.
         static let sizeValue: CGFloat = 72
         /// Tamaños de letra de muestra («Aa») para chico, mediano y grande.
         static let sampleSizes: [String: CGFloat] = ["small": 12, "medium": 15, "large": 19]
-        /// En vertical con el panel abierto, la parte de arriba de la pantalla que queda para el video.
-        static let videoShare: CGFloat = 0.5
         /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando) y entre qué límites.
         static let portraitCenter: CGFloat = 0.32, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
         /// En vertical sin controles a la vista, el video se centra.
@@ -316,12 +361,47 @@ enum DS {
         static let scrubTrack: CGFloat = 4, scrubKnob: CGFloat = 14, scrubKnobActive: CGFloat = 26, scrubHit: CGFloat = 32
         /// El menú del «⋯»: su ancho.
         static let menuWidth: CGFloat = 272
-        /// La tira para probar subtítulos sobre el video: lo más ancha que se pone.
-        static let tryStripMaxWidth: CGFloat = 480
         /// «Siguiente episodio»: el ancho de la imagen del episodio y el anillo de la cuenta atrás en «Ver ahora».
         static let upNextThumb: CGFloat = 96, ring: CGFloat = 22, ringWidth: CGFloat = 2.5
         /// El degradado oscuro de arriba (detrás del nombre y el episodio), para leerlos sobre un video claro.
         static let topScrimHeight: CGFloat = 170
+        /// El cuadro que se guarda al irse a segundo plano (para tenerlo a la vista al volver): lo más grande que se guarda.
+        static let frozenFrameMax = CGSize(width: 1920, height: 1080)
+    }
+
+    /// «Modo iPod» del reproductor vertical: un iPod Classic blanco o negro (la caja, la pantalla con su marco y la rueda).
+    /// Colores fijos a propósito: son los del aparato, no cambian con el modo claro u oscuro (se elige la cara).
+    enum IPod {
+        // La caja.
+        static let whiteTop = Color(red: 0.96, green: 0.96, blue: 0.95), whiteBottom = Color(red: 0.88, green: 0.88, blue: 0.87)
+        static let blackTop = Color(red: 0.17, green: 0.17, blue: 0.18), blackBottom = Color(red: 0.05, green: 0.05, blue: 0.06)
+        // La pantalla: el marco negro, el fondo claro, la barra «Reproduciendo» y el avance azul.
+        static let bezelColor = Color(red: 0.06, green: 0.06, blue: 0.06)
+        static let lcd = Color(red: 0.97, green: 0.97, blue: 0.97)
+        static let lcdText = Color(red: 0.07, green: 0.07, blue: 0.07), lcdMuted = Color(red: 0.28, green: 0.28, blue: 0.28)
+        static let barTop = Color(red: 0.99, green: 0.99, blue: 0.99), barBottom = Color(red: 0.79, green: 0.81, blue: 0.84)
+        static let barLine = Color(red: 0.55, green: 0.59, blue: 0.63)
+        static let fillTop = Color(red: 0.56, green: 0.76, blue: 0.96), fillBottom = Color(red: 0.18, green: 0.5, blue: 0.82)
+        /// La pantalla del iPod negro: todo oscuro (para ver de noche), con las letras claras.
+        static let lcdDark = Color(red: 0.09, green: 0.09, blue: 0.1)
+        static let lcdDarkText = Color(red: 0.93, green: 0.93, blue: 0.93), lcdDarkMuted = Color(red: 0.66, green: 0.66, blue: 0.68)
+        static let barDarkTop = Color(red: 0.24, green: 0.24, blue: 0.26), barDarkBottom = Color(red: 0.12, green: 0.12, blue: 0.13)
+        static let barDarkLine = Color(red: 0.3, green: 0.3, blue: 0.32)
+        // La rueda: la cara, su orilla, el botón del centro y las letras (MENU, ⏮ ⏭ ▶❚❚), en blanco y en negro.
+        static let wheelWhiteTop = Color(red: 1, green: 1, blue: 1), wheelWhiteBottom = Color(red: 0.91, green: 0.91, blue: 0.9)
+        static let wheelWhiteEdge = Color(red: 0.8, green: 0.8, blue: 0.79), labelWhite = Color(red: 0.45, green: 0.45, blue: 0.45)
+        static let centerWhiteTop = Color(red: 0.92, green: 0.92, blue: 0.91), centerWhiteBottom = Color(red: 0.98, green: 0.98, blue: 0.97)
+        static let wheelBlackTop = Color(red: 0.23, green: 0.23, blue: 0.24), wheelBlackBottom = Color(red: 0.13, green: 0.13, blue: 0.14)
+        static let wheelBlackEdge = Color(red: 0.03, green: 0.03, blue: 0.03), labelBlack = Color(red: 0.8, green: 0.8, blue: 0.8)
+        static let centerBlackTop = Color(red: 0.08, green: 0.08, blue: 0.09), centerBlackBottom = Color(red: 0.18, green: 0.18, blue: 0.19)
+        // Medidas: margen a los lados, marco, esquinas, la barra de arriba, lo de abajo del video y la rueda.
+        static let inset: CGFloat = 22, bezel: CGFloat = 10, bezelRadius: CGFloat = 18, lcdRadius: CGFloat = 8
+        static let statusHeight: CGFloat = 26, infoHeight: CGFloat = 92, progressHeight: CGFloat = 10, line: CGFloat = 1
+        /// La rueda: qué parte del ancho ocupa, el botón del centro (parte del diámetro) y dónde van las letras (desde la orilla).
+        static let wheelShare: CGFloat = 0.74, centerShare: CGFloat = 0.38, labelReach: CGFloat = 0.11
+        /// Cada muesca de la rueda (en grados) busca 10 s; girando rápido (muescas a menos de `fastNotch` s), un minuto.
+        static let notchDegrees: Double = 30, fastNotch: Double = 0.06, fastStep: Double = 60
+        static let menuTracking: CGFloat = 1.5
     }
 
     /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.
@@ -383,12 +463,19 @@ enum DS {
     /// «¿Qué vemos?»: el alto de la hoja corta (la propuesta rápida), la parte de la pantalla de la estirada, el alto de la
     /// propuesta y los mínimos de calificación que se ofrecen.
     enum Decide {
-        static let quickHeight: CGFloat = 470, moreShare: CGFloat = 0.72, cardHeight: CGFloat = 230, compactCardHeight: CGFloat = 130
-        /// Los tres carteles: el elegido con su borde; los otros, un poco más chicos y tenues; al elegir filtros, más bajos.
-        static let chosenStroke: CGFloat = 3, otherScale: CGFloat = 0.92, otherOpacity: Double = 0.7, trioCompactHeight: CGFloat = 150
+        /// El alto de la hoja corta antes de medirse.
+        static let quickHeight: CGFloat = 470
+        /// Los tres carteles: el elegido con su borde; los otros, un poco más chicos y tenues.
+        static let chosenStroke: CGFloat = 3, otherScale: CGFloat = 0.92, otherOpacity: Double = 0.7
         /// La frase de por qué verla: al menos estos caracteres antes de cortar en el primer punto.
         static let pitchMin = 40
-        static let ratingSteps: [Double] = [0, 6, 7, 8]
+        /// Los carteles apilados de una lista en «De qué listas».
+        static let listPoster: CGFloat = 44
+        /// Los mosaicos de «Más filtros»: alto de un género y de una época, y a qué tamaño se baja su arte.
+        static let genreTile: CGFloat = 60, eraTile: CGFloat = 80
+        /// Elegir un mosaico: crece un poco (y su imagen se acerca), anillo con brillo; los demás pierden color.
+        static let chosenScale: CGFloat = 1.04, artZoom: CGFloat = 1.08, glowRadius: CGFloat = 10, glowOpacity: Double = 0.55
+        static let dimSaturation: Double = 0.4, labelShadow: CGFloat = 4, eraTracking: CGFloat = -0.5
     }
 
     /// Modo acompañante: la tarjeta del juego, las del carrusel, la batería baja (%), las líneas de la nota y los tiempos
@@ -414,6 +501,8 @@ enum DS {
         static let stackPoster: CGFloat = 40, stackWidth: CGFloat = 54, stackAngle: Double = 8
         /// «Porque viste»: el póster de lo que viste y los relacionados.
         static let seedPoster: CGFloat = 104, relatedPoster: CGFloat = 92
+        /// «Porque viste»: cuántos pósters vacíos ocupan el lugar de las relacionadas mientras llegan.
+        static let relatedPlaceholders = 4
         /// «Porque viste» en mini pósters: el tamaño de cada uno, el elegido (crece) y qué tan apagados los demás.
         /// «Porque viste» en mazo: la carta de arriba, cuánto se corre y gira cada una de abajo, y cuánto hay que arrastrar.
         static let deckPoster: CGFloat = 112, deckShift: CGFloat = 7, deckTurn: Double = 3, deckShrink: CGFloat = 0.05, deckThrow: CGFloat = 40, deckDepth = 3
@@ -421,6 +510,10 @@ enum DS {
         static let deckFly: Double = 0.22, deckFlyDistance: CGFloat = 340, deckSettle: Double = 0.28
         /// Los botones de anterior y siguiente del mazo: el glifo y el círculo (≥ 44 pt para tocar).
         static let deckNavGlyph: CGFloat = 22, deckNav: CGFloat = 48
+        /// El alto del mazo (la carta y lo que se asoman las de abajo): la columna del nombre mide eso, sea corto o largo.
+        static let deckHeight: CGFloat = deckPoster / DesignTokens.Aspect.poster + deckShift * CGFloat(deckDepth - 1)
+        /// Lo más que se achica un nombre largo para caber en sus dos renglones.
+        static let becauseTitleScale: CGFloat = 0.6
         /// «Por año»: la tarjeta (cuatro pósters) y su número.
         static let yearWidth: CGFloat = 150, yearHeight: CGFloat = 150
         /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.
@@ -611,8 +704,24 @@ enum DS {
         static let immersiveGlowRadius: CGFloat = 520
     }
 
+    /// Los avisos (`Toast`).
+    enum Toast {
+        /// El alto de la cápsula de la salida («Deshacer», «Reintentar»).
+        static let actionHeight: CGFloat = 32
+        /// El borde del que te necesita (ámbar) o del que avisa que algo se perdió (rojo): su color, tenue.
+        static let toneStroke = 0.4, strokeWidth: CGFloat = 1
+        /// Lo que hay que deslizar hacia abajo para quitarlo, y lo más ancho que se pone (en iPad u horizontal no cruza la pantalla).
+        static let swipe: CGFloat = 12, maxWidth: CGFloat = 520
+        /// Cuántos avisos esperan detrás del que tiene salida (los de más se descartan: ya no vienen al caso).
+        static let queueLimit = 3
+        /// Antes de esto (segundos), el aviso de pasar a la TV dice «desde el principio» y no «desde 0:12».
+        static let fromStartUnder: Double = 30
+    }
+
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
     enum Timing {
+        /// De vuelta de segundo plano: cada cuánto se mira si el video ya está para quitar el cuadro guardado.
+        static let frozenFramePoll: UInt64 = 100_000_000
         /// Cuánto espera una lista abierta (un premio) antes de dar por hecho que no llegará y mostrar el vacío.
         static let listGiveUp: UInt64 = 15_000_000_000
         /// Lo más que el pulgar espera en el destino de un salto antes de volver al avance real.
@@ -620,14 +729,23 @@ enum DS {
         /// Cuánto espera una confirmación («¿Ver en la TV?») antes de cerrarse sola.
         static let confirm: UInt64 = 3_500_000_000
         static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)
-        /// Cuánto se queda el aviso «Pasó a tu Orbital» (con «Deshacer»).
-        static let handoff = UInt64(8 * 1e9)
+        /// Lo que se espera antes de enseñar la ruedita al volver a la app (casi siempre el video vuelve antes).
+        static let quietSpinnerDelay = UInt64(1 * 1e9)
+        /// Cuánto se queda un aviso con salida («Sigue en tu Orbital · Deshacer», «Bajando · Otra»).
+        static let toastAction = UInt64(8 * 1e9)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
         static let longPressDelay = DesignTokens.Timing.longPressDelay
+        /// ×2: cuánto mantener el dedo para que arranque (casi al instante, como YouTube) y cuánto más para que se quede fijo
+        /// (vibra; ya puedes soltar).
+        static let fastForwardStart = 0.3
         /// Cada cuánto, como pronto, le pide iOS a la app mirar en segundo plano lo que dejó la TV (iOS decide si y cuándo corre).
         static let inboxRefresh: TimeInterval = 15 * 60
         /// Cada cuánto (como mínimo) iOS despierta la app para ver si un estreno ya se puede ver.
         static let releaseRefresh: TimeInterval = 30 * 60
+        /// Revisar estrenos: lo más pronto que se pide la siguiente y cuánto después de que sale un episodio (para que ya tenga fuente).
+        static let releaseSoonest: TimeInterval = 15 * 60, releaseAfterAiring: TimeInterval = 15 * 60
+        /// La imagen del aviso de estreno: lo más que se espera por ella (en segundo plano el tiempo es poco; sin ella igual se avisa).
+        static let releaseImageTimeout: TimeInterval = 5
         /// Cuánto se queda a la vista el candado de «Pantalla bloqueada» tras un toque.
         static let unlockPrompt: UInt64 = 3_000_000_000
         /// Cuánto se queda a la vista el indicador de brillo o volumen tras soltar, antes de desvanecerse.

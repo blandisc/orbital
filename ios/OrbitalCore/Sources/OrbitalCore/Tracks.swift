@@ -43,12 +43,26 @@ public enum TrackChooser {
     }
 
     /// El audio en tu idioma; si no hay, el que viene marcado por defecto; si no, el primero.
-    public static func audio(_ tracks: [MediaTrack], language: String, latin: Bool = false) -> MediaTrack? {
+    public static func audio(_ tracks: [MediaTrack], language: String, latin: Bool = false, castilian: Bool = false) -> MediaTrack? {
         let audios = tracks.filter { $0.kind == .audio }
         let mine = audios.filter { matches($0, language) }
+        if castilian, language == "es", let spain = mine.first(where: isCastilian) ?? mine.first(where: { !isLatinSpanish($0) }) { return spain }
         // Español latino: de las de español, la latina (etiqueta es-419/es-MX o «Latino» en su nombre) antes que la de España.
         if latin, language == "es", let latino = mine.first(where: isLatinSpanish) ?? mine.first(where: { !isCastilian($0) }) { return latino }
         return mine.first ?? audios.first(where: \.isDefault) ?? audios.first
+    }
+
+    /// El idioma de una pista como lo usan las versiones: «es-419», «es-ES», «es» (no dice cuál), «en», «ja»…; nil si no dice.
+    public static func audioCode(_ t: MediaTrack) -> String? {
+        if isLatinSpanish(t) { return "es-419" }
+        if isCastilian(t) { return "es-ES" }
+        let lang = (t.language ?? "").lowercased().replacingOccurrences(of: "_", with: "-")
+        guard !lang.isEmpty, !["und", "mul", "zxx", "mis"].contains(lang) else { return nil }
+        let base = String(lang.split(separator: "-").first ?? "")
+        let three: [String: String] = ["eng": "en", "spa": "es", "jpn": "ja", "fre": "fr", "fra": "fr", "ger": "de", "deu": "de", "ita": "it",
+                                       "por": "pt", "rus": "ru", "kor": "ko", "chi": "zh", "zho": "zh", "hin": "hi", "pol": "pl", "tur": "tr",
+                                       "ukr": "uk", "dut": "nl", "nld": "nl", "cze": "cs", "ces": "cs", "hun": "hu", "gre": "el", "ell": "el"]
+        return three[base] ?? (base.count == 2 ? base : nil)
     }
 
     static func isLatinSpanish(_ t: MediaTrack) -> Bool {

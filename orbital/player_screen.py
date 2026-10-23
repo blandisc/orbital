@@ -9,6 +9,9 @@ El mando, viendo algo:
   LT/RT episodio · ▲ ▼ volumen · X Audio y subtítulos · Y Más (episodios, fuente, desde el principio) ·
   B pregunta «¿Salir de …?» (A sigue viendo, B sale).
 
+En X, elegir audio o subtítulos no cierra el panel (B lo cierra) y, mientras está abierto, los subtítulos suben para
+verse encima de él. X › Subtítulos › «Probar otros»: una franja arriba para pasar de un subtítulo a otro (player_subs.py).
+
 La TV en vivo usa los mismos botones con otro sentido (no hay a dónde adelantar ni una película que pausar):
   ▲ ▼ o LT/RT cambian de canal · ◀ ▶ volumen · A sin sonido · Y guía de canales · X audio · B (mantener) salir.
 """
@@ -20,7 +23,8 @@ import threading
 import time
 
 from . import player_ui
-from .playback import CHAPTER_SEEK, UPNEXT_COUNTDOWN, seek_step
+from .playback import CHAPTER_SEEK, UPNEXT_COUNTDOWN, seek_step, track_variant
+from .player_subs import SubtitleTrial
 from .text import clock
 
 log = logging.getLogger(__name__)
@@ -28,7 +32,7 @@ log = logging.getLogger(__name__)
 SEEK_LINGER = 2.0  # s que se queda la vista de «adelantar» (en pausa vuelve a la de pausa)
 
 
-class PlayerScreen:
+class PlayerScreen(SubtitleTrial):
     """Lo que se ve encima del video (barra, pausa, adelantar, paneles, tarjetas, avisos) y qué
     hace cada botón del mando. Se mezcla en OrbitalPlayer: usa su estado (mpv, segment…)."""
 
@@ -97,6 +101,7 @@ class PlayerScreen:
             return
         if not player_ui.set_canvas(w, h):
             return
+        self._try_draw()
         if self.menu is not None:  # lo que se ve, otra vez con el ancho nuevo
             self._draw_panel()
         elif self._hud_visible:
@@ -146,7 +151,7 @@ class PlayerScreen:
         `seeking` («+30 s»): mientras adelantas, solo la barra y a dónde vas. `position`/`paused`: lo que
         el botón acaba de pedir (mpv tarda un instante en confirmarlo y la barra saldría atrasada)."""
         current = self.current
-        if current is None or self.menu is not None:
+        if current is None or self.menu is not None or self._try is not None:
             return
         if getattr(self, "pip", False):  # en pequeño: solo los tres botones, nunca la barra completa
             return self._show_pip_controls()
@@ -204,6 +209,8 @@ class PlayerScreen:
     def open_tracks(self, focus: str = "audio") -> None:
         tracks = self.mpv.get("track-list") or []
         extra = []
+        if not self._is_live() and (self._fallback_subs or any(t.get("type") == "sub" for t in tracks)):
+            extra.append({"label": "Probar otros", "hint": "Uno por uno", "action": ("try", None), "current": False})
         if self._fallback_subs and self._subs_lang:
             extra.append({"label": f"Buscar en {player_ui.language(self._subs_lang).lower()}…",
                           "action": ("fetch", self._subs_lang), "current": False})
@@ -236,7 +243,7 @@ class PlayerScreen:
 
         threading.Thread(target=run, daemon=True, name="player-more").start()
         if not done.wait(.35):
-            self.toast("Buscando fuentes…", 3)
+            self.toast("Buscando versiones…", 3)
 
     def _open_panel(self, panel: player_ui.Panel) -> None:
         self.menu = panel
@@ -246,6 +253,7 @@ class PlayerScreen:
         self._overlay(1, None)
         self._overlay(4, None)  # la tarjeta vuelve al cerrar el panel
         self._overlay(self.MUTE, None)  # el panel dice «sin sonido» (la píldora se encimaba sobre su etiqueta)
+        self._lift_subs(panel.kind == "tracks")  # X: los subtítulos suben, para ver cómo quedan los que eliges
         self._draw_panel()
 
     def _draw_panel(self) -> None:
@@ -258,6 +266,7 @@ class PlayerScreen:
     def close_menu(self) -> None:
         self.menu = None
         self._overlay(2, None)
+        self._lift_subs(False)
         if self._live_muted():
             self._overlay(self.MUTE, player_ui.muted_ass())  # vuelve la píldora «Sin sonido»
         card = self._card
@@ -273,8 +282,7 @@ class PlayerScreen:
             self._show_category(value)
             return
         if prop == "subdelay":  # Sincronía: se queda en el panel (se ajusta paso a paso); vuelve a cero con cada video
-            self.sub_delay = 0.0 if not value else round(self.sub_delay + value, 1)
-            self.mpv.command("set_property", "sub-delay", self.sub_delay)
+            self._set_sub_delay(0.0 if not value else self.sub_delay + value)
             column = self.menu.find("sync") if self.menu else None
             if column:
                 column.options = player_ui.sync_options(self.sub_delay)
@@ -292,9 +300,19 @@ class PlayerScreen:
                 o["current"] = o is option
             self._draw_panel()
             return
+        if prop in ("aid", "sid") and self.menu is not None and self.menu.kind == "tracks":
+            # Audio o subtítulos: el panel se queda (B lo cierra) para probar otro sin volver a abrirlo.
+            column = self.menu.find("audio" if prop == "aid" else "sub")
+            for o in column.options if column else []:
+                o["current"] = o.get("action") == option["action"]
+            self._pick_track(option)
+            self._draw_panel()
+            return
         self.close_menu()
         meta = getattr(self.current, "meta", None) or {}
-        if prop == "fetch":
+        if prop == "try":
+            self.try_subtitles()
+        elif prop == "fetch":
             self.toast("Buscando subtítulos…", 3)
             threading.Thread(target=self._fetch_subs, args=(value,), daemon=True).start()
         elif prop == "channel":
@@ -327,17 +345,25 @@ class PlayerScreen:
             if option.get("current") or self.current is None:
                 return
             position = self.mpv.get("time-pos")
-            self.toast("Cambiando de fuente…", 4)
+            self.toast("Cambiando de versión…", 4)
             if self.on_switch_source:
-                self._in_background(self.on_switch_source, meta, value, float(position or 0), failed="No pude cambiar de fuente")
+                self._in_background(self.on_switch_source, meta, value, float(position or 0), failed="No pude cambiar de versión")
         else:  # aid / sid
-            self.mpv.command("set_property", prop, value)
-            kind = "Audio" if prop == "aid" else "Subtítulos"
-            self.toast(f"{kind}: {option['label'].split(' · ')[0]}")
-            if self.on_language and self.current is not None:  # que la serie lo recuerde
-                lang = "" if value == "no" else option.get("lang")
-                if lang is not None:
-                    self._safe(self.on_language, meta, "audio" if prop == "aid" else "subtitles", lang)
+            self._pick_track(option)
+
+    def _pick_track(self, option: dict) -> None:
+        """Una pista de audio o de subtítulos (del panel X o del iPhone): se pone, se dice y la serie la recuerda."""
+        prop, value = option["action"]
+        meta = getattr(self.current, "meta", None) or {}
+        self.mpv.command("set_property", prop, value)
+        kind = "Audio" if prop == "aid" else "Subtítulos"
+        self.toast(f"{kind}: {option['label'].split(' · ')[0]}")
+        if self.on_language and self.current is not None:  # que la serie lo recuerde
+            lang = "" if value == "no" else option.get("lang")
+            if prop == "aid" and lang is not None:  # «spa · Latino»: que la serie recuerde el doblaje, no solo «español»
+                lang = track_variant(lang, option.get("label") or "") or lang
+            if lang is not None:
+                self._safe(self.on_language, meta, "audio" if prop == "aid" else "subtitles", lang)
 
     def _send_iphone(self, meta: dict, action: str) -> None:
         position = self.mpv.get("time-pos")
@@ -371,6 +397,7 @@ class PlayerScreen:
             self._safe(running, meta)
         self.menu = None
         self._overlay(2, None)
+        self._lift_subs(False)
         self.toast(f"Sigues en {meta.get('detail') or title} · fuera del canal", 4)
         self.show_hud()
 
@@ -461,6 +488,11 @@ class PlayerScreen:
         self._quiet_episodes = 0
         if player_ui.set_touch(True):
             self._redraw_for_input()
+        if self._try is not None:  # probando subtítulos: solo sus botones (tocar el video no hace nada)
+            action = player_ui.hit("try", x, y)
+            if isinstance(action, str):
+                self._try_press(action)
+            return
         if self._card is not None:
             action = player_ui.hit("card", x, y)
             if action == "a":
@@ -519,7 +551,7 @@ class PlayerScreen:
         if player_ui.set_input("keyboard"):
             self._redraw_for_input()
         if button == "esc":
-            if self.menu is None and self._card is None:
+            if self.menu is None and self._card is None and self._try is None:
                 self._quiet_episodes = 0
                 self._show_card({"kind": "quit", "title": self.current.title})
                 return
@@ -538,6 +570,7 @@ class PlayerScreen:
             self.show_hud()
         if self._card is not None:
             self._draw_card()
+        self._try_draw()
 
     # --- el mando ---------------------------------------------------------------------------------
     def press(self, button: str) -> None:
@@ -549,6 +582,8 @@ class PlayerScreen:
         if current is None:
             return
         self._fit_canvas()  # por si la pantalla cambió en este segundo (TV ↔ Legion Go)
+        if self._try is not None and self._try_press(button):
+            return  # probando subtítulos: ◀▶ otro, ↑↓ sincronía, A este va bien, B el de antes
         if button == "b-up":
             if getattr(self, "_quit_hold", None) is not None:
                 self._quit_hold = None
@@ -777,11 +812,14 @@ class PlayerScreen:
         if self._is_live():
             return {"up": "Canal siguiente", "down": "Canal anterior", "options": "Canales", "alt": "Audio",
                     "left": "Bajar volumen", "right": "Subir volumen", "select": "Silencio", "back": "Salir"}
+        if self._try is not None:  # «Probar otros» subtítulos (la franja de arriba)
+            return {"left": "Subtítulo anterior", "right": "Subtítulo siguiente", "up": "Adelantar subtítulos",
+                    "down": "Atrasar subtítulos", "select": "Este va bien", "back": "Dejar el de antes"}
         segment = self.segment
         meta = (segment.meta if segment is not None else None) or getattr(self.current, "meta", None) or {}
         series = meta.get("kind") == "series" and self.on_episode is not None
         legend = {"select": "Continuar" if self._value("pause") else "Pausa", "alt": "Audio y subtítulos",
-                  "options": "Episodios" if series else "Fuentes", "left": "Atrasar", "right": "Adelantar",
+                  "options": "Episodios" if series else "Versión", "left": "Atrasar", "right": "Adelantar",
                   "up": "Subir volumen", "down": "Bajar volumen", "back": "Salir"}
         if series:
             legend |= {"pageleft": "Episodio anterior", "pageright": "Episodio siguiente"}
@@ -817,7 +855,9 @@ class PlayerScreen:
         """Un botón del control del iPhone con el reproductor al frente: como el mando, salvo B, que sale sin mantener
         (en el teléfono no hay «mantener B»): con un panel o los controles a la vista, primero los quita."""
         if action == "back":
-            if self.menu is not None:
+            if self._try is not None:
+                self.press("b")  # «Dejar el de antes»
+            elif self.menu is not None:
                 self.press("b")
                 self.press("b-up")
             elif self._hud_visible and not self._value("pause"):

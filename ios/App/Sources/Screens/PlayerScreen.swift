@@ -26,6 +26,7 @@ final class PlayerHolder: ObservableObject {
                             skipSegments: { videoID in await services.introDB.segments(videoID: videoID) },   // saltar intro y resumen (IntroDB, como Infuse)
                             scareMap: { imdb, title in await services.scares(imdb: imdb, fallbackTitle: title) })   // el mapa de sustos
         model.subtitlePicks = SubtitlePicks(services.kv)   // «Este va bien»: el subtítulo que elegiste para la serie
+        model.subtitleOffsets = SubtitleOffsets(services.kv)   // la sincronía de cada versión (antes no se conectaba y se perdía)
         model.ownSource = { videoID, preferred in await library.source(videoID, purpose: .watch, preferring: preferred) }   // Mi media: tu copia primero
         subscription = model.onChange { [weak self] in self?.objectWillChange.send() }
         // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
@@ -59,7 +60,6 @@ struct PlayerScreen: View {
     @State private var moreOpen = false
     /// «Descargar» desde el reproductor: si este video (película o episodio) ya está en Descargas (o se está bajando).
     @State private var inDownloads = false
-    @State private var panel = false
     @Environment(\.verticalSizeClass) private var verticalSize
     @State private var scrubbing: Double?
     /// A dónde se pidió ir y el video todavía no llega.
@@ -72,15 +72,42 @@ struct PlayerScreen: View {
     @AppStorage(PlayerScreen.portraitCenterKey) private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
     @State private var portraitDrag: Double?
     @State private var portraitAtDragStart: Double = 0
+    /// «Modo iPod» (vertical): "" apagado, "white" o "black". Se queda para la próxima.
+    @AppStorage("player-ipod") private var ipodFace = ""
+    /// Girando la rueda del iPod: a dónde vas (se va al soltar) y cuándo fue la última muesca (rápido = de a minuto).
+    @State private var wheelTarget: Double?
+    /// De vuelta de segundo plano: el cuadro donde ibas, a la vista mientras el motor rearma el video (antes, negro y a esperar).
+    @State private var frozenFrame: UIImage?
+    @State private var frozenTask: Task<Void, Never>?
+    /// Si la app está al frente. Un `@State` y no `scenePhase`: dentro de una tarea, `scenePhase` es una copia del momento
+    /// en que empezó (se quedaba en «segundo plano» para siempre y el cuadro guardado no se quitaba).
+    @State private var appActive = true
+    @State private var lastNotch: Date?
     /// El zoom del video (botón de arriba y pellizco, como Infuse); se recuerda en ajustes. `zoomToast`: el aviso con su nombre.
     @State private var zoom: VideoZoom = .fit
-    /// Cada toque en la tira de probar subtítulos reinicia su tiempo para irse.
-    @State private var tryStripTouches = 0
     @State private var zoomToast: VideoZoom?
     /// «Subtítulos desactivados» o «Español · 1 de 4», un momento, al apagar o prender con el botón.
     @State private var subtitleToast: String?
+    /// Lo que pasó al pedir «Descargar» (el mismo aviso que en el resto de la app, arriba: abajo están los controles).
+    @State private var notice: PlayerNotice?
+    struct PlayerNotice: Equatable {
+        var title: String, detail: String?, tone: DSNotice.Tone
+        var showsDownloads = false
+        /// «Cambiar a latino»: otra versión que sí trae tu idioma (su índice), en el mismo segundo.
+        var switchTo: Int? = nil
+        var switchTitle: String? = nil
+        let id = UUID()
+    }
     /// Subtítulos rápidos (el panel chico sobre el video) y su lista de idiomas.
     @State private var subtitleDock = false
+    /// La hoja «Audio y subtítulos» tiene dos páginas: lo de siempre y «Versión» (por idioma o todas las fuentes).
+    enum DockPage { case media, version }
+    @State private var dockPage: DockPage = .media
+    @State private var dockOpens: SubtitleDock.Section? = .subtitles
+    @State private var versionShowsAll = false
+    /// Una versión que Real-Debrid aún no tiene: se pregunta antes de abrirla (puede tardar o no abrir).
+    @State private var slowPick: Int?
+    /// Lo que mide la hoja (para que en vertical ocupe lo suyo y, si no cabe, se recorra).
     @State private var dockLanguages = false
     /// «Todas las versiones» desde el panel chico: media hoja (el video sigue a la vista arriba).
     @State private var dockVersions = false
@@ -88,13 +115,16 @@ struct PlayerScreen: View {
     @State private var syncLines: [SubtitleLine]?
     @State private var syncPicked: Double?
     @State private var syncResult: Double?
-    /// La página con que abre el panel (mantener el botón de subtítulos lo abre en Subtítulos).
-    @State private var panelPage: VideoSettingsPanel.Page = .hub
     @State private var zoomToastTask: Task<Void, Never>?
-    /// Cuántas veces se ha visto «Arrastra el video…» (se deja de decir después de unas pocas).
+    /// Cuántas veces se ha visto «Arrastra para mover» junto a la agarradera (se deja de decir después de unas pocas).
+    @AppStorage("player-move-hint-seen") private var moveHintSeen = 0
+    /// En esta función se dice (se decide al abrir, para que no aparezca y desaparezca a media película).
+    /// En vertical, este arrastre mueve el video (empezó en la agarradera o fuera del video); si no, es brillo o volumen.
+    @State private var movingVideo = false
 
     // MARK: gestos como Infuse (brillo, volumen, buscar arrastrando, 2×)
     @State private var dragAxis: GestureAxis = .undecided
+    @GestureState private var dragging = false
     @State private var verticalKind: VerticalGesture?
     @State private var brightnessAtDragStart: Double = 1
     @State private var volumeAtDragStart: Double = 0
@@ -108,8 +138,22 @@ struct PlayerScreen: View {
     @State private var seekPositionAtDragStart: Double?
     @State private var seekPreview: Double?
     @State private var isFastForwarding = false
+    /// ×2 fijo: mantuviste el dedo hasta que vibró; sigue al soltar y un toque lo quita.
+    @State private var fastForwardLocked = false
+    /// El dedo sigue puesto después de la pulsación larga (el ×2 dura lo que dure el dedo, como TikTok).
+    @State private var fastForwardHolding = false
+    /// Cómo estaba al empezar a mantener: deslizar hacia arriba lo cambia (fijo ↔ no fijo) una vez por pulsación.
+    @State private var fastForwardLockedAtStart = false
+    @State private var fastForwardToggledThisHold = false
+    /// Dónde empezó el toque (el ×2 es del lado derecho, como YouTube).
+    @State private var touchStartX: CGFloat?
     /// El ícono que aparece un momento al centro tras un doble toque (pausa, ±10 s).
     @State private var flashSymbol: String?
+    /// Dobles toques en una orilla: cuántos segundos llevan sumados y de qué lado (la burbuja va de ese lado).
+    @State private var skipChain: (forward: Bool, seconds: Int, at: Date)?
+    @State private var skipChainTask: Task<Void, Never>?
+    /// ×2: lo que lleva el anillo antes de quedarse fijo.
+    @State private var fastForwardProgress: Double = 0
     @State private var flashTask: Task<Void, Never>?
     @State private var rateBeforeFastForward: Float = 1
 
@@ -119,12 +163,13 @@ struct PlayerScreen: View {
     var body: some View {
         let model = holder.model
         ZStack {
-            DS.video.ignoresSafeArea()
-            // En vertical con el panel abierto, el video sube a la parte de arriba (la hoja ocupa la de abajo).
+            if let face = ipod { Rectangle().fill(face.body).ignoresSafeArea() } else { DS.video.ignoresSafeArea() }
             GeometryReader { geo in
                 let rect = videoRect(in: geo.size)
                 ZStack {
+                    if ipod != nil { DS.video }   // la pantalla del iPod: negro detrás del video
                     holder.engine.surface
+                    if let frozenFrame { frozenCover(frozenFrame).transition(.opacity) }
                     if dragAxis != .horizontal && !fillsPortrait {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
@@ -134,6 +179,10 @@ struct PlayerScreen: View {
                     }
                 }
                 .frame(width: rect.width, height: rect.height)
+                // Al arrastrarlo se levanta: un poco más chico, con esquinas y sombra (como al mover algo en iOS).
+                .clipShape(RoundedRectangle(cornerRadius: movingVideo ? DS.PlayerPanel.liftRadius : 0, style: .continuous))
+                .scaleEffect(movingVideo ? DS.PlayerPanel.liftScale : 1)
+                .shadow(color: movingVideo ? DS.scrimStrong : .clear, radius: DS.PlayerPanel.liftShadow)
                 .offset(x: rect.minX, y: rect.minY)
                 // «Recortar» en vertical: los subtítulos con el tamaño de siempre (el de un cuadro a lo ancho), abajo; con los
                 // controles a la vista suben sobre ellos.
@@ -143,16 +192,6 @@ struct PlayerScreen: View {
                             .frame(width: geo.size.width, height: geo.size.width / DS.Poster.stillAspect)
                             .padding(.bottom, controlsVisible ? geo.size.height * DS.PlayerPanel.portraitFillControlsShare : DS.Space.s6)
                             .allowsHitTesting(false)
-                    }
-                }
-                .overlay(alignment: .bottom) {
-                    // En vertical con el panel: bajo el video, qué es y dónde vas (llena el espacio y orienta).
-                    if panel && !landscape {
-                        VStack(spacing: DS.Space.s1) {
-                            Text(current.displayTitle).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
-                            Text(verbatim: [current.episodeLabel, positionText(model)].filter { !$0.isEmpty }.joined(separator: " · ")).recipe(.footnote).lineLimit(1)
-                        }
-                        .padding(.bottom, DS.Space.s4)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -174,33 +213,33 @@ struct PlayerScreen: View {
             }
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
-            let controlsShown = controlsVisible && !locked && !panel && !failed(model) && !subtitleDock
+            let controlsShown = controlsVisible && !locked && !failed(model) && !subtitleDock && ipod == nil
             if controlsShown { controls(model).transition(.opacity) }
-            if subtitleDock && !locked && !panel { subtitleDockLayer(model).transition(.move(edge: .bottom).combined(with: .opacity)) }
+            // El iPod no se esconde (es el aparato): con la pantalla bloqueada se ve pero no se toca.
+            if let face = ipod, !failed(model) { ipodChrome(model, face: face).transition(.opacity) }
+            if (controlsShown || (ipod != nil && !locked)) && moreOpen { moreLayer(model) }
+            if subtitleDock && !locked { subtitleDockLayer(model).transition(.move(edge: .bottom).combined(with: .opacity)) }
             // «Saltar intro» no depende de los controles (se esconden a los pocos segundos y con ellos se iba el botón):
             // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse. Con los controles a la
             // vista (en pausa, o con la ventana de PiP afuera) ya va dentro de ellos: antes salía dos veces.
-            else if !controlsShown && !locked && !panel && model.skipIntroTo != nil {
+            else if !controlsShown && !locked && ipod == nil && model.skipIntroTo != nil {
                 VStack { Spacer(); HStack { Spacer(); skipIntro(model) } }.padding(landscape ? DS.Space.s6 : DS.Space.gutter).transition(.opacity)
-            }
-            // Probando subtítulos (elegidos en el panel): la tira al pie del video (en vertical nunca tapa los controles,
-            // que van debajo del video).
-            if panel && landscape {
-                // Tocar fuera del panel lo cierra; el video sigue a la vista (el cambio de subtítulos se ve al momento).
-                Color.clear.contentShape(Rectangle()).onTapGesture { panel = false }
-                HStack { Spacer(); settingsPanel(model).frame(width: DS.PlayerPanel.width)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous)) }
-                    .padding(DS.Space.s4)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
             // Bloqueado no se ve (ni se toca): si llega a cero, pasa solo al siguiente. En vertical va entre el video y la barra
             // (dentro de los controles, o sola si están escondidos); en horizontal, abajo a la derecha sobre la barra.
             // Con el panel de subtítulos abierto, tampoco: se encimaba sobre él (sale al cerrarlo, si aún falta).
-            if let up = model.upNext, !panel, !locked, !subtitleDock {
+            if let up = model.upNext, !locked, !subtitleDock {
                 if landscape {
                     VStack { Spacer(); HStack { Spacer(); upNextCard(model, up) } }
                         .padding(.horizontal, DS.Space.s6)
                         .padding(.bottom, controlsVisible ? DS.Space.s6 + DS.Size.touchTarget * 2 : DS.Space.s6)
+                } else if ipod != nil {
+                    // En el iPod, sobre lo de abajo de la pantalla (el nombre y el avance), como un aviso del aparato.
+                    GeometryReader { geo in
+                        let screen = IPodLayout(in: geo.size).screen
+                        upNextCard(model, up).padding(.horizontal, DS.Space.gutter)
+                            .frame(width: geo.size.width, height: screen.maxY - DS.Space.s2, alignment: .bottom)
+                    }
                 } else if !controlsVisible {
                     GeometryReader { geo in
                         upNextCard(model, up).padding(.horizontal, DS.Space.gutter)
@@ -220,8 +259,8 @@ struct PlayerScreen: View {
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
-        .animation(DS.Motion.base(reduceMotion), value: panel)
         .animation(DS.Motion.base(reduceMotion), value: dragAxis)
+        .animation(DS.Motion.base(reduceMotion), value: ipodFace)
         .task {
             // Abre como tienes el teléfono (Los Simpson, siempre vertical); boca arriba o sin saberlo, horizontal.
             #if DEBUG
@@ -243,6 +282,7 @@ struct PlayerScreen: View {
             zoom = VideoZoom(stored: env.services.appSettings.videoZoom)
             #if DEBUG
             if Demo.isOn, let raw = Demo.value(after: "-demo-zoom") { zoom = VideoZoom(stored: raw) }   // `-demo-zoom fill`: para capturas
+            if Demo.isOn, let face = Demo.value(after: "-demo-ipod") { ipodFace = face == "off" ? "" : face }   // `-demo-ipod black`
             #endif
             engine.setZoom(zoom)
             pip.onActiveChange = { engine.setPictureInPictureActive($0) }
@@ -252,8 +292,14 @@ struct PlayerScreen: View {
                 #if DEBUG
                 if Demo.isOn, let open = Demo.player {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
-                    if open == "panel" || open == "sources" || open == "subtitles" { panel = true } else if open == "close" { await close() }
-                    if open == "dock" { subtitleDock = true }   // `-demo-player dock`: los subtítulos rápidos
+                    // `-demo-player dock|subtitles|audio|version`: la hoja «Audio y subtítulos» (con ese renglón abierto) o «Versión».
+                    switch open {
+                    case "dock", "subtitles": openDock(.subtitles)
+                    case "audio": openDock(.audio)
+                    case "version": openDock(nil, version: true)
+                    case "close": await close()
+                    default: break
+                    }
                 }
                 if Demo.isOn, let state = Demo.playerState {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
@@ -275,10 +321,57 @@ struct PlayerScreen: View {
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { Task { await model.appDidEnterBackground() } }
             // De vuelta: el motor soltó el video en segundo plano; se rearma (o se pide otra vez) en vez de quedarse en negro.
-            if phase == .background { model.appDidEnterBackgroundFully() }
-            if phase == .active { Task { await model.appDidBecomeActive() } }
+            if phase == .background { model.appDidEnterBackgroundFully(); captureFrozenFrame() }
+            appActive = phase == .active
+            if phase == .active {
+                // Si el video siguió vivo (volviste rápido, o seguía sonando), no hace falta el cuadro guardado.
+                if holder.engine.showsVideo { frozenTask?.cancel(); frozenFrame = nil }
+                Task { await model.appDidBecomeActive() }
+            }
         }
         .onChange(of: model.phase) { _, phase in if phase == .closed { finish() } }
+        // El cuadro guardado se queda hasta que el video de verdad vuelve a la pantalla (o algo falla y sale el error).
+        .task(id: frozenFrame != nil) {
+            while frozenFrame != nil, !Task.isCancelled {
+                if failed(holder.model) { frozenFrame = nil; break }
+                if appActive, holder.engine.showsVideo, holder.model.snapshot.state != .loading {
+                    withAnimation(DS.Motion.base(reduceMotion)) { frozenFrame = nil }
+                    break
+                }
+                try? await Task.sleep(nanoseconds: DS.Timing.frozenFramePoll)
+            }
+        }
+        // «Arrastra para mover» junto a la agarradera solo las primeras funciones.
+        // Las primeras veces, el video da un brinquito (hacia abajo y de regreso) en cuanto aparece la agarradera: enseña que se
+        // mueve sin decirlo con texto.
+        .task {
+            guard moveHintSeen < DS.PlayerPanel.moveHintTimes, !reduceMotion else { return }
+            try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 3)
+            guard !landscape, ipod == nil, !fillsPortrait, controlsVisible else { return }
+            moveHintSeen += 1
+            withAnimation(DS.Motion.spring(reduceMotion)) { portraitDrag = portraitCenter + DS.PlayerPanel.moveNudge }
+            try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 8)
+            withAnimation(DS.Motion.spring(reduceMotion)) { portraitDrag = nil }
+        }
+
+        // Esta versión no trae tu idioma (o no el latino) y otra sí: se ofrece cambiar sin perder el punto.
+        .onChange(of: model.notice) { _, value in
+            let ui0 = env.services.appSettings.uiLanguage
+            if value == .switchFailedBack {
+                return show(PlayerNotice(title: Strings.tr("Esa versión no abrió", language: ui0), detail: Strings.tr("Volviste a la que veías, en el mismo punto.", language: ui0), tone: .warn))
+            }
+            if value == .notReadyOnRealDebrid {
+                return show(PlayerNotice(title: Strings.tr("Real-Debrid aún no la tiene", language: ui0), detail: Strings.tr("Mandó su aviso de «descargando». Puede tardar; prueba más tarde u otra versión.", language: ui0), tone: .warn))
+            }
+            guard case .otherVersionHasYourLanguage(let want, let have, let index)? = value else { return }
+            let ui = env.services.appSettings.uiLanguage, tr = { (k: String) in Strings.tr(k, language: ui) }
+            // Corto, para que quepa con su botón: «No trae latino · Sus pistas: inglés y castellano · Cambiar».
+            let wanted = want == "es" ? VersionLanguageRow.spanish(ui) : Streams.versionLanguageName(want, in: ui)
+            let tracks = have.map { VersionLanguageRow.inline(Streams.versionLanguageName($0, in: ui), ui) }.joined(separator: tr(" y "))
+            show(PlayerNotice(title: String(format: tr("No trae %@"), VersionLanguageRow.inline(wanted, ui)),
+                              detail: String(format: tr("Sus pistas: %@"), tracks), tone: .warn,
+                              switchTo: index, switchTitle: tr("Cambiar")))
+        }
         // El video ya llegó (o pasó un momento): el pulgar vuelve a seguir el avance real.
         .onChange(of: model.snapshot.position) { _, position in
             if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
@@ -286,15 +379,20 @@ struct PlayerScreen: View {
         .task(id: pendingSeek) { if pendingSeek != nil { try? await Task.sleep(nanoseconds: DS.Timing.seekPatience); pendingSeek = nil } }
         .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
         .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
+        // Una versión que Real-Debrid aún no tiene: la verdad antes de abrirla (puede tardar u horas; si manda su aviso, se vuelve).
+        .confirmationDialog(Text("Real-Debrid aún no tiene esta versión"), isPresented: Binding(get: { slowPick != nil }, set: { if !$0 { slowPick = nil } }), titleVisibility: .visible) {
+            Button("Abrirla de todos modos") {
+                if let index = slowPick { withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media }; Task { await model.switchSource(to: index) } }
+                slowPick = nil
+            }
+            Button("Mejor no", role: .cancel) { slowPick = nil }
+        } message: { Text("Empieza a bajarla y puede tardar minutos u horas. Si manda su aviso de «descargando», vuelves a la que ves en el mismo punto.") }
         .alert("¿Sigues viendo?", isPresented: Binding(get: { model.stillWatchingPrompt }, set: { _ in })) {
             Button("Seguir") { Task { await model.confirmStillWatching() } }
             Button("Salir", role: .cancel) { Task { await close() } }
         } message: { Text("Llevas tres episodios seguidos.") }
-        // En vertical, el panel es una hoja ajustada a lo que tiene (sin espacio muerto); en horizontal va a la derecha (arriba).
-        .onChange(of: panel) { _, open in holder.model.panelOpen = open }   // la cuenta de «Siguiente» se detiene con el panel abierto
-        .sheet(isPresented: Binding(get: { panel && !landscape }, set: { if !$0 { panel = false } })) {
-            settingsPanel(model)
-        }
+        // Con «Audio y subtítulos» abierto la tarjeta de «Siguiente» no se ve: su cuenta se detiene (no cambia de episodio a escondidas).
+        .onChange(of: subtitleDock) { _, open in holder.model.panelOpen = open }
         // Girar el teléfono gira el video: el aviso de giro del sistema no llega con el candado de rotación puesto,
         // así que con el candado el video se queda como abrió. Con «Bloquear» se ignora.
         .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
@@ -328,7 +426,6 @@ struct PlayerScreen: View {
     }
 
     private func lock() {
-        panel = false
         hideTask?.cancel()
         withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false; locked = true }
         freezeOrientation()
@@ -355,16 +452,17 @@ struct PlayerScreen: View {
     // MARK: gestos
     private func gestureLayer(_ model: PlayerModel) -> some View {
         GeometryReader { geo in
-            // Como Infuse: doble toque al centro pausa o sigue; en las orillas, ±10 s.
-            HStack(spacing: 0) {
-                Color.clear.contentShape(Rectangle()).frame(width: geo.size.width * DS.Gesture.edgeShare)
-                    .onTapGesture(count: 2) { Task { await model.skip(-PlaybackRules.skipSeconds) }; flash("gobackward.10") }
-                Color.clear.contentShape(Rectangle())
-                    .onTapGesture(count: 2) { Task { await model.togglePlay() }; flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
-                Color.clear.contentShape(Rectangle()).frame(width: geo.size.width * DS.Gesture.edgeShare)
-                    .onTapGesture(count: 2) { Task { await model.skip(PlaybackRules.skipSeconds) }; flash("goforward.10") }
-            }
+            // Un solo doble toque en toda la pantalla (también en lo negro de arriba y abajo) y lo que hace depende de dónde:
+            // tercio izquierdo −10 s, centro pausa o sigue, tercio derecho +10 s. Antes cada zona tenía su gesto y a veces el
+            // toque caía en otra capa.
+            Color.clear
             .contentShape(Rectangle())
+            .onTapGesture(count: 2) { location in
+                let third = geo.size.width * DS.Gesture.edgeShare
+                if location.x < third { skip(model, forward: false) }
+                else if location.x > geo.size.width - third { skip(model, forward: true) }
+                else { Task { await model.togglePlay() }; flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
+            }
             .onTapGesture {
                 // Con los subtítulos rápidos abiertos, tocar el video los cierra (y nada más).
                 if subtitleDock { withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false }; return }
@@ -378,9 +476,32 @@ struct PlayerScreen: View {
             })
             .sensoryFeedback(.impact, trigger: zoom)
             .simultaneousGesture(dragGesture(model, size: geo.size))
-            .onLongPressGesture(minimumDuration: DS.Timing.longPressDelay, maximumDistance: DS.Gesture.axisThreshold,
-                                 perform: { startFastForward(model) }, onPressingChanged: { pressing in if !pressing { endFastForward(model) } })
+            .onChange(of: dragging) { _, now in
+                // Un arrastre cancelado (sin `onEnded`): se limpia todo sin buscar ni mover nada. Un momento después, para que
+                // un arrastre normal termine primero con `onEnded` (que sí busca) y aquí ya no haya nada que limpiar.
+                guard !now else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(80))
+                    guard !dragging, dragAxis != .undecided || seekPreview != nil || portraitDrag != nil else { return }
+                    portraitDrag = nil; movingVideo = false
+                    dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil
+                    scheduleIndicatorHide()
+                    if controlsVisible { scheduleHide() }
+                }
+            }
+            // Dónde empieza el dedo, sin quitarle nada a los demás gestos.
+            // Y cuándo lo levantas de verdad: el `onPressingChanged` de la pulsación larga avisa «ya no» en cuanto la reconoce
+            // (no al soltar), y el ×2 se prendía y se apagaba casi a la vez.
+            .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { value in
+                if touchStartX == nil { touchStartX = value.startLocation.x }
+                if fastForwardHolding { fastForwardDrag(up: -value.translation.height) }
+            }.onEnded { _ in touchStartX = nil; releaseFastForward(model) })
+            // ×2 del lado derecho: casi al instante; si sigues, vibra y se queda fijo (sueltas antes: vuelve a ×1).
+            // Simultánea: como gesto normal competía con los dobles toques de las orillas y casi nunca ganaba.
+            .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.fastForwardStart, maximumDistance: DS.Gesture.axisThreshold)
+                .onEnded { _ in if (touchStartX ?? geo.size.width) >= geo.size.width / 2 { holdFastForward(model) } })
             .sensoryFeedback(.impact, trigger: isFastForwarding)
+            .sensoryFeedback(.success, trigger: fastForwardLocked)
         }
         .accessibilityHidden(true)
     }
@@ -390,14 +511,24 @@ struct PlayerScreen: View {
     /// medias ni de golpe): el reloj que los esconde solo se reanuda al soltar.
     private func dragGesture(_ model: PlayerModel, size: CGSize) -> some Gesture {
         DragGesture(minimumDistance: DS.Gesture.axisThreshold)
+            // Vuelve a false sola si iOS cancela el arrastre (otro gesto, una llamada, el centro de control): ahí `onEnded`
+            // no llega y la burbuja de buscar se quedaba pegada en pantalla. Ver `.onChange(of: dragging)`.
+            .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
+                if fastForwardHolding { return }   // con el ×2 puesto, deslizar es para fijarlo, no brillo ni volumen
                 let dx = Double(value.translation.width), dy = Double(value.translation.height)
                 if dragAxis == .undecided {
                     hideTask?.cancel()
                     dragAxis = PlayerGestures.dominantAxis(dx: dx, dy: dy)
                     switch dragAxis {
-                    case .vertical where !landscape:
-                        portraitAtDragStart = portraitCenter   // en vertical, arrastrar arriba o abajo mueve el video
+                    // En vertical: arrastrar sobre el video es brillo (izquierda) o volumen (derecha), como en horizontal y en
+                    // Infuse; desde la agarradera de abajo o lo negro de fuera, mueve el video (antes todo arrastre lo movía y
+                    // se perdían el brillo y el volumen).
+                    case .vertical where !landscape && !fillsPortrait && ipod == nil
+                                          && !videoRect(in: size).insetBy(dx: 0, dy: -DS.PlayerPanel.handleReach).contains(value.startLocation)
+                                          || startsOnHandle(value.startLocation, size: size):
+                        movingVideo = true
+                        portraitAtDragStart = portraitCenter
                         controlsVisible = true                 // se mueve a la altura de los controles (sin ellos va al centro)
                     case .vertical:
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
@@ -411,9 +542,10 @@ struct PlayerScreen: View {
                     }
                 }
                 switch dragAxis {
-                case .vertical where !landscape:
-                    let range = DS.PlayerPanel.portraitCenterRange
-                    portraitDrag = min(max(portraitAtDragStart + dy / Double(size.height), Double(range.lowerBound)), Double(range.upperBound))
+                case .vertical where movingVideo:
+                    // Libre, entre lo más arriba y lo más abajo que puede ir.
+                    let limits = Self.portraitLimits(in: size)
+                    portraitDrag = min(max(portraitAtDragStart + dy / Double(size.height), limits.lowerBound), limits.upperBound)
                 case .vertical:
                     guard let kind = verticalKind else { return }
                     let start = kind == .brightness ? brightnessAtDragStart : volumeAtDragStart
@@ -429,7 +561,9 @@ struct PlayerScreen: View {
                 }
             }
             .onEnded { _ in
-                if let moved = portraitDrag { portraitCenter = moved; portraitDrag = nil }
+                // Se queda donde lo sueltas (sin imanes).
+                if let moved = portraitDrag { withAnimation(DS.Motion.base(reduceMotion)) { portraitCenter = moved; portraitDrag = nil; movingVideo = false } }
+                movingVideo = false
                 if dragAxis == .horizontal, let target = seekPreview { pendingSeek = target; Task { await model.seek(to: target) } }
                 dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil
                 scheduleIndicatorHide()
@@ -450,8 +584,32 @@ struct PlayerScreen: View {
         if dragAxis == .horizontal, let target = seekPreview, let start = seekPositionAtDragStart {
             seekBubble(target: target, start: start)
         }
-        if isFastForwarding {
-            VStack { DSSpeedPill(); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
+        // Mientras mantienes, siempre; fijo, solo con los controles a la vista (sonando no estorba). Tocarla fija lo quita.
+        if isFastForwarding && (fastForwardHolding || controlsVisible) {
+            VStack {
+                Button { if !fastForwardHolding { endFastForward(holder.model, force: true) } } label: {
+                    DSSpeedPill(locked: fastForwardLocked, progress: fastForwardProgress, holding: fastForwardHolding,
+                                unlocks: fastForwardLockedAtStart)
+                }
+                .buttonStyle(.plain)
+                Spacer()
+            }
+            .padding(.top, DS.Space.s14).transition(.opacity)
+        }
+        if let notice {
+            VStack {
+                Toast(tone: notice.tone, title: Text(verbatim: notice.title), detail: notice.detail.map { Text(verbatim: $0) },
+                      actionTitle: notice.switchTitle.map { LocalizedStringKey($0) } ?? (notice.showsDownloads ? "Ver" : nil),
+                      action: notice.switchTo.map { index in { Task { await holder.model.switchSource(to: index) } } }
+                        ?? (notice.showsDownloads ? { Task { await close(); env.openTab = AppEnvironment.downloadsTab } } : nil),
+                      seconds: Toast.duration(notice.tone, hasAction: notice.showsDownloads || notice.switchTo != nil) ?? DS.Timing.toastAction,
+                      dismiss: { withAnimation(DS.Motion.base(reduceMotion)) { if self.notice?.id == notice.id { self.notice = nil } } })
+                    .id(notice.id)
+                Spacer()
+            }
+            // Bajo la barra de arriba con aire (antes quedaba pegado a ella).
+            .padding(.top, DS.Space.s14 + DS.Space.s4)
+            .transition(.move(edge: .top).combined(with: .opacity))
         }
         if let subtitleToast {
             VStack { DSToastPill(text: LocalizedStringKey(subtitleToast)); Spacer() }.padding(.top, DS.Space.s14)
@@ -466,11 +624,29 @@ struct PlayerScreen: View {
             } else {
                 GeometryReader { geo in
                     let rect = videoRect(in: geo.size)
-                    DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: zoomToast == .fill ? Text("Llena la pantalla y recorta los lados") : nil)
+                    DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: zoomToast == .fill ? Text("Llena la pantalla y recorta los lados")
+                                : zoomToast == .stretch ? Text("Llena la pantalla deformando la imagen") : nil)
                         .position(x: rect.midX, y: rect.midY)
                 }
                 .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
             }
+        }
+        if let chain = skipChain {
+            // La burbuja del lado que tocaste, con lo que llevas sumado («+20 s»), como YouTube.
+            GeometryReader { geo in
+                let rect = videoRect(in: geo.size)
+                VStack(spacing: DS.Space.s1) {
+                    Image(systemName: chain.forward ? "goforward" : "gobackward").font(DS.TextRecipe.cardTitle.font.weight(.bold))
+                    Text(verbatim: "\(chain.forward ? "+" : "−")\(chain.seconds) s").font(DS.TextRecipe.footnote.font.weight(.bold)).monospacedDigit()
+                        .contentTransition(.numericText())
+                }
+                .foregroundStyle(DS.text)
+                .frame(width: DS.Size.touchTarget * 2, height: DS.Size.touchTarget * 2)
+                .glassEffect(.regular, in: Circle())
+                // Sobre el video, al centro del tercio que tocaste (en vertical el video no llena la pantalla).
+                .position(x: chain.forward ? rect.maxX - rect.width / 6 : rect.minX + rect.width / 6, y: rect.midY)
+            }
+            .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
         if let flashSymbol, !controlsVisible {
             Image(systemName: flashSymbol).font(DS.TextRecipe.display.font).foregroundStyle(DS.text)
@@ -503,16 +679,39 @@ struct PlayerScreen: View {
         }
     }
 
-    private func startFastForward(_ model: PlayerModel) {
-        guard !isFastForwarding, dragAxis == .undecided else { return }
+    /// ×2 como TikTok: mantener el dedo lo pone mientras dure; deslizar hacia arriba sin soltar lo fija (y lo mismo lo quita).
+    private func holdFastForward(_ model: PlayerModel) {
+        guard dragAxis == .undecided else { return }
+        fastForwardHolding = true
+        fastForwardLockedAtStart = fastForwardLocked
+        fastForwardToggledThisHold = false
+        fastForwardProgress = 0
+        guard !isFastForwarding else { return }   // ya iba fijo: mantener solo deja deslizar para quitarlo
         rateBeforeFastForward = model.rate
         withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = true }
         Task { await model.setRate(PlaybackRules.fastForwardRate) }
     }
 
-    private func endFastForward(_ model: PlayerModel) {
-        guard isFastForwarding else { return }
-        withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = false }
+    /// Lo que llevas deslizado hacia arriba con el dedo puesto: llena el anillo y, al completarlo, fija o quita el ×2 (vibra).
+    private func fastForwardDrag(up: CGFloat) {
+        fastForwardProgress = Double(min(1, max(0, up / DS.Gesture.fastForwardLockDrag)))
+        guard fastForwardProgress >= 1, !fastForwardToggledThisHold else { return }
+        fastForwardToggledThisHold = true
+        withAnimation(DS.Motion.base(reduceMotion)) { fastForwardLocked = !fastForwardLockedAtStart }
+    }
+
+    /// Al soltar: si quedó fijo sigue en ×2 (y la píldora se va con los controles); si no, vuelve a la velocidad de antes.
+    private func releaseFastForward(_ model: PlayerModel) {
+        guard fastForwardHolding else { return }
+        fastForwardHolding = false
+        fastForwardProgress = 0
+        if !fastForwardLocked { endFastForward(model, force: true) }
+    }
+
+    private func endFastForward(_ model: PlayerModel, force: Bool = false) {
+        guard isFastForwarding, force || !fastForwardLocked else { return }
+        withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = false; fastForwardLocked = false }
+        fastForwardProgress = 0
         Task { await model.setRate(rateBeforeFastForward) }
     }
 
@@ -523,8 +722,7 @@ struct PlayerScreen: View {
         case "brightness": verticalKind = .brightness; indicator = (.brightness, "sun.max.fill", 0.65); indicatorVisible = true
         case "volume": verticalKind = .volume; indicator = (.volume, "speaker.wave.2.fill", 0.4); indicatorVisible = true
         case "seek": dragAxis = .horizontal; seekPositionAtDragStart = model.snapshot.position; seekPreview = model.snapshot.position + 80
-        case "fastforward": startFastForward(model)
-        case "next-subtitle": nextSubtitle(model)   // el botón de subtítulos, un toque
+        case "fastforward": holdFastForward(model)
         default: break
         }
     }
@@ -546,6 +744,24 @@ struct PlayerScreen: View {
     }
 
     /// Un ícono grande que aparece y se va (el doble toque se nota sin abrir los controles).
+    /// Doble toque en una orilla: ±10 s; seguidos del mismo lado cada uno salta más (10 → 20 → 40 → 60 → 90 → 120 s en
+    /// total) y la burbuja dice el total. Así tres toques ya son 40 s, no 30.
+    private func skip(_ model: PlayerModel, forward: Bool) {
+        let now = Date()
+        let chained = skipChain.map { $0.forward == forward && now.timeIntervalSince($0.at) < DS.Gesture.skipChain } ?? false
+        let before = chained ? skipChain?.seconds ?? 0 : 0
+        let total = DS.Gesture.skipTotals.first { $0 > before } ?? before + DS.Gesture.skipTotals.last! - DS.Gesture.skipTotals.dropLast().last!
+        withAnimation(DS.Motion.base(reduceMotion)) { skipChain = (forward, total, now) }
+        let step = Double(total - before)
+        Task { await model.skip(forward ? step : -step) }
+        skipChainTask?.cancel()
+        skipChainTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(DS.Gesture.skipChain))
+            guard !Task.isCancelled else { return }
+            withAnimation(DS.Motion.base(reduceMotion)) { skipChain = nil }
+        }
+    }
+
     private func flash(_ symbol: String) {
         flashTask?.cancel()
         withAnimation(DS.Motion.base(reduceMotion)) { flashSymbol = symbol }
@@ -554,6 +770,13 @@ struct PlayerScreen: View {
             guard !Task.isCancelled else { return }
             withAnimation(DS.Motion.base(reduceMotion)) { flashSymbol = nil }
         }
+    }
+
+    /// La agarradera: una franja a lo ancho justo debajo del video (fácil de agarrar aunque la rayita sea chica).
+    private func startsOnHandle(_ point: CGPoint, size: CGSize) -> Bool {
+        guard !landscape, !fillsPortrait, ipod == nil else { return false }
+        let rect = videoRect(in: size)
+        return point.y >= rect.maxY - DS.PlayerPanel.handleGrab && point.y <= rect.maxY + DS.PlayerPanel.handleBelow
     }
 
     private func scheduleHide() {
@@ -568,6 +791,8 @@ struct PlayerScreen: View {
     // MARK: estados
     @ViewBuilder private func statusOverlays(_ model: PlayerModel) -> some View {
         switch model.phase {
+        // Volviendo a abrir el mismo video (al regresar a la app): solo la ruedita, sin letrero (antes «Reconectando…»).
+        case .preparing where model.reconnecting: QuietSpinner()
         case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
         case .failed(let message):
             // Una pantalla por cada caso (sin fuentes, ninguna sirvió, sin red…), sobre los controles, que se esconden.
@@ -577,17 +802,28 @@ struct PlayerScreen: View {
                               close: { Task { await close() } })
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:
-            if model.reconnecting { VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text("Reconectando…").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) } }
+            if model.reconnecting { QuietSpinner() }
             else if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
+        }
+    }
+
+    /// La ruedita sola, y solo si tarda más de un instante (lo normal es que el video vuelva antes y no se vea nada).
+    private struct QuietSpinner: View {
+        @State private var shown = false
+        var body: some View {
+            ProgressView().tint(DS.text).opacity(shown ? 1 : 0)
+                .task { try? await Task.sleep(nanoseconds: DS.Timing.quietSpinnerDelay); shown = true }
         }
     }
 
     private func failed(_ model: PlayerModel) -> Bool { if case .failed = model.phase { true } else { false } }
 
     private func preparingText(_ model: PlayerModel) -> LocalizedStringKey {
-        if model.reconnecting { return "Reconectando…" }
-        if case .triedAnotherSource(let n)? = model.notice { return "Probando otra fuente (\(n))…" }
-        return "Buscando la mejor fuente…"
+        if case .triedAnotherSource(let n)? = model.notice { return "Probando otra versión (\(n))…" }
+        // Ya sabe qué abrir: la versión que elegiste o tu descarga. «Buscando la mejor fuente» ahí no era cierto.
+        if current.localFile != nil { return "Abriendo tu descarga…" }
+        if current.sourceIndex != nil { return "Abriendo la versión que elegiste…" }
+        return "Buscando la mejor versión…"
     }
 
     // MARK: controles
@@ -624,6 +860,20 @@ struct PlayerScreen: View {
                         LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     }
                     topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+                    // Sin agarradera a la vista (se pidió quitarla): el video se sigue moviendo arrastrando desde su borde de abajo o
+                    // desde lo negro. Para VoiceOver queda un elemento invisible con «Subir el video» y «Bajar el video».
+                    if !fillsPortrait {
+                        Color.clear
+                            .frame(width: rect.width, height: DS.PlayerPanel.handleGrab)
+                            .padding(.top, rect.maxY - DS.PlayerPanel.handleGrab)
+                            .allowsHitTesting(false)
+                            .accessibilityElement()
+                            .accessibilityLabel(Text("Mover el video"))
+                            .accessibilityHint(Text("Arrastra hacia arriba o hacia abajo"))
+                            .accessibilityAction(named: Text("Subir el video")) { stepVideo(-1, size: geo.size) }
+                            .accessibilityAction(named: Text("Bajar el video")) { stepVideo(1, size: geo.size) }
+                            .accessibilityIdentifier("player-drag-hint")
+                    }
                     VStack(spacing: DS.Space.s3) {
                         // «Siguiente episodio» entre el video y la barra (antes tapaba los controles).
                         if let up = model.upNext, !locked { upNextCard(model, up) }
@@ -632,17 +882,11 @@ struct PlayerScreen: View {
                         HStack { Spacer(); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
                         if !fillsPortrait { Spacer(minLength: 0) }
                         if model.phase != .preparing { transport(model) }
-                        if !fillsPortrait {
-                            Spacer(minLength: 0)
-                            // Cómo mover el video, dicho con palabras y siempre que estén los controles: al pie, solo.
-                            Label("Arrastra el video para subirlo o bajarlo", systemImage: "arrow.up.and.down")
-                                .recipe(.footnote, color: DS.textMuted)
-                                .accessibilityIdentifier("player-drag-hint")
-                        }
+                        if !fillsPortrait { Spacer(minLength: 0) }
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     .padding(.bottom, fillsPortrait ? DS.Space.s8 : DS.Space.s4)
-                    .padding(.top, fillsPortrait ? 0 : rect.maxY + DS.Space.s3)
+                    .padding(.top, fillsPortrait ? 0 : rect.maxY + DS.PlayerPanel.handleGap)
                     .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
@@ -671,15 +915,43 @@ struct PlayerScreen: View {
             }
             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
             SubtitleButton(code: currentSubtitleCode(model), state: subtitleState(model), loading: model.loadingSubtitle,
-                           open: { withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false; subtitleDock = true } },
+                           open: { openDock(.subtitles) },
                            toggle: { toggleSubtitles(model) })
                 .accessibilityIdentifier("player-next-subtitle")
             AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
                 .accessibilityLabel(Text("AirPlay"))
-            // Un globo (no un `Menu` del sistema): así se sabe cuándo está abierto y los controles no se esconden debajo de él.
-            PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") { hideTask?.cancel(); moreOpen = true }
-                .accessibilityIdentifier("player-more")
-                .popover(isPresented: $moreOpen) { moreMenu(model).presentationCompactAdaptation(.popover) }
+            // Un globo propio (no un `Menu` del sistema): así se sabe cuándo está abierto y los controles no se esconden debajo de
+            // él. Se dibuja en `moreLayer` (antes un `popover`: la esquina junto a su colita quedaba recta y las otras tres no).
+            PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") {
+                hideTask?.cancel(); withAnimation(DS.Motion.base(reduceMotion)) { moreOpen.toggle() }
+            }
+            .accessibilityIdentifier("player-more")
+        }
+    }
+
+    /// El globo del «⋯», debajo de su botón: las cuatro esquinas iguales, en vidrio. Tocar fuera lo cierra.
+    private func moreLayer(_ model: PlayerModel) -> some View {
+        let top = (landscape ? DS.Space.s6 : DS.Space.s2) + DS.Size.touchTarget + DS.Space.s2
+        return GeometryReader { geo in
+            ZStack(alignment: .topTrailing) {
+                Color.clear.contentShape(Rectangle()).ignoresSafeArea()
+                    .onTapGesture { withAnimation(DS.Motion.base(reduceMotion)) { moreOpen = false } }
+                    .accessibilityHidden(true)
+                // Nunca más alto que lo que queda de pantalla: en horizontal los nueve renglones no caben y el globo crecía,
+                // empujaba la barra de arriba fuera de la pantalla y se cortaba abajo. Si no cabe, se desplaza por dentro.
+                let room = max(0, geo.size.height - top - DS.Space.s4)
+                let glass = RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                ViewThatFits(in: .vertical) {
+                    moreMenu(model).glassEffect(.regular, in: glass)
+                    ScrollView { moreMenu(model) }.scrollBounceBehavior(.basedOnSize).frame(height: room).glassEffect(.regular, in: glass)
+                }
+                .frame(maxHeight: room, alignment: .top)
+                .padding(.top, top)
+                .padding(.trailing, landscape ? DS.Space.s6 : DS.Space.gutter)
+                .accessibilityAction(.escape) { withAnimation(DS.Motion.base(reduceMotion)) { moreOpen = false } }
+                .transition(.scale(scale: DS.PlayerPanel.lockScale, anchor: .topTrailing).combined(with: .opacity))
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topTrailing)
         }
     }
 
@@ -687,22 +959,152 @@ struct PlayerScreen: View {
     private func moreMenu(_ model: PlayerModel) -> some View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: 0) {
-            PlayerMenuRow(title: "Audio y subtítulos", symbol: "slider.horizontal.3") { moreOpen = false; panelPage = .hub; panel = true }
-                .accessibilityIdentifier("player-settings")
+            // La misma hoja que el botón de subtítulos (antes abría otra, «Ajustes del video», que hacía la mitad).
+            // «Audio y subtítulos» ya no va aquí: se abre con el botón de subtítulos de la barra (era la misma hoja dos veces).
+            if model.sourceChoices.count > 1 {
+                PlayerMenuRow(title: "Versión", symbol: "square.stack", detail: Text(verbatim: videoVersionShort(model))) { openDock(nil, version: true) }
+                    .accessibilityIdentifier("player-versions")
+            }
+            // La velocidad, aquí como el zoom: cada toque la siguiente (antes vivía escondida en «Ajustes del video»).
+            PlayerMenuRow(title: "Velocidad", symbol: "gauge.with.dots.needle.67percent", detail: Text(verbatim: rateText(model.rate))) {
+                let rates = PlayerModel.rates
+                let next = rates[((rates.firstIndex(of: model.rate) ?? 1) + 1) % rates.count]
+                Task { await model.setRate(next) }
+            }
+            .accessibilityIdentifier("player-speed")
             PlayerMenuRow(title: "Zoom", symbol: zoom.symbol, detail: Text(verbatim: Strings.tr(zoom.title, language: language))) { setZoom(nextZoom) }
                 .accessibilityHint(Text("Cambia el zoom del video"))
                 .accessibilityIdentifier("player-zoom")
+            if !landscape {
+                // Prender o apagar el iPod (y su color): no → blanco → negro → no.
+                PlayerMenuRow(title: "Modo iPod", symbol: "ipod", detail: Text(verbatim: Strings.tr(IPodFace.name(ipodFace), language: language))) {
+                    // Al apagarlo vuelven los controles de siempre (con el globo abierto, para seguir cambiando si quieres).
+                    hideTask?.cancel(); controlsVisible = true
+                    ipodFace = IPodFace.next(after: ipodFace)
+                }
+                .accessibilityIdentifier("player-ipod")
+            }
             if pip.isPossible { PlayerMenuRow(title: "Ventana (PiP)", symbol: "pip.enter") { moreOpen = false; pip.toggle() } }
             if canHandOffToTV(model) {
                 PlayerMenuRow(title: "Ver en la TV", symbol: "tv") { moreOpen = false; Task { await continueOnTV() } }
             }
             if canDownload { downloadRow { moreOpen = false } }
+            if model.source != nil {
+                PlayerMenuRow(title: "Abrir en Infuse", symbol: "arrow.up.forward.app") { moreOpen = false; Task { await openInInfuse() } }
+            }
             Divider().padding(.vertical, DS.Space.s1)
             PlayerMenuRow(title: "Bloquear pantalla", symbol: "lock") { moreOpen = false; lock() }
                 .accessibilityIdentifier("player-lock")
         }
         .padding(.vertical, DS.Space.s2)
         .frame(width: DS.PlayerPanel.menuWidth)
+    }
+
+    // MARK: volver de segundo plano
+    /// Al irse a segundo plano: se guarda el cuadro que se ve (leído de la capa del video, con tiempo prestado por iOS). Si el
+    /// motor suelta el video (en pausa, pasado el plazo), al volver se ve ese cuadro en su lugar y no negro.
+    private func captureFrozenFrame() {
+        guard holder.model.phase == .playing else { return }
+        let engine = holder.engine
+        let app = UIApplication.shared
+        var assertion = UIBackgroundTaskIdentifier.invalid
+        assertion = app.beginBackgroundTask(withName: "orbital.frozenFrame") { app.endBackgroundTask(assertion); assertion = .invalid }
+        frozenTask?.cancel()
+        frozenTask = Task {
+            let image = await engine.stillFrame(maxSize: DS.PlayerPanel.frozenFrameMax)
+            if !Task.isCancelled, let image, !appActive || !engine.showsVideo { frozenFrame = image }
+            if assertion != .invalid { app.endBackgroundTask(assertion); assertion = .invalid }
+        }
+    }
+
+    /// El cuadro guardado, con el mismo zoom que el video.
+    @ViewBuilder private func frozenCover(_ image: UIImage) -> some View {
+        switch zoom {
+        case .fill: Image(uiImage: image).resizable().scaledToFill().frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
+        case .stretch: Image(uiImage: image).resizable()
+        default: Image(uiImage: image).resizable().scaledToFit()
+        }
+    }
+
+    // MARK: modo iPod
+    /// El iPod: arriba ✕, AirPlay y «⋯» (los de siempre); la pantalla con el video, el nombre, la versión y el avance; la rueda.
+    private func ipodChrome(_ model: PlayerModel, face: IPodFace) -> some View {
+        GeometryReader { geo in
+            let layout = IPodLayout(in: geo.size)
+            let shown = wheelTarget ?? (dragAxis == .horizontal ? seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
+            let state = model.snapshot.state
+            ZStack(alignment: .topLeading) {
+                HStack(spacing: DS.Space.s3) {
+                    PlayerCircleButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
+                        .accessibilityIdentifier("player-close")
+                    Spacer()
+                    AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
+                        .accessibilityLabel(Text("AirPlay"))
+                    PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") {
+                        withAnimation(DS.Motion.base(reduceMotion)) { moreOpen.toggle() }
+                    }
+                    .accessibilityIdentifier("player-more")
+                }
+                .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+                .frame(width: geo.size.width)
+                IPodScreen(face: face, status: state == .playing ? "Reproduciendo" : state == .loading || state == .buffering || model.phase == .preparing ? "Cargando" : "En pausa",
+                           playing: state == .playing, title: current.displayTitle, detail: ipodDetail(model),
+                           position: shown, duration: model.snapshot.duration)
+                    .frame(width: layout.screen.width, height: layout.screen.height)
+                    .offset(x: layout.screen.minX, y: layout.screen.minY)
+                    .allowsHitTesting(false)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAdjustableAction { d in
+                        Task { await model.skip(d == .increment ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
+                    }
+                // «Saltar intro», en la esquina del video.
+                skipIntro(model).padding(DS.Space.s2)
+                    .frame(width: layout.video.width, height: layout.video.height, alignment: .bottomTrailing)
+                    .offset(x: layout.video.minX, y: layout.video.minY)
+                IPodWheel(face: face,
+                          menu: { Task { await close() } },
+                          hold: { lock() },
+                          back: { Task { await model.skip(-PlaybackRules.skipSeconds) } },
+                          forward: { Task { await model.skip(PlaybackRules.skipSeconds) } },
+                          playPause: { Task { await model.togglePlay() } },
+                          center: { openDock(.subtitles) },
+                          turn: { turnWheel($0, model) },
+                          turned: { releaseWheel(model) })
+                    .frame(width: layout.wheel.width, height: layout.wheel.height)
+                    .offset(x: layout.wheel.minX, y: layout.wheel.minY)
+                    .disabled(model.phase == .preparing)
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+        }
+        .environment(\.colorScheme, face.scheme)
+        .allowsHitTesting(!locked)
+    }
+
+    /// Una muesca de la rueda: 10 s (de a minuto si giras rápido); el avance enseña a dónde vas.
+    private func turnWheel(_ notches: Int, _ model: PlayerModel) {
+        let now = Date()
+        let fast = lastNotch.map { now.timeIntervalSince($0) < DS.IPod.fastNotch } ?? false
+        lastNotch = now
+        let start = wheelTarget ?? model.snapshot.position
+        let target = min(max(0, start + Double(notches) * (fast ? DS.IPod.fastStep : PlaybackRules.skipSeconds)), max(0, model.snapshot.duration))
+        wheelTarget = target
+        model.scrub(to: target)
+    }
+
+    private func releaseWheel(_ model: PlayerModel) {
+        lastNotch = nil
+        guard let target = wheelTarget else { return }
+        wheelTarget = nil; pendingSeek = target
+        Task { await model.seek(to: target) }
+    }
+
+    /// Bajo el nombre: el episodio («T5 · E12») o, en una película, la versión («Latino · 1080p»).
+    private func ipodDetail(_ model: PlayerModel) -> String {
+        if !current.episodeLabel.isEmpty { return current.episodeLabel }
+        guard let src = model.source else { return "" }
+        let ui = env.services.appSettings.uiLanguage
+        let language = Streams.playingLanguage(src, env.services.appSettings.preferences()).map { Streams.versionLanguageName($0.code, in: ui) }
+        return ([language].compactMap { $0 } + src.qualitySummary).joined(separator: " · ")
     }
 
     // MARK: descargar
@@ -714,7 +1116,7 @@ struct PlayerScreen: View {
     private func downloadRow(_ before: @escaping () -> Void = {}) -> some View {
         PlayerMenuRow(title: inDownloads ? "Descargada" : "Descargar", symbol: inDownloads ? "checkmark.circle" : "arrow.down.circle") {
             before()
-            Task { if inDownloads { await toast(Strings.tr("Ya está en Descargas", language: env.services.appSettings.uiLanguage)) } else { await downloadCurrent() } }
+            Task { if inDownloads { alreadyDownloaded() } else { await downloadCurrent() } }
         }
         .accessibilityIdentifier("player-download")
         .task(id: current.videoID) { await refreshInDownloads() }
@@ -730,15 +1132,28 @@ struct PlayerScreen: View {
         let outcome = await env.services.queueDownload(kind: r.kind, metaID: r.metaID, videoID: r.videoID, title: r.displayTitle, originalTitle: r.originalTitle,
                                                        subtitle: subtitle, poster: r.poster, source: holder.model.source)
         let tr = { (k: String) in Strings.tr(k, language: language) }
+        let message = { (k: String) in Strings.message(k, language: language) }
         switch outcome {
         case .queued:
             inDownloads = true
             // La misma versión que estás viendo; se sigue bajando aunque cierres el reproductor.
-            await toast(String(format: tr("Bajando %@ · la misma versión"), subtitle.isEmpty ? r.displayTitle : subtitle))
-        case .already: inDownloads = true; await toast(tr("Ya está en Descargas"))
-        case .noSources: await toast(tr("No hay fuentes de Real-Debrid para descargar."))
-        case .notEnoughSpace(let text), .failed(let text): await toast(text)
+            show(PlayerNotice(title: String(format: tr("Bajando %@"), subtitle.isEmpty ? r.displayTitle : subtitle), detail: tr("La misma versión que estás viendo"),
+                              tone: .success, showsDownloads: true))
+        case .already: inDownloads = true; alreadyDownloaded()
+        case .noSources: show(PlayerNotice(title: tr("No hay una versión para bajar"), detail: tr("Real-Debrid no tiene un archivo de este título"), tone: .info))
+        case .notEnoughSpace(let text): show(PlayerNotice(title: tr("No cabe en el iPhone"), detail: message(text), tone: .warn, showsDownloads: true))
+        case .failed(let text): show(PlayerNotice(title: tr("No pude preparar la descarga"), detail: message(text), tone: .warn))
         }
+    }
+
+    private func alreadyDownloaded() {
+        let tr = { (k: String) in Strings.tr(k, language: env.services.appSettings.uiLanguage) }
+        show(PlayerNotice(title: tr("Ya está en Descargas"), detail: tr("En el iPhone, para ver sin conexión"), tone: .info, showsDownloads: true))
+    }
+
+    private func show(_ new: PlayerNotice) {
+        UIAccessibility.post(notification: .announcement, argument: new.title)
+        withAnimation(DS.Motion.base(reduceMotion)) { notice = new }
     }
 
     /// Un video que te pasaron (sin reconocer) no lo puede poner la TV.
@@ -751,14 +1166,8 @@ struct PlayerScreen: View {
             .transition(.opacity)
     }
 
-    /// El zoom siguiente del botón. En vertical «Ajustar al área segura» no cambia nada (el video ya va dentro del área
-    /// segura), así que se salta.
-    /// En vertical el botón alterna entre «Ajustar» y «Recortar» (pantalla completa); el área segura y «Estirar» solo tienen
-    /// sentido en horizontal.
-    private var nextZoom: VideoZoom {
-        if !landscape { return zoom == .fill ? .fit : .fill }
-        return zoom.next
-    }
+    /// El zoom siguiente del botón: los cuatro de Infuse en orden, en los dos sentidos (antes en vertical solo había dos).
+    private var nextZoom: VideoZoom { zoom.next }
 
     // MARK: subtítulos rápidos
     /// El panel chico: en horizontal abajo y al centro, sobre el video; en vertical bajo el video (en el lugar de los controles).
@@ -766,14 +1175,43 @@ struct PlayerScreen: View {
         GeometryReader { geo in
             let rect = videoRect(in: geo.size)
             let dock = Group {
-                if let syncLines { subtitleSyncView(model, lines: syncLines) } else { subtitleDockView(model) }
+                if let syncLines { subtitleSyncView(model, lines: syncLines) }
+                else if dockPage == .version { versionPage(model) }
+                else {
+                    // Si cabe, sin desplazarse ni rebotar (antes siempre iba en un ScrollView: en vertical se movía y al jalarlo
+                    // hacia abajo parecía «actualizar»); solo si un renglón abierto ya no cabe, se desplaza.
+                    ViewThatFits(in: .vertical) {
+                        subtitleDockView(model)
+                        ScrollView { subtitleDockView(model) }.scrollBounceBehavior(.basedOnSize)
+                    }
+                }
             }
-            .frame(maxWidth: DS.PlayerPanel.dockWidth)
             if landscape {
-                // Arriba: los subtítulos van abajo, y son lo que estás revisando.
-                VStack { dock; Spacer() }.frame(maxWidth: .infinity).padding(.top, DS.Space.s3)
+                // A la derecha, de arriba abajo, con dos pestañas fijas: «Audio y subtítulos» y «Versión» (antes la versión no se
+                // veía: el panel cortaba su pie). El video queda a la izquierda, a la vista.
+                HStack {
+                    Spacer()
+                    VStack(spacing: DS.Space.s2) {
+                        HStack(spacing: DS.Space.s2) {
+                            Picker(selection: Binding(get: { dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockPage = v ? .version : .media } })) {
+                                Text("Audio y subtítulos").tag(false)
+                                Text("Versión").tag(true)
+                            } label: { Text("Ver") }
+                            .pickerStyle(.segmented)
+                            Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
+                                .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
+                        }
+                        dock
+                    }
+                    .frame(width: DS.PlayerPanel.width)
+                }
+                .padding(DS.Space.s3)
+                .frame(maxHeight: .infinity, alignment: .top)
             } else {
-                dock.padding(.horizontal, DS.Space.gutter).offset(y: min(rect.maxY + DS.Space.s4, geo.size.height * DS.PlayerPanel.dockPortraitMaxTop))
+                let top = min(rect.maxY + DS.Space.s4, geo.size.height * DS.PlayerPanel.dockPortraitMaxTop)
+                dock.frame(maxWidth: DS.PlayerPanel.dockWidth)
+                    .frame(maxHeight: geo.size.height - top - DS.Space.s2, alignment: .top)
+                    .padding(.horizontal, DS.Space.gutter).offset(y: top)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
@@ -851,7 +1289,12 @@ struct PlayerScreen: View {
         let tr = { (k: String) in Strings.tr(k, language: env.services.appSettings.uiLanguage) }
         let res = v.name.flatMap { n in n.range(of: #"(2160|1080|720|480)[pi]"#, options: [.regularExpression, .caseInsensitive]).map { String(n[$0]).lowercased() } }
         let named = [v.traits.source, res].compactMap { $0 }.joined(separator: " · ")
-        return v.fromVideo ? tr("Del video") : (named.isEmpty ? String(format: tr("Versión %lld"), index + 1) : named)
+        // Una pista del video de las que se esconden (venía puesta): dice cuál es.
+        if case .embedded(let track) = v.origin, SubtitleFilter.hides(track) {
+            let forced = track.isForced || (track.title ?? "").range(of: #"forc|forz|sign|song|carteles"#, options: [.regularExpression, .caseInsensitive]) != nil
+            return tr(forced ? "Del video · forzados" : "Del video · para sordos")
+        }
+        return v.fromVideo ? tr("Del video") : (named.isEmpty ? String(format: tr("Subtítulo %lld"), index + 1) : named)
     }
 
     private func subtitleDockView(_ model: PlayerModel) -> some View {
@@ -871,12 +1314,16 @@ struct PlayerScreen: View {
         // mismo grupo), no una huella confirmada.
         let version: SubtitleDock.Version? = off ? nil : at.map { i in
             let v = versions[i]
-            let badge: String? = v.match >= 2 ? tr("Hecho para tu copia") : v.match == 1 ? tr("Misma fuente") : v.fromVideo ? tr("Viene dentro del archivo")
+            let badge: String? = v.match >= 2 ? tr("Hecho para tu copia") : v.match == 1 ? tr("Misma versión")
+                // «Del video» ya lo dice el título: sin «Viene dentro del archivo» debajo (era lo mismo dos veces).
+                : v.fromVideo ? nil
                 : v.downloads.flatMap { $0 > 0 ? String(format: tr("%@ descargas"), $0.formatted(.number.notation(.compactName).locale(Locale(identifier: settings.uiLanguage)))) : nil }
             return SubtitleDock.Version(title: dockVersionTitle(v, index: i), badge: badge, strong: v.match >= 2,
-                                        position: String(format: tr("%lld de %lld"), i + 1, versions.count))
+                                        position: String(format: tr("Subtítulo %lld de %lld"), i + 1, versions.count))
         } ?? SubtitleDock.Version(title: tr("Cargando…"), badge: nil, strong: false, position: "")
-        let check: SubtitleDock.Check? = model.askInSync ? .inSync : model.restoredDelay.map { .restored($0) }
+        // Sin «¿Va a tiempo? Sí, va bien / Probar otra»: el subtítulo se cambia con las flechas ‹ › y la elección ya se
+        // recuerda sola al cambiarlo. Solo queda el aviso de un ajuste de tiempo recordado.
+        let check: SubtitleDock.Check? = model.restoredDelay.map { .restored($0) }
         let tried = versions.enumerated().filter { model.triedVersionIDs.contains($0.element.id) && $0.element.id != model.selectedVersionID }
             .map { dockVersionTitle($0.element, index: $0.offset) }
         // Un subtítulo de imagen (PGS) no trae frases: la vista de sincronizar lo dice y deja Antes/Después.
@@ -890,7 +1337,30 @@ struct PlayerScreen: View {
             let next = at.map { (($0 + d) % versions.count + versions.count) % versions.count } ?? 0
             Task { await model.selectVersion(versions[next]) }
         }
+        // El audio: las pistas de este archivo (sin repetir idioma) y los idiomas que solo trae otra versión (seguro).
+        let ui = settings.uiLanguage
+        let audioTracks = model.snapshot.audioTracks.filter { $0.kind == .audio }
+        var seenAudio = Set<String>()
+        let audio: [SubtitleDock.Language] = audioTracks.compactMap { t in
+            let code = TrackChooser.audioCode(t) ?? "t\(t.id)"
+            guard seenAudio.insert(code).inserted else { return nil }
+            let title = TrackChooser.audioCode(t).map { Streams.versionLanguageName($0, in: ui) } ?? TrackChooser.label(t, locale: Locale(identifier: ui), technical: false)
+            return .init(id: String(t.id), title: title, selected: model.snapshot.selectedAudio == t.id)
+        }
+        // Los idiomas que solo trae otra versión: sin cine ni tráileres, la más parecida a la tuya y diciendo a qué va.
+        let others: [SubtitleDock.Language] = model.otherVersionAudio(excluding: seenAudio).prefix(DS.PlayerPanel.otherVersionsShown).map { o in
+            let speed = o.instant ? Strings.tr("en Real-Debrid", language: ui) : Strings.tr("Real-Debrid aún no la tiene", language: ui)
+            let detail = "↻ " + ([o.sure ? nil : Strings.tr("se supone", language: ui), o.quality.isEmpty ? nil : o.quality, speed].compactMap { $0 }.joined(separator: " · "))
+            return .init(id: String(o.sourceIndex), title: o.code == "es" ? VersionLanguageRow.spanish(ui) : Streams.versionLanguageName(o.code, in: ui),
+                         selected: false, detail: detail, guessed: !o.sure)
+        }
+        let otherLanguage = Dictionary(model.otherVersionAudio(excluding: seenAudio).map { (String($0.sourceIndex), $0.code) }, uniquingKeysWith: { a, _ in a })
+        let currentAudio = audio.first { $0.selected }?.title ?? audio.first?.title ?? ""
+        let subtitleValue = off ? Strings.tr("Apagados", language: ui)
+            : [on.map(name), at.map { String(format: Strings.tr("%lld de %lld", language: ui), $0 + 1, versions.count) }].compactMap { $0 }.joined(separator: " · ")
         return SubtitleDock(
+            audio: audio, pickAudio: { id in if let n = Int(id) { Task { await model.selectAudio(n) } } },
+            otherVersions: others, pickVersion: { id in if let n = Int(id) { pickSource(n, model, language: otherLanguage[id]) } },
             languages: languages,
             pickLanguage: { code in Task { if code.isEmpty { await model.selectSubtitle(nil) } else { await model.chooseLanguage(code) } } },
             otherLanguage: { dockLanguages = true },
@@ -906,7 +1376,73 @@ struct PlayerScreen: View {
             sizeName: sizeNames[sizeAt],
             smaller: sizeAt > 0 ? { setSize(sizeAt - 1) } : nil, larger: sizeAt < 2 ? { setSize(sizeAt + 1) } : nil,
             done: { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false } },
-            compact: landscape, language: settings.uiLanguage)
+            compact: false, language: settings.uiLanguage,
+            audioValue: currentAudio, subtitleValue: subtitleValue,
+            videoVersion: videoVersionText(model), openVersion: model.sourceChoices.count > 1 ? { withAnimation(DS.Motion.base(reduceMotion)) { dockPage = .version } } : nil,
+            showsHeader: !landscape, initiallyOpen: dockOpens)
+    }
+
+    /// «Inglés · 1080p · 12.3 GB», la versión que suena (o «Descarga en el iPhone»).
+    private func videoVersionText(_ model: PlayerModel) -> String {
+        let ui = env.services.appSettings.uiLanguage
+        if current.localFile != nil { return Strings.tr("Descarga en el iPhone", language: ui) }
+        guard let src = model.source else { return "" }
+        // El idioma que de verdad suena (la pista puesta) gana a lo que decía el nombre.
+        let heard = model.snapshot.audioTracks.first { $0.id == model.snapshot.selectedAudio }.flatMap(TrackChooser.audioCode)
+        let language = (heard ?? Streams.playingLanguage(src, env.services.appSettings.preferences())?.code).map { Streams.versionLanguageName($0, in: ui) }
+        let size = src.size > 0 ? ByteCountFormatter.string(fromByteCount: Int64(src.size), countStyle: .file) : nil
+        return ([language, src.resolution.isEmpty ? nil : src.resolution, size].compactMap { $0 }).joined(separator: " · ")
+    }
+
+    /// Cambiar a otra versión. Si Real-Debrid aún no la tiene, se pregunta antes (puede tardar, o mandar su aviso).
+    private func pickSource(_ index: Int, _ model: PlayerModel, language: String? = nil) {
+        guard index != model.source?.index else { return }
+        if let src = model.sourceChoices.first(where: { $0.index == index }), !src.cached, src.debrid {
+            slowPick = index; return
+        }
+        withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media }
+        Task { await model.switchSource(to: index, language: language) }
+    }
+
+    /// La página «Versión»: por idioma (como «Elegir versión» de la ficha) o todas las fuentes; tocar una cambia a esa en el
+    /// mismo segundo.
+    private func versionPage(_ model: PlayerModel) -> some View {
+        let ui = env.services.appSettings.uiLanguage
+        let prefs = model.request.map { env.services.titlePrefs.languages(for: $0.metaID, settings: env.services.appSettings).prefs } ?? env.services.appSettings.preferences()
+        // La que suena va primero: sale marcada como la elegida.
+        let ranked = model.sourceChoices.filter { $0.index == model.source?.index } + model.sourceChoices.filter { $0.index != model.source?.index }
+        let rows = SourcesModel.languageRows(ranked, prefs: prefs, limitGB: env.services.appSettings.warnCellularOverGB)
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+            // En horizontal ya lo dice la pestaña de arriba (y se vuelve con ella).
+            if !landscape {
+                HStack(spacing: DS.Space.s2) {
+                    Button { withAnimation(DS.Motion.base(reduceMotion)) { dockPage = .media } } label: { Image(systemName: "chevron.left") }
+                        .buttonStyle(.glass).accessibilityLabel(Text("Atrás")).accessibilityIdentifier("version-back")
+                    Text("Versión").recipe(.cardTitle)
+                    Spacer()
+                }
+            }
+            Picker(selection: $versionShowsAll) {
+                Text("Por idioma").tag(false)
+                Text("Todas las fuentes").tag(true)
+            } label: { Text("Ver") }
+            .pickerStyle(.segmented)
+            ScrollView {
+                if versionShowsAll {
+                    AllSourcesList(sources: model.sourceChoices, current: model.source?.index, currentIsPlaying: true,
+                                   primary: ("Cambiar a esta", { pickSource($0.index, model) }), secondary: nil, uiLanguage: ui)
+                } else {
+                    VStack(alignment: .leading, spacing: DS.Space.s2) {
+                        ForEach(rows.main + rows.more) { row in
+                            VersionLanguageRow(row: row, uiLanguage: ui) { option in pickSource(option.id, model) }
+                        }
+                    }
+                }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+        .padding(DS.Space.s4)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
     }
 
     /// El idioma puesto, en corto («es»); nil: apagados.
@@ -941,22 +1477,6 @@ struct PlayerScreen: View {
         withAnimation(DS.Motion.base(reduceMotion)) { if subtitleToast == text { subtitleToast = nil } }
     }
 
-    /// Un toque en el botón de subtítulos: la versión siguiente, sin pausar; los controles se quedan (para seguir tocando),
-    /// el aviso arriba y la tira abajo (‹ anterior y «Este va bien»).
-    private func nextSubtitle(_ model: PlayerModel) {
-        pulse()
-        tryStripTouches += 1
-        let settings = env.services.appSettings
-        var languages: [String] = []
-        for code in [settings.subtitles, settings.audio, settings.uiLanguage].compactMap(SubtitleLanguage.code) where !languages.contains(code) { languages.append(code) }
-        Task {
-            guard await model.cycleSubtitle(languages: languages) != nil else { return }
-            // Lo dice la tira de abajo (no un aviso arriba que repetía lo mismo); VoiceOver lo anuncia.
-            withAnimation(DS.Motion.base(reduceMotion)) { zoomToast = nil }
-            UIAccessibility.post(notification: .announcement, argument: subtitleInfo(model)?.title)
-        }
-    }
-
     /// «Español · 3 de 7» y por qué está esa versión («WEB-DL · coincide con tu copia», «Del video»…); nil sin subtítulos.
     private func subtitleInfo(_ model: PlayerModel, language: String? = nil) -> (title: String, reason: Text)? {
         let s = model.snapshot
@@ -974,33 +1494,6 @@ struct PlayerScreen: View {
         if v.matchesCopy { return (title, source.map { Text("\($0) · coincide con tu copia") } ?? Text("Coincide con tu copia")) }
         if let d = v.downloads, d > 0 { return (title, Text("\(d.formatted(.number.notation(.compactName))) descargas")) }
         return (title, Text("De internet"))
-    }
-
-    /// La tira de «probar subtítulos»: ‹ › entre versiones del idioma, «Inglés · 2 de 12» y por qué, ±0.5 s y «Este va bien».
-    /// Se va sola si no la tocas.
-    private func subtitleTryStrip(_ model: PlayerModel, language: String) -> some View {
-        let (title, reason) = subtitleInfo(model, language: language) ?? (language, Text("Cargando…"))
-        func touched() { tryStripTouches += 1 }
-        return GeometryReader { geo in
-            let rect = videoRect(in: geo.size)
-            SubtitleTryStrip(title: title, reason: reason, delay: model.subtitleDelay, step: PlayerModel.subtitleStep,
-                             previous: { touched(); Task { await model.stepVersion(-1) } },
-                             next: { touched(); Task { await model.stepVersion(1) } },
-                             nudge: { touched(); model.nudgeSubtitles(by: $0) },
-                             confirm: { model.confirmSubtitle() })
-                .padding(.horizontal, DS.Space.s3)
-                // En horizontal, con los controles a la vista, sube sobre la barra de avance.
-                .padding(.bottom, landscape && controlsVisible && !panel ? DS.Space.s6 + DS.Size.touchTarget * 2 : DS.Space.s3)
-                .frame(width: rect.width, height: rect.height, alignment: .bottom)
-                .offset(x: rect.minX, y: rect.minY)
-        }
-        .ignoresSafeArea(edges: landscape ? .all : [])
-        .transition(.opacity)
-        .task(id: tryStripTouches) {
-            try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
-            if !Task.isCancelled { model.dismissTry() }
-        }
-        .accessibilityIdentifier("player-subtitle-try")
     }
 
     /// «Saltar intro» (o «Saltar resumen»): abajo a la derecha, justo encima de la barra de avance (donde lo buscas al verla).
@@ -1111,16 +1604,16 @@ struct PlayerScreen: View {
 
     private var landscape: Bool { verticalSize == .compact }
 
-    /// Dónde va el video. Horizontal: toda la pantalla (o a la izquierda del panel). Vertical: arriba, a todo lo ancho y en su
-    /// proporción y de orilla a orilla (no apachurrado), a la altura que lo dejes al arrastrarlo; con el panel abierto, la mitad de arriba.
+    /// Dónde va el video. Horizontal: toda la pantalla (o a la izquierda de «Audio y subtítulos»). Vertical: arriba, a todo lo
+    /// ancho y en su proporción y de orilla a orilla (no apachurrado), a la altura que lo dejes al arrastrarlo.
     private func videoRect(in size: CGSize) -> CGRect {
-        if landscape && zoom == .fitSafeArea && !panel {
-            // «Ajustar al área segura»: el cuadro nunca queda bajo la isla ni bajo el indicador de inicio.
+        if landscape && zoom == .fitSafeArea && !subtitleDock {
+            // «Ajuste de aspecto» (Aspect Fit de Infuse): el cuadro nunca queda bajo la isla ni bajo el indicador de inicio.
             let inset = Self.windowSafeArea
             return CGRect(x: inset.left, y: inset.top, width: max(0, size.width - inset.left - inset.right),
                           height: max(0, size.height - inset.top - inset.bottom))
         }
-        if landscape && panel {
+        if landscape && subtitleDock {
             // Con el panel: el cuadro completo, en su proporción y centrado en lo que queda libre a la izquierda (sin
             // pegarse a la orilla ni quedar bajo el panel).
             let left = Self.windowSafeArea.left + DS.Space.s4
@@ -1130,43 +1623,74 @@ struct PlayerScreen: View {
             return CGRect(x: free.midX - width / 2, y: free.midY - height / 2, width: width, height: height)
         }
         if landscape { return CGRect(x: 0, y: 0, width: size.width, height: size.height) }
-        if panel { return CGRect(x: 0, y: 0, width: size.width, height: size.height * DS.PlayerPanel.videoShare) }
+        if ipod != nil { return IPodLayout(in: size).video }   // dentro de la pantalla del iPod
         // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
-        return Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter)
+        let band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter)
+        // «Ajuste de aspecto» en vertical: el cuadro con su margen a los lados, lejos de las esquinas redondeadas.
+        if zoom == .fitSafeArea {
+            let width = band.width - DS.Space.gutter * 2, height = width / DS.Poster.stillAspect
+            return CGRect(x: band.minX + DS.Space.gutter, y: band.midY - height / 2, width: width, height: height)
+        }
+        return band
     }
 
     /// El video en vertical: de orilla a orilla, el alto sale del ancho y la proporción (sin tope, salvo que no quepa), a la
     /// altura `center` (fracción del alto). `size` es el área segura. Lo usa también la ruleta de Los Simpson, que crece
     /// hasta aquí para que el episodio arranque donde ya está la imagen.
+    /// Arriba nunca llega a la barra de botones (antes, subido hasta arriba, se encimaba con ✕ y el nombre) y abajo deja el
+    /// lugar de los controles (la barra, «Saltar intro», ±10 y el botón grande).
     static func portraitVideoRect(in size: CGSize, center: Double) -> CGRect {
         let height = min(size.width / DS.Poster.stillAspect, size.height)
-        let y = min(max(0, size.height * center - height / 2), max(0, size.height - height))
+        let top = DS.PlayerPanel.portraitTopClearance
+        let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
+        let y = min(max(top, size.height * center - height / 2), lowest)
         return CGRect(x: 0, y: y, width: size.width, height: height)
     }
+    /// Lo más arriba y lo más abajo que puede ir el video (como centro, parte del alto): debajo de la barra de botones y
+    /// dejando el lugar de los controles.
+    static func portraitLimits(in size: CGSize) -> ClosedRange<Double> {
+        guard size.height > 0 else { return Double(DS.PlayerPanel.portraitCenter)...Double(DS.PlayerPanel.portraitCenter) }
+        let height = min(size.width / DS.Poster.stillAspect, size.height)
+        let top = DS.PlayerPanel.portraitTopClearance
+        let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
+        return Double((top + height / 2) / size.height)...Double((lowest + height / 2) / size.height)
+    }
+
+    /// VoiceOver: subir o bajar el video un tramo.
+    private func stepVideo(_ step: Int, size: CGSize) {
+        let limits = Self.portraitLimits(in: size)
+        let next = min(max(portraitCenter + Double(step) * DS.PlayerPanel.voiceOverStep, limits.lowerBound), limits.upperBound)
+        withAnimation(DS.Motion.base(reduceMotion)) { portraitCenter = next }
+    }
+
     /// Dónde dejaste el video en vertical (se recuerda entre videos).
     static let portraitCenterKey = "player-portrait-center"
 
     /// Vertical con «Recortar»: el video a pantalla completa.
-    private var fillsPortrait: Bool { !landscape && !panel && zoom == .fill }
+    private var fillsPortrait: Bool { !landscape && ipod == nil && (zoom == .fill || zoom == .stretch) }
+
+    /// El iPod se ve en vertical.
+    private var ipod: IPodFace? { landscape ? nil : IPodFace(rawValue: ipodFace) }
 
     /// Los márgenes seguros de la ventana (el video en horizontal ignora el área segura, así que no los trae su `GeometryReader`).
     static var windowSafeArea: UIEdgeInsets {
         UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.safeAreaInsets ?? .zero
     }
 
-    /// «12:34 de 22:00».
-    private func positionText(_ model: PlayerModel) -> String {
-        guard model.snapshot.duration > 0 else { return "" }
-        func t(_ s: Double) -> String { Duration.seconds(s).formatted(.time(pattern: s >= 3600 ? .hourMinuteSecond : .minuteSecond)) }
-        return String(format: Strings.tr("%@ de %@", language: env.services.appSettings.uiLanguage), t(model.snapshot.position), t(model.snapshot.duration))
+    /// Abre la hoja «Audio y subtítulos» con un renglón abierto, o directo en «Versión».
+    private func openDock(_ section: SubtitleDock.Section?, version: Bool = false) {
+        dockOpens = section
+        withAnimation(DS.Motion.base(reduceMotion)) {
+            moreOpen = false; controlsVisible = false; dockPage = version ? .version : .media; subtitleDock = true
+        }
     }
 
-    private func settingsPanel(_ model: PlayerModel) -> some View {
-        VideoSettingsPanel(model: model, page: panelPage, close: { panel = false }, openInInfuse: { Task { await openInInfuse() } }, drawsSubtitles: holder.engine.drawsSubtitles,
-                           openSubtitleDock: { panel = false; withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false; subtitleDock = true } })
-    }
+    /// «1080p» de la versión que suena (para el renglón del ⋯).
+    private func videoVersionShort(_ model: PlayerModel) -> String { model.source?.resolution ?? "" }
+
+    private func rateText(_ rate: Float) -> String { rate == 1 ? "1×" : String(format: "%g×", rate) }
 
     private func openInInfuse() async {
         await holder.model.close()
@@ -1250,331 +1774,5 @@ struct PlayerScreen: View {
                 DispatchQueue.main.async { requestGeometry(scene, target, attemptsLeft: attemptsLeft - 1, generation: generation) }
             }
         }
-    }
-}
-
-/// Un solo panel para audio, subtítulos y velocidad (recuerda lo que eliges por serie). En horizontal, audio y subtítulos
-/// «Ajustes del video»: un panel con cuatro renglones que dicen cómo está cada cosa (audio, subtítulos, fuente y velocidad,
-/// esta última ahí mismo) y, al tocar uno, su página con opciones grandes. En horizontal va a la derecha con el video a la
-/// vista; en vertical, como hoja ajustada a lo que tiene (sin espacio muerto).
-struct VideoSettingsPanel: View {
-    enum Page { case hub, audio, subtitles, source }
-    let model: PlayerModel
-    let close: () -> Void
-    let openInInfuse: () -> Void
-    /// Si la app dibuja los subtítulos (y entonces se pueden adelantar o atrasar).
-    var drawsSubtitles = true
-    /// «Tiempo y tamaño»: cierra el menú y abre el panel chico sobre el video (ahí se ajustan viendo la escena).
-    var openSubtitleDock: () -> Void = {}
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var observer: ModelObserver<PlayerModel>
-    @State private var page: Page = .hub
-    /// El idioma elegido en el menú de Subtítulos («» = sin subtítulos); nil: el de los puestos o el tuyo.
-    @State private var subtitleLanguage: String?
-    @State private var moreLanguages = false
-    /// Si queda más lista abajo (se desvanece el pie para que se note que sigue).
-    @State private var moreBelow = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    init(model: PlayerModel, page: Page = .hub, close: @escaping () -> Void, openInInfuse: @escaping () -> Void, drawsSubtitles: Bool = true,
-         openSubtitleDock: @escaping () -> Void = {}) {
-        _page = State(initialValue: page)
-        self.model = model; self.close = close; self.openInInfuse = openInInfuse; self.drawsSubtitles = drawsSubtitles
-        self.openSubtitleDock = openSubtitleDock
-        _observer = StateObject(wrappedValue: ModelObserver(model))
-    }
-
-    private var language: String { env.services.appSettings.uiLanguage }
-    private var locale: Locale { Locale(identifier: language) }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                switch page {
-                case .hub: hub
-                case .audio: audio
-                case .subtitles: subtitles
-                case .source: source
-                }
-            }
-            .padding(DS.Space.s4)
-            .animation(DS.Motion.base(reduceMotion), value: page)
-        }
-        .scrollBounceBehavior(.basedOnSize)
-        // El último renglón no queda bajo la barra de inicio, y si hay más abajo el pie se desvanece (antes se cortaba
-        // «Abrir en Infuse» o «Sincronía» sin aviso).
-        .contentMargins(.bottom, DS.Space.s6, for: .scrollContent)
-        .onScrollGeometryChange(for: Bool.self) { g in
-            g.contentOffset.y + g.containerSize.height < g.contentSize.height + g.contentInsets.bottom - DS.Space.s2
-        } action: { _, more in moreBelow = more }
-        .mask {
-            VStack(spacing: 0) {
-                Rectangle()
-                LinearGradient(colors: [.black, moreBelow ? .clear : .black], startPoint: .top, endPoint: .bottom)
-                    .frame(height: DS.Space.s14)
-            }
-        }
-        #if DEBUG
-        .onAppear { if Demo.isOn, Demo.player == "subtitles" { page = .subtitles } }   // `-demo-player subtitles`
-        #endif
-        // Mide lo que mide la lista (no `fixedSize`): si la hoja no cabe, se queda al tope y la lista se recorre hasta abajo.
-        .fittedScrollSheet()
-    }
-
-    private func header(_ title: LocalizedStringKey, back: Bool) -> some View {
-        HStack(spacing: DS.Space.s2) {
-            if back {
-                Button { page = .hub } label: { Image(systemName: "chevron.left") }.buttonStyle(.glass).accessibilityLabel(Text("Atrás")).accessibilityIdentifier("panel-back")
-            }
-            Text(title).recipe(.section)
-            Spacer()
-            if !back { Button(action: close) { Image(systemName: "xmark") }.buttonStyle(.glass).accessibilityLabel(Text("Cerrar")) }
-        }
-        .padding(.bottom, DS.Space.s2)
-    }
-
-    // MARK: el panel
-    @ViewBuilder private var hub: some View {
-        let s = model.snapshot
-        header("Ajustes del video", back: false)
-        PanelRow(title: "Audio", symbol: "speaker.wave.2.fill", color: DS.ListTint.library, action: { page = .audio }) {
-            trackValue(s.audioTracks.first { $0.id == s.selectedAudio }, empty: Text("Sin pistas de audio"))
-        }
-        .accessibilityIdentifier("panel-audio")
-        PanelRow(title: "Subtítulos", symbol: "captions.bubble.fill", color: DS.ListTint.spark, action: { page = .subtitles }) {
-            trackValue(s.subtitleTracks.first { $0.id == s.selectedSubtitle }, empty: Text("Sin subtítulos"))
-        }
-        .accessibilityIdentifier("panel-subtitles")
-        PanelRow(title: "Fuente", symbol: "list.bullet", color: DS.ListTint.flame, action: model.sourceChoices.count > 1 ? { page = .source } : nil) {
-            if let src = model.source { sourceValue(src) } else { Text("Archivo descargado").recipe(.footnote) }
-        }
-        .accessibilityIdentifier("panel-source")
-        // La velocidad, en el mismo renglón: − 1× + (sin una segunda fila de cápsulas).
-        HStack(spacing: DS.Space.s3) {
-            PanelIcon(symbol: "gauge.with.dots.needle.67percent", color: DS.ListTint.list)
-            Text("Velocidad").recipe(.secondary, color: DS.text).fontWeight(.semibold)
-            Spacer(minLength: DS.Space.s2)
-            SpeedStepper(rates: PlayerModel.rates, rate: model.rate) { rate in Task { await model.setRate(rate) } }
-        }
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
-        Button(action: openInInfuse) { Label { Text("Abrir en Infuse") } icon: { InfuseIcon() } }
-            .buttonStyle(.borderless).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-            .frame(maxWidth: .infinity).padding(.top, DS.Space.s2)
-    }
-
-
-    @ViewBuilder private func trackValue(_ track: MediaTrack?, empty: Text) -> some View {
-        if let track {
-            Text(verbatim: TrackChooser.label(track, locale: locale, technical: true)).recipe(.footnote).lineLimit(1)
-        } else { empty.recipe(.footnote) }
-    }
-
-    private func sourceValue(_ src: Source) -> some View {
-        HStack(spacing: DS.Space.s1) {
-            QualityBadges(items: QualityBadges.items(resolution: src.resolution, hdr: src.hdr, audio: src.audioBadges))
-            if src.size > 0 { Text(verbatim: Int64(src.size).formatted(.byteCount(style: .file))).recipe(.footnote).lineLimit(1) }
-        }
-    }
-
-    // MARK: audio
-    @ViewBuilder private var audio: some View {
-        let s = model.snapshot
-        header("Audio", back: true)
-        ForEach(s.audioTracks.sorted { $0.id < $1.id }) { track in
-            choiceRow(selected: s.selectedAudio == track.id, title: Text(verbatim: TrackChooser.label(track, locale: locale, technical: false)),
-                      detail: Text(verbatim: TrackChooser.technical(track))) { Task { await model.selectAudio(track.id) } }
-        }
-    }
-
-    private func choiceRow(selected: Bool, title: Text, detail: Text?, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: DS.Space.s3) {
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    title.recipe(.secondary, color: DS.text).fontWeight(.semibold)
-                    if let detail { detail.recipe(.footnote) }
-                }
-                Spacer(minLength: DS.Space.s2)
-                if selected { Image(systemName: "checkmark").fontWeight(.bold).foregroundStyle(DS.accent) }
-            }
-            .padding(DS.Space.s3)
-            .background(selected ? DS.fillStrong : DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous).stroke(selected ? DS.accent : .clear))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    // MARK: subtítulos
-    /// Tres pasos, de arriba abajo: el idioma (fichas, «Desactivar» primero; tocar uno ya pone su mejor versión), el ajuste
-    /// de tiempo (si hay subtítulos puestos) y las versiones de ese idioma (la recomendada primero). Abajo, qué se recuerda.
-    @ViewBuilder private var subtitles: some View {
-        let s = model.snapshot
-        let settings = env.services.appSettings
-        let lang = chosenSubtitleLanguage
-        let off = s.selectedSubtitle == nil && subtitleLanguage == ""
-        let available = Set(model.subtitleLanguages.map(\.code))
-        // Pocos idiomas a la vista: los tuyos, español e inglés, y el que esté puesto; los demás en «Más idiomas…».
-        let shortList = (yourSubtitleLanguages + ["es", "en"] + (lang.map { [$0] } ?? [])).reduce(into: [String]()) { out, c in if !out.contains(c) { out.append(c) } }
-        header("Subtítulos", back: true)
-        PanelGroupTitle(title: "Idioma")
-        FlowChips {
-            PanelChip(title: Text("Desactivar"), selected: off || (s.selectedSubtitle == nil && subtitleLanguage == nil), symbol: "captions.bubble") {
-                subtitleLanguage = ""
-                Task { await model.selectSubtitle(nil) }
-            }
-            .accessibilityIdentifier("player-subtitles-off")
-            ForEach(shortList, id: \.self) { code in
-                PanelChip(title: Text(verbatim: languageName(code)), selected: !off && s.selectedSubtitle != nil && code == lang) {
-                    subtitleLanguage = code
-                    Task { await model.chooseLanguage(code) }
-                }
-                .opacity(available.contains(code) || model.searchingSubtitles ? 1 : DesignTokens.Opacity.faint)
-            }
-            PanelChip(title: Text("Más idiomas…"), selected: false, symbol: "globe") { moreLanguages = true }
-        }
-        .accessibilityIdentifier("player-subtitle-language")
-        .sheet(isPresented: $moreLanguages) {
-            LanguageSearchList(codes: SubtitleLanguage.all, available: model.subtitleLanguages.filter { !shortList.contains($0.code) }, name: languageName) { code in
-                subtitleLanguage = code
-                Task { await model.chooseLanguage(code) }
-            }
-        }
-        // Se busca en internet al abrir (para que haya más versiones), sin tocar «Buscar».
-        .task { await model.ensureSubtitleSearch() }
-        // El tiempo y el tamaño se ajustan en el panel chico, viendo la escena (aquí solo el atajo).
-        if s.selectedSubtitle != nil {
-            PanelChip(title: Text("Tiempo y tamaño…"), selected: false, symbol: "slider.horizontal.3", action: openSubtitleDock)
-                .accessibilityIdentifier("player-subtitle-dock")
-        }
-        if let lang, !off {
-            let versions = model.subtitleVersions(language: lang)
-            if !versions.isEmpty { PanelGroupTitle(title: "Versión") }
-            // Probar rápido: ‹ › van a la versión anterior o siguiente (se ve al momento en el video, arriba); las que ya
-            // probaste quedan marcadas en la lista.
-            if versions.count > 1 {
-                let at = versions.firstIndex { $0.id == model.selectedVersionID }
-                VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    HStack(spacing: DS.Space.s2) {
-                        PanelChip(title: Text("‹ Anterior"), selected: false) { step(versions, from: at, by: -1) }
-                        Spacer(minLength: DS.Space.s2)
-                        Text(verbatim: at.map { String(format: Strings.tr("%lld de %lld", language: language), $0 + 1, versions.count) } ?? "—")
-                            .recipe(.secondary, color: DS.text).fontWeight(.semibold).monospacedDigit()
-                        Spacer(minLength: DS.Space.s2)
-                        PanelChip(title: Text("Siguiente ›"), selected: false) { step(versions, from: at, by: 1) }
-                            .accessibilityIdentifier("player-subtitle-next-version")
-                    }
-                    Text("¿No va a tiempo o se ve mal? Toca Siguiente para probar otra.").recipe(.caption)
-                }
-            }
-            ForEach(Array(versions.enumerated()), id: \.element.id) { index, version in
-                let selected = model.selectedVersionID == version.id
-                SubtitleVersionRow(title: versionTitle(version, index: index, recommended: index == 0), selected: selected,
-                                   fromVideo: version.fromVideo, matchesCopy: version.matchesCopy, downloads: version.downloads,
-                                   loading: version.option.map { model.addedSubtitleURLs.contains($0.url) && model.addedTracks[$0.url] == nil } ?? false,
-                                   detail: model.triedVersionIDs.contains(version.id) && !selected ? "\(Strings.tr("Ya la probaste", language: language)) · \(version.name ?? "")" : version.name) {
-                    Task { await model.selectVersion(version) }
-                }
-            }
-            if versions.isEmpty {
-                if model.searchingSubtitles { Text("Buscando versiones en internet…").recipe(.footnote) }
-                else if model.subtitleSearchFailed {
-                    DSNotice(text: "No pudimos buscar subtítulos. Revisa tu conexión.", tone: .warn)
-                    PanelChip(title: Text("Volver a buscar"), selected: false, symbol: "magnifyingglass") { Task { await model.searchSubtitles() } }
-                        .accessibilityIdentifier("player-search-subtitles")
-                } else { Text("No hay subtítulos en este idioma.").recipe(.footnote) }
-            }
-        }
-        // Qué se recuerda: lo que elijas aquí vale para todo el título (sin confirmar nada).
-        Label(model.request?.kind == "series" ? "Se recuerda para toda la serie." : "Se recuerda para esta película.", systemImage: "checkmark.circle")
-            .recipe(.caption)
-    }
-
-    /// ‹ › de las versiones: pone la anterior o la siguiente y marca la de antes como probada.
-    private func step(_ versions: [SubtitleVersion], from at: Int?, by delta: Int) {
-        guard !versions.isEmpty else { return }
-        let next = at.map { (($0 + delta) % versions.count + versions.count) % versions.count } ?? 0
-        Task { await model.selectVersion(versions[next]) }
-    }
-
-    /// El idioma de la lista: el que elegiste en el menú; si no, el de los subtítulos puestos; si no, el tuyo (Ajustes:
-    /// subtítulos, luego audio). nil: sin subtítulos.
-    private var chosenSubtitleLanguage: String? {
-        if let subtitleLanguage { return subtitleLanguage.isEmpty ? nil : subtitleLanguage }
-        let s = model.snapshot
-        if let id = s.selectedSubtitle, let code = SubtitleLanguage.code(s.subtitleTracks.first { $0.id == id }?.language) { return code }
-        return yourSubtitleLanguages.first
-    }
-
-    private var yourSubtitleLanguages: [String] {
-        let settings = env.services.appSettings
-        var out: [String] = []
-        for code in [settings.subtitles, settings.audio].compactMap(SubtitleLanguage.code) where !out.contains(code) { out.append(code) }
-        return out
-    }
-
-    /// Un título que se entiende («Español · del video», «WEB-DL · 1080p»), no el nombre del archivo («SPA (srt)»,
-    /// «Show.S01E02.1080p.WEB-DL.srt»), que va abajo, chico.
-    private func versionTitle(_ version: SubtitleVersion, index: Int, recommended: Bool = false) -> String {
-        let tr = { (key: String) in Strings.tr(key, language: language) }
-        let base = versionBaseTitle(version, index: index)
-        return recommended ? "\(base) · \(tr("Recomendada"))" : base
-    }
-
-    private func versionBaseTitle(_ version: SubtitleVersion, index: Int) -> String {
-        let tr = { (key: String) in Strings.tr(key, language: language) }
-        if version.fromVideo {
-            let name = languageName(version.language)
-            return "\(name) · \(tr("del video"))"
-        }
-        let parts = [version.traits.source, Self.resolution(version.name)].compactMap { $0 }
-        if !parts.isEmpty { return parts.joined(separator: " · ") }
-        return String(format: tr("Versión %lld"), index + 1)
-    }
-
-    /// «1080p», «720p», «2160p» del nombre de la copia.
-    private static func resolution(_ name: String?) -> String? {
-        guard let name, let range = name.range(of: #"(2160|1080|720|480)[pi]"#, options: [.regularExpression, .caseInsensitive]) else { return nil }
-        return name[range].lowercased()
-    }
-
-    /// «spa» o «es» → «Español» (en el idioma de la app).
-    private func languageName(_ code: String) -> String {
-        let two = SubtitleLanguage.code(code) ?? code
-        return locale.localizedString(forLanguageCode: two)?.capitalized(with: locale) ?? code
-    }
-
-    // MARK: fuente
-    @ViewBuilder private var source: some View {
-        let current = model.source
-        let rest = model.sourceChoices.filter { $0.index != current?.index }
-        header("Fuente", back: true)
-        if let current {
-            PanelGroupTitle(title: "La que tienes")
-            sourceRow(current, selected: true)
-        }
-        if !rest.isEmpty { PanelGroupTitle(title: "Otras") }
-        ForEach(rest) { sourceRow($0, selected: false) }
-    }
-
-    private func sourceRow(_ src: Source, selected: Bool) -> some View {
-        let langs = src.languages.prefix(2).map { Streams.languageName($0, in: language) }.joined(separator: " + ")
-        let size = src.size > 0 ? Int64(src.size).formatted(.byteCount(style: .file)) : ""
-        return Button { if !selected { Task { await model.switchSource(to: src.index); page = .hub } } } label: {
-            HStack(spacing: DS.Space.s3) {
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    QualityBadges(items: QualityBadges.items(resolution: src.resolution.isEmpty ? "SD" : src.resolution, hdr: src.hdr, audio: src.audioBadges))
-                    Text(verbatim: [langs, size].filter { !$0.isEmpty }.joined(separator: " · ")).recipe(.footnote)
-                    (src.cached ? Text("Al instante") : Text("Tarda en empezar")).recipe(.caption, color: src.cached ? DS.good : DS.textMuted)
-                }
-                Spacer(minLength: DS.Space.s2)
-                if selected { Image(systemName: "checkmark").fontWeight(.bold).foregroundStyle(DS.accent) }
-            }
-            .padding(DS.Space.s3)
-            .background(selected ? DS.fillStrong : DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous).stroke(selected ? DS.accent : .clear))
-        }
-        .buttonStyle(.plain)
     }
 }
