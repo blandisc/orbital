@@ -249,6 +249,8 @@ struct VersionCard: View {
                 Button { act(other.id, .download) } label: { Image(systemName: "arrow.down").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }
                     .buttonStyle(.plain).foregroundStyle(DS.text).accessibilityLabel(Text("Descargar"))
             }
+            // Sin ↓ (una lista HLS) se aparta su lugar: el ▶ queda en la misma columna que el de las demás filas.
+            else { Color.clear.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).accessibilityHidden(true) }
         }
         .padding(DS.Space.s2)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
