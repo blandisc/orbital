@@ -308,11 +308,12 @@ struct PlayerScreen: View {
                 #if DEBUG
                 if Demo.isOn, let open = Demo.player {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
-                    // `-demo-player dock|subtitles|audio|version`: la hoja «Audio y subtítulos» (con ese renglón abierto) o «Versión».
+                    // `-demo-player dock|subtitles|audio|version|subtitle-versions`: la hoja «Audio y subtítulos» (con ese renglón abierto) o «Versión».
                     switch open {
                     case "dock", "subtitles": openDock(.subtitles)
                     case "audio": openDock(.audio)
                     case "version": openDock(nil, version: true)
+                    case "subtitle-versions": openDock(.subtitles); dockVersions = true   // todas las versiones del idioma puesto
                     case "close": await close()
                     default: break
                     }
@@ -1310,6 +1311,13 @@ struct PlayerScreen: View {
         let tr = { (k: String) in Strings.tr(k, language: env.services.appSettings.uiLanguage) }
         let res = v.name.flatMap { n in n.range(of: #"(2160|1080|720|480)[pi]"#, options: [.regularExpression, .caseInsensitive]).map { String(n[$0]).lowercased() } }
         let named = [v.traits.source, res].compactMap { $0 }.joined(separator: " · ")
+        // Guardado con la descarga: «Español 2 · OpenSubtitles · para sordos» (la copia va debajo, en la hoja de versiones).
+        if let saved = v.saved {
+            let locale = Locale(identifier: env.services.appSettings.uiLanguage)
+            let language = locale.localizedString(forLanguageCode: v.language)?.capitalized(with: locale) ?? v.language
+            return ["\(language) \(v.savedNumber ?? index + 1)", saved.source,
+                    saved.hearingImpaired ? tr("para sordos") : saved.foreignOnly ? tr("forzados") : nil].compactMap { $0 }.joined(separator: " · ")
+        }
         // Una pista del video de las que se esconden (venía puesta): dice cuál es.
         if case .embedded(let track) = v.origin, SubtitleFilter.hides(track) {
             let forced = track.isForced || (track.title ?? "").range(of: #"forc|forz|sign|song|carteles"#, options: [.regularExpression, .caseInsensitive]) != nil
@@ -1524,6 +1532,7 @@ struct PlayerScreen: View {
         guard let at else { return (title, Text("Cargando…")) }
         let v = versions[at]
         if v.fromVideo { return (title, Text("Del video")) }
+        if v.saved != nil { return (title, Text("Guardado con la descarga")) }
         let source = v.traits.source
         if v.matchesCopy { return (title, source.map { Text("\($0) · coincide con tu copia") } ?? Text("Coincide con tu copia")) }
         if let d = v.downloads, d > 0 { return (title, Text("\(d.formatted(.number.notation(.compactName))) descargas")) }

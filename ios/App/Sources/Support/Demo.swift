@@ -134,7 +134,10 @@ enum Demo {
             d.state = state; d.writtenBytes = state == .done ? 2_400_000_000 : 900_000_000
             // Los subtítulos que de verdad estén junto al video (`-demo-play-download`), como los deja una descarga.
             let subs = demoDownloadsRoot.appendingPathComponent(meta).appendingPathComponent("subs")
-            d.subtitleFiles = ((try? FileManager.default.contentsOfDirectory(atPath: subs.path)) ?? []).sorted().map { "subs/\($0)" }
+            d.subtitleFiles = ((try? FileManager.default.contentsOfDirectory(atPath: subs.path)) ?? []).filter { $0.hasSuffix(".srt") }.sorted().map { "subs/\($0)" }
+            // Y su índice (`subs/index.json`, como el que guarda una descarga de verdad en el índice de descargas).
+            if let data = try? Data(contentsOf: subs.appendingPathComponent("index.json")),
+               let saved = try? JSONDecoder().decode([SavedSubtitle].self, from: data) { d.savedSubtitles = saved }
             return d
         }
         return [item("movie", "tt1160419", "tt1160419", "Dune", "", .done, "Dune.2021.1080p.WEB-DL"),
