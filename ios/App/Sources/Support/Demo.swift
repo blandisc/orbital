@@ -65,6 +65,8 @@ enum Demo {
     static var trakt: Bool { ProcessInfo.processInfo.arguments.contains("-demo-trakt") || open == "save" }
     /// `-demo-scroll 240`: la ficha abre ya desplazada esos puntos (para capturar el arte a medio recoger).
     static var scroll: Double? { value(after: "-demo-scroll").flatMap(Double.init) }
+    /// `-demo-autoscroll`: la ficha baja sola y suave hasta ~600 pt, espera y regresa arriba (para grabar el arte en video).
+    static var autoscroll: Bool { ProcessInfo.processInfo.arguments.contains("-demo-autoscroll") }
     /// `-demo-onedrive off|unlinked|linked`: OneDrive de mentira (Microsoft y la carpeta responden aquí; nada sale a tu cuenta).
     /// `linked` ya trae la carpeta «Películas» revisada: Dune Part Two (2024) y Severance T1 sale como fuente.
     static var oneDrive: String? { value(after: "-demo-onedrive") }
@@ -720,18 +722,40 @@ extension Demo {
 }
 
 /// `-demo-scroll N`: la pantalla abre ya desplazada N puntos (cuando ya cargó), para capturar a medio camino lo que cambia
-/// al desplazar (el arte de la ficha). Sin el argumento no toca el desplazamiento.
+/// al desplazar (el arte de la ficha). `-demo-autoscroll`: baja sola y suave hasta ~600 pt (~4 s), espera 1 s y regresa
+/// arriba (~3 s), para grabarlo con `xcrun simctl io … recordVideo`. Sin los argumentos no toca el desplazamiento.
 struct DemoScroll: ViewModifier {
     @State private var position = ScrollPosition()
 
     func body(content: Content) -> some View {
-        if let y = Demo.scroll {
+        if Demo.autoscroll {
+            content.scrollPosition($position).task {
+                try? await Task.sleep(for: .seconds(2))   // ds-exception: espera a que la ficha cargue (solo modo demo)
+                await glide(from: 0, to: 600, seconds: 4)
+                try? await Task.sleep(for: .seconds(1))   // ds-exception: quieta abajo antes de regresar (solo modo demo)
+                await glide(from: 600, to: 0, seconds: 3)
+            }
+        } else if let y = Demo.scroll {
             content.scrollPosition($position).task {
                 try? await Task.sleep(for: .seconds(2))   // ds-exception: espera a que la ficha cargue (solo modo demo)
                 position.scrollTo(y: y)
             }
         } else {
             content
+        }
+    }
+
+    /// Un recorrido suave cuadro a cuadro (~60 por segundo, curva smoothstep): `withAnimation` + `scrollTo` no respeta la
+    /// duración, y para grabar hace falta que dure lo que dice.
+    @MainActor private func glide(from: Double, to: Double, seconds: Double) async {
+        let frames = max(1, Int(seconds * 60))
+        let start = Date()
+        for i in 1...frames {
+            let t = HeroCollapse.smoothstep(0, 1, Double(i) / Double(frames))
+            position.scrollTo(y: from + (to - from) * t)            // Al ritmo del reloj, no del sueño: si un cuadro se atrasa, el recorrido no se alarga.
+            let next = start.addingTimeInterval(seconds * Double(i) / Double(frames))
+            let wait = next.timeIntervalSinceNow
+            if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
         }
     }
 }
