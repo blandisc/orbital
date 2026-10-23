@@ -71,6 +71,17 @@ public enum DesignTokens {
         public static func color(_ brand: String) -> String { hex[brand] ?? hex["otra"]! }
     }
 
+    /// El color de cada lista (`DS.ListTint`): el de siempre en oscuro y, en claro, el mismo tono más oscuro para que el ícono
+    /// se distinga del papel (≥ 3:1 sobre el fondo y la superficie en los dos modos).
+    public enum ListTint {
+        public static let hex: [String: (dark: String, light: String)] = [
+            "watching": ("#ffb547", "#c97800"), "library": ("#59c7fa", "#0793d5"), "bookmark": ("#ff70ad", "#ff388d"),
+            "spark": ("#b58cff", "#a16eff"), "calendar": ("#2ec4a6", "#249b83"), "series": ("#7aa3ff", "#4f85ff"),
+            "trend": ("#ff7a59", "#ff4719"), "flame": ("#ff9e0a", "#c77800"), "list": ("#9ed16b", "#63982f"),
+            "addon": ("#c9a1ff", "#aa69ff"), "chart": ("#ff5e7d", "#ff4064"), "trophy": ("#ffd166", "#b88100"),
+        ]
+    }
+
     /// Contraste WCAG entre dos colores «#rrggbb» (1…21).
     public static func contrast(_ a: String, _ b: String) -> Double {
         func luminance(_ hex: String) -> Double {

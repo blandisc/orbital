@@ -76,6 +76,13 @@ final class DesignTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.danger), hex(background)), 4.5, "\(mode): el error se lee sobre \(background)")
             }
             XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.onPrimary), hex(.primary)), 7, "\(mode): texto del botón principal")
+            // Los íconos de las listas (no son texto: 3:1).
+            for (name, tint) in DesignTokens.ListTint.hex {
+                for background in [R.background, .surface] {
+                    let color = mode == "dark" ? tint.dark : tint.light
+                    XCTAssertGreaterThanOrEqual(DesignTokens.contrast(color, hex(background)), 3, "\(mode): el color de la lista «\(name)» sobre \(background)")
+                }
+            }
         }
     }
 
