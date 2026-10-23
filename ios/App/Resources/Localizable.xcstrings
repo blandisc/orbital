@@ -6062,6 +6062,17 @@
         }
       }
     },
+    "Guardado con la descarga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved with the download"
+          }
+        }
+      }
+    },
     "Guardado en el iPhone: llega a Trakt en cuanto haya conexión.": {
       "extractionState": "manual",
       "localizations": {
@@ -8735,6 +8746,17 @@
         }
       }
     },
+    "No disponible sin conexión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not available offline"
+          }
+        }
+      }
+    },
     "No encontré %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -8808,6 +8830,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't find subtitles (or there's no connection). Try again."
+          }
+        }
+      }
+    },
+    "No encontré subtítulos en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't find subtitles in %@"
           }
         }
       }
@@ -12728,6 +12761,28 @@
         }
       }
     },
+    "Sin conexión: no hay subtítulos en %@ en esta descarga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline: this download has no subtitles in %@"
+          }
+        }
+      }
+    },
+    "Sin conexión: no hay subtítulos guardados en este idioma.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline: no saved subtitles in this language."
+          }
+        }
+      }
+    },
     "Sin conexión: no pude buscar dónde verlo.": {
       "extractionState": "manual",
       "localizations": {
@@ -12768,6 +12823,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Offline: showing what I saved last."
+          }
+        }
+      }
+    },
+    "Sin conexión: solo los subtítulos del video y los guardados con la descarga.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline: only the video's subtitles and the ones saved with the download."
+          }
+        }
+      }
+    },
+    "Sin conexión: solo los subtítulos del video.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline: only the video's subtitles."
           }
         }
       }

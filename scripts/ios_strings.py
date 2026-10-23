@@ -19,6 +19,13 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Subtítulos sin conexión (descargas).
+    "Guardado con la descarga": "Saved with the download", "No disponible sin conexión": "Not available offline",
+    "No encontré subtítulos en %@": "Couldn't find subtitles in %@",
+    "Sin conexión: no hay subtítulos en %@ en esta descarga": "Offline: this download has no subtitles in %@",
+    "Sin conexión: no hay subtítulos guardados en este idioma.": "Offline: no saved subtitles in this language.",
+    "Sin conexión: solo los subtítulos del video y los guardados con la descarga.": "Offline: only the video's subtitles and the ones saved with the download.",
+    "Sin conexión: solo los subtítulos del video.": "Offline: only the video's subtitles.",
     # «Guardar»: la watchlist de Trakt por omisión y la hoja «Guardar en…».
     "Guardada en tu watchlist": "Saved to your watchlist", "Quitada de tu watchlist": "Removed from your watchlist",
     "No pude cambiar tu watchlist de Trakt": "Couldn't change your Trakt watchlist",
