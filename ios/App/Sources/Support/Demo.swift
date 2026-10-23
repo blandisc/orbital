@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
@@ -59,6 +60,11 @@ enum Demo {
     static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
     /// `-demo-because`: Trakt de mentira con historial y relacionados, para ver «Porque viste» en Para ti.
     static var because: Bool { ProcessInfo.processInfo.arguments.contains("-demo-because") }
+    /// `-demo-trakt`: Trakt «conectado» con una watchlist y listas propias de mentira (unas recientes, otras viejas) que tardan
+    /// ~1,5 s en llegar, como la red de verdad: para ver «Guardar en…» cargando y ya cargada. `-demo-open save` lo prende solo.
+    static var trakt: Bool { ProcessInfo.processInfo.arguments.contains("-demo-trakt") || open == "save" }
+    /// `-demo-scroll 240`: la ficha abre ya desplazada esos puntos (para capturar el arte a medio recoger).
+    static var scroll: Double? { value(after: "-demo-scroll").flatMap(Double.init) }
     /// `-demo-onedrive off|unlinked|linked`: OneDrive de mentira (Microsoft y la carpeta responden aquí; nada sale a tu cuenta).
     /// `linked` ya trae la carpeta «Películas» revisada: Dune Part Two (2024) y Severance T1 sale como fuente.
     static var oneDrive: String? { value(after: "-demo-onedrive") }
@@ -156,7 +162,7 @@ enum Demo {
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
-        if scrobble || airings || because { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
+        if scrobble || airings || because || trakt { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         if tmdb { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
         if oneDrive == "linked" { secrets.set(SecretKey.oneDriveTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }
@@ -229,6 +235,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             if url.path.hasSuffix("/related") { try? await Task.sleep(nanoseconds: 1_200_000_000) }   // ds-exception: demora de red simulada (solo modo demo)
             return HTTPResponse(status: 200, data: found.serialized())
         }
+        if url.host == "api.trakt.tv", Demo.trakt, let found = await traktDemo(request) { return found }
         // La calificación de la comunidad de Trakt (la ficha la enseña con su logo junto a IMDb y TMDB).
         if url.host == "api.trakt.tv", url.path.hasSuffix("/ratings") { return HTTPResponse(status: 200, data: JSON.object(["rating": .double(8.4), "votes": 52_310]).serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
@@ -397,6 +404,75 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                  row("tt14452776", "The Bear", days: -7, hour: 20, season: 3, episode: 3, network: "FX"),
                                  row("tt11280740", "Severance", days: -6, hour: 21, season: 2, episode: 6, network: "Apple TV+")])
         return HTTPResponse(status: 200, data: rows.serialized())
+    }
+
+    /// Tus listas de Trakt de mentira (`-demo-trakt`): nombre, cuándo se crearon y cuándo cambiaron (horas atrás) y qué tienen.
+    /// Trakt las manda en el orden en que las acomodaste (aquí, de la más vieja a la más nueva): la app decide cuál va arriba.
+    private struct DemoTraktList { var id: Int; var name: String; var created: Double; var updated: Double; var items: Set<String> }
+    private var traktLists: [DemoTraktList] = [
+        .init(id: 101, name: "Documentales", created: 9000, updated: 8000, items: ["tt7366338"]),
+        .init(id: 102, name: "Clásicos pendientes", created: 6000, updated: 4000, items: ["tt0068646", "tt0111161"]),
+        .init(id: 103, name: "Para ver con Ana", created: 2000, updated: 900, items: ["tt0386676", "tt0108778"]),
+        .init(id: 104, name: "Terror de octubre", created: 400, updated: 30, items: ["tt1591095"]),
+        .init(id: 105, name: "Fin de semana", created: 48, updated: 2, items: ["tt15239678"]),
+    ]
+    private var traktWatchlist: [(imdb: String, title: String, kind: String, hoursAgo: Double)] = [
+        ("tt11280740", "Severance", "show", 5), ("tt15239678", "Dune: Part Two", "movie", 30), ("tt0903747", "Breaking Bad", "show", 200),
+    ]
+    private var nextTraktList = 106
+
+    /// Trakt de mentira para «Guardar en…»: la watchlist, tus listas (tardan ~1,5 s, como la red) y lo que escribes en ellas.
+    private func traktDemo(_ request: HTTPRequest) async -> HTTPResponse? {
+        let path = request.url.path, post = request.method == "POST"
+        let body = request.body.flatMap(JSON.parse)
+        func iso(_ hoursAgo: Double) -> JSON { .string(StremioLibrary.iso(Date().timeIntervalSince1970 - hoursAgo * 3600)) }
+        func imdbs(_ body: JSON?) -> [String] { ((body?["movies"]?.array ?? []) + (body?["shows"]?.array ?? [])).compactMap { $0["ids"]?["imdb"]?.string } }
+        func json(_ value: JSON, status: Int = 200) -> HTTPResponse { HTTPResponse(status: status, data: value.serialized()) }
+        if path == "/users/me/lists", !post {
+            try? await Task.sleep(for: .milliseconds(1500))   // ds-exception: demora de red simulada (solo modo demo), para ver «Guardar en…» cargando
+            return lock.withLock {
+                json(.array(traktLists.map { l in
+                    ["name": .string(l.name), "ids": ["trakt": .int(l.id), "slug": .string(l.name.lowercased())], "privacy": "private",
+                     "item_count": .int(l.items.count), "created_at": iso(l.created), "updated_at": iso(l.updated)]
+                }))
+            }
+        }
+        if path == "/users/me/lists", post {
+            return lock.withLock {
+                let name = body?["name"]?.string ?? "Lista"
+                traktLists.append(.init(id: nextTraktList, name: name, created: 0, updated: 0, items: []))
+                defer { nextTraktList += 1 }
+                return json(["name": .string(name), "ids": ["trakt": .int(nextTraktList)], "created_at": iso(0), "updated_at": iso(0)], status: 201)
+            }
+        }
+        let parts = path.split(separator: "/").map(String.init)   // users · me · lists · {id} · items [· remove]
+        if parts.count >= 5, parts[2] == "lists", parts[4] == "items", let id = Int(parts[3]) {
+            return lock.withLock {
+                guard let i = traktLists.firstIndex(where: { $0.id == id }) else { return json([:], status: 404) }
+                if post {
+                    let ids = imdbs(body)
+                    if parts.count == 6 { traktLists[i].items.subtract(ids) } else { traktLists[i].items.formUnion(ids) }
+                    traktLists[i].updated = 0
+                    return json(["added": [:]], status: 201)
+                }
+                return json(.array(traktLists[i].items.sorted().map { ["type": "movie", "movie": ["ids": ["imdb": .string($0)]]] }))
+            }
+        }
+        if path.hasPrefix("/sync/watchlist") {
+            return lock.withLock {
+                if post {
+                    let ids = imdbs(body)
+                    if path.hasSuffix("/remove") { traktWatchlist.removeAll { ids.contains($0.imdb) } }
+                    else { for id in ids where !traktWatchlist.contains(where: { $0.imdb == id }) { traktWatchlist.insert((id, id, body?["shows"] != nil ? "show" : "movie", 0), at: 0) } }
+                    return json(["added": [:]], status: 201)
+                }
+                return json(.array(traktWatchlist.map { w in
+                    ["listed_at": iso(w.hoursAgo), "type": .string(w.kind),
+                     w.kind: ["title": .string(w.title), "year": 2022, "ids": ["imdb": .string(w.imdb), "trakt": 1]]]
+                }))
+            }
+        }
+        return nil
     }
 
     /// Lo que manda `orbital/foryou.py` para un `video_item`, con `rank` si es de un chart.
@@ -641,6 +717,23 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
 }
 extension Demo {
     static var yearInReview: YearInReview { DemoHTTPClient.demoYear }
+}
+
+/// `-demo-scroll N`: la pantalla abre ya desplazada N puntos (cuando ya cargó), para capturar a medio camino lo que cambia
+/// al desplazar (el arte de la ficha). Sin el argumento no toca el desplazamiento.
+struct DemoScroll: ViewModifier {
+    @State private var position = ScrollPosition()
+
+    func body(content: Content) -> some View {
+        if let y = Demo.scroll {
+            content.scrollPosition($position).task {
+                try? await Task.sleep(for: .seconds(2))   // ds-exception: espera a que la ficha cargue (solo modo demo)
+                position.scrollTo(y: y)
+            }
+        } else {
+            content
+        }
+    }
 }
 #endif
 

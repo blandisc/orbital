@@ -87,6 +87,9 @@ struct TitleView: View {
                 .frame(minHeight: viewport.height, alignment: .top)
             }
         }
+        #if DEBUG
+        .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazada (capturas del arte a medio recoger)
+        #endif
         .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
         .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in scrolled = y }
