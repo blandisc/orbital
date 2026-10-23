@@ -146,6 +146,23 @@ public enum SubtitleVersions {
     }
 }
 
+/// Los subtítulos que se guardan junto a una descarga, para verla sin conexión.
+public enum DownloadSubtitles {
+    /// Los idiomas: los tuyos (los de ese título, tus ajustes, el audio, la app) y siempre español e inglés.
+    public static func languages(_ wanted: [String]) -> [String] {
+        var out: [String] = []
+        for raw in wanted + ["es", "en"] { if let code = SubtitleLanguage.code(raw), !out.contains(code) { out.append(code) } }
+        return out
+    }
+
+    /// El mejor de cada idioma (sin SDH ni forzados; el hecho para tu copia y luego el más bajado), en el orden de `languages`.
+    public static func pick(_ found: [SubtitleOption], languages: [String], release: String?) -> [(language: String, option: SubtitleOption)] {
+        languages.compactMap { language in
+            SubtitleVersions.ranked(language: language, tracks: [], found: found, release: release).first?.option.map { (language, $0) }
+        }
+    }
+}
+
 /// Lo que elegiste con «Este va bien» en una serie: el idioma y la copia (grupo o nombre) del subtítulo, para escoger el
 /// más parecido en el siguiente episodio.
 public struct SubtitlePick: Sendable, Equatable, Codable {

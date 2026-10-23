@@ -36,7 +36,7 @@ final class DownloadsTests: XCTestCase {
     func makeDownloads(_ transport: FakeTransport, secrets: SecretsStore = InMemorySecrets(), free: Int64 = 50_000_000_000, saved: [DownloadItem] = [],
                        refresh: @escaping @Sendable (DownloadItem) async -> URL? = { _ in nil },
                        otherSource: @escaping @Sendable (DownloadItem) async -> DownloadSource? = { _ in nil },
-                       subs: @escaping @Sendable (DownloadItem) async -> [(name: String, data: Data)] = { _ in [] }) -> Downloads {
+                       subs: @escaping @Sendable (DownloadItem) async -> [(name: String, data: Data)]? = { _ in [] }) -> Downloads {
         let d = Downloads(transport: transport, secrets: secrets, root: root, saved: saved, freeSpace: { free }, refresh: refresh,
                           otherSource: otherSource, subtitles: subs, backoff: { _ in })
         Task { await d.start() }
@@ -421,4 +421,45 @@ final class Locked<Value>: @unchecked Sendable {
     init(_ value: Value) { _value = value }
     var value: Value { lock.withLock { _value } }
     func mutate(_ change: (inout Value) -> Void) { lock.withLock { change(&_value) } }
+
+}
+
+extension DownloadsTests {
+    func testSubtitlesMissedForLackOfNetworkAreFetchedAgainLater() async throws {
+        var done = item("tt1:1:1"); done.state = .done
+        let online = Flag()
+        let d = makeDownloads(FakeTransport(), saved: [done], subs: { _ in online.value ? [(name: "es.srt", data: Data("1\n".utf8)), (name: "en.srt", data: Data("1\n".utf8))] : nil })
+        await settle("intentó") { true }
+        try? await Task.sleep(nanoseconds: 30_000_000)
+        var now = await d.item(done.id)
+        XCTAssertEqual(now?.subtitleFiles, [], "sin red no se guarda nada…")
+        XCTAssertEqual(now?.subtitleTries, 0, "…y no cuenta como intento")
+        online.value = true
+        await d.setBackgrounded(false)   // vuelves a la app, ya con red
+        now = await d.item(done.id)
+        XCTAssertEqual(now?.subtitleFiles, ["subs/es.srt", "subs/en.srt"])
+        XCTAssertEqual(now?.subtitleTries, 1)
+    }
+
+    func testSubtitleTriesSurviveTheIndex() throws {
+        var it = item("tt1:1:1"); it.subtitleTries = 2
+        let back = try JSONDecoder().decode(DownloadItem.self, from: JSONEncoder().encode(it))
+        XCTAssertEqual(back.subtitleTries, 2)
+    }
+
+    func testDownloadSubtitleLanguagesAlwaysIncludeSpanishAndEnglish() {
+        XCTAssertEqual(DownloadSubtitles.languages(["es", "es", "es", "es"]), ["es", "en"])
+        XCTAssertEqual(DownloadSubtitles.languages(["", "fre", "en", "es"]), ["fr", "en", "es"])
+        let found = [SubtitleOption(url: URL(string: "https://s/1")!, language: "spa", hearingImpaired: true),
+                     SubtitleOption(url: URL(string: "https://s/2")!, language: "spa"),
+                     SubtitleOption(url: URL(string: "https://s/3")!, language: "eng")]
+        let picked = DownloadSubtitles.pick(found, languages: ["es", "en", "fr"], release: nil)
+        XCTAssertEqual(picked.map(\.language), ["es", "en"])
+        XCTAssertEqual(picked.map(\.option.url.absoluteString), ["https://s/2", "https://s/3"], "sin los de sordos")
+    }
+}
+
+private final class Flag: @unchecked Sendable {
+    private let lock = NSLock(); private var _value = false
+    var value: Bool { get { lock.withLock { _value } } set { lock.withLock { _value = newValue } } }
 }

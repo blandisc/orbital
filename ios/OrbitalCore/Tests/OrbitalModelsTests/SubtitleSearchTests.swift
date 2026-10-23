@@ -51,4 +51,37 @@ final class SubtitleSearchTests: XCTestCase {
         let chose = await rig.model.chooseLanguage("fr")
         XCTAssertTrue(chose, "lo pediste tú: se vuelve a buscar")
     }
+
+    // MARK: sin conexión (una descarga en modo avión)
+
+    func testOfflineALanguageThatIsNotInTheVideoSaysOfflineInsteadOfNothing() async throws {
+        let rig = try await rig()
+        rig.http.offline = true
+        let chose = await rig.model.chooseLanguage("es")
+        XCTAssertFalse(chose)
+        XCTAssertTrue(rig.model.subtitlesOffline, "sin red no es «no hay subtítulos»: el panel lo dice")
+        XCTAssertFalse(rig.model.hasSubtitles(language: "es"))
+    }
+
+    func testOfflineTheVideoTracksAndTheSavedOnesStillWork() async throws {
+        let rig = try await rig()
+        rig.http.offline = true
+        let embedded = MediaTrack(id: 7, kind: .subtitle, language: "eng", title: "English")
+        let saved = MediaTrack(id: 8, kind: .subtitle, language: "es", title: "es")   // el «es.srt» de la descarga
+        await rig.model.handle(rig.playing(1, audio: [eng], subs: [embedded, saved], selectedAudio: 1))
+        await rig.model.ensureSubtitleSearch()
+        XCTAssertTrue(rig.model.subtitlesOffline)
+        let en = await rig.model.chooseLanguage("en")
+        XCTAssertTrue(en, "la pista del video se pone sin red")
+        let es = await rig.model.chooseLanguage("es")
+        XCTAssertTrue(es, "el subtítulo guardado con la descarga se pone sin red")
+        XCTAssertTrue(rig.model.hasSubtitles(language: "es") && rig.model.hasSubtitles(language: "en"))
+    }
+
+    func testWithNetworkNothingFoundIsNotOffline() async throws {
+        let rig = try await rig()
+        await rig.model.ensureSubtitleSearch()   // contestan (404: no hay), pero contestan
+        XCTAssertTrue(rig.model.subtitleSearchFailed)
+        XCTAssertFalse(rig.model.subtitlesOffline)
+    }
 }

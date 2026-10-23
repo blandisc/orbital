@@ -206,7 +206,7 @@ public final class PlayerModel: ObservableModel {
 
     /// Otro archivo: lo encontrado en internet se vuelve a buscar con su huella.
     private func forgetSubtitleSearch() {
-        foundSubtitles = nil; subtitleSearchFailed = false; searchTask = nil
+        foundSubtitles = nil; subtitleSearchFailed = false; subtitlesOffline = false; searchTask = nil
     }
     private var addedExternalSubtitle = false
     private var rescrobbleAfterSeek = false
@@ -289,7 +289,7 @@ public final class PlayerModel: ObservableModel {
         notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []
         acceptingSnapshots = false; retrying = false; nextLocal = nil; choicesAt = .distantPast
         // Lo encontrado «En internet» y el mapa de sustos eran del video anterior.
-        foundSubtitles = nil; addedSubtitleURLs = []; subtitleSearchFailed = false; searchTask = nil; scares = nil
+        foundSubtitles = nil; addedSubtitleURLs = []; subtitleSearchFailed = false; subtitlesOffline = false; searchTask = nil; scares = nil
         addedTracks = [:]; pendingSubtitleURL = nil; tryingSubtitles = nil
         Task { [weak self] in await self?.loadScares() }
     }
@@ -695,15 +695,22 @@ public final class PlayerModel: ObservableModel {
         var file = request.localFile.flatMap(FileFingerprint.of)
         if file == nil, let url = source?.playbackURL, !url.isFileURL { file = await finder.fingerprint(of: url) }
         guard generation == mine else { return }
-        let found = await finder.subtitleOptions(kind: request.kind, videoID: request.videoID, file: file)
+        let search = await finder.subtitleSearch(kind: request.kind, videoID: request.videoID, file: file)
         guard generation == mine else { return }   // ya es otro video: no se le cuelgan los de este
         // Nada (o sin red): se queda el botón para volver a intentar, con el aviso.
+        let found = search ?? []
         foundSubtitles = found.isEmpty ? nil : found
         subtitleSearchFailed = found.isEmpty
+        subtitlesOffline = search == nil
     }
 
     /// No se encontró nada en la última búsqueda (o no había red).
     public private(set) var subtitleSearchFailed = false { didSet { changed() } }
+    /// La última búsqueda no llegó a internet (modo avión, sin señal): solo hay los del video y los guardados con la descarga.
+    public private(set) var subtitlesOffline = false { didSet { if oldValue != subtitlesOffline { changed() } } }
+
+    /// Hay subtítulos de ese idioma para poner ya (del video, guardados con la descarga o encontrados en internet).
+    public func hasSubtitles(language: String) -> Bool { !subtitleVersions(language: language).isEmpty }
     /// Los que ya se sumaron (no se suma dos veces el mismo).
     public private(set) var addedSubtitleURLs: Set<URL> = [] { didSet { changed() } }
 

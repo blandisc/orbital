@@ -181,17 +181,18 @@ public final class Services: ObservableModel {
         }
     }
 
-    static func subtitleFetcher(http: HTTPClient, finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> [(name: String, data: Data)] {
+    /// Los subtítulos que se guardan con una descarga: uno por idioma (los tuyos, y siempre español e inglés), en «es.srt»,
+    /// «en.srt»… Antes solo el de tu audio y el de tus subtítulos (con los ajustes de siempre, solo español), y si no había red
+    /// al terminar no se guardaba nada: sin conexión no había ni uno. nil: sin red (se vuelve a intentar).
+    static func subtitleFetcher(http: HTTPClient, finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> [(name: String, data: Data)]? {
         { item in
-            let langs = titlePrefs.languages(for: item.metaID, settings: settings.value)
-            var languages = [settings.value.audio]
-            if !langs.subtitles.isEmpty { languages.append(langs.subtitles) }
+            let s = settings.value
+            let languages = DownloadSubtitles.languages([titlePrefs.languages(for: item.metaID, settings: s).subtitles, s.subtitles, s.audio, s.uiLanguage])
+            guard let found = await finder.subtitleSearch(kind: item.kind, videoID: item.videoID) else { return nil }
             var out: [(name: String, data: Data)] = []
-            for language in Set(languages) {
-                for (i, url) in (await finder.subtitles(kind: item.kind, videoID: item.videoID, language: language)).prefix(1).enumerated() {
-                    guard let response = try? await http.send(HTTPRequest(url: url, timeout: 20)), response.status == 200, !response.data.isEmpty else { continue }
-                    out.append((name: "\(language)\(i == 0 ? "" : "-\(i)").srt", data: response.data))
-                }
+            for (language, option) in DownloadSubtitles.pick(found, languages: languages, release: item.release) {
+                guard let response = try? await http.send(HTTPRequest(url: option.url, timeout: 20)), response.status == 200, !response.data.isEmpty else { continue }
+                out.append((name: "\(language).srt", data: response.data))
             }
             return out
         }

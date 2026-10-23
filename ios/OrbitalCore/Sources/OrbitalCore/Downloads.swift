@@ -30,6 +30,8 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
     public var state: DownloadState = .queued
     public var relativePath: String       // dentro de la carpeta de descargas
     public var subtitleFiles: [String] = []
+    /// Cuántas veces se intentó bajar sus subtítulos sin red de por medio (ver `Downloads.retryMissingSubtitles`).
+    public var subtitleTries = 0
     public var attempts = 0
     public var refreshes = 0              // cuántas veces se pidió un enlace nuevo (tope: `Downloads.maxRefreshes`)
     /// Las fuentes que ya se probaron y no dieron el video (el aviso corto de Torrentio, una página de error): no se vuelven a elegir.
@@ -67,6 +69,7 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
         state = try c.decodeIfPresent(DownloadState.self, forKey: .state) ?? .queued
         relativePath = try c.decode(String.self, forKey: .relativePath)
         subtitleFiles = try c.decodeIfPresent([String].self, forKey: .subtitleFiles) ?? []
+        subtitleTries = try c.decodeIfPresent(Int.self, forKey: .subtitleTries) ?? 0
         attempts = try c.decodeIfPresent(Int.self, forKey: .attempts) ?? 0
         refreshes = try c.decodeIfPresent(Int.self, forKey: .refreshes) ?? 0
         skippedReleases = try c.decodeIfPresent([String].self, forKey: .skippedReleases) ?? []
@@ -77,7 +80,7 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
 
     enum Keys: String, CodingKey {
         case id, kind, metaID, videoID, title, originalTitle, subtitle, poster, addon, release, sourceIndex, expectedBytes, writtenBytes, state
-        case relativePath, subtitleFiles, attempts, refreshes, skippedReleases, lastError, createdAt, finishedAt
+        case relativePath, subtitleFiles, subtitleTries, attempts, refreshes, skippedReleases, lastError, createdAt, finishedAt
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -87,6 +90,7 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
         try c.encodeIfPresent(poster, forKey: .poster); try c.encode(addon, forKey: .addon); try c.encode(release, forKey: .release)
         try c.encode(sourceIndex, forKey: .sourceIndex); try c.encodeIfPresent(expectedBytes, forKey: .expectedBytes); try c.encode(writtenBytes, forKey: .writtenBytes)
         try c.encode(state, forKey: .state); try c.encode(relativePath, forKey: .relativePath); try c.encode(subtitleFiles, forKey: .subtitleFiles)
+        try c.encode(subtitleTries, forKey: .subtitleTries)
         try c.encode(attempts, forKey: .attempts); try c.encode(refreshes, forKey: .refreshes); try c.encode(skippedReleases, forKey: .skippedReleases); try c.encodeIfPresent(lastError, forKey: .lastError)
         try c.encode(createdAt, forKey: .createdAt); try c.encodeIfPresent(finishedAt, forKey: .finishedAt)
     }
@@ -175,7 +179,7 @@ public actor Downloads {
     private let freeSpace: @Sendable () -> Int64
     private let refresh: @Sendable (DownloadItem) async -> URL?
     private let otherSource: @Sendable (DownloadItem) async -> DownloadSource?
-    private let subtitles: @Sendable (DownloadItem) async -> [(name: String, data: Data)]
+    private let subtitles: @Sendable (DownloadItem) async -> [(name: String, data: Data)]?
     private let clock: @Sendable () -> Date
     private let backoff: @Sendable (Int) async -> Void
     private let onChange: @Sendable ([DownloadItem]) -> Void
@@ -190,18 +194,18 @@ public actor Downloads {
 
     public func setBackgrounded(_ value: Bool) async {
         backgrounded = value
-        if value { await pump() }
+        if value { await pump() } else { await retryMissingSubtitles() }
     }
     private var listening: Task<Void, Never>?
     private nonisolated let updatesHub = UpdatesHub()
 
     /// - refresh: pide un enlace nuevo de ese título (mismo complemento y fuente); nil si no hay.
     /// - otherSource: otra fuente del mismo video que no esté en `skippedReleases` (la de ahora mandó algo que no es el video).
-    /// - subtitles: descarga los subtítulos de ese título (nombre de archivo y contenido).
+    /// - subtitles: descarga los subtítulos de ese título (nombre de archivo y contenido); nil si no hubo red.
     public init(transport: DownloadTransport, secrets: SecretsStore, root: URL, saved: [DownloadItem] = [],
                 freeSpace: @escaping @Sendable () -> Int64, refresh: @escaping @Sendable (DownloadItem) async -> URL?,
                 otherSource: @escaping @Sendable (DownloadItem) async -> DownloadSource? = { _ in nil },
-                subtitles: @escaping @Sendable (DownloadItem) async -> [(name: String, data: Data)] = { _ in [] },
+                subtitles: @escaping @Sendable (DownloadItem) async -> [(name: String, data: Data)]? = { _ in [] },
                 clock: @escaping @Sendable () -> Date = { Date() }, backoff: @escaping @Sendable (Int) async -> Void = { attempt in
                     try? await Task.sleep(nanoseconds: UInt64(min(60, pow(2, Double(attempt)))) * 1_000_000_000) },
                 onChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in }) {
@@ -218,7 +222,7 @@ public actor Downloads {
         guard listening == nil else { return }
         let events = transport.events
         listening = Task { [weak self] in for await event in events { await self?.handle(event) } }
-        Task { await pump() }
+        Task { await pump(); await retryMissingSubtitles() }
     }
 
     public var all: [DownloadItem] { items.values.sorted { $0.createdAt < $1.createdAt } }
@@ -467,18 +471,33 @@ public actor Downloads {
 
     private func changedAfterSubtitles() { changed() }
 
+    /// Las descargas terminadas que se quedaron sin subtítulos porque no había red (terminó en segundo plano y la app se abrió
+    /// ya en el avión, OpenSubtitles no contestó): se vuelven a pedir al abrir la app y al volver a ella. Sin red no cuenta
+    /// como intento; con red, a lo más `maxSubtitleTries` (si de verdad no hay, no se pregunta para siempre).
+    public func retryMissingSubtitles() async {
+        for item in all where item.state == .done && item.subtitleFiles.isEmpty && item.subtitleTries < Self.maxSubtitleTries {
+            await saveSubtitles(for: item.id)
+        }
+        changed()
+    }
+    static let maxSubtitleTries = 3
+    private var fetchingSubtitles = Set<String>()
+
     private func saveSubtitles(for id: String) async {
-        guard let snapshot = items[id] else { return }
-        let found = await subtitles(snapshot)
+        guard let snapshot = items[id], fetchingSubtitles.insert(id).inserted else { return }
+        defer { fetchingSubtitles.remove(id) }
+        let fetched = await subtitles(snapshot)
         // Lo borraron (o lo cambiaron por otra versión) mientras se bajaban los subtítulos: no son de esta.
         guard var item = items[id], item.createdAt == snapshot.createdAt else { return }
+        guard let found = fetched else { return }   // sin red: se intenta otra vez (`retryMissingSubtitles`)
+        item.subtitleTries += 1
         let folder = fileURL(item).deletingLastPathComponent().appendingPathComponent("subs")
-        guard DownloadFiles.isStrictlyInside(folder, root: root) else { return }
+        guard DownloadFiles.isStrictlyInside(folder, root: root) else { items[id] = item; return }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         for sub in found {
             let name = DownloadFiles.component(sub.name)
             guard (try? sub.data.write(to: folder.appendingPathComponent(name))) != nil else { continue }
-            item.subtitleFiles.append("subs/\(name)")
+            if !item.subtitleFiles.contains("subs/\(name)") { item.subtitleFiles.append("subs/\(name)") }
         }
         items[id] = item
     }

@@ -155,15 +155,25 @@ public actor StreamFinder {
     /// Todos los subtítulos que hay para un video, de tus complementos y de OpenSubtitles; con la huella del archivo (una
     /// descarga), los que van sincronizados con esa copia exacta salen primero.
     public func subtitleOptions(kind: String, videoID: String, file: FileFingerprint? = nil) async -> [SubtitleOption] {
+        await subtitleSearch(kind: kind, videoID: videoID, file: file) ?? []
+    }
+
+    /// Lo mismo, pero nil si nadie contestó (sin red): así «no hay subtítulos» y «sin conexión» no se confunden.
+    public func subtitleSearch(kind: String, videoID: String, file: FileFingerprint? = nil) async -> [SubtitleOption]? {
         var bases = ((try? await registry.serving("subtitles", kind: kind, itemID: videoID)) ?? []).map(\.base)
         if !bases.contains(where: { $0.contains("opensubtitles") }) { bases.append(Self.builtInSubtitles) }
         let extra = file.map { "/videoHash=\($0.hash)&videoSize=\($0.size)" } ?? ""
         var out: [SubtitleOption] = []
-        await withTaskGroup(of: [SubtitleOption].self) { group in
+        var answered = false
+        await withTaskGroup(of: [SubtitleOption]?.self) { group in
             for base in bases {
                 group.addTask { [http] in
-                    guard let url = URL(string: "\(base)/subtitles/\(kind)/\(uriComponent(videoID))\(extra).json"),
-                          let subs = (try? await http.getJSON(url, timeout: 15))?["subtitles"]?.array else { return [] }
+                    guard let url = URL(string: "\(base)/subtitles/\(kind)/\(uriComponent(videoID))\(extra).json") else { return [] }
+                    let json: JSON?
+                    do { json = try await http.getJSON(url, timeout: 15) }
+                    catch let error as NetworkError where error.description.hasPrefix("HTTP") { return [] }   // contestó: no es falta de red
+                    catch { return nil }
+                    guard let subs = json?["subtitles"]?.array else { return [] }
                     return subs.compactMap { sub in
                         guard let text = sub["url"]?.string, let u = URL(string: text), ["http", "https"].contains(u.scheme?.lowercased() ?? ""),
                               let lang = sub["lang"]?.string else { return nil }
@@ -176,8 +186,9 @@ public actor StreamFinder {
                     }
                 }
             }
-            for await found in group { out += found }
+            for await found in group { if let found { answered = true; out += found } }
         }
+        guard answered else { return nil }
         var seen = Set<URL>()
         return out.filter { seen.insert($0.url).inserted }
     }
