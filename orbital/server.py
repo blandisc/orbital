@@ -649,7 +649,7 @@ def _foryou_public_routes(public: FastAPI, main_app: FastAPI) -> None:
     @public.get("/api/foryou/list")
     def items(id: str, kind: str | None = None) -> dict:
         list_id = id[:120]
-        if _is_game_list(list_id):
+        if _is_game_list(list_id) or list_id.startswith(TV_ONLY_PREFIXES):
             raise HTTPException(404, "Esa lista ya no existe.")
         try:
             return {"items": foryou_of().list_items(list_id, kind)}
