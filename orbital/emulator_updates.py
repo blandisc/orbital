@@ -250,13 +250,17 @@ def download(url: str, dest: Path, timeout: float = 30, limit: int = MAX_DOWNLOA
     tmp = dest.with_suffix(dest.suffix + ".part")
     size = 0
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/octet-stream"})
-    with urllib.request.urlopen(req, timeout=timeout) as res, open(tmp, "wb") as out:
-        while chunk := res.read(1024 * 1024):
-            size += len(chunk)
-            if size > limit:
-                raise InstallError("La descarga es demasiado grande.")
-            out.write(chunk)
-    tmp.replace(dest)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as res, open(tmp, "wb") as out:
+            while chunk := res.read(1024 * 1024):
+                size += len(chunk)
+                if size > limit:
+                    raise InstallError("La descarga es demasiado grande.")
+                out.write(chunk)
+        tmp.replace(dest)
+    except BaseException:
+        tmp.unlink(missing_ok=True)  # no se queda un .part tirado
+        raise
     return dest
 
 
