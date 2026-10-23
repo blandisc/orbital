@@ -56,6 +56,47 @@ final class AddonsTests: XCTestCase {
         XCTAssertEqual(serving.map(\.name), ["Cuenta"])
     }
 
+    func testRegistrySharesInFlightAndOpensFromDisk() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let http = FakeHTTP(), url = "https://api.strem.io/api/addonCollectionGet"
+        http.json[url] = ["result": ["addons": [["transportUrl": "https://cuenta.example/manifest.json", "manifest": ["name": "Cuenta", "resources": ["stream"], "types": ["movie"]]]]]]
+        http.delays[url] = 50
+        let registry = AddonRegistry(http: http, account: StremioAPI(http: http), auth: { "KEY" }, disk: dir)
+        async let a = registry.addons()
+        async let b = registry.addons()
+        let (first, second) = try await (a, b)
+        XCTAssertEqual(first.map(\.name), ["Cuenta"]); XCTAssertEqual(second.map(\.name), ["Cuenta"])
+        XCTAssertEqual(http.calls.filter { $0 == url }.count, 1, "a la vez: una sola addonCollectionGet")
+
+        // Otra apertura: la lista guardada sale sin esperar a la red y se revalida aparte.
+        http.delays[url] = 2000
+        let reopened = AddonRegistry(http: http, account: StremioAPI(http: http), auth: { "KEY" }, disk: dir)
+        let saved = try await reopened.addons()
+        XCTAssertEqual(saved.map(\.name), ["Cuenta"])
+        for _ in 0..<200 where http.calls.filter({ $0 == url }).count < 2 { try await Task.sleep(nanoseconds: 5_000_000) }
+        XCTAssertEqual(http.calls.filter { $0 == url }.count, 2, "revalidando en segundo plano")
+    }
+
+    func testRepeatedReadsShareAndRecentItemIsReused() async throws {
+        let http = FakeHTTP(), url = "https://api.strem.io/api/datastoreGet"
+        http.json[url] = ["result": [["_id": "tt1", "name": "Uno", "state": [:]]]]
+        http.delays[url] = 50
+        let api = StremioAPI(http: http)
+        async let a = api.libraryItem(authKey: "K", id: "tt1")
+        async let b = api.libraryItem(authKey: "K", id: "tt1")
+        _ = try await (a, b)
+        XCTAssertEqual(http.calls.count, 1, "la misma lectura a la vez: una petición")
+        _ = try await api.libraryItem(authKey: "K", id: "tt1", maxAge: 60)
+        XCTAssertEqual(http.calls.count, 1, "solo para leer: reusa la de hace un momento")
+        _ = try await api.libraryItem(authKey: "K", id: "tt1")
+        XCTAssertEqual(http.calls.count, 2, "para escribir: siempre la de Stremio")
+        http.json["https://api.strem.io/api/datastorePut"] = ["result": ["success": true]]
+        try await api.saveLibraryItem(authKey: "K", item: ["_id": "tt1"])
+        _ = try await api.libraryItem(authKey: "K", id: "tt1", maxAge: 60)
+        XCTAssertEqual(http.calls.filter { $0 == url }.count, 3, "después de escribir no se reusa lo leído antes")
+    }
+
     func testRegistryShortCacheWhenSomethingFails() async throws {
         let http = FakeHTTP()
         http.json["https://ok.example/manifest.json"] = ["name": "Ok", "resources": ["stream"]]

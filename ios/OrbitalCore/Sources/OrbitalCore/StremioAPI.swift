@@ -17,9 +17,21 @@ public struct StremioAPI: Sendable {
     let http: HTTPClient
     let base: URL
 
+    /// Lecturas compartidas: la misma lectura a la vez (dos pantallas, la ficha y el reproductor) es una sola petición.
+    let reads = StremioReads()
+    /// Cuánto vale una lectura para solo leer (dónde ibas): lo que tarda abrir una ficha y darle a reproducir.
+    public static let recentRead: TimeInterval = 60
+
     public init(http: HTTPClient, base: URL = StremioAPI.defaultBase) { self.http = http; self.base = base }
 
+    /// Las lecturas (`datastoreGet`, `addonCollectionGet`) idénticas en vuelo comparten la petición; las escrituras van siempre.
     public func request(_ method: String, _ params: [String: JSON]) async throws -> JSON {
+        guard StremioReads.shareable.contains(method) else { return try await send(method, params) }
+        let body = JSON.object(params).serialized(sortedKeys: true)
+        return try await reads.shared(method + "|" + String(decoding: body, as: UTF8.self)) { try await send(method, params) }
+    }
+
+    private func send(_ method: String, _ params: [String: JSON]) async throws -> JSON {
         let body = JSON.object(params).serialized()
         let url = base.appendingPathComponent("api/\(method)")
         let response: HTTPResponse
@@ -46,16 +58,27 @@ public struct StremioAPI: Sendable {
     }
 
     public func library(authKey: String) async throws -> [JSON] {
+        let generation = await reads.generation
         let result = try await request("datastoreGet", ["authKey": .string(authKey), "collection": "libraryItem", "ids": [], "all": true])
-        return (result.array ?? []).filter { $0.object != nil }
+        let items = (result.array ?? []).filter { $0.object != nil }
+        await reads.remember(authKey: authKey, items: items, complete: true, generation: generation)
+        return items
     }
 
-    public func libraryItem(authKey: String, id: String) async throws -> JSON? {
+    /// `maxAge`: solo para LEER (dónde ibas, el ✓ de visto): reusa lo que se trajo hace menos de esos segundos (la biblioteca
+    /// completa o el mismo elemento) en vez de volver a preguntar. Lo que lee para luego escribir pide siempre lo de Stremio.
+    public func libraryItem(authKey: String, id: String, maxAge: TimeInterval = 0) async throws -> JSON? {
+        if maxAge > 0, let recent = await reads.recentItem(authKey: authKey, id: id, maxAge: maxAge) { return recent }
+        let generation = await reads.generation
         let result = try await request("datastoreGet", ["authKey": .string(authKey), "collection": "libraryItem", "ids": [.string(id)], "all": false])
-        return (result.array ?? []).first { $0["_id"]?.string == id }
+        let item = (result.array ?? []).first { $0["_id"]?.string == id }
+        await reads.remember(authKey: authKey, items: item.map { [$0] } ?? [], complete: false, asked: id, generation: generation)
+        return item
     }
 
     public func saveLibraryItem(authKey: String, item: JSON) async throws {
+        await reads.forget()
+        defer { Task { await reads.forget() } }
         _ = try await request("datastorePut", ["authKey": .string(authKey), "collection": "libraryItem", "changes": [item]])
     }
 
@@ -63,6 +86,47 @@ public struct StremioAPI: Sendable {
     public func addonCollection(authKey: String) async throws -> JSON {
         try await request("addonCollectionGet", ["authKey": .string(authKey), "update": true])
     }
+}
+
+/// Lo que comparten las copias de `StremioAPI` (es un struct): las lecturas en vuelo y los elementos leídos hace poco.
+public actor StremioReads {
+    static let shareable: Set<String> = ["datastoreGet", "addonCollectionGet"]
+    private var inflight: [String: Task<JSON, Error>] = [:]
+    /// authKey → id → (cuándo, el elemento o nil si Stremio no lo tiene).
+    private var items: [String: [String: (at: Date, item: JSON?)]] = [:]
+    /// Cuándo se trajo la biblioteca completa (un id que no venía ahí es que no está).
+    private var complete: [String: Date] = [:]
+    /// Sube con cada escritura: lo que se leyó antes de escribir ya no se recuerda ni se comparte.
+    private(set) var generation = 0
+    private let clock: @Sendable () -> Date
+
+    init(clock: @escaping @Sendable () -> Date = { Date() }) { self.clock = clock }
+
+    func shared(_ key: String, _ work: @escaping @Sendable () async throws -> JSON) async throws -> JSON {
+        if let running = inflight[key] { return try await running.value }
+        let task = Task { try await work() }
+        inflight[key] = task
+        defer { inflight[key] = nil }
+        return try await task.value
+    }
+
+    func remember(authKey: String, items new: [JSON], complete full: Bool, asked: String? = nil, generation: Int) {
+        guard generation == self.generation else { return }
+        let now = clock()
+        if full { items[authKey] = [:]; complete[authKey] = now }
+        for item in new { if let id = item["_id"]?.string { items[authKey, default: [:]][id] = (now, item) } }
+        if let asked, !new.contains(where: { $0["_id"]?.string == asked }) { items[authKey, default: [:]][asked] = (now, nil) }
+    }
+
+    /// `.some(nil)`: se sabe que Stremio no lo tiene; `nil`: no hay nada reciente.
+    func recentItem(authKey: String, id: String, maxAge: TimeInterval) -> JSON?? {
+        let now = clock()
+        if let hit = items[authKey]?[id], now.timeIntervalSince(hit.at) < maxAge { return .some(hit.item) }
+        if let at = complete[authKey], now.timeIntervalSince(at) < maxAge, items[authKey]?[id] == nil { return .some(nil) }
+        return nil
+    }
+
+    func forget() { items = [:]; complete = [:]; inflight = [:]; generation += 1 }
 }
 
 // MARK: - Lo que se guarda en la biblioteca de Stremio

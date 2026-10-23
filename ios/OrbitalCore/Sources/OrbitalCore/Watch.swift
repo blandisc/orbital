@@ -187,7 +187,7 @@ public actor WatchService {
 
     /// Dónde ibas según Stremio (0 si no se sabe).
     public func resumePosition(metaID: String, videoID: String) async -> Double {
-        guard let key = authKey(), let item = try? await stremio.libraryItem(authKey: key, id: metaID) else { return 0 }
+        guard let key = authKey(), let item = try? await stremio.libraryItem(authKey: key, id: metaID, maxAge: StremioAPI.recentRead) else { return 0 }
         return StremioLibrary.resumeSeconds(item, videoID: videoID)
     }
 
@@ -385,7 +385,7 @@ public actor WatchService {
 extension WatchService {
     /// El libraryItem tal cual lo guarda Stremio (para leer el bitfield de «visto» y dónde ibas).
     public func rawItem(metaID: String) async -> JSON? {
-        guard let key = authKeyValue(), let item = try? await stremioClient().libraryItem(authKey: key, id: metaID) else { return nil }
+        guard let key = authKeyValue(), let item = try? await stremioClient().libraryItem(authKey: key, id: metaID, maxAge: StremioAPI.recentRead) else { return nil }
         return item
     }
 }

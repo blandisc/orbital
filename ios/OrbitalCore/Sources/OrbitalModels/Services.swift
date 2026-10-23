@@ -102,7 +102,8 @@ public final class Services: ObservableModel {
         let stremio = StremioAPI(http: http)
         self.stremio = stremio
         let registry = AddonRegistry(http: http, account: stremio, auth: { secrets.get(SecretKey.stremioAuth) },
-                                     own: { (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init) }, clock: clock)
+                                     own: { (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init) },
+                                     disk: cacheRoot?.appendingPathComponent("addons"), clock: clock)
         let cinemeta = Cinemeta(http: http, cached: http is URLSessionHTTPClient ? URLSessionHTTPClient.publicCache("cinemeta") : nil,
                                 registry: registry,
                                 disk: cacheRoot?.appendingPathComponent("cinemeta"),
