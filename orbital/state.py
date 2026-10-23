@@ -18,6 +18,7 @@ MAX_DISMISSED = 2000  # «No me interesa» guardados (los más viejos se olvidan
 SHARED_PREFS = ("audio", "spanish", "subtitles")
 _CHOICE_OK = {"audio": re.compile(r"^[a-z]{2,3}$"), "spanish": re.compile(r"^(es-419|es-ES)?$"),
               "subtitles": re.compile(r"^([a-z]{2,3}|forced)?$")}
+MAX_OPENED = 500  # consolas (filas) con su última entrada; las que hace más que no abres se olvidan
 MAX_CHECKED = 2000  # versiones cuyo audio real ya se vio (como el iPhone, `TitlePreferences.checkedLimit`)
 _NUMBER = "número"
 # Qué tipo lleva cada ajuste: un «abc» en video_idle_minutes impedía arrancar (int("abc")).
@@ -158,7 +159,12 @@ class State:
     def mark_opened(self, row_id: str, now: float | None = None) -> None:
         """Entraste a esa consola: lo que llegó antes ya no cuenta como «nuevo» en su tarjeta."""
         with self._lock:
-            self._data["opened"][row_id[:80]] = now or time.time()
+            opened = self._data["opened"]
+            key = row_id[:80]
+            opened.pop(key, None)
+            opened[key] = now or time.time()  # al final: las más viejas se van primero
+            while len(opened) > MAX_OPENED:  # cada fila nueva (búsquedas, colecciones) sumaba para siempre
+                del opened[next(iter(opened))]
             self._save()
 
     def opened(self, row_id: str) -> float:

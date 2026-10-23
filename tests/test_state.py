@@ -22,6 +22,21 @@ def test_state_persists(tmp_path):
     assert again.unhide_all() == 1 and State(path).prefs("b") == {}
 
 
+def test_opened_rows_are_capped_keeping_the_latest(tmp_path, monkeypatch):
+    """«opened» crecía sin tope en state.json (cada fila nueva sumaba para siempre)."""
+    from orbital import state as state_module
+
+    monkeypatch.setattr(state_module, "MAX_OPENED", 3)
+    path = tmp_path / "state.json"
+    s = State(path)
+    for i, row in enumerate(["a", "b", "c", "d"]):
+        s.mark_opened(row, now=100 + i)
+    s.mark_opened("b", now=200)  # volver a entrar la hace reciente
+    s.mark_opened("e", now=201)
+    again = State(path)
+    assert [again.opened(r) for r in "abcde"] == [0, 200, 0, 103, 201]
+
+
 def test_corrupt_state_starts_fresh(tmp_path):
     path = tmp_path / "state.json"
     path.write_text("{no es json")
