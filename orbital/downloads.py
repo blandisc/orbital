@@ -84,6 +84,7 @@ class Downloads:
         self.opener = opener
         self._jobs: dict[str, dict] = {}
         self._lock = threading.Lock()
+        self._save_lock = threading.Lock()  # una escritura del índice a la vez (comparten el .tmp)
         self._wake = threading.Event()
         self._cancel: set[str] = set()
         self._load()
@@ -107,21 +108,22 @@ class Downloads:
                 self._jobs[job["id"]] = job
 
     def _save(self) -> None:
-        with self._lock:
-            data = json.dumps(list(self._jobs.values()), ensure_ascii=False, indent=1)
-        try:
-            self.folder.mkdir(parents=True, exist_ok=True)
-            tmp = self.index_path.with_suffix(".tmp")
-            tmp.write_text(data, encoding="utf-8")
-            tmp.replace(self.index_path)
-        except OSError as exc:
-            log.warning("No pude guardar la lista de descargas: %s", exc)
+        with self._save_lock:
+            with self._lock:
+                data = json.dumps(list(self._jobs.values()), ensure_ascii=False, indent=1)
+            try:
+                self.folder.mkdir(parents=True, exist_ok=True)
+                tmp = self.index_path.with_suffix(".tmp")
+                tmp.write_text(data, encoding="utf-8", errors="replace")  # un surrogate suelto no tumba el hilo
+                tmp.replace(self.index_path)
+            except OSError as exc:
+                log.warning("No pude guardar la lista de descargas: %s", exc)
 
     # --- lo que pide la interfaz --------------------------------------------------------------------------------------
     def public(self, job: dict) -> dict:
         out = {k: job.get(k) for k in ("id", "kind", "meta_id", "video_id", "title", "detail", "poster", "status", "size",
                                         "done", "error", "added", "season", "episode", "quality")}
-        out["progress"] = round(job["done"] / job["size"], 3) if job.get("size") else None
+        out["progress"] = round((job.get("done") or 0) / job["size"], 3) if job.get("size") else None
         return out
 
     def list(self) -> list[dict]:
@@ -161,9 +163,9 @@ class Downloads:
         if not job:
             return False
         for path in (job.get("file"), job.get("partial")):
-            if path and Path(path).parent == self.folder:
+            if path:
                 try:
-                    Path(path).unlink(missing_ok=True)
+                    self._local(path).unlink(missing_ok=True)
                 except OSError as exc:
                     log.info("No pude quitar %s: %s", path, exc)
         self._save()
@@ -185,9 +187,13 @@ class Downloads:
     def file_for(self, video_id: str) -> Path | None:
         """El archivo ya bajado de ese video (None si no está completo o ya no existe)."""
         job = self.find(video_id)
-        if job and job.get("status") == "done" and job.get("file") and Path(job["file"]).is_file():
-            return Path(job["file"])
+        if job and job.get("status") == "done" and job.get("file") and self._local(job["file"]).is_file():
+            return self._local(job["file"])
         return None
+
+    def _local(self, path: str) -> Path:
+        """Los archivos viven en la carpeta de descargas: se busca por nombre ahí (sirve aunque se haya movido)."""
+        return self.folder / Path(path).name
 
     # --- bajar ------------------------------------------------------------------------------------------------------
     def _next(self) -> dict | None:
@@ -233,7 +239,7 @@ class Downloads:
 
     def _fetch(self, job: dict, url: str, release: str) -> None:
         self.folder.mkdir(parents=True, exist_ok=True)
-        partial = Path(job.get("partial") or self.folder / f"{job['name']}.part")
+        partial = self._local(job.get("partial") or f"{job['name']}.part")
         job["partial"] = str(partial)
         last_error: Exception | None = None
         for attempt in range(RETRIES):
