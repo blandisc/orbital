@@ -194,7 +194,8 @@ public final class DownloadsModel: ObservableModel {
             return first
         }
         return PlayRequest(kind: item.kind, metaID: item.metaID, videoID: item.videoID, originalTitle: item.originalTitle, displayTitle: item.title,
-                           episodeLabel: item.subtitle, poster: item.poster, meta: meta, localFile: file, localSubtitles: subs)
+                           episodeLabel: item.subtitle, poster: item.poster, meta: meta, localFile: file, localSubtitles: subs,
+                           savedSubtitles: item.allSavedSubtitles)
     }
     /// Cuánto se espera la ficha antes de ver una descarga sin ella (segundos).
     static let offlineMetaWait = 3.0

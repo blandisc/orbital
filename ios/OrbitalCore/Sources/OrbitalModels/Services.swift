@@ -181,20 +181,19 @@ public final class Services: ObservableModel {
         }
     }
 
-    /// Los subtítulos que se guardan con una descarga: uno por idioma (los tuyos, y siempre español e inglés), en «es.srt»,
-    /// «en.srt»… Antes solo el de tu audio y el de tus subtítulos (con los ajustes de siempre, solo español), y si no había red
-    /// al terminar no se guardaba nada: sin conexión no había ni uno. nil: sin red (se vuelve a intentar).
-    static func subtitleFetcher(http: HTTPClient, finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> [(name: String, data: Data)]? {
+    /// Los subtítulos que se guardan con una descarga: TODOS los de español e inglés (y tus idiomas), hasta 50 por idioma,
+    /// los que aún no tiene (ni por id ni por enlace), de 3 en 3. Para que en el avión haya varios que probar si uno sale
+    /// desfasado. nil: sin red (se vuelve a intentar).
+    static func subtitleFetcher(http: HTTPClient, finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> SubtitleFetch? {
         { item in
             let s = settings.value
             let languages = DownloadSubtitles.languages([titlePrefs.languages(for: item.metaID, settings: s).subtitles, s.subtitles, s.audio, s.uiLanguage])
             guard let found = await finder.subtitleSearch(kind: item.kind, videoID: item.videoID) else { return nil }
-            var out: [(name: String, data: Data)] = []
-            for (language, option) in DownloadSubtitles.pick(found, languages: languages, release: item.release) {
-                guard let response = try? await http.send(HTTPRequest(url: option.url, timeout: 20)), response.status == 200, !response.data.isEmpty else { continue }
-                out.append((name: "\(language).srt", data: response.data))
+            let picks = DownloadSubtitles.pick(found, languages: languages, release: item.release, saved: item.allSavedSubtitles)
+            return await DownloadSubtitles.fetchAll(picks) { url in
+                guard let response = try? await http.send(HTTPRequest(url: url, timeout: 20)), response.status == 200 else { return nil }
+                return response.data
             }
-            return out
         }
     }
 

@@ -18,6 +18,8 @@ public struct PlayRequest: Sendable {
     public var startPosition: Double?
     public var localFile: URL?             // una descarga: se reproduce sin red
     public var localSubtitles: [URL] = []
+    /// Lo que se sabe de los subtítulos guardados con la descarga (fuente, copia, si es para sordos), para nombrarlos.
+    public var savedSubtitles: [SavedSubtitle] = []
     public var binge: String?              // el grupo de la fuente anterior (misma calidad e idioma)
     public var sourceIndex: Int?           // una fuente elegida en la lista
     /// Desde Mi media: primero tu copia de OneDrive (también para el siguiente episodio); si falla, Real-Debrid.
@@ -26,10 +28,10 @@ public struct PlayRequest: Sendable {
     public var startPortrait = false
 
     public init(kind: String, metaID: String, videoID: String, originalTitle: String, displayTitle: String, episodeLabel: String = "", poster: String? = nil,
-                year: String? = nil, meta: JSON? = nil, fromStart: Bool = false, localFile: URL? = nil, localSubtitles: [URL] = [], binge: String? = nil, sourceIndex: Int? = nil) {
+                year: String? = nil, meta: JSON? = nil, fromStart: Bool = false, localFile: URL? = nil, localSubtitles: [URL] = [], savedSubtitles: [SavedSubtitle] = [], binge: String? = nil, sourceIndex: Int? = nil) {
         self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.originalTitle = originalTitle; self.displayTitle = displayTitle
         self.episodeLabel = episodeLabel; self.poster = poster; self.year = year; self.meta = meta; self.fromStart = fromStart
-        self.localFile = localFile; self.localSubtitles = localSubtitles; self.binge = binge; self.sourceIndex = sourceIndex
+        self.localFile = localFile; self.localSubtitles = localSubtitles; self.savedSubtitles = savedSubtitles; self.binge = binge; self.sourceIndex = sourceIndex
     }
 }
 
@@ -69,7 +71,8 @@ public struct OtherVersionAudio: Sendable, Equatable, Identifiable {
 public struct LocalEpisode: Sendable, Equatable {
     public var file: URL
     public var subtitles: [URL]
-    public init(file: URL, subtitles: [URL] = []) { self.file = file; self.subtitles = subtitles }
+    public var saved: [SavedSubtitle]
+    public init(file: URL, subtitles: [URL] = [], saved: [SavedSubtitle] = []) { self.file = file; self.subtitles = subtitles; self.saved = saved }
 }
 
 /// Orquesta una reproducción: elige la fuente, reanuda donde ibas, pone el audio y los subtítulos que quieres,
@@ -764,7 +767,13 @@ public final class PlayerModel: ObservableModel {
     }
 
     public func subtitleVersions(language: String) -> [SubtitleVersion] {
-        SubtitleVersions.ranked(language: language, tracks: videoTracks, found: foundSubtitles ?? [], release: currentRelease, playing: snapshot.selectedSubtitle)
+        SubtitleVersions.ranked(language: language, tracks: videoTracks, found: foundSubtitles ?? [], release: currentRelease, playing: snapshot.selectedSubtitle,
+                                saved: savedByTrack)
+    }
+
+    /// Los subtítulos guardados con la descarga, por el nombre de su pista en el motor («es-3»).
+    private var savedByTrack: [String: SavedSubtitle] {
+        Dictionary((request?.savedSubtitles ?? []).map { ($0.trackName, $0) }, uniquingKeysWith: { a, _ in a })
     }
 
     /// El video trae (sin contar SDH ni forzados) subtítulos en ese idioma.
@@ -1264,7 +1273,7 @@ public final class PlayerModel: ObservableModel {
             var next = request
             next.videoID = card.videoID; next.fromStart = true; next.binge = source?.binge
             next.episodeLabel = card.title.isEmpty ? card.label : "\(card.label) · \(card.title)"   // si no, se queda el del episodio anterior
-            if request.localFile != nil, let local = nextLocal { next.localFile = local.file; next.localSubtitles = local.subtitles }
+            if request.localFile != nil, let local = nextLocal { next.localFile = local.file; next.localSubtitles = local.subtitles; next.savedSubtitles = local.saved }
             if auto { autoAdvances += 1 }
             advancing = false
             await begin(next)

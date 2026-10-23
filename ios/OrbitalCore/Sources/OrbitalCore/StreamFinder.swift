@@ -174,6 +174,7 @@ public actor StreamFinder {
                     catch let error as NetworkError where error.description.hasPrefix("HTTP") { return [] }   // contestó: no es falta de red
                     catch { return nil }
                     guard let subs = json?["subtitles"]?.array else { return [] }
+                    let source = base.contains("opensubtitles") ? "OpenSubtitles" : URL(string: base)?.host
                     return subs.compactMap { sub in
                         guard let text = sub["url"]?.string, let u = URL(string: text), ["http", "https"].contains(u.scheme?.lowercased() ?? ""),
                               let lang = sub["lang"]?.string else { return nil }
@@ -182,7 +183,9 @@ public actor StreamFinder {
                         let downloads = sub["downloads"]?.intValue ?? sub["download_count"]?.intValue
                         let hi = sub["hearing_impaired"]?.bool ?? sub["hearingImpaired"]?.bool ?? false
                         let forced = sub["foreign_parts_only"]?.bool ?? sub["forced"]?.bool ?? false
-                        return SubtitleOption(url: u, language: lang, release: release, downloads: downloads, hearingImpaired: hi, foreignOnly: forced)
+                        let fileID = sub["id"]?.string ?? sub["id"]?.intValue.map(String.init)
+                        return SubtitleOption(url: u, language: lang, release: release, downloads: downloads, hearingImpaired: hi, foreignOnly: forced,
+                                              source: source, fileID: fileID)
                     }
                 }
             }
@@ -202,10 +205,14 @@ public struct SubtitleOption: Sendable, Equatable, Identifiable {
     public var downloads: Int?
     public var hearingImpaired = false   // SDH/CC
     public var foreignOnly = false       // forzado: solo carteles o partes en otro idioma
+    /// De dónde salió («OpenSubtitles» o el servidor del complemento) y su id de archivo allá (para no guardarlo dos veces).
+    public var source: String?
+    public var fileID: String?
     public var id: URL { url }
-    public init(url: URL, language: String, release: String? = nil, downloads: Int? = nil, hearingImpaired: Bool = false, foreignOnly: Bool = false) {
+    public init(url: URL, language: String, release: String? = nil, downloads: Int? = nil, hearingImpaired: Bool = false, foreignOnly: Bool = false,
+                source: String? = nil, fileID: String? = nil) {
         self.url = url; self.language = language; self.release = release; self.downloads = downloads
-        self.hearingImpaired = hearingImpaired; self.foreignOnly = foreignOnly
+        self.hearingImpaired = hearingImpaired; self.foreignOnly = foreignOnly; self.source = source; self.fileID = fileID
     }
 }
 
