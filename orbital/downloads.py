@@ -114,7 +114,7 @@ class Downloads:
             try:
                 self.folder.mkdir(parents=True, exist_ok=True)
                 tmp = self.index_path.with_suffix(".tmp")
-                tmp.write_text(data, encoding="utf-8")
+                tmp.write_text(data, encoding="utf-8", errors="replace")  # un surrogate suelto no tumba el hilo
                 tmp.replace(self.index_path)
             except OSError as exc:
                 log.warning("No pude guardar la lista de descargas: %s", exc)
