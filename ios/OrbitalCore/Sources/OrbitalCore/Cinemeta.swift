@@ -162,10 +162,11 @@ public actor Cinemeta {
     private func url(_ path: String, base: String? = nil) -> URL? { URL(string: (base ?? root.absoluteString) + path) }
 
     /// Lo más popular (`top`), o lo más popular de un género de Cinemeta («Action», «Sci-Fi»: los nombres en inglés).
-    public func catalog(_ kind: String, genre: String? = nil) async throws -> [JSON] {
-        let path = genre.map { "/catalog/\(kind)/top/genre=\(uriComponent($0)).json" } ?? "/catalog/\(kind)/top.json"
+    /// `list`: el catálogo de Cinemeta (`top` lo popular; `imdbRating` los mejor calificados, boceto de «Lo mejor del género»).
+    public func catalog(_ kind: String, genre: String? = nil, list: String = "top") async throws -> [JSON] {
+        let path = genre.map { "/catalog/\(kind)/\(list)/genre=\(uriComponent($0)).json" } ?? "/catalog/\(kind)/\(list).json"
         guard let url = url(path) else { throw CinemetaError.unexpected }
-        return CinemetaParsing.usable(try await get(url, persist: genre == nil)["metas"]?.array)
+        return CinemetaParsing.usable(try await get(url, persist: genre == nil && list == "top")["metas"]?.array)
     }
 
     /// Búsqueda tolerante a errores («ofice» encuentra The Office); 2-3 letras suelen bastar.

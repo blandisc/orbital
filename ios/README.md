@@ -146,6 +146,9 @@ públicos y Cinemeta de verdad. Nada toca tu Keychain ni tus ajustes. Para abrir
 | `-demo-scroll 240` | con `-demo-title`, la ficha abre ya desplazada esos puntos (el arte a medio recoger) |
 | `-demo-autoscroll` | con `-demo-title`, a los ~2 s la ficha baja sola y suave hasta ~600 pt (~4 s), espera 1 s y regresa arriba (~3 s): para grabar el arte con `xcrun simctl io <udid> recordVideo` |
 | `-demo-search dune` | una búsqueda en Ver |
+| `-demo-genre-top Horror` | boceto: en Buscar, ese género elegido en «Lo mejor del género» (nombre de Cinemeta en inglés: Action, Comedy, Drama, Sci-Fi, Horror, Thriller, Animation, Romance, Crime, Documentary) |
+| `-demo-season navidad` | boceto: en Buscar, esa temporada primero en «Por temporada» (`halloween`, `muertos`, `navidad`, `sanvalentin`, `verano`) |
+| `-demo-browse-scroll genero` · `temporada` | boceto: Buscar abre ya desplazada (~2 s) con esa fila arriba |
 | `-demo-mode lists` | en Para ti, abre en Listas (con `-demo-console`, el feed completo de estantes) |
 | `-demo-lang en` | la app en inglés |
 | `-demo-signed-out` | la pantalla de entrada |

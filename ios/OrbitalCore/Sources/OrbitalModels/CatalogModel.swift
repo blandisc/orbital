@@ -71,6 +71,23 @@ public final class CatalogModel: ObservableModel {
         update(Self.interleave(movies, series))
     }
 
+    /// BOCETO «Lo mejor del género»: los mejor calificados de un género, películas y series juntas, por calificación de IMDb.
+    /// Pide el catálogo `imdbRating` de Cinemeta; si no contesta (o viene vacío), lo popular del género ordenado aquí por calificación.
+    /// Los títulos van como los da Cinemeta (sin traducir: el boceto no gasta TMDB en esto).
+    public func topRated(genre name: String) async -> [CatalogItem] {
+        async let m = fetch("movie", genre: name, list: "imdbRating"), s = fetch("series", genre: name, list: "imdbRating")
+        var (movieMetas, seriesMetas) = await (m, s)
+        if (movieMetas ?? []).isEmpty && (seriesMetas ?? []).isEmpty {
+            async let pm = fetch("movie", genre: name), ps = fetch("series", genre: name)
+            (movieMetas, seriesMetas) = await (pm, ps)
+        }
+        guard !Task.isCancelled else { return [] }
+        func rated(_ kind: String, _ metas: [JSON]) -> [(item: CatalogItem, rating: Double?)] {
+            metas.compactMap { meta in Self.items(kind, [meta]).first.map { ($0, Double(CinemetaParsing.describe(meta).rating)) } }
+        }
+        return GenreTop.rank(rated("movie", movieMetas ?? []) + rated("series", seriesMetas ?? []))
+    }
+
     private static func interleave(_ movies: [CatalogItem], _ series: [CatalogItem]) -> [CatalogItem] {
         var out: [CatalogItem] = []
         for i in 0..<max(movies.count, series.count) {
@@ -81,8 +98,8 @@ public final class CatalogModel: ObservableModel {
     }
 
     /// Lo popular de Cinemeta (nil si no contestó).
-    private func fetch(_ kind: String, genre: String? = nil) async -> [JSON]? {
-        guard let metas = try? await services.cinemeta.catalog(kind, genre: genre) else { return nil }
+    private func fetch(_ kind: String, genre: String? = nil, list: String = "top") async -> [JSON]? {
+        guard let metas = try? await services.cinemeta.catalog(kind, genre: genre, list: list) else { return nil }
         return Array(metas.prefix(30))
     }
 

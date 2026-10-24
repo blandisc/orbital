@@ -158,6 +158,13 @@ enum Demo {
 
     /// `-demo-search dune`: escribe eso en Buscar (pestaña Ver).
     static var search: String? { value(after: "-demo-search") }
+    /// Boceto de Buscar (exp/explorar-genero-temporada). `-demo-genre-top Horror`: ese género elegido en «Lo mejor del género»
+    /// (nombre de Cinemeta, en inglés).
+    static var genreTop: String? { value(after: "-demo-genre-top") }
+    /// `-demo-season navidad`: esa temporada primero en «Por temporada» (halloween, muertos, navidad, sanvalentin, verano).
+    static var season: String? { value(after: "-demo-season") }
+    /// `-demo-browse-scroll genero|temporada`: Buscar abre ya desplazada con esa fila arriba.
+    static var browseScroll: String? { value(after: "-demo-browse-scroll") }
     /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.
     static var open: String? { value(after: "-demo-open") }
     /// `-demo-gesture brightness|volume|seek|fastforward`: simula el gesto a medio camino (sin tocar la pantalla),

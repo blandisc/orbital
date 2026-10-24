@@ -21,6 +21,15 @@ struct BrowseView: View {
     @State private var tint: ArtTint
     /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
 
+    // BOCETO (exp/explorar-genero-temporada): «Lo mejor del género» y «Por temporada». Ver docs/bocetos/explorar-genero-temporada.md.
+    /// El género elegido en «Lo mejor del género» (nombre de Cinemeta) y sus mejor calificados.
+    @State private var topGenre = BrowseChip(id: CatalogModel.exploreGenres[0])
+    @State private var topRated: [CatalogItem] = []
+    @State private var topLoaded = false
+    /// Las temporadas, la de hoy (o la siguiente) primero, y la elegida.
+    @State private var seasons = Seasons.ordered(on: Date())
+    @State private var season = BrowseChip(id: "")
+
     /// Cuántos de lo más popular van en el carrusel con puesto (un Top 10).
     private static let popularCount = 10
 
@@ -32,12 +41,15 @@ struct BrowseView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+                    if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
+                }
+                .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
+                .padding(.bottom, DS.Space.s8)
             }
-            .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
-            .padding(.bottom, DS.Space.s8)
+            .task { await demoScroll(proxy) }
         }
         // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
         .environment(\.dynamicTypeSize, typeSize)
@@ -68,10 +80,19 @@ struct BrowseView: View {
         .task {
             #if DEBUG
             if Demo.isOn, let text = Demo.search { query = text }
+            if Demo.isOn, let genre = Demo.genreTop, CatalogModel.exploreGenres.contains(genre) { topGenre = BrowseChip(id: genre) }
+            if Demo.isOn, let forced = Demo.season { seasons = Seasons.ordered(on: Date(), forced: forced) }
             #endif
+            if season.id.isEmpty { season = BrowseChip(id: seasons.first?.id ?? "") }
             async let warm: Void = env.services.cinemeta.warmUp()   // la conexión con Cinemeta lista antes de la primera letra
             if catalog.model.popular.isEmpty { await catalog.model.load() }   // ya se pidió al abrir la app
             await warm
+        }
+        .task(id: topGenre) {
+            topLoaded = false
+            let items = await catalog.model.topRated(genre: topGenre.id)
+            guard !Task.isCancelled else { return }
+            topRated = items; topLoaded = true
         }
         .refreshable { await catalog.model.load() }
         // ds-exception: el campo de búsqueda del sistema se dibuja vacío con letra de accesibilidad (el texto sí está):
@@ -129,7 +150,80 @@ struct BrowseView: View {
         if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
         if !model.popular.isEmpty { popular(model) }
         else if model.isLoading { ProgressView().frame(maxWidth: .infinity) }
+        seasonal.id(BrowseAnchor.season)
+        genreTop.id(BrowseAnchor.genre)
         explore
+    }
+
+    // MARK: boceto — «Por temporada» y «Lo mejor del género»
+
+    /// «Por temporada»: colecciones de Halloween, Navidad, San Valentín…, la de hoy primero (`Seasons.ordered`).
+    /// BOCETO: los títulos de cada temporada son una lista de ejemplo escrita a mano (`Seasons.all`), no una API.
+    @ViewBuilder private var seasonal: some View {
+        let shown = seasons.first { $0.id == season.id } ?? seasons.first
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: "Por temporada", meta: shown.map { Text(LocalizedStringKey($0.blurb)) })
+                .padding(.horizontal, DS.Space.gutter)
+            DSChipRow(items: seasons.map { BrowseChip(id: $0.id) }, label: { chip in
+                let s = seasons.first { $0.id == chip.id }
+                Label(LocalizedStringKey(s?.title ?? chip.id), systemImage: s?.symbol ?? "calendar")
+            }, selection: $season)
+            if let shown {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                        ForEach(shown.picks, id: \.metaID) { pick in
+                            TitleLink(route: TitleRoute(kind: pick.kind, metaID: pick.metaID, title: pick.title, poster: pick.poster))
+                        }
+                    }
+                    .scrollTargetLayout()
+                    .environment(\.posterCaptions, false)
+                }
+                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+                .scrollTargetBehavior(.viewAligned)
+                .id(shown.id)   // otra temporada empieza desde su primer póster
+            }
+        }
+    }
+
+    /// «Lo mejor del género»: un selector de géneros y los 10 mejor calificados (IMDb, vía Cinemeta) con su puesto.
+    private var genreTop: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: "Lo mejor del género", meta: Text("Los mejor calificados en IMDb, películas y series"), source: .stremio)
+                .padding(.horizontal, DS.Space.gutter)
+            DSChipRow(items: CatalogModel.exploreGenres.map { BrowseChip(id: $0) }, label: { Text(verbatim: genreName($0.id)) }, selection: $topGenre)
+            if topLoaded && topRated.isEmpty {
+                DSNotice(verbatim: Strings.tr("No pude leer este género. Revisa tu conexión.", language: env.services.appSettings.uiLanguage), tone: .warn)
+                    .padding(.horizontal, DS.Space.gutter)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                        if !topLoaded { ShelfSkeleton() }
+                        else {
+                            ForEach(Array(topRated.enumerated()), id: \.element.id) { index, item in
+                                let route = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)
+                                NavigationLink(value: route) {
+                                    RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster, tint: tint.colors?.accent).titleZoomSource(route)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .scrollTargetLayout()
+                }
+                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+                .scrollTargetBehavior(.viewAligned)
+                .id(topGenre.id)   // otro género empieza desde el n.º 1
+            }
+        }
+    }
+
+    /// Modo demostración (`-demo-browse-scroll genero|temporada`): baja hasta esa fila al abrir, para las capturas.
+    private func demoScroll(_ proxy: ScrollViewProxy) async {
+        #if DEBUG
+        guard Demo.isOn, let id = Demo.browseScroll else { return }
+        try? await Task.sleep(for: .seconds(2))
+        proxy.scrollTo(id == "temporada" ? BrowseAnchor.season : BrowseAnchor.genre, anchor: .top)
+        #endif
     }
 
     /// Lo que buscaste, en cápsulas bajo el título (un toque lo vuelve a buscar); «Borrar» al final.
@@ -192,6 +286,12 @@ struct BrowseView: View {
     /// El arte fijo de cada género (Grok Imagine, en el catálogo de la app): se ve al instante, sin red.
     static func genreAsset(_ genre: String) -> String { "genre-" + genre.lowercased().filter { $0.isLetter || $0.isNumber } }
 }
+
+/// Una opción de los filtros del boceto de Buscar (un género de Cinemeta o el id de una temporada).
+struct BrowseChip: Hashable, Identifiable { var id: String }
+
+/// Las filas del boceto a las que salta `-demo-browse-scroll`.
+enum BrowseAnchor { static let genre = "browse-genero", season = "browse-temporada" }
 
 /// Un género de Explora: lo más popular de ese género, películas y series, en cuadrícula.
 struct GenreView: View {
