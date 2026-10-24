@@ -172,16 +172,49 @@ class State:
         with self._lock:
             return dict(self._data["prefs"].get(item_id, {}))
 
+    def _set_pref_unlocked(self, item_id: str, key: str, value) -> None:
+        prefs = self._data["prefs"].setdefault(item_id, {})
+        if value is None:
+            prefs.pop(key, None)
+        else:
+            prefs[key] = value
+        if not prefs:
+            self._data["prefs"].pop(item_id)
+
     def set_pref(self, item_id: str, key: str, value) -> None:
         with self._lock:
-            prefs = self._data["prefs"].setdefault(item_id, {})
-            if value is None:
-                prefs.pop(key, None)
-            else:
-                prefs[key] = value
-            if not prefs:
-                self._data["prefs"].pop(item_id)
+            self._set_pref_unlocked(item_id, key, value)
             self._save()
+
+    def set_pref_on(self, item_ids: list[str], key: str, value) -> None:
+        """La misma preferencia en varias claves (el emulador: title ID, título, huella y ruta)."""
+        with self._lock:
+            for item_id in item_ids:
+                self._set_pref_unlocked(item_id, key, value)
+            self._save()
+
+    def migrate_runner_prefs(self, item_keys: list[tuple[str, list[str]]]) -> int:
+        """Copia prefs[ruta].runner a cada clave estable que aún no tenga emulador.
+
+        No borra las entradas viejas. Idempotente. Devuelve cuántas copias hizo.
+        """
+        copied = 0
+        with self._lock:
+            prefs = self._data["prefs"]
+            for item_id, keys in item_keys:
+                old = prefs.get(item_id, {}).get("runner")
+                if not old:
+                    continue
+                for key in keys:
+                    if key == item_id:
+                        continue
+                    slot = prefs.setdefault(key, {})
+                    if not slot.get("runner"):
+                        slot["runner"] = old
+                        copied += 1
+            if copied:
+                self._save()
+        return copied
 
     def unhide_all(self) -> int:
         with self._lock:
