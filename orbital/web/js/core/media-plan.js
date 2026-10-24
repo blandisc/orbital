@@ -3,19 +3,21 @@
  * mismas tarjetas. Lógica pura (pruebas en tests/web/media-plan.test.mjs); main.js pide las listas y monta las filas.
  *
  *   Destacados (como hoy) → Porque viste X → lo general con su sello (Recomendadas, En tendencia, Lo más popular) →
- *   Nuevo en tus plataformas → Tus plataformas → Premios → Estudios → Por año → Próximos estrenos →
+ *   Nuevo en tus plataformas → Tus plataformas → Premios → Estudios → Lo mejor del género → Temporadas →
+ *   Por año → Próximos estrenos →
  *   Listas de Trakt → Listas de Stremio → (Por género y los lanzadores, al final: la tele no tiene la pestaña Buscar).
  */
 import { curatedItem } from "./curation.js";
 
 /** Las filas de tarjetas que se centran (como el carrusel centrado del iPhone). */
-const CENTERED = new Set(["platforms", "awards", "studios", "years"]);
+const CENTERED = new Set(["platforms", "awards", "studios", "genre-top", "seasons", "years"]);
 
 /** Los grupos de «Ir a…» (☰), en orden; LT/RT pasan de uno a otro. */
 export const GROUPS = [
   { id: "spotlight", label: "Destacados" }, { id: "onedrive", label: "Mi media" }, { id: "because", label: "Porque viste" }, { id: "general", label: "Recomendadas y populares" },
   { id: "fresh", label: "Nuevo en tus plataformas" }, { id: "platforms", label: "Tus plataformas" }, { id: "awards", label: "Premios" },
-  { id: "studios", label: "Estudios" }, { id: "years", label: "Por año" }, { id: "estrenos", label: "Próximos estrenos" },
+  { id: "studios", label: "Estudios" }, { id: "genre-top", label: "Lo mejor del género" }, { id: "seasons", label: "Temporadas" },
+  { id: "years", label: "Por año" }, { id: "estrenos", label: "Próximos estrenos" },
   { id: "lists", label: "Tus listas" }, { id: "genres", label: "Por género" },
 ];
 
@@ -67,7 +69,7 @@ export function itemsOf(itemsById, list, filter = "all") {
 
 const posterOf = (i) => i?.image || null;
 /** El rótulo del héroe con una tarjeta enfocada: qué es (su dato ya va debajo del nombre). */
-const EYEBROW = { award: "Premio", studio: "Estudio", year: "Por año" };
+const EYEBROW = { award: "Premio", studio: "Estudio", year: "Por año", genre: "Género", season: "Temporada" };
 const card = (id, title, collection, extra = {}) => ({ id, title, source: "collection", collection, subtitle: collection.detail || "", ...extra });
 
 /** El héroe de arriba con una tarjeta enfocada: el fondo de su primer título y lo que la tarjeta es. */
@@ -157,6 +159,8 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   };
   collections("award", "Premios", "awards");
   collections("studio", "Estudios", "studios");
+  collections("genre", "Lo mejor del género", "genre-top");
+  collections("season", "Temporadas", "seasons");
   collections("year", "Por año", "years");
 
   if (byId.estrenos) plain("estrenos", byId.estrenos.title, itemsOf(itemsById, byId.estrenos), { seal: "trakt", group: "estrenos" });

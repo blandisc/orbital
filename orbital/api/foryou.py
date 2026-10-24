@@ -37,7 +37,7 @@ def router(d: Deps) -> APIRouter:
     @r.get("/list")
     def items(id: str, kind: str | None = None) -> dict:
         try:
-            return {"items": foryou.list_items(id[:120], kind)}
+            return foryou.list_payload(id[:120], kind)
         except KeyError:
             raise HTTPException(404, "Esa lista ya no existe.")
         except trakt.TraktAuthError as exc:

@@ -178,3 +178,44 @@ test("«Porque viste»: tus títulos llevan su logo (el héroe no los pone en te
   assert.equal(stageSide({ stage: { seeds: 1 }, items: [{}] }, 0), null);
   assert.equal(stageJump({ id: "curated:trend", items: [{}, {}] }, 0, 1), null);
 });
+
+test("Lo mejor del género y Temporadas van junto a Estudios y Tus plataformas", async () => {
+  const { mediaRows, fetchPlan, keyOf, GROUPS } = await plan();
+  const lists = [...LISTS,
+    { id: "genre:accion", title: "Acción", headline: "Lo mejor de Acción en 2026", meta: "Las mejor calificadas del año", collection: "genre", kinds: ["movie", "series"] },
+    { id: "genre:terror", title: "Terror", collection: "genre", kinds: ["movie", "series"] },
+    { id: "season:halloween", title: "Halloween", meta: "Sustos, brujas y calabazas", collection: "season", kinds: ["movie", "series"] },
+    { id: "season:navidad", title: "Navidad", meta: "Para ver en familia", collection: "season", kinds: ["movie", "series"] },
+  ];
+  const got = items(keyOf);
+  got[keyOf("genre:accion", "movie")] = [v("g1", "movie"), v("g2", "series"), v("g3", "movie"), v("g4", "movie")];
+  got[keyOf("genre:terror", "movie")] = [v("t1", "movie")];
+  got[keyOf("season:halloween", "movie")] = [v("h1", "series"), v("h2", "movie"), v("h3", "movie")];
+  got[keyOf("season:navidad", "movie")] = [v("n1", "movie")];
+  const rows = mediaRows(lists, got, { years: { "year:2025": [v("y1", "movie")] } });
+  const ids = rows.map((r) => r.id);
+  assert.deepEqual(ids.filter((id) => ["curated:platforms", "curated:awards", "curated:studios", "curated:genre-top", "curated:seasons", "curated:years"].includes(id)),
+    ["curated:platforms", "curated:awards", "curated:studios", "curated:genre-top", "curated:seasons", "curated:years"]);
+  const genre = rows.find((r) => r.id === "curated:genre-top");
+  assert.equal(genre.title, "Lo mejor del género");
+  assert.equal(genre.centered, true);
+  assert.deepEqual(genre.items.map((c) => c.title), ["Acción", "Terror"]);
+  const accion = genre.items[0];
+  assert.equal(accion.collection.type, "genre");
+  assert.deepEqual(accion.collection.posters, ["p/g1", "p/g2", "p/g3"]);
+  assert.equal(accion.extra.eyebrow, "Género");
+  assert.equal(accion.hero, "h/g1");
+  assert.equal(accion.collection.list.headline, "Lo mejor de Acción en 2026");
+  const seasons = rows.find((r) => r.id === "curated:seasons");
+  assert.equal(seasons.title, "Temporadas");
+  assert.equal(seasons.centered, true);
+  assert.deepEqual(seasons.items.map((c) => [c.title, c.extra.eyebrow, c.collection.type]), [
+    ["Halloween", "Temporada", "season"], ["Navidad", "Temporada", "season"]]);
+  // Sin pósters el estante no sale (sin clave de TMDB esas listas ni siquiera llegan).
+  assert.equal(mediaRows([{ id: "genre:accion", title: "Acción", collection: "genre" }], {}).find((r) => r.group === "genre-top"), undefined);
+  const wanted = fetchPlan(lists);
+  assert.deepEqual(wanted.filter((w) => w.id === "genre:accion"), [{ id: "genre:accion", kind: "movie" }]);
+  assert.ok(wanted.some((w) => w.id === "season:halloween" && w.kind === "movie"));
+  const groups = GROUPS.map((g) => g.id);
+  assert.deepEqual(groups.slice(groups.indexOf("studios"), groups.indexOf("years") + 1), ["studios", "genre-top", "seasons", "years"]);
+});

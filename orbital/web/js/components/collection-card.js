@@ -6,7 +6,7 @@ import { sized } from "../core/images.js";
  * Cada una es una lista: A la abre completa (list-screen). Van en filas como las portadas (shelf), con su propia proporción.
  *
  * item.collection = {
- *   type: "platform" | "studio" | "award" | "year" | "list" | "seed",
+ *   type: "platform" | "studio" | "award" | "year" | "genre" | "season" | "list" | "seed",
  *   posters: [url…],            // el top 3 en abanico, los 4 del año o los 2 de la pila
  *   logo?, brand?,              // plataforma: su logo y su color (el halo)
  *   statue?, tint?,             // premio: la estatuilla real y su halo (gold | silver | bronze)
@@ -16,7 +16,7 @@ import { sized } from "../core/images.js";
  */
 
 /** Ancho / alto de cada tarjeta (la fila mide con esto, como con la proporción de un póster). */
-export const COLLECTION_RATIO = { platform: 1.45, studio: 1.45, award: 1.45, year: 1, list: 1.7, seed: 1.3 };
+export const COLLECTION_RATIO = { platform: 1.45, studio: 1.45, award: 1.45, year: 1, genre: 1.45, season: 1.45, list: 1.7, seed: 1.3 };
 
 /** El halo de cada una, de los tokens (los mismos colores que el iPhone). */
 const HALO = {
@@ -73,6 +73,11 @@ function body(c) {
       // El logo del estudio (en blanco); sin logo, su nombre en cápsula.
       return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters),
         h("span", { class: "collection__foot" }, brandMark(c, { mono: true, fallback: "collection__capsule" }))];
+    case "genre":
+    case "season":
+      // El mismo abanico que un estudio, con el nombre del género o de la temporada en la cápsula.
+      return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters),
+        h("span", { class: "collection__foot" }, h("span", { class: "collection__capsule" }, c.name))];
     case "award":
       return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters),
         c.statue && h("img", { class: "collection__statue", src: c.statue, alt: "", decoding: "async" }),
@@ -97,13 +102,14 @@ function body(c) {
 
 const TYPE_CLASS = {
   platform: "card--collection card--fan", studio: "card--collection card--fan card--studio", award: "card--collection card--fan card--award",
-  year: "card--collection card--year", list: "card--collection card--list", seed: "card--collection card--seed",
+  year: "card--collection card--year", genre: "card--collection card--fan card--studio", season: "card--collection card--fan card--studio",
+  list: "card--collection card--list", seed: "card--collection card--seed",
 };
 
 /** Una tarjeta de colección. Mismo contrato que Card: un botón con `dataset.ratio` (la fila lo usa para medir). */
 export function CollectionCard(item, { onPress } = {}) {
   const c = item.collection;
-  const halo = HALO[c.brand] || HALO[c.tint] || (c.type === "studio" ? HALO.studio : null);
+  const halo = HALO[c.brand] || HALO[c.tint] || (c.type === "studio" || c.type === "genre" || c.type === "season" ? HALO.studio : null);
   const card = h("button", {
     class: ["card", "card--has-art", TYPE_CLASS[c.type]], type: "button", "aria-label": c.label || item.title, onClick: onPress,
     style: halo ? { "--halo": halo } : null,
