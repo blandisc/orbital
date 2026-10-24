@@ -802,15 +802,15 @@ struct DSSeekBubble: View {
     }
 }
 
-/// La píldora «2×» mientras mantienes el dedo (como YouTube/Infuse): sobre vidrio, arriba al centro.
+/// La píldora «2×» mientras mantienes el dedo (como YouTube/Infuse): sobre vidrio, abajo al centro.
 struct DSSpeedPill: View {
-    /// Se quedó fijo en ×2 (mantuviste el dedo hasta que vibró): dice cómo quitarlo.
+    /// Se quedó fijo en ×2 (deslizaste hacia abajo hasta que vibró): dice cómo quitarlo.
     var locked = false
-    /// Mientras mantienes: el anillo se llena al deslizar hacia arriba (0…1).
+    /// Mientras mantienes: el anillo se llena al deslizar hacia abajo (0…1).
     var progress: Double = 0
     /// El dedo sigue puesto: dice qué hace deslizar.
     var holding = false
-    /// Ya iba fijo: deslizar lo quita.
+    /// Ya iba fijo al apoyar el dedo: deslizar hacia arriba lo quita.
     var unlocks = false
     var body: some View {
         HStack(spacing: DS.Space.s2) {
@@ -826,7 +826,8 @@ struct DSSpeedPill: View {
             }
             Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold))
             if holding {
-                (Text(Image(systemName: "arrow.up")) + Text(" ") + (unlocks ? Text("Desliza para quitar") : Text("Desliza para fijar")))
+                (Text(Image(systemName: unlocks ? "arrow.up" : "arrow.down")) + Text(" ")
+                    + (unlocks ? Text("Desliza para quitar") : Text("Desliza para fijar")))
                     .font(DS.TextRecipe.footnote.font)
             } else if locked {
                 Text("Toca para quitar").font(DS.TextRecipe.footnote.font)

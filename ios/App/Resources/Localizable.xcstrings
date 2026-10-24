@@ -3873,6 +3873,17 @@
         }
       }
     },
+    "Desbloquear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock"
+          }
+        }
+      }
+    },
     "Descarga en el iPhone": {
       "extractionState": "manual",
       "localizations": {

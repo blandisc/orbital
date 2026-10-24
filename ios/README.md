@@ -80,12 +80,12 @@ el doble toque):
 | Arrastrar vertical, mitad izquierda | Brillo de la pantalla (`UIScreen.main.brightness`; se restaura al salir) | Ícono `sun.max` + barra, sobre vidrio |
 | Arrastrar vertical, mitad derecha | Volumen del sistema (`MPVolumeView` oculto, sin el HUD nativo) | Ícono `speaker.wave.2` + barra, sobre vidrio |
 | Arrastrar horizontal, cualquier zona | Buscar: salta al soltar (no en cada movimiento). Ancho completo = 10 % de la duración o 3 min, lo que sea menor | Burbuja con el tiempo destino y la diferencia («+1:20») |
-| Mantener el dedo ≥ 0,4 s | 2× mientras se mantiene; vuelve a la velocidad previa al soltar; vibra al entrar | Píldora «2×» arriba al centro |
+| Mantener ≥ 0,3 s en la mitad derecha | 2× mientras se mantiene; al soltar sin deslizar vuelve a la velocidad previa. Deslizar hacia abajo lo fija (vibra); hacia arriba lo quita al momento | Píldora «2×» abajo al centro |
 
 La aritmética (eje dominante, segundos por punto, brillo/volumen 0…1) vive en `PlayerGestures.swift`
 (`OrbitalModels`, sin UIKit) y se prueba en `OrbitalModelsTests/PlayerGesturesTests.swift`. En modo demostración,
-`-demo-gesture brightness|volume|seek|fastforward` simula el gesto a medio camino sin tocar la pantalla, para
-capturarlo en el simulador.
+`-demo-gesture brightness|volume|seek|fastforward|fastforward-locked` simula el gesto a medio camino sin tocar la pantalla, para
+capturarlo en el simulador. `fastforward-locked` deja el 2× fijo, con la píldora y los controles a la vista.
 
 ## Widgets
 
@@ -149,7 +149,7 @@ públicos y Cinemeta de verdad. Nada toca tu Keychain ni tus ajustes. Para abrir
 | `-demo-mode lists` | en Para ti, abre en Listas (con `-demo-console`, el feed completo de estantes) |
 | `-demo-lang en` | la app en inglés |
 | `-demo-signed-out` | la pantalla de entrada |
-| `-demo-gesture brightness` · `volume` · `seek` · `fastforward` | con el reproductor abierto, simula ese gesto a medio camino (ver «Gestos del reproductor») |
+| `-demo-gesture brightness` · `volume` · `seek` · `fastforward` · `fastforward-locked` | con el reproductor abierto, simula ese gesto a medio camino (`fastforward-locked`: 2× fijo y píldora a la vista; ver «Gestos del reproductor») |
 
 ```bash
 xcrun simctl launch booted mx.iracheta.orbital -demo -demo-title series:tt0386676 -demo-open play

@@ -49,4 +49,10 @@ public enum PlayerGestures {
         guard screenHeight > 0 else { return start }
         return max(0, min(1, start - dy / screenHeight))
     }
+
+    /// Cuánto hay que deslizar hacia abajo, desde donde apoyaste el dedo, para fijar el ×2. Si hasta el borde
+    /// de abajo queda menos que `preferred`, se usa ese hueco, pero nunca menos de `minimum`.
+    public static func fastForwardLockDistance(roomBelow: Double, preferred: Double, minimum: Double) -> Double {
+        max(minimum, min(preferred, roomBelow))
+    }
 }

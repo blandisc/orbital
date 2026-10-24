@@ -210,6 +210,9 @@ enum DS {
     /// Subtítulos: medidas relativas a la letra o al video (la letra misma sale de Ajustes › Tamaño de subtítulos).
     enum Subtitle {
         static let minFont = CGFloat(DesignTokens.Subtitle.minFont), liftWithControls = CGFloat(DesignTokens.Subtitle.liftWithControls)
+        /// Con la píldora «2×» a la vista en horizontal: la línea queda justo por encima de ella (el video va a
+        /// sangre y la píldora, dentro del área segura).
+        static let liftWithSpeedPill: CGFloat = 120
         static let lineGap = CGFloat(DesignTokens.Subtitle.lineGap), edgeMargin = CGFloat(DesignTokens.Subtitle.edgeMargin)
         static let shadowRadius = CGFloat(DesignTokens.Subtitle.shadowRadius), outlineWidth = CGFloat(DesignTokens.Subtitle.outlineWidth)
         static let raisedMargin = CGFloat(DesignTokens.Subtitle.raisedMargin)
@@ -225,8 +228,12 @@ enum DS {
         static let edgeShare: CGFloat = 1.0 / 3.0
         /// Dobles toques seguidos del mismo lado se suman (+10, +20, +30 s) mientras no pase este rato.
         static let skipChain: TimeInterval = 0.9
-        /// ×2: cuánto deslizar hacia arriba sin soltar para fijarlo (o quitarlo).
-        static let fastForwardLockDrag: CGFloat = 90
+        /// ×2: deslizar hacia abajo esta distancia, desde donde apoyaste el dedo, lo fija. Si hasta el borde
+        /// de abajo queda menos, se usa ese hueco, pero nunca menos de `fastForwardLockDragMin`. Hacia arriba,
+        /// esta misma distancia lo quita al momento (sin esperar a soltar).
+        static let fastForwardLockDrag: CGFloat = 60
+        /// Lo menos que puede medir el deslizamiento hacia abajo cuando el dedo ya está cerca del borde.
+        static let fastForwardLockDragMin: CGFloat = 40
         /// Lo que llevas saltado tras 1, 2, 3… dobles toques seguidos: cada toque salta más que el anterior.
         static let skipTotals = [10, 20, 40, 60, 90, 120]
         /// A cuántos segundos del destino ya se da por llegado un salto (el pulgar vuelve a seguir el avance).
@@ -239,6 +246,16 @@ enum DS {
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
         /// `padding(DS.Space.s6)` de `controls`, con el slider y la hilera de tiempos debajo).
         static let seekBubbleBottomInset: CGFloat = 108
+        /// La píldora «2×» en horizontal, dentro del área segura (igual que los controles): el borde de abajo
+        /// queda un `s3` por encima de la hilera de tiempos y de la barra (`padding` de `controls` + `scrubHit`).
+        static var fastForwardPillBottomInset: CGFloat {
+            DS.Space.s6 + DS.PlayerPanel.scrubHit + DS.Space.s3
+        }
+        /// «Recortar» en vertical, con los controles a la vista: encima de la barra (aire de abajo, el botón
+        /// grande, «Saltar intro» y la propia barra).
+        static var fastForwardPillFillInset: CGFloat {
+            DS.Space.s8 + DS.PlayerPanel.playButton + DS.Space.s3 + DS.Size.touchTarget + DS.Space.s3 + DS.PlayerPanel.scrubHit + DS.Space.s3
+        }
     }
 
     // MARK: Elevación (sombras)
@@ -313,6 +330,14 @@ enum DS {
         static func spring(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.2) }
         /// Un rebote más marcado y corto: elegir un mosaico («¿Qué vemos?» › Más filtros).
         static func pop(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.base, bounce: 0.45) }
+        /// El aviso de pantalla bloqueada entra con un fundido (también con «Reducir movimiento»).
+        static func lockNoticeIn() -> Animation { .easeOut(duration: DesignTokens.Motion.base) }
+        /// Se encoge al círculo del candado. Con «Reducir movimiento» no hay movimiento: solo el fundido de salida.
+        static let lockShrinkDuration = 0.3
+        static func lockShrink(_ reduce: Bool) -> Animation? { reduce ? nil : .easeInOut(duration: lockShrinkDuration) }
+        /// El candado sube y se desvanece. Con «Reducir movimiento» se desvanece en su sitio.
+        static let lockRiseDuration = 0.4
+        static func lockRise(_ reduce: Bool) -> Animation? { .easeOut(duration: reduce ? DesignTokens.Motion.base : lockRiseDuration) }
     }
 
     /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32
@@ -392,8 +417,10 @@ enum DS {
         static let dockWidth: CGFloat = 560, dockPortraitMaxTop: CGFloat = 0.55
         /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).
         static let portraitFillControlsShare: CGFloat = 0.3
-        /// El candado de «Pantalla bloqueada» entra creciendo desde este tamaño.
+        /// El globo del «⋯» entra un poco más chico.
         static let lockScale: CGFloat = 0.9
+        /// El aviso de pantalla bloqueada: el círculo al que se encoge el candado, y cuánto sube al irse.
+        static let lockNoticeIcon: CGFloat = 36, lockNoticeRise: CGFloat = 28
         static let width: CGFloat = 420, radius: CGFloat = 30, rowRadius: CGFloat = 16, icon: CGFloat = 32
         /// El ancho del nombre del tamaño de subtítulos («Mediano») entre − y +: no brinca al cambiar.
         static let sizeValue: CGFloat = 72
@@ -799,8 +826,8 @@ enum DS {
         static let toastAction = UInt64(8 * 1e9)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
         static let longPressDelay = DesignTokens.Timing.longPressDelay
-        /// ×2: cuánto mantener el dedo para que arranque (casi al instante, como YouTube) y cuánto más para que se quede fijo
-        /// (vibra; ya puedes soltar).
+        /// ×2: cuánto mantener el dedo en la mitad derecha para que arranque (casi al instante, como YouTube).
+        /// Fijarlo es deslizar hacia abajo sin soltar; hacia arriba lo quita y vuelve a la velocidad previa.
         static let fastForwardStart = 0.3
         /// Cada cuánto, como pronto, le pide iOS a la app mirar en segundo plano lo que dejó la TV (iOS decide si y cuándo corre).
         static let inboxRefresh: TimeInterval = 15 * 60
@@ -810,7 +837,12 @@ enum DS {
         static let releaseSoonest: TimeInterval = 15 * 60, releaseAfterAiring: TimeInterval = 15 * 60
         /// La imagen del aviso de estreno: lo más que se espera por ella (en segundo plano el tiempo es poco; sin ella igual se avisa).
         static let releaseImageTimeout: TimeInterval = 5
-        /// Cuánto se queda a la vista el candado de «Pantalla bloqueada» tras un toque.
+        /// Al bloquear: la cápsula «Pantalla bloqueada» antes de encogerse.
+        static let lockNotice: UInt64 = 1_000_000_000
+        /// Lo que duran el encogido y la subida del candado (los mismos segundos que `DS.Motion`).
+        static var lockNoticeShrink: UInt64 { UInt64(DS.Motion.lockShrinkDuration * 1_000_000_000) }
+        static var lockNoticeRise: UInt64 { UInt64(DS.Motion.lockRiseDuration * 1_000_000_000) }
+        /// Tras un toque con la pantalla bloqueada: la cápsula con «Desbloquear» antes de encogerse.
         static let unlockPrompt: UInt64 = 3_000_000_000
         /// Cuánto se queda a la vista el indicador de brillo o volumen tras soltar, antes de desvanecerse.
         static let gestureIndicatorHold = UInt64(DesignTokens.Timing.gestureIndicatorHold * 1e9)

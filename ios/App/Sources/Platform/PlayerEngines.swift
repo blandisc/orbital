@@ -16,7 +16,8 @@ protocol VideoPlayerEngine: PlayerEngine {
     /// La ventana de PiP se abrió o se cerró (el motor sigue decodificando video en segundo plano mientras tanto).
     @MainActor func setPictureInPictureActive(_ active: Bool)
     /// Los subtítulos encima del video, si el motor no los pinta solo (AVPlayer sí; AetherEngine no).
-    @MainActor func subtitleOverlay(lifted: Bool, look: SubtitleLook, delay: Double) -> AnyView
+    /// `speedPill`: la píldora «2×» está a la vista y la línea tiene que quedar por encima.
+    @MainActor func subtitleOverlay(lifted: Bool, speedPill: Bool, look: SubtitleLook, delay: Double) -> AnyView
     /// Si los subtítulos los dibuja la app (y por eso se pueden adelantar o atrasar, y cambiar de estilo).
     var drawsSubtitles: Bool { get }
     /// «Sincronizar con una línea»: las frases de texto del subtítulo puesto desde ese segundo del archivo (vacío si no hay
@@ -174,7 +175,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     @MainActor var pictureInPicture: PictureInPictureContent? { player.currentItem == nil ? nil : .playerLayer(layerView.playerLayer) }
     @MainActor func setZoom(_ zoom: VideoZoom) { layerView.playerLayer.videoGravity = zoom.gravity }
     @MainActor func setPictureInPictureActive(_ active: Bool) {}
-    @MainActor func subtitleOverlay(lifted: Bool, look: SubtitleLook, delay: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
+    @MainActor func subtitleOverlay(lifted: Bool, speedPill: Bool, look: SubtitleLook, delay: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
     var drawsSubtitles: Bool { false }
     @MainActor func subtitleLines(from seconds: Double, count: Int) -> [SubtitleLine] { [] }
     @MainActor var shownTime: Double { player.currentTime().seconds }
