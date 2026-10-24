@@ -106,6 +106,10 @@ struct PlayerScreen: View {
     @State private var subtitleToast: String?
     /// Lo que pasó al pedir «Descargar» (el mismo aviso que en el resto de la app, arriba: abajo están los controles).
     @State private var notice: PlayerNotice?
+    /// Avisos que llegaron con la cápsula del candado en pantalla. Salen, en orden, cuando esa cápsula se va.
+    @State private var heldNotices = HeldNotices<QueuedNotice>()
+    @State private var heldDrain: Task<Void, Never>?
+    @State private var heldDrainGeneration = 0
     struct PlayerNotice: Equatable {
         var title: String, detail: String?, tone: DSNotice.Tone
         var showsDownloads = false
@@ -114,6 +118,13 @@ struct PlayerScreen: View {
         var switchTitle: String? = nil
         let id = UUID()
     }
+    /// Lo que espera turno. Subtítulos y zoom se quedan con el último; los demás, todos, en orden.
+    private enum QueuedNotice {
+        case player(PlayerNotice)
+        case subtitle(String)
+        case zoom(VideoZoom)
+    }
+    private enum QueuedNoticeKey: Hashable { case subtitle, zoom }
     /// Subtítulos rápidos (el panel chico sobre el video) y su lista de idiomas.
     @State private var subtitleDock = false
     /// La hoja «Audio y subtítulos» tiene dos páginas: lo de siempre y «Versión» (por idioma o todas las fuentes).
@@ -476,6 +487,9 @@ struct PlayerScreen: View {
     /// La cápsula de arriba. Al bloquear dura un instante y no trae botón; un toque la trae con «Desbloquear» y se queda más.
     /// Luego se encoge al candado, sube y se desvanece (con «Reducir movimiento», solo se desvanece).
     private func showLockNotice(withUnlock: Bool) {
+        // Primero se retiene: lo que llegue a partir de aquí espera. Lo que ya se veía arriba se quita.
+        heldNotices.hold()
+        cancelHeldDrain()
         clearTopNotices()
         lockNoticeGeneration += 1
         let generation = lockNoticeGeneration
@@ -509,9 +523,11 @@ struct PlayerScreen: View {
         lockNoticeCollapsed = false
         lockNoticeRisen = false
         lockNoticeShowsUnlock = false
+        flushHeldNotices()
     }
 
-    /// El aviso de bloqueo y los de arriba (toast, subtítulos, zoom) no se apilan: uno reemplaza al otro.
+    /// Lo que ya está arriba (toast, subtítulos, zoom) se quita: el candado no se apila con ello.
+    /// Lo que llegue mientras la cápsula sigue en pantalla no se tira: queda en `heldNotices`.
     private func clearTopNotices() {
         zoomToastTask?.cancel()
         notice = nil
@@ -529,6 +545,65 @@ struct PlayerScreen: View {
         withAnimation(DS.Motion.base(reduceMotion)) { locked = false; controlsVisible = true }
         AppDelegate.orientations = .allButUpsideDown; refreshSupportedOrientations()
         scheduleHide()
+        flushHeldNotices()
+    }
+
+    /// La cápsula del candado está en pantalla, o todavía salen los avisos que esperaron detrás de ella.
+    private var topNoticesAreWaiting: Bool {
+        heldNotices.isHolding || !heldNotices.isEmpty || heldDrain?.isCancelled == false
+    }
+
+    private func cancelHeldDrain() {
+        heldDrainGeneration += 1
+        heldDrain?.cancel()
+        heldDrain = nil
+    }
+
+    /// La cápsula ya se fue (se encogió, o se desbloqueó): los avisos que esperaron salen uno tras otro,
+    /// cada uno el tiempo de siempre. Si el candado vuelve antes de vaciar la cola, lo que falta se queda.
+    private func flushHeldNotices() {
+        heldNotices.resume()
+        guard !heldNotices.isEmpty else { return }
+        if let heldDrain, !heldDrain.isCancelled { return }
+        heldDrainGeneration += 1
+        let generation = heldDrainGeneration
+        heldDrain?.cancel()
+        heldDrain = Task { @MainActor in
+            while !Task.isCancelled, !heldNotices.isHolding, !lockNoticeVisible {
+                guard let item = heldNotices.next() else { break }
+                await presentHeld(item)
+            }
+            guard generation == heldDrainGeneration, !Task.isCancelled else { return }
+            heldDrain = nil
+            if !heldNotices.isEmpty, !heldNotices.isHolding, !lockNoticeVisible {
+                flushHeldNotices()
+            }
+        }
+    }
+
+    /// Muestra un aviso que estaba en espera. VoiceOver se entera aquí, cuando de verdad aparece.
+    private func presentHeld(_ item: QueuedNotice) async {
+        switch item {
+        case .player(let new):
+            zoomToastTask?.cancel()
+            withAnimation(DS.Motion.base(reduceMotion)) { subtitleToast = nil; zoomToast = nil }
+            reveal(new)
+            try? await Task.sleep(nanoseconds: Toast.duration(new.tone, hasAction: new.showsDownloads || new.switchTo != nil) ?? DS.Timing.toastAction)
+        case .subtitle(let text):
+            zoomToastTask?.cancel()
+            withAnimation(DS.Motion.base(reduceMotion)) { notice = nil; zoomToast = nil }
+            await revealSubtitle(text)
+        case .zoom(let target):
+            withAnimation(DS.Motion.base(reduceMotion)) { notice = nil; subtitleToast = nil }
+            await revealZoom(target)
+        }
+    }
+
+    private func revealZoom(_ target: VideoZoom) async {
+        withAnimation(DS.Motion.base(reduceMotion)) { zoomToast = target }
+        try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
+        guard !Task.isCancelled else { return }
+        withAnimation(DS.Motion.base(reduceMotion)) { if zoomToast == target { zoomToast = nil } }
     }
 
     // MARK: gestos
@@ -870,14 +945,20 @@ struct PlayerScreen: View {
 
     /// Cambia el zoom (botón o pellizco), lo recuerda para la próxima vez y avisa un momento cuál quedó.
     private func setZoom(_ target: VideoZoom) {
-        withAnimation(DS.Motion.base(reduceMotion)) { zoom = target; if !lockNoticeVisible { zoomToast = target } }
+        let queueToast = topNoticesAreWaiting
+        if queueToast { heldNotices.hold(.zoom(target), key: QueuedNoticeKey.zoom) }
+        withAnimation(DS.Motion.base(reduceMotion)) {
+            zoom = target
+            if !queueToast { zoomToast = target }
+        }
         holder.engine.setZoom(target)
         env.services.settings.update { $0.videoZoom = target.rawValue }
+        guard !queueToast else { return }
         zoomToastTask?.cancel()
-        zoomToastTask = Task {
+        zoomToastTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
             guard !Task.isCancelled else { return }
-            withAnimation(DS.Motion.base(reduceMotion)) { zoomToast = nil }
+            withAnimation(DS.Motion.base(reduceMotion)) { if zoomToast == target { zoomToast = nil } }
         }
     }
 
@@ -1290,7 +1371,15 @@ struct PlayerScreen: View {
     }
 
     private func show(_ new: PlayerNotice) {
-        guard !lockNoticeVisible else { return }
+        if topNoticesAreWaiting {
+            heldNotices.hold(.player(new))
+            return
+        }
+        reveal(new)
+    }
+
+    /// El aviso de arriba, ya en pantalla. VoiceOver lo dice en este momento, no cuando se encoló.
+    private func reveal(_ new: PlayerNotice) {
         UIAccessibility.post(notification: .announcement, argument: new.title)
         withAnimation(DS.Motion.base(reduceMotion)) { notice = new }
     }
@@ -1630,10 +1719,18 @@ struct PlayerScreen: View {
 
     /// Un aviso breve arriba del video (sin tapar los controles), que VoiceOver también dice.
     private func toast(_ text: String) async {
-        guard !lockNoticeVisible else { return }
+        if topNoticesAreWaiting {
+            heldNotices.hold(.subtitle(text), key: QueuedNoticeKey.subtitle)
+            return
+        }
+        await revealSubtitle(text)
+    }
+
+    private func revealSubtitle(_ text: String) async {
         withAnimation(DS.Motion.base(reduceMotion)) { subtitleToast = text }
         UIAccessibility.post(notification: .announcement, argument: text)
         try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
+        guard !Task.isCancelled else { return }
         withAnimation(DS.Motion.base(reduceMotion)) { if subtitleToast == text { subtitleToast = nil } }
     }
 
