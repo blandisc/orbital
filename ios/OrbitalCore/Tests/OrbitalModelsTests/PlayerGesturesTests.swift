@@ -105,4 +105,14 @@ final class PlayerGesturesTests: XCTestCase {
     func testZeroWidthKeepsTheStartingPosition() {
         XCTAssertEqual(PlayerGestures.seekTarget(startPosition: 42, duration: 600, dragWidth: 100, screenWidth: 0), 42)
     }
+
+    // MARK: fijar el ×2
+
+    func testFastForwardLockDistanceShrinksNearTheBottomButNotBelowTheMinimum() {
+        XCTAssertEqual(PlayerGestures.fastForwardLockDistance(roomBelow: 200, preferred: 60, minimum: 40), 60)
+        XCTAssertEqual(PlayerGestures.fastForwardLockDistance(roomBelow: 60, preferred: 60, minimum: 40), 60)
+        XCTAssertEqual(PlayerGestures.fastForwardLockDistance(roomBelow: 50, preferred: 60, minimum: 40), 50)
+        XCTAssertEqual(PlayerGestures.fastForwardLockDistance(roomBelow: 10, preferred: 60, minimum: 40), 40)
+        XCTAssertEqual(PlayerGestures.fastForwardLockDistance(roomBelow: 0, preferred: 60, minimum: 40), 40)
+    }
 }

@@ -61,9 +61,15 @@ struct PlayerScreen: View {
     @State private var holder = PlayerHolder()
     @State private var controlsVisible = true
     /// «Bloquear» (como Netflix): sin controles y la pantalla no responde a toques ni deslizamientos (para no pausar o adelantar
-    /// sin querer). Un toque enseña el candado unos segundos; tocarlo desbloquea.
+    /// sin querer). Un toque enseña la cápsula de arriba con «Desbloquear».
     @State private var locked = false
-    @State private var unlockPrompt = false
+    /// La cápsula de «Pantalla bloqueada» (arriba). `showsUnlock`: tras un toque, con el botón. `collapsed`: ya es el
+    /// círculo del candado. `risen`: sube y se desvanece. `generation` descarta un cierre si llegó otro aviso.
+    @State private var lockNoticeVisible = false
+    @State private var lockNoticeShowsUnlock = false
+    @State private var lockNoticeCollapsed = false
+    @State private var lockNoticeRisen = false
+    @State private var lockNoticeGeneration = 0
     @State private var unlockHide: Task<Void, Never>?
     @State private var hideTask: Task<Void, Never>?
     /// El «⋯» de la barra horizontal abierto: mientras está, los controles no se esconden (si no, se cerraba solo).
@@ -100,6 +106,10 @@ struct PlayerScreen: View {
     @State private var subtitleToast: String?
     /// Lo que pasó al pedir «Descargar» (el mismo aviso que en el resto de la app, arriba: abajo están los controles).
     @State private var notice: PlayerNotice?
+    /// Avisos que llegaron con la cápsula del candado en pantalla. Salen, en orden, cuando esa cápsula se va.
+    @State private var heldNotices = HeldNotices<QueuedNotice>()
+    @State private var heldDrain: Task<Void, Never>?
+    @State private var heldDrainGeneration = 0
     struct PlayerNotice: Equatable {
         var title: String, detail: String?, tone: DSNotice.Tone
         var showsDownloads = false
@@ -108,6 +118,13 @@ struct PlayerScreen: View {
         var switchTitle: String? = nil
         let id = UUID()
     }
+    /// Lo que espera turno. Subtítulos y zoom se quedan con el último; los demás, todos, en orden.
+    private enum QueuedNotice {
+        case player(PlayerNotice)
+        case subtitle(String)
+        case zoom(VideoZoom)
+    }
+    private enum QueuedNoticeKey: Hashable { case subtitle, zoom }
     /// Subtítulos rápidos (el panel chico sobre el video) y su lista de idiomas.
     @State private var subtitleDock = false
     /// La hoja «Audio y subtítulos» tiene dos páginas: lo de siempre y «Versión» (por idioma o todas las fuentes).
@@ -148,21 +165,24 @@ struct PlayerScreen: View {
     @State private var seekPositionAtDragStart: Double?
     @State private var seekPreview: Double?
     @State private var isFastForwarding = false
-    /// ×2 fijo: mantuviste el dedo hasta que vibró; sigue al soltar y un toque lo quita.
+    /// ×2 fijo: deslizaste hacia abajo hasta que vibró; sigue al soltar y un toque en la píldora lo quita.
     @State private var fastForwardLocked = false
     /// El dedo sigue puesto después de la pulsación larga (el ×2 dura lo que dure el dedo, como TikTok).
     @State private var fastForwardHolding = false
-    /// Cómo estaba al empezar a mantener: deslizar hacia arriba lo cambia (fijo ↔ no fijo) una vez por pulsación.
+    /// El ×2 se quedó con este toque (aunque ya hayas deslizado hacia arriba para quitarlo): el arrastre del video no lo roba.
+    @State private var fastForwardOwnsTouch = false
+    /// Cómo estaba al empezar a mantener: si ya iba fijo, el aviso dice deslizar hacia arriba para quitarlo.
     @State private var fastForwardLockedAtStart = false
     @State private var fastForwardToggledThisHold = false
-    /// Dónde empezó el toque (el ×2 es del lado derecho, como YouTube).
+    /// Dónde empezó el toque (el ×2 es del lado derecho, como YouTube; hacia abajo se mide desde aquí).
     @State private var touchStartX: CGFloat?
+    @State private var touchStartY: CGFloat?
     /// El ícono que aparece un momento al centro tras un doble toque (pausa, ±10 s).
     @State private var flashSymbol: String?
     /// Dobles toques en una orilla: cuántos segundos llevan sumados y de qué lado (la burbuja va de ese lado).
     @State private var skipChain: (forward: Bool, seconds: Int, at: Date)?
     @State private var skipChainTask: Task<Void, Never>?
-    /// ×2: lo que lleva el anillo antes de quedarse fijo.
+    /// ×2: lo que lleva el anillo al deslizar hacia abajo, antes de quedarse fijo.
     @State private var fastForwardProgress: Double = 0
     @State private var flashTask: Task<Void, Never>?
     /// Lo que mide la tarjeta de «Siguiente episodio» (para subir los subtítulos sobre ella).
@@ -186,7 +206,7 @@ struct PlayerScreen: View {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
                         // quedaba a media imagen).
-                        holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
+                        holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, speedPill: speedPillVisible && landscape, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
                             // Con la tarjeta de «Siguiente episodio» (abajo a la derecha, en horizontal) la línea sube sobre ella.
                             .offset(y: landscape && model.upNext != nil && !locked && !subtitleDock ? -(upNextHeight + DS.Space.s6) : 0)
                             .transition(.opacity)
@@ -202,9 +222,13 @@ struct PlayerScreen: View {
                 // controles a la vista suben sobre ellos.
                 .overlay(alignment: .bottom) {
                     if fillsPortrait && dragAxis != .horizontal {
-                        holder.engine.subtitleOverlay(lifted: false, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
+                        // Con los controles, ya van por encima de ellos; si además está la píldora, un poco más. Sin controles
+                        // y con la píldora al pie, suben lo bastante para no taparla.
+                        let aboveControls = controlsVisible ? geo.size.height * DS.PlayerPanel.portraitFillControlsShare : DS.Space.s6
+                        let abovePill = speedPillVisible ? (controlsVisible ? DS.Space.s10 : DS.Subtitle.liftWithSpeedPill) : 0
+                        holder.engine.subtitleOverlay(lifted: false, speedPill: false, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
                             .frame(width: geo.size.width, height: geo.size.width / DS.Poster.stillAspect)
-                            .padding(.bottom, controlsVisible ? geo.size.height * DS.PlayerPanel.portraitFillControlsShare : DS.Space.s6)
+                            .padding(.bottom, aboveControls + abovePill)
                             .allowsHitTesting(false)
                     }
                 }
@@ -229,6 +253,8 @@ struct PlayerScreen: View {
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
             let controlsShown = controlsVisible && !locked && !failed(model) && !subtitleDock && ipod == nil
             if controlsShown { controls(model).transition(.opacity) }
+            // Encima de los controles: en horizontal sobre la barra; en vertical, al pie (o sobre la barra si «Recortar»).
+            if speedPillVisible { speedPill.transition(.opacity) }
             // El iPod no se esconde (es el aparato): con la pantalla bloqueada se ve pero no se toca.
             if let face = ipod, !failed(model) { ipodChrome(model, face: face).transition(.opacity) }
             if (controlsShown || (ipod != nil && !locked)) && moreOpen { moreLayer(model) }
@@ -428,22 +454,24 @@ struct PlayerScreen: View {
     }
 
     // MARK: bloquear
-    /// Bloqueado: todo toque solo enseña el candado; nada pausa, adelanta ni mueve el video, y el giro se congela
+    /// Bloqueado: todo toque solo enseña la cápsula; nada pausa, adelanta ni mueve el video, y el giro se congela
     /// en la orientación de ese momento (girar el teléfono no voltea el video).
-    /// El aviso va arriba (en los dos sentidos): abajo tapaba los subtítulos y, en vertical, el pie del video.
+    /// El aviso va arriba, dentro del área segura, en los dos sentidos: nunca tapa el centro del video.
     private var lockLayer: some View {
         ZStack {
-            // Cualquier toque (o arrastre) solo enseña el aviso; desbloquear es tocar su botón grande, al centro.
+            // Cualquier toque (o arrastre) trae la cápsula con «Desbloquear».
             Color.clear.contentShape(Rectangle())
                 .onTapGesture { showUnlockPrompt() }
                 .gesture(DragGesture(minimumDistance: 0).onEnded { _ in showUnlockPrompt() })
                 .accessibilityHidden(true)
-            if unlockPrompt {
-                PlayerUnlockPrompt { unlock() }
-                    .transition(.opacity.combined(with: .scale(scale: DS.PlayerPanel.lockScale)))
+            if lockNoticeVisible {
+                VStack {
+                    PlayerLockNotice(showsUnlock: lockNoticeShowsUnlock, collapsed: lockNoticeCollapsed, risen: lockNoticeRisen, unlock: unlock)
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, DS.Space.s2)
             }
         }
-        .animation(DS.Motion.base(reduceMotion), value: unlockPrompt)
         .accessibilityElement(children: .contain)
     }
 
@@ -451,24 +479,131 @@ struct PlayerScreen: View {
         hideTask?.cancel()
         withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false; locked = true }
         freezeOrientation()
-        showUnlockPrompt()
+        showLockNotice(withUnlock: false)
     }
 
-    private func showUnlockPrompt() {
-        unlockPrompt = true
-        unlockHide?.cancel()
-        unlockHide = Task {
-            try? await Task.sleep(nanoseconds: DS.Timing.unlockPrompt)
-            if !Task.isCancelled { unlockPrompt = false }
+    private func showUnlockPrompt() { showLockNotice(withUnlock: true) }
+
+    /// La cápsula de arriba. Al bloquear dura un instante y no trae botón; un toque la trae con «Desbloquear» y se queda más.
+    /// Luego se encoge al candado, sube y se desvanece (con «Reducir movimiento», solo se desvanece).
+    private func showLockNotice(withUnlock: Bool) {
+        // Primero se retiene: lo que llegue a partir de aquí espera. Lo que ya se veía arriba se quita.
+        heldNotices.hold()
+        cancelHeldDrain()
+        clearTopNotices()
+        lockNoticeGeneration += 1
+        let generation = lockNoticeGeneration
+        lockNoticeShowsUnlock = withUnlock
+        withAnimation(DS.Motion.lockNoticeIn()) {
+            lockNoticeCollapsed = false
+            lockNoticeRisen = false
+            lockNoticeVisible = true
         }
+        unlockHide?.cancel()
+        unlockHide = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: withUnlock ? DS.Timing.unlockPrompt : DS.Timing.lockNotice)
+            guard !Task.isCancelled, generation == lockNoticeGeneration else { return }
+            await dismissLockNotice(generation: generation)
+        }
+    }
+
+    private func dismissLockNotice(generation: Int) async {
+        if reduceMotion {
+            withAnimation(DS.Motion.lockRise(true)) { lockNoticeRisen = true }
+            try? await Task.sleep(nanoseconds: UInt64(DesignTokens.Motion.base * 1_000_000_000))
+        } else {
+            withAnimation(DS.Motion.lockShrink(false)) { lockNoticeCollapsed = true }
+            try? await Task.sleep(nanoseconds: DS.Timing.lockNoticeShrink)
+            guard !Task.isCancelled, generation == lockNoticeGeneration else { return }
+            withAnimation(DS.Motion.lockRise(false)) { lockNoticeRisen = true }
+            try? await Task.sleep(nanoseconds: DS.Timing.lockNoticeRise)
+        }
+        guard !Task.isCancelled, generation == lockNoticeGeneration else { return }
+        lockNoticeVisible = false
+        lockNoticeCollapsed = false
+        lockNoticeRisen = false
+        lockNoticeShowsUnlock = false
+        flushHeldNotices()
+    }
+
+    /// Lo que ya está arriba (toast, subtítulos, zoom) se quita: el candado no se apila con ello.
+    /// Lo que llegue mientras la cápsula sigue en pantalla no se tira: queda en `heldNotices`.
+    private func clearTopNotices() {
+        zoomToastTask?.cancel()
+        notice = nil
+        subtitleToast = nil
+        zoomToast = nil
     }
 
     private func unlock() {
         unlockHide?.cancel()
-        unlockPrompt = false
+        lockNoticeGeneration += 1
+        lockNoticeVisible = false
+        lockNoticeCollapsed = false
+        lockNoticeRisen = false
+        lockNoticeShowsUnlock = false
         withAnimation(DS.Motion.base(reduceMotion)) { locked = false; controlsVisible = true }
         AppDelegate.orientations = .allButUpsideDown; refreshSupportedOrientations()
         scheduleHide()
+        flushHeldNotices()
+    }
+
+    /// La cápsula del candado está en pantalla, o todavía salen los avisos que esperaron detrás de ella.
+    private var topNoticesAreWaiting: Bool {
+        heldNotices.isHolding || !heldNotices.isEmpty || heldDrain?.isCancelled == false
+    }
+
+    private func cancelHeldDrain() {
+        heldDrainGeneration += 1
+        heldDrain?.cancel()
+        heldDrain = nil
+    }
+
+    /// La cápsula ya se fue (se encogió, o se desbloqueó): los avisos que esperaron salen uno tras otro,
+    /// cada uno el tiempo de siempre. Si el candado vuelve antes de vaciar la cola, lo que falta se queda.
+    private func flushHeldNotices() {
+        heldNotices.resume()
+        guard !heldNotices.isEmpty else { return }
+        if let heldDrain, !heldDrain.isCancelled { return }
+        heldDrainGeneration += 1
+        let generation = heldDrainGeneration
+        heldDrain?.cancel()
+        heldDrain = Task { @MainActor in
+            while !Task.isCancelled, !heldNotices.isHolding, !lockNoticeVisible {
+                guard let item = heldNotices.next() else { break }
+                await presentHeld(item)
+            }
+            guard generation == heldDrainGeneration, !Task.isCancelled else { return }
+            heldDrain = nil
+            if !heldNotices.isEmpty, !heldNotices.isHolding, !lockNoticeVisible {
+                flushHeldNotices()
+            }
+        }
+    }
+
+    /// Muestra un aviso que estaba en espera. VoiceOver se entera aquí, cuando de verdad aparece.
+    private func presentHeld(_ item: QueuedNotice) async {
+        switch item {
+        case .player(let new):
+            zoomToastTask?.cancel()
+            withAnimation(DS.Motion.base(reduceMotion)) { subtitleToast = nil; zoomToast = nil }
+            reveal(new)
+            try? await Task.sleep(nanoseconds: Toast.duration(new.tone, hasAction: new.showsDownloads || new.switchTo != nil) ?? DS.Timing.toastAction)
+        case .subtitle(let text):
+            zoomToastTask?.cancel()
+            withAnimation(DS.Motion.base(reduceMotion)) { notice = nil; zoomToast = nil }
+            await revealSubtitle(text)
+        case .zoom(let target):
+            withAnimation(DS.Motion.base(reduceMotion)) { notice = nil; subtitleToast = nil }
+            await revealZoom(target)
+        }
+    }
+
+    private func revealZoom(_ target: VideoZoom) async {
+        withAnimation(DS.Motion.base(reduceMotion)) { zoomToast = target }
+        try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
+        guard !Task.isCancelled else { return }
+        withAnimation(DS.Motion.base(reduceMotion)) { if zoomToast == target { zoomToast = nil } }
     }
 
     // MARK: gestos
@@ -515,10 +650,10 @@ struct PlayerScreen: View {
             // Y cuándo lo levantas de verdad: el `onPressingChanged` de la pulsación larga avisa «ya no» en cuanto la reconoce
             // (no al soltar), y el ×2 se prendía y se apagaba casi a la vez.
             .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { value in
-                if touchStartX == nil { touchStartX = value.startLocation.x }
-                if fastForwardHolding { fastForwardDrag(up: -value.translation.height) }
-            }.onEnded { _ in touchStartX = nil; releaseFastForward(model) })
-            // ×2 del lado derecho: casi al instante; si sigues, vibra y se queda fijo (sueltas antes: vuelve a ×1).
+                if touchStartX == nil { touchStartX = value.startLocation.x; touchStartY = value.startLocation.y }
+                if fastForwardHolding { fastForwardDrag(translationY: value.translation.height, screenHeight: geo.size.height, model: model) }
+            }.onEnded { _ in touchStartX = nil; touchStartY = nil; releaseFastForward(model) })
+            // ×2 del lado derecho: casi al instante. Hacia abajo se fija (vibra); hacia arriba se quita al momento.
             // Simultánea: como gesto normal competía con los dobles toques de las orillas y casi nunca ganaba.
             .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.fastForwardStart, maximumDistance: DS.Gesture.axisThreshold)
                 .onEnded { _ in if (touchStartX ?? geo.size.width) >= geo.size.width / 2 { holdFastForward(model) } })
@@ -537,7 +672,9 @@ struct PlayerScreen: View {
             // no llega y la burbuja de buscar se quedaba pegada en pantalla. Ver `.onChange(of: dragging)`.
             .updating($dragging) { _, state, _ in state = true }
             .onChanged { value in
-                if fastForwardHolding { return }   // con el ×2 puesto, deslizar es para fijarlo, no brillo ni volumen
+                // Con el ×2 puesto, deslizar fija o quita: ni brillo, ni volumen, ni mover el video (aunque el dedo
+                // haya empezado en la agarradera). Si el video ya se había movido, se deshace.
+                if fastForwardOwnsTouch { cancelVideoMove(); return }
                 let dx = Double(value.translation.width), dy = Double(value.translation.height)
                 if dragAxis == .undecided {
                     hideTask?.cancel()
@@ -583,6 +720,8 @@ struct PlayerScreen: View {
                 }
             }
             .onEnded { _ in
+                // El ×2 se quedó con el toque: no se confirma el movimiento del video.
+                if fastForwardOwnsTouch { cancelVideoMove(); dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil; return }
                 // Se queda donde lo sueltas (sin imanes).
                 if let moved = portraitDrag { withAnimation(DS.Motion.base(reduceMotion)) { portraitCenter = moved; portraitDrag = nil; movingVideo = false } }
                 movingVideo = false
@@ -606,19 +745,7 @@ struct PlayerScreen: View {
         if dragAxis == .horizontal, let target = seekPreview, let start = seekPositionAtDragStart {
             seekBubble(target: target, start: start)
         }
-        // Mientras mantienes, siempre; fijo, solo con los controles a la vista (sonando no estorba). Tocarla fija lo quita.
-        if isFastForwarding && (fastForwardHolding || controlsVisible) {
-            VStack {
-                Button { if !fastForwardHolding { endFastForward(holder.model, force: true) } } label: {
-                    DSSpeedPill(locked: fastForwardLocked, progress: fastForwardProgress, holding: fastForwardHolding,
-                                unlocks: fastForwardLockedAtStart)
-                }
-                .buttonStyle(.plain)
-                Spacer()
-            }
-            .padding(.top, DS.Space.s14).transition(.opacity)
-        }
-        if let notice {
+        if let notice, !lockNoticeVisible {
             VStack {
                 Toast(tone: notice.tone, title: Text(verbatim: notice.title), detail: notice.detail.map { Text(verbatim: $0) },
                       actionTitle: notice.switchTitle.map { LocalizedStringKey($0) } ?? (notice.showsDownloads ? "Ver" : nil),
@@ -633,11 +760,11 @@ struct PlayerScreen: View {
             .padding(.top, DS.Space.s14 + DS.Space.s4)
             .transition(.move(edge: .top).combined(with: .opacity))
         }
-        if let subtitleToast {
+        if let subtitleToast, !lockNoticeVisible {
             VStack { DSToastPill(text: LocalizedStringKey(subtitleToast)); Spacer() }.padding(.top, DS.Space.s14)
                 .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
-        if let zoomToast {
+        if let zoomToast, !lockNoticeVisible {
             // Siempre se ve: en horizontal arriba; en vertical sobre el video (arriba lo tapaba la barra), y si el modo no
             // cambia nada en vertical, lo dice.
             if landscape {
@@ -701,33 +828,86 @@ struct PlayerScreen: View {
         }
     }
 
-    /// ×2 como TikTok: mantener el dedo lo pone mientras dure; deslizar hacia arriba sin soltar lo fija (y lo mismo lo quita).
+    /// La píldora «2×» se ve mientras mantienes el dedo y, si quedó fija, cuando hay controles. Bloqueada la pantalla, no.
+    private var speedPillVisible: Bool { isFastForwarding && (fastForwardHolding || controlsVisible) && !locked }
+
+    /// Abajo al centro. Horizontal: justo encima de la barra. Vertical: al pie del área segura, salvo «Recortar» con
+    /// controles, que va encima de su barra.
+    private var speedPillBottomInset: CGFloat {
+        if landscape { return DS.Gesture.fastForwardPillBottomInset }
+        if fillsPortrait && controlsVisible { return DS.Gesture.fastForwardPillFillInset }
+        return DS.Space.s2
+    }
+
+    private var speedPill: some View {
+        VStack {
+            Spacer(minLength: 0)
+            Button { if !fastForwardHolding { endFastForward(holder.model, force: true) } } label: {
+                DSSpeedPill(locked: fastForwardLocked, progress: fastForwardProgress, holding: fastForwardHolding,
+                            unlocks: fastForwardLockedAtStart)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.bottom, speedPillBottomInset)
+    }
+
+    /// El arrastre del video en vertical no se queda con el toque del ×2.
+    private func cancelVideoMove() {
+        portraitDrag = nil
+        movingVideo = false
+        if dragAxis == .vertical { dragAxis = .undecided; verticalKind = nil }
+    }
+
+    /// ×2 como TikTok: mantener el dedo lo pone mientras dure. Hacia abajo se fija; hacia arriba vuelve a la velocidad previa.
     private func holdFastForward(_ model: PlayerModel) {
+        if movingVideo { cancelVideoMove() }
         guard dragAxis == .undecided else { return }
+        fastForwardOwnsTouch = true
         fastForwardHolding = true
         fastForwardLockedAtStart = fastForwardLocked
         fastForwardToggledThisHold = false
         fastForwardProgress = 0
+        hideTask?.cancel()
+        // En vertical (sin «Recortar») la pantalla queda limpia mientras el dedo sigue puesto.
+        if !landscape && !fillsPortrait {
+            withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false }
+        }
         guard !isFastForwarding else { return }   // ya iba fijo: mantener solo deja deslizar para quitarlo
         rateBeforeFastForward = model.rate
         withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = true }
         Task { await model.setRate(PlaybackRules.fastForwardRate) }
     }
 
-    /// Lo que llevas deslizado hacia arriba con el dedo puesto: llena el anillo y, al completarlo, fija o quita el ×2 (vibra).
-    private func fastForwardDrag(up: CGFloat) {
-        fastForwardProgress = Double(min(1, max(0, up / DS.Gesture.fastForwardLockDrag)))
-        guard fastForwardProgress >= 1, !fastForwardToggledThisHold else { return }
+    /// Hacia abajo llena el anillo y, al completar la distancia, fija el ×2 (vibra). Hacia arriba lo quita al momento.
+    /// La distancia hacia abajo se acorta si el dedo empezó cerca del borde, pero no baja de `fastForwardLockDragMin`.
+    private func fastForwardDrag(translationY: CGFloat, screenHeight: CGFloat, model: PlayerModel) {
+        guard fastForwardHolding else { return }
+        let down = max(0, translationY)
+        let up = max(0, -translationY)
+        if up >= DS.Gesture.fastForwardLockDrag {
+            fastForwardHolding = false
+            fastForwardProgress = 0
+            endFastForward(model, force: true)
+            return
+        }
+        let room = max(0, screenHeight - (touchStartY ?? 0))
+        let distance = CGFloat(PlayerGestures.fastForwardLockDistance(
+            roomBelow: Double(room), preferred: Double(DS.Gesture.fastForwardLockDrag), minimum: Double(DS.Gesture.fastForwardLockDragMin)))
+        guard distance > 0 else { return }
+        fastForwardProgress = Double(min(1, down / distance))
+        guard down >= distance, !fastForwardToggledThisHold else { return }
         fastForwardToggledThisHold = true
-        withAnimation(DS.Motion.base(reduceMotion)) { fastForwardLocked = !fastForwardLockedAtStart }
+        withAnimation(DS.Motion.base(reduceMotion)) { fastForwardLocked = true }
     }
 
     /// Al soltar: si quedó fijo sigue en ×2 (y la píldora se va con los controles); si no, vuelve a la velocidad de antes.
     private func releaseFastForward(_ model: PlayerModel) {
-        guard fastForwardHolding else { return }
+        let wasHolding = fastForwardHolding
         fastForwardHolding = false
+        fastForwardOwnsTouch = false
         fastForwardProgress = 0
-        if !fastForwardLocked { endFastForward(model, force: true) }
+        if wasHolding, !fastForwardLocked { endFastForward(model, force: true) }
+        if controlsVisible { scheduleHide() }
     }
 
     private func endFastForward(_ model: PlayerModel, force: Bool = false) {
@@ -739,12 +919,23 @@ struct PlayerScreen: View {
 
     #if DEBUG
     /// Para `-demo-gesture`: pone el indicador a medio camino sin tocar la pantalla, para capturarlo en el simulador.
+    /// `fastforward-locked` deja el ×2 fijo, con la píldora y los controles a la vista.
     private func simulateGesture(_ kind: String, model: PlayerModel) {
         switch kind {
         case "brightness": verticalKind = .brightness; indicator = (.brightness, "sun.max.fill", 0.65); indicatorVisible = true
         case "volume": verticalKind = .volume; indicator = (.volume, "speaker.wave.2.fill", 0.4); indicatorVisible = true
         case "seek": dragAxis = .horizontal; seekPositionAtDragStart = model.snapshot.position; seekPreview = model.snapshot.position + 80
         case "fastforward": holdFastForward(model)
+        case "fastforward-locked":
+            hideTask?.cancel()
+            rateBeforeFastForward = model.rate
+            fastForwardLocked = true
+            fastForwardHolding = false
+            fastForwardOwnsTouch = false
+            fastForwardLockedAtStart = true
+            fastForwardProgress = 0
+            withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = true; controlsVisible = true }
+            Task { await model.setRate(PlaybackRules.fastForwardRate) }
         default: break
         }
     }
@@ -754,14 +945,20 @@ struct PlayerScreen: View {
 
     /// Cambia el zoom (botón o pellizco), lo recuerda para la próxima vez y avisa un momento cuál quedó.
     private func setZoom(_ target: VideoZoom) {
-        withAnimation(DS.Motion.base(reduceMotion)) { zoom = target; zoomToast = target }
+        let queueToast = topNoticesAreWaiting
+        if queueToast { heldNotices.hold(.zoom(target), key: QueuedNoticeKey.zoom) }
+        withAnimation(DS.Motion.base(reduceMotion)) {
+            zoom = target
+            if !queueToast { zoomToast = target }
+        }
         holder.engine.setZoom(target)
         env.services.settings.update { $0.videoZoom = target.rawValue }
+        guard !queueToast else { return }
         zoomToastTask?.cancel()
-        zoomToastTask = Task {
+        zoomToastTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
             guard !Task.isCancelled else { return }
-            withAnimation(DS.Motion.base(reduceMotion)) { zoomToast = nil }
+            withAnimation(DS.Motion.base(reduceMotion)) { if zoomToast == target { zoomToast = nil } }
         }
     }
 
@@ -1174,6 +1371,15 @@ struct PlayerScreen: View {
     }
 
     private func show(_ new: PlayerNotice) {
+        if topNoticesAreWaiting {
+            heldNotices.hold(.player(new))
+            return
+        }
+        reveal(new)
+    }
+
+    /// El aviso de arriba, ya en pantalla. VoiceOver lo dice en este momento, no cuando se encoló.
+    private func reveal(_ new: PlayerNotice) {
         UIAccessibility.post(notification: .announcement, argument: new.title)
         withAnimation(DS.Motion.base(reduceMotion)) { notice = new }
     }
@@ -1513,9 +1719,18 @@ struct PlayerScreen: View {
 
     /// Un aviso breve arriba del video (sin tapar los controles), que VoiceOver también dice.
     private func toast(_ text: String) async {
+        if topNoticesAreWaiting {
+            heldNotices.hold(.subtitle(text), key: QueuedNoticeKey.subtitle)
+            return
+        }
+        await revealSubtitle(text)
+    }
+
+    private func revealSubtitle(_ text: String) async {
         withAnimation(DS.Motion.base(reduceMotion)) { subtitleToast = text }
         UIAccessibility.post(notification: .announcement, argument: text)
         try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
+        guard !Task.isCancelled else { return }
         withAnimation(DS.Motion.base(reduceMotion)) { if subtitleToast == text { subtitleToast = nil } }
     }
 

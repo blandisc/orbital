@@ -82,8 +82,8 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
 
     /// AetherEngine no pinta subtítulos: entrega las líneas y la app las dibuja encima del video (su README: «your UI paints them»).
     var drawsSubtitles: Bool { true }
-    func subtitleOverlay(lifted: Bool, look: SubtitleLook, delay: Double) -> AnyView {
-        AnyView(AetherSubtitleOverlay(engine: engine, clock: engine.clock, lifted: lifted, look: look, fills: fills, delay: delay))
+    func subtitleOverlay(lifted: Bool, speedPill: Bool, look: SubtitleLook, delay: Double) -> AnyView {
+        AnyView(AetherSubtitleOverlay(engine: engine, clock: engine.clock, lifted: lifted, speedPill: speedPill, look: look, fills: fills, delay: delay))
     }
     @MainActor func subtitleLines(from seconds: Double, count: Int) -> [SubtitleLine] {
         engine.subtitleCues.sorted { $0.startTime < $1.startTime }.lazy.filter { $0.startTime >= seconds }.compactMap { cue -> SubtitleLine? in
@@ -235,11 +235,13 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
 }
 /// Los subtítulos de AetherEngine dibujados sobre el video: las líneas que tocan según el reloj del cuadro que se ve
 /// (`clock.sourceTime`), en texto (con color, negrita y cursiva del archivo) o como imagen (PGS de Blu-ray), colocados
-/// sobre el rectángulo real del video (no sobre las franjas negras). Suben cuando están los controles para no taparse.
+/// sobre el rectángulo real del video (no sobre las franjas negras). Suben con los controles, y más si está la píldora «2×».
 struct AetherSubtitleOverlay: View {
     @ObservedObject var engine: AetherEngine
     @ObservedObject var clock: PlaybackClock
     let lifted: Bool
+    /// La píldora «2×» está a la vista: la línea sube por encima de ella.
+    var speedPill = false
     let look: SubtitleLook
     let fills: Bool
     /// La sincronía elegida (s): con +1 cada línea sale un segundo después.
@@ -284,7 +286,7 @@ struct AetherSubtitleOverlay: View {
         // La parte del video que se ve (con «llenar pantalla» el video se sale por los lados).
         let visible = video.intersection(CGRect(origin: .zero, size: screen))
         let fontSize = max(DS.Subtitle.minFont, visible.height * look.heightFraction)
-        let lift = lifted ? DS.Subtitle.liftWithControls : 0
+        let lift = subtitleLift
         let placement = cues.compactMap(\.placement).first
         let top = placement?.alignment.map { (7...9).contains($0) } ?? false
         return VStack(spacing: fontSize * DS.Subtitle.lineGap) {
@@ -344,7 +346,12 @@ struct AetherSubtitleOverlay: View {
                            width: image.position.width * canvas.width, height: image.position.height * canvas.height)
         return Image(decorative: image.cgImage, scale: 1).resizable()
             .frame(width: frame.width, height: frame.height)
-            .offset(x: frame.minX, y: frame.minY - (lifted ? DS.Subtitle.liftWithControls : 0))
+            .offset(x: frame.minX, y: frame.minY - subtitleLift)
+    }
+
+    /// Con los controles, un poco; con la píldora «2×», lo bastante para que la línea quede por encima de ella.
+    private var subtitleLift: CGFloat {
+        speedPill ? DS.Subtitle.liftWithSpeedPill : (lifted ? DS.Subtitle.liftWithControls : 0)
     }
 }
 

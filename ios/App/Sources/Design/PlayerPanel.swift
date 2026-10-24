@@ -28,21 +28,39 @@ struct PlayerCircleGlyph: View {
     }
 }
 
-/// Bloqueado: el primer toque enseña esto; el botón grande «Desbloquear» es lo único que responde.
-struct PlayerUnlockPrompt: View {
+/// Bloqueado: una cápsula chica arriba. Al bloquear solo dice «Pantalla bloqueada»; tras un toque, trae «Desbloquear».
+/// Encogida (`collapsed`) queda el círculo del candado; `risen` la sube y la desvanece (con «Reducir movimiento», solo se desvanece).
+struct PlayerLockNotice: View {
+    var showsUnlock: Bool
+    var collapsed: Bool
+    var risen: Bool
     let unlock: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        VStack(spacing: DS.Space.s3) {
-            Label("Pantalla y giro bloqueados", systemImage: "lock.fill").recipe(.footnote, color: DS.text).fontWeight(.semibold)
-            Button(action: unlock) {
-                Label("Desbloquear", systemImage: "lock.open.fill").font(DS.TextRecipe.secondary.font.weight(.semibold))
-                    .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
+        HStack(spacing: DS.Space.s2) {
+            Image(systemName: "lock.fill").font(DS.TextRecipe.footnote.font.weight(.bold))
+            if !collapsed {
+                Text("Pantalla bloqueada").font(DS.TextRecipe.footnote.font.weight(.semibold))
+                if showsUnlock {
+                    Button(action: unlock) {
+                        Text("Desbloquear").font(DS.TextRecipe.footnote.font.weight(.semibold))
+                    }
+                    .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
+                    .accessibilityIdentifier("player-unlock")
+                }
             }
-            .buttonStyle(.glassProminent).tint(DS.primary).foregroundStyle(DS.onPrimary)
-            .accessibilityIdentifier("player-unlock")
         }
-        .padding(DS.Space.s4)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
+        .foregroundStyle(DS.text)
+        .padding(.horizontal, collapsed ? DS.Space.s2 : DS.Space.s3)
+        .padding(.vertical, DS.Space.s2)
+        .frame(width: collapsed ? DS.PlayerPanel.lockNoticeIcon : nil, height: collapsed ? DS.PlayerPanel.lockNoticeIcon : nil)
+        .glassEffect(.regular, in: Capsule())
+        .offset(y: risen && !reduceMotion ? -DS.PlayerPanel.lockNoticeRise : 0)
+        .opacity(risen ? 0 : 1)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("player-lock-notice")
+        .allowsHitTesting(showsUnlock && !collapsed && !risen)
     }
 }
 

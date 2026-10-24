@@ -40,7 +40,8 @@ final class PlayerPanelUITests: XCTestCase {
         XCTAssertTrue(done.waitForNonExistence(timeout: 5), "«Listo» la cierra")
     }
 
-    /// Bloqueado: tocar solo enseña «Desbloquear»; ese botón desbloquea. La tarjeta de «Siguiente episodio» no se ve.
+    /// Bloqueado: sale el aviso de arriba y se va solo; un toque trae «Desbloquear» y ese botón desbloquea.
+    /// La tarjeta de «Siguiente episodio» no se ve.
     func testLockShowsAnUnlockButtonAndHidesUpNext() {
         let app = XCUIApplication()
         app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
@@ -60,14 +61,14 @@ final class PlayerPanelUITests: XCTestCase {
         XCTAssertTrue(lock.exists, "con el «⋯» abierto los controles no se esconden")
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = "player-more"; shot.lifetime = .keepAlways; add(shot)
         lock.tap()
-        sleep(1)
+        let notice = app.descendants(matching: .any)["player-lock-notice"]
+        XCTAssertTrue(notice.waitForExistence(timeout: 3), "al bloquear aparece el aviso")
+        XCTAssertFalse(app.buttons["player-unlock"].exists, "al bloquear no sale «Desbloquear»")
         XCTAssertFalse(app.buttons["Ahora no"].exists, "bloqueado, la tarjeta no se ve ni se toca")
-        let unlock = app.buttons["player-unlock"]
-        XCTAssertTrue(unlock.waitForExistence(timeout: 3), "al bloquear aparece «Desbloquear»")
-        sleep(4)
-        XCTAssertFalse(unlock.exists, "y se va solo")
+        XCTAssertTrue(notice.waitForNonExistence(timeout: 4), "y se va solo")
         app.tap()
-        XCTAssertTrue(unlock.waitForExistence(timeout: 3), "un toque lo trae")
+        let unlock = app.buttons["player-unlock"]
+        XCTAssertTrue(unlock.waitForExistence(timeout: 3), "un toque trae «Desbloquear»")
         unlock.tap()
         XCTAssertTrue(app.buttons["player-close"].waitForExistence(timeout: 3), "desbloquear trae los controles")
         XCTAssertTrue(app.buttons["Ahora no"].exists, "y la tarjeta")

@@ -43,7 +43,7 @@ final class PlayerRotationUITests: XCTestCase {
         sleep(3)
         XCTAssertTrue(isLandscape(app), "bloqueado no gira")
 
-        app.tap()
+        app.tap()   // la cápsula de arriba vuelve, ahora con «Desbloquear»
         let unlock = app.buttons["player-unlock"]
         XCTAssertTrue(unlock.waitForExistence(timeout: 5))
         unlock.tap()
