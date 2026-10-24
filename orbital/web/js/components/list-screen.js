@@ -70,6 +70,13 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
   }
 
   /** Lo de la persona que llega después (TMDB): su foto, de dónde es y su biografía. */
+  function setHeading(titleText, metaText) {
+    if (!list) return;
+    if (titleText) list.title = titleText;
+    if (metaText != null) list.meta = metaText;
+    paintHead();
+  }
+
   function setPerson(person) {
     if (!list?.person) return;
     list.person = { ...list.person, ...person };
@@ -271,5 +278,5 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     { glyph: g.back, label: "Atrás", end: true },
   ].filter(Boolean);
 
-  return { el, open, close, handle, hints, sorter: api, setPerson, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
+  return { el, open, close, handle, hints, sorter: api, setPerson, setHeading, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

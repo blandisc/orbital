@@ -299,6 +299,40 @@ def install(catalog) -> None:
     fy._fresh = fresh
     fy._studio = lambda company_id, name: [foryou.video_item(M[k], name) for k in studios.get(company_id, ["inter"])]
 
+    # «Lo mejor del género» y «Temporadas», sin TMDB: títulos del demo (ids de IMDb de verdad).
+    # Película y serie intercaladas: cada Top 10 del demo mezcla los dos, como TMDB.
+    cycle = ["madmax", "andor", "batman", "stranger", "spider", "dark", "dune2", "breaking", "inception", "tlou",
+             "oppen", "severance", "parasite", "wednesday", "br", "squid", "inter", "mando", "arrival", "shogun",
+             "bear", "succession", "blackmirror", "saul", "silo", "loki", "hotd", "penguin", "lotus", "inside2",
+             "prestige", "dune1", "glass", "poor", "past", "futurama"]
+    pool = {**M, **S}
+
+    def genre_bundle(slug, year):
+        spec = foryou.tmdb_api.GENRE_BY_SLUG[slug]
+        start = list(foryou.tmdb_api.GENRE_BY_SLUG).index(slug)
+        items = []
+        for n, key in enumerate([cycle[(start + i) % len(cycle)] for i in range(10)]):
+            item = foryou.video_item(pool[key], f"N.º {n + 1} · {spec.title}")
+            item["rank"] = n + 1
+            items.append(item)
+        return {"items": items, "title": f"Lo mejor de {spec.title} en {year}", "meta": "Las mejor calificadas del año"}
+
+    seasons = {
+        "halloween": ["stranger", "wednesday", "dark", "blackmirror", "batman", "prestige", "parasite", "silo", "squid", "glass"],
+        "muertos": ["parasite", "dark", "stranger", "wednesday", "prestige", "silo", "breaking", "saul", "blackmirror", "glass"],
+        "navidad": ["inside2", "bear", "succession", "lotus", "shogun", "futurama", "poor", "past", "loki", "mando"],
+        "sanvalentin": ["past", "poor", "arrival", "succession", "bear", "lotus", "shogun", "severance", "inside2", "prestige"],
+        "verano": ["dune2", "dune1", "spider", "madmax", "inter", "br", "mando", "loki", "andor", "tlou"],
+    }
+
+    def season_bundle(slug):
+        spec = foryou.tmdb_api.SEASON_BY_SLUG[slug]
+        items = [foryou.video_item(pool[key], spec.title) for key in seasons[slug]]
+        return {"items": items, "title": spec.title, "meta": spec.blurb}
+
+    fy._genre_bundle = genre_bundle
+    fy._season_bundle = season_bundle
+
     # El Top 10 de Netflix y lo más visto por plataforma (JustWatch), sin internet: puestos, sube y baja y «Nuevo».
     def chart(keys, kind):
         pool = S if kind == "series" else M

@@ -848,3 +848,189 @@ def test_para_ti_remembers_on_disk_what_it_brought_for_when_there_is_no_internet
 
     later = foryou_mod.Cache(clock=lambda: time.time() + 10_000, path=path)  # otro arranque, ya vencido
     assert later.get("trakt:trend:series", 60, offline) == [{"title": "Dark"}]
+
+
+# --- Lo mejor del género y Temporadas (TMDB) ---------------------------------------------------------------------------
+def _discover_page(n, vote=8.0, pop=40):
+    return 200, {"results": [{"id": i, "vote_average": vote - i / 100, "popularity": pop - i} for i in range(1, n + 1)]}
+
+
+def test_genre_top_asks_for_this_years_best_rated_in_spanish(net):
+    """Películas por primary_release_year, series por first_air_date_year, nota alta y es-MX."""
+    client = tmdb.Tmdb("k")
+    net.on("GET", r"/discover/", lambda url, _: _discover_page(12, vote=9))
+    out = client.genre_top(28, 10759, 2026)
+    urls = [url for _, url, _ in net.calls]
+    assert len(urls) == 2  # con el piso alto ya hay 10: no baja ni cambia de año
+    movie = next(url for url in urls if "/discover/movie" in url)
+    show = next(url for url in urls if "/discover/tv" in url)
+    assert "with_genres=28" in movie and "primary_release_year=2026" in movie and "first_air_date_year" not in movie
+    assert "with_genres=10759" in show and "first_air_date_year=2026" in show and "primary_release_year" not in show
+    assert "sort_by=vote_average.desc" in movie and "vote_count.gte=150" in movie and "language=es-MX" in movie
+    assert out["basis"] == "votes" and out["year"] == 2026 and len(out["rows"]) == 20
+    assert out["rows"][0]["vote_average"] >= out["rows"][-1]["vote_average"]
+
+
+def test_genre_top_lowers_the_vote_floor_then_uses_popularity_then_last_year(net):
+    client = tmdb.Tmdb("k")
+
+    def thin(url, _body):
+        if "vote_count" in url:
+            return _discover_page(1)
+        return _discover_page(11, pop=80)
+
+    net.on("GET", r"/discover/", thin)
+    popular = client.genre_top(27, None, 2026)
+    assert popular["basis"] == "popular" and popular["year"] == 2026
+    assert not any("2025" in url or "/discover/tv" in url for _, url, _ in net.calls)
+    assert any("sort_by=popularity.desc" in url and "primary_release_year=2026" in url and "vote_count.gte" not in url
+               for _, url, _ in net.calls)
+
+    net.calls.clear()
+    net.routes.clear()
+
+    def scarce(url, _body):
+        year = 2025 if "2025" in url else 2026
+        if "vote_count.gte=150" in url:
+            return _discover_page(1)
+        if "vote_count.gte=50" in url:
+            return _discover_page(11 if year == 2025 else 3)
+        return _discover_page(2)
+
+    net.on("GET", r"/discover/", scarce)
+    previous = tmdb.Tmdb("k").genre_top(27, None, 2026)
+    assert previous["basis"] == "previous" and previous["year"] == 2025 and len(previous["rows"]) >= 10
+    urls = [url for _, url, _ in net.calls]
+    assert any("vote_count.gte=150" in url and "primary_release_year=2026" in url and "sort_by=vote_average.desc" in url for url in urls)
+    assert any("vote_count.gte=50" in url and "primary_release_year=2026" in url for url in urls)
+    assert any("sort_by=popularity.desc" in url and "primary_release_year=2026" in url and "vote_count.gte" not in url for url in urls)
+    assert any("primary_release_year=2025" in url and "vote_count.gte=50" in url and "sort_by=vote_average.desc" in url for url in urls)
+    assert not any("sort_by=popularity.desc" in url and "2025" in url for url in urls)
+
+
+def test_a_season_keyword_is_the_exact_name_and_the_list_is_in_spanish(net):
+    client = tmdb.Tmdb("k")
+
+    def search(url, _body):
+        if "christmas" in url:
+            return 200, {"results": [{"id": 9, "name": "christmas movie"}, {"id": 207317, "name": "christmas"}]}
+        if "day+of+the+dead" in url:
+            return 200, {"results": []}
+        if "dia+de+los+muertos" in url:
+            return 200, {"results": [{"id": 42, "name": "dia de los muertos"}]}
+        return 200, {"results": []}
+
+    net.on("GET", r"/search/keyword", search)
+    assert client.keyword_id(("christmas",)) == 207317
+    assert "language=en-US" in net.calls[-1][1]
+    assert client.keyword_id(("day of the dead", "dia de los muertos")) == 42
+    assert client.keyword_id(("no-such-keyword",)) is None
+    net.calls.clear()
+    net.on("GET", r"/discover/", lambda url, _: _discover_page(11, pop=100))
+    rows = client.season_titles(3335)
+    urls = [url for _, url, _ in net.calls]
+    assert len(urls) == 2  # con 50 votos ya hay 10
+    assert all("with_keywords=3335" in url and "sort_by=popularity.desc" in url and "language=es-MX" in url
+               and "vote_count.gte=50" in url for url in urls)
+    assert any("/discover/movie" in url for url in urls) and any("/discover/tv" in url for url in urls)
+    assert rows[0]["popularity"] >= rows[1]["popularity"]
+
+
+def test_seasons_put_the_current_one_first_and_then_the_calendar():
+    def ids(day):
+        return [s.slug for s in tmdb.ordered_seasons(foryou_mod.date.fromisoformat(day))]
+
+    assert ids("2026-10-24") == ["halloween", "muertos", "navidad", "sanvalentin", "verano"]
+    assert ids("2026-04-10") == ["verano", "halloween", "muertos", "navidad", "sanvalentin"]
+    assert ids("2026-01-03") == ["navidad", "sanvalentin", "verano", "halloween", "muertos"]  # Navidad cruza el año
+    assert ids("2026-11-15") == ["navidad", "sanvalentin", "verano", "halloween", "muertos"]  # entre dos: la siguiente
+    assert ids("2026-02-01") == ["sanvalentin", "verano", "halloween", "muertos", "navidad"]
+    for month in range(1, 13):
+        for day in (1, 15, 28):
+            hit = [s for s in tmdb.SEASONS if tmdb._in_season(s.start, s.end, (month, day))]
+            assert len(hit) <= 1
+
+
+def test_the_genre_screen_names_the_year_it_actually_used(make_foryou, net):
+    fy = make_foryou(trakt_keys=False, tmdb_key="k")
+    fy._today = lambda: foryou_mod.date(2026, 10, 24)
+
+    def detail(url, _body):
+        i = int(re.search(r"/movie/(\d+)", url).group(1))
+        return 200, {"id": i, "title": f"Película {i}", "release_date": "2025-04-01", "poster_path": "/p.jpg",
+                     "external_ids": {"imdb_id": f"tt{i:07d}"}}
+
+    net.on("GET", r"/movie/\d+", detail)
+
+    def chart(basis, used):
+        return {"rows": [{"kind": "movie", "id": i} for i in range(1, 11)], "year": used, "basis": basis}
+
+    fy.tmdb.genre_top = lambda movie, tv, year: chart("popular", year)
+    popular = fy.list_payload("genre:romance")
+    assert popular["title"] == "Lo mejor de Romance en 2026" and popular["meta"] == "Las más populares de 2026"
+    assert [i["rank"] for i in popular["items"]] == list(range(1, 11))
+    fy.tmdb.genre_top = lambda movie, tv, year: chart("previous", year - 1)
+    previous = fy.list_payload("genre:terror")
+    assert previous["title"] == "Lo mejor de Terror en 2025"
+    assert previous["meta"] == "Pocas de 2026: las mejor calificadas de 2025"
+    fy.tmdb.genre_top = lambda movie, tv, year: chart("previous-popular", year - 1)
+    thin = fy.list_payload("genre:suspenso")
+    assert thin["title"] == "Lo mejor de Suspenso en 2025" and thin["meta"] == "Pocas de 2026: lo más visto en 2025"
+
+
+def test_genre_and_season_shelves_need_tmdb_and_the_phone_does_not_get_them(make_foryou, net, library):
+    assert not [r for r in make_foryou(trakt_keys=False).lists() if r.get("collection") in ("genre", "season")]
+    fy = make_foryou(trakt_keys=False, tmdb_key="k")
+    fy._today = lambda: foryou_mod.date(2026, 10, 24)
+    genres = [r for r in fy.lists() if r.get("collection") == "genre"]
+    seasons = [r for r in fy.lists() if r.get("collection") == "season"]
+    assert [r["title"] for r in genres[:3]] == ["Acción", "Aventura", "Animación"]
+    assert genres[0]["headline"] == "Lo mejor de Acción en 2026" and len(genres) == 14
+    assert [r["id"] for r in seasons] == ["season:halloween", "season:muertos", "season:navidad", "season:sanvalentin", "season:verano"]
+
+    def discover(url, _body):
+        if "/discover/movie" in url:
+            return 200, {"results": [{"id": 10 + i, "vote_average": 7 + i / 10, "popularity": 30 - i} for i in range(6)]}
+        return 200, {"results": [{"id": 30 + i, "vote_average": 8.5 - i / 10, "popularity": 40 - i} for i in range(6)]}
+
+    def detail(url, _body):
+        found = re.search(r"/(movie|tv)/(\d+)", url)
+        kind, i = found.group(1), int(found.group(2))
+        body = {"id": i, "poster_path": "/p.jpg", "backdrop_path": "/b.jpg", "external_ids": {"imdb_id": f"tt{i:07d}"}}
+        if kind == "movie":
+            return 200, {**body, "title": f"Película {i}", "release_date": "2026-02-02"}
+        return 200, {**body, "name": f"Serie {i}", "first_air_date": "2026-02-02", "number_of_seasons": 2}
+
+    net.on("GET", r"/discover/", discover)
+    net.on("GET", r"/(movie|tv)/\d+", detail)
+    net.on("GET", r"/search/keyword", lambda url, _: (200, {"results": [{"id": 3335, "name": "halloween"}]}))
+    payload = fy.list_payload("genre:accion")
+    assert payload["title"] == "Lo mejor de Acción en 2026" and payload["meta"] == "Las mejor calificadas del año"
+    assert [i["rank"] for i in payload["items"]] == list(range(1, 11))
+    assert payload["items"][0]["kind"] == "series" and payload["items"][0]["why"] == "N.º 1 · Acción"
+    assert payload["items"][0]["meta_id"].startswith("tt")
+    before = len(net.calls)
+    assert fy.list_items("genre:accion")[0]["meta_id"] == payload["items"][0]["meta_id"]
+    assert len(net.calls) == before  # la segunda vez sale de la caché
+    season = fy.list_payload("season:halloween")
+    assert season["title"] == "Halloween" and season["meta"] == "Sustos, brujas y calabazas" and season["items"]
+    assert "rank" not in season["items"][0]
+    urls = [url for _, url, _ in net.calls]
+    assert any("/search/keyword" in url and "language=en-US" in url and "query=halloween" in url for url in urls)
+    assert any("/discover/" in url and "with_keywords=3335" in url and "language=es-MX" in url and "sort_by=popularity.desc" in url
+               for url in urls)
+    with pytest.raises(KeyError):
+        fy.list_items("genre:no-existe")
+
+    from orbital.server import create_public_app
+
+    main = create_app(library.config, library)
+    with TestClient(main, base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as tv:
+        public = TestClient(create_public_app(library.config, main), base_url="https://legion.ts.net", client=("127.0.0.1", 2))
+        home = tv.get("/api/foryou").json()
+        assert any(row["id"] == "genre:accion" for row in home["lists"])
+        got = tv.get("/api/foryou/list", params={"id": "genre:accion"}).json()
+        assert got["title"] == "Lo mejor de Acción en 2026" and len(got["items"]) == 10
+        assert tv.get("/api/foryou/list", params={"id": "genre:no-existe"}).status_code == 404
+        phone = [row["id"] for row in public.get("/api/foryou", headers={"Authorization": "Bearer secreto"}).json()["lists"]]
+        assert phone and not [i for i in phone if i.startswith(("genre:", "season:"))]

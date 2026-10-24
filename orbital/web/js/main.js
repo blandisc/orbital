@@ -912,7 +912,12 @@ function refreshBecauseRow() {
   setFocus(state.focus.r, state.focus.c, { silent: true });
 }
 
-const fetchList = async (id, kind) => (await api.forYouList(id, kind).catch(() => ({ items: [] }))).items || [];
+const mediaHeads = {}; // título de verdad de un género o una temporada (el año puede no ser el de hoy)
+const fetchList = async (id, kind) => {
+  const res = await api.forYouList(id, kind).catch(() => ({ items: [] }));
+  if (res?.title) mediaHeads[id] = { title: res.title, meta: res.meta || "" };
+  return res?.items || [];
+};
 async function fetchMany(wanted, into = mediaItems) {
   const queue = [...wanted];
   await Promise.all(Array.from({ length: 4 }, async () => {
@@ -920,7 +925,7 @@ async function fetchMany(wanted, into = mediaItems) {
   }));
 }
 /** Lo de arriba primero (Destacados, lo general, Porque viste, lo nuevo, las plataformas); las colecciones, después. */
-const LATER = (w) => /^(award|studio|list|addon):/.test(w.id) || ["watchlist", "mine", "mylist", "estrenos"].includes(w.id);
+const LATER = (w) => /^(award|studio|list|addon|genre|season):/.test(w.id) || ["watchlist", "mine", "mylist", "estrenos"].includes(w.id);
 
 async function loadYears(count = 6) {
   const years = mediaLists.filter((l) => l.collection === "year").slice(yearsLoaded, yearsLoaded + count);
@@ -988,6 +993,17 @@ function openCollection(item) {
   }
   const l = c.list || {};
   if (l.id === "estrenos") { ui.calendar.open(); return renderHints(); } // el mes, como el iPhone
+  if (c.type === "genre" || c.type === "season") {
+    const kind = l.kinds?.[0] ?? null;
+    const head = mediaHeads[l.id];
+    ui.listScreen.open({ id: l.id, title: head?.title || l.headline || l.title, meta: head?.meta ?? l.meta ?? "", media: {},
+      tabs: [{ id: "all", label: "", ranked: c.type === "genre", load: () => cached(l.id, kind).then((items) => {
+        const ready = mediaHeads[l.id];
+        if (ready?.title) ui.listScreen.setHeading(ready.title, ready.meta);
+        return items.map(curatedItem);
+      }) }] });
+    return renderHints();
+  }
   if (l.id === "mimedia") return openMiMedia();
   const kinds = l.split ? (c.type === "year" ? [["movie", "Películas"], ["series", "Series"]] : [["series", "Series"], ["movie", "Películas"]])
     : [[l.kinds?.[0] ?? null, ""]];
