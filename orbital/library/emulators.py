@@ -12,6 +12,7 @@ from pathlib import Path
 
 from ..config import EmulatorConfig
 from .esde import EsdeLibrary
+from .identity import fingerprint_extra
 from .media import MediaStore, good, image_size
 from .models import LibraryItem, Runner, added_at
 from .shortcuts import read_lnk, xenia_games
@@ -214,7 +215,7 @@ def scan(
                 LibraryItem(
                     id=_item_id(emu.id, rom),
                     title=game_title(meta.name if meta else None, entry, own),
-                    extra={**game_extra(own), "added": added_at(rom)},
+                    extra={**game_extra(own), "added": added_at(rom), **fingerprint_extra(rom)},
                     category="emulators",
                     source=emu.id,
                     subtitle=emu.name,
@@ -241,7 +242,7 @@ def scan(
                 id=_item_id(emu.id, package), title=name, category="emulators", source=emu.id, subtitle=emu.name,
                 runners=[Runner(emu.id, runner_name(emu, exe), build_argv(emu, exe, package), str(exe.parent))],
                 default_runner=emu.id, art_path=art["cover"], hero_path=art["hero"], logo_path=art["logo"],
-                system=emu.system, media_key=name, extra={"added": added_at(package)}))
+                system=emu.system, media_key=name, extra={"added": added_at(package), **fingerprint_extra(package)}))
     return sorted(items, key=lambda i: i.title.lower())
 
 
@@ -263,7 +264,8 @@ def _scan_ps4(emu: EmulatorConfig, dirs: list[Path], candidates: list[EmulatorCo
             source=emu.id, subtitle=emu.name, runners=runners, default_runner=emu.id,
             art_path=art["cover"] or (str(game.icon) if game.icon else None),
             hero_path=art["hero"] or (str(game.background) if game.background else None), logo_path=art["logo"],
-            system=emu.system, media_key=key, extra={**game_extra(own), "added": added_at(game.eboot)}))
+            system=emu.system, media_key=key, extra={**game_extra(own), "added": added_at(game.eboot),
+                                                     **fingerprint_extra(game.eboot)}))
     return items
 
 
@@ -288,7 +290,8 @@ def _scan_ps3(emu: EmulatorConfig, dirs: list[Path], candidates: list[EmulatorCo
             source=emu.id, subtitle=emu.name, runners=runners, default_runner=emu.id,
             art_path=art["cover"] or (str(game.icon) if game.icon else None),
             hero_path=art["hero"] or (str(game.background) if game.background else None), logo_path=art["logo"],
-            system=emu.system, media_key=key, extra={**game_extra(own), "added": added_at(game.boot)}))
+            system=emu.system, media_key=key, extra={**game_extra(own), "added": added_at(game.boot),
+                                                     **fingerprint_extra(game.boot)}))
     return items
 
 
@@ -324,7 +327,7 @@ def _ports(emu: EmulatorConfig, dirs: list[Path], emulator_exes: set[str], media
                 source=emu.id, subtitle=emu.name, runners=[Runner(PORT_RUNNER, "PC", [str(target), *shortcut.argv()], cwd)],
                 default_runner=PORT_RUNNER, favorite=bool(meta and meta.favorite), art_path=art["cover"], hero_path=art["hero"],
                 logo_path=art["logo"], system=emu.system, media_key=key if emu.system else None,
-                extra={**game_extra(own), "added": added_at(lnk), "port": True}))
+                extra={**game_extra(own), "added": added_at(lnk), "port": True, **fingerprint_extra(lnk)}))
     return items
 
 
