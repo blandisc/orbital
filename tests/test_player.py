@@ -593,6 +593,8 @@ def test_the_player_with_a_keyboard_shows_keys_and_esc_asks_first():
 
     assert "SPACE script-message orbital-key a" in KEY_BINDINGS
     assert "LEFT repeatable script-message orbital-key left" in KEY_BINDINGS
+    assert "VOLUME_UP repeatable script-message orbital-key up" in KEY_BINDINGS
+    assert "VOLUME_DOWN repeatable script-message orbital-key down" in KEY_BINDINGS
     p, mpv = make_player()
     p._on_mpv_message(["orbital-key", "a"])  # Espacio: pausa, como A
     assert mpv.props["pause"] is True and player_ui.KEYBOARD
@@ -660,6 +662,15 @@ def test_the_memory_watchdog_reopens_a_channel_and_only_warns_in_a_video():
 def test_the_video_buffer_has_a_cap_both_ways():
     cmd = player.build_command("mpv.exe", "u", "t")
     assert "--demuxer-max-bytes=200MiB" in cmd and "--demuxer-max-back-bytes=25MiB" in cmd
+
+
+def test_mpv_does_not_show_its_own_osd_bar():
+    """Orbital dibuja su barra y su volumen: la OSD nativa de mpv (avance abajo, volumen arriba)
+    no se enseña, ni con teclas multimedia ni con seek por IPC."""
+    cmd = player.build_command("mpv.exe", "u", "t")
+    assert "--osd-bar=no" in cmd and "--osd-on-seek=no" in cmd and "--osd-level=0" in cmd
+    assert "--osc=no" in cmd and "--input-default-bindings=no" in cmd
+    assert "--osd-bar-align-y=0.88" not in cmd
 
 
 def test_paused_with_the_finger_has_one_play_button_and_the_bar_does_not_cover_the_info():
