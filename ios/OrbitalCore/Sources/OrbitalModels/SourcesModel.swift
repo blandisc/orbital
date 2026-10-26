@@ -170,7 +170,7 @@ extension SourcesModel {
                       alsoHas: s.audio.map(rowCode).filter { $0 != code }, release: s.release, site: s.site,
                       downloadable: s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false,
                       heavy: Double(s.size) / 1e9 > limitGB, recommended: recommended, others: others,
-                      otherTitle: s.tags.contains(Streams.otherTitleTag), debrid: s.debrid)
+                      otherTitle: s.tags.contains(Streams.otherTitleTag) || s.otherTitle, debrid: s.debrid)
     }
 
     /// Las demás versiones de ese idioma y calidad («Otras 2 en latino 1080p»), en orden.

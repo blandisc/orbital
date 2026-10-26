@@ -18,7 +18,14 @@ final class StreamsTests: XCTestCase {
             XCTAssertEqual(s.release, r["release"]?.string, "release \(i)")
             XCTAssertEqual(s.tags, r["tags"]?.array?.compactMap(\.string), "etiquetas \(i)")
             XCTAssertEqual(s.binge, r["binge"]?.string, "binge \(i)")
+            XCTAssertEqual(s.dub, r["dub"]?.string, "doblaje \(i)")
+            XCTAssertEqual(audioLangs(s), r["audio_langs"]?.object?.compactMapValues(\.string), "audio_langs \(i)")
         }
+    }
+
+    /// El audio como lo da la TV: idioma → qué tan seguro es («seen», «name», «site», «original», «assumed», «maybe»).
+    func audioLangs(_ s: Source) -> [String: String] {
+        Dictionary(s.audio.map { ($0.code, $0.evidence.tv) }, uniquingKeysWith: { a, _ in a })
     }
 
     func testRankMatchesPython() throws {
@@ -46,6 +53,10 @@ final class StreamsTests: XCTestCase {
             XCTAssertEqual(ranked.map(\.index), c["order"]?.array?.compactMap(\.intValue), "orden \(prefs) \(kind)")
             for s in ranked {
                 XCTAssertEqual(s.score, number(c["scores"]?[String(s.index)]), accuracy: 1e-9, "puntaje \(s.index) \(prefs) \(kind)")
+                XCTAssertEqual(audioLangs(s), c["audio_langs"]?[String(s.index)]?.object?.compactMapValues(\.string), "audio_langs \(s.index)")
+                // El doblaje, con la regla de la TV (`set_languages`): solo si es seguro (comprobado, dicho o el original).
+                let sure = (c["audio_langs"]?[String(s.index)]?.object ?? [:]).filter { ["seen", "name", "site", "original"].contains($0.value.string ?? "") }
+                XCTAssertEqual(s.dub, sure["es-419"] != nil ? "latino" : sure["es-ES"] != nil ? "castellano" : "", "doblaje \(s.index)")
             }
         }
     }

@@ -22,15 +22,24 @@ public struct Source: Sendable, Equatable, Identifiable {
     public var tags: [String] = []
     public var score = 0.0
     public var binge: String?      // behaviorHints.bingeGroup: misma calidad e idioma en el siguiente episodio
+    /// En español: «latino», «castellano» o "" si no es seguro (con los dos, «latino»: trae esa pista). Como `dub` en la TV.
+    public var dub = ""
+    /// El nombre no menciona el título (TMDB y Cinemeta): Torrentio a veces trae otro («La casa de la pradera»). Baja, no se esconde.
+    public var otherTitle = false
 
     public var id: Int { index }
 
-    /// Pone el audio (lo comprobado al verla) y sus idiomas sin variante.
+    /// Pone el audio (de la versión o lo comprobado al verla) y lo que sale de ahí, como `set_languages` de la TV: sus idiomas
+    /// sin variante, el doblaje (solo si es seguro: lo comprobado, lo dicho o el original) y la etiqueta «Latino» / «Castellano».
     public mutating func setAudio(_ value: [AudioLanguage]) {
         audio = value
         var unique: [String] = []
-        for l in value.map(\.base) where !unique.contains(l) { unique.append(l) }
-        languages = unique
+        for l in value.map({ Streams.spanish.contains($0.code) ? "es" : $0.code }) where !unique.contains(l) { unique.append(l) }
+        languages = unique.isEmpty ? ["en"] : unique
+        let sure = value.filter { $0.evidence.level >= AudioLanguage.Evidence.original.level }.map(\.code)
+        dub = sure.contains("es-419") ? "latino" : sure.contains("es-ES") ? "castellano" : ""
+        tags.removeAll { $0 == "Latino" || $0 == "Castellano" }
+        if !dub.isEmpty { tags.insert(dub.prefix(1).uppercased() + dub.dropFirst(), at: 0) }
     }
 
     /// «Lo mejor disponible» (el encabezado de la ficha, como Infuse): la de más resolución y, entre esas, la de más
@@ -118,6 +127,14 @@ public struct AudioLanguage: Sendable, Equatable, Codable {
         public static func < (a: Evidence, b: Evidence) -> Bool { order.firstIndex(of: a)! < order.firstIndex(of: b)! }
         /// Sirve para poner la versión en la fila de ese idioma (lo «tal vez» va aparte).
         public var solid: Bool { self != .maybe }
+        /// Qué tan seguro es, como `EVIDENCE` de la TV: el nombre y el sitio valen lo mismo.
+        public var level: Int {
+            switch self { case .checked: 5; case .name, .site: 4; case .original: 3; case .unknown: 2; case .maybe: 1 }
+        }
+        /// El nombre de la TV («seen» es lo comprobado, «assumed» lo que se supone). Lo guardado en el teléfono no cambia.
+        public var tv: String {
+            switch self { case .checked: "seen"; case .unknown: "assumed"; default: rawValue }
+        }
     }
     public init(_ code: String, _ evidence: Evidence) { self.code = code; self.evidence = evidence }
     /// «es-419» → «es».
@@ -130,7 +147,11 @@ public struct TitleOrigin: Sendable, Equatable {
     public var country: String?
     /// El año de una película: una versión cuyo nombre dice otro año es otro título («Roma (1972)» de Fellini en vez de la de 2018).
     public var year: Int?
-    public init(language: String? = nil, country: String? = nil, year: Int? = nil) { self.language = language; self.country = country; self.year = year }
+    /// Sus nombres (TMDB y Cinemeta, en cualquier idioma): una versión que no menciona ninguno puede ser otro título.
+    public var titles: [String]
+    public init(language: String? = nil, country: String? = nil, year: Int? = nil, titles: [String] = []) {
+        self.language = language; self.country = country; self.year = year; self.titles = titles
+    }
 
     static let spainNames: Set<String> = ["es", "spain", "españa"]
     static let latinNames: Set<String> = ["mx", "mexico", "méxico", "ar", "argentina", "co", "colombia", "cl", "chile", "pe", "peru", "perú",
@@ -161,32 +182,52 @@ public struct TitleOrigin: Sendable, Equatable {
 public enum Purpose: Sendable { case watch, download }
 
 public enum Streams {
-    // Banderas e indicios de idioma en los títulos de Torrentio y compañía (en orden: el orden importa).
+    // Banderas e indicios de idioma en los títulos de Torrentio y compañía (`FLAG_LANG` de la TV). Torrentio solo pone 🇲🇽
+    // cuando el nombre dice latino; 🇪🇸 la pone a cualquier «Spanish»: no dice cuál de los dos («es» = español sin saber cuál).
     static let flagLanguages: [(String, String)] = [
-        ("🇬🇧", "en"), ("🇺🇸", "en"), ("🇲🇽", "es"), ("🇪🇸", "es"), ("🇦🇷", "es"), ("🇫🇷", "fr"), ("🇮🇹", "it"), ("🇩🇪", "de"),
+        ("🇬🇧", "en"), ("🇺🇸", "en"), ("🇲🇽", "es-419"), ("🇪🇸", "es"), ("🇦🇷", "es-419"), ("🇫🇷", "fr"), ("🇮🇹", "it"), ("🇩🇪", "de"),
         ("🇵🇹", "pt"), ("🇧🇷", "pt"), ("🇷🇺", "ru"), ("🇯🇵", "ja"), ("🇰🇷", "ko"), ("🇨🇳", "zh"), ("🇮🇳", "hi"), ("🇵🇱", "pl"),
         ("🇹🇷", "tr"), ("🇺🇦", "uk"), ("🇳🇱", "nl"), ("🇨🇿", "cs"), ("🇸🇰", "sk"), ("🇭🇺", "hu"), ("🇬🇷", "el"), ("🇸🇪", "sv"),
         ("🇩🇰", "da"), ("🇳🇴", "no"), ("🇫🇮", "fi"), ("🇷🇴", "ro"), ("🇧🇬", "bg"), ("🇭🇷", "hr"), ("🇷🇸", "sr"), ("🇮🇱", "he"),
         ("🇸🇦", "ar"), ("🇹🇭", "th"), ("🇻🇳", "vi"), ("🇮🇩", "id"), ("🇱🇹", "lt"), ("🇱🇻", "lv"), ("🇪🇪", "et"),
     ]
+    /// Las palabras de idioma (`WORD_LANG` de la TV, en el mismo orden). «LAT», «CAST», «ESP» solo en mayúsculas: en minúsculas
+    /// son palabras del título («Cast.Away»).
     static let wordLanguages: [(NSRegularExpression, String)] = [
-        (r(#"\b(lat|latino|castellano|spanish|español|espanol|esp|cast)\b"#), "es"),
-        (r(#"\b(french|vff|vf|vfq|truefrench)\b"#), "fr"),
+        (r(#"\b(latino|latam|es-?419|spa-la|hispanoam[eé]rica(no)?|latinoam[eé]rica(no)?|latin[ ._-]?american)\b|dual[-. ]?lat\b"#), "es-419"),
+        (r(#"\bLAT\b"#, caseInsensitive: false), "es-419"),
+        (r(#"\b(castellano|castilian|es-es)\b"#), "es-ES"),
+        (r(#"\bCAST\b"#, caseInsensitive: false), "es-ES"),
+        (r(#"\b(spanish|español|espanol|spa)\b"#), "es"),
+        (r(#"\bESP\b|\[Esp\]|(?<=/)ES\b|\bES(?=/)"#, caseInsensitive: false), "es"),   // «EN/FR/ES»
+        (r(#"\b(eng|english|ingles)\b|(?<![A-Za-z])EN(?=/)"#), "en"),
+        (r(#"\b(jpn|japanese|jap)\b"#), "ja"),   // «Jap» solo en el iPhone: «Eng 5.1 AAC Jap 5.1 AAC»
+        (r(#"(?i:\b(mvo|dvo|avo)\b)|[А-Яа-яЁё]{4,}"#, caseInsensitive: false), "ru"),   // voces rusas; un nombre en cirílico es ruso
+        (r(#"(?i:\b(french|fre|vff|vf|vf2|vfq|truefrench)\b)|(?<![-\w])FR\b"#, caseInsensitive: false), "fr"),
         (r(#"\b(ita|italian)\b"#), "it"),
         (r(#"\b(german|deutsch|ger)\b"#), "de"),
         (r(#"\b(rus|russian)\b"#), "ru"),
         (r(#"\b(hindi)\b"#), "hi"),
-        (r(#"\b(cz|cze|czech|cesky|český|dabing)\b"#), "cs"),
-        (r(#"\b(sk|slovak|slovensky|slovenský)\b"#), "sk"),
-        (r(#"\b(pl|polish|polski|lektor)\b"#), "pl"),
+        // «CZ», «SK», «PL» solo en mayúsculas y no tras un guion: «x264-pl» es el grupo que lo subió, no polaco.
+        (r(#"(?i:\b(cze|czech|cesky|český|dabing)\b)|(?<![-\w])CZ\b"#, caseInsensitive: false), "cs"),
+        (r(#"(?i:\b(slovak|slovensky|slovenský)\b)|(?<![-\w])SK\b"#, caseInsensitive: false), "sk"),
+        (r(#"(?i:\b(polish|polski|lektor)\b)|(?<![-\w])PL\b"#, caseInsensitive: false), "pl"),
         (r(#"\b(hun|hungarian|magyar)\b"#), "hu"),
         (r(#"\b(ptbr|pt-br|dublado|portuguese|portugues|português)\b"#), "pt"),
         (r(#"\b(ukr|ukrainian)\b"#), "uk"),
         (r(#"\b(turkish|türkçe|turkce)\b"#), "tr"),
         (r(#"\b(arabic)\b"#), "ar"),
         (r(#"\b(korean|kor)\b"#), "ko"),
-        (r(#"\b(swedish|danish|norwegian|finnish)\b"#), "sv"),   // «NORDiC» no: son subtítulos nórdicos con el audio original
-        (r(#"\b(jap|japanese|jpn)\b"#), "ja"),
+        (r(#"\b(swedish|danish|norwegian|finnish)\b"#), "sv"),   // «NORDiC» no (solo en el iPhone): son subtítulos nórdicos con el audio original
+    ]
+    /// Las de `wordLanguages` que no se confunden con palabras del título (códigos en mayúsculas, el cirílico): se buscan en
+    /// todo el nombre; las demás, solo en lo técnico («The Italian Job» no es italiano). Solo en el iPhone.
+    static let codeLanguages: [(NSRegularExpression, String)] = [
+        (r(#"\bLAT\b"#, caseInsensitive: false), "es-419"), (r(#"\bCAST\b"#, caseInsensitive: false), "es-ES"),
+        (r(#"\bESP\b|\[Esp\]|(?<=/)ES\b|\bES(?=/)"#, caseInsensitive: false), "es"), (r(#"(?<![A-Za-z])EN(?=/)"#), "en"),
+        (r(#"[А-Яа-яЁё]{4,}"#, caseInsensitive: false), "ru"), (r(#"(?<![-\w])FR\b"#, caseInsensitive: false), "fr"),
+        (r(#"(?<![-\w])CZ\b"#, caseInsensitive: false), "cs"), (r(#"(?<![-\w])SK\b"#, caseInsensitive: false), "sk"),
+        (r(#"(?<![-\w])PL\b"#, caseInsensitive: false), "pl"),
     ]
     public static let languageNames: [String: String] = [
         "en": "Inglés", "es": "Español", "fr": "Francés", "it": "Italiano", "de": "Alemán", "pt": "Portugués",
@@ -222,9 +263,9 @@ public enum Streams {
         ("REMUX", r(#"\bremux\b"#)), ("BluRay", r(#"\bblu-?ray\b"#)), ("WEB-DL", r(#"\bweb-?(dl|rip)\b"#)),
         ("x265", r(#"\b(x265|hevc|h\.?265)\b"#)), ("AV1", r(#"\bav1\b"#)), ("Atmos", r(#"\batmos\b"#)),
         ("5.1", r(#"\b(5\.1|ddp?5|dts)"#)), ("Tráiler", r(#"\btrailer\b"#)), ("CAM", r(#"\b(cam|hdcam|ts|telesync)\b"#)),
+        ("3D", r(#"\b3D\b|\bSBS\b"#)), ("Reescalada", r(#"\bupscaled?\b|\bai[-. ]?enhanced\b"#)),
     ]
     static let debridPattern = r(#"\[(RD|AD|PM|DL|TB|OC)[ +\]]"#, caseInsensitive: false)
-    static let dualPattern = r(#"\bdual\b"#), multiPattern = r(#"\bmulti\b"#)
 
     static func r(_ pattern: String, caseInsensitive: Bool = true) -> NSRegularExpression {
         // swiftlint:disable:next force_try
@@ -271,96 +312,128 @@ public enum Streams {
         return Int(digest.prefix(12), radix: 16)! % (1 << 31)
     }
 
-    // MARK: idioma del audio (las reglas de la TV, `streams.py`)
-    static let subsMarker = r(#"\b(sub|subs|subtitle|subtitles|subtitulado|subtitulada|subtitulos|subtítulos|multisub|multi-sub|vostfr|vose|napisy)\b"#)
-    static let latinoWords = r(#"\b(lat|latino|latina|latam|dual[-. ]?lat|spa[-. ]?la|es[-. ]?mx|es[-. ]?419)\b"#)
-    static let castellanoWords = r(#"\b(castellano|cast|es[-. ]?es|españa)\b"#)
-    static let spanishWords = r(#"\b(spanish|español|espanol|esp|spa)\b"#)
-    static let englishWords = r(#"\b(eng|english|ingles|inglés)\b"#)
-    /// Donde empieza lo técnico de un nombre (el año, la temporada, la calidad, el origen o un corchete): antes va el título
-    /// de la película, y sus palabras no son idiomas («Cast Away», «The Italian Job», «The Spanish Prisoner»).
-    static let releaseMarker = r(#"(\b(19[2-9]\d|20[0-4]\d)\b|\bs\d{1,2}(e\d{1,3})?\b|\b\d{3,4}p\b|\b4k\b|\b(bluray|blu-ray|bdrip|brrip|web-?dl|webrip|hdtv|dvdrip|hdrip|remux|temporada|season)\b|\[)"#)
-    static let nordicPattern = r(#"\bnordic\b"#)
-    static let dubbedPattern = r(#"\bdubbed\b"#)
-    static let audioMarks = r(#"\b(dubbed|multi audio|dual audio)\b"#)
-    static let flagPair = r("[\u{1F1E6}-\u{1F1FF}]{2}", caseInsensitive: false)
-    /// Sitios que solo suben un idioma.
-    static let siteLanguages: [(String, String)] = [
-        ("cinecalidad", "es-419"), ("mejortorrent", "es-ES"), ("wolfmax4k", "es-ES"), ("rutor", "ru"), ("rutracker", "ru"),
-        ("ilcorsaronero", "it"), ("torrent9", "fr"), ("comando", "pt"), ("bludv", "pt"),
+    // MARK: idioma del audio (las reglas de la TV, `streams.py`: `audio_languages`, `set_languages`, `spanish_dub`)
+    /// El español viene en dos doblajes que no se parecen (Los Simpson, sobre todo): latino y castellano; «es» no dice cuál.
+    public static let spanish = ["es-419", "es-ES", "es"]
+    static let spanishVariants = ["es-419", "es-ES"]
+    /// Sitios de un solo idioma: lo que suben ahí va doblado a ese idioma (MejorTorrent = castellano, Cinecalidad = latino).
+    static let siteLanguages: [String: String] = [
+        "mejortorrent": "es-ES", "wolfmax4k": "es-ES", "cinecalidad": "es-419", "ilcorsaronero": "it", "rutor": "ru", "rutracker": "ru",
+        "torrent9": "fr", "comando": "pt", "bludv": "pt", "besttorrents": "pl",
     ]
+    /// Lo que va después de esto en un nombre es la lista de SUBTÍTULOS, no de audio: «[Multiple Subtitle] [ENG][SPA-LA]»,
+    /// «sub ita.eng», «Lektor i napisy PL».
+    static let subsFrom = r(#"\b(eng|english|spa|spanish|esp|español|espanol|fre|french|ita|italian|ger|german|por|pt-?br|pl|lat|latino|"#
+        + #"castellano)[ ._-]*(subs?|subtitles?|subtitulos|subtítulos)\b|multi[ ._-]?subs?|multiple[ ._-]?subtitles?|subt[ií]t\w*|"#
+        + #"\bsubs\b|[a-z]+subs?\b|\bsub[ ._-]+(ita|eng|esp|spa|fr|pl|lat|forzados)\b|\bvostfr\b|\bnapisy\b|\bsubbed\b|"#
+        + #"\bsoft[ ._-]?subs?\b"#)
+    static let flagPattern = r(flagLanguages.map { NSRegularExpression.escapedPattern(for: $0.0) }.joined(separator: "|"), caseInsensitive: false)
+    static let marksPattern = r(#"\b(Dubbed|Dual Audio|Multi Audio|Multi Subs)\b"#, caseInsensitive: false)
+    static let dubbedMarks = r(#"\b(Dubbed|Multi Audio|Dual Audio)\b"#, caseInsensitive: false)
+    static let dualPattern = r(#"\bdual\b"#)
+    /// Donde empieza lo técnico de un nombre (el año, la temporada, la calidad, el origen o un corchete): antes va el título
+    /// de la película, y sus palabras no son idiomas («The Italian Job», «The Spanish Prisoner», «Russian Doll»). Solo en el iPhone.
+    static let releaseMarker = r(#"(\b(19[2-9]\d|20[0-4]\d)\b|\bs\d{1,2}(e\d{1,3})?\b|\b\d{3,4}p\b|\b4k\b|\b(bluray|blu-ray|bdrip|brrip|web-?dl|webrip|hdtv|dvdrip|hdrip|remux|temporada|season)\b|\[)"#)
+    /// «DUBBED» sin idioma (RARBG, GalaxyRG): doblaje al inglés de una película extranjera, no su audio original. Solo en el iPhone.
+    static let dubbedWord = r(#"\bdubbed\b"#)
 
-    /// El audio de una versión con cómo lo sabemos. Lo que va después de «sub / subs / subtitulado» es la lista de subtítulos,
-    /// no de audio. Sin nada que lo diga, es el idioma original del título (si se sabe; si no, inglés «tal vez»).
+    /// El audio de una versión con cómo lo sabemos, de su nombre, su archivo, su sitio y las marcas de Torrentio (la última
+    /// línea: banderas, «Dual Audio»…), como `parse` de la TV. Sin nada que lo diga, el idioma original del título (si se sabe;
+    /// si no, inglés «se supone»).
     public static func audio(name: String, description: String, filename: String, site: String, origin: TitleOrigin?) -> [AudioLanguage] {
-        let first = (description.components(separatedBy: .newlines).first ?? "")
-        // Solo lo técnico del nombre y del archivo (sin el título) y sin la lista de subtítulos.
-        func technical(_ value: String) -> String {
-            let lower = value.lowercased()
-            guard let m = releaseMarker.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)), let r = Range(m.range, in: lower) else { return lower }
-            return String(lower[r.lowerBound...])
-        }
-        func withoutSubtitles(_ value: String) -> String {
-            guard let m = subsMarker.firstMatch(in: value, range: NSRange(value.startIndex..., in: value)), let r = Range(m.range, in: value) else { return value }
-            var before = String(value[..<r.lowerBound])
-            // «Eng.Sub», «English Subs»: la palabra pegada antes es el idioma de los subtítulos (con «+» no: «Ingles+Subs» es audio).
-            if let last = before.range(of: #"[a-záéíóúñ]+[ ._\-\[\(]*$"#, options: .regularExpression) { before.removeSubrange(last) }
-            return before
-        }
-        let raw = "\(first) \(filename)".lowercased()
-        let text = withoutSubtitles(technical(first)) + " " + withoutSubtitles(technical(filename))
-        var out: [AudioLanguage] = []
-        func add(_ code: String, _ evidence: AudioLanguage.Evidence) {
-            if let i = out.firstIndex(where: { $0.code == code }) { if evidence < out[i].evidence { out[i].evidence = evidence } }
-            else { out.append(AudioLanguage(code, evidence)) }
-        }
-        let hasSpanish = { out.contains { $0.base == "es" } }
-        // 1. Lo dice el nombre.
-        if matches(latinoWords, text) { add("es-419", .name) }
-        if matches(castellanoWords, text) { add("es-ES", .name) }
-        if !hasSpanish() && matches(spanishWords, text) { add("es", .name) }
-        if matches(englishWords, text) { add("en", .name) }
-        for (pattern, lang) in wordLanguages where lang != "es" && matches(pattern, text) { add(lang, .name) }
-        // 2. Lo dice el sitio.
-        let place = site.lowercased()
-        if let code = siteLanguages.first(where: { place.contains($0.0) })?.1 {
-            // El nombre solo dice «español» y el sitio sabe cuál: se afina («[Esp]» en MejorTorrent es castellano).
-            if code.hasPrefix("es-"), let i = out.firstIndex(where: { $0.code == "es" }) { out[i] = AudioLanguage(code, .site) }
-            else if !(code.hasPrefix("es") && hasSpanish()) { add(code, .site) }
-        }
-        // 3. Las banderas (en la descripción, o en el nombre como Peerflix): con 4 o menos son el audio; con más, son subtítulos
-        // salvo que diga «Dubbed / Multi Audio». Si el nombre trae una lista de subtítulos («Multi Subs», «SUBS: FR EN ES»,
-        // «NORDiC»), las banderas son esa lista y no cuentan.
-        let flags = allMatches(flagPair, description) + allMatches(flagPair, name)
-        let marked = matches(audioMarks, description)
-        let subtitleList = matches(subsMarker, raw) || description.lowercased().contains("multi subs") || matches(nordicPattern, raw)
-        if (flags.count <= 4 || marked) && !(subtitleList && !marked) {
-            let evidence: AudioLanguage.Evidence = flags.count <= 4 ? .name : .maybe
-            for flag in flags {
-                switch flag {
-                case "🇲🇽", "🇦🇷": if !out.contains(where: { $0.code == "es-419" }) { add("es-419", evidence) }
-                case "🇪🇸": if !hasSpanish() { add("es", evidence) }
-                default: if let code = flagLanguages.first(where: { $0.0 == flag })?.1 { add(code, evidence) }
-                }
-            }
-        }
-        let original = origin?.originalCode
-        // 4. «Dual»: el original más el doblaje que diga (si no dice el original, inglés; en anime, japonés).
-        if matches(dualPattern, "\(name)\n\(description)") || matches(multiPattern, text) {
-            let base = original ?? "en"
-            if !out.contains(where: { $0.base == String(base.prefix(2)) }) { add(base, original == nil ? .unknown : .original) }
-        }
-        // Dice «español» sin decir cuál y el título es de México o de España: es su audio original (Roma: «SPANISH» = mexicano).
-        if let original, original != "es", original.hasPrefix("es"), let i = out.firstIndex(where: { $0.code == "es" }) {
-            out[i] = AudioLanguage(original, .original)
-        }
-        // «DUBBED» sin idioma (RARBG, GalaxyRG): doblaje al inglés de una película extranjera, no su audio original.
-        if out.isEmpty, matches(dubbedPattern, text) { add("en", .maybe) }
-        // 5. Nada lo dice: el original (sin saberlo, inglés como la TV, marcado «No dice idioma»).
-        if out.isEmpty { add(original ?? "en", original == nil ? .unknown : .original) }
-        return out
+        let lines = description.components(separatedBy: "\n")
+        let last = lines.last ?? ""
+        let marked = lines.count > 1 && (matches(flagPattern, last) || matches(marksPattern, last))
+        let words = (lines.dropLast(marked ? 1 : 0).filter { !matches(sizePattern, $0) && !matches(seedersPattern, $0) } + [filename])
+            .joined(separator: "\n")
+        // Peerflix pone la bandera en el nombre («Peerflix 🇪🇸 1080p»): cuenta como una marca más (solo en el iPhone).
+        let marks = ([marked ? last : ""] + allMatches(flagPattern, name)).joined(separator: " ")
+        return audioLanguages(words, marks: marks, site: site, original: origin?.originalCode)
     }
 
+    /// Los idiomas de AUDIO y cómo lo sabemos (`audio_languages` de la TV, de 405 fuentes reales): las banderas de Torrentio
+    /// mezclan audio y subtítulos; un nombre que lista subtítulos no habla del audio; «Dual» es el original más un doblaje.
+    static func audioLanguages(_ words: String, marks: String = "", site: String = "", original: String? = nil) -> [AudioLanguage] {
+        var found: [AudioLanguage] = []
+        func level(_ code: String) -> Int { found.first { $0.code == code }?.evidence.level ?? 0 }
+        func put(_ code: String, _ how: AudioLanguage.Evidence) {
+            guard how.level > level(code) else { return }
+            if let i = found.firstIndex(where: { $0.code == code }) { found[i].evidence = how } else { found.append(AudioLanguage(code, how)) }
+        }
+        func pop(_ code: String) -> AudioLanguage.Evidence? {
+            guard let i = found.firstIndex(where: { $0.code == code }) else { return nil }
+            return found.remove(at: i).evidence
+        }
+        func before(_ regex: NSRegularExpression, _ line: String) -> String {
+            guard let m = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)), let r = Range(m.range, in: line) else { return line }
+            return String(line[..<r.lowerBound])
+        }
+        func technical(_ line: String) -> String {
+            guard let m = releaseMarker.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)), let r = Range(m.range, in: line) else { return line }
+            return String(line[r.lowerBound...])
+        }
+        let lines = words.components(separatedBy: "\n").map { before(subsFrom, $0) }
+        let subtitled = lines.joined(separator: "\n") != words
+        let audioWords = lines.map(technical).joined(separator: "\n")
+        for (pattern, code) in wordLanguages where matches(pattern, audioWords) { put(code, .name) }
+        for (pattern, code) in codeLanguages where matches(pattern, lines.joined(separator: "\n")) { put(code, .name) }
+        let place = String(site.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) || $0 == "_" }.map(Character.init)).lowercased()
+        if let lang = siteLanguages[place], !(subtitled && level(lang) == 0) { put(lang, .site) }
+        var flags: [String] = []
+        for flag in allMatches(flagPattern, marks) {
+            if let code = flagLanguages.first(where: { $0.0 == flag })?.1, !flags.contains(code) { flags.append(code) }
+        }
+        let dubbed = matches(dubbedMarks, marks)
+        let dualAudio = marks.contains("Dual Audio")
+        if flags.count >= 5 {   // muchas banderas: con doblaje, alguna es pista (no se sabe cuál); sin él, son subtítulos
+            if dubbed { for code in flags { put(code, .maybe) } }
+        } else if dubbed || !marks.contains("Multi Subs") {
+            // 🇲🇽 solo sale cuando el nombre dice latino; con «Dual Audio» y una o dos banderas, esas son las pistas.
+            for code in flags { put(code, code == "es-419" || (dualAudio && flags.count <= 2) ? .name : .maybe) }
+        }
+        if dualAudio || matches(dualPattern, audioWords) {
+            // «Dual»: el original y un doblaje (en anime, japonés + inglés). Sin saber el original, inglés supuesto.
+            put(original ?? "en", original == nil ? .unknown : .name)
+            if let original, original != "en", !found.contains(where: { $0.code != original && $0.evidence.level >= 4 }) { put("en", .name) }
+        }
+        if level("es") > 0, spanishVariants.contains(where: { level($0) >= level("es") }) { _ = pop("es") }   // «SPANiSH.LATiNO»: ya se sabe cuál
+        if let original, spanishVariants.contains(original), let how = pop("es") { put(original, how) }   // «Spanish» en una serie española: su castellano
+        if found.isEmpty, matches(dubbedWord, audioWords) { return [AudioLanguage("en", .maybe)] }
+        if !found.contains(where: { $0.evidence.level >= 4 }) { put(original ?? "en", original == nil ? .unknown : .original) }   // nada lo dice: el original
+        return found.enumerated().sorted { a, b in
+            a.element.evidence.level != b.element.evidence.level ? a.element.evidence.level > b.element.evidence.level : a.offset < b.offset
+        }.map(\.element)
+    }
+
+    /// «latino», «castellano» o "" según lo que diga el nombre de la fuente (si dice los dos, «latino»: trae esa pista).
+    /// 🇪🇸 sola no lo dice: Torrentio la pone a cualquier «Spanish».
+    public static func spanishDub(_ text: String) -> String {
+        let codes = audioLanguages(text, marks: allMatches(flagPattern, text).joined(separator: " / ")).map(\.code)
+        return codes.contains("es-419") ? "latino" : codes.contains("es-ES") ? "castellano" : ""
+    }
+
+    static let stopwords: Set<String> = ["the", "and", "los", "las", "del", "une", "les", "der", "die", "das", "una"]
+    static let scriptFree = r("[\u{0400}-\u{04FF}\u{3040}-\u{30FF}\u{4E00}-\u{9FFF}\u{AC00}-\u{D7AF}]", caseInsensitive: false)   // cirílico, japonés, chino, coreano
+
+    static func plain(_ text: String) -> String {
+        let ascii = String(text.decomposedStringWithCompatibilityMapping.unicodeScalars.filter(\.isASCII).map(Character.init)).lowercased()
+        return ascii.replacingOccurrences(of: "[^a-z0-9]+", with: " ", options: .regularExpression).split(separator: " ").joined(separator: " ")
+    }
+
+    /// ¿El nombre de la fuente menciona alguno de los títulos (en cualquier idioma)? Como `mentions_title` de la TV. Lo que está
+    /// en otra escritura (cirílico, japonés…) se da por bueno: no hay cómo compararlo.
+    public static func mentionsTitle(_ titles: [String], _ text: String) -> Bool {
+        if titles.isEmpty || matches(scriptFree, text) { return true }
+        // Basta la palabra más distintiva (la más larga) de algún título: «Dune - Parte due» (italiano) es Dune.
+        let haystack = plain(text).replacingOccurrences(of: " ", with: "")
+        for title in titles {
+            let words = plain(title).split(separator: " ").map(String.init).filter { !stopwords.contains($0) }
+            let longest = words.map(\.count).max() ?? 0
+            if longest < 3 { return true }   // «Up», «It», «Pi»: caben dentro de cualquier palabra; no se puede decidir
+            if words.contains(where: { $0.count == longest && haystack.contains($0) }) { return true }
+        }
+        return false
+    }
     /// «¿Otro título?»: el nombre trae un solo año y no es el de la película (con un año de margen por los estrenos tardíos).
     /// Dos años o más («1947 - 2021») es una colección: puede traer la buena, no se marca.
     public static let otherTitleTag = "¿Otro título?"
@@ -404,13 +477,10 @@ public enum Streams {
         }
         if let n = capture(seedersPattern, description) { src.seeders = Int(n) ?? 0 }
         if let site = capture(sitePattern, description) { src.site = site.trimmingCharacters(in: .whitespacesAndNewlines) }
-        // El audio y cómo lo sabemos; lo comprobado al verla (sus pistas reales) gana a todo.
-        src.audio = checked ?? audio(name: name, description: description, filename: filename, site: src.site, origin: origin)
-        var unique: [String] = []
-        for l in src.audio.map(\.base) where !unique.contains(l) { unique.append(l) }
-        src.languages = unique
         src.release = first
         src.tags = tagPatterns.filter { matches($0.1, blob) }.map(\.0)
+        // El audio y cómo lo sabemos; lo comprobado al verla (sus pistas reales) gana a todo. Pone «Latino» / «Castellano» primero.
+        src.setAudio(checked ?? audio(name: name, description: description, filename: filename, site: src.site, origin: origin))
         if Self.otherTitle(release: first, year: origin?.year) { src.tags.append(Self.otherTitleTag) }
         return src
     }
@@ -444,6 +514,9 @@ public enum Streams {
         if src.hdr.contains("DV") && !src.hdr.contains("HDR") && !src.hdr.contains("HDR10+") { s -= 200 }  // DV sin HDR de respaldo
         if src.tags.contains("Tráiler") || src.tags.contains("CAM") { s -= 2000 }
         if src.tags.contains(otherTitleTag) { s -= 1500 }   // otra película con el mismo nombre: nunca la recomendada
+        if src.tags.contains("3D") { s -= 1500 }
+        if src.tags.contains("Reescalada") { s -= 150 }
+        if src.otherTitle { s -= 500 }   // el nombre no menciona el título: puede ser otro (no se esconde: a veces es el nombre en otro país)
         s += Double(min(src.seeders, 500)) / 10
         if purpose == .download {
             // Para guardar en el teléfono: 1080p y HEVC, y nada de REMUX ni de archivos enormes.
@@ -456,22 +529,28 @@ public enum Streams {
         return s
     }
 
-    /// Cuánto suma el idioma: el que quieres (con su variante) y solo ese es lo mejor; con otro idioma, menos; el español
-    /// que no dice cuál, antes que la otra variante; lo que es «tal vez» pesa menos que lo que se sabe. Sin tu idioma, al fondo.
+    /// Cuánto vale el idioma que quieres según qué tan seguro es (`LANG_POINTS` de la TV): lo comprobado, lo que se dice y el
+    /// original van arriba; lo que se supone, poco menos; «tal vez», apenas.
+    static let languagePoints: [AudioLanguage.Evidence: Double] = [.checked: 340, .name: 300, .site: 300, .original: 300, .unknown: 260, .maybe: 60]
+    /// Otro idioma pesa más que arrancar al instante (+1000): una en ruso lista no le gana a una en tu idioma que tarda.
+    static let wrongLanguage = -1600.0
+
+    /// Cuánto suma el idioma según qué tan seguro es (`language_score` de la TV). Una dual con tu idioma vale lo mismo que la
+    /// que solo trae ese. Con una variante de español elegida (Ajustes, la voz, el título): el doblaje pedido primero, luego el
+    /// español que no dice cuál y al final el otro.
     static func languageScore(_ src: Source, _ prefs: Preferences) -> Double {
-        let want = prefs.wanted
-        let audio = src.audio.isEmpty ? src.languages.map { AudioLanguage($0, .maybe) } : src.audio
-        func value(_ a: AudioLanguage) -> Double {
-            let sure = a.evidence.solid
-            if a.code == want || (a.base == want && want.count == 2) { return sure ? 300 : 110 }   // el que quieres (o cualquier español)
-            if a.base == prefs.audio, a.code == prefs.audio { return sure ? 180 : 80 }            // español que no dice cuál
-            if a.base == prefs.audio { return sure ? 60 : 30 }                                   // la otra variante (castellano)
-            return -Double.infinity
+        let audio = src.audio.isEmpty ? src.languages.map { AudioLanguage($0, .name) } : src.audio
+        func points(_ code: String) -> Double? { audio.filter { $0.code == code }.compactMap { languagePoints[$0.evidence] }.max() }
+        guard prefs.audio == "es" else { return points(prefs.audio) ?? wrongLanguage }
+        let wanted = spanishVariants.contains(prefs.spanish) ? prefs.spanish : nil
+        var best = wrongLanguage
+        for code in spanish {
+            guard var value = points(code) else { continue }
+            if wanted != nil && code == "es" { value -= 100 }   // español sin saber cuál: después del que pediste, antes que otro idioma
+            else if let wanted, code != wanted { value -= 250 }   // el otro doblaje
+            best = max(best, value)
         }
-        guard let best = audio.map(value).max(), best > -Double.infinity else { return -600 }
-        // «Dual»: con tu idioma, pero detrás de la que solo trae ese (como la TV: 120 contra 300).
-        // Con una variante elegida (latino, castellano), una «Dual-Lat» segura va antes que un «Spanish» que no dice cuál.
-        return audio.count == 1 ? best : best - (prefs.spanish.isEmpty ? 180 : 80)
+        return best
     }
 
     /// El nombre de un idioma de versión: «Latino», «Castellano», «Español (no dice cuál)» o el del idioma («Inglés»).

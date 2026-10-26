@@ -277,12 +277,16 @@ actor OriginBook {
         if let hit = known[metaID] { return hit }
         guard metaID.hasPrefix("tt") else { return nil }
         let client = tmdb()
-        async let language = client.configured ? (try? await client.originalLanguage(imdb: metaID, kind: kind)) : nil
+        async let facts = client.configured ? (try? await client.original(imdb: metaID, kind: kind)) : nil
         async let meta = try? await cinemeta.meta(kind: kind, id: metaID)
         let info = await meta
         // El año solo en películas (una serie dura años: sus episodios no dicen el del estreno).
         let year = kind == "movie" ? (info?["year"]?.string ?? info?["releaseInfo"]?.string).flatMap { Int($0.prefix(4)) } : nil
-        let found = TitleOrigin(language: await language ?? nil, country: info?["country"]?.nonEmptyString, year: year)
+        // Los nombres de TMDB y el de Cinemeta: una versión que no dice ninguno puede ser otro título (como la TV).
+        let tmdb = await facts
+        var titles = tmdb?.titles ?? []
+        if let name = info?["name"]?.nonEmptyString, !titles.contains(name) { titles.append(name) }
+        let found = TitleOrigin(language: tmdb?.language, country: info?["country"]?.nonEmptyString, year: year, titles: titles)
         if found.language != nil || found.country != nil { known[metaID] = found }
         return found
     }

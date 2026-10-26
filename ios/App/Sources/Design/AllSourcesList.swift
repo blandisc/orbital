@@ -189,7 +189,7 @@ struct AllSourcesList: View {
             if let tag = AllSources.hiddenTag(source) {
                 (tag == "CAM" ? Text("Grabada en el cine") : Text("Tráiler")).recipe(.caption, color: DS.warning)
             }
-            if source.tags.contains(Streams.otherTitleTag) { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
+            if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
         }
     }
 
@@ -315,7 +315,7 @@ struct AllSourcesList: View {
         if let speed = speedText(source) { label = label + Text(verbatim: ", ") + speed }
         if let marker = marker(source) { label = label + Text(verbatim: ", ") + marker }
         if let tag = AllSources.hiddenTag(source) { label = label + Text(verbatim: ", ") + (tag == "CAM" ? Text("Grabada en el cine") : Text("Tráiler")) }
-        if source.tags.contains(Streams.otherTitleTag) { label = label + Text(verbatim: ", ") + Text("¿Otro título?") }
+        if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { label = label + Text(verbatim: ", ") + Text("¿Otro título?") }
         return label
     }
 

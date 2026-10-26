@@ -167,9 +167,20 @@ public struct Tmdb: Sendable {
     }
     /// El idioma original de un título de IMDb («es», «en», «ja»…), de la misma consulta de `find`; nil si TMDB no lo tiene.
     public func originalLanguage(imdb: String, kind: String) async throws -> String? {
-        guard imdb.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil else { return nil }
+        try await original(imdb: imdb, kind: kind).language
+    }
+
+    /// El idioma original y los nombres de un título (como `original` de la TV): para el audio de las versiones que no lo
+    /// dicen y para notar las que traen otro título.
+    public func original(imdb: String, kind: String) async throws -> (language: String?, titles: [String]) {
+        guard imdb.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil else { return (nil, []) }
         let data = try await get("/find/\(imdb)", [("external_source", "imdb_id")])
-        return data[kind == "movie" ? "movie_results" : "tv_results"]?.array?.first?["original_language"]?.nonEmptyString
+        let row = data[kind == "movie" ? "movie_results" : "tv_results"]?.array?.first
+        var titles: [String] = []
+        for key in ["title", "original_title", "name", "original_name"] {
+            if let t = row?[key]?.string?.trimmingCharacters(in: .whitespaces), !t.isEmpty, !titles.contains(t) { titles.append(t) }
+        }
+        return (row?["original_language"]?.nonEmptyString, titles)
     }
 
     /// Con menos votos, la calificación de TMDB no dice mucho (un 9 con 3 votos).

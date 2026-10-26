@@ -71,6 +71,7 @@ public actor StreamFinder {
                 var index = Streams.stableIndex(addonURL: addon.url, stream: stream)
                 while seen.contains(index) { index = (index + 1) % (1 << 31) }  // el mismo enlace dos veces: la segunda, el número siguiente
                 var source = Streams.parse(stream, addon: addon.name, transportURL: addon.url, index: index, origin: titleOrigin)
+                source.otherTitle = !Streams.mentionsTitle(titleOrigin?.titles ?? [], "\(source.release) \(stream["behaviorHints"]?["filename"]?.string ?? "")")
                 if let real = checked(source.key) { source.setAudio(real) }
                 if onlyPlayable && source.playbackURL == nil { continue }
                 // Una lista HLS o DASH no es un archivo: se ve, pero no se puede guardar en el teléfono.

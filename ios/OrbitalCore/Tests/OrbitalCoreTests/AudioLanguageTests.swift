@@ -12,7 +12,7 @@ final class AudioLanguageTests: XCTestCase {
 
     func testLatinoSaidByTheNameOrTheSite() {
         XCTAssertEqual(audio("Dune.part.two.2024.2160p.x265.hdr.5.1-dual-lat-cinecalidad.re.mkv", flags: "🇲🇽", site: "Cinecalidad", origin: american),
-                       [AudioLanguage("es-419", .name), AudioLanguage("en", .original)], "«Dual-Lat»: latino y el original")
+                       [AudioLanguage("es-419", .name), AudioLanguage("en", .name)], "«Dual-Lat»: latino y el original (lo dice «Dual», como la TV)")
         XCTAssertEqual(audio("Inside.Out.2.2024.2160p.WEB-DL.DV.HDR10.PLUS.ENG.LATINO.DDP5.1.Atmos", flags: "🇬🇧 🇲🇽", origin: american),
                        [AudioLanguage("es-419", .name), AudioLanguage("en", .name)])
         XCTAssertEqual(audio("IntensaMente 2 (2024) 1080p WEBDL LAT - ZeiZ", flags: "🇲🇽", site: "Cinecalidad", origin: american).first, AudioLanguage("es-419", .name))
@@ -23,16 +23,17 @@ final class AudioLanguageTests: XCTestCase {
         XCTAssertEqual(audio("Del reves 2 (Inside Out 2) (2024) [Bluray 1080p][Esp]", flags: "🇪🇸", site: "Wolfmax4k", origin: american), [AudioLanguage("es-ES", .site)])
     }
 
+    /// Las banderas de Torrentio mezclan audio y subtítulos: sin «Dual Audio», 🇪🇸 es «tal vez» y no dice cuál (como la TV).
     func testSpanishThatDoesNotSayWhichStaysGeneric() {
         XCTAssertEqual(audio("Coco.2017.1080p.BluRay.x265-RARBG", flags: "🇬🇧 🇪🇸", site: "RARBG", origin: american),
-                       [AudioLanguage("en", .name), AudioLanguage("es", .name)])
+                       [AudioLanguage("en", .original), AudioLanguage("es", .maybe)])
     }
 
-    /// Roma dice «SPANISH» y es mexicana: es su audio original, latino.
+    /// Roma dice «SPANISH» y es mexicana: es su audio original, latino (y lo dice el nombre, como la TV).
     func testTheOriginalCountryTellsWhichSpanish() {
         let mexican = TitleOrigin(language: "es", country: "Mexico")
         XCTAssertEqual(audio("Roma.2018.SPANISH.2160p.NF.WEB-DL.x265.10bit.HDR.DDP5.1.Atmos-SMURF", flags: "🇪🇸", site: "RARBG", origin: mexican),
-                       [AudioLanguage("es-419", .original)])
+                       [AudioLanguage("es-419", .name)])
         let spanish = TitleOrigin(language: "es", country: "Spain")
         XCTAssertEqual(audio("La.Casa.de.Papel.S01E01.1080p.NF.WEB-DL", origin: spanish), [AudioLanguage("es-ES", .original)])
     }
