@@ -252,3 +252,86 @@ def test_trakt_being_down_never_disconnects_you(monkeypatch):
     with pytest.raises(trakt.TraktAuthError):
         t._get("/sync/watchlist")
     assert t.credentials.get(trakt.TOKENS_KEY) is None
+
+
+# ---------------------------------------------------------------- el avance de Trakt al retomar (como el iPhone)
+PLAYBACK = [
+    {"progress": 42.5, "paused_at": "2026-10-26T14:00:00.000Z", "type": "movie",
+     "movie": {"title": "Origen", "ids": {"imdb": "tt1375666"}, "runtime": 148}},
+    {"progress": 30.0, "paused_at": "2026-10-26T13:00:00.000Z", "type": "episode",
+     "episode": {"season": 2, "number": 5, "runtime": 22}, "show": {"ids": {"imdb": "tt0386676"}}},
+    {"progress": 10.0, "paused_at": "2026-10-20T13:00:00.000Z", "type": "episode",  # uno viejo del mismo episodio
+     "episode": {"season": 2, "number": 5, "runtime": 22}, "show": {"ids": {"imdb": "tt0386676"}}},
+    {"progress": 50.0, "paused_at": "nunca", "type": "movie", "movie": {"ids": {"imdb": "tt1"}}},
+    {"progress": 50.0, "paused_at": "2026-10-26T13:00:00.000Z", "type": "movie", "movie": {"ids": {"tmdb": 5}}},
+]
+
+
+def when(text):
+    from datetime import datetime
+    return datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp()
+
+
+def test_playback_is_read_by_imdb_and_episode_and_cached_for_a_minute(monkeypatch):
+    net, t, s = setup(monkeypatch)
+    net.on("/sync/playback", (200, PLAYBACK))
+    got = t.playback(now=1000)
+    assert set(got) == {"tt1375666", "tt0386676:2:5"}
+    assert got["tt0386676:2:5"] == {"percent": 30.0, "paused_at": when("2026-10-26T13:00:00Z"), "runtime": 22 * 60}
+    assert got["tt1375666"]["runtime"] == 148 * 60
+    assert "extended=full" in net.calls[-1][1]
+    t.playback(now=1050)
+    assert sum("/sync/playback" in c[1] for c in net.calls) == 1  # un minuto de caché
+    t.playback(now=1061)
+    assert sum("/sync/playback" in c[1] for c in net.calls) == 2
+
+
+def test_pausing_or_closing_forgets_the_cached_playback(monkeypatch):
+    net, t, s = setup(monkeypatch)
+    net.on("/sync/playback", (200, PLAYBACK))
+    t.playback()
+    s.event("start", MOVIE, 10, 7200)
+    s.wait()
+    assert t._playback is not None  # empezar no cambia el punto guardado
+    s.event("pause", MOVIE, 600, 7200)
+    s.wait()
+    assert t._playback is None
+    t.playback()
+    s.event("stop", MOVIE, 900, 7200)
+    s.wait()
+    assert t._playback is None
+
+
+def test_the_most_recent_resume_point_wins_like_the_iphone():
+    tr = {"percent": 50.0, "paused_at": 2000.0, "runtime": 6000.0}
+    assert trakt.latest_resume(300.0, 1000.0, 7200.0, tr) == 3600 - trakt.RESUME_BACK  # Trakt más nuevo: con la duración de Stremio
+    assert trakt.latest_resume(300.0, 3000.0, 7200.0, tr) == 300.0  # Stremio más nuevo
+    assert trakt.latest_resume(0.0, 3000.0, 7200.0, tr) == 0.0  # en Stremio lo terminaste después: desde el inicio
+    assert trakt.latest_resume(0.0, None, None, tr) == 3000 - trakt.RESUME_BACK  # solo Trakt: su propia duración
+    assert trakt.latest_resume(120.0, None, None, None) == 120.0  # sin Trakt: lo de siempre
+    assert trakt.latest_resume(120.0, 1000.0, None, {**tr, "percent": 85.0}) == 120.0  # ≥ 80 %: visto, no se retoma
+    assert trakt.latest_resume(0.0, None, None, {**tr, "runtime": None}) == 0.0  # sin duración no se adivina
+    assert trakt.playback_key("series", "tt0386676", "tt0386676:2:5") == "tt0386676:2:5"
+    assert trakt.playback_key("movie", "tt1375666", "tt1375666") == "tt1375666"
+    assert trakt.playback_key("series", "kitsu:1", "kitsu:1:2") is None
+
+
+def test_watch_resumes_from_trakt_when_the_iphone_paused_later(monkeypatch):
+    from types import SimpleNamespace
+
+    from orbital.watch import Watch
+
+    net, t, s = setup(monkeypatch)
+    net.on("/sync/playback", (200, PLAYBACK))
+    stremio_item = {"state": {"video_id": "tt0386676:2:5", "timeOffset": 120_000, "duration": 1_320_000,
+                              "lastWatched": "2026-10-25T20:00:00.000Z"}}
+    w = SimpleNamespace(scrobbler=s, credentials=Creds(), stremio_client=SimpleNamespace(library_item=lambda key, meta: stremio_item))
+    w._trakt_playback = lambda m, v: Watch._trakt_playback(w, m, v)
+    # El iPhone pausó al 30 % hoy (más nuevo que Stremio, ayer): 30 % de 22 min (la duración de Stremio) − 10 s.
+    assert Watch.resume_position(w, "tt0386676", "tt0386676:2:5") == .3 * 1320 - 10
+    stremio_item["state"]["lastWatched"] = "2026-10-26T15:00:00.000Z"  # luego viste más aquí: gana Stremio
+    assert Watch.resume_position(w, "tt0386676", "tt0386676:2:5") == 120.0
+    t.credentials.set(trakt.TOKENS_KEY, None)  # sin Trakt conectado: solo Stremio, sin pedirle nada
+    stremio_item["state"]["lastWatched"] = "2026-10-25T20:00:00.000Z"
+    t.forget_playback()
+    assert Watch.resume_position(w, "tt0386676", "tt0386676:2:5") == 120.0

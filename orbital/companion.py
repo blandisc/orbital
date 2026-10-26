@@ -66,17 +66,6 @@ def qr_svg(text: str, *, border: int = 2) -> str:
             f'<rect width="100%" height="100%" fill="#fff"/><path d="{path}" fill="#000"/></svg>')
 
 
-def trakt_session(trakt) -> dict | None:
-    """Una sesión de Trakt vigente para el iPhone (renovada aquí si estaba por caducar), sin la parte que la renueva."""
-    if trakt is None or not trakt.linked:
-        return None
-    try:
-        access = trakt.access_token()
-    except Exception:  # sin internet o la sesión se cayó: el iPhone lo intenta luego
-        return None
-    return {"access_token": access, "expires_at": trakt.session_expiry()} if access else None
-
-
 class NothingPlaying(Exception):
     """Nada se está viendo ahora mismo: no hay «Viendo en la TV» que enseñar ni que controlar."""
 

@@ -92,6 +92,8 @@ class TraktScrobbler:
     def _send(self, trakt: trakt_api.Trakt, action: str, target: dict, progress: float, session: str, title: str) -> None:
         try:
             trakt.scrobble(action, target, progress)
+            if action in ("pause", "stop") and hasattr(trakt, "forget_playback"):
+                trakt.forget_playback()  # Trakt ya guardó este punto: al retomar se le vuelve a preguntar
         except Exception as exc:  # noqa: BLE001 - TraktError, TraktAuthError o cualquier otra cosa
             with self._lock:
                 if session != self._session:

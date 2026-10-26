@@ -61,6 +61,61 @@ def scrobble_target(kind: str, meta_id: str, video_id: str | None) -> dict | Non
     return None
 
 
+PLAYBACK_TTL = 60  # s: el avance de Trakt (/sync/playback) se vuelve a pedir a lo más cada minuto (como el iPhone)
+RESUME_BACK = 10  # s antes del punto de Trakt: su porcentaje se redondea y la duración de la copia puede ser otra
+WATCHED_PERCENT = 80  # Trakt marca visto desde 80 %: arriba de eso no hay punto que retomar
+
+
+def playback_key(kind: str, meta_id: str, video_id: str | None) -> str | None:
+    """La llave con la que se cruza el avance de Trakt: «tt123» (película) o «tt123:2:5» (episodio)."""
+    target = scrobble_target(kind, meta_id, video_id)
+    if target is None:
+        return None
+    if "episode" in target:
+        return f"{meta_id}:{target['episode']['season']}:{target['episode']['number']}"
+    return meta_id
+
+
+def playback_entry(row) -> tuple[str, dict] | None:
+    """Una fila de GET /sync/playback → («tt123» o «tt123:2:5», {percent, paused_at, runtime}). None si no se entiende."""
+    if not isinstance(row, dict) or not isinstance(row.get("progress"), (int, float)):
+        return None
+    when = _when(row.get("paused_at"))
+    if when is None:
+        return None
+    if row.get("type") == "movie":
+        movie = row.get("movie") if isinstance(row.get("movie"), dict) else {}
+        imdb, runtime = (movie.get("ids") or {}).get("imdb"), movie.get("runtime")
+        key = imdb if isinstance(imdb, str) and re.fullmatch(r"tt\d+", imdb) else None
+    elif row.get("type") == "episode":
+        show = row.get("show") if isinstance(row.get("show"), dict) else {}
+        ep = row.get("episode") if isinstance(row.get("episode"), dict) else {}
+        imdb, runtime = (show.get("ids") or {}).get("imdb"), ep.get("runtime")
+        ok = isinstance(imdb, str) and re.fullmatch(r"tt\d+", imdb) and isinstance(ep.get("season"), int) \
+            and isinstance(ep.get("number"), int)
+        key = f"{imdb}:{ep['season']}:{ep['number']}" if ok else None
+    else:
+        key = None
+    if key is None:
+        return None
+    return key, {"percent": float(row["progress"]), "paused_at": when,
+                 "runtime": float(runtime) * 60 if isinstance(runtime, (int, float)) and runtime > 0 else None}
+
+
+def latest_resume(stremio_seconds: float, stremio_when: float | None, duration: float | None,
+                  trakt: dict | None) -> float:
+    """Dónde seguir: lo más reciente entre Stremio (segundos exactos) y Trakt (porcentaje, a segundos con la duración de
+    Stremio para ese video o, si no la hay, la que dice Trakt), como ResumePoint.latest del iPhone. 0 = desde el inicio."""
+    if not trakt or (stremio_when is not None and stremio_when >= trakt["paused_at"]):
+        return stremio_seconds  # lo de Stremio es más nuevo (también si ahí ya lo terminaste: 0)
+    if not 0 < trakt["percent"] < WATCHED_PERCENT:
+        return stremio_seconds
+    length = duration if duration and duration > 0 else trakt.get("runtime")
+    if not length:
+        return stremio_seconds  # sin duración no se sabe a qué segundo va el porcentaje
+    return max(0.0, trakt["percent"] / 100 * length - RESUME_BACK)
+
+
 class TraktError(Exception):
     pass
 
@@ -158,6 +213,7 @@ class Trakt:
         self.credentials = credentials
         self.timeout = timeout
         self._lock = threading.Lock()
+        self._playback: tuple[float, dict[str, dict]] | None = None  # (cuándo se pidió, {llave: avance})
 
     # --- cuenta -----------------------------------------------------------------------------
     @property
@@ -462,6 +518,26 @@ class Trakt:
                           "aired": aired, "network": network.strip(),
                           "runtime": _positive(ep.get("runtime")) or show.get("runtime")})
         return sorted(found, key=lambda e: e["aired"])
+
+    def playback(self, now: float | None = None) -> dict[str, dict]:
+        """Dónde ibas en cada película y episodio según Trakt (GET /sync/playback: lo que pausaste o cerraste entre 1 y
+        79 %, desde cualquier app: el iPhone, la TV…), con un minuto de caché. {«tt123» o «tt123:2:5»: avance}."""
+        now = time.time() if now is None else now
+        cached = self._playback
+        if cached is not None and now - cached[0] < PLAYBACK_TTL:
+            return cached[1]
+        rows = self._get("/sync/playback", extended="full", limit=100)
+        found: dict[str, dict] = {}
+        for row in rows if isinstance(rows, list) else []:
+            parsed = playback_entry(row)
+            if parsed and (parsed[0] not in found or parsed[1]["paused_at"] > found[parsed[0]]["paused_at"]):
+                found[parsed[0]] = parsed[1]
+        self._playback = (now, found)
+        return found
+
+    def forget_playback(self) -> None:
+        """Pausaste o cerraste: lo que se pidió a Trakt ya no es lo último (la siguiente vez se pide otra vez)."""
+        self._playback = None
 
     def watching(self, limit: int = 12) -> list[dict]:
         """Las series que estás viendo (lo más reciente primero) con el episodio que sigue; las terminadas no."""

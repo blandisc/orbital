@@ -26,6 +26,7 @@ from .launcher import Launcher
 from .library import addons, cinemeta, localize, streams, stremio_api
 from .library import subtitles as subtitle_lib
 from .library import tmdb as tmdb_api
+from .library import trakt as trakt_api
 from .library.models import LibraryItem
 from .scrobble import TraktScrobbler, not_the_video
 from .sessions import Sessions
@@ -927,13 +928,36 @@ class Watch:
         return True
 
     def resume_position(self, meta_id: str, video_id: str) -> float:
-        """Dónde ibas según Stremio (0 si no se sabe)."""
+        """Dónde ibas: lo más reciente entre Stremio y Trakt (lo que pausaste en el iPhone o en otra app), como el
+        iPhone. Sin Trakt, lo de Stremio. 0 si no se sabe."""
+        seconds, when, duration = 0.0, None, None
         try:
-            return stremio_api.resume_seconds(
-                self.stremio_client.library_item(self.credentials.get(STREMIO_KEY) or "", meta_id), video_id)
+            raw = self.stremio_client.library_item(self.credentials.get(STREMIO_KEY) or "", meta_id)
+            seconds = stremio_api.resume_seconds(raw, video_id)
+            state = stremio_api.state_of(raw)
+            if state.get("video_id") == video_id:  # su fecha y su duración solo cuentan si son de este mismo video
+                when = stremio_api.watched_at(raw)
+                duration = stremio_api.as_int(state.get("duration")) / 1000 or None
         except (stremio_api.StremioError, ValueError, TypeError, AttributeError, OverflowError) as exc:
-            log.info("No pude leer dónde ibas: %s", exc)
-            return 0.0
+            log.info("No pude leer dónde ibas en Stremio: %s", exc)
+        trakt = self._trakt_playback(meta_id, video_id)
+        start = trakt_api.latest_resume(seconds, when, duration, trakt)
+        if trakt and start != seconds:
+            log.info("Sigo donde dice Trakt (%.0f %%): %.0f s (Stremio: %.0f s)", trakt["percent"], start, seconds)
+        return start
+
+    def _trakt_playback(self, meta_id: str, video_id: str) -> dict | None:
+        """El avance de Trakt de ese video (None sin Trakt conectado, sin internet o si no hay)."""
+        try:
+            trakt = self.scrobbler.trakt()
+            kind = "series" if ":" in str(video_id or "") else "movie"
+            key = trakt_api.playback_key(kind, meta_id, video_id)
+            if trakt is None or not trakt.linked or key is None:
+                return None
+            return trakt.playback().get(key)
+        except Exception as exc:  # noqa: BLE001 - TraktError, sin internet…: se sigue con Stremio
+            log.info("No pude leer el avance de Trakt: %s", exc)
+            return None
 
     def _fallback_subs(self, kind: str, video_id: str, subs: str | None = None):
         subs = self.subtitles_lang if subs is None else subs
