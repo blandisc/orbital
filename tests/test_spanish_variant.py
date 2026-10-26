@@ -4,7 +4,6 @@ que dice «Ver» (las mismas cuentas que el iPhone, `Streams.languageScore`)."""
 import json
 from pathlib import Path
 
-import pytest
 from test_player import make_player
 
 from orbital import player_ui, watch
@@ -34,9 +33,6 @@ def order(prefs, *titles):
     return [s.index for s in streams.rank([source(i, t) for i, t in enumerate(titles)], prefs, "series")]
 
 
-@pytest.mark.xfail(strict=False, reason="La TV lee el idioma con lo aprendido de 405 fuentes reales (tests/test_streams_real.py) y "
-                   "pondera qué tan seguro es; el iPhone (Streams.swift) sigue con las cuentas de antes. Falta pasarlo al iPhone "
-                   "y regenerar tests/fixtures/ios con scripts/ios_golden.py.")
 def test_sin_variante_el_orden_es_el_de_siempre():
     """Con «Español (cualquiera)» o con inglés, nada cambia: las cuentas que ya comparten la TV y el iPhone."""
     data = json.loads(FIXTURES.read_text(encoding="utf-8"))

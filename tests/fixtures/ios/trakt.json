@@ -15,9 +15,11 @@
    },
    "result": {
     "episodes": 19,
+    "genres": [],
     "imdb": "tt11280740",
     "kind": "series",
     "overview": "Sinopsis",
+    "rating": null,
     "runtime": 50,
     "title": "Severance",
     "trakt_id": 1234,
@@ -57,9 +59,11 @@
    },
    "result": {
     "episodes": null,
+    "genres": [],
     "imdb": "tt1160419",
     "kind": "movie",
     "overview": "",
+    "rating": null,
     "runtime": null,
     "title": "Dune",
     "trakt_id": null,
@@ -76,9 +80,11 @@
   "result": [
    {
     "episodes": null,
+    "genres": [],
     "imdb": "tt1160419",
     "kind": "movie",
     "overview": "",
+    "rating": null,
     "runtime": null,
     "title": "Dune",
     "trakt_id": null,
@@ -86,9 +92,11 @@
    },
    {
     "episodes": 19,
+    "genres": [],
     "imdb": "tt11280740",
     "kind": "series",
     "overview": "Sinopsis",
+    "rating": null,
     "runtime": 50,
     "title": "Severance",
     "trakt_id": 1234,

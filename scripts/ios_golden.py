@@ -119,7 +119,7 @@ def streams_cases() -> dict:
         parsed.append({"stream": s, "result": {
             "addon": src.addon, "resolution": src.resolution, "hdr": src.hdr, "size": src.size, "seeders": src.seeders,
             "site": src.site, "cached": src.cached, "debrid": src.debrid, "languages": src.languages, "release": src.release,
-            "tags": src.tags, "binge": src.binge}})
+            "tags": src.tags, "binge": src.binge, "dub": src.dub, "audio_langs": src.audio_langs}})
     ranked = []
     for audio, quality in prefs:
         sources = [streams.parse(s, "Torrentio", "https://t.example/manifest.json", i) for i, s in enumerate(SAMPLE_STREAMS)]
@@ -150,7 +150,8 @@ def spanish_cases() -> list[dict]:
         for kind in ("movie", "series"):
             order = streams.rank(sources, streams.Preferences(audio=audio, quality="1080p", spanish=spanish), kind)
             out.append({"audio": audio, "spanish": spanish, "quality": "1080p", "kind": kind, "streams": SPANISH_STREAMS,
-                        "order": [s.index for s in order], "scores": {str(s.index): s.score for s in order}})
+                        "order": [s.index for s in order], "scores": {str(s.index): s.score for s in order},
+                        "audio_langs": {str(s.index): s.audio_langs for s in order}})
     return out
 
 
