@@ -383,6 +383,10 @@ class OrbitalPlayer(PlayerScreen):
         self._reveal_wait = 0.0  # otro episodio u otra fuente en la misma ventana: se destapa en cuanto haya imagen
         self._curtain(1)
         self.mpv.command("loadfile", url, "replace")
+        # Otra vez, ya con el archivo nuevo: al terminar el anterior, keep-open lo deja en pausa en su último cuadro y
+        # mpv lo vuelve a pausar mientras siga ahí, así que la pausa de arriba no alcanzaba. El siguiente episodio (de un
+        # canal 24/7 o de una serie) arrancaba en pausa en el segundo 0: parecía que «no ponía el siguiente».
+        self.mpv.command("set_property", "pause", False)
         self.toast(message or f"Cargando {title}…", 4)
         log.info("Cargando en el mismo mpv: %s", title)
         return True

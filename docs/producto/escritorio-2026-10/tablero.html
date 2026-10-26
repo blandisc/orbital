@@ -61,7 +61,7 @@ footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
 </div>
 
 <script>
-const UPDATED = "25 oct 2026 · en la Lenovo: #9, #7, #1, #2, #3, #6 y #4 listos con evidencia; #10 con código, falta verlo con mpv";
+const UPDATED = "25 oct 2026 · en la Lenovo: #9, #7, #1, #2, #3, #6, #4 y #10 listos con evidencia; #10 con código, falta verlo con mpv";
 // estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
 const ITEMS = [
   { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "doing",
@@ -69,8 +69,9 @@ const ITEMS = [
     nota: "Causa: con el video al frente, Windows a veces deja el foco en Orbital. A se perdía y la ficha de atrás la tomaba como «Ver», así que salía la carga con el logo. Ahora la pulsación va al video y la interfaz no hace caso del mando mientras el video tiene la pantalla. Código listo y al día con main (pruebas verdes). La prueba con mando y mpv de verdad va en la tanda del reproductor." },
   { n: 12, t: "La película se traba («Qué pasó ayer»)", tipo: "Investigación", prio: true, estado: "doing",
     d: "Revisar si una configuración de caché del reproductor se rompe y hace que se trabe.", nota: "Hallazgo: la A perdida hacía que la ficha recargara la película desde lo último guardado. Ya no la recarga. Falta medir el caché y los cuadros perdidos en la Lenovo." },
-  { n: 10, t: "Canal 24/7 de Los Simpson", tipo: "Bug", estado: "doing",
-    d: "Al acabar un episodio no pone el siguiente solo. Debe ser como una tele 24/7.", nota: "Causa: si buscar el siguiente fallaba por red (o tras una pausa larga no podía volver al aire), el canal se quedaba en el último cuadro o se cerraba. Ahora lo vuelve a pedir cada 25 s (hasta 3 veces) y el registro anota cada episodio. Falta verlo pasar de episodio con mpv en la Lenovo." },
+  { n: 10, t: "Canal 24/7 de Los Simpson", tipo: "Bug", estado: "done",
+    d: "Al acabar un episodio no pone el siguiente solo. Debe ser como una tele 24/7.", nota: "Dos causas. La principal: al terminar, mpv se queda en pausa en el último cuadro y el siguiente episodio arrancaba en pausa en 0:00 (tu registro de hoy lo muestra: 15:52 cargó y no avanzó; 16:15 igual y lo cerraste a las 16:30). Ahora se quita la pausa después de cargarlo. Además, si buscar el siguiente fallaba por red se congelaba: ahora reintenta. Probado en la Lenovo con mpv de verdad y el reproductor de Orbital (fuera de pantalla, sin tocar tu Orbital): antes en pausa, después «Al aire · T1 E2» avanzando.",
+    ev: ["evidencia/10-canal.jpg"] },
   { n: 9, t: "Ficha: «Ver» y «Guardar» se tocan", tipo: "Bug", estado: "done",
     d: "En las fichas de películas y series los dos botones quedan pegados.", nota: "«Ver» enfocado crece hacia la derecha y no tenía espacio. Ahora le queda aire (27 px medidos). Probado en la Lenovo con Edge (demo).",
     ev: ["evidencia/09-ver-guardar.jpg"] },

@@ -993,3 +993,15 @@ def test_paused_shows_the_title_logo_instead_of_plain_text():
     q, mpv2 = make_player()
     q.press("a")
     assert "Interstellar" in mpv2.overlays[1] and not any(c[0] == "overlay-add" for c in mpv2.sent)  # sin logo: el nombre
+
+
+def test_the_next_file_starts_playing_even_if_the_last_one_ended_paused():
+    """Al terminar, keep-open deja el archivo en pausa en su último cuadro y mpv lo vuelve a pausar mientras siga ahí: la
+    pausa se quita también DESPUÉS de cargar el siguiente (antes el siguiente episodio de un canal 24/7 arrancaba en pausa
+    en el segundo 0, y parecía que «no ponía el siguiente»; probado con mpv de verdad en la Lenovo)."""
+    alive = type("Proc", (), {"poll": lambda self: None})()
+    p, mpv = make_player(pause=True)
+    p.current = player.Playback("Los Simpson 24/7", alive, 0, {})
+    assert p.load("http://ep2", "Los Simpson 24/7", {"synthetic": True, "video_id": "tt0096697:5:8"})
+    at = next(i for i, c in enumerate(mpv.sent) if c[0] == "loadfile")
+    assert ("set_property", "pause", False) in mpv.sent[at + 1:]
