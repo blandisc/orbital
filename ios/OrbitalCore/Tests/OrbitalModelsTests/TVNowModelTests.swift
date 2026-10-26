@@ -20,6 +20,43 @@ final class TVNowModelTests: XCTestCase {
         model.setActive(false)
     }
 
+    /// Emparejar con el QR teniendo ya las claves (nada nuevo que traer): antes no se avisaba a nadie y el control no aparecía
+    /// («Orbital no conectado») hasta mandar la app a segundo plano y volver.
+    func testPairingWithNothingNewStartsPollingAtOnce() async throws {
+        let rig = try ServicesRig()  // sin dirección ni token
+        rig.http.json["https://tv.example/api/ping"] = .object(["ok": .bool(true)])
+        rig.http.json["https://tv.example/api/companion"] = .object([:])
+        let playing: JSON = .object(["kind": .string("movie"), "live": .bool(false), "title": .string("Interstellar"),
+                                     "position": .int(10), "duration": .int(100), "paused": .bool(false)])
+        rig.http.json["https://tv.example/api/companion/now"] = .object(["playing": playing])
+        let model = TVNowModel(rig.services, intervalSeconds: 0.01)
+        var told = 0
+        let watch = model.onChange { told += 1 }
+        model.setActive(true)   // la app ya estaba al frente: sin configuración, no sondea
+        let generation = rig.services.generation
+        try await rig.services.connectOrbital(address: "tv.example", token: "secreto")
+        XCTAssertEqual(rig.services.generation, generation)   // no se rearmó nada…
+        try await Task.sleep(nanoseconds: 40_000_000)
+        XCTAssertGreaterThan(told, 0)                          // …pero el control se enteró
+        XCTAssertEqual(model.now?.title, "Interstellar")       // y ya sondea
+        model.setActive(false)
+        _ = watch
+    }
+
+    /// Borrar la app se lleva los ajustes, no el Keychain: al volver a instalarla, la dirección de tu Orbital y la app de Trakt
+    /// se recuperan solas (antes Trakt y «Para ti» no cargaban hasta volver a escanear el QR).
+    func testAfterReinstallingTheOrbitalAddressAndTraktAppComeBackFromTheKeychain() async throws {
+        let rig = try ServicesRig()
+        rig.http.json["https://tv.example/api/ping"] = .object(["ok": .bool(true)])
+        rig.http.json["https://tv.example/api/companion"] = .object(["trakt_client_id": .string("CID")])
+        try await rig.services.connectOrbital(address: "tv.example", token: "secreto")
+        let reinstalled = Services(http: rig.http, secrets: rig.secrets, kv: InMemoryKeyValueStore(), pending: InMemoryPendingStore(),
+                                   downloadTransport: FakeDownloadTransport(), downloadsRoot: rig.root, freeSpace: { 50_000_000_000 })
+        XCTAssertEqual(reinstalled.appSettings.orbitalAddress, "tv.example")
+        XCTAssertEqual(reinstalled.appSettings.traktClientID, "CID")
+        XCTAssertTrue(reinstalled.orbital.isConfigured)
+    }
+
     func testPollsWhileActiveAndStopsWhenNot() async throws {
         let rig = try connected()
         let playing: JSON = .object(["kind": .string("movie"), "live": .bool(false), "title": .string("Interstellar"),

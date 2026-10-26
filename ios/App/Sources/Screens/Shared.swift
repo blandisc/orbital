@@ -16,6 +16,11 @@ func timeLeftText(minutes: Int) -> LocalizedStringKey {
     return Strings.episode(season: season, episode: episode, language: AppEnvironment.shared.services.appSettings.uiLanguage)
 }
 
+extension Suggestion {
+    /// La plataforma, si la sugerencia es «En Netflix», «En Disney+»… (para su píldora en color).
+    var platformName: String? { if case .onPlatform(let name) = reason, !name.isEmpty { name } else { nil } }
+}
+
 func badgeKey(_ reason: SuggestionReason) -> LocalizedStringKey {
     switch reason {
     case .recommended: "Recomendada"

@@ -557,7 +557,7 @@ private struct MosaicTileCell: View {
             if focused { VStack { HStack { kindIcon; Spacer() }; Spacer() }.padding(DS.Space.s3) }
             if focused {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    DSBadge(text: inWatchlist ? "En tu watchlist" : badgeKey(tile.item.reason))
+                    if !inWatchlist, let platform = tile.item.platformName { PlatformBadge(name: platform) } else { DSBadge(text: inWatchlist ? "En tu watchlist" : badgeKey(tile.item.reason)) }
                     TitleLogo(url: tile.item.logo, title: tile.item.title)
                     ViewThatFits(in: .horizontal) {   // si no cabe, se quitan partes del medio antes de cortar
                         ForEach(Array(factVariants(tile.item).enumerated()), id: \.offset) { _, text in text.lineLimit(1).fixedSize(horizontal: true, vertical: false) }

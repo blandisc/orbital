@@ -6,6 +6,13 @@ public enum StreamFinderError: Error, Sendable, CustomStringConvertible {
     public var description: String { "Sin conexión: no pude buscar dónde verlo. Revisa tu internet." }
 }
 
+/// Lo que va pasando al pedir fuentes: a qué complementos se les pregunta y lo que contesta cada uno (las versiones con
+/// enlace que trajo; 0 si no tiene ese video, nil si no contestó a tiempo).
+public enum SearchEvent: Sendable, Equatable {
+    case asking([String])
+    case answered(addon: String, found: Int?)
+}
+
 /// Pide fuentes a los complementos que las dan (en paralelo) y las recuerda unos minutos.
 /// Los enlaces de Real-Debrid caducan: una caché vieja no se usa para reproducir.
 public actor StreamFinder {
@@ -25,6 +32,11 @@ public actor StreamFinder {
     private typealias Answers = (serving: [Addon], results: [[JSON]?])
     private var answers: [String: (expires: Date, answers: Answers, failed: Bool)] = [:]
     private var asking: [String: Task<Answers, Error>] = [:]
+    /// Quien quiere ver la búsqueda mientras pasa (la órbita de «Buscando la mejor versión»), por video.
+    private var watchers: [String: [UUID: AsyncStream<SearchEvent>.Continuation]] = [:]
+    /// Lo que ya pasó en una búsqueda en curso: quien llega tarde (el reproductor, si la ficha ya había preguntado) lo recibe
+    /// primero.
+    private var happened: [String: [SearchEvent]] = [:]
 
     public init(http: HTTPClient, registry: AddonRegistry, clock: @escaping @Sendable () -> Date = { Date() }) {
         self.http = http; self.registry = registry; self.clock = clock
@@ -88,6 +100,24 @@ public actor StreamFinder {
         return ranked
     }
 
+    /// La búsqueda de un video mientras pasa. Si las fuentes ya estaban guardadas no llega nada (no hubo que preguntar).
+    public func events(kind: String, videoID: String) -> AsyncStream<SearchEvent> {
+        let key = "\(kind):\(videoID)", id = UUID()
+        let (stream, continuation) = AsyncStream<SearchEvent>.makeStream()
+        watchers[key, default: [:]][id] = continuation
+        for event in happened[key] ?? [] { continuation.yield(event) }
+        continuation.onTermination = { [weak self] _ in Task { await self?.stopWatching(key, id) } }
+        return stream
+    }
+    private func stopWatching(_ key: String, _ id: UUID) {
+        watchers[key]?[id] = nil
+        if watchers[key]?.isEmpty == true { watchers[key] = nil }
+    }
+    private func emit(_ key: String, _ event: SearchEvent) {
+        if case .asking = event { happened[key] = [event] } else { happened[key, default: []].append(event) }
+        watchers[key]?.values.forEach { $0.yield(event) }
+    }
+
     /// Pregunta ya a los complementos por ese video (sin ordenar nada): el `find` que venga después se une o lo encuentra guardado.
     public func warm(kind: String, videoID: String) async { _ = try? await ask(kind: kind, videoID: videoID, fresh: false) }
     /// Pide ya la lista de complementos (`addonCollectionGet`, o la de disco y la nueva aparte) para que las fuentes no la esperen.
@@ -111,6 +141,8 @@ public actor StreamFinder {
 
     private func askAll(kind: String, videoID: String) async throws -> Answers {
         let serving = try await registry.serving("stream", kind: kind, itemID: videoID)
+        let key = "\(kind):\(videoID)"
+        emit(key, .asking(serving.map(\.name)))
         // Un complemento lento no detiene a los demás: pasado `budget`, si alguno ya dio fuentes, no se le espera (cuenta como
         // fallido: se vuelve a preguntar pronto).
         let budget = Self.budget
@@ -121,7 +153,9 @@ public actor StreamFinder {
             var pending = serving.count, overBudget = false
             while pending > 0, let next = await group.next() {
                 switch next {
-                case .addon(let i, let streams): out[i] = streams; pending -= 1
+                case .addon(let i, let streams):
+                    out[i] = streams; pending -= 1
+                    emit(key, .answered(addon: serving[i].name, found: streams?.filter { $0["url"]?.nonEmptyString != nil }.count))
                 case .budget: overBudget = true
                 }
                 if overBudget, out.contains(where: { !($0 ?? []).isEmpty }) { break }
@@ -129,6 +163,7 @@ public actor StreamFinder {
             group.cancelAll()
             return out
         }
+        happened[key] = nil
         return (serving, results)
     }
 

@@ -12,6 +12,13 @@ struct BrowseView: View {
     @State private var catalog: ModelObserver<CatalogModel>
     @State private var search: ModelObserver<SearchModel>
     @State private var query = ""
+    /// El campo abierto (con el teclado). Un segundo toque en la lupa cae en el campo y lo abre (iOS); si iOS avisa que
+    /// tocaste «Buscar» otra vez (RootView), también se abre desde aquí.
+    @State private var searching = false
+    private let ui = AppEnvironment.shared.ui
+    /// La barra de abajo (con el campo) se esconde al bajar y vuelve al subir: iOS no la encoge en la pestaña de búsqueda.
+    @State private var barHidden = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Los resultados: todo, solo películas o solo series.
     @State private var kind: String = ""
     /// «Ver todo» de lo más popular hoy.
@@ -39,12 +46,28 @@ struct BrowseView: View {
             .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
             .padding(.bottom, DS.Space.s8)
         }
+        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { old, y in
+            let hide: Bool
+            if searching || y <= DS.Size.barScrollHide { hide = false }   // escribiendo o arriba del todo: siempre a la vista
+            else if y - old > DS.Size.barScrollHide { hide = true }
+            else if old - y > DS.Size.barScrollHide { hide = false }
+            else { return }
+            if hide != barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = hide } }
+        }
+        .onChange(of: searching) { _, open in if open { barHidden = false } }
+        .toolbarVisibility(barHidden ? .hidden : .visible, for: .tabBar)
         // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
         .environment(\.dynamicTypeSize, typeSize)
         .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .searchable(text: $query, prompt: Text("Películas y series"))
+        // La barra siempre a la vista al abrir Buscar (antes, a veces había que bajar para que saliera).
+        .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Películas y series"))
+        .onChange(of: ui.focusSearch, initial: true) { _, wants in
+            guard wants else { return }
+            ui.focusSearch = false
+            searching = true
+        }
         // Nombres propios: sin autocorrector ni mayúscula automática («Shōgun» no se vuelve «Shotgun»); al deslizar los
         // resultados, el teclado se va para verlos.
         .autocorrectionDisabled()
@@ -74,6 +97,7 @@ struct BrowseView: View {
             await warm
         }
         .refreshable { await catalog.model.load() }
+        .onAppear { Perf.mark("stab.appear") }   // con `-perf`: de tocar Buscar a verla (marca `stab.tap` en RootView)
         // ds-exception: el campo de búsqueda del sistema se dibuja vacío con letra de accesibilidad (el texto sí está):
         // se topa en el tamaño más grande que sí pinta.
         .dynamicTypeSize(...DS.Typeface.searchFieldMax)

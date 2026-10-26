@@ -328,8 +328,13 @@ struct YearCard: View {
 struct AppMark: View {
     var body: some View {
         let compact = UIScreen.main.bounds.width < DS.Size.compactWidth
+        let ui = AppEnvironment.shared.ui
         OrbitalWordmark(size: compact ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
             .foregroundStyle(DS.text).fixedSize()
+            // La entrada de la app termina justo aquí (sin el planeta, en un iPhone angosto, ya no calza: ahí se desvanece).
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if !compact { ui.homeLogoFrame = $0 } }
+            .onDisappear { ui.homeLogoFrame = nil }
+            .opacity(ui.splashing ? 0 : 1)
     }
 }
 
@@ -361,6 +366,32 @@ struct StudioEmblem: View {
 
     private var nameText: some View {
         Text(verbatim: name).recipe(.cardTitle, color: DS.backdropDeep).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+    }
+}
+
+/// El emblema de una temporada o un género al pie de su tarjeta: su ícono blanco (Grok Imagine, en `Assets.xcassets/Collections`)
+/// y su nombre debajo, con el mismo trato que el logo de un estudio. Al abrir la lista, solo el ícono en grande con el halo de su color.
+struct CollectionIconEmblem: View {
+    let slug: String
+    let name: String
+    var size: CGFloat = DS.Collections.iconEmblem
+    var glow: Color?
+
+    var body: some View {
+        VStack(spacing: DS.Space.s1) {
+            // A color (estilo de Grok Imagine): se leen en claro y en oscuro.
+            Image("Collections/" + slug).resizable().scaledToFit()
+                .frame(width: size, height: size)
+                // Un resplandor del color del fondo detrás: se lee aunque caiga sobre los pósters.
+                .background { Circle().fill(DS.bg).opacity(DS.Collections.iconBackdrop).blur(radius: DS.Collections.glow).scaleEffect(DS.Collections.iconBackdropScale) }
+                .shadow(color: glow ?? .clear, radius: DS.Collections.glow)
+            if glow == nil {
+                Text(verbatim: name).recipe(.caption, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            }
+        }
+        .shadow(DS.Elevation.high.drop(0))
+        .padding(.horizontal, DS.Space.s2)
+        .accessibilityHidden(true)
     }
 }
 

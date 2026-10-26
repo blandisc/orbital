@@ -394,7 +394,7 @@ struct DownloadSubtitlesSheet: View {
                         ForEach(languages(found), id: \.self) { code in
                             let options = found.filter { $0.language == code }
                             let done = saved[code, default: 0]
-                            PanelChip(title: Text(verbatim: done == 0 ? "\(name(code)) · \(options.count)" : "\(name(code)) · \(done)/\(options.count)"),
+                            PanelChip(title: Text.flagged(done == 0 ? "\(name(code)) · \(options.count)" : "\(name(code)) · \(done)/\(options.count)"),
                                       selected: done > 0, symbol: saving == code ? "arrow.down.circle.dotted" : (done > 0 ? "checkmark" : "arrow.down.circle")) {
                                 Task { await save(code, options) }
                             }
@@ -431,7 +431,7 @@ struct DownloadSubtitlesSheet: View {
 
     private func name(_ code: String) -> String {
         let two = Streams.languageCodes.first { $0.value == code }?.key ?? code
-        return locale.localizedString(forLanguageCode: two)?.capitalized(with: locale) ?? code
+        return LanguageFlags.flagged(locale.localizedString(forLanguageCode: two)?.capitalized(with: locale) ?? code, code)
     }
 }
 

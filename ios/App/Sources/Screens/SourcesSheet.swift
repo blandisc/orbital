@@ -136,7 +136,7 @@ struct SourcesSheet: View {
                 }
                 .padding(.top, DS.Space.s2)
             } label: {
-                Text("Otros idiomas · ") + Text(verbatim: model.moreLanguages.map { VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui) }.joined(separator: ", "))
+                Text("Otros idiomas · ") + Text(verbatim: model.moreLanguages.map { LanguageFlags.flagged(VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui), $0.code) }.joined(separator: ", "))
             }
             .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
             .padding(DS.Space.s3)
@@ -175,7 +175,7 @@ struct VersionCard: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(verbatim: "\(language) · \(option.quality)").recipe(.title)
+                    (Text.flag(row.code) + Text(verbatim: "\(language) · \(option.quality)")).recipe(.title)
                     let facts = [VersionChip.size(option), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")].compactMap { $0 }.joined(separator: " · ")
                     VersionCard.withSpeed(facts, option.speed).recipe(.secondary)
                 }
@@ -184,7 +184,7 @@ struct VersionCard: View {
                 }
                 VersionEvidence(evidence: option.evidence, language: language, release: option.release, site: option.site)
                 if !option.alsoHas.isEmpty {
-                    (Text("También trae: ") + Text(verbatim: option.alsoHas.map { Streams.versionLanguageName($0, in: uiLanguage) }.joined(separator: ", ")))
+                    (Text("También trae: ") + Text(verbatim: option.alsoHas.map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: uiLanguage), $0) }.joined(separator: ", ")))
                         .recipe(.footnote)
                 }
                 HStack(spacing: DS.Space.s2) {

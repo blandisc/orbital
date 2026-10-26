@@ -29,11 +29,19 @@ protocol VideoPlayerEngine: PlayerEngine {
     @MainActor func stillFrame(maxSize: CGSize) async -> UIImage?
     /// Ya hay video de verdad en la pantalla (nada que rearmar): se puede quitar el cuadro guardado.
     @MainActor var showsVideo: Bool { get }
+    /// Ancho entre alto del cuadro (con su forma de pixel), cuando ya se sabe; nil antes de cargar.
+    @MainActor var videoAspect: Double? { get }
 }
 
 extension VideoPlayerEngine {
     @MainActor func stillFrame(maxSize: CGSize) async -> UIImage? { nil }
     @MainActor var showsVideo: Bool { true }
+    @MainActor var videoAspect: Double? { nil }
+}
+
+extension CGSize {
+    /// Ancho entre alto, o nil si todavía no hay cuadro.
+    var aspectIfKnown: Double? { width > 0 && height > 0 ? Double(width / height) : nil }
 }
 
 /// Una frase del subtítulo puesto, con el segundo en que el archivo la pone.
@@ -176,6 +184,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     @MainActor func setZoom(_ zoom: VideoZoom) { layerView.playerLayer.videoGravity = zoom.gravity }
     @MainActor func setPictureInPictureActive(_ active: Bool) {}
     @MainActor func subtitleOverlay(lifted: Bool, speedPill: Bool, look: SubtitleLook, delay: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
+    @MainActor var videoAspect: Double? { player.currentItem?.presentationSize.aspectIfKnown }
     var drawsSubtitles: Bool { false }
     @MainActor func subtitleLines(from seconds: Double, count: Int) -> [SubtitleLine] { [] }
     @MainActor var shownTime: Double { player.currentTime().seconds }

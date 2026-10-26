@@ -19,6 +19,10 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # La órbita de «Buscando la mejor versión».
+    "Buscando en tus complementos": "Searching your add-ons", "1 versión encontrada": "1 version found",
+    "%lld versiones encontradas": "%lld versions found", "%lld de %lld complementos": "%lld of %lld add-ons",
+    "%@ y %lld más": "%@ and %lld more", "Elegimos %@": "Picked %@", "Abriendo…": "Opening…",
     # Subtítulos sin conexión (descargas).
     "Guardado con la descarga": "Saved with the download", "No disponible sin conexión": "Not available offline",
     "No encontré subtítulos en %@": "Couldn't find subtitles in %@",
@@ -379,23 +383,23 @@ TRANSLATIONS = {
     "Sale hoy": "Out today", "Desde la madrugada": "Overnight", "Nada este día": "Nothing this day",
     "No sale nada en los próximos 14 días de las series que sigues.": "Nothing comes out in the next 14 days from the shows you follow.",
     "Agregar complemento": "Add add-on", "Ajustes": "Settings", "Al instante": "Instant", "Audio y subtítulos": "Audio and subtitles",
-    "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.":
-        "A code appears to enter at trakt.tv/activate. With Trakt connected, what you watch is reported and your watchlist and lists show up.",
+    "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas.":
+        "A code appears to enter on the Trakt page shown. The session belongs to this iPhone only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up.",
     "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.": "What you're watching shows up here, on iPhone and on Orbital.",
     "Añadir a Mi lista": "Add to My List", "En Mi lista": "In My List", "Ver ficha": "View details", "Conecta Trakt (tu watchlist y tus listas) o agrega una clave de TMDB (lo popular en Netflix, Disney+ y HBO Max) en Ajustes.": "Connect Trakt (your watchlist and lists) or add a TMDB key (what is popular on Netflix, Disney+ and HBO Max) in Settings.", "Orbital · faltan %lld": "Orbital · %lld left", "Orbital · descargando": "Orbital · downloading", "Poniéndolo en la TV.": "Playing it on the TV.", "Desde la TV": "From the TV", "Descartar": "Dismiss", "Desde la TV: %@": "From the TV: %@", "Descargando %@ (desde la TV)": "Downloading %@ (from the TV)", "No encontré una fuente para descargar %@ (desde la TV)": "I did not find a source to download %@ (from the TV)", "No hay espacio para descargar %@ (desde la TV)": "Not enough space to download %@ (from the TV)", "No pude descargar %@ (desde la TV)": "I could not download %@ (from the TV)",
     "Dirección (orbital.tudominio.com)": "Address (orbital.yourdomain.com)", "Token guardado": "Token saved", "Token (el mismo de Alexa)": "Token (the same as Alexa's)",
     "Guardar token": "Save token", "Probar conexión": "Test connection", "Conectada": "Connected", "Tu Orbital (la TV)": "Your Orbital (the TV)",
-    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and your Trakt and For You keys come from it.",
+    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y las claves de Para ti salen de ella. Trakt se conecta aparte en cada uno.": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and your For You keys come from it. Trakt is connected separately on each one.",
+    "Conecta Trakt en este iPhone (Ajustes › Trakt).": "Connect Trakt on this iPhone (Settings › Trakt).",
+    "Solo si usas tu propia aplicación (developer.trakt.tv). Vacío: la de Orbital.": "Only if you use your own app (developer.trakt.tv). Empty: Orbital's.",
     "Conectada a %@": "Connected to %@", "En la TV: Ajustes › Cuentas › iPhone": "On the TV: Settings › Accounts › iPhone",
     "Aparece un código. Apúntale con la cámara del iPhone y toca «Abrir en Orbital»: queda conectada, sin escribir nada.": "A code appears. Point the iPhone camera at it and tap “Open in Orbital”: it connects, no typing.",
     "Cambiar a mano": "Change manually", "Conectar a mano": "Connect manually",
-    "Con la sesión de tu Orbital: no hay nada que conectar aquí.": "Using your Orbital's session: nothing to connect here.",
-    "Dejar de usar Trakt en el iPhone": "Stop using Trakt on iPhone",
-    "Conecta tu Orbital (arriba) y Trakt se configura solo. Si no, crea una aplicación en developer.trakt.tv y pega aquí su Client ID.": "Connect your Orbital (above) and Trakt sets itself up. Otherwise, create an app at developer.trakt.tv and paste its Client ID here.",
+    "Conecta tu Orbital (arriba) y Trakt queda listo. Si usas tu propia aplicación de Trakt, pega su Client ID en Avanzado.": "Connect your Orbital (above) and Trakt is ready. If you use your own Trakt app, paste its Client ID in Advanced.",
     "Conectado con tu Orbital.": "Connected to your Orbital.", "Conectado con tu Orbital: %@ ya están aquí.": "Connected to your Orbital: %@ are here now.",
     "Traje de tu Orbital: %@. No hay que escribirlo aquí.": "Brought from your Orbital: %@. No need to type it here.", "Velocidad": "Speed", "Tamaño de subtítulos": "Subtitle size", "Chico": "Small", "Mediano": "Medium", "Grande": "Large", "Fuentes": "Sources", "Descargado": "Downloaded", "Ya está descargado. Lo encuentras en Descargas.": "Already downloaded. You'll find it in Downloads.", "Película": "Movie", "Serie": "Series",
     "Crea una aplicación en developer.trakt.tv y pega aquí su Client ID (las nuevas ya no dan secreto).": "Create an app at developer.trakt.tv and paste its Client ID here (new ones no longer have a secret).",
-    "Client ID de tu aplicación de Trakt": "Your Trakt app's Client ID", "Aplicación anterior (con secreto)": "Older app (with a secret)", "Imagen dentro de imagen": "Picture in Picture",
+    "Client ID de tu aplicación de Trakt": "Your Trakt app's Client ID", "Imagen dentro de imagen": "Picture in Picture",
     "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.": "What's popular on Stremio. Connect Trakt in Settings and the mosaic is built from your stuff.", "Nada descargado": "Nothing downloaded", "Avance": "Progress",
     "Bajar el siguiente episodio al terminar uno": "Download the next episode when one finishes", "Borrar": "Delete",
     "Borrar al terminar de verlo": "Delete when watched", "Buscando la mejor fuente…": "Finding the best source…",
@@ -448,7 +452,7 @@ TRANSLATIONS = {
     "Actualiza tu Orbital para usar el control completo.": "Update your Orbital to use the full remote.", "Atrás": "Back", "Control de tu Orbital": "Orbital remote", "Nada en la TV ahora": "Nothing on the TV right now",
     "Desliza para moverte; toca para elegir": "Swipe to move; tap to select", "Desliza · toca para elegir": "Swipe · tap to select", "Escribir en la TV": "Type on the TV",
     "Estira hacia arriba para el control completo": "Pull up for the full remote", "Menú": "Menu", "Pad de la TV": "TV touchpad", "Tu Orbital": "Your Orbital",
-    "Abre la ficha": "Opens the details", "Elegir": "Choose", "Especiales": "Specials", "Esperando…": "Waiting…", "Fuentes de Real-Debrid": "Real-Debrid sources", "Guardar clave de TMDB": "Save TMDB key", "Guion": "Written by", "Guardar secreto": "Save secret",
+    "Abre la ficha": "Opens the details", "Elegir": "Choose", "Especiales": "Specials", "Esperando…": "Waiting…", "Fuentes de Real-Debrid": "Real-Debrid sources", "Guardar clave de TMDB": "Save TMDB key", "Guion": "Written by",
     "Identificador de la aplicación (client id)": "Application identifier (client id)", "Idioma": "Language", "Idioma de la app y de las fichas": "App and title language",
     "Infuse no dice cuánto dura, así que no sé si llegaste al final.": "Infuse doesn't report the length, so I can't tell if you reached the end.",
     "Infuse no pudo reproducirlo.": "Infuse couldn't play it.", "Infuse no pudo reproducirlo: %@": "Infuse couldn't play it: %@", "Inicio": "Home",
@@ -639,11 +643,22 @@ TRANSLATIONS = {
     "Toca para ver los detalles": "Tap to see the details", "Toca para cerrar los detalles": "Tap to close the details", "Copiar nombre": "Copy name",
     "Grabada en el cine": "Theater recording", "La que ves": "Playing now", "comprobado": "checked", "lo dice el nombre": "the name says so",
     "lo dice el sitio": "the site says so", "Todas, por calidad · toca una": "All, by quality · tap one",
+    # Para ti › Listas: «Temporadas» y «Lo mejor del género» (los nombres y frases vienen de Tmdb.seasons / Tmdb.genres).
+    "Temporadas": "Seasons", "La de ahora, primero": "The current one first", "Lo mejor del género": "Best by genre",
+    "Las mejor calificadas del año": "The year's top rated", "Las más populares de %@": "The most popular of %@",
+    "Lo mejor de %@ en %@": "The best of %@ in %@", "Pocas de %@: las mejor calificadas de %@": "Few from %@: the top rated of %@",
+    "Pocas de %@: lo más visto en %@": "Few from %@: the most watched in %@",
+    "Halloween": "Halloween", "Día de Muertos": "Day of the Dead", "Navidad": "Christmas", "San Valentín": "Valentine's Day", "Verano": "Summer",
+    "Sustos, brujas y calabazas": "Scares, witches and pumpkins", "Para recordar a los que se fueron": "To remember those who are gone",
+    "Para ver en familia": "To watch with the family", "Para ver en pareja": "To watch as a couple", "Sol, playa y vacaciones": "Sun, beach and vacation",
+    "Acción": "Action", "Aventura": "Adventure", "Animación": "Animation", "Comedia": "Comedy", "Crimen": "Crime", "Documental": "Documentary",
+    "Drama": "Drama", "Familia": "Family", "Fantasía": "Fantasy", "Terror": "Horror", "Misterio": "Mystery", "Romance": "Romance",
+    "Ciencia ficción": "Science fiction", "Suspenso": "Thriller",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
-          "Icons/", "Glyphs/donut", "Avatars/", "Awards/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
+          "Icons/", "Glyphs/donut", "Avatars/", "Awards/", "Collections/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 

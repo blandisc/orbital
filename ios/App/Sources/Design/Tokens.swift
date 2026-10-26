@@ -241,6 +241,11 @@ enum DS {
         static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)
         static let indicatorBarHeight: CGFloat = 120
         static let indicatorBarWidth: CGFloat = 5
+        /// Lo que mide el indicador además de la barra (ícono, porcentaje, espacios y relleno), y lo más corta que puede quedar.
+        static let indicatorChrome: CGFloat = 88
+        static let indicatorBarMin: CGFloat = 48
+        /// Un toque de un dedo y uno de dos tan juntos son el mismo toque (s).
+        static let twoFingerTapGuard: TimeInterval = 0.35
         /// La burbuja de buscar no se acerca más que esto a los bordes de la pantalla.
         static let seekBubbleSideMargin: CGFloat = 64
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
@@ -342,6 +347,42 @@ enum DS {
 
     /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32
     /// (el planeta y el anillo) o en em de la palabra (la luna, el interletrado, el tamaño de la marca junto a la palabra).
+    /// La píldora de una plataforma (`PlatformBadge`): el logo de la app a la izquierda, con sus esquinas.
+    enum PlatformBadge { static let logo: CGFloat = 16, logoRadius: CGFloat = 4 }
+
+    /// La entrada de la app (`LaunchSplash`): los mismos tiempos que la TV y la computadora (~1.4 s).
+    enum Splash {
+        static let wordSize: CGFloat = 52
+        static let start = 0.1, ring = 0.5, moonAt = 0.5, leaveAt = 0.4, leaveSeconds = 0.5
+        static let letterStagger = 0.04, letterRise: CGFloat = 0.14
+        static let letter = Animation.easeOut(duration: 0.4).delay(0.08)
+        static let moon = Animation.spring(duration: 0.55, bounce: 0.45)
+        static let leave = Animation.spring(duration: 0.5, bounce: 0.08)
+        /// Con «Reducir movimiento»: quieto un momento y un fundido.
+        static let still = 0.5, fade = 0.3
+    }
+
+    /// La órbita de «Buscando la mejor versión» (`SourceOrbit`).
+    enum SourceOrbit {
+        static let size: CGFloat = 132
+        static let dot: CGFloat = 6, chosenDot: CGFloat = 16
+        static let ringWidth: CGFloat = 1.5, planetWidth: CGFloat = 3, sweepWidth: CGFloat = 2.4
+        static let planetShare: CGFloat = 0.24
+        static let maxDots = 24
+        /// Cada punto nuevo cae al ángulo áureo del anterior: se reparten parejos sin encimarse.
+        static let goldenAngle = 137.5
+        static let sweepSeconds = 1.6
+        static let sweepLength: CGFloat = 0.16
+        static let dimOpacity = 0.25, failedOpacity = 0.12
+        /// Cuántos complementos se nombran antes de «y N más», y el ancho mínimo de los textos junto a la órbita (horizontal).
+        static let namesShown = 3
+        /// Cada cuánto sale otro punto cuando las versiones llegan juntas; la luna que gira mientras se abre (a qué distancia del
+        /// planeta, en veces su radio, y cuánto tarda la vuelta).
+        static let revealStep = 0.03
+        static let moonOrbit: CGFloat = 0.85, moonSeconds = 1.2
+        static let textWidth: CGFloat = 220
+    }
+
     enum Brand {
         static let box: CGFloat = 32
         static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8, ringStroke: CGFloat = 2.1
@@ -397,6 +438,8 @@ enum DS {
         /// El video en vertical, al arrastrarlo: lo más arriba que sube (debajo de la barra de ✕ y el nombre: botón de 44 y
         /// su aire) y lo que deja libre abajo para los controles (la barra, «Saltar intro», ±10, el botón grande y la pista).
         static let portraitTopClearance: CGFloat = 60, portraitControlsReserve: CGFloat = 260
+        /// Lo más cuadrado que se le da espacio en vertical (4:3, la tele de antes); algo más angosto ya va con franjas.
+        static let portraitMinAspect: Double = 4.0 / 3.0
         /// La agarradera del video en vertical: la rayita, la franja de abajo que la toma (y lo que se mete sobre el video).
         /// «Audio y subtítulos»: cuántos idiomas de otra versión se ofrecen junto a las pistas de este archivo.
         static let otherVersionsShown = 2
@@ -616,6 +659,18 @@ enum DS {
         static let studio = Color(red: 0.55, green: 0.56, blue: 0.62)
         /// El logo del estudio en su cápsula.
         static let studioLogoWidth: CGFloat = 96, studioLogoHeight: CGFloat = 26
+        /// El halo de cada temporada de «Temporadas»: Halloween naranja, Día de Muertos rosa mexicano, Navidad verde, San Valentín
+        /// guinda y Verano ámbar. Los géneros usan el neutro de los estudios.
+        static let halloween = Color(red: 0.95, green: 0.47, blue: 0.12), muertos = Color(red: 0.89, green: 0.0, blue: 0.49)
+        static let navidad = Color(red: 0.13, green: 0.58, blue: 0.32), sanValentin = Color(red: 0.62, green: 0.11, blue: 0.25)
+        static let verano = Color(red: 0.96, green: 0.71, blue: 0.16)
+        static func season(_ slug: String) -> Color {
+            switch slug { case "halloween": halloween; case "muertos": muertos; case "navidad": navidad; case "sanvalentin": sanValentin; case "verano": verano; default: studio }
+        }
+        /// El ícono blanco de una temporada o un género al pie de su tarjeta (con su nombre debajo) y en grande al abrirla.
+        static let iconEmblem: CGFloat = 40, iconHeader: CGFloat = 56   // antes 22: al pie de la tarjeta se perdía
+        /// El resplandor detrás del ícono de una temporada o género (cuánto tapa y de qué tamaño).
+        static let iconBackdrop = 0.85, iconBackdropScale: CGFloat = 1.3
         static func tint(_ award: String) -> Color {
             switch award { case "emmy": silver; case "bafta", "ariel": bronze; default: gold }
         }
@@ -723,6 +778,8 @@ enum DS {
         static let heroPrefetch = 3
         /// Cuánto hay que bajar para que el título grande se encoja (y el de Inicio diga otra cosa).
         static let titleCollapse: CGFloat = 8
+        /// Cuánto hay que deslizar en un sentido para que la barra de Buscar se esconda (al bajar) o vuelva (al subir).
+        static let barScrollHide: CGFloat = 12
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)
         /// Cuánto puede encogerse un título de sección largo («Top 10 en Paramount+») antes de cortarse: así no brinca a dos renglones.
         static let titleShrink: CGFloat = 0.8

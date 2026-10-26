@@ -437,6 +437,56 @@ public actor ForYou {
         }) ?? []
     }
 
+    /// «Lo mejor del género»: el Top 10 del año (TMDB, por nota con piso de votos y sus respaldos), con su puesto y el año de
+    /// verdad. Nil sin TMDB o si falló (no se guarda: la próxima vez se vuelve a pedir).
+    public func genreChart(slug: String) async -> GenreChart? {
+        guard let tmdb, tmdb.configured, let genre = Tmdb.genres.first(where: { $0.slug == slug }) else { return nil }
+        let year = Calendar.current.component(.year, from: clock())
+        return try? await remember("tmdb:genre:\(slug):\(year)", ttl: Self.slowTTL) {
+            let chart = try await tmdb.genreTop(movie: genre.movie, tv: genre.tv, year: year)
+            var items = Array(await Self.suggestions(chart.rows, reason: .console(genre.title), tmdb: tmdb).prefix(Self.genreTopCount))
+            for i in items.indices { items[i].rank = i + 1 }   // el puesto después de saltar los que no tienen IMDb (1…n seguidos)
+            return GenreChart(items: items, asked: year, year: chart.year, basis: chart.basis)
+        }
+    }
+
+    static let genreTopCount = 10
+
+    /// «Temporadas»: lo más popular con la palabra clave de esa temporada (hasta 20). La palabra clave se guarda en el iPhone
+    /// (no cambia); los títulos, en la caché del día.
+    public func seasonItems(slug: String) async -> [Suggestion] {
+        guard let tmdb, tmdb.configured, let season = Tmdb.seasons.first(where: { $0.slug == slug }) else { return [] }
+        let kv = kv
+        return (try? await remember("tmdb:season:\(slug)", ttl: Self.slowTTL) {
+            let saved = kv.data("tmdb-keyword.\(slug)").flatMap { String(data: $0, encoding: .utf8) }.flatMap { Int($0) }
+            var keyword = saved
+            if keyword == nil { keyword = try await tmdb.keywordID(season.queries) }
+            guard let keyword else { return [Suggestion]() }
+            if saved == nil { kv.set("tmdb-keyword.\(slug)", data: String(keyword).data(using: .utf8)) }
+            let rows = try await tmdb.seasonTitles(keywordID: keyword)
+            return Array(await Self.suggestions(rows, reason: .console(season.title), tmdb: tmdb).prefix(Self.seasonCount))
+        }) ?? []
+    }
+
+    static let seasonCount = 20
+
+    /// Filas de TMDB de películas y series juntas → sugerencias, en su orden (cada una con su IMDb; un título repetido, una vez).
+    static func suggestions(_ rows: [TmdbRow], reason: SuggestionReason, tmdb: Tmdb) async -> [Suggestion] {
+        let details = await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
+            for (i, row) in rows.enumerated() { group.addTask { (i, try? await tmdb.details(kind: row.kind, tmdbID: row.id)) } }
+            var out = [TmdbDetails?](repeating: nil, count: rows.count)
+            for await (i, d) in group { out[i] = d }
+            return out
+        }
+        var seen = Set<String>()
+        return details.compactMap { d -> Suggestion? in
+            guard let d, let imdb = d.imdb, !d.title.isEmpty, seen.insert(imdb).inserted else { return nil }
+            return Suggestion(kind: d.kind, imdb: imdb, title: d.title, year: d.year, runtime: d.runtime, overview: d.overview,
+                              poster: d.poster ?? String(format: metahubPoster, imdb), wide: d.backdrop ?? String(format: metahubBackground, imdb),
+                              logo: String(format: metahubLogo, imdb), reason: reason, next: nil)
+        }
+    }
+
     // MARK: próximos estrenos
     /// Lo que sale hoy y los próximos 14 días de las series que sigues en Trakt, con la hora de aquí. Sin Trakt: nada.
     /// `skip` días después de hoy y los `days` siguientes (las semanas que siguen, al deslizar la tira de «Próximos estrenos»).

@@ -87,6 +87,40 @@ public struct ProgressEvent: Sendable, Equatable, Codable {
     enum Keys: String, CodingKey { case kind, metaID, videoID, originalTitle, position, duration, watched, at, finished }
 }
 
+/// Dónde seguir: el segundo exacto (Stremio, o Trakt convertido con la duración conocida) o, si de Trakt solo se sabe el
+/// porcentaje y aún no la duración, la fracción (0–1) para buscarla en cuanto el reproductor la diga.
+public struct ResumePoint: Sendable, Equatable {
+    public var seconds: Double
+    public var fraction: Double?
+    public init(seconds: Double = 0, fraction: Double? = nil) { self.seconds = seconds; self.fraction = fraction }
+    public static let start = ResumePoint()
+
+    /// El segundo donde seguir con una duración ya conocida (0 si no se sabe dónde).
+    public func seconds(duration: Double) -> Double {
+        guard let fraction else { return seconds }
+        return duration > 0 ? fraction * duration : seconds
+    }
+
+    /// Lo MÁS RECIENTE entre tu biblioteca de Stremio (`lastWatched`, `timeOffset`) y la pausa de Trakt (`paused_at`,
+    /// `progress`). Así se sigue donde lo dejaste en otro dispositivo aunque solo uno de los dos se haya enterado. El porcentaje
+    /// de Trakt se vuelve segundos con la duración de Stremio de ese mismo video; sin ella, queda como fracción.
+    public static func latest(stremio raw: JSON?, videoID: String, trakt: TraktPlayback?) -> ResumePoint {
+        let fromStremio = StremioLibrary.resumeSeconds(raw, videoID: videoID)
+        guard let trakt else { return ResumePoint(seconds: fromStremio) }
+        let state = StremioLibrary.state(of: raw)
+        let sameVideo = state["video_id"]?.string == videoID
+        let stremioAt = sameVideo ? StremioLibrary.epoch(state["lastWatched"]) : nil
+        // Stremio lo vio después (o lo terminó después): manda Stremio, aunque diga «desde el principio».
+        if let stremioAt, stremioAt >= trakt.pausedAt.timeIntervalSince1970 { return ResumePoint(seconds: fromStremio) }
+        let fraction = trakt.progress / 100
+        // Casi nada, o ya casi visto (Trakt lo marca visto desde el 80 %): desde el principio, como hace Stremio.
+        guard fraction >= PlaybackRules.continueMinProgress, fraction < StremioLibrary.watchedAt else { return ResumePoint(seconds: fromStremio) }
+        let durationMs = sameVideo ? (state["duration"]?.doubleValue ?? 0) : 0
+        if durationMs > 0 { return ResumePoint(seconds: fraction * durationMs / 1000) }
+        return ResumePoint(seconds: 0, fraction: fraction)
+    }
+}
+
 /// Lo que espera para subirse cuando vuelva la red (avance a Stremio y vistos a Trakt).
 public struct PendingWork: Sendable, Equatable, Codable {
     public var progress: [ProgressEvent] = []
@@ -185,10 +219,27 @@ public actor WatchService {
     func authKeyValue() -> String? { authKey() }
     func stremioClient() -> StremioAPI { stremio }
 
-    /// Dónde ibas según Stremio (0 si no se sabe).
-    public func resumePosition(metaID: String, videoID: String) async -> Double {
-        guard let key = authKey(), let item = try? await stremio.libraryItem(authKey: key, id: metaID, maxAge: StremioAPI.recentRead) else { return 0 }
-        return StremioLibrary.resumeSeconds(item, videoID: videoID)
+    /// Dónde ibas en segundos: lo más reciente entre Stremio y Trakt (0 si no se sabe). Si de Trakt solo se sabe el porcentaje
+    /// (sin la duración), lo de Stremio (Infuse recibe segundos, no puede buscar después).
+    public func resumePosition(metaID: String, videoID: String, kind: String? = nil) async -> Double {
+        let (point, stremio) = await resume(metaID: metaID, videoID: videoID, kind: kind)
+        return point.fraction == nil ? point.seconds : stremio
+    }
+
+    /// Dónde seguir: lo más reciente entre tu biblioteca de Stremio y lo que Trakt guardó al pausar o cerrar en otro dispositivo.
+    /// Sin Trakt conectado, exactamente lo de Stremio.
+    public func resumePoint(metaID: String, videoID: String, kind: String? = nil) async -> ResumePoint {
+        await resume(metaID: metaID, videoID: videoID, kind: kind).point
+    }
+
+    private func resume(metaID: String, videoID: String, kind: String?) async -> (point: ResumePoint, stremio: Double) {
+        // Los dos a la vez: Trakt guarda lo suyo un minuto (`Trakt.playback`), así que casi siempre no espera nada.
+        let target = TraktTarget(videoID: videoID, kind: kind ?? (videoID == metaID ? "movie" : "series"))
+        async let paused = Self.paused(trakt, target)
+        var item: JSON?
+        if let key = authKey() { item = try? await stremio.libraryItem(authKey: key, id: metaID, maxAge: StremioAPI.recentRead) }
+        let point = ResumePoint.latest(stremio: item, videoID: videoID, trakt: await paused)
+        return (point, StremioLibrary.resumeSeconds(item, videoID: videoID))
     }
 
     /// `scrobbleToTrakt: false` para Infuse, que ya avisa a Trakt con su propia conexión (así no se duplica).
@@ -244,6 +295,11 @@ public actor WatchService {
         } catch {
             scrobbleLog?.recordFailure("\(error)")
         }
+    }
+
+    private static func paused(_ trakt: Trakt?, _ target: TraktTarget?) async -> TraktPlayback? {
+        guard let trakt, trakt.linked, let target else { return nil }
+        return await trakt.paused(target)
     }
 
     /// «The Office T2 · E5» o «Dune»: cómo se dice lo último que se mandó.

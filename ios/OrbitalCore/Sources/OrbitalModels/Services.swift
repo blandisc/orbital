@@ -26,7 +26,7 @@ public final class Services: ObservableModel {
     public private(set) var cinemeta: Cinemeta { didSet { changed() } }
     public private(set) var localizer: Localizer { didSet { changed() } }
     /// IntroDB: dónde saltar la intro y el resumen (y cuándo empiezan los créditos).
-    public var introDB: IntroDB { IntroDB(http: http, recent: introDBRecent) }
+    public var introDB: IntroDB { IntroDB(http: http, recent: introDBRecent, store: kv) }
     private let introDBRecent = IntroDBRecent()
     public var jumpScares: JumpScares { JumpScares(http: http) }
 
@@ -88,6 +88,12 @@ public final class Services: ObservableModel {
 
     /// Carpeta de lo que se guarda para enseñarlo al instante al abrir (stale-while-revalidate). nil = sin disco (pruebas).
     let cacheRoot: URL?
+    /// El Client ID de Trakt incluido en la app (Info.plist › `OrbitalTraktClientID`, del ajuste de compilación
+    /// `ORBITAL_TRAKT_CLIENT_ID`): el último recurso, después del de Ajustes y el de tu Orbital. Vacío: solo los otros dos.
+    let builtInTraktClientID: String
+    public nonisolated static var bundledTraktClientID: String {
+        ((Bundle.main.object(forInfoDictionaryKey: "OrbitalTraktClientID") as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
     private let downloadTransport: DownloadTransport
     private let downloadsRoot: URL
     let freeSpace: @Sendable () -> Int64
@@ -96,13 +102,23 @@ public final class Services: ObservableModel {
 
     public init(http: HTTPClient, secrets: SecretsStore, kv: KeyValueStore, pending: PendingStore, downloadTransport: DownloadTransport,
                 downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64, cacheRoot: URL? = nil,
-                clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in }) {
+                clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in },
+                builtInTraktClientID: String = Services.bundledTraktClientID) {
         self.cacheRoot = cacheRoot
+        self.builtInTraktClientID = builtInTraktClientID
         self.http = http; self.secrets = secrets; self.kv = kv; self.pending = pending; self.downloadTransport = downloadTransport
         self.downloadsRoot = downloadsRoot; self.freeSpace = freeSpace; self.clock = clock; self.onDownloadsChange = onDownloadsChange
         let scrobbleLog = ScrobbleLog(kv: kv)
         self.scrobbleLog = scrobbleLog
         let settings = SettingsStore(kv)
+        // Al borrar la app se van los ajustes (UserDefaults) pero el Keychain se queda: la dirección de tu Orbital y la app de
+        // Trakt se recuperan de ahí (antes, tras reinstalar, Trakt y «Para ti» no cargaban hasta volver a escanear el QR).
+        if settings.value.orbitalAddress.isEmpty, let saved = secrets.get(SecretKey.orbitalAddress), !saved.isEmpty {
+            settings.update { $0.orbitalAddress = saved }
+        }
+        if settings.value.traktClientID.isEmpty, let saved = secrets.get(SecretKey.traktClientID), !saved.isEmpty {
+            settings.update { $0.traktClientID = saved }
+        }
         self.settings = settings
         self.titlePrefs = TitlePreferences(kv)
         self.traktOutbox = TraktOutbox(kv)
@@ -121,7 +137,7 @@ public final class Services: ObservableModel {
         self.oneDrive = oneDrive; self.oneDriveLibrary = oneDriveLibrary
         let tmdb = Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX")
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
-        let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, clock: clock)
+        let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, builtIn: builtInTraktClientID, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
@@ -140,16 +156,25 @@ public final class Services: ObservableModel {
         super.init()
     }
 
-    static func makeTrakt(http: HTTPClient, secrets: SecretsStore, settings: AppSettings, clock: @escaping @Sendable () -> Date) -> Trakt? {
-        let id = settings.traktClientID.isEmpty ? (secrets.get(SecretKey.traktClientID) ?? "") : settings.traktClientID
+    /// El Client ID, en orden: el de Ajustes (escrito a mano, o el que trajo tu Orbital si no había uno), el del Keychain
+    /// (sobrevive a reinstalar) y, al final, el incluido en la app. Sin ninguno, no hay Trakt.
+    static func traktClientID(settings: AppSettings, secrets: SecretsStore, builtIn: String) -> String {
+        if !settings.traktClientID.isEmpty { return settings.traktClientID }
+        if let saved = secrets.get(SecretKey.traktClientID), !saved.isEmpty { return saved }
+        return builtIn
+    }
+
+    static func makeTrakt(http: HTTPClient, secrets: SecretsStore, settings: AppSettings, builtIn: String = "",
+                          clock: @escaping @Sendable () -> Date) -> Trakt? {
+        let id = traktClientID(settings: settings, secrets: secrets, builtIn: builtIn)
         guard !id.isEmpty else { return nil }
-        let secret = secrets.get(SecretKey.traktClientSecret) ?? ""     // el secreto nunca va en los ajustes normales
-        // Si la sesión es la de tu Orbital, al caducar se le pide otra a la consola.
-        let borrow: @Sendable () async -> BorrowedSession? = {
-            let remote = OrbitalRemote(http: http, address: settings.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "")
-            return try? await remote.keys().traktSession
-        }
-        return Trakt(http: http, secrets: secrets, clientID: id, clientSecret: secret, clock: clock, borrow: borrow)
+        // Las apps nuevas de Trakt (PKCE) no tienen secreto: el código y la renovación van sin él. Una antigua lo guarda en el Keychain.
+        let secret = secrets.get(SecretKey.traktClientSecret) ?? ""
+        let trakt = Trakt(http: http, secrets: secrets, clientID: id, clientSecret: secret, clock: clock)
+        // La sesión que antes prestaba tu Orbital ya no se usa (cada dispositivo con la suya): se olvida aquí sin revocarla, y
+        // Ajustes ofrece conectar Trakt en este iPhone.
+        trakt.forgetBorrowedSession()
+        return trakt
     }
 
     /// Un enlace nuevo de Real-Debrid para una descarga cuyo enlace caducó: el mismo complemento y la misma fuente.
@@ -197,31 +222,35 @@ public final class Services: ObservableModel {
         }
     }
 
-    /// Conecta tu Orbital (el QR de la TV o Ajustes) y trae de ella lo que falte aquí: la clave de TMDB, la aplicación
-    /// de Trakt, el país y la sesión de Trakt. Devuelve qué se trajo («TMDB», «Trakt»); lanza si no contesta.
+    /// Conecta tu Orbital (el QR de la TV o Ajustes) y trae de ella lo que falte aquí: la clave de TMDB, el Client ID de la
+    /// aplicación de Trakt y el país. Es un atajo: sin consola el iPhone usa el Client ID incluido en la app (o el de Ajustes ›
+    /// Avanzado). La sesión de Trakt NO se trae: el iPhone conecta la suya con un código. Devuelve qué se trajo («TMDB»,
+    /// «Trakt»); lanza si no contesta.
     @discardableResult
     public func connectOrbital(address: String? = nil, token: String? = nil) async throws -> [String] {
-        if let address { settings.update { $0.orbitalAddress = address } }
+        if let address { settings.update { $0.orbitalAddress = address }; secrets.set(SecretKey.orbitalAddress, address) }
         if let token { secrets.set(SecretKey.orbitalToken, token) }
+        // Avisar ya (antes de preguntarle a la consola): el control y el sondeo aparecen aunque no se haya traído nada nuevo.
+        // Antes solo se avisaba si cambiaban TMDB, Trakt o el país, y al volver a emparejar seguía «Sin conectar».
+        if address != nil || token != nil { changed() }
         let remote = orbital
         try await remote.check()
         let keys = try await remote.keys()
         var got: [String] = []
         if !keys.tmdbKey.isEmpty, (secrets.get(SecretKey.tmdbKey) ?? "").isEmpty { secrets.set(SecretKey.tmdbKey, keys.tmdbKey); got.append("TMDB") }
         if !keys.traktClientID.isEmpty, settings.value.traktClientID.isEmpty { settings.update { $0.traktClientID = keys.traktClientID }; got.append("Trakt") }
+        // El Client ID que de verdad se usa, también en el Keychain (sobrevive a reinstalar). Antes se guardaba el de la consola
+        // aunque aquí hubieras pegado otro.
+        if !settings.value.traktClientID.isEmpty { secrets.set(SecretKey.traktClientID, settings.value.traktClientID) }
+        if !settings.value.orbitalAddress.isEmpty { secrets.set(SecretKey.orbitalAddress, settings.value.orbitalAddress) }
         let regionChanged = keys.region.count == 2 && keys.region != settings.value.region
         if regionChanged { settings.update { $0.region = keys.region } }
         // Solo se rearma si algo cambió: rearmar tira las cachés (traducciones, listas) y vuelve a pintar toda la app, y esto
         // corre en cada arranque.
-        var needsReconfigure = !got.isEmpty || regionChanged
-        if needsReconfigure { reconfigure(); needsReconfigure = false }
-        // Trakt sin conectar en el iPhone (o con la sesión prestada de antes): la de la consola, si es otra.
-        if let session = keys.traktSession, let trakt, !trakt.linked || (trakt.borrowed && trakt.accessToken != session.accessToken) {
-            trakt.adopt(session)
-            if !got.contains("Trakt") { got.append("Trakt") }
-            needsReconfigure = true
-        }
-        if needsReconfigure { reconfigure() }
+        // La sesión prestada de antes se olvida aquí SIN revocarla (revocarla desconectaría la consola): Ajustes ofrece conectar
+        // la tuya.
+        let forgotBorrowed = trakt?.forgetBorrowedSession() ?? false
+        if !got.isEmpty || regionChanged || forgotBorrowed { reconfigure() }
         return got
     }
 
@@ -242,7 +271,7 @@ public final class Services: ObservableModel {
         let settings = settings, secrets = secrets
         localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
         self.tmdb = tmdb
-        trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, clock: clock)
+        trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, builtIn: builtInTraktClientID, clock: clock)
         let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock)
         forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: charts, addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)

@@ -275,6 +275,8 @@ struct ListsView: View {
     @State private var activeSection: CollectionSection = .forYou
     /// Saltos elegidos en el índice (el toque háptico es de esos, no de cada sección que pasa al deslizar).
     @State private var jumps = 0
+    /// Modo demostración (`-demo-collection`): la lista que se abre sola para las capturas.
+    @State private var demoCollection: CollectionRoute?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var model: ParaTiModel { observer.model }
 
@@ -326,12 +328,23 @@ struct ListsView: View {
         ScrollViewReader { proxy in scroller(proxy).task { await demoScroll(proxy) } }
     }
 
-    /// Modo demostración (`-demo-shelf id`): baja hasta ese estante al abrir, para las capturas.
+    /// Modo demostración (`-demo-shelf id`): baja hasta ese estante al abrir, para las capturas. `-demo-section seasons|genres`
+    /// baja hasta ese grupo de colecciones y `-demo-collection genre:accion` (o `season:halloween`) abre esa lista.
     private func demoScroll(_ proxy: ScrollViewProxy) async {
         #if DEBUG
-        guard Demo.isOn, let id = Demo.shelf else { return }
-        try? await Task.sleep(for: .seconds(3))
-        proxy.scrollTo(id, anchor: .top)
+        guard Demo.isOn else { return }
+        if let id = Demo.shelf {
+            try? await Task.sleep(for: .seconds(3))
+            proxy.scrollTo(id, anchor: .top)
+        }
+        if let name = Demo.section, let section = CollectionSection.allCases.first(where: { "\($0)" == name }) {
+            try? await Task.sleep(for: .seconds(3))
+            proxy.scrollTo(section, anchor: .top)
+        }
+        if let open = Demo.collection?.split(separator: ":"), open.count == 2 {
+            try? await Task.sleep(for: .seconds(2))
+            demoCollection = CollectionRoute(kind: open[0] == "genre" ? .genre : .season, id: String(open[1]))
+        }
         #endif
     }
 
@@ -368,12 +381,13 @@ struct ListsView: View {
                             ForEach(model.newOnPlatforms) { s in
                                 NavigationLink(value: s.route) {
                                     WideCard(art: s.wide, logo: s.logo, title: s.title, badge: Text(badgeKey(s.reason)),
-                                             caption: Text(verbatim: s.title))
+                                             caption: Text(verbatim: s.title), platform: s.platformName)
                                 }
                                 .buttonStyle(.plain)
                                 .contextMenu { SuggestionActions(suggestion: s) { dismissed in Task { await model.dismiss(dismissed) } } }
                             }
                         }
+                        .id("new-on-platforms")   // `-demo-shelf new-on-platforms` baja hasta aquí
                     }
                     if model.needsSources { sourcesFallback }
                 }
@@ -382,7 +396,11 @@ struct ListsView: View {
                 // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas (el reflejo ya separa).
                 VStack(alignment: .leading, spacing: DS.Collections.groupGap) {
                     if !model.platformHubs.isEmpty { platforms.reflectionTail().modifier(SectionSpy(section: .platforms, active: $activeSection)) }
-                    if collections.model.tmdbReady { studiosSection.reflectionTail().modifier(SectionSpy(section: .studios, active: $activeSection)) }
+                    if collections.model.tmdbReady {
+                        studiosSection.reflectionTail().modifier(SectionSpy(section: .studios, active: $activeSection))
+                        seasonsSection.reflectionTail().modifier(SectionSpy(section: .seasons, active: $activeSection))
+                        genresSection.reflectionTail().modifier(SectionSpy(section: .genres, active: $activeSection))
+                    }
                     awards.modifier(SectionSpy(section: .awards, active: $activeSection))
                     if collections.model.traktLinked { yearsSection.reflectionTail().modifier(SectionSpy(section: .years, active: $activeSection)) }
                 }
@@ -435,6 +453,7 @@ struct ListsView: View {
             if let hub = model.platformHubs.first(where: { $0.brand == route.brand }) { PlatformRankingsView(observer: observer, hub: hub) }
         }
         .navigationDestination(for: CollectionRoute.self) { route in CollectionGridView(collections: collections, route: route) }
+        .navigationDestination(item: $demoCollection) { route in CollectionGridView(collections: collections, route: route) }
         .task { await collections.model.loadMyList() }
         .navigationDestination(for: ShelfRoute.self) { route in
             if route.id == "estrenos" { UpcomingScreen(observer: observer) } else { ListGridView(observer: observer, collections: collections, shelfID: route.id) }
@@ -493,7 +512,7 @@ struct ListsView: View {
         case .stremio: !stremioCards.isEmpty
         case .platforms: !model.platformHubs.isEmpty
         case .awards: !collections.model.awards.isEmpty
-        case .studios: collections.model.tmdbReady
+        case .studios, .seasons, .genres: collections.model.tmdbReady
         case .years: collections.model.traktLinked
         case .airings: !model.airings.isEmpty
         case .yourYear: collections.model.traktLinked
@@ -576,6 +595,49 @@ struct ListsView: View {
                 }
                 .buttonStyle(.plain)
                 .task { await collections.model.loadStudio(studio.id) }
+            }
+        }
+    }
+
+    /// Temporadas: Halloween, Día de Muertos, Navidad, San Valentín y Verano (la de hoy primero), cada una con sus tres títulos
+    /// más vistos, su ícono y su nombre al pie y el halo de su color.
+    private var seasonsSection: some View {
+        let language = env.services.appSettings.uiLanguage
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: "Temporadas", meta: Text("La de ahora, primero")).padding(.horizontal, DS.Space.gutter)
+            CenteredCarousel(items: collections.model.seasons, id: \.slug, cardWidth: DS.PlatformFan.width) { season in
+                let name = Strings.tr(season.title, language: language)
+                NavigationLink(value: CollectionRoute(kind: .season, id: season.slug)) {
+                    CollectionCard(title: Text(verbatim: name), detail: Text(verbatim: Strings.tr(season.blurb, language: language)), name: name,
+                                   posters: (collections.model.seasonItems[season.slug] ?? []).prefix(3).map { Optional($0.poster) },
+                                   tint: DS.Collections.season(season.slug), captioned: false) {
+                        CollectionIconEmblem(slug: season.slug, name: name)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("season-\(season.slug)")
+                .task { await collections.model.loadSeason(season.slug) }
+            }
+        }
+    }
+
+    /// Lo mejor del género: el Top 10 del año de cada género (TMDB, por nota), con su ícono y su nombre al pie.
+    private var genresSection: some View {
+        let language = env.services.appSettings.uiLanguage
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: "Lo mejor del género", meta: Text("Las mejor calificadas del año")).padding(.horizontal, DS.Space.gutter)
+            CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width) { genre in
+                let name = Strings.tr(genre.title, language: language)
+                NavigationLink(value: CollectionRoute(kind: .genre, id: genre.slug)) {
+                    CollectionCard(title: Text(verbatim: name), detail: Text("Las mejor calificadas del año"), name: name,
+                                   posters: (collections.model.genreCharts[genre.slug]?.items ?? []).prefix(3).map { Optional($0.poster) },
+                                   tint: DS.Collections.studio, captioned: false) {
+                        CollectionIconEmblem(slug: genre.slug, name: name)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("genre-\(genre.slug)")
+                .task { await collections.model.loadGenre(genre.slug) }
             }
         }
     }
@@ -664,7 +726,7 @@ struct ListsView: View {
     private func featuredTile(_ featured: ParaTiModel.Featured) -> some View {
         let s = featured.item
         let route = s.route
-        return HeroCard(title: s.title, background: s.wide, logo: s.logo, eyebrow: Text(reasonKey(featured.reason)), accentEyebrow: true,
+        return HeroCard(title: s.title, background: s.wide, logo: s.logo, eyebrow: reasonKey(featured.reason).map { Text($0) }, accentEyebrow: true,
                         data: (factStrings(s).first ?? "").components(separatedBy: " · "), open: { openTitle = route }) {
             HeroActions { watchButton(s); moreMenu(s) }   // con letra grande, uno debajo del otro
         }
@@ -686,11 +748,14 @@ struct ListsView: View {
         DSMoreMenu { SuggestionActions(suggestion: s, includeWatch: false) { dismissed in Task { await model.dismiss(dismissed) } } }
     }
 
-    private func reasonKey(_ reason: ParaTiModel.FeaturedReason) -> LocalizedStringKey {
+    /// La etiqueta sobre el arte del destacado. El nombre de una lista (de Trakt o de un complemento: «RT: Certified Fresh»)
+    /// no va: en el destacado se leía como un sello raro; mejor sin etiqueta.
+    private func reasonKey(_ reason: ParaTiModel.FeaturedReason) -> LocalizedStringKey? {
         switch reason {
         case .recommendedByTrakt: "Recomendada por Trakt"
         case .rank(let n, let platform): "N.º \(n) en \(platform)"
         case .trending: "En tendencia"
+        case .other(.inList): nil
         case .other(let r): badgeKey(r)
         }
     }

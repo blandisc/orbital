@@ -91,7 +91,7 @@ struct AllSourcesList: View {
                 Picker("Idioma", selection: $filter.language) {
                     Text("Todos").tag(String?.none)
                     ForEach(AllSources.languages(in: sources), id: \.self) { code in
-                        Text(verbatim: Streams.languageName(code, in: uiLanguage)).tag(Optional(code))
+                        (Text.flag(code) + Text(verbatim: Streams.languageName(code, in: uiLanguage))).tag(Optional(code))
                     }
                 }
                 .pickerStyle(.menu)
@@ -204,7 +204,7 @@ struct AllSourcesList: View {
             if !extra.isEmpty { Text(verbatim: extra.joined(separator: " · ")).recipe(.data) }
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 ForEach(Array(AllSources.languageEvidence(source).enumerated()), id: \.offset) { _, item in
-                    (Text(verbatim: VersionLanguageRow.inline(Streams.versionLanguageName(item.code, in: ui), ui) + ": ") + evidence(item.kind))
+                    (Text.flag(item.code) + Text(verbatim: VersionLanguageRow.inline(Streams.versionLanguageName(item.code, in: ui), ui) + ": ") + evidence(item.kind))
                         .recipe(.footnote)
                 }
             }
@@ -269,7 +269,7 @@ struct AllSourcesList: View {
             let name = Streams.versionLanguageName(item.code, in: ui)
             return i == 0 ? name : VersionLanguageRow.inline(name, ui)
         }
-        var text = Text(verbatim: names.joined(separator: " + "))
+        var text = Text.flag(items.map(\.code)) + Text(verbatim: names.joined(separator: " + "))
         let guessed = items.filter { $0.kind == .assumed }
         if !guessed.isEmpty {
             text = text + Text(verbatim: " · ") + Text("se supone")

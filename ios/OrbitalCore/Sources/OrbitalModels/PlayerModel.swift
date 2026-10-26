@@ -100,6 +100,24 @@ public final class PlayerModel: ObservableModel {
     public private(set) var failure: Failure? { didSet { changed() } }
 
     public private(set) var phase: Phase = .idle { didSet { changed() } }
+    /// La búsqueda de versiones de verdad (para la órbita de «Buscando la mejor versión»): a qué complementos se les
+    /// pregunta, cuántas trajo cada uno y cuántas quedaron para elegir. nil si no se buscó (tu descarga, la que elegiste).
+    public struct SourceSearch: Sendable, Equatable {
+        public var addons: [String] = []
+        /// Lo que contestó cada complemento (versiones con enlace; nil: no contestó a tiempo).
+        public var answers: [String: Int?] = [:]
+        /// Las versiones con las que se quedó (ya sin las de torrent sin Real-Debrid): llega al terminar.
+        public var choices: Int?
+        public var found: Int { choices ?? answers.values.reduce(0) { $0 + ($1 ?? 0) } }
+        public var answered: Int { answers.count }
+        mutating func apply(_ event: SearchEvent) {
+            switch event {
+            case .asking(let names): addons = names
+            case .answered(let addon, let count): answers[addon] = count
+            }
+        }
+    }
+    public private(set) var search: SourceSearch? { didSet { changed() } }
     public private(set) var snapshot = EngineSnapshot() { didSet { changed() } }
     /// Un episodio descargado que viste hasta el final y del que el reproductor pasó solo al siguiente (para «Borrar al
     /// terminar de verlo»: el último lo atiende quien cierra el reproductor).
@@ -229,6 +247,8 @@ public final class PlayerModel: ObservableModel {
     private var autoAdvances = 0
     private var reachedEnd = false
     private var finalReported = false
+    /// Dónde seguir según Trakt cuando solo se sabe el porcentaje (sin la duración): se busca en cuanto el motor la dice.
+    private var pendingResumeFraction: Double?
     private var generation = 0
     private var acceptingSnapshots = false     // false mientras se elige y se carga una fuente (lo que el motor diga entonces es del video anterior)
     private var retrying = false
@@ -289,7 +309,8 @@ public final class PlayerModel: ObservableModel {
         scrobbleStarted = false; scrobblePlaying = false; rescrobbleAfterSeek = false
         tracksApplied = false; addedExternalSubtitle = false; knownSubtitleIDs = []; preloadedNext = false
         upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; reachedEnd = false; finalReported = false
-        notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []
+        pendingResumeFraction = nil
+        notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []; search = nil
         acceptingSnapshots = false; retrying = false; nextLocal = nil; choicesAt = .distantPast
         // Lo encontrado «En internet» y el mapa de sustos eran del video anterior.
         foundSubtitles = nil; addedSubtitleURLs = []; subtitleSearchFailed = false; subtitlesOffline = false; searchTask = nil; scares = nil
@@ -312,11 +333,12 @@ public final class PlayerModel: ObservableModel {
         guard let request else { return }
         // Dónde ibas se pregunta ya, a la vez que las fuentes (antes esperaba a que llegaran).
         let watch = watch
-        let resume: Task<Double, Never>? = startAt == nil && !request.fromStart && request.startPosition == nil
-            ? Task { await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } : nil
+        // Lo más reciente entre Stremio y Trakt (lo que dejaste en la TV u otro dispositivo); sin Trakt, lo de Stremio.
+        let resume: Task<ResumePoint, Never>? = startAt == nil && !request.fromStart && request.startPosition == nil
+            ? Task { await watch.resumePoint(metaID: request.metaID, videoID: request.videoID, kind: request.kind) } : nil
         if let file = request.localFile {
             var start = startAt ?? 0
-            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resume?.value ?? 0 } }
+            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resumeStart(resume) } }
             guard mine == generation, !closing else { return }
             startLoading()
             do { try await loadVideo(file, at: start) } catch { fail("No pude abrir el archivo descargado.", .localFile) }
@@ -330,14 +352,21 @@ public final class PlayerModel: ObservableModel {
                 guard mine == generation, !closing else { return }
                 source = own
                 var start = startAt ?? 0
-                if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resume?.value ?? 0 } }
+                if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resumeStart(resume) } }
                 guard mine == generation, !closing, let url = own.playbackURL else { failedSources.insert(own.index); continue }
                 startLoading()
                 do { try await loadVideo(url, at: start); return }
                 catch { guard mine == generation else { return }; failedSources.insert(own.index); notice = .triedAnotherSource(attempt: 1); acceptingSnapshots = false; continue }
             }
             do {
+                if search == nil { search = SourceSearch() }
+                let events = await finder.events(kind: request.kind, videoID: request.videoID)
+                let listening = Task { [weak self] in
+                    for await event in events { guard let self, self.generation == mine else { return }; self.search?.apply(event) }
+                }
+                defer { listening.cancel() }
                 sourceChoices = try await finder.find(kind: request.kind, videoID: request.videoID, prefs: langs.prefs)
+                if mine == generation { search?.choices = sourceChoices.count }
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
                 if let chosen = request.sourceIndex, failedSources.isEmpty, let pick = sourceChoices.first(where: { $0.index == chosen }) { found = pick }
@@ -354,7 +383,7 @@ public final class PlayerModel: ObservableModel {
             guard let found else { return failedSources.isEmpty ? fail("No hay versiones en Real-Debrid para este título.", .noSources) : fail("Ninguna versión funcionó.", .noneWorked) }
             source = found
             var start = startAt ?? 0
-            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resume?.value ?? 0 } }
+            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resumeStart(resume) } }
             guard mine == generation, !closing else { return }
             guard let url = found.playbackURL else { failedSources.insert(found.index); continue }
             startLoading()
@@ -368,6 +397,24 @@ public final class PlayerModel: ObservableModel {
                 acceptingSnapshots = false
             }
         }
+    }
+
+    /// El segundo donde empezar. Si Trakt solo dio un porcentaje (sin duración conocida) se empieza en 0 y se busca ese punto
+    /// cuando el motor diga cuánto dura (`seekToPendingResume`).
+    private func resumeStart(_ resume: Task<ResumePoint, Never>?) async -> Double {
+        guard let point = await resume?.value else { return 0 }
+        pendingResumeFraction = point.fraction
+        return point.seconds
+    }
+
+    /// Ya se sabe la duración: se va al punto que dio Trakt (una vez). El aviso de «Viendo» a Trakt sale ya con ese avance.
+    private func seekToPendingResume(_ s: EngineSnapshot) async {
+        guard let fraction = pendingResumeFraction, s.duration > 0 else { return }
+        pendingResumeFraction = nil
+        let target = fraction * s.duration
+        guard target > 5, abs(target - s.position) > 5 else { return }
+        await engine.seek(to: target)
+        snapshot.position = target
     }
 
     /// Los mensajes de los motores pueden traer la dirección del video (con tu clave): nunca llegan a la pantalla.
@@ -396,6 +443,7 @@ public final class PlayerModel: ObservableModel {
         lastSnapshotAt = now
         snapshot = s
         restoreOffsetIfVersionChanged()
+        if pendingResumeFraction != nil, s.state == .playing || s.state == .paused, !isPlaceholder(s) { await seekToPendingResume(s) }
 
         if case .failed(let message) = s.state {
             // Una fuente que se corta (antes o después de empezar) se cambia por otra en el mismo punto, como en Orbital.
@@ -1134,7 +1182,9 @@ public final class PlayerModel: ObservableModel {
     // MARK: intro y siguiente episodio
     /// Las marcas de IntroDB del video que va a sonar (una vez por video; otra fuente del mismo no las vuelve a pedir).
     /// Esperas entre reintentos de las marcas de IntroDB cuando no responde.
-    var segmentRetryDelays: [Double] = [2, 5]
+    /// Antes eran dos (2 y 5 s) y luego se rendía por toda la reproducción: con la red floja al empezar, el episodio se quedaba
+    /// sin botón aunque la intro llegara minutos después (las de Game of Thrones empiezan pasados los 7 min).
+    var segmentRetryDelays: [Double] = [2, 5, 15, 30, 60, 120]
     private func loadSegmentsIfNeeded() {
         guard let videoID = request?.videoID, segmentsFor != videoID else { return }
         segmentsFor = videoID

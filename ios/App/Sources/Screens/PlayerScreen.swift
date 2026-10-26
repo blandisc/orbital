@@ -60,6 +60,9 @@ struct PlayerScreen: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @State private var holder = PlayerHolder()
     @State private var controlsVisible = true
+    /// Cuándo fue el último toque de un dedo y el último de dos (para que uno de dos dedos no mueva también los controles).
+    @State private var singleTapAt = Date.distantPast
+    @State private var twoFingerTapAt = Date.distantPast
     /// «Bloquear» (como Netflix): sin controles y la pantalla no responde a toques ni deslizamientos (para no pausar o adelantar
     /// sin querer). Un toque enseña la cápsula de arriba con «Desbloquear».
     @State private var locked = false
@@ -244,7 +247,9 @@ struct PlayerScreen: View {
             if case .failed = model.phase { statusOverlays(model) } else {
                 GeometryReader { geo in
                     let rect = videoRect(in: geo.size)
-                    statusOverlays(model).position(x: rect.midX, y: rect.midY)
+                    // La búsqueda de versiones, siempre al centro de la pantalla (todavía no hay video); lo demás, al del video.
+                    let searching = model.phase == .preparing && model.search != nil && !model.reconnecting
+                    statusOverlays(model).position(x: searching ? geo.size.width / 2 : rect.midX, y: searching ? geo.size.height / 2 : rect.midY)
                 }
                 .ignoresSafeArea(edges: landscape ? .all : [])
                 .allowsHitTesting(false)
@@ -623,8 +628,19 @@ struct PlayerScreen: View {
             .onTapGesture {
                 // Con los subtítulos rápidos abiertos, tocar el video los cierra (y nada más).
                 if subtitleDock { withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false }; return }
+                // Un toque con dos dedos también puede contar como toque: ese no mueve los controles.
+                if Date().timeIntervalSince(twoFingerTapAt) < DS.Gesture.twoFingerTapGuard { return }
+                singleTapAt = Date()
                 controlsVisible.toggle(); if controlsVisible { scheduleHide() }
             }
+            // Tocar con dos dedos, en cualquier parte: pausa o sigue (como en Infuse y en la app TV de Apple).
+            .gesture(TwoFingerTap {
+                twoFingerTapAt = Date()
+                // Si el mismo toque ya alcanzó a contar como uno de un dedo, se deshace lo que hizo con los controles.
+                if Date().timeIntervalSince(singleTapAt) < DS.Gesture.twoFingerTapGuard { controlsVisible.toggle(); singleTapAt = .distantPast }
+                Task { await model.togglePlay() }
+                flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill")
+            })
             .gesture(MagnifyGesture().onEnded { value in
                 // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
                 let target = VideoZoom.pinched(magnification: Double(value.magnification))
@@ -687,7 +703,7 @@ struct PlayerScreen: View {
                                           && !videoRect(in: size).insetBy(dx: 0, dy: -DS.PlayerPanel.handleReach).contains(value.startLocation)
                                           || startsOnHandle(value.startLocation, size: size):
                         movingVideo = true
-                        portraitAtDragStart = Self.resolvedCenter(portraitCenter, in: size)   // en vertical, arrastrar arriba o abajo mueve el video
+                        portraitAtDragStart = Self.resolvedCenter(portraitCenter, in: size, aspect: portraitAspect)   // en vertical, arrastrar arriba o abajo mueve el video
                         controlsVisible = true                 // se mueve a la altura de los controles (sin ellos va al centro)
                     case .vertical:
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
@@ -703,7 +719,7 @@ struct PlayerScreen: View {
                 switch dragAxis {
                 case .vertical where movingVideo:
                     // Libre, entre lo más arriba y lo más abajo que puede ir.
-                    let limits = Self.portraitLimits(in: size)
+                    let limits = Self.portraitLimits(in: size, aspect: portraitAspect)
                     portraitDrag = min(max(portraitAtDragStart + dy / Double(size.height), limits.lowerBound), limits.upperBound)
                 case .vertical:
                     guard let kind = verticalKind else { return }
@@ -734,11 +750,19 @@ struct PlayerScreen: View {
 
     @ViewBuilder private var gestureOverlays: some View {
         if indicatorVisible, let indicator {
-            HStack {
-                if indicator.kind == .brightness { DSGestureIndicator(symbol: indicator.symbol, value: indicator.value); Spacer() }
-                else { Spacer(); DSGestureIndicator(symbol: indicator.symbol, value: indicator.value) }
+            // Antes iba centrado en toda la pantalla: en vertical caía debajo del video, encima de la barra de avance, y en
+            // horizontal casi la tocaba. Ahora: en vertical, a media altura del video y de su tamaño; en horizontal, entre la
+            // barra de arriba y la de avance.
+            GeometryReader { geo in
+                let place = indicatorPlacement(in: geo.size)
+                HStack {
+                    if indicator.kind == .brightness { DSGestureIndicator(symbol: indicator.symbol, value: indicator.value, barHeight: place.bar); Spacer() }
+                    else { Spacer(); DSGestureIndicator(symbol: indicator.symbol, value: indicator.value, barHeight: place.bar) }
+                }
+                .padding(.horizontal, DS.Space.s8)
+                .frame(width: geo.size.width)
+                .position(x: geo.size.width / 2, y: place.y)
             }
-            .padding(DS.Space.s8)
             .transition(.opacity)
             .allowsHitTesting(false)
         }
@@ -991,6 +1015,20 @@ struct PlayerScreen: View {
         }
     }
 
+    /// Dónde va el indicador de brillo o volumen (su centro a lo alto) y de qué largo es su barra, para que nunca toque la barra
+    /// de avance.
+    private func indicatorPlacement(in size: CGSize) -> (y: CGFloat, bar: CGFloat) {
+        func bar(_ room: CGFloat) -> CGFloat { min(DS.Gesture.indicatorBarHeight, max(DS.Gesture.indicatorBarMin, room - DS.Gesture.indicatorChrome)) }
+        if landscape {
+            let top = DS.Space.s8, bottom = DS.Gesture.fastForwardPillBottomInset
+            let room = max(0, size.height - top - bottom)
+            return (top + room / 2, bar(room))
+        }
+        if fillsPortrait || ipod != nil { return (size.height / 2, DS.Gesture.indicatorBarHeight) }
+        let rect = videoRect(in: size)
+        return (rect.midY, bar(rect.height - DS.Space.s4))
+    }
+
     /// La agarradera: una franja a lo ancho justo debajo del video (fácil de agarrar aunque la rayita sea chica).
     private func startsOnHandle(_ point: CGPoint, size: CGSize) -> Bool {
         guard !landscape, !fillsPortrait, ipod == nil else { return false }
@@ -1012,6 +1050,12 @@ struct PlayerScreen: View {
         switch model.phase {
         // Volviendo a abrir el mismo video (al regresar a la app): solo la ruedita, sin letrero (antes «Reconectando…»).
         case .preparing where model.reconnecting: QuietSpinner()
+        // Buscando versiones de verdad: la órbita con lo que contesta cada complemento.
+        case .preparing where model.search != nil:
+            if let search = model.search {
+                SourceOrbit(found: max(search.found, model.source != nil ? 1 : 0), chosen: model.source != nil, failed: triedCount(model),
+                            title: orbitTitle(model, search), detail: orbitDetail(model, search), sideBySide: landscape)
+            }
         case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
         case .failed(let message):
             // Una pantalla por cada caso (sin fuentes, ninguna sirvió, sin red…), sobre los controles, que se esconden.
@@ -1024,6 +1068,40 @@ struct PlayerScreen: View {
             if model.reconnecting { QuietSpinner() }
             else if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
         }
+    }
+
+    private func triedCount(_ model: PlayerModel) -> Int {
+        if case .triedAnotherSource(let n)? = model.notice { return n }
+        return 0
+    }
+
+    /// Lo que dice la órbita: a quién se le pregunta, cuántas llegaron y cuál se eligió (todo de la búsqueda real).
+    private func orbitTitle(_ model: PlayerModel, _ search: PlayerModel.SourceSearch) -> Text {
+        if let src = model.source {
+            let n = triedCount(model)
+            return n > 0 ? Text("Probando otra versión (\(n))…") : Text("Elegimos \(versionText(src))")
+        }
+        if search.found == 1 { return Text("1 versión encontrada") }
+        let n = search.found
+        if n > 1 { return Text("\(n) versiones encontradas") }
+        return Text("Buscando en tus complementos")
+    }
+
+    private func orbitDetail(_ model: PlayerModel, _ search: PlayerModel.SourceSearch) -> Text? {
+        if let src = model.source { return triedCount(model) > 0 ? Text(verbatim: versionText(src)) : Text("Abriendo…") }
+        if search.addons.isEmpty { return nil }
+        let answeredCount = search.answered
+        if answeredCount > 0 { return Text("\(answeredCount) de \(search.addons.count) complementos") }
+        let names = search.addons.prefix(DS.SourceOrbit.namesShown).joined(separator: " · ")
+        let moreCount = search.addons.count - DS.SourceOrbit.namesShown
+        return moreCount > 0 ? Text("\(names) y \(moreCount) más") : Text(verbatim: names)
+    }
+
+    /// «Latino · 1080p»: el idioma que va a sonar y la calidad de una versión.
+    private func versionText(_ src: Source) -> String {
+        let ui = env.services.appSettings.uiLanguage
+        let language = Streams.playingLanguage(src, env.services.appSettings.preferences()).map { LanguageFlags.flagged(Streams.versionLanguageName($0.code, in: ui), $0.code) }
+        return ([language].compactMap { $0 } + src.qualitySummary).joined(separator: " · ")
     }
 
     /// La ruedita sola, y solo si tarda más de un instante (lo normal es que el video vuelva antes y no se vea nada).
@@ -1321,9 +1399,7 @@ struct PlayerScreen: View {
     private func ipodDetail(_ model: PlayerModel) -> String {
         if !current.episodeLabel.isEmpty { return current.episodeLabel }
         guard let src = model.source else { return "" }
-        let ui = env.services.appSettings.uiLanguage
-        let language = Streams.playingLanguage(src, env.services.appSettings.preferences()).map { Streams.versionLanguageName($0.code, in: ui) }
-        return ([language].compactMap { $0 } + src.qualitySummary).joined(separator: " · ")
+        return versionText(src)
     }
 
     // MARK: descargar
@@ -1445,7 +1521,7 @@ struct PlayerScreen: View {
         }
         .sheet(isPresented: $dockLanguages) {
             LanguageSearchList(codes: SubtitleLanguage.all, available: model.subtitleLanguages.filter { !["es", "en"].contains($0.code) },
-                               name: { Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: SubtitleLanguage.code($0) ?? $0)?.capitalized ?? $0 }) { code in
+                               name: { LanguageFlags.flagged(Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: SubtitleLanguage.code($0) ?? $0)?.capitalized ?? $0, SubtitleLanguage.code($0) ?? $0) }) { code in
                 Task { await model.chooseLanguage(code) }
             }
         }
@@ -1484,7 +1560,7 @@ struct PlayerScreen: View {
         let code = currentSubtitleCode(model).flatMap { $0 == "CC" ? nil : $0 } ?? "es"
         let versions = model.subtitleVersions(language: code)
         let locale = Locale(identifier: uiLanguage)
-        let name = locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code
+        let name = LanguageFlags.flagged(locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code, code)
         return NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -1520,7 +1596,7 @@ struct PlayerScreen: View {
         // Guardado con la descarga: «Español 2 · OpenSubtitles · para sordos» (la copia va debajo, en la hoja de versiones).
         if let saved = v.saved {
             let locale = Locale(identifier: env.services.appSettings.uiLanguage)
-            let language = locale.localizedString(forLanguageCode: v.language)?.capitalized(with: locale) ?? v.language
+            let language = LanguageFlags.flagged(locale.localizedString(forLanguageCode: v.language)?.capitalized(with: locale) ?? v.language, v.language)
             return ["\(language) \(v.savedNumber ?? index + 1)", saved.source,
                     saved.hearingImpaired ? tr("para sordos") : saved.foreignOnly ? tr("forzados") : nil].compactMap { $0 }.joined(separator: " · ")
         }
@@ -1535,7 +1611,7 @@ struct PlayerScreen: View {
     private func subtitleDockView(_ model: PlayerModel) -> some View {
         let settings = env.services.appSettings
         let locale = Locale(identifier: settings.uiLanguage)
-        let name = { (code: String) in locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code }
+        let name = { (code: String) in LanguageFlags.flagged(locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code, code) }
         let on = currentSubtitleCode(model).flatMap { $0 == "CC" ? nil : $0 }
         let off = model.snapshot.selectedSubtitle == nil
         var codes = ["es", "en"]
@@ -1582,14 +1658,14 @@ struct PlayerScreen: View {
         let audio: [SubtitleDock.Language] = audioTracks.compactMap { t in
             let code = TrackChooser.audioCode(t) ?? "t\(t.id)"
             guard seenAudio.insert(code).inserted else { return nil }
-            let title = TrackChooser.audioCode(t).map { Streams.versionLanguageName($0, in: ui) } ?? TrackChooser.label(t, locale: Locale(identifier: ui), technical: false)
+            let title = TrackChooser.audioCode(t).map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: ui), $0) } ?? TrackChooser.label(t, locale: Locale(identifier: ui), technical: false)
             return .init(id: String(t.id), title: title, selected: model.snapshot.selectedAudio == t.id)
         }
         // Los idiomas que solo trae otra versión: sin cine ni tráileres, la más parecida a la tuya y diciendo a qué va.
         let others: [SubtitleDock.Language] = model.otherVersionAudio(excluding: seenAudio).prefix(DS.PlayerPanel.otherVersionsShown).map { o in
             let speed = o.instant ? Strings.tr("en Real-Debrid", language: ui) : Strings.tr("Real-Debrid aún no la tiene", language: ui)
             let detail = "↻ " + ([o.sure ? nil : Strings.tr("se supone", language: ui), o.quality.isEmpty ? nil : o.quality, speed].compactMap { $0 }.joined(separator: " · "))
-            return .init(id: String(o.sourceIndex), title: o.code == "es" ? VersionLanguageRow.spanish(ui) : Streams.versionLanguageName(o.code, in: ui),
+            return .init(id: String(o.sourceIndex), title: LanguageFlags.flagged(o.code == "es" ? VersionLanguageRow.spanish(ui) : Streams.versionLanguageName(o.code, in: ui), o.code),
                          selected: false, detail: detail, guessed: !o.sure)
         }
         let otherLanguage = Dictionary(model.otherVersionAudio(excluding: seenAudio).map { (String($0.sourceIndex), $0.code) }, uniquingKeysWith: { a, _ in a })
@@ -1637,7 +1713,7 @@ struct PlayerScreen: View {
         guard let src = model.source else { return "" }
         // El idioma que de verdad suena (la pista puesta) gana a lo que decía el nombre.
         let heard = model.snapshot.audioTracks.first { $0.id == model.snapshot.selectedAudio }.flatMap(TrackChooser.audioCode)
-        let language = (heard ?? Streams.playingLanguage(src, env.services.appSettings.preferences())?.code).map { Streams.versionLanguageName($0, in: ui) }
+        let language = (heard ?? Streams.playingLanguage(src, env.services.appSettings.preferences())?.code).map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: ui), $0) }
         let size = src.size > 0 ? ByteCountFormatter.string(fromByteCount: Int64(src.size), countStyle: .file) : nil
         return ([language, src.resolution.isEmpty ? nil : src.resolution, size].compactMap { $0 }).joined(separator: " · ")
     }
@@ -1741,7 +1817,7 @@ struct PlayerScreen: View {
                 ?? s.selectedSubtitle.flatMap({ id in SubtitleLanguage.code(s.subtitleTracks.first { $0.id == id }?.language) }) else { return nil }
         let versions = model.subtitleVersions(language: language)
         let at = versions.firstIndex { $0.id == model.selectedVersionID }
-        let name = Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: language)?.capitalized ?? language
+        let name = LanguageFlags.flagged(Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: language)?.capitalized ?? language, language)
         // En el idioma de la app (no el del sistema: salía «1 of 3» con la app en español).
         let title = at.map { String(format: Strings.tr("%@ · %lld de %lld", language: env.services.appSettings.uiLanguage), name, $0 + 1, versions.count) } ?? name
         guard let at else { return (title, Text("Cargando…")) }
@@ -1885,10 +1961,10 @@ struct PlayerScreen: View {
         // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
-        let band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter)
+        let band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter, aspect: portraitAspect)
         // «Ajuste de aspecto» en vertical: el cuadro con su margen a los lados, lejos de las esquinas redondeadas.
         if zoom == .fitSafeArea {
-            let width = band.width - DS.Space.gutter * 2, height = width / DS.Poster.stillAspect
+            let width = band.width - DS.Space.gutter * 2, height = width * band.height / max(band.width, 1)
             return CGRect(x: band.minX + DS.Space.gutter, y: band.midY - height / 2, width: width, height: height)
         }
         return band
@@ -1899,8 +1975,8 @@ struct PlayerScreen: View {
     /// hasta aquí para que el episodio arranque donde ya está la imagen.
     /// Arriba nunca llega a la barra de botones (antes, subido hasta arriba, se encimaba con ✕ y el nombre) y abajo deja el
     /// lugar de los controles (la barra, «Saltar intro», ±10 y el botón grande).
-    static func portraitVideoRect(in size: CGSize, center: Double) -> CGRect {
-        let height = min(size.width / DS.Poster.stillAspect, size.height)
+    static func portraitVideoRect(in size: CGSize, center: Double, aspect: Double = Double(DS.Poster.stillAspect)) -> CGRect {
+        let height = portraitHeight(in: size, aspect: aspect)
         let top = DS.PlayerPanel.portraitTopClearance
         let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
         let y = min(max(top, size.height * center - height / 2), lowest)
@@ -1908,24 +1984,36 @@ struct PlayerScreen: View {
     }
     /// Lo más arriba y lo más abajo que puede ir el video (como centro, parte del alto): debajo de la barra de botones y
     /// dejando el lugar de los controles.
-    static func portraitLimits(in size: CGSize) -> ClosedRange<Double> {
+    static func portraitLimits(in size: CGSize, aspect: Double = Double(DS.Poster.stillAspect)) -> ClosedRange<Double> {
         guard size.height > 0 else { return Double(DS.PlayerPanel.portraitCenter)...Double(DS.PlayerPanel.portraitCenter) }
-        let height = min(size.width / DS.Poster.stillAspect, size.height)
+        let height = portraitHeight(in: size, aspect: aspect)
         let top = DS.PlayerPanel.portraitTopClearance
         let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
         return Double((top + height / 2) / size.height)...Double((lowest + height / 2) / size.height)
     }
     /// El centro del video como fracción del alto: el que dejaste, o (negativo: sin mover) el de lo más arriba, donde
     /// `portraitVideoRect` lo pinta. Sin esto, arrastrar o mover con VoiceOver partía de -1 y el video no bajaba.
-    static func resolvedCenter(_ stored: Double, in size: CGSize) -> Double {
+    static func resolvedCenter(_ stored: Double, in size: CGSize, aspect: Double = Double(DS.Poster.stillAspect)) -> Double {
         if stored >= 0 || size.height <= 0 { return stored }
-        return portraitLimits(in: size).lowerBound
+        return portraitLimits(in: size, aspect: aspect).lowerBound
     }
+
+    /// El alto del video en vertical: de orilla a orilla en la proporción del cuadro. Un video más cuadrado que 16:9 (Los
+    /// Simpson en 4:3) crece a lo alto en vez de quedar con franjas negras a los lados dentro de una banda 16:9; uno más
+    /// ancho (cine) se queda en la banda 16:9 de siempre. Nunca invade el lugar de los controles.
+    static func portraitHeight(in size: CGSize, aspect: Double) -> CGFloat {
+        let ratio = CGFloat(min(max(aspect, DS.PlayerPanel.portraitMinAspect), Double(DS.Poster.stillAspect)))
+        let room = max(size.width / DS.Poster.stillAspect, size.height - DS.PlayerPanel.portraitTopClearance - DS.PlayerPanel.portraitControlsReserve)
+        return min(size.width / ratio, room, size.height)
+    }
+
+    /// La proporción del cuadro que suena (la mide el motor al cargar); 16:9 mientras no se sabe.
+    private var portraitAspect: Double { holder.engine.videoAspect ?? Double(DS.Poster.stillAspect) }
 
     /// VoiceOver: subir o bajar el video un tramo.
     private func stepVideo(_ step: Int, size: CGSize) {
-        let limits = Self.portraitLimits(in: size)
-        let next = min(max(Self.resolvedCenter(portraitCenter, in: size) + Double(step) * DS.PlayerPanel.voiceOverStep, limits.lowerBound), limits.upperBound)
+        let limits = Self.portraitLimits(in: size, aspect: portraitAspect)
+        let next = min(max(Self.resolvedCenter(portraitCenter, in: size, aspect: portraitAspect) + Double(step) * DS.PlayerPanel.voiceOverStep, limits.lowerBound), limits.upperBound)
         withAnimation(DS.Motion.base(reduceMotion)) { portraitCenter = next }
     }
 
@@ -2038,5 +2126,20 @@ struct PlayerScreen: View {
                 DispatchQueue.main.async { requestGeometry(scene, target, attemptsLeft: attemptsLeft - 1, generation: generation) }
             }
         }
+    }
+}
+
+/// Un toque con dos dedos (SwiftUI no lo trae): el reconocedor de UIKit dentro de los gestos de SwiftUI, así convive con el
+/// doble toque, el pellizco y los arrastres del reproductor.
+private struct TwoFingerTap: UIGestureRecognizerRepresentable {
+    let action: () -> Void
+    func makeUIGestureRecognizer(context: Context) -> UITapGestureRecognizer {
+        let tap = UITapGestureRecognizer()
+        tap.numberOfTouchesRequired = 2
+        tap.numberOfTapsRequired = 1
+        return tap
+    }
+    func handleUIGestureRecognizerAction(_ recognizer: UITapGestureRecognizer, context: Context) {
+        if recognizer.state == .ended { action() }
     }
 }

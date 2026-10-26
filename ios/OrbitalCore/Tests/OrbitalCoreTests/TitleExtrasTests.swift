@@ -111,6 +111,19 @@ final class IntroDBTests: XCTestCase {
         XCTAssertNil(notImdb, "sin id de IMDb no se pregunta")
     }
 
+    /// Lo encontrado se guarda en el teléfono: sin red (una descarga en el avión) el botón sigue saliendo.
+    func testFoundSegmentsAreKeptForOfflinePlayback() async {
+        let http = FakeHTTP()
+        http.json["https://api.introdb.app/segments?imdb_id=tt0944947&season=1&episode=1"] = ["intro": ["start_sec": 437, "end_sec": 531]]
+        let store = InMemoryKeyValueStore()
+        let online = await IntroDB(http: http, store: store).segments(videoID: "tt0944947:1:1")
+        XCTAssertEqual(online?.intro, 437...531)
+        let offline = await IntroDB(http: FakeHTTP(), store: store).segments(videoID: "tt0944947:1:1")
+        XCTAssertEqual(offline?.intro, 437...531, "sin red, las guardadas")
+        let missing = await IntroDB(http: FakeHTTP(), store: store).segments(videoID: "tt0944947:1:2")
+        XCTAssertNil(missing)
+    }
+
     func testWhatTheTitleAskedIsReusedByThePlayerButNotAMiss() async {
         let http = FakeHTTP()
         http.json["https://api.introdb.app/segments?imdb_id=tt0944947&season=1&episode=1"] = ["intro": ["start_sec": 10, "end_sec": 70]]

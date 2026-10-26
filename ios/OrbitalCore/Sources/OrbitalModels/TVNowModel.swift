@@ -68,16 +68,24 @@ public final class TVNowModel: ObservableModel {
     private var active = false
     private var servicesWatch: ObservableModel.Subscription?
     private var seenGeneration = 0
+    /// Lo último que se supo de la conexión (dirección y si hay token): cualquier aviso de los servicios la compara.
+    private var seenConnection = ""
+    private var connection: String { let o = services.orbital; return o.isConfigured ? (o.base?.absoluteString ?? "") : "" }
 
     public init(_ services: Services, intervalSeconds: Double = 5) {
         self.services = services
         self.intervalNanoseconds = UInt64(intervalSeconds * 1_000_000_000)
         super.init()
         seenGeneration = services.generation
+        seenConnection = connection
         // Conectar tu Orbital (a mano o con el QR) con la app abierta: el sondeo empieza ya, no al volver de segundo plano.
+        // Se mira la conexión misma y no solo `generation`: volver a emparejar sin claves nuevas no rearma los servicios.
         servicesWatch = services.onChange { [weak self] in
-            guard let self, self.services.generation != self.seenGeneration else { return }
+            guard let self else { return }
+            let connection = self.connection
+            guard self.services.generation != self.seenGeneration || connection != self.seenConnection else { return }
             self.seenGeneration = self.services.generation
+            self.seenConnection = connection
             self.changed()   // conectaste o desconectaste tu Orbital: el accesorio aparece o se va
             if self.active { self.setActive(true) }
         }

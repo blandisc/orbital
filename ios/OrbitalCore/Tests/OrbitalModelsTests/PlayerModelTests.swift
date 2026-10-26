@@ -543,6 +543,77 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(progress, 700.0 / 1320 * 100, accuracy: 0.5)
     }
 
+    /// Un Trakt con sesión propia en su propia red falsa (`probe`), y lo que dejaste en pausa en otro dispositivo.
+    func traktRig(remote: JSON? = nil, paused: JSON = []) throws -> (Rig, FakeHTTP) {
+        let secrets = InMemorySecrets()
+        secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(1_760_000_000 + 86400)}"#)
+        let probe = FakeHTTP()
+        let trakt = Trakt(http: probe, secrets: secrets, clientID: "CID", clock: { Date(timeIntervalSince1970: 1_760_000_000) }, pause: { _ in })
+        let rig = try Rig(remote: remote, trakt: trakt)
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("a")]]
+        probe.json["https://api.trakt.tv/sync/playback"] = paused
+        for action in ["start", "pause", "stop"] { probe.json["https://api.trakt.tv/scrobble/\(action)"] = [:] }
+        return (rig, probe)
+    }
+
+    static let pausedOnTheTV: JSON = [["progress": 50, "paused_at": "2025-10-09T08:00:00.000Z", "id": 7, "type": "episode",
+                                       "episode": ["season": 1, "number": 1], "show": ["ids": ["imdb": "tt0386676"]]]]
+
+    /// Lo dejaste en la TV después que en el iPhone: se sigue donde dice Trakt, con la duración que Stremio ya conoce.
+    func testResumesFromTraktWhenItsPauseIsNewerThanStremio() async throws {
+        let (rig, _) = try traktRig(remote: ["_id": "tt0386676", "state": ["video_id": "tt0386676:1:1", "timeOffset": 300_000, "duration": 1_320_000,
+                                                                          "lastWatched": "2025-10-08T08:00:00.000Z"]],
+                                    paused: Self.pausedOnTheTV)
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.engine.loads.first?.start, 660, "50 % de 1320 s (Trakt es más reciente)")
+    }
+
+    func testStremioStillWinsWhenItIsNewer() async throws {
+        let (rig, _) = try traktRig(remote: ["_id": "tt0386676", "state": ["video_id": "tt0386676:1:1", "timeOffset": 300_000, "duration": 1_320_000,
+                                                                          "lastWatched": "2025-10-09T09:00:00.000Z"]],
+                                    paused: Self.pausedOnTheTV)
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.engine.loads.first?.start, 300)
+    }
+
+    /// Solo el porcentaje (Stremio no tiene ese episodio): se empieza y, en cuanto el motor dice cuánto dura, se va a ese punto;
+    /// Trakt recibe el «Viendo» ya con ese avance.
+    func testATraktPercentWithoutDurationSeeksOnceTheEngineKnowsIt() async throws {
+        let (rig, probe) = try traktRig(paused: Self.pausedOnTheTV)
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.engine.loads.first?.start, 0)
+        await rig.model.handle(rig.playing(0, duration: 2000))
+        XCTAssertTrue(rig.engine.calls.contains("seek 1000"))
+        await rig.model.handle(rig.playing(1000, duration: 2000))
+        XCTAssertEqual(rig.engine.calls.filter { $0.hasPrefix("seek") }.count, 1, "una sola vez")
+        let progress = try XCTUnwrap(JSON.parse(try XCTUnwrap(probe.bodies("https://api.trakt.tv/scrobble/start").first))?["progress"]?.doubleValue)
+        XCTAssertEqual(progress, 50, accuracy: 0.5)
+    }
+
+    func testFromStartIgnoresTrakt() async throws {
+        let (rig, probe) = try traktRig(paused: Self.pausedOnTheTV)
+        await rig.model.begin(rig.request(fromStart: true))
+        await rig.model.handle(rig.playing(0, duration: 2000))
+        XCTAssertFalse(rig.engine.calls.contains { $0.hasPrefix("seek") })
+        XCTAssertFalse(probe.calls.contains { $0.hasSuffix("/sync/playback") })
+    }
+
+    /// Pausar manda `pause` con el avance exacto (una vez por pausa) y cerrar manda `stop`: Trakt guarda ese punto para el otro
+    /// dispositivo.
+    func testPauseAndCloseSendTheExactProgressToTrakt() async throws {
+        let (rig, probe) = try traktRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(330))
+        await rig.model.handle(rig.playing(660, state: .paused))
+        await rig.model.handle(rig.playing(660, state: .paused))
+        await rig.model.close()
+        func progress(_ action: String) -> [Double] {
+            probe.bodies("https://api.trakt.tv/scrobble/\(action)").compactMap { JSON.parse($0)?["progress"]?.doubleValue }
+        }
+        XCTAssertEqual(progress("pause"), [50], "una pausa, un aviso")
+        XCTAssertEqual(progress("stop"), [50])
+    }
+
     func testTheChosenSpeedSurvivesAnotherSource() async throws {
         let rig = try twoSources()
         await rig.model.begin(rig.request())

@@ -22,8 +22,19 @@ struct RootView: View {
     @State private var services: ModelObserver<Services>
     @Environment(\.scenePhase) private var scenePhase
 
+    /// La entrada de la app: solo al arrancar en frío (cada arranque arma una raíz nueva). En modo demo, solo con
+    /// `-demo-splash` (las capturas no la esperan).
+    @State private var splashing: Bool
+
     init() {
         let env = AppEnvironment.shared
+        #if DEBUG
+        let splash = !Demo.isOn || ProcessInfo.processInfo.arguments.contains("-demo-splash")
+        #else
+        let splash = true
+        #endif
+        _splashing = State(wrappedValue: splash)
+        env.ui.splashing = splash
         _session = State(wrappedValue: ModelObserver(env.session))
         _services = State(wrappedValue: ModelObserver(env.services))
     }
@@ -46,6 +57,7 @@ struct RootView: View {
             }
         }
         .background(DS.bg.ignoresSafeArea())
+        .overlay { if splashing { LaunchSplash(target: ui.homeLogoFrame) { splashing = false; ui.splashing = false } } }
         .fullScreenCover(item: $env.playing) { request in PlayerScreen(request: request) }
         .sensoryFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
         .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {
@@ -163,7 +175,12 @@ struct MainTabs: View {
     }
 
     var body: some View {
-        TabView(selection: $tab) {
+        // Tocar «Buscar» estando ya en Buscar abre el campo con el teclado (TabView avisa aunque la pestaña no cambie).
+        let selection = Binding(get: { tab }, set: { new in
+            if new == 2, tab == 2, paths[2].isEmpty { ui.focusSearch = true }
+            tab = new
+        })
+        TabView(selection: selection) {
             Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
             Tab("Para ti", image: OrbitalIcon.spark.asset, value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() }.tint(DS.primary) }
             // «arrow.down.to.line» no tiene versión rellena: queda de contorno como las demás (el círculo salía siempre relleno).
@@ -172,8 +189,9 @@ struct MainTabs: View {
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
-        // En Buscar la barra no se encoge al bajar: con ella se escondía el campo de búsqueda.
+        // En Buscar iOS no encoge la barra (lleva el campo): ahí se esconde entera al bajar (BrowseView).
         .tabBarMinimizeBehavior(tab == 2 ? .never : .onScrollDown)
+        .onChange(of: tab) { _, t in if t == 2 { Perf.begin("stab"); Perf.mark("stab.tap") } }
         .task {
             let downloads = env.services.downloads
             pendingDownloads = await downloads.all.filter { $0.state != .done }.count
@@ -235,13 +253,14 @@ struct MainTabs: View {
         .onChange(of: ui.openRemote, initial: true) { _, wants in
             guard wants else { return }
             ui.openRemote = false
-            if tvNow.model.isConfigured { remoteLarge = true; showRemote = true }
+            // Sin tu Orbital conectada (el control del Centro de control abre la app igual): a Ajustes, donde se conecta.
+            if tvNow.model.isConfigured { remoteLarge = true; showRemote = true } else { paths[tab].append(SettingsRoute()) }
         }
         .task { forceDemoTab() }   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer
         #if DEBUG
         // iOS restaura la pestaña que viste la última vez (independiente de nuestro @State) y lo hace después de
         // aparecer y del `.task` de arriba: si en modo demo algo la cambia por detrás, se vuelve a pedir la tuya.
-        .onChange(of: tab) { _, new in if Demo.isOn, new != Demo.tab { tab = Demo.tab } }
+        .onChange(of: tab) { _, new in if Demo.isOn, !Demo.freeTabs, new != Demo.tab { tab = Demo.tab } }
         #endif
     }
 

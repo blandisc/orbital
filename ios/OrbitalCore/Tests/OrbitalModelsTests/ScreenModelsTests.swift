@@ -174,8 +174,9 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(request.episodeLabel.hasPrefix("T1 · E3"))
     }
 
-    /// CEN-37: con la consola conectada la ficha toma su sinopsis (en español) y si el logo es oscuro; sin consola, lo de Cinemeta.
-    func testTitleTakesTheConsolesOverviewWhenConnected() async throws {
+    /// CEN-37: sin clave de TMDB en el iPhone, con la consola conectada la ficha toma su sinopsis (en español); sin consola, lo
+    /// de Cinemeta. Con clave, el iPhone es independiente: no le pregunta a la consola.
+    func testTitleTakesTheConsolesOverviewOnlyWithoutItsOwnTmdbKey() async throws {
         let rig = try titleRig()
         let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
         await title.load()
@@ -189,12 +190,19 @@ final class ScreenModelsTests: XCTestCase {
         rig.http.json["https://tv.example/api/foryou/details?key=video:tt0386676&kind=series"] = ["overview": " Un falso documental. ", "logo_dark": true]
         await title.loadConsoleDetails()
         XCTAssertEqual(title.overview, "Un falso documental.")
-        XCTAssertTrue(title.logoIsDark)
 
         rig.http.json["https://tv.example/api/foryou/details?key=video:tt0386676&kind=series"] = ["overview": ""]
         let other = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
         await other.load(); await other.loadConsoleDetails()
         XCTAssertEqual(other.overview, other.info.description, "una sinopsis vacía no tapa la de Cinemeta")
+
+        rig.http.json["https://tv.example/api/foryou/details?key=video:tt0386676&kind=series"] = ["overview": "De la consola"]
+        rig.secrets.set(SecretKey.tmdbKey, "clave")
+        rig.services.reconfigure()
+        let own = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await own.load(); await own.loadConsoleDetails()
+        XCTAssertNil(own.consoleOverview, "con su propia clave de TMDB no depende de la consola")
+        XCTAssertEqual(own.overview, own.info.description)
     }
 
     func testTitleWithoutHistoryStartsAtTheFirstEpisode() async throws {
@@ -493,15 +501,67 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(model.importedFromOrbital, [])
     }
 
-    func testConnectingTheTVBringsItsTraktSessionSoThereIsNothingToLink() async throws {
+    /// La sesión que antes prestaba la consola (sin refresh token) se olvida aquí SIN revocarla (revocarla desconectaría la
+    /// consola): el iPhone queda «por conectar» con su propia sesión, y la app de Trakt sí se trae.
+    func testConnectingTheTVNoLongerAdoptsItsSessionAndForgetsTheBorrowedOneWithoutRevoking() async throws {
         let rig = try ServicesRig()
         rig.http.json["https://legion.example/api/ping"] = ["ok": true]
-        rig.http.json["https://legion.example/api/companion"] = ["tmdb_key": "k", "trakt_client_id": "cid", "region": "MX",
-                                                                 "trakt_session": ["access_token": "AT", "expires_at": 1_760_100_000]]
+        rig.http.json["https://legion.example/api/companion"] = ["tmdb_key": "k", "trakt_client_id": "cid", "region": "MX"]
+        rig.secrets.set(SecretKey.traktTokens, #"{"access_token":"PRESTADA","expires_at":1760100000}"#)   // la de antes
         let got = try await rig.services.connectOrbital(address: "https://legion.example", token: "secreto")
         XCTAssertEqual(got, ["TMDB", "Trakt"])
-        XCTAssertEqual(rig.services.trakt?.linked, true, "Trakt queda conectado con la sesión de la consola")
-        XCTAssertEqual(rig.services.trakt?.borrowed, true)
+        XCTAssertEqual(rig.services.trakt?.linked, false, "nada de la sesión de la consola: se conecta la del iPhone")
+        XCTAssertNil(rig.secrets.get(SecretKey.traktTokens))
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("/oauth/revoke") }, "revocarla desconectaría la consola")
+        XCTAssertEqual(rig.secrets.get(SecretKey.traktClientID), "cid", "la app de Trakt también al Keychain (reinstalar)")
+        XCTAssertEqual(SettingsModel(rig.services).trakt, .unlinked, "Ajustes ofrece «Conectar Trakt»")
+    }
+
+    /// Al abrir la app con la sesión prestada de antes (aunque la consola no conteste): se olvida sin revocar.
+    func testABorrowedSessionIsForgottenAtLaunchWithoutRevoking() async throws {
+        let first = try ServicesRig(traktClientID: "cid")
+        first.secrets.set(SecretKey.traktTokens, #"{"access_token":"PRESTADA","expires_at":1760100000}"#)
+        first.services.reconfigure()
+        XCTAssertEqual(first.services.trakt?.linked, false)
+        XCTAssertNil(first.secrets.get(SecretKey.traktTokens))
+        XCTAssertFalse(first.http.calls.contains { $0.contains("api.trakt.tv") }, "sin llamar a Trakt (ni a /oauth/revoke)")
+    }
+
+    /// El Client ID: el de Ajustes, luego el que trae la consola, luego el incluido en la app.
+    func testTraktClientIDPriorityIsSettingsThenConsoleThenBuiltIn() async throws {
+        let builtIn = try ServicesRig(builtInTraktClientID: "INCLUIDO")
+        XCTAssertNotNil(builtIn.services.trakt, "sin Ajustes ni consola: el incluido en la app")
+        XCTAssertEqual(Services.traktClientID(settings: AppSettings(), secrets: InMemorySecrets(), builtIn: "INCLUIDO"), "INCLUIDO")
+        // Llega la consola: su Client ID gana al incluido.
+        builtIn.http.json["https://legion.example/api/ping"] = ["ok": true]
+        builtIn.http.json["https://legion.example/api/companion"] = ["tmdb_key": "", "trakt_client_id": "CONSOLA", "region": "MX"]
+        _ = try await builtIn.services.connectOrbital(address: "https://legion.example", token: "t")
+        XCTAssertEqual(Services.traktClientID(settings: builtIn.services.appSettings, secrets: builtIn.secrets, builtIn: "INCLUIDO"), "CONSOLA")
+        // El escrito en Ajustes › Avanzado gana a los dos, y la consola no lo pisa.
+        let model = SettingsModel(builtIn.services)
+        model.update { $0.traktClientID = "MIO" }
+        XCTAssertEqual(builtIn.secrets.get(SecretKey.traktClientID), "MIO", "pegado a mano también va al Keychain")
+        _ = try await builtIn.services.connectOrbital()
+        XCTAssertEqual(Services.traktClientID(settings: builtIn.services.appSettings, secrets: builtIn.secrets, builtIn: "INCLUIDO"), "MIO")
+        XCTAssertEqual(builtIn.services.appSettings.traktClientID, "MIO")
+    }
+
+    /// Sin consola y sin secreto: con el Client ID incluido en la app, «Conectar Trakt» da el código y conecta la sesión del
+    /// iPhone. Trakt (PKCE) no pide secreto: no se manda `client_secret`.
+    func testStandaloneLinkWithTheBuiltInClientIDAndNoSecret() async throws {
+        let rig = try ServicesRig(builtInTraktClientID: "INCLUIDO")
+        XCTAssertTrue(rig.services.appSettings.orbitalAddress.isEmpty, "sin tu Orbital")
+        rig.http.json["https://api.trakt.tv/oauth/device/code"] = ["device_code": "DC", "user_code": "ABCD1234", "verification_url": "https://trakt.tv/activate", "interval": 1, "expires_in": 60]
+        rig.http.json["https://api.trakt.tv/oauth/device/token"] = ["access_token": "AT", "refresh_token": "RT", "created_at": .double(rig.clock.now.timeIntervalSince1970), "expires_in": 604800]
+        rig.http.json["https://api.trakt.tv/users/settings"] = ["user": ["username": "fer"]]
+        let model = SettingsModel(rig.services)
+        XCTAssertEqual(model.trakt, .unlinked)
+        await model.linkTrakt()
+        XCTAssertEqual(model.trakt, .linked("fer"))
+        let body = try XCTUnwrap(JSON.parse(try XCTUnwrap(rig.http.bodies("https://api.trakt.tv/oauth/device/token").first)))
+        XCTAssertEqual(body["client_id"]?.string, "INCLUIDO")
+        XCTAssertNil(body["client_secret"], "las apps nuevas de Trakt no tienen secreto")
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("legion") || $0.contains("/api/companion") }, "nada de la consola")
     }
 
     // MARK: ajustes y Trakt

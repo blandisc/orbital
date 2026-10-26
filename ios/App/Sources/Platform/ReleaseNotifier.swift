@@ -167,11 +167,8 @@ enum ReleaseNotifier {
         case Action.download:
             _ = await env.services.queueDownload(kind: kind, metaID: id, videoID: video ?? id, title: title, originalTitle: title, subtitle: "",
                                                  poster: String(format: ForYou.metahubPoster, id))
-        case Action.watch:
+        default:   // «Ver» o tocar el aviso: ese episodio (antes tocarlo abría la ficha de la serie y había que buscarlo)
             let link: URL? = WidgetLink.play(kind: kind, id: id, video: video)
-            if let link { await env.handle(url: link) }
-        default:   // tocar el aviso: la ficha
-            let link: URL? = WidgetLink.title(kind: kind, id: id)
             if let link { await env.handle(url: link) }
         }
     }

@@ -17,6 +17,8 @@ enum Demo {
     /// Lo guardado (Inicio, el mosaico, los colores) sobrevive entre aperturas, como en el iPhone de verdad (para medir).
     static var persist: Bool { ProcessInfo.processInfo.arguments.contains("-demo-persist") }
     static var noIdle: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-idle") }
+    /// `-demo-free-tabs`: en demo se puede cambiar de pestaña (sin esto, la de `-demo-tab` vuelve siempre).
+    static var freeTabs: Bool { ProcessInfo.processInfo.arguments.contains("-demo-free-tabs") }
 
     static let addonURL = "https://demo.orbital.invalid/manifest.json"
     /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
@@ -57,6 +59,8 @@ enum Demo {
                                             displayTitle: "La Oficina", episodeLabel: "T2 · E5")
 
     /// `-demo-scrobble`: Trakt «conectado» con un último scrobble de mentira (para ver la fila de Ajustes › Trakt en el simulador).
+    static var searchSlow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-search-slow") }
+    static let slowLanes = ["torrentio", "comet", "mediafusion"]
     static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
     /// `-demo-because`: Trakt de mentira con historial y relacionados, para ver «Porque viste» en Para ti.
     static var because: Bool { ProcessInfo.processInfo.arguments.contains("-demo-because") }
@@ -122,6 +126,10 @@ enum Demo {
     static var shelf: String? { value(after: "-demo-shelf") }
     /// `-demo-mode lists`: en Para ti, abre en Listas (en vez de Mosaico).
     static var mode: String? { value(after: "-demo-mode") }
+    /// `-demo-section seasons`: en Para ti › Listas, baja hasta ese grupo de colecciones (el nombre del caso de `CollectionSection`).
+    static var section: String? { value(after: "-demo-section") }
+    /// `-demo-collection genre:accion` o `season:halloween`: en Para ti › Listas, abre esa lista (con `-demo-tmdb`).
+    static var collection: String? { value(after: "-demo-collection") }
     /// `-demo-lang en`: idioma de la app.
     static var language: String? { value(after: "-demo-lang") }
     /// `-demo-downloads`: Descargas con una película, dos episodios y una a medias (para ver y deslizar los renglones).
@@ -180,7 +188,7 @@ enum Demo {
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
-        if scrobble || airings || because || trakt { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
+        if scrobble || airings || because || trakt { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa (propia del iPhone): nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         if tmdb { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
         if oneDrive == "linked" { secrets.set(SecretKey.oneDriveTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }
@@ -245,7 +253,15 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     private func fake(_ request: HTTPRequest) async throws -> HTTPResponse? {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
-        if url.host == "demo.orbital.invalid" { return addon(url.path) }
+        if url.host == "demo.orbital.invalid" {
+            // `-demo-search-slow`: tres complementos que contestan a destiempo (0.8, 1.6 y 2.4 s), para ver la órbita de
+            // «Buscando la mejor versión» llenarse como con la red de verdad.
+            if Demo.searchSlow, let lane = Demo.slowLanes.firstIndex(where: { url.path.hasPrefix("/\($0)/") }) {
+                if url.path.contains("/stream/") { try? await Task.sleep(for: .milliseconds(800 * (lane + 1))) }   // ds-exception: demora de red simulada (solo modo demo)
+                return addon(String(url.path.dropFirst(Demo.slowLanes[lane].count + 1)))
+            }
+            return addon(url.path)
+        }
         // OpenSubtitles de mentira: varias versiones por idioma (con copia, descargas, y unas SDH/forzadas que se esconden).
         if url.host == "opensubtitles-v3.strem.io" { return HTTPResponse(status: 200, data: Self.subtitlesDemo.serialized()) }
         if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
@@ -336,10 +352,18 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                                   ["id": 3, "media_type": "movie", "title": "Foxcatcher", "poster_path": "/f.jpg", "popularity": 40, "character": "John du Pont"]]]]
         } else if path.hasPrefix("/watch/providers/") {
             body = ["results": [["provider_id": 8, "provider_name": "Netflix"], ["provider_id": 337, "provider_name": "Disney Plus"], ["provider_id": 1899, "provider_name": "HBO Max"]]]
+        } else if path.hasPrefix("/search/keyword") {
+            // «Temporadas»: la palabra clave de cada una (cualquiera sirve: el discover de abajo no la mira).
+            let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "query" }?.value ?? ""
+            body = ["results": [["id": .int(1 + query.unicodeScalars.reduce(0) { $0 + Int($1.value) } % 997), "name": .string(query)]]]   // una por temporada: listas distintas
         } else if path.hasPrefix("/discover/") {
             // Colecciones › Estudios y «Nuevo en tus plataformas»: ids 100+ que la ficha de abajo vuelve títulos reales.
+            // «Lo mejor del género» y «Temporadas» piden 12 (con nota y popularidad): así llega a 10 al primer intento y el año es el de hoy.
             let offset = abs(url.query?.hashValue ?? 0) % Self.demoIMDb.count
-            body = ["results": .array((0..<8).map { ["id": .int(100 + (offset + $0) % Self.demoIMDb.count)] })]
+            let ranked = url.query?.contains("with_genres") == true || url.query?.contains("with_keywords") == true
+            body = ["results": .array((0..<(ranked ? Self.demoIMDb.count : 8)).map { i in
+                ["id": .int(100 + (offset + i) % Self.demoIMDb.count), "vote_average": .double(9 - Double(i) / 10), "popularity": .double(100 - Double(i))]
+            })]
         } else if let id = Int(url.lastPathComponent), id >= 100, Self.demoIMDb.indices.contains(id - 100) {
             let pick = Self.demoIMDb[id - 100]
             body = ["id": .int(id), "title": .string(pick.1), "name": .string(pick.1), "imdb_id": .string(pick.0), "release_date": "2024-03-01", "first_air_date": "2024-03-01"]
@@ -637,6 +661,13 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             lock.withLock { for change in body?["changes"]?.array ?? [] { if let id = change["_id"]?.string { library[id] = change } } }
             return ok(["success": true])
         case "addonCollectionGet":
+            if Demo.searchSlow {
+                return ok(["addons": .array(Demo.slowLanes.map { lane in
+                    var manifest = Self.manifest.object ?? [:]
+                    manifest["id"] = .string("orbital.demo.\(lane)"); manifest["name"] = .string(lane.capitalized)
+                    return ["transportUrl": .string("https://demo.orbital.invalid/\(lane)/manifest.json"), "manifest": .object(manifest)]
+                })])
+            }
             return ok(["addons": [["transportUrl": .string(Demo.addonURL), "manifest": Self.manifest]]])
         default:
             return ok(.null)

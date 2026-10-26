@@ -52,6 +52,15 @@ public actor Charts {
         justWatchPlatforms.first { $0.brand == brand }.map { justWatchImages + $0.logo }
     }
 
+    /// La marca de una plataforma por su nombre («Disney+» → disney); nil si no es una de las conocidas.
+    public static func brand(named name: String) -> String? {
+        let folded = fold(name)
+        if folded.contains("netflix") { return "netflix" }
+        return justWatchPlatforms.first { fold($0.name) == folded || folded.contains(fold($0.name)) }?.brand
+    }
+    /// El logo de una plataforma (el de Netflix aparte: no es una lista de JustWatch).
+    public static func platformLogo(_ brand: String) -> String? { brand == "netflix" ? netflixLogo : justWatchLogo(brand) }
+
     private let http: HTTPClient
     private let tmdb: Tmdb?
     private let cinemeta: Cinemeta

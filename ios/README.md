@@ -141,12 +141,15 @@ públicos y Cinemeta de verdad. Nada toca tu Keychain ni tus ajustes. Para abrir
 | `-demo-tv-now` | algo sonando en la TV (el accesorio «En la TV») |
 | `-demo-title series:tt0386676` | una ficha |
 | `-demo-open settings` · `sources` · `play` · `download` | Ajustes, la hoja de fuentes, el reproductor o una descarga (sobre la ficha) |
+| `-demo-settings-page trakt` | con `-demo-open settings`, abre Ajustes › Trakt (sin `-demo-trakt` y con `ORBITAL_TRAKT_CLIENT_ID=…` al compilar: «Conectar Trakt») |
 | `-demo-open save` | con `-demo-title`, la ficha con la hoja «Guardar en…» abierta (prende `-demo-trakt`) |
 | `-demo-trakt` | Trakt «conectado» de mentira: watchlist y cinco listas propias (unas recientes, otras viejas) que tardan ~1,5 s en llegar; guardar, quitar y «Nueva lista…» funcionan sin salir a internet |
 | `-demo-scroll 240` | con `-demo-title`, la ficha abre ya desplazada esos puntos (el arte a medio recoger) |
 | `-demo-autoscroll` | con `-demo-title`, a los ~2 s la ficha baja sola y suave hasta ~600 pt (~4 s), espera 1 s y regresa arriba (~3 s): para grabar el arte con `xcrun simctl io <udid> recordVideo` |
 | `-demo-search dune` | una búsqueda en Ver |
 | `-demo-mode lists` | en Para ti, abre en Listas (con `-demo-console`, el feed completo de estantes) |
+| `-demo-section seasons` · `genres` | en Para ti › Listas, baja hasta ese grupo (con `-demo-tmdb`: Temporadas y Lo mejor del género) |
+| `-demo-collection genre:terror` · `season:halloween` | en Para ti › Listas, abre esa lista (con `-demo-tmdb`) |
 | `-demo-lang en` | la app en inglés |
 | `-demo-signed-out` | la pantalla de entrada |
 | `-demo-gesture brightness` · `volume` · `seek` · `fastforward` · `fastforward-locked` | con el reproductor abierto, simula ese gesto a medio camino (`fastforward-locked`: 2× fijo y píldora a la vista; ver «Gestos del reproductor») |

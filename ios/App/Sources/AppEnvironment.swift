@@ -375,7 +375,7 @@ final class AppEnvironment {
     func play(_ request: PlayRequest) { playing = request }
 
     func playExternal(_ request: PlayRequest, source: Source? = nil) async {
-        let position = request.fromStart ? 0 : await services.watch.resumePosition(metaID: request.metaID, videoID: request.videoID)
+        let position = request.fromStart ? 0 : await services.watch.resumePosition(metaID: request.metaID, videoID: request.videoID, kind: request.kind)
         let langs = services.titlePrefs.languages(for: request.metaID, settings: services.appSettings)
         var chosen = source
         var unreachable = false
@@ -767,6 +767,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         InboxBackgroundTask.register()
         ReleaseNotifier.register()
         OrbitalShortcuts.updateAppShortcutParameters()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)
+        OpenRemoteIntent.open = { AppEnvironment.shared.ui.openRemote = true }   // el control del Centro de control abre el control
         ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         DownloadFailureNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.
@@ -815,4 +816,10 @@ final class AppUI {
     var openRemote = false
     /// Abrir Ajustes (desde un aviso, como «Tu sesión de Trakt se cerró · Conectar»).
     var openSettings = false
+    /// Tocaste «Buscar» estando ya en Buscar: se abre el campo con el teclado listo.
+    var focusSearch = false
+    /// La entrada de la app está a la vista (el logotipo de Inicio espera escondido a que llegue el de la entrada).
+    var splashing = false
+    /// Dónde está el logotipo de Inicio en la pantalla, si se ve: ahí termina la entrada.
+    var homeLogoFrame: CGRect?
 }

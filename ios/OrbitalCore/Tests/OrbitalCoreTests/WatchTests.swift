@@ -353,3 +353,68 @@ final class StremioRobustnessTests: XCTestCase {
         XCTAssertFalse(work.progress[0].finished)
     }
 }
+
+/// Dónde seguir: lo más reciente entre Stremio y Trakt.
+final class ResumeTests: XCTestCase {
+    let get = "https://api.strem.io/api/datastoreGet"
+
+    // MARK: dónde seguir: Stremio o Trakt, lo más reciente
+    func stremioItem(video: String = "tt0386676:2:5", offsetMs: Int = 300_000, durationMs: Int = 1_320_000, at: String) -> JSON {
+        ["_id": "tt0386676", "state": ["video_id": .string(video), "timeOffset": .int(offsetMs), "duration": .int(durationMs), "lastWatched": .string(at)]]
+    }
+    func pause(_ progress: Double, at: String) -> TraktPlayback {
+        TraktPlayback(id: 1, progress: progress, pausedAt: TraktParsing.date(at)!, target: TraktTarget(imdb: "tt0386676", season: 2, episode: 5))
+    }
+
+    func testTraktWinsWhenItsPauseIsNewerAndItsPercentBecomesSecondsWithStremiosDuration() {
+        let raw = stremioItem(at: "2026-10-25T10:00:00.000Z")                       // en el iPhone, 300 s
+        let point = ResumePoint.latest(stremio: raw, videoID: "tt0386676:2:5", trakt: pause(50, at: "2026-10-25T21:00:00.000Z"))  // en la TV, después
+        XCTAssertEqual(point, ResumePoint(seconds: 660), "50 % de 1320 s")
+    }
+
+    func testStremioWinsWhenItIsNewer() {
+        let raw = stremioItem(at: "2026-10-26T10:00:00.000Z")
+        let point = ResumePoint.latest(stremio: raw, videoID: "tt0386676:2:5", trakt: pause(50, at: "2026-10-25T21:00:00.000Z"))
+        XCTAssertEqual(point, ResumePoint(seconds: 300))
+    }
+
+    func testWithoutStremioTheTraktPercentWaitsForTheDuration() {
+        let point = ResumePoint.latest(stremio: nil, videoID: "tt0386676:2:5", trakt: pause(25, at: "2026-10-25T21:00:00.000Z"))
+        XCTAssertEqual(point, ResumePoint(seconds: 0, fraction: 0.25))
+        XCTAssertEqual(point.seconds(duration: 2000), 500, "en cuanto el reproductor sabe cuánto dura")
+        XCTAssertEqual(point.seconds(duration: 0), 0)
+        // Otro episodio en Stremio: su duración no sirve para este.
+        let other = ResumePoint.latest(stremio: stremioItem(video: "tt0386676:2:4", at: "2026-10-20T10:00:00Z"), videoID: "tt0386676:2:5",
+                                       trakt: pause(25, at: "2026-10-25T21:00:00.000Z"))
+        XCTAssertEqual(other.fraction, 0.25)
+    }
+
+    func testWithoutTraktItIsExactlyStremio() {
+        XCTAssertEqual(ResumePoint.latest(stremio: stremioItem(at: "2026-10-25T10:00:00Z"), videoID: "tt0386676:2:5", trakt: nil), ResumePoint(seconds: 300))
+    }
+
+    func service(stremio: [JSON]) -> WatchService {
+        let http = FakeHTTP(), clock = Clock(), secrets = InMemorySecrets()
+        secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(clock.now.timeIntervalSince1970 + 86400)}"#)
+        let trakt = Trakt(http: http, secrets: secrets, clientID: "CID", clock: { clock.now }, pause: { _ in })
+        http.json[get] = ["result": .array(stremio)]
+        http.json["https://api.trakt.tv/sync/playback"] = [["progress": 50, "paused_at": "2026-10-25T21:00:00.000Z", "id": 7, "type": "episode",
+                                                            "episode": ["season": 2, "number": 5], "show": ["ids": ["imdb": "tt0386676"]]]]
+        return WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: Cinemeta(http: http), trakt: trakt,
+                            pending: InMemoryPendingStore(), clock: { clock.now })
+    }
+
+    func testResumePointAsksTraktForThatEpisodeAndInfuseGetsSeconds() async throws {
+        let both = service(stremio: [stremioItem(at: "2026-10-25T10:00:00.000Z")])
+        let point = await both.resumePoint(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")
+        XCTAssertEqual(point, ResumePoint(seconds: 660))
+        let seconds = await both.resumePosition(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")
+        XCTAssertEqual(seconds, 660)
+        // Solo el porcentaje (sin la duración de Stremio): Infuse recibe lo de Stremio, que sí son segundos.
+        let onlyTrakt = service(stremio: [])
+        let fraction = await onlyTrakt.resumePoint(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")
+        XCTAssertEqual(fraction.fraction, 0.5)
+        let infuse = await onlyTrakt.resumePosition(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")
+        XCTAssertEqual(infuse, 0)
+    }
+}

@@ -769,15 +769,17 @@ struct DSChipRow<Item: Hashable & Identifiable, Label: View>: View {
 struct DSGestureIndicator: View {
     let symbol: String
     let value: Double   // 0…1
+    /// El largo de la barra: más corta cuando el video es bajito (en vertical va dentro de la imagen).
+    var barHeight: CGFloat = DS.Gesture.indicatorBarHeight
 
     var body: some View {
         VStack(spacing: DS.Space.s2) {
             Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
             ZStack(alignment: .bottom) {
                 Capsule().fill(DS.track)
-                Capsule().fill(DS.primary).frame(height: DS.Gesture.indicatorBarHeight * min(1, max(0, value)))
+                Capsule().fill(DS.primary).frame(height: barHeight * min(1, max(0, value)))
             }
-            .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarHeight)
+            .frame(width: DS.Gesture.indicatorBarWidth, height: barHeight)
             Text("\(Int((value * 100).rounded())) %").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).monospacedDigit()
         }
         .padding(.vertical, DS.Space.s4).padding(.horizontal, DS.Space.s3)
@@ -1169,4 +1171,21 @@ struct DSCapsuleLabel: View {
     }
 
     private func icon(_ name: String) -> some View { Image(systemName: name).font(DS.TextRecipe.footnote.font.weight(.bold)).imageScale(.small) }
+}
+
+extension Text {
+    /// La bandera de un idioma antes de su nombre («🇲🇽 Latino»), con su espacio; VoiceOver no la lee (dice solo el nombre).
+    /// Sin bandera conocida (el árabe, un código raro), nada. Varios idiomas, varias banderas («🇺🇸🇲🇽 Inglés + latino»).
+    static func flag(_ codes: [String]) -> Text {
+        let flagged = LanguageFlags.flagged("", codes)
+        return flagged.isEmpty ? Text(verbatim: "") : Text(verbatim: flagged + " ").accessibilityLabel(Text(verbatim: ""))
+    }
+    static func flag(_ code: String?) -> Text { flag(code.map { [$0] } ?? []) }
+
+    /// Un texto que ya trae sus banderas al principio («🇲🇽 Latino · 1080p»): igual a la vista, pero VoiceOver no las lee.
+    static func flagged(_ string: String) -> Text {
+        let rest = LanguageFlags.withoutFlags(string)
+        guard rest.count < string.count, string.hasSuffix(rest) else { return Text(verbatim: string) }
+        return Text(verbatim: String(string.dropLast(rest.count))).accessibilityLabel(Text(verbatim: "")) + Text(verbatim: rest)
+    }
 }

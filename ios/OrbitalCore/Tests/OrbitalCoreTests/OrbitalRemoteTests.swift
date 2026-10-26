@@ -40,12 +40,12 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertNil(OrbitalRemote.pairing(URL(string: "orbital-ios://pair?u=&t=x")!))
     }
 
-    func testKeysCarryTheConsolesTraktSession() async throws {
+    /// La consola presta la app de Trakt (su Client ID), nunca su sesión: el iPhone conecta la suya con un código.
+    func testKeysCarryTheTraktAppButNoSession() async throws {
         let http = FakeHTTP()
-        http.json["https://tv.example/api/companion"] = ["tmdb_key": "k", "trakt_client_id": "c", "region": "MX",
-                                                         "trakt_session": ["access_token": "AT", "expires_at": 1_760_100_000]]
+        http.json["https://tv.example/api/companion"] = ["tmdb_key": "k", "trakt_client_id": "c", "region": "MX"]
         let keys = try await OrbitalRemote(http: http, address: "tv.example", token: "x").keys()
-        XCTAssertEqual(keys.traktSession, BorrowedSession(accessToken: "AT", expiresAt: 1_760_100_000))
+        XCTAssertEqual(keys, OrbitalRemote.Keys(tmdbKey: "k", traktClientID: "c", region: "MX"))
     }
 
     func testNowParsesAMovieOrNilWhenNothingPlays() async throws {

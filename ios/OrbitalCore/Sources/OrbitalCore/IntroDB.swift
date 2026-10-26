@@ -1,7 +1,7 @@
 import Foundation
 
 /// Dónde están la intro, el resumen y los créditos de un episodio o película (en segundos), marcados por la comunidad.
-public struct SkipSegments: Sendable, Equatable {
+public struct SkipSegments: Sendable, Equatable, Codable {
     public var intro: ClosedRange<Double>?
     public var recap: ClosedRange<Double>?
     public var credits: ClosedRange<Double>?
@@ -18,12 +18,18 @@ public struct IntroDB: Sendable {
     let http: HTTPClient
     /// Lo pedido hace poco (la ficha lo adelanta y el reproductor lo recoge): en vuelo o con marcas. Sin él, cada vez se pide.
     let recent: IntroDBRecent?
-    public init(http: HTTPClient, recent: IntroDBRecent? = nil) { self.http = http; self.recent = recent }
+    /// Las marcas ya encontradas, guardadas en el teléfono: una descarga las tiene en el avión (sin red no hay IntroDB) y un
+    /// episodio que ya se vio no vuelve a depender de que IntroDB conteste a tiempo.
+    let store: KeyValueStore?
+    public init(http: HTTPClient, recent: IntroDBRecent? = nil, store: KeyValueStore? = nil) { self.http = http; self.recent = recent; self.store = store }
 
     /// Las marcas de un video (`tt0944947:1:1` o `tt0133093`); nil sin id de IMDb, sin red o sin marcas.
     public func segments(videoID: String) async -> SkipSegments? {
-        guard let recent else { return await fetch(videoID: videoID) }
-        return await recent.shared(videoID) { await self.fetch(videoID: videoID) }
+        let key = "introdb.\(videoID)"
+        if let data = store?.data(key), let saved = try? JSONDecoder().decode(SkipSegments.self, from: data) { return saved }
+        let found = if let recent { await recent.shared(videoID) { await self.fetch(videoID: videoID) } } else { await fetch(videoID: videoID) }
+        if let found, let store { store.set(key, data: try? JSONEncoder().encode(found)) }
+        return found
     }
 
     /// Las pide ya (al abrir la ficha, en cuanto se sabe el episodio) para que el reproductor las tenga al empezar.
