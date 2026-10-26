@@ -111,6 +111,7 @@
 .title__action .icon { width: var(--icon-md); height: var(--icon-md); flex: none; }
 .title__action--primary {
   transform-origin: left center; /* enfocado crece hacia la derecha: no se sale del margen */
+  margin-inline-end: var(--space-5); /* …y ese crecimiento (6 % de su ancho) cabe antes del redondo de «Guardar» */
   min-width: 13rem; max-width: 100%; padding: 0 var(--space-8) 0 var(--space-5);
   background: var(--color-fill); font-size: var(--type-section); font-weight: var(--weight-medium);
 }
