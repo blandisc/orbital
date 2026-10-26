@@ -10,7 +10,7 @@ def test_samples_go_to_csv_and_warning_is_rate_limited(tmp_path):
     assert not mon.check(now=1500)  # dentro de la hora: no repite
     assert not mon.check(now=9000)  # ya hay memoria
     lines = (tmp_path / "memoria.csv").read_text(encoding="utf-8").splitlines()
-    assert lines[0].startswith("hora,ram_libre_mb") and len(lines) == 4 and lines[1].endswith(",900,54000,1300,Zelda")
+    assert lines[0].startswith("hora,ram_libre_mb") and len(lines) == 4 and lines[1].endswith(",900,54000,1300,,Zelda")
     assert len(notes) == 1 and notes[0]["type"] == "health" and "suspender no lo arregla" in notes[0]["message"]
 
 
@@ -86,3 +86,76 @@ def test_pending_warning_keeps_the_latest(tmp_path):
     mon._last_warning = float("-inf")  # como si hubiera pasado la hora
     mon.check(now=20)
     assert mon.pending["restart"] is True  # la medición más reciente (la fuga de DWM) manda
+
+
+class FakeRelease:
+    def __init__(self, ready=True):
+        self.ready, self.runs = ready, 0
+
+    def available(self):
+        return self.ready
+
+    def run(self):
+        self.runs += 1
+        return True
+
+
+def monitor(tmp_path, dwm, **kwargs):
+    readings = iter(dwm) if isinstance(dwm, list) else None
+    measure = (lambda: (8000, (next(readings), 300), 9000)) if readings else (lambda: (8000, (dwm, 300), 9000))
+    kwargs.setdefault("running", lambda: "")
+    running = kwargs.pop("running")
+    return health.HealthMonitor([].append, running, path=tmp_path / "m.csv", measure=measure, **kwargs)
+
+
+def test_video_memory_is_released_only_when_nobody_is_using_the_console(tmp_path):
+    # Cada juego de Switch le deja ~100 MB a DWM; con la consola sola, Orbital lo reinicia para que los suelte.
+    release = FakeRelease()
+    idle = {"s": 30.0}
+    mon = monitor(tmp_path, 5000, idle=lambda: idle["s"], release=release)
+    mon.check(now=1000)
+    assert release.runs == 0  # alguien tocó el mando hace 30 s: la pantalla no parpadea
+    idle["s"] = health.RELEASE_IDLE + 1
+    mon.check(now=1100)
+    assert release.runs == 1
+    mon.check(now=1200)
+    assert release.runs == 1  # como mucho una vez por hora
+
+
+def test_video_memory_is_never_released_in_a_game_or_below_the_threshold(tmp_path):
+    release = FakeRelease()
+    monitor(tmp_path, 5000, idle=lambda: 9999, release=release, running=lambda: "Mario Kart 8").check(now=1)
+    monitor(tmp_path, 5000, idle=lambda: 9999, release=release, busy=lambda: True).check(now=1)
+    monitor(tmp_path, health.RELEASE_MB - 1, idle=lambda: 9999, release=release).check(now=1)
+    monitor(tmp_path, 5000, idle=lambda: 9999, release=FakeRelease(ready=False)).check(now=1)  # sin activar: nada
+    assert release.runs == 0
+
+
+def test_sudden_dwm_growth_logs_who_was_in_front_and_measures_every_minute(tmp_path, caplog, monkeypatch):
+    monkeypatch.setattr(health, "top_memory", lambda limit=3: [("Eden", 6000)])
+    mon = monitor(tmp_path, [600, 700, 7400], foreground=lambda: "Ryujinx.exe — Kirby")
+    mon.check(now=0)
+    mon.check(now=300)
+    assert mon.fast_until < 300  # +100 MB: normal
+    with caplog.at_level("WARNING"):
+        mon.check(now=600)
+    assert mon.fast_until == 600 + health.FAST_FOR
+    assert "Ryujinx.exe — Kirby" in caplog.text and "+6700 MB" in caplog.text
+
+
+def test_leak_warning_offers_to_release_without_restarting(tmp_path):
+    notes = []
+    mon = health.HealthMonitor(notes.append, lambda: "", path=tmp_path / "m.csv", measure=lambda: (8000, (9000, 300), 9000),
+                               release=FakeRelease(ready=False), busy=lambda: True)
+    mon.check(now=1)
+    assert mon.pending["restart"] and mon.pending["release"] == "setup"
+
+
+def test_old_csv_without_the_orbital_column_is_set_aside(tmp_path):
+    path = tmp_path / "memoria.csv"
+    path.write_text("hora,ram_libre_mb,dwm_compartida_mb,dwm_dedicada_mb,abierto\n2026-10-24 16:23:18,799,52511,16082,\n",
+                    encoding="utf-8")
+    health.append_sample(path, 0, 900, (600, 300), "Zelda", orbital_mb=780)
+    assert path.read_text(encoding="utf-8").splitlines()[0] == health.CSV_HEADER.strip()
+    assert path.read_text(encoding="utf-8").splitlines()[1].endswith(",900,600,300,780,Zelda")
+    assert "52511" in path.with_suffix(".old.csv").read_text(encoding="utf-8")

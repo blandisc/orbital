@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 
-from .. import capture, health, memory, music, quick
+from .. import capture, dwm_release, health, memory, music, quick
 from .deps import Deps
 
 _LOCAL = re.compile(r"^[A-Za-z]:\\(?!\\)")
@@ -70,9 +70,29 @@ def router(d: Deps) -> APIRouter:
     @r.get("/api/memory")
     async def memory_usage() -> dict:
         def read() -> dict:
-            return {"room_mb": health.commit_room_mb(), "free_mb": health.free_ram_mb(),
+            dwm = health.dwm_gpu_mb()
+            # La memoria de video que Windows se queda (ver dwm_release.py): cuánta y si se puede liberar sin reiniciar.
+            video = None if dwm is None else {"dwm_mb": dwm[0], "release": "ready" if dwm_release.available() else "setup"}
+            return {"room_mb": health.commit_room_mb(), "free_mb": health.free_ram_mb(), "video": video,
                     "apps": [a.public() for a in memory.usage(protect_pids=protected())]}
         return await run_in_threadpool(read)
+
+    @r.post("/api/video-memory/release")
+    def video_memory_release() -> dict:
+        """Reiniciar DWM para que suelte la memoria de video: la pantalla parpadea. Nunca con un juego o video abierto."""
+        if d.catalog.launcher.status():
+            raise HTTPException(409, "Cierra el juego o el video primero: la pantalla parpadea un momento")
+        if not dwm_release.available():
+            raise HTTPException(409, "Primero actívalo (Windows pide permiso una vez)")
+        before = health.dwm_gpu_mb()
+        if not dwm_release.run():
+            raise HTTPException(500, "Windows no lo dejó")
+        return {"ok": True, "before_mb": before[0] if before else None}
+
+    @r.post("/api/video-memory/setup")
+    async def video_memory_setup() -> dict:
+        """Crea la tarea de Windows que lo permite. Windows muestra su aviso de permiso en la pantalla."""
+        return {"ok": await run_in_threadpool(dwm_release.setup)}
 
     @r.post("/api/memory/close")
     def memory_close(body: dict) -> dict:

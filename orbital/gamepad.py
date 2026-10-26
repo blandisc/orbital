@@ -348,6 +348,7 @@ class GamepadWatcher:
         self.hold_label = ""  # el atajo de cerrar que se está manteniendo («LB + RB + Select»), para el aviso
         self.devices: dict[int, tuple[int, int]] = {}  # lugar -> (marca, modelo) de cada mando encendido
         self.last_used: int | None = None  # el lugar del último mando que apretó un botón (el Jugador 1 de un juego)
+        self.last_input = time.monotonic()  # cuándo se apretó algo por última vez (para saber si la consola está sola)
 
     def start(self) -> bool:
         if sys.platform != "win32":
@@ -406,6 +407,7 @@ class GamepadWatcher:
                 buttons = state.Gamepad.wButtons if connected else 0
                 if buttons & ~pressed[slot]:
                     self.last_used = slot
+                    self.last_input = now
                 pressed[slot] = buttons
                 if connected:  # diagnóstico (entrada.log): lo que reporta XInput, solo cuando cambia
                     pad = state.Gamepad

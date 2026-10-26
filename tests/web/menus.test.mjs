@@ -288,6 +288,17 @@ test("liberar memoria: A cierra lo seguro; lo de Windows solo se muestra", () =>
   assert.equal(menu.options[1].command.type, "stay");
 });
 
+test("liberar memoria: la de video de Windows arriba, para liberarla o activarlo la primera vez", () => {
+  const ready = memoryMenu({ room_mb: 6000, apps: [], video: { dwm_mb: 6064, release: "ready" } });
+  assert.deepEqual(ready.options[0].command, { type: "video-release" });
+  assert.equal(ready.options[0].value, "5.9 GB");
+  const setup = memoryMenu({ room_mb: 6000, apps: [], video: { dwm_mb: 6064, release: "setup" } });
+  assert.deepEqual(setup.options[0].command, { type: "video-setup" });
+  assert.match(setup.options[0].hint, /permiso una sola vez/);
+  // Con poca no estorba: solo «Listo».
+  assert.deepEqual(memoryMenu({ room_mb: 6000, apps: [], video: { dwm_mb: 400, release: "ready" } }).options.map((o) => o.label), ["Listo"]);
+});
+
 test("panel rápido: la música que suena, A pausa y ◀/▶ cambian de canción", () => {
   const menu = quickMenu({ volume: null, brightness: null, power_mode: null },
     { music: { now: { title: "Pedro Navaja", artist: "Rubén Blades", app: "Apple Music", playing: true } } });

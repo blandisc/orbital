@@ -1714,6 +1714,20 @@ async function runCommand(command, context = null) {
         return openMenu(memoryMenu(await api.memory()), nested(context));
       case "confirm-close-app":
         return openMenu(closeAppConfirmMenu(command), nested(context));
+      case "video-release": { // reiniciar DWM: suelta la memoria de video que se quedó (la pantalla parpadea)
+        ui.sheet.close();
+        const res = await api.releaseVideoMemory();
+        sound.play("select");
+        return ui.toast.show(res.before_mb ? `Memoria de video liberada · ${(res.before_mb / 1024).toFixed(1)} GB` : "Memoria de video liberada", { tone: "success" });
+      }
+      case "video-setup": { // la primera vez: Windows pide permiso en la pantalla
+        ui.toast.show("Windows te va a pedir permiso: elige «Sí» con el ratón, el teclado o tocando la pantalla");
+        const res = await api.setupVideoMemory();
+        sound.play(res.ok ? "select" : "error");
+        if (!res.ok) return ui.toast.show("No se activó: hace falta decir «Sí» en el aviso de Windows", { tone: "warn" });
+        ui.toast.show("Listo: Orbital la libera solo cuando no estés usando la consola", { tone: "success" });
+        return openMenu(memoryMenu(await api.memory()), { stack: context?.stack ?? [] });
+      }
       case "close-app": {
         const res = await api.closeApp(command.exe);
         sound.play("select");
@@ -2098,7 +2112,7 @@ function handleEvent(event) {
     sound.play("error");
     // Con un juego abierto, un aviso que no estorba; si no, la pregunta (con Reiniciar solo si sirve).
     if (state.running?.managed) return ui.toast.show(event.message, { error: true });
-    return openMenu(healthMenu(event.message, { restart: event.restart !== false }));
+    return openMenu(healthMenu(event.message, { restart: event.restart !== false, release: event.release || null }));
   }
   if (event.type === "open-quick") return openQuick().catch((err) => ui.toast.show(err.message, { error: true }));
   if (event.type === "emulator-update-done") {

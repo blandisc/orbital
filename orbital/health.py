@@ -3,7 +3,9 @@
 En la Legion Go la memoria de video sale de la RAM. Si se acaba (DWM, el que dibuja las ventanas,
 puede ir acumulando), los emuladores fallan al arrancar (Eden: VK_ERROR_OUT_OF_DEVICE_MEMORY).
 Cada pocos minutos se anota una línea en %LOCALAPPDATA%\\orbital\\memoria.csv (hora, RAM libre,
-memoria de DWM y qué estaba abierto) y, si la memoria está casi llena, Orbital avisa en pantalla.
+memoria de DWM, lo que pesa Orbital y qué estaba abierto) y, si la memoria está casi llena, Orbital avisa en pantalla.
+Si DWM crece de golpe, se mide cada minuto y se anota quién estaba al frente (para encontrar al culpable), y con la
+consola sin usar se libera solo (ver dwm_release.py).
 """
 
 from __future__ import annotations
@@ -27,6 +29,15 @@ COMMIT_LOW_MB = 2000
 DWM_HIGH_MB = 8000  # DWM con más memoria compartida que esto: casi seguro, fuga
 WARN_EVERY = 3600  # s: no repetir el aviso más de una vez por hora
 MAX_CSV_BYTES = 1_000_000
+CSV_HEADER = "hora,ram_libre_mb,dwm_compartida_mb,dwm_dedicada_mb,orbital_mb,abierto\n"
+# Cada juego de Switch le deja ~100 MB a DWM: con más de esto y la consola sin usar, se libera solo (dwm_release.py).
+RELEASE_MB = 3000
+RELEASE_IDLE = 600  # s sin tocar nada (ni mando ni teclado) antes de liberar: la pantalla parpadea
+RELEASE_EVERY = 3600  # s: como mucho una vez por hora
+# El 2026-10-24 DWM pasó de 0,6 a 52 GB en 25 min sin nada abierto: si crece así, medir cada minuto y anotar quién.
+FAST_GROWTH_MB = 1000
+FAST_INTERVAL = 60
+FAST_FOR = 1800
 
 
 class _MemoryStatus(ctypes.Structure):
@@ -93,6 +104,15 @@ def top_memory(limit: int = 3) -> list[tuple[str, int]]:
             totals[name] = totals.get(name, 0) + counters.PrivateUsage // (1024 * 1024)
         kernel32.CloseHandle(handle)
     return sorted(totals.items(), key=lambda kv: kv[1], reverse=True)[:limit]
+
+
+def private_mb(pids: set[int]) -> int | None:
+    """Memoria comprometida (privada) de esos procesos juntos, en MB: lo que pesa Orbital (servidor + su ventana)."""
+    if sys.platform != "win32" or not pids:
+        return None
+    from . import memory
+
+    return sum(memory._private_mb(pid) for pid in pids)  # noqa: SLF001 - el mismo conteo que «Liberar memoria»
 
 
 def _pdh_sum(counter_paths: list[str]) -> list[float] | None:
@@ -211,17 +231,29 @@ def csv_path() -> Path:
     return Path(os.environ.get("LOCALAPPDATA", ".")) / "orbital" / "memoria.csv"
 
 
-def append_sample(path: Path, when: float, free_mb: int | None, dwm: tuple[int, int] | None, running: str) -> None:
+def _header(path: Path) -> str:
+    try:
+        with path.open(encoding="utf-8") as fh:
+            return fh.readline()
+    except OSError:
+        return ""
+
+
+def append_sample(path: Path, when: float, free_mb: int | None, dwm: tuple[int, int] | None, running: str,
+                  orbital_mb: int | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.stat().st_size > MAX_CSV_BYTES:
+    # Lleno, o de antes de la columna orbital_mb: se aparta y empieza uno nuevo (nunca columnas revueltas).
+    if path.exists() and (path.stat().st_size > MAX_CSV_BYTES or _header(path) != CSV_HEADER):
         path.replace(path.with_suffix(".old.csv"))
     new = not path.exists()
     with path.open("a", encoding="utf-8") as fh:
         if new:
-            fh.write("hora,ram_libre_mb,dwm_compartida_mb,dwm_dedicada_mb,abierto\n")
+            fh.write(CSV_HEADER)
         shared, dedicated = dwm if dwm else ("", "")
         stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(when))
-        fh.write(f"{stamp},{free_mb if free_mb is not None else ''},{shared},{dedicated},{running.replace(',', ' ')}\n")
+        own = orbital_mb if orbital_mb is not None else ""
+        free = free_mb if free_mb is not None else ""
+        fh.write(f"{stamp},{free},{shared},{dedicated},{own},{running.replace(',', ' ')}\n")
 
 
 class HealthMonitor:
@@ -234,14 +266,23 @@ class HealthMonitor:
     """
 
     def __init__(self, notify: Callable[[dict], None], running: Callable[[], str], path: Path | None = None,
-                 measure=None, busy: Callable[[], bool] | None = None) -> None:
+                 measure=None, busy: Callable[[], bool] | None = None, own_pids: Callable[[], set[int]] | None = None,
+                 idle: Callable[[], float] | None = None, release=None,
+                 foreground: Callable[[], str] | None = None) -> None:
         self.notify = notify
         self.running = running
         self.busy = busy or (lambda: False)
         self.path = path or csv_path()
         self.measure = measure or (lambda: (free_ram_mb(), dwm_gpu_mb(), commit_room_mb()))
+        self.own_pids = own_pids or set  # Orbital: servidor y su ventana, para anotar cuánto pesa
+        self.idle = idle or (lambda: 0.0)  # s sin tocar nada (mando, teclado, ratón)
+        self.release = release  # dwm_release (o un doble en las pruebas): available() y run()
+        self.foreground = foreground or (lambda: "")  # el programa al frente, para anotar quién hace crecer a DWM
         self.pending: dict | None = None  # el aviso que espera a que vuelvas a Orbital
         self._last_warning = float("-inf")
+        self._last_release = float("-inf")
+        self._last_dwm: int | None = None
+        self.fast_until = float("-inf")  # hasta cuándo medir cada minuto (DWM creciendo de golpe)
         self._stop = threading.Event()
 
     def check(self, now: float | None = None) -> bool:
@@ -249,10 +290,15 @@ class HealthMonitor:
         now = time.time() if now is None else now
         free_mb, dwm, *rest = self.measure()
         commit = rest[0] if rest else None
+        running = self.running()
         try:
-            append_sample(self.path, now, free_mb, dwm, self.running())
+            append_sample(self.path, now, free_mb, dwm, running, private_mb(self.own_pids()))
         except OSError as exc:
             log.debug("No pude anotar la memoria: %s", exc)
+        if dwm is not None:
+            self._watch_growth(now, dwm[0], running)
+            if self.maybe_release(now, dwm[0], running):
+                return False
         if not needs_warning(free_mb, dwm, commit):
             self.pending = None  # ya hay memoria: el aviso que esperaba ya no aplica
             return False
@@ -263,11 +309,37 @@ class HealthMonitor:
         # Con la fuga de DWM, pregunta con "Reiniciar ahora"; si son programas abiertos, solo avisa
         # (reiniciar no ayuda).
         event = {"type": "health", "ok": False, "restart": dwm_leak(dwm), "message": warning_message(free_mb, dwm, top)}
+        if dwm_leak(dwm) and self.release is not None:
+            event["release"] = "ready" if self.release.available() else "setup"  # liberar sin reiniciar
         if self.busy():
             self.pending = event  # el más reciente manda; se entrega al volver a Orbital
             log.info("Aviso de memoria en espera: estás en un juego o un video")
             return True
         self._deliver(event, now)
+        return True
+
+    def _watch_growth(self, now: float, shared: int, running: str) -> None:
+        """DWM creciendo de golpe: anotar quién estaba al frente y medir cada minuto un rato (ver FAST_GROWTH_MB)."""
+        before, self._last_dwm = self._last_dwm, shared
+        if before is None or shared - before < FAST_GROWTH_MB:
+            return
+        self.fast_until = now + FAST_FOR
+        log.warning("DWM creció de golpe: %+d MB (ahora %d MB). Al frente: %s · abierto: %s · lo que más ocupa: %s",
+                    shared - before, shared, self.foreground() or "?", running or "nada", top_memory(5))
+
+    def maybe_release(self, now: float, shared: int, running: str) -> bool:
+        """Con DWM reteniendo mucho y la consola sin usar (nada abierto, nadie tocando), reiniciarlo para que suelte la
+        memoria. Nunca en un juego o video ni con alguien usando la consola: la pantalla parpadea. Devuelve si lo hizo."""
+        if (self.release is None or shared < RELEASE_MB or running or self.busy()
+                or self.idle() < RELEASE_IDLE or now - self._last_release < RELEASE_EVERY):
+            return False
+        if not self.release.available():
+            return False
+        self._last_release = now
+        if not self.release.run():
+            return False
+        log.info("Memoria de video liberada con la consola sin usar (DWM tenía %d MB)", shared)
+        self._last_dwm = None  # vuelve a empezar desde poco: no es «crecer de golpe»
         return True
 
     def flush(self, now: float | None = None) -> bool:
@@ -295,4 +367,4 @@ class HealthMonitor:
                 self.check()
             except Exception:  # noqa: BLE001
                 log.exception("Error midiendo la memoria")
-            self._stop.wait(INTERVAL)
+            self._stop.wait(FAST_INTERVAL if time.time() < self.fast_until else INTERVAL)

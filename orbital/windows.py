@@ -28,6 +28,21 @@ def foreground() -> int:
     return (user32.GetForegroundWindow() or 0) if WIN else 0
 
 
+class _LastInput(ctypes.Structure):
+    _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
+
+
+def input_idle_seconds() -> float:
+    """Segundos desde la última tecla, clic o toque (no cuenta el mando: ese lo lleva gamepad.py)."""
+    if not WIN:
+        return 0.0
+    info = _LastInput()
+    info.cbSize = ctypes.sizeof(info)
+    if not user32.GetLastInputInfo(ctypes.byref(info)):
+        return 0.0
+    return ((ctypes.windll.kernel32.GetTickCount() - info.dwTime) & 0xFFFFFFFF) / 1000  # type: ignore[attr-defined]
+
+
 def is_window(hwnd: int) -> bool:
     return bool(WIN and hwnd and user32.IsWindow(hwnd) and user32.IsWindowVisible(hwnd))
 

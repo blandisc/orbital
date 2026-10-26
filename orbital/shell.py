@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import subprocess
 import sys
 import threading
@@ -488,13 +489,36 @@ class ConsoleShell:
         self.keyboard_home.start()
         # Memoria (RAM y la de video que usa DWM): se anota cada 5 min y avisa si los juegos no van a poder
         # abrir. Nunca en pleno juego o video: el aviso espera a que Orbital vuelva al frente.
+        from . import dwm_release
         from .health import HealthMonitor
         running = lambda: (self.catalog.launcher.status() or {}).get("title", "")  # noqa: E731
-        self.health = HealthMonitor(self.notify, running, busy=self.away_from_orbital)
+        self.health = HealthMonitor(self.notify, running, busy=self.away_from_orbital, own_pids=self.own_pids,
+                                    idle=self.idle_seconds, release=dwm_release, foreground=self.foreground_name)
         threading.Thread(target=self._watch_foreground, daemon=True, name="legion-l").start()
         threading.Thread(target=self._watch_sleep, daemon=True, name="sleep").start()
         self.health.start()
         return True
+
+    def own_pids(self) -> set[int]:
+        """Los procesos de Orbital: este servidor, el supervisor que lo vigila y su ventana de Edge."""
+        pids = {os.getpid()}
+        parent = os.getppid()
+        if windows.exe_name(parent) in ("python.exe", "pythonw.exe", "orbital.exe"):
+            pids.add(parent)
+        if self.kiosk is not None:
+            pids |= self.kiosk.pids()
+        return pids
+
+    def idle_seconds(self) -> float:
+        """Cuánto lleva la consola sin que nadie toque nada: ni el mando ni el teclado, el ratón o la pantalla."""
+        gamepad = getattr(self, "gamepad", None)  # se crea en start()
+        pad = time.monotonic() - gamepad.last_input if gamepad is not None else float("inf")
+        return min(pad, windows.input_idle_seconds())
+
+    def foreground_name(self) -> str:
+        """El programa al frente, para el registro: «Ryujinx.exe — Super Mario Party Jamboree»."""
+        hwnd = windows.foreground()
+        return f"{windows.exe_name(windows.pid_of(hwnd))} — {windows.title(hwnd)}" if hwnd else ""
 
     def away_from_orbital(self) -> bool:
         """¿Estás en otra cosa (un juego, un video, otra app)? Orbital no debe asomarse ni avisar."""

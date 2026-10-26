@@ -212,14 +212,19 @@ class KioskWindow:
                 self._guard.start()
             return True
 
+    def pids(self) -> set[int]:
+        """Los procesos de Edge con el perfil de Orbital (la ventana y sus hijos: GPU, renderizador…)."""
+        from . import windows
+
+        profile = f"--user-data-dir={self.profile_dir}".lower()
+        return {pid for pid, (exe, _parent) in windows.processes().items()
+                if exe in ("msedge.exe", "chrome.exe") and profile in windows.command_line(pid).lower()}
+
     def window(self) -> int:
         """La ventana visible de la interfaz (de los procesos de Edge con el perfil de Orbital), o 0."""
         from . import windows
 
-        profile = f"--user-data-dir={self.profile_dir}".lower()
-        pids = {pid for pid, (exe, _parent) in windows.processes().items()
-                if exe in ("msedge.exe", "chrome.exe") and profile in windows.command_line(pid).lower()}
-        return windows.main_window(pids)
+        return windows.main_window(self.pids())
 
     def ensure_shown(self, front: bool = False) -> str:
         """Que la interfaz se vea: al despertar la consola y cada GUARD_EVERY s. El 18 de octubre, al despertar tras pasar

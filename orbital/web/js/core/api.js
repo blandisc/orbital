@@ -76,6 +76,8 @@ export const api = {
   music: () => request("/api/music"),
   musicCommand: (action) => post("/api/music", { action }),
   closeApp: (exe) => post("/api/memory/close", { exe }),
+  releaseVideoMemory: () => post("/api/video-memory/release", {}),
+  setupVideoMemory: () => post("/api/video-memory/setup", {}),
   folders: () => request("/api/folders"),
   checkUpdate: (force = false) => request(`/api/update${force ? "?force=true" : ""}`),
   applyUpdate: () => post("/api/update"),

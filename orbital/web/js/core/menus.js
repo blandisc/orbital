@@ -286,11 +286,12 @@ const gb = (mb) => `${(mb / 1024).toFixed(1)} GB`; // punto decimal, como en Mé
  * Liberar memoria: lo que más ocupa, y A cierra lo que es seguro cerrar (lo demás solo se muestra).
  * Arriba, el margen que queda: con menos de 2 GB los juegos pueden no abrir.
  */
-export function memoryMenu({ room_mb: room, apps = [] }) {
-  const options = apps.map((app) => (app.closable
+export function memoryMenu({ room_mb: room, apps = [], video = null }) {
+  const options = videoMemoryOptions(video);
+  options.push(...apps.map((app) => (app.closable
     ? { icon: "close", label: `Cerrar ${app.name}`, value: gb(app.mb), hint: app.warning || undefined,
       command: { type: "confirm-close-app", exe: app.exe, name: app.name } }
-    : { icon: "windows", label: app.name, value: gb(app.mb), hint: "De Windows u Orbital: no se cierra", command: { type: "stay" } }));
+    : { icon: "windows", label: app.name, value: gb(app.mb), hint: "De Windows u Orbital: no se cierra", command: { type: "stay" } })));
   options.push({ icon: "check", label: "Listo", command: { type: "close" } });
   const tight = room != null && room < 2048;
   return {
@@ -298,6 +299,21 @@ export function memoryMenu({ room_mb: room, apps = [] }) {
     subtitle: room == null ? "" : `${tight ? "Poco margen" : "Margen"}: ${gb(room)} libres para abrir juegos.${tight ? " Cierra algo para que abran bien." : ""}`,
     options,
   };
+}
+
+/**
+ * La memoria de video que Windows (DWM) se queda: cada juego de Switch le deja ~100 MB que no suelta.
+ * Con poca no se muestra; con más de 1 GB, liberarla (la pantalla parpadea) o activarlo la primera vez.
+ */
+export function videoMemoryOptions(video) {
+  if (!video || video.dwm_mb < 1024) return [];
+  const value = gb(video.dwm_mb);
+  if (video.release === "ready") {
+    return [{ icon: "refresh", label: "Liberar memoria de video", value, hint: "La pantalla parpadea un momento",
+      command: { type: "video-release" } }];
+  }
+  return [{ icon: "refresh", label: "Liberar memoria de video sin reiniciar", value,
+    hint: "Windows pedirá permiso una sola vez (con ratón, teclado o tocando la pantalla)", command: { type: "video-setup" } }];
 }
 
 /** Cerrar una app para liberar memoria: puede perder lo no guardado, así que se pregunta (Cancelar primero). */
@@ -332,7 +348,7 @@ export function capturesMenu(items) {
  * Memoria casi llena. Con la fuga de Windows (DWM) se ofrece reiniciar; si la llenan programas
  * abiertos, reiniciar no ayuda: solo se dice cuáles son.
  */
-export function healthMenu(message, { restart = true } = {}) {
+export function healthMenu(message, { restart = true, release = null } = {}) {
   if (!restart) {
     return { title: "Memoria casi llena", subtitle: message,
       options: [{ icon: "memory", label: "Liberar memoria", command: { type: "memory" } },
@@ -343,6 +359,7 @@ export function healthMenu(message, { restart = true } = {}) {
     subtitle: message,
     options: [
       { icon: "close", label: "Más tarde", command: { type: "close" } },
+      ...(release ? videoMemoryOptions({ dwm_mb: Infinity, release }).map((o) => ({ ...o, value: undefined })) : []),
       { icon: "refresh", label: "Reiniciar ahora", danger: true, command: { type: "power-confirm", action: "restart" } },
     ],
   };
