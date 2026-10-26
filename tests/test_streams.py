@@ -91,3 +91,24 @@ def test_finder_asks_stream_addons_in_parallel_and_caches(monkeypatch):
     finder.find("movie", "tt0816692", Preferences())
     assert fetched == ["Torrentio RD"] and Client.calls == 1  # en caché
     assert finder.get("movie", "tt0816692", Preferences(), found[0].index) is found[0]
+
+
+def test_sin_complementos_de_fuentes_lo_dice():
+    class Client:
+        def request(self, method, params):
+            return {"addons": [{"transportUrl": "https://cat/manifest.json", "manifest": {"name": "Cinemeta", "resources": ["catalog"]}}]}
+
+    finder = streams.StreamFinder(AddonRegistry(Client(), auth=lambda: "key"))
+    assert finder.find("movie", "tt0816692", Preferences()) == []
+    assert finder.outcome["movie:tt0816692"] == "no-addons"
+
+
+def test_palabras_del_titulo_y_marcas_no_son_idiomas():
+    for name in ("The.Italian.Job.2003.1080p.BluRay", "The Spanish Prisoner 1997 1080p", "Russian.Doll.S01.1080p",
+                 "Home Alone 1990 NORDiC 1080p"):
+        assert streams.audio_languages(name) == {"en": "assumed"}, name
+    assert streams.audio_languages("Dune.2021.ITALIAN.1080p") == {"it": "name"}  # en lo técnico, sí
+    assert streams.audio_languages("[RUS(int) JAP+Sub] Frieren 1080p").get("ja") == "name"
+    assert streams.audio_languages("Money.Heist.S01.DUBBED.1080p", original="es-ES") == {"en": "maybe"}
+    peerflix = parse({"name": "Peerflix 🇪🇸 1080p", "title": "Some.Movie.2020.1080p.WEB-DL"}, "Peerflix", "u", 1)
+    assert "es" in peerflix.audio_langs

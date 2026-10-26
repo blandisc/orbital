@@ -52,7 +52,7 @@ WORD_LANG = [
     (re.compile(r"\b(spanish|español|espanol|spa)\b", re.I), "es"),
     (re.compile(r"\bESP\b|\[Esp\]|(?<=/)ES\b|\bES(?=/)"), "es"),  # «EN/FR/ES»
     (re.compile(r"\b(eng|english|ingles)\b|(?<![A-Za-z])EN(?=/)", re.I), "en"),
-    (re.compile(r"\b(jpn|japanese)\b", re.I), "ja"),
+    (re.compile(r"\b(jpn|japanese|jap)\b", re.I), "ja"),  # «Eng 5.1 AAC Jap 5.1 AAC»
     (re.compile(r"(?i:\b(mvo|dvo|avo)\b)|[А-Яа-яЁё]{4,}"), "ru"),  # voces rusas; un nombre en cirílico es un lanzamiento ruso
     (re.compile(r"(?i:\b(french|fre|vff|vf|vf2|vfq|truefrench)\b)|(?<![-\w])FR\b"), "fr"),
     (re.compile(r"\b(ita|italian)\b", re.I), "it"),
@@ -70,8 +70,24 @@ WORD_LANG = [
     (re.compile(r"\b(turkish|türkçe|turkce)\b", re.I), "tr"),
     (re.compile(r"\b(arabic)\b", re.I), "ar"),
     (re.compile(r"\b(korean|kor)\b", re.I), "ko"),
-    (re.compile(r"\b(nordic|swedish|danish|norwegian|finnish)\b", re.I), "sv"),
+    # «NORDiC» no: son subtítulos nórdicos con el audio original.
+    (re.compile(r"\b(swedish|danish|norwegian|finnish)\b", re.I), "sv"),
 ]
+# Las de WORD_LANG que no se confunden con palabras del título (códigos en mayúsculas, el cirílico): se buscan en todo el
+# nombre; las demás, solo en lo técnico («The Italian Job» no es italiano).
+CODE_LANG = [
+    (re.compile(r"\bLAT\b"), "es-419"), (re.compile(r"\bCAST\b"), "es-ES"),
+    (re.compile(r"\bESP\b|\[Esp\]|(?<=/)ES\b|\bES(?=/)"), "es"), (re.compile(r"(?<![A-Za-z])EN(?=/)", re.I), "en"),
+    (re.compile(r"[А-Яа-яЁё]{4,}"), "ru"), (re.compile(r"(?<![-\w])FR\b"), "fr"),
+    (re.compile(r"(?<![-\w])CZ\b"), "cs"), (re.compile(r"(?<![-\w])SK\b"), "sk"), (re.compile(r"(?<![-\w])PL\b"), "pl"),
+]
+# Donde empieza lo técnico de un nombre (el año, la temporada, la calidad, el origen o un corchete): antes va el título, y
+# sus palabras no son idiomas («The Italian Job», «The Spanish Prisoner», «Russian Doll»).
+RELEASE_MARKER = re.compile(
+    r"\b(19[2-9]\d|20[0-4]\d)\b|\bs\d{1,2}(e\d{1,3})?\b|\b\d{3,4}p\b|\b4k\b|"
+    r"\b(bluray|blu-ray|bdrip|brrip|web-?dl|webrip|hdtv|dvdrip|hdrip|remux|temporada|season)\b|\[", re.I)
+# «DUBBED» sin idioma (RARBG, GalaxyRG): doblaje al inglés de una película extranjera, no su audio original.
+DUBBED_WORD = re.compile(r"\bdubbed\b", re.I)
 # Sitios de un solo idioma: lo que suben ahí va doblado a ese idioma (MejorTorrent = castellano, Cinecalidad = latino).
 SITE_LANG = {"mejortorrent": "es-ES", "wolfmax4k": "es-ES", "cinecalidad": "es-419", "ilcorsaronero": "it",
              "rutor": "ru", "rutracker": "ru", "torrent9": "fr", "comando": "pt", "bludv": "pt", "besttorrents": "pl"}
@@ -228,6 +244,8 @@ def parse(stream: dict, addon: str, transport_url: str, index: int, original: st
     marks = lines[-1] if len(lines) > 1 and (FLAG_RE.search(lines[-1]) or MARKS.search(lines[-1])) else ""
     words = "\n".join([line for line in lines[:-1 if marks else None] if not SIZE.search(line) and not SEEDERS.search(line)]
                       + [filename])
+    # Peerflix pone la bandera en el nombre («Peerflix 🇪🇸 1080p»): cuenta como una marca más.
+    marks = " ".join([marks, *FLAG_RE.findall(name)])
     set_languages(src, audio_languages(words, marks, src.site, original))
     src.release = first
     src.tags = [t for t, p in (("REMUX", r"\bremux\b"), ("BluRay", r"\bblu-?ray\b"), ("WEB-DL", r"\bweb-?(dl|rip)\b"),
@@ -254,10 +272,14 @@ def audio_languages(words: str, marks: str = "", site: str = "", original: str |
         if EVIDENCE[how] > EVIDENCE.get(found.get(code, ""), 0):
             found[code] = how
 
-    audio_words = "\n".join(SUBS_FROM.split(line, 1)[0] for line in words.split("\n"))
-    subtitled = audio_words != words
+    no_subs = [SUBS_FROM.split(line, 1)[0] for line in words.split("\n")]
+    subtitled = "\n".join(no_subs) != words
+    audio_words = "\n".join(line[m.start():] if (m := RELEASE_MARKER.search(line)) else line for line in no_subs)
     for pattern, code in WORD_LANG:
         if pattern.search(audio_words):
+            put(code, "name")
+    for pattern, code in CODE_LANG:
+        if pattern.search("\n".join(no_subs)):
             put(code, "name")
     if (lang := SITE_LANG.get(re.sub(r"\W", "", site).lower())) and not (subtitled and lang not in found):
         put(lang, "site")
@@ -280,6 +302,8 @@ def audio_languages(words: str, marks: str = "", site: str = "", original: str |
         found.pop("es")  # «SPANiSH.LATiNO»: ya se sabe cuál
     if "es" in found and original in ("es-419", "es-ES"):  # «Spanish» en una serie española: es su castellano
         put(original, found.pop("es"))
+    if not found and DUBBED_WORD.search(audio_words):
+        return {"en": "maybe"}
     if not any(EVIDENCE[how] >= EVIDENCE["name"] for how in found.values()):
         put(original or "en", "original" if original else "assumed")  # nada lo dice: casi siempre el original
     return dict(sorted(found.items(), key=lambda kv: -EVIDENCE[kv[1]]))
@@ -574,7 +598,7 @@ class StreamFinder:
                     continue
                 seen.add(index)
         ranked = rank(sources, prefs, kind)
-        self.outcome[f"{kind}:{video_id}"] = "no-addons" if not addons else "offline" if failed and not ranked else "ok"
+        self.outcome[f"{kind}:{video_id}"] = "no-addons" if not serving else "offline" if failed and not ranked else "ok"
         if failed and not ranked:
             return ranked  # la red falló y no hay nada: no se recuerda, la próxima vez se pregunta otra vez
         with self._lock:
