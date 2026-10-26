@@ -230,3 +230,50 @@ def test_dislike_skips_the_same_picture_at_another_address(tmp_path):
     # Una de verdad distinta sí entra.
     s.http.pages["fanart/12-2.jpg"] = picture(1920, 1080, flip=True)
     assert s.replace(target, "hero") is not None
+
+
+DREAD = """<a href="./game.php?id=121672"><div class="card"><div class="card-footer bg-secondary"><p>Metroid Dread</p></div></a>
+<a href="./game.php?id=87675"><div class="card"><div class="card-footer bg-secondary"><p>Metroid Dread</p></div></a>"""
+
+
+def test_dislike_of_one_edition_brings_the_box_of_another(tmp_path):
+    # Metroid Dread tiene cinco fichas en TheGamesDB. Solo se miraba una (la de México): al rechazar su caja
+    # no quedaba otra y el juego se quedó sin portada para siempre.
+    s = scraper(tmp_path, {
+        "search.php": DREAD.encode(),
+        "game.php?id=87675": b'<img src="https://cdn.thegamesdb.net/images/original/boxart/front/87675-1.jpg">',
+        "game.php?id=121672": b'<img src="https://cdn.thegamesdb.net/images/original/boxart/front/121672-1.jpg">',
+        "front/87675-1.jpg": picture(600, 900), "front/121672-1.jpg": picture(600, 900, flip=True),
+    })
+    target = Target("switch", "Metroid Dread [010093801237C000][v0]", "Metroid Dread", ["cover"])
+    s.fetch(target)
+    # Con el mismo nombre, primero la ficha más vieja (la principal), aunque la página la ponga después.
+    assert s.sources()[f"switch/{target.key}/cover"].endswith("87675-1.jpg")
+    assert s.replace(target, "cover") is not None
+    assert s.sources()[f"switch/{target.key}/cover"].endswith("121672-1.jpg")
+
+
+WIKI = """{"query": {"pages": {
+ "1": {"index": 2, "title": "Pikmin", "description": "Nintendo video game series"},
+ "2": {"index": 1, "title": "Pikmin (video game)", "description": "2001 video game",
+       "original": {"source": "https://upload.wikimedia.org/wikipedia/en/1/13/Pikmin_cover_art.jpg?utm_source=x"}},
+ "3": {"index": 3, "title": "Pikmin Bloom", "description": "2021 mobile game",
+       "original": {"source": "https://upload.wikimedia.org/wikipedia/en/f/f2/Pikmin_Bloom.png"}}}}}"""
+
+
+def test_wikipedia_box_as_last_resort_only_for_that_very_game(tmp_path):
+    s = scraper(tmp_path, {"api.php": WIKI.encode(), "Pikmin_cover_art.jpg": picture(600, 900)})
+    s.providers = [s.providers[3]]  # solo Wikipedia
+    saved = s.fetch(Target("gc", "Pikmin (USA)", "Pikmin"))
+    assert set(saved) == {"cover"}  # ni fondo ni logotipo: Wikipedia solo trae la caja
+    assert s.sources()["gc/Pikmin (USA)/cover"] == "https://upload.wikimedia.org/wikipedia/en/1/13/Pikmin_cover_art.jpg"
+    # Otro juego con nombre parecido no se lleva la caja de Pikmin.
+    assert s.fetch(Target("gc", "Pikmin 2", "Pikmin 2", ["cover"])) == {}
+
+
+def test_each_source_is_asked_only_for_what_is_missing(tmp_path):
+    s = scraper(tmp_path, {"api.php": WIKI.encode()})
+    s.providers = [s.providers[3]]
+    s.store.target("gc", "Pikmin", "cover", ".jpg").write_bytes(picture(600, 900))
+    s.fetch(Target("gc", "Pikmin", "Pikmin", ["cover", "hero"]))
+    assert not any("api.php" in u for u in s.http.asked)  # ya tiene caja: no se le pregunta a Wikipedia

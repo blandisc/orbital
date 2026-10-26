@@ -4,6 +4,7 @@ Fuentes, en orden, y ninguna pide clave:
 - libretro-thumbnails: portadas de cajas para sistemas retro, por el nombre exacto de la ROM (No-Intro).
 - TheGamesDB: portada, fanart horizontal y logotipo de casi cualquier consola (se lee su web pública).
 - Steam: para juegos que también salieron en PC (portada, héroe y logotipo oficiales).
+- Wikipedia: último recurso para la portada, de cualquier consola (la imagen de la ficha del juego).
 
 Cada imagen se valida antes de guardarla (media.good): una captura no pasa como portada ni un fondo
 chico como héroe. Lo que rechazaste no vuelve. Uso: python -m orbital.library.scraper [--force]
@@ -20,7 +21,7 @@ import threading
 import time
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from ..net import NET_ERRORS, read_body
@@ -54,6 +55,10 @@ TGDB_GAME = "https://thegamesdb.net/game.php?id={id}"
 TGDB_IMAGE = "https://cdn.thegamesdb.net/images/original/{path}"
 STEAM_SEARCH = "https://store.steampowered.com/api/storesearch/?term={term}&cc=us&l=english"
 STEAM_ASSET = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{name}"
+WIKI_SEARCH = ("https://en.wikipedia.org/w/api.php?action=query&format=json&redirects=1&prop=pageimages|description"
+               "&piprop=original&pilicense=any&generator=search&gsrlimit=3&gsrsearch={query}")
+# TheGamesDB tiene una ficha por región o edición del mismo juego (Metroid Dread: cinco). Se miran las mejores.
+TGDB_EDITIONS = 3
 
 
 @dataclass
@@ -166,8 +171,9 @@ class TheGamesDB:
             return []
         text = page.decode("utf-8", "replace")
         results = re.findall(r'game\.php\?id=(\d+)">.*?<div class="card-footer[^>]*>\s*<p>([^<]*)</p>', text, re.S)
-        scored = sorted(((similar(title, name), int(gid)) for gid, name in results), reverse=True)
-        return [gid for score, gid in scored if score >= threshold]
+        # Empate de nombre: primero la ficha más vieja, que suele ser la principal (la caja de EE. UU.).
+        scored = sorted(((similar(title, name), int(gid)) for gid, name in results), key=lambda s: (-s[0], s[1]))
+        return list(dict.fromkeys(gid for score, gid in scored if score >= threshold))
 
     def images(self, game: int, kinds: set[str]) -> list[Candidate]:
         found = re.findall(r"images/original/((boxart/front|fanart|clearlogo|screenshot)/(\d+)-?(\d*)\.\w+)", self.page(game))
@@ -182,13 +188,15 @@ class TheGamesDB:
         if platform is None:
             return []
         title = clean(target.title)
-        games = self.search(title, platform, 0.75)
-        found = self.images(games[0], set(target.kinds)) if games else []
+        games = self.search(title, platform, 0.75)[:TGDB_EDITIONS]
+        # Las imágenes de todas las ediciones, de la más parecida a la menos: si rechazas la caja de una
+        # (la de México, con el plástico del estuche), queda la de otra en vez de ninguna.
+        found = [c for game in games for c in self.images(game, set(target.kinds))]
         # Fondo y logotipo son del juego, no de la caja: si esta versión no los tiene, sirven los de la
         # misma obra en otra consola (Hit & Run de Xbox con el fanart de la de GameCube).
         lacking = {"hero", "logo"} & set(target.kinds) - {c.kind for c in found}
         if lacking:
-            for other in [g for g in self.search(title, None, 0.92) if g not in games[:1]][:3]:
+            for other in [g for g in self.search(title, None, 0.92) if g not in games][:3]:
                 found += self.images(other, lacking)
         return found
 
@@ -236,11 +244,37 @@ class Steam:
         ]
 
 
+class Wikipedia:
+    """La imagen de la ficha del juego en Wikipedia: casi siempre la caja. Solo para la portada."""
+
+    name = "wikipedia"
+
+    def __init__(self, http: Http) -> None:
+        self.http = http
+
+    def candidates(self, target: Target) -> list[Candidate]:
+        if "cover" not in target.kinds:
+            return []
+        title = clean(target.title)
+        data = self.http.get(WIKI_SEARCH.format(query=urllib.parse.quote(f"{title} video game")))
+        try:
+            pages = ((json.loads(data) if data else {}).get("query") or {}).get("pages") or {}
+        except (ValueError, AttributeError):
+            return []
+        for page in sorted(pages.values(), key=lambda p: p.get("index", 99)):
+            name = re.sub(r"\s*\([^)]*\)$", "", page.get("title", ""))  # «Pikmin (video game)» -> «Pikmin»
+            url = (page.get("original") or {}).get("source", "").split("?")[0]
+            # Solo la página de ESE juego: no la de la serie, ni la de otro con nombre parecido.
+            if url and "game" in (page.get("description") or "").lower() and similar(title, name) >= 0.9:
+                return [Candidate("cover", url, self.name)]
+        return []
+
+
 class Scraper:
     def __init__(self, store: MediaStore | None = None, http: Http | None = None) -> None:
         self.store = store or MediaStore()
         self.http = http or Http()
-        self.providers = [Libretro(), TheGamesDB(self.http), Steam(self.http)]
+        self.providers = [Libretro(), TheGamesDB(self.http), Steam(self.http), Wikipedia(self.http)]
         self._sources_file = self.store.root / "fuentes.json"
 
     def sources(self) -> dict[str, str]:
@@ -269,7 +303,7 @@ class Scraper:
             if not missing:
                 break
             try:
-                candidates += provider.candidates(target)
+                candidates += provider.candidates(replace(target, kinds=list(missing)))  # solo lo que falta
             except Exception:  # noqa: BLE001 - una fuente rota no debe parar a las demás
                 log.exception("Falló %s con %s", provider.name, target.title)
         # Primero el arte oficial de todas las fuentes; las capturas, solo si no hubo nada mejor.
