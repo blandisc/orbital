@@ -1178,6 +1178,17 @@
         }
       }
     },
+    "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A code appears to enter on the Trakt page shown. The session belongs to this iPhone only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
+          }
+        }
+      }
+    },
     "Aparece un código para escribir en microsoft.com/link. Solo pide leer tus archivos.": {
       "extractionState": "manual",
       "localizations": {
@@ -1185,17 +1196,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "A code appears to type at microsoft.com/link. It only asks to read your files."
-          }
-        }
-      }
-    },
-    "Aparece un código para escribir en trakt.tv/activate. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A code appears to enter at trakt.tv/activate. The session belongs to this iPhone only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
           }
         }
       }
