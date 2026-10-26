@@ -465,7 +465,8 @@ struct SubtitleButton: View {
         ZStack {
             if loading { ProgressView().tint(DS.text) }
             else {
-                Image(systemName: code == nil ? "text.bubble" : "text.bubble.fill").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+                // Idioma y subtítulos (el botón cambia los dos): antes «text.bubble», que solo decía subtítulos.
+                Image(systemName: code == nil ? "character.bubble" : "character.bubble.fill").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
                     .contentTransition(.symbolEffect(.replace))
             }
         }

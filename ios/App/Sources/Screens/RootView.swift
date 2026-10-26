@@ -28,7 +28,11 @@ struct RootView: View {
 
     init() {
         let env = AppEnvironment.shared
+        #if DEBUG
         let splash = !Demo.isOn || ProcessInfo.processInfo.arguments.contains("-demo-splash")
+        #else
+        let splash = true
+        #endif
         _splashing = State(wrappedValue: splash)
         env.ui.splashing = splash
         _session = State(wrappedValue: ModelObserver(env.session))

@@ -767,6 +767,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         InboxBackgroundTask.register()
         ReleaseNotifier.register()
         OrbitalShortcuts.updateAppShortcutParameters()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)
+        OpenRemoteIntent.open = { AppEnvironment.shared.ui.openRemote = true }   // el control del Centro de control abre el control
         ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         DownloadFailureNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.

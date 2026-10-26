@@ -19,6 +19,9 @@ struct SourceOrbit: View {
     var sideBySide = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Cuántos puntos ya se ven: aunque las versiones lleguen todas juntas (ya estaban guardadas), salen una tras otra; y la
+    /// elegida se marca cuando ya están todas. Es solo la vista: el video no espera nada.
+    @State private var revealed = 0
 
     var body: some View {
         let layout = sideBySide ? AnyLayout(HStackLayout(spacing: DS.Space.s6)) : AnyLayout(VStackLayout(spacing: DS.Space.s4))
@@ -32,16 +35,28 @@ struct SourceOrbit: View {
             .frame(minWidth: sideBySide ? DS.SourceOrbit.textWidth : nil, alignment: sideBySide ? .leading : .center)
             .contentTransition(.opacity)
         }
-        .animation(DS.Motion.base(reduceMotion), value: found)
-        .animation(DS.Motion.spring(reduceMotion), value: chosen)
+        .animation(DS.Motion.base(reduceMotion), value: revealed)
+        .animation(DS.Motion.spring(reduceMotion), value: picked)
         .animation(DS.Motion.base(reduceMotion), value: failed)
         .accessibilityElement(children: .combine)
+        .task(id: min(found, DS.SourceOrbit.maxDots)) {
+            let target = min(found, DS.SourceOrbit.maxDots)
+            if reduceMotion { revealed = target; return }
+            while revealed < target, !Task.isCancelled {
+                revealed += 1
+                try? await Task.sleep(for: .seconds(DS.SourceOrbit.revealStep))
+            }
+        }
     }
+
+    /// La elegida se marca cuando ya se ven todos los puntos.
+    private var picked: Bool { chosen && revealed >= min(found, DS.SourceOrbit.maxDots) }
 
     private var orbit: some View {
         let radius = size / 2 - DS.SourceOrbit.dot
-        let shown = min(found, DS.SourceOrbit.maxDots)
+        let shown = revealed
         let pick = min(failed, max(shown - 1, 0))
+        let chosen = picked
         return ZStack {
             Circle().stroke(DS.track, lineWidth: DS.SourceOrbit.ringWidth).padding(DS.SourceOrbit.dot)
             if !chosen && !reduceMotion { Sweep(size: size) }
@@ -58,8 +73,24 @@ struct SourceOrbit: View {
             }
             Circle().stroke(DS.text, lineWidth: DS.SourceOrbit.planetWidth)
                 .frame(width: size * DS.SourceOrbit.planetShare, height: size * DS.SourceOrbit.planetShare)
+            // Abriendo la elegida: una luna gira alrededor del planeta hasta que empieza el video.
+            if chosen && !reduceMotion { Moon(radius: size * DS.SourceOrbit.planetShare * DS.SourceOrbit.moonOrbit) }
         }
         .accessibilityHidden(true)
+    }
+
+    /// La luna turquesa que gira alrededor del planeta mientras se abre la versión elegida.
+    private struct Moon: View {
+        let radius: CGFloat
+        var body: some View {
+            TimelineView(.animation) { context in
+                let turn = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: DS.SourceOrbit.moonSeconds) / DS.SourceOrbit.moonSeconds
+                let angle = turn * 2 * .pi
+                Circle().fill(DS.brandMoon)
+                    .frame(width: DS.SourceOrbit.dot, height: DS.SourceOrbit.dot)
+                    .offset(x: radius * cos(angle), y: radius * sin(angle))
+            }
+        }
     }
 
     /// El barrido que gira en la órbita mientras se pregunta a los complementos.

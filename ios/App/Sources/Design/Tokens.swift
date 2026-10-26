@@ -373,6 +373,10 @@ enum DS {
         static let dimOpacity = 0.25, failedOpacity = 0.12
         /// Cuántos complementos se nombran antes de «y N más», y el ancho mínimo de los textos junto a la órbita (horizontal).
         static let namesShown = 3
+        /// Cada cuánto sale otro punto cuando las versiones llegan juntas; la luna que gira mientras se abre (a qué distancia del
+        /// planeta, en veces su radio, y cuánto tarda la vuelta).
+        static let revealStep = 0.03
+        static let moonOrbit: CGFloat = 0.85, moonSeconds = 1.2
         static let textWidth: CGFloat = 220
     }
 
