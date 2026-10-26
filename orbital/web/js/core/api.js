@@ -87,6 +87,9 @@ export const api = {
   controllers: () => request("/api/controllers"),
   dismiss: (id) => post("/api/stremio/dismiss", { id }),
   setInLibrary: (kind, id, add) => post("/api/stremio/library", { kind, id, add }),
+  // «Guardar en…» (como el iPhone): tu watchlist y tus listas de Trakt.
+  savedIn: (kind, id) => request(`/api/foryou/saved?kind=${kind}&id=${encodeURIComponent(id)}`),
+  saveTo: (kind, id, where, add) => post("/api/foryou/save", { kind, id, where, add }),
   trailer: (kind, id) => post("/api/stremio/trailer", { kind, id }),
   stremioLogin: (email, password, signal) => post("/api/stremio/login", { email, password }, { signal, timeout: 20000 }),
   stremioLogout: () => post("/api/stremio/logout"),

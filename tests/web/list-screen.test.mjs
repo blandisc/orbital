@@ -1,0 +1,27 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+const ROOT = fileURLToPath(new URL("../../", import.meta.url));
+const MAIN = readFileSync(join(ROOT, "orbital", "web", "js", "main.js"), "utf8");
+
+test("la ficha se monta después de la lista: A en un póster la deja encima", () => {
+  // .screen comparte --z-overlay: el que va después en el DOM tapa al anterior. Antes la lista
+  // iba después de la ficha, así que seleccionar un título (Estudios › A24 › …) abría la ficha
+  // debajo y no se veía.
+  const mount = MAIN.match(/replaceWith\(\s*([\s\S]*?)\);/);
+  assert.ok(mount, "no encuentro el montaje de #app");
+  const order = [...mount[1].matchAll(/ui\.(\w+)\.el/g)].map((m) => m[1]);
+  const list = order.indexOf("listScreen");
+  const title = order.indexOf("title");
+  const sources = order.indexOf("sources");
+  assert.ok(list >= 0 && title > list,
+    `la ficha debe ir después de la lista en el DOM (ahora: ${order.join(" → ")})`);
+  assert.ok(sources > title, "«Elegir versión» va encima de la ficha");
+  for (const overlay of ["decide", "year", "calendar"]) {
+    const at = order.indexOf(overlay);
+    assert.ok(at >= 0 && title > at, `la ficha debe ir después de ${overlay}`);
+  }
+});

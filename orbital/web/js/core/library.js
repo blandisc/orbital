@@ -67,15 +67,22 @@ export function rowOffset(widths, c, { gap, grow = 0, visible }) {
   return Math.min(lefts[Math.max(0, c - 1)] ?? 0, max);
 }
 
-/** Fila centrada (Tus plataformas, Premios…): la enfocada al centro de lo visible, como el carrusel centrado del iPhone,
- *  pero sin hueco: las primeras arrancan pegadas a la izquierda y las últimas no se pasan del final (antes la primera
- *  quedaba al centro con un espacio muerto a la izquierda). La enfocada crece desde su centro. */
+/** Fila centrada (Tus plataformas, Premios…): la enfocada lo más cerca del centro de lo visible, como el carrusel centrado
+ *  del iPhone, pero la fila siempre arranca con una tarjeta entera en el margen (antes la de la izquierda quedaba cortada a
+ *  la mitad, «comida»): se elige el arranque de tarjeta más cercano al centro ideal. Las primeras arrancan pegadas a la
+ *  izquierda y al final no se pasa de la última. La enfocada crece desde su centro. */
 export function centeredOffset(widths, c, { gap, grow = 0, visible }) {
-  let left = 0;
-  for (let i = 0; i < c; i++) left += (widths[i] ?? 0) + gap;
-  const total = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(0, widths.length - 1) + grow;
-  const centered = left + grow / 2 + (widths[c] ?? 0) / 2 - visible / 2;
-  return Math.min(Math.max(0, centered), Math.max(0, total - visible));
+  const lefts = [];
+  let x = 0;
+  for (const w of widths) { lefts.push(x); x += w + gap; }
+  const total = Math.max(0, x - gap) + grow;
+  if (total <= visible) return 0; // caben todas
+  const focusLeft = lefts[c] ?? 0;
+  const need = focusLeft + (widths[c] ?? 0) + grow - visible; // desde aquí, la enfocada cabe entera a la derecha
+  const ideal = Math.min(focusLeft + grow / 2 + (widths[c] ?? 0) / 2 - visible / 2, total - visible);
+  const fits = lefts.filter((left) => left <= focusLeft && left >= need);
+  if (!fits.length) return Math.max(0, Math.min(focusLeft, total - visible));
+  return fits.reduce((best, left) => (Math.abs(left - ideal) < Math.abs(best - ideal) ? left : best));
 }
 
 /** El emulador alternativo (p. ej. Eden cuando el predeterminado es Ryujinx). */
@@ -134,11 +141,14 @@ export const SECTIONS = [
   // Lo tuyo primero (Seguir viendo). Buscar es un atajo (botón Vista o la píldora de arriba), así
   // que la fila de apps (Buscar, YouTube…) va al final.
   // Con la curaduría de Para ti (core/curation.js) entre lo tuyo y lo popular: Top 10, plataformas, tus listas.
-  // Como Para ti › Listas del iPhone (core/media-plan.js): el mismo orden y los mismos nombres. «Seguir viendo» vive en el
-  // Inicio y Mi lista en «Listas de Stremio». Sin la fila «Multimedia» (Buscar, Stremio, YouTube): el usuario ya no la usa; Buscar es ⧉.
+  // Como Para ti › Listas del iPhone (core/media-plan.js): el mismo orden y los mismos nombres. Mi lista vive en
+  // «Listas de Stremio». Sin la fila «Multimedia» (Buscar, Stremio, YouTube): el usuario ya no la usa; Buscar es ⧉.
   // Siempre en la barra (como TV): la curaduría llega unos segundos después y la pestaña aparecía tarde (y la barra se
   // recorría al llegar). Mientras, la sección dice que está cargando (main.js · emptyFor).
-  { id: "media", title: "Películas y series", rows: (id) => id.startsWith("curated:"), order: ["curated:spotlight", "curated:*"], always: true },
+  // «Seguir viendo» (lo que dejaste a medias en Stremio, lo más reciente primero) va justo debajo de Destacados: lo tuyo
+  // antes que lo popular. También sigue en el Inicio, mezclado con los juegos.
+  { id: "media", title: "Películas y series", rows: (id) => id === "continue" || id.startsWith("curated:"),
+    order: ["curated:spotlight", "continue", "curated:*"], always: true },
   // TV en vivo: los canales de México (su propia vista, sin filas de biblioteca). Siempre a la vista: aunque
   // la lista aún no llegue, la sección dice qué está pasando en vez de desaparecer de la barra.
   { id: "tv", title: "TV en vivo", rows: () => false, always: true },

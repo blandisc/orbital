@@ -40,7 +40,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
   const busy = () => performance.now() < busyUntil;
   let generation = 0; // sube al cambiar de hoja o de nivel: una respuesta tardía no reabre una que ya dejaste
   // Lo que se cambia en su sitio: la hoja no se cierra y reabre (parpadeaba y, si fallaba, se cerraba).
-  const inPlace = (option, command) => !!option?.adjust || ["setting", "quick-set", "music", "stay"].includes(command?.type);
+  const inPlace = (option, command) => !!option?.adjust || ["setting", "quick-set", "music", "stay", "save-toggle"].includes(command?.type);
 
   /** La ayuda va debajo del nombre si es larga o si a la derecha ya está el valor (‹ 70 % ›). */
   /** Se cambia con A o ◀/▶ (un ajuste, o volumen y brillo del panel rápido): lleva ‹ ›. */
@@ -200,6 +200,8 @@ export function createSheet({ onCommand, onMove, onClose }) {
   }
 
   return { el, open, close, handle, get isOpen() { return !!menu; }, get depth() { return stack.length; },
+    /** El menú abierto y la opción enfocada (para ponerlo al día sin mover el foco, como «Guardar en…»). */
+    get menu() { return menu; }, get index() { return index; }, get stack() { return [...stack]; },
     /** La opción enfocada se cambia con ◀ ▶ (un ajuste, el volumen…). */
     /** La opción enfocada solo informa (A no hace nada). */
     get inert() { const o = menu?.options[index]; return !!o && (!o.command || o.command.type === "stay"); },

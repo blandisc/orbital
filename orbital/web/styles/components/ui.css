@@ -5,7 +5,7 @@
 /* Chip: un dato corto (4K, Inglés, Al instante). */
 .chip {
   display: inline-flex; align-items: center; gap: var(--space-1);
-  padding: .14rem .55rem; border-radius: var(--radius-xs); background: var(--chip-bg, var(--color-chip-bg)); box-shadow: var(--chip-shadow, none);
+  padding: .14rem .55rem; border-radius: var(--radius-xs); background: var(--color-chip-bg);
   font-size: var(--type-secondary); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums;
   white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
 }
@@ -53,6 +53,15 @@
 }
 .side-panel--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
 .side-panel--leaving .side-panel__panel { animation: slide-out-right var(--duration-exit) var(--ease-in) forwards; }
+/* Abajo (`side-panel--bottom`): del ancho de la pantalla y del alto de lo que trae, como el panel del reproductor; arriba
+   se sigue viendo el arte. Lo usa «Elegir versión» (antes a la derecha y a todo lo alto: con dos idiomas, media pantalla vacía). */
+.side-panel--bottom { align-items: flex-end; justify-content: stretch; }
+.side-panel--bottom .side-panel__panel {
+  width: 100%; height: auto; max-height: calc(100vh - var(--space-14) - var(--safe-y));
+  border-left: 0; border-top: 1px solid var(--color-hairline); border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  animation-name: slide-in-up;
+}
+.side-panel--bottom.side-panel--leaving .side-panel__panel { animation-name: slide-out-down; }
 
 /* Progress: cuánto llevas de un video (también sobre el arte). */
 .progress {

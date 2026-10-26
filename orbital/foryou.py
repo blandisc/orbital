@@ -76,14 +76,15 @@ TRAKT_ADDON = "trakt integration"
 
 # Las claves de cada servicio. Las que escribes en Ajustes › Cuentas se guardan cifradas con las
 # credenciales (como la sesión de Stremio) y mandan sobre las de config.yaml.
-# Películas y series (como Para ti › Listas del iPhone): premios fijos, «Nuevo en tus plataformas», estudios y por año.
+# Películas y series (como Para ti › Listas del iPhone): premios fijos, «Nuevo en tus plataformas», estudios, género,
+# temporada y por año.
 AWARDS_FILE = Path(__file__).resolve().parent.parent / "design" / "awards.json"  # compartido con el iPhone
 AWARD_TINTS = ("gold", "silver", "bronze")
 FRESH_BRANDS = ("netflix", "disney", "hbo")  # «Nuevo en tus plataformas» las alterna, como el iPhone
 FRESH_SERIES_DAYS, FRESH_MOVIE_DAYS = 14, 90
 FIRST_YEAR = 1980  # «Por año», del actual hacia atrás
 # Lo que solo arma la TV (el iPhone calcula los suyos): no viaja por el túnel (server._foryou_public_routes).
-TV_ONLY_PREFIXES = ("because", "fresh", "award:", "studio:", "year:")
+TV_ONLY_PREFIXES = ("because", "fresh", "award:", "studio:", "year:", "genre:", "season:")
 
 
 def load_awards(path: Path = AWARDS_FILE) -> list[dict]:
@@ -587,7 +588,8 @@ class ForYou:
 
     def _collections(self) -> list[dict]:
         """Lo de Películas y series que viene del iPhone (Para ti › Listas): «Porque viste X», «Nuevo en tus plataformas»,
-        los premios, los estudios y los años. `collection` dice qué tarjeta lleva (award, studio, year) en la TV."""
+        los premios, los estudios, lo mejor del género, las temporadas y los años. `collection` dice qué tarjeta lleva
+        (award, studio, genre, season, year) en la TV."""
         out: list[dict] = []
         if self.trakt.linked:
             seeds = self._recent_seeds()
@@ -612,6 +614,13 @@ class ForYou:
             out += [{"id": f"studio:{sid}", "title": name, "meta": "Lo más popular del estudio", "icon": "film", "source": "TMDB",
                      "collection": "studio", "kinds": ["movie"], **({"logo": logos[str(sid)]} if logos.get(str(sid)) else {})}
                     for sid, name in tmdb_api.STUDIOS]
+            year = self._today().year
+            out += [{"id": f"genre:{g.slug}", "title": g.title, "headline": f"Lo mejor de {g.title} en {year}",
+                     "meta": "Las mejor calificadas del año", "icon": "film", "source": "TMDB", "collection": "genre",
+                     "kinds": ["movie", "series"]} for g in tmdb_api.GENRES]
+            out += [{"id": f"season:{s.slug}", "title": s.title, "headline": s.title, "meta": s.blurb, "icon": "calendar",
+                     "source": "TMDB", "collection": "season", "kinds": ["movie", "series"]}
+                    for s in tmdb_api.ordered_seasons(self._today())]
         if self.trakt.configured:
             this_year = datetime.now().year
             out += [{"id": f"year:{y}", "title": str(y), "meta": f"Lo más popular de {y}", "icon": "calendar", "source": "Trakt",
@@ -635,6 +644,40 @@ class ForYou:
         pairs = [(k if k in ("movie", "series") else "movie", i) for k, i in wanted if isinstance(i, str) and i.startswith("tt")][:120]
         with ThreadPoolExecutor(max_workers=12) as pool:
             return {imdb: rating for imdb, rating in pool.map(one, pairs) if rating}
+
+    def saved_in(self, kind: str, imdb: str) -> dict:
+        """«Guardar en…» (como el iPhone): si el título está en tu watchlist y en cuáles de tus listas de Trakt. Se
+        pregunta a Trakt al momento (no a lo guardado en caché): lo que cambiaste en el iPhone ya cuenta."""
+        t = self.trakt
+        if not t.linked or not imdb.startswith("tt"):
+            return {"trakt": False, "watchlist": False, "lists": []}
+        lists = t.lists()
+
+        def members(list_id: str) -> list[dict] | None:
+            try:
+                return t.list_items(list_id)
+            except SERVICE_ERRORS:  # una lista que no responde no tumba las demás
+                return None
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            watch = pool.submit(t.watchlist)
+            found = [pool.submit(members, row["id"]) for row in lists]
+            in_watch = any(e["imdb"] == imdb for e in watch.result())
+            out = [{**row, "contains": any(e["imdb"] == imdb for e in f.result() or [])}
+                   for row, f in zip(lists, found, strict=True) if f.result() is not None]
+        return {"trakt": True, "watchlist": in_watch, "lists": out}
+
+    def save_to(self, kind: str, imdb: str, where: str, add: bool) -> None:
+        """Añadir o quitar de tu watchlist («watchlist») o de una de tus listas de Trakt («list:123»). Las filas de esa
+        lista se vuelven a pedir (en la TV y en Para ti)."""
+        if where == "watchlist":
+            self.trakt.set_watchlist(kind, imdb, add)
+            self.cache.clear("trakt:watchlist")
+        elif where.startswith("list:") and where[5:].isdigit():
+            self.trakt.set_list_item(where[5:], kind, imdb, add)
+            self.cache.clear(f"trakt:list:{where[5:]}")
+        else:
+            raise ValueError("¿Guardar dónde?")
 
     def title_extras(self, kind: str, imdb: str) -> dict:
         """La ficha como el iPhone: frase, clasificación, quién la hizo (TMDB) y «Más como esto» (lo que Trakt relaciona, ya
@@ -745,11 +788,29 @@ class ForYou:
         order = [seeds[(start + i) % span] for i in range(span)] + seeds[span:]
         return next((s for s in order if self._related(s)), order[0])
 
+    def _today(self) -> date:
+        return date.today()
+
     def _country(self) -> str:
         return {"MX": "México", "US": "Estados Unidos", "ES": "España", "AR": "Argentina", "CO": "Colombia",
                 "CL": "Chile", "PE": "Perú"}.get(self.region, self.region)
 
     # --- el contenido de cada lista ----------------------------------------------------------
+    def list_payload(self, list_id: str, kind: str | None = None) -> dict:
+        """Lo que pide la tele: los títulos y, en género o temporada, el título de la pantalla (el año de verdad)."""
+        return {"items": self.list_items(list_id, kind), **self._list_heading(list_id)}
+
+    def _list_heading(self, list_id: str) -> dict:
+        if list_id.startswith("genre:"):
+            bundle = self.cache.peek(f"tmdb:genre:{list_id.removeprefix('genre:')}:{self._today().year}")
+        elif list_id.startswith("season:"):
+            bundle = self.cache.peek(f"tmdb:season:{list_id.removeprefix('season:')}")
+        else:
+            return {}
+        if isinstance(bundle, dict) and bundle.get("title"):
+            return {"title": bundle["title"], **({"meta": bundle["meta"]} if bundle.get("meta") else {})}
+        return {}
+
     def list_items(self, list_id: str, kind: str | None = None) -> list[dict]:
         kind = kind if kind in ("movie", "series") else "series"
         hidden = self.catalog.state.dismissed()
@@ -857,6 +918,19 @@ class ForYou:
             if not name or not self.tmdb.configured:
                 raise KeyError(list_id)
             return self.cache.get(f"tmdb:studio:{sid}", SLOW_TTL, lambda: self._studio(int(sid), name))
+        if list_id.startswith("genre:"):
+            slug = list_id.removeprefix("genre:")
+            if slug not in tmdb_api.GENRE_BY_SLUG or not self.tmdb.configured:
+                raise KeyError(list_id)
+            year = self._today().year
+            bundle = self.cache.get(f"tmdb:genre:{slug}:{year}", SLOW_TTL, lambda: self._genre_bundle(slug, year))
+            return bundle["items"]
+        if list_id.startswith("season:"):
+            slug = list_id.removeprefix("season:")
+            if slug not in tmdb_api.SEASON_BY_SLUG or not self.tmdb.configured:
+                raise KeyError(list_id)
+            bundle = self.cache.get(f"tmdb:season:{slug}", SLOW_TTL, lambda: self._season_bundle(slug))
+            return bundle["items"]
         if list_id.startswith("year:"):
             year = list_id.removeprefix("year:")
             if not year.isdigit() or not FIRST_YEAR <= int(year) <= datetime.now().year:
@@ -906,6 +980,48 @@ class ForYou:
 
     def _studio(self, company_id: int, name: str) -> list[dict]:
         return self._tmdb_items(self.tmdb.studio(company_id), "movie", name)
+
+    def _genre_heading(self, name: str, asked: int, used: int, basis: str) -> tuple[str, str]:
+        """El título de la pantalla dice el año de verdad; el renglón de abajo dice si no alcanzó la nota."""
+        title = f"Lo mejor de {name} en {used}"
+        if basis == "votes":
+            return title, "Las mejor calificadas del año"
+        if basis == "popular":
+            return title, f"Las más populares de {used}"
+        if basis == "previous":
+            return title, f"Pocas de {asked}: las mejor calificadas de {used}"
+        return title, f"Pocas de {asked}: lo más visto en {used}"
+
+    def _genre_bundle(self, slug: str, year: int) -> dict:
+        spec = tmdb_api.GENRE_BY_SLUG[slug]
+        chart = self.tmdb.genre_top(spec.movie, spec.tv, year)
+        title, meta = self._genre_heading(spec.title, year, int(chart["year"]), str(chart["basis"]))
+        return {"items": self._from_tmdb_rows(chart["rows"], spec.title, ranked=True), "title": title, "meta": meta}
+
+    def _season_bundle(self, slug: str) -> dict:
+        spec = tmdb_api.SEASON_BY_SLUG[slug]
+        keyword = self.cache.get(f"tmdb:keyword:{slug}", SLOW_TTL, lambda: self.tmdb.keyword_id(spec.queries))
+        rows = self.tmdb.season_titles(int(keyword)) if keyword else []
+        return {"items": self._from_tmdb_rows(rows, spec.title, limit=20), "title": spec.title, "meta": spec.blurb}
+
+    def _from_tmdb_rows(self, rows: list[dict], why: str, *, limit: int = 10, ranked: bool = False) -> list[dict]:
+        """Filas de discover ({kind, id}) → video_item con IMDb. Un Top pone el puesto 1…n."""
+        picked = [r for r in rows if r.get("kind") in ("movie", "series") and isinstance(r.get("id"), int)][:20]
+
+        def one(row: dict) -> dict | None:
+            detail = self._safe(lambda: self.tmdb.details(row["kind"], int(row["id"])))
+            if not detail or not detail.get("imdb") or not detail.get("title"):
+                return None
+            return video_item(detail, why, title=detail["title"], poster=detail.get("poster"), wide=detail.get("backdrop"),
+                              overview=detail.get("overview"), seasons=detail.get("seasons"))
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            items = [item for item in pool.map(one, picked) if item][:limit]
+        if ranked:
+            for n, item in enumerate(items, start=1):
+                item["rank"] = n
+                item["why"] = f"N.º {n} · {why}"
+        return items
 
     def _year(self, year: int, kind: str) -> list[dict]:
         """Lo más popular de un año en Trakt; en películas, primero las premiadas de ese año (como los pósters del iPhone)."""

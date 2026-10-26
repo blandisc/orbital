@@ -65,11 +65,13 @@ INTRO = re.compile(r"\b(intro|opening|op|recap|previously|resumen|anteriormente|
 RECAP = re.compile(r"\b(recap|previously|resumen|anteriormente)\b", re.I)
 CREDITS = re.compile(r"\b(credits?|ending|ed|outro|créditos|creditos)\b", re.I)
 
-# Apariencia de los mensajes de mpv con la tipografía y la paleta de Orbital.
+# Orbital dibuja su propia interfaz (osd-overlay). La barra nativa de mpv (avance abajo y
+# volumen arriba) no se enseña: salía al adelantar o al cambiar el volumen (mando, teclas
+# multimedia o el control del teléfono) encima de la de Orbital.
 OSD_STYLE = [
+    "--osd-bar=no", "--osd-on-seek=no", "--osd-level=0",
     "--osd-font=Segoe UI Variable Display Semibold", "--osd-font-size=38", "--osd-color=#F5F4F0",
     "--osd-border-size=0", "--osd-shadow-offset=2", "--osd-shadow-color=#99000000",
-    "--osd-bar-align-y=0.88", "--osd-bar-h=1.6", "--osd-bar-w=72", "--osd-margin-x=60", "--osd-margin-y=48",
     "--sub-font=Segoe UI Variable Text Semibold", "--sub-font-size=44", "--sub-border-size=2.5",
     "--sub-color=#F5F4F0", "--sub-border-color=#CC000000", "--sub-margin-y=56",
 ]
@@ -161,7 +163,9 @@ KEY_BINDINGS = "".join(f"{key} {'repeatable ' if repeat else ''}script-message o
     ("LEFT", "left", True), ("RIGHT", "right", True), ("UP", "up", True), ("DOWN", "down", True),
     ("ESC", "esc", False), ("BS", "esc", False), ("q", "esc", False),
     ("x", "x", False), ("y", "y", False), ("PGUP", "lb", False), ("PGDWN", "rb", False),
-    ("[", "lt", False), ("]", "rt", False)))
+    ("[", "lt", False), ("]", "rt", False),
+    # Teclas multimedia: el volumen de Windows (el de Orbital), no el OSD nativo de mpv.
+    ("VOLUME_UP", "up", True), ("VOLUME_DOWN", "down", True)))
 
 
 # El ratón (o el dedo) mantenido: input.conf solo sabe «bajó», así que un script mínimo de mpv avisa también por dónde
@@ -238,14 +242,15 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
                   referrer: str | None = None) -> list[str]:
     """`live`: un canal de TV (caché corta, reconexión, sin posición que recordar). `user_agent` y `referrer`
     son los del canal; los canales siguientes los llevan en su propio `loadfile` (ver OrbitalPlayer.tune)."""
-    # Por delante 400 MiB (adelantar sin esperar) y hacia atrás 50 MiB, escrito aquí para que una versión nueva de
-    # mpv no cambie el valor de fábrica sin que se note: el búfer no puede pasar de ~450 MiB.
-    cache = LIVE_ARGS if live else ["--cache=yes", "--demuxer-max-bytes=400MiB", "--demuxer-max-back-bytes=50MiB"]
+    # Por delante 200 MiB y hacia atrás 25 MiB, escrito aquí para que una versión nueva de mpv no cambie el valor de
+    # fábrica sin que se note. Antes 400 + 50: con Los Simpson al aire mpv llegaba a 1 GB en una consola de 12 GB que
+    # también corre los juegos. 200 MiB siguen siendo ~3 min de un 1080p y ~30 s de un 4K remux por delante.
+    cache = LIVE_ARGS if live else ["--cache=yes", "--demuxer-max-bytes=200MiB", "--demuxer-max-back-bytes=25MiB"]
     cmd = [
         mpv, f"--input-ipc-server={PIPE}", "--fullscreen", "--force-window=immediate",
         # keep-open: al terminar se queda en el último cuadro (Orbital decide: siguiente episodio o
         # salir). idle: si una fuente falla, mpv no se cierra; Orbital carga otra en la misma ventana.
-        "--keep-open=yes", "--idle=yes", "--osc=no", "--input-default-bindings=yes",
+        "--keep-open=yes", "--idle=yes", "--osc=no", "--input-default-bindings=no",
         *([f"--input-conf={bindings}"] if bindings else []),
         *([f"--script={script}"] if bindings and (script := Path(bindings).with_name(MOUSE_SCRIPT_NAME)).is_file() else []),
         f"--title={title}", f"--force-media-title={title}",

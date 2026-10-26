@@ -33,6 +33,7 @@ from .foryou import ForYou
 from .launcher import Launcher
 from .library import cinemeta, detect, emulators, esde, geforcenow, localize, steam, steam_store, stremio, stremio_api, wiki_games
 from .library import onedrive as onedrive_api
+from .library.identity import runner_keys
 from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
@@ -186,6 +187,8 @@ class Catalog:
         self.watch.localizer.on_name = self.names.remember
         self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
         self.watch.scrobbler.trakt = lambda: self.foryou.trakt  # lo que ves, a Trakt (se pide en cada aviso)
+        # En pausa, el título estilizado: el mismo logo recortado de la ficha (en blanco si es oscuro).
+        self.watch.player.logo_provider = lambda meta: self.foryou.trimmed_logo(str(meta.get("meta_id") or ""))
         self.tv = LiveTV(config, self)  # «TV en vivo»: canales y su salud (no sale a internet hasta que arranca)
         self.events.subscribe(self._on_event)
 
@@ -275,6 +278,7 @@ class Catalog:
         if not items:
             return False
         self.store.replace(items)
+        self._migrate_runner_prefs(items)
         log.info("Biblioteca guardada: %d elementos (escaneando para ponerla al día)", len(items))
         return True
 
@@ -411,6 +415,7 @@ class Catalog:
             self._chosen_art(item)
         self.state.mark_seen([i.id for i in found if i.category in ("emulators", "steam")])
         self.store.replace(found)
+        self._migrate_runner_prefs(found)
         self._save_snapshot(found)
         if self.library_watch is not None:
             self.library_watch.accept()  # lo que hay ahora ya está escaneado: el vigilante no lo vuelve a pedir
@@ -540,7 +545,19 @@ class Catalog:
         return self.state.prefs(item.id).get("favorite", item.favorite)
 
     def runner_for(self, item: LibraryItem, runner_id: str | None = None):
-        return item.runner(runner_id or self.state.prefs(item.id).get("runner"))
+        if runner_id:
+            return item.runner(runner_id)
+        for key in runner_keys(item):
+            chosen = self.state.prefs(key).get("runner")
+            if chosen:
+                return item.runner(chosen)
+        return item.runner()
+
+    def _migrate_runner_prefs(self, items: list[LibraryItem]) -> None:
+        """Las elecciones de emulador guardadas por ruta pasan a la clave estable (sin borrar las viejas)."""
+        n = self.state.migrate_runner_prefs([(i.id, runner_keys(i)) for i in items])
+        if n:
+            log.info("Emulador elegido: %d preferencias copiadas a una clave que sobrevive a renombrar", n)
 
     def describe(self, item: LibraryItem) -> dict:
         data = item.public()
@@ -665,12 +682,13 @@ class Catalog:
             self.state.set_pref(item_id, "favorite", favorite)
         if hidden is not None:
             self.state.set_pref(item_id, "hidden", True if hidden else None)
+        keys = runner_keys(item)
         if runner is not None:
             if runner not in {r.id for r in item.runners}:
                 raise ValueError(f"{item.title} no tiene el emulador {runner}")
-            self.state.set_pref(item_id, "runner", None if runner == item.default_runner else runner)
+            self.state.set_pref_on(keys, "runner", None if runner == item.default_runner else runner)
         if clear_runner:
-            self.state.set_pref(item_id, "runner", None)
+            self.state.set_pref_on(keys, "runner", None)
         return self.describe(item)
 
     def _chosen_art(self, item: LibraryItem) -> None:

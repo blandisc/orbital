@@ -209,3 +209,18 @@ def test_opening_and_closing_before_any_image_reports_nothing():
 def test_live_tv_reports_nothing_to_trakt():
     live = {"kind": "tv", "meta_id": "tv:canal", "video_id": "tv:canal", "title": "Canal"}
     assert watch(live, [{"time-pos": 10.0, "path": "http://x/v"}] * 3, live=True) == []
+
+
+def test_a_filler_clip_does_not_mark_the_movie_as_watched(monkeypatch):
+    """El 22 de octubre una fuente de Hope (2 h 36 min) era un clip de 30 s: al «terminar», Trakt la dio por vista y se
+    perdió dónde ibas. Un video que dura mucho menos que una película (o que un episodio) no se cuenta."""
+    from orbital.scrobble import not_the_video
+
+    assert not_the_video(MOVIE, 30) and not not_the_video(MOVIE, 9406) and not not_the_video(MOVIE, 0)
+    assert not_the_video(EPISODE, 30) and not not_the_video(EPISODE, 22 * 60)
+    assert not not_the_video({"kind": "channel"}, 30)
+    net, t, s = setup(monkeypatch)
+    s.event("stop", MOVIE, 30, 30)
+    s.event("start", MOVIE, 60, 7200)
+    s.wait()
+    assert [action for action, _ in net.scrobbles()] == ["start"]

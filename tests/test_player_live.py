@@ -28,7 +28,7 @@ def live_player(**props):
 # --- el comando de mpv -----------------------------------------------------------------------
 def test_comando_en_vivo_usa_cache_corta_y_reconexion_no_los_400_mib():
     cmd = player.build_command("mpv.exe", URL, "Canal 2", live=True, audio="es", subtitles="", start=900)
-    assert "--demuxer-max-bytes=400MiB" not in cmd and "--demuxer-max-bytes=48MiB" in cmd
+    assert "--demuxer-max-bytes=200MiB" not in cmd and "--demuxer-max-bytes=48MiB" in cmd
     assert "--cache-secs=8" in cmd and "--demuxer-readahead-secs=8" in cmd
     assert any(a.startswith("--stream-lavf-o=reconnect=1") for a in cmd) and "--network-timeout=10" in cmd
     assert not any(a.startswith("--start") for a in cmd)  # en vivo no hay punto donde seguir
@@ -38,7 +38,7 @@ def test_comando_en_vivo_usa_cache_corta_y_reconexion_no_los_400_mib():
 
 def test_comando_normal_no_cambia():
     cmd = player.build_command("mpv.exe", URL, "Peli")
-    assert "--demuxer-max-bytes=400MiB" in cmd and not any("reconnect" in a for a in cmd)
+    assert "--demuxer-max-bytes=200MiB" in cmd and not any("reconnect" in a for a in cmd)
     assert not any(a.startswith(("--user-agent", "--referrer")) for a in cmd)
 
 

@@ -9,6 +9,7 @@ abrir nada de verdad (el lanzador solo anota). No interfiere con el Orbital real
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import tempfile
@@ -306,7 +307,28 @@ def build(tmp: Path):
     demo_downloads(catalog, tmp)
     demo_onedrive(catalog)
     demo_tv.install(catalog, tmp)  # «TV en vivo»: canales y logos de mentiras, sin Internet ni mpv
+    demo_sources(catalog)
     return create_app(config, catalog)
+
+
+def demo_sources(catalog) -> None:
+    """«Elegir versión» sin internet: las fuentes REALES que dio Torrentio con Real-Debrid (tests/fixtures/streams) para
+    cualquier título (películas: Dune; series: Los Simpson; anime si el id es el de Frieren)."""
+    from orbital.library import streams
+
+    fixture = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "streams" / "torrentio_rd_2026-10-20.json"
+    titles = {t["video_id"].split(":")[0]: t for t in json.loads(fixture.read_text("utf-8"))["titles"]}
+
+    def stream_sources(kind, video_id, prefs=None):
+        title = titles.get(video_id.split(":")[0]) or titles["tt15239678" if kind == "movie" else "tt0096697"]
+        found = []
+        for i, stream in enumerate(title["streams"]):
+            src = streams.parse(stream, "Torrentio", "https://torrentio.strem.fun/manifest.json", i, title["original"])
+            src.other_title = not streams.mentions_title(title["titles"], src.release)
+            found.append(src)
+        return streams.rank(found, prefs or catalog.watch.stream_prefs, kind)
+
+    catalog.watch.stream_sources = stream_sources
 
 
 def main() -> None:

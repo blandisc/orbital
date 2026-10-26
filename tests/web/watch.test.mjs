@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { episodeStates, titleActions } from "../../orbital/web/js/core/watch.js";
+import { episodeStates, episodesLed, titleActions } from "../../orbital/web/js/core/watch.js";
 
 const seasons = [
   { season: 1, episodes: [{ id: "s:1:1", episode: 1, title: "Piloto" }, { id: "s:1:2", episode: 2, title: "Dos" }] },
@@ -17,16 +17,16 @@ test("película: Ver, o Continuar con lo que queda y Desde el principio", () => 
   assert.ok(half[0].primary);
 });
 
-test("serie: el foco empieza en el episodio en el que ibas (o el siguiente)", () => {
-  const going = titleActions({ kind: "series", seasons, resume: { video_id: "s:2:1", label: "T2 E1", position: 600, duration: 1800 } });
-  assert.equal(going[0].label, "Continuar T2 E1");
-  assert.equal(going[0].video_id, "s:2:1");
-  assert.ok(going.some((a) => a.id === "restart"));
-  const next = titleActions({ kind: "series", seasons, resume: { video_id: "s:1:2", label: "T1 E2", episode_title: "Dos", position: 0 } });
-  assert.equal(next[0].label, "Ver T1 E2");
-  assert.ok(!next.some((a) => a.id === "restart"));
-  const fresh = titleActions({ kind: "series", seasons, resume: null });
-  assert.deepEqual([fresh[0].label, fresh[0].video_id], ["Ver T1 E1", "s:1:1"]);
+test("serie con episodios: se ve desde la lista; a la izquierda solo lo de la serie", () => {
+  const going = { kind: "series", seasons, trailer: "x", resume: { video_id: "s:2:1", label: "T2 E1", position: 600, duration: 1800 } };
+  assert.ok(episodesLed(going));
+  // Sin «Continuar» aparte ni «Versión»/«Descargar» (son del episodio enfocado: A, Y, X).
+  assert.deepEqual(titleActions(going, { download: null }).map((a) => a.id), ["mylist", "trailer"]);
+  assert.deepEqual(titleActions(going, { phone: true }).map((a) => a.id), ["mylist", "trailer", "phone-download", "phone-open"]);
+  // Sin episodios en la lista (Cinemeta no los trae): el botón de siempre, con el que ibas.
+  const bare = titleActions({ kind: "series", seasons: [], resume: { video_id: "s:2:1", label: "T2 E1", position: 600 } });
+  assert.ok(!episodesLed({ kind: "series", seasons: [] }));
+  assert.deepEqual([bare[0].label, bare[0].video_id], ["Continuar T2 E1", "s:2:1"]);
 });
 
 test("sin conexión: un solo botón, Reintentar", () => {
@@ -71,9 +71,8 @@ test("tráiler y Mi lista en la ficha", async () => {
   assert.deepEqual(labels, ["Ver", "Guardada", "Tráiler", "Versión"]);
 });
 
-test("serie sin episodios: sin «Elegir fuente» (no había nada que elegir)", () => {
+test("serie sin episodios: sin «Elegir versión» (no había nada que elegir)", () => {
   assert.deepEqual(titleActions({ kind: "series", seasons: [], resume: null }).map((a) => a.id), ["mylist"]);
-  assert.ok(titleActions({ kind: "series", seasons, resume: null }).some((a) => a.id === "sources"));
 });
 
 test("ficha: «Enviar al iPhone» y «Descargar en el iPhone» solo con un iPhone conectado", () => {
@@ -104,29 +103,45 @@ test("en el Inicio, un video dice solo lo que falta (sin «termina a las…»)",
   assert.equal(detailOf(movie, now), "Quedan 1 h 43 min");
 });
 
-test("la hoja de Fuente: la recomendada sola arriba y el resto por calidad, como el iPhone", async () => {
-  const { sourceGroups } = await import("../../orbital/web/js/core/watch.js");
-  const s = (id, resolution) => ({ id, resolution });
-  const { groups, order } = sourceGroups([s("a", "1080p"), s("b", "4K"), s("c", "720p"), s("d", "1080p"), s("e", null), s("f", "4K")]);
-  assert.deepEqual(groups.map((g) => [g.title, g.items.map((x) => x.id).join("")]),
-    [["Recomendada", "a"], ["4K", "bf"], ["1080p", "d"], ["720p", "c"], ["Otras", "e"]]);
-  assert.match(groups[0].note, /idioma, la calidad y el tamaño/);
-  assert.deepEqual(order.map((x) => x.id), ["a", "b", "f", "d", "c", "e"]); // ↑↓ va en el orden en que se ven
-  assert.deepEqual(sourceGroups([]), { groups: [], order: [] });
-  // Tu copia de OneDrive va primero y se dice así (como el iPhone), no «la elegimos por tu idioma».
-  assert.equal(sourceGroups([{ id: "o", addon: "Tu OneDrive", resolution: "1080p" }, s("a", "4K")]).groups[0].note, "Tu copia en OneDrive");
+test("Versión: una fila por idioma con solo las calidades que hay; tu idioma, luego el original", async () => {
+  const { versionRows, versionStart, versionStep } = await import("../../orbital/web/js/core/watch.js");
+  const lang = (code, name, proof) => ({ code, name, proof });
+  const s = (id, resolution, langs, extra = {}) => ({ id, resolution, audio_langs: langs, tags: [], ...extra });
+  const en = lang("en", "Inglés", "original");
+  const lat = lang("es-419", "Latino", "name");
+  const sources = [
+    s("a", "4K", [en]), s("b", "1080p", [lat, lang("en", "Inglés", "name")]), s("c", "1080p", [en]),
+    s("d", "4K", [lang("es-ES", "Castellano", "site")]), s("e", "480p", [en]), s("f", "1080p", [en], { tags: ["CAM"] }),
+    s("g", "720p", [lang("es", "Español", "maybe")]),
+  ];
+  const rows = versionRows(sources, { audio: "es", spanish: "es-419" });
+  assert.deepEqual(rows.map((r) => [r.code, r.role, r.options.map((o) => `${o.res}:${o.source.id}`).join(" ")]), [
+    ["es-419", "Tu idioma", "1080p:b"], ["es", "No dice si latino o castellano", "720p:g"], ["es-ES", "", "4K:d"], ["en", "Original", "4K:a 1080p:b SD:e"],
+  ]); // la grabada en el cine (f) no sale; la dual (b) sale en latino y en inglés
+  assert.deepEqual(rows[3].options[1].all.map((x) => x.id), ["b", "c"]); // X: todas las de esa fila y calidad
+  const english = versionRows(sources, { audio: "en" });
+  assert.deepEqual(english.map((r) => r.code), ["en", "es-419", "es-ES", "es"]); // el español antes que los demás
+  assert.deepEqual(versionStart(english, sources[0]), { row: 0, col: 0 });
+  // La recomendada se queda en su casilla aunque otra diga el idioma con más palabras (antes el panel abría sin ella).
+  const two = [s("r", "4K", [en]), s("y", "4K", [lang("en", "Inglés", "name"), lang("es", "Español", "name")])];
+  assert.equal(versionRows(two, { audio: "en" })[0].options[0].source.id, "r");
+  // ↓ se queda en la misma calidad si la hay; si no, en la más cercana.
+  assert.deepEqual(versionStep(rows, { row: 3, col: 1 }, "up"), { row: 2, col: 0 });
+  assert.deepEqual(versionStep(rows, { row: 0, col: 0 }, "right"), { row: 0, col: 0 });
+  assert.deepEqual(versionStep(rows, { row: 2, col: 0 }, "down"), { row: 3, col: 0 });
+  assert.deepEqual(versionRows([]), []);
+  // Solo grabadas en el cine: salen (mejor algo que nada).
+  assert.equal(versionRows([s("x", "1080p", [en], { tags: ["CAM"] })], { audio: "en" }).length, 1);
 });
 
-test("la ficha: «Ver» arriba a todo lo ancho, los demás abajo; ← → los recorre y al final se pasa a los episodios", async () => {
+test("la ficha: los botones en un renglón; ← → los recorre y ↑ ↓ salen de él", async () => {
   const { actionStep } = await import("../../orbital/web/js/core/watch.js");
-  assert.equal(actionStep(5, 0, "down"), 1); // del principal, a los de abajo
-  assert.equal(actionStep(5, 3, "up"), 0);
   assert.equal(actionStep(5, 2, "right"), 3);
-  assert.equal(actionStep(5, 4, "right"), "episodes"); // del último, a los episodios (a la derecha)
-  assert.equal(actionStep(5, 2, "down"), "episodes");
+  assert.equal(actionStep(5, 4, "right"), null); // el último: rebota
   assert.equal(actionStep(5, 0, "left"), null);
-  assert.equal(actionStep(5, 0, "up"), null);
-  assert.equal(actionStep(1, 0, "down"), "episodes"); // solo «Ver»
+  assert.equal(actionStep(5, 3, "left"), 2);
+  assert.equal(actionStep(5, 2, "down"), "down"); // a los episodios o a «Más como esto»
+  assert.equal(actionStep(5, 0, "up"), "up");
 });
 
 test("Descargar en la ficha dice cómo va (para ver sin internet), como el iPhone", async () => {
@@ -141,20 +156,52 @@ test("Descargar en la ficha dice cómo va (para ver sin internet), como el iPhon
   assert.deepEqual(titleActions(movie, { download: null }).map((b) => b.id), ["play", "mylist", "download", "sources"]);
 });
 
+test("Versión: con «Cualquiera», latino y castellano son tu idioma; la casilla enseña la más segura", async () => {
+  const { versionRows, versionStep } = await import("../../orbital/web/js/core/watch.js");
+  const lang = (code, name, proof) => ({ code, name, proof });
+  const s = (id, resolution, langs) => ({ id, resolution, audio_langs: langs, tags: [] });
+  const sources = [
+    s("a", "1080p", [lang("en", "Inglés", "maybe")]), s("b", "1080p", [lang("es-419", "Latino", "name"), lang("en", "Inglés", "name")]),
+    s("c", "4K", [lang("es-ES", "Castellano", "site")]), s("d", "720p", [lang("es", "Español", "name")]),
+  ];
+  const rows = versionRows(sources, { audio: "es", spanish: "" });
+  assert.deepEqual(rows.map((r) => [r.code, r.role]), [
+    ["es-419", "Tu idioma"], ["es-ES", "Tu idioma"], ["es", "No dice si latino o castellano"], ["en", ""]]);
+  const english = rows.find((r) => r.code === "en").options[0];
+  assert.equal(english.source.id, "b"); // la dual que dice inglés, no la primera que es «tal vez»
+  assert.deepEqual(english.all.map((x) => x.id), ["a", "b"]);
+  // Sin filas, o con una fila vacía, moverse no truena.
+  assert.deepEqual(versionStep([], { row: 0, col: 0 }, "right"), { row: 0, col: 0 });
+  assert.deepEqual(versionStep([{ options: [] }], { row: 0, col: 0 }, "down"), { row: 0, col: 0 });
+});
+
+test("Versión: los «tal vez» se resumen y nunca gana una de otro título si hay una que sí es", async () => {
+  const { languageLine, versionRows } = await import("../../orbital/web/js/core/watch.js");
+  const l = (code, name, proof) => ({ code, name, proof });
+  const crunchy = { audio_langs: [l("en", "Inglés", "name"), l("ja", "Japonés", "name"), l("ru", "Ruso", "maybe"),
+    l("es-419", "Latino", "maybe"), l("fr", "Francés", "maybe")] };
+  assert.equal(languageLine(crunchy, "es-419"), "Inglés (lo dice el nombre) + Japonés (lo dice el nombre) · Latino tal vez, entre 2 más");
+  assert.equal(languageLine(crunchy, "en"), "Inglés (lo dice el nombre) + Japonés (lo dice el nombre) · 3 más tal vez");
+  const s = (id, other) => ({ id, resolution: "720p", tags: [], other_title: other, audio_langs: [l("es-ES", "Castellano", "site")] });
+  assert.equal(versionRows([s("pradera", true), s("papel", false)], { audio: "es", spanish: "es-ES" })[0].options[0].source.id, "papel");
+});
+
 test("«Ver» dice cómo va a sonar, y la lista dice latino o castellano", async () => {
-  const { sourceGroups, sourceLanguages, availability } = await import("../../orbital/web/js/core/watch.js");
+  const { sourceLanguages, availability, versionRows, versionStart } = await import("../../orbital/web/js/core/watch.js");
   const plays = { video_id: "tt1", line: "Latino · 1080p · Sin subtítulos" };
   assert.equal(titleActions({ kind: "movie", resume: null }, { plays })[0].hint, plays.line);
   const seasons = [{ season: 1, episodes: [{ id: "s:1:1", episode: 1 }, { id: "s:1:2", episode: 2 }] }];
   const going = { kind: "series", seasons, resume: { video_id: "s:1:2", label: "T1 E2", position: 0 } };
-  assert.equal(titleActions(going, { plays: { video_id: "s:1:2", line: "Latino · 720p · Sin subtítulos" } })[0].hint, "Latino · 720p · Sin subtítulos");
-  assert.equal(titleActions(going, { plays: { video_id: "s:1:1", line: "otro episodio" } })[0].hint, undefined); // otro episodio: no
+  // Una serie con episodios se ve desde su lista (no hay «Ver» en la ficha): nada que describir ahí.
+  assert.ok(!titleActions(going, { plays: { video_id: "s:1:2", line: "Latino · 720p · Sin subtítulos" } }).some((a) => a.hint));
   const lat = { id: 7, resolution: "1080p", languages: ["Español", "Inglés"], dub: "latino" };
   const spa = { id: 8, resolution: "1080p", languages: ["Español"], dub: "" };
   assert.deepEqual(sourceLanguages(lat), ["Latino", "Inglés"]);
   assert.deepEqual(sourceLanguages(spa), ["Español"]);
   assert.deepEqual(availability([lat, spa]).filter((c) => c.includes("Latino")), ["Latino, Inglés, Español"]);
-  // La recomendada es la que pone «Ver» (con «Continuar», la de antes), aunque no sea la primera.
-  assert.equal(sourceGroups([spa, lat], 7).groups[0].items[0], lat);
-  assert.equal(sourceGroups([spa, lat]).groups[0].items[0], spa);
+  // La recomendada es la que pone «Ver» (con «Continuar», la de antes), aunque no sea la primera: ahí empieza el foco.
+  const l = (code, name) => ({ code, name, proof: "name" });
+  const rows = versionRows([{ ...spa, audio_langs: [l("es", "Español")] }, { ...lat, audio_langs: [l("es-419", "Latino")] }], { audio: "es", spanish: "es-419" });
+  assert.deepEqual(versionStart(rows, rows[0].options[0].source), { row: 0, col: 0 });
+  assert.equal(rows[0].options[0].source.id, 7);
 });

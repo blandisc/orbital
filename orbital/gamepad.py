@@ -249,8 +249,8 @@ class _XInputCapabilitiesEx(ctypes.Structure):
                 ("ProductVersion", ctypes.c_ushort), ("unk1", ctypes.c_ushort), ("unk2", ctypes.c_uint)]
 
 
-def _load_vendor():
-    """XInputGetCapabilitiesEx (ordinal 108): da la marca (VendorId) de cada mando. None si no existe."""
+def _load_ids():
+    """XInputGetCapabilitiesEx (ordinal 108): la marca y el modelo (VendorId, ProductId) de cada mando. None si no existe."""
     try:
         fn = ctypes.WinDLL("xinput1_4.dll")[108]  # type: ignore[index]
     except (OSError, AttributeError):
@@ -258,10 +258,37 @@ def _load_vendor():
     fn.argtypes = [ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(_XInputCapabilitiesEx)]
     fn.restype = ctypes.c_uint
 
-    def vendor(slot: int) -> int | None:
+    def ids(slot: int) -> tuple[int, int] | None:
         caps = _XInputCapabilitiesEx()
-        return caps.VendorId if fn(1, slot, 0, ctypes.byref(caps)) == 0 else None
+        return (caps.VendorId, caps.ProductId) if fn(1, slot, 0, ctypes.byref(caps)) == 0 else None
+    return ids
+
+
+def _load_vendor():
+    """La marca (VendorId) de cada mando. None si no existe."""
+    ids = _load_ids()
+    if ids is None:
+        return None
+
+    def vendor(slot: int) -> int | None:
+        found = ids(slot)
+        return found[0] if found else None
     return vendor
+
+
+_watcher: GamepadWatcher | None = None  # el que sondea los mandos (uno por Orbital)
+
+
+def play_order() -> list[tuple[int, int]]:
+    """Los controles encendidos para un juego, como en una consola: primero el que usaste por última vez (el que apretó
+    A para abrirlo), luego los demás en su lugar de XInput. [(marca, modelo), …] (emulator_input los acomoda)."""
+    watcher = _watcher
+    if watcher is None:
+        return []
+    devices = dict(watcher.devices)
+    first = watcher.last_used if watcher.last_used in devices else None
+    slots = ([first] if first is not None else []) + [s for s in sorted(devices) if s != first]
+    return [devices[s] for s in slots]
 
 
 class _BatteryInformation(ctypes.Structure):
@@ -319,6 +346,8 @@ class GamepadWatcher:
         self._stop = threading.Event()
         self._redetect = threading.Event()
         self.hold_label = ""  # el atajo de cerrar que se está manteniendo («LB + RB + Select»), para el aviso
+        self.devices: dict[int, tuple[int, int]] = {}  # lugar -> (marca, modelo) de cada mando encendido
+        self.last_used: int | None = None  # el lugar del último mando que apretó un botón (el Jugador 1 de un juego)
 
     def start(self) -> bool:
         if sys.platform != "win32":
@@ -328,6 +357,8 @@ class GamepadWatcher:
         except (OSError, AttributeError) as exc:
             log.warning("Sin XInput: los atajos del mando (Home, Select+Start) no funcionarán: %s", exc)
             return False
+        global _watcher
+        _watcher = self
         threading.Thread(target=self._run, args=(get_state,), daemon=True, name="gamepad").start()
         log.info("Atajos del mando activos: Home = Orbital/juego · cerrar juego = Start+Select+Home "
                  "(GameSir: LB+RB+Select · controles de la Legion Go: Start+Select)")
@@ -342,8 +373,9 @@ class GamepadWatcher:
 
     def _run(self, get_state) -> None:
         state = _XInputState()
-        vendor = _load_vendor()
+        ids = _load_ids()
         was_connected = [False] * 4
+        pressed = [0] * 4  # los botones de la vuelta anterior: un botón nuevo dice quién está jugando
         sticks_armed = [False] * 4  # ya se le vio el stick en el centro desde que se conectó
         stick_state: list[tuple[int, ...]] = [()] * 4  # la dirección de cada stick en la vuelta anterior (histéresis)
         traced: list[tuple | None] = [None] * 4  # lo último anotado en entrada.log, por lugar
@@ -356,17 +388,25 @@ class GamepadWatcher:
                 self._detectors = [ComboDetector() for _ in range(4)]
             for slot, detector in enumerate(self._detectors):
                 connected = get_state(slot, ctypes.byref(state)) == 0
-                if connected and not was_connected[slot] and vendor:
+                if connected and not was_connected[slot] and ids:
                     # Un mando nuevo en este lugar: su atajo de cerrar depende de la marca.
-                    vid = vendor(slot)
+                    found = ids(slot)
+                    vid = found[0] if found else None
+                    if found:
+                        self.devices[slot] = found
                     detector.combo = close_combo_for(vid)
-                    log.info("Mando %d (marca %s): cerrar juego con %s", slot + 1, f"{vid:04X}" if vid else "?",
+                    log.info("Mando %d (%s): cerrar juego con %s", slot + 1, "%04X:%04X" % found if found else "?",
                              CLOSE_LABELS[detector.combo])
                 if was_connected[slot] and not connected:
                     # Se desconectó con botones apretados: eso no es «soltar Home» (no abre Orbital).
                     self._detectors[slot] = detector = ComboDetector(combo=detector.combo)
+                if not connected:
+                    self.devices.pop(slot, None)
                 was_connected[slot] = connected
                 buttons = state.Gamepad.wButtons if connected else 0
+                if buttons & ~pressed[slot]:
+                    self.last_used = slot
+                pressed[slot] = buttons
                 if connected:  # diagnóstico (entrada.log): lo que reporta XInput, solo cuando cambia
                     pad = state.Gamepad
                     sig = (buttons, pad.bLeftTrigger // 32, pad.bRightTrigger // 32,

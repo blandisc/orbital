@@ -598,6 +598,8 @@ def test_the_player_with_a_keyboard_shows_keys_and_esc_asks_first():
 
     assert "SPACE script-message orbital-key a" in KEY_BINDINGS
     assert "LEFT repeatable script-message orbital-key left" in KEY_BINDINGS
+    assert "VOLUME_UP repeatable script-message orbital-key up" in KEY_BINDINGS
+    assert "VOLUME_DOWN repeatable script-message orbital-key down" in KEY_BINDINGS
     p, mpv = make_player()
     p._on_mpv_message(["orbital-key", "a"])  # Espacio: pausa, como A
     assert mpv.props["pause"] is True and player_ui.KEYBOARD
@@ -664,7 +666,16 @@ def test_the_memory_watchdog_reopens_a_channel_and_only_warns_in_a_video():
 
 def test_the_video_buffer_has_a_cap_both_ways():
     cmd = player.build_command("mpv.exe", "u", "t")
-    assert "--demuxer-max-bytes=400MiB" in cmd and "--demuxer-max-back-bytes=50MiB" in cmd
+    assert "--demuxer-max-bytes=200MiB" in cmd and "--demuxer-max-back-bytes=25MiB" in cmd
+
+
+def test_mpv_does_not_show_its_own_osd_bar():
+    """Orbital dibuja su barra y su volumen: la OSD nativa de mpv (avance abajo, volumen arriba)
+    no se enseña, ni con teclas multimedia ni con seek por IPC."""
+    cmd = player.build_command("mpv.exe", "u", "t")
+    assert "--osd-bar=no" in cmd and "--osd-on-seek=no" in cmd and "--osd-level=0" in cmd
+    assert "--osc=no" in cmd and "--input-default-bindings=no" in cmd
+    assert "--osd-bar-align-y=0.88" not in cmd
 
 
 def test_paused_with_the_finger_has_one_play_button_and_the_bar_does_not_cover_the_info():
@@ -952,3 +963,33 @@ def test_watching_the_same_video_again_does_not_reload_it():
     assert p.showing("tt1119646") and p.showing("tt1119646", "rd:1")
     assert not p.showing("tt1119646", "rd:2")  # otra versión elegida a propósito sí se abre
     assert not p.showing("tt0000001")
+
+
+def test_paused_shows_the_title_logo_instead_of_plain_text():
+    """En pausa, el título estilizado (su logo, como en la ficha) en vez de su nombre en texto: mpv lo pone encima con
+    overlay-add donde el bloque le dejó lugar, y se quita al seguir viendo. Sin logo, el nombre como siempre."""
+    import io
+    import time
+
+    from PIL import Image
+
+    png = io.BytesIO()
+    Image.new("RGBA", (400, 100), (255, 255, 255, 255)).save(png, "PNG")
+    p, mpv = make_player(**{"osd-height": 2160, "osd-width": 3840})
+    p.current.meta = {"meta_id": "tt0816692", "kind": "movie"}
+    p.logo_provider = lambda meta: png.getvalue()
+    p.press("a")  # pausa: el logo se prepara por detrás y la pausa se vuelve a dibujar con él
+    deadline = time.monotonic() + 3
+    while not any(c[0] == "overlay-add" for c in mpv.sent) and time.monotonic() < deadline:
+        time.sleep(.02)
+    add = next(c for c in mpv.sent if c[0] == "overlay-add")
+    _, oid, x, y, path, offset, fmt, w, h, stride = add
+    # Cabe en 860 × 190 del lienzo (1080 de alto): en una pantalla 4K, al doble en píxeles.
+    assert (fmt, w, h, stride, x) == ("bgra", 1520, 380, 1520 * 4, player_ui.MARGIN * 2)
+    assert len(open(path, "rb").read()) == w * h * 4
+    assert "Interstellar" not in mpv.overlays[1].split("En pausa", 1)[1].split("Continuar", 1)[0]  # sin el nombre en texto
+    p.press("a")  # sigue: el logo se va con la barra de pausa
+    assert ("overlay-remove", 0) in mpv.sent
+    q, mpv2 = make_player()
+    q.press("a")
+    assert "Interstellar" in mpv2.overlays[1] and not any(c[0] == "overlay-add" for c in mpv2.sent)  # sin logo: el nombre

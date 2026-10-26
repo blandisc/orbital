@@ -127,8 +127,14 @@ test("filas centradas: la enfocada al centro, sin hueco a la izquierda ni pasars
   const { centeredOffset } = await import("../../orbital/web/js/core/library.js");
   const widths = Array(8).fill(100);
   assert.equal(centeredOffset(widths, 0, { gap: 10, visible: 400 }), 0); // la primera, pegada a la izquierda
-  assert.equal(centeredOffset(widths, 4, { gap: 10, visible: 400 }), 440 + 50 - 200); // en medio, al centro
-  assert.equal(centeredOffset(widths, 7, { gap: 10, visible: 400 }), 870 - 400); // la última, sin aire de más
+  // En medio: el arranque de tarjeta más cerca del centro ideal (290): la de 330; nunca una tarjeta cortada a la izquierda.
+  assert.equal(centeredOffset(widths, 4, { gap: 10, visible: 400 }), 330);
+  assert.equal(centeredOffset(widths, 7, { gap: 10, visible: 400 }), 550); // la última: entera y con la fila arrancando en una tarjeta
+  for (let c = 0; c < 8; c++) {
+    const x = centeredOffset(widths, c, { gap: 10, visible: 400 });
+    assert.equal(x % 110, 0, `la fila arranca en una tarjeta (enfocada ${c})`);
+    assert.ok(c * 110 >= x && c * 110 + 100 <= x + 400, `la enfocada ${c} se ve entera`);
+  }
   assert.equal(centeredOffset([100, 100], 1, { gap: 10, visible: 400 }), 0); // si caben todas, no se mueve
 });
 
@@ -177,4 +183,45 @@ test("«Porque viste»: tus títulos llevan su logo (el héroe no los pone en te
   // Sin sugeridas, o en otra fila, no hay a dónde saltar.
   assert.equal(stageSide({ stage: { seeds: 1 }, items: [{}] }, 0), null);
   assert.equal(stageJump({ id: "curated:trend", items: [{}, {}] }, 0, 1), null);
+});
+
+test("Lo mejor del género y Temporadas van junto a Estudios y Tus plataformas", async () => {
+  const { mediaRows, fetchPlan, keyOf, GROUPS } = await plan();
+  const lists = [...LISTS,
+    { id: "genre:accion", title: "Acción", headline: "Lo mejor de Acción en 2026", meta: "Las mejor calificadas del año", collection: "genre", kinds: ["movie", "series"] },
+    { id: "genre:terror", title: "Terror", collection: "genre", kinds: ["movie", "series"] },
+    { id: "season:halloween", title: "Halloween", meta: "Sustos, brujas y calabazas", collection: "season", kinds: ["movie", "series"] },
+    { id: "season:navidad", title: "Navidad", meta: "Para ver en familia", collection: "season", kinds: ["movie", "series"] },
+  ];
+  const got = items(keyOf);
+  got[keyOf("genre:accion", "movie")] = [v("g1", "movie"), v("g2", "series"), v("g3", "movie"), v("g4", "movie")];
+  got[keyOf("genre:terror", "movie")] = [v("t1", "movie")];
+  got[keyOf("season:halloween", "movie")] = [v("h1", "series"), v("h2", "movie"), v("h3", "movie")];
+  got[keyOf("season:navidad", "movie")] = [v("n1", "movie")];
+  const rows = mediaRows(lists, got, { years: { "year:2025": [v("y1", "movie")] } });
+  const ids = rows.map((r) => r.id);
+  assert.deepEqual(ids.filter((id) => ["curated:platforms", "curated:awards", "curated:studios", "curated:genre-top", "curated:seasons", "curated:years"].includes(id)),
+    ["curated:platforms", "curated:awards", "curated:studios", "curated:genre-top", "curated:seasons", "curated:years"]);
+  const genre = rows.find((r) => r.id === "curated:genre-top");
+  assert.equal(genre.title, "Lo mejor del género");
+  assert.equal(genre.centered, true);
+  assert.deepEqual(genre.items.map((c) => c.title), ["Acción", "Terror"]);
+  const accion = genre.items[0];
+  assert.equal(accion.collection.type, "genre");
+  assert.deepEqual(accion.collection.posters, ["p/g1", "p/g2", "p/g3"]);
+  assert.equal(accion.extra.eyebrow, "Género");
+  assert.equal(accion.hero, "h/g1");
+  assert.equal(accion.collection.list.headline, "Lo mejor de Acción en 2026");
+  const seasons = rows.find((r) => r.id === "curated:seasons");
+  assert.equal(seasons.title, "Temporadas");
+  assert.equal(seasons.centered, true);
+  assert.deepEqual(seasons.items.map((c) => [c.title, c.extra.eyebrow, c.collection.type]), [
+    ["Halloween", "Temporada", "season"], ["Navidad", "Temporada", "season"]]);
+  // Sin pósters el estante no sale (sin clave de TMDB esas listas ni siquiera llegan).
+  assert.equal(mediaRows([{ id: "genre:accion", title: "Acción", collection: "genre" }], {}).find((r) => r.group === "genre-top"), undefined);
+  const wanted = fetchPlan(lists);
+  assert.deepEqual(wanted.filter((w) => w.id === "genre:accion"), [{ id: "genre:accion", kind: "movie" }]);
+  assert.ok(wanted.some((w) => w.id === "season:halloween" && w.kind === "movie"));
+  const groups = GROUPS.map((g) => g.id);
+  assert.deepEqual(groups.slice(groups.indexOf("studios"), groups.indexOf("years") + 1), ["studios", "genre-top", "seasons", "years"]);
 });

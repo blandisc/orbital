@@ -109,14 +109,20 @@ def _configs(exe: Path) -> tuple[list[Path], list[Path]]:
     return [], []
 
 
+def emulator_exe(argv: list[str]) -> Path:
+    """El ejecutable del emulador, aunque se abra con un .cmd propio (launch-eden.cmd: el emulador está junto a él)."""
+    exe = Path(argv[0])
+    if exe.suffix.lower() == ".cmd":
+        exe = exe.with_name(exe.stem.removeprefix("launch-") + ".exe")
+    return exe
+
+
 def sync_for(argv: list[str]) -> int:
     """Antes de abrir un emulador: su hora, la de la computadora. Cuántos archivos tocó. Nunca falla."""
     try:
         if not argv:
             return 0
-        exe = Path(argv[0])
-        if exe.suffix.lower() == ".cmd":  # launch-eden.cmd: el emulador está junto a él
-            exe = exe.with_name(exe.stem.removeprefix("launch-") + ".exe")
+        exe = emulator_exe(argv)
         ryujinx, yuzu = _configs(exe)
         if not ryujinx and not yuzu:
             return 0

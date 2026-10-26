@@ -1,14 +1,18 @@
-/* Sources: elegir la fuente a mano (Y en la ficha). Un panel a la derecha, encima de la ficha,
-   como el menú: no te saca de lo que estabas viendo. Cada fila se lee de un vistazo: la
-   resolución grande a la izquierda; ¿arranca ya?, idioma y calidad en chips; lo técnico, en pequeño. */
-/* El velo, el marco y la entrada son del SidePanel (ui.css); aquí, su ancho, su relleno y su contenido. */
+/* Sources: elegir la versión a mano (Y en la ficha). Un panel que sube desde abajo, encima de la ficha (arriba se sigue
+   viendo su arte): del alto de lo que trae, sin hueco al final. Cada calidad se lee de un vistazo: la resolución grande,
+   ¿arranca ya? y lo esencial; lo técnico, en pequeño. */
+/* El velo, el marco y la entrada son del SidePanel (ui.css, `side-panel--bottom`); aquí, su relleno y su contenido. */
 .sources__panel {
-  display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: var(--space-4);
-  width: min(44rem, 100vw);
-  padding: calc(var(--space-10) + var(--safe-y)) calc(var(--space-6) + var(--safe-x) * .5) var(--hints-room) var(--space-6);
+  display: flex; flex-direction: column; gap: var(--space-4);
+  padding: var(--space-8) var(--page-gutter) var(--hints-room);
 }
+.sources__panel > * { flex-shrink: 0; }
+.sources__panel > .sources__list { flex-shrink: 1; } /* si no cabe, solo la lista se desplaza */
 
-.sources__head { display: grid; gap: var(--space-2); }
+/* El encabezado en un renglón: qué es y el título a la izquierda, qué quiere decir cada estado a la derecha. */
+.sources__head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 30rem); align-items: end; column-gap: var(--space-8); }
+.sources__head > .sources__heading, .sources__head > .sources__title { grid-column: 1; }
+.sources__head > .sources__subtitle { grid-column: 2; grid-row: 1 / span 2; }
 .sources__heading { color: var(--color-accent); font-size: var(--type-secondary); font-weight: var(--weight-medium); }
 .sources__title { margin: 0; font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); line-height: var(--leading-snug); }
 .sources__title:empty { display: none; }
@@ -18,19 +22,17 @@
 .sources__status--problem { color: var(--color-warning); }
 .sources__retry { margin-top: var(--space-4); }
 .sources__list {
-  display: flex; flex-direction: column; gap: var(--space-5); min-height: 0;
+  display: flex; flex-direction: column; gap: var(--space-3); min-height: 0;
   overflow-y: auto; scrollbar-width: none; padding: var(--space-2); margin: calc(-1 * var(--space-2));
-  -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) 90%, transparent); mask-image: linear-gradient(180deg, var(--mask-solid) 90%, transparent);
 }
 
 /* Por calidad, como el iPhone: la recomendada sola arriba (con por qué), luego 4K, 1080p, 720p y Otras. */
-.sources__group { display: flex; flex-shrink: 0; flex-direction: column; gap: var(--space-2); }
+.sources__group { display: flex; flex-shrink: 0; flex-direction: column; gap: var(--space-2); max-width: 64rem; }
 .sources__group-title { padding-inline: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); letter-spacing: var(--tracking-label); }
-.sources__note { padding-inline: var(--space-2); color: var(--color-text-muted); font-size: var(--type-footnote); }
 
 .source {
   position: relative; flex-shrink: 0; /* sin esto, la lista aplastaba las tarjetas en vez de desplazarse */
-  display: grid; grid-template-columns: 4.8rem minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-4);
+  display: grid; grid-template-columns: 4.8rem minmax(0, 1fr); align-items: center; column-gap: var(--space-4);
   width: 100%; padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
   border-radius: var(--radius-lg); text-align: left; background: var(--color-fill);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
@@ -56,11 +58,51 @@
 .source--focused .chip { background: var(--on-light-fill); }
 .source--focused .chip--good { color: var(--on-light-live); }
 .source--focused .chip--warn { color: var(--on-light-warning); }
-.source--focused .badge { background: var(--color-on-primary); color: var(--color-primary); }
+
+/* «Elegir versión»: una fila por idioma (nombre a la izquierda; «Tu idioma», «Original», «Tal vez» debajo) y sus
+   calidades a la derecha, solo las que hay. Cada calidad: la resolución grande, ¿arranca ya? y lo esencial. */
+.versions__row { display: grid; flex-shrink: 0; grid-template-columns: 12rem minmax(0, 72rem); align-items: center; column-gap: var(--space-5); }
+.versions__lang { display: grid; gap: var(--space-1); padding-inline: var(--space-2); min-width: 0; }
+.versions__name { font-family: var(--font-sans); font-size: var(--type-body); font-weight: var(--weight-bold); }
+.versions__role { color: var(--color-text-muted); font-size: var(--type-footnote); }
+.versions__options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+
+.version {
+  position: relative; display: grid; align-content: center; gap: var(--space-1);
+  min-height: 5.2rem; padding: var(--space-3); border-radius: var(--radius-lg); text-align: left; background: var(--color-fill);
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.version:hover { background: var(--color-fill-hover); }
+.version__res { font-family: var(--font-sans); font-size: var(--type-body); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
+.version__res--4k { color: var(--color-accent); }
+.version__state { font-size: var(--type-footnote); font-weight: var(--weight-medium); }
+.version__state--good { color: var(--color-live); }
+.version__state--warn { color: var(--color-warning); }
+.version__facts { overflow: hidden; color: var(--color-text-muted); font-size: var(--type-footnote); text-overflow: ellipsis; white-space: nowrap; }
+.version__badge { position: absolute; top: var(--space-3); right: var(--space-3); } /* arriba a la derecha: no empuja ni se corta */
+.version__other { justify-self: start; }
+
+/* Foco invertido, como las fuentes y el menú. */
+.version--focused, .version--focused:hover { background: var(--inverse-bg); color: var(--inverse-fg); }
+.version--focused .version__res--4k { color: inherit; }
+.version--focused .version__state--good { color: var(--on-light-live); }
+.version--focused .version__state--warn { color: var(--on-light-warning); }
+.version--focused .version__facts { color: inherit; opacity: var(--opacity-near); }
+.version--focused .badge { background: var(--color-on-primary); color: var(--color-primary); }
+.version--focused .chip { background: var(--on-light-fill); }
+
+/* Lo que trae la enfocada y cómo lo sabemos: una línea, para leer desde el sillón. */
+.sources__why { display: grid; gap: var(--space-1); min-height: 2.6rem; padding-inline: calc(12rem + var(--space-5) + var(--space-2)) var(--space-2); } /* bajo las calidades */
+.sources__why:empty { display: none; }
+.sources__why-langs { font-size: var(--type-secondary); font-weight: var(--weight-medium); }
+.sources__why-more { color: var(--color-text-muted); font-size: var(--type-footnote); }
 
 @media (max-width: 760px) {
-  .sources__panel { width: 100vw; border-left: 0; }
+  .sources__head { grid-template-columns: minmax(0, 1fr); }
+  .sources__head > .sources__subtitle { grid-column: 1; grid-row: auto; }
   .source { grid-template-columns: 3.8rem minmax(0, 1fr); }
-  .source__badge { grid-column: 2; justify-self: start; }
+  .versions__row { grid-template-columns: minmax(0, 1fr); row-gap: var(--space-2); }
+  .versions__options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sources__why { padding-left: var(--space-2); }
 }
 [data-input="touch"] .sources__head { padding-right: var(--touch-back-room); } /* «Atrás» (arriba a la derecha) no lo tapa */

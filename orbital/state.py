@@ -19,10 +19,9 @@ SHARED_PREFS = ("audio", "spanish", "subtitles")
 _CHOICE_OK = {"audio": re.compile(r"^[a-z]{2,3}$"), "spanish": re.compile(r"^(es-419|es-ES)?$"),
               "subtitles": re.compile(r"^([a-z]{2,3}|forced)?$")}
 MAX_OPENED = 500  # consolas (filas) con su última entrada; las que hace más que no abres se olvidan
-MAX_CHECKED = 2000  # versiones cuyo audio real ya se vio (como el iPhone, `TitlePreferences.checkedLimit`)
 _NUMBER = "número"
 # Qué tipo lleva cada ajuste: un «abc» en video_idle_minutes impedía arrancar (int("abc")).
-SETTING_TYPES = {"audio": str, "subtitles": str, "quality": str, "text_size": str, "sub_scale": _NUMBER,
+SETTING_TYPES = {"audio": str, "dub": str, "subtitles": str, "quality": str, "text_size": str, "sub_scale": _NUMBER,
                  "safe_area": _NUMBER, "game_idle_minutes": _NUMBER, "video_idle_minutes": _NUMBER,
                  "reduce_motion": bool, "sounds": bool, "haptics": bool, "voice_tips": bool, "close_previous": bool}
 
@@ -46,9 +45,8 @@ class State:
         # "dismissed": sugerencias de «Para ti» que dijiste «No me interesa» (clave → cuándo).
         # "inbox": lo que la TV le manda al iPhone y él aún no recoge (id → pendiente; ver companion.py).
         # "opened": cuándo entraste por última vez a cada consola (fila → cuándo): lo nuevo deja de anunciarse.
-        # "checked": las pistas de audio reales de cada versión que ya se abrió (huella → ["es-419", "en"]).
         self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}, "dismissed": {}, "inbox": {},
-                            "opened": {}, "checked": {}, "sync": {}}
+                            "opened": {}, "sync": {}}
         self._frozen = False  # no se pudo leer el archivo: se vive en memoria y NO se pisa
         if path and path.exists():
             self._load(path)
@@ -103,8 +101,6 @@ class State:
         self._data["inbox"] = {k: v for k, v in self._data["inbox"].items() if isinstance(v, dict) and v.get("action") in ("open", "download")}
         rev = self._data["sync"].get("rev")
         self._data["sync"] = {"rev": rev if isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0 else 0}
-        self._data["checked"] = {k: v for k, v in self._data["checked"].items()
-                                 if isinstance(v, list) and v and all(isinstance(c, str) and c for c in v)}
 
     def _save(self) -> None:
         """Escritura atómica (no se corrompe si se apaga la consola). Si Windows no deja escribir (un
@@ -189,19 +185,52 @@ class State:
         with self._lock:
             return dict(self._data["prefs"].get(item_id, {}))
 
+    def _set_pref_unlocked(self, item_id: str, key: str, value) -> None:
+        prefs = self._data["prefs"].setdefault(item_id, {})
+        changed = prefs.get(key) != value
+        if value is None:
+            prefs.pop(key, None)
+        else:
+            prefs[key] = value
+        if changed and key in SHARED_PREFS and item_id.startswith("stremio:"):
+            prefs["rev"] = self._bump()  # el iPhone lo recibe en su siguiente sincronización
+        if not prefs:
+            self._data["prefs"].pop(item_id)
+
     def set_pref(self, item_id: str, key: str, value) -> None:
         with self._lock:
-            prefs = self._data["prefs"].setdefault(item_id, {})
-            changed = prefs.get(key) != value
-            if value is None:
-                prefs.pop(key, None)
-            else:
-                prefs[key] = value
-            if changed and key in SHARED_PREFS and item_id.startswith("stremio:"):
-                prefs["rev"] = self._bump()  # el iPhone lo recibe en su siguiente sincronización
-            if not prefs:
-                self._data["prefs"].pop(item_id)
+            self._set_pref_unlocked(item_id, key, value)
             self._save()
+
+    def set_pref_on(self, item_ids: list[str], key: str, value) -> None:
+        """La misma preferencia en varias claves (el emulador: title ID, título, huella y ruta)."""
+        with self._lock:
+            for item_id in item_ids:
+                self._set_pref_unlocked(item_id, key, value)
+            self._save()
+
+    def migrate_runner_prefs(self, item_keys: list[tuple[str, list[str]]]) -> int:
+        """Copia prefs[ruta].runner a cada clave estable que aún no tenga emulador.
+
+        No borra las entradas viejas. Idempotente. Devuelve cuántas copias hizo.
+        """
+        copied = 0
+        with self._lock:
+            prefs = self._data["prefs"]
+            for item_id, keys in item_keys:
+                old = prefs.get(item_id, {}).get("runner")
+                if not old:
+                    continue
+                for key in keys:
+                    if key == item_id:
+                        continue
+                    slot = prefs.setdefault(key, {})
+                    if not slot.get("runner"):
+                        slot["runner"] = old
+                        copied += 1
+            if copied:
+                self._save()
+        return copied
 
     def unhide_all(self) -> int:
         with self._lock:
@@ -283,27 +312,6 @@ class State:
             rows = [(k.split(":", 1)[1], {key: v[key] for key in SHARED_PREFS if isinstance(v.get(key), str)}, v.get("rev") or 0)
                     for k, v in self._data["prefs"].items() if k.startswith("stremio:") and any(isinstance(v.get(x), str) for x in SHARED_PREFS)]
             return [(m, f) for m, f, _ in sorted(rows, key=lambda r: r[2], reverse=True)]
-
-    def checked_audio(self, key: str) -> list[str] | None:
-        """El audio real de una versión que ya se abrió («es-419», «en»…), o None si nunca se vio."""
-        with self._lock:
-            codes = self._data["checked"].get(key)
-            return list(codes) if codes else None
-
-    def remember_checked(self, key: str, codes: list[str]) -> bool:
-        """Se abrió una versión: sus pistas de audio reales. True si cambió algo (lo ordenado ya no vale)."""
-        if not key or not codes:
-            return False
-        with self._lock:
-            checked = self._data["checked"]
-            if checked.get(key) == codes:
-                return False
-            checked.pop(key, None)
-            checked[key] = list(codes)  # al final: las más viejas se van primero
-            while len(checked) > MAX_CHECKED:
-                del checked[next(iter(checked))]
-            self._save()
-            return True
 
     def dismissed(self) -> set[str]:
         with self._lock:

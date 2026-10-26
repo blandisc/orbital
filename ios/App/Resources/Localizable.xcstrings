@@ -892,6 +892,17 @@
         }
       }
     },
+    "Adelántale": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip ahead"
+          }
+        }
+      }
+    },
     "Afinemos": {
       "extractionState": "manual",
       "localizations": {
@@ -11584,6 +11595,17 @@
         }
       }
     },
+    "Reanuda": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume"
+          }
+        }
+      }
+    },
     "Reanudar": {
       "extractionState": "manual",
       "localizations": {
@@ -12691,6 +12713,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next subtitle"
+          }
+        }
+      }
+    },
+    "Silencia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute"
           }
         }
       }

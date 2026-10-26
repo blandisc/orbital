@@ -37,6 +37,9 @@ KEYBOARD = False  # con teclado: los glifos dicen la tecla, no el botón del man
 KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LB RB": "RePág AvPág", "Home": "Ctrl Inicio"}
 # Dónde quedó cada cosa tocable, por capa: (x, y, ancho, alto, acción). Se rehace al dibujar la capa.
 targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": [], "try": []}
+# Dónde va lo que no es ASS (el logo del título en pausa: una imagen que mpv pone encima): (x, y, ancho, alto) en el lienzo.
+placed: dict[str, tuple[float, float, float, float]] = {}
+LOGO_BOX = (860, 190)  # lo más que mide el logo en pausa, en el lienzo
 
 
 def set_input(mode: str) -> bool:
@@ -261,6 +264,24 @@ def gradient(y0: float, y1: float, top_alpha: int, bottom_alpha: int, steps: int
     return "\n".join(out)
 
 
+def side_gradient(x1: float, left_alpha: int, steps: int = 28) -> str:
+    """Velo negro desde la orilla izquierda (`left_alpha`, 255 = transparente) que se desvanece hasta `x1`: lo oscuro
+    «sangra» sobre el video, sin borde. Las capas se apilan desde la orilla, como `gradient`."""
+    def clear(t: float) -> float:  # transparencia total en t (0 = la orilla, 1 = x1)
+        eased = t * t * (3 - 2 * t)
+        return (left_alpha + (255 - left_alpha) * eased) / 255
+
+    out, step, before = [], x1 / steps, clear(1)
+    for i in range(steps, 0, -1):  # de lo claro (x1) a lo oscuro (la orilla)
+        now = clear((i - 1) / steps)
+        layer = 1 - now / before if before > 0 else 1
+        before = now
+        a = max(0, min(255, round(255 * (1 - layer))))
+        if a < 255:
+            out.append(_shape(rrect_path(0, 0, i * step, H, 0), SHADE, f"{a:02X}", blur=3))
+    return "\n".join(out)
+
+
 def text(x: float, y: float, value: str, size: int, color: str = TEXT, *, weight: str = "regular", align: int = 7,
          alpha: str = "00") -> str:
     """Texto ya escapado (o con etiquetas). weight: regular | semi | bold."""
@@ -383,6 +404,7 @@ class Hud:
     description: str = ""  # sinopsis (en pausa)
     seeking: str = ""  # "+10 s" / "−1 min" mientras adelantas: solo la barra y la burbuja
     pip: bool = False  # Home lo pone en pequeño (Ajustes): se dice arriba, que si no nadie lo descubre
+    logo: tuple[float, float] | None = None  # en pausa, el logo del título (ancho, alto en el lienzo) en vez de su nombre
 
 
 def info_line(hud: Hud) -> str:
@@ -477,7 +499,7 @@ def hud_ass(hud: Hud) -> str:
     # solo se descubrían en pausa). Si no caben (4:3), se quitan primero los de menos uso.
     lines.append(text(MARGIN, 878, esc(fit(info_line(hud), 22, min(1300, W - 2 * MARGIN), "semi")), 22, MUTED, weight="semi"))
     # A primero, como en todo Orbital; luego lo que se descubre (◀▶, LT/RT) y B al final.
-    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Versión"),
+    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios y versión" if hud.series else "Versión"),
              ("◀ ▶", "Adelantar"), *([("LT RT", "Mantén: episodio")] if hud.series else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
         items.pop(-2)  # si no caben (4:3): primero LT/RT, luego ◀▶
@@ -489,7 +511,11 @@ def hud_ass(hud: Hud) -> str:
 def paused_ass(hud: Hud) -> str:
     """En pausa: el video se oscurece y a la izquierda, lo esencial y los botones."""
     targets["hud"] = []
-    lines = [rrect(0, 0, W, H, 0, SHADE, "88"), gradient(420, H, 255, 70), gradient(0, 200, 140, 255, 14)]
+    placed.pop("logo", None)
+    # Más oscuro que antes (88) y con la sombra que entra desde la izquierda, donde va el título: el video se ve, pero
+    # el logo y el texto descansan sobre negro, como el arte de la ficha.
+    lines = [rrect(0, 0, W, H, 0, SHADE, "70"), side_gradient(W * .62, 90), gradient(420, H, 255, 60),
+             gradient(0, 200, 140, 255, 14)]
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
     if hud.pip:
@@ -497,15 +523,20 @@ def paused_ass(hud: Hud) -> str:
     # El bloque va abajo, apoyado sobre la barra (como en las TV), no a media pantalla: se mide primero
     # y se coloca para que los botones queden justo encima de la barra de progreso.
     width = min(1180, W - 2 * MARGIN)
-    title_lines = wrap(hud.title, 64, width, 2)
+    # Con logo, el título va estilizado (la imagen la pone mpv encima, en `placed`); sin él, su nombre en texto.
+    title_lines = [] if hud.logo else wrap(hud.title, 64, width, 2)
+    title_h = hud.logo[1] + 28 if hud.logo else 92 * len(title_lines)
     meta = " · ".join(p for p in (hud.detail, hud.facts) if p)
     about = wrap(hud.description, 26, min(1000, width), 3)
-    height = 54 + 92 * len(title_lines) + (52 if meta else 0) + 40 * len(about) + 30 + 62
+    height = 54 + title_h + (52 if meta else 0) + 40 * len(about) + 30 + 62
     y = max(110, BAR_Y - 56 - height)
     # «‖ En pausa»: el ícono dibujado (dos barras) y la palabra, sin mayúsculas.
     lines += [rrect(MARGIN, y + 5, 6, 22, 2, TEXT), rrect(MARGIN + 12, y + 5, 6, 22, 2, TEXT),
               text(MARGIN + 30, y, "En pausa", 26, weight="semi")]
     y += 54
+    if hud.logo:
+        placed["logo"] = (MARGIN, y - 10, *hud.logo)
+        y += title_h
     for line in title_lines:
         lines.append(text(MARGIN, y, esc(line), 64, weight="bold"))
         y += 92
@@ -516,7 +547,7 @@ def paused_ass(hud: Hud) -> str:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
-    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Versión")], MARGIN, y))
+    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios y versión" if hud.series else "Versión")], MARGIN, y))
     bar, _ = progress_bar(hud)
     more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Mantén: episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
@@ -576,7 +607,7 @@ def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
     if paused:
         return [("−10 s", "left"), ("+10 s", "right"), ("Salir", "quit")]
     return [("−10 s", "left"), ("Pausa", "a"), ("+10 s", "right"), ("Audio y subtítulos", "x"),
-            ("Episodios" if hud.series else "Versión", "y"), ("Salir", "quit")]
+            ("Episodios y versión" if hud.series else "Versión", "y"), ("Salir", "quit")]
 
 
 def pills_width(items: Sequence[tuple[str, object]], gap: float = 16, size: int = 24) -> float:
@@ -590,13 +621,30 @@ def _touch_bar(hud: Hud, y: float, *, paused: bool) -> str:
     return pills(items, y, right=W - MARGIN, h=66) if paused else pills(items, y, center=W / 2, h=66)
 
 
-# --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Fuentes · Episodios) ------------------------------------
+# --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Episodios · Versión) ------------------------------------
 @dataclass
 class Column:
     key: str  # "audio" | "sub" | "size" | "episodes" | "source" | "playback"
     options: list[dict] = field(default_factory=list)  # {"label", "action", "current", "hint"?, "progress"?}
     index: int = 0
     top: int = 0  # primera fila a la vista: la lista solo se desplaza cuando el foco llega al borde
+    cell: int = 0  # en una cuadrícula (Versión: un renglón por idioma), la casilla enfocada del renglón
+
+    @property
+    def grid(self) -> bool:
+        """Cada opción es un renglón con casillas (Versión: idioma × calidad); ◀ ▶ recorre las casillas."""
+        return bool(self.options) and "cells" in self.options[0]
+
+    @property
+    def chosen(self) -> dict | None:
+        """Lo que elige A: la opción enfocada o, en una cuadrícula, su casilla enfocada."""
+        if not self.options:
+            return None
+        option = self.options[self.index]
+        if not self.grid:
+            return option
+        cells = option["cells"]
+        return cells[min(self.cell, len(cells) - 1)] if cells else None
 
 
 @dataclass
@@ -640,8 +688,9 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                   _shape(f"m {MARGIN + 24} 77 l {MARGIN + 38} 87 l {MARGIN + 24} 97", TEXT),
                   text(MARGIN + 50, 87, label, 22, weight="semi", align=4)]
     n = len(panel.columns)
-    # Fuentes y Episodios más anchas (el detalle de cada fuente, el nombre de cada episodio); Reproducción, angosta.
-    weights = [{"source": 1.4, "episodes": 1.35, "playback": .85, "channels": 1.5, "category": .7}.get(column.key, 1.0)
+    # Fuentes y Episodios más anchas (el detalle de cada fuente, el nombre de cada episodio); Reproducción, angosta. La
+    # cuadrícula de versiones, la que más: hasta cuatro calidades por idioma.
+    weights = [2.0 if column.grid else {"source": 1.4, "episodes": 1.35, "playback": .85, "channels": 1.5, "category": .7}.get(column.key, 1.0)
                for column in panel.columns]
     unit = min(520, (W - 2 * MARGIN - 64 * (n - 1)) / max(1.0, sum(weights)))
     x = MARGIN
@@ -664,7 +713,9 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
         y = 644  # filas de 54 cada 60: la sexta termina antes de la fila de botones (en 16:10 se encimaban)
         if not column.options:
             lines.append(text(x + 18, y + 27, "Nada que elegir aquí", 24, MUTED, align=4))
-        for i, option in enumerate(column.options[first:first + PANEL_ROWS], start=first):
+        if column.grid:
+            lines += _grid_rows(column, c, x, y, col_w, active)
+        for i, option in enumerate([] if column.grid else column.options[first:first + PANEL_ROWS], start=first):
             focused = active and i == column.index
             current = bool(option.get("current"))
             if focused:
@@ -691,14 +742,54 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
             y += 60
         if len(column.options) > PANEL_ROWS:  # en el encabezado, a la derecha: abajo se encimaba con la nota de Fuentes
             lines.append(text(x + col_w - 18, 602, f"{column.index + 1} de {len(column.options)}", 20, MUTED, align=9))
-    if panel.column.key == "source":  # qué quiere decir «Al instante», donde se elige
-        lines.append(text(MARGIN, 1022, "Al instante: Real-Debrid ya la tiene guardada y arranca en segundos. "
-                                        "Las demás primero se descargan y pueden tardar.", 20, MUTED, align=4))
+    if panel.column.key == "source":  # la enfocada en palabras y qué quiere decir «Al instante», donde se elige
+        note = "Al instante: Real-Debrid ya la tiene guardada y arranca en segundos. Las demás primero se descargan y pueden tardar."
+        if panel.column.grid and panel.column.chosen:
+            row, cell = panel.column.options[panel.column.index], panel.column.chosen
+            said = " · ".join(p for p in (row["label"], cell["label"], cell["doubt"], cell["hint"], cell["size"],
+                                          "la que ves" if cell.get("current") else "") if p)
+            note = f"{said}      Al instante: Real-Debrid ya la tiene y arranca en segundos"
+        lines.append(text(MARGIN, 1022, esc(fit(note, 20, W - 2 * MARGIN - 420)), 20, MUTED, align=4))
     if TOUCH:
         lines.append(pills([("Cerrar", "close")], 986, right=W - MARGIN, layer="panel"))
     else:
         lines.append(hints([("◀ ▶", "Columna"), ("A", "Elegir"), ("B", "Cerrar")], 1022, right=W - MARGIN))
     return "\n".join(lines)
+
+
+GRID_NAME = 170  # el nombre del idioma, a la izquierda de sus casillas
+
+
+def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active: bool) -> list[str]:
+    """La cuadrícula de Versión (como «Versión» de la ficha): un renglón por idioma, su nombre a la izquierda y
+    sus calidades en casillas («1080p» y debajo «Al instante»); la enfocada, clara; la que ves, con contorno."""
+    lines = []
+    width = (col_w - GRID_NAME - 10 * 3) / 4  # hasta cuatro calidades: 4K, 1080p, 720p, SD
+    for i, row in enumerate(column.options[column.top:column.top + PANEL_ROWS], start=column.top):
+        here = active and i == column.index
+        lines.append(text(x + 18, y + 27, esc(fit(row["label"], 24, GRID_NAME - 26, "semi" if here else "regular")), 24,
+                          TEXT if here or any(cell.get("current") for cell in row["cells"]) else SOFT,
+                          weight="semi" if here else "regular", align=4))
+        cx = x + GRID_NAME
+        for j, cell in enumerate(row["cells"][:4]):
+            focused = here and j == min(column.cell, len(row["cells"]) - 1)
+            if focused:
+                lines.append(rrect(cx, y, width, 54, 12, TEXT))
+            else:
+                lines.append(rrect(cx, y, width, 54, 12, TEXT, "E6"))  # la casilla, apenas marcada
+            if cell.get("current"):
+                lines.append(rrect(cx, y, width, 54, 12, TEXT, "FF", outline=TEXT if not focused else ON_LIGHT, width=2))
+            if TOUCH:
+                targets["panel"].append((cx, y, width, 54, ("cell", c, i, j)))
+            ink = ON_LIGHT if focused else TEXT
+            state = cell["doubt"] or cell["hint"]
+            good = cell["hint"] == "Al instante" and not cell["doubt"]
+            lines += [text(cx + 14, y + 17, esc(fit(cell["label"], 21, width - 24, "semi")), 21, ink, weight="semi", align=4),
+                      text(cx + 14, y + 40, esc(fit(state, 17, width - 24)), 17,
+                           ON_LIGHT if focused else (LIVE if good else MUTED), align=4)]
+            cx += width + 10
+        y += 60
+    return lines
 
 
 SUB_SCALES = [(.85, "Pequeño"), (1.0, "Normal"), (1.25, "Grande"), (1.5, "Muy grande")]
@@ -745,27 +836,37 @@ def sync_options(delay: float) -> list[dict]:
 
 
 def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | None = None, focus: str = "audio",
-                 sub_delay: float = 0.0) -> Panel:
-    """X: Audio · Subtítulos · Tamaño · Sincronía de los subtítulos, en columnas (el video sigue)."""
+                 sub_delay: float = 0.0, versions: list[dict] | None = None) -> Panel:
+    """X: Audio · Subtítulos · Tamaño · Sincronía de los subtítulos, en columnas (el video sigue). En Audio, después de
+    las pistas de esta versión, tu idioma en otra («Latino · en otra versión  4K · al instante»): cambia de fuente
+    y sigue donde ibas."""
     sizes = [{"label": name, "action": ("subscale", value), "current": abs(value - sub_scale) < .01}
              for value, name in SUB_SCALES]
-    columns = [_column("audio", track_options("audio", tracks)), _column("sub", track_options("sub", tracks, extra_subs)),
+    other = [{"label": v["label"], "hint": v.get("hint", ""), "action": ("source", v["id"]), "current": False}
+             for v in versions or []]
+    columns = [_column("audio", track_options("audio", tracks, other)), _column("sub", track_options("sub", tracks, extra_subs)),
                _column("size", sizes), _column("sync", sync_options(sub_delay))]
     return Panel("tracks", columns, next((i for i, c in enumerate(columns) if c.key == focus), 0))
 
 
 def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None = None,
                back_to: float | None = None, iphone: bool = False, channel: bool = False) -> Panel:
-    """Y: Episodios (series) · Fuentes · Reproducción (Desde el principio / Volver a… y, con un iPhone conectado, mandarlo o
+    """Y: Episodios (series) · Versión · Reproducción (Desde el principio / Volver a… y, con un iPhone conectado, mandarlo o
     descargarlo allá). El iPhone va dentro de Reproducción: como cuarta columna todo se cortaba («2…», «Desde el prin…»)."""
     columns = []
-    # Episodios primero (en una serie es lo que más se busca), luego Fuentes y Reproducción.
+    # Episodios primero (en una serie es lo que más se busca), luego Versión y Reproducción.
     if episodes:
         columns.append(_column("episodes", [
             {"label": e["label"], "action": ("episode", e["id"]), "current": bool(e.get("current")),
              "hint": "Viendo" if e.get("current") else e.get("hint", ""), "progress": e.get("progress")}
             for e in episodes]))
-    if sources:
+    if sources and "cells" in sources[0]:  # idioma × calidad: empieza en la que ves (o en la primera, la recomendada)
+        rows = [{"label": r["label"], "cells": [{**cell, "action": ("source", cell["id"])} for cell in r["cells"]]}
+                for r in sources if r.get("cells")]
+        at = next(((i, j) for i, r in enumerate(rows) for j, cell in enumerate(r["cells"]) if cell.get("current")), (0, 0))
+        if rows:
+            columns.append(Column("source", rows, at[0], cell=at[1]))
+    elif sources:
         columns.append(_column("source", [{"label": s["label"], "hint": s.get("hint", ""), "action": ("source", s["id"]),
                                            "current": bool(s.get("current"))} for s in sources]))
     if channel:  # un canal de Orbital: salirte del canal y quedarte en este episodio, o seguirlo en el iPhone

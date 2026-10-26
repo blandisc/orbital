@@ -229,6 +229,9 @@ class OrbitalPlayer(PlayerScreen):
         self.on_failed = None  # (meta, posición, sigue_abierto) -> True si se intenta con otra fuente
         self.next_provider = None  # (meta) -> {"label", "title", "play"} | None
         self.sources_provider = None  # (meta) -> [{"id", "label", "current"}]
+        self.logo_provider = None  # (meta) -> PNG del logo del título (en pausa, el título estilizado) | None
+        self.on_tracks = None  # (meta, track-list) -> aviso si no trae tu idioma (y lo recuerda: «Comprobado»)
+        self.versions_provider = None  # (meta) -> [{"id", "label", "hint"}]: tu idioma en otra versión (X › Audio)
         self.on_switch_source = None  # (meta, id_fuente, posición)
         self.on_episode = None  # (meta, ±1): episodio anterior / siguiente
         self.episodes_provider = None  # (meta) -> [{"id", "label", "current", "progress"?}] de la temporada
@@ -240,7 +243,6 @@ class OrbitalPlayer(PlayerScreen):
         self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
         self.on_sub_kept = None  # (meta): «Probar otros» › «Este va bien»: recordar ya esos subtítulos (y su sincronía)
         self.spanish_provider = None  # (meta) -> "es-419" | "es-ES" | "": el doblaje que va con ese título
-        self.on_audio_tracks = None  # (meta, pistas): al abrir, el audio real de esa versión (se anota)
         # TV en vivo (ver tv.py): el reproductor solo pregunta y avisa, no sabe de listas ni de salud.
         self.channels_provider = None  # (meta, categoría | None) -> {"category", "categories", "channels"}
         self.on_play_channel = None  # (meta, id_del_canal, categoría | None): sintonizar ese canal
@@ -752,13 +754,14 @@ class OrbitalPlayer(PlayerScreen):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
             self.show_hud()
             return
-        if wrong_audio(tracks, self._audio_lang) and not segment.meta.get("synthetic"):
+        note = self._safe(self.on_tracks, segment.meta, tracks) if self.on_tracks else None
+        if isinstance(note, str) and note:
+            self.toast(note, 7)  # «Esta versión no trae latino: sus pistas son inglés y castellano · X › Audio…»
+        elif wrong_audio(tracks, self._audio_lang):
             # El archivo dice ser de otro idioma (un doblaje mal etiquetado): avisa en vez de callar.
             self.toast("Esta versión no trae audio en tu idioma · Y para elegir otra", 6)
         elif segment.start > 5:
             self.toast("Sigues donde te quedaste · ◀ regresa", 3.5)
-        if self.on_audio_tracks and not segment.live:
-            self._safe(self.on_audio_tracks, segment.meta, tracks)
         self._pick_dub(segment, tracks)
         if not self._apply_sub_pick(tracks):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
@@ -825,7 +828,8 @@ class OrbitalPlayer(PlayerScreen):
         log.info("La fuente de %s %s", segment.title, "se cortó" if segment.playing else "no arrancó")
         retrying = False
         if self.on_failed:
-            self.toast("Esa versión falló · probando otra…", 6)
+            self.toast("Esa versión no abrió · regreso a la de antes…" if segment.meta.get("back_to") is not None
+                       else "Esa versión falló · probando otra…", 6)
             retrying = bool(self._safe(self.on_failed, segment.meta, segment.position, True))
         if not retrying:
             self.toast("No pude reproducir esto con ninguna versión", 4)

@@ -127,6 +127,59 @@ class PlayerScreen(SubtitleTrial):
     def _overlay(self, overlay_id: int, ass: str | None) -> None:
         self.mpv.command_named(name="osd-overlay", id=overlay_id, format="ass-events" if ass else "none",
                                data=ass or "", res_x=player_ui.W, res_y=player_ui.H, z=overlay_id)
+        if overlay_id == 1 and not ass:  # se fue la barra (o la tapó un panel): el logo de la pausa, con ella
+            self._show_logo(None)
+
+    # --- el logo del título en pausa: una imagen encima del video (mpv overlay-add), no texto plano -----------------
+    LOGO_OVERLAY = 0  # el id de overlay-add (las imágenes van aparte de las capas ASS)
+    _LOGO_BUSY = "busy"
+
+    def _logo_for(self, meta: dict) -> tuple[str, int, int] | None:
+        """El logo listo para mpv (archivo BGRA, ancho y alto en px de la pantalla); None si no hay o si aún se prepara
+        (se pide por detrás y, si sigues en pausa, se vuelve a dibujar con él)."""
+        key = meta.get("meta_id")
+        scale = self._px_per_unit()
+        if not key or not self.logo_provider or not scale:
+            return None
+        cache = self.__dict__.setdefault("_logos", {})
+        found = cache.get((key, scale))
+        if found is None and (key, scale) not in cache:
+            cache[(key, scale)] = self._LOGO_BUSY
+            threading.Thread(target=self._prepare_logo, args=(meta, key, scale), daemon=True, name="player-logo").start()
+            return None
+        return found if isinstance(found, tuple) else None
+
+    def _px_per_unit(self) -> float | None:
+        h = self.mpv.get("osd-height")
+        return round(h / player_ui.H, 4) if isinstance(h, (int, float)) and h > 0 else None
+
+    def _prepare_logo(self, meta: dict, key: str, scale: float) -> None:
+        cache = self.__dict__.setdefault("_logos", {})
+        result = None
+        try:
+            raw = self.logo_provider(meta)
+            if raw:
+                result = logo_bgra(raw, key, (player_ui.LOGO_BOX[0] * scale, player_ui.LOGO_BOX[1] * scale))
+        except Exception:  # noqa: BLE001 - sin logo, el nombre en texto como siempre
+            log.info("Sin logo para la pausa de %s", key, exc_info=True)
+        cache[(key, scale)] = result
+        current = self.current
+        if result and current is not None and (current.meta or {}).get("meta_id") == key and self._hud_visible \
+                and self.menu is None and self._value("pause"):
+            self.show_hud()
+
+    def _show_logo(self, where: tuple[float, float, float, float] | None, logo: tuple[str, int, int] | None = None) -> None:
+        """Pone el logo en su lugar del lienzo (o lo quita con None)."""
+        if where is None or logo is None:
+            if getattr(self, "_logo_shown", False):
+                self._logo_shown = False
+                self.mpv.command("overlay-remove", self.LOGO_OVERLAY)
+            return
+        scale = self._px_per_unit() or 1.0
+        path, w, h = logo
+        x, y = round(where[0] * scale), round(where[1] * scale)
+        self.mpv.command("overlay-add", self.LOGO_OVERLAY, x, y, path, 0, "bgra", w, h, w * 4)
+        self._logo_shown = True
 
     def _hud(self, current, seeking: str = "", *, position: float | None = None, paused: bool | None = None) -> player_ui.Hud:
         tracks = self.mpv.get("track-list") or []
@@ -158,7 +211,12 @@ class PlayerScreen(SubtitleTrial):
         if self._is_live():
             return self._show_live_hud()
         hud = self._hud(current, seeking, position=position, paused=paused)
+        logo = self._logo_for(current.meta or {}) if hud.paused and not seeking else None
+        scale = self._px_per_unit() or 1.0
+        if logo:
+            hud.logo = (logo[1] / scale, logo[2] / scale)
         self._overlay(1, player_ui.hud_ass(hud))
+        self._show_logo(player_ui.placed.get("logo") if logo else None, logo)
         self._hud_visible = True
         if self._hud_timer:
             self._hud_timer.cancel()
@@ -214,7 +272,11 @@ class PlayerScreen(SubtitleTrial):
         if self._fallback_subs and self._subs_lang:
             extra.append({"label": f"Buscar en {player_ui.language(self._subs_lang).lower()}…",
                           "action": ("fetch", self._subs_lang), "current": False})
-        self._open_panel(player_ui.tracks_panel(tracks, self.sub_scale, extra, focus, sub_delay=self.sub_delay))
+        meta = getattr(self.current, "meta", None) or {}
+        # Tu idioma (y los que esta no trae) en otra versión: de la lista ya buscada, sin esperar a internet.
+        versions = self._safe(self.versions_provider, meta) if self.versions_provider and self.current else None
+        self._open_panel(player_ui.tracks_panel(tracks, self.sub_scale, extra, focus, sub_delay=self.sub_delay,
+                                                versions=versions or None))
 
     def open_more(self, still_wanted=lambda: True) -> None:
         meta = getattr(self.current, "meta", None) or {}
@@ -428,11 +490,15 @@ class PlayerScreen(SubtitleTrial):
                 self._draw_panel()
         elif button in ("left", "right"):
             step = -1 if button == "left" else 1
-            if 0 <= panel.col + step < len(panel.columns):
+            cells = len(column.options[column.index]["cells"]) if column.grid else 0
+            if column.grid and 0 <= min(column.cell, cells - 1) + step < cells:  # Versión: de calidad en calidad
+                column.cell = min(column.cell, cells - 1) + step
+                self._draw_panel()
+            elif 0 <= panel.col + step < len(panel.columns):  # del borde de la cuadrícula, a la columna de al lado
                 panel.col += step
                 self._draw_panel()
-        elif button == "a" and column.options:
-            self._choose(column.options[column.index])
+        elif button == "a" and column.chosen:
+            self._choose(column.chosen)
         elif button == "b":
             self.close_menu()
         elif button in ("x", "y"):
@@ -508,6 +574,11 @@ class PlayerScreen(SubtitleTrial):
                 _, col, index = action
                 self.menu.col = col
                 self.menu.columns[col].index = index
+                self._menu_press("a")
+            elif isinstance(action, tuple) and action[0] == "cell":  # una casilla de Versión
+                _, col, index, cell = action
+                self.menu.col = col
+                self.menu.columns[col].index, self.menu.columns[col].cell = index, cell
                 self._menu_press("a")
             elif isinstance(action, tuple) and action[0] == "column":
                 self.menu.col = action[1]
@@ -1009,3 +1080,26 @@ class PlayerScreen(SubtitleTrial):
             column.options, column.index, column.top = new.options, new.index, 0
         panel.col = 1
         self._draw_panel()
+
+
+def logo_bgra(raw: bytes, key: str, box: tuple[float, float]) -> tuple[str, int, int] | None:
+    """PNG del logo -> archivo BGRA con alfa premultiplicado (lo que pide mpv overlay-add), del tamaño que cabe en `box`
+    (px). (ruta, ancho, alto) o None si no es una imagen."""
+    import io
+    import re as _re
+    import tempfile
+    from pathlib import Path as _Path
+
+    from PIL import Image
+
+    image = Image.open(io.BytesIO(raw)).convert("RGBA")
+    ratio = min(box[0] / image.width, box[1] / image.height)
+    size = (max(1, round(image.width * ratio)), max(1, round(image.height * ratio)))
+    image = image.resize(size, Image.Resampling.LANCZOS)
+    r, g, b, a = image.convert("RGBa").split()  # RGBa: alfa premultiplicado
+    data = Image.merge("RGBa", (b, g, r, a)).tobytes()
+    folder = _Path(tempfile.gettempdir()) / "orbital-logos"
+    folder.mkdir(exist_ok=True)
+    path = folder / f"{_re.sub(r'[^A-Za-z0-9_-]', '_', key)}-{size[0]}x{size[1]}.bgra"
+    path.write_bytes(data)
+    return str(path), size[0], size[1]

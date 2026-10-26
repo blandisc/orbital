@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import companion, emulator_clock, focus, health, system, title_switch
+from . import companion, emulator_clock, emulator_input, focus, gamepad, health, system, title_switch
 from .config import Config
 from .events import EventBus
 from .launcher import Launcher
@@ -185,6 +185,8 @@ class Sessions:
             return item
         if runner or item.argv:
             emulator_clock.sync_for(argv or [])  # su hora, la de la computadora (los de Switch traen la suya)
+            # Los de Switch: el control con el que lo abriste es el Jugador 1, los demás encendidos el 2, 3…
+            emulator_input.arrange_for(argv or [], gamepad.play_order())
             # Orbital encima ANTES de lanzar: la ventana del emulador nunca se asoma.
             pinned = self.pin()
             try:

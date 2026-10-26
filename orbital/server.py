@@ -691,7 +691,7 @@ def _foryou_public_routes(public: FastAPI, main_app: FastAPI) -> None:
         if _is_game_list(list_id) or list_id.startswith(TV_ONLY_PREFIXES):
             raise HTTPException(404, "Esa lista ya no existe.")
         try:
-            return {"items": foryou_of().list_items(list_id, kind)}
+            return foryou_of().list_payload(list_id, kind)
         except KeyError:
             raise HTTPException(404, "Esa lista ya no existe.")
         except trakt.TraktAuthError as exc:

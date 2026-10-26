@@ -1,10 +1,12 @@
 """Canales de Orbital: series al aire las 24 horas, como un canal de tele (TV en vivo › «Orbital 24/7»).
 
-Ningún servidor transmite nada: el canal es una programación corrida, sin huecos. Los episodios de sus series se
-revuelven una vez por vuelta (siempre igual: el orden sale del número de la vuelta) y uno entra en cuanto acaba el otro,
-con su duración real (Orbital la aprende la primera vez que lo pone; mientras, un estimado). Al prenderlo, la hora dice
-qué episodio va y en qué minuto: entras a media emisión, como en la tele. Al terminar uno sigue lo que va a esa hora; si
-pausas más de un minuto, al seguir regresas a lo que va al aire.
+Ningún servidor transmite nada: el canal es una programación con horario fijo, como la tele. Los episodios de sus
+series se revuelven una vez por vuelta (siempre igual: el orden sale del número de la vuelta) y cada uno tiene su espacio
+del mismo largo (`slot`, un poco más de lo que dura el más largo). La hora, y nada más, dice qué episodio va y en qué
+minuto: si te sales 5 minutos, al volver va el mismo 5 minutos después; si te sales media hora, ya va otro. (Antes el
+horario sumaba lo que dura cada episodio y, cada vez que Orbital aprendía una duración, todo el horario se recorría.) Si
+el episodio ya terminó dentro de su espacio, entra el siguiente desde el principio; al terminar uno sigue lo que va a esa
+hora; si pausas más de un minuto, al seguir regresas a lo que va al aire.
 
 Cada episodio se pone con una fuente de tus complementos de Stremio en el doblaje del canal (latino: nunca castellano)
 y el reproductor elige esa pista de audio (playback.dub_track). No todos los episodios tienen ese doblaje: en segundo
@@ -56,7 +58,7 @@ class SyntheticChannel:
     shows: tuple[Show, ...]
     tagline: str = ""  # lo que dice la sección cuando no sabe qué va («Pinky y Cerebro, Batman, ThunderCats…»)
     dub: str = "latino"  # streams.Source.dub que se acepta
-    slot: int = 1320  # s que se estima que dura un episodio mientras no se sabe lo que dura de verdad
+    slot: int = 1380  # s del espacio de cada episodio en el horario (fijo: un poco más que el más largo)
     logo: str | None = None  # dirección de internet (Orbital la baja y la empareja) o un archivo de la interfaz («/img/…»)
     aliases: tuple[str, ...] = ()  # cómo lo pides por voz: «pon el canal de los Simpson» (voice._find_own)
 
@@ -66,7 +68,8 @@ class SyntheticChannel:
 
 
 CHANNELS = [
-    SyntheticChannel("orbital:simpsons", "Los Simpson 24/7", (Show("tt0096697", (3, 10)),), slot=1350,
+    # Los de las temporadas 3 a 10 duran de 22:42 a 23:27 (medido al ponerlos): espacios de 23½ min.
+    SyntheticChannel("orbital:simpsons", "Los Simpson 24/7", (Show("tt0096697", (3, 10)),), slot=1410,
                      logo="https://images.metahub.space/logo/medium/tt0096697/img",
                      aliases=("los simpson", "simpson", "los simpsons", "simpsons")),
     # Las de los 90 que sí tienen doblaje latino en los complementos (las de los 60 y 70 casi no: ver la historia del
@@ -98,19 +101,15 @@ def cycle_order(count: int, channel_id: str, cycle: int) -> list[int]:
     return order
 
 
-def on_air(lengths: list[float], channel_id: str, now: float) -> tuple[int, int, float]:
-    """(vuelta, lugar en la vuelta, segundos ya emitidos del episodio) a esta hora, en una programación corrida:
-    `lengths[i]` es lo que dura el episodio i. Una vuelta dura lo que suman todos (el orden no cambia la suma)."""
-    total = sum(lengths)
+def on_air(count: int, slot: float, now: float) -> tuple[int, int, float]:
+    """(vuelta, lugar en la vuelta, segundos desde que empezó su espacio) a esta hora: `count` episodios, cada uno en un
+    espacio de `slot` segundos. Solo depende del reloj (todas las teles, y tú al volver, ven lo mismo a la misma hora)."""
     elapsed = max(0.0, now - EPOCH)
+    total = count * slot
     cycle = int(elapsed // total)
     rest = elapsed - cycle * total
-    order = cycle_order(len(lengths), channel_id, cycle)
-    for place, index in enumerate(order):
-        if rest < lengths[index]:
-            return cycle, place, rest
-        rest -= lengths[index]
-    return cycle, len(order) - 1, lengths[order[-1]]  # redondeo al final de la vuelta
+    place = min(count - 1, int(rest // slot))
+    return cycle, place, rest - place * slot
 
 
 def following(count: int, cycle: int, place: int) -> tuple[int, int]:
@@ -216,11 +215,24 @@ class SyntheticTV:
     def _at(self, channel: SyntheticChannel, episodes: list[dict], cycle: int, place: int) -> dict:
         return episodes[cycle_order(len(episodes), channel.id, cycle)[place % len(episodes)]]
 
-    def _length(self, channel: SyntheticChannel, episode: dict) -> float:
-        return self.coverage.duration(episode["id"]) or float(channel.slot)
-
     def _on_air(self, channel: SyntheticChannel, episodes: list[dict], now: float) -> tuple[int, int, float]:
-        return on_air([self._length(channel, e) for e in episodes], channel.id, now)
+        """El espacio de esta hora (vuelta, lugar, segundos dentro de él)."""
+        return on_air(len(episodes), channel.slot, now)
+
+    def _tuned(self, channel: SyntheticChannel, episodes: list[dict], now: float) -> tuple[int, int, float, float]:
+        """Lo que se ve a esta hora: (vuelta, lugar, segundo del episodio, cuándo acaba su espacio). Si el episodio de este
+        espacio ya terminó (dura menos que el espacio), el siguiente desde el principio. Si no tiene doblaje, el siguiente
+        que sí, en el mismo minuto (como si fuera el de este espacio): la hora no se recorre."""
+        cycle, place, offset = self._on_air(channel, episodes, now)
+        ends = now - offset + channel.slot
+        length = self.coverage.duration(self._at(channel, episodes, cycle, place)["id"])
+        if length and offset >= length - 5:
+            (cycle, place), offset, ends = following(len(episodes), cycle, place), 0.0, ends + channel.slot
+        cycle, place = self._airable(channel, episodes, cycle, place)
+        length = self.coverage.duration(self._at(channel, episodes, cycle, place)["id"])
+        if length and offset >= length - 5:
+            offset = 0.0
+        return cycle, place, offset, ends
 
     def now(self, channel: SyntheticChannel) -> dict | None:
         """Lo que va ahora (para la sección): episodio, imagen y a qué hora termina. None si Cinemeta no responde."""
@@ -231,12 +243,8 @@ class SyntheticTV:
         if not episodes:
             return None
         now = self.clock()
-        cycle, place, offset = self._on_air(channel, episodes, now)
-        airable = self._airable(channel, episodes, cycle, place)
-        if airable != (cycle, place):  # lo de esta hora no tiene doblaje: va el siguiente, desde el principio
-            cycle, place, offset = *airable, 0.0
+        cycle, place, _, ends = self._tuned(channel, episodes, now)
         episode = self._at(channel, episodes, cycle, place)
-        ends = now - offset + self._length(channel, episode)
         upcoming = self._at(channel, episodes, *self._airable(channel, episodes, *following(len(episodes), cycle, place)))
         many = len(channel.shows) > 1
         return {"series": episode["series"] if many else "", "label": episode["label"], "title": episode["title"],
@@ -361,7 +369,7 @@ class SyntheticTV:
             episodes = self._episodes(channel)
             if not episodes:
                 raise LookupError(f"No encontré los episodios de {channel.name}.")
-            cycle, place, offset = self._on_air(channel, episodes, self.clock())
+            cycle, place, offset, _ = self._tuned(channel, episodes, self.clock())
             picked = self._pick(channel, cycle, place)
         except (cinemeta.CinemetaError, stremio_api.StremioError) as exc:
             raise LookupError(f"No pude prender {channel.name}: {exc}") from exc
@@ -426,9 +434,11 @@ class SyntheticTV:
             episodes = self._episodes(channel)
             if not episodes:
                 return False
-            cycle, place, offset = self._on_air(channel, episodes, self.clock())
+            cycle, place, offset, _ = self._tuned(channel, episodes, self.clock())
             if why == "ended" and self._at(channel, episodes, cycle, place)["id"] == meta.get("video_id"):
                 (cycle, place), offset = following(len(episodes), cycle, place), 0.0
+            elif why == "ended" and offset < 90:
+                offset = 0.0  # el anterior se pasó de su espacio por poco: este desde el principio (sin cortarle el inicio)
             picked = self._pick(channel, cycle, place)
         except (cinemeta.CinemetaError, stremio_api.StremioError) as exc:
             log.warning("%s: no pude seguir con lo que va al aire: %s", channel.name, exc)
@@ -460,10 +470,14 @@ class SyntheticTV:
             picked = self._pick(channel, cycle, place, skip=tried, skips=skips) if len(tried) < MAX_SOURCES else None
             if picked is not None and (picked[2], picked[3]) != (cycle, place):
                 tried, skips = set(), skips + 1  # ya es otro episodio
+            episodes = self._episodes(channel)
             if picked is None and skips + 1 < MAX_SKIPS:
-                count = len(self._episodes(channel))
-                picked = self._pick(channel, *following(count, cycle, place), skips=skips + 1)
+                picked = self._pick(channel, *following(len(episodes), cycle, place), skips=skips + 1)
                 tried, skips = set(), skips + 1
+            # La otra fuente entra en el minuto que va al aire, no desde el principio: al prender el canal, la primera
+            # fuente a veces no trae el latino y la de respaldo empezaba el episodio de cero (dejaba de ser «en vivo»).
+            on_cycle, on_place, offset, _ = self._tuned(channel, episodes, self.clock()) if episodes else (-1, -1, 0.0, 0.0)
+            start = offset if picked is not None and (picked[2], picked[3]) == (on_cycle, on_place) else 0.0
         except (cinemeta.CinemetaError, stremio_api.StremioError, KeyError, ValueError) as exc:
             log.warning("%s: no pude cambiar de fuente: %s", channel.name, exc)
             return False
@@ -471,4 +485,5 @@ class SyntheticTV:
             self.coverage.save()
         if picked is None or skips >= MAX_SKIPS:
             return False  # varios episodios seguidos sin abrir: algo más pasa (Internet, los complementos)
-        return self._load(channel, picked, sorted(tried | {picked[1].index}), f"{channel.name} · probando otra versión", skips)
+        return self._load(channel, picked, sorted(tried | {picked[1].index}), f"{channel.name} · probando otra versión", skips,
+                          start=start)

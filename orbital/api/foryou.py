@@ -25,6 +25,13 @@ class KeysRequest(BaseModel):
     values: list[str]
 
 
+class SaveRequest(BaseModel):
+    kind: str
+    id: str
+    where: str  # «watchlist» o «list:123»
+    add: bool
+
+
 def router(d: Deps) -> APIRouter:
     r = APIRouter(prefix="/api/foryou")
     foryou = d.catalog.foryou
@@ -37,7 +44,7 @@ def router(d: Deps) -> APIRouter:
     @r.get("/list")
     def items(id: str, kind: str | None = None) -> dict:
         try:
-            return {"items": foryou.list_items(id[:120], kind)}
+            return foryou.list_payload(id[:120], kind)
         except KeyError:
             raise HTTPException(404, "Esa lista ya no existe.")
         except trakt.TraktAuthError as exc:
@@ -51,6 +58,33 @@ def router(d: Deps) -> APIRouter:
         """«movie:tt1,series:tt2» → {"tt1": 8.1, …}: la calificación de IMDb (ordenar una lista)."""
         wanted = [tuple(p.split(":", 1)) for p in ids[:4000].split(",") if p.count(":") == 1]
         return {"ratings": foryou.imdb_ratings([(k, i) for k, i in wanted])}
+
+    @r.get("/saved")
+    def saved(kind: str, id: str) -> dict:
+        """«Guardar en…»: si está en tu watchlist y en cuáles de tus listas de Trakt."""
+        if kind not in ("movie", "series"):
+            raise HTTPException(400, "Tipo inválido")
+        try:
+            return foryou.saved_in(kind, id[:20])
+        except trakt.TraktAuthError as exc:
+            raise HTTPException(409, str(exc))
+        except SERVICE_ERRORS:
+            raise HTTPException(502, "No pude leer tus listas de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+
+    @r.post("/save")
+    def save(body: SaveRequest) -> dict:
+        """Añadir o quitar de tu watchlist o de una de tus listas de Trakt."""
+        if body.kind not in ("movie", "series"):
+            raise HTTPException(400, "Tipo inválido")
+        try:
+            foryou.save_to(body.kind, body.id[:20], body.where[:40], body.add)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        except trakt.TraktAuthError as exc:
+            raise HTTPException(409, str(exc))
+        except SERVICE_ERRORS:
+            raise HTTPException(502, "No pude cambiar tu lista de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True}
 
     @r.get("/title-extras")
     def title_extras(kind: str, id: str) -> dict:

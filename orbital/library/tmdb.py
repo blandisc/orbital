@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import date
+from typing import NamedTuple
 from urllib.parse import urlencode
 
 from ..net import NET_ERRORS, http_json
@@ -31,6 +33,88 @@ KINDS = {"movie": "movie", "series": "tv"}
 # Los estudios de «Estudios» (su id en TMDB), los mismos que el iPhone (Tmdb.studios).
 STUDIOS = [(41077, "A24"), (3, "Pixar"), (10342, "Studio Ghibli"), (420, "Marvel Studios"), (1, "Lucasfilm"),
            (3172, "Blumhouse"), (521, "DreamWorks Animation"), (90733, "NEON")]
+
+
+class Genre(NamedTuple):
+    """Un género de «Lo mejor del género»: id de película y, si TMDB tiene un género de serie que corresponde, el de serie.
+
+    Acción y aventura en series es uno solo (10759): lo usa Acción. Ciencia ficción y fantasía en series es uno (10765):
+    lo usan las dos. Terror, romance, suspenso y aventura no tienen género de serie propio."""
+
+    slug: str
+    title: str
+    movie: int
+    tv: int | None
+
+
+GENRES = (
+    Genre("accion", "Acción", 28, 10759),
+    Genre("aventura", "Aventura", 12, None),
+    Genre("animacion", "Animación", 16, 16),
+    Genre("comedia", "Comedia", 35, 35),
+    Genre("crimen", "Crimen", 80, 80),
+    Genre("documental", "Documental", 99, 99),
+    Genre("drama", "Drama", 18, 18),
+    Genre("familia", "Familia", 10751, 10751),
+    Genre("fantasia", "Fantasía", 14, 10765),
+    Genre("terror", "Terror", 27, None),
+    Genre("misterio", "Misterio", 9648, 9648),
+    Genre("romance", "Romance", 10749, None),
+    Genre("ciencia-ficcion", "Ciencia ficción", 878, 10765),
+    Genre("suspenso", "Suspenso", 53, None),
+)
+GENRE_BY_SLUG = {g.slug: g for g in GENRES}
+# Primero con bastantes votos; si no llegan a 10, se baja el piso. Luego popularidad del año y, al final, el año anterior.
+GENRE_VOTE_FLOORS = (150, 50)
+
+
+class Season(NamedTuple):
+    """Una temporada de «Temporadas». `queries` se resuelven en TMDB (/search/keyword); las fechas no se enciman
+    (las mismas del boceto del iPhone) y Navidad cruza el año."""
+
+    slug: str
+    title: str
+    queries: tuple[str, ...]
+    start: tuple[int, int]  # mes, día
+    end: tuple[int, int]
+    blurb: str
+
+
+SEASONS = (
+    Season("halloween", "Halloween", ("halloween",), (9, 25), (10, 31), "Sustos, brujas y calabazas"),
+    Season("muertos", "Día de Muertos", ("day of the dead", "dia de los muertos"), (11, 1), (11, 10),
+           "Para recordar a los que se fueron"),
+    Season("navidad", "Navidad", ("christmas",), (11, 25), (1, 6), "Para ver en familia"),
+    Season("sanvalentin", "San Valentín", ("valentine's day",), (1, 25), (2, 14), "Para ver en pareja"),
+    Season("verano", "Verano", ("summer",), (6, 1), (8, 31), "Sol, playa y vacaciones"),
+)
+SEASON_BY_SLUG = {s.slug: s for s in SEASONS}
+SEASON_VOTE_FLOORS = (50, 10)
+
+
+def _day_of_year(month: int, day: int) -> int:
+    """Día del año en uno no bisiesto (el 29 de febrero cuenta como 28: ninguna temporada depende de él)."""
+    before = (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334)
+    return before[max(0, min(11, month - 1))] + min(day, 28 if month == 2 else 31)
+
+
+def _in_season(start: tuple[int, int], end: tuple[int, int], day: tuple[int, int]) -> bool:
+    if start <= end:
+        return start <= day <= end
+    return day >= start or day <= end  # cruza el año (Navidad)
+
+
+def _days_until(start: tuple[int, int], day: tuple[int, int]) -> int:
+    begin, today = _day_of_year(*start), _day_of_year(*day)
+    return begin - today if begin >= today else begin + 365 - today
+
+
+def ordered_seasons(today: date, seasons: tuple[Season, ...] = SEASONS) -> list[Season]:
+    """La que va hoy primero (o, entre temporadas, la siguiente en llegar) y el resto en el orden en que llegan."""
+    day = (today.month, today.day)
+    ranked = sorted(enumerate(seasons), key=lambda pair: (
+        0 if _in_season(pair[1].start, pair[1].end, day) else _days_until(pair[1].start, day), pair[0]))
+    return [season for _, season in ranked]
 
 PLATFORMS = {
     "netflix": ("Netflix", ("netflix",)),
@@ -161,6 +245,90 @@ class Tmdb:
                          **{"vote_count.gte": 50}, page=1)
         return [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]
 
+    def _discover(self, kind: str, **params) -> list[dict]:
+        data = self._get(f"/discover/{KINDS[kind]}", page=1, **params)
+        return [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]
+
+    def _genre_rows(self, movie_genre: int | None, tv_genre: int | None, year: int, sort: str, floor: int) -> list[dict]:
+        """Películas y series de un género en un año, juntas, de mejor a peor según `sort`."""
+        extra = {"sort_by": sort, **({"vote_count.gte": floor} if floor else {})}
+        found: list[dict] = []
+        if movie_genre:
+            for row in self._discover("movie", with_genres=int(movie_genre), primary_release_year=int(year), **extra):
+                found.append({"kind": "movie", "id": row["id"], "vote_average": float(row.get("vote_average") or 0),
+                              "popularity": float(row.get("popularity") or 0)})
+        if tv_genre:
+            for row in self._discover("series", with_genres=int(tv_genre), first_air_date_year=int(year), **extra):
+                found.append({"kind": "series", "id": row["id"], "vote_average": float(row.get("vote_average") or 0),
+                              "popularity": float(row.get("popularity") or 0)})
+        seen: set[tuple[str, int]] = set()
+        out = []
+        for row in found:
+            key = (row["kind"], row["id"])
+            if key not in seen:
+                seen.add(key)
+                out.append(row)
+        if sort.startswith("vote"):
+            out.sort(key=lambda r: (-r["vote_average"], -r["popularity"], r["kind"], r["id"]))
+        else:
+            out.sort(key=lambda r: (-r["popularity"], -r["vote_average"], r["kind"], r["id"]))
+        return out
+
+    def genre_top(self, movie_genre: int | None, tv_genre: int | None, year: int) -> dict:
+        """El Top del género en `year`. {rows, year, basis}: basis es votes, popular, previous o previous-popular.
+
+        Pide nota con un piso de votos; si no hay 10, baja el piso, luego lo más popular de ese año y, al final, el año
+        anterior. `year` del resultado es el año de verdad (puede ser el anterior)."""
+        for floor in GENRE_VOTE_FLOORS:
+            rows = self._genre_rows(movie_genre, tv_genre, year, "vote_average.desc", floor)
+            if len(rows) >= 10:
+                return {"rows": rows[:20], "year": year, "basis": "votes"}
+        rows = self._genre_rows(movie_genre, tv_genre, year, "popularity.desc", 0)
+        if len(rows) >= 10:
+            return {"rows": rows[:20], "year": year, "basis": "popular"}
+        previous = year - 1
+        rows = self._genre_rows(movie_genre, tv_genre, previous, "vote_average.desc", GENRE_VOTE_FLOORS[-1])
+        if len(rows) >= 10:
+            return {"rows": rows[:20], "year": previous, "basis": "previous"}
+        rows = self._genre_rows(movie_genre, tv_genre, previous, "popularity.desc", 0)
+        return {"rows": rows[:20], "year": previous, "basis": "previous-popular"}
+
+    def keyword_id(self, queries: tuple[str, ...]) -> int | None:
+        """El id de una palabra clave de TMDB. Se busca en inglés (los nombres canónicos están en inglés) y gana el
+        nombre exacto; si no hay, el primer resultado. None si ninguna consulta trae nada."""
+        for query in queries:
+            data = self._get("/search/keyword", query=query, language="en-US")
+            results = [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int) and r.get("name")]
+            exact = [r for r in results if str(r["name"]).casefold() == query.casefold()]
+            pick = (exact or results or [None])[0]
+            if pick:
+                return int(pick["id"])
+        return None
+
+    def season_titles(self, keyword_id: int) -> list[dict]:
+        """Películas y series con esa palabra clave, lo más popular primero (es-MX: lo pone `_get`). Si con el piso de
+        votos no hay 10, lo baja y al final quita el piso."""
+        floors = (*SEASON_VOTE_FLOORS, 0)
+        rows: list[dict] = []
+        for floor in floors:
+            extra = {"with_keywords": int(keyword_id), "sort_by": "popularity.desc", **({"vote_count.gte": floor} if floor else {})}
+            found = []
+            for kind in ("movie", "series"):
+                for row in self._discover(kind, **extra):
+                    found.append({"kind": kind, "id": row["id"], "vote_average": float(row.get("vote_average") or 0),
+                                  "popularity": float(row.get("popularity") or 0)})
+            seen: set[tuple[str, int]] = set()
+            rows = []
+            for row in found:
+                key = (row["kind"], row["id"])
+                if key not in seen:
+                    seen.add(key)
+                    rows.append(row)
+            rows.sort(key=lambda r: (-r["popularity"], -r["vote_average"], r["kind"], r["id"]))
+            if len(rows) >= 10 or floor == 0:
+                return rows[:20]
+        return rows[:20]
+
     def company_logo(self, company_id: int) -> str | None:
         """El logo de un estudio (PNG transparente de TMDB), para Películas y series › Estudios."""
         raw = self._get(f"/company/{int(company_id)}")
@@ -265,6 +433,24 @@ class Tmdb:
             return [url for r in rows[:limit] if (url := image(r["file_path"], size))]
 
         return {"posters": pick(raw.get("posters"), "w500"), "backgrounds": pick(raw.get("backdrops"), "w1280")}
+
+    def original(self, imdb: str, kind: str) -> dict:
+        """El idioma original de un título y sus nombres, para saber en qué idioma viene una fuente que no lo dice:
+        {"original": "en" | "ja" | "es-ES" | "es-419"…, "titles": [...]}. El español, con su país (Roma es mexicana;
+        La casa de papel, española)."""
+        data = self._get(f"/find/{imdb}", external_source="imdb_id")
+        rows = data.get("movie_results" if kind == "movie" else "tv_results") or []
+        row = rows[0] if isinstance(rows, list) and rows and isinstance(rows[0], dict) else {}
+        lang = str(row.get("original_language") or "").lower()
+        titles = [str(row.get(k) or "").strip() for k in ("title", "original_title", "name", "original_name")]
+        if lang == "es":
+            countries = row.get("origin_country") or []
+            if not countries and kind == "movie" and _positive(row.get("id")):
+                countries = self._get(f"/movie/{int(row['id'])}").get("origin_country") or []
+            countries = [c for c in countries if isinstance(c, str)]
+            lang = "es-ES" if countries[:1] == ["ES"] else "es-419" if countries else "es"
+        lang = {"xx": "", "cn": "zh"}.get(lang, lang)  # «xx»: sin idioma (mudas, música); «cn»: cantonés
+        return {"original": lang or None, "titles": list(dict.fromkeys(t for t in titles if t))}
 
     def find_id(self, imdb: str, kind: str) -> int | None:
         """El id de TMDB de un título de IMDb (None si TMDB no lo tiene)."""

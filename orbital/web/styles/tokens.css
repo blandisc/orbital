@@ -133,7 +133,6 @@
   --duration-launch-out: 420ms;
   --duration-launch-draw: 1.1s; /* la órbita se dibuja al entrar */
   --duration-launch-float: 9s; /* portada y órbita flotan apenas, como en ingravidez */
-  --duration-launch-trail: 110ms; /* cada punto de la estela del satélite, detrás del anterior */
   /* Escalonado: cada pieza entra un poco después que la anterior */
   --stagger: 45ms;
   --delay-1: 90ms;

@@ -447,7 +447,8 @@ const SETTING_ICONS = {
 
 const SETTING_PAGES = {
   playback: { title: "Películas y series", icon: "play", hint: "Idioma, subtítulos y calidad", options: [
-    ["audio", "Idioma", "En qué idioma prefieres oírlas"], ["subtitles", "Subtítulos", null], ["quality", "Calidad", null],
+    ["audio", "Idioma", "En qué idioma prefieres oírlas"],
+    ["subtitles", "Subtítulos", null], ["quality", "Calidad", null],
     ["sub_scale", "Letra de los subtítulos", null]] },
   display: { title: "Pantalla y sonido", icon: "display", hint: "Texto, márgenes, sonidos y vibración", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],

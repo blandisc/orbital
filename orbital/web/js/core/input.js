@@ -74,8 +74,8 @@ export const usablePad = (pad) => !!pad && pad.mapping === "standard";
 /** Un stick se cuenta en el centro (para «armarlo») por debajo de esto. */
 export const STICK_REST = .2;
 
-/** ms quieto el ratón antes de esconder el cursor. */
-export const POINTER_IDLE = 3000;
+/** ms quieto el ratón antes de esconder el cursor (con 3 s se quedaba demasiado en la tele). */
+export const POINTER_IDLE = 1500;
 
 /** Acciones activas según el estado de los mandos (botones + stick izquierdo). `memory` guarda
  * la dirección del stick de cada mando entre frames (para la histéresis) y si ya se le vio en el centro.
@@ -174,7 +174,13 @@ export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && 
 export function createInput({ onAction, onModality, onText = null, typing = () => false, onTrace = null, resting = () => false }) {
   // Diagnóstico (entrada.log): lo que llega en bruto y lo que se dispara, con si Orbital tenía el foco.
   const trace = (entry) => onTrace?.({ ms: Date.now(), focus: document.hasFocus(), hidden: document.hidden, ...entry });
+  // El cursor solo se ve mientras mueves el ratón: a los POINTER_IDLE quieto se esconde, en cualquier modo (antes solo con
+  // el mando: al mover el ratón la leyenda pasaba a teclado y el cursor se quedaba en la tele). Una tecla o un botón del
+  // mando lo esconde al momento.
+  let pointerTimer = 0;
+  const hidePointer = () => { clearTimeout(pointerTimer); delete document.body.dataset.pointer; };
   document.addEventListener("keydown", (event) => {
+    hidePointer();
     if (onText && typing() && (isTextKey(event) || TYPING_KEYS[event.key])) {
       event.preventDefault();
       // Escribiendo solo se repite borrar: un Enter sostenido saltaba a los resultados y abría el primero. Mantener
@@ -208,13 +214,10 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   // saltaba entre "A" y "Enter" todo el tiempo.
   let lastPad = -Infinity;
   let mouseFrom = null;
-  // El cursor solo se ve mientras mueves el ratón: a los 3 s quieto se esconde, en cualquier modo (antes solo con el
-  // mando: al mover el ratón la leyenda pasaba a teclado y el cursor se quedaba en la tele).
-  let pointerTimer = 0;
   document.addEventListener("mousemove", () => {
     document.body.dataset.pointer = "on";
     clearTimeout(pointerTimer);
-    pointerTimer = setTimeout(() => { delete document.body.dataset.pointer; }, POINTER_IDLE);
+    pointerTimer = setTimeout(hidePointer, POINTER_IDLE);
   }, { passive: true });
   document.addEventListener("mousemove", (event) => {
     const now = performance.now();
@@ -260,7 +263,7 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
     if (now < swallowUntil) repeater.swallow([...active].filter((a) => !repeater.held.has(a)));
     const fire = repeater.update(active, now);
     if (active.size) lastPad = now;
-    if (fire.length) onModality("gamepad");
+    if (fire.length) { onModality("gamepad"); hidePointer(); }
     fire.forEach((action) => {
       trace({ src: "action", from: "pad", action, repeat: repeater.isRepeat(action) });
       onAction(action, { repeat: repeater.isRepeat(action) });

@@ -6,14 +6,15 @@
   display: grid; grid-template-rows: auto auto 1fr; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); overflow: hidden;
   /* Portadas y teclas un poco más compactas que en el resto: resultados + teclado + pie caben siempre
      en la pantalla (antes el teclado bajaba hasta las pistas del pie). */
-  --card-height: min(13rem, 17vh); --key-height: min(2.85rem, 4.9vh); /* resultados + teclado caben a 1080 y a 800 de alto (con 18.5vh / 5.3vh el pie de los resultados quedaba bajo las teclas) */
+  /* Teclado más grande (se acierta mejor desde el sillón: teclas ~10 % más altas y 15 % más anchas) y la portada cede un poco;
+     resultados + teclado + pie caben a 1080, 800 y 720 de alto (medido: el pie de la enfocada no toca las teclas). */
+  --card-height: min(11.5rem, 15vh); --key-height: min(3.1rem, 5.2vh); --keyboard-width: 62rem;
 }
 /* Letra más grande = pies de resultado más altos: la portada cede para que el teclado no los tape. */
 [data-text-size="large"] .search, [data-text-size="xlarge"] .search {
-  --card-height: min(12rem, 16.5vh); --key-height: min(2.85rem, 4.8vh); gap: var(--space-3);
+  --card-height: min(11rem, 14.5vh); --key-height: min(3rem, 4.9vh); gap: var(--space-3);
   padding-top: calc(var(--space-6) + var(--safe-y));
 }
-[data-text-size="xlarge"] .search__results { padding-bottom: 5.6rem; } /* el pie de la enfocada, más alto */
 
 .search__top { min-width: 0; display: flex; align-items: baseline; gap: var(--space-6); }
 .search__field {
@@ -40,15 +41,26 @@
 
 /* Resultados: la misma tarjeta que en el inicio, en una fila con desplazamiento. */
 .search__results {
-  display: flex; align-items: flex-end; gap: var(--card-gap);
+  display: flex; align-items: flex-start; gap: var(--card-gap); /* los nombres de los grupos en una línea (también «Recientes» junto a «Populares») */
   min-height: calc(var(--card-height) * var(--card-focus-scale) + var(--space-4));
   /* Arriba: lo que crece, lo que sube (translateY .35rem del foco) y el anillo. */
-  padding: calc(var(--focus-grow) + .2rem) calc(var(--focus-grow) / 2 + var(--space-2)) 4.6rem; /* abajo: el pie (la enfocada, en dos líneas); arriba ya da aire el nombre del grupo */
-  margin: 0 calc(-1 * var(--space-2)); scroll-padding-inline: calc(var(--focus-grow) / 2 + var(--space-2));
+  /* Abajo: el pie de la enfocada entero (título en dos líneas + tipo, escalado como la portada). Antes 4.6rem fijos
+     cortaban la última línea; calculado desde la letra, también vale con letra grande. */
+  --caption-room: calc((.55rem + .2rem + 3 * var(--caption-size) * var(--leading-normal)) * var(--card-focus-scale));
+  /* Arriba solo el aire del anillo: lo que crece la enfocada ya lo aparta cada grupo entre su nombre y sus portadas (antes
+     se apartaba dos veces y los resultados quedaban tan abajo que el teclado tapaba sus pies). A la izquierda, lo mismo:
+     la enfocada crece desde su esquina de abajo a la izquierda, hacia la derecha; así la primera portada y el nombre del
+     grupo quedan en la misma línea que el campo de arriba y las pistas del pie (antes, 18 px más adentro). */
+  padding: var(--space-2) calc(var(--focus-grow) / 2 + var(--space-2)) var(--caption-room) var(--space-2);
+  margin: 0 calc(-1 * var(--space-2)); scroll-padding-inline: var(--space-2) calc(var(--focus-grow) / 2 + var(--space-2));
   overflow-x: auto; scrollbar-width: none;
 }
 /* Todas enseñan el título en dos líneas (antes solo la enfocada: «Hollow Kni…» sobraba lugar): «Harry Potter and the Deat…» ×2 no se distinguían. */
 .search .card:not(.card--no-art, .card--named) .card__caption strong { display: -webkit-box; white-space: normal; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* Sin portada (el nombre va encima del ícono de su consola): en la portada chica de Buscar, dos renglones y la letra que
+   cabe; con letra grande, «Kirby Amazing Mirror» en tres renglones se subía sobre el ícono. */
+.search .card--no-art .card__title { -webkit-line-clamp: 2; font-size: min(var(--type-secondary), calc(var(--card-height) * .115)); }
+.search .card--no-art .card__placeholder { inset: 0 0 55% 0; } /* el ícono arriba: el nombre (dos renglones) y la consola caben debajo sin encimarse */
 
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va. */
 .search .keyboard { align-self: end; justify-self: center; min-height: 0; }
@@ -59,16 +71,18 @@
 
 /* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
 /* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */
-.search__set { flex: none; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow)); }
+.search__set + .search__set { margin-left: var(--space-6); } /* entre grupos, más aire que entre portadas: se ve dónde empieza cada uno */
+.search__set { flex: none; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow) + .35rem); } /* + lo que sube la enfocada: el anillo rozaba el nombre */
 .search__set-cards { display: flex; align-items: flex-end; gap: var(--card-gap); }
 .search__group {
   flex: none; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); line-height: var(--leading-title);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Los títulos de los resultados, legibles desde el sillón (antes en letra de pie de foto). */
 .search { --caption-size: var(--type-secondary); }
-/* Caja vacía: búsquedas recientes como píldoras. */
-.search__results--recent { align-items: center; min-height: 0; padding-bottom: var(--space-4); }
-.search__results--recent .search__group { align-self: center; padding: 0 var(--space-2) 0 0; }
+/* Caja vacía, solo búsquedas recientes (sin portadas): las píldoras, sin el lugar de las portadas. */
+.search__results--recent { min-height: 0; padding-bottom: var(--space-4); }
+.search__set--pills { gap: var(--space-3); }
+.search__set--pills .search__set-cards { align-items: center; gap: var(--space-3); }
 
 @media (max-height: 640px) {
   .search { gap: var(--space-3); }

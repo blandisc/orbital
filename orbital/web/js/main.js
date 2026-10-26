@@ -5,7 +5,7 @@
 import { api } from "./core/api.js";
 import { markFocus } from "./core/focus-mark.js";
 import { closedSummary, crashMessage } from "./core/format.js";
-import { createInput, ERASE_WORD, GLYPHS } from "./core/input.js";
+import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
@@ -118,6 +118,7 @@ const ui = {
   title: createTitle({
     onPlay: (play) => watch(play),
     onSources: (play) => openSources(play),
+    onSave: (info) => openSave(info),
     onPerson: (person) => openPerson(person),
     onDownload: (body, job) => downloadTitle(body, job),
     onVersions: (play, versions) => openMenu(versionsMenu(play, versions)),
@@ -229,8 +230,10 @@ const ui = {
 const { back: touchBack, menu: touchMenu } = createTouchBack({ onBack: () => handleAction("back"), onMenu: () => handleAction("menu") });
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
+// Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Versión») van
+// después de la lista abierta, ¿Qué vemos?, Tu año y el calendario: A en un póster las deja a la vista.
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 markFocus(document.body); // «lo enfocado lleva aria-current», en todas las piezas
 
@@ -909,7 +912,12 @@ function refreshBecauseRow() {
   setFocus(state.focus.r, state.focus.c, { silent: true });
 }
 
-const fetchList = async (id, kind) => (await api.forYouList(id, kind).catch(() => ({ items: [] }))).items || [];
+const mediaHeads = {}; // título de verdad de un género o una temporada (el año puede no ser el de hoy)
+const fetchList = async (id, kind) => {
+  const res = await api.forYouList(id, kind).catch(() => ({ items: [] }));
+  if (res?.title) mediaHeads[id] = { title: res.title, meta: res.meta || "" };
+  return res?.items || [];
+};
 async function fetchMany(wanted, into = mediaItems) {
   const queue = [...wanted];
   await Promise.all(Array.from({ length: 4 }, async () => {
@@ -917,7 +925,7 @@ async function fetchMany(wanted, into = mediaItems) {
   }));
 }
 /** Lo de arriba primero (Destacados, lo general, Porque viste, lo nuevo, las plataformas); las colecciones, después. */
-const LATER = (w) => /^(award|studio|list|addon):/.test(w.id) || ["watchlist", "mine", "mylist", "estrenos"].includes(w.id);
+const LATER = (w) => /^(award|studio|list|addon|genre|season):/.test(w.id) || ["watchlist", "mine", "mylist", "estrenos"].includes(w.id);
 
 async function loadYears(count = 6) {
   const years = mediaLists.filter((l) => l.collection === "year").slice(yearsLoaded, yearsLoaded + count);
@@ -985,6 +993,17 @@ function openCollection(item) {
   }
   const l = c.list || {};
   if (l.id === "estrenos") { ui.calendar.open(); return renderHints(); } // el mes, como el iPhone
+  if (c.type === "genre" || c.type === "season") {
+    const kind = l.kinds?.[0] ?? null;
+    const head = mediaHeads[l.id];
+    ui.listScreen.open({ id: l.id, title: head?.title || l.headline || l.title, meta: head?.meta ?? l.meta ?? "", media: {},
+      tabs: [{ id: "all", label: "", ranked: c.type === "genre", load: () => cached(l.id, kind).then((items) => {
+        const ready = mediaHeads[l.id];
+        if (ready?.title) ui.listScreen.setHeading(ready.title, ready.meta);
+        return items.map(curatedItem);
+      }) }] });
+    return renderHints();
+  }
   if (l.id === "mimedia") return openMiMedia();
   const kinds = l.split ? (c.type === "year" ? [["movie", "Películas"], ["series", "Series"]] : [["series", "Series"], ["movie", "Películas"]])
     : [[l.kinds?.[0] ?? null, ""]];
@@ -1020,6 +1039,65 @@ function openMiMedia() {
 }
 
 /** «Versiones en tu carpeta» (como el iPhone): resolución, HDR, audio, idiomas y tamaño; A ve esa. */
+// --- «Guardar en…» (como el iPhone): en qué listas va un título, varias a la vez ---------------------------------------
+let saving = null; // { kind, id, title, library, trakt: null (buscando) | { trakt, watchlist, lists }, error }
+
+function saveMenu(s) {
+  const row = (label, hint, on, where) => ({ icon: on ? "check" : "plus", label, hint, value: on ? "✓" : "", ok: on,
+    command: { type: "save-toggle", where } });
+  const options = [row("Mi lista", "Stremio", s.library, "library")];
+  if (s.error) options.push({ icon: "info", label: s.error, command: { type: "stay" } });
+  else if (!s.trakt) options.push({ icon: "refresh", label: "Buscando tus listas de Trakt…", command: { type: "stay" } });
+  else if (s.trakt.trakt) {
+    options.push(row("Tu watchlist", "Trakt", s.trakt.watchlist, "watchlist"), { heading: true, label: "Tus listas de Trakt" });
+    if (!s.trakt.lists.length) options.push({ icon: "info", label: "Aún no tienes listas en Trakt", command: { type: "stay" } });
+    for (const l of s.trakt.lists) options.push(row(l.name, "", l.contains, `list:${l.id}`));
+  }
+  return { title: "Guardar en…", subtitle: s.title, options, save: true };
+}
+
+/** La hoja abierta, con lo nuevo y en la misma opción (si sigue abierta). */
+function refreshSave() {
+  if (!saving) return;
+  const elsewhere = !!saving.trakt && (saving.trakt.watchlist || saving.trakt.lists.some((l) => l.contains));
+  ui.title.saved(saving.id, { library: saving.library, elsewhere });
+  if (ui.sheet.isOpen && ui.sheet.menu?.save) ui.sheet.open(saveMenu(saving), { index: ui.sheet.index, stack: ui.sheet.stack });
+}
+
+function openSave({ kind, id, title, library }) {
+  const mine = saving = { kind, id, title, library, trakt: null, error: null };
+  openMenu(saveMenu(saving));
+  api.savedIn(kind, id)
+    .then((res) => { mine.trakt = res; })
+    .catch((err) => { mine.error = err.message || "No pude leer tus listas de Trakt"; })
+    .finally(() => { if (saving === mine) refreshSave(); });
+}
+
+/** Una casilla de «Guardar en…»: cambia al instante (sin esperar a Stremio ni a Trakt) y, si falla, regresa y lo dice. */
+function toggleSave(where) {
+  const s = saving;
+  if (!s) return;
+  const list = where.startsWith("list:") ? s.trakt?.lists.find((l) => `list:${l.id}` === where) : null;
+  const get = () => (where === "library" ? s.library : where === "watchlist" ? s.trakt?.watchlist : list?.contains);
+  const set = (value) => {
+    if (where === "library") s.library = value;
+    else if (where === "watchlist" && s.trakt) s.trakt.watchlist = value;
+    else if (list) list.contains = value;
+  };
+  const add = !get();
+  set(add);
+  sound.play("select");
+  refreshSave();
+  const call = where === "library" ? api.setInLibrary(s.kind, s.id, add) : api.saveTo(s.kind, s.id, where, add);
+  // (Mi lista: el servidor vuelve a leer tu biblioteca por detrás y avisa con «library-changed».)
+  call.catch((err) => {
+      set(!add);
+      refreshSave();
+      sound.play("error");
+      ui.toast.show(err.message || "No pude guardarlo", { error: true });
+    });
+}
+
 function versionsMenu(play, versions) {
   const lang = { es: "Español", en: "Inglés" };
   const gb = (b) => (b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${Math.round(b / 1e6)} MB`);
@@ -1364,7 +1442,7 @@ function setOnline(online) {
 }
 
 // ---------------------------------------------------------------- películas y series
-/** La ficha (película o serie): datos, reparto, episodios, Continuar / Ver / Elegir fuente. */
+/** La ficha (película o serie): datos, reparto, episodios, Continuar / Ver / Versión. */
 function openTitle(item, restoreFocus = null) {
   const ref = titleRef(item);
   if (!ref) return;
@@ -1782,6 +1860,9 @@ async function runCommand(command, context = null) {
       case "stay":
         if (context && stillThere(context)) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
         return renderHints();
+      case "save-toggle": // «Guardar en…»: se queda abierta, con la casilla ya cambiada
+        toggleSave(command.where);
+        return renderHints();
       case "back": { // «Cancelar» en una pregunta: al menú de antes, donde estabas
         const previous = context?.stack?.at(-1);
         if (previous) ui.sheet.open(previous.menu, { index: previous.index, stack: context.stack.slice(0, -1) });
@@ -2192,6 +2273,23 @@ document.addEventListener("visibilitychange", () => {
 document.body.dataset.input = state.modality;
 ui.foryou.setGlyphs(glyphs());
 ui.tv.setGlyphs(glyphs());
+// Los controles de la Legion Go, sueltos, a veces llegan en modo DInput o «Dual DInput»: Windows no los da como control de
+// Xbox y nada los usa (Orbital tampoco: sus ejes no sirven). Al despertar suelen llegar así unos segundos y Legion Space los
+// pasa solo a XInput (entrada.log: 6 s): se espera y, si siguen así sin otro control que sirva, se dice cómo cambiarlos
+// (lo que enseña Legion Space), una vez.
+let legionTip = false;
+const legionStuck = () => {
+  const pads = [...(navigator.getGamepads?.() || [])].filter(Boolean);
+  return !pads.some(usablePad) && pads.some((pad) => /legion/i.test(pad.id || ""));
+};
+window.addEventListener("gamepadconnected", ({ gamepad }) => {
+  if (legionTip || usablePad(gamepad) || !/legion/i.test(gamepad.id || "")) return;
+  setTimeout(() => {
+    if (legionTip || !legionStuck()) return;
+    legionTip = true;
+    ui.toast.show("Tus controles Legion están en modo DInput: mantén Legion L + RB un segundo para pasarlos a XInput");
+  }, 10_000);
+});
 setInterval(pollStatus, 60_000); // red de seguridad: el estado llega por SSE al cambiar
 setInterval(pollSystem, 30_000);
 pollStatus();

@@ -87,8 +87,8 @@ test("secciones: cada fila en su lugar; Inicio vacío cae en Juegos; secciones v
   const ids = (sec) => sectionRows(rows, sec).map((r) => r.id);
   assert.deepEqual(ids("home"), ["jump", "favorites"]);
   assert.deepEqual(ids("games"), ["recent", "steam", "geforcenow", "emulators:switch"]);
-  // Como Para ti › Listas del iPhone: «Seguir viendo» vive en el Inicio; aquí solo lo de Para ti (sin «Multimedia»).
-  assert.deepEqual(ids("media"), []);
+  // «Seguir viendo» arriba de lo de Para ti (sin «Multimedia»); en el Inicio va mezclado con los juegos («jump»).
+  assert.deepEqual(ids("media"), ["continue"]);
   assert.deepEqual(ids("apps"), ["apps"]);
   const fresh = rows.filter((r) => !["jump", "recent", "continue", "favorites"].includes(r.id));
   assert.deepEqual(sectionRows(fresh, "home").map((r) => r.id), ["steam", "geforcenow", "emulators:switch"]);
@@ -126,10 +126,10 @@ test("cada imagen se pide al tamaño en que se ve", async () => {
   assert.equal(sized("img/placeholders/a.jpg", 240, 1), "img/placeholders/a.jpg");
 });
 
-test("Películas y series: Destacados arriba y lo de Para ti en su orden, sin «Multimedia»", async () => {
+test("Películas y series: Destacados, debajo Seguir viendo y luego lo de Para ti en su orden, sin «Multimedia»", async () => {
   const { sectionRows } = await import("../../orbital/web/js/core/library.js");
   const rows = [{ id: "media" }, { id: "continue" }, { id: "curated:recs" }, { id: "curated:platforms" }, { id: "curated:spotlight" }, { id: "movies" }];
-  assert.deepEqual(sectionRows(rows, "media").map((r) => r.id), ["curated:spotlight", "curated:recs", "curated:platforms"]);
+  assert.deepEqual(sectionRows(rows, "media").map((r) => r.id), ["curated:spotlight", "continue", "curated:recs", "curated:platforms"]);
 });
 
 test("Por género: tarjetas con arte que llevan a su estante, y el destacado no las trata como juego", async () => {
