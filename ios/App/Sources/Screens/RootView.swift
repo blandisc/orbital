@@ -235,7 +235,8 @@ struct MainTabs: View {
         .onChange(of: ui.openRemote, initial: true) { _, wants in
             guard wants else { return }
             ui.openRemote = false
-            if tvNow.model.isConfigured { remoteLarge = true; showRemote = true }
+            // Sin tu Orbital conectada (el control del Centro de control abre la app igual): a Ajustes, donde se conecta.
+            if tvNow.model.isConfigured { remoteLarge = true; showRemote = true } else { paths[tab].append(SettingsRoute()) }
         }
         .task { forceDemoTab() }   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer
         #if DEBUG
