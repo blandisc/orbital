@@ -7,8 +7,6 @@ import { setupMenu } from "../core/menus.js";
 import { reducedMotion } from "../core/motion.js";
 import { tokenMs } from "../core/tokens.js";
 
-const BOOT_MIN_MS = 1150; // la marca se arma completa (la luna cae a los 0.6 s y tarda 0.55 s) antes de irse
-
 const LANDING_BLOCK_MS = 400; // la marca todavía tapa la interfaz los primeros instantes de la salida
 
 let landTimer = 0;
@@ -21,6 +19,16 @@ function brandRect(bar) {
   const top = Math.min(mark.top, word.top), bottom = Math.max(mark.bottom, word.bottom);
   return { left: mark.left, top, width: word.right - mark.left, height: bottom - top };
 }
+
+/** Milisegundos desde que empezó la animación de la marca (no desde que abrió la página: el CSS tarda en llegar). */
+function sinceIntro(el) {
+  const ring = el.querySelector(".boot__ring")?.getAnimations?.()[0];
+  const now = document.timeline?.currentTime;
+  return ring?.startTime != null && now != null ? now - ring.startTime : performance.now();
+}
+
+/** Movimiento reducido: el de Ajustes o el del sistema. */
+const stillMotion = () => reducedMotion() || !!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 /** Cuánto está escalada la marca al centro (--boot-brand-scale): su ancho sin escalar es el de la barra. */
 const scaleOf = (node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).a || 1;
@@ -47,17 +55,19 @@ export function createBoot({ state, applySettings, openMenu, busy = () => false,
       return !!el?.isConnected && (!el.classList.contains("boot--leaving") || performance.now() - leavingAt < LANDING_BLOCK_MS);
     },
 
-    /** La biblioteca llegó: la marca viaja y se encoge hasta su lugar en la barra mientras Inicio aparece debajo. Sin
-     * barra a la vista (o con «Reducir movimiento»), un fundido. */
+    /** La biblioteca llegó: como el iPhone, a 1.0 s de empezar (0.4 s después de la luna) la marca vuela y se encoge
+     * hasta su lugar en la barra mientras Inicio aparece debajo. Sin barra a la vista, se desvanece ahí. Con «Reducir
+     * movimiento», quieta 0.5 s y un fundido de 0.3 s. */
     finish() {
       if (!el || el.classList.contains("boot--leaving")) return;
-      const wait = Math.max(0, BOOT_MIN_MS - performance.now());
+      const still = stillMotion();
+      const wait = Math.max(0, tokenMs(still ? "--delay-brand-still" : "--delay-brand-glide") - sinceIntro(el));
       setTimeout(() => {
         welcome();
         const brand = el.querySelector(".boot__brand");
         const to = brandRect(document.querySelector(".status-bar__brand"));
         const from = brand?.getBoundingClientRect();
-        const glide = !reducedMotion() && to?.width > 0 && from?.width > 0;
+        const glide = !still && to?.width > 0 && from?.width > 0;
         document.body.dataset.landing = "boot";
         leavingAt = performance.now();
         if (glide) {
@@ -67,6 +77,10 @@ export function createBoot({ state, applySettings, openMenu, busy = () => false,
           document.body.dataset.bootGlide = "";
           el.classList.add("boot--leaving");
           brand.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(${to.width / (from.width / scaleOf(brand))})`;
+        } else if (still) {
+          // El CSS de movimiento reducido apaga las animaciones: el fundido va por su cuenta (Web Animations).
+          el.classList.add("boot--leaving");
+          el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: tokenMs("--duration-brand-fade"), fill: "forwards" });
         } else {
           el.classList.add("boot--leaving", "boot--fading");
         }
@@ -74,7 +88,7 @@ export function createBoot({ state, applySettings, openMenu, busy = () => false,
           el.remove();
           delete document.body.dataset.bootGlide;
           delete document.body.dataset.landing;
-        }, tokenMs("--duration-brand-glide") + 60);
+        }, tokenMs(glide ? "--duration-brand-glide" : "--duration-brand-fade") + 60);
       }, wait);
     },
 

@@ -112,7 +112,6 @@
   /* El planeta de la pantalla de carga cuando lo que abres no tiene portada (una app). */
   --gradient-launch-planet: radial-gradient(circle at 35% 30%, var(--color-star), var(--palette-ink-200) 45%, var(--palette-ink-700));
   /* El fondo del arranque: grafito que se oscurece hacia las orillas. */
-  --color-boot-bg: var(--palette-ink-950); /* la entrada: negro, como el iPhone */
   /* Sombras para fotos y logotipos recortados (filter: drop-shadow sigue la silueta). */
   --shadow-drop-sm: drop-shadow(0 .3rem .5rem rgba(0, 0, 0, .45));
   --shadow-drop: drop-shadow(0 .5rem 1rem rgba(0, 0, 0, .5));

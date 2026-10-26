@@ -5,26 +5,26 @@
 #boot {
   position: fixed; inset: 0; z-index: var(--z-boot); overflow: hidden; color: var(--color-text); font-family: var(--font-sans);
 }
-#boot::before { content: ""; position: absolute; inset: 0; background: var(--color-boot-bg); } /* el fondo: se funde aparte de la marca */
+#boot::before { content: ""; position: absolute; inset: 0; background: var(--color-bg); } /* el fondo de la app: se funde aparte de la marca */
 /* La marca, armada igual que la de la barra (status-bar.css · .status-bar__brand) y más grande: al irse, solo se encoge. */
 #boot .boot__brand {
   position: absolute; left: 50%; top: 50%; display: inline-flex; align-items: center; gap: .6rem; font-size: var(--type-body);
   transform: translate(-50%, -50%) scale(var(--boot-brand-scale));
 }
 #boot .boot__mark { width: 2.05rem; height: 2.05rem; overflow: visible; }
-#boot .boot__ring { opacity: .7; stroke-dasharray: 1; animation: mark-draw var(--duration-brand-ring) var(--ease-draw) both; }
+#boot .boot__ring { opacity: .7; stroke-dasharray: 1; animation: mark-draw var(--duration-brand-ring) var(--ease-brand-out) var(--delay-brand-ring) both; }
 #boot .boot__word {
   display: inline-flex; align-items: flex-start; font-size: var(--type-section); font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-display); line-height: var(--leading-none); padding-bottom: .08em;
 }
 #boot .boot__word > span {
   display: inline-block;
-  animation: boot-letter var(--duration-brand-letter) var(--ease-glide) both;
+  animation: boot-letter var(--duration-brand-letter) var(--ease-brand-out) both;
   animation-delay: calc(var(--delay-brand-word) + var(--i) * var(--stagger-brand));
 }
 #boot .boot__moon {
   display: inline-block; width: .26em; height: .26em; margin-left: .1em; border-radius: 50%; background: var(--color-brand-moon);
-  margin-top: .1em; animation: boot-moon var(--duration-brand-moon) var(--ease-bounce) var(--delay-brand-moon) both;
+  margin-top: .1em; animation: boot-moon var(--duration-brand-moon) var(--ease-brand-moon) var(--delay-brand-moon) both;
 }
 #boot .boot__status {
   position: absolute; left: 0; right: 0; top: calc(50% + 6rem); text-align: center; color: var(--color-text-muted);
@@ -33,11 +33,11 @@
 #boot .boot__status:not(:empty) { opacity: 1; }
 /* Salida: el fondo se funde (Inicio aparece debajo) y la marca viaja a la barra (boot.js le pone el transform). */
 #boot.boot--leaving::before { animation: fade-out var(--duration-brand-glide) var(--ease-out) forwards; }
-#boot.boot--leaving .boot__brand { transition: transform var(--duration-brand-glide) var(--ease-glide); }
+#boot.boot--leaving .boot__brand { transition: transform var(--duration-brand-glide) var(--ease-brand-glide); }
 #boot.boot--leaving .boot__status { animation: fade-out var(--duration-fast) var(--ease-out) forwards; }
-#boot.boot--fading { animation: fade-out var(--duration-brand-glide) var(--ease-out) forwards; } /* sin barra a dónde ir */
+#boot.boot--fading { animation: fade-out var(--duration-brand-fade) var(--ease-out) forwards; } /* sin barra a dónde ir: se desvanece ahí */
 @keyframes mark-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-@keyframes boot-letter { from { opacity: 0; transform: translateY(.3em); } }
-@keyframes boot-moon { from { opacity: 0; transform: translate(-.9em, -1.5em) scale(.4); } 30% { opacity: 1; } }
+@keyframes boot-letter { from { opacity: 0; transform: translateY(.14em); } }
+@keyframes boot-moon { from { opacity: 0; transform: translate(-.9em, -.7em) scale(.2); } 20% { opacity: 1; } } /* DS.Brand.moonFrom */
 /* Mientras la marca viaja, la de la barra espera (llega a su mismo lugar y tamaño). */
 [data-boot-glide] .status-bar__brand { visibility: hidden; }
