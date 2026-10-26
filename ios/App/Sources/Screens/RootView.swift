@@ -174,6 +174,7 @@ struct MainTabs: View {
         }
         // En Buscar la barra no se encoge al bajar: con ella se escondía el campo de búsqueda.
         .tabBarMinimizeBehavior(tab == 2 ? .never : .onScrollDown)
+        .onChange(of: tab) { _, t in if t == 2 { Perf.begin("stab"); Perf.mark("stab.tap") } }
         .task {
             let downloads = env.services.downloads
             pendingDownloads = await downloads.all.filter { $0.state != .done }.count
