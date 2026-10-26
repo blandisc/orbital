@@ -486,6 +486,7 @@ class ConsoleShell:
             overlay = GameOverlay()
             self.overlay = overlay if overlay.start() else None
         self.gamepad = GamepadWatcher(self.on_gamepad, self.on_buttons)
+        self.gamepad.on_pad = self.on_pad  # un control que llega o se va: su número de jugador, en pantalla
         self.gamepad.start()  # sin XInput, Legion L sigue funcionando
         # El Home del teclado (Ctrl + Inicio): como Home en el mando o un toque de Legion L, aunque el juego tenga el foco.
         from .hotkey import KeyboardHome
@@ -502,6 +503,36 @@ class ConsoleShell:
         threading.Thread(target=self._watch_sleep, daemon=True, name="sleep").start()
         self.health.start()
         return True
+
+    # Emuladores que toman un control nuevo a media partida (Dolphin: cada puerto ya apunta a un lugar de XInput).
+    LIVE_JOIN = {"dolphin.exe"}
+
+    def on_pad(self, slot: int, connected: bool, device) -> None:
+        """Llega un control: vibra y dice qué jugador es (y, con un juego abierto, si ya puede jugar). Se va: se dice."""
+        from . import gamepad
+        from .players import name_of, players
+
+        name = name_of(device)
+        if not connected:
+            players.sync()
+            if self.away_from_orbital() and self.overlay is not None:
+                self.overlay.notice(f"Se desconectó el control {name}", "")
+            else:
+                self.notify({"type": "toast", "tone": "warn", "message": f"Se desconectó el control {name}"})
+            return
+        number = players.joined(slot)
+        gamepad.rumble(slot)
+        message = f"Control {name} conectado · Jugador {number}"
+        running = self.catalog.launcher.status()
+        detail = ""
+        if running and running.get("managed") and number > 1:
+            exe = self.win.exe_name(int(running["pid"])) if running.get("pid") else ""
+            detail = ("Ya puede jugar" if exe in self.LIVE_JOIN
+                      else f"Para que juegue en {running['title']}: Home › Jugadores › Reiniciar con estos jugadores")
+        if self.away_from_orbital() and self.overlay is not None:
+            self.overlay.notice(message, detail)  # con un juego al frente, encima del juego (Orbital no se ve)
+        else:
+            self.notify({"type": "toast", "tone": "success", "message": message, **({"detail": detail} if detail else {})})
 
     def own_pids(self) -> set[int]:
         """Los procesos de Orbital: este servidor, el supervisor que lo vigila y su ventana de Edge."""

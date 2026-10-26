@@ -30,10 +30,10 @@ test("opciones de un juego favorito y sin alternativas", () => {
 
 test("menú ☰: lo de todos los días; lo técnico en Ajustes → Mantenimiento", () => {
   const basic = mainMenu({ running: null, hiddenCount: 0 });
-  assert.deepEqual(basic.options.map((o) => o.label), ["Panel rápido", "¿Qué vemos?", "Tu año", "Cómo se usa", "Ajustes", "Apagar"]);
+  assert.deepEqual(basic.options.map((o) => o.label), ["Panel rápido", "Jugadores", "¿Qué vemos?", "Tu año", "Cómo se usa", "Ajustes", "Apagar"]);
   const full = mainMenu({ running: { title: "Zelda", managed: true }, hiddenCount: 3 });
   assert.deepEqual(full.options.map((o) => o.label),
-    ["Panel rápido", "Cerrar Zelda", "Mostrar juegos ocultos", "¿Qué vemos?", "Tu año", "Cómo se usa", "Ajustes", "Apagar"]);
+    ["Panel rápido", "Cerrar Zelda", "Mostrar juegos ocultos", "Jugadores", "¿Qué vemos?", "Tu año", "Cómo se usa", "Ajustes", "Apagar"]);
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
   const maintenance = settingsPage("maintenance", {});
@@ -415,4 +415,21 @@ test("antes de jugar: cerrar todo y jugar, jugar así, o cerrar solo uno", async
   assert.match(menu.options[0].hint, /Detiene lo que Claude/); // el aviso de lo que se pierde, antes de elegir
   assert.deepEqual(menu.options[1].command, { type: "launch", id: item.id, runner: "switch-eden", roomChecked: true });
   assert.deepEqual(menu.options.slice(2).map((o) => o.command.exes), [["claude.exe"], ["steam.exe"]]);
+});
+
+test("jugadores: quién es quién; con un juego de Switch, reiniciar con estos jugadores", async () => {
+  const { playersMenu, playerMenu } = await import("../../orbital/web/js/core/menus.js");
+  const players = [{ player: 1, slot: 2, name: "GameSir", battery: "low" }, { player: 2, slot: 0, name: "Legion Go", battery: "wired" }];
+  const idle = playersMenu({ players, game: null });
+  assert.deepEqual(idle.options.map((o) => o.label), ["Jugador 1 · GameSir", "Jugador 2 · Legion Go", "Listo"]);
+  assert.equal(idle.options[0].value, "Batería baja");
+  assert.deepEqual(idle.options[0].command, { type: "player-identify", slot: 2 }); // el 1: A lo hace vibrar
+  assert.equal(idle.options[1].command.type, "player-menu");
+  const sw = playersMenu({ players, game: { title: "Mario Kart 8 Deluxe", live_join: false } });
+  assert.match(sw.subtitle, /lee los controles al abrir/);
+  assert.equal(sw.options.at(-2).command.type, "players-restart-confirm");
+  const gc = playersMenu({ players, game: { title: "Pikmin 2", live_join: true } });
+  assert.ok(!gc.options.some((o) => o.command.type === "players-restart-confirm")); // Dolphin lo toma solo
+  assert.deepEqual(playerMenu({ slot: 0, name: "Legion Go", player: 2 }).options[0].command, { type: "player-first", slot: 0 });
+  assert.equal(playersMenu({ players: [], game: null }).options[0].label, "No hay controles conectados");
 });

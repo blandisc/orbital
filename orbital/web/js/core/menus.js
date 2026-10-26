@@ -177,6 +177,7 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
   // Como el iPhone: «¿Qué vemos?» (Para ti › 🎲) y «Tu año» (bajo tu perfil).
+  options.push({ icon: "gamepad", label: "Jugadores", hint: "Quién es el Jugador 1, 2…", command: { type: "players" } });
   options.push({ icon: "spark", label: "¿Qué vemos?", hint: "Tres que caben en tu tiempo", command: { type: "decide" } });
   options.push({ icon: "chart", label: "Tu año", hint: "Lo que viste según Trakt", command: { type: "year" } });
   options.push({ icon: "gamepad", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
@@ -335,6 +336,54 @@ export function beforePlayMenu(item, { free_mb: free, apps = [] }, runner = null
       { icon: "play", label: "Jugar así", command: { type: "launch", id: item.id, runner, roomChecked: true } },
       ...(apps.length > 1 ? apps.map((app) => ({ icon: "close", label: `Cerrar solo ${app.name} y jugar`, value: gb(app.mb),
         hint: app.warning || undefined, command: close([app]) })) : []),
+    ],
+  };
+}
+
+const BATTERY = { wired: "Con cable", full: "Batería llena", medium: "Batería a la mitad", low: "Batería baja", empty: "Sin batería" };
+
+/**
+ * Jugadores, como en una consola: el control con el que abres un juego es el Jugador 1 y los que conectas después se
+ * suman. A sobre uno: hacerlo Jugador 1 o hacerlo vibrar para saber cuál es. Con un juego abierto que solo lee los
+ * controles al arrancar (los de Switch), reiniciarlo con estos jugadores.
+ */
+export function playersMenu({ players = [], game = null }) {
+  const options = players.map((p) => ({
+    icon: "gamepad", label: `Jugador ${p.player} · ${p.name}`, value: BATTERY[p.battery] || undefined,
+    hint: p.player === 1 ? "Vibra para saber cuál es" : "Hacerlo Jugador 1 o identificarlo",
+    command: p.player === 1 ? { type: "player-identify", slot: p.slot } : { type: "player-menu", slot: p.slot, name: p.name, player: p.player },
+  }));
+  if (!options.length) {
+    options.push({ icon: "gamepad", label: "No hay controles conectados", hint: "Conecta uno: entra como el siguiente jugador", command: { type: "stay" } });
+  }
+  if (game && !game.live_join && players.length) {
+    options.push({ icon: "refresh", label: `Reiniciar ${game.title} con estos jugadores`, hint: "Lo no guardado se pierde",
+      danger: true, command: { type: "players-restart-confirm", title: game.title } });
+  }
+  options.push({ icon: "check", label: "Listo", command: { type: "close" } });
+  let subtitle = "El control con el que abres un juego es el Jugador 1. Los que conectes después se suman.";
+  if (game) subtitle = game.live_join ? `${game.title}: un control que conectes entra solo.` : `${game.title} lee los controles al abrir: para cambiarlos, reinícialo.`;
+  return { title: "Jugadores", crumb: "Jugadores", subtitle, options };
+}
+
+/** Un jugador: hacerlo el 1 o hacerlo vibrar. */
+export function playerMenu({ slot, name, player }) {
+  return {
+    title: `Jugador ${player} · ${name}`, crumb: name,
+    options: [
+      { icon: "gamepad", label: "Hacerlo Jugador 1", hint: "Los demás se recorren", command: { type: "player-first", slot } },
+      { icon: "gamepad", label: "Vibrar para identificarlo", command: { type: "player-identify", slot } },
+    ],
+  };
+}
+
+/** Reiniciar el juego con los jugadores de ahora: se pierde lo no guardado (Cancelar primero). */
+export function playersRestartMenu({ title }) {
+  return {
+    title: `¿Reiniciar ${title}?`, subtitle: "Se cierra y se abre con estos jugadores. Lo que no hayas guardado se perderá.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "back" } },
+      { icon: "refresh", label: "Reiniciar", danger: true, command: { type: "players-restart" } },
     ],
   };
 }

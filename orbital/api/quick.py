@@ -9,7 +9,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 
-from .. import capture, dwm_release, health, memory, music, quick
+from .. import capture, dwm_release, gamepad, health, memory, music, quick
+from ..players import players
 from .deps import Deps
 
 _LOCAL = re.compile(r"^[A-Za-z]:\\(?!\\)")
@@ -76,6 +77,42 @@ def router(d: Deps) -> APIRouter:
             return {"room_mb": health.commit_room_mb(), "free_mb": health.free_ram_mb(), "video": video,
                     "apps": [a.public() for a in memory.usage(protect_pids=protected())]}
         return await run_in_threadpool(read)
+
+    @r.get("/api/players")
+    async def players_list() -> dict:
+        """Jugadores: quién es quién y, con un juego abierto, si toma un control nuevo solo o hay que reiniciarlo."""
+        def read() -> dict:
+            from .. import windows
+
+            running = d.catalog.launcher.status()
+            game = None
+            if running and running.get("managed"):
+                exe = windows.exe_name(int(running["pid"])) if running.get("pid") else ""
+                game = {"title": running.get("title"), "live_join": exe in d.shell.LIVE_JOIN}
+            return {"players": players.snapshot(), "game": game}
+        return await run_in_threadpool(read)
+
+    @r.post("/api/players/first")
+    def players_first(body: dict) -> dict:
+        slot = body.get("slot")
+        if not isinstance(slot, int) or not players.make_first(slot):
+            raise HTTPException(404, "Ese control ya no está conectado")
+        return {"ok": True, "players": players.snapshot()}
+
+    @r.post("/api/players/identify")
+    def players_identify(body: dict) -> dict:
+        """Hace vibrar ese control: «¿cuál es el Jugador 2?»."""
+        slot = body.get("slot")
+        if not isinstance(slot, int) or not 0 <= slot < 4:
+            raise HTTPException(422, "Control desconocido")
+        return {"ok": gamepad.rumble(slot, seconds=.6, strength=.8)}
+
+    @r.post("/api/players/restart")
+    def players_restart() -> dict:
+        d.shell.unpause()  # estaba congelado por Home: que se cierre limpio
+        if not d.catalog.sessions.restart_with_players():
+            raise HTTPException(409, "No hay un juego abierto que se pueda reiniciar")
+        return {"ok": True}
 
     @r.post("/api/video-memory/release")
     def video_memory_release() -> dict:

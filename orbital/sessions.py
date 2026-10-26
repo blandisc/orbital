@@ -14,12 +14,13 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import companion, emulator_clock, emulator_input, focus, gamepad, health, system, title_switch
+from . import companion, emulator_clock, emulator_input, focus, health, system, title_switch
 from .config import Config
 from .events import EventBus
 from .launcher import Launcher
 from .library import cinemeta, geforcenow, steam, stremio
 from .library.models import LibraryItem
+from .players import players
 from .state import State
 from .store import ItemStore
 
@@ -186,8 +187,9 @@ class Sessions:
             return item
         if runner or item.argv:
             emulator_clock.sync_for(argv or [])  # su hora, la de la computadora (los de Switch traen la suya)
-            # Los de Switch: el control con el que lo abriste es el Jugador 1, los demás encendidos el 2, 3…
-            emulator_input.arrange_for(argv or [], gamepad.play_order())
+            # El control con el que lo abriste es el Jugador 1, los demás en el orden en que llegaron (Switch y Dolphin).
+            order = players.for_launch()
+            emulator_input.arrange_for(argv or [], players.devices(order), slots=order, versions=players.versions())
             # Orbital encima ANTES de lanzar: la ventana del emulador nunca se asoma.
             pinned = self.pin()
             try:
@@ -267,6 +269,29 @@ class Sessions:
                                  "ready_check": ready, "timeout": timeout, "art_wait": self.art_wait,
                                  "user_returned": lambda: self.returned_at > launched},
                          daemon=True, name="to-front").start()
+        return True
+
+    def restart_with_players(self) -> bool:
+        """Jugadores › «Reiniciar con estos jugadores»: cierra el juego y lo abre otra vez con el orden de ahora (los de
+        Switch solo leen los controles al arrancar). Lo no guardado se pierde: la interfaz lo dice antes."""
+        running = self.launcher.status()
+        last = self._last_launch
+        if not running or not running.get("managed") or not last or last.get("id") != running.get("id"):
+            return False
+        item = self.store.get(running["id"])
+        if item is None:
+            return False
+        runner = self.runner_for(item, last.get("runner"))
+        argv = runner.argv if runner else item.argv
+        if not argv:
+            return False
+        cwd = runner.cwd if runner else item.cwd
+        order = players.sync()  # el orden que elegiste (no el del último control que apretó A, que fue en el menú)
+        emulator_input.arrange_for(argv, players.devices(order), slots=order, versions=players.versions())
+        log.info("Reinicio %s con %d jugador(es)", item.title, len(order))
+        if not self.launcher.relaunch(item.id, argv, cwd=cwd):
+            return False
+        self.to_front(item.id, item.title, runner.name if runner else None)
         return True
 
     def game_mode(self, item_id: str) -> bool:

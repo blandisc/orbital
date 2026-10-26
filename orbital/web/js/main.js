@@ -9,6 +9,7 @@ import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
+import { playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
@@ -1720,6 +1721,26 @@ async function runCommand(command, context = null) {
         return openMenu(memoryMenu(await api.memory()), nested(context));
       case "confirm-close-app":
         return openMenu(closeAppConfirmMenu(command), nested(context));
+      case "players":
+        return openMenu(playersMenu(await api.players()), nested(context));
+      case "player-menu":
+        return openMenu(playerMenu(command), nested(context));
+      case "player-identify":
+        await api.identifyPlayer(command.slot);
+        return sound.play("select");
+      case "player-first": { // de vuelta a Jugadores, ya con el orden nuevo (sin la hoja del jugador en el «Atrás»)
+        await api.playerFirst(command.slot);
+        sound.play("select");
+        ui.toast.show("Listo: es el Jugador 1", { tone: "success" });
+        const stack = context?.stack ?? [];
+        return openMenu(playersMenu(await api.players()), { stack: stack.slice(0, Math.max(0, stack.length - 1)) });
+      }
+      case "players-restart-confirm":
+        return openMenu(playersRestartMenu(command), nested(context));
+      case "players-restart":
+        ui.sheet.close();
+        await api.restartWithPlayers();
+        return sound.play("open");
       case "video-release": { // reiniciar DWM: suelta la memoria de video que se quedó (la pantalla parpadea)
         ui.sheet.close();
         const res = await api.releaseVideoMemory();

@@ -1,5 +1,6 @@
 """Aviso encima del juego mientras se mantiene el atajo de cerrar (Start + Select + Home; GameSir: LB + RB + Select):
-el juego en grande, qué mantener y una barra que se llena.
+el juego en grande, qué mantener y una barra que se llena. También avisos breves sin barra («Control GameSir conectado ·
+Jugador 2»): con un juego al frente, la ventana de Orbital no se ve.
 
 Una ventana pequeña, centrada, siempre visible y que NO toma el foco: el juego sigue
 recibiendo el mando. Se dibuja con Tkinter (viene con Python) en su propio hilo.
@@ -53,6 +54,10 @@ class GameOverlay:
     def show(self, title: str, detail: str, duration_ms: int) -> None:
         self._commands.put(("show", title, detail, duration_ms))
 
+    def notice(self, title: str, detail: str = "", seconds: float = 3.5) -> None:
+        """Un aviso breve, sin barra, que se va solo."""
+        self._commands.put(("notice", title, detail, int(seconds * 1000)))
+
     def closing(self, title: str, detail: str = "") -> None:
         self._commands.put(("closing", title, detail))
 
@@ -89,7 +94,7 @@ class GameOverlay:
         detail = canvas.create_text(pad, pad + int(32 * scale), anchor="nw", fill=MUTED, font=detail_font, text="")
         bar_h = max(3, int(BAR * scale))
         bar_y = h - pad - bar_h
-        canvas.create_rectangle(pad, bar_y, w - pad, bar_y + bar_h, fill=TRACK, width=0)
+        track = canvas.create_rectangle(pad, bar_y, w - pad, bar_y + bar_h, fill=TRACK, width=0)
         fill = canvas.create_rectangle(pad, bar_y, pad, bar_y + bar_h, fill=FILL, width=0)
 
         def fit(text: str, font) -> str:
@@ -117,7 +122,16 @@ class GameOverlay:
 
         def handle(cmd) -> None:
             kind = cmd[0]
-            if kind == "show":
+            bar = "hidden" if kind == "notice" else "normal"
+            canvas.itemconfigure(track, state=bar)
+            canvas.itemconfigure(fill, state=bar)
+            if kind == "notice":
+                _, text, sub, duration = cmd
+                canvas.itemconfigure(title, text=fit(text, title_font))
+                canvas.itemconfigure(detail, text=fit(sub, detail_font))
+                state.update(filling=False, target=0.97, hide_at=time.monotonic() + duration / 1000)
+                _raise_no_activate(hwnd)
+            elif kind == "show":
                 _, text, sub, duration = cmd
                 canvas.itemconfigure(title, text=fit(text, title_font))
                 canvas.itemconfigure(detail, text=fit(sub, detail_font))

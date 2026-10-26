@@ -57,13 +57,73 @@ def test_eden_only_one_controller_on_leaves_the_others_disconnected(tmp_path):
     assert LEGION_GUID in v["player_0_button_a"] and v["player_1_connected"] == "false"
 
 
-def test_a_controller_never_set_up_is_left_out_not_invented(tmp_path):
-    """Un control que el emulador nunca vio (un Xbox nuevo) no se inventa: juegan los que sí tienen mapeo."""
+def test_a_new_xbox_style_controller_plays_with_the_mapping_of_another_one(tmp_path):
+    """Antes, un control que el emulador nunca vio (un Xbox nuevo) se quedaba fuera y no respondía. Todos los controles
+    tipo Xbox reportan los mismos botones: usa el mapeo de otro, con su propio identificador (marca, modelo y versión)."""
     path = eden_config(tmp_path, eden_block(0, LEGION_GUID), eden_block(1, GAMESIR_GUID))
-    assert emulator_input.arrange_eden(path, [XBOX, GAMESIR])
+    assert emulator_input.arrange_eden(path, [XBOX, GAMESIR], versions={XBOX: 0x0408})
     v = values(path)
-    assert GAMESIR_GUID in v["player_0_button_a"] and v["player_1_connected"] == "false"
-    assert not emulator_input.arrange_eden(eden_config(tmp_path, eden_block(0, LEGION_GUID)), [XBOX])  # nada conocido: no se toca
+    assert "guid:030000005e040000120b000008047801," in v["player_0_button_a"]  # 045E:0B12 v0x0408, como lo arma SDL
+    assert v["player_0_button_a"].endswith('button:0"') and GAMESIR_GUID in v["player_1_button_a"]
+    assert v["player_0_connected"] == "true" and v["player_1_connected"] == "true"
+
+
+def test_a_nintendo_controller_never_set_up_is_still_left_out(tmp_path):
+    """Un Pro Controller no es tipo Xbox (otros botones, otro driver): sin su mapeo no se inventa."""
+    pro = (0x057E, 0x2009)
+    path = eden_config(tmp_path, eden_block(0, LEGION_GUID))
+    assert emulator_input.arrange_eden(path, [pro, LEGION])
+    v = values(path)
+    assert LEGION_GUID in v["player_0_button_a"] and v["player_1_connected"] == "false"
+
+
+def test_the_legion_identifier_is_rebuilt_exactly_from_its_parts():
+    assert emulator_input.eden_guid_for(GAMESIR_GUID, LEGION, 0x0100) == LEGION_GUID
+
+
+def test_ryujinx_new_xbox_style_controller_gets_its_own_id(tmp_path):
+    legion_id = "0-00000003-17ef-0000-eb61-000000007200"
+    glob = tmp_path / "Config.json"
+    glob.write_text(json.dumps({"input_config": [ryujinx_pad(legion_id, "Player1")]}), encoding="utf-8")
+    profiles = emulator_input.ryujinx_profiles([glob])
+    assert emulator_input.arrange_ryujinx(glob, [LEGION, XBOX], profiles)
+    pads = json.loads(glob.read_text(encoding="utf-8"))["input_config"]
+    assert [(p["id"], p["player_index"]) for p in pads] == [(legion_id, "Player1"), ("0-00000003-045e-0000-120b-000000007200", "Player2")]
+    assert emulator_input.ryujinx_device(pads[1]) == XBOX
+
+
+GCPAD = """[GCPad1]
+Device = XInput/0/Gamepad
+Buttons/A = `Button A`
+[GCPad2]
+Device = XInput/1/Gamepad
+Buttons/A = `Button A`
+[GCPad3]
+Device = DInput/0/Wireless Controller
+[GCPad4]
+Device = XInput/3/Gamepad
+"""
+
+
+def test_dolphin_port_one_is_player_one_and_the_rest_wait_for_whoever_comes(tmp_path):
+    (tmp_path / "GCPadNew.ini").write_text(GCPAD, encoding="utf-8")
+    (tmp_path / "Dolphin.ini").write_text("[Core]\nSIDevice0 = 6\nSIDevice1 = 0\nSIDevice2 = 0\nSIDevice3 = 0\n", encoding="utf-8")
+    # Jugador 1 = el mando en el lugar 2 (con el que abriste), Jugador 2 = el del lugar 0.
+    assert emulator_input.arrange_dolphin(tmp_path, [2, 0]) == 2
+    pad = (tmp_path / "GCPadNew.ini").read_text(encoding="utf-8")
+    assert "[GCPad1]\nDevice = XInput/2/Gamepad" in pad and "[GCPad2]\nDevice = XInput/0/Gamepad" in pad
+    assert "Device = DInput/0/Wireless Controller" in pad  # un DualShock por Bluetooth: no se toca
+    assert "[GCPad4]\nDevice = XInput/3/Gamepad" in pad  # libre para quien se conecte después
+    core = (tmp_path / "Dolphin.ini").read_text(encoding="utf-8")
+    assert "SIDevice1 = 6" in core and "SIDevice2 = 0" in core  # el Jugador 2 tiene control; el resto, como estaba
+    assert (tmp_path / "GCPadNew.ini.antes-de-orbital").exists()
+    assert emulator_input.arrange_dolphin(tmp_path, [2, 0]) == 0  # ya estaba así
+
+
+def test_dolphin_is_found_next_to_its_exe(tmp_path):
+    (tmp_path / "User" / "Config").mkdir(parents=True)
+    (tmp_path / "User" / "Config" / "Dolphin.ini").write_text("[Core]\n", encoding="utf-8")
+    assert emulator_input.dolphin_config_dir(tmp_path / "Dolphin.exe") == tmp_path / "User" / "Config"
 
 
 def ryujinx_pad(device_id: str, player: str, a="A", b="B") -> dict:

@@ -3,9 +3,13 @@
 Eden y Ryujinx guardan qué control es cada jugador por su identificador (marca y modelo), y Orbital los encontraba en el
 orden en que alguien los dejó a mano: en Ryujinx los dos jugadores eran el GameSir (los de la Legion no hacían nada) y en
 Eden el GameSir era el Jugador 2 (en un juego de uno, no respondía). Antes de abrir uno, Orbital acomoda los jugadores:
-primero el control que usaste por última vez (el que apretó A para abrir), luego los demás encendidos. El mapeo de cada
-modelo sale de lo que ya está en tus configuraciones (la global y las de cada juego): un modelo que nunca se configuró no
-se inventa (se queda fuera y se anota). Y en todos, A es A, B es B, X es X y Y es Y, como dicen los botones.
+primero el control que usaste por última vez (el que apretó A para abrir), luego los demás encendidos (ver players.py).
+El mapeo de cada modelo sale de lo que ya está en tus configuraciones (la global y las de cada juego); un control tipo
+Xbox que nunca se configuró usa el mapeo de otro control tipo Xbox (todos reportan los mismos botones), con su propio
+identificador: antes se quedaba fuera y no respondía. Y en todos, A es A, B es B, X es X y Y es Y, como dicen los botones.
+
+Dolphin (GameCube y Wii) asigna cada puerto a un lugar de XInput: el puerto 1 es el lugar del Jugador 1, y los puertos
+siguientes los de los demás, así que un control que conectas a media partida entra solo en el puerto que sigue.
 
 Solo se escribe si algo cambia, y la primera vez se guarda una copia del archivo («.antes-de-orbital»).
 """
@@ -36,6 +40,11 @@ def _le(hex4: str) -> int:
     return int(hex4[2:4] + hex4[0:2], 16)
 
 
+def _le4(value: int) -> str:
+    """0x17EF -> «ef17» (los dos bytes al revés, como van en el identificador de SDL)."""
+    return f"{value & 0xFF:02x}{value >> 8 & 0xFF:02x}"
+
+
 def _backup(path: Path) -> None:
     copy = path.with_name(path.name + BACKUP)
     if not copy.exists():
@@ -63,6 +72,26 @@ def eden_device(value: str) -> Device | None:
     return _le(guid[8:12]), _le(guid[16:20])
 
 
+def eden_guid_for(template_guid: str, device: Device, version: int | None = None) -> str:
+    """El identificador de SDL de otro control con la misma forma: cambian la marca, el modelo y (si se sabe) la versión
+    del producto (la Legion reporta 0x0100 y su identificador lleva «0001» en ese lugar)."""
+    guid = template_guid[:8] + _le4(device[0]) + template_guid[12:16] + _le4(device[1]) + template_guid[20:]
+    return guid if version is None else guid[:24] + _le4(version) + guid[28:]
+
+
+def _eden_synth(profiles: dict[Device, dict[str, str]], device: Device, version: int | None = None) -> dict[str, str] | None:
+    """El mapeo de un control tipo Xbox que nunca se configuró: el de otro control tipo Xbox, con su identificador."""
+    if device[0] == NINTENDO:
+        return None
+    template = next((block for dev, block in profiles.items() if dev[0] != NINTENDO), None)
+    match = re.search(r"guid:([0-9a-f]{32})", template.get("button_a", "")) if template else None
+    if template is None or match is None:
+        return None
+    guid = eden_guid_for(match.group(1), device, version)
+    log.info("Control %04X:%04X sin mapeo en Eden: uso el de otro control tipo Xbox", *device)
+    return {key: value.replace(match.group(1), guid) for key, value in template.items()}
+
+
 def _eden_blocks(lines: list[str]) -> dict[int, dict[str, str]]:
     """{jugador: {sufijo: valor}} (sin las líneas «\\default»)."""
     blocks: dict[int, dict[str, str]] = {}
@@ -84,7 +113,7 @@ def _eden_labels(block: dict[str, str], device: Device) -> dict[str, str]:
     return out
 
 
-def arrange_eden(config: Path, order: list[Device]) -> bool:
+def arrange_eden(config: Path, order: list[Device], versions: dict[Device, int] | None = None) -> bool:
     """El Jugador 1 es el primer control de `order`, el 2 el siguiente…; los demás jugadores, desconectados."""
     try:
         text = config.read_text(encoding="utf-8")
@@ -104,6 +133,10 @@ def arrange_eden(config: Path, order: list[Device]) -> bool:
         device = eden_device(blocks[n].get("button_a", ""))
         if device and device not in profiles:
             profiles[device] = blocks[n]
+    for device in order:
+        synth = _eden_synth(profiles, device, (versions or {}).get(device)) if device not in profiles else None
+        if synth:
+            profiles[device] = synth
     players = assign(order, set(profiles))[:EDEN_PLAYERS]
     if not players:
         return False
@@ -163,6 +196,21 @@ def _ryujinx_entry(profile: dict, device: Device, port: int, player: int) -> dic
     return entry
 
 
+def ryujinx_synth(profiles: dict[Device, dict], device: Device) -> dict | None:
+    """Como en Eden: un control tipo Xbox sin mapeo usa el de otro, con su propio identificador."""
+    if device[0] == NINTENDO:
+        return None
+    template = next((entry for dev, entry in profiles.items() if dev[0] != NINTENDO), None)
+    parts = str(template.get("id", "")).split("-") if template else []
+    if template is None or len(parts) != 6:
+        return None
+    entry = json.loads(json.dumps(template))
+    entry["id"] = "-".join([parts[0], parts[1], f"{device[0]:04x}", parts[3], _le4(device[1]), parts[5]])
+    entry["name"] = f"Control {device[0]:04X}:{device[1]:04X}"
+    log.info("Control %04X:%04X sin mapeo en Ryujinx: uso el de otro control tipo Xbox", *device)
+    return entry
+
+
 def ryujinx_profiles(configs: list[Path]) -> dict[Device, dict]:
     """El mapeo de cada modelo de control, de todas las configuraciones (la global primero)."""
     profiles: dict[Device, dict] = {}
@@ -186,6 +234,11 @@ def arrange_ryujinx(config: Path, order: list[Device], profiles: dict[Device, di
         return False
     if not isinstance(data, dict) or not isinstance(data.get("input_config"), list):
         return False
+    profiles = dict(profiles)
+    for device in order:
+        synth = ryujinx_synth(profiles, device) if device not in profiles else None
+        if synth:
+            profiles[device] = synth
     players = assign(order, set(profiles))[:RYUJINX_PLAYERS]
     if not players:
         return False
@@ -206,15 +259,118 @@ def arrange_ryujinx(config: Path, order: list[Device], profiles: dict[Device, di
     return True
 
 
-def arrange_for(argv: list[str], order: list[Device]) -> int:
-    """Antes de abrir un emulador de Switch: los jugadores en `order`. Cuántos archivos tocó. Nunca falla."""
+# --- Dolphin (GameCube y Wii: GCPadNew.ini, WiimoteNew.ini y Dolphin.ini) ------------------------------------------------
+DOLPHIN_PORTS = 4
+SI_STANDARD = "6"  # SIDevice: control estándar de GameCube
+
+
+def dolphin_config_dir(exe: Path) -> Path | None:
+    """La carpeta Config de Dolphin: la portátil (User\\Config junto al .exe) o la de Documentos."""
+    import os
+
+    for candidate in (exe.parent / "User" / "Config",
+                      Path(os.environ.get("USERPROFILE", "~")).expanduser() / "Documents" / "Dolphin Emulator" / "Config",
+                      Path(os.environ.get("APPDATA", "")) / "Dolphin Emulator" / "Config"):
+        if (candidate / "Dolphin.ini").exists() or (candidate / "GCPadNew.ini").exists():
+            return candidate
+    return None
+
+
+def _ini_set(text: str, section: str, key: str, value: str) -> str:
+    """Pone `key = value` en esa sección (si existe); lo demás, intacto."""
+    newline = "\r\n" if "\r\n" in text else "\n"
+    lines = text.splitlines()
+    try:
+        start = lines.index(f"[{section}]") + 1
+    except ValueError:
+        return text
+    end = next((i for i in range(start, len(lines)) if lines[i].startswith("[")), len(lines))
+    for i in range(start, end):
+        if lines[i].split("=", 1)[0].strip() == key:
+            lines[i] = f"{key} = {value}"
+            break
+    else:
+        lines.insert(end, f"{key} = {value}")
+    return newline.join(lines) + (newline if text.endswith("\n") else "")
+
+
+def _ini_get(text: str, section: str, key: str) -> str | None:
+    lines = text.splitlines()
+    try:
+        start = lines.index(f"[{section}]") + 1
+    except ValueError:
+        return None
+    for line in lines[start:]:
+        if line.startswith("["):
+            break
+        name, _, value = line.partition("=")
+        if name.strip() == key:
+            return value.strip()
+    return None
+
+
+def dolphin_ports(slots: list[int]) -> list[int]:
+    """El lugar de XInput de cada puerto: primero los jugadores en orden, luego los lugares libres (para quien llegue)."""
+    return (list(slots) + [s for s in range(DOLPHIN_PORTS) if s not in slots])[:DOLPHIN_PORTS]
+
+
+def arrange_dolphin(config_dir: Path, slots: list[int]) -> int:
+    """Puerto 1 = el Jugador 1, etc. Solo toca los puertos que ya usan XInput (no un DualShock por Bluetooth ni el
+    teclado), y a los puertos con jugador que estaban vacíos se les conecta un control de GameCube. Cuántos archivos
+    cambió."""
+    if not slots:
+        return 0
+    ports = dolphin_ports(slots)
+    changed = 0
+    for name, section in (("GCPadNew.ini", "GCPad{n}"), ("WiimoteNew.ini", "Wiimote{n}")):
+        path = config_dir / name
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        new = text
+        for n, slot in enumerate(ports, start=1):
+            current = _ini_get(new, section.format(n=n), "Device")
+            if current is not None and current.startswith("XInput/"):
+                new = _ini_set(new, section.format(n=n), "Device", f"XInput/{slot}/Gamepad")
+        if new != text:
+            _backup(path)
+            path.write_text(new, encoding="utf-8")
+            changed += 1
+    main = config_dir / "Dolphin.ini"
+    try:
+        text = main.read_text(encoding="utf-8")
+    except OSError:
+        return changed
+    new = text
+    for n in range(min(len(slots), DOLPHIN_PORTS)):
+        if _ini_get(new, "Core", f"SIDevice{n}") == "0":  # un puerto vacío con un jugador: se le conecta un control
+            new = _ini_set(new, "Core", f"SIDevice{n}", SI_STANDARD)
+    if new != text:
+        _backup(main)
+        main.write_text(new, encoding="utf-8")
+        changed += 1
+    return changed
+
+
+def arrange_for(argv: list[str], order: list[Device], slots: list[int] | None = None,
+                versions: dict[Device, int] | None = None) -> int:
+    """Antes de abrir un emulador: los jugadores en `order` (marca y modelo) y `slots` (sus lugares de XInput, para
+    Dolphin). Cuántos archivos tocó. Nunca falla."""
     try:
         if not argv or not order:
             return 0
         from .emulator_clock import _configs, emulator_exe
 
-        ryujinx, yuzu = _configs(emulator_exe(argv))
-        changed = sum(arrange_eden(p, order) for p in yuzu)
+        exe = emulator_exe(argv)
+        if exe is not None and exe.name.lower() == "dolphin.exe":
+            folder = dolphin_config_dir(exe)
+            changed = arrange_dolphin(folder, slots or []) if folder else 0
+            if changed:
+                log.info("Controles de Dolphin: puerto 1 = mando %d (%d archivo(s))", (slots or [0])[0] + 1, changed)
+            return changed
+        ryujinx, yuzu = _configs(exe)
+        changed = sum(arrange_eden(p, order, versions) for p in yuzu)
         if ryujinx:
             profiles = ryujinx_profiles(ryujinx)
             changed += sum(arrange_ryujinx(p, order, profiles) for p in ryujinx)

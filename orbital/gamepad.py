@@ -264,6 +264,21 @@ def _load_ids():
     return ids
 
 
+def _load_version():
+    """La versión del producto de cada mando (va en el identificador de SDL que usan Eden y compañía). None si no hay."""
+    try:
+        fn = ctypes.WinDLL("xinput1_4.dll")[108]  # type: ignore[index]
+    except (OSError, AttributeError):
+        return None
+    fn.argtypes = [ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(_XInputCapabilitiesEx)]
+    fn.restype = ctypes.c_uint
+
+    def version(slot: int) -> int | None:
+        caps = _XInputCapabilitiesEx()
+        return caps.ProductVersion if fn(1, slot, 0, ctypes.byref(caps)) == 0 else None
+    return version
+
+
 def _load_vendor():
     """La marca (VendorId) de cada mando. None si no existe."""
     ids = _load_ids()
@@ -320,6 +335,29 @@ def _load_battery():
     return read
 
 
+class _XInputVibration(ctypes.Structure):
+    _fields_ = [("wLeftMotorSpeed", ctypes.c_ushort), ("wRightMotorSpeed", ctypes.c_ushort)]
+
+
+def rumble(slot: int, seconds: float = .35, strength: float = .6) -> bool:
+    """Hace vibrar ESE mando un momento: «¿cuál es el Jugador 2?» se contesta sintiéndolo en la mano."""
+    if sys.platform != "win32":
+        return False
+    try:
+        fn = ctypes.WinDLL("xinput1_4.dll").XInputSetState
+    except (OSError, AttributeError):
+        return False
+    fn.argtypes = [ctypes.c_uint, ctypes.POINTER(_XInputVibration)]
+    fn.restype = ctypes.c_uint
+    level = int(max(0.0, min(1.0, strength)) * 65535)
+    if fn(slot, ctypes.byref(_XInputVibration(level, level))) != 0:
+        return False
+    timer = threading.Timer(seconds, lambda: fn(slot, ctypes.byref(_XInputVibration(0, 0))))
+    timer.daemon = True
+    timer.start()
+    return True
+
+
 def _load_get_state():
     """XInputGetStateEx (ordinal 100): como XInputGetState pero incluye el botón Guía."""
     dll = ctypes.WinDLL("xinput1_4.dll")
@@ -337,6 +375,7 @@ class GamepadWatcher:
     # gastaba CPU sin parar aunque no hubiera mando (y es lo que más hacía con Orbital quieta y un juego al frente).
     POLL = 1 / 30
     POLL_IDLE = 1 / 4
+    QUIET = 3.0  # s tras arrancar o despertar en que los mandos que aparecen ya estaban: no se avisan
 
     def __init__(self, on_event: Callable[[str], None],
                  on_buttons: Callable[[int, int, float], None] | None = None) -> None:
@@ -349,6 +388,11 @@ class GamepadWatcher:
         self.devices: dict[int, tuple[int, int]] = {}  # lugar -> (marca, modelo) de cada mando encendido
         self.last_used: int | None = None  # el lugar del último mando que apretó un botón (el Jugador 1 de un juego)
         self.last_input = time.monotonic()  # cuándo se apretó algo por última vez (para saber si la consola está sola)
+        self.connected_at: dict[int, float] = {}  # lugar -> cuándo llegó (el orden de los jugadores, ver players.py)
+        self.versions: dict[tuple[int, int], int] = {}  # (marca, modelo) -> versión del producto (ver emulator_input)
+        # (lugar, conectado, (marca, modelo)): un mando que llega o se va. No suena por los que ya estaban al arrancar
+        # ni al despertar (ver QUIET).
+        self.on_pad: Callable[[int, bool, tuple[int, int] | None], None] | None = None
 
     def start(self) -> bool:
         if sys.platform != "win32":
@@ -368,6 +412,14 @@ class GamepadWatcher:
     def stop(self) -> None:
         self._stop.set()
 
+    def _pad_changed(self, slot: int, connected: bool, device: tuple[int, int] | None, quiet: bool) -> None:
+        if self.on_pad is None or quiet:
+            return
+        try:
+            self.on_pad(slot, connected, device)
+        except Exception:  # noqa: BLE001 - un aviso roto no tumba el hilo de los mandos
+            log.exception("Error avisando del mando %d", slot + 1)
+
     def redetect(self) -> None:
         """Tras suspender, los mandos se reconectan: volver a ver la marca de cada uno."""
         self._redetect.set()
@@ -375,16 +427,19 @@ class GamepadWatcher:
     def _run(self, get_state) -> None:
         state = _XInputState()
         ids = _load_ids()
+        version = _load_version()
         was_connected = [False] * 4
         pressed = [0] * 4  # los botones de la vuelta anterior: un botón nuevo dice quién está jugando
         sticks_armed = [False] * 4  # ya se le vio el stick en el centro desde que se conectó
         stick_state: list[tuple[int, ...]] = [()] * 4  # la dirección de cada stick en la vuelta anterior (histéresis)
         traced: list[tuple | None] = [None] * 4  # lo último anotado en entrada.log, por lugar
+        quiet_until = time.monotonic() + self.QUIET
         while not self._stop.is_set():
             now = time.monotonic()
             if self._redetect.is_set():
                 self._redetect.clear()
                 was_connected = [False] * 4
+                quiet_until = now + self.QUIET
                 # Nada queda "mantenido" de antes de dormir (sin disparar eventos al soltar).
                 self._detectors = [ComboDetector() for _ in range(4)]
             for slot, detector in enumerate(self._detectors):
@@ -395,12 +450,20 @@ class GamepadWatcher:
                     vid = found[0] if found else None
                     if found:
                         self.devices[slot] = found
+                        ver = version(slot) if version else None
+                        if ver is not None:
+                            self.versions[found] = ver
                     detector.combo = close_combo_for(vid)
                     log.info("Mando %d (%s): cerrar juego con %s", slot + 1, "%04X:%04X" % found if found else "?",
                              CLOSE_LABELS[detector.combo])
+                    self.connected_at.setdefault(slot, now)
+                    self._pad_changed(slot, True, found, quiet=now < quiet_until)
                 if was_connected[slot] and not connected:
                     # Se desconectó con botones apretados: eso no es «soltar Home» (no abre Orbital).
                     self._detectors[slot] = detector = ComboDetector(combo=detector.combo)
+                if was_connected[slot] and not connected:
+                    self.connected_at.pop(slot, None)
+                    self._pad_changed(slot, False, self.devices.get(slot), quiet=False)
                 if not connected:
                     self.devices.pop(slot, None)
                 was_connected[slot] = connected
