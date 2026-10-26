@@ -107,6 +107,27 @@ def usage(limit: int = 6, protect_pids: set[int] | None = None) -> list[AppUsage
     return sorted(groups.values(), key=lambda a: a.mb, reverse=True)[:limit]
 
 
+# Consolas cuyos emuladores ocupan mucho (Eden llega a 10 GB, Ryujinx 3–4 GB): antes de abrirlas se revisa la memoria.
+HEAVY_SYSTEMS = {"switch", "wiiu", "ps3", "ps4", "xbox360"}
+PLAY_FREE_MB = 4000  # RAM disponible por debajo de esto: el juego va a pelear por memoria (tirones, la consola trabada)
+PLAY_MIN_APP_MB = 300  # solo vale la pena ofrecer cerrar lo que pesa
+
+
+def before_play(system: str | None, protect_pids: set[int] | None = None, free_mb: int | None = None) -> dict | None:
+    """Antes de abrir un juego pesado: si falta memoria y hay programas que se pueden cerrar, cuáles (para ofrecerlo).
+    None si no hace falta (la consola ligera, una consola que no pesa, o nada que cerrar). Midiendo solo lo barato
+    primero: la lista de programas (lo lento) solo cuando de verdad falta."""
+    if system not in HEAVY_SYSTEMS:
+        return None
+    free_mb = health.free_ram_mb() if free_mb is None else free_mb
+    if free_mb is None or free_mb >= PLAY_FREE_MB:
+        return None
+    apps = [a for a in usage(limit=12, protect_pids=protect_pids) if a.closable and a.mb >= PLAY_MIN_APP_MB][:4]
+    if not apps:
+        return None
+    return {"free_mb": free_mb, "apps": [a.public() for a in apps]}
+
+
 def close(exe: str, protect_pids: set[int] | None = None) -> int:
     """Cierra un programa (todos sus procesos). Devuelve cuántos MB tenía."""
     apps = {a.exe: a for a in usage(limit=200, protect_pids=protect_pids)}

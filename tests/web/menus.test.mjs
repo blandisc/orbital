@@ -403,3 +403,16 @@ test("lo que recuerda cada título: el nombre, lo elegido, y A lo olvida", async
   assert.deepEqual(menu.options[0].command, { type: "remembered-forget", id: "tt0096697", title: "Los Simpson" });
   assert.equal(rememberedMenu([]).options[0].inert, true);
 });
+
+test("antes de jugar: cerrar todo y jugar, jugar así, o cerrar solo uno", async () => {
+  const { beforePlayMenu } = await import("../../orbital/web/js/core/menus.js");
+  const item = { id: "switch:jamboree", title: "Super Mario Party Jamboree" };
+  const menu = beforePlayMenu(item, { free_mb: 2500, apps: [
+    { exe: "claude.exe", name: "la app de Claude", mb: 2400, warning: "Detiene lo que Claude esté haciendo en esta consola" },
+    { exe: "steam.exe", name: "Steam", mb: 600, warning: "" }] }, "switch-eden");
+  assert.match(menu.subtitle, /Quedan 2.4 GB libres.*libera 2.9 GB/);
+  assert.deepEqual(menu.options[0].command, { type: "before-play-close", id: item.id, runner: "switch-eden", exes: ["claude.exe", "steam.exe"] });
+  assert.match(menu.options[0].hint, /Detiene lo que Claude/); // el aviso de lo que se pierde, antes de elegir
+  assert.deepEqual(menu.options[1].command, { type: "launch", id: item.id, runner: "switch-eden", roomChecked: true });
+  assert.deepEqual(menu.options.slice(2).map((o) => o.command.exes), [["claude.exe"], ["steam.exe"]]);
+});

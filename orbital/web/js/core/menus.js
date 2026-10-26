@@ -316,6 +316,27 @@ export function videoMemoryOptions(video) {
     hint: "Windows pedirá permiso una sola vez (con ratón, teclado o tocando la pantalla)", command: { type: "video-setup" } }];
 }
 
+/**
+ * Antes de jugar algo pesado (Switch, Wii U…) con poca memoria: cerrar lo que estorba o jugar así.
+ * Primero lo que se recomienda; cada programa también por separado (con su aviso, como en «Liberar memoria»).
+ */
+export function beforePlayMenu(item, { free_mb: free, apps = [] }, runner = null) {
+  const total = apps.reduce((sum, app) => sum + app.mb, 0);
+  const close = (list) => ({ type: "before-play-close", id: item.id, runner, exes: list.map((a) => a.exe) });
+  const warnings = apps.map((a) => a.warning).filter(Boolean);
+  return {
+    title: `Antes de jugar ${item.title}`, crumb: "Memoria",
+    subtitle: `Quedan ${gb(free)} libres y el juego puede trabarse. Cerrar estos programas libera ${gb(total)}.`,
+    options: [
+      { icon: "play", label: "Cerrar todo y jugar", value: gb(total),
+        hint: [apps.map((a) => a.name).join(" · "), ...warnings].join(". "), command: close(apps) },
+      { icon: "play", label: "Jugar así", command: { type: "launch", id: item.id, runner, roomChecked: true } },
+      ...(apps.length > 1 ? apps.map((app) => ({ icon: "close", label: `Cerrar solo ${app.name} y jugar`, value: gb(app.mb),
+        hint: app.warning || undefined, command: close([app]) })) : []),
+    ],
+  };
+}
+
 /** Cerrar una app para liberar memoria: puede perder lo no guardado, así que se pregunta (Cancelar primero). */
 export function closeAppConfirmMenu({ exe, name }) {
   return {

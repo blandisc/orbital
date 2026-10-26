@@ -45,6 +45,7 @@ export const api = {
   library: () => request("/api/library"),
   refresh: () => post("/api/library/refresh"),
   launch: (id, runner = null, keep = false) => post("/api/launch", { id, runner, keep }),
+  beforePlay: (id) => request(`/api/before-play/${encodeURIComponent(id)}`),
   reveal: () => post("/api/launch/reveal"),
   launchArt: (shown) => post("/api/launch/art", { shown }),
   stop: () => post("/api/stop"),

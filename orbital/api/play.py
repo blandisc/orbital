@@ -9,7 +9,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from .. import system
+from .. import memory, system
 from ..sessions import NotLaunchable
 from .deps import Deps
 
@@ -61,6 +61,15 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(500, humane_error(exc, found.title if found else ""))
         # `reveal`: la pantalla de carga espera el evento launch-ready (el juego ya está listo).
         return {"ok": True, "title": item.title, "reveal": catalog.revealing}
+
+    @r.get("/api/before-play/{item_id:path}")
+    def before_play(item_id: str) -> dict:
+        """«Antes de jugar»: con poca memoria y un juego pesado, qué programas conviene cerrar (vacío si nada)."""
+        import os
+
+        item = catalog.get(item_id)
+        room = memory.before_play(item.system if item else None, protect_pids={os.getpid(), os.getppid()})
+        return room or {}
 
     @r.post("/api/launch/art")
     def launch_art(body: ArtRequest) -> dict:

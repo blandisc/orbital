@@ -38,3 +38,17 @@ def test_close_refuses_protected_and_kills_the_rest(monkeypatch):
         memory.close("eden.exe", protect_pids={9})  # el juego abierto se cierra aparte
     with pytest.raises(LookupError):
         memory.close("spotify.exe")
+
+
+def test_before_a_heavy_game_with_little_memory_offers_what_to_close(monkeypatch):
+    # El 2026-10-26 la consola tenía 5 GB libres en reposo y Claude (2,4 GB), Grok y Steam abiertos; con un juego de
+    # Switch la RAM libre bajaba a ~150 MB y todo se trababa.
+    procs = {1: ("claude.exe", 0), 2: ("claude.exe", 1), 3: ("steam.exe", 0), 4: ("svchost.exe", 0), 5: ("tiny.exe", 0)}
+    fake_system(monkeypatch, procs, windows_pids=[5], private={1: 1600, 2: 800, 3: 600, 4: 3000, 5: 50})
+    room = memory.before_play("switch", free_mb=2500)
+    assert room["free_mb"] == 2500
+    assert [a["exe"] for a in room["apps"]] == ["claude.exe", "steam.exe"]  # svchost nunca; tiny no vale la pena
+    assert memory.before_play("switch", free_mb=6000) is None  # hay memoria: se juega directo
+    assert memory.before_play("gba", free_mb=500) is None  # un juego ligero no necesita nada
+    fake_system(monkeypatch, {4: ("svchost.exe", 0)}, private={4: 3000})
+    assert memory.before_play("switch", free_mb=500) is None  # nada que se pueda cerrar: no se pregunta

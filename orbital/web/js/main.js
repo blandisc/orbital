@@ -1528,7 +1528,13 @@ async function runCommand(command, context = null) {
   try {
     switch (command.type) {
       case "launch":
-        return launch(findItem(command.id), command.runner || null, { confirmed: !!command.confirmed, keep: !!command.keep });
+        return launch(findItem(command.id), command.runner || null, { confirmed: !!command.confirmed, keep: !!command.keep, roomChecked: !!command.roomChecked });
+      case "before-play-close": { // «Antes de jugar»: cerrar lo que estorba y abrir el juego
+        let freed = 0;
+        for (const exe of command.exes || []) freed += (await api.closeApp(exe).catch(() => ({ freed_mb: 0 }))).freed_mb || 0;
+        if (freed) ui.toast.show(`${(freed / 1024).toFixed(1)} GB libres de más`, { tone: "success" });
+        return launch(findItem(command.id), command.runner || null, { roomChecked: true });
+      }
       case "watch":
         return watch({ ...command.play, keep: !!command.keep }, { confirmed: true });
       case "tv": // «Cerrar y abrir» el canal, tras la pregunta de un juego que estaba abierto

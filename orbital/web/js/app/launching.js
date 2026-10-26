@@ -5,7 +5,7 @@
 import { api } from "../core/api.js";
 import { rumble } from "../core/haptics.js";
 import { alternativeRunner, isWatchable, needsInternet, runnerName } from "../core/library.js";
-import { switchMenu } from "../core/menus.js";
+import { beforePlayMenu, switchMenu } from "../core/menus.js";
 import { sound } from "../core/sound.js";
 import { gameInTheWay, takeLaunchLock } from "../core/store.js";
 
@@ -144,7 +144,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     }
   }
 
-  async function launch(item, runner = null, { confirmed = false, keep = false } = {}) {
+  async function launch(item, runner = null, { confirmed = false, keep = false, roomChecked = false } = {}) {
     if (!item) return;
     if (Date.now() < state.launchLockedUntil) { // evita dobles pulsaciones de A; si aún se está abriendo algo, se dice
       if (state.launchingTitle && !ui.launch.visible) {
@@ -169,6 +169,10 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     if (!runner && item.id === state.running?.id) return resumeRunning(); // sigue abierto: se continúa
     const inTheWay = !confirmed && gameInTheWay(state.running, item.id);
     if (inTheWay) return openMenu(switchMenu({ running: inTheWay, title: item.title, command: { type: "launch", id: item.id, runner } }));
+    if (!roomChecked && item.system) { // Antes de jugar algo pesado con poca memoria: ofrecer cerrar lo que estorba
+      const room = await api.beforePlay(item.id).catch(() => null);
+      if (room?.apps?.length) return openMenu(beforePlayMenu(item, room, runner));
+    }
     state.launchingId = item.id;
     takeLaunchLock(state);
     sound.play("open");
