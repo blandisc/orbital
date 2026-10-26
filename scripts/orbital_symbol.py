@@ -22,7 +22,7 @@ RING = ((3.2, 20.4), (7.0, 23.5), (24.4, 18.0), (29.2, 11.6))
 MOON = (27.6, 6.0)
 # Grosores (planeta, anillo, radio de la luna) del más delgado al más grueso, en unidades de la caja.
 WEIGHT_NAMES = ["Ultralight", "Thin", "Light", "Regular", "Medium", "Semibold", "Bold", "Heavy", "Black"]
-THIN, REGULAR, BLACK = (1.1, 0.9, 1.7), (3.0, 2.4, 2.6), (4.8, 3.9, 3.3)
+THIN, REGULAR, BLACK = (0.7, 0.6, 1.5), (1.9, 1.5, 2.3), (3.4, 2.8, 2.9)   # más finas: en el Centro de control se veían gruesas
 
 
 def weight(i: int) -> tuple[float, float, float]:
