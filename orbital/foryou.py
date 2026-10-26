@@ -242,8 +242,10 @@ class Cache:
 
 # ---------------------------------------------------------------- piezas
 def video_item(e: dict, why: str, *, title: str | None = None, poster: str | None = None,
-               wide: str | None = None, overview: str | None = None, seasons: int | None = None) -> dict:
-    """Una película o serie: lo que necesita el mosaico, las listas, la ficha y el reproductor."""
+               wide: str | None = None, overview: str | None = None, seasons: int | None = None,
+               in_list: bool = False) -> dict:
+    """Una película o serie: lo que necesita el mosaico, las listas, la ficha y el reproductor. `in_list`: viene de una
+    lista de Trakt o de un complemento («En «RT: Certified Fresh»»): el destacado no pone ese nombre como etiqueta."""
     imdb, kind = e["imdb"], e["kind"]
     nxt = e.get("next")
     episode = f"T{nxt['season']} E{nxt['episode']}" if nxt else None
@@ -263,6 +265,7 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
     return {
         "key": f"video:{imdb}", "id": f"cinemeta:{kind}:{imdb}", "source": "cinemeta", "kind": kind, "meta_id": imdb,
         "title": title or e["title"], "year": e.get("year"), "why": why, "detail": detail,
+        **({"in_list": True} if in_list else {}),
         "facts": [[k, str(v)] for k, v in facts if v],
         "image": poster or METAHUB.format(kind="poster", imdb=imdb),
         "hero": wide or METAHUB.format(kind="background", imdb=imdb),
@@ -509,6 +512,7 @@ class ForYou:
             raise stremio_api.StremioError(f"{entry['addon']} no respondió: {exc}") from exc
         metas = data.get("metas") if isinstance(data, dict) else None
         why = {"Watchlist": "En tu watchlist", "Recommendations": "Recomendada"}.get(entry["title"], f"En {entry['title']}")
+        named = entry["title"] not in ("Watchlist", "Recommendations")  # «En RT: Certified Fresh»: el nombre de una lista
         items = []
         for m in metas if isinstance(metas, list) else []:
             if not isinstance(m, dict) or not re.fullmatch(r"tt\d+", str(m.get("id") or "")) or not isinstance(m.get("name"), str):
@@ -516,7 +520,7 @@ class ForYou:
             year = re.match(r"\d{4}", str(m.get("releaseInfo") or m.get("year") or ""))
             e = {"imdb": m["id"], "kind": kind, "title": m["name"], "year": int(year.group()) if year else None}
             items.append(video_item(e, why, wide=m.get("background") if isinstance(m.get("background"), str) else None,
-                                    overview=str(m.get("description") or "")[:600]))
+                                    overview=str(m.get("description") or "")[:600], in_list=named))
         return items[:60]
 
     def lists(self) -> list[dict]:
@@ -873,7 +877,7 @@ class ForYou:
             name = next((r["name"] for r in self.cache.get("trakt:lists", MINE_TTL, t.lists) if r["id"] == lid), "tu lista")
             # La etiqueta es de un renglón: un nombre largo se cortaba («En «The 25 Best Sci-Fi…»»).
             why = f"En «{name}»" if len(name) <= 22 else "En una de tus listas"
-            return [video_item(e, why) for e in self.cache.get(f"trakt:list:{lid}", MINE_TTL, lambda: t.list_items(lid))]
+            return [video_item(e, why, in_list=True) for e in self.cache.get(f"trakt:list:{lid}", MINE_TTL, lambda: t.list_items(lid))]
         if list_id == "trend":
             return [video_item(e, "En tendencia") for e in self.cache.get(f"trakt:trend:{kind}", RECS_TTL, lambda: t.trending(kind))]
         if list_id == "popular":

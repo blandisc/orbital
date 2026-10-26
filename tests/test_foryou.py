@@ -1036,3 +1036,11 @@ def test_genre_and_season_shelves_need_tmdb_and_the_phone_does_not_get_them(make
         assert tv.get("/api/foryou/list", params={"id": "genre:no-existe"}).status_code == 404
         phone = [row["id"] for row in public.get("/api/foryou", headers={"Authorization": "Bearer secreto"}).json()["lists"]]
         assert phone and not [i for i in phone if i.startswith(("genre:", "season:"))]
+
+
+def test_a_title_from_a_named_list_is_marked_so_the_hero_skips_the_list_name():
+    from orbital.foryou import video_item
+
+    e = {"imdb": "tt1375666", "kind": "movie", "title": "Origen"}
+    assert video_item(e, "En RT: Certified Fresh", in_list=True)["in_list"] is True
+    assert "in_list" not in video_item(e, "Recomendada")
