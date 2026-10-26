@@ -929,7 +929,9 @@ class SubTrial:
     edition_on: bool = False
 
 
-TRY_H = 128  # alto de la franja (con el dedo, un poco más: sus botones se tocan)
+TRY_H = 166  # alto de la franja con el mando (con el dedo, TRY_TOUCH_H: sus botones se tocan)
+TRY_TOUCH_H = 190
+TRY_ROWS = (46, 92, 132)  # los tres renglones (título, la copia, los botones): con aire entre ellos, no encimados
 
 
 def try_items(trial: SubTrial) -> list[tuple[str, str]]:
@@ -958,7 +960,8 @@ def sub_trial_ass(trial: SubTrial) -> str:
     Subtítulo 2 de 5», por qué está ahí («Hecho para tu copia»), la copia, las descargas y la sincronía; abajo, los botones
     del mando o, con el dedo y el mouse, botones tocables."""
     targets["try"] = []
-    h = TRY_H + (24 if TOUCH else 0)
+    h = TRY_TOUCH_H if TOUCH else TRY_H
+    top, info, keys = TRY_ROWS
     lines = [rrect(0, 0, W, h, 0, PANEL, "18"), gradient(h, h + 48, 120, 255, 8)]
     if trial.total <= 0:
         title = f"{trial.language} · No hay subtítulos para probar"
@@ -968,28 +971,32 @@ def sub_trial_ass(trial: SubTrial) -> str:
         title = f"{trial.language} · Subtítulo {trial.number} de {trial.total}"
     x = MARGIN
     if trial.flag:
-        lines += flags.ass(trial.flag, x, 34 - FLAG_H / 2, FLAG_H)
+        lines += flags.ass(trial.flag, x, top - FLAG_H / 2, FLAG_H)
         x += FLAG_H * flags.W / flags.H + FLAG_GAP
     status_w = min(text_width(trial.status, 22, "semi"), (W - 2 * MARGIN) * .36) if trial.status else 0
-    lines.append(text(x, 34, esc(fit(title, 26, W - MARGIN - x - status_w - 40, "bold")), 26, weight="bold", align=4))
-    x += text_width(title, 26, "bold") + 24
+    room = W - MARGIN - x - status_w - 48
+    lines.append(text(x, top, esc(fit(title, 28, room, "bold")), 28, weight="bold", align=4))
+    x += min(text_width(title, 28, "bold"), room) + 28
     if trial.badge and trial.number > 0:  # por qué está ahí, en su píldora (el turquesa de «al aire»: es lo bueno)
-        bw = text_width(trial.badge, 19, "semi") + 28
-        if x + bw < W - MARGIN - status_w - 40:
-            lines += [rrect(x, 18, bw, 32, 16, LIVE, "C8", outline=LIVE, width=1.5),
-                      text(x + bw / 2, 34, esc(trial.badge), 19, LIVE, weight="semi", align=5)]
-            x += bw + 18
+        bw, bh = text_width(trial.badge, 19, "semi") + 32, 34
+        if x + bw < W - MARGIN - status_w - 48:
+            lines += [rrect(x, top - bh / 2, bw, bh, bh / 2, LIVE, "C8", outline=LIVE, width=1.5),
+                      text(x + bw / 2, top, esc(trial.badge), 19, LIVE, weight="semi", align=5)]
     if trial.status:
-        lines.append(text(W - MARGIN, 34, esc(fit(trial.status, 22, status_w + 1, "semi")), 22, SOFT, weight="semi", align=6))
-    # Segundo renglón: de dónde viene, la copia para la que se hizo, sus descargas y la sincronía.
+        lines.append(text(W - MARGIN, top, esc(fit(trial.status, 22, status_w + 1, "semi")), 22, SOFT, weight="semi", align=6))
+    # Segundo renglón: de dónde viene, la copia para la que se hizo y sus descargas; la sincronía va a la derecha (es lo
+    # que mueves con ↑ ↓, y así el nombre largo de la copia no la empuja fuera).
     origin = "Del video" if trial.origin == "video" else ""
     parts = [p for p in (origin, trial.release, _downloads(trial.downloads)) if p] if trial.number > 0 else []
-    parts.append(f"Sincronía: {delay_label(trial.delay)}")
-    lines.append(text(MARGIN, 70, esc(fit(" · ".join(parts), 21, W - 2 * MARGIN, "semi")), 21, MUTED, weight="semi", align=4))
+    sync = f"Sincronía: {delay_label(trial.delay)}"
+    lines.append(text(W - MARGIN, info, esc(sync), 21, SOFT if abs(trial.delay) >= .05 else MUTED, weight="semi", align=6))
+    if parts:
+        room = W - 2 * MARGIN - text_width(sync, 21, "semi") - 48
+        lines.append(text(MARGIN, info, esc(fit(" · ".join(parts), 21, room, "semi")), 21, MUTED, weight="semi", align=4))
     if TOUCH:
-        lines.append(pills(try_pills(trial), 96, left=MARGIN, layer="try", h=48))
+        lines.append(pills(try_pills(trial), keys - 10, left=MARGIN, layer="try", h=48))
     else:
-        lines.append(hints(try_items(trial), 104, left=MARGIN, size=20))
+        lines.append(hints(try_items(trial), keys, left=MARGIN, size=20))
     return "\n".join(lines)
 
 
