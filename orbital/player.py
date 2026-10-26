@@ -117,6 +117,7 @@ CURTAIN_STEP = .07
 CURTAIN_REVEAL_WAIT = 1.1  # s tras la primera imagen al abrir desde Orbital: lo que tarda su salida (focus.FADE_TO_BLACK)
 CUT_MARGIN = 90  # s: un «final» antes de esto es la conexión que se cortó, no el final de verdad
 NEXT_LOAD_WAIT = 25  # s que el final espera al siguiente episodio que se está cargando
+SYNTHETIC_NEXT_TRIES = 3  # veces que un canal de Orbital pide lo que sigue (cada NEXT_LOAD_WAIT) antes de cerrarse
 
 
 def process_memory_mb(pid: int) -> int:
@@ -794,7 +795,18 @@ class OrbitalPlayer(PlayerScreen):
         if away > SYNTHETIC_RESYNC_AFTER and self.on_synthetic_resync and not segment.next_loading:
             segment.next_loading = time.monotonic()
             self.toast(f"De vuelta al aire · {segment.title}", 4)
-            self._in_background(self.on_synthetic_resync, segment.meta, failed="No pude volver a lo que va al aire")
+            self._in_background(self._synthetic_resync, segment, failed="No pude volver a lo que va al aire")
+
+    def _synthetic_resync(self, segment: Segment) -> bool:
+        """Si no se pudo volver al aire, sigue lo que ya veías y su final vuelve a pedir lo que sigue (antes quedaba
+        marcado como «cargando» y, al acabar el episodio, el canal se quedaba en el último cuadro)."""
+        ok = False
+        try:
+            ok = bool(self.on_synthetic_resync and self.on_synthetic_resync(segment.meta))
+        finally:
+            if not ok:
+                segment.next_loading = 0.0
+        return ok
 
     def _synthetic_started(self, segment: Segment, tracks: list) -> None:
         """Un canal de Orbital: la pista del doblaje del canal (si el archivo no la trae, otra fuente) y qué va."""
@@ -1004,7 +1016,7 @@ class OrbitalPlayer(PlayerScreen):
         if segment.closed:
             return
         if segment.meta.get("synthetic") and self.on_synthetic_end:
-            if not segment.next_loading:  # el siguiente episodio del canal, una sola vez
+            if not segment.next_loading:  # el siguiente episodio del canal, una vez (si no se pudo, otra al rato)
                 segment.next_loading = time.monotonic()
                 self._in_background(self._synthetic_next, segment, failed="No pude seguir con el canal")
             return
@@ -1020,10 +1032,28 @@ class OrbitalPlayer(PlayerScreen):
         self._quit()
 
     def _synthetic_next(self, segment: Segment) -> None:
+        """Lo que sigue en el canal. Si no se pudo, el final lo vuelve a pedir en NEXT_LOAD_WAIT: la tele no se apaga (ni
+        se queda en el último cuadro) por un tropiezo de Internet. Tras SYNTHETIC_NEXT_TRIES, se cierra."""
         handler = self.on_synthetic_end
-        if not (handler and handler(segment.meta)) and self.segment is segment:
-            self._user_quit = True
-            self._quit()
+        try:
+            ok = bool(handler and handler(segment.meta))
+        except Exception:  # noqa: BLE001 - un error de red no deja el canal congelado en el último cuadro
+            log.exception("%s: no pude poner lo que sigue", segment.title)
+            ok = False
+        if ok or self.segment is not segment:
+            return
+        segment.next_tries += 1
+        if segment.next_tries < SYNTHETIC_NEXT_TRIES:
+            log.info("%s: no pude poner lo que sigue (intento %d); otra vez en %d s", segment.title, segment.next_tries,
+                     NEXT_LOAD_WAIT)
+            self.toast(f"Buscando lo que sigue en {segment.title}…", 6)
+            timer = threading.Timer(NEXT_LOAD_WAIT, lambda: setattr(segment, "next_loading", 0.0))
+            timer.daemon = True
+            timer.start()
+            return
+        self.toast(f"No pude seguir con {segment.title}", 4)
+        self._user_quit = True
+        self._quit()
 
     def _play_next(self, segment: Segment, auto: bool) -> None:
         info = segment.upnext

@@ -448,6 +448,8 @@ class SyntheticTV:
         if picked is None:
             return False
         start = offset if (picked[2], picked[3]) == (cycle, place) else 0.0
+        log.info("%s %s: %s · %s (desde %d s)", channel.name, "sigue" if why == "ended" else "de vuelta al aire",
+                 picked[0]["label"], picked[0]["title"], int(start))
         return self._load(channel, picked, [picked[1].index], f"{channel.name} · {picked[0]['label']}", start=start)
 
     def ended(self, meta: dict) -> bool:
