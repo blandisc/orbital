@@ -1034,3 +1034,23 @@ def test_every_layer_fits_what_mpv_can_paint_at_4k():
     layers["canal"] = player_ui.live_hud_ass(player_ui.LiveHud(name="Canal 5", number=5))
     for name, ass in layers.items():
         assert _shaded_screens(ass) <= player_ui.SHADE_BUDGET, f"{name}: {_shaded_screens(ass):.1f} pantallas"
+
+
+def test_each_buffer_wait_goes_to_the_log(caplog):
+    """Un «Cargando…» a media película queda en el registro (cuánto duró, cuánto había por delante y la velocidad), y al
+    cerrar el video, cuántas esperas hubo: antes solo se veía en pantalla y una traba no se podía investigar (#12)."""
+    import logging
+
+    p, mpv = make_player(**{"paused-for-cache": True, "cache-buffering-state": 40, "demuxer-cache-duration": 0.4,
+                            "cache-speed": 500_000, "frame-drop-count": 3})
+    segment = player.Segment({"kind": "movie"}, "¿Qué Pasó Ayer?", "u")
+    segment.playing, segment.position, segment.watched = True, 1800.0, 1800.0
+    p.segment = segment
+    with caplog.at_level(logging.INFO, logger="orbital.player"):
+        p._buffering_state(False)
+        mpv.props["paused-for-cache"] = False
+        p._buffering_state(False)
+        p._close_segment(segment)
+    text = caplog.text
+    assert "Esperó al búfer" in text and "(min 30)" in text and "por delante 0.4 s" in text and "bajando a 4.0 Mbps" in text
+    assert "1 esperas de búfer" in text and "3 cuadros perdidos" in text

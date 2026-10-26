@@ -178,6 +178,11 @@ def glide_curve(t: float) -> float:
     return bez(y1, y2, (lo + hi) / 2)
 
 
+
+def _num(value) -> str:
+    """Un número del registro, corto («12.4»), o «?» si mpv no lo dio."""
+    return f"{value:.1f}" if isinstance(value, (int, float)) else "?"
+
 class OrbitalPlayer(PlayerScreen):
     """Arranca mpv, lo vigila y avisa cuánto se vio (para Seguir viendo).
 
@@ -894,6 +899,10 @@ class OrbitalPlayer(PlayerScreen):
             if segment.closed:
                 return
             segment.closed = True
+        if segment.playing and not segment.live:  # cómo se vio: para saber, si «se trabó», si fue la red o la imagen (#12)
+            drops = self.mpv.get("frame-drop-count")
+            log.info("%s: %d min vistos, %d esperas de búfer (%.0f s), %s cuadros perdidos", segment.title,
+                     int(segment.watched // 60), segment.waits, segment.waited, drops if isinstance(drops, int) else "?")
         if segment.live or segment.meta.get("synthetic"):
             return  # la tele (en vivo o un canal de Orbital) no guarda dónde ibas ni entra en «Seguir viendo»
         self._scrobble("stop", segment)  # Trakt: lo que llevabas (≥ 80 % lo marca visto)
@@ -925,6 +934,8 @@ class OrbitalPlayer(PlayerScreen):
 
     def _buffering_state(self, paused: bool) -> None:
         waiting = bool(self.mpv.get("paused-for-cache")) and not paused
+        if waiting and not self._buffering:
+            self._wait_started = time.monotonic()  # una espera nueva: al terminar se anota cuánto duró (ver abajo)
         if waiting:
             percent = self.mpv.get("cache-buffering-state")
             self._buffering = True
@@ -934,6 +945,20 @@ class OrbitalPlayer(PlayerScreen):
         elif self._buffering:
             self._buffering = False
             self._overlay(self.BUFFER, None)  # solo el «Cargando…»: el aviso que estaba sigue
+            self._log_wait()
+
+    def _log_wait(self) -> None:
+        """Cada «Cargando…» a media reproducción, en el registro: cuánto duró, cuánto quedaba por delante y a qué velocidad
+        bajaba. Antes solo se veía en pantalla: cuando algo «se trababa», no había cómo saber por qué (#12)."""
+        segment = self.segment
+        lasted = time.monotonic() - getattr(self, "_wait_started", time.monotonic())
+        if segment is not None:
+            segment.waits += 1
+            segment.waited += lasted
+        speed = self.mpv.get("cache-speed")
+        log.info("Esperó al búfer %.1f s en %s (min %s): por delante %s s, bajando a %s Mbps", lasted,
+                 segment.title if segment else "?", int(segment.position // 60) if segment else "?",
+                 _num(self.mpv.get("demuxer-cache-duration")), _num(speed * 8 / 1e6) if isinstance(speed, (int, float)) else "?")
 
     # --- capítulos: saltar intro, créditos ---------------------------------------------------
     def _chapter_now(self, segment: Segment) -> tuple[int, dict | None]:

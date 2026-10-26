@@ -336,6 +336,8 @@ class Segment:
     paused_at: float | None = None  # canal de Orbital: desde cuándo está en pausa (al seguir, regresa al aire)
     duration_told: bool = False  # canal de Orbital: ya se le dijo cuánto dura de verdad este episodio
     next_tries: int = 0  # canal de Orbital: veces que no se pudo poner lo que sigue (al rato se vuelve a pedir)
+    waits: int = 0  # «Cargando…» a media reproducción (esperas de búfer) y sus segundos: van al registro al cerrar
+    waited: float = 0.0
     grace_until: float = 0.0  # otro archivo en la misma ventana: hasta entonces no se lee su posición (player.tick)
 
 
