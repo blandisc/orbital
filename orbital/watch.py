@@ -876,6 +876,13 @@ class Watch:
             log.info("%s ya se está abriendo: no lo empiezo otra vez", title)
             self.sessions.revealing = True
             return
+        if not from_start and start_at is None and self.player.showing(video_id, source.key if source else None):
+            # Ya se está viendo: vuelve al frente donde va (no se recarga desde lo último guardado).
+            log.info("%s ya se está viendo: lo traigo al frente", title)
+            if getattr(self.player, "pip", False):
+                self.player.exit_pip()
+            self.sessions.revealing = self.sessions.to_front("media:player", title, ready=lambda: True)
+            return
         if from_start:
             start = 0.0
         elif isinstance(start_at, (int, float)) and start_at > 0:

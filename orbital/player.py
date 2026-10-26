@@ -324,6 +324,15 @@ class OrbitalPlayer(PlayerScreen):
                     and (source_key is None or segment.meta.get("source_key") == source_key)
                     and time.monotonic() - segment.loaded < STARTUP_TIMEOUT)
 
+    def showing(self, video_id: str | None, source_key: str | None = None) -> bool:
+        """Ese mismo video ya se está viendo (con imagen). Otro «ver» lo trae al frente en vez de abrirlo otra vez: antes
+        lo cerraba y lo volvía a cargar desde lo último guardado (hasta un minuto atrás), y la película «se trababa»."""
+        playback, segment = self.current, self.segment
+        return bool(video_id and playback is not None and playback.process.poll() is None and segment is not None
+                    and segment.playing and not segment.failed and not segment.live and not segment.closed
+                    and segment.meta.get("video_id") == video_id
+                    and (source_key is None or segment.meta.get("source_key") == source_key))
+
     def load(self, url: str, title: str, meta: dict, *, start: float = 0, fallback_subs=None,
              subtitles: str | None = None, audio: str | None = None, message: str | None = None) -> bool:
         """Otro archivo en la misma ventana: el siguiente episodio, u otra fuente del mismo título.

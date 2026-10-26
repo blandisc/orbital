@@ -939,3 +939,16 @@ def test_mpv_loads_the_mouse_script_next_to_the_bindings(tmp_path):
     cmd = player.build_command("mpv.exe", "http://a", "T", bindings=str(conf))
     assert f"--script={tmp_path / player.MOUSE_SCRIPT_NAME}" in cmd
     assert 'mp.add_forced_key_binding("MBTN_LEFT"' in player.MOUSE_SCRIPT and "orbital-drop" in player.MOUSE_SCRIPT
+
+
+def test_watching_the_same_video_again_does_not_reload_it():
+    """La ficha de atrás recibía «Ver» de la misma película (la A de pausar): se recargaba desde lo último guardado."""
+    p, _ = make_player()
+    alive = type("Proc", (), {"poll": lambda self: None})()
+    p.current = player.Playback("Qué pasó ayer", alive, 0, {})
+    p.segment = player.Segment({"video_id": "tt1119646", "source_key": "rd:1"}, "Qué pasó ayer", "u")
+    assert not p.showing("tt1119646")  # todavía sin imagen: eso es starting()
+    p.segment.playing = True
+    assert p.showing("tt1119646") and p.showing("tt1119646", "rd:1")
+    assert not p.showing("tt1119646", "rd:2")  # otra versión elegida a propósito sí se abre
+    assert not p.showing("tt0000001")
