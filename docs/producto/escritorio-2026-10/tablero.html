@@ -61,7 +61,7 @@ footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
 </div>
 
 <script>
-const UPDATED = "25 oct 2026 · en la Lenovo: #9, #7, #1, #2, #3 y #6 listos con evidencia; #10 con código, falta verlo con mpv";
+const UPDATED = "25 oct 2026 · en la Lenovo: #9, #7, #1, #2, #3, #6 y #4 listos con evidencia; #10 con código, falta verlo con mpv";
 // estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
 const ITEMS = [
   { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "doing",
@@ -86,8 +86,9 @@ const ITEMS = [
   { n: 3, t: "Banderitas en idiomas y subtítulos", tipo: "Mejora", estado: "done",
     d: "Mapear todos los lugares donde eliges idioma o subtítulo y ponerles bandera.", nota: "Lugares: Elegir versión (filas, la lista de «todas las de aquí» y la línea de abajo), Ajustes › Idioma y Subtítulos, Versiones de tu carpeta y, en el reproductor, Audio, Subtítulos, «En otra versión» y Versión. Mapa igual al iPhone: latino y español sin decir cuál 🇲🇽, castellano 🇪🇸, inglés 🇺🇸, portugués 🇧🇷; dos audios, dos banderas. Una sola definición (orbital/flags.py) para la interfaz y mpv (Windows no dibuja los emoji de bandera). Probado en la Lenovo: Edge y mpv de verdad.",
     ev: ["evidencia/03-version.jpg", "evidencia/03-fuentes.jpg", "evidencia/03-ajustes.jpg", "evidencia/03-reproductor-audio.jpg", "evidencia/03-reproductor-version.jpg"] },
-  { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "todo",
-    d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "" },
+  { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "done",
+    d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "Cada temporada y cada género lleva su ícono de línea (los mismos dibujos que la propuesta T4 del iPhone, con el trazo de la marca) en una placa redonda y su nombre debajo, como el logo de un estudio. Las temporadas con su color (Halloween naranja, Día de Muertos rosa mexicano, Navidad verde…); los géneros, neutros. Probado en la Lenovo con Edge (demo).",
+    ev: ["evidencia/04-temporadas.jpg", "evidencia/04-generos.jpg"] },
   { n: 6, t: "Animación de entrada de Orbital", tipo: "Propuesta", estado: "done",
     d: "Propuesta elegante, minimalista y fluida, alineada con la del iPhone.", nota: "Aprobada (vía la sesión de la Mac) y hecha con los tiempos del iPhone: anillo 0.5 s, letras cada 40 ms, la luna cae con rebote; al estar lista la biblioteca, la marca viaja a su lugar exacto en la barra (medido: mismos píxeles) e Inicio aparece. Ya no hay dos entradas. Movimiento reducido: fundido. Probado en la Lenovo con Edge (cámara lenta para la captura).",
     ev: ["evidencia/06-entrada-antes.jpg", "evidencia/06-entrada-despues.jpg"] },

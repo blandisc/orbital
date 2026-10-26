@@ -1,4 +1,5 @@
-import { h } from "../core/dom.js";
+import { h, svg } from "../core/dom.js";
+import { ICONS } from "../core/icons.js";
 import { sized } from "../core/images.js";
 
 /**
@@ -24,7 +25,14 @@ const HALO = {
   paramount: "var(--platform-paramount)", appletv: "var(--platform-other)",
   gold: "var(--color-award-gold)", silver: "var(--color-award-silver)", bronze: "var(--color-award-bronze)",
   studio: "var(--color-studio-halo)",
+  // Cada temporada con su color (Halloween naranja, Día de Muertos rosa mexicano, Navidad verde…); los géneros, neutros.
+  "season-halloween": "var(--color-season-halloween)", "season-muertos": "var(--color-season-muertos)",
+  "season-navidad": "var(--color-season-navidad)", "season-sanvalentin": "var(--color-season-sanvalentin)",
+  "season-verano": "var(--color-season-verano)",
 };
+
+/** «genre:accion» → «genre-accion»: su ícono en icons.js y, si es temporada, su halo. */
+const iconOf = (c) => String(c.list?.id || "").replace(":", "-");
 
 /** El nombre de un premio estilizado, como el logo de un título: con remate, en mayúsculas y con el degradado de su metal
  *  (oro, plata para el Emmy, bronce para el BAFTA y el Ariel). En la tarjeta, arriba en el héroe y en su lista. */
@@ -74,10 +82,15 @@ function body(c) {
       return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters),
         h("span", { class: "collection__foot" }, brandMark(c, { mono: true, fallback: "collection__capsule" }))];
     case "genre":
-    case "season":
-      // El mismo abanico que un estudio, con el nombre del género o de la temporada en la cápsula.
+    case "season": {
+      // El mismo abanico que un estudio y, al frente, su ícono de línea con el nombre debajo (como el logo de un estudio;
+      // los mismos íconos que el iPhone). Sin ícono, el nombre en la cápsula.
+      const icon = ICONS[iconOf(c)];
       return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters),
-        h("span", { class: "collection__foot" }, h("span", { class: "collection__capsule" }, c.name))];
+        h("span", { class: "collection__foot" }, icon
+          ? [h("span", { class: "collection__badge", "aria-hidden": "true" }, svg(icon)), h("span", { class: "collection__name" }, c.name)]
+          : h("span", { class: "collection__capsule" }, c.name))];
+    }
     case "award":
       return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters),
         c.statue && h("img", { class: "collection__statue", src: c.statue, alt: "", decoding: "async" }),
@@ -109,7 +122,8 @@ const TYPE_CLASS = {
 /** Una tarjeta de colección. Mismo contrato que Card: un botón con `dataset.ratio` (la fila lo usa para medir). */
 export function CollectionCard(item, { onPress } = {}) {
   const c = item.collection;
-  const halo = HALO[c.brand] || HALO[c.tint] || (c.type === "studio" || c.type === "genre" || c.type === "season" ? HALO.studio : null);
+  const halo = HALO[c.brand] || HALO[c.tint] || (c.type === "season" && HALO[iconOf(c)])
+    || (c.type === "studio" || c.type === "genre" || c.type === "season" ? HALO.studio : null);
   const card = h("button", {
     class: ["card", "card--has-art", TYPE_CLASS[c.type]], type: "button", "aria-label": c.label || item.title, onClick: onPress,
     style: halo ? { "--halo": halo } : null,

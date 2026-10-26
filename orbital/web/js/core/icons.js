@@ -106,6 +106,27 @@ export const ICONS = {
   catOther: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h.01M12 6h.01M18 6h.01M6 12h.01M12 12h.01M6 18h.01M12 18h.01"/><circle cx="18" cy="18" r="1.6" fill="currentColor" stroke="none"/></svg>',
   tv: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7.5" width="18" height="11" rx="2.2"/><path d="M8.5 3.5 12 7l3.5-3.5M8.5 21.5h7"/></svg>',
   trophy: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 4M16 6h2.8a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"/><circle cx="12" cy="8" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  // Lo mejor del género y Temporadas (collection-card): un ícono de línea por cada uno, con el trazo redondo de la marca;
+  // los mismos dibujos que el iPhone (propuesta T4).
+  "season-halloween": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 9c-6 0-10 3.5-10 9s4 9 10 9 10-3.5 10-9-4-9-10-9z"/><path d="M16 9c-2.5 2.5-3 13.5 0 18M16 9c2.5 2.5 3 13.5 0 18"/><path d="M16 9c0-2 1-4 3-5"/></svg>',
+  "season-muertos": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 17a7 7 0 1 1 14 0v3l-2 1v4H11v-4l-2-1z"/><circle cx="12.8" cy="17" r="1.7"/><circle cx="19.2" cy="17" r="1.7"/><path d="M16 19.5l-.9 1.6h1.8z"/><path d="M14 23v2M16 23v2M18 23v2"/><circle cx="22.5" cy="8.5" r="1.6"/><path d="M22.5 5.4v1.5M22.5 10.1v1.5M19.4 8.5h1.5M24.1 8.5h1.5"/></svg>',
+  "season-navidad": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5l-6 8h3l-5 7h4l-4 6h16l-4-6h4l-5-7h3z"/><path d="M16 26v3"/></svg>',
+  "season-sanvalentin": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 26s-10-6-10-13a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 7-10 13-10 13z"/></svg>',
+  "season-verano": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="13" r="4.5"/><path d="M16 4.5v1.8M16 19.7v1.8M7.5 13h1.8M22.7 13h1.8M10 7l1.3 1.3M20.7 17.7L22 19M10 19l1.3-1.3M20.7 8.3L22 7"/><path d="M4 26c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 6 0 4 1.5 6 0"/></svg>',
+  "genre-accion": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4l2.5 7L25 8l-3.5 6L28 16l-6.5 2L25 24l-6.5-3L16 28l-2.5-7L7 24l3.5-6L4 16l6.5-2L7 8l6.5 3z"/></svg>',
+  "genre-aventura": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11"/><path d="M20.5 11.5l-2.8 6.2-6.2 2.8 2.8-6.2z"/></svg>',
+  "genre-animacion": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M14 5c1 5 3 7 8 8-5 1-7 3-8 8-1-5-3-7-8-8 5-1 7-3 8-8z"/><path d="M24 20c.4 2 1.2 2.8 3 3.2-1.8.4-2.6 1.2-3 3-.4-1.8-1.2-2.6-3-3 1.8-.4 2.6-1.2 3-3.2z"/></svg>',
+  "genre-comedia": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11"/><path d="M12 13.2v.1M20 13.2v.1"/><path d="M11 18c2.5 4 7.5 4 10 0"/></svg>',
+  "genre-crimen": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 22c-1-3-1-7 1-10a7.5 7.5 0 0 1 13 3"/><path d="M12.5 25.5c-1.5-3-2-6-1-9a5 5 0 0 1 9.5 1c.5 3 0 6-1 9"/><path d="M16 17c.5 3 .3 6-1 9"/><path d="M23.5 18.5c0 2.5-.5 5-1.5 7"/></svg>',
+  "genre-documental": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="10" width="17" height="13" rx="3"/><path d="M21 15l7-4v11l-7-4"/></svg>',
+  "genre-drama": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M8 7h16v8a8 8 0 0 1-16 0z"/><path d="M11.5 12.2l2 1M20.5 12.2l-2 1"/><path d="M12.5 20c2-2 5-2 7 0"/></svg>',
+  "genre-familia": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 15L16 6l11 9"/><path d="M8 13v13h16V13"/><path d="M16 23s-4-2.4-4-5a2 2 0 0 1 4-.4 2 2 0 0 1 4 .4c0 2.6-4 5-4 5z"/></svg>',
+  "genre-fantasia": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M6 26L19 13"/><path d="M22 4l1.2 3.3 3.3 1.2-3.3 1.2L22 13l-1.2-3.3-3.3-1.2 3.3-1.2z"/><path d="M27 17v.1M12 7v.1"/></svg>',
+  "genre-terror": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M8 27V14a8 8 0 0 1 16 0v13l-2.7-2-2.6 2-2.7-2-2.6 2-2.7-2z"/><path d="M13 14v.1M19 14v.1"/></svg>',
+  "genre-misterio": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="14" cy="14" r="8.5"/><path d="M20.3 20.3L27 27"/><path d="M11.8 11.8a2.3 2.3 0 1 1 3.4 2c-.8.5-1.2 1-1.2 1.9M14 18.6v.1"/></svg>',
+  "genre-romance": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M13 25s-8.5-5-8.5-11a4.2 4.2 0 0 1 8.5-.9 4.2 4.2 0 0 1 8.5.9c0 6-8.5 11-8.5 11z"/><path d="M24 12s-3.5-2-3.5-4.4a1.8 1.8 0 0 1 3.5-.4 1.8 1.8 0 0 1 3.5.4C27.5 10 24 12 24 12z"/></svg>',
+  "genre-ciencia-ficcion": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4c4 3 6 8 5 14l-5 3-5-3c-1-6 1-11 5-14z"/><circle cx="16" cy="12" r="2"/><path d="M11 18l-3 5 4-1M21 18l3 5-4-1"/><path d="M14.5 24c.5 2 1 3 1.5 4 .5-1 1-2 1.5-4"/></svg>',
+  "genre-suspenso": '<svg class="collection__icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M3 16s5-8 13-8 13 8 13 8-5 8-13 8S3 16 3 16z"/><circle cx="16" cy="16" r="4"/></svg>',
 };
 
 /** La marca real de su plataforma (a color, la misma en todas las pantallas): el logo de Stremio para películas y

@@ -67,7 +67,13 @@
   --color-year-series: #6b4ac4;
   --color-year-both: #b04ad6;
   --color-year-empty: rgba(255, 255, 255, .07);
-  --color-studio-halo: #8c8f9e; /* neutro: cada estudio es de muchos colores */
+  --color-studio-halo: #8c8f9e; /* neutro: cada estudio es de muchos colores (y cada género) */
+  /* Temporadas: el halo de cada una (los tonos de la propuesta del iPhone, más claros para que se vean en la TV). */
+  --color-season-halloween: #e8742a;
+  --color-season-muertos: #e0457b; /* rosa mexicano */
+  --color-season-navidad: #3fa66a;
+  --color-season-sanvalentin: #e0526e;
+  --color-season-verano: #f2b33d;
   --color-progress: var(--palette-paper);
   --color-progress-track: rgba(255, 255, 255, .2);
   --color-pad-a: var(--palette-pad-green);
