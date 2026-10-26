@@ -18,6 +18,24 @@ export const PlatformMark = (src, fallback = null) => (src ? h("img", { class: "
 export const Badge = (text, { className = null, large = false, plate = false } = {}) =>
   h("span", { class: ["badge", large && "badge--lg", plate && "badge--plate", className] }, text);
 
+/** Las plataformas con píldora a color (sus colores de `--platform-*`, los de design/tokens.json › platforms que usa el
+ *  iPhone) y su logo de JustWatch (los mismos de orbital/library/charts.py › JUSTWATCH_PACKAGES). */
+const JUSTWATCH = "https://images.justwatch.com";
+export const PLATFORM_PILLS = {
+  netflix: "/icon/207360008/s100/netflix.png", disney: "/icon/313118777/s100/disneyplus.png",
+  hbo: "/icon/332884837/s100/max.png", prime: "/icon/322992749/s100/amazonprimevideo.png",
+  paramount: "/icon/242706661/s100/paramountplus.png",
+};
+
+/** «En Netflix» como en el iPhone (PlatformBadge): una cápsula del color de la plataforma, con su logo chico a la
+ *  izquierda y el texto en blanco. `brand` fuera de PLATFORM_PILLS: null (quien la usa pone su Badge de siempre). */
+export const PlatformBadge = (text, brand, { large = false, className = null } = {}) => {
+  if (!PLATFORM_PILLS[brand]) return null;
+  const logo = h("img", { class: "badge__logo", src: JUSTWATCH + PLATFORM_PILLS[brand], alt: "", "aria-hidden": "true", decoding: "async" });
+  logo.addEventListener("error", () => logo.remove(), { once: true });
+  return h("span", { class: ["badge", "badge--platform", `badge--platform-${brand}`, large && "badge--lg", className] }, logo, text);
+};
+
 /** Encabezado de una pantalla completa (Conectar Stremio, Conectar Trakt): de dónde es, el título y una línea. */
 export const ScreenHead = ({ eyebrow, title, lead = null, className = null }) =>
   h("div", { class: ["screen-head", className] },

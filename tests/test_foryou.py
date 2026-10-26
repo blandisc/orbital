@@ -1044,3 +1044,15 @@ def test_a_title_from_a_named_list_is_marked_so_the_hero_skips_the_list_name():
     e = {"imdb": "tt1375666", "kind": "movie", "title": "Origen"}
     assert video_item(e, "En RT: Certified Fresh", in_list=True)["in_list"] is True
     assert "in_list" not in video_item(e, "Recomendada")
+
+
+def test_the_platform_pill_logos_are_the_justwatch_ones():
+    import re
+    from pathlib import Path
+
+    from orbital.library import charts
+
+    ui = (Path(__file__).parent.parent / "orbital" / "web" / "js" / "components" / "ui.js").read_text("utf-8")
+    block = ui[ui.index("PLATFORM_PILLS = {"):ui.index("};", ui.index("PLATFORM_PILLS = {"))]
+    pills = dict(re.findall(r'(\w+): "(/icon/[^"]+)"', block))
+    assert pills and all(charts.JUSTWATCH_PACKAGES[brand][2] == path for brand, path in pills.items())
