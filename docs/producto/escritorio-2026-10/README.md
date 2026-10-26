@@ -3,7 +3,7 @@
 Rama: `claude/orbital-desktop-improvements-15b3e7`. Tablero (artefacto): https://claude.ai/artifact/YDfzgb77Yt5ooVnAUe6J6S
 (fuente: `tablero.html`, aquí mismo; se actualiza publicándolo a esa misma URL).
 
-**Regla de Fernando: nada se da por cerrado sin probarlo en la Lenovo.** En la Mac solo corren las pruebas automáticas y el
+**Regla de Fernando: nada se da por cerrado sin probarlo en la Lenovo y sin evidencia de antes y después** (capturas en `evidencia/`, también en el tablero). En la Mac solo corren las pruebas automáticas y el
 demo; lo que depende de Windows y mpv se prueba allá. Nunca mandes teclas ni POST a la Orbital real (`127.0.0.1:8710`) sin
 avisar: una tecla Enter abre juegos de verdad. Para la interfaz, `scripts/demo_server.py --port <puerto>`.
 
@@ -11,16 +11,16 @@ avisar: una tecla Enter abre juegos de verdad. Para la interfaz, `scripts/demo_s
 
 | # | Pedido | Estado |
 |---|---|---|
-| 11 | Reproductor: al pausar no detecta bien los botones, o sale el logo y no la pantalla de pausa (lo más importante) | Código hecho (commits 32afc70, 0089406). **Falta probar en la Lenovo** |
-| 12 | «Qué pasó ayer» se trababa: revisar caché/configuración | Hallazgo: ver abajo. Falta medir en la Lenovo |
-| 10 | Canal 24/7 de Los Simpson: al acabar un episodio no pone el siguiente solo (debe ser tele 24/7) | Pendiente |
-| 9 | Fichas de películas y series: los botones «Ver» y «Guardar» se tocan | Pendiente |
-| 7 | «Ver más» en las descripciones de las fichas | Pendiente |
-| 1 | Buscador: que se note que está buscando (animación) | Pendiente |
-| 2 | Dictado: hoy siempre añade; si lo escrito tiene más de 2 min, que lo reemplace | Pendiente |
-| 3 | Banderitas en todos los lugares donde eliges idioma o subtítulo (mapear todos) | Pendiente |
-| 4 | Aparadores de temporadas (Halloween, Día de Muertos, Navidad) y de géneros con icono y título bonito, como Estudios y Plataformas; alineado con la sesión de Mac que hace lo mismo en el iPhone | Pendiente |
-| 6 | Propuesta de animación de entrada elegante, minimalista y fluida, alineada con el iPhone | Propuesta lista (abajo, y `entrada-propuesta.html`) |
+| 11 | Reproductor: al pausar no detecta bien los botones, o sale el logo y no la pantalla de pausa (lo más importante) | Código hecho (32afc70, 0089406). **Falta la prueba con mando en la TV** (esta sesión no tiene permiso de mandar el mando a la Orbital real) |
+| 12 | «Qué pasó ayer» se trababa: revisar caché/configuración | Medido: la vista de hoy (12:50–14:39) sin trabas ni recargas. La causa vista (la A que recargaba) la arregla el #11 |
+| 10 | Canal 24/7 de Los Simpson: al acabar un episodio no pone el siguiente solo (debe ser tele 24/7) | **Listo** (45484a2, 00e1d06): arrancaba en pausa en 0:00 (keep-open) y sin reintento ante un tropiezo de red. Probado con mpv de verdad |
+| 9 | Fichas de películas y series: los botones «Ver» y «Guardar» se tocan | **Listo** (828f791) |
+| 7 | «Ver más» en las descripciones de las fichas | **Listo** (943c9c3) |
+| 1 | Buscador: que se note que está buscando (animación) | **Listo** (6de70a8) |
+| 2 | Dictado: hoy siempre añade; si lo escrito tiene más de 2 min, que lo reemplace | **Listo** (828f4ef) |
+| 3 | Banderitas en todos los lugares donde eliges idioma o subtítulo (mapear todos) | **Listo** (0d291d7): interfaz y reproductor, mapa del iPhone |
+| 4 | Aparadores de temporadas y de géneros con icono y título bonito, alineado con el iPhone | **Listo** (8e0ed07): los íconos de la propuesta T4 del iPhone |
+| 6 | Propuesta de animación de entrada elegante, minimalista y fluida, alineada con el iPhone | **Listo** (49df49d): aprobada; tiempos de OrbitalWordmark |
 | 8 | Análisis UI/UX: cambiar rápido de subtítulo y probar varios con el video | Análisis listo (abajo) |
 | 5 | Trakt: sincronizar el avance del iPhone aquí, y ¿dos sesiones de Trakt? | Investigación lista (abajo) |
 
