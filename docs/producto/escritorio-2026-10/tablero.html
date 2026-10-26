@@ -57,14 +57,14 @@ footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
 </div>
 
 <script>
-const UPDATED = "25 oct 2026 · reproductor listo, revisando trabas";
+const UPDATED = "25 oct 2026 · el trabajo pasó a la Lenovo para probarlo allá";
 // estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
 const ITEMS = [
-  { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "done",
+  { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "doing",
     d: "Al pausar no detecta bien los botones, o sale el logo pero no la pantalla de pausa.",
-    nota: "Causa: con el video al frente, Windows a veces deja el foco en Orbital. A se perdía y la ficha de atrás la tomaba como «Ver», así que salía la carga con el logo. Ahora la pulsación va al video y la interfaz no hace caso del mando mientras el video tiene la pantalla. Pendiente: probarlo en la Legion Go." },
+    nota: "Causa: con el video al frente, Windows a veces deja el foco en Orbital. A se perdía y la ficha de atrás la tomaba como «Ver», así que salía la carga con el logo. Ahora la pulsación va al video y la interfaz no hace caso del mando mientras el video tiene la pantalla. Código listo; falta probarlo en la Lenovo." },
   { n: 12, t: "La película se traba («Qué pasó ayer»)", tipo: "Investigación", prio: true, estado: "doing",
-    d: "Revisar si una configuración de caché del reproductor se rompe y hace que se trabe.", nota: "" },
+    d: "Revisar si una configuración de caché del reproductor se rompe y hace que se trabe.", nota: "Hallazgo: la A perdida hacía que la ficha recargara la película desde lo último guardado. Ya no la recarga. Falta medir el caché y los cuadros perdidos en la Lenovo." },
   { n: 10, t: "Canal 24/7 de Los Simpson", tipo: "Bug", estado: "todo",
     d: "Al acabar un episodio no pone el siguiente solo. Debe ser como una tele 24/7.", nota: "" },
   { n: 9, t: "Ficha: «Ver» y «Guardar» se tocan", tipo: "Bug", estado: "todo",
@@ -80,11 +80,11 @@ const ITEMS = [
   { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "todo",
     d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "" },
   { n: 6, t: "Animación de entrada de Orbital", tipo: "Propuesta", estado: "todo",
-    d: "Propuesta elegante, minimalista y fluida, alineada con la del iPhone.", nota: "" },
+    d: "Propuesta elegante, minimalista y fluida, alineada con la del iPhone.", nota: "Propuesta y maqueta listas (misma marca que el iPhone; la luna cae y la marca viaja a la barra). Espera tu OK." },
   { n: 8, t: "Cambio rápido de subtítulo", tipo: "Propuesta", estado: "todo",
-    d: "Análisis de UI y UX para probar varios subtítulos con el video que estás viendo, como en el iPhone.", nota: "" },
+    d: "Análisis de UI y UX para probar varios subtítulos con el video que estás viendo, como en el iPhone.", nota: "Análisis listo: mantener X entra directo, dar la vuelta al final, sincronía por subtítulo y el mejor primero, como el iPhone. Espera tu OK." },
   { n: 5, t: "Trakt: avance compartido y dos sesiones", tipo: "Investigación", estado: "todo",
-    d: "Cómo sincronizar el avance de películas del iPhone aquí, y si se pueden tener dos sesiones de Trakt.", nota: "" },
+    d: "Cómo sincronizar el avance de películas del iPhone aquí, y si se pueden tener dos sesiones de Trakt.", nota: "Sí se pueden dos sesiones, y conviene. Hoy el avance ya viaja por Stremio; Trakt quedaría de respaldo. Espera tu OK." },
 ];
 const LABEL = { todo: "Pendiente", doing: "En curso", done: "Listo" };
 const VAR = { todo: "--todo", doing: "--doing", done: "--done" };
