@@ -1,5 +1,4 @@
-import { h, svg } from "../core/dom.js";
-import { ICONS } from "../core/icons.js";
+import { h } from "../core/dom.js";
 import { sized } from "../core/images.js";
 
 /**
@@ -31,8 +30,17 @@ const HALO = {
   "season-verano": "var(--color-season-verano)",
 };
 
-/** «genre:accion» → «genre-accion»: su ícono en icons.js y, si es temporada, su halo. */
+/** «season:halloween» → «season-halloween»: su halo, si es temporada. */
 const iconOf = (c) => String(c.list?.id || "").replace(":", "-");
+
+/** Los 19 íconos a color de Temporadas y Géneros, los mismos del iPhone (Grok Imagine, estilo C; design/iconos-grok en la
+ *  rama del iPhone): img/collections/<slug>.png, con los slugs de GENRES y SEASONS de orbital/library/tmdb.py. */
+const EMBLEMS = new Set(["accion", "aventura", "animacion", "comedia", "crimen", "documental", "drama", "familia", "fantasia",
+  "terror", "misterio", "romance", "ciencia-ficcion", "suspenso", "halloween", "muertos", "navidad", "sanvalentin", "verano"]);
+const emblemOf = (c) => {
+  const slug = String(c.list?.id || "").split(":")[1] || "";
+  return EMBLEMS.has(slug) ? `img/collections/${slug}.png` : null;
+};
 
 /** El nombre de un premio estilizado, como el logo de un título: con remate, en mayúsculas y con el degradado de su metal
  *  (oro, plata para el Emmy, bronce para el BAFTA y el Ariel). En la tarjeta, arriba en el héroe y en su lista. */
@@ -83,12 +91,12 @@ function body(c) {
         h("span", { class: "collection__foot" }, brandMark(c, { mono: true, fallback: "collection__capsule" }))];
     case "genre":
     case "season": {
-      // El mismo abanico que un estudio y, al frente, su ícono de línea con el nombre debajo (como el logo de un estudio;
-      // los mismos íconos que el iPhone). Sin ícono, el nombre en la cápsula.
-      const icon = ICONS[iconOf(c)];
+      // El mismo abanico que un estudio y, al frente, su ícono a color con el nombre debajo (como el logo de un estudio;
+      // los mismos íconos que el iPhone, tal cual: sin filtro). Sin ícono, el nombre en la cápsula.
+      const emblem = emblemOf(c);
       return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters),
-        h("span", { class: "collection__foot" }, icon
-          ? [h("span", { class: "collection__badge", "aria-hidden": "true" }, svg(icon)), h("span", { class: "collection__name" }, c.name)]
+        h("span", { class: "collection__foot" }, emblem
+          ? [h("img", { class: "collection__emblem", src: emblem, alt: "", decoding: "async" }), h("span", { class: "collection__name" }, c.name)]
           : h("span", { class: "collection__capsule" }, c.name))];
     }
     case "award":

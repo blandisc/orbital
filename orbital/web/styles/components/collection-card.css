@@ -42,14 +42,12 @@
   font-size: var(--type-body); font-weight: var(--weight-bold); line-height: var(--leading-title); letter-spacing: var(--tracking-tight);
   text-shadow: var(--shadow-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .collection__detail { color: var(--color-text-muted); font-size: var(--type-caption); line-height: var(--leading-snug); }
-/* Un género o una temporada: su ícono de línea (icons.js) en blanco, sobre una placa redonda del color de su halo (así se
-   lee encima de los pósters), y su nombre debajo. */
-.collection__badge {
-  display: grid; place-items: center; width: 3.4rem; height: 3.4rem; border-radius: 50%;
-  background: color-mix(in oklab, var(--halo, var(--color-studio-halo)) 55%, var(--color-badge-bg));
-  box-shadow: var(--shadow-badge), 0 0 1.4rem color-mix(in oklab, var(--halo, transparent) 60%, transparent);
+/* Un género o una temporada: su ícono a color (img/collections, los del iPhone) tal cual, sin placa: un resplandor oscuro
+   detrás para leerse sobre los pósters (como el iPhone) y el de su halo; su nombre debajo. */
+.collection__emblem {
+  display: block; width: 4.4rem; height: 4.4rem; object-fit: contain;
+  filter: drop-shadow(0 0 .9rem color-mix(in oklab, var(--color-bg) 80%, transparent)) drop-shadow(0 0 1.1rem color-mix(in oklab, var(--halo, transparent) 55%, transparent));
 }
-.collection__icon { width: 2.2rem; height: 2.2rem; fill: none; stroke: var(--color-text); stroke-width: var(--stroke-regular); stroke-linecap: round; stroke-linejoin: round; }
 /* Un estudio: su nombre en cápsula al frente (como el iPhone). */
 .collection__capsule {
   padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-badge-bg);

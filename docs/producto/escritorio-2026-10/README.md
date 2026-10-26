@@ -19,7 +19,7 @@ avisar: una tecla Enter abre juegos de verdad. Para la interfaz, `scripts/demo_s
 | 1 | Buscador: que se note que está buscando (animación) | **Listo** (6de70a8) |
 | 2 | Dictado: hoy siempre añade; si lo escrito tiene más de 2 min, que lo reemplace | **Listo** (828f4ef) |
 | 3 | Banderitas en todos los lugares donde eliges idioma o subtítulo (mapear todos) | **Listo** (0d291d7): interfaz y reproductor, mapa del iPhone |
-| 4 | Aparadores de temporadas y de géneros con icono y título bonito, alineado con el iPhone | **Listo** (8e0ed07): los íconos de la propuesta T4 del iPhone |
+| 4 | Aparadores de temporadas y de géneros con icono y título bonito, alineado con el iPhone | **Listo**: los 19 íconos a color de Grok Imagine, los mismos del iPhone (c924722 en `ios/pendientes-oct`), en `orbital/web/img/collections` |
 | 6 | Propuesta de animación de entrada elegante, minimalista y fluida, alineada con el iPhone | **Listo** (49df49d): aprobada; tiempos de OrbitalWordmark |
 | 8 | Análisis UI/UX: cambiar rápido de subtítulo y probar varios con el video | **Hecho** (todo en una entrega, como se decidió): mantener X / S / botón, vuelta al final, sincronía por subtítulo, todo se guarda, salir deja el último, orden del iPhone con copia y descargas, LB/RB idioma, otra edición. Evidencia en mpv; **falta probarlo con mando en la TV** |
 | 5 | Trakt: sincronizar el avance del iPhone aquí, y ¿dos sesiones de Trakt? | Investigación lista (abajo) |
