@@ -114,7 +114,9 @@ public final class ReleaseAlerts {
         await withCheckedContinuation { (done: CheckedContinuation<(Source?, late: Bool), Never>) in
             let once = Once()
             let lookup = Task {
-                let best = (try? await finder.find(kind: "series", videoID: id, prefs: prefs, fresh: true))?.first
+                // Solo una que se vea al instante (ya en la caché de Real-Debrid): un enlace sin caché también es http, pero
+                // al tocar el aviso el episodio todavía no se podía ver (un enlace directo, sin Real-Debrid, sí vale). Sin ninguna así, no se avisa y se vuelve a revisar luego.
+                let best = (try? await finder.find(kind: "series", videoID: id, prefs: prefs, fresh: true))?.first(where: { $0.cached || !$0.debrid })
                 if once.claim() { done.resume(returning: (best, false)) }
             }
             Task {
