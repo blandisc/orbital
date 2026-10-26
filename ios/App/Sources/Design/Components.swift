@@ -769,15 +769,17 @@ struct DSChipRow<Item: Hashable & Identifiable, Label: View>: View {
 struct DSGestureIndicator: View {
     let symbol: String
     let value: Double   // 0…1
+    /// El largo de la barra: más corta cuando el video es bajito (en vertical va dentro de la imagen).
+    var barHeight: CGFloat = DS.Gesture.indicatorBarHeight
 
     var body: some View {
         VStack(spacing: DS.Space.s2) {
             Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
             ZStack(alignment: .bottom) {
                 Capsule().fill(DS.track)
-                Capsule().fill(DS.primary).frame(height: DS.Gesture.indicatorBarHeight * min(1, max(0, value)))
+                Capsule().fill(DS.primary).frame(height: barHeight * min(1, max(0, value)))
             }
-            .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarHeight)
+            .frame(width: DS.Gesture.indicatorBarWidth, height: barHeight)
             Text("\(Int((value * 100).rounded())) %").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).monospacedDigit()
         }
         .padding(.vertical, DS.Space.s4).padding(.horizontal, DS.Space.s3)

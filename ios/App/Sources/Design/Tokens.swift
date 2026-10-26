@@ -241,6 +241,11 @@ enum DS {
         static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)
         static let indicatorBarHeight: CGFloat = 120
         static let indicatorBarWidth: CGFloat = 5
+        /// Lo que mide el indicador además de la barra (ícono, porcentaje, espacios y relleno), y lo más corta que puede quedar.
+        static let indicatorChrome: CGFloat = 88
+        static let indicatorBarMin: CGFloat = 48
+        /// Un toque de un dedo y uno de dos tan juntos son el mismo toque (s).
+        static let twoFingerTapGuard: TimeInterval = 0.35
         /// La burbuja de buscar no se acerca más que esto a los bordes de la pantalla.
         static let seekBubbleSideMargin: CGFloat = 64
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
@@ -397,6 +402,8 @@ enum DS {
         /// El video en vertical, al arrastrarlo: lo más arriba que sube (debajo de la barra de ✕ y el nombre: botón de 44 y
         /// su aire) y lo que deja libre abajo para los controles (la barra, «Saltar intro», ±10, el botón grande y la pista).
         static let portraitTopClearance: CGFloat = 60, portraitControlsReserve: CGFloat = 260
+        /// Lo más cuadrado que se le da espacio en vertical (4:3, la tele de antes); algo más angosto ya va con franjas.
+        static let portraitMinAspect: Double = 4.0 / 3.0
         /// La agarradera del video en vertical: la rayita, la franja de abajo que la toma (y lo que se mete sobre el video).
         /// «Audio y subtítulos»: cuántos idiomas de otra versión se ofrecen junto a las pistas de este archivo.
         static let otherVersionsShown = 2

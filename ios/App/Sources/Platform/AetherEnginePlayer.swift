@@ -78,6 +78,10 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         return nil
     }
     func setZoom(_ zoom: VideoZoom) { engine.videoGravity = zoom.gravity; fills = zoom == .fill }
+    /// La vía nativa lo sabe por AVPlayer (ya con la forma del pixel); la de software, por el tamaño del cuadro que pinta.
+    @MainActor var videoAspect: Double? {
+        engine.nativePlayerLayer?.player?.currentItem?.presentationSize.aspectIfKnown ?? engine.softwareDisplaySize?.aspectIfKnown
+    }
     private var fills = false
 
     /// AetherEngine no pinta subtítulos: entrega las líneas y la app las dibuja encima del video (su README: «your UI paints them»).

@@ -60,6 +60,9 @@ struct PlayerScreen: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @State private var holder = PlayerHolder()
     @State private var controlsVisible = true
+    /// Cuándo fue el último toque de un dedo y el último de dos (para que uno de dos dedos no mueva también los controles).
+    @State private var singleTapAt = Date.distantPast
+    @State private var twoFingerTapAt = Date.distantPast
     /// «Bloquear» (como Netflix): sin controles y la pantalla no responde a toques ni deslizamientos (para no pausar o adelantar
     /// sin querer). Un toque enseña la cápsula de arriba con «Desbloquear».
     @State private var locked = false
@@ -623,8 +626,19 @@ struct PlayerScreen: View {
             .onTapGesture {
                 // Con los subtítulos rápidos abiertos, tocar el video los cierra (y nada más).
                 if subtitleDock { withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false }; return }
+                // Un toque con dos dedos también puede contar como toque: ese no mueve los controles.
+                if Date().timeIntervalSince(twoFingerTapAt) < DS.Gesture.twoFingerTapGuard { return }
+                singleTapAt = Date()
                 controlsVisible.toggle(); if controlsVisible { scheduleHide() }
             }
+            // Tocar con dos dedos, en cualquier parte: pausa o sigue (como en Infuse y en la app TV de Apple).
+            .gesture(TwoFingerTap {
+                twoFingerTapAt = Date()
+                // Si el mismo toque ya alcanzó a contar como uno de un dedo, se deshace lo que hizo con los controles.
+                if Date().timeIntervalSince(singleTapAt) < DS.Gesture.twoFingerTapGuard { controlsVisible.toggle(); singleTapAt = .distantPast }
+                Task { await model.togglePlay() }
+                flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill")
+            })
             .gesture(MagnifyGesture().onEnded { value in
                 // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
                 let target = VideoZoom.pinched(magnification: Double(value.magnification))
@@ -687,7 +701,7 @@ struct PlayerScreen: View {
                                           && !videoRect(in: size).insetBy(dx: 0, dy: -DS.PlayerPanel.handleReach).contains(value.startLocation)
                                           || startsOnHandle(value.startLocation, size: size):
                         movingVideo = true
-                        portraitAtDragStart = Self.resolvedCenter(portraitCenter, in: size)   // en vertical, arrastrar arriba o abajo mueve el video
+                        portraitAtDragStart = Self.resolvedCenter(portraitCenter, in: size, aspect: portraitAspect)   // en vertical, arrastrar arriba o abajo mueve el video
                         controlsVisible = true                 // se mueve a la altura de los controles (sin ellos va al centro)
                     case .vertical:
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
@@ -703,7 +717,7 @@ struct PlayerScreen: View {
                 switch dragAxis {
                 case .vertical where movingVideo:
                     // Libre, entre lo más arriba y lo más abajo que puede ir.
-                    let limits = Self.portraitLimits(in: size)
+                    let limits = Self.portraitLimits(in: size, aspect: portraitAspect)
                     portraitDrag = min(max(portraitAtDragStart + dy / Double(size.height), limits.lowerBound), limits.upperBound)
                 case .vertical:
                     guard let kind = verticalKind else { return }
@@ -734,11 +748,19 @@ struct PlayerScreen: View {
 
     @ViewBuilder private var gestureOverlays: some View {
         if indicatorVisible, let indicator {
-            HStack {
-                if indicator.kind == .brightness { DSGestureIndicator(symbol: indicator.symbol, value: indicator.value); Spacer() }
-                else { Spacer(); DSGestureIndicator(symbol: indicator.symbol, value: indicator.value) }
+            // Antes iba centrado en toda la pantalla: en vertical caía debajo del video, encima de la barra de avance, y en
+            // horizontal casi la tocaba. Ahora: en vertical, a media altura del video y de su tamaño; en horizontal, entre la
+            // barra de arriba y la de avance.
+            GeometryReader { geo in
+                let place = indicatorPlacement(in: geo.size)
+                HStack {
+                    if indicator.kind == .brightness { DSGestureIndicator(symbol: indicator.symbol, value: indicator.value, barHeight: place.bar); Spacer() }
+                    else { Spacer(); DSGestureIndicator(symbol: indicator.symbol, value: indicator.value, barHeight: place.bar) }
+                }
+                .padding(.horizontal, DS.Space.s8)
+                .frame(width: geo.size.width)
+                .position(x: geo.size.width / 2, y: place.y)
             }
-            .padding(DS.Space.s8)
             .transition(.opacity)
             .allowsHitTesting(false)
         }
@@ -989,6 +1011,20 @@ struct PlayerScreen: View {
             guard !Task.isCancelled else { return }
             withAnimation(DS.Motion.base(reduceMotion)) { flashSymbol = nil }
         }
+    }
+
+    /// Dónde va el indicador de brillo o volumen (su centro a lo alto) y de qué largo es su barra, para que nunca toque la barra
+    /// de avance.
+    private func indicatorPlacement(in size: CGSize) -> (y: CGFloat, bar: CGFloat) {
+        func bar(_ room: CGFloat) -> CGFloat { min(DS.Gesture.indicatorBarHeight, max(DS.Gesture.indicatorBarMin, room - DS.Gesture.indicatorChrome)) }
+        if landscape {
+            let top = DS.Space.s8, bottom = DS.Gesture.fastForwardPillBottomInset
+            let room = max(0, size.height - top - bottom)
+            return (top + room / 2, bar(room))
+        }
+        if fillsPortrait || ipod != nil { return (size.height / 2, DS.Gesture.indicatorBarHeight) }
+        let rect = videoRect(in: size)
+        return (rect.midY, bar(rect.height - DS.Space.s4))
     }
 
     /// La agarradera: una franja a lo ancho justo debajo del video (fácil de agarrar aunque la rayita sea chica).
@@ -1885,10 +1921,10 @@ struct PlayerScreen: View {
         // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
-        let band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter)
+        let band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter, aspect: portraitAspect)
         // «Ajuste de aspecto» en vertical: el cuadro con su margen a los lados, lejos de las esquinas redondeadas.
         if zoom == .fitSafeArea {
-            let width = band.width - DS.Space.gutter * 2, height = width / DS.Poster.stillAspect
+            let width = band.width - DS.Space.gutter * 2, height = width * band.height / max(band.width, 1)
             return CGRect(x: band.minX + DS.Space.gutter, y: band.midY - height / 2, width: width, height: height)
         }
         return band
@@ -1899,8 +1935,8 @@ struct PlayerScreen: View {
     /// hasta aquí para que el episodio arranque donde ya está la imagen.
     /// Arriba nunca llega a la barra de botones (antes, subido hasta arriba, se encimaba con ✕ y el nombre) y abajo deja el
     /// lugar de los controles (la barra, «Saltar intro», ±10 y el botón grande).
-    static func portraitVideoRect(in size: CGSize, center: Double) -> CGRect {
-        let height = min(size.width / DS.Poster.stillAspect, size.height)
+    static func portraitVideoRect(in size: CGSize, center: Double, aspect: Double = Double(DS.Poster.stillAspect)) -> CGRect {
+        let height = portraitHeight(in: size, aspect: aspect)
         let top = DS.PlayerPanel.portraitTopClearance
         let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
         let y = min(max(top, size.height * center - height / 2), lowest)
@@ -1908,24 +1944,36 @@ struct PlayerScreen: View {
     }
     /// Lo más arriba y lo más abajo que puede ir el video (como centro, parte del alto): debajo de la barra de botones y
     /// dejando el lugar de los controles.
-    static func portraitLimits(in size: CGSize) -> ClosedRange<Double> {
+    static func portraitLimits(in size: CGSize, aspect: Double = Double(DS.Poster.stillAspect)) -> ClosedRange<Double> {
         guard size.height > 0 else { return Double(DS.PlayerPanel.portraitCenter)...Double(DS.PlayerPanel.portraitCenter) }
-        let height = min(size.width / DS.Poster.stillAspect, size.height)
+        let height = portraitHeight(in: size, aspect: aspect)
         let top = DS.PlayerPanel.portraitTopClearance
         let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
         return Double((top + height / 2) / size.height)...Double((lowest + height / 2) / size.height)
     }
     /// El centro del video como fracción del alto: el que dejaste, o (negativo: sin mover) el de lo más arriba, donde
     /// `portraitVideoRect` lo pinta. Sin esto, arrastrar o mover con VoiceOver partía de -1 y el video no bajaba.
-    static func resolvedCenter(_ stored: Double, in size: CGSize) -> Double {
+    static func resolvedCenter(_ stored: Double, in size: CGSize, aspect: Double = Double(DS.Poster.stillAspect)) -> Double {
         if stored >= 0 || size.height <= 0 { return stored }
-        return portraitLimits(in: size).lowerBound
+        return portraitLimits(in: size, aspect: aspect).lowerBound
     }
+
+    /// El alto del video en vertical: de orilla a orilla en la proporción del cuadro. Un video más cuadrado que 16:9 (Los
+    /// Simpson en 4:3) crece a lo alto en vez de quedar con franjas negras a los lados dentro de una banda 16:9; uno más
+    /// ancho (cine) se queda en la banda 16:9 de siempre. Nunca invade el lugar de los controles.
+    static func portraitHeight(in size: CGSize, aspect: Double) -> CGFloat {
+        let ratio = CGFloat(min(max(aspect, DS.PlayerPanel.portraitMinAspect), Double(DS.Poster.stillAspect)))
+        let room = max(size.width / DS.Poster.stillAspect, size.height - DS.PlayerPanel.portraitTopClearance - DS.PlayerPanel.portraitControlsReserve)
+        return min(size.width / ratio, room, size.height)
+    }
+
+    /// La proporción del cuadro que suena (la mide el motor al cargar); 16:9 mientras no se sabe.
+    private var portraitAspect: Double { holder.engine.videoAspect ?? Double(DS.Poster.stillAspect) }
 
     /// VoiceOver: subir o bajar el video un tramo.
     private func stepVideo(_ step: Int, size: CGSize) {
-        let limits = Self.portraitLimits(in: size)
-        let next = min(max(Self.resolvedCenter(portraitCenter, in: size) + Double(step) * DS.PlayerPanel.voiceOverStep, limits.lowerBound), limits.upperBound)
+        let limits = Self.portraitLimits(in: size, aspect: portraitAspect)
+        let next = min(max(Self.resolvedCenter(portraitCenter, in: size, aspect: portraitAspect) + Double(step) * DS.PlayerPanel.voiceOverStep, limits.lowerBound), limits.upperBound)
         withAnimation(DS.Motion.base(reduceMotion)) { portraitCenter = next }
     }
 
@@ -2038,5 +2086,20 @@ struct PlayerScreen: View {
                 DispatchQueue.main.async { requestGeometry(scene, target, attemptsLeft: attemptsLeft - 1, generation: generation) }
             }
         }
+    }
+}
+
+/// Un toque con dos dedos (SwiftUI no lo trae): el reconocedor de UIKit dentro de los gestos de SwiftUI, así convive con el
+/// doble toque, el pellizco y los arrastres del reproductor.
+private struct TwoFingerTap: UIGestureRecognizerRepresentable {
+    let action: () -> Void
+    func makeUIGestureRecognizer(context: Context) -> UITapGestureRecognizer {
+        let tap = UITapGestureRecognizer()
+        tap.numberOfTouchesRequired = 2
+        tap.numberOfTapsRequired = 1
+        return tap
+    }
+    func handleUIGestureRecognizerAction(_ recognizer: UITapGestureRecognizer, context: Context) {
+        if recognizer.state == .ended { action() }
     }
 }
