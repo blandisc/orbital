@@ -175,7 +175,12 @@ struct MainTabs: View {
     }
 
     var body: some View {
-        TabView(selection: $tab) {
+        // Tocar «Buscar» estando ya en Buscar abre el campo con el teclado (TabView avisa aunque la pestaña no cambie).
+        let selection = Binding(get: { tab }, set: { new in
+            if new == 2, tab == 2, paths[2].isEmpty { ui.focusSearch = true }
+            tab = new
+        })
+        TabView(selection: selection) {
             Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
             Tab("Para ti", image: OrbitalIcon.spark.asset, value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() }.tint(DS.primary) }
             // «arrow.down.to.line» no tiene versión rellena: queda de contorno como las demás (el círculo salía siempre relleno).
@@ -184,7 +189,7 @@ struct MainTabs: View {
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
-        // En Buscar la barra no se encoge al bajar: con ella se escondía el campo de búsqueda.
+        // En Buscar iOS no encoge la barra (lleva el campo): ahí se esconde entera al bajar (BrowseView).
         .tabBarMinimizeBehavior(tab == 2 ? .never : .onScrollDown)
         .onChange(of: tab) { _, t in if t == 2 { Perf.begin("stab"); Perf.mark("stab.tap") } }
         .task {
@@ -255,7 +260,7 @@ struct MainTabs: View {
         #if DEBUG
         // iOS restaura la pestaña que viste la última vez (independiente de nuestro @State) y lo hace después de
         // aparecer y del `.task` de arriba: si en modo demo algo la cambia por detrás, se vuelve a pedir la tuya.
-        .onChange(of: tab) { _, new in if Demo.isOn, new != Demo.tab { tab = Demo.tab } }
+        .onChange(of: tab) { _, new in if Demo.isOn, !Demo.freeTabs, new != Demo.tab { tab = Demo.tab } }
         #endif
     }
 

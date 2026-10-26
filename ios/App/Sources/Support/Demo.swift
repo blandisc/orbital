@@ -17,6 +17,8 @@ enum Demo {
     /// Lo guardado (Inicio, el mosaico, los colores) sobrevive entre aperturas, como en el iPhone de verdad (para medir).
     static var persist: Bool { ProcessInfo.processInfo.arguments.contains("-demo-persist") }
     static var noIdle: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-idle") }
+    /// `-demo-free-tabs`: en demo se puede cambiar de pestaña (sin esto, la de `-demo-tab` vuelve siempre).
+    static var freeTabs: Bool { ProcessInfo.processInfo.arguments.contains("-demo-free-tabs") }
 
     static let addonURL = "https://demo.orbital.invalid/manifest.json"
     /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).

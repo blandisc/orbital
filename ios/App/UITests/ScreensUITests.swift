@@ -37,4 +37,49 @@ final class ScreensUITests: XCTestCase {
         XCTAssertTrue(app.buttons["title-link"].firstMatch.waitForExistence(timeout: 15), "la lista del género aparece")
         print("GENRE-OPEN \(Date().timeIntervalSince(start)) s")
     }
+    /// Buscar: la barra se ve al abrir, se esconde al bajar y vuelve al subir.
+    func testSearchBarHidesOnScroll() {
+        app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
+        app.launch()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 20), "la barra a la vista al abrir")
+        XCTAssertTrue(field.isHittable)
+        app.swipeUp()
+        XCTAssertTrue(waitUntil { !field.exists || !field.isHittable || field.frame.width < 120 }, "al bajar, la barra se esconde")
+        app.swipeDown(); app.swipeDown()
+        XCTAssertTrue(waitUntil { field.exists && field.isHittable && field.frame.width > 200 }, "al subir, vuelve")
+        XCTAssertFalse(app.keyboards.firstMatch.exists, "sin teclado todavía")
+    }
+
+    /// Tocar la lupa dos veces (desde otra pestaña): el primer toque abre Buscar, el segundo el campo con el teclado.
+    /// (También con la barra encogida: bajaste en Inicio y la lupa quedó sola a la derecha.)
+    func testSecondTapOnSearchTabOpensTheField() { secondTapOpensTheField(minimized: false) }
+    func testSecondTapOnMinimizedSearchTabOpensTheField() { secondTapOpensTheField(minimized: true) }
+
+    private func secondTapOpensTheField(minimized: Bool) {
+        app.launchArguments = ["-demo", "-demo-tab", "0", "-demo-free-tabs", "-demo-no-idle"]
+        app.launch()
+        if minimized { sleep(3); app.swipeUp(); sleep(1); shot("g-minimized") }
+        let tab = app.tabBars.buttons["Buscar"]
+        XCTAssertTrue(tab.waitForExistence(timeout: 20), "la lupa en la barra")
+        // El mismo punto de la pantalla las dos veces (la lupa se vuelve el campo al abrir Buscar).
+        let spot = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: tab.frame.midX, dy: tab.frame.midY))
+        spot.tap()
+        XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 10), "abre Buscar")
+        XCTAssertFalse(app.keyboards.firstMatch.exists, "el primer toque no abre el teclado")
+        spot.tap()
+        let ok = app.keyboards.firstMatch.waitForExistence(timeout: 5)
+        XCTAssertTrue(ok, "el segundo toque abre el campo con el teclado")
+    }
+
+    private func shot(_ name: String) {
+        guard let dir = ProcessInfo.processInfo.environment["SHOTS"] else { return }
+        try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
+    }
+
+    private func waitUntil(_ timeout: TimeInterval = 5, _ check: () -> Bool) -> Bool {
+        let end = Date().addingTimeInterval(timeout)
+        while Date() < end { if check() { return true }; RunLoop.current.run(until: Date().addingTimeInterval(0.2)) }
+        return check()
+    }
 }

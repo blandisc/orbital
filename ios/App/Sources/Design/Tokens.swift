@@ -778,6 +778,8 @@ enum DS {
         static let heroPrefetch = 3
         /// Cuánto hay que bajar para que el título grande se encoja (y el de Inicio diga otra cosa).
         static let titleCollapse: CGFloat = 8
+        /// Cuánto hay que deslizar en un sentido para que la barra de Buscar se esconda (al bajar) o vuelva (al subir).
+        static let barScrollHide: CGFloat = 12
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)
         /// Cuánto puede encogerse un título de sección largo («Top 10 en Paramount+») antes de cortarse: así no brinca a dos renglones.
         static let titleShrink: CGFloat = 0.8
