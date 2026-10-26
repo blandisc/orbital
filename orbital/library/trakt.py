@@ -226,8 +226,11 @@ class Trakt:
             if status == 200 and isinstance(data, dict):
                 break
         if status != 200 or not isinstance(data, dict):
-            self.credentials.set(TOKENS_KEY, None)
-            raise TraktAuthError("Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes › Cuentas.")
+            if status in (400, 401, 403):  # Trakt rechazó la renovación (revocada o vencida): ahora sí, a reconectar
+                self.credentials.set(TOKENS_KEY, None)
+                raise TraktAuthError("Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes › Cuentas.")
+            # Trakt caído o lento (5xx, 429): la sesión se queda; la próxima vez se vuelve a intentar renovar.
+            raise TraktError(f"No pude renovar tu sesión de Trakt (HTTP {status}): lo intento de nuevo más tarde.")
         self._save(data)
         return self._tokens() or {}
 
@@ -259,8 +262,13 @@ class Trakt:
             raise TraktError(f"No pude conectar con Trakt: {exc}") from exc
 
     def _get(self, path: str, *, auth: bool = True, **params):
+        """Una lectura. Un 401 renueva la sesión una vez y reintenta (antes la borraba de inmediato y había que volver a
+        conectar Trakt, aunque la renovación hubiera funcionado)."""
         status, data = self._call("GET", path, auth=auth, params=params or None)
         if status == 401 and auth:
+            self._renew()  # si Trakt rechaza la renovación, _refresh borra la sesión y avisa
+            status, data = self._call("GET", path, auth=auth, params=params or None)
+        if status == 401 and auth:  # renovada y aun así rechazada: la sesión de verdad ya no sirve
             self.credentials.set(TOKENS_KEY, None)
             raise TraktAuthError("Trakt cerró tu sesión: vuelve a conectarla en Ajustes › Cuentas.")
         if status != 200:

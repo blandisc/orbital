@@ -61,12 +61,13 @@ footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
 </div>
 
 <script>
-const UPDATED = "25 oct 2026, 21:45 · en la Lenovo: 8 listos con evidencia; #11 y #12 esperan tu prueba con el mando; #8 y #5 esperan tu OK";
+const UPDATED = "25 oct 2026, 22:05 · #11: causa real hallada (pausa a 4K) y arreglada, falta tu prueba · #12: investigación del búfer · #4 íconos provisionales (Grok) · #8 y #5 con reporte gráfico";
 // estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
 const ITEMS = [
   { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "doing",
     d: "Al pausar no detecta bien los botones, o sale el logo pero no la pantalla de pausa.",
-    nota: "Código listo y probado con pruebas automáticas: con el video al frente, la pulsación va al video aunque Windows deje el foco en Orbital, y la ficha de atrás ya no la toma como «Ver». FALTA TU PRUEBA: el permiso de esta sesión no me deja mandar el mando (virtual) a tu Orbital real. Tu Orbital ya corre esta rama: abre una película, pausa con A varias veces, haz clic en Orbital y pausa otra vez, mantén B para salir." },
+    nota: "Tu prueba de las 21:44 mostró la causa real: la A sí pausaba, pero a 4K mpv no alcanzaba a dibujar la pantalla de pausa (75 capas de sombra, ~21 pantallas de figuras) y solo quedaba la imagen del logo. Reproducido en la Lenovo con mpv a 4K y los datos reales de X-Files; ahora la pausa pesa ~9 y sale completa. Tu Orbital ya corre este arreglo: falta que lo confirmes con el mando.",
+    ev: ["evidencia/11-pausa-4k.jpg"] },
   { n: 12, t: "La película se traba («Qué pasó ayer»)", tipo: "Investigación", prio: true, estado: "doing",
     d: "Revisar si una configuración de caché del reproductor se rompe y hace que se trabe.", nota: "Medido en tu registro: hoy la viste completa (12:50–14:39) con el caché nuevo de 200 MiB, sin recargas y con 4 s de atraso en 106 minutos, o sea, sin trabas. La traba que viste se explica por la A perdida (recargaba la película desde lo último guardado), que arregla el #11. Se cierra con tu prueba del #11.",
     ev: ["evidencia/12-trabas-hoy.jpg"] },
@@ -88,16 +89,16 @@ const ITEMS = [
   { n: 3, t: "Banderitas en idiomas y subtítulos", tipo: "Mejora", estado: "done",
     d: "Mapear todos los lugares donde eliges idioma o subtítulo y ponerles bandera.", nota: "Lugares: Elegir versión (filas, la lista de «todas las de aquí» y la línea de abajo), Ajustes › Idioma y Subtítulos, Versiones de tu carpeta y, en el reproductor, Audio, Subtítulos, «En otra versión» y Versión. Mapa igual al iPhone: latino y español sin decir cuál 🇲🇽, castellano 🇪🇸, inglés 🇺🇸, portugués 🇧🇷; dos audios, dos banderas. Una sola definición (orbital/flags.py) para la interfaz y mpv (Windows no dibuja los emoji de bandera). Probado en la Lenovo: Edge y mpv de verdad.",
     ev: ["evidencia/03-version.jpg", "evidencia/03-fuentes.jpg", "evidencia/03-ajustes.jpg", "evidencia/03-reproductor-audio.jpg", "evidencia/03-reproductor-version.jpg"] },
-  { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "done",
-    d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "Cada temporada y cada género lleva su ícono de línea (los mismos dibujos que la propuesta T4 del iPhone, con el trazo de la marca) en una placa redonda y su nombre debajo, como el logo de un estudio. Las temporadas con su color (Halloween naranja, Día de Muertos rosa mexicano, Navidad verde…); los géneros, neutros. Probado en la Lenovo con Edge (demo).",
+  { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "doing",
+    d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "La tarjeta ya tiene su lugar para el ícono (placa redonda con el color de la temporada y el nombre debajo). Los íconos actuales son provisionales: se rehacen con Grok en otra sesión.",
     ev: ["evidencia/04-temporadas.jpg", "evidencia/04-generos.jpg"] },
   { n: 6, t: "Animación de entrada de Orbital", tipo: "Propuesta", estado: "done",
-    d: "Propuesta elegante, minimalista y fluida, alineada con la del iPhone.", nota: "Aprobada (vía la sesión de la Mac) y hecha con los tiempos del iPhone: anillo 0.5 s, letras cada 40 ms, la luna cae con rebote; al estar lista la biblioteca, la marca viaja a su lugar exacto en la barra (medido: mismos píxeles) e Inicio aparece. Ya no hay dos entradas. Movimiento reducido: fundido. Probado en la Lenovo con Edge (cámara lenta para la captura).",
-    ev: ["evidencia/06-entrada-antes.jpg", "evidencia/06-entrada-despues.jpg"] },
+    d: "Propuesta elegante, minimalista y fluida, alineada con la del iPhone.", nota: "Idéntica a la del iPhone (tiempos de DS.Splash que pasó la Mac, resortes de SwiftUI): fondo de la app, anillo a 0.1 s, luna a 0.6 s, vuelo a la barra a 1.0 s; medida cuadro por cuadro (gráfica). Antes: anillo 0.5 s, letras cada 40 ms, la luna cae con rebote; al estar lista la biblioteca, la marca viaja a su lugar exacto en la barra (medido: mismos píxeles) e Inicio aparece. Ya no hay dos entradas. Movimiento reducido: fundido. Probado en la Lenovo con Edge (cámara lenta para la captura).",
+    ev: ["evidencia/06-entrada-antes.jpg", "evidencia/06-entrada-despues.jpg", "evidencia/06-entrada-tiempos.jpg"] },
   { n: 8, t: "Cambio rápido de subtítulo", tipo: "Propuesta", estado: "todo",
-    d: "Análisis de UI y UX para probar varios subtítulos con el video que estás viendo, como en el iPhone.", nota: "Análisis listo: mantener X entra directo, dar la vuelta al final, sincronía por subtítulo y el mejor primero, como el iPhone. Espera tu OK." },
+    d: "Análisis de UI y UX para probar varios subtítulos con el video que estás viendo, como en el iPhone.", nota: "Reporte gráfico para decidir: https://claude.ai/artifact/Kirvje8N1YfmohPd3sXEou (hoy 8 pulsaciones, propuesta 1). Espera tu OK." },
   { n: 5, t: "Trakt: avance compartido y dos sesiones", tipo: "Investigación", estado: "todo",
-    d: "Cómo sincronizar el avance de películas del iPhone aquí, y si se pueden tener dos sesiones de Trakt.", nota: "Sí se pueden dos sesiones, y conviene. Hoy el avance ya viaja por Stremio; Trakt quedaría de respaldo. Espera tu OK." },
+    d: "Cómo sincronizar el avance de películas del iPhone aquí, y si se pueden tener dos sesiones de Trakt.", nota: "Sí se pueden dos sesiones, y conviene. Reporte gráfico: https://claude.ai/artifact/Kirvje8N1YfmohPd3sXEou#trakt. Espera tu OK." },
 ];
 const LABEL = { todo: "Pendiente", doing: "En curso", done: "Listo" };
 const VAR = { todo: "--todo", doing: "--doing", done: "--done" };

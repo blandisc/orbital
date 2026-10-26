@@ -224,3 +224,31 @@ def test_a_filler_clip_does_not_mark_the_movie_as_watched(monkeypatch):
     s.event("start", MOVIE, 60, 7200)
     s.wait()
     assert [action for action, _ in net.scrobbles()] == ["start"]
+
+
+def test_a_401_while_reading_renews_the_session_instead_of_forgetting_it(monkeypatch):
+    """Al leer (tus listas, el avance), un 401 renueva la sesión y reintenta; antes la borraba sin intentarlo y había que
+    volver a conectar Trakt en Ajustes."""
+    net, t, _ = setup(monkeypatch)
+    answers = iter([(401, None), (200, [{"id": 1}])])
+    net.on("/sync/watchlist", lambda url, body: next(answers))
+    net.on("/oauth/token", (200, {"access_token": "nuevo", "refresh_token": "r2", "expires_in": 7200}))
+    assert t._get("/sync/watchlist") == [{"id": 1}]
+    assert json.loads(t.credentials.get(trakt.TOKENS_KEY))["access_token"] == "nuevo"
+
+
+def test_trakt_being_down_never_disconnects_you(monkeypatch):
+    """Si Trakt está caído al renovar (5xx), la sesión se queda y se reintenta después; solo un rechazo de verdad
+    (400/401) obliga a reconectar."""
+    import pytest
+
+    net, t, _ = setup(monkeypatch)
+    net.on("/sync/watchlist", (401, None)).on("/oauth/token", (503, None))
+    with pytest.raises(trakt.TraktError) as caught:
+        t._get("/sync/watchlist")
+    assert not isinstance(caught.value, trakt.TraktAuthError) and t.credentials.get(trakt.TOKENS_KEY)
+    net.routes = [r for r in net.routes if r[0] != "/oauth/token"]
+    net.on("/oauth/token", (400, {"error": "invalid_grant"}))
+    with pytest.raises(trakt.TraktAuthError):
+        t._get("/sync/watchlist")
+    assert t.credentials.get(trakt.TOKENS_KEY) is None

@@ -163,9 +163,11 @@ def test_an_old_session_is_renewed_and_a_rejected_one_is_forgotten(make_foryou, 
     assert any(c[1].endswith("/oauth/token") for c in net.calls)
     assert json.loads(fy.catalog.credentials.get(trakt.TOKENS_KEY))["access_token"] == "new"
     net.routes.insert(0, ("GET", r"/sync/watchlist", (401, None)))
+    renewals = sum(c[1].endswith("/oauth/token") for c in net.calls)
     with pytest.raises(trakt.TraktAuthError):
         fy.trakt.watchlist()
-    assert not fy.trakt.linked  # Trakt cerró la sesión: hay que volver a conectar
+    assert sum(c[1].endswith("/oauth/token") for c in net.calls) == renewals + 1  # primero intentó renovarla
+    assert not fy.trakt.linked  # renovada y aun así rechazada: hay que volver a conectar
 
 
 def test_your_series_bring_the_next_episode_and_skip_finished_ones(make_foryou, net):

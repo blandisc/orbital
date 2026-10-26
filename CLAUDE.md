@@ -11,6 +11,11 @@ Interfaz de consola para la TV (Windows, Legion Go), en español, que se usa con
 - `tests/web/design-system.test.mjs` lo verifica: colores, duraciones, capas y tamaños de letra a mano,
   tokens inexistentes o sin uso, componentes fuera del catálogo, CSS muerto y colores fijos en JS.
 
+## Las cuatro superficies
+
+Todo cambio en la app de escritorio se diseña y se prueba para **control, teclado, mouse y touch** (regla completa en
+`docs/sistema-de-diseno.md` § 5). Un atajo de mando siempre tiene camino visible en el menú, y el menú lo dice.
+
 ## Pruebas
 
 ```bash
