@@ -1005,3 +1005,32 @@ def test_the_next_file_starts_playing_even_if_the_last_one_ended_paused():
     assert p.load("http://ep2", "Los Simpson 24/7", {"synthetic": True, "video_id": "tt0096697:5:8"})
     at = next(i for i, c in enumerate(mpv.sent) if c[0] == "loadfile")
     assert ("set_property", "pause", False) in mpv.sent[at + 1:]
+
+
+def _shaded_screens(ass: str) -> float:
+    """Cuántas pantallas cubren, sumadas, las figuras de una capa (lo que pesa en libass)."""
+    import re
+
+    total = 0.0
+    for line in ass.split("\n"):
+        m = re.search(r"\\p1\}(.*?)\{\\p0\}", line)
+        if m:
+            nums = [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", m.group(1))]
+            total += (max(nums[0::2]) - min(nums[0::2])) * (max(nums[1::2]) - min(nums[1::2]))
+    return total / (player_ui.W * player_ui.H)
+
+
+def test_every_layer_fits_what_mpv_can_paint_at_4k():
+    """A 4K, libass deja de pintar una capa cuyas figuras suman más de ~12 pantallas: la pausa (con su sombra de 28 pasos)
+    sumaba 21 y en la TV no salía nada de ella, solo la imagen del logo. Medido en la Lenovo con mpv de verdad."""
+    hud = player_ui.Hud(title="Los Expedientes Secretos X", detail="T1 E1", position=3, duration=2894, paused=True, audio="",
+                        subtitles="", source="", series=True, now="9:50", chapters=[], chapter_titles=[], facts="1993",
+                        description="Fox Mulder y Dana Scully investigan casos sin explicación.", seeking="", pip=False)
+    layers = {"pausa": player_ui.hud_ass(hud)}
+    hud.paused = False
+    layers["barra"] = player_ui.hud_ass(hud)
+    tracks = [{"type": "audio", "id": 1, "lang": "spa", "selected": True}, {"type": "sub", "id": 2, "lang": "eng"}]
+    layers["panel"] = player_ui.panel_ass(player_ui.tracks_panel(tracks, 1.0))
+    layers["canal"] = player_ui.live_hud_ass(player_ui.LiveHud(name="Canal 5", number=5))
+    for name, ass in layers.items():
+        assert _shaded_screens(ass) <= player_ui.SHADE_BUDGET, f"{name}: {_shaded_screens(ass):.1f} pantallas"

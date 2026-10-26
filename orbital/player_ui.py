@@ -238,6 +238,12 @@ def ring(cx: float, cy: float, r: float, thickness: float, fraction: float, colo
     return _shape("m " + outside[0] + " l " + " ".join(outside[1:] + inside), color, alpha)
 
 
+# Cuánto pueden cubrir, sumadas, las figuras de una capa (en pantallas completas): a 4K libass deja de pintar la capa
+# entera pasando de ~12 (medido en la Lenovo con mpv: 12.3 sí, 16.5 no). Cada paso de un velo es una figura que llega
+# hasta su orilla oscura, así que un velo de muchos pasos cuesta varias pantallas.
+SHADE_BUDGET = 11.0
+
+
 def gradient(y0: float, y1: float, top_alpha: int, bottom_alpha: int, steps: int = 32) -> str:
     """Velo negro que va de `top_alpha` a `bottom_alpha` (255 = transparente) sin franjas visibles.
 
@@ -473,7 +479,7 @@ def hud_ass(hud: Hud) -> str:
     targets["hud"] = []
     if hud.paused and not hud.seeking:
         return paused_ass(hud)
-    lines = [gradient(470, H, 255, 34)]
+    lines = [gradient(470, H, 255, 34, 20)]  # 20 pasos: dentro de SHADE_BUDGET a 4K
     bar, knob = progress_bar(hud)
     if hud.seeking:  # adelantando: solo la barra y, sobre el punto, a dónde vas
         center = max(MARGIN + 220, min(W - MARGIN - 220, knob if knob is not None else W / 2))
@@ -517,8 +523,10 @@ def paused_ass(hud: Hud) -> str:
     placed.pop("logo", None)
     # Más oscuro que antes (88) y con la sombra que entra desde la izquierda, donde va el título: el video se ve, pero
     # el logo y el texto descansan sobre negro, como el arte de la ficha.
-    lines = [rrect(0, 0, W, H, 0, SHADE, "70"), side_gradient(W * .62, 90), gradient(420, H, 255, 60),
-             gradient(0, 200, 140, 255, 14)]
+    # Pocas capas (SHADE_BUDGET): cada una es una figura casi del tamaño de la pantalla y, a 4K, libass no alcanzaba a
+    # pintar las ~75 de antes: no salía nada de la pausa, solo la imagen del logo encima (lo que vio Fernando en la TV).
+    lines = [rrect(0, 0, W, H, 0, SHADE, "70"), side_gradient(W * .62, 90, steps=8), gradient(420, H, 255, 60, 12),
+             gradient(0, 200, 140, 255, 8)]
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
     if hud.pip:
@@ -971,7 +979,7 @@ def live_hud_ass(hud: LiveHud) -> str:
     """La barra del canal, abajo a la izquierda: su número en un bloque claro, el nombre y, debajo, el estado,
     la categoría y la calidad. Sin barra de avance (en vivo no hay a dónde adelantar) y con los botones de la TV."""
     targets["hud"] = []
-    lines = [gradient(560, H, 255, 34), gradient(0, 200, 100, 255, 14)]
+    lines = [gradient(560, H, 255, 34, 20), gradient(0, 200, 100, 255, 14)]
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
     number = str(hud.number) if hud.number else "—"
