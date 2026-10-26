@@ -320,6 +320,8 @@ export function videoMemoryOptions(video) {
  * Antes de jugar algo pesado (Switch, Wii U…) con poca memoria: cerrar lo que estorba o jugar así.
  * Primero lo que se recomienda; cada programa también por separado (con su aviso, como en «Liberar memoria»).
  */
+const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1); // «la app de Claude» al inicio de una frase
+
 export function beforePlayMenu(item, { free_mb: free, apps = [] }, runner = null) {
   const total = apps.reduce((sum, app) => sum + app.mb, 0);
   const close = (list) => ({ type: "before-play-close", id: item.id, runner, exes: list.map((a) => a.exe) });
@@ -329,7 +331,7 @@ export function beforePlayMenu(item, { free_mb: free, apps = [] }, runner = null
     subtitle: `Quedan ${gb(free)} libres y el juego puede trabarse. Cerrar estos programas libera ${gb(total)}.`,
     options: [
       { icon: "play", label: "Cerrar todo y jugar", value: gb(total),
-        hint: [apps.map((a) => a.name).join(" · "), ...warnings].join(". "), command: close(apps) },
+        hint: capitalize([apps.map((a) => a.name).join(" · "), ...warnings].join(". ")), command: close(apps) },
       { icon: "play", label: "Jugar así", command: { type: "launch", id: item.id, runner, roomChecked: true } },
       ...(apps.length > 1 ? apps.map((app) => ({ icon: "close", label: `Cerrar solo ${app.name} y jugar`, value: gb(app.mb),
         hint: app.warning || undefined, command: close([app]) })) : []),
@@ -500,7 +502,7 @@ const SETTING_PAGES = {
     ["video_idle_minutes", "Cerrar videos olvidados en pausa", "Tu avance se guarda"],
     ["video_home", "Home durante un video", "En pequeño: sigue en una esquina"],
     ["close_previous", "Abrir algo nuevo cierra lo anterior", null],
-    ["game_mode", "Cerrar Orbital mientras juegas", "Switch, Wii U…: ~0.7 GB más para el juego. Home la abre en un segundo"]] },
+    ["game_mode", "Cerrar Orbital al jugar", "Más memoria para Switch, Wii U…"]] },
 };
 
 export function settingsMenu() {
