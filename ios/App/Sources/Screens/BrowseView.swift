@@ -44,7 +44,8 @@ struct BrowseView: View {
         .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .searchable(text: $query, prompt: Text("Películas y series"))
+        // La barra siempre a la vista al abrir Buscar (antes, a veces había que bajar para que saliera).
+        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Películas y series"))
         // Nombres propios: sin autocorrector ni mayúscula automática («Shōgun» no se vuelve «Shotgun»); al deslizar los
         // resultados, el teclado se va para verlos.
         .autocorrectionDisabled()
