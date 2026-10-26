@@ -103,7 +103,8 @@ edición» con `sub-speed`.
   `watch.resume_position` lee `GET /sync/playback?extended=full` (`library/trakt.py` · `Trakt.playback`, un minuto de
   caché; `forget_playback` al pausar o cerrar, desde `scrobble.py`) y `trakt.latest_resume` elige lo más reciente entre
   Stremio (`lastWatched`, solo si es el mismo video) y Trakt (`paused_at`). El porcentaje pasa a segundos con la duración
-  de Stremio o, si no la hay, con el `runtime` de Trakt, 10 s antes; ≥ 80 % no se retoma. Escribir ya funcionaba.
+  de Stremio o, si no la hay, con el `runtime` de Trakt, en el segundo exacto (decisión de Fernando, igual que el iPhone).
+  Escribir ya funcionaba.
 - **Destacado** (85380319): una sugerencia de una lista de Trakt o de un complemento lleva `in_list` y el héroe no pone
   «En «RT: Certified Fresh»»; «N.º 1 en Netflix», «Recomendada» y «En tendencia» sí.
 - **Píldora de plataforma** (48293874): `PlatformBadge` en el mosaico de Para ti: cápsula del color de la plataforma,

@@ -62,8 +62,6 @@ def scrobble_target(kind: str, meta_id: str, video_id: str | None) -> dict | Non
 
 
 PLAYBACK_TTL = 60  # s: el avance de Trakt (/sync/playback) se vuelve a pedir a lo más cada minuto (como el iPhone)
-RESUME_BACK = 10  # s antes del punto de Trakt: su porcentaje se redondea y la duración de la copia puede ser otra
-WATCHED_PERCENT = 80  # Trakt marca visto desde 80 %: arriba de eso no hay punto que retomar
 
 
 def playback_key(kind: str, meta_id: str, video_id: str | None) -> str | None:
@@ -109,15 +107,15 @@ def playback_entry(row) -> tuple[str, dict] | None:
 def latest_resume(stremio_seconds: float, stremio_when: float | None, duration: float | None,
                   trakt: dict | None) -> float:
     """Dónde seguir: lo más reciente entre Stremio (segundos exactos) y Trakt (porcentaje, a segundos con la duración de
-    Stremio para ese video o, si no la hay, la que dice Trakt), como ResumePoint.latest del iPhone. 0 = desde el inicio."""
+    Stremio para ese video o, si no la hay, la que dice Trakt), como ResumePoint.latest del iPhone. El punto exacto, sin
+    regresar unos segundos (decisión de Fernando). Pasado el 80 % Trakt no guarda punto (lo marca visto): queda el de
+    Stremio. 0 = desde el inicio."""
     if not trakt or (stremio_when is not None and stremio_when >= trakt["paused_at"]):
         return stremio_seconds  # lo de Stremio es más nuevo (también si ahí ya lo terminaste: 0)
-    if not 0 < trakt["percent"] < WATCHED_PERCENT:
-        return stremio_seconds
     length = duration if duration and duration > 0 else trakt.get("runtime")
-    if not length:
+    if trakt["percent"] <= 0 or not length:
         return stremio_seconds  # sin duración no se sabe a qué segundo va el porcentaje
-    return max(0.0, trakt["percent"] / 100 * length - RESUME_BACK)
+    return trakt["percent"] / 100 * length
 
 
 class TraktError(Exception):

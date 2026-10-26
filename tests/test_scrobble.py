@@ -304,12 +304,12 @@ def test_pausing_or_closing_forgets_the_cached_playback(monkeypatch):
 
 def test_the_most_recent_resume_point_wins_like_the_iphone():
     tr = {"percent": 50.0, "paused_at": 2000.0, "runtime": 6000.0}
-    assert trakt.latest_resume(300.0, 1000.0, 7200.0, tr) == 3600 - trakt.RESUME_BACK  # Trakt más nuevo: con la duración de Stremio
+    assert trakt.latest_resume(300.0, 1000.0, 7200.0, tr) == 3600  # Trakt más nuevo: el punto exacto, con la duración de Stremio
     assert trakt.latest_resume(300.0, 3000.0, 7200.0, tr) == 300.0  # Stremio más nuevo
     assert trakt.latest_resume(0.0, 3000.0, 7200.0, tr) == 0.0  # en Stremio lo terminaste después: desde el inicio
-    assert trakt.latest_resume(0.0, None, None, tr) == 3000 - trakt.RESUME_BACK  # solo Trakt: su propia duración
+    assert trakt.latest_resume(0.0, None, None, tr) == 3000  # solo Trakt: su propia duración
     assert trakt.latest_resume(120.0, None, None, None) == 120.0  # sin Trakt: lo de siempre
-    assert trakt.latest_resume(120.0, 1000.0, None, {**tr, "percent": 85.0}) == 120.0  # ≥ 80 %: visto, no se retoma
+    assert trakt.latest_resume(120.0, 1000.0, None, {**tr, "percent": 85.0}) == 6120.0  # también arriba de 80 %: el punto exacto
     assert trakt.latest_resume(0.0, None, None, {**tr, "runtime": None}) == 0.0  # sin duración no se adivina
     assert trakt.playback_key("series", "tt0386676", "tt0386676:2:5") == "tt0386676:2:5"
     assert trakt.playback_key("movie", "tt1375666", "tt1375666") == "tt1375666"
@@ -327,8 +327,8 @@ def test_watch_resumes_from_trakt_when_the_iphone_paused_later(monkeypatch):
                               "lastWatched": "2026-10-25T20:00:00.000Z"}}
     w = SimpleNamespace(scrobbler=s, credentials=Creds(), stremio_client=SimpleNamespace(library_item=lambda key, meta: stremio_item))
     w._trakt_playback = lambda m, v: Watch._trakt_playback(w, m, v)
-    # El iPhone pausó al 30 % hoy (más nuevo que Stremio, ayer): 30 % de 22 min (la duración de Stremio) − 10 s.
-    assert Watch.resume_position(w, "tt0386676", "tt0386676:2:5") == .3 * 1320 - 10
+    # El iPhone pausó al 30 % hoy (más nuevo que Stremio, ayer): 30 % de 22 min (la duración de Stremio), exacto.
+    assert Watch.resume_position(w, "tt0386676", "tt0386676:2:5") == .3 * 1320
     stremio_item["state"]["lastWatched"] = "2026-10-26T15:00:00.000Z"  # luego viste más aquí: gana Stremio
     assert Watch.resume_position(w, "tt0386676", "tt0386676:2:5") == 120.0
     t.credentials.set(trakt.TOKENS_KEY, None)  # sin Trakt conectado: solo Stremio, sin pedirle nada
