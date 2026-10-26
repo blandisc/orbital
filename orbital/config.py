@@ -40,7 +40,7 @@ class UiConfig:
 class SteamConfig:
     enabled: bool = True
     path: str | None = None  # None = autodetectar
-    # Steam abierto en segundo plano (sin ventana): abrir un juego va directo al juego.
+    # Al abrir un juego de Steam, Steam se abre antes en segundo plano (sin ventana): el juego abre directo, sin su ventana.
     silent_start: bool = True
 
 

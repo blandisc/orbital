@@ -305,8 +305,8 @@ class Catalog:
                     self._steam_owned = sorted(steam.owned_appids(self.steam_root) - have)
                 except Exception:  # noqa: BLE001 - un archivo de Steam roto no tumba el escaneo
                     log.exception("No pude leer la biblioteca de Steam")
-                if self.config.steam.silent_start and self.config.source:  # no en pruebas
-                    threading.Thread(target=steam.start_silent, args=(self.steam_root,), daemon=True).start()
+                # Steam ya no se abre al arrancar Orbital (eran ~0,6 GB todo el día que los juegos necesitan): se abre en
+                # silencio al abrir un juego de Steam (sessions.launch › steam.ready_silent).
                 found.append(
                     LibraryItem(
                         id="steam:bigpicture",
