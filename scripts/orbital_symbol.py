@@ -28,7 +28,7 @@ THIN, REGULAR, BLACK = (0.7, 0.6, 1.5), (1.9, 1.5, 2.3), (3.4, 2.8, 2.9)   # má
 def weight(i: int) -> tuple[float, float, float]:
     """Del delgado al normal (0…3) y del normal al grueso (3…8), en línea recta."""
     a, b, t = (THIN, REGULAR, i / 3) if i <= 3 else (REGULAR, BLACK, (i - 3) / 5)
-    return tuple(x + (y - x) * t for x, y in zip(a, b))
+    return tuple(x + (y - x) * t for x, y in zip(a, b, strict=True))
 
 
 WEIGHTS = {f"{name}-{scale}": weight(i) for i, name in enumerate(WEIGHT_NAMES) for scale in "SML"}
@@ -69,8 +69,8 @@ def stroked_ring(width: float) -> list[tuple[float, float]]:
         dx, dy = b[0] - a[0], b[1] - a[1]
         length = math.hypot(dx, dy) or 1
         normals.append((-dy / length, dx / length))
-    left = [(c[0] + n[0] * half, c[1] + n[1] * half) for c, n in zip(centers, normals)]
-    right = [(c[0] - n[0] * half, c[1] - n[1] * half) for c, n in zip(centers, normals)]
+    left = [(c[0] + n[0] * half, c[1] + n[1] * half) for c, n in zip(centers, normals, strict=True)]
+    right = [(c[0] - n[0] * half, c[1] - n[1] * half) for c, n in zip(centers, normals, strict=True)]
 
     def cap(center, normal, flip):
         base = math.atan2(normal[1], normal[0])
