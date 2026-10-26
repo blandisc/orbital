@@ -1134,7 +1134,9 @@ public final class PlayerModel: ObservableModel {
     // MARK: intro y siguiente episodio
     /// Las marcas de IntroDB del video que va a sonar (una vez por video; otra fuente del mismo no las vuelve a pedir).
     /// Esperas entre reintentos de las marcas de IntroDB cuando no responde.
-    var segmentRetryDelays: [Double] = [2, 5]
+    /// Antes eran dos (2 y 5 s) y luego se rendía por toda la reproducción: con la red floja al empezar, el episodio se quedaba
+    /// sin botón aunque la intro llegara minutos después (las de Game of Thrones empiezan pasados los 7 min).
+    var segmentRetryDelays: [Double] = [2, 5, 15, 30, 60, 120]
     private func loadSegmentsIfNeeded() {
         guard let videoID = request?.videoID, segmentsFor != videoID else { return }
         segmentsFor = videoID

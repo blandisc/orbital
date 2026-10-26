@@ -9,6 +9,7 @@ extension Services {
                               subtitle: String, poster: String?, source chosen: Source? = nil, replace: Bool = false,
                               keepBoth: Bool = false) async -> TitleModel.DownloadOutcome {
         let langs = titlePrefs.languages(for: metaID, settings: appSettings)
+        introDB.warm(videoID: videoID)   // «Saltar intro» también sin conexión: las marcas se guardan con la descarga
         do {
             // La que elegiste en «Elegir la fuente» (si tiene enlace); si no, la que mejor sirve para guardar.
             // Una lista de reproducción (HLS/DASH) no es un archivo: esa no se baja aunque la elijas.
