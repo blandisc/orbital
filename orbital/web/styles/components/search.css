@@ -37,6 +37,14 @@
 /* Dictando: la línea respira con el acento del juego. */
 .search__field--listening { border-color: var(--color-accent); animation: listening var(--duration-breathe) var(--ease-float) infinite; }
 @keyframes listening { 50% { border-color: transparent; } }
+/* Buscando: la raya del campo barre de lado a lado (solo mientras va en camino; con movimiento reducido, quieta y encendida). */
+.search__field { position: relative; }
+.search--searching .search__field::after {
+  content: ""; position: absolute; inset: auto 0 -2px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent) 0 0 / 40% 100% no-repeat;
+  animation: search-sweep var(--duration-launch-sweep) var(--ease-sweep) infinite;
+}
+@keyframes search-sweep { from { background-position: -70% 0; } to { background-position: 170% 0; } }
 .search__hint { flex: 0 1 36%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-muted); font-size: var(--type-secondary); }
 
 /* Resultados: la misma tarjeta que en el inicio, en una fila con desplazamiento. */
@@ -82,6 +90,16 @@
 /* Caja vacía, solo búsquedas recientes (sin portadas): las píldoras, sin el lugar de las portadas. */
 .search__results--recent { min-height: 0; padding-bottom: var(--space-4); }
 .search__set--pills { gap: var(--space-3); }
+/* Lo que va en camino: portadas vacías del tamaño de las de verdad, con un brillo que pasa (search.js · showResults). */
+.search__ghost {
+  flex: none; width: calc(var(--card-height) * .667); height: var(--card-height); border-radius: var(--card-radius);
+  background: linear-gradient(100deg, var(--color-fill) 30%, var(--color-fill-hover) 50%, var(--color-fill) 70%) 0 0 / 300% 100%;
+  animation: search-shimmer var(--duration-launch-sweep) var(--ease-sweep) infinite, fade-in var(--duration-base) var(--ease-out);
+}
+.search__ghost:nth-child(2) { animation-delay: var(--delay-1), var(--duration-none); }
+.search__ghost:nth-child(3) { animation-delay: var(--delay-2), var(--duration-none); }
+.search__ghost:nth-child(4) { animation-delay: var(--delay-3), var(--duration-none); }
+@keyframes search-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
 .search__set--pills .search__set-cards { align-items: center; gap: var(--space-3); }
 
 @media (max-height: 640px) {

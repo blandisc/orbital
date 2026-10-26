@@ -107,8 +107,10 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     hint.textContent = message;
   }
 
-  /** Resultados con encabezado por grupo (los encabezados no se enfocan). */
-  function showResults(list) {
+  /** Resultados con encabezado por grupo (los encabezados no se enfocan). Buscando: al final, el lugar de las películas y
+   * series con portadas vacías que brillan, y la raya del campo barre: se ve que algo va en camino. */
+  function showResults(list, { searching = false } = {}) {
+    el.classList.toggle("search--searching", searching);
     items = groupResults(list);
     focusables = [];
     // Cada grupo con su nombre ENCIMA de sus portadas, derecho (antes girado 90° entre las portadas).
@@ -120,7 +122,10 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       sets.at(-1).cards.push(card);
     });
     mount(results, sets.map((s) => h("div", { class: "search__set" },
-      h("span", { class: "search__group", "aria-hidden": "true" }, GROUPS[s.group]), h("div", { class: "search__set-cards" }, s.cards))));
+      h("span", { class: "search__group", "aria-hidden": "true" }, GROUPS[s.group]), h("div", { class: "search__set-cards" }, s.cards))),
+    searching && h("div", { class: ["search__set", "search__set--ghost"], "aria-hidden": "true" },
+      h("span", { class: "search__group" }, picking?.kind === "series" ? "Series" : picking?.kind === "movie" ? "Películas" : "Películas y series"),
+      h("div", { class: "search__set-cards" }, [0, 1, 2, 3].map(() => h("span", { class: "search__ghost" })))));
     results.classList.remove("search__results--recent");
     if (zone === "results") resultIndex = Math.min(resultIndex, Math.max(0, items.length - 1));
     if (!items.length && zone === "results") zone = "keys";
@@ -132,6 +137,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     // Caja vacía: tus búsquedas recientes y lo popular ahora (como Google TV), no una pantalla en blanco.
     const recent = storage.get(RECENT_KEY, []);
     const trending = popular().slice(0, 10);
+    el.classList.remove("search--searching");
     items = [...recent.map((q) => ({ recent: q })), ...trending];
     const chips = recent.map((q, i) => Pill(q, {
       tone: "fill", icon: svg(ICONS.search), onClick: () => { resultIndex = i; zone = "results"; open(); },
@@ -169,7 +175,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     // Tus juegos y apps al instante; las películas y series llegan después, detrás de ellos.
     // Eligiendo una ficha («Corregir ficha»): solo películas o series del tipo que corrige, nada de tus juegos.
     const local = picking ? [] : localSearch(q);
-    showResults(local);
+    showResults(local, { searching: true });
     setHint(local.length ? `${count(local.length)} · buscando películas y series…` : "Buscando…");
     timer = setTimeout(async () => {
       const mine = ++token;
@@ -183,6 +189,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       } catch (err) {
         if (mine !== token) return;
         pending = "";
+        showResults(local); // sin las portadas vacías: no va a llegar nada
         // Sin internet: tus juegos siguen funcionando; se dice claro y sin jerga.
         setHint(local.length ? `${count(local.length)} · sin conexión para películas y series` : "Sin conexión para películas y series");
       }
@@ -371,6 +378,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     picking = null;
     clearTimeout(timer);
     token++; // una respuesta que llegue tarde ya no pinta nada
+    el.classList.remove("search--searching");
     listening?.stop();
     cancelExit = hideAfterExit(el, "screen--leaving", 300);
     onClose?.();
