@@ -176,6 +176,10 @@ class ConsoleShell:
             return False
         focused = self.win.focus(target)
         log.info("Volver al juego: %s%s", self.win.title(target), "" if focused else " (Windows no lo dejó al frente)")
+        running = self.catalog.launcher.status()
+        sessions = getattr(self.catalog, "sessions", None)
+        if focused and running and sessions is not None and hasattr(sessions, "park_soon"):
+            sessions.park_soon(running["id"])  # modo juego: de vuelta al juego, la ventana de Orbital se cierra otra vez
         if focused and self.player and self.win.exe_name(self.win.pid_of(target)) == PLAYER_EXE:
             self.player.show_progress()  # en pausa, con la barra: A para seguir
         return focused

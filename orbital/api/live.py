@@ -34,12 +34,36 @@ class VoiceRequest(BaseModel):
 class SseHub:
     """Reparte eventos a las pantallas conectadas vía SSE (una cola por pantalla)."""
 
+    BACKLOG = 30  # avisos guardados como mucho mientras la ventana de Orbital está cerrada
+    BACKLOG_FOR = 60.0  # s después de reabrirla en que el primero que se conecta los recibe
+
     def __init__(self) -> None:
         self._subscribers: set[asyncio.Queue] = set()
         self.loop: asyncio.AbstractEventLoop | None = None
+        self._held = False  # modo juego: la ventana de Orbital está cerrada
+        self._backlog: list[dict] = []
+        self._deliver_until = 0.0
+
+    def hold(self) -> None:
+        """La ventana de Orbital se cerró (modo juego): guardar los avisos («De vuelta de…», memoria) para entregarlos
+        cuando se vuelva a abrir, en vez de que se pierdan."""
+        self._held, self._backlog = True, []
+
+    def release(self) -> None:
+        """La ventana se está abriendo otra vez: el primero que se conecte en BACKLOG_FOR s recibe lo guardado (y lo
+        que llegue mientras carga: «De vuelta de…» sale justo al reabrirla, antes de que la página se conecte)."""
+        self._held = False
+        self._deliver_until = time.monotonic() + self.BACKLOG_FOR
+
+    def _keeping(self) -> bool:
+        return self._held or time.monotonic() < self._deliver_until
 
     def subscribe(self) -> asyncio.Queue:
         queue: asyncio.Queue = asyncio.Queue(maxsize=100)
+        if not self._held and time.monotonic() < self._deliver_until:
+            for event in self._backlog:
+                queue.put_nowait(event)
+            self._backlog, self._deliver_until = [], 0.0
         self._subscribers.add(queue)
         return queue
 
@@ -47,6 +71,8 @@ class SseHub:
         self._subscribers.discard(queue)
 
     def publish(self, event: dict) -> None:
+        if self._keeping() and event.get("type") != "status" and len(self._backlog) < self.BACKLOG:
+            self._backlog.append(event)  # el estado no: quien se conecta lo recibe al día de todos modos
         for queue in list(self._subscribers):
             if not queue.full():
                 queue.put_nowait(event)

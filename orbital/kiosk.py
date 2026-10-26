@@ -168,6 +168,9 @@ class KioskWindow:
         self._misses = 0  # revisiones seguidas sin ventana visible
         self._guard: threading.Thread | None = None
         self.hide_taskbar = hide_taskbar  # modo consola: la barra de Windows no se asoma al abrir un juego
+        self.parked = False  # modo juego: cerrada mientras juegas algo pesado (Home o terminar la reabren)
+        self.on_park = None  # avisan al servidor para guardar los avisos mientras no hay ventana (ver SseHub.hold)
+        self.on_unpark = None
         self._lock = threading.Lock()
 
     @property
@@ -177,6 +180,11 @@ class KioskWindow:
     def open(self) -> bool:
         with self._lock:
             self.exited_by_user = False
+            if self.parked:
+                self.parked = False
+                log.info("Modo juego: vuelvo a abrir la ventana de Orbital")
+                if self.on_unpark:
+                    self.on_unpark()
             if self.is_open:
                 # El ícono de Orbital con Orbital ya abierto: SU ventana (la de Edge con el perfil de Orbital, no la primera
                 # que diga «Orbital» en su título) al frente; si Edge sigue vivo sin ventana, se reabre.
@@ -330,6 +338,21 @@ class KioskWindow:
                 log.info("Modo consola: barra de tareas escondida")
         except OSError as exc:
             log.debug("No pude %s la barra de tareas: %s", "esconder" if hidden else "mostrar", exc)
+
+    def park(self) -> bool:
+        """Modo juego: cierra la ventana mientras juegas algo pesado (Edge son ~560–800 MB que el juego necesita más).
+        No es «Salir al escritorio»: Home o terminar el juego la vuelven a abrir (open), en ~1 s. Devuelve si la cerró."""
+        with self._lock:
+            proc = self._process
+            if proc is None or proc.poll() is not None or self.exited_by_user:
+                return False
+            self._process = None  # _watch ve que ya no es la suya: no la reabre
+            self.parked = True
+            if self.on_park:
+                self.on_park()
+        log.info("Modo juego: cierro la ventana de Orbital mientras juegas (se reabre con Home o al terminar)")
+        self._kill(proc)
+        return True
 
     def close(self) -> bool:
         """Sale al escritorio. Orbital sigue escuchando (Alexa puede volver a abrirla)."""

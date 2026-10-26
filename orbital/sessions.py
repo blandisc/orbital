@@ -64,6 +64,7 @@ def taskbar_hidden(fn, *args, **kwargs):
                 windows.set_taskbar_visible(True)
 
 QUICK_EXIT = 15  # s: un juego que se cierra antes, solo, seguramente no pudo abrir
+PARK_AFTER = 8.0  # s con el juego al frente antes de cerrar la ventana de Orbital (modo juego)
 
 
 def memory_problem() -> str | None:
@@ -257,6 +258,8 @@ class Sessions:
         def reveal(*args, **kwargs):
             shown = taskbar_hidden(focus.bring_game_to_front, *args, **kwargs)
             health.note_dwm(f"con {title} al frente")
+            if shown:
+                self.park_soon(item_id)
             return shown
 
         threading.Thread(target=reveal, args=(self.launcher, item_id, title, runner),
@@ -265,6 +268,33 @@ class Sessions:
                                  "user_returned": lambda: self.returned_at > launched},
                          daemon=True, name="to-front").start()
         return True
+
+    def game_mode(self, item_id: str) -> bool:
+        """¿Cerrar la ventana de Orbital mientras se juega esto? Solo consolas pesadas (sus emuladores necesitan la
+        memoria que ocupa Edge) y si no lo apagaste en Ajustes › Juegos y videos."""
+        from .memory import HEAVY_SYSTEMS
+
+        item = self.store.get(item_id)
+        if self.kiosk is None or item is None or item.system not in HEAVY_SYSTEMS:
+            return False
+        return self.state.settings().get("game_mode", "heavy") == "heavy"
+
+    def park_soon(self, item_id: str) -> None:
+        """Modo juego: en unos segundos, si sigues en ese juego (no apretaste Home), cerrar la ventana de Orbital."""
+        if not self.game_mode(item_id):
+            return
+        asked = time.monotonic()
+
+        def park() -> None:
+            status = self.launcher.status()
+            if not status or status.get("id") != item_id or self.returned_at > asked:
+                return  # ya se cerró, o volviste a Orbital mientras tanto
+            if self.kiosk is not None:
+                self.kiosk.park()
+
+        timer = threading.Timer(PARK_AFTER, park)
+        timer.daemon = True
+        timer.start()
 
     def art(self, shown: bool) -> None:
         """La pantalla de carga avisa de su arte: `False` viene en camino, `True` ya se ve (o ya no hace falta)."""
