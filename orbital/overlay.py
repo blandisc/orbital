@@ -120,8 +120,16 @@ class GameOverlay:
         def set_progress(fraction: float) -> None:
             canvas.coords(fill, pad, bar_y, pad + (w - 2 * pad) * min(1.0, max(0.0, fraction)), bar_y + bar_h)
 
+        def place() -> None:
+            """Centrado abajo en la pantalla de AHORA: al jugar, Orbital baja la tele a 1080p (display.py) y la posición
+            calculada al arrancar (a 4K) quedaba fuera de la pantalla."""
+            sw, sh = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
+            root.geometry(f"{w}x{h}+{(sw - w) // 2}+{int(sh * FROM_TOP) - h // 2}")
+
         def handle(cmd) -> None:
             kind = cmd[0]
+            if kind in ("show", "notice", "closing"):
+                place()
             bar = "hidden" if kind == "notice" else "normal"
             canvas.itemconfigure(track, state=bar)
             canvas.itemconfigure(fill, state=bar)

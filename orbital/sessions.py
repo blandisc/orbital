@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import companion, emulator_clock, emulator_input, focus, health, system, title_switch
+from . import companion, display, emulator_clock, emulator_input, focus, health, system, title_switch
 from .config import Config
 from .events import EventBus
 from .launcher import Launcher
@@ -186,6 +186,7 @@ class Sessions:
             self.state.record_launch(item.id)
             return item
         if runner or item.argv:
+            self.lower_resolution()  # los juegos a ~1080p (la tele a 4K le cuesta 4 veces más a la gráfica)
             emulator_clock.sync_for(argv or [])  # su hora, la de la computadora (los de Switch traen la suya)
             # El control con el que lo abriste es el Jugador 1, los demás en el orden en que llegaron (Switch y Dolphin).
             order = players.for_launch()
@@ -203,6 +204,8 @@ class Sessions:
             self.watch_program_switch(item, runner.argv if runner else item.argv, runner.cwd if runner else item.cwd,
                                       runner.name if runner else None)
         elif item.uri:
+            if item.source == "steam" and item.steam_appid:
+                self.lower_resolution()
             if item.source == "steam" and item.steam_appid and self.config.steam.silent_start:
                 steam.ready_silent(steam.find_steam(self.config.steam.path))
             self.launcher.open_uri(item.uri)
@@ -270,6 +273,16 @@ class Sessions:
                                  "user_returned": lambda: self.returned_at > launched},
                          daemon=True, name="to-front").start()
         return True
+
+    def lower_resolution(self) -> bool:
+        """Al abrir un juego: ~1080p si no lo apagaste (Ajustes › Juegos y videos › Resolución al jugar)."""
+        if sys.platform != "win32" or self.state.settings().get("game_resolution", "lower") != "lower":
+            return False
+        try:
+            return display.resolution.for_game()
+        except Exception:  # noqa: BLE001 - la resolución nunca impide abrir un juego
+            log.exception("No pude bajar la resolución para jugar")
+            return False
 
     def restart_with_players(self) -> bool:
         """Jugadores › «Reiniciar con estos jugadores»: cierra el juego y lo abre otra vez con el orden de ahora (los de
@@ -401,6 +414,7 @@ class Sessions:
         self.state.record_session(item_id, seconds)
         if self._retry_quick_crash(item_id, title, seconds):
             return
+        display.resolution.restore()  # de vuelta a la resolución de la pantalla (Orbital y las películas, a 4K)
         if self.kiosk is not None and not self.kiosk.exited_by_user:
             self.kiosk.open()  # al frente o, si alguien cerró la ventana, otra vez abierta
         else:

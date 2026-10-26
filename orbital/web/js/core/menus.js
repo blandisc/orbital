@@ -492,6 +492,7 @@ export const SETTING_VALUES = {
   video_home: [["pip", "En pequeño"], ["pause", "Pausar"]],
   close_previous: [[true, "Sí"], [false, "No"]],
   game_mode: [["heavy", "Consolas pesadas"], ["off", "Nunca"]],
+  game_resolution: [["lower", "1080p"], ["native", "La de la pantalla"]],
   emulator_updates: [["avisar", "Avisarme"], ["auto", "Automático"], ["nunca", "No revisar"]],
   screensaver_minutes: [[5, "5 min"], [10, "10 min"], [20, "20 min"], [30, "30 min"], [0, "Nunca"]],
 };
@@ -533,7 +534,7 @@ const SETTING_ICONS = {
   audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", haptics: "gamepad", game_idle_minutes: "gamepad",
   video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide",
-  game_mode: "memory",
+  game_mode: "memory", game_resolution: "hd",
 };
 
 const SETTING_PAGES = {
@@ -551,7 +552,8 @@ const SETTING_PAGES = {
     ["video_idle_minutes", "Cerrar videos olvidados en pausa", "Tu avance se guarda"],
     ["video_home", "Home durante un video", "En pequeño: sigue en una esquina"],
     ["close_previous", "Abrir algo nuevo cierra lo anterior", null],
-    ["game_mode", "Cerrar Orbital al jugar", "Más memoria para Switch, Wii U…"]] },
+    ["game_mode", "Cerrar Orbital al jugar", "Más memoria para Switch, Wii U…"],
+    ["game_resolution", "Resolución al jugar", "Las películas siguen en 4K"]] },
 };
 
 export function settingsMenu() {
