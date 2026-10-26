@@ -369,6 +369,33 @@ struct StudioEmblem: View {
     }
 }
 
+/// El emblema de una temporada o un género al pie de su tarjeta: su ícono blanco (Grok Imagine, en `Assets.xcassets/Collections`)
+/// y su nombre debajo, con el mismo trato que el logo de un estudio. Al abrir la lista, solo el ícono en grande con el halo de su color.
+struct CollectionIconEmblem: View {
+    let slug: String
+    let name: String
+    var size: CGFloat = DS.Collections.iconEmblem
+    var glow: Color?
+
+    var body: some View {
+        VStack(spacing: DS.Space.s1) {
+            // En el color del texto (oscuro en modo claro, claro en oscuro): en blanco se perdía sobre la tarjeta clara.
+            Image("Collections/" + slug).resizable().scaledToFit()
+                .foregroundStyle(DS.text)
+                .frame(width: size, height: size)
+                // Un resplandor del color del fondo detrás: se lee aunque caiga sobre los pósters.
+                .background { Circle().fill(DS.bg).opacity(DS.Collections.iconBackdrop).blur(radius: DS.Collections.glow).scaleEffect(DS.Collections.iconBackdropScale) }
+                .shadow(color: glow ?? .clear, radius: DS.Collections.glow)
+            if glow == nil {
+                Text(verbatim: name).recipe(.caption, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            }
+        }
+        .shadow(DS.Elevation.high.drop(0))
+        .padding(.horizontal, DS.Space.s2)
+        .accessibilityHidden(true)
+    }
+}
+
 /// Una tira de tarjetas (Plataformas, Premios, Estudios, Por año) desde la orilla izquierda: las que van saliendo por los
 /// lados se encogen y oscurecen un poco.
 struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {

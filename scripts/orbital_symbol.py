@@ -22,7 +22,7 @@ RING = ((3.2, 20.4), (7.0, 23.5), (24.4, 18.0), (29.2, 11.6))
 MOON = (27.6, 6.0)
 # Grosores (planeta, anillo, radio de la luna) del más delgado al más grueso, en unidades de la caja.
 WEIGHT_NAMES = ["Ultralight", "Thin", "Light", "Regular", "Medium", "Semibold", "Bold", "Heavy", "Black"]
-THIN, REGULAR, BLACK = (1.0, 0.8, 1.6), (2.8, 2.1, 2.4), (4.6, 3.6, 3.1)
+THIN, REGULAR, BLACK = (1.1, 0.9, 1.7), (3.0, 2.4, 2.6), (4.8, 3.9, 3.3)
 
 
 def weight(i: int) -> tuple[float, float, float]:
@@ -35,7 +35,7 @@ WEIGHTS = {f"{name}-{scale}": weight(i) for i, name in enumerate(WEIGHT_NAMES) f
 # Dónde va cada variante: la columna por grosor y el renglón por tamaño (con su línea base); S más chico, L más grande.
 COLUMN = {f"{name}-{scale}": 413.0 + 300.0 * i for i, name in enumerate(WEIGHT_NAMES) for scale in "SML"}
 ROW = {"S": (696.0, 625.541, 0.84), "M": (1126.0, 1055.54, 1.0), "L": (1556.0, 1485.54, 1.21)}
-UNITS = 92.0
+UNITS = 122.0   # antes 92: en el Centro de control se veía chico
 SAMPLES = 48
 CAP = 10
 

@@ -124,6 +124,10 @@ enum Demo {
     static var shelf: String? { value(after: "-demo-shelf") }
     /// `-demo-mode lists`: en Para ti, abre en Listas (en vez de Mosaico).
     static var mode: String? { value(after: "-demo-mode") }
+    /// `-demo-section seasons`: en Para ti › Listas, baja hasta ese grupo de colecciones (el nombre del caso de `CollectionSection`).
+    static var section: String? { value(after: "-demo-section") }
+    /// `-demo-collection genre:accion` o `season:halloween`: en Para ti › Listas, abre esa lista (con `-demo-tmdb`).
+    static var collection: String? { value(after: "-demo-collection") }
     /// `-demo-lang en`: idioma de la app.
     static var language: String? { value(after: "-demo-lang") }
     /// `-demo-downloads`: Descargas con una película, dos episodios y una a medias (para ver y deslizar los renglones).
@@ -346,10 +350,18 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                                   ["id": 3, "media_type": "movie", "title": "Foxcatcher", "poster_path": "/f.jpg", "popularity": 40, "character": "John du Pont"]]]]
         } else if path.hasPrefix("/watch/providers/") {
             body = ["results": [["provider_id": 8, "provider_name": "Netflix"], ["provider_id": 337, "provider_name": "Disney Plus"], ["provider_id": 1899, "provider_name": "HBO Max"]]]
+        } else if path.hasPrefix("/search/keyword") {
+            // «Temporadas»: la palabra clave de cada una (cualquiera sirve: el discover de abajo no la mira).
+            let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "query" }?.value ?? ""
+            body = ["results": [["id": .int(1 + query.unicodeScalars.reduce(0) { $0 + Int($1.value) } % 997), "name": .string(query)]]]   // una por temporada: listas distintas
         } else if path.hasPrefix("/discover/") {
             // Colecciones › Estudios y «Nuevo en tus plataformas»: ids 100+ que la ficha de abajo vuelve títulos reales.
+            // «Lo mejor del género» y «Temporadas» piden 12 (con nota y popularidad): así llega a 10 al primer intento y el año es el de hoy.
             let offset = abs(url.query?.hashValue ?? 0) % Self.demoIMDb.count
-            body = ["results": .array((0..<8).map { ["id": .int(100 + (offset + $0) % Self.demoIMDb.count)] })]
+            let ranked = url.query?.contains("with_genres") == true || url.query?.contains("with_keywords") == true
+            body = ["results": .array((0..<(ranked ? Self.demoIMDb.count : 8)).map { i in
+                ["id": .int(100 + (offset + i) % Self.demoIMDb.count), "vote_average": .double(9 - Double(i) / 10), "popularity": .double(100 - Double(i))]
+            })]
         } else if let id = Int(url.lastPathComponent), id >= 100, Self.demoIMDb.indices.contains(id - 100) {
             let pick = Self.demoIMDb[id - 100]
             body = ["id": .int(id), "title": .string(pick.1), "name": .string(pick.1), "imdb_id": .string(pick.0), "release_date": "2024-03-01", "first_air_date": "2024-03-01"]

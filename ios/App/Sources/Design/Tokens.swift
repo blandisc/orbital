@@ -656,6 +656,18 @@ enum DS {
         static let studio = Color(red: 0.55, green: 0.56, blue: 0.62)
         /// El logo del estudio en su cápsula.
         static let studioLogoWidth: CGFloat = 96, studioLogoHeight: CGFloat = 26
+        /// El halo de cada temporada de «Temporadas»: Halloween naranja, Día de Muertos rosa mexicano, Navidad verde, San Valentín
+        /// guinda y Verano ámbar. Los géneros usan el neutro de los estudios.
+        static let halloween = Color(red: 0.95, green: 0.47, blue: 0.12), muertos = Color(red: 0.89, green: 0.0, blue: 0.49)
+        static let navidad = Color(red: 0.13, green: 0.58, blue: 0.32), sanValentin = Color(red: 0.62, green: 0.11, blue: 0.25)
+        static let verano = Color(red: 0.96, green: 0.71, blue: 0.16)
+        static func season(_ slug: String) -> Color {
+            switch slug { case "halloween": halloween; case "muertos": muertos; case "navidad": navidad; case "sanvalentin": sanValentin; case "verano": verano; default: studio }
+        }
+        /// El ícono blanco de una temporada o un género al pie de su tarjeta (con su nombre debajo) y en grande al abrirla.
+        static let iconEmblem: CGFloat = 40, iconHeader: CGFloat = 56   // antes 22: al pie de la tarjeta se perdía
+        /// El resplandor detrás del ícono de una temporada o género (cuánto tapa y de qué tamaño).
+        static let iconBackdrop = 0.85, iconBackdropScale: CGFloat = 1.3
         static func tint(_ award: String) -> Color {
             switch award { case "emmy": silver; case "bafta", "ariel": bronze; default: gold }
         }

@@ -22,6 +22,12 @@ public final class CollectionsModel: ObservableModel {
     /// El logo de cada estudio (TMDB), si lo tiene; se guarda en el iPhone (no cambia).
     public private(set) var studioLogos: [Int: String] = [:] { didSet { changed() } }
     public var tmdbReady: Bool { services.tmdb.configured }
+    /// «Temporadas»: la de hoy primero (o la siguiente en llegar) y las demás en el orden en que llegan; lo de cada una se pide al verla.
+    public var seasons: [TmdbSeason] { Tmdb.orderedSeasons(today: services.now()) }
+    public private(set) var seasonItems: [String: [Suggestion]] = [:] { didSet { changed() } }
+    /// «Lo mejor del género»: los 14 géneros y el Top de cada uno (con el año de verdad), que se pide al verlo.
+    public let genres: [TmdbGenre] = Tmdb.genres
+    public private(set) var genreCharts: [String: GenreChart] = [:] { didSet { changed() } }
     /// Los años de «Por año», del actual hacia atrás.
     public let years: [Int]
 
@@ -87,6 +93,19 @@ public final class CollectionsModel: ObservableModel {
             studioLogos[id] = logo
             services.kv.set(key, data: logo.data(using: .utf8))
         }
+    }
+
+    /// Lo de una temporada (una vez; luego de la caché).
+    public func loadSeason(_ slug: String) async {
+        guard seasonItems[slug] == nil else { return }
+        let found = await services.forYou.seasonItems(slug: slug)
+        if !found.isEmpty { seasonItems[slug] = found }
+    }
+
+    /// El Top de un género (una vez; luego de la caché).
+    public func loadGenre(_ slug: String) async {
+        guard genreCharts[slug] == nil else { return }
+        if let chart = await services.forYou.genreChart(slug: slug), !chart.items.isEmpty { genreCharts[slug] = chart }
     }
 
     /// La calificación de IMDb de cada título (de Cinemeta, 12 a la vez), para «Mejor calificadas en IMDb»; se recuerda.

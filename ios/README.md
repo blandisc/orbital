@@ -147,6 +147,8 @@ públicos y Cinemeta de verdad. Nada toca tu Keychain ni tus ajustes. Para abrir
 | `-demo-autoscroll` | con `-demo-title`, a los ~2 s la ficha baja sola y suave hasta ~600 pt (~4 s), espera 1 s y regresa arriba (~3 s): para grabar el arte con `xcrun simctl io <udid> recordVideo` |
 | `-demo-search dune` | una búsqueda en Ver |
 | `-demo-mode lists` | en Para ti, abre en Listas (con `-demo-console`, el feed completo de estantes) |
+| `-demo-section seasons` · `genres` | en Para ti › Listas, baja hasta ese grupo (con `-demo-tmdb`: Temporadas y Lo mejor del género) |
+| `-demo-collection genre:terror` · `season:halloween` | en Para ti › Listas, abre esa lista (con `-demo-tmdb`) |
 | `-demo-lang en` | la app en inglés |
 | `-demo-signed-out` | la pantalla de entrada |
 | `-demo-gesture brightness` · `volume` · `seek` · `fastforward` · `fastforward-locked` | con el reproductor abierto, simula ese gesto a medio camino (`fastforward-locked`: 2× fijo y píldora a la vista; ver «Gestos del reproductor») |

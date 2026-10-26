@@ -643,11 +643,22 @@ TRANSLATIONS = {
     "Toca para ver los detalles": "Tap to see the details", "Toca para cerrar los detalles": "Tap to close the details", "Copiar nombre": "Copy name",
     "Grabada en el cine": "Theater recording", "La que ves": "Playing now", "comprobado": "checked", "lo dice el nombre": "the name says so",
     "lo dice el sitio": "the site says so", "Todas, por calidad · toca una": "All, by quality · tap one",
+    # Para ti › Listas: «Temporadas» y «Lo mejor del género» (los nombres y frases vienen de Tmdb.seasons / Tmdb.genres).
+    "Temporadas": "Seasons", "La de ahora, primero": "The current one first", "Lo mejor del género": "Best by genre",
+    "Las mejor calificadas del año": "The year's top rated", "Las más populares de %@": "The most popular of %@",
+    "Lo mejor de %@ en %@": "The best of %@ in %@", "Pocas de %@: las mejor calificadas de %@": "Few from %@: the top rated of %@",
+    "Pocas de %@: lo más visto en %@": "Few from %@: the most watched in %@",
+    "Halloween": "Halloween", "Día de Muertos": "Day of the Dead", "Navidad": "Christmas", "San Valentín": "Valentine's Day", "Verano": "Summer",
+    "Sustos, brujas y calabazas": "Scares, witches and pumpkins", "Para recordar a los que se fueron": "To remember those who are gone",
+    "Para ver en familia": "To watch with the family", "Para ver en pareja": "To watch as a couple", "Sol, playa y vacaciones": "Sun, beach and vacation",
+    "Acción": "Action", "Aventura": "Adventure", "Animación": "Animation", "Comedia": "Comedy", "Crimen": "Crime", "Documental": "Documentary",
+    "Drama": "Drama", "Familia": "Family", "Fantasía": "Fantasy", "Terror": "Horror", "Misterio": "Mystery", "Romance": "Romance",
+    "Ciencia ficción": "Science fiction", "Suspenso": "Thriller",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
-          "Icons/", "Glyphs/donut", "Avatars/", "Awards/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
+          "Icons/", "Glyphs/donut", "Avatars/", "Awards/", "Collections/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 

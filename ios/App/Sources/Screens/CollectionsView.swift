@@ -4,11 +4,12 @@ import OrbitalModels
 
 /// Los grupos de Para ti › Listas, en orden (el menú «Ir a una sección» los lista así).
 enum CollectionSection: CaseIterable, Hashable {
-    case forYou, platforms, studios, awards, years, airings, trakt, stremio, yourYear
+    case forYou, platforms, studios, seasons, genres, awards, years, airings, trakt, stremio, yourYear
     var title: Text {
         switch self {
         case .forYou: Text("Para ti"); case .trakt: Text("Listas de Trakt"); case .stremio: Text("Listas de Stremio")
         case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .studios: Text("Estudios"); case .years: Text("Por año")
+        case .seasons: Text("Temporadas"); case .genres: Text("Lo mejor del género")
         case .airings: Text("Próximos estrenos"); case .yourYear: Text("Tu año")
         }
     }
@@ -17,6 +18,7 @@ enum CollectionSection: CaseIterable, Hashable {
     var symbol: String {
         switch self {
         case .forYou: "sparkles"; case .platforms: "play.tv"; case .studios: "film.stack"; case .awards: "trophy"
+        case .seasons: "leaf"; case .genres: "medal"
         case .years: "calendar"; case .airings: "calendar.badge.clock"; case .trakt: "list.bullet.rectangle"; case .stremio: "rectangle.stack"
         case .yourYear: "square.grid.3x3.fill"
         }
@@ -38,9 +40,9 @@ struct SectionSpy: ViewModifier {
     }
 }
 
-/// Una colección abierta: un premio, un año o Mi lista de Stremio.
+/// Una colección abierta: un premio, un año, Mi lista de Stremio, un estudio, una temporada o un género (su slug).
 struct CollectionRoute: Hashable {
-    enum Kind: Hashable { case award, year, myList, studio }
+    enum Kind: Hashable { case award, year, myList, studio, season, genre }
     let kind: Kind
     let id: String
 }
@@ -63,11 +65,15 @@ struct CollectionGridView: View {
                 if route.kind == .year {
                     DSKindFilter(kind: $kind, includeAll: false).padding(.horizontal, DS.Space.gutter)
                 }
-                // Un año ya trae su Películas · Series arriba: el menú no repite ese filtro.
-                SortableGrid(listID: "\(route.kind):\(route.id)", items: items, watched: { await collections.model.watchedIDs() },
-                             imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) },
-                             showsKindFilter: route.kind != .year, loading: isLoading) { s, width in
-                    TitleLink(route: s.route, width: width, detail: detail(s))
+                if route.kind == .genre {
+                    rankedGrid   // un Top: en su orden, con el puesto (como la TV), sin ordenar ni filtrar
+                } else {
+                    // Un año ya trae su Películas · Series arriba: el menú no repite ese filtro.
+                    SortableGrid(listID: "\(route.kind):\(route.id)", items: items, watched: { await collections.model.watchedIDs() },
+                                 imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) },
+                                 showsKindFilter: route.kind != .year, loading: isLoading) { s, width in
+                        TitleLink(route: s.route, width: width, detail: detail(s))
+                    }
                 }
             }
             .padding(.bottom, DS.Space.s14)
@@ -78,6 +84,8 @@ struct CollectionGridView: View {
             // Un estudio se pide aquí; un premio llega con las colecciones. Si al final no hay nada (falló o tardó
             // demasiado), el vacío en lugar de la ruedita para siempre.
             if route.kind == .studio, let id = Int(route.id) { await collections.model.loadStudio(id) }
+            else if route.kind == .season { await collections.model.loadSeason(route.id) }
+            else if route.kind == .genre { await collections.model.loadGenre(route.id) }
             else { try? await Task.sleep(nanoseconds: DS.Timing.listGiveUp) }
             settled = true
         }
@@ -103,6 +111,62 @@ struct CollectionGridView: View {
                 }
             }
             .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+        } else if let heading {
+            // Una temporada o un género: su ícono con el halo de su color, el título de la lista y su renglón.
+            HStack(spacing: DS.Space.s4) {
+                CollectionIconEmblem(slug: route.id, name: "", size: DS.Collections.iconHeader, glow: heading.tint)
+                    .padding(DS.Space.s3)
+                    .background(heading.tint, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    heading.title.recipe(.title).fixedSize(horizontal: false, vertical: true)
+                    if let meta = heading.meta { meta.recipe(.footnote) }
+                }
+            }
+            .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+        }
+    }
+
+    private var language: String { AppEnvironment.shared.services.appSettings.uiLanguage }
+
+    /// El encabezado de una temporada (su nombre y su frase) o de un género: «Lo mejor de Terror en 2026» con el año de verdad
+    /// y, abajo, si alcanzó la nota o de dónde salió (`_genre_heading` de la TV).
+    private var heading: (title: Text, meta: Text?, tint: Color)? {
+        switch route.kind {
+        case .season:
+            guard let season = Tmdb.seasons.first(where: { $0.slug == route.id }) else { return nil }
+            return (Text(verbatim: Strings.tr(season.title, language: language)), Text(verbatim: Strings.tr(season.blurb, language: language)),
+                    DS.Collections.season(season.slug))
+        case .genre:
+            guard let genre = Tmdb.genres.first(where: { $0.slug == route.id }) else { return nil }
+            let name = Strings.tr(genre.title, language: language)
+            guard let chart = collections.model.genreCharts[genre.slug] else { return (Text(verbatim: name), nil, DS.Collections.studio) }
+            let asked = String(chart.asked), used = String(chart.year)
+            let meta: Text = switch chart.basis {
+            case .votes: Text("Las mejor calificadas del año")
+            case .popular: Text("Las más populares de \(used)")
+            case .previous: Text("Pocas de \(asked): las mejor calificadas de \(used)")
+            case .previousPopular: Text("Pocas de \(asked): lo más visto en \(used)")
+            }
+            return (Text("Lo mejor de \(name) en \(used)"), meta, DS.Collections.studio)
+        default: return nil
+        }
+    }
+
+    /// El Top de un género: de dos en dos, con la cifra grande detrás del póster (como los rankings de una plataforma).
+    @ViewBuilder private var rankedGrid: some View {
+        if items.isEmpty {
+            if isLoading { ProgressView().frame(maxWidth: .infinity).padding(.vertical, DS.Space.s14) }
+            else { DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"), message: Text("Esta lista todavía no tiene títulos.")) }
+        } else {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s5) {
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
+                    NavigationLink(value: s.route) {
+                        RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster).titleZoomSource(s.route)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, DS.Space.gutter)
         }
     }
 
@@ -111,6 +175,8 @@ struct CollectionGridView: View {
         switch route.kind {
         case .year: loading || yearItems.isEmpty && !loadedOnce
         case .studio: !settled && Int(route.id).flatMap { collections.model.studioItems[$0] } == nil
+        case .season: !settled && collections.model.seasonItems[route.id] == nil
+        case .genre: !settled && collections.model.genreCharts[route.id] == nil
         case .award: !settled && award == nil
         case .myList: false
         }
@@ -124,6 +190,8 @@ struct CollectionGridView: View {
         case .year: yearItems
         case .myList: collections.model.myList
         case .studio: Int(route.id).flatMap { collections.model.studioItems[$0] } ?? []
+        case .season: collections.model.seasonItems[route.id] ?? []
+        case .genre: collections.model.genreCharts[route.id]?.items ?? []
         }
     }
 
@@ -133,6 +201,8 @@ struct CollectionGridView: View {
         case .year: Text(verbatim: route.id)
         case .myList: Text("Mi lista")
         case .studio: Text(verbatim: collections.model.studios.first { String($0.id) == route.id }?.name ?? "")
+        case .season: Text(verbatim: Tmdb.seasons.first { $0.slug == route.id }.map { Strings.tr($0.title, language: language) } ?? "")
+        case .genre: Text(verbatim: Tmdb.genres.first { $0.slug == route.id }.map { Strings.tr($0.title, language: language) } ?? "")
         }
     }
 

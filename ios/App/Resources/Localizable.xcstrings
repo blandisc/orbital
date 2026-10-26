@@ -804,6 +804,17 @@
         }
       }
     },
+    "Acción": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Action"
+          }
+        }
+      }
+    },
     "Acción X": {
       "extractionState": "manual",
       "localizations": {
@@ -1086,6 +1097,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Alexa, ask my console to…"
+          }
+        }
+      }
+    },
+    "Animación": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Animation"
           }
         }
       }
@@ -1383,6 +1405,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Advanced"
+          }
+        }
+      }
+    },
+    "Aventura": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adventure"
           }
         }
       }
@@ -2542,6 +2575,17 @@
         }
       }
     },
+    "Ciencia ficción": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Science fiction"
+          }
+        }
+      }
+    },
     "Cierra el juego": {
       "extractionState": "manual",
       "localizations": {
@@ -2659,6 +2703,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Matches your copy"
+          }
+        }
+      }
+    },
+    "Comedia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comedy"
           }
         }
       }
@@ -3451,6 +3506,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Create"
+          }
+        }
+      }
+    },
+    "Crimen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crime"
           }
         }
       }
@@ -4522,6 +4588,28 @@
         }
       }
     },
+    "Documental": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documentary"
+          }
+        }
+      }
+    },
+    "Drama": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drama"
+          }
+        }
+      }
+    },
     "Duración": {
       "extractionState": "manual",
       "localizations": {
@@ -4551,6 +4639,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Previous day you watched something"
+          }
+        }
+      }
+    },
+    "Día de Muertos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Day of the Dead"
           }
         }
       }
@@ -5952,6 +6051,28 @@
         }
       }
     },
+    "Familia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family"
+          }
+        }
+      }
+    },
+    "Fantasía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fantasy"
+          }
+        }
+      }
+    },
     "Fecha inválida": {
       "extractionState": "manual",
       "localizations": {
@@ -6344,6 +6465,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ MB needed and %@ MB free."
+          }
+        }
+      }
+    },
+    "Halloween": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halloween"
           }
         }
       }
@@ -6766,6 +6898,17 @@
         }
       }
     },
+    "La de ahora, primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current one first"
+          }
+        }
+      }
+    },
     "La descarga falló (código %@).": {
       "extractionState": "manual",
       "localizations": {
@@ -6971,6 +7114,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "The phrases below work the same in all three: your Orbital understands them. They are in Spanish."
+          }
+        }
+      }
+    },
+    "Las mejor calificadas del año": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The year's top rated"
+          }
+        }
+      }
+    },
+    "Las más populares de %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The most popular of %@"
           }
         }
       }
@@ -7356,6 +7521,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "The TV sent it: try from its page"
+          }
+        }
+      }
+    },
+    "Lo mejor de %@ en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The best of %@ in %@"
+          }
+        }
+      }
+    },
+    "Lo mejor del género": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best by genre"
           }
         }
       }
@@ -8251,6 +8438,17 @@
         }
       }
     },
+    "Misterio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mystery"
+          }
+        }
+      }
+    },
     "Modo": {
       "extractionState": "manual",
       "localizations": {
@@ -8709,6 +8907,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing out"
+          }
+        }
+      }
+    },
+    "Navidad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Christmas"
           }
         }
       }
@@ -10264,6 +10473,17 @@
         }
       }
     },
+    "Para recordar a los que se fueron": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To remember those who are gone"
+          }
+        }
+      }
+    },
     "Para ti": {
       "extractionState": "manual",
       "localizations": {
@@ -10282,6 +10502,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "For You, from your Orbital"
+          }
+        }
+      }
+    },
+    "Para ver en familia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To watch with the family"
+          }
+        }
+      }
+    },
+    "Para ver en pareja": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To watch as a couple"
           }
         }
       }
@@ -10524,6 +10766,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Platforms"
+          }
+        }
+      }
+    },
+    "Pocas de %@: las mejor calificadas de %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Few from %@: the top rated of %@"
+          }
+        }
+      }
+    },
+    "Pocas de %@: lo más visto en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Few from %@: the most watched in %@"
           }
         }
       }
@@ -12090,6 +12354,17 @@
         }
       }
     },
+    "Romance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Romance"
+          }
+        }
+      }
+    },
     "Saga": {
       "extractionState": "manual",
       "localizations": {
@@ -12229,6 +12504,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skip recap"
+          }
+        }
+      }
+    },
+    "San Valentín": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valentine's Day"
           }
         }
       }
@@ -13135,6 +13421,17 @@
         }
       }
     },
+    "Sol, playa y vacaciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sun, beach and vacation"
+          }
+        }
+      }
+    },
     "Solo con Wi‑Fi": {
       "extractionState": "manual",
       "localizations": {
@@ -13498,6 +13795,17 @@
         }
       }
     },
+    "Suspenso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thriller"
+          }
+        }
+      }
+    },
     "Sustos": {
       "extractionState": "manual",
       "localizations": {
@@ -13505,6 +13813,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scares"
+          }
+        }
+      }
+    },
+    "Sustos, brujas y calabazas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scares, witches and pumpkins"
           }
         }
       }
@@ -13729,6 +14048,17 @@
         }
       }
     },
+    "Temporadas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seasons"
+          }
+        }
+      }
+    },
     "Tendencia": {
       "extractionState": "manual",
       "localizations": {
@@ -13813,6 +14143,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Finish the command"
+          }
+        }
+      }
+    },
+    "Terror": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Horror"
           }
         }
       }
@@ -15320,6 +15661,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watch now"
+          }
+        }
+      }
+    },
+    "Verano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summer"
           }
         }
       }
