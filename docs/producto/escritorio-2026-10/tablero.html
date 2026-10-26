@@ -61,7 +61,7 @@ footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
 </div>
 
 <script>
-const UPDATED = "25 oct 2026, 22:05 · #11: causa real hallada (pausa a 4K) y arreglada, falta tu prueba · #12: investigación del búfer · #4 íconos provisionales (Grok) · #8 y #5 con reporte gráfico";
+const UPDATED = "26 oct 2026, 9:10 · #8 hecho (mantener X, cuatro superficies, orden del iPhone) y pulido; #4 con los 19 íconos a color de Grok · #11, #12 y #8 esperan tu prueba con el mando · #5 espera tu OK";
 // estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
 const ITEMS = [
   { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "doing",
@@ -89,14 +89,15 @@ const ITEMS = [
   { n: 3, t: "Banderitas en idiomas y subtítulos", tipo: "Mejora", estado: "done",
     d: "Mapear todos los lugares donde eliges idioma o subtítulo y ponerles bandera.", nota: "Lugares: Elegir versión (filas, la lista de «todas las de aquí» y la línea de abajo), Ajustes › Idioma y Subtítulos, Versiones de tu carpeta y, en el reproductor, Audio, Subtítulos, «En otra versión» y Versión. Mapa igual al iPhone: latino y español sin decir cuál 🇲🇽, castellano 🇪🇸, inglés 🇺🇸, portugués 🇧🇷; dos audios, dos banderas. Una sola definición (orbital/flags.py) para la interfaz y mpv (Windows no dibuja los emoji de bandera). Probado en la Lenovo: Edge y mpv de verdad.",
     ev: ["evidencia/03-version.jpg", "evidencia/03-fuentes.jpg", "evidencia/03-ajustes.jpg", "evidencia/03-reproductor-audio.jpg", "evidencia/03-reproductor-version.jpg"] },
-  { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "doing",
-    d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "La tarjeta ya tiene su lugar para el ícono (placa redonda con el color de la temporada y el nombre debajo). Los íconos actuales son provisionales: se rehacen con Grok en otra sesión.",
+  { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "done",
+    d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "Los 19 íconos a color de Grok Imagine, los mismos del iPhone (estilo C), al pie de la tarjeta sobre el abanico, tal cual (sin filtro ni placa) y su nombre debajo; las temporadas con su halo de color. Sustituyen a los provisionales de línea. Probado en la Lenovo con Edge (demo).",
     ev: ["evidencia/04-temporadas.jpg", "evidencia/04-generos.jpg"] },
   { n: 6, t: "Animación de entrada de Orbital", tipo: "Propuesta", estado: "done",
     d: "Propuesta elegante, minimalista y fluida, alineada con la del iPhone.", nota: "Idéntica a la del iPhone (tiempos de DS.Splash que pasó la Mac, resortes de SwiftUI): fondo de la app, anillo a 0.1 s, luna a 0.6 s, vuelo a la barra a 1.0 s; medida cuadro por cuadro (gráfica). Antes: anillo 0.5 s, letras cada 40 ms, la luna cae con rebote; al estar lista la biblioteca, la marca viaja a su lugar exacto en la barra (medido: mismos píxeles) e Inicio aparece. Ya no hay dos entradas. Movimiento reducido: fundido. Probado en la Lenovo con Edge (cámara lenta para la captura).",
     ev: ["evidencia/06-entrada-antes.jpg", "evidencia/06-entrada-despues.jpg", "evidencia/06-entrada-tiempos.jpg"] },
-  { n: 8, t: "Cambio rápido de subtítulo", tipo: "Propuesta", estado: "todo",
-    d: "Análisis de UI y UX para probar varios subtítulos con el video que estás viendo, como en el iPhone.", nota: "Reporte gráfico para decidir: https://claude.ai/artifact/Kirvje8N1YfmohPd3sXEou (hoy 8 pulsaciones, propuesta 1). Espera tu OK." },
+  { n: 8, t: "Cambio rápido de subtítulo", tipo: "Mejora", estado: "doing",
+    d: "Probar varios subtítulos con el video que estás viendo, como en el iPhone, con control, teclado, mouse y touch.", nota: "Hecho en una sola entrega, como lo decidiste: mantener X (o S, o el botón «Probar subtítulos») entra directo y la pausa y el panel lo dicen; ◀ ▶ dan la vuelta; LB/RB cambian de idioma; cada subtítulo guarda su sincronía; todo se recuerda al momento y B deja el último que probaste. Los de internet llegan con su copia y descargas, y «Hecho para tu copia» va primero (huella del archivo y grupo, como el iPhone). Franja pulida para que no se vea encimada. Probado con mpv de verdad (fuera de pantalla); falta tu prueba con el mando.",
+    ev: ["evidencia/08-franja.jpg", "evidencia/08-pausa.jpg", "evidencia/08-panel.jpg"] },
   { n: 5, t: "Trakt: avance compartido y dos sesiones", tipo: "Investigación", estado: "todo",
     d: "Cómo sincronizar el avance de películas del iPhone aquí, y si se pueden tener dos sesiones de Trakt.", nota: "Sí se pueden dos sesiones, y conviene. Reporte gráfico: https://claude.ai/artifact/Kirvje8N1YfmohPd3sXEou#trakt. Espera tu OK." },
 ];
