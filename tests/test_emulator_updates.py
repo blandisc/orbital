@@ -61,7 +61,8 @@ def test_says_which_emulators_have_a_new_version(tmp_path):
     items = {i["id"]: i for i in s.summary()["items"]}
     assert items["xemu"] | {"folder": None} == {"id": "xemu", "name": "xemu", "installed": "0.8.137", "latest": "v0.8.138",
                                                  "update": True, "likely": False, "can_install": True,
-                                                 "page": "https://xemu.app/#download", "error": None, "folder": None}
+                                                 "page": "https://xemu.app/#download", "error": None, "folder": None,
+                                                 "can_rollback": False, "previous": None}
     assert items["ppsspp"]["update"] is False
 
 
@@ -142,3 +143,63 @@ def test_screensaver_setting_is_saved(make_client):
     assert c.get("/api/settings").json()["screensaver_minutes"] == 10
     assert c.post("/api/settings", json={"screensaver_minutes": 0}).json()["screensaver_minutes"] == 0
     assert c.post("/api/settings", json={"screensaver_minutes": 7}).status_code == 422
+
+
+def test_a_bad_new_version_can_go_back_to_the_previous_one(tmp_path):
+    """La 0.8.138 sale mal: «Regresar a la versión anterior» pone la 0.8.137 de vuelta y quita lo que la nueva agregó."""
+    xemu = emulator(tmp_path, files={"settings.toml": b"mis ajustes"})
+    s = service(tmp_path, [xemu], {"xemu-project": release("v0.8.138", ["xemu-0.8.138-windows-x86_64.zip"])},
+                versions={"xemu.exe": "0.8.137"})
+    s.install("xemu")
+    assert xemu.read_bytes() == b"nuevo" and (xemu.parent / "data" / "x.bin").exists()
+    item = s.summary()["items"][0]
+    assert item["can_rollback"] and item["previous"] == "0.8.137"
+    assert s.rollback("xemu") == "xemu regresó a 0.8.137."
+    assert xemu.read_bytes() == b"viejo" and not (xemu.parent / "data" / "x.bin").exists()
+    assert (xemu.parent / "settings.toml").read_bytes() == b"mis ajustes"  # tus ajustes, intactos
+    assert not s.summary()["items"][0]["can_rollback"]  # ya no hay a dónde regresar
+    with pytest.raises(eu.InstallError):
+        s.rollback("xemu")
+
+
+def test_eden_from_forgejo_and_ryujinx_from_gitlab_now_install_on_their_own():
+    eden = next(x for x in eu.SOURCES if x.id == "eden")
+    data = [{"tag_name": "v0.2.1", "published_at": "2026-10-01T00:00:00Z", "assets": [
+        {"name": "Eden-Windows-v0.2.1-arm64-clang-pgo.zip", "browser_download_url": "https://e/arm.zip"},
+        {"name": "Eden-Windows-v0.2.1-amd64-msvc-standard.zip", "browser_download_url": "https://e/x64.zip"}]}]
+    assert eu.latest_release(eden, lambda url: data).asset_url == "https://e/x64.zip"
+    ryujinx = next(x for x in eu.SOURCES if x.id == "ryujinx")
+    gitlab = [{"tag_name": "1.3.4", "released_at": "2026-10-20T00:00:00Z", "assets": {"links": [
+        {"name": "ryujinx-1.3.4-macos_universal.app.tar.gz", "url": "https://r/mac"},
+        {"name": "ryujinx-1.3.4-win_x64.zip", "url": "https://r/win.zip"}]}}]
+    assert eu.latest_release(ryujinx, lambda url: gitlab).asset_url == "https://r/win.zip"
+
+
+def test_games_without_their_emulator_offer_to_install_it(tmp_path):
+    roms = tmp_path / "ROMs"
+    for system, game in (("psp", "Patapon.iso"), ("switch", "Zelda.xci"), ("gba", "Pokemon.gba")):
+        (roms / system).mkdir(parents=True)
+        (roms / system / game).write_bytes(b"x")
+    (roms / "xbox").mkdir()  # carpeta vacía: no hay juegos que abrir
+    s = eu.EmulatorUpdates(list, mode=lambda: "avisar", busy=lambda: False, roms_root=lambda: roms,
+                           have_systems=lambda: {"switch"}, install_root=lambda: tmp_path / "Emuladores")
+    assert s.installable() == [{"system": "psp", "id": "ppsspp", "name": "PPSSPP", "system_name": "PSP"}]
+
+
+def test_installing_a_missing_emulator_puts_it_in_your_emulators_folder(tmp_path):
+    installed = []
+
+    def fetch(url, dest):
+        return make_zip(dest, {"PPSSPP-v1.20.4/PPSSPPWindows64.exe": b"ppsspp", "PPSSPP-v1.20.4/assets/a.bin": b"a"})
+
+    s = eu.EmulatorUpdates(list, mode=lambda: "avisar", busy=lambda: False, cache_dir=tmp_path / "cache",
+                           get_json=lambda url: release("v1.20.4", ["PPSSPP-v1.20.4-Windows-x64.zip"]), fetch=fetch,
+                           install_root=lambda: tmp_path / "Emuladores", on_installed=lambda: installed.append(1))
+    assert "PPSSPP instalado" in s.install_new("ppsspp")
+    exe = tmp_path / "Emuladores" / "ppsspp" / "ppssppwindows64.exe"
+    assert exe.read_bytes() == b"ppsspp" and (exe.parent / "assets" / "a.bin").exists() and installed == [1]
+    assert eu.rollback_version(exe) is None  # recién instalado: no hay versión anterior
+    with pytest.raises(eu.InstallError):
+        s.install_new("ppsspp")  # ya está
+    with pytest.raises(eu.InstallError):
+        s.install_new("dolphin")  # viene en .7z: no se instala solo

@@ -5,10 +5,13 @@ instalada sale del propio .exe (su recurso de versión de Windows) o, si Orbital
 junto al .exe. Si no hay forma de saberla (Dolphin, Eden, Xenia no la ponen), se compara la fecha del .exe con la de la
 última versión: «parece que hay una más nueva».
 
-Instalar solo se ofrece cuando la versión viene en un .zip con el .exe adentro (xemu, PPSSPP, shadPS4, Cemu,
-melonDS): se baja, se guarda lo que se va a reemplazar en `.orbital-respaldo/` (si algo falla, se regresa) y se
-descomprime encima, sin tocar partidas ni ajustes (solo se escriben los archivos que trae el .zip). Los demás (vienen
-en .7z o con instalador) se avisan con su página para bajarlos a mano.
+Instalar solo se ofrece cuando la versión viene en un .zip con el .exe adentro (Ryujinx, Eden, Xenia, xemu, PPSSPP,
+shadPS4, Cemu, melonDS): se baja, se guarda lo que se va a reemplazar en `.orbital-respaldo/` (si algo falla, se
+regresa) y se descomprime encima, sin tocar partidas ni ajustes (solo se escriben los archivos que trae el .zip). Los
+demás (vienen en .7z o con instalador) se avisan con su página para bajarlos a mano.
+
+Si una versión nueva sale mal, «Regresar a la versión anterior» pone de vuelta lo del respaldo y quita lo que la
+nueva agregó. Y si tienes juegos de una consola sin su emulador, Orbital lo instala (en la carpeta de tus emuladores).
 
 El modo («avisar», «auto» o «nunca») es un ajuste (Ajustes › Mantenimiento › Emuladores). En automático, Orbital revisa
 al arrancar y cada 12 h, e instala solo lo que puede instalar y nunca con un juego abierto.
@@ -71,15 +74,22 @@ SOURCES: tuple[Source, ...] = (
     Source("duckstation", "DuckStation", ("duckstation-qt-x64-releaseltcg.exe",), "github", "stenzek/duckstation",
            "https://www.duckstation.org/", dated=True),
     Source("xenia", "Xenia Canary", ("xenia_canary.exe",), "github", "xenia-canary/xenia-canary-releases",
-           "https://github.com/xenia-canary/xenia-canary-releases/releases", dated=True),
+           "https://github.com/xenia-canary/xenia-canary-releases/releases", r"^xenia_canary_windows_?\.zip$", dated=True),
     Source("dolphin", "Dolphin", ("dolphin.exe",), "dolphin", "https://dolphin-emu.org/update/latest/beta/",
            "https://dolphin-emu.org/download/", dated=True),
     Source("eden", "Eden", ("eden.exe",), "forgejo", "https://git.eden-emu.dev/api/v1/repos/eden-emu/eden/releases?limit=1",
-           "https://eden-emu.dev/", dated=True),
+           "https://eden-emu.dev/", r"^Eden-Windows-v[\d.]+-amd64-msvc-standard\.zip$", dated=True),
     Source("rpcs3", "RPCS3", ("rpcs3.exe",), "github", "RPCS3/rpcs3-binaries-win", "https://rpcs3.net/download", dated=True),
     Source("ryujinx", "Ryujinx", ("ryujinx.exe",), "gitlab", "https://git.ryujinx.app/api/v4/projects/ryubing%2Fryujinx/releases?per_page=1",
-           "https://ryujinx.app/download"),
+           "https://ryujinx.app/download", r"^ryujinx-[\d.]+-win_x64\.zip$"),
 )
+
+
+# Si tienes juegos de una consola y ningún emulador para ella, cuál instalar (solo los que se instalan solos).
+INSTALL_FOR_SYSTEM = {"switch": "eden", "xbox": "xemu", "xbox360": "xenia", "psp": "ppsspp", "nds": "melonds",
+                      "wiiu": "cemu", "ps4": "shadps4"}
+SYSTEM_NAMES = {"switch": "Switch", "xbox": "Xbox", "xbox360": "Xbox 360", "psp": "PSP", "nds": "Nintendo DS",
+                "wiiu": "Wii U", "ps4": "PlayStation 4"}
 
 
 @dataclass
@@ -107,10 +117,11 @@ class Status:
         return bool(self.update and self.source.asset and self.latest and self.latest.asset_url)
 
     def public(self) -> dict:
+        previous = rollback_version(self.exe)
         return {"id": self.source.id, "name": self.source.name, "installed": self.installed,
                 "latest": self.latest.version if self.latest else None, "update": self.update, "likely": self.likely,
                 "can_install": self.can_install, "page": self.source.page, "error": self.error,
-                "folder": str(self.exe.parent)}
+                "folder": str(self.exe.parent), "can_rollback": previous is not None, "previous": previous or None}
 
 
 # --- versiones ----------------------------------------------------------------------------------------------------------
@@ -205,8 +216,13 @@ def latest_release(source: Source, get_json=http_get_json) -> Release:
     if source.kind in ("forgejo", "gitlab"):
         data = get_json(source.repo)
         first = data[0] if isinstance(data, list) and data else {}
+        # Forgejo: «assets» con browser_download_url; GitLab: «assets.links» con su url.
+        assets = first.get("assets") or []
+        files = [(a.get("name") or "", a.get("browser_download_url")) for a in assets] if isinstance(assets, list) else \
+            [(a.get("name") or "", a.get("direct_asset_url") or a.get("url")) for a in (assets.get("links") or [])]
+        url = next((u for name, u in files if source.asset and re.search(source.asset, name, re.IGNORECASE)), None)
         return Release(str(first.get("tag_name") or ""), _epoch(first.get("published_at") or first.get("released_at")
-                                                                or first.get("created_at")))
+                                                                or first.get("created_at")), url)
     raise ValueError(f"fuente desconocida: {source.kind}")
 
 
@@ -281,10 +297,12 @@ def _safe_target(folder: Path, relative: str) -> Path:
     return target
 
 
-def install_zip(zip_path: Path, exe: Path, version: str) -> None:
+def install_zip(zip_path: Path, exe: Path, version: str, previous: str | None = None) -> None:
     """Descomprime encima de la carpeta del emulador. Antes guarda en `.orbital-respaldo/` cada archivo que se va a
-    reemplazar; si algo falla a medias, los regresa."""
+    reemplazar; si algo falla a medias, los regresa. `previous`: la versión que había (si no, se lee antes de tocar)."""
     folder = exe.parent
+    if previous is None and exe.exists():
+        previous = installed_version(exe)  # antes de descomprimir: después ya sería la nueva
     backup = folder / BACKUP
     try:
         archive = zipfile.ZipFile(zip_path)
@@ -296,6 +314,7 @@ def install_zip(zip_path: Path, exe: Path, version: str) -> None:
         shutil.rmtree(backup, ignore_errors=True)  # solo se guarda el último respaldo
         written: list[Path] = []
         saved: list[tuple[Path, Path]] = []
+        added = [str(target.relative_to(folder.resolve())) for _member, target in plan if not target.exists()]
         try:
             for _member, target in plan:
                 if target.is_file():
@@ -316,9 +335,58 @@ def install_zip(zip_path: Path, exe: Path, version: str) -> None:
             if isinstance(exc, InstallError):
                 raise
             raise InstallError(f"No pude escribir en {folder.name} ({type(exc).__name__}). Lo dejé como estaba.") from exc
-    previous = installed_version(exe)
-    (folder / MANIFEST).write_text(json.dumps({"exe": exe.name, "version": version, "previous": previous,
+    previous = previous if saved else None  # sin nada reemplazado (recién instalado) no hay a dónde regresar
+    # «added»: lo que la versión nueva trajo de más (al regresar a la anterior se quita).
+    (folder / MANIFEST).write_text(json.dumps({"exe": exe.name, "version": version, "previous": previous, "added": added,
                                                "installed_at": time.strftime("%Y-%m-%d %H:%M")}), encoding="utf-8")
+
+
+def _manifest(folder: Path) -> dict:
+    try:
+        data = json.loads((folder / MANIFEST).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def rollback_version(exe: Path) -> str | None:
+    """La versión a la que se puede regresar (la que había antes de que Orbital actualizara), o None."""
+    data = _manifest(exe.parent)
+    previous = data.get("previous")
+    return previous if isinstance(previous, str) and (exe.parent / BACKUP).is_dir() else None
+
+
+def rollback(exe: Path) -> str:
+    """Regresa a la versión anterior: lo del respaldo de vuelta y fuera lo que la nueva agregó. Devuelve esa versión."""
+    folder = exe.parent
+    backup = folder / BACKUP
+    data = _manifest(folder)
+    previous = rollback_version(exe)
+    if previous is None:
+        raise InstallError("No hay una versión anterior guardada.")
+    for name in data.get("added") or []:
+        target = _safe_target(folder, str(name))
+        target.unlink(missing_ok=True)
+    for copy in [p for p in backup.rglob("*") if p.is_file()]:
+        target = _safe_target(folder, str(copy.relative_to(backup)))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(copy, target)
+    shutil.rmtree(backup, ignore_errors=True)
+    (folder / MANIFEST).write_text(json.dumps({"exe": exe.name, "version": previous, "previous": None, "added": [],
+                                               "installed_at": time.strftime("%Y-%m-%d %H:%M")}), encoding="utf-8")
+    return previous
+
+
+def missing_systems(roms_root: Path | None, have: set[str]) -> list[str]:
+    """Consolas con juegos en tu carpeta de ROMs pero sin emulador (solo las que Orbital sabe instalar)."""
+    if roms_root is None or not roms_root.is_dir():
+        return []
+    out = []
+    for system in INSTALL_FOR_SYSTEM:
+        folder = roms_root / system
+        if system not in have and folder.is_dir() and any(p.is_file() or p.is_dir() for p in folder.iterdir()):
+            out.append(system)
+    return out
 
 
 # --- el servicio ------------------------------------------------------------------------------------------------------
@@ -329,8 +397,12 @@ class EmulatorUpdates:
     def __init__(self, emulator_exes: Callable[[], list[Path]], *, mode: Callable[[], str], busy: Callable[[], bool],
                  notify: Callable[[str], None] = lambda text: None, cache_dir: Path | None = None,
                  get_json=None, fetch=None, version_of: Callable[[Path], str | None] | None = None,
-                 clock: Callable[[], float] = time.time) -> None:
+                 clock: Callable[[], float] = time.time, roms_root: Callable[[], Path | None] = lambda: None,
+                 have_systems: Callable[[], set[str]] = set, install_root: Callable[[], Path | None] = lambda: None,
+                 on_installed: Callable[[], None] = lambda: None) -> None:
         self.emulator_exes, self.mode, self.busy, self.notify = emulator_exes, mode, busy, notify
+        self.roms_root, self.have_systems, self.install_root = roms_root, have_systems, install_root
+        self.on_installed = on_installed  # un emulador nuevo: que la biblioteca lo encuentre
         self.cache_dir = cache_dir
         # Se buscan al llamar (no al definir): las pruebas cambian http_get_json y download por unas sin internet.
         self.get_json = get_json or (lambda url: http_get_json(url))
@@ -370,7 +442,73 @@ class EmulatorUpdates:
     def summary(self, force: bool = False) -> dict:
         items = self.check(force)
         return {"mode": self.mode(), "checked_at": self._last[0] if self._last else None,
-                "installing": self._installing.locked(), "items": [s.public() for s in items]}
+                "installing": self._installing.locked(), "items": [s.public() for s in items],
+                "installable": self.installable()}
+
+    def installable(self) -> list[dict]:
+        """Emuladores que faltan para juegos que ya tienes: [{system, id, name, system_name}]."""
+        if self.install_root() is None:
+            return []
+        by_id = {s.id: s for s in SOURCES}
+        return [{"system": system, "id": INSTALL_FOR_SYSTEM[system], "name": by_id[INSTALL_FOR_SYSTEM[system]].name,
+                 "system_name": SYSTEM_NAMES.get(system, system)}
+                for system in missing_systems(self.roms_root(), self.have_systems())]
+
+    def _cache(self) -> Path:
+        return self.cache_dir or Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" / "emulator-updates"
+
+    def install_new(self, source_id: str) -> str:
+        """Instala un emulador que no tenías, en la carpeta de tus emuladores. Lanza InstallError si no se pudo."""
+        source = next((s for s in SOURCES if s.id == source_id and s.asset), None)
+        root = self.install_root()
+        if source is None or root is None:
+            raise InstallError("Ese emulador no se puede instalar desde Orbital.")
+        if not self._installing.acquire(blocking=False):
+            raise InstallError("Ya estoy instalando otro emulador.")
+        try:
+            folder = root / source.id
+            exe = folder / source.exe_names[0]
+            if exe.exists():
+                raise InstallError(f"{source.name} ya está instalado.")
+            try:
+                latest = latest_release(source, self.get_json)
+            except (*NET_ERRORS, KeyError, TypeError) as exc:
+                raise InstallError("No pude revisar su versión (sin conexión o el sitio no contestó).") from exc
+            if not latest.asset_url:
+                raise InstallError(f"{source.name} no publicó una versión para Windows que pueda instalar.")
+            name = re.sub(r"[^\w.-]", "_", f"{source.id}-{latest.version}.zip")
+            try:
+                self._cache().mkdir(parents=True, exist_ok=True)
+                zip_path = self.fetch(latest.asset_url, self._cache() / name)
+            except NET_ERRORS as exc:
+                raise InstallError("No pude bajarlo (revisa tu conexión).") from exc
+            folder.mkdir(parents=True, exist_ok=True)
+            install_zip(zip_path, exe, latest.version)
+            Path(zip_path).unlink(missing_ok=True)
+            shutil.rmtree(folder / BACKUP, ignore_errors=True)  # recién instalado: no hay versión anterior
+            log.info("Emuladores: instalé %s %s en %s", source.name, latest.version, folder)
+            self._last = None
+        finally:
+            self._installing.release()
+        self.on_installed()
+        return f"{source.name} instalado. Tus juegos ya aparecen en Orbital."
+
+    def rollback(self, source_id: str) -> str:
+        """Regresa ese emulador a la versión que tenía antes de que Orbital lo actualizara."""
+        if self.busy():
+            raise InstallError("Cierra el juego primero: no cambio un emulador abierto.")
+        target = next(((s, exe) for s, exe in self._targets() if s.id == source_id), None)
+        if target is None:
+            raise InstallError("No tienes ese emulador.")
+        if not self._installing.acquire(blocking=False):
+            raise InstallError("Ya estoy cambiando otro emulador.")
+        try:
+            version = rollback(target[1])
+        finally:
+            self._installing.release()
+        self._last = None
+        log.info("Emuladores: %s regresó a %s", target[0].name, version)
+        return f"{target[0].name} regresó a {version}."
 
     def install(self, source_id: str) -> str:
         """Instala la última versión de ese emulador. Devuelve el mensaje para la tele; lanza InstallError si no."""
@@ -386,14 +524,14 @@ class EmulatorUpdates:
                 return f"{status.source.name} ya está al día."
             if not status.can_install:
                 raise InstallError(f"{status.source.name} se actualiza a mano: {status.source.page}")
-            cache = self.cache_dir or Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" / "emulator-updates"
+            cache = self._cache()
             name = re.sub(r"[^\w.-]", "_", f"{status.source.id}-{status.latest.version}.zip")
             try:
                 cache.mkdir(parents=True, exist_ok=True)
                 zip_path = self.fetch(status.latest.asset_url, cache / name)
             except NET_ERRORS as exc:
                 raise InstallError("No pude bajar la versión nueva (revisa tu conexión).") from exc
-            install_zip(zip_path, status.exe, status.latest.version)
+            install_zip(zip_path, status.exe, status.latest.version, previous=status.installed)
             Path(zip_path).unlink(missing_ok=True)
             log.info("Actualizaciones: %s %s → %s", status.source.name, status.installed, status.latest.version)
             self._last = None  # la próxima revisión ya ve la versión nueva

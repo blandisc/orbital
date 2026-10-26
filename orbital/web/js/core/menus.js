@@ -591,7 +591,7 @@ const EMULATOR_MODE_HINTS = {
  * Emuladores: cada uno con su versión y si hay una nueva. Los que vienen en .zip se instalan desde aquí (A); los demás
  * dicen dónde bajarlos. Arriba, el modo: avisar, automático o no revisar (◀/▶).
  */
-export function emulatorsMenu({ mode = "avisar", items = [], installing = false } = {}) {
+export function emulatorsMenu({ mode = "avisar", items = [], installing = false, installable = [] } = {}) {
   const row = (e) => {
     const value = e.error ? "Sin revisar" : e.update ? (e.likely ? "Puede haber nueva" : `Nueva: ${e.latest}`) : "Al día";
     const site = String(e.page || "").replace(/^https?:\/\//, "").replace(/\/.*$/, "");
@@ -599,9 +599,14 @@ export function emulatorsMenu({ mode = "avisar", items = [], installing = false 
       : e.update && e.can_install ? `Tienes ${e.installed}`
         : e.update ? `Se baja en ${site}`
           : e.installed ? `Versión ${e.installed}` : "";
+    // Con algo que hacer (actualizar o regresar a la versión anterior), A abre sus opciones.
+    const actionable = !installing && ((e.update && e.can_install) || e.can_rollback);
     return { icon: e.error ? "info" : e.update ? "download" : "check", label: e.name, value, hint,
-      command: e.update && e.can_install && !installing ? { type: "emulator-install", id: e.id, name: e.name } : { type: "stay" } };
+      command: actionable ? { type: "emulator-menu", emulator: e } : { type: "stay" } };
   };
+  // Juegos de una consola sin su emulador: instalarlo desde aquí.
+  const missing = installable.map((m) => ({ icon: "download", label: `Instalar ${m.name}`, hint: `Para tus juegos de ${m.system_name}`,
+    command: installing ? { type: "stay" } : { type: "emulator-install-new", id: m.id, name: m.name } }));
   return {
     title: "Emuladores", crumb: "Emuladores",
     subtitle: installing ? "Actualizando un emulador… te aviso al terminar." : "",
@@ -610,11 +615,26 @@ export function emulatorsMenu({ mode = "avisar", items = [], installing = false 
         command: { type: "emulators-mode", value: nextSetting("emulator_updates", mode) },
         adjust: { left: { type: "emulators-mode", value: stepSetting("emulator_updates", mode, -1) },
           right: { type: "emulators-mode", value: stepSetting("emulator_updates", mode, 1) } } },
+      ...(missing.length ? [{ heading: true, label: "Te faltan" }, ...missing] : []),
       { heading: true, label: "Tus emuladores" },
       ...items.map(row),
       { icon: "refresh", label: "Revisar ahora", command: { type: "emulators", force: true } },
     ],
   };
+}
+
+/** Un emulador: actualizarlo o regresarlo a la versión que tenía antes de la última actualización. */
+export function emulatorMenu(e) {
+  const options = [];
+  if (e.update && e.can_install) {
+    options.push({ icon: "download", label: `Actualizar a ${e.latest}`, hint: e.installed ? `Tienes ${e.installed}` : undefined,
+      command: { type: "emulator-install", id: e.id, name: e.name } });
+  }
+  if (e.can_rollback) {
+    options.push({ icon: "refresh", label: `Regresar a ${e.previous}`, hint: "Si la versión nueva salió mal",
+      command: { type: "emulator-rollback", id: e.id, name: e.name } });
+  }
+  return { title: e.name, crumb: e.name, subtitle: e.installed ? `Versión ${e.installed}` : "", options };
 }
 
 /** Actualizar Orbital: qué cambia y "Actualizar ahora" (prueba la versión nueva; si falla, vuelve). */

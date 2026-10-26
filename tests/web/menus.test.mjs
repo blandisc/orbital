@@ -359,11 +359,24 @@ test("Emuladores: cuál tiene versión nueva, cuál se instala aquí y el modo c
   const [mode, , xemu, dolphin, ppsspp] = menu.options;
   assert.equal(mode.value, "Avisarme");
   assert.deepEqual(mode.adjust.right, { type: "emulators-mode", value: "auto" });
-  assert.deepEqual(xemu.command, { type: "emulator-install", id: "xemu", name: "xemu" });
+  assert.equal(xemu.command.type, "emulator-menu"); // A: sus opciones (actualizar o regresar a la anterior)
+  const { emulatorMenu } = await import("../../orbital/web/js/core/menus.js");
+  assert.deepEqual(emulatorMenu(xemu.command.emulator).options.map((o) => o.command),
+    [{ type: "emulator-install", id: "xemu", name: "xemu" }]);
+  assert.deepEqual(emulatorMenu({ ...xemu.command.emulator, update: false, can_rollback: true, previous: "0.8.136" }).options[0].command,
+    { type: "emulator-rollback", id: "xemu", name: "xemu" });
   assert.equal(xemu.value, "Nueva: v0.8.138");
   assert.equal(dolphin.value, "Puede haber nueva");
   assert.equal(dolphin.hint, "Se baja en dolphin-emu.org");
   assert.equal(ppsspp.value, "Al día");
+});
+
+test("Emuladores: los que te faltan para juegos que ya tienes, arriba", async () => {
+  const { emulatorsMenu } = await import("../../orbital/web/js/core/menus.js");
+  const menu = emulatorsMenu({ items: [], installable: [{ system: "psp", id: "ppsspp", name: "PPSSPP", system_name: "PSP" }] });
+  assert.deepEqual(menu.options.slice(1, 3).map((o) => o.label), ["Te faltan", "Instalar PPSSPP"]);
+  assert.equal(menu.options[2].hint, "Para tus juegos de PSP");
+  assert.deepEqual(menu.options[2].command, { type: "emulator-install-new", id: "ppsspp", name: "PPSSPP" });
 });
 
 test("Pantalla y sonido: el protector de pantalla (el mosaico) con su tiempo", async () => {

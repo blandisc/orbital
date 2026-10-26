@@ -83,4 +83,33 @@ def router(d: Deps, updater: Updater | None = None, restart=restart_orbital) -> 
         threading.Thread(target=work, daemon=True, name="emulator-update").start()
         return {"ok": True}
 
+    def _in_background(name: str, action, emulator_id: str) -> dict:
+        """Instalar o regresar de versión en segundo plano; avisa al terminar (evento emulator-update-done)."""
+        from ..emulator_updates import InstallError
+
+        def work() -> None:
+            try:
+                message, ok = action(emulator_id[:40]), True
+            except InstallError as exc:
+                message, ok = str(exc), False
+            except Exception:  # noqa: BLE001
+                log.exception("%s %s", name, emulator_id)
+                message, ok = "No pude hacerlo. Quedó como estaba.", False
+            d.hub.publish_threadsafe({"type": "emulator-update-done", "ok": ok, "message": message})
+
+        threading.Thread(target=work, daemon=True, name=name).start()
+        return {"ok": True}
+
+    @r.post("/api/emulators/install/{emulator_id}")
+    def install_new_emulator(emulator_id: str) -> dict:
+        """Instala un emulador que faltaba para juegos que ya tienes."""
+        return _in_background("emulator-install", d.extra["emulator_updates"].install_new, emulator_id)
+
+    @r.post("/api/emulators/rollback/{emulator_id}")
+    def rollback_emulator(emulator_id: str) -> dict:
+        """Regresa a la versión que había antes de la última actualización."""
+        if d.extra["emulator_updates"].busy():
+            raise HTTPException(409, "Cierra el juego primero: no cambio un emulador abierto.")
+        return _in_background("emulator-rollback", d.extra["emulator_updates"].rollback, emulator_id)
+
     return r

@@ -109,10 +109,29 @@ def emulator_updates_for(d: Deps):
         found = (emulator_lib.resolve_executable(e) for e in d.catalog.emulators)
         return [emulator_updates.real_exe(p) for p in found if p is not None]
 
+    from .config import expand
+
+    detect = d.config.detect
+
+    def roms_root() -> Path | None:
+        return Path(expand(detect.roms)) if detect.roms else None
+
+    def install_root() -> Path | None:
+        """Donde van los emuladores que instala Orbital: tu carpeta de emuladores (la primera de detect.dirs)."""
+        return Path(expand(detect.dirs[0])) if detect.dirs else Path.home() / "Emuladores"
+
+    def have_systems() -> set[str]:
+        return {e.system for e in d.catalog.emulators if e.system and emulator_lib.resolve_executable(e)}
+
+    def installed() -> None:  # un emulador nuevo: la biblioteca lo encuentra y la interfaz se pone al día
+        d.catalog.refresh()
+        d.hub.publish_threadsafe({"type": "library-changed"})
+
     return emulator_updates.EmulatorUpdates(
         exes, mode=lambda: d.catalog.state.settings().get("emulator_updates", "avisar"),
         busy=lambda: d.catalog.launcher.status() is not None,
-        notify=lambda text: d.hub.publish_threadsafe({"type": "toast", "message": text}))
+        notify=lambda text: d.hub.publish_threadsafe({"type": "toast", "message": text}),
+        roms_root=roms_root, have_systems=have_systems, install_root=install_root, on_installed=installed)
 
 
 def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, shortcuts: bool = False,

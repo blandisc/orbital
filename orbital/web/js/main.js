@@ -9,7 +9,7 @@ import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
-import { playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
+import { emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
@@ -1791,6 +1791,14 @@ async function runCommand(command, context = null) {
       case "emulator-install":
         await api.installEmulator(command.id);
         return ui.toast.show(`Actualizando ${command.name}… puedes seguir usando Orbital.`);
+      case "emulator-menu":
+        return openMenu(emulatorMenu(command.emulator), nested(context));
+      case "emulator-install-new":
+        await api.installNewEmulator(command.id);
+        return ui.toast.show(`Instalando ${command.name}… puedes seguir usando Orbital.`);
+      case "emulator-rollback":
+        await api.rollbackEmulator(command.id);
+        return ui.toast.show(`Regresando ${command.name} a la versión anterior…`);
       case "quick-set": { // cambia y se queda en el panel, en la misma opción
         const q = await api.setQuick(command.changes);
         sound.play("move");
