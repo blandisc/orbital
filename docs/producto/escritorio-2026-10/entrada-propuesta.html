@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Entrada de Orbital</title>
+<style>
+/* Tokens copiados de orbital/web/styles/tokens.css y themes/orbital.css. --k = cámara lenta de la maqueta. */
+:root {
+  --k: 1;
+  --palette-ink-1000: #070708; --palette-ink-950: #0c0c0e; --palette-ink-900: #121215; --palette-ink-850: #18181c;
+  --palette-ink-700: #2a2a30; --palette-ink-300: #a3a3ab; --palette-ink-200: #cdcdd3; --palette-paper: #f5f4f0; --palette-teal-300: #5fd6c6;
+  --color-bg: var(--palette-ink-950); --color-text: var(--palette-paper); --color-text-muted: var(--palette-ink-300);
+  --color-star: #fff; --color-brand-moon: var(--palette-teal-300); --color-fill: rgba(255,255,255,.06); --color-danger: #ff5a5f;
+  --gradient-boot: radial-gradient(ellipse at 50% 42%, var(--palette-ink-850) 0%, var(--palette-ink-950) 55%, var(--palette-ink-1000) 100%);
+  --gradient-launch-planet: radial-gradient(circle at 35% 30%, var(--color-star), var(--palette-ink-200) 45%, var(--palette-ink-700));
+  --font-sans: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", ui-rounded, system-ui, sans-serif;
+  --tracking-display: -.035em; --tracking-wordmark: .32em; --tracking-label: .04em;
+  --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-in: cubic-bezier(.5, 0, .75, 0);
+  --ease-spring: cubic-bezier(.34, 1.4, .64, 1); --ease-launch: cubic-bezier(.7, 0, .84, 0); --ease-float: cubic-bezier(.37, 0, .63, 1);
+  --ease-glide: cubic-bezier(.65, 0, .35, 1); /* NUEVO: un elemento que viaja de un lugar a otro (la marca al Inicio) */
+  --duration-base: calc(220ms * var(--k)); --duration-slow: calc(320ms * var(--k)); --duration-enter: calc(520ms * var(--k));
+  --duration-enter-long: calc(640ms * var(--k)); --duration-land: calc(760ms * var(--k)); --duration-breathe: calc(1.4s * var(--k));
+  --duration-launch-reveal: calc(700ms * var(--k)); --duration-launch-draw: calc(1.1s * var(--k)); --duration-launch-orbit: calc(3.4s * var(--k));
+  --duration-boot-drift: calc(14s * var(--k));
+  --delay-1: calc(90ms * var(--k)); --delay-2: calc(170ms * var(--k)); --delay-3: calc(260ms * var(--k));
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); overflow: hidden; }
+
+/* ---------- El Inicio de mentiras (detrás) ---------- */
+.home { position: fixed; inset: 0; padding: 2rem 3rem; display: flex; flex-direction: column; gap: 1.6rem; }
+.bar { display: flex; align-items: center; gap: 2rem; height: 3rem; }
+.brand { display: inline-flex; align-items: center; gap: .5em; font-size: 1.2rem; }
+.brand.is-hidden { opacity: 0; }
+.pills { display: flex; gap: .6rem; margin-left: auto; }
+.pills span { width: 2.6rem; height: 2.6rem; border-radius: 99px; background: var(--color-fill); }
+.pills span:first-child { width: 7rem; background: rgba(255,255,255,.14); }
+.hero { flex: 1; max-height: 52vh; border-radius: 1.4rem; background: linear-gradient(120deg, #23313a, #15161c 60%), #15161c; position: relative; overflow: hidden; }
+.hero::after { content: ""; position: absolute; left: 3rem; bottom: 3rem; width: 36%; height: 1.6rem; border-radius: .4rem; background: rgba(255,255,255,.22); box-shadow: 0 2.4rem 0 -.4rem rgba(255,255,255,.1); }
+.shelf { display: flex; gap: 1rem; }
+.shelf span { flex: 0 0 13rem; height: 7.4rem; border-radius: 1rem; background: linear-gradient(160deg, #2a2a30, #18181c); }
+.shelf span:first-child { outline: 3px solid var(--color-text); outline-offset: 3px; }
+.hints { height: 1rem; width: 30%; border-radius: .3rem; background: var(--color-fill); }
+/* Igual que base.css: el Inicio aterriza desde un poco más cerca, escalonado. */
+[data-landing="old"] .bar, [data-landing] .pills, [data-landing] .hero, [data-landing] .shelf, [data-landing] .hints { animation: land var(--duration-land) var(--ease-out) both; }
+[data-landing] .hero { animation-delay: var(--delay-1); }
+[data-landing] .shelf { animation-delay: var(--delay-2); }
+[data-landing] .hints { animation-delay: var(--delay-3); }
+@keyframes land { from { opacity: 0; transform: scale(1.04) translateY(.6rem); } }
+
+/* ---------- La marca: la misma pieza en el arranque, en la barra y en el iPhone ---------- */
+.mark { width: 1.708em; height: 1.708em; overflow: visible; color: var(--color-text); flex: none; }
+.mark__ring { opacity: .7; }
+.word { font-weight: 700; letter-spacing: var(--tracking-display); line-height: 1; padding-bottom: .08em; white-space: nowrap; }
+.moon { display: inline-block; width: .26em; height: .26em; margin-left: .1em; border-radius: 50%; background: var(--color-brand-moon); vertical-align: .62em; }
+
+/* ---------- PROPUESTA ---------- */
+#boot { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; }
+#boot .boot__bg { position: absolute; inset: 0; background: var(--gradient-boot); }
+#boot .lockup { position: relative; display: inline-flex; align-items: center; gap: .5em; font-size: clamp(2.6rem, 6vmin, 5rem); transform-origin: 0 0; will-change: transform; }
+#boot .boot__status { position: absolute; top: calc(50% + 6rem); left: 0; right: 0; text-align: center; color: var(--color-text-muted); font-size: 1rem; letter-spacing: var(--tracking-label); opacity: 0; transition: opacity var(--duration-slow) var(--ease-out); }
+#boot .boot__status.is-on { opacity: 1; }
+/* T1 · T2 · T3 · T4: planeta, anillo, palabra, luna (los tiempos del iPhone: Brand.swift + Tokens.swift DS.Brand). */
+#boot.is-in .mark__planet { transform-origin: 16px 16px; animation: b-planet var(--duration-enter) var(--ease-spring) both; }
+#boot.is-in .mark__ring { stroke-dasharray: 1; animation: b-draw var(--duration-land) var(--ease-out) var(--delay-2) both; }
+#boot.is-in .word { animation: b-word var(--duration-enter) var(--ease-out) var(--delay-3) both; }
+#boot.is-in .moon { animation: b-moon var(--duration-enter) var(--ease-spring) calc(var(--duration-land) * 1.7) both; }
+/* Espera: la luna respira; nada más se mueve. */
+#boot.is-waiting .moon { animation: b-breathe var(--duration-breathe) var(--ease-float) infinite alternate; }
+/* T5 salida: el fondo se desvanece mientras la marca viaja a la barra (JS: FLIP). */
+#boot.is-leaving .boot__bg { animation: b-fade var(--duration-launch-reveal) var(--ease-out) var(--delay-2) forwards; }
+@keyframes b-planet { from { opacity: 0; transform: scale(.6); } }
+@keyframes b-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes b-word { from { opacity: 0; transform: translateX(-.12em); } }
+@keyframes b-moon { from { opacity: 0; translate: -.9em -.7em; scale: .2; } 70% { opacity: 1; } }
+@keyframes b-breathe { to { opacity: .4; scale: .78; } }
+@keyframes b-fade { to { opacity: 0; } }
+
+/* ---------- HOY (para comparar): copia de boot.css ---------- */
+#old { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; overflow: hidden; background: var(--gradient-boot); }
+#old .o-stars { position: absolute; inset: -20%; opacity: .55; background-size: 38vmin 38vmin; animation: o-drift var(--duration-boot-drift) linear infinite;
+  background-image: radial-gradient(1.5px 1.5px at 12% 22%, #fff, transparent), radial-gradient(1px 1px at 72% 18%, #fff, transparent), radial-gradient(1px 1px at 33% 78%, #fff, transparent), radial-gradient(1.5px 1.5px at 86% 64%, #fff, transparent), radial-gradient(1px 1px at 52% 46%, #fff, transparent); }
+#old .o-system { position: relative; width: 34vmin; height: 34vmin; display: grid; place-items: center; }
+#old .o-planet { width: 13vmin; height: 13vmin; border-radius: 50%; background: var(--gradient-launch-planet); box-shadow: 0 0 6vmin -1vmin rgba(255,255,255,.35); animation: o-rise var(--duration-land) var(--ease-out) both; }
+#old .o-orbit { position: absolute; left: 50%; top: 50%; width: 30vmin; height: 10.5vmin; margin: -5.25vmin 0 0 -15vmin; border-radius: 50%; border: .3vmin solid rgba(245,244,240,.85); transform: rotate(-24deg); animation: o-orbit var(--duration-launch-draw) var(--ease-out) var(--delay-2) both; }
+#old .o-front { clip-path: inset(50% 0 0 0); z-index: 1; }
+#old .o-sat { position: absolute; left: 0; top: 0; width: 1.6vmin; height: 1.6vmin; border-radius: 50%; background: #fff; box-shadow: 0 0 2vmin .4vmin rgba(255,90,95,.9); offset-path: ellipse(50% 50% at 50% 50%); animation: o-sat var(--duration-launch-orbit) linear infinite; }
+#old .o-word { position: absolute; bottom: 26vh; font-size: 2.4rem; font-weight: 700; letter-spacing: var(--tracking-wordmark); text-indent: var(--tracking-wordmark); animation: o-word var(--duration-launch-draw) var(--ease-out) var(--delay-3) both; }
+#old.is-leaving { animation: o-fade var(--duration-launch-reveal) var(--ease-in) var(--delay-2) forwards; }
+#old.is-leaving .o-system { animation: o-dive var(--duration-land) var(--ease-launch) forwards; }
+#old.is-leaving .o-word { animation: o-out var(--duration-slow) var(--ease-out) forwards; }
+@keyframes o-drift { to { transform: translate(-38vmin, -19vmin); } }
+@keyframes o-rise { from { opacity: 0; transform: scale(.6); } }
+@keyframes o-orbit { from { opacity: 0; transform: rotate(-24deg) scale(.4); } }
+@keyframes o-sat { to { offset-distance: 100%; } }
+@keyframes o-word { from { opacity: 0; letter-spacing: calc(var(--tracking-wordmark) * 2.5); } }
+@keyframes o-out { to { opacity: 0; transform: translateY(1vh); } }
+@keyframes o-dive { to { transform: scale(9); opacity: 0; } }
+@keyframes o-fade { to { opacity: 0; visibility: hidden; } }
+/* Hoy la barra repite su propia animación de la marca después del arranque (status-bar.css:20-26). */
+.brand.replay .mark__planet { transform-origin: 16px 16px; animation: b-planet var(--duration-enter) var(--ease-spring) both; }
+.brand.replay .mark__ring { stroke-dasharray: 1; animation: b-draw var(--duration-land) var(--ease-out) var(--duration-land) both; }
+.brand.replay .moon { animation: b-moon var(--duration-enter) var(--ease-spring) calc(var(--duration-land) * 1.7) both; }
+
+/* Movimiento reducido: todo quieto, cortes limpios (igual que base.css). */
+[data-motion="reduce"] *, [data-motion="reduce"] *::before, [data-motion="reduce"] *::after { animation-duration: 0s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0s !important; }
+
+/* ---------- Panel de la maqueta ---------- */
+.panel { position: fixed; z-index: 50; right: 16px; bottom: 16px; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; max-width: calc(100vw - 32px);
+  padding: .6rem .7rem; border-radius: 1rem; background: rgba(20,20,24,.86); backdrop-filter: blur(12px); font-size: .85rem; border: 1px solid rgba(255,255,255,.08); }
+.panel button { font: inherit; color: var(--color-text); background: rgba(255,255,255,.08); border: 0; border-radius: 99px; padding: .45rem .85rem; cursor: pointer; }
+.panel button[aria-pressed="true"] { background: var(--color-text); color: var(--palette-ink-1000); }
+.panel .t { color: var(--color-text-muted); font-variant-numeric: tabular-nums; min-width: 5.5rem; }
+</style>
+</head>
+<body>
+<div class="home" id="home">
+  <div class="bar">
+    <span class="brand is-hidden" id="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle class="mark__planet" cx="16" cy="16" r="7.2" fill="none" stroke="currentColor" stroke-width="2.8"/><path class="mark__ring" pathLength="1" d="M3.2 20.4c3.8 3.1 21.2-2.4 26-8.8" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>
+      <span class="word">orbital<span class="moon"></span></span>
+    </span>
+    <div class="pills"><span></span><span></span><span></span><span></span></div>
+  </div>
+  <div class="hero"></div>
+  <div class="shelf"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="hints"></div>
+</div>
+
+<template id="tpl-new">
+  <div id="boot" role="status" aria-label="Orbital se está abriendo">
+    <div class="boot__bg"></div>
+    <div class="lockup" aria-hidden="true">
+      <svg class="mark" viewBox="0 0 32 32"><circle class="mark__planet" cx="16" cy="16" r="7.2" fill="none" stroke="currentColor" stroke-width="2.8"/><path class="mark__ring" pathLength="1" d="M3.2 20.4c3.8 3.1 21.2-2.4 26-8.8" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>
+      <span class="word">orbital<span class="moon"></span></span>
+    </div>
+    <div class="boot__status"></div>
+  </div>
+</template>
+<template id="tpl-old">
+  <div id="old"><div class="o-stars"></div><div class="o-system"><div class="o-orbit"><span class="o-sat"></span></div><div class="o-planet"></div><div class="o-orbit o-front"></div></div><div class="o-word">orbital</div></div>
+</template>
+
+<div class="panel">
+  <button id="replay">↻ Repetir</button>
+  <button id="b-mode" aria-pressed="false">Ver la de hoy</button>
+  <button id="b-slow" aria-pressed="false">Carga lenta (4,5 s)</button>
+  <button id="b-k" aria-pressed="false">Cámara lenta ×3</button>
+  <button id="b-reduce" aria-pressed="false">Movimiento reducido</button>
+  <span class="t" id="clock">0 ms</span>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const opts = { old: false, slow: false, k: 1, reduce: false };
+let timers = [], t0 = 0, raf = 0;
+const later = (ms, fn) => timers.push(setTimeout(fn, ms * opts.k));
+
+function tick() { $("#clock").textContent = Math.round((performance.now() - t0) / opts.k) + " ms"; raf = requestAnimationFrame(tick); }
+
+function reset() {
+  timers.forEach(clearTimeout); timers = []; cancelAnimationFrame(raf);
+  document.querySelectorAll("#boot, #old").forEach((n) => n.remove());
+  delete document.body.dataset.landing;
+  const brand = $("#brand"); brand.className = "brand is-hidden"; brand.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+  document.documentElement.style.setProperty("--k", opts.k);
+  if (opts.reduce) document.documentElement.dataset.motion = "reduce"; else delete document.documentElement.dataset.motion;
+  t0 = performance.now(); tick();
+}
+
+function run() {
+  reset();
+  const libraryMs = opts.slow ? 4500 : 600;           // cuándo llega la biblioteca (simulado)
+  opts.old ? runOld(libraryMs) : runNew(libraryMs);
+}
+
+/* ---------------- Propuesta ---------------- */
+function runNew(libraryMs) {
+  document.body.append($("#tpl-new").content.cloneNode(true));
+  const boot = $("#boot"), lockup = boot.querySelector(".lockup"), status = boot.querySelector(".boot__status");
+  boot.classList.add("is-in");
+  const INTRO_MS = opts.reduce ? 0 : 1810;            // la luna termina de caer (760 × 1,7 + 520)
+  const STATUS_MS = 2400;                             // si sigue esperando, lo dice
+  let ready = false;
+  later(INTRO_MS, () => { if (!ready) boot.classList.add("is-waiting"); });
+  later(STATUS_MS, () => { if (!ready) { status.textContent = "Preparando tu biblioteca…"; status.classList.add("is-on"); } });
+  later(Math.max(libraryMs, INTRO_MS), () => { ready = true; leave(boot, lockup, status); });
+}
+
+function leave(boot, lockup, status) {
+  const k = opts.k, brand = $("#brand");
+  // La luna deja de respirar sin saltar: de donde esté a su sitio.
+  const moon = lockup.querySelector(".moon");
+  if (boot.classList.contains("is-waiting")) {
+    const cs = getComputedStyle(moon); const from = { opacity: cs.opacity, scale: cs.scale };
+    boot.classList.remove("is-waiting", "is-in");
+    moon.animate([from, { opacity: 1, scale: 1 }], { duration: 220 * k, easing: "cubic-bezier(.16,1,.3,1)" });
+  } else boot.classList.remove("is-in");
+  status.classList.remove("is-on");
+  if (opts.reduce) { brand.classList.remove("is-hidden"); boot.remove(); return; }
+  // FLIP: la marca grande viaja a donde vive la de la barra y se vuelve ella.
+  const a = lockup.getBoundingClientRect(), b = brand.getBoundingClientRect();
+  const s = b.width / a.width, dx = b.left - a.left, dy = b.top - a.top;
+  const move = 640 * k;
+  lockup.animate([{ transform: "none" }, { transform: `translate(${dx}px, ${dy}px) scale(${s})` }],
+    { duration: move, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" });
+  boot.classList.add("is-leaving");
+  document.body.dataset.landing = "boot";
+  setTimeout(() => { brand.classList.remove("is-hidden"); lockup.style.visibility = "hidden"; }, move);
+  setTimeout(() => { boot.remove(); delete document.body.dataset.landing; }, 1100 * k);
+}
+
+/* ---------------- Hoy ---------------- */
+function runOld(libraryMs) {
+  document.body.append($("#tpl-old").content.cloneNode(true));
+  const old = $("#old");
+  const wait = Math.max(0, (opts.reduce ? 0 : 1100) - 0);
+  later(Math.max(libraryMs, wait), () => {
+    old.classList.add("is-leaving");
+    document.body.dataset.landing = "old";
+    const brand = $("#brand"); brand.classList.remove("is-hidden"); brand.classList.add("replay");
+    later(1100, () => { old.remove(); delete document.body.dataset.landing; });
+  });
+}
+
+const toggle = (id, key, on, off) => $(id).addEventListener("click", (e) => {
+  opts[key] = key === "k" ? (opts.k === 1 ? 3 : 1) : !opts[key];
+  e.currentTarget.setAttribute("aria-pressed", key === "k" ? opts.k !== 1 : opts[key]);
+  run();
+});
+toggle("#b-mode", "old"); toggle("#b-slow", "slow"); toggle("#b-k", "k"); toggle("#b-reduce", "reduce");
+$("#replay").addEventListener("click", run);
+addEventListener("keydown", (e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); run(); } });
+run();
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<title>Tablero Orbital Escritorio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una franja de resumen y una cuadrícula de tarjetas por estado, como la parrilla de una consola */
+:root {
+  --bg: #f3f4f6; --surface: #ffffff; --line: #dcdee4; --fg: #15161a; --muted: #5c5f6a;
+  --moon: #0f8f86; --doing: #b7791f; --done: #0f8f86; --todo: #8a8d97; --prio: #c0392b;
+  --display: "Sora", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e0f12; --surface: #17181d; --line: #2a2c33; --fg: #f2f2f4; --muted: #9a9ca6;
+  --moon: #5fd3c8; --doing: #f2c14e; --done: #5fd3c8; --todo: #6c6f7a; --prio: #ff6b5e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e0f12; --surface: #17181d; --line: #2a2c33; --fg: #f2f2f4; --muted: #9a9ca6;
+  --moon: #5fd3c8; --doing: #f2c14e; --done: #5fd3c8; --todo: #6c6f7a; --prio: #ff6b5e; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 24px; }
+header { display: grid; gap: 6px; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -.02em; text-wrap: balance; margin: 0; }
+.brand .o { color: var(--moon); }
+.sub { color: var(--muted); margin: 0; }
+.summary { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-family: var(--mono); font-size: 13px; }
+.bar { flex: 1 1 240px; height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 16px 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card.doing { border-color: var(--doing); box-shadow: 0 0 0 1px var(--doing); }
+.top { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.chip { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+.chip.todo { color: var(--todo); } .chip.doing { color: var(--doing); } .chip.done { color: var(--done); }
+.chip.prio { color: var(--prio); }
+.card h2 { font-family: var(--display); font-weight: 600; font-size: 16px; margin: 0; text-wrap: balance; }
+.card p { margin: 0; color: var(--muted); font-size: 14px; }
+.note { border-top: 1px dashed var(--line); padding-top: 8px; font-size: 13px; color: var(--fg); }
+.note:empty { display: none; }
+.kind { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+@media (prefers-reduced-motion: no-preference) { .card.doing .chip.doing { animation: pulse 1.6s ease-in-out infinite; } }
+@keyframes pulse { 50% { opacity: .45; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1 class="brand">orbital<span class="o">·</span> escritorio</h1>
+    <p class="sub">Las 12 mejoras y bugs que pediste, en el orden en que los ataco. El reproductor va primero.</p>
+  </header>
+  <div class="summary" id="summary"></div>
+  <div class="grid" id="grid"></div>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const UPDATED = "25 oct 2026 · reproductor listo, revisando trabas";
+// estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
+const ITEMS = [
+  { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "done",
+    d: "Al pausar no detecta bien los botones, o sale el logo pero no la pantalla de pausa.",
+    nota: "Causa: con el video al frente, Windows a veces deja el foco en Orbital. A se perdía y la ficha de atrás la tomaba como «Ver», así que salía la carga con el logo. Ahora la pulsación va al video y la interfaz no hace caso del mando mientras el video tiene la pantalla. Pendiente: probarlo en la Legion Go." },
+  { n: 12, t: "La película se traba («Qué pasó ayer»)", tipo: "Investigación", prio: true, estado: "doing",
+    d: "Revisar si una configuración de caché del reproductor se rompe y hace que se trabe.", nota: "" },
+  { n: 10, t: "Canal 24/7 de Los Simpson", tipo: "Bug", estado: "todo",
+    d: "Al acabar un episodio no pone el siguiente solo. Debe ser como una tele 24/7.", nota: "" },
+  { n: 9, t: "Ficha: «Ver» y «Guardar» se tocan", tipo: "Bug", estado: "todo",
+    d: "En las fichas de películas y series los dos botones quedan pegados.", nota: "" },
+  { n: 7, t: "«Ver más» en las descripciones", tipo: "Mejora", estado: "todo",
+    d: "En la ficha, un botón para leer la sinopsis completa.", nota: "" },
+  { n: 1, t: "Buscador: que se note que está buscando", tipo: "Mejora", estado: "todo",
+    d: "Una animación clara mientras busca, para que no parezca que no pasó nada.", nota: "" },
+  { n: 2, t: "Dictado: borrar si pasaron más de 2 min", tipo: "Mejora", estado: "todo",
+    d: "Hoy el dictado siempre añade. Si lo escrito tiene más de 2 minutos, que lo reemplace.", nota: "" },
+  { n: 3, t: "Banderitas en idiomas y subtítulos", tipo: "Mejora", estado: "todo",
+    d: "Mapear todos los lugares donde eliges idioma o subtítulo y ponerles bandera.", nota: "" },
+  { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "todo",
+    d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "" },
+  { n: 6, t: "Animación de entrada de Orbital", tipo: "Propuesta", estado: "todo",
+    d: "Propuesta elegante, minimalista y fluida, alineada con la del iPhone.", nota: "" },
+  { n: 8, t: "Cambio rápido de subtítulo", tipo: "Propuesta", estado: "todo",
+    d: "Análisis de UI y UX para probar varios subtítulos con el video que estás viendo, como en el iPhone.", nota: "" },
+  { n: 5, t: "Trakt: avance compartido y dos sesiones", tipo: "Investigación", estado: "todo",
+    d: "Cómo sincronizar el avance de películas del iPhone aquí, y si se pueden tener dos sesiones de Trakt.", nota: "" },
+];
+const LABEL = { todo: "Pendiente", doing: "En curso", done: "Listo" };
+const VAR = { todo: "--todo", doing: "--doing", done: "--done" };
+const grid = document.getElementById("grid");
+for (const it of ITEMS) {
+  const c = document.createElement("article");
+  c.className = "card " + it.estado;
+  c.innerHTML = `<div class="top"><span>#${it.n} · <span class="kind">${it.tipo}</span></span>
+    <span>${it.prio ? '<span class="chip prio">Prioridad</span> ' : ""}<span class="chip ${it.estado}">${LABEL[it.estado]}</span></span></div>
+    <h2></h2><p></p><div class="note"></div>`;
+  c.querySelector("h2").textContent = it.t;
+  c.querySelector("p").textContent = it.d;
+  c.querySelector(".note").textContent = it.nota;
+  grid.append(c);
+}
+const count = s => ITEMS.filter(i => i.estado === s).length;
+const sum = document.getElementById("summary");
+const bar = ["done", "doing", "todo"].map(s => `<i style="width:${count(s) / ITEMS.length * 100}%;background:var(${VAR[s]})"></i>`).join("");
+sum.innerHTML = `<span>${count("done")} de ${ITEMS.length} listos</span><div class="bar">${bar}</div>
+  <div class="legend">${["done", "doing", "todo"].map(s => `<span><span class="dot" style="background:var(${VAR[s]})"></span>${LABEL[s]} ${count(s)}</span>`).join("")}</div>`;
+document.getElementById("foot").textContent = "Actualizado: " + UPDATED;
+</script>
