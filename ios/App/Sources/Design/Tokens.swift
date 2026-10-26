@@ -347,6 +347,18 @@ enum DS {
 
     /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32
     /// (el planeta y el anillo) o en em de la palabra (la luna, el interletrado, el tamaño de la marca junto a la palabra).
+    /// La entrada de la app (`LaunchSplash`): los mismos tiempos que la TV y la computadora (~1.4 s).
+    enum Splash {
+        static let wordSize: CGFloat = 52
+        static let start = 0.1, ring = 0.5, moonAt = 0.5, leaveAt = 0.4, leaveSeconds = 0.5
+        static let letterStagger = 0.04, letterRise: CGFloat = 0.14
+        static let letter = Animation.easeOut(duration: 0.4).delay(0.08)
+        static let moon = Animation.spring(duration: 0.55, bounce: 0.45)
+        static let leave = Animation.spring(duration: 0.5, bounce: 0.08)
+        /// Con «Reducir movimiento»: quieto un momento y un fundido.
+        static let still = 0.5, fade = 0.3
+    }
+
     /// La órbita de «Buscando la mejor versión» (`SourceOrbit`).
     enum SourceOrbit {
         static let size: CGFloat = 132

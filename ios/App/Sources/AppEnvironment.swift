@@ -815,4 +815,8 @@ final class AppUI {
     var openRemote = false
     /// Abrir Ajustes (desde un aviso, como «Tu sesión de Trakt se cerró · Conectar»).
     var openSettings = false
+    /// La entrada de la app está a la vista (el logotipo de Inicio espera escondido a que llegue el de la entrada).
+    var splashing = false
+    /// Dónde está el logotipo de Inicio en la pantalla, si se ve: ahí termina la entrada.
+    var homeLogoFrame: CGRect?
 }

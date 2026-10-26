@@ -91,3 +91,89 @@ struct OrbitalWordmark: View {
         }
     }
 }
+
+/// La entrada de la app (arranque en frío): sobre el fondo de la app, el anillo se dibuja sobre el planeta, las letras de
+/// «orbital» suben una tras otra y la luna cae a su lugar con un rebote corto; luego el logotipo vuela y se encoge hasta
+/// donde vive el de Inicio (arriba a la izquierda) mientras Inicio aparece debajo. Unos 1.4 s; si Inicio no está a la vista,
+/// se desvanece en su lugar. Con «Reducir movimiento», todo quieto y un fundido. Los mismos tiempos que la TV y la computadora.
+struct LaunchSplash: View {
+    /// Dónde está el logotipo de Inicio en la pantalla (si se ve): ahí termina.
+    let target: CGRect?
+    let finished: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var drawn = false
+    @State private var lettersUp = false
+    @State private var moonIn = false
+    @State private var leaving = false
+    @State private var natural = CGRect.zero
+    private let size = DS.Splash.wordSize
+
+    var body: some View {
+        GeometryReader { geo in
+            let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
+            let flies = target != nil && natural.width > 0 && !reduceMotion
+            ZStack {
+                DS.bg.opacity(leaving ? 0 : 1)
+                wordmark
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if !leaving { natural = $0 } }
+                    .scaleEffect(leaving && flies ? (target?.width ?? natural.width) / natural.width : 1)
+                    .offset(x: leaving && flies ? (target?.midX ?? 0) - center.x : 0, y: leaving && flies ? (target?.midY ?? 0) - center.y : 0)
+                    .opacity(leaving && !flies ? 0 : 1)
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(!leaving)
+        .accessibilityHidden(true)
+        .task { await run() }
+    }
+
+    private var wordmark: some View {
+        let mark = size * DS.Brand.markScale, unit = mark / DS.Brand.box
+        return HStack(alignment: .center, spacing: size * DS.Brand.markGap) {
+            ZStack {
+                MarkPlanet().stroke(lineWidth: DS.Brand.planetStroke * unit)
+                MarkRing().trim(from: 0, to: drawn ? 1 : 0)
+                    .stroke(style: StrokeStyle(lineWidth: DS.Brand.ringStroke * unit, lineCap: .round))
+            }
+            .frame(width: mark, height: mark)
+            HStack(alignment: .firstTextBaseline, spacing: size * DS.Brand.moonGap) {
+                HStack(spacing: size * DS.Brand.tracking) {
+                    ForEach(Array("orbital".enumerated()), id: \.offset) { i, letter in
+                        Text(verbatim: String(letter)).font(DS.Brand.wordFont(size))
+                            .opacity(lettersUp ? 1 : 0)
+                            .offset(y: lettersUp ? 0 : size * DS.Splash.letterRise)
+                            .animation(reduceMotion ? nil : DS.Splash.letter.delay(Double(i) * DS.Splash.letterStagger), value: lettersUp)
+                    }
+                }
+                Circle().fill(DS.brandMoon)
+                    .frame(width: size * DS.Brand.moon, height: size * DS.Brand.moon)
+                    .alignmentGuide(.firstTextBaseline) { $0.height + size * DS.Brand.moonRise }
+                    .scaleEffect(moonIn ? 1 : DS.Brand.moonFromScale)
+                    .offset(x: moonIn ? 0 : size * DS.Brand.moonFromX, y: moonIn ? 0 : size * DS.Brand.moonFromY)
+                    .opacity(moonIn ? 1 : 0)
+            }
+        }
+        .foregroundStyle(DS.text)
+        .fixedSize()
+    }
+
+    private func run() async {
+        if reduceMotion {
+            drawn = true; lettersUp = true; moonIn = true
+            try? await Task.sleep(for: .seconds(DS.Splash.still))
+            withAnimation(.easeOut(duration: DS.Splash.fade)) { leaving = true }
+            try? await Task.sleep(for: .seconds(DS.Splash.fade))
+            return finished()
+        }
+        try? await Task.sleep(for: .seconds(DS.Splash.start))
+        withAnimation(.easeOut(duration: DS.Splash.ring)) { drawn = true }
+        lettersUp = true
+        try? await Task.sleep(for: .seconds(DS.Splash.moonAt))
+        withAnimation(DS.Splash.moon) { moonIn = true }
+        try? await Task.sleep(for: .seconds(DS.Splash.leaveAt))
+        withAnimation(DS.Splash.leave) { leaving = true }
+        try? await Task.sleep(for: .seconds(DS.Splash.leaveSeconds))
+        finished()
+    }
+}

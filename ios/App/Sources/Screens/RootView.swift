@@ -22,8 +22,15 @@ struct RootView: View {
     @State private var services: ModelObserver<Services>
     @Environment(\.scenePhase) private var scenePhase
 
+    /// La entrada de la app: solo al arrancar en frío (cada arranque arma una raíz nueva). En modo demo, solo con
+    /// `-demo-splash` (las capturas no la esperan).
+    @State private var splashing: Bool
+
     init() {
         let env = AppEnvironment.shared
+        let splash = !Demo.isOn || ProcessInfo.processInfo.arguments.contains("-demo-splash")
+        _splashing = State(wrappedValue: splash)
+        env.ui.splashing = splash
         _session = State(wrappedValue: ModelObserver(env.session))
         _services = State(wrappedValue: ModelObserver(env.services))
     }
@@ -46,6 +53,7 @@ struct RootView: View {
             }
         }
         .background(DS.bg.ignoresSafeArea())
+        .overlay { if splashing { LaunchSplash(target: ui.homeLogoFrame) { splashing = false; ui.splashing = false } } }
         .fullScreenCover(item: $env.playing) { request in PlayerScreen(request: request) }
         .sensoryFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
         .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {

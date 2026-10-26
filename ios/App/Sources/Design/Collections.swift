@@ -328,8 +328,13 @@ struct YearCard: View {
 struct AppMark: View {
     var body: some View {
         let compact = UIScreen.main.bounds.width < DS.Size.compactWidth
+        let ui = AppEnvironment.shared.ui
         OrbitalWordmark(size: compact ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
             .foregroundStyle(DS.text).fixedSize()
+            // La entrada de la app termina justo aquí (sin el planeta, en un iPhone angosto, ya no calza: ahí se desvanece).
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if !compact { ui.homeLogoFrame = $0 } }
+            .onDisappear { ui.homeLogoFrame = nil }
+            .opacity(ui.splashing ? 0 : 1)
     }
 }
 
