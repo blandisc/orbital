@@ -222,24 +222,86 @@ final class TraktTests: XCTestCase {
         XCTAssertTrue(http.calls.isEmpty)
     }
 
-    func testABorrowedSessionIsRenewedByTheConsoleAndNeverRevoked() async throws {
+    /// La sesión que antes prestaba tu Orbital (sin refresh token): se olvida aquí sin revocarla; una propia no se toca.
+    func testABorrowedSessionIsForgottenLocallyAndNeverRevoked() async throws {
         let http = FakeHTTP(), clock = Clock(), secrets = InMemorySecrets()
-        let asked = AskCounter()
-        let trakt = Trakt(http: http, secrets: secrets, clientID: "CID", clock: { clock.now }, pause: { _ in },
-                          borrow: { await asked.add(); return BorrowedSession(accessToken: "NEW", expiresAt: clock.now.timeIntervalSince1970 + 86400) })
-        trakt.adopt(BorrowedSession(accessToken: "OLD", expiresAt: clock.now.timeIntervalSince1970 + 600))   // caduca en 10 min
+        secrets.set(SecretKey.traktTokens, #"{"access_token":"PRESTADA","expires_at":\#(clock.now.timeIntervalSince1970 + 600)}"#)
+        let trakt = Trakt(http: http, secrets: secrets, clientID: "CID", clock: { clock.now }, pause: { _ in })
         XCTAssertTrue(trakt.linked); XCTAssertTrue(trakt.borrowed)
-        http.json["\(api)/sync/watchlist?extended=full&sort_by=added&sort_how=desc"] = []
-        _ = try await trakt.watchlist()
-        let renewed = await asked.value
-        XCTAssertEqual(renewed, 1, "por caducar: se le pide otra a la consola (no a Trakt)")
-        XCTAssertFalse(http.calls.contains { $0.hasSuffix("/oauth/token") }, "el iPhone no renueva: no tiene con qué")
-        await trakt.unlink()
+        XCTAssertTrue(trakt.forgetBorrowedSession())
         XCTAssertFalse(trakt.linked)
-        XCTAssertFalse(http.calls.contains { $0.hasSuffix("/oauth/revoke") }, "revocarla desconectaría también la consola")
+        XCTAssertTrue(http.calls.isEmpty, "ni /oauth/revoke: revocarla desconectaría también la consola")
+        let own = makeTrakt(http)
+        XCTAssertFalse(own.forgetBorrowedSession(), "la sesión propia del iPhone se queda")
+        XCTAssertTrue(own.linked)
+    }
+
+    /// Las apps nuevas de Trakt (PKCE) solo tienen Client ID: el código y la sesión van sin `client_secret`; una antigua lo manda.
+    func testDeviceLinkWithoutASecretSendsNoClientSecret() async throws {
+        let http = FakeHTTP(), secrets = InMemorySecrets()
+        http.json["\(api)/oauth/device/code"] = ["device_code": "DC", "user_code": "ABCD1234", "interval": 5, "expires_in": 600]
+        http.json["\(api)/oauth/device/token"] = ["access_token": "AT", "refresh_token": "RT", "created_at": 1_760_000_000, "expires_in": 604800]
+        let trakt = makeTrakt(http, secrets: secrets, linked: false)
+        let code = try await trakt.deviceCode()
+        XCTAssertEqual(code.verificationURL, "https://trakt.tv/activate")
+        let status = try await trakt.pollDevice(code)
+        XCTAssertEqual(status, .linked)
+        let body = try XCTUnwrap(JSON.parse(try XCTUnwrap(http.bodies(for: "\(api)/oauth/device/token").first)))
+        XCTAssertEqual(body["client_id"]?.string, "CID")
+        XCTAssertNil(body["client_secret"])
+        let legacy = Trakt(http: http, secrets: InMemorySecrets(), clientID: "CID", clientSecret: "S", pause: { _ in })
+        _ = try await legacy.pollDevice(code)
+        XCTAssertEqual(JSON.parse(http.bodies(for: "\(api)/oauth/device/token").last!)?["client_secret"]?.string, "S")
+    }
+
+    static let playbackRows: JSON = [
+        ["progress": .double(31.5), "paused_at": "2026-10-25T20:00:00.000Z", "id": 11, "type": "movie",
+         "movie": ["title": "Dune", "ids": ["trakt": 1, "imdb": "tt1160419"]]],
+        ["progress": 12, "paused_at": "2026-10-24T20:00:00.000Z", "id": 12, "type": "episode",
+         "episode": ["season": 2, "number": 5, "title": "x", "ids": ["trakt": 9]],
+         "show": ["title": "The Office", "ids": ["trakt": 2, "imdb": "tt0386676"]]],
+        ["progress": 50, "paused_at": "2026-10-26T20:00:00Z", "id": 13, "type": "episode",
+         "episode": ["season": 2, "number": 5], "show": ["title": "The Office", "ids": ["trakt": 2, "imdb": "tt0386676"]]],
+        ["progress": 40, "paused_at": "2026-10-24T20:00:00Z", "id": 14, "type": "movie", "movie": ["title": "Sin IMDb", "ids": ["trakt": 3]]],
+    ]
+
+    func testPlaybackParsesMoviesAndEpisodesByIMDb() throws {
+        let rows = try XCTUnwrap(Self.playbackRows.array).compactMap(TraktParsing.playback)
+        XCTAssertEqual(rows.map(\.id), [11, 12, 13], "sin IMDb no sirve para seguir")
+        XCTAssertEqual(rows[0].target, TraktTarget(imdb: "tt1160419"))
+        XCTAssertEqual(rows[0].progress, 31.5)
+        XCTAssertEqual(rows[0].pausedAt, TraktParsing.date("2026-10-25T20:00:00.000Z"))
+        XCTAssertEqual(rows[1].target, TraktTarget(imdb: "tt0386676", season: 2, episode: 5))
+    }
+
+    /// La pausa más reciente de ESE episodio; se guarda un minuto (abrir varios títulos no pregunta cada vez) y una pausa propia
+    /// la renueva.
+    func testPausedPicksTheMostRecentAndIsCachedBriefly() async throws {
+        let http = FakeHTTP(), clock = Clock()
+        http.json["\(api)/sync/playback"] = Self.playbackRows
+        let trakt = makeTrakt(http, clock: clock)
+        let episode = await trakt.paused(TraktTarget(imdb: "tt0386676", season: 2, episode: 5))
+        XCTAssertEqual(episode?.id, 13)
+        let none = await trakt.paused(TraktTarget(imdb: "tt0386676", season: 1, episode: 1))
+        XCTAssertNil(none)
+        XCTAssertEqual(http.calls.filter { $0.hasSuffix("/sync/playback") }.count, 1, "la segunda pregunta sale de lo guardado")
+        clock.now = clock.now.addingTimeInterval(61)
+        _ = await trakt.paused(TraktTarget(imdb: "tt1160419"))
+        XCTAssertEqual(http.calls.filter { $0.hasSuffix("/sync/playback") }.count, 2, "pasado el minuto se vuelve a preguntar")
+        http.json["\(api)/scrobble/pause"] = [:]
+        try await trakt.scrobble(.pause, TraktTarget(imdb: "tt1160419"), progress: 40)
+        _ = await trakt.paused(TraktTarget(imdb: "tt1160419"))
+        XCTAssertEqual(http.calls.filter { $0.hasSuffix("/sync/playback") }.count, 3, "tras tu propia pausa, lo nuevo")
+    }
+
+    func testPausedWithoutASessionAsksNothing() async {
+        let http = FakeHTTP()
+        let trakt = makeTrakt(http, linked: false)
+        let found = await trakt.paused(TraktTarget(imdb: "tt1160419"))
+        XCTAssertNil(found)
+        XCTAssertTrue(http.calls.isEmpty)
     }
 }
 
 actor Sleeps { var total = 0.0; func add(_ v: TimeInterval) { total += v } }
 
-actor AskCounter { private(set) var value = 0; func add() { value += 1 } }

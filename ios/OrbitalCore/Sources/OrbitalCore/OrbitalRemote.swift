@@ -52,22 +52,19 @@ public struct OrbitalRemote: Sendable {
         _ = try await send("api/ping", method: "GET", body: nil)
     }
 
-    /// Lo de «Para ti» que ya está en tu Orbital (para no escribirlo otra vez en el iPhone).
+    /// Lo de «Para ti» que ya está en tu Orbital (para no escribirlo otra vez en el iPhone): la clave de TMDB, el Client ID de
+    /// la aplicación de Trakt y el país. La sesión de Trakt de la consola no viaja: cada dispositivo conecta la suya con un código.
     public struct Keys: Sendable, Equatable {
         public var tmdbKey: String, traktClientID: String, region: String
-        /// La sesión de Trakt de la consola (nil si allá no está conectado).
-        public var traktSession: BorrowedSession?
+        public init(tmdbKey: String, traktClientID: String, region: String) {
+            self.tmdbKey = tmdbKey; self.traktClientID = traktClientID; self.region = region
+        }
     }
 
     public func keys() async throws -> Keys {
         let json = try await send("api/companion", method: "GET", body: nil)
         func text(_ key: String) -> String { json?[key]?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
-        var session: BorrowedSession?
-        if let raw = json?["trakt_session"], let access = raw["access_token"]?.nonEmptyString {
-            let expires: Double = { switch raw["expires_at"] { case .int(let i)?: Double(i); case .double(let d)?: d; default: 0 } }()
-            session = BorrowedSession(accessToken: access, expiresAt: expires)
-        }
-        return Keys(tmdbKey: text("tmdb_key"), traktClientID: text("trakt_client_id"), region: text("region"), traktSession: session)
+        return Keys(tmdbKey: text("tmdb_key"), traktClientID: text("trakt_client_id"), region: text("region"))
     }
 
     /// Pone en la TV un título de Stremio (película o el episodio `videoID`), desde donde ibas.

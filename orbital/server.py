@@ -504,13 +504,13 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     @public.get("/api/companion")
     def companion_keys() -> dict:
         """La app del iPhone toma de aquí lo de «Para ti» para no escribirlo dos veces: la clave de TMDB, la aplicación
-        de Trakt (su Client ID, que no es secreto; el secreto no sale de aquí) y el país."""
+        de Trakt (su Client ID, que no es secreto; el secreto no sale de aquí) y el país. La sesión de Trakt de la consola
+        ya no se presta: el iPhone conecta la suya con un código (cada app con su sesión)."""
         p = config.para_ti
         saw_phone()  # Ajustes › Cuentas: el iPhone está conectado (antes decía siempre «Conectar»)
         foryou = getattr(main_app.state.catalog, "foryou", None)
         key = foryou.key if foryou else (lambda name: getattr(p, name))  # las escritas en la TV, o las de config.yaml
-        return {"tmdb_key": key("tmdb_key"), "trakt_client_id": key("trakt_client_id"), "region": p.region,
-                "trakt_session": companion.trakt_session(getattr(foryou, "trakt", None))}
+        return {"tmdb_key": key("tmdb_key"), "trakt_client_id": key("trakt_client_id"), "region": p.region}
 
     @public.get("/escribir/{code}")
     def remote_form(code: str) -> HTMLResponse:

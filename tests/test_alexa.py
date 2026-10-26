@@ -245,15 +245,16 @@ def test_public_app_plays_a_stremio_title_on_the_tv_only_with_token(public):
     assert client.post("/api/stremio/login", json={}, headers=auth).status_code == 404
 
 
-def test_public_app_shares_para_ti_keys_with_the_iphone_but_never_the_secret(public):
+def test_public_app_shares_para_ti_keys_with_the_iphone_but_never_the_secret_nor_the_session(public):
     client, main = public
     cfg = main.state.deps.config
     cfg.para_ti.tmdb_key, cfg.para_ti.trakt_client_id, cfg.para_ti.trakt_client_secret = "tmdb123", "cid456", "secreto-de-trakt"
     assert client.get("/api/companion").status_code == 401
     got = client.get("/api/companion", headers={"Authorization": "Bearer secreto"}).json()
     assert {k: got[k] for k in ("tmdb_key", "trakt_client_id", "region")} == {"tmdb_key": "tmdb123", "trakt_client_id": "cid456", "region": cfg.para_ti.region}
-    assert got["trakt_session"] is None  # Trakt sin conectar en la consola: no hay sesión que prestar
+    # El iPhone conecta su propia sesión de Trakt con un código (solo con el Client ID): ni el secreto ni la sesión salen.
     assert "secreto-de-trakt" not in str(got)
+    assert "trakt_session" not in got
 
 
 def test_main_app_rejects_tunnel_host_without_token(library):

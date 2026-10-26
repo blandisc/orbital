@@ -124,7 +124,7 @@ final class ServicesRig {
     let services: Services
     let root = FileManager.default.temporaryDirectory.appendingPathComponent("orbital-svc-\(UUID().uuidString)")
 
-    init(signedIn: Bool = true, traktLinked: Bool = false, traktClientID: String = "", tmdbKey: String = "") throws {
+    init(signedIn: Bool = true, traktLinked: Bool = false, traktClientID: String = "", tmdbKey: String = "", builtInTraktClientID: String = "") throws {
         if signedIn { secrets.set(SecretKey.stremioAuth, "KEY") }
         if !tmdbKey.isEmpty { secrets.set(SecretKey.tmdbKey, tmdbKey) }
         if !traktClientID.isEmpty {
@@ -133,7 +133,7 @@ final class ServicesRig {
         if traktLinked { secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(1_760_000_000 + 86400)}"#) }
         let clock = self.clock
         services = Services(http: http, secrets: secrets, kv: kv, pending: pending, downloadTransport: transport, downloadsRoot: root,
-                            freeSpace: { 50_000_000_000 }, clock: { clock.now })
+                            freeSpace: { 50_000_000_000 }, clock: { clock.now }, builtInTraktClientID: builtInTraktClientID)
         let series = try Fixtures.json("cinemeta/meta_series_tt0386676.json")
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
         http.json["https://a.example/manifest.json"] = ["name": "Torrentio", "resources": ["stream", "subtitles"], "types": ["movie", "series"], "idPrefixes": ["tt"]]

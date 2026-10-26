@@ -1189,13 +1189,13 @@
         }
       }
     },
-    "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.": {
+    "Aparece un código para escribir en trakt.tv/activate. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A code appears to enter at trakt.tv/activate. With Trakt connected, what you watch is reported and your watchlist and lists show up."
+            "value": "A code appears to enter at trakt.tv/activate. The session belongs to this iPhone only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
           }
         }
       }
@@ -1218,17 +1218,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Appearance"
-          }
-        }
-      }
-    },
-    "Aplicación anterior (con secreto)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Older app (with a secret)"
           }
         }
       }
@@ -2927,17 +2916,6 @@
         }
       }
     },
-    "Con la sesión de tu Orbital: no hay nada que conectar aquí.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Using your Orbital's session: nothing to connect here."
-          }
-        }
-      }
-    },
     "Con subtítulos para este video": {
       "extractionState": "manual",
       "localizations": {
@@ -2949,13 +2927,13 @@
         }
       }
     },
-    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.": {
+    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y las claves de Para ti salen de ella. Trakt se conecta aparte en cada uno.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and your Trakt and For You keys come from it."
+            "value": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and your For You keys come from it. Trakt is connected separately on each one."
           }
         }
       }
@@ -2989,6 +2967,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connect Trakt (your watchlist and lists) or add a TMDB key (what is popular on Netflix, Disney+ and HBO Max) in Settings."
+          }
+        }
+      }
+    },
+    "Conecta Trakt en este iPhone (Ajustes › Trakt).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Trakt on this iPhone (Settings › Trakt)."
           }
         }
       }
@@ -3037,13 +3026,13 @@
         }
       }
     },
-    "Conecta tu Orbital (arriba) y Trakt se configura solo. Si no, crea una aplicación en developer.trakt.tv y pega aquí su Client ID.": {
+    "Conecta tu Orbital (arriba) y Trakt queda listo. Si usas tu propia aplicación de Trakt, pega su Client ID en Avanzado.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connect your Orbital (above) and Trakt sets itself up. Otherwise, create an app at developer.trakt.tv and paste its Client ID here."
+            "value": "Connect your Orbital (above) and Trakt is ready. If you use your own Trakt app, paste its Client ID in Advanced."
           }
         }
       }
@@ -3913,17 +3902,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your watchlist, lists and shows stop appearing; what you watch is no longer marked on Trakt."
-          }
-        }
-      }
-    },
-    "Dejar de usar Trakt en el iPhone": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stop using Trakt on iPhone"
           }
         }
       }
@@ -6344,17 +6322,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save to…"
-          }
-        }
-      }
-    },
-    "Guardar secreto": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save secret"
           }
         }
       }
@@ -13505,6 +13472,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Only that folder and its subfolders are read. Each video is recognized by its name (“Dune Part Two (2024).mkv”, “Severance S01E03.mkv”)."
+          }
+        }
+      }
+    },
+    "Solo si usas tu propia aplicación (developer.trakt.tv). Vacío: la de Orbital.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only if you use your own app (developer.trakt.tv). Empty: Orbital's."
           }
         }
       }

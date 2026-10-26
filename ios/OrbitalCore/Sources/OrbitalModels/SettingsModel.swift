@@ -64,13 +64,18 @@ public final class SettingsModel: ObservableModel {
         services.settings.update(change)
         settings = services.appSettings
         services.settingsDidChange()
+        if before.traktClientID != settings.traktClientID {
+            // También en el Keychain: pegada a mano (sin consola) sobrevive a borrar la app, como la que trae tu Orbital.
+            services.secrets.set(SecretKey.traktClientID, settings.traktClientID.isEmpty ? nil : settings.traktClientID)
+        }
         if before.traktClientID != settings.traktClientID || before.uiLanguage != settings.uiLanguage || before.region != settings.region {
             services.reconfigure()
             trakt = computeTraktState()
         }
     }
 
-    /// El secreto de la aplicación de Trakt va al Keychain (no a los ajustes).
+    /// El secreto de una aplicación de Trakt antigua va al Keychain (no a los ajustes). Las nuevas (PKCE) no tienen: el código
+    /// de dispositivo y la renovación funcionan sin él.
     public func setTraktSecret(_ secret: String) {
         let trimmed = secret.trimmingCharacters(in: .whitespacesAndNewlines)
         services.secrets.set(SecretKey.traktClientSecret, trimmed.isEmpty ? nil : trimmed)
@@ -97,7 +102,7 @@ public final class SettingsModel: ObservableModel {
     /// Lo que se trajo de tu Orbital la última vez («TMDB y Trakt»), para decirlo en Ajustes.
     public private(set) var importedFromOrbital: [String] = [] { didSet { changed() } }
 
-    /// Trae de tu Orbital la clave de TMDB, la aplicación y la sesión de Trakt y el país, sin pisar lo que ya escribiste aquí.
+    /// Trae de tu Orbital la clave de TMDB, la aplicación de Trakt (no la sesión: la tuya se conecta con un código) y el país, sin pisar lo que ya escribiste aquí.
     public func importFromOrbital() async {
         guard let got = try? await services.connectOrbital() else { return }
         importedFromOrbital = got
@@ -122,7 +127,8 @@ public final class SettingsModel: ObservableModel {
         }
     }
 
-    /// Conecta Trakt con el código de dispositivo: se muestra un código y se espera a que lo escribas en trakt.tv/activate.
+    /// Conecta Trakt en este iPhone con el código de dispositivo: se muestra un código y se espera a que lo escribas en
+    /// trakt.tv/activate. La sesión es solo de aquí (tu Orbital tiene la suya); no hace falta secreto.
     public func linkTrakt() async {
         guard let t = services.trakt else { return trakt = .off }
         linking?.cancel()

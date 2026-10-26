@@ -75,10 +75,16 @@ public struct DeviceCode: Sendable, Equatable {
     public var interval: TimeInterval, expiresAt: Date
 }
 
-/// Una sesión de Trakt que presta tu Orbital (sin refresh token).
-public struct BorrowedSession: Sendable, Equatable {
-    public var accessToken: String, expiresAt: Double
-    public init(accessToken: String, expiresAt: Double) { self.accessToken = accessToken; self.expiresAt = expiresAt }
+/// Algo que dejaste a medias según Trakt (`/sync/playback`): cuánto llevabas (0–100 %) y cuándo lo pausaste. Lo escribe
+/// cualquier dispositivo que haga scrobble con tu cuenta (la consola, el iPhone): así se sigue donde ibas en el otro.
+public struct TraktPlayback: Sendable, Equatable {
+    public var id: Int
+    public var progress: Double
+    public var pausedAt: Date
+    public var target: TraktTarget
+    public init(id: Int, progress: Double, pausedAt: Date, target: TraktTarget) {
+        self.id = id; self.progress = progress; self.pausedAt = pausedAt; self.target = target
+    }
 }
 
 public enum DeviceStatus: Sendable, Equatable { case linked, pending, slow, expired, denied, invalid }
@@ -157,6 +163,23 @@ public enum TraktParsing {
                            network: (row["show"]?["network"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
+    /// Una fila de `/sync/playback`: una película (por su IMDb) o un episodio (IMDb de la serie, temporada y número).
+    /// Sin IMDb, sin fecha o sin avance: nada.
+    public static func playback(_ row: JSON) -> TraktPlayback? {
+        guard let id = row["id"]?.intValue, let progress = row["progress"]?.doubleValue, progress > 0,
+              let stamp = row["paused_at"]?.string, let at = date(stamp) else { return nil }
+        let target: TraktTarget
+        if row["type"]?.string == "episode" {
+            guard let imdb = row["show"]?["ids"]?["imdb"]?.string, Trakt.isIMDb(imdb),
+                  let season = row["episode"]?["season"]?.intValue, let number = row["episode"]?["number"]?.intValue else { return nil }
+            target = TraktTarget(imdb: imdb, season: season, episode: number)
+        } else {
+            guard let imdb = row["movie"]?["ids"]?["imdb"]?.string, Trakt.isIMDb(imdb) else { return nil }
+            target = TraktTarget(imdb: imdb)
+        }
+        return TraktPlayback(id: id, progress: min(100, progress), pausedAt: at, target: target)
+    }
+
     /// «2025-10-16T01:00:00.000Z» (con o sin milésimas).
     static func date(_ text: String) -> Date? {
         let precise = ISO8601DateFormatter()
@@ -195,15 +218,14 @@ public actor Trakt {
     private let clock: @Sendable () -> Date
     private let pause: @Sendable (TimeInterval) async -> Void
     private var lastWrite = Date.distantPast
-    /// La sesión prestada por tu Orbital: cuando caduca se le pide otra (la renueva la consola, no el iPhone).
-    private let borrow: (@Sendable () async -> BorrowedSession?)?
+    /// Lo que dejaste a medias (`/sync/playback`), guardado un momento: abrir varios títulos seguidos no pregunta cada vez.
+    private var playbackCache: (at: Date, items: [TraktPlayback])?
+    static let playbackCacheFor: TimeInterval = 60
 
     public init(http: HTTPClient, secrets: SecretsStore, clientID: String, clientSecret: String = "",
                 clock: @escaping @Sendable () -> Date = { Date() },
-                pause: @escaping @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) },
-                borrow: (@Sendable () async -> BorrowedSession?)? = nil) {
+                pause: @escaping @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
         self.http = http; self.secrets = secrets; self.clientID = clientID; self.clientSecret = clientSecret; self.clock = clock; self.pause = pause
-        self.borrow = borrow
     }
 
     static func isIMDb(_ id: String) -> Bool { id.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil }
@@ -214,17 +236,16 @@ public actor Trakt {
 
     private struct Tokens: Codable { var access_token: String; var refresh_token: String?; var expires_at: Double }
 
-    /// La sesión es la de tu Orbital (sin la parte que la renueva): desconectar aquí no la toca en la consola.
+    /// La sesión es la que antes prestaba tu Orbital (sin la parte que la renueva). Ya no se usa: cada dispositivo tiene la suya.
     public nonisolated var borrowed: Bool { tokens().map { ($0.refresh_token ?? "").isEmpty } ?? false }
 
-    /// Usa la sesión de Trakt de tu Orbital (sin conectar nada en el iPhone).
-    public nonisolated func adopt(_ session: BorrowedSession) {
-        let tokens = Tokens(access_token: session.accessToken, refresh_token: nil, expires_at: session.expiresAt)
-        secrets.set(SecretKey.traktTokens, (try? JSONEncoder().encode(tokens)).flatMap { String(data: $0, encoding: .utf8) })
+    /// Olvida aquí la sesión prestada de antes, SIN revocarla (revocarla desconectaría también la consola). Devuelve si había una.
+    @discardableResult
+    public nonisolated func forgetBorrowedSession() -> Bool {
+        guard borrowed else { return false }
+        secrets.set(SecretKey.traktTokens, nil)
+        return true
     }
-
-    /// El token de la sesión de ahora (para no volver a adoptar la misma sesión de tu Orbital en cada arranque).
-    public nonisolated var accessToken: String? { tokens()?.access_token }
 
     private nonisolated func tokens() -> Tokens? {
         guard let raw = secrets.get(SecretKey.traktTokens), let data = raw.data(using: .utf8),
@@ -301,9 +322,6 @@ public actor Trakt {
         guard var tokens = tokens() else { throw TraktError.auth("Conecta tu cuenta de Trakt en Ajustes.") }
         let expiring = clock().timeIntervalSince1970 > tokens.expires_at - 3600
         if !(tokens.refresh_token ?? "").isEmpty, expiring { tokens = try await refresh(tokens) }
-        else if expiring, let borrow, let fresh = await borrow(), fresh.expiresAt > tokens.expires_at || fresh.accessToken != tokens.access_token {
-            adopt(fresh); tokens = self.tokens() ?? tokens   // tu Orbital ya la renovó
-        }
         return tokens.access_token
     }
 
@@ -322,8 +340,7 @@ public actor Trakt {
     private func get(_ path: String, auth: Bool = true, _ params: [(String, String)] = []) async throws -> JSON? {
         var (status, data) = try await call("GET", path, auth: auth, params: params)
         if status == 401 && auth {
-            // Como en las escrituras: una sesión nueva UNA vez (renovar, o pedírsela a tu Orbital) antes de darla por perdida. Antes
-            // un 401 al leer borraba la sesión prestada y el scrobble se apagaba sin decir nada.
+            // Como en las escrituras: se renueva la sesión UNA vez antes de darla por perdida.
             try await renewAfterRejection()
             (status, data) = try await call("GET", path, auth: auth, params: params)
             if status == 401 { secrets.set(SecretKey.traktTokens, nil); Trakt.announceSessionLost(); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
@@ -342,7 +359,7 @@ public actor Trakt {
         if wait > 0 { await pause(wait) }
         var result = try await call("POST", path, body: body)
         if result.0 == 401 {
-            // Un 401 no siempre es el final: se pide una sesión nueva UNA vez (se renueva, o se la pide a tu Orbital) y se reintenta.
+            // Un 401 no siempre es el final: se renueva la sesión UNA vez y se reintenta.
             try await renewAfterRejection()
             result = try await call("POST", path, body: body)
             if result.0 == 401 { secrets.set(SecretKey.traktTokens, nil); Trakt.announceSessionLost(); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
@@ -350,22 +367,13 @@ public actor Trakt {
         return result
     }
 
-    /// Trakt rechazó la sesión (401). Con refresh token se renueva (ya limpia la sesión si Trakt también lo rechaza); si es la
-    /// prestada por tu Orbital se le pide otra a la consola. Si la consola no contesta o tiene la misma, lanza SIN olvidar la sesión
-    /// (puede ser la TV apagada): el aviso queda para reintentarse y la sesión sigue ahí.
+    /// Trakt rechazó la sesión (401). Con refresh token se renueva (ya limpia la sesión si Trakt también lo rechaza); una sin él
+    /// (la prestada de antes) no se puede renovar: se olvida aquí y se avisa para conectar Trakt en este iPhone.
     private func renewAfterRejection() async throws {
         guard let old = tokens() else { throw TraktError.auth("Conecta tu cuenta de Trakt en Ajustes.") }
         if !(old.refresh_token ?? "").isEmpty { _ = try await refresh(old); return }
-        guard let borrow else {
-            secrets.set(SecretKey.traktTokens, nil)
-            throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.")
-        }
-        // La consola no contestó (apagada, sin red): no es que Trakt cerrara tu sesión; se reintenta luego.
-        guard let fresh = await borrow() else { throw TraktError.network("tu Orbital no contesta para renovar la sesión") }
-        guard fresh.accessToken != old.access_token else {
-            throw TraktError.auth("Trakt no acepta la sesión de tu Orbital: reconecta Trakt en la TV (Ajustes › Cuentas).")
-        }
-        adopt(fresh)
+        secrets.set(SecretKey.traktTokens, nil); Trakt.announceSessionLost()
+        throw TraktError.auth("Conecta Trakt en este iPhone (Ajustes › Trakt).")
     }
 
     /// La calificación de la comunidad de Trakt (0–10) y cuántos votaron; nil si nadie ha votado.
@@ -530,6 +538,20 @@ public actor Trakt {
         return (rows?.array ?? []).compactMap { TraktParsing.entry($0, kind: kind) }
     }
 
+    /// Lo que dejaste a medias en cualquier dispositivo (películas y episodios), guardado `playbackCacheFor` segundos.
+    public func playback(fresh: Bool = false) async throws -> [TraktPlayback] {
+        if !fresh, let cache = playbackCache, clock().timeIntervalSince(cache.at) < Self.playbackCacheFor { return cache.items }
+        let items = (try await get("/sync/playback")?.array ?? []).compactMap(TraktParsing.playback)
+        playbackCache = (clock(), items)
+        return items
+    }
+
+    /// Dónde lo dejaste según Trakt (la pausa más reciente de esa película o ese episodio); nil sin sesión o si no hay.
+    public func paused(_ target: TraktTarget) async -> TraktPlayback? {
+        guard linked, let items = try? await playback() else { return nil }
+        return items.filter { $0.target == target }.max { $0.pausedAt < $1.pausedAt }
+    }
+
     // MARK: escritura
     public func setWatchlist(imdb: String, series: Bool, add: Bool) async throws {
         guard Self.isIMDb(imdb) else { throw TraktError.invalid("Título inválido") }
@@ -562,6 +584,7 @@ public actor Trakt {
         var body = target.body.object ?? [:]
         body["progress"] = .double(min(100, max(0, progress)))
         let (status, _) = try await write("/scrobble/\(action.rawValue)", .object(body))
+        if action != .start { playbackCache = nil }   // una pausa o un cierre cambian dónde ibas: la próxima lectura es nueva
         switch status {
         case 200, 201: return .sent
         case 409: return .duplicate

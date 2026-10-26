@@ -52,6 +52,9 @@ targets:
         SWIFT_EMIT_LOC_STRINGS: YES
         LOCALIZATION_PREFERS_STRING_CATALOGS: YES
         STRING_CATALOG_GENERATE_SYMBOLS: NO
+        # El Client ID de la app de Trakt incluida (las nuevas, con PKCE, no tienen secreto): con él el iPhone conecta su propia
+        # sesión con un código, sin consola. Vacío: se usa el de tu Orbital o el de Ajustes › Trakt › Avanzado.
+        ORBITAL_TRAKT_CLIENT_ID: ""
     entitlements:
       path: Build/Orbital.entitlements
       properties:
@@ -62,6 +65,7 @@ targets:
         CFBundleDisplayName: Orbital
         CFBundleDevelopmentRegion: es
         CFBundleLocalizations: [es, en]
+        OrbitalTraktClientID: $(ORBITAL_TRAKT_CLIENT_ID)   # lo lee Services.bundledTraktClientID
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UIBackgroundModes: [audio, fetch, processing]   # audio: sigue sonando con la pantalla apagada y en PiP · fetch y processing: mirar lo que dejó la TV (mejor esfuerzo)

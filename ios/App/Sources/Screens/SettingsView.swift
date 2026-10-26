@@ -10,12 +10,12 @@ struct SettingsView: View {
     @State private var session: ModelObserver<SessionModel>
     @State private var tmdbKey = ""
     @State private var newAddon = ""
-    @State private var secret = ""
     @State private var confirmSignOut = false
     @State private var confirmUnlink = false
     @State private var orbitalToken = ""
     @State private var editingAvatar = false
     @State private var showsYear = false
+    @State private var showsTrakt = false
 
     init() {
         let services = AppEnvironment.shared.services
@@ -128,6 +128,8 @@ struct SettingsView: View {
         #if DEBUG
         .navigationDestination(isPresented: $showsYear) { YearView() }   // `-demo-open year`: para las capturas
         .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
+        .navigationDestination(isPresented: $showsTrakt) { page("Trakt") { traktSection(model) } }   // `-demo-settings-page trakt`: capturas
+        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
         #endif
     }
 
@@ -393,7 +395,7 @@ struct SettingsView: View {
                 if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
             }
         } header: { Label { Text("Tu Orbital (la TV)") } icon: { OrbitalMark(size: DS.Size.markSmall) } } footer: {
-            Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.")
+            Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y las claves de Para ti salen de ella. Trakt se conecta aparte en cada uno.")
         }
         .listRowBackground(DS.surface)
     }
@@ -403,16 +405,11 @@ struct SettingsView: View {
         Section("Trakt") {
             switch model.trakt {
             case .off:
-                Text("Conecta tu Orbital (arriba) y Trakt se configura solo. Si no, crea una aplicación en developer.trakt.tv y pega aquí su Client ID.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-                TextField("Client ID de tu aplicación de Trakt", text: Binding(get: { model.settings.traktClientID }, set: { v in model.update { $0.traktClientID = v.trimmingCharacters(in: .whitespaces) } }))
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
-                DisclosureGroup("Aplicación anterior (con secreto)") {
-                    SecureField("Client Secret", text: $secret).textInputAutocapitalization(.never)
-                    if !secret.isEmpty { Button("Guardar secreto") { model.setTraktSecret(secret); secret = "" } }
-                }
+                Text("Conecta tu Orbital (arriba) y Trakt queda listo. Si usas tu propia aplicación de Trakt, pega su Client ID en Avanzado.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             case .unlinked:
+                // Un solo botón: el código y trakt.tv/activate. La sesión es de este iPhone; tu Orbital tiene la suya.
                 Button("Conectar Trakt") { Task { await model.linkTrakt() } }
-                Text("Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
+                Text("Aparece un código para escribir en trakt.tv/activate. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             case .linking(let code, let url):
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     Text("Escribe este código en \(url):").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
@@ -422,16 +419,21 @@ struct SettingsView: View {
                 Button("Cancelar", role: .cancel) { model.cancelLinking() }
             case .linked(let name):
                 (name.isEmpty ? Label("Trakt conectado", systemImage: "checkmark.seal") : Label("Trakt: \(name)", systemImage: "checkmark.seal"))
-                if env.services.trakt?.borrowed == true {
-                    Text("Con la sesión de tu Orbital: no hay nada que conectar aquí.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
-                    Button("Dejar de usar Trakt en el iPhone", role: .destructive) { confirmUnlink = true }
-                } else {
-                    Button("Desconectar Trakt", role: .destructive) { confirmUnlink = true }
-                }
+                Button("Desconectar Trakt", role: .destructive) { confirmUnlink = true }
                 scrobbleRow(model)
             case .failed(let message):
                 DSNotice(verbatim: env.message(message), tone: .error)
                 Button("Volver a intentar") { Task { await model.linkTrakt() } }
+            }
+            // Fuera del switch: escribir el Client ID cambia el estado (sin app → por conectar) sin perder el foco del campo.
+            switch model.trakt {
+            case .off, .unlinked, .failed:
+                DisclosureGroup("Avanzado") {
+                    TextField("Client ID de tu aplicación de Trakt", text: Binding(get: { model.settings.traktClientID }, set: { v in model.update { $0.traktClientID = v.trimmingCharacters(in: .whitespaces) } }))
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Text("Solo si usas tu propia aplicación (developer.trakt.tv). Vacío: la de Orbital.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
+                }
+            default: EmptyView()
             }
         }
         .listRowBackground(DS.surface)

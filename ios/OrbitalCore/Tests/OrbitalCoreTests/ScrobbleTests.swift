@@ -1,7 +1,7 @@
 import XCTest
 @testable import OrbitalCore
 
-/// El scrobble a Trakt desde el iPhone: la sesión prestada por la consola, el 409, el 401, la cola sin conexión y el registro de lo último.
+/// El scrobble a Trakt desde el iPhone (con su propia sesión): el 409, el 401, la cola sin conexión y el registro de lo último.
 final class ScrobbleTests: XCTestCase {
     let api = "https://api.trakt.tv"
     let series = try! Fixtures.json("cinemeta/meta_series_tt0386676.json")
@@ -11,11 +11,13 @@ final class ScrobbleTests: XCTestCase {
         let http: FakeHTTP, service: WatchService, pending: InMemoryPendingStore, clock: Clock, log: ScrobbleLog, trakt: Trakt, secrets: InMemorySecrets
     }
 
-    /// Un Trakt con la sesión PRESTADA por la consola (sin refresh token); `borrow` es lo que contesta la consola.
-    func makeRig(borrow: (@Sendable () async -> BorrowedSession?)? = nil, kv: KeyValueStore? = nil) -> Rig {
+    /// Un Trakt con la sesión PROPIA del iPhone (con refresh token); `borrowed`: la que antes prestaba la consola (sin él).
+    func makeRig(borrowed: Bool = false, kv: KeyValueStore? = nil) -> Rig {
         let http = FakeHTTP(), pending = InMemoryPendingStore(), clock = Clock(), secrets = InMemorySecrets()
-        let trakt = Trakt(http: http, secrets: secrets, clientID: "CID", clock: { clock.now }, pause: { _ in }, borrow: borrow)
-        trakt.adopt(BorrowedSession(accessToken: "OLD", expiresAt: clock.now.timeIntervalSince1970 + 86400))
+        let expires = clock.now.timeIntervalSince1970 + 86400
+        secrets.set(SecretKey.traktTokens, borrowed ? #"{"access_token":"OLD","expires_at":\#(expires)}"#
+                                                    : #"{"access_token":"OLD","refresh_token":"RT","expires_at":\#(expires)}"#)
+        let trakt = Trakt(http: http, secrets: secrets, clientID: "CID", clock: { clock.now }, pause: { _ in })
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
         http.json[get] = ["result": []]; http.json[put] = ["result": ["success": true]]
         let log = ScrobbleLog(kv: kv)
@@ -49,15 +51,16 @@ final class ScrobbleTests: XCTestCase {
         XCTAssertNil(rig.log.status.error)
     }
 
-    /// Un 401 al LEER (p. ej. al subir lo visto sin conexión) ya no borra la sesión prestada: le pide otra a tu Orbital, y si la
-    /// consola no contesta, la sesión se queda (antes el scrobble se apagaba sin avisar).
-    func testA401OnAReadAsksTheConsoleAndKeepsTheSessionIfItCannotAnswer() async {
-        let asked = Counter()
-        let rig = makeRig(borrow: { asked.bump(); return nil })
-        rig.http.json["\(api)/users/me/lists"] = [:]; rig.http.statuses["\(api)/users/me/lists"] = 401
-        do { _ = try await rig.trakt.lists(); XCTFail("debe avisar del error") } catch {}
-        XCTAssertEqual(asked.value, 1, "se le pidió una sesión nueva a la consola")
-        XCTAssertTrue(rig.trakt.linked, "la sesión prestada sigue ahí")
+    /// Un 401 con la sesión prestada de antes: no hay a quién pedirle otra. Se olvida (sin revocarla: es la de la consola), se
+    /// avisa para conectar Trakt en este iPhone y lo visto espera en la cola.
+    func testA401WithALeftoverBorrowedSessionForgetsItWithoutRevokingAndQueues() async {
+        let rig = makeRig(borrowed: true)
+        rig.http.json["\(api)/scrobble/stop"] = [:]; rig.http.statuses["\(api)/scrobble/stop"] = 401
+        await rig.service.report(event(rig, position: 1300), phase: .stopped(finished: true))
+        XCTAssertFalse(rig.trakt.linked)
+        XCTAssertFalse(rig.http.calls.contains { $0.hasSuffix("/oauth/revoke") || $0.hasSuffix("/oauth/token") })
+        XCTAssertTrue(rig.log.status.error?.contains("este iPhone") == true)
+        XCTAssertEqual(rig.pending.load().traktWatched.count, 1, "lo visto espera para subirse cuando conectes Trakt")
     }
 
     /// Un título sin IMDb no se puede registrar en Trakt: se dice (una vez, al empezar) en vez de callar.
@@ -83,36 +86,32 @@ final class ScrobbleTests: XCTestCase {
         XCTAssertTrue(rig.pending.load().traktWatched.isEmpty)
     }
 
-    func testA401AsksTheConsoleForANewSessionOnceAndRetries() async throws {
-        let asked = AskCounter()
-        let http = FakeHTTPBox()
-        let rig = makeRig(borrow: {
-            await asked.add()
-            http.value?.statuses["https://api.trakt.tv/scrobble/stop"] = nil      // la consola ya tiene la sesión buena
-            return BorrowedSession(accessToken: "NEW", expiresAt: 1_760_000_000 + 2 * 86400)
-        })
-        http.value = rig.http
+    /// Un 401 con la sesión propia: se renueva UNA vez con el refresh token y se reintenta.
+    func testA401RenewsTheOwnSessionOnceAndRetries() async throws {
+        let rig = makeRig()
         rig.http.json["\(api)/scrobble/stop"] = [:]; rig.http.statuses["\(api)/scrobble/stop"] = 401
-        let sent = try await rig.trakt.scrobble(.stop, TraktTarget(imdb: "tt0386676", season: 2, episode: 5), progress: 95)
-        XCTAssertEqual(sent, .sent)
-        let count = await asked.value
-        XCTAssertEqual(count, 1, "se le pide una sesión nueva a la consola, una sola vez")
+        rig.http.json["\(api)/oauth/token"] = ["access_token": "NEW", "refresh_token": "RT2", "created_at": 1_760_000_000, "expires_in": 604800]
+        _ = try? await rig.trakt.scrobble(.stop, TraktTarget(imdb: "tt0386676", season: 2, episode: 5), progress: 95)
+        XCTAssertEqual(rig.http.calls.filter { $0.hasSuffix("/oauth/token") }.count, 1, "una sola renovación")
         XCTAssertEqual(rig.http.calls.filter { $0.hasSuffix("/scrobble/stop") }.count, 2, "y se reintenta")
-        XCTAssertTrue(rig.trakt.linked)
-        XCTAssertTrue(rig.secrets.get(SecretKey.traktTokens)?.contains("NEW") == true, "la sesión nueva se guardó")
+        XCTAssertFalse(rig.http.calls.contains { $0.hasSuffix("/oauth/revoke") })
     }
 
-    func testA401WhenTheConsoleHasNothingNewKeepsTheSessionAndQueuesWhatWasWatched() async {
-        let asked = AskCounter()
-        let rig = makeRig(borrow: { await asked.add(); return nil })       // la TV está apagada
-        rig.http.json["\(api)/scrobble/stop"] = [:]; rig.http.statuses["\(api)/scrobble/stop"] = 401
-        await rig.service.report(event(rig, position: 1300), phase: .stopped(finished: true))
-        let count = await asked.value
-        XCTAssertEqual(count, 1)
-        XCTAssertEqual(rig.http.calls.filter { $0.hasSuffix("/scrobble/stop") }.count, 1, "sin sesión nueva no se insiste")
-        XCTAssertTrue(rig.trakt.linked, "la TV apagada no desconecta Trakt del iPhone")
-        XCTAssertNotNil(rig.log.status.error)
-        XCTAssertEqual(rig.pending.load().traktWatched.count, 1, "lo visto espera para subirse luego")
+    /// Pausar y cerrar le dicen a Trakt el avance exacto: con menos de 80 % Trakt lo guarda como «en pausa» (sus `/sync/playback`)
+    /// y el otro dispositivo sigue ahí.
+    func testPauseAndStopCarryTheExactProgressSoTraktSavesThePlaybackPoint() async {
+        let rig = makeRig()
+        for action in ["pause", "stop"] { rig.http.json["\(api)/scrobble/\(action)"] = [:] }
+        await rig.service.report(event(rig, position: 412.5, duration: 1320), phase: .paused)
+        await rig.service.report(event(rig, position: 528, duration: 1320), phase: .stopped(finished: false))
+        XCTAssertEqual(progress(rig.http, "pause"), [31.25]); XCTAssertEqual(progress(rig.http, "stop"), [40])
+    }
+
+    /// Infuse avisa a Trakt por su cuenta: desde aquí no se manda nada (ni pausa ni cierre).
+    func testInfuseNeverScrobblesFromHere() async {
+        let rig = makeRig()
+        await rig.service.report(event(rig, position: 528), phase: .stopped(finished: false), scrobbleToTrakt: false)
+        XCTAssertTrue(rig.http.calls.filter { $0.contains("/scrobble/") }.isEmpty)
     }
 
     func testAFailureIsSaidInWordsAndTheNextSuccessClearsIt() async {
@@ -154,7 +153,4 @@ final class ScrobbleTests: XCTestCase {
         XCTAssertEqual(ScrobbleLog(kv: kv).status, ScrobbleStatus())
     }
 }
-
-/// Para que la consola falsa (que corre dentro de `borrow`) pueda tocar la red falsa creada después.
-final class FakeHTTPBox: @unchecked Sendable { var value: FakeHTTP? }
 
