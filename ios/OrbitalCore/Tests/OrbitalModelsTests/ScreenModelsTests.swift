@@ -174,8 +174,9 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(request.episodeLabel.hasPrefix("T1 · E3"))
     }
 
-    /// CEN-37: con la consola conectada la ficha toma su sinopsis (en español) y si el logo es oscuro; sin consola, lo de Cinemeta.
-    func testTitleTakesTheConsolesOverviewWhenConnected() async throws {
+    /// CEN-37: sin clave de TMDB en el iPhone, con la consola conectada la ficha toma su sinopsis (en español); sin consola, lo
+    /// de Cinemeta. Con clave, el iPhone es independiente: no le pregunta a la consola.
+    func testTitleTakesTheConsolesOverviewOnlyWithoutItsOwnTmdbKey() async throws {
         let rig = try titleRig()
         let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
         await title.load()
@@ -189,12 +190,19 @@ final class ScreenModelsTests: XCTestCase {
         rig.http.json["https://tv.example/api/foryou/details?key=video:tt0386676&kind=series"] = ["overview": " Un falso documental. ", "logo_dark": true]
         await title.loadConsoleDetails()
         XCTAssertEqual(title.overview, "Un falso documental.")
-        XCTAssertTrue(title.logoIsDark)
 
         rig.http.json["https://tv.example/api/foryou/details?key=video:tt0386676&kind=series"] = ["overview": ""]
         let other = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
         await other.load(); await other.loadConsoleDetails()
         XCTAssertEqual(other.overview, other.info.description, "una sinopsis vacía no tapa la de Cinemeta")
+
+        rig.http.json["https://tv.example/api/foryou/details?key=video:tt0386676&kind=series"] = ["overview": "De la consola"]
+        rig.secrets.set(SecretKey.tmdbKey, "clave")
+        rig.services.reconfigure()
+        let own = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await own.load(); await own.loadConsoleDetails()
+        XCTAssertNil(own.consoleOverview, "con su propia clave de TMDB no depende de la consola")
+        XCTAssertEqual(own.overview, own.info.description)
     }
 
     func testTitleWithoutHistoryStartsAtTheFirstEpisode() async throws {
