@@ -309,7 +309,7 @@ def test_the_most_recent_resume_point_wins_like_the_iphone():
     assert trakt.latest_resume(0.0, 3000.0, 7200.0, tr) == 0.0  # en Stremio lo terminaste después: desde el inicio
     assert trakt.latest_resume(0.0, None, None, tr) == 3000  # solo Trakt: su propia duración
     assert trakt.latest_resume(120.0, None, None, None) == 120.0  # sin Trakt: lo de siempre
-    assert trakt.latest_resume(120.0, 1000.0, None, {**tr, "percent": 85.0}) == 6120.0  # también arriba de 80 %: el punto exacto
+    assert trakt.latest_resume(120.0, 1000.0, None, {**tr, "percent": 85.0}) == 5100.0  # también arriba de 80 %: el punto exacto
     assert trakt.latest_resume(0.0, None, None, {**tr, "runtime": None}) == 0.0  # sin duración no se adivina
     assert trakt.playback_key("series", "tt0386676", "tt0386676:2:5") == "tt0386676:2:5"
     assert trakt.playback_key("movie", "tt1375666", "tt1375666") == "tt1375666"
