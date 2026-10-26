@@ -36,6 +36,8 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
   // En una serie, con el foco en los episodios: cuál es el enfocado (y la sinopsis de abajo pasa a ser la suya).
   const episodeHead = h("div", { class: "title__episode", hidden: true });
   const description = h("p", { class: "title__description" });
+  // Si la sinopsis no cabe: «Ver más» debajo (↑ desde los botones, A la abre completa ahí mismo; «Ver menos» la cierra).
+  const readMore = h("button", { class: "title__read", type: "button", hidden: true, onClick: () => toggleAbout() });
   const avail = h("div", { class: "title__avail", hidden: true });
   const progressBar = h("span", { class: "title__progress-bar" });
   const progressLabel = h("span", { class: "title__progress-label" });
@@ -58,14 +60,15 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
   // «Dirección…», «Con…» y los chips llenaban la ficha de texto encima del arte).
   const el = h("section", { class: ["screen", "title"], hidden: true, "aria-label": "Ficha" },
     backdrop,
-    h("div", { class: "title__info" }, logo, name, meta, episodeHead, description, avail, progress, actions, status),
+    h("div", { class: "title__info" }, logo, name, meta, episodeHead, description, readMore, avail, progress, actions, status),
     browser, more);
 
   let item = null;
   let details = null;
   let plays = null; // { video_id, line }: cómo va a sonar «Ver» (lo dice el servidor)
   let buttons = [];
-  let zone = "actions"; // "actions" | "episodes" | "more" | "cast"
+  let zone = "actions"; // "about" (la sinopsis) | "actions" | "episodes" | "more" | "cast"
+  let aboutOpen = false; // la sinopsis completa, sin cortar
   let action = 0;
   let expanded = false; // «Más»: ya enseña todos los botones
   let extras = null; // frase, clasificación, créditos y «Más como esto» (title-extras)
@@ -290,12 +293,42 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
     if (!ep || !current) {
       episodeHead.textContent = "";
       description.textContent = about;
+      paintAbout();
       return;
     }
     const st = states.get(ep.id) || {};
     episodeHead.textContent = [current.season === 0 ? "Especial" : `T${current.season}`, `E${ep.episode}`, ep.title, st.upcoming]
       .filter(Boolean).join(" · ");
     description.textContent = ep.overview || about;
+    paintAbout();
+  }
+
+  /** «Ver más» solo si la sinopsis del título se corta (en la fila de episodios, la de abajo es del episodio). En una
+   * serie guarda su lugar aunque no se vea: al pasar de los botones a la fila nada brinca. */
+  function paintAbout() {
+    if (zone !== "about") aboutOpen = false;
+    description.classList.toggle("title__description--open", aboutOpen);
+    readMore.textContent = aboutOpen ? "Ver menos" : "Ver más";
+    readMore.classList.toggle("title__read--focused", zone === "about");
+    readMore.toggleAttribute("aria-current", zone === "about");
+    const reserve = kindOf() === "series" && seasons().length > 0;
+    readMore.classList.toggle("title__read--reserved", reserve);
+    readMore.hidden = !reserve;
+    requestAnimationFrame(() => {
+      const cut = aboutOpen || description.scrollHeight > description.clientHeight + 1;
+      const shown = cut && zone !== "episodes" && !!about && description.textContent === about;
+      readMore.hidden = !(shown || reserve);
+      readMore.classList.toggle("title__read--idle", !shown);
+      if (!shown && zone === "about") { zone = "actions"; render(); onMove?.(); }
+    });
+  }
+
+  function toggleAbout() {
+    zone = "about";
+    aboutOpen = !aboutOpen;
+    renderActions();
+    paintAbout();
+    onMove?.();
   }
 
   function renderProgress() {
@@ -317,6 +350,7 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
       renderTabs();
       renderList();
     }
+    paintAbout();
   }
 
   /** Desplaza SOLO la fila de episodios (scrollIntoView también movía la pantalla): el enfocado a la vista, con aire a
@@ -557,6 +591,7 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
     restore = restoreFocus; // al volver de una persona: el reparto, con la misma cara enfocada (applyExtras)
     cancelExit();
     zone = "actions";
+    aboutOpen = false;
     action = 0;
     expanded = false;
     extras = null;
@@ -594,6 +629,7 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
       // Con el mando, B primero sube de los episodios a los botones; con el dedo, «Atrás» cierra (ese paso no se veía).
       // En una serie la lista es el punto de partida: de Más como esto o el reparto se vuelve a ella y, desde ella, B cierra.
       if ((zone === "more" || zone === "cast") && !touching()) { zone = led() ? "episodes" : "actions"; onMove?.(); render(); return true; }
+      if (zone === "about") { zone = "actions"; onMove?.(); render(); return true; }
       if (zone === "episodes" && !led() && !touching()) { zone = "actions"; onMove?.(); render(); return true; }
       close();
       return true;
@@ -601,6 +637,11 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
     if (!details) return true;
     const series = kindOf() === "series" && seasons().length > 0;
     let moved = false;
+    if (zone === "about") {
+      if (act === "select") toggleAbout();
+      else if (act === "down") { zone = "actions"; onMove?.(); render(); }
+      return true;
+    }
     if (zone === "more") {
       if (act === "left" && moreIndex > 0) { moreIndex--; moved = true; }
       else if (act === "right" && moreIndex < moreItems.length - 1) { moreIndex++; moved = true; }
@@ -627,7 +668,11 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
           if (below) { zone = below; onMove?.(); render(); }
           return true;
         }
-        if (next === "up") return true;
+        if (next === "up") {
+          // Arriba de los botones: «Ver más» de la sinopsis, si se corta.
+          if (!readMore.hidden && !readMore.classList.contains("title__read--idle")) { zone = "about"; onMove?.(); render(); }
+          return true;
+        }
         if (next !== null) { action = next; moved = true; }
       } else if (act === "select" && buttons[action]) run(buttons[action]);
       else if (act === "options" && hasTarget()) sources();
@@ -666,6 +711,8 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
     return hintsFor(g);
   };
   const hintsFor = (g) => (details?.error ? [{ glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }]
+    : zone === "about"
+    ? [{ glyph: g.select, label: aboutOpen ? "Ver menos" : "Ver más" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "more"
     ? [{ glyph: g.select, label: "Ver la ficha" }, castItems.length && { glyph: g.rows, label: "Reparto" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : zone === "cast"

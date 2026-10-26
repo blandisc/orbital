@@ -35,7 +35,7 @@
 .title__info > * { animation: title-settle var(--duration-enter) var(--ease-out) backwards; }
 /* El logo que viaja desde la tarjeta (title.js · flyIn) no entra además desde abajo. */
 .title__info > .title__logo--flying { animation: none; transform-origin: top left; }
-.title__info > .title__meta, .title__info > .title__episode, .title__info > .title__description { animation-delay: var(--delay-1); }
+.title__info > .title__meta, .title__info > .title__episode, .title__info > .title__description, .title__info > .title__read { animation-delay: var(--delay-1); }
 .title__info > .title__avail, .title__info > .title__progress { animation-delay: var(--delay-2); }
 .title__info > .title__actions, .title__info > .title__status { animation-delay: var(--delay-3); }
 /* Nada se encoge: un título o una sinopsis encogidos se rebanaban a media línea (con letra grande). */
@@ -74,6 +74,16 @@
 }
 /* En una serie, la sinopsis cambia con el episodio enfocado: siempre mide dos renglones (nada brinca, sin hueco de más). */
 .title--series .title__description { min-height: 2lh; -webkit-line-clamp: 2; }
+/* «Ver más»: la sinopsis completa, ahí mismo (la ficha crece hacia arriba; los botones no se mueven). */
+.title .title__description.title__description--open { display: block; }
+.title__read {
+  align-self: flex-start; display: inline-flex; align-items: center; margin-top: calc(-1 * var(--space-2)); padding: var(--space-1) var(--space-3);
+  margin-left: calc(-1 * var(--space-3)); border-radius: var(--radius-pill); color: var(--color-text); font-size: var(--type-secondary);
+  font-weight: var(--weight-bold); text-shadow: var(--shadow-text-strong); transform-origin: left center;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-spring);
+}
+.title__read--idle { visibility: hidden; } /* una serie le guarda su lugar */
+.title__read--focused { background: var(--inverse-bg); color: var(--inverse-fg); text-shadow: none; transform: scale(var(--inverse-scale)); }
 
 /* Lo que hay para ver, en un renglón tenue (antes eran chips): 4K · HDR · Inglés, Español · Al instante. */
 .title__avail { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--type-secondary); }
