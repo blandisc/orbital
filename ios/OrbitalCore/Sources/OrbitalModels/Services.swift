@@ -203,6 +203,9 @@ public final class Services: ObservableModel {
     public func connectOrbital(address: String? = nil, token: String? = nil) async throws -> [String] {
         if let address { settings.update { $0.orbitalAddress = address } }
         if let token { secrets.set(SecretKey.orbitalToken, token) }
+        // Avisar ya (antes de preguntarle a la consola): el control y el sondeo aparecen aunque no se haya traído nada nuevo.
+        // Antes solo se avisaba si cambiaban TMDB, Trakt o el país, y al volver a emparejar seguía «Sin conectar».
+        if address != nil || token != nil { changed() }
         let remote = orbital
         try await remote.check()
         let keys = try await remote.keys()

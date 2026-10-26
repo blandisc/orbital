@@ -45,18 +45,21 @@ public final class KeychainSecrets: SecretsStore, @unchecked Sendable {
 
     public func get(_ key: String) -> String? {
         if let hit = lock.withLock({ cache[key] }) { return hit }
-        let value = read(key)
-        lock.withLock { cache[key] = .some(value) }
+        let (value, certain) = read(key)
+        // «No existe» solo se recuerda si el Keychain lo dijo. Con el iPhone recién prendido y aún sin desbloquear (la app
+        // arranca en segundo plano), el Keychain no deja leer: recordar ese nil dejaba «Orbital no conectado» hasta cerrarla.
+        if certain { lock.withLock { cache[key] = .some(value) } }
         return value
     }
 
-    private func read(_ key: String) -> String? {
+    private func read(_ key: String) -> (String?, certain: Bool) {
         var q = query(key)
         q[kSecReturnData as String] = true
         q[kSecMatchLimit as String] = kSecMatchLimitOne
         var out: CFTypeRef?
-        guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let data = out as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        let status = SecItemCopyMatching(q as CFDictionary, &out)
+        guard status == errSecSuccess, let data = out as? Data else { return (nil, status == errSecItemNotFound) }
+        return (String(data: data, encoding: .utf8), true)
     }
 
     public func set(_ key: String, _ value: String?) {

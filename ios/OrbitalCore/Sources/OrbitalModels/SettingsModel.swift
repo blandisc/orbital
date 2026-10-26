@@ -83,6 +83,7 @@ public final class SettingsModel: ObservableModel {
         services.secrets.set(SecretKey.orbitalToken, trimmed.isEmpty ? nil : trimmed)
         hasOrbitalToken = !trimmed.isEmpty
         orbitalCheck = nil
+        services.settingsDidChange()   // el control y lo que suena en la TV se enteran de que ya hay (o ya no hay) token
     }
 
     /// «Probar conexión»: ¿contesta tu Orbital y acepta el token?

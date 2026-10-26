@@ -20,6 +20,29 @@ final class TVNowModelTests: XCTestCase {
         model.setActive(false)
     }
 
+    /// Emparejar con el QR teniendo ya las claves (nada nuevo que traer): antes no se avisaba a nadie y el control no aparecía
+    /// («Orbital no conectado») hasta mandar la app a segundo plano y volver.
+    func testPairingWithNothingNewStartsPollingAtOnce() async throws {
+        let rig = try ServicesRig()  // sin dirección ni token
+        rig.http.json["https://tv.example/api/ping"] = .object(["ok": .bool(true)])
+        rig.http.json["https://tv.example/api/companion"] = .object([:])
+        let playing: JSON = .object(["kind": .string("movie"), "live": .bool(false), "title": .string("Interstellar"),
+                                     "position": .int(10), "duration": .int(100), "paused": .bool(false)])
+        rig.http.json["https://tv.example/api/companion/now"] = .object(["playing": playing])
+        let model = TVNowModel(rig.services, intervalSeconds: 0.01)
+        var told = 0
+        let watch = model.onChange { told += 1 }
+        model.setActive(true)   // la app ya estaba al frente: sin configuración, no sondea
+        let generation = rig.services.generation
+        try await rig.services.connectOrbital(address: "tv.example", token: "secreto")
+        XCTAssertEqual(rig.services.generation, generation)   // no se rearmó nada…
+        try await Task.sleep(nanoseconds: 40_000_000)
+        XCTAssertGreaterThan(told, 0)                          // …pero el control se enteró
+        XCTAssertEqual(model.now?.title, "Interstellar")       // y ya sondea
+        model.setActive(false)
+        _ = watch
+    }
+
     func testPollsWhileActiveAndStopsWhenNot() async throws {
         let rig = try connected()
         let playing: JSON = .object(["kind": .string("movie"), "live": .bool(false), "title": .string("Interstellar"),
