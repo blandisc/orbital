@@ -340,7 +340,7 @@ export function beforePlayMenu(item, { free_mb: free, apps = [] }, runner = null
   };
 }
 
-const BATTERY = { wired: "Con cable", full: "Batería llena", medium: "Batería a la mitad", low: "Batería baja", empty: "Sin batería" };
+const BATTERY = { wired: "Con cable", full: "Llena", medium: "A la mitad", low: "Baja", empty: "Vacía" }; // la batería del control
 
 /**
  * Jugadores, como en una consola: el control con el que abres un juego es el Jugador 1 y los que conectas después se

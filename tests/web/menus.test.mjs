@@ -422,7 +422,7 @@ test("jugadores: quién es quién; con un juego de Switch, reiniciar con estos j
   const players = [{ player: 1, slot: 2, name: "GameSir", battery: "low" }, { player: 2, slot: 0, name: "Legion Go", battery: "wired" }];
   const idle = playersMenu({ players, game: null });
   assert.deepEqual(idle.options.map((o) => o.label), ["Jugador 1 · GameSir", "Jugador 2 · Legion Go", "Listo"]);
-  assert.equal(idle.options[0].value, "Batería baja");
+  assert.equal(idle.options[0].value, "Baja");
   assert.deepEqual(idle.options[0].command, { type: "player-identify", slot: 2 }); // el 1: A lo hace vibrar
   assert.equal(idle.options[1].command.type, "player-menu");
   const sw = playersMenu({ players, game: { title: "Mario Kart 8 Deluxe", live_join: false } });
