@@ -61,7 +61,7 @@ footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
 </div>
 
 <script>
-const UPDATED = "26 oct 2026, 9:10 · #8 hecho (mantener X, cuatro superficies, orden del iPhone) y pulido; #4 con los 19 íconos a color de Grok · #11, #12 y #8 esperan tu prueba con el mando · #5 espera tu OK";
+const UPDATED = "26 oct 2026, 9:40 · #5 hecho (Trakt: cada app con su sesión y el avance de Trakt al retomar), más el destacado sin nombre de lista y la píldora de plataforma del iPhone · #11, #12 y #8 esperan tu prueba con el mando";
 // estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
 const ITEMS = [
   { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "doing",
@@ -98,8 +98,9 @@ const ITEMS = [
   { n: 8, t: "Cambio rápido de subtítulo", tipo: "Mejora", estado: "doing",
     d: "Probar varios subtítulos con el video que estás viendo, como en el iPhone, con control, teclado, mouse y touch.", nota: "Hecho en una sola entrega, como lo decidiste: mantener X (o S, o el botón «Probar subtítulos») entra directo y la pausa y el panel lo dicen; ◀ ▶ dan la vuelta; LB/RB cambian de idioma; cada subtítulo guarda su sincronía; todo se recuerda al momento y B deja el último que probaste. Los de internet llegan con su copia y descargas, y «Hecho para tu copia» va primero (huella del archivo y grupo, como el iPhone). Franja pulida para que no se vea encimada. Probado con mpv de verdad (fuera de pantalla); falta tu prueba con el mando.",
     ev: ["evidencia/08-franja.jpg", "evidencia/08-pausa.jpg", "evidencia/08-panel.jpg"] },
-  { n: 5, t: "Trakt: avance compartido y dos sesiones", tipo: "Investigación", estado: "todo",
-    d: "Cómo sincronizar el avance de películas del iPhone aquí, y si se pueden tener dos sesiones de Trakt.", nota: "Sí se pueden dos sesiones, y conviene. Reporte gráfico: https://claude.ai/artifact/Kirvje8N1YfmohPd3sXEou#trakt. Espera tu OK." },
+  { n: 5, t: "Trakt: avance compartido y dos sesiones", tipo: "Mejora", estado: "done",
+    d: "Cómo sincronizar el avance de películas del iPhone aquí, y si se pueden tener dos sesiones de Trakt.", nota: "Hecho igual que el iPhone: cada app con su propia sesión (la consola ya no le presta la suya) y, al retomar, Orbital lee lo que guardó Trakt (lo que pausaste en el iPhone) y sigue desde lo más reciente entre Stremio y Trakt; el porcentaje pasa a segundos con la duración. Además, como en el iPhone: el destacado de Para ti ya no pone el nombre de una lista, y «N.º 1 en Netflix» va en la píldora de su plataforma con su logo. Probado con pruebas automáticas y el demo; falta verlo con algo pausado en el iPhone.",
+    ev: ["evidencia/mac-pildora-plataforma.jpg"] },
 ];
 const LABEL = { todo: "Pendiente", doing: "En curso", done: "Listo" };
 const VAR = { todo: "--todo", doing: "--doing", done: "--done" };

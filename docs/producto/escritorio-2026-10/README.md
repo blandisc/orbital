@@ -22,7 +22,7 @@ avisar: una tecla Enter abre juegos de verdad. Para la interfaz, `scripts/demo_s
 | 4 | Aparadores de temporadas y de géneros con icono y título bonito, alineado con el iPhone | **Listo**: los 19 íconos a color de Grok Imagine, los mismos del iPhone (c924722 en `ios/pendientes-oct`), en `orbital/web/img/collections` |
 | 6 | Propuesta de animación de entrada elegante, minimalista y fluida, alineada con el iPhone | **Listo** (49df49d): aprobada; tiempos de OrbitalWordmark |
 | 8 | Análisis UI/UX: cambiar rápido de subtítulo y probar varios con el video | **Hecho** (todo en una entrega, como se decidió): mantener X / S / botón, vuelta al final, sincronía por subtítulo, todo se guarda, salir deja el último, orden del iPhone con copia y descargas, LB/RB idioma, otra edición. Evidencia en mpv; **falta probarlo con mando en la TV** |
-| 5 | Trakt: sincronizar el avance del iPhone aquí, y ¿dos sesiones de Trakt? | Investigación lista (abajo) |
+| 5 | Trakt: sincronizar el avance del iPhone aquí, y ¿dos sesiones de Trakt? | **Hecho** (6dfea23), como el iPhone (9dfb1fe): cada app con su sesión (la consola ya no presta la suya) y al retomar gana lo más reciente entre Stremio y Trakt. Probado con pruebas automáticas; falta verlo con un título pausado en el iPhone |
 
 ## 11 · Reproductor: lo hecho
 
@@ -96,6 +96,18 @@ edición» con `sub-speed`.
 - Evidencia: `evidencia/08-franja.jpg`, `08-pausa.jpg`, `08-panel.jpg` (dibujado por el reproductor en un mpv de verdad).
 - Probar en la TV: mantener X en pausa y reproduciendo; un toque de X; ◀ ▶ hasta dar la vuelta; LB/RB; B y ver que se
   queda; siguiente episodio de la misma serie tras A.
+
+## Lo que pidió la Mac (26 oct, aprobado por Fernando)
+
+- **Trakt (#5)**: `/api/companion` ya no manda `trakt_session` (se quitó `companion.trakt_session`). Al retomar,
+  `watch.resume_position` lee `GET /sync/playback?extended=full` (`library/trakt.py` · `Trakt.playback`, un minuto de
+  caché; `forget_playback` al pausar o cerrar, desde `scrobble.py`) y `trakt.latest_resume` elige lo más reciente entre
+  Stremio (`lastWatched`, solo si es el mismo video) y Trakt (`paused_at`). El porcentaje pasa a segundos con la duración
+  de Stremio o, si no la hay, con el `runtime` de Trakt, 10 s antes; ≥ 80 % no se retoma. Escribir ya funcionaba.
+- **Destacado** (85380319): una sugerencia de una lista de Trakt o de un complemento lleva `in_list` y el héroe no pone
+  «En «RT: Certified Fresh»»; «N.º 1 en Netflix», «Recomendada» y «En tendencia» sí.
+- **Píldora de plataforma** (48293874): `PlatformBadge` en el mosaico de Para ti: cápsula del color de la plataforma,
+  logo de JustWatch y texto en blanco (`evidencia/mac-pildora-plataforma.jpg`).
 
 ## 6 · Animación de entrada (propuesta)
 

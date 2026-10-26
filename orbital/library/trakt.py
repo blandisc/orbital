@@ -76,6 +76,10 @@ def playback_key(kind: str, meta_id: str, video_id: str | None) -> str | None:
     return meta_id
 
 
+def _dict(value) -> dict:
+    return value if isinstance(value, dict) else {}
+
+
 def playback_entry(row) -> tuple[str, dict] | None:
     """Una fila de GET /sync/playback → («tt123» o «tt123:2:5», {percent, paused_at, runtime}). None si no se entiende."""
     if not isinstance(row, dict) or not isinstance(row.get("progress"), (int, float)):
@@ -84,16 +88,16 @@ def playback_entry(row) -> tuple[str, dict] | None:
     if when is None:
         return None
     if row.get("type") == "movie":
-        movie = row.get("movie") if isinstance(row.get("movie"), dict) else {}
+        movie = _dict(row.get("movie"))
         imdb, runtime = (movie.get("ids") or {}).get("imdb"), movie.get("runtime")
         key = imdb if isinstance(imdb, str) and re.fullmatch(r"tt\d+", imdb) else None
     elif row.get("type") == "episode":
-        show = row.get("show") if isinstance(row.get("show"), dict) else {}
-        ep = row.get("episode") if isinstance(row.get("episode"), dict) else {}
+        show = _dict(row.get("show"))
+        ep = _dict(row.get("episode"))
         imdb, runtime = (show.get("ids") or {}).get("imdb"), ep.get("runtime")
-        ok = isinstance(imdb, str) and re.fullmatch(r"tt\d+", imdb) and isinstance(ep.get("season"), int) \
-            and isinstance(ep.get("number"), int)
-        key = f"{imdb}:{ep['season']}:{ep['number']}" if ok else None
+        season, number = ep.get("season"), ep.get("number")
+        ok = isinstance(imdb, str) and re.fullmatch(r"tt\d+", imdb) and isinstance(season, int) and isinstance(number, int)
+        key = f"{imdb}:{season}:{number}" if ok else None
     else:
         key = None
     if key is None:
