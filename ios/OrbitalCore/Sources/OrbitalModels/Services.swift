@@ -103,6 +103,14 @@ public final class Services: ObservableModel {
         let scrobbleLog = ScrobbleLog(kv: kv)
         self.scrobbleLog = scrobbleLog
         let settings = SettingsStore(kv)
+        // Al borrar la app se van los ajustes (UserDefaults) pero el Keychain se queda: la dirección de tu Orbital y la app de
+        // Trakt se recuperan de ahí (antes, tras reinstalar, Trakt y «Para ti» no cargaban hasta volver a escanear el QR).
+        if settings.value.orbitalAddress.isEmpty, let saved = secrets.get(SecretKey.orbitalAddress), !saved.isEmpty {
+            settings.update { $0.orbitalAddress = saved }
+        }
+        if settings.value.traktClientID.isEmpty, let saved = secrets.get(SecretKey.traktClientID), !saved.isEmpty {
+            settings.update { $0.traktClientID = saved }
+        }
         self.settings = settings
         self.titlePrefs = TitlePreferences(kv)
         self.traktOutbox = TraktOutbox(kv)
@@ -201,7 +209,7 @@ public final class Services: ObservableModel {
     /// de Trakt, el país y la sesión de Trakt. Devuelve qué se trajo («TMDB», «Trakt»); lanza si no contesta.
     @discardableResult
     public func connectOrbital(address: String? = nil, token: String? = nil) async throws -> [String] {
-        if let address { settings.update { $0.orbitalAddress = address } }
+        if let address { settings.update { $0.orbitalAddress = address }; secrets.set(SecretKey.orbitalAddress, address) }
         if let token { secrets.set(SecretKey.orbitalToken, token) }
         // Avisar ya (antes de preguntarle a la consola): el control y el sondeo aparecen aunque no se haya traído nada nuevo.
         // Antes solo se avisaba si cambiaban TMDB, Trakt o el país, y al volver a emparejar seguía «Sin conectar».
@@ -212,6 +220,8 @@ public final class Services: ObservableModel {
         var got: [String] = []
         if !keys.tmdbKey.isEmpty, (secrets.get(SecretKey.tmdbKey) ?? "").isEmpty { secrets.set(SecretKey.tmdbKey, keys.tmdbKey); got.append("TMDB") }
         if !keys.traktClientID.isEmpty, settings.value.traktClientID.isEmpty { settings.update { $0.traktClientID = keys.traktClientID }; got.append("Trakt") }
+        if !keys.traktClientID.isEmpty { secrets.set(SecretKey.traktClientID, keys.traktClientID) }   // también en el Keychain (reinstalar)
+        if !settings.value.orbitalAddress.isEmpty { secrets.set(SecretKey.orbitalAddress, settings.value.orbitalAddress) }
         let regionChanged = keys.region.count == 2 && keys.region != settings.value.region
         if regionChanged { settings.update { $0.region = keys.region } }
         // Solo se rearma si algo cambió: rearmar tira las cachés (traducciones, listas) y vuelve a pintar toda la app, y esto

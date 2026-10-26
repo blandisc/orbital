@@ -43,6 +43,20 @@ final class TVNowModelTests: XCTestCase {
         _ = watch
     }
 
+    /// Borrar la app se lleva los ajustes, no el Keychain: al volver a instalarla, la dirección de tu Orbital y la app de Trakt
+    /// se recuperan solas (antes Trakt y «Para ti» no cargaban hasta volver a escanear el QR).
+    func testAfterReinstallingTheOrbitalAddressAndTraktAppComeBackFromTheKeychain() async throws {
+        let rig = try ServicesRig()
+        rig.http.json["https://tv.example/api/ping"] = .object(["ok": .bool(true)])
+        rig.http.json["https://tv.example/api/companion"] = .object(["trakt_client_id": .string("CID")])
+        try await rig.services.connectOrbital(address: "tv.example", token: "secreto")
+        let reinstalled = Services(http: rig.http, secrets: rig.secrets, kv: InMemoryKeyValueStore(), pending: InMemoryPendingStore(),
+                                   downloadTransport: FakeDownloadTransport(), downloadsRoot: rig.root, freeSpace: { 50_000_000_000 })
+        XCTAssertEqual(reinstalled.appSettings.orbitalAddress, "tv.example")
+        XCTAssertEqual(reinstalled.appSettings.traktClientID, "CID")
+        XCTAssertTrue(reinstalled.orbital.isConfigured)
+    }
+
     func testPollsWhileActiveAndStopsWhenNot() async throws {
         let rig = try connected()
         let playing: JSON = .object(["kind": .string("movie"), "live": .bool(false), "title": .string("Interstellar"),
