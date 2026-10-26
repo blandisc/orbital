@@ -128,6 +128,9 @@ class ConsoleShell:
         sessions = getattr(self.catalog, "sessions", None)
         if sessions is not None:
             sessions.returned_at = time.monotonic()
+        events = getattr(self.catalog, "events", None)
+        if events is not None and hasattr(events, "publish"):
+            events.publish({"type": "returned"})  # la interfaz vuelve a hacerle caso al mando (ver video_holds_screen)
 
     def home(self) -> None:
         self.mark_returned()  # también Home estando en Orbital (vuelve al juego, no hay que regresarte)
@@ -326,21 +329,28 @@ class ConsoleShell:
             self._fg_cache = (now, self.win.exe_name(self.win.pid_of(self.win.foreground())))
         return self._fg_cache[1]
 
+    def video_holds_screen(self) -> bool:
+        """Un video de Orbital a pantalla completa y tú sin volver a Orbital desde que empezó (ni Home, ni en pequeño): el
+        mando es del video. La interfaz lo sabe por /api/status («front») y no hace caso del mando aunque Windows le deje el
+        foco (antes A pausaba el video Y le daba «Ver» a la ficha de atrás: salía la pantalla de carga con el logo)."""
+        player = self.player
+        current = getattr(player, "current", None) if getattr(player, "playing", False) else None
+        if current is None or getattr(player, "pip", False):
+            return False
+        sessions = getattr(self.catalog, "sessions", None)
+        returned = getattr(sessions, "returned_at", 0.0) or 0.0
+        return not (returned and time.time() - (time.monotonic() - returned) > current.started)  # Home: Orbital se queda
+
     def _video_lost_focus(self, now: float) -> bool:
         """El video se ve al frente, pero Windows dejó el foco en Orbital (detrás): el mando y el teclado
         le hablaban a Orbital y el video «solo funcionaba con teclado» tras hacer clic. Si no volviste a
         Orbital desde que empezó el video, el foco regresa al video. True si lo intentó."""
-        player = self.player
-        current = getattr(player, "current", None) if getattr(player, "playing", False) else None
-        if current is None or now < self._refocus_at:
+        if now < self._refocus_at or not self.video_holds_screen():
             return False
         fg = self.win.foreground()
         if not self.is_orbital(fg):
             return False
-        sessions = getattr(self.catalog, "sessions", None)
-        returned = getattr(sessions, "returned_at", 0.0) or 0.0
-        if returned and time.time() - (time.monotonic() - returned) > current.started:
-            return False  # tú volviste a Orbital (Home): ahí se queda
+        current = self.player.current
         video = self.win.main_window(self.win.process_tree(current.process.pid))
         if not video:
             return False
@@ -379,8 +389,13 @@ class ConsoleShell:
         if self.wake_on_button(slot, buttons, now):
             return
         exe = self.foreground_exe(now)
-        if buttons and exe != PLAYER_EXE and self._video_lost_focus(now):
-            return  # el foco vuelve al video; la siguiente lectura del mando ya le llega a él
+        if exe in BROWSERS and self.player and self.video_holds_screen():
+            # El video tapa la pantalla pero el foco quedó en Orbital: el foco vuelve al video y el mando ES suyo, también
+            # esta pulsación y al soltar (antes se tiraba: A no pausaba, había que darle otra vez, y el anillo de «Mantén B»
+            # se quedaba sin su «soltaste»). La interfaz no le hace caso (status «front»).
+            if buttons:
+                self._video_lost_focus(now)
+            exe = PLAYER_EXE
         if exe == PLAYER_EXE and self.player:
             # El reproductor tiene UN control remoto y esto llega por cada puerto (los 4, aun vacíos):
             # el puerto vacío "soltaba" la cruceta en cada lectura y una pulsación contaba varias

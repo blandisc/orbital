@@ -2072,7 +2072,10 @@ function handleEvent(event) {
     return ui.traktLink.failed(event.message);
   } else if (event.type === "foryou-changed") {
     return ui.foryou.load({ force: true });
+  } else if (event.type === "returned") { // Home o Legion L: el mando vuelve a Orbital ya (sin esperar al siguiente status)
+    if (state.running?.front) state.running = { ...state.running, front: false };
   } else if (event.type === "pip") { // Home con un video: se fue a la esquina; cómo regresarlo
+    if (state.running?.front) state.running = { ...state.running, front: false };
     return ui.toast.show(`${event.title} sigue en pequeño · Home lo regresa a pantalla completa`);
   } else if (event.type === "studio-logos") { // llegaron los logos de los estudios: la fila de Estudios los enseña
     return loadCuration();
@@ -2105,12 +2108,15 @@ function handleEvent(event) {
 }
 
 // ---------------------------------------------------------------- arranque
+// Con un video a pantalla completa el mando es del video, aunque Windows le deje el foco a Orbital (detrás): el servidor
+// se lo pasa al reproductor y aquí no se hace nada (antes A pausaba Y le daba «Ver» a la ficha: salía la carga con el logo).
+const videoInFront = () => state.running?.id === "media:player" && state.running.front === true;
 createInput({
-  onAction: handleAction,
+  onAction: (action, options) => { if (!videoInFront()) handleAction(action, options); },
   onModality: setModality,
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).
   // Conectar Stremio no borra por palabras (es un correo o una contraseña): ahí Retroceso mantenido sigue de letra en letra.
-  onText: (char) => { (ui.login.isOpen ? ui.login.type(char === ERASE_WORD ? "" : char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
+  onText: (char) => { if (videoInFront()) return; (ui.login.isOpen ? ui.login.type(char === ERASE_WORD ? "" : char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
   onTrace: (entry) => traceInput(entry),
   resting: () => document.body.dataset.still !== undefined,
