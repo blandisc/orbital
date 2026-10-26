@@ -61,7 +61,7 @@ footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
 </div>
 
 <script>
-const UPDATED = "25 oct 2026 · en la Lenovo: #9, #7, #1, #2 y #3 listos con evidencia; #10 con código, falta verlo con mpv";
+const UPDATED = "25 oct 2026 · en la Lenovo: #9, #7, #1, #2, #3 y #6 listos con evidencia; #10 con código, falta verlo con mpv";
 // estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
 const ITEMS = [
   { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "doing",
@@ -88,8 +88,9 @@ const ITEMS = [
     ev: ["evidencia/03-version.jpg", "evidencia/03-fuentes.jpg", "evidencia/03-ajustes.jpg", "evidencia/03-reproductor-audio.jpg", "evidencia/03-reproductor-version.jpg"] },
   { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "todo",
     d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "" },
-  { n: 6, t: "Animación de entrada de Orbital", tipo: "Propuesta", estado: "todo",
-    d: "Propuesta elegante, minimalista y fluida, alineada con la del iPhone.", nota: "Propuesta y maqueta listas (misma marca que el iPhone; la luna cae y la marca viaja a la barra). Espera tu OK." },
+  { n: 6, t: "Animación de entrada de Orbital", tipo: "Propuesta", estado: "done",
+    d: "Propuesta elegante, minimalista y fluida, alineada con la del iPhone.", nota: "Aprobada (vía la sesión de la Mac) y hecha con los tiempos del iPhone: anillo 0.5 s, letras cada 40 ms, la luna cae con rebote; al estar lista la biblioteca, la marca viaja a su lugar exacto en la barra (medido: mismos píxeles) e Inicio aparece. Ya no hay dos entradas. Movimiento reducido: fundido. Probado en la Lenovo con Edge (cámara lenta para la captura).",
+    ev: ["evidencia/06-entrada-antes.jpg", "evidencia/06-entrada-despues.jpg"] },
   { n: 8, t: "Cambio rápido de subtítulo", tipo: "Propuesta", estado: "todo",
     d: "Análisis de UI y UX para probar varios subtítulos con el video que estás viendo, como en el iPhone.", nota: "Análisis listo: mantener X entra directo, dar la vuelta al final, sincronía por subtítulo y el mejor primero, como el iPhone. Espera tu OK." },
   { n: 5, t: "Trakt: avance compartido y dos sesiones", tipo: "Investigación", estado: "todo",
