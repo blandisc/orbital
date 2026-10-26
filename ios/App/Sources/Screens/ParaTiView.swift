@@ -381,12 +381,13 @@ struct ListsView: View {
                             ForEach(model.newOnPlatforms) { s in
                                 NavigationLink(value: s.route) {
                                     WideCard(art: s.wide, logo: s.logo, title: s.title, badge: Text(badgeKey(s.reason)),
-                                             caption: Text(verbatim: s.title))
+                                             caption: Text(verbatim: s.title), platform: s.platformName)
                                 }
                                 .buttonStyle(.plain)
                                 .contextMenu { SuggestionActions(suggestion: s) { dismissed in Task { await model.dismiss(dismissed) } } }
                             }
                         }
+                        .id("new-on-platforms")   // `-demo-shelf new-on-platforms` baja hasta aquí
                     }
                     if model.needsSources { sourcesFallback }
                 }
@@ -725,7 +726,7 @@ struct ListsView: View {
     private func featuredTile(_ featured: ParaTiModel.Featured) -> some View {
         let s = featured.item
         let route = s.route
-        return HeroCard(title: s.title, background: s.wide, logo: s.logo, eyebrow: Text(reasonKey(featured.reason)), accentEyebrow: true,
+        return HeroCard(title: s.title, background: s.wide, logo: s.logo, eyebrow: reasonKey(featured.reason).map { Text($0) }, accentEyebrow: true,
                         data: (factStrings(s).first ?? "").components(separatedBy: " · "), open: { openTitle = route }) {
             HeroActions { watchButton(s); moreMenu(s) }   // con letra grande, uno debajo del otro
         }
@@ -747,11 +748,14 @@ struct ListsView: View {
         DSMoreMenu { SuggestionActions(suggestion: s, includeWatch: false) { dismissed in Task { await model.dismiss(dismissed) } } }
     }
 
-    private func reasonKey(_ reason: ParaTiModel.FeaturedReason) -> LocalizedStringKey {
+    /// La etiqueta sobre el arte del destacado. El nombre de una lista (de Trakt o de un complemento: «RT: Certified Fresh»)
+    /// no va: en el destacado se leía como un sello raro; mejor sin etiqueta.
+    private func reasonKey(_ reason: ParaTiModel.FeaturedReason) -> LocalizedStringKey? {
         switch reason {
         case .recommendedByTrakt: "Recomendada por Trakt"
         case .rank(let n, let platform): "N.º \(n) en \(platform)"
         case .trending: "En tendencia"
+        case .other(.inList): nil
         case .other(let r): badgeKey(r)
         }
     }

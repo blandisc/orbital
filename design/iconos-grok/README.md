@@ -1,7 +1,7 @@
 # Íconos de temporadas y géneros (Grok Imagine)
 
-Generados con `grok-imagine-image-2.0` (xAI) el 25-oct-2026: línea blanca de trazo redondo sobre negro, pasada a blanco
-sobre transparente (240 × 240). Para las tarjetas de Temporadas y Géneros, con el mismo trato que los logos de Estudios.
+Generados con `grok-imagine-image-2.0` (xAI) el 25-oct-2026: ilustración plana a color, un poco abstracta (el estilo C que eligió Fernando), con el negro
+pasado a transparente (240 × 240). Para las tarjetas de Temporadas y Géneros, con el mismo trato que los logos de Estudios.
 
 Los 19: 5 temporadas (halloween, muertos, navidad, sanvalentin, verano) y 14 géneros (los slugs de GENRES en
 orbital/library/tmdb.py). Imágenes nuevas: con Grok Build (regla 10 de la casa), no con la API directa.

@@ -24,3 +24,4 @@ final class LanguageFlagsTests: XCTestCase {
         XCTAssertEqual(LanguageFlags.withoutFlags(both), "Inglés + latino")
     }
 }
+

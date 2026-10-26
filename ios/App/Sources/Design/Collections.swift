@@ -379,9 +379,8 @@ struct CollectionIconEmblem: View {
 
     var body: some View {
         VStack(spacing: DS.Space.s1) {
-            // En el color del texto (oscuro en modo claro, claro en oscuro): en blanco se perdía sobre la tarjeta clara.
+            // A color (estilo de Grok Imagine): se leen en claro y en oscuro.
             Image("Collections/" + slug).resizable().scaledToFit()
-                .foregroundStyle(DS.text)
                 .frame(width: size, height: size)
                 // Un resplandor del color del fondo detrás: se lee aunque caiga sobre los pósters.
                 .background { Circle().fill(DS.bg).opacity(DS.Collections.iconBackdrop).blur(radius: DS.Collections.glow).scaleEffect(DS.Collections.iconBackdropScale) }

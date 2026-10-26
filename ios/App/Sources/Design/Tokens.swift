@@ -347,6 +347,9 @@ enum DS {
 
     /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32
     /// (el planeta y el anillo) o en em de la palabra (la luna, el interletrado, el tamaño de la marca junto a la palabra).
+    /// La píldora de una plataforma (`PlatformBadge`): el logo de la app a la izquierda, con sus esquinas.
+    enum PlatformBadge { static let logo: CGFloat = 16, logoRadius: CGFloat = 4 }
+
     /// La entrada de la app (`LaunchSplash`): los mismos tiempos que la TV y la computadora (~1.4 s).
     enum Splash {
         static let wordSize: CGFloat = 52
