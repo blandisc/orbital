@@ -29,7 +29,8 @@ SETTINGS = {
     "video_home": {"pip", "pause"},  # Home durante un video: en pequeño en una esquina, o pausa
     "close_previous": {True, False},  # la frase de Alexa debajo de los botones del héroe
     "game_mode": {"heavy", "off"},  # modo juego: cerrar la ventana de Orbital mientras juegas Switch, Wii U…
-    "game_resolution": {"lower", "native"},  # los juegos a ~1080p (las películas siguen a 4K), o a la de la pantalla
+    "game_resolution": {"lower", "native"},
+    "eden_build": {"standard", "rog-ally"},  # qué versión de Eden baja el actualizador (emulator_updates.VARIANTS)  # los juegos a ~1080p (las películas siguen a 4K), o a la de la pantalla
     "welcomed": {True, False},
     "emulator_updates": {"avisar", "auto", "nunca"},
     "screensaver_minutes": {0, 5, 10, 20, 30},  # protector de pantalla: el mosaico de Para ti tras ese rato sin tocar nada  # versiones nuevas de los emuladores (emulator_updates.py)  # ya vio "Tu consola" (la pantalla de primer uso)

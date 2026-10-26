@@ -131,7 +131,8 @@ def emulator_updates_for(d: Deps):
         exes, mode=lambda: d.catalog.state.settings().get("emulator_updates", "avisar"),
         busy=lambda: d.catalog.launcher.status() is not None,
         notify=lambda text: d.hub.publish_threadsafe({"type": "toast", "message": text}),
-        roms_root=roms_root, have_systems=have_systems, install_root=install_root, on_installed=installed)
+        roms_root=roms_root, have_systems=have_systems, install_root=install_root, on_installed=installed,
+        variant=lambda source_id: d.catalog.state.settings().get("eden_build", "standard") if source_id == "eden" else None)
 
 
 def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, shortcuts: bool = False,

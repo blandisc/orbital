@@ -62,7 +62,7 @@ def router(d: Deps, updater: Updater | None = None, restart=restart_orbital) -> 
         return await run_in_threadpool(d.extra["emulator_updates"].summary, force)
 
     @r.post("/api/emulators/updates/{emulator_id}")
-    def install_emulator(emulator_id: str) -> dict:
+    def install_emulator(emulator_id: str, force: bool = False) -> dict:
         """Instala la versión nueva en segundo plano y avisa al terminar (evento emulator-update-done)."""
         from ..emulator_updates import InstallError
 
@@ -72,7 +72,7 @@ def router(d: Deps, updater: Updater | None = None, restart=restart_orbital) -> 
 
         def work() -> None:
             try:
-                message, ok = service.install(emulator_id[:40]), True
+                message, ok = service.install(emulator_id[:40], force=force), True
             except InstallError as exc:
                 message, ok = str(exc), False
             except Exception:  # noqa: BLE001

@@ -85,6 +85,14 @@ SOURCES: tuple[Source, ...] = (
 )
 
 
+# Emuladores que publican varias versiones para Windows: cuál bajar lo eliges en Ajustes (el actualizador la respeta,
+# también en automático). Eden: la estándar (MSVC, la más estable) o la compilada para el ROG Ally, que tiene el mismo
+# procesador que la Legion Go (Z1 Extreme).
+VARIANTS: dict[str, dict[str, tuple[str, str]]] = {
+    "eden": {"standard": ("Estándar", r"^Eden-Windows-v[\d.]+-amd64-msvc-standard\.zip$"),
+             "rog-ally": ("ROG Ally", r"^Eden-Windows-v[\d.]+-rog-ally-clang-pgo\.zip$")},
+}
+
 # Si tienes juegos de una consola y ningún emulador para ella, cuál instalar (solo los que se instalan solos).
 INSTALL_FOR_SYSTEM = {"switch": "eden", "xbox": "xemu", "xbox360": "xenia", "psp": "ppsspp", "nds": "melonds",
                       "wiiu": "cemu", "ps4": "shadps4"}
@@ -197,19 +205,21 @@ def http_get_json(url: str, timeout: float = 15):
         return read_json(res, timeout=timeout)
 
 
-def latest_release(source: Source, get_json=http_get_json) -> Release:
-    """La última versión publicada (lanza NET_ERRORS o ValueError si no se pudo saber)."""
+def latest_release(source: Source, get_json=http_get_json, asset: str | None = None) -> Release:
+    """La última versión publicada (lanza NET_ERRORS o ValueError si no se pudo saber). `asset`: qué archivo buscar en
+    vez del de siempre (la versión de Eden que elegiste)."""
+    pattern = asset or source.asset
     if source.kind == "github":
         data = get_json(f"https://api.github.com/repos/{source.repo}/releases/latest")
-        asset = None
-        if source.asset:
-            asset = next((a for a in data.get("assets") or [] if re.search(source.asset, a.get("name") or "", re.IGNORECASE)), None)
+        found = None
+        if pattern:
+            found = next((a for a in data.get("assets") or [] if re.search(pattern, a.get("name") or "", re.IGNORECASE)), None)
         published = _epoch(data.get("published_at"))
         if source.dated:  # «latest» o un commit: lo que cuenta es la fecha (y los archivos, que se resuben)
             dates = [_epoch(a.get("updated_at")) for a in data.get("assets") or []]
             published = max([d for d in dates if d] or [published or 0]) or None
-        return Release(str(data.get("tag_name") or ""), published, asset and asset.get("browser_download_url"),
-                       asset and asset.get("size"), data.get("html_url"))
+        return Release(str(data.get("tag_name") or ""), published, found and found.get("browser_download_url"),
+                       found and found.get("size"), data.get("html_url"))
     if source.kind == "dolphin":
         data = get_json(source.repo)
         return Release(str(data.get("shortrev") or ""), _epoch(data.get("date")))
@@ -220,7 +230,7 @@ def latest_release(source: Source, get_json=http_get_json) -> Release:
         assets = first.get("assets") or []
         files = [(a.get("name") or "", a.get("browser_download_url")) for a in assets] if isinstance(assets, list) else \
             [(a.get("name") or "", a.get("direct_asset_url") or a.get("url")) for a in (assets.get("links") or [])]
-        url = next((u for name, u in files if source.asset and re.search(source.asset, name, re.IGNORECASE)), None)
+        url = next((u for name, u in files if pattern and re.search(pattern, name, re.IGNORECASE)), None)
         return Release(str(first.get("tag_name") or ""), _epoch(first.get("published_at") or first.get("released_at")
                                                                 or first.get("created_at")), url)
     raise ValueError(f"fuente desconocida: {source.kind}")
@@ -399,7 +409,9 @@ class EmulatorUpdates:
                  get_json=None, fetch=None, version_of: Callable[[Path], str | None] | None = None,
                  clock: Callable[[], float] = time.time, roms_root: Callable[[], Path | None] = lambda: None,
                  have_systems: Callable[[], set[str]] = set, install_root: Callable[[], Path | None] = lambda: None,
-                 on_installed: Callable[[], None] = lambda: None) -> None:
+                 on_installed: Callable[[], None] = lambda: None,
+                 variant: Callable[[str], str | None] = lambda source_id: None) -> None:
+        self.variant = variant  # la versión elegida de un emulador (VARIANTS), o None
         self.emulator_exes, self.mode, self.busy, self.notify = emulator_exes, mode, busy, notify
         self.roms_root, self.have_systems, self.install_root = roms_root, have_systems, install_root
         self.on_installed = on_installed  # un emulador nuevo: que la biblioteca lo encuentre
@@ -430,7 +442,7 @@ class EmulatorUpdates:
             for source, exe in self._targets():
                 status = Status(source, exe, installed_version(exe, self.version_of))
                 try:
-                    status.latest = latest_release(source, self.get_json)
+                    status.latest = latest_release(source, self.get_json, self._asset(source))
                     status.update, status.likely = compare(source, exe, status.installed, status.latest)
                 except (*NET_ERRORS, KeyError, TypeError) as exc:
                     status.error = "No pude revisar (sin conexión o el sitio no contestó)."
@@ -439,11 +451,20 @@ class EmulatorUpdates:
             self._last = (self.clock(), result)
             return result
 
+    def _asset(self, source: Source) -> str | None:
+        chosen = VARIANTS.get(source.id, {}).get(self.variant(source.id) or "")
+        return chosen[1] if chosen else source.asset
+
     def summary(self, force: bool = False) -> dict:
         items = self.check(force)
+        have = {s.source.id for s in items}
+        # Las versiones a elegir, solo de los emuladores que tienes: {"eden": {"value": "rog-ally", "options": [...]}}
+        variants = {sid: {"value": self.variant(sid) or next(iter(options)),
+                          "options": [[key, label] for key, (label, _pattern) in options.items()]}
+                    for sid, options in VARIANTS.items() if sid in have}
         return {"mode": self.mode(), "checked_at": self._last[0] if self._last else None,
                 "installing": self._installing.locked(), "items": [s.public() for s in items],
-                "installable": self.installable()}
+                "installable": self.installable(), "variants": variants}
 
     def installable(self) -> list[dict]:
         """Emuladores que faltan para juegos que ya tienes: [{system, id, name, system_name}]."""
@@ -510,8 +531,9 @@ class EmulatorUpdates:
         log.info("Emuladores: %s regresó a %s", target[0].name, version)
         return f"{target[0].name} regresó a {version}."
 
-    def install(self, source_id: str) -> str:
-        """Instala la última versión de ese emulador. Devuelve el mensaje para la tele; lanza InstallError si no."""
+    def install(self, source_id: str, force: bool = False) -> str:
+        """Instala la última versión de ese emulador. Devuelve el mensaje para la tele; lanza InstallError si no.
+        `force`: aunque ya esté al día (cambiaste de versión de Eden: se baja la otra)."""
         if self.busy():
             raise InstallError("Cierra el juego primero: no actualizo un emulador abierto.")
         if not self._installing.acquire(blocking=False):
@@ -520,9 +542,9 @@ class EmulatorUpdates:
             status = next((s for s in self.check() if s.source.id == source_id), None)
             if status is None:
                 raise InstallError("No tienes ese emulador.")
-            if not status.update:
+            if not status.update and not force:
                 return f"{status.source.name} ya está al día."
-            if not status.can_install:
+            if not (status.latest and status.latest.asset_url):
                 raise InstallError(f"{status.source.name} se actualiza a mano: {status.source.page}")
             cache = self._cache()
             name = re.sub(r"[^\w.-]", "_", f"{status.source.id}-{status.latest.version}.zip")
@@ -531,11 +553,13 @@ class EmulatorUpdates:
                 zip_path = self.fetch(status.latest.asset_url, cache / name)
             except NET_ERRORS as exc:
                 raise InstallError("No pude bajar la versión nueva (revisa tu conexión).") from exc
-            install_zip(zip_path, status.exe, status.latest.version, previous=status.installed)
+            variant = self.variant(status.source.id) if status.source.id in VARIANTS else None
+            version = f"{status.latest.version}-{variant}" if variant else status.latest.version
+            install_zip(zip_path, status.exe, version, previous=status.installed)
             Path(zip_path).unlink(missing_ok=True)
-            log.info("Actualizaciones: %s %s → %s", status.source.name, status.installed, status.latest.version)
+            log.info("Actualizaciones: %s %s → %s", status.source.name, status.installed, version)
             self._last = None  # la próxima revisión ya ve la versión nueva
-            return f"{status.source.name} actualizado a {status.latest.version}."
+            return f"{status.source.name} actualizado a {version}."
         finally:
             self._installing.release()
 

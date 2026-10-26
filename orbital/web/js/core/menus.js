@@ -593,7 +593,7 @@ const EMULATOR_MODE_HINTS = {
  * Emuladores: cada uno con su versión y si hay una nueva. Los que vienen en .zip se instalan desde aquí (A); los demás
  * dicen dónde bajarlos. Arriba, el modo: avisar, automático o no revisar (◀/▶).
  */
-export function emulatorsMenu({ mode = "avisar", items = [], installing = false, installable = [] } = {}) {
+export function emulatorsMenu({ mode = "avisar", items = [], installing = false, installable = [], variants = {} } = {}) {
   const row = (e) => {
     const value = e.error ? "Sin revisar" : e.update ? (e.likely ? "Puede haber nueva" : `Nueva: ${e.latest}`) : "Al día";
     const site = String(e.page || "").replace(/^https?:\/\//, "").replace(/\/.*$/, "");
@@ -618,9 +618,36 @@ export function emulatorsMenu({ mode = "avisar", items = [], installing = false,
         adjust: { left: { type: "emulators-mode", value: stepSetting("emulator_updates", mode, -1) },
           right: { type: "emulators-mode", value: stepSetting("emulator_updates", mode, 1) } } },
       ...(missing.length ? [{ heading: true, label: "Te faltan" }, ...missing] : []),
+      ...edenBuild(variants.eden),
       { heading: true, label: "Tus emuladores" },
       ...items.map(row),
       { icon: "refresh", label: "Revisar ahora", command: { type: "emulators", force: true } },
+    ],
+  };
+}
+
+/** Versión de Eden: A o ◀/▶ cambian cuál baja el actualizador (y luego se ofrece instalarla ya). */
+function edenBuild(variant) {
+  if (!variant?.options?.length) return [];
+  const values = variant.options.map(([id]) => id);
+  const i = Math.max(0, values.indexOf(variant.value));
+  const go = (step) => {
+    const next = variant.options[(i + step + values.length) % values.length];
+    return { type: "eden-build", value: next[0], label: next[1] };
+  };
+  return [{ icon: "swap", label: "Versión de Eden", value: variant.options[i][1],
+    hint: variant.value === "rog-ally" ? "Hecha para el procesador de la Legion Go" : "La más estable",
+    command: go(1), adjust: { left: go(-1), right: go(1) } }];
+}
+
+/** Elegiste otra versión de Eden: instalarla ya o esperar a la próxima actualización. */
+export function edenBuildMenu({ label }) {
+  return {
+    title: `Eden ${label}`, crumb: "Versión de Eden",
+    subtitle: "Las próximas actualizaciones bajan esta versión. Tus juegos, partidas y controles no cambian.",
+    options: [
+      { icon: "download", label: "Instalarla ahora", command: { type: "emulator-install-forced", id: "eden", name: `Eden ${label}` } },
+      { icon: "check", label: "En la próxima actualización", command: { type: "emulators", again: true } },
     ],
   };
 }

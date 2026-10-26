@@ -203,3 +203,34 @@ def test_installing_a_missing_emulator_puts_it_in_your_emulators_folder(tmp_path
         s.install_new("ppsspp")  # ya está
     with pytest.raises(eu.InstallError):
         s.install_new("dolphin")  # viene en .7z: no se instala solo
+
+
+def test_the_eden_build_you_chose_is_the_one_that_downloads(tmp_path):
+    """Eden publica varias versiones para Windows: el actualizador baja la que elegiste (ROG Ally o estándar)."""
+    eden = emulator(tmp_path, "eden", "eden.exe")
+    data = [{"tag_name": "v0.2.2", "published_at": "2099-01-01T00:00:00Z", "assets": [
+        {"name": "Eden-Windows-v0.2.2-amd64-msvc-standard.zip", "browser_download_url": "https://e/std.zip"},
+        {"name": "Eden-Windows-v0.2.2-rog-ally-clang-pgo.zip", "browser_download_url": "https://e/rog.zip"}]}]
+    asked = []
+
+    def fetch(url, dest):
+        asked.append(url)
+        return make_zip(dest, {"eden.exe": b"nuevo"})
+
+    choice = {"eden": "rog-ally"}
+    s = eu.EmulatorUpdates(lambda: [eden], mode=lambda: "auto", busy=lambda: False, cache_dir=tmp_path / "cache",
+                           get_json=lambda url: data, fetch=fetch, version_of=lambda exe: None,
+                           variant=lambda sid: choice.get(sid))
+    summary = s.summary()
+    assert summary["variants"]["eden"] == {"value": "rog-ally", "options": [["standard", "Estándar"], ["rog-ally", "ROG Ally"]]}
+    assert s.install("eden") == "Eden actualizado a v0.2.2-rog-ally."
+    assert asked == ["https://e/rog.zip"]
+    choice["eden"] = "standard"  # cambiaste a la estándar: «Instalarla ahora» la baja aunque ya estés al día
+    s._last = None
+    assert s.install("eden", force=True) == "Eden actualizado a v0.2.2-standard."
+    assert asked[-1] == "https://e/std.zip"
+
+
+def test_without_eden_there_is_no_build_to_choose(tmp_path):
+    s = service(tmp_path, [emulator(tmp_path)], {"xemu-project": release("v0.8.138", ["xemu-0.8.138-windows-x86_64.zip"])})
+    assert s.summary()["variants"] == {}

@@ -77,6 +77,7 @@ export const api = {
   music: () => request("/api/music"),
   musicCommand: (action) => post("/api/music", { action }),
   closeApp: (exe) => post("/api/memory/close", { exe }),
+  installEmulatorForced: (id) => post(`/api/emulators/updates/${encodeURIComponent(id)}?force=true`, {}),
   installNewEmulator: (id) => post(`/api/emulators/install/${encodeURIComponent(id)}`, {}),
   rollbackEmulator: (id) => post(`/api/emulators/rollback/${encodeURIComponent(id)}`, {}),
   players: () => request("/api/players"),

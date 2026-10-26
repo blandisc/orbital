@@ -446,3 +446,15 @@ test("jugadores: quién es quién; con un juego de Switch, reiniciar con estos j
   assert.deepEqual(playerMenu({ slot: 0, name: "Legion Go", player: 2 }).options[0].command, { type: "player-first", slot: 0 });
   assert.equal(playersMenu({ players: [], game: null }).options[0].label, "No hay controles conectados");
 });
+
+test("Emuladores: la versión de Eden se elige con A o ◀/▶ y luego se ofrece instalarla", async () => {
+  const { emulatorsMenu, edenBuildMenu } = await import("../../orbital/web/js/core/menus.js");
+  const menu = emulatorsMenu({ items: [], variants: { eden: { value: "rog-ally", options: [["standard", "Estándar"], ["rog-ally", "ROG Ally"]] } } });
+  const row = menu.options.find((o) => o.label === "Versión de Eden");
+  assert.equal(row.value, "ROG Ally");
+  assert.deepEqual(row.command, { type: "eden-build", value: "standard", label: "Estándar" });
+  assert.deepEqual(row.adjust.left, { type: "eden-build", value: "standard", label: "Estándar" });
+  const next = edenBuildMenu({ label: "Estándar" });
+  assert.deepEqual(next.options[0].command, { type: "emulator-install-forced", id: "eden", name: "Eden Estándar" });
+  assert.ok(!emulatorsMenu({ items: [] }).options.some((o) => o.label === "Versión de Eden")); // sin Eden, no sale
+});
