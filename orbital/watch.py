@@ -24,6 +24,7 @@ from .credentials import Credentials
 from .events import EventBus
 from .launcher import Launcher
 from .library import addons, cinemeta, localize, streams, stremio_api
+from .library import subtitles as subtitle_lib
 from .library import tmdb as tmdb_api
 from .library.models import LibraryItem
 from .scrobble import TraktScrobbler, not_the_video
@@ -706,6 +707,9 @@ class Watch:
         p.on_language = self._remember_language
         p.on_tracks = self._tracks_seen
         p.versions_provider = self._other_versions
+        p.subtitle_search = self._subtitle_search  # «Probar otros»: los de internet con su copia y descargas
+        p.good_release = lambda meta: self.state.prefs(f"stremio:{meta.get('meta_id')}").get("sub_release") if meta.get("meta_id") else None
+        p.on_good_release = self._remember_sub_release
         p.on_sub_kept = self._safe_remember  # «Probar otros» › «Este va bien»: esos subtítulos (y su sincronía), ya
         p.spanish_provider = self._spanish_for
         p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
@@ -759,7 +763,9 @@ class Watch:
         return {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title, "detail": detail,
                 "facts": facts, "description": description, "poster": poster,
                 "source": source.index, "source_label": source_label(source), "binge": source.binge,
-                "source_key": source.key, "source_dub": source.dub, "tried": [source.index]}
+                "source_key": source.key, "source_dub": source.dub, "tried": [source.index],
+                # La copia que ves («…WEB-DL-NTb»): «Probar otros» pone primero los subtítulos hechos para ella.
+                "release": str((source.stream.get("behaviorHints") or {}).get("filename") or source.release or "")}
 
     def best_source(self, kind: str, video_id: str, binge: str | None = None,
                     skip: set[int] | None = None, prefs: streams.Preferences | None = None) -> streams.Source | None:
@@ -1480,6 +1486,23 @@ class Watch:
 
     def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
         self._save_progress(meta, position, duration, watched, refresh=True)
+
+    def _subtitle_search(self, meta: dict, url: str | None) -> list[dict] | None:
+        """Los subtítulos de internet de lo que ves (todos los idiomas), con la huella del archivo si el servidor la da (dos
+        pedidos de 64 KB): los de tu copia exacta salen primero. None si nadie contestó."""
+        kind = "series" if meta.get("kind") == "series" else "movie"
+        if not meta.get("video_id"):
+            return None
+        cache = self.__dict__.setdefault("_fingerprints", {})
+        if url and url not in cache:
+            cache[url] = subtitle_lib.remote_fingerprint(url)
+        return self.streams.subtitle_options(kind, meta["video_id"], cache.get(url) if url else None)
+
+    def _remember_sub_release(self, meta: dict, release: str | None) -> None:
+        """«Este va bien» en una serie: la copia de ese subtítulo («…-NTb»). En los siguientes episodios, los subtítulos
+        del mismo grupo van primero."""
+        if meta.get("meta_id") and release:
+            self.state.set_pref(f"stremio:{meta['meta_id']}", "sub_release", release)
 
     def _safe_remember(self, meta: dict) -> None:
         try:

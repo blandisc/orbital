@@ -560,7 +560,10 @@ def paused_ass(hud: Hud) -> str:
     y += 30
     lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios y versión" if hud.series else "Versión")], MARGIN, y))
     bar, _ = progress_bar(hud)
-    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Mantén: episodio")] if hud.series else []),
+    # «Probar subtítulos» a la vista (regla de las cuatro superficies): mantener X con el mando, S con el teclado y, con el
+    # dedo o el mouse, su botón abajo.
+    subs = ("S", "Probar subtítulos") if KEYBOARD else ("X", "Mantén: probar subtítulos")
+    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), subs, *([("LT RT", "Mantén: episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
     room = max(260, W - 2 * MARGIN - hints_width(more) - 48)
     if TOUCH:
@@ -616,7 +619,7 @@ def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None 
 def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
     """En pausa, Continuar, Audio y Episodios ya son botones grandes del bloque: abajo solo regresar, adelantar y salir."""
     if paused:
-        return [("−10 s", "left"), ("+10 s", "right"), ("Salir", "quit")]
+        return [("−10 s", "left"), ("+10 s", "right"), ("Probar subtítulos", "subs"), ("Salir", "quit")]
     return [("−10 s", "left"), ("Pausa", "a"), ("+10 s", "right"), ("Audio y subtítulos", "x"),
             ("Episodios y versión" if hud.series else "Versión", "y"), ("Salir", "quit")]
 
@@ -821,7 +824,8 @@ def sub_scale_label(scale: float) -> str:
 
 def track_options(kind: str, tracks: list[dict], extra: list[dict] | None = None) -> list[dict]:
     """Opciones de una columna de pistas (y "Sin subtítulos" / buscar en tu addon)."""
-    options = []
+    options = [o for o in extra or [] if o.get("first")]  # «Probar otros · mantén X»: arriba, donde se ve
+    extra = [o for o in extra or [] if not o.get("first")]
     if kind == "sub":
         none_selected = not any(t.get("type") == "sub" and t.get("selected") for t in tracks)
         options.append({"label": "Sin subtítulos", "action": ("sid", "no"), "current": none_selected})
@@ -913,22 +917,48 @@ class SubTrial:
     language: str  # «Español»
     number: int  # el que está puesto (1…total); 0 = ahora sin subtítulos
     total: int
-    origin: str = "video"  # «video» | «addon» (de tu complemento)
+    origin: str = "video"  # «video» | «addon» (de internet)
     delay: float = 0.0  # la sincronía (s)
-    status: str = ""  # «Bajando el subtítulo…», «No hay más subtítulos en español», «Sin internet…»
+    status: str = ""  # «Bajando el subtítulo…», «De vuelta al primero», «Sin internet…»
+    flag: str | None = None  # la banderita del idioma (flags.py)
+    badge: str = ""  # «Hecho para tu copia» · «Misma versión» (library/subtitles.badge)
+    release: str = ""  # la copia para la que se hizo («The.Office.S02E05.720p.WEB-DL-NTb»)
+    downloads: int | None = None
+    languages: int = 1  # cuántos idiomas hay (con más de uno, LB/RB los cambia)
+    edition: bool = False  # parece de otra edición del video: Y ajusta la velocidad
+    edition_on: bool = False
 
 
-TRY_H = 96  # alto de la franja (con el dedo, un poco más: sus botones se tocan)
-TRY_ITEMS = [("◀ ▶", "Otro subtítulo"), ("↑ ↓", "Adelantar o atrasar"), ("A", "Este va bien"), ("B", "Dejar el de antes")]
-TRY_PILLS = [("◀ Anterior", "left"), ("Siguiente ▶", "right"), ("Antes", "up"), ("Después", "down"),
-             ("Este va bien", "a"), ("Dejar el de antes", "b")]
+TRY_H = 128  # alto de la franja (con el dedo, un poco más: sus botones se tocan)
+
+
+def try_items(trial: SubTrial) -> list[tuple[str, str]]:
+    """Las pistas del mando (o del teclado: hints() pone la tecla) de la franja."""
+    return [("◀ ▶", "Otro"), *([("LB RB", "Idioma")] if trial.languages > 1 else []), ("↑ ↓", "Sincronía"),
+            *([("Y", "Velocidad como venía" if trial.edition_on else "Ajustar velocidad")] if trial.edition else []),
+            ("A", "Este va bien"), ("B", "Listo")]
+
+
+def try_pills(trial: SubTrial) -> list[tuple[str, str]]:
+    """Con el dedo o el mouse: los mismos, como botones (la rueda del mouse también cambia de subtítulo)."""
+    return [("‹ Anterior", "left"), ("Siguiente ›", "right"), *([("Otro idioma", "rb")] if trial.languages > 1 else []),
+            ("Antes", "up"), ("Después", "down"),
+            *([("Velocidad", "y")] if trial.edition else []), ("Este va bien", "a"), ("Listo", "done")]
+
+
+def _downloads(n: int | None) -> str:
+    """«12 400 descargas» (con espacio de miles, como se escribe en México en la TV)."""
+    if not isinstance(n, int) or n <= 0:
+        return ""
+    return f"{n:,} descarga{'s' if n != 1 else ''}".replace(",", " ")
 
 
 def sub_trial_ass(trial: SubTrial) -> str:
-    """La franja de «Probar otros»: «Español · Subtítulo 2 de 5», de dónde viene y la sincronía; abajo, los botones.
-    Arriba (los subtítulos van abajo): así se lee la frase con cada subtítulo que pruebas."""
+    """La franja de «Probar otros», arriba (así se lee la frase de abajo con cada subtítulo): la bandera y «Español ·
+    Subtítulo 2 de 5», por qué está ahí («Hecho para tu copia»), la copia, las descargas y la sincronía; abajo, los botones
+    del mando o, con el dedo y el mouse, botones tocables."""
     targets["try"] = []
-    h = TRY_H + (28 if TOUCH else 0)
+    h = TRY_H + (24 if TOUCH else 0)
     lines = [rrect(0, 0, W, h, 0, PANEL, "18"), gradient(h, h + 48, 120, 255, 8)]
     if trial.total <= 0:
         title = f"{trial.language} · No hay subtítulos para probar"
@@ -936,20 +966,30 @@ def sub_trial_ass(trial: SubTrial) -> str:
         title = f"{trial.language} · Ahora sin subtítulos · {trial.total} para probar"
     else:
         title = f"{trial.language} · Subtítulo {trial.number} de {trial.total}"
-    origin = "De tu complemento" if trial.origin == "addon" else "Del video"
-    detail = " · ".join(p for p in (origin if trial.number > 0 else "", f"Sincronía: {delay_label(trial.delay)}") if p)
-    title_w = text_width(title, 26, "bold")
-    status_w = min(text_width(trial.status, 22, "semi"), (W - 2 * MARGIN) * .4) if trial.status else 0
-    lines.append(text(MARGIN, 34, esc(fit(title, 26, W - 2 * MARGIN - status_w - 40, "bold")), 26, weight="bold", align=4))
-    room = W - 2 * MARGIN - title_w - 28 - status_w - 40
-    if room > 120:
-        lines.append(text(MARGIN + title_w + 28, 34, esc(fit(detail, 22, room, "semi")), 22, MUTED, weight="semi", align=4))
+    x = MARGIN
+    if trial.flag:
+        lines += flags.ass(trial.flag, x, 34 - FLAG_H / 2, FLAG_H)
+        x += FLAG_H * flags.W / flags.H + FLAG_GAP
+    status_w = min(text_width(trial.status, 22, "semi"), (W - 2 * MARGIN) * .36) if trial.status else 0
+    lines.append(text(x, 34, esc(fit(title, 26, W - MARGIN - x - status_w - 40, "bold")), 26, weight="bold", align=4))
+    x += text_width(title, 26, "bold") + 24
+    if trial.badge and trial.number > 0:  # por qué está ahí, en su píldora (el turquesa de «al aire»: es lo bueno)
+        bw = text_width(trial.badge, 19, "semi") + 28
+        if x + bw < W - MARGIN - status_w - 40:
+            lines += [rrect(x, 18, bw, 32, 16, LIVE, "C8", outline=LIVE, width=1.5),
+                      text(x + bw / 2, 34, esc(trial.badge), 19, LIVE, weight="semi", align=5)]
+            x += bw + 18
     if trial.status:
         lines.append(text(W - MARGIN, 34, esc(fit(trial.status, 22, status_w + 1, "semi")), 22, SOFT, weight="semi", align=6))
+    # Segundo renglón: de dónde viene, la copia para la que se hizo, sus descargas y la sincronía.
+    origin = "Del video" if trial.origin == "video" else ""
+    parts = [p for p in (origin, trial.release, _downloads(trial.downloads)) if p] if trial.number > 0 else []
+    parts.append(f"Sincronía: {delay_label(trial.delay)}")
+    lines.append(text(MARGIN, 70, esc(fit(" · ".join(parts), 21, W - 2 * MARGIN, "semi")), 21, MUTED, weight="semi", align=4))
     if TOUCH:
-        lines.append(pills(TRY_PILLS, 64, left=MARGIN, layer="try", h=48))
+        lines.append(pills(try_pills(trial), 96, left=MARGIN, layer="try", h=48))
     else:
-        lines.append(hints(TRY_ITEMS, 74, left=MARGIN, size=20))
+        lines.append(hints(try_items(trial), 104, left=MARGIN, size=20))
     return "\n".join(lines)
 
 

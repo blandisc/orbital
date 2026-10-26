@@ -21,7 +21,7 @@ avisar: una tecla Enter abre juegos de verdad. Para la interfaz, `scripts/demo_s
 | 3 | Banderitas en todos los lugares donde eliges idioma o subtítulo (mapear todos) | **Listo** (0d291d7): interfaz y reproductor, mapa del iPhone |
 | 4 | Aparadores de temporadas y de géneros con icono y título bonito, alineado con el iPhone | **Listo** (8e0ed07): los íconos de la propuesta T4 del iPhone |
 | 6 | Propuesta de animación de entrada elegante, minimalista y fluida, alineada con el iPhone | **Listo** (49df49d): aprobada; tiempos de OrbitalWordmark |
-| 8 | Análisis UI/UX: cambiar rápido de subtítulo y probar varios con el video | Análisis listo (abajo) |
+| 8 | Análisis UI/UX: cambiar rápido de subtítulo y probar varios con el video | **Hecho** (todo en una entrega, como se decidió): mantener X / S / botón, vuelta al final, sincronía por subtítulo, todo se guarda, salir deja el último, orden del iPhone con copia y descargas, LB/RB idioma, otra edición. Evidencia en mpv; **falta probarlo con mando en la TV** |
 | 5 | Trakt: sincronizar el avance del iPhone aquí, y ¿dos sesiones de Trakt? | Investigación lista (abajo) |
 
 ## 11 · Reproductor: lo hecho
@@ -79,6 +79,23 @@ Propuesta para el mando, primero: mantener X entra directo a «Probar otros»; �
 vuelta; sincronía por subtítulo y guardar en cada paso. Después: detalle de cada subtítulo y orden como el iPhone con chips
 («Hecho para tu copia», descargas), huella del archivo, recordar la copia por serie, LB/RB cambia de idioma, aviso de «otra
 edición» con `sub-speed`.
+
+## 8 · Cambio rápido de subtítulo: lo hecho
+
+- Entrar: **mantener X** (anillo de 0.6 s; un toque sigue abriendo Audio y subtítulos, al soltar), **S** en el teclado,
+  el botón **«Probar subtítulos»** en pausa con dedo y mouse, o X › Subtítulos › «Probar otros» (ahora la primera fila,
+  con «Mantén X» / «Tecla S»). La barra de pausa lo dice y, la primera vez que abres el panel, un aviso de 4 s.
+- En la franja: ◀ ▶ / ← → / rueda / ‹ › cambian y **dan la vuelta**; LB RB / RePág AvPág / «Otro idioma» cambian de
+  idioma; ↑ ↓ sincronía **de ese subtítulo**; A «Este va bien» (en series recuerda la copia buena: el siguiente episodio
+  pone primero los del mismo grupo); B / Esc / «Listo» **deja el último que probaste**. Cada cambio se guarda al momento.
+- Orden del iPhone (`orbital/library/subtitles.py`): tus complementos + OpenSubtitles siempre, con la **huella** del
+  archivo (dos pedidos de 64 KB) si el servidor la da; luego «Hecho para tu copia» (grupo y tipo), «Misma versión», más
+  descargas. Sordos y forzados fuera. Si el subtítulo sigue después del final del video, Y ajusta `sub-speed` (otra edición).
+- Archivos: `player_subs.py`, `player_ui.py` (franja, pausa, panel), `player_screen.py` (mantener X, S, rueda, botón),
+  `playback.py` (X avisa al soltar; S y rueda), `library/streams.py` (`subtitle_options`), `watch.py`.
+- Evidencia: `evidencia/08-franja.jpg`, `08-pausa.jpg`, `08-panel.jpg` (dibujado por el reproductor en un mpv de verdad).
+- Probar en la TV: mantener X en pausa y reproduciendo; un toque de X; ◀ ▶ hasta dar la vuelta; LB/RB; B y ver que se
+  queda; siguiente episodio de la misma serie tras A.
 
 ## 6 · Animación de entrada (propuesta)
 

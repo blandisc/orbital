@@ -27,6 +27,7 @@ from urllib.parse import quote
 
 from ..net import NET_ERRORS
 from . import addons
+from . import subtitles as subtitle_lib
 
 log = logging.getLogger(__name__)
 
@@ -522,6 +523,34 @@ class StreamFinder:
             urls += [s["url"] for s in subs if isinstance(s, dict) and isinstance(s.get("url"), str)
                      and s["url"].startswith(("http://", "https://")) and s.get("lang") in codes]
         return urls
+
+    def subtitle_options(self, kind: str, video_id: str, fingerprint: tuple[str, int] | None = None) -> list[dict] | None:
+        """Todos los subtítulos de un video, de tus complementos y de OpenSubtitles (siempre, como el iPhone), con la copia
+        para la que se hicieron y sus descargas. Con la huella del archivo, los de tu copia exacta salen primero. None si
+        nadie contestó (sin internet): así «no hay» y «sin conexión» no se confunden."""
+        bases = [(a.base, a.name) for a in self.addons() if a.handles("subtitles", kind, video_id)]
+        if not any("opensubtitles" in b for b, _ in bases):
+            bases.append((subtitle_lib.BUILTIN, "OpenSubtitles"))
+        extra = f"/videoHash={fingerprint[0]}&videoSize={fingerprint[1]}" if fingerprint else ""
+
+        def ask(base: str, name: str) -> list[dict] | None:
+            try:
+                data = addons.fetch_json(f"{base}/subtitles/{kind}/{quote(video_id, safe='')}{extra}.json", self.timeout)
+            except NET_ERRORS as exc:
+                log.info("Sin subtítulos de %s: %s", name, exc)
+                return None
+            return subtitle_lib.parse_options(data.get("subtitles") or [], "OpenSubtitles" if "opensubtitles" in base else name)
+
+        with ThreadPoolExecutor(max_workers=max(1, len(bases))) as pool:
+            answers = list(pool.map(lambda b: ask(*b), bases))
+        if all(a is None for a in answers):
+            return None
+        seen, out = set(), []
+        for option in (o for a in answers if a for o in a):
+            if option["url"] not in seen:
+                seen.add(option["url"])
+                out.append(option)
+        return out
 
     def find(self, kind: str, video_id: str, prefs: Preferences) -> list[Source]:
         key = cache_key(kind, video_id, prefs)

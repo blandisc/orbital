@@ -77,7 +77,7 @@ def test_remote_turns_buttons_into_names_with_repeat():
     assert remote.actions(A_BUTTON, .5) == []  # mantener A no repite
     assert remote.actions(0, .6) == []
     assert remote.actions(X_BUTTON | Y_BUTTON, .7) == ["x", "y"]
-    assert remote.actions(DPAD_LEFT, 1) == ["left"]
+    assert remote.actions(DPAD_LEFT, 1) == ["x-up", "left"]  # X avisa al soltar (mantener X: probar subtítulos)
     assert remote.actions(DPAD_LEFT, 1.2) == []
     assert remote.actions(DPAD_LEFT, 1.36) == ["left"]  # mantener: continuo
     assert remote.actions(GUIDE | A_BUTTON, 2) == []  # Home es de Orbital
@@ -128,8 +128,8 @@ def test_subtitle_menu_has_off_and_addon_search():
     p.press("x")
     p.press("right")  # columna Subtítulos
     labels = [o["label"] for o in p.menu.options]
-    assert labels[0] == "Sin subtítulos" and "Español · Forzados" in labels and labels[-1].startswith("Buscar en español")
-    assert p.menu.index == 1  # en la que está puesta
+    assert labels[:2] == ["Probar otros", "Sin subtítulos"] and "Español · Forzados" in labels and labels[-1].startswith("Buscar en español")
+    assert p.menu.index == 2  # en la que está puesta («Probar otros» va primero)
     p.press("up")
     p.press("a")
     assert ("set_property", "sid", "no") in mpv.sent
