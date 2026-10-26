@@ -247,7 +247,9 @@ struct PlayerScreen: View {
             if case .failed = model.phase { statusOverlays(model) } else {
                 GeometryReader { geo in
                     let rect = videoRect(in: geo.size)
-                    statusOverlays(model).position(x: rect.midX, y: rect.midY)
+                    // La búsqueda de versiones, siempre al centro de la pantalla (todavía no hay video); lo demás, al del video.
+                    let searching = model.phase == .preparing && model.search != nil && !model.reconnecting
+                    statusOverlays(model).position(x: searching ? geo.size.width / 2 : rect.midX, y: searching ? geo.size.height / 2 : rect.midY)
                 }
                 .ignoresSafeArea(edges: landscape ? .all : [])
                 .allowsHitTesting(false)
@@ -1048,6 +1050,12 @@ struct PlayerScreen: View {
         switch model.phase {
         // Volviendo a abrir el mismo video (al regresar a la app): solo la ruedita, sin letrero (antes «Reconectando…»).
         case .preparing where model.reconnecting: QuietSpinner()
+        // Buscando versiones de verdad: la órbita con lo que contesta cada complemento.
+        case .preparing where model.search != nil:
+            if let search = model.search {
+                SourceOrbit(found: max(search.found, model.source != nil ? 1 : 0), chosen: model.source != nil, failed: triedCount(model),
+                            title: orbitTitle(model, search), detail: orbitDetail(model, search), sideBySide: landscape)
+            }
         case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
         case .failed(let message):
             // Una pantalla por cada caso (sin fuentes, ninguna sirvió, sin red…), sobre los controles, que se esconden.
@@ -1060,6 +1068,40 @@ struct PlayerScreen: View {
             if model.reconnecting { QuietSpinner() }
             else if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
         }
+    }
+
+    private func triedCount(_ model: PlayerModel) -> Int {
+        if case .triedAnotherSource(let n)? = model.notice { return n }
+        return 0
+    }
+
+    /// Lo que dice la órbita: a quién se le pregunta, cuántas llegaron y cuál se eligió (todo de la búsqueda real).
+    private func orbitTitle(_ model: PlayerModel, _ search: PlayerModel.SourceSearch) -> Text {
+        if let src = model.source {
+            let n = triedCount(model)
+            return n > 0 ? Text("Probando otra versión (\(n))…") : Text("Elegimos \(versionText(src))")
+        }
+        if search.found == 1 { return Text("1 versión encontrada") }
+        let n = search.found
+        if n > 1 { return Text("\(n) versiones encontradas") }
+        return Text("Buscando en tus complementos")
+    }
+
+    private func orbitDetail(_ model: PlayerModel, _ search: PlayerModel.SourceSearch) -> Text? {
+        if let src = model.source { return triedCount(model) > 0 ? Text(verbatim: versionText(src)) : Text("Abriendo…") }
+        if search.addons.isEmpty { return nil }
+        let answeredCount = search.answered
+        if answeredCount > 0 { return Text("\(answeredCount) de \(search.addons.count) complementos") }
+        let names = search.addons.prefix(DS.SourceOrbit.namesShown).joined(separator: " · ")
+        let moreCount = search.addons.count - DS.SourceOrbit.namesShown
+        return moreCount > 0 ? Text("\(names) y \(moreCount) más") : Text(verbatim: names)
+    }
+
+    /// «Latino · 1080p»: el idioma que va a sonar y la calidad de una versión.
+    private func versionText(_ src: Source) -> String {
+        let ui = env.services.appSettings.uiLanguage
+        let language = Streams.playingLanguage(src, env.services.appSettings.preferences()).map { Streams.versionLanguageName($0.code, in: ui) }
+        return ([language].compactMap { $0 } + src.qualitySummary).joined(separator: " · ")
     }
 
     /// La ruedita sola, y solo si tarda más de un instante (lo normal es que el video vuelva antes y no se vea nada).
@@ -1357,9 +1399,7 @@ struct PlayerScreen: View {
     private func ipodDetail(_ model: PlayerModel) -> String {
         if !current.episodeLabel.isEmpty { return current.episodeLabel }
         guard let src = model.source else { return "" }
-        let ui = env.services.appSettings.uiLanguage
-        let language = Streams.playingLanguage(src, env.services.appSettings.preferences()).map { Streams.versionLanguageName($0.code, in: ui) }
-        return ([language].compactMap { $0 } + src.qualitySummary).joined(separator: " · ")
+        return versionText(src)
     }
 
     // MARK: descargar

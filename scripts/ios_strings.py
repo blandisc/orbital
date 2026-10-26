@@ -19,6 +19,10 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # La órbita de «Buscando la mejor versión».
+    "Buscando en tus complementos": "Searching your add-ons", "1 versión encontrada": "1 version found",
+    "%lld versiones encontradas": "%lld versions found", "%lld de %lld complementos": "%lld of %lld add-ons",
+    "%@ y %lld más": "%@ and %lld more", "Elegimos %@": "Picked %@", "Abriendo…": "Opening…",
     # Subtítulos sin conexión (descargas).
     "Guardado con la descarga": "Saved with the download", "No disponible sin conexión": "Not available offline",
     "No encontré subtítulos en %@": "Couldn't find subtitles in %@",

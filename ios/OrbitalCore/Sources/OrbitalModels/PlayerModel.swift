@@ -100,6 +100,24 @@ public final class PlayerModel: ObservableModel {
     public private(set) var failure: Failure? { didSet { changed() } }
 
     public private(set) var phase: Phase = .idle { didSet { changed() } }
+    /// La búsqueda de versiones de verdad (para la órbita de «Buscando la mejor versión»): a qué complementos se les
+    /// pregunta, cuántas trajo cada uno y cuántas quedaron para elegir. nil si no se buscó (tu descarga, la que elegiste).
+    public struct SourceSearch: Sendable, Equatable {
+        public var addons: [String] = []
+        /// Lo que contestó cada complemento (versiones con enlace; nil: no contestó a tiempo).
+        public var answers: [String: Int?] = [:]
+        /// Las versiones con las que se quedó (ya sin las de torrent sin Real-Debrid): llega al terminar.
+        public var choices: Int?
+        public var found: Int { choices ?? answers.values.reduce(0) { $0 + ($1 ?? 0) } }
+        public var answered: Int { answers.count }
+        mutating func apply(_ event: SearchEvent) {
+            switch event {
+            case .asking(let names): addons = names
+            case .answered(let addon, let count): answers[addon] = count
+            }
+        }
+    }
+    public private(set) var search: SourceSearch? { didSet { changed() } }
     public private(set) var snapshot = EngineSnapshot() { didSet { changed() } }
     /// Un episodio descargado que viste hasta el final y del que el reproductor pasó solo al siguiente (para «Borrar al
     /// terminar de verlo»: el último lo atiende quien cierra el reproductor).
@@ -289,7 +307,7 @@ public final class PlayerModel: ObservableModel {
         scrobbleStarted = false; scrobblePlaying = false; rescrobbleAfterSeek = false
         tracksApplied = false; addedExternalSubtitle = false; knownSubtitleIDs = []; preloadedNext = false
         upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; reachedEnd = false; finalReported = false
-        notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []
+        notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []; search = nil
         acceptingSnapshots = false; retrying = false; nextLocal = nil; choicesAt = .distantPast
         // Lo encontrado «En internet» y el mapa de sustos eran del video anterior.
         foundSubtitles = nil; addedSubtitleURLs = []; subtitleSearchFailed = false; subtitlesOffline = false; searchTask = nil; scares = nil
@@ -337,7 +355,14 @@ public final class PlayerModel: ObservableModel {
                 catch { guard mine == generation else { return }; failedSources.insert(own.index); notice = .triedAnotherSource(attempt: 1); acceptingSnapshots = false; continue }
             }
             do {
+                if search == nil { search = SourceSearch() }
+                let events = await finder.events(kind: request.kind, videoID: request.videoID)
+                let listening = Task { [weak self] in
+                    for await event in events { guard let self, self.generation == mine else { return }; self.search?.apply(event) }
+                }
+                defer { listening.cancel() }
                 sourceChoices = try await finder.find(kind: request.kind, videoID: request.videoID, prefs: langs.prefs)
+                if mine == generation { search?.choices = sourceChoices.count }
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
                 if let chosen = request.sourceIndex, failedSources.isEmpty, let pick = sourceChoices.first(where: { $0.index == chosen }) { found = pick }

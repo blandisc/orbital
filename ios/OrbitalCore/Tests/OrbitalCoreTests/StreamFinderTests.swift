@@ -24,6 +24,31 @@ final class StreamFinderTests: XCTestCase {
         XCTAssertEqual(all.count, 4)
     }
 
+    /// La órbita de «Buscando la mejor versión» cuenta lo real: a quién se le pregunta y cuántas versiones con enlace trajo
+    /// cada complemento (la de torrent sin Real-Debrid no cuenta); y quien llega tarde recibe lo que ya pasó.
+    func testTheSearchTellsWhoWasAskedAndWhatEachOneFound() async throws {
+        let http = FakeHTTP()
+        let finder = makeFinder(http)
+        http.json["https://a.example/stream/movie/tt1.json"] = ["streams": [
+            ["name": "T\n1080p", "title": "Peli 1080p", "url": "https://rd.example/a"],
+            ["name": "T\n720p", "title": "Peli 720p", "infoHash": "abcdef0123456789abcdef0123456789abcdef01"]]]
+        http.json["https://b.example/stream/movie/tt1.json"] = ["streams": [["name": "O\n1080p", "title": "Peli 1080p", "url": "https://rd.example/b"]]]
+        http.delays["https://b.example/stream/movie/tt1.json"] = 40
+        let events = await finder.events(kind: "movie", videoID: "tt1")
+        func firstThree(_ stream: AsyncStream<SearchEvent>) -> Task<[SearchEvent], Never> {
+            Task { var out: [SearchEvent] = []; for await event in stream { out.append(event); if out.count == 3 { break } }; return out }
+        }
+        let reading = firstThree(events)
+        let search = Task { try await finder.find(kind: "movie", videoID: "tt1", prefs: Preferences(audio: "es", quality: "1080p")) }
+        try await Task.sleep(nanoseconds: 20_000_000)
+        let late = await finder.events(kind: "movie", videoID: "tt1")   // el reproductor, después de la ficha
+        let lateReading = firstThree(late)
+        _ = try await search.value
+        let seen = await reading.value, lateSeen = await lateReading.value
+        XCTAssertEqual(seen, [.asking(["Torrentio", "Otro"]), .answered(addon: "Torrentio", found: 1), .answered(addon: "Otro", found: 1)])
+        XCTAssertEqual(lateSeen, seen, "quien llega tarde ve también a quién se le preguntó")
+    }
+
     func testAStreamingPlaylistCanBeWatchedButNotDownloaded() async throws {
         let http = FakeHTTP()
         let finder = makeFinder(http)

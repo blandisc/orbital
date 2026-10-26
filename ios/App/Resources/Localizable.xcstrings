@@ -100,6 +100,17 @@
         }
       }
     },
+    "%@ y %lld más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ and %lld more"
+          }
+        }
+      }
+    },
     "%@ · %@": {
       "extractionState": "manual",
       "localizations": {
@@ -151,6 +162,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld of %lld"
+          }
+        }
+      }
+    },
+    "%lld de %lld complementos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld add-ons"
           }
         }
       }
@@ -419,6 +441,17 @@
         }
       }
     },
+    "%lld versiones encontradas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld versions found"
+          }
+        }
+      }
+    },
     "+%lld más": {
       "extractionState": "manual",
       "localizations": {
@@ -459,6 +492,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 hidden: a theater recording or trailer"
+          }
+        }
+      }
+    },
+    "1 versión encontrada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 version found"
           }
         }
       }
@@ -646,6 +690,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opening your download…"
+          }
+        }
+      }
+    },
+    "Abriendo…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening…"
           }
         }
       }
@@ -1779,6 +1834,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Searching online…"
+          }
+        }
+      }
+    },
+    "Buscando en tus complementos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searching your add-ons"
           }
         }
       }
@@ -4760,6 +4826,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chosen"
+          }
+        }
+      }
+    },
+    "Elegimos %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Picked %@"
           }
         }
       }

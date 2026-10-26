@@ -57,6 +57,8 @@ enum Demo {
                                             displayTitle: "La Oficina", episodeLabel: "T2 · E5")
 
     /// `-demo-scrobble`: Trakt «conectado» con un último scrobble de mentira (para ver la fila de Ajustes › Trakt en el simulador).
+    static var searchSlow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-search-slow") }
+    static let slowLanes = ["torrentio", "comet", "mediafusion"]
     static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
     /// `-demo-because`: Trakt de mentira con historial y relacionados, para ver «Porque viste» en Para ti.
     static var because: Bool { ProcessInfo.processInfo.arguments.contains("-demo-because") }
@@ -245,7 +247,15 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     private func fake(_ request: HTTPRequest) async throws -> HTTPResponse? {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
-        if url.host == "demo.orbital.invalid" { return addon(url.path) }
+        if url.host == "demo.orbital.invalid" {
+            // `-demo-search-slow`: tres complementos que contestan a destiempo (0.8, 1.6 y 2.4 s), para ver la órbita de
+            // «Buscando la mejor versión» llenarse como con la red de verdad.
+            if Demo.searchSlow, let lane = Demo.slowLanes.firstIndex(where: { url.path.hasPrefix("/\($0)/") }) {
+                if url.path.contains("/stream/") { try? await Task.sleep(for: .milliseconds(800 * (lane + 1))) }   // ds-exception: demora de red simulada (solo modo demo)
+                return addon(String(url.path.dropFirst(Demo.slowLanes[lane].count + 1)))
+            }
+            return addon(url.path)
+        }
         // OpenSubtitles de mentira: varias versiones por idioma (con copia, descargas, y unas SDH/forzadas que se esconden).
         if url.host == "opensubtitles-v3.strem.io" { return HTTPResponse(status: 200, data: Self.subtitlesDemo.serialized()) }
         if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
@@ -637,6 +647,13 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             lock.withLock { for change in body?["changes"]?.array ?? [] { if let id = change["_id"]?.string { library[id] = change } } }
             return ok(["success": true])
         case "addonCollectionGet":
+            if Demo.searchSlow {
+                return ok(["addons": .array(Demo.slowLanes.map { lane in
+                    var manifest = Self.manifest.object ?? [:]
+                    manifest["id"] = .string("orbital.demo.\(lane)"); manifest["name"] = .string(lane.capitalized)
+                    return ["transportUrl": .string("https://demo.orbital.invalid/\(lane)/manifest.json"), "manifest": .object(manifest)]
+                })])
+            }
             return ok(["addons": [["transportUrl": .string(Demo.addonURL), "manifest": Self.manifest]]])
         default:
             return ok(.null)

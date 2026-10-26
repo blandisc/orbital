@@ -347,6 +347,23 @@ enum DS {
 
     /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32
     /// (el planeta y el anillo) o en em de la palabra (la luna, el interletrado, el tamaño de la marca junto a la palabra).
+    /// La órbita de «Buscando la mejor versión» (`SourceOrbit`).
+    enum SourceOrbit {
+        static let size: CGFloat = 132
+        static let dot: CGFloat = 6, chosenDot: CGFloat = 16
+        static let ringWidth: CGFloat = 1.5, planetWidth: CGFloat = 3, sweepWidth: CGFloat = 2.4
+        static let planetShare: CGFloat = 0.24
+        static let maxDots = 24
+        /// Cada punto nuevo cae al ángulo áureo del anterior: se reparten parejos sin encimarse.
+        static let goldenAngle = 137.5
+        static let sweepSeconds = 1.6
+        static let sweepLength: CGFloat = 0.16
+        static let dimOpacity = 0.25, failedOpacity = 0.12
+        /// Cuántos complementos se nombran antes de «y N más», y el ancho mínimo de los textos junto a la órbita (horizontal).
+        static let namesShown = 3
+        static let textWidth: CGFloat = 220
+    }
+
     enum Brand {
         static let box: CGFloat = 32
         static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8, ringStroke: CGFloat = 2.1
