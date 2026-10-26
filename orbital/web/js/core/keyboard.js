@@ -37,3 +37,9 @@ export function clampKey(rows, { row, col }) {
   const r = Math.max(0, Math.min(row, rows.length - 1));
   return { row: r, col: Math.max(0, Math.min(col, rows[r].length - 1)) };
 }
+
+/** Lo escrito hace más de esto ya es otra búsqueda: dictar lo reemplaza en vez de seguir escribiendo detrás. */
+export const DICTATION_FRESH_MS = 2 * 60 * 1000;
+
+/** Sobre qué texto escribe el dictado: lo que había (si lo escribiste hace poco) o nada (si ya pasó el rato). */
+export const dictationBase = (text, editedAt, now) => (now - editedAt < DICTATION_FRESH_MS ? text.trimEnd() : "");

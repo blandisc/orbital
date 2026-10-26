@@ -3,6 +3,7 @@ import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { motion } from "../core/motion.js";
 import { ERASE_WORD, typingGlyphs } from "../core/input.js";
+import { dictationBase } from "../core/keyboard.js";
 import { storage } from "../core/storage.js";
 import { Card } from "./card.js";
 import { createKeyboard } from "./keyboard.js";
@@ -70,6 +71,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     h("div", { class: "search__top" }, field, hint), results, keys);
 
   let text = "";
+  let shownText = "";
+  let editedAt = 0; // cuándo cambió lo escrito por última vez (el dictado decide si sigue o empieza de nuevo)
   let items = []; // lo que se puede enfocar en la fila: resultados o búsquedas recientes
   let focusables = [];
   let zone = "keys"; // "keys" | "results"
@@ -88,6 +91,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   keyboard.setLayout(layout(false));
 
   function render() {
+    if (text !== shownText) { shownText = text; editedAt = Date.now(); }
     query.textContent = text;
     query.scrollLeft = query.scrollWidth; // larga: se ve lo último que escribiste
     placeholder.hidden = !!text;
@@ -271,8 +275,10 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     rec.lang = "es-MX";
     rec.interimResults = true;
     rec.maxAlternatives = 1;
-    // Dictar otra vez sigue escribiendo después de lo que ya había (antes lo borraba y empezaba de cero).
-    const before = text.trimEnd();
+    // Dictar otra vez sigue escribiendo después de lo que acabas de escribir; si ya pasaron 2 min, es otra búsqueda: lo
+    // reemplaza (antes siempre añadía, y «Severance» de hace una hora quedaba pegado a lo nuevo).
+    const before = dictationBase(text, editedAt, Date.now());
+    if (!before && text) cleared = text; // «Borrar todo» dice «Deshacer» si lo que dijiste no era
     rec.onresult = (event) => {
       // Sin el punto que Edge le pone al final («Severance.»): se busca lo que dijiste, no una frase.
       const said = [...event.results].map((r) => r[0].transcript).join("").trim().replace(/[.。]+$/u, "");

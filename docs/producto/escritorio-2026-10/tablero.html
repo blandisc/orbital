@@ -61,7 +61,7 @@ footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
 </div>
 
 <script>
-const UPDATED = "25 oct 2026 · en la Lenovo: #9, #7 y #1 listos con evidencia; #10 con código, falta verlo con mpv";
+const UPDATED = "25 oct 2026 · en la Lenovo: #9, #7, #1 y #2 listos con evidencia; #10 con código, falta verlo con mpv";
 // estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
 const ITEMS = [
   { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "doing",
@@ -80,8 +80,9 @@ const ITEMS = [
   { n: 1, t: "Buscador: que se note que está buscando", tipo: "Mejora", estado: "done",
     d: "Una animación clara mientras busca, para que no parezca que no pasó nada.", nota: "Mientras llegan películas y series, la raya del campo barre y su lugar se llena de portadas vacías que brillan; se van al llegar. Solo anima mientras busca. Probado en la Lenovo.",
     ev: ["evidencia/01-buscando.jpg"] },
-  { n: 2, t: "Dictado: borrar si pasaron más de 2 min", tipo: "Mejora", estado: "todo",
-    d: "Hoy el dictado siempre añade. Si lo escrito tiene más de 2 minutos, que lo reemplace.", nota: "" },
+  { n: 2, t: "Dictado: borrar si pasaron más de 2 min", tipo: "Mejora", estado: "done",
+    d: "Hoy el dictado siempre añade. Si lo escrito tiene más de 2 minutos, que lo reemplace.", nota: "Si lo escrito cambió hace más de 2 min, dictar lo reemplaza (y «Borrar todo» ofrece «Deshacer»); si es reciente, sigue escribiendo. Probado en la Lenovo con Edge, con la voz simulada y el reloj adelantado.",
+    ev: ["evidencia/02-dictado.jpg"] },
   { n: 3, t: "Banderitas en idiomas y subtítulos", tipo: "Mejora", estado: "todo",
     d: "Mapear todos los lugares donde eliges idioma o subtítulo y ponerles bandera.", nota: "" },
   { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "todo",
