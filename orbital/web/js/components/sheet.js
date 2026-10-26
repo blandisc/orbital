@@ -1,6 +1,7 @@
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { motion } from "../core/motion.js";
+import { Flag, Flags } from "./flag.js";
 
 /**
  * Menú lateral navegable con mando (entra desde la derecha). Recibe un menú como datos
@@ -66,13 +67,14 @@ export function createSheet({ onCommand, onMove, onClose }) {
     h("span", { class: ["sheet__icon", option.mark && "sheet__icon--mark"] },
       option.mark ? h("img", { class: "sheet__mark", src: option.mark, alt: "" }) : ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
     // Una descripción larga va debajo del nombre (en la misma línea lo aplastaba); un dato corto, a la derecha.
-    h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, option.label),
+    h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, ...Flags(option.flags), option.label),
       below(option) && h("small", { class: "sheet__hint sheet__hint--below" }, option.hint)),
     // ‹ › solo en lo que se cambia con A o ◀/▶ (un estado, como "Conectada", no lleva flechas).
     option.value !== undefined && h("span", { class: ["sheet__value", choice(option) && "sheet__value--choice", option.ok && "sheet__value--ok"] },
       choice(option)
         // Con el dedo, ‹ y › se tocan por separado (antes el toque siempre hacía lo de A: subir o silenciar).
-        ? [h("span", { class: "sheet__chev", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "left") }, svg(ICONS.back)), option.value,
+        ? [h("span", { class: "sheet__chev", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "left") }, svg(ICONS.back)),
+          option.valueFlag && Flag(option.valueFlag), option.value,
           h("span", { class: "sheet__chev", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "right") }, svg(ICONS.chevron))]
         : option.value),
     option.hint && !below(option) && h("small", { class: "sheet__hint" }, option.hint))));

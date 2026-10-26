@@ -3,12 +3,21 @@ import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, p
 import { ICONS } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { reducedMotion, settler } from "../core/motion.js";
-import { Badge } from "./ui.js";
+import { Badge, PlatformBadge } from "./ui.js";
 import { dragArea, hoverArea } from "../core/swipe.js";
 import { tokenPx } from "../core/tokens.js";
 
 // Al ancho en que se ven (core/images.js): el póster de una columna y la pieza enfocada, que se ensancha.
 const POSTER_PX = 360;
+
+/** El porqué de una pieza. Si nombra una plataforma con píldora («N.º 1 en Netflix», «Nuevo en Disney+»), en su cápsula de
+ *  color con su logo, como el iPhone; si no, la insignia de siempre (las demás marcas, con el estilo de su nombre). */
+function whyBadge(why) {
+  const parts = brandParts(why);
+  const brand = parts.find((p) => p.brand)?.brand;
+  return PlatformBadge(why, brand, { large: true })
+    || Badge(h("span", {}, parts.map((p) => (p.brand ? h("span", { class: ["brand-name", `brand-name--${p.brand}`] }, p.text) : p.text))), { large: true });
+}
 const WIDE_PX = 720;
 
 /**
@@ -122,8 +131,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
       h("span", { class: "foryou-mosaic__kind", "aria-hidden": "true" }, svg(ICONS[iconName(item)] || ICONS.apps)),
       h("div", { class: "foryou-mosaic__info" },
         // Un solo renglón de texto (la insignia es flex: con pedazos sueltos se perdía el espacio, «enNetflix»).
-        item.why && Badge(h("span", {}, brandParts(item.why).map((p) => (p.brand ? h("span", { class: ["brand-name", `brand-name--${p.brand}`] }, p.text) : p.text))),
-          { large: true }), logo,
+        item.why && whyBadge(item.why), logo,
         h("span", { class: "foryou-mosaic__fact" }, factLine(item))));
     return { item, node, logo, loadWide, top: 0, h: 0 };
   }

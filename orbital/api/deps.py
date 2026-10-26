@@ -37,6 +37,9 @@ class Deps:
         running = self.catalog.launcher.status()
         if running is not None:
             running["paused"] = self.shell.is_paused
+            if running.get("id") == "media:player":
+                holds = getattr(self.shell, "video_holds_screen", None)
+                running["front"] = bool(holds and holds())  # el mando es del video: la interfaz no le hace caso
             live = self.catalog.tv.playing() if running.get("id") == "media:player" else None
             if live:
                 running["live"] = live  # qué canal de TV está al aire (la sección lo marca y A vuelve a él)

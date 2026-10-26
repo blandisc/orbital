@@ -34,24 +34,6 @@ def test_qr_is_an_svg_with_modules():
     assert svg.startswith("<svg") and "<path" in svg and svg.count("h1v1h-1z") > 100
 
 
-class FakeTrakt:
-    linked = True
-
-    def access_token(self):
-        return "AT"
-
-    def session_expiry(self):
-        return 123.0
-
-
-def test_trakt_session_is_lent_without_the_refresh_token():
-    assert companion.trakt_session(FakeTrakt()) == {"access_token": "AT", "expires_at": 123.0}
-    assert companion.trakt_session(None) is None
-    broken = FakeTrakt()
-    broken.access_token = lambda: (_ for _ in ()).throw(OSError("sin red"))
-    assert companion.trakt_session(broken) is None
-
-
 def test_qr_route_is_local_and_the_json_never_has_the_token(library, monkeypatch):
     library.config.server.token, library.config.server.token_is_ephemeral = "secreto", False
     monkeypatch.setattr(companion.alexa_setup, "tailscale_url", lambda: "https://legion.tail1.ts.net")

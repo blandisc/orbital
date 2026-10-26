@@ -268,7 +268,9 @@ class PlayerScreen(SubtitleTrial):
         tracks = self.mpv.get("track-list") or []
         extra = []
         if not self._is_live() and (self._fallback_subs or any(t.get("type") == "sub" for t in tracks)):
-            extra.append({"label": "Probar otros", "hint": "Uno por uno", "action": ("try", None), "current": False})
+            # Primera fila de Subtítulos, y dice el atajo (regla de las cuatro superficies): mantener X, la tecla S.
+            how = "Tecla S" if player_ui.KEYBOARD else "Uno por uno" if player_ui.TOUCH else "Mantén X"
+            extra.append({"label": "Probar otros", "hint": how, "action": ("try", None), "current": False, "first": True})
         if self._fallback_subs and self._subs_lang:
             extra.append({"label": f"Buscar en {player_ui.language(self._subs_lang).lower()}…",
                           "action": ("fetch", self._subs_lang), "current": False})
@@ -277,6 +279,10 @@ class PlayerScreen(SubtitleTrial):
         versions = self._safe(self.versions_provider, meta) if self.versions_provider and self.current else None
         self._open_panel(player_ui.tracks_panel(tracks, self.sub_scale, extra, focus, sub_delay=self.sub_delay,
                                                 versions=versions or None))
+        if extra and extra[0].get("first") and not player_ui.TOUCH and not PlayerScreen.subs_taught:
+            PlayerScreen.subs_taught = True  # la primera vez (en esta Orbital): cómo se llega directo
+            key = "S" if player_ui.KEYBOARD else "X"
+            self.toast(f"Para probar subtítulos sin abrir esto: {'oprime' if player_ui.KEYBOARD else 'mantén'} {key}", 4)
 
     def open_more(self, still_wanted=lambda: True) -> None:
         meta = getattr(self.current, "meta", None) or {}
@@ -603,6 +609,8 @@ class PlayerScreen(SubtitleTrial):
         if action == "quit":
             self._user_quit = True
             self._quit()
+        elif action == "subs":
+            self.try_subtitles()
         elif action in ("a", "x", "y", "left", "right", "up", "down"):
             self._touching = True
             try:
@@ -618,6 +626,10 @@ class PlayerScreen(SubtitleTrial):
         """Una tecla (ya con el nombre del botón del mando que hace lo mismo). La barra enseña las teclas. Esc:
         cierra lo abierto o pregunta «¿Salir de …?» (otro Esc sale; Espacio sigue viendo)."""
         if self.current is None:
+            return
+        if button.startswith("wheel-"):  # la rueda del mouse: otro subtítulo mientras pruebas; si no, nada
+            if self._try is not None:
+                self._try_press(button)
             return
         if player_ui.set_input("keyboard"):
             self._redraw_for_input()
@@ -673,6 +685,11 @@ class PlayerScreen(SubtitleTrial):
             return
         if button in ("lt", "rt") and self.remote.held(button):
             return  # mantenido: lo cuenta el anillo del episodio (y en un panel o en la TV en vivo, una vez)
+        if button == "x-up":
+            self._release_x()
+            return
+        if button == "x" and self.remote.held("x"):
+            return  # mantenido: lo cuenta el anillo de «Probar subtítulos»
         if button.startswith("stick-"):
             # Un stick: en un panel mueve el foco como la cruceta; si no, solo enseña los controles. Ya no recorre los
             # botones de abajo (el usuario prefiere solo los atajos), ni adelanta ni sube el volumen: un empujón sin
@@ -717,7 +734,12 @@ class PlayerScreen(SubtitleTrial):
             self._quit_hold = time.monotonic()
             self._animate_hold(self._quit_hold)  # el anillo sale solo si lo mantienes (un toque solo oculta)
         elif button == "x":
-            self.open_tracks()
+            if self.remote.down("x") and not self._is_live():
+                self._hold_subs()  # el mando: un toque abre Audio y subtítulos al soltar; mantenido, prueba subtítulos
+            else:
+                self.open_tracks()  # una tecla, el dedo o el iPhone no avisan al soltar: directo
+        elif button == "subs":
+            self.try_subtitles()  # S, o el botón «Probar subtítulos» (mouse y dedo)
         elif button == "y":
             self._open_more_soon()
         elif button in ("left", "right"):
@@ -827,6 +849,38 @@ class PlayerScreen(SubtitleTrial):
 
         threading.Thread(target=run, daemon=True, name="hold-episode").start()
 
+    subs_taught = False  # ya se enseñó «mantén X» al abrir el panel (una vez por Orbital)
+    SUBS_HOLD = .6  # s con X mantenido para entrar a «Probar subtítulos» (un toque de X sigue abriendo el panel)
+
+    def _hold_subs(self) -> None:
+        """Mantener X: el anillo se llena y, lleno, entra a «Probar subtítulos». Soltar antes abre Audio y subtítulos
+        (_release_x)."""
+        started = time.monotonic()
+        self._subs_hold = started
+
+        def run() -> None:
+            time.sleep(self.HOLD_SHOW_AFTER)  # un toque de X no enseña el anillo
+            while getattr(self, "_subs_hold", None) == started:
+                progress = (time.monotonic() - started) / self.SUBS_HOLD
+                self._overlay(self.HOLD, player_ui.quit_hold_ass(min(1.0, progress), "X", "Probar subtítulos"))
+                if progress >= 1:
+                    self._subs_hold = None
+                    self._overlay(self.HOLD, None)
+                    self.try_subtitles()
+                    return
+                time.sleep(1 / self.HOLD_FPS)
+
+        threading.Thread(target=run, daemon=True, name="hold-subs").start()
+
+    def _release_x(self) -> None:
+        """Soltaste X: si no se llenó el anillo, era un toque (Audio y subtítulos)."""
+        if getattr(self, "_subs_hold", None) is None:
+            return  # ya entró a probar, o la X cerró un panel
+        self._subs_hold = None
+        self._overlay(self.HOLD, None)
+        if self.menu is None and self._try is None and self.current is not None:
+            self.open_tracks()
+
     def _hold_to_quit(self) -> None:
         """B sigue mantenido: la barra avanza y, llena, sale. Solo si la pulsación empezó aquí (no la
         que cerró un panel o una tarjeta)."""
@@ -885,7 +939,8 @@ class PlayerScreen(SubtitleTrial):
                     "left": "Bajar volumen", "right": "Subir volumen", "select": "Silencio", "back": "Salir"}
         if self._try is not None:  # «Probar otros» subtítulos (la franja de arriba)
             return {"left": "Subtítulo anterior", "right": "Subtítulo siguiente", "up": "Adelantar subtítulos",
-                    "down": "Atrasar subtítulos", "select": "Este va bien", "back": "Dejar el de antes"}
+                    "down": "Atrasar subtítulos", "select": "Este va bien", "back": "Listo",
+                    "prevsection": "Idioma anterior", "nextsection": "Idioma siguiente"}
         segment = self.segment
         meta = (segment.meta if segment is not None else None) or getattr(self.current, "meta", None) or {}
         series = meta.get("kind") == "series" and self.on_episode is not None
@@ -927,7 +982,7 @@ class PlayerScreen(SubtitleTrial):
         (en el teléfono no hay «mantener B»): con un panel o los controles a la vista, primero los quita."""
         if action == "back":
             if self._try is not None:
-                self.press("b")  # «Dejar el de antes»
+                self.press("b")  # «Listo»: se queda el último que probaste
             elif self.menu is not None:
                 self.press("b")
                 self.press("b-up")

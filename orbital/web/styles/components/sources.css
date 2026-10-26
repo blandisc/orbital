@@ -63,7 +63,7 @@
    calidades a la derecha, solo las que hay. Cada calidad: la resolución grande, ¿arranca ya? y lo esencial. */
 .versions__row { display: grid; flex-shrink: 0; grid-template-columns: 12rem minmax(0, 72rem); align-items: center; column-gap: var(--space-5); }
 .versions__lang { display: grid; gap: var(--space-1); padding-inline: var(--space-2); min-width: 0; }
-.versions__name { font-family: var(--font-sans); font-size: var(--type-body); font-weight: var(--weight-bold); }
+.versions__name { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-sans); font-size: var(--type-body); font-weight: var(--weight-bold); }
 .versions__role { color: var(--color-text-muted); font-size: var(--type-footnote); }
 .versions__options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
 
@@ -105,4 +105,5 @@
   .versions__options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sources__why { padding-left: var(--space-2); }
 }
-[data-input="touch"] .sources__head { padding-right: var(--touch-back-room); } /* «Atrás» (arriba a la derecha) no lo tapa */
+[data-input="touch"] .sources__head { padding-right: var(--touch-back-room); } /* «Atrás» (arriba a la derecha) no lo tapa *//* Las banderitas dentro de un renglón de texto (los audios de una versión, el idioma del grupo). */
+:is(.sources__why-langs, .source__release, .sources__group-title) .flag { margin-inline-end: var(--space-1); }

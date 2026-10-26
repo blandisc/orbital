@@ -28,6 +28,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import flags
+
+FLAG_H, FLAG_GAP = 22, 12  # la banderita junto al idioma (audio, subtítulos, versión)
 W, H = 1920, 1080  # coordenadas del lienzo: 1080 de alto y lo ancho que dé la pantalla (ver set_canvas)
 MARGIN = 96
 
@@ -233,6 +236,12 @@ def ring(cx: float, cy: float, r: float, thickness: float, fraction: float, colo
     outside = [point(outer, i / steps) for i in range(steps + 1)]
     inside = [point(inner, i / steps) for i in range(steps, -1, -1)]
     return _shape("m " + outside[0] + " l " + " ".join(outside[1:] + inside), color, alpha)
+
+
+# Cuánto pueden cubrir, sumadas, las figuras de una capa (en pantallas completas): a 4K libass deja de pintar la capa
+# entera pasando de ~12 (medido en la Lenovo con mpv: 12.3 sí, 16.5 no). Cada paso de un velo es una figura que llega
+# hasta su orilla oscura, así que un velo de muchos pasos cuesta varias pantallas.
+SHADE_BUDGET = 11.0
 
 
 def gradient(y0: float, y1: float, top_alpha: int, bottom_alpha: int, steps: int = 32) -> str:
@@ -470,7 +479,7 @@ def hud_ass(hud: Hud) -> str:
     targets["hud"] = []
     if hud.paused and not hud.seeking:
         return paused_ass(hud)
-    lines = [gradient(470, H, 255, 34)]
+    lines = [gradient(470, H, 255, 34, 20)]  # 20 pasos: dentro de SHADE_BUDGET a 4K
     bar, knob = progress_bar(hud)
     if hud.seeking:  # adelantando: solo la barra y, sobre el punto, a dónde vas
         center = max(MARGIN + 220, min(W - MARGIN - 220, knob if knob is not None else W / 2))
@@ -514,8 +523,10 @@ def paused_ass(hud: Hud) -> str:
     placed.pop("logo", None)
     # Más oscuro que antes (88) y con la sombra que entra desde la izquierda, donde va el título: el video se ve, pero
     # el logo y el texto descansan sobre negro, como el arte de la ficha.
-    lines = [rrect(0, 0, W, H, 0, SHADE, "70"), side_gradient(W * .62, 90), gradient(420, H, 255, 60),
-             gradient(0, 200, 140, 255, 14)]
+    # Pocas capas (SHADE_BUDGET): cada una es una figura casi del tamaño de la pantalla y, a 4K, libass no alcanzaba a
+    # pintar las ~75 de antes: no salía nada de la pausa, solo la imagen del logo encima (lo que vio Fernando en la TV).
+    lines = [rrect(0, 0, W, H, 0, SHADE, "70"), side_gradient(W * .62, 90, steps=8), gradient(420, H, 255, 60, 12),
+             gradient(0, 200, 140, 255, 8)]
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
     if hud.pip:
@@ -549,7 +560,10 @@ def paused_ass(hud: Hud) -> str:
     y += 30
     lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios y versión" if hud.series else "Versión")], MARGIN, y))
     bar, _ = progress_bar(hud)
-    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Mantén: episodio")] if hud.series else []),
+    # «Probar subtítulos» a la vista (regla de las cuatro superficies): mantener X con el mando, S con el teclado y, con el
+    # dedo o el mouse, su botón abajo.
+    subs = ("S", "Probar subtítulos") if KEYBOARD else ("X", "Mantén: probar subtítulos")
+    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), subs, *([("LT RT", "Mantén: episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
     room = max(260, W - 2 * MARGIN - hints_width(more) - 48)
     if TOUCH:
@@ -605,7 +619,7 @@ def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None 
 def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
     """En pausa, Continuar, Audio y Episodios ya son botones grandes del bloque: abajo solo regresar, adelantar y salir."""
     if paused:
-        return [("−10 s", "left"), ("+10 s", "right"), ("Salir", "quit")]
+        return [("−10 s", "left"), ("+10 s", "right"), ("Probar subtítulos", "subs"), ("Salir", "quit")]
     return [("−10 s", "left"), ("Pausa", "a"), ("+10 s", "right"), ("Audio y subtítulos", "x"),
             ("Episodios y versión" if hud.series else "Versión", "y"), ("Salir", "quit")]
 
@@ -731,7 +745,12 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                 room = (col_w - 70) * .45
                 hint = fit(hint, 20, col_w - 70 - room - 20)
             weight = "semi" if focused or current else "regular"
-            lines.append(text(x + 52, y + 27, esc(fit(option["label"], 24, room, weight)), 24, color, weight=weight, align=4))
+            left = x + 52
+            if option.get("flag"):  # la banderita del idioma, antes de su nombre (como en la interfaz)
+                lines += flags.ass(option["flag"], left, y + 27 - FLAG_H / 2, FLAG_H)
+                left += FLAG_H * flags.W / flags.H + FLAG_GAP
+                room -= left - x - 52
+            lines.append(text(left, y + 27, esc(fit(option["label"], 24, room, weight)), 24, color, weight=weight, align=4))
             if hint:
                 lines.append(text(x + col_w - 18, y + 27, esc(hint), 20, ON_LIGHT if focused else MUTED, align=6))
             if option.get("progress"):
@@ -757,7 +776,7 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
     return "\n".join(lines)
 
 
-GRID_NAME = 170  # el nombre del idioma, a la izquierda de sus casillas
+GRID_NAME = 215  # la banderita y el nombre del idioma («Castellano» entero), a la izquierda de sus casillas
 
 
 def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active: bool) -> list[str]:
@@ -767,7 +786,11 @@ def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active:
     width = (col_w - GRID_NAME - 10 * 3) / 4  # hasta cuatro calidades: 4K, 1080p, 720p, SD
     for i, row in enumerate(column.options[column.top:column.top + PANEL_ROWS], start=column.top):
         here = active and i == column.index
-        lines.append(text(x + 18, y + 27, esc(fit(row["label"], 24, GRID_NAME - 26, "semi" if here else "regular")), 24,
+        left = x + 18
+        if row.get("flag"):
+            lines += flags.ass(row["flag"], left, y + 27 - FLAG_H / 2, FLAG_H)
+            left += FLAG_H * flags.W / flags.H + FLAG_GAP
+        lines.append(text(left, y + 27, esc(fit(row["label"], 24, GRID_NAME - 8 - (left - x), "semi" if here else "regular")), 24,
                           TEXT if here or any(cell.get("current") for cell in row["cells"]) else SOFT,
                           weight="semi" if here else "regular", align=4))
         cx = x + GRID_NAME
@@ -801,14 +824,16 @@ def sub_scale_label(scale: float) -> str:
 
 def track_options(kind: str, tracks: list[dict], extra: list[dict] | None = None) -> list[dict]:
     """Opciones de una columna de pistas (y "Sin subtítulos" / buscar en tu addon)."""
-    options = []
+    options = [o for o in extra or [] if o.get("first")]  # «Probar otros · mantén X»: arriba, donde se ve
+    extra = [o for o in extra or [] if not o.get("first")]
     if kind == "sub":
         none_selected = not any(t.get("type") == "sub" and t.get("selected") for t in tracks)
         options.append({"label": "Sin subtítulos", "action": ("sid", "no"), "current": none_selected})
     for t in tracks:
         if t.get("type") == kind:
             options.append({"label": track_label(t), "action": ("aid" if kind == "audio" else "sid", t["id"]),
-                            "current": bool(t.get("selected")), "lang": t.get("lang")})
+                            "current": bool(t.get("selected")), "lang": t.get("lang"),
+                            "flag": flags.flag_for(t.get("lang"), str(t.get("title") or ""))})
     return options + (extra or [])
 
 
@@ -842,8 +867,8 @@ def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | 
     y sigue donde ibas."""
     sizes = [{"label": name, "action": ("subscale", value), "current": abs(value - sub_scale) < .01}
              for value, name in SUB_SCALES]
-    other = [{"label": v["label"], "hint": v.get("hint", ""), "action": ("source", v["id"]), "current": False}
-             for v in versions or []]
+    other = [{"label": v["label"], "hint": v.get("hint", ""), "action": ("source", v["id"]), "current": False,
+              "flag": v.get("flag")} for v in versions or []]
     columns = [_column("audio", track_options("audio", tracks, other)), _column("sub", track_options("sub", tracks, extra_subs)),
                _column("size", sizes), _column("sync", sync_options(sub_delay))]
     return Panel("tracks", columns, next((i for i, c in enumerate(columns) if c.key == focus), 0))
@@ -861,7 +886,7 @@ def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None
              "hint": "Viendo" if e.get("current") else e.get("hint", ""), "progress": e.get("progress")}
             for e in episodes]))
     if sources and "cells" in sources[0]:  # idioma × calidad: empieza en la que ves (o en la primera, la recomendada)
-        rows = [{"label": r["label"], "cells": [{**cell, "action": ("source", cell["id"])} for cell in r["cells"]]}
+        rows = [{"label": r["label"], "flag": r.get("flag"), "cells": [{**cell, "action": ("source", cell["id"])} for cell in r["cells"]]}
                 for r in sources if r.get("cells")]
         at = next(((i, j) for i, r in enumerate(rows) for j, cell in enumerate(r["cells"]) if cell.get("current")), (0, 0))
         if rows:
@@ -892,22 +917,51 @@ class SubTrial:
     language: str  # «Español»
     number: int  # el que está puesto (1…total); 0 = ahora sin subtítulos
     total: int
-    origin: str = "video"  # «video» | «addon» (de tu complemento)
+    origin: str = "video"  # «video» | «addon» (de internet)
     delay: float = 0.0  # la sincronía (s)
-    status: str = ""  # «Bajando el subtítulo…», «No hay más subtítulos en español», «Sin internet…»
+    status: str = ""  # «Bajando el subtítulo…», «De vuelta al primero», «Sin internet…»
+    flag: str | None = None  # la banderita del idioma (flags.py)
+    badge: str = ""  # «Hecho para tu copia» · «Misma versión» (library/subtitles.badge)
+    release: str = ""  # la copia para la que se hizo («The.Office.S02E05.720p.WEB-DL-NTb»)
+    downloads: int | None = None
+    languages: int = 1  # cuántos idiomas hay (con más de uno, LB/RB los cambia)
+    edition: bool = False  # parece de otra edición del video: Y ajusta la velocidad
+    edition_on: bool = False
 
 
-TRY_H = 96  # alto de la franja (con el dedo, un poco más: sus botones se tocan)
-TRY_ITEMS = [("◀ ▶", "Otro subtítulo"), ("↑ ↓", "Adelantar o atrasar"), ("A", "Este va bien"), ("B", "Dejar el de antes")]
-TRY_PILLS = [("◀ Anterior", "left"), ("Siguiente ▶", "right"), ("Antes", "up"), ("Después", "down"),
-             ("Este va bien", "a"), ("Dejar el de antes", "b")]
+TRY_H = 166  # alto de la franja con el mando (con el dedo, TRY_TOUCH_H: sus botones se tocan)
+TRY_TOUCH_H = 190
+TRY_ROWS = (46, 92, 132)  # los tres renglones (título, la copia, los botones): con aire entre ellos, no encimados
+
+
+def try_items(trial: SubTrial) -> list[tuple[str, str]]:
+    """Las pistas del mando (o del teclado: hints() pone la tecla) de la franja."""
+    return [("◀ ▶", "Otro"), *([("LB RB", "Idioma")] if trial.languages > 1 else []), ("↑ ↓", "Sincronía"),
+            *([("Y", "Velocidad como venía" if trial.edition_on else "Ajustar velocidad")] if trial.edition else []),
+            ("A", "Este va bien"), ("B", "Listo")]
+
+
+def try_pills(trial: SubTrial) -> list[tuple[str, str]]:
+    """Con el dedo o el mouse: los mismos, como botones (la rueda del mouse también cambia de subtítulo)."""
+    return [("‹ Anterior", "left"), ("Siguiente ›", "right"), *([("Otro idioma", "rb")] if trial.languages > 1 else []),
+            ("Antes", "up"), ("Después", "down"),
+            *([("Velocidad", "y")] if trial.edition else []), ("Este va bien", "a"), ("Listo", "done")]
+
+
+def _downloads(n: int | None) -> str:
+    """«12 400 descargas» (con espacio de miles, como se escribe en México en la TV)."""
+    if not isinstance(n, int) or n <= 0:
+        return ""
+    return f"{n:,} descarga{'s' if n != 1 else ''}".replace(",", " ")
 
 
 def sub_trial_ass(trial: SubTrial) -> str:
-    """La franja de «Probar otros»: «Español · Subtítulo 2 de 5», de dónde viene y la sincronía; abajo, los botones.
-    Arriba (los subtítulos van abajo): así se lee la frase con cada subtítulo que pruebas."""
+    """La franja de «Probar otros», arriba (así se lee la frase de abajo con cada subtítulo): la bandera y «Español ·
+    Subtítulo 2 de 5», por qué está ahí («Hecho para tu copia»), la copia, las descargas y la sincronía; abajo, los botones
+    del mando o, con el dedo y el mouse, botones tocables."""
     targets["try"] = []
-    h = TRY_H + (28 if TOUCH else 0)
+    h = TRY_TOUCH_H if TOUCH else TRY_H
+    top, info, keys = TRY_ROWS
     lines = [rrect(0, 0, W, h, 0, PANEL, "18"), gradient(h, h + 48, 120, 255, 8)]
     if trial.total <= 0:
         title = f"{trial.language} · No hay subtítulos para probar"
@@ -915,20 +969,34 @@ def sub_trial_ass(trial: SubTrial) -> str:
         title = f"{trial.language} · Ahora sin subtítulos · {trial.total} para probar"
     else:
         title = f"{trial.language} · Subtítulo {trial.number} de {trial.total}"
-    origin = "De tu complemento" if trial.origin == "addon" else "Del video"
-    detail = " · ".join(p for p in (origin if trial.number > 0 else "", f"Sincronía: {delay_label(trial.delay)}") if p)
-    title_w = text_width(title, 26, "bold")
-    status_w = min(text_width(trial.status, 22, "semi"), (W - 2 * MARGIN) * .4) if trial.status else 0
-    lines.append(text(MARGIN, 34, esc(fit(title, 26, W - 2 * MARGIN - status_w - 40, "bold")), 26, weight="bold", align=4))
-    room = W - 2 * MARGIN - title_w - 28 - status_w - 40
-    if room > 120:
-        lines.append(text(MARGIN + title_w + 28, 34, esc(fit(detail, 22, room, "semi")), 22, MUTED, weight="semi", align=4))
+    x = MARGIN
+    if trial.flag:
+        lines += flags.ass(trial.flag, x, top - FLAG_H / 2, FLAG_H)
+        x += FLAG_H * flags.W / flags.H + FLAG_GAP
+    status_w = min(text_width(trial.status, 22, "semi"), (W - 2 * MARGIN) * .36) if trial.status else 0
+    room = W - MARGIN - x - status_w - 48
+    lines.append(text(x, top, esc(fit(title, 28, room, "bold")), 28, weight="bold", align=4))
+    x += min(text_width(title, 28, "bold"), room) + 28
+    if trial.badge and trial.number > 0:  # por qué está ahí, en su píldora (el turquesa de «al aire»: es lo bueno)
+        bw, bh = text_width(trial.badge, 19, "semi") + 32, 34
+        if x + bw < W - MARGIN - status_w - 48:
+            lines += [rrect(x, top - bh / 2, bw, bh, bh / 2, LIVE, "C8", outline=LIVE, width=1.5),
+                      text(x + bw / 2, top, esc(trial.badge), 19, LIVE, weight="semi", align=5)]
     if trial.status:
-        lines.append(text(W - MARGIN, 34, esc(fit(trial.status, 22, status_w + 1, "semi")), 22, SOFT, weight="semi", align=6))
+        lines.append(text(W - MARGIN, top, esc(fit(trial.status, 22, status_w + 1, "semi")), 22, SOFT, weight="semi", align=6))
+    # Segundo renglón: de dónde viene, la copia para la que se hizo y sus descargas; la sincronía va a la derecha (es lo
+    # que mueves con ↑ ↓, y así el nombre largo de la copia no la empuja fuera).
+    origin = "Del video" if trial.origin == "video" else ""
+    parts = [p for p in (origin, trial.release, _downloads(trial.downloads)) if p] if trial.number > 0 else []
+    sync = f"Sincronía: {delay_label(trial.delay)}"
+    lines.append(text(W - MARGIN, info, esc(sync), 21, SOFT if abs(trial.delay) >= .05 else MUTED, weight="semi", align=6))
+    if parts:
+        room = W - 2 * MARGIN - text_width(sync, 21, "semi") - 48
+        lines.append(text(MARGIN, info, esc(fit(" · ".join(parts), 21, room, "semi")), 21, MUTED, weight="semi", align=4))
     if TOUCH:
-        lines.append(pills(TRY_PILLS, 64, left=MARGIN, layer="try", h=48))
+        lines.append(pills(try_pills(trial), keys - 10, left=MARGIN, layer="try", h=48))
     else:
-        lines.append(hints(TRY_ITEMS, 74, left=MARGIN, size=20))
+        lines.append(hints(try_items(trial), keys, left=MARGIN, size=20))
     return "\n".join(lines)
 
 
@@ -958,7 +1026,7 @@ def live_hud_ass(hud: LiveHud) -> str:
     """La barra del canal, abajo a la izquierda: su número en un bloque claro, el nombre y, debajo, el estado,
     la categoría y la calidad. Sin barra de avance (en vivo no hay a dónde adelantar) y con los botones de la TV."""
     targets["hud"] = []
-    lines = [gradient(560, H, 255, 34), gradient(0, 200, 100, 255, 14)]
+    lines = [gradient(560, H, 255, 34, 20), gradient(0, 200, 100, 255, 14)]
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
     number = str(hud.number) if hud.number else "—"

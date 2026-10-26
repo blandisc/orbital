@@ -347,15 +347,33 @@ def test_video_in_front_without_focus_gets_it_back():
     shell, win, _ = make({"title": "Futurama", "managed": True, "runner": "Reproductor", "pid": 30})
     win.windows[DESKTOP_APP] = ("Futurama", 30, "mpv.exe")
     proc = type("Proc", (), {"pid": 30})()
-    shell.catalog.player = type("P", (), {"playing": True, "remote": FakePlayer(),
+    remote = FakePlayer()
+    shell.catalog.player = type("P", (), {"playing": True, "remote": remote, "pip": False,
                                           "current": type("C", (), {"process": proc, "started": _t.time() - 5})()})()
     win.fg = ORBITAL
+    assert shell.video_holds_screen()  # /api/status dice «front»: la interfaz no le hace caso al mando
     shell.on_buttons(0, 0x1000, 10.0)
     assert win.fg == DESKTOP_APP  # el foco volvió al video
+    assert remote.calls == [("buttons", 0x1000)]  # y esa pulsación (A: pausa) fue del video, no se tiró
     win.fg = ORBITAL
+    shell._fg_cache = (0.0, "")
+    shell.on_buttons(0, 0, 10.5)  # soltar también le llega (el anillo de «Mantén B» sabe que soltaste)
+    assert remote.calls[-1] == ("buttons", 0)
     shell.catalog.sessions = type("S", (), {"returned_at": _t.monotonic()})()  # ahora sí volviste con Home
+    assert not shell.video_holds_screen()
     shell.on_buttons(0, 0x1000, 20.0)
     assert win.fg == ORBITAL  # Orbital se queda: lo pediste tú
+    assert remote.calls[-1] == ("buttons", 0)  # y el mando es de Orbital
+
+
+def test_video_in_pip_leaves_the_gamepad_to_orbital():
+    import time as _t
+
+    shell, win, _ = make({"title": "Futurama", "managed": True, "runner": "Reproductor", "pid": 30})
+    proc = type("Proc", (), {"pid": 30})()
+    shell.catalog.player = type("P", (), {"playing": True, "remote": FakePlayer(), "pip": True,
+                                          "current": type("C", (), {"process": proc, "started": _t.time() - 5})()})()
+    assert not shell.video_holds_screen()  # en pequeño, con Orbital: el mando es de la interfaz
 
 
 class FakeHealth:
@@ -420,7 +438,8 @@ def test_home_during_a_video_sends_it_to_a_corner_and_back(tmp_path):
     win.fg = DESKTOP_APP
     shell.home()
     assert win.fg == ORBITAL and shell.player.calls == ["pip"]  # sin pausa
-    assert published == [{"type": "pip", "title": "El video"}]  # Orbital dice cómo regresarlo
+    # La interfaz vuelve a hacerle caso al mando y dice cómo regresar el video.
+    assert published[0] == {"type": "returned"} and {"type": "pip", "title": "El video"} in published
     shell.home()
     assert win.fg == DESKTOP_APP and shell.player.calls[-2:] == ["full", "progress"]
     shell.catalog.state.set_setting("video_home", "pause")

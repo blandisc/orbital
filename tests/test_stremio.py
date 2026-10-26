@@ -259,6 +259,9 @@ def test_chosen_source_plays_in_orbital_player_from_where_you_left(linked, monke
         def starting(self, video_id, source_key=None):
             return False
 
+        def showing(self, video_id, source_key=None):
+            return False
+
         def play(self, run, exe, url, title, meta, started=None, **options):
             played.append((exe, url, title, meta, options))
             process = run([exe, url])

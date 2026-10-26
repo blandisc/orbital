@@ -18,13 +18,15 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 
-from . import companion, player, player_ui
+from . import companion, flags, player, player_ui
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
 from .launcher import Launcher
 from .library import addons, cinemeta, localize, streams, stremio_api
+from .library import subtitles as subtitle_lib
 from .library import tmdb as tmdb_api
+from .library import trakt as trakt_api
 from .library.models import LibraryItem
 from .scrobble import TraktScrobbler, not_the_video
 from .sessions import Sessions
@@ -194,7 +196,7 @@ def version_grid(found: list[streams.Source], prefs: streams.Preferences, curren
                           "size": f"{src.size / 1e9:.1f} GB" if src.size else "",
                           "doubt": "Idioma dudoso" if cell["how"] == "maybe" else "",
                           "current": current is not None and current in cell["all"]})
-        out.append({"label": name, "cells": cells})
+        out.append({"label": name, "flag": flags.flag_for(row["code"]), "cells": cells})
     return out
 
 
@@ -706,6 +708,9 @@ class Watch:
         p.on_language = self._remember_language
         p.on_tracks = self._tracks_seen
         p.versions_provider = self._other_versions
+        p.subtitle_search = self._subtitle_search  # «Probar otros»: los de internet con su copia y descargas
+        p.good_release = lambda meta: self.state.prefs(f"stremio:{meta.get('meta_id')}").get("sub_release") if meta.get("meta_id") else None
+        p.on_good_release = self._remember_sub_release
         p.on_sub_kept = self._safe_remember  # «Probar otros» › «Este va bien»: esos subtítulos (y su sincronía), ya
         p.spanish_provider = self._spanish_for
         p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
@@ -759,7 +764,9 @@ class Watch:
         return {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title, "detail": detail,
                 "facts": facts, "description": description, "poster": poster,
                 "source": source.index, "source_label": source_label(source), "binge": source.binge,
-                "source_key": source.key, "source_dub": source.dub, "tried": [source.index]}
+                "source_key": source.key, "source_dub": source.dub, "tried": [source.index],
+                # La copia que ves («…WEB-DL-NTb»): «Probar otros» pone primero los subtítulos hechos para ella.
+                "release": str((source.stream.get("behaviorHints") or {}).get("filename") or source.release or "")}
 
     def best_source(self, kind: str, video_id: str, binge: str | None = None,
                     skip: set[int] | None = None, prefs: streams.Preferences | None = None) -> streams.Source | None:
@@ -921,13 +928,36 @@ class Watch:
         return True
 
     def resume_position(self, meta_id: str, video_id: str) -> float:
-        """Dónde ibas según Stremio (0 si no se sabe)."""
+        """Dónde ibas: lo más reciente entre Stremio y Trakt (lo que pausaste en el iPhone o en otra app), como el
+        iPhone. Sin Trakt, lo de Stremio. 0 si no se sabe."""
+        seconds, when, duration = 0.0, None, None
         try:
-            return stremio_api.resume_seconds(
-                self.stremio_client.library_item(self.credentials.get(STREMIO_KEY) or "", meta_id), video_id)
+            raw = self.stremio_client.library_item(self.credentials.get(STREMIO_KEY) or "", meta_id)
+            seconds = stremio_api.resume_seconds(raw, video_id)
+            state = stremio_api.state_of(raw)
+            if state.get("video_id") == video_id:  # su fecha y su duración solo cuentan si son de este mismo video
+                when = stremio_api.watched_at(raw)
+                duration = stremio_api.as_int(state.get("duration")) / 1000 or None
         except (stremio_api.StremioError, ValueError, TypeError, AttributeError, OverflowError) as exc:
-            log.info("No pude leer dónde ibas: %s", exc)
-            return 0.0
+            log.info("No pude leer dónde ibas en Stremio: %s", exc)
+        trakt = self._trakt_playback(meta_id, video_id)
+        start = trakt_api.latest_resume(seconds, when, duration, trakt)
+        if trakt and start != seconds:
+            log.info("Sigo donde dice Trakt (%.0f %%): %.0f s (Stremio: %.0f s)", trakt["percent"], start, seconds)
+        return start
+
+    def _trakt_playback(self, meta_id: str, video_id: str) -> dict | None:
+        """El avance de Trakt de ese video (None sin Trakt conectado, sin internet o si no hay)."""
+        try:
+            trakt = self.scrobbler.trakt()
+            kind = "series" if ":" in str(video_id or "") else "movie"
+            key = trakt_api.playback_key(kind, meta_id, video_id)
+            if trakt is None or not trakt.linked or key is None:
+                return None
+            return trakt.playback().get(key)
+        except Exception as exc:  # noqa: BLE001 - TraktError, sin internet…: se sigue con Stremio
+            log.info("No pude leer el avance de Trakt: %s", exc)
+            return None
 
     def _fallback_subs(self, kind: str, video_id: str, subs: str | None = None):
         subs = self.subtitles_lang if subs is None else subs
@@ -945,6 +975,13 @@ class Watch:
             # Ya está cargando: Orbital sigue tapando hasta la primera imagen (el aviso del primer intento sigue en pie).
             log.info("%s ya se está abriendo: no lo empiezo otra vez", title)
             self.sessions.revealing = True
+            return
+        if not from_start and start_at is None and self.player.showing(video_id, source.key if source else None):
+            # Ya se está viendo: vuelve al frente donde va (no se recarga desde lo último guardado).
+            log.info("%s ya se está viendo: lo traigo al frente", title)
+            if getattr(self.player, "pip", False):
+                self.player.exit_pip()
+            self.sessions.revealing = self.sessions.to_front("media:player", title, ready=lambda: True)
             return
         if from_start:
             start = 0.0
@@ -1104,7 +1141,7 @@ class Watch:
                 seen.add(code)
                 # Corto: la columna Audio es angosta (con cuatro columnas cabe «Castellano» + «En otra · 1080p», medido con
                 # player_ui.text_width; «Latino · en otra versión» y «4K HDR · al instante» se cortaban).
-                out.append({"id": src.index, "code": code, "label": streams.LANG_NAMES.get(code, code),
+                out.append({"id": src.index, "code": code, "label": streams.LANG_NAMES.get(code, code), "flag": flags.flag_for(code),
                             "hint": f"En otra · {src.resolution or 'SD'}"})
         wanted = self._wanted_codes(prefs)
         out.sort(key=lambda o: o["code"] not in wanted)  # tu idioma primero (en español sin preferencia, los dos)
@@ -1473,6 +1510,23 @@ class Watch:
 
     def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
         self._save_progress(meta, position, duration, watched, refresh=True)
+
+    def _subtitle_search(self, meta: dict, url: str | None) -> list[dict] | None:
+        """Los subtítulos de internet de lo que ves (todos los idiomas), con la huella del archivo si el servidor la da (dos
+        pedidos de 64 KB): los de tu copia exacta salen primero. None si nadie contestó."""
+        kind = "series" if meta.get("kind") == "series" else "movie"
+        if not meta.get("video_id"):
+            return None
+        cache = self.__dict__.setdefault("_fingerprints", {})
+        if url and url not in cache:
+            cache[url] = subtitle_lib.remote_fingerprint(url)
+        return self.streams.subtitle_options(kind, meta["video_id"], cache.get(url) if url else None)
+
+    def _remember_sub_release(self, meta: dict, release: str | None) -> None:
+        """«Este va bien» en una serie: la copia de ese subtítulo («…-NTb»). En los siguientes episodios, los subtítulos
+        del mismo grupo van primero."""
+        if meta.get("meta_id") and release:
+            self.state.set_pref(f"stremio:{meta['meta_id']}", "sub_release", release)
 
     def _safe_remember(self, meta: dict) -> None:
         try:

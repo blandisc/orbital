@@ -77,7 +77,7 @@ def test_remote_turns_buttons_into_names_with_repeat():
     assert remote.actions(A_BUTTON, .5) == []  # mantener A no repite
     assert remote.actions(0, .6) == []
     assert remote.actions(X_BUTTON | Y_BUTTON, .7) == ["x", "y"]
-    assert remote.actions(DPAD_LEFT, 1) == ["left"]
+    assert remote.actions(DPAD_LEFT, 1) == ["x-up", "left"]  # X avisa al soltar (mantener X: probar subtítulos)
     assert remote.actions(DPAD_LEFT, 1.2) == []
     assert remote.actions(DPAD_LEFT, 1.36) == ["left"]  # mantener: continuo
     assert remote.actions(GUIDE | A_BUTTON, 2) == []  # Home es de Orbital
@@ -128,8 +128,8 @@ def test_subtitle_menu_has_off_and_addon_search():
     p.press("x")
     p.press("right")  # columna Subtítulos
     labels = [o["label"] for o in p.menu.options]
-    assert labels[0] == "Sin subtítulos" and "Español · Forzados" in labels and labels[-1].startswith("Buscar en español")
-    assert p.menu.index == 1  # en la que está puesta
+    assert labels[:2] == ["Probar otros", "Sin subtítulos"] and "Español · Forzados" in labels and labels[-1].startswith("Buscar en español")
+    assert p.menu.index == 2  # en la que está puesta («Probar otros» va primero)
     p.press("up")
     p.press("a")
     assert ("set_property", "sid", "no") in mpv.sent
@@ -952,6 +952,19 @@ def test_mpv_loads_the_mouse_script_next_to_the_bindings(tmp_path):
     assert 'mp.add_forced_key_binding("MBTN_LEFT"' in player.MOUSE_SCRIPT and "orbital-drop" in player.MOUSE_SCRIPT
 
 
+def test_watching_the_same_video_again_does_not_reload_it():
+    """La ficha de atrás recibía «Ver» de la misma película (la A de pausar): se recargaba desde lo último guardado."""
+    p, _ = make_player()
+    alive = type("Proc", (), {"poll": lambda self: None})()
+    p.current = player.Playback("Qué pasó ayer", alive, 0, {})
+    p.segment = player.Segment({"video_id": "tt1119646", "source_key": "rd:1"}, "Qué pasó ayer", "u")
+    assert not p.showing("tt1119646")  # todavía sin imagen: eso es starting()
+    p.segment.playing = True
+    assert p.showing("tt1119646") and p.showing("tt1119646", "rd:1")
+    assert not p.showing("tt1119646", "rd:2")  # otra versión elegida a propósito sí se abre
+    assert not p.showing("tt0000001")
+
+
 def test_paused_shows_the_title_logo_instead_of_plain_text():
     """En pausa, el título estilizado (su logo, como en la ficha) en vez de su nombre en texto: mpv lo pone encima con
     overlay-add donde el bloque le dejó lugar, y se quita al seguir viendo. Sin logo, el nombre como siempre."""
@@ -980,3 +993,64 @@ def test_paused_shows_the_title_logo_instead_of_plain_text():
     q, mpv2 = make_player()
     q.press("a")
     assert "Interstellar" in mpv2.overlays[1] and not any(c[0] == "overlay-add" for c in mpv2.sent)  # sin logo: el nombre
+
+
+def test_the_next_file_starts_playing_even_if_the_last_one_ended_paused():
+    """Al terminar, keep-open deja el archivo en pausa en su último cuadro y mpv lo vuelve a pausar mientras siga ahí: la
+    pausa se quita también DESPUÉS de cargar el siguiente (antes el siguiente episodio de un canal 24/7 arrancaba en pausa
+    en el segundo 0, y parecía que «no ponía el siguiente»; probado con mpv de verdad en la Lenovo)."""
+    alive = type("Proc", (), {"poll": lambda self: None})()
+    p, mpv = make_player(pause=True)
+    p.current = player.Playback("Los Simpson 24/7", alive, 0, {})
+    assert p.load("http://ep2", "Los Simpson 24/7", {"synthetic": True, "video_id": "tt0096697:5:8"})
+    at = next(i for i, c in enumerate(mpv.sent) if c[0] == "loadfile")
+    assert ("set_property", "pause", False) in mpv.sent[at + 1:]
+
+
+def _shaded_screens(ass: str) -> float:
+    """Cuántas pantallas cubren, sumadas, las figuras de una capa (lo que pesa en libass)."""
+    import re
+
+    total = 0.0
+    for line in ass.split("\n"):
+        m = re.search(r"\\p1\}(.*?)\{\\p0\}", line)
+        if m:
+            nums = [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", m.group(1))]
+            total += (max(nums[0::2]) - min(nums[0::2])) * (max(nums[1::2]) - min(nums[1::2]))
+    return total / (player_ui.W * player_ui.H)
+
+
+def test_every_layer_fits_what_mpv_can_paint_at_4k():
+    """A 4K, libass deja de pintar una capa cuyas figuras suman más de ~12 pantallas: la pausa (con su sombra de 28 pasos)
+    sumaba 21 y en la TV no salía nada de ella, solo la imagen del logo. Medido en la Lenovo con mpv de verdad."""
+    hud = player_ui.Hud(title="Los Expedientes Secretos X", detail="T1 E1", position=3, duration=2894, paused=True, audio="",
+                        subtitles="", source="", series=True, now="9:50", chapters=[], chapter_titles=[], facts="1993",
+                        description="Fox Mulder y Dana Scully investigan casos sin explicación.", seeking="", pip=False)
+    layers = {"pausa": player_ui.hud_ass(hud)}
+    hud.paused = False
+    layers["barra"] = player_ui.hud_ass(hud)
+    tracks = [{"type": "audio", "id": 1, "lang": "spa", "selected": True}, {"type": "sub", "id": 2, "lang": "eng"}]
+    layers["panel"] = player_ui.panel_ass(player_ui.tracks_panel(tracks, 1.0))
+    layers["canal"] = player_ui.live_hud_ass(player_ui.LiveHud(name="Canal 5", number=5))
+    for name, ass in layers.items():
+        assert _shaded_screens(ass) <= player_ui.SHADE_BUDGET, f"{name}: {_shaded_screens(ass):.1f} pantallas"
+
+
+def test_each_buffer_wait_goes_to_the_log(caplog):
+    """Un «Cargando…» a media película queda en el registro (cuánto duró, cuánto había por delante y la velocidad), y al
+    cerrar el video, cuántas esperas hubo: antes solo se veía en pantalla y una traba no se podía investigar (#12)."""
+    import logging
+
+    p, mpv = make_player(**{"paused-for-cache": True, "cache-buffering-state": 40, "demuxer-cache-duration": 0.4,
+                            "cache-speed": 500_000, "frame-drop-count": 3})
+    segment = player.Segment({"kind": "movie"}, "¿Qué Pasó Ayer?", "u")
+    segment.playing, segment.position, segment.watched = True, 1800.0, 1800.0
+    p.segment = segment
+    with caplog.at_level(logging.INFO, logger="orbital.player"):
+        p._buffering_state(False)
+        mpv.props["paused-for-cache"] = False
+        p._buffering_state(False)
+        p._close_segment(segment)
+    text = caplog.text
+    assert "Esperó al búfer" in text and "(min 30)" in text and "por delante 0.4 s" in text and "bajando a 4.0 Mbps" in text
+    assert "1 esperas de búfer" in text and "3 cuadros perdidos" in text

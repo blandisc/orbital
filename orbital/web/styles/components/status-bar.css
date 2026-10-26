@@ -13,26 +13,19 @@
 .status-bar__brand:hover { background: var(--color-fill); }
 .status-bar__brand { gap: .6rem; }
 /* La marca (icons.js · mark): el planeta de contorno, el anillo que pasa por delante y la luna como punto final de
-   «orbital». Al arrancar, el planeta aparece, el anillo se dibuja de una vez y la luna cae en su lugar; al señalar la
-   marca, la luna da un saltito en su órbita. Con «Reducir movimiento», quieta. */
+   «orbital». Quieta: su entrada la hace la de arranque (boot.css), que llega volando a este mismo lugar. Al señalarla,
+   la luna da un saltito en su órbita. */
 .status-bar__brand .mark { width: 2.05rem; height: 2.05rem; color: var(--color-text); overflow: visible; }
-/* Después de la pantalla de arranque (si no, pasaba detrás de ella): el anillo y luego la luna. */
-.status-bar__brand .mark__ring { opacity: .7; stroke-dasharray: 1; animation: mark-draw var(--duration-land) var(--ease-out) both; animation-delay: var(--duration-land); }
-.status-bar__brand .mark__planet { transform-origin: 16px 16px; animation: mark-planet var(--duration-enter) var(--ease-spring) both; }
-@keyframes mark-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-@keyframes mark-planet { from { opacity: 0; transform: scale(.6); } }
+.status-bar__brand .mark__ring { opacity: .7; }
 .status-bar__moon {
   display: inline-block; width: .26em; height: .26em; margin-left: .1em; border-radius: 50%; background: var(--color-brand-moon);
-  vertical-align: .62em; animation: mark-moon var(--duration-enter) var(--ease-spring) both; animation-delay: calc(var(--duration-land) * 1.7);
-  transition: translate var(--duration-slow) var(--ease-spring);
+  vertical-align: .62em; transition: translate var(--duration-slow) var(--ease-spring);
 }
 .status-bar__brand:hover .status-bar__moon, .status-bar__brand.is-focused .status-bar__moon { translate: .08em -.18em; }
-@keyframes mark-moon { from { opacity: 0; translate: -.9em -.7em; scale: .2; } 70% { opacity: 1; } }
 
 .status-bar__wordmark {
   font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-display); line-height: var(--leading-none); padding-bottom: .08em; /* centro óptico con el planeta */
-  animation: fade-in var(--duration-enter) var(--ease-out) both; animation-delay: var(--delay-1);
 }
 
 .status-bar__playing { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); animation: fade-in var(--duration-base) var(--ease-out); }

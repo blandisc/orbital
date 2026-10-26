@@ -87,6 +87,7 @@ body[data-offline] .needs-internet { opacity: var(--opacity-off); filter: graysc
 [data-landing] .status-bar, [data-landing] .hero, [data-landing] .home, [data-landing] .shelf, [data-landing] .hints {
   animation: land var(--duration-land) var(--ease-out) both;
 }
+[data-landing="boot"] .status-bar { animation: fade-in var(--duration-brand-glide) var(--ease-out) both; } /* quieta: la marca aterriza en ella */
 [data-landing="boot"] .hero { animation-delay: var(--delay-1); }
 [data-landing="boot"] .shelf { animation-delay: var(--delay-2); }
 [data-landing="boot"] .hints { animation-delay: var(--delay-3); }

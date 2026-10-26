@@ -117,6 +117,7 @@ CURTAIN_STEP = .07
 CURTAIN_REVEAL_WAIT = 1.1  # s tras la primera imagen al abrir desde Orbital: lo que tarda su salida (focus.FADE_TO_BLACK)
 CUT_MARGIN = 90  # s: un «final» antes de esto es la conexión que se cortó, no el final de verdad
 NEXT_LOAD_WAIT = 25  # s que el final espera al siguiente episodio que se está cargando
+SYNTHETIC_NEXT_TRIES = 3  # veces que un canal de Orbital pide lo que sigue (cada NEXT_LOAD_WAIT) antes de cerrarse
 
 
 def process_memory_mb(pid: int) -> int:
@@ -176,6 +177,11 @@ def glide_curve(t: float) -> float:
             hi = mid
     return bez(y1, y2, (lo + hi) / 2)
 
+
+
+def _num(value) -> str:
+    """Un número del registro, corto («12.4»), o «?» si mpv no lo dio."""
+    return f"{value:.1f}" if isinstance(value, (int, float)) else "?"
 
 class OrbitalPlayer(PlayerScreen):
     """Arranca mpv, lo vigila y avisa cuánto se vio (para Seguir viendo).
@@ -326,6 +332,15 @@ class OrbitalPlayer(PlayerScreen):
                     and (source_key is None or segment.meta.get("source_key") == source_key)
                     and time.monotonic() - segment.loaded < STARTUP_TIMEOUT)
 
+    def showing(self, video_id: str | None, source_key: str | None = None) -> bool:
+        """Ese mismo video ya se está viendo (con imagen). Otro «ver» lo trae al frente en vez de abrirlo otra vez: antes
+        lo cerraba y lo volvía a cargar desde lo último guardado (hasta un minuto atrás), y la película «se trababa»."""
+        playback, segment = self.current, self.segment
+        return bool(video_id and playback is not None and playback.process.poll() is None and segment is not None
+                    and segment.playing and not segment.failed and not segment.live and not segment.closed
+                    and segment.meta.get("video_id") == video_id
+                    and (source_key is None or segment.meta.get("source_key") == source_key))
+
     def load(self, url: str, title: str, meta: dict, *, start: float = 0, fallback_subs=None,
              subtitles: str | None = None, audio: str | None = None, message: str | None = None) -> bool:
         """Otro archivo en la misma ventana: el siguiente episodio, u otra fuente del mismo título.
@@ -373,6 +388,10 @@ class OrbitalPlayer(PlayerScreen):
         self._reveal_wait = 0.0  # otro episodio u otra fuente en la misma ventana: se destapa en cuanto haya imagen
         self._curtain(1)
         self.mpv.command("loadfile", url, "replace")
+        # Otra vez, ya con el archivo nuevo: al terminar el anterior, keep-open lo deja en pausa en su último cuadro y
+        # mpv lo vuelve a pausar mientras siga ahí, así que la pausa de arriba no alcanzaba. El siguiente episodio (de un
+        # canal 24/7 o de una serie) arrancaba en pausa en el segundo 0: parecía que «no ponía el siguiente».
+        self.mpv.command("set_property", "pause", False)
         self.toast(message or f"Cargando {title}…", 4)
         log.info("Cargando en el mismo mpv: %s", title)
         return True
@@ -785,7 +804,18 @@ class OrbitalPlayer(PlayerScreen):
         if away > SYNTHETIC_RESYNC_AFTER and self.on_synthetic_resync and not segment.next_loading:
             segment.next_loading = time.monotonic()
             self.toast(f"De vuelta al aire · {segment.title}", 4)
-            self._in_background(self.on_synthetic_resync, segment.meta, failed="No pude volver a lo que va al aire")
+            self._in_background(self._synthetic_resync, segment, failed="No pude volver a lo que va al aire")
+
+    def _synthetic_resync(self, segment: Segment) -> bool:
+        """Si no se pudo volver al aire, sigue lo que ya veías y su final vuelve a pedir lo que sigue (antes quedaba
+        marcado como «cargando» y, al acabar el episodio, el canal se quedaba en el último cuadro)."""
+        ok = False
+        try:
+            ok = bool(self.on_synthetic_resync and self.on_synthetic_resync(segment.meta))
+        finally:
+            if not ok:
+                segment.next_loading = 0.0
+        return ok
 
     def _synthetic_started(self, segment: Segment, tracks: list) -> None:
         """Un canal de Orbital: la pista del doblaje del canal (si el archivo no la trae, otra fuente) y qué va."""
@@ -869,6 +899,10 @@ class OrbitalPlayer(PlayerScreen):
             if segment.closed:
                 return
             segment.closed = True
+        if segment.playing and not segment.live:  # cómo se vio: para saber, si «se trabó», si fue la red o la imagen (#12)
+            drops = self.mpv.get("frame-drop-count")
+            log.info("%s: %d min vistos, %d esperas de búfer (%.0f s), %s cuadros perdidos", segment.title,
+                     int(segment.watched // 60), segment.waits, segment.waited, drops if isinstance(drops, int) else "?")
         if segment.live or segment.meta.get("synthetic"):
             return  # la tele (en vivo o un canal de Orbital) no guarda dónde ibas ni entra en «Seguir viendo»
         self._scrobble("stop", segment)  # Trakt: lo que llevabas (≥ 80 % lo marca visto)
@@ -900,6 +934,8 @@ class OrbitalPlayer(PlayerScreen):
 
     def _buffering_state(self, paused: bool) -> None:
         waiting = bool(self.mpv.get("paused-for-cache")) and not paused
+        if waiting and not self._buffering:
+            self._wait_started = time.monotonic()  # una espera nueva: al terminar se anota cuánto duró (ver abajo)
         if waiting:
             percent = self.mpv.get("cache-buffering-state")
             self._buffering = True
@@ -909,6 +945,20 @@ class OrbitalPlayer(PlayerScreen):
         elif self._buffering:
             self._buffering = False
             self._overlay(self.BUFFER, None)  # solo el «Cargando…»: el aviso que estaba sigue
+            self._log_wait()
+
+    def _log_wait(self) -> None:
+        """Cada «Cargando…» a media reproducción, en el registro: cuánto duró, cuánto quedaba por delante y a qué velocidad
+        bajaba. Antes solo se veía en pantalla: cuando algo «se trababa», no había cómo saber por qué (#12)."""
+        segment = self.segment
+        lasted = time.monotonic() - getattr(self, "_wait_started", time.monotonic())
+        if segment is not None:
+            segment.waits += 1
+            segment.waited += lasted
+        speed = self.mpv.get("cache-speed")
+        log.info("Esperó al búfer %.1f s en %s (min %s): por delante %s s, bajando a %s Mbps", lasted,
+                 segment.title if segment else "?", int(segment.position // 60) if segment else "?",
+                 _num(self.mpv.get("demuxer-cache-duration")), _num(speed * 8 / 1e6) if isinstance(speed, (int, float)) else "?")
 
     # --- capítulos: saltar intro, créditos ---------------------------------------------------
     def _chapter_now(self, segment: Segment) -> tuple[int, dict | None]:
@@ -995,7 +1045,7 @@ class OrbitalPlayer(PlayerScreen):
         if segment.closed:
             return
         if segment.meta.get("synthetic") and self.on_synthetic_end:
-            if not segment.next_loading:  # el siguiente episodio del canal, una sola vez
+            if not segment.next_loading:  # el siguiente episodio del canal, una vez (si no se pudo, otra al rato)
                 segment.next_loading = time.monotonic()
                 self._in_background(self._synthetic_next, segment, failed="No pude seguir con el canal")
             return
@@ -1011,10 +1061,28 @@ class OrbitalPlayer(PlayerScreen):
         self._quit()
 
     def _synthetic_next(self, segment: Segment) -> None:
+        """Lo que sigue en el canal. Si no se pudo, el final lo vuelve a pedir en NEXT_LOAD_WAIT: la tele no se apaga (ni
+        se queda en el último cuadro) por un tropiezo de Internet. Tras SYNTHETIC_NEXT_TRIES, se cierra."""
         handler = self.on_synthetic_end
-        if not (handler and handler(segment.meta)) and self.segment is segment:
-            self._user_quit = True
-            self._quit()
+        try:
+            ok = bool(handler and handler(segment.meta))
+        except Exception:  # noqa: BLE001 - un error de red no deja el canal congelado en el último cuadro
+            log.exception("%s: no pude poner lo que sigue", segment.title)
+            ok = False
+        if ok or self.segment is not segment:
+            return
+        segment.next_tries += 1
+        if segment.next_tries < SYNTHETIC_NEXT_TRIES:
+            log.info("%s: no pude poner lo que sigue (intento %d); otra vez en %d s", segment.title, segment.next_tries,
+                     NEXT_LOAD_WAIT)
+            self.toast(f"Buscando lo que sigue en {segment.title}…", 6)
+            timer = threading.Timer(NEXT_LOAD_WAIT, lambda: setattr(segment, "next_loading", 0.0))
+            timer.daemon = True
+            timer.start()
+            return
+        self.toast(f"No pude seguir con {segment.title}", 4)
+        self._user_quit = True
+        self._quit()
 
     def _play_next(self, segment: Segment, auto: bool) -> None:
         info = segment.upnext

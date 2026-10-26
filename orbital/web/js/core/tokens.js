@@ -7,3 +7,9 @@ export function tokenPx(name, el = document.documentElement) {
   probe.remove();
   return px;
 }
+
+/** Una duración de los tokens («550ms», «1.1s») en milisegundos, para esperar a que termine una animación. */
+export function tokenMs(name, el = document.documentElement) {
+  const value = getComputedStyle(el).getPropertyValue(name).trim();
+  return value.endsWith("ms") ? parseFloat(value) : parseFloat(value) * 1000 || 0;
+}

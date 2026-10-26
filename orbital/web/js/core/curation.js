@@ -21,7 +21,10 @@ export function curatedItem(item, { rowTitle = null } = {}) {
     year: item.year ?? undefined, rating: item.rating ?? undefined, genres: item.genres ?? undefined,
     award_year: item.award_year ?? undefined, day_label: item.day_label ?? undefined,
     subtitle: [KIND_LABEL[kind], item.year].filter(Boolean).join(" · "),
-    extra: { kind, meta_id: item.meta_id, year: item.year, description: item.overview || "", logo: item.logo, eyebrow: why },
+    // El destacado no pone el nombre de una lista de Trakt o de un complemento («En «RT: Certified Fresh»»), como el iPhone;
+    // «N.º 1 en Netflix», «Recomendada» y «En tendencia» sí se quedan.
+    extra: { kind, meta_id: item.meta_id, year: item.year, description: item.overview || "", logo: item.logo,
+      eyebrow: item.in_list ? undefined : why },
   };
 }
 

@@ -108,6 +108,14 @@
 
 /* Badge grande: sobre arte a sangre (el mosaico de Para ti). */
 .badge--lg { padding: .22rem var(--space-3); font-size: var(--type-secondary); }
+/* «En Netflix» (PlatformBadge): la cápsula del color de la plataforma, su logo a la izquierda y el texto en blanco. */
+.badge--platform { gap: var(--space-1); padding-left: var(--space-1); color: var(--color-text); background: var(--platform-color); }
+.badge--platform-netflix { --platform-color: var(--platform-netflix); }
+.badge--platform-disney { --platform-color: var(--platform-disney); }
+.badge--platform-hbo { --platform-color: var(--platform-hbo); }
+.badge--platform-prime { --platform-color: var(--platform-prime); }
+.badge--platform-paramount { --platform-color: var(--platform-paramount); }
+.badge__logo { flex: none; width: 1.15em; height: 1.15em; border-radius: var(--radius-xs); object-fit: cover; }
 
 /* Pantalla completa encima de todo (Buscar, la ficha, Conectar Stremio…): el mismo fondo, margen y entrada. */
 .screen {

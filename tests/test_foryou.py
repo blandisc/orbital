@@ -163,9 +163,11 @@ def test_an_old_session_is_renewed_and_a_rejected_one_is_forgotten(make_foryou, 
     assert any(c[1].endswith("/oauth/token") for c in net.calls)
     assert json.loads(fy.catalog.credentials.get(trakt.TOKENS_KEY))["access_token"] == "new"
     net.routes.insert(0, ("GET", r"/sync/watchlist", (401, None)))
+    renewals = sum(c[1].endswith("/oauth/token") for c in net.calls)
     with pytest.raises(trakt.TraktAuthError):
         fy.trakt.watchlist()
-    assert not fy.trakt.linked  # Trakt cerró la sesión: hay que volver a conectar
+    assert sum(c[1].endswith("/oauth/token") for c in net.calls) == renewals + 1  # primero intentó renovarla
+    assert not fy.trakt.linked  # renovada y aun así rechazada: hay que volver a conectar
 
 
 def test_your_series_bring_the_next_episode_and_skip_finished_ones(make_foryou, net):
@@ -1034,3 +1036,23 @@ def test_genre_and_season_shelves_need_tmdb_and_the_phone_does_not_get_them(make
         assert tv.get("/api/foryou/list", params={"id": "genre:no-existe"}).status_code == 404
         phone = [row["id"] for row in public.get("/api/foryou", headers={"Authorization": "Bearer secreto"}).json()["lists"]]
         assert phone and not [i for i in phone if i.startswith(("genre:", "season:"))]
+
+
+def test_a_title_from_a_named_list_is_marked_so_the_hero_skips_the_list_name():
+    from orbital.foryou import video_item
+
+    e = {"imdb": "tt1375666", "kind": "movie", "title": "Origen"}
+    assert video_item(e, "En RT: Certified Fresh", in_list=True)["in_list"] is True
+    assert "in_list" not in video_item(e, "Recomendada")
+
+
+def test_the_platform_pill_logos_are_the_justwatch_ones():
+    import re
+    from pathlib import Path
+
+    from orbital.library import charts
+
+    ui = (Path(__file__).parent.parent / "orbital" / "web" / "js" / "components" / "ui.js").read_text("utf-8")
+    block = ui[ui.index("PLATFORM_PILLS = {"):ui.index("};", ui.index("PLATFORM_PILLS = {"))]
+    pills = dict(re.findall(r'(\w+): "(/icon/[^"]+)"', block))
+    assert pills and all(charts.JUSTWATCH_PACKAGES[brand][2] == path for brand, path in pills.items())

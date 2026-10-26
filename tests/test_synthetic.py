@@ -188,6 +188,70 @@ def test_el_reproductor_no_guarda_nada_de_un_canal_y_al_terminar_pide_el_siguien
     assert saved == [] and scrobbled == [] and len(ended) == 1
 
 
+def test_si_no_pudo_poner_lo_que_sigue_lo_vuelve_a_pedir_en_vez_de_quedarse_en_el_ultimo_cuadro(monkeypatch):
+    """Un tropiezo de Internet al acabar el episodio: antes el canal se quedaba congelado (si fallaba con error) o se
+    cerraba (si no encontraba nada). Ahora lo vuelve a pedir al rato y solo se cierra tras varios intentos."""
+    from tests.test_player import make_player
+
+    monkeypatch.setattr(player, "NEXT_LOAD_WAIT", .05)
+    p, mpv = make_player()
+    quits, calls = [], []
+    p._quit = lambda: quits.append(1)
+
+    def flaky(meta):
+        calls.append(meta)
+        if len(calls) == 1:
+            raise OSError("sin Internet")
+        return len(calls) >= 3  # el segundo no encontró nada; el tercero sí
+
+    p.on_synthetic_end = flaky
+    segment = player.Segment({"synthetic": True, "kind": "channel", "detail": "T3 E1"}, "Serie 24/7", "u")
+    segment.duration = segment.position = 1300.0
+    p.segment = segment
+    deadline = time.monotonic() + 3
+    while len(calls) < 3 and time.monotonic() < deadline:
+        p._at_end(segment)  # el final se ve cada segundo
+        time.sleep(.01)
+    assert len(calls) == 3 and quits == []
+    time.sleep(.15)
+    p._at_end(segment)
+    assert len(calls) == 3  # ya cargó lo que sigue: no se pide otra vez
+
+    p, mpv = make_player()
+    p._quit = lambda: quits.append(1)
+    p.on_synthetic_end = lambda meta: False
+    segment = player.Segment({"synthetic": True, "kind": "channel", "detail": "T3 E1"}, "Serie 24/7", "u")
+    p.segment = segment
+    deadline = time.monotonic() + 3
+    while not quits and time.monotonic() < deadline:
+        p._at_end(segment)
+        time.sleep(.01)
+    assert quits and segment.next_tries == player.SYNTHETIC_NEXT_TRIES
+
+
+def test_si_no_pudo_volver_al_aire_el_final_igual_pide_lo_que_sigue():
+    """Pausa larga y, al seguir, no se pudo volver a lo que va al aire: sigue lo que veías y al acabar pone lo que sigue
+    (antes quedaba «cargando» para siempre y el canal se quedaba en el último cuadro)."""
+    from tests.test_player import make_player
+
+    p, mpv = make_player()
+    ended = []
+    p.on_synthetic_resync = lambda meta: False
+    p.on_synthetic_end = lambda meta: ended.append(meta) or True
+    segment = player.Segment({"synthetic": True, "kind": "channel", "detail": "T3 E1"}, "Serie 24/7", "u")
+    p.segment = segment
+    p._synthetic_tick(segment, 100.0, True)
+    p._synthetic_tick(segment, 100.0 + player.SYNTHETIC_RESYNC_AFTER + 5, False)  # sigue tras la pausa
+    deadline = time.monotonic() + 2
+    while segment.next_loading and time.monotonic() < deadline:
+        time.sleep(.01)
+    assert segment.next_loading == 0.0
+    p._at_end(segment)
+    while not ended and time.monotonic() < deadline:
+        time.sleep(.01)
+    assert len(ended) == 1
+
+
 def test_un_archivo_sin_la_pista_latina_pide_otra_fuente():
     from tests.test_player import make_player
 

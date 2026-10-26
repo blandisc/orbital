@@ -163,6 +163,9 @@ KEY_BINDINGS = "".join(f"{key} {'repeatable ' if repeat else ''}script-message o
     ("LEFT", "left", True), ("RIGHT", "right", True), ("UP", "up", True), ("DOWN", "down", True),
     ("ESC", "esc", False), ("BS", "esc", False), ("q", "esc", False),
     ("x", "x", False), ("y", "y", False), ("PGUP", "lb", False), ("PGDWN", "rb", False),
+    ("s", "subs", False),  # «Probar subtítulos» directo (con el mando: mantener X)
+    # La rueda del mouse: otro subtítulo mientras pruebas (fuera de la franja no hace nada).
+    ("WHEEL_UP", "wheel-up", True), ("WHEEL_DOWN", "wheel-down", True),
     ("[", "lt", False), ("]", "rt", False),
     # Teclas multimedia: el volumen de Windows (el de Orbital), no el OSD nativo de mpv.
     ("VOLUME_UP", "up", True), ("VOLUME_DOWN", "down", True)))
@@ -335,6 +338,9 @@ class Segment:
     upnext_deadline: float | None = None
     paused_at: float | None = None  # canal de Orbital: desde cuándo está en pausa (al seguir, regresa al aire)
     duration_told: bool = False  # canal de Orbital: ya se le dijo cuánto dura de verdad este episodio
+    next_tries: int = 0  # canal de Orbital: veces que no se pudo poner lo que sigue (al rato se vuelve a pedir)
+    waits: int = 0  # «Cargando…» a media reproducción (esperas de búfer) y sus segundos: van al registro al cerrar
+    waited: float = 0.0
     grace_until: float = 0.0  # otro archivo en la misma ventana: hasta entonces no se lee su posición (player.tick)
 
 
@@ -346,8 +352,9 @@ class PlayerRemote:
                DPAD_UP: "up", DPAD_DOWN: "down", LB: "lb", RB: "rb", LT: "lt", RT: "rt",
                STICK_UP: "stick-up", STICK_DOWN: "stick-down", STICK_LEFT: "stick-left", STICK_RIGHT: "stick-right"}
     REPEAT = {DPAD_LEFT, DPAD_RIGHT, DPAD_UP, DPAD_DOWN, LB, RB, STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT,
-              B_BUTTON, LT, RT}  # B, LT y RT mantenidos: el anillo de «Salir» / «Episodio» se va llenando
-    RELEASE = {B_BUTTON, LT, RT}  # al soltar llega "b-up" / "lt-up" / "rt-up" (el anillo se va si soltaste antes)
+              B_BUTTON, LT, RT, X_BUTTON}  # B, LT, RT y X mantenidos: el anillo de «Salir» / «Episodio» / «Probar
+    # subtítulos» se va llenando
+    RELEASE = {B_BUTTON, LT, RT, X_BUTTON}  # al soltar llega "b-up", "x-up"… (el anillo se va si soltaste antes)
 
     def __init__(self, on_press, delay: float = .35, rate: float = .15) -> None:
         self.on_press = on_press
@@ -355,6 +362,10 @@ class PlayerRemote:
         self.rate = rate
         self._next: dict[int, float] = {}
         self._repeats: dict[str, int] = {}
+
+    def down(self, name: str) -> bool:
+        """¿Ese botón está oprimido en el mando ahora? (las teclas, el dedo y el iPhone no avisan al soltar)."""
+        return name in self._repeats
 
     def held(self, name: str) -> int:
         """Cuántas veces se ha repetido ese botón sin soltarlo (0 = pulsación nueva)."""

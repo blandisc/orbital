@@ -85,13 +85,14 @@ class DryLauncher:
 # Unas fichas de mentiras (sin internet): así el recorrido también pasa por la ficha, los episodios y Fuentes.
 DEMO_TITLES = {
     ("series", "tt0386676"): {"name": "The Office", "year": "2005–2013", "imdbRating": "9.0", "genres": ["Comedy"],
-                              "description": "Un falso documental sobre la vida diaria en una oficina de papel en Scranton.",
+                              "description": "Un falso documental sobre la vida diaria en una oficina de papel en Scranton, Pensilvania: Michael Scott, un gerente que se cree el jefe más gracioso del mundo, y los empleados que lo aguantan entre juntas inútiles, bromas a Dwight y el romance que crece despacio en la recepción.",
+                              # larga a propósito: la ficha la corta y ofrece «Ver más»
                               "seasons": 2, "episodes": 4, "hero": "hero-generic-3.jpg"},
     ("series", "tt11280740"): {"name": "Severance", "year": "2022–", "imdbRating": "8.7", "genres": ["Drama", "Mystery"],
                                "description": "Mark dirige un equipo cuyos recuerdos del trabajo y de la vida personal fueron separados.",
                                "seasons": 2, "episodes": 3, "upcoming": True, "hero": "hero-switch-2.jpg"},
     ("movie", "tt0816692"): {"name": "Interstellar", "year": "2014", "imdbRating": "8.7", "genres": ["Adventure", "Sci-Fi"],
-                             "description": "Un grupo de exploradores viaja a través de un agujero de gusano en busca de un nuevo hogar.",
+                             "description": "Con la Tierra muriendo por las plagas y el polvo, un expiloto de la NASA deja a sus hijos para llevar a un grupo de exploradores a través de un agujero de gusano junto a Saturno, en busca de un planeta donde la humanidad pueda empezar de nuevo, sabiendo que cada hora allá son años aquí.",
                              "runtime": "169 min", "hero": "hero-xbox-2.jpg"},
 }
 

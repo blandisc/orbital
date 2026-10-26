@@ -28,7 +28,8 @@ API_URL = "https://api.strem.io"
 METAHUB_BACKGROUND = "https://images.metahub.space/background/medium/{id}/img"
 METAHUB_POSTER = "https://images.metahub.space/poster/medium/{id}/img"
 
-
+
+
 # Sin cuenta: qué hacer, en una frase (se muestra tal cual; antes «Stremio no respondió bien (…). Inténtalo de nuevo»).
 NOT_LINKED = "Para eso, conecta tu cuenta de Stremio en Ajustes › Cuentas."
 
@@ -274,6 +275,11 @@ def _epoch(value) -> float | None:
         return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
     except (ValueError, OSError, OverflowError):  # fechas imposibles (año 1 o 9999)
         return None
+
+
+def watched_at(raw: dict | None) -> float | None:
+    """Cuándo lo viste por última vez según Stremio (`state.lastWatched`, segundos desde 1970), para compararlo con Trakt."""
+    return _epoch(state_of(raw).get("lastWatched"))
 
 
 def parse_item(raw: dict) -> Watchable | None:

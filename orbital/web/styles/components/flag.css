@@ -1,0 +1,2 @@
+/* La banderita junto a un idioma (flag.js): del alto de la letra, en 3:2, sin encogerse. */
+.flag { flex: none; width: 1.5em; height: 1em; vertical-align: -.12em; }

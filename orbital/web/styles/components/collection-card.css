@@ -42,6 +42,12 @@
   font-size: var(--type-body); font-weight: var(--weight-bold); line-height: var(--leading-title); letter-spacing: var(--tracking-tight);
   text-shadow: var(--shadow-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .collection__detail { color: var(--color-text-muted); font-size: var(--type-caption); line-height: var(--leading-snug); }
+/* Un género o una temporada: su ícono a color (img/collections, los del iPhone) tal cual, sin placa: un resplandor oscuro
+   detrás para leerse sobre los pósters (como el iPhone) y el de su halo; su nombre debajo. */
+.collection__emblem {
+  display: block; width: 4.4rem; height: 4.4rem; object-fit: contain;
+  filter: drop-shadow(0 0 .9rem color-mix(in oklab, var(--color-bg) 80%, transparent)) drop-shadow(0 0 1.1rem color-mix(in oklab, var(--halo, transparent) 55%, transparent));
+}
 /* Un estudio: su nombre en cápsula al frente (como el iPhone). */
 .collection__capsule {
   padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-badge-bg);

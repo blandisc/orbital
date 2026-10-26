@@ -1,0 +1,125 @@
+<title>Tablero Orbital Escritorio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una franja de resumen y una cuadrícula de tarjetas por estado, como la parrilla de una consola */
+:root {
+  --bg: #f3f4f6; --surface: #ffffff; --line: #dcdee4; --fg: #15161a; --muted: #5c5f6a;
+  --moon: #0f8f86; --doing: #b7791f; --done: #0f8f86; --todo: #8a8d97; --prio: #c0392b;
+  --display: "Sora", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e0f12; --surface: #17181d; --line: #2a2c33; --fg: #f2f2f4; --muted: #9a9ca6;
+  --moon: #5fd3c8; --doing: #f2c14e; --done: #5fd3c8; --todo: #6c6f7a; --prio: #ff6b5e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e0f12; --surface: #17181d; --line: #2a2c33; --fg: #f2f2f4; --muted: #9a9ca6;
+  --moon: #5fd3c8; --doing: #f2c14e; --done: #5fd3c8; --todo: #6c6f7a; --prio: #ff6b5e; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 24px; }
+header { display: grid; gap: 6px; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 30px; letter-spacing: -.02em; text-wrap: balance; margin: 0; }
+.brand .o { color: var(--moon); }
+.sub { color: var(--muted); margin: 0; }
+.summary { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-family: var(--mono); font-size: 13px; }
+.bar { flex: 1 1 240px; height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 16px 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card.doing { border-color: var(--doing); box-shadow: 0 0 0 1px var(--doing); }
+.top { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.chip { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+.chip.todo { color: var(--todo); } .chip.doing { color: var(--doing); } .chip.done { color: var(--done); }
+.chip.prio { color: var(--prio); }
+.card h2 { font-family: var(--display); font-weight: 600; font-size: 16px; margin: 0; text-wrap: balance; }
+.card p { margin: 0; color: var(--muted); font-size: 14px; }
+.note { border-top: 1px dashed var(--line); padding-top: 8px; font-size: 13px; color: var(--fg); }
+.note:empty { display: none; }
+.kind { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.ev { display: grid; gap: 6px; }
+.ev a { display: block; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.ev img { display: block; width: 100%; height: auto; }
+.ev-label { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+@media (prefers-reduced-motion: no-preference) { .card.doing .chip.doing { animation: pulse 1.6s ease-in-out infinite; } }
+@keyframes pulse { 50% { opacity: .45; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1 class="brand">orbital<span class="o">·</span> escritorio</h1>
+    <p class="sub">Las 12 mejoras y bugs que pediste, en el orden en que los ataco. El reproductor va primero. Nada pasa a «Listo» sin captura de antes y después (toca una para verla en grande).</p>
+  </header>
+  <div class="summary" id="summary"></div>
+  <div class="grid" id="grid"></div>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const UPDATED = "26 oct 2026, 9:40 · #5 hecho (Trakt: cada app con su sesión y el avance de Trakt al retomar), más el destacado sin nombre de lista y la píldora de plataforma del iPhone · #11, #12 y #8 esperan tu prueba con el mando";
+// estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
+const ITEMS = [
+  { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "doing",
+    d: "Al pausar no detecta bien los botones, o sale el logo pero no la pantalla de pausa.",
+    nota: "Tu prueba de las 21:44 mostró la causa real: la A sí pausaba, pero a 4K mpv no alcanzaba a dibujar la pantalla de pausa (75 capas de sombra, ~21 pantallas de figuras) y solo quedaba la imagen del logo. Reproducido en la Lenovo con mpv a 4K y los datos reales de X-Files; ahora la pausa pesa ~9 y sale completa. Tu Orbital ya corre este arreglo: falta que lo confirmes con el mando.",
+    ev: ["evidencia/11-pausa-4k.jpg"] },
+  { n: 12, t: "La película se traba («Qué pasó ayer»)", tipo: "Investigación", prio: true, estado: "doing",
+    d: "Revisar si una configuración de caché del reproductor se rompe y hace que se trabe.", nota: "Medido en tu registro: hoy la viste completa (12:50–14:39) con el caché nuevo de 200 MiB, sin recargas y con 4 s de atraso en 106 minutos, o sea, sin trabas. La traba que viste se explica por la A perdida (recargaba la película desde lo último guardado), que arregla el #11. Se cierra con tu prueba del #11.",
+    ev: ["evidencia/12-trabas-hoy.jpg"] },
+  { n: 10, t: "Canal 24/7 de Los Simpson", tipo: "Bug", estado: "done",
+    d: "Al acabar un episodio no pone el siguiente solo. Debe ser como una tele 24/7.", nota: "Dos causas. La principal: al terminar, mpv se queda en pausa en el último cuadro y el siguiente episodio arrancaba en pausa en 0:00 (tu registro de hoy lo muestra: 15:52 cargó y no avanzó; 16:15 igual y lo cerraste a las 16:30). Ahora se quita la pausa después de cargarlo. Además, si buscar el siguiente fallaba por red se congelaba: ahora reintenta. Probado en la Lenovo con mpv de verdad y el reproductor de Orbital (fuera de pantalla, sin tocar tu Orbital): antes en pausa, después «Al aire · T1 E2» avanzando.",
+    ev: ["evidencia/10-canal.jpg"] },
+  { n: 9, t: "Ficha: «Ver» y «Guardar» se tocan", tipo: "Bug", estado: "done",
+    d: "En las fichas de películas y series los dos botones quedan pegados.", nota: "«Ver» enfocado crece hacia la derecha y no tenía espacio. Ahora le queda aire (27 px medidos). Probado en la Lenovo con Edge (demo).",
+    ev: ["evidencia/09-ver-guardar.jpg"] },
+  { n: 7, t: "«Ver más» en las descripciones", tipo: "Mejora", estado: "done",
+    d: "En la ficha, un botón para leer la sinopsis completa.", nota: "Si la sinopsis se corta, sale «Ver más» debajo: ↑ desde los botones y A la abre ahí mismo; «Ver menos», ↓ o B la cierran. Los botones no se mueven. Probado en la Lenovo (película y serie).",
+    ev: ["evidencia/07-ver-mas-cerrado.jpg", "evidencia/07-ver-mas.jpg"] },
+  { n: 1, t: "Buscador: que se note que está buscando", tipo: "Mejora", estado: "done",
+    d: "Una animación clara mientras busca, para que no parezca que no pasó nada.", nota: "Mientras llegan películas y series, la raya del campo barre y su lugar se llena de portadas vacías que brillan; se van al llegar. Solo anima mientras busca. Probado en la Lenovo.",
+    ev: ["evidencia/01-buscando.jpg"] },
+  { n: 2, t: "Dictado: borrar si pasaron más de 2 min", tipo: "Mejora", estado: "done",
+    d: "Hoy el dictado siempre añade. Si lo escrito tiene más de 2 minutos, que lo reemplace.", nota: "Si lo escrito cambió hace más de 2 min, dictar lo reemplaza (y «Borrar todo» ofrece «Deshacer»); si es reciente, sigue escribiendo. Probado en la Lenovo con Edge, con la voz simulada y el reloj adelantado.",
+    ev: ["evidencia/02-dictado.jpg"] },
+  { n: 3, t: "Banderitas en idiomas y subtítulos", tipo: "Mejora", estado: "done",
+    d: "Mapear todos los lugares donde eliges idioma o subtítulo y ponerles bandera.", nota: "Lugares: Elegir versión (filas, la lista de «todas las de aquí» y la línea de abajo), Ajustes › Idioma y Subtítulos, Versiones de tu carpeta y, en el reproductor, Audio, Subtítulos, «En otra versión» y Versión. Mapa igual al iPhone: latino y español sin decir cuál 🇲🇽, castellano 🇪🇸, inglés 🇺🇸, portugués 🇧🇷; dos audios, dos banderas. Una sola definición (orbital/flags.py) para la interfaz y mpv (Windows no dibuja los emoji de bandera). Probado en la Lenovo: Edge y mpv de verdad.",
+    ev: ["evidencia/03-version.jpg", "evidencia/03-fuentes.jpg", "evidencia/03-ajustes.jpg", "evidencia/03-reproductor-audio.jpg", "evidencia/03-reproductor-version.jpg"] },
+  { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "done",
+    d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "Los 19 íconos a color de Grok Imagine, los mismos del iPhone (estilo C), al pie de la tarjeta sobre el abanico, tal cual (sin filtro ni placa) y su nombre debajo; las temporadas con su halo de color. Sustituyen a los provisionales de línea. Probado en la Lenovo con Edge (demo).",
+    ev: ["evidencia/04-temporadas.jpg", "evidencia/04-generos.jpg"] },
+  { n: 6, t: "Animación de entrada de Orbital", tipo: "Propuesta", estado: "done",
+    d: "Propuesta elegante, minimalista y fluida, alineada con la del iPhone.", nota: "Idéntica a la del iPhone (tiempos de DS.Splash que pasó la Mac, resortes de SwiftUI): fondo de la app, anillo a 0.1 s, luna a 0.6 s, vuelo a la barra a 1.0 s; medida cuadro por cuadro (gráfica). Antes: anillo 0.5 s, letras cada 40 ms, la luna cae con rebote; al estar lista la biblioteca, la marca viaja a su lugar exacto en la barra (medido: mismos píxeles) e Inicio aparece. Ya no hay dos entradas. Movimiento reducido: fundido. Probado en la Lenovo con Edge (cámara lenta para la captura).",
+    ev: ["evidencia/06-entrada-antes.jpg", "evidencia/06-entrada-despues.jpg", "evidencia/06-entrada-tiempos.jpg"] },
+  { n: 8, t: "Cambio rápido de subtítulo", tipo: "Mejora", estado: "doing",
+    d: "Probar varios subtítulos con el video que estás viendo, como en el iPhone, con control, teclado, mouse y touch.", nota: "Hecho en una sola entrega, como lo decidiste: mantener X (o S, o el botón «Probar subtítulos») entra directo y la pausa y el panel lo dicen; ◀ ▶ dan la vuelta; LB/RB cambian de idioma; cada subtítulo guarda su sincronía; todo se recuerda al momento y B deja el último que probaste. Los de internet llegan con su copia y descargas, y «Hecho para tu copia» va primero (huella del archivo y grupo, como el iPhone). Franja pulida para que no se vea encimada. Probado con mpv de verdad (fuera de pantalla); falta tu prueba con el mando.",
+    ev: ["evidencia/08-franja.jpg", "evidencia/08-pausa.jpg", "evidencia/08-panel.jpg"] },
+  { n: 5, t: "Trakt: avance compartido y dos sesiones", tipo: "Mejora", estado: "done",
+    d: "Cómo sincronizar el avance de películas del iPhone aquí, y si se pueden tener dos sesiones de Trakt.", nota: "Hecho igual que el iPhone: cada app con su propia sesión (la consola ya no le presta la suya) y, al retomar, Orbital lee lo que guardó Trakt (lo que pausaste en el iPhone) y sigue desde lo más reciente entre Stremio y Trakt; el porcentaje pasa a segundos con la duración. Además, como en el iPhone: el destacado de Para ti ya no pone el nombre de una lista, y «N.º 1 en Netflix» va en la píldora de su plataforma con su logo. Probado con pruebas automáticas y el demo; falta verlo con algo pausado en el iPhone.",
+    ev: ["evidencia/mac-pildora-plataforma.jpg"] },
+];
+const LABEL = { todo: "Pendiente", doing: "En curso", done: "Listo" };
+const VAR = { todo: "--todo", doing: "--doing", done: "--done" };
+const grid = document.getElementById("grid");
+for (const it of ITEMS) {
+  const c = document.createElement("article");
+  c.className = "card " + it.estado;
+  c.innerHTML = `<div class="top"><span>#${it.n} · <span class="kind">${it.tipo}</span></span>
+    <span>${it.prio ? '<span class="chip prio">Prioridad</span> ' : ""}<span class="chip ${it.estado}">${LABEL[it.estado]}</span></span></div>
+    <h2></h2><p></p><div class="note"></div>${it.ev ? `<div class="ev"><span class="ev-label">Evidencia · antes y después</span>${it.ev.map(src => `<a href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="Captura de antes y después del pedido ${it.n}" loading="lazy"></a>`).join("")}</div>` : ""}`;
+  c.querySelector("h2").textContent = it.t;
+  c.querySelector("p").textContent = it.d;
+  c.querySelector(".note").textContent = it.nota;
+  grid.append(c);
+}
+const count = s => ITEMS.filter(i => i.estado === s).length;
+const sum = document.getElementById("summary");
+const bar = ["done", "doing", "todo"].map(s => `<i style="width:${count(s) / ITEMS.length * 100}%;background:var(${VAR[s]})"></i>`).join("");
+sum.innerHTML = `<span>${count("done")} de ${ITEMS.length} listos</span><div class="bar">${bar}</div>
+  <div class="legend">${["done", "doing", "todo"].map(s => `<span><span class="dot" style="background:var(${VAR[s]})"></span>${LABEL[s]} ${count(s)}</span>`).join("")}</div>`;
+document.getElementById("foot").textContent = "Actualizado: " + UPDATED;
+</script>
