@@ -5,7 +5,7 @@ import OrbitalModels
 struct LoginView: View {
     @State private var signingIn = false
     let session: SessionModel
-    @StateObject private var observer: ModelObserver<SessionModel>
+    @State private var observer: ModelObserver<SessionModel>
     @State private var email = ""
     @State private var password = ""
     @FocusState private var focus: Field?
@@ -13,7 +13,7 @@ struct LoginView: View {
 
     init(session: SessionModel) {
         self.session = session
-        _observer = StateObject(wrappedValue: ModelObserver(session))
+        _observer = State(wrappedValue: ModelObserver(session))
     }
 
     var body: some View {

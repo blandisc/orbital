@@ -132,6 +132,28 @@ def streams_cases() -> dict:
     return {"parsed": parsed, "ranked": ranked, "hashes": hashes, "sizes": sizes}
 
 
+# Latino o castellano: el mismo orden en la TV y en el iPhone (Ajustes › Idioma: latino, de España o cualquiera).
+SPANISH_STREAMS = [
+    {"name": "Torrentio\n1080p [RD+]", "title": "Los.Simpson.S08E23.1080p.WEB-DL.Latino\n👤 40 💾 1.2 GB", "url": "https://rd.example/s/0"},
+    {"name": "Torrentio\n1080p [RD+]", "title": "Los.Simpson.S08E23.1080p.WEB-DL.Castellano\n👤 40 💾 1.2 GB", "url": "https://rd.example/s/1"},
+    {"name": "Torrentio\n1080p [RD+]", "title": "Los.Simpson.S08E23.1080p.WEB-DL\n👤 40 💾 1.2 GB\n🇪🇸", "url": "https://rd.example/s/2"},
+    {"name": "Torrentio\n1080p [RD+]", "title": "Los.Simpson.S08E23.1080p.Dual-Lat\n👤 40 💾 1.3 GB", "url": "https://rd.example/s/3"},
+    {"name": "Torrentio\n1080p [RD+]", "title": "The.Simpsons.S08E23.1080p.WEB-DL\n👤 90 💾 1.2 GB\n🇬🇧", "url": "https://rd.example/s/4"},
+    {"name": "Torrentio\n720p [RD+]", "title": "Los.Simpson.S08E23.720p.HDTV.Castellano\n👤 10 💾 400 MB", "url": "https://rd.example/s/5"},
+]
+
+
+def spanish_cases() -> list[dict]:
+    out = []
+    for audio, spanish in (("es", "es-419"), ("es", "es-ES"), ("es", ""), ("en", "")):
+        sources = [streams.parse(s, "Torrentio", "https://t.example/manifest.json", i) for i, s in enumerate(SPANISH_STREAMS)]
+        for kind in ("movie", "series"):
+            order = streams.rank(sources, streams.Preferences(audio=audio, quality="1080p", spanish=spanish), kind)
+            out.append({"audio": audio, "spanish": spanish, "quality": "1080p", "kind": kind, "streams": SPANISH_STREAMS,
+                        "order": [s.index for s in order], "scores": {str(s.index): s.score for s in order}})
+    return out
+
+
 def cinemeta_cases() -> dict:
     fx = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "cinemeta"
     meta = json.loads((fx / "meta_series_tt0386676.json").read_text(encoding="utf-8"))
@@ -194,6 +216,7 @@ def main() -> None:
     write("toggle", toggle_cases())
     write("parse_item", parse_item_cases())
     write("streams", streams_cases())
+    write("streams_spanish", spanish_cases())
     write("cinemeta", cinemeta_cases())
     write("localize", localize_cases())
     write("trakt", trakt_cases())

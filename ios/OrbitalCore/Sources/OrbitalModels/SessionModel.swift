@@ -50,7 +50,7 @@ public final class SessionModel: ObservableModel {
     public func addAddon(_ input: String) async {
         guard let url = Addons.manifestURL(input), let target = URL(string: url) else { return addonError = "Pega la dirección completa del complemento (https://…)." }
         guard (try? await services.http.getJSON(target)).flatMap({ Addons.parseManifest($0, url: url) }) != nil else {
-            return addonError = "Ese complemento no responde o no da fuentes ni fichas."
+            return addonError = "Ese complemento no responde o no da videos ni fichas."
         }
         var urls = ownAddonURLs
         if !urls.contains(url) { urls.append(url) }

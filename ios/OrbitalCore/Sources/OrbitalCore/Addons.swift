@@ -92,10 +92,14 @@ public actor AddonRegistry {
     private let own: @Sendable () -> [String]
     private let clock: @Sendable () -> Date
     private var cache: (expires: Date, key: [String], addons: [Addon])?
+    /// La que ya se está pidiendo (la ficha y el reproductor la piden a la vez: una sola `addonCollectionGet`).
+    private var loading: (key: [String], task: Task<[Addon], Error>)?
+    /// Dónde se guarda la última lista buena (stale-while-revalidate): al abrir se usa al instante y se pide la nueva aparte.
+    private let disk: URL?
 
     public init(http: HTTPClient, account: StremioAPI?, auth: @escaping @Sendable () -> String? = { nil },
-                own: @escaping @Sendable () -> [String] = { [] }, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.account = account; self.auth = auth; self.own = own; self.clock = clock
+                own: @escaping @Sendable () -> [String] = { [] }, disk: URL? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.http = http; self.account = account; self.auth = auth; self.own = own; self.disk = disk; self.clock = clock
     }
 
     private func key() -> [String] { [auth() ?? ""] + Addons.cleanURLs(own()) }
@@ -104,34 +108,71 @@ public actor AddonRegistry {
     public func addons() async throws -> [Addon] {
         let key = key()
         if let cache, cache.key == key, clock() < cache.expires { return cache.addons }
-        var (found, failed, error) = await fromAccount(auth())
+        if cache?.key != key, let saved = readDisk(key) {
+            cache = (clock().addingTimeInterval(Self.retryFailed), key, saved)
+            Task { _ = try? await self.load(key) }
+            return saved
+        }
+        return try await load(key)
+    }
+
+    private func load(_ key: [String]) async throws -> [Addon] {
+        if let loading, loading.key == key { return try await loading.task.value }
+        let task = Task { try await self.fetch(key) }
+        loading = (key, task)
+        defer { if loading?.key == key { loading = nil } }
+        return try await task.value
+    }
+
+    private func fetch(_ key: [String]) async throws -> [Addon] {
+        var (entries, failed, error) = await fromAccount(key.first)
+        var found = entries.compactMap { Addons.parseManifest($0["manifest"], url: $0["transportUrl"]?.string) }
         for url in key.dropFirst() where !found.contains(where: { $0.url == url }) {
             guard let target = URL(string: url) else { continue }
             do {
-                if let addon = Addons.parseManifest(try await http.getJSON(target), url: url) { found.append(addon) }
+                let manifest = try await http.getJSON(target)
+                if let addon = Addons.parseManifest(manifest, url: url) { found.append(addon); entries.append(["manifest": manifest ?? .null, "transportUrl": .string(url)]) }
             } catch { failed = true }
         }
         if let error, found.isEmpty { throw error }
         // Si algo no respondió (Wi‑Fi al despertar), la lista se recuerda solo unos segundos.
         let lifetime = failed ? Self.retryFailed : Self.cacheSeconds
         cache = (clock().addingTimeInterval(lifetime), key, found)
+        if !failed { writeDisk(key, entries) }
         return found
     }
 
-    private func fromAccount(_ authKey: String?) async -> ([Addon], Bool, Error?) {
+    private func fromAccount(_ authKey: String?) async -> ([JSON], Bool, Error?) {
         guard let authKey, !authKey.isEmpty, let account else { return ([], false, nil) }
         do {
             let result = try await account.addonCollection(authKey: authKey)
-            let found = (result["addons"]?.array ?? []).compactMap {
-                Addons.parseManifest($0["manifest"], url: $0["transportUrl"]?.string)
-            }
-            return (found, false, nil)
+            return (result["addons"]?.array ?? [], false, nil)
         } catch { return ([], true, error) }
+    }
+
+    /// Un archivo por cuenta y lista propia (el nombre es un hash: la clave de la sesión no queda escrita).
+    private func diskFile(_ key: [String]) -> URL? {
+        disk?.appendingPathComponent("addons-" + SHA1.hex(Array(key.joined(separator: "\n").utf8)) + ".json")
+    }
+
+    private func readDisk(_ key: [String]) -> [Addon]? {
+        guard let file = diskFile(key), let data = try? Data(contentsOf: file), let entries = JSON.parse(data)?.array else { return nil }
+        let found = entries.compactMap { Addons.parseManifest($0["manifest"], url: $0["transportUrl"]?.string) }
+        return found.isEmpty ? nil : found
+    }
+
+    private func writeDisk(_ key: [String], _ entries: [JSON]) {
+        guard let disk, let file = diskFile(key) else { return }
+        try? FileManager.default.createDirectory(at: disk, withIntermediateDirectories: true)
+        try? JSON.array(entries).serialized().write(to: file, options: .atomic)
     }
 
     public func serving(_ resource: String, kind: String, itemID: String? = nil) async throws -> [Addon] {
         try await addons().filter { $0.handles(resource, kind: kind, itemID: itemID) }
     }
 
-    public func invalidate() { cache = nil }
+    public func invalidate() {
+        cache = nil; loading = nil
+        if let disk { try? FileManager.default.removeItem(at: disk) }
+    }
 }

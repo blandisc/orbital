@@ -6,18 +6,18 @@ import OrbitalModels
 /// Descargas: lo que se está bajando (con su avance), lo listo para ver sin conexión agrupado por título y la descarga
 /// inteligente. El espacio va en el subtítulo de la barra; el fondo toma el color de lo que se está bajando.
 struct DownloadsView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var observer: ModelObserver<DownloadsModel>
-    @StateObject private var tint = ArtTint()
+    @Environment(AppEnvironment.self) private var env
+    @State private var observer: ModelObserver<DownloadsModel>
+    @State private var tint = ArtTint()
     /// La descarga a la que se le buscan subtítulos.
     @State private var subtitlesFor: DownloadItem?
     /// Mi media (tu OneDrive como biblioteca) junto a lo que ya está en el iPhone.
-    @StateObject private var media = ModelObserver(MiMediaModel(AppEnvironment.shared.services))
+    @State private var media = ModelObserver(MiMediaModel(AppEnvironment.shared.services))
     enum Part: Hashable { case phone, media }
     @State private var part: Part = .phone
 
     init() {
-        _observer = StateObject(wrappedValue: ModelObserver(DownloadsModel(AppEnvironment.shared.services, freeSpace: { DiskSpace.freeBytes() })))
+        _observer = State(wrappedValue: ModelObserver(DownloadsModel(AppEnvironment.shared.services, freeSpace: { DiskSpace.freeBytes() })))
     }
 
     /// «En el iPhone | Mi media» siempre arriba: sin OneDrive, Mi media explica cómo conectarlo (antes no se veía en absoluto).
@@ -61,6 +61,15 @@ struct DownloadsView: View {
     }
 
     /// En el iPhone: lo que se baja y lo listo para ver sin conexión.
+    /// El encabezado de una sección como el primer renglón de ella, sin fondo ni sangría: queda al ras de las tarjetas (como en
+    /// el resto de la app); un encabezado de lista agrupada se mete lo que se meten sus renglones y cambia con el ancho.
+    private func headerRow(_ head: DSSectionHead) -> some View {
+        head
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
+
     private func phoneList(_ model: DownloadsModel) -> some View {
         let settings = env.services.appSettings
         return List {
@@ -73,38 +82,39 @@ struct DownloadsView: View {
                 .listRowBackground(DS.surface)
             }
             if !model.active.isEmpty {
-                Section { ForEach(model.active) { row($0, model) } } header: { DSSectionHead(title: "Descargando", count: model.active.count) }
-                    .downloadCard()
+                Section {
+                    headerRow(DSSectionHead(title: "Descargando", count: model.active.count))
+                    ForEach(model.active) { row($0, model) }
+                }
+                .downloadCard()
             }
             // Listo para ver: series (una fila cada una; dentro, sus temporadas y episodios) y películas, aparte.
             if !model.readySeries.isEmpty {
                 Section {
+                    headerRow(DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes }))))
                     ForEach(model.readySeries) { g in
                         NavigationLink(value: DownloadSeriesRoute(metaID: g.metaID)) { seriesRow(g) }
-                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { for item in g.items { await model.remove(item.id) } } }.tint(DS.danger) }
+                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete(g.items.map(\.id)) }.tint(DS.danger) }
                     }
-                } header: {
-                    DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })))
                 }
                 .downloadCard()
             }
             if !model.readyMovies.isEmpty {
                 Section {
-                    ForEach(model.readyMovies) { g in
-                        if let item = g.items.first {
-                            readyRow(title: g.title, poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
-                        }
+                    headerRow(DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes }))))
+                    // Un renglón por cada película, siempre (un `if` que a veces no pinta nada descuadra la lista al borrar).
+                    ForEach(model.readyMovies.compactMap { g in g.items.first.map { (g, $0) } }, id: \.0.id) { g, item in
+                        readyRow(title: g.title, poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
                     }
-                } header: {
-                    DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })))
                 }
                 .downloadCard()
             }
             if !model.items.isEmpty {
                 Section {
+                    headerRow(DSSectionHead(title: "Descarga inteligente"))
                     Toggle("Bajar el siguiente episodio al terminar uno", isOn: setting(\.autoNextDownload))
                     Toggle("Borrar al terminar de verlo", isOn: setting(\.deleteWhenWatched))
-                } header: { DSSectionHead(title: "Descarga inteligente") } footer: {
+                } footer: {
                     if settings.wifiOnlyDownloads { Label("Solo con Wi‑Fi", systemImage: "wifi").recipe(.footnote) }
                 }
                 .listRowBackground(DS.surface)
@@ -116,7 +126,11 @@ struct DownloadsView: View {
                 DSEmptyState(symbol: "arrow.down.circle", title: Text("Nada descargado"), message: Text("En una ficha, toca Descargar y lo ves aquí sin conexión."))
             }
         }
+        .perfTag("downloads")   // «downloads.shown» con la lista (o el vacío), «downloads.image» con la primera imagen
         .listRowSpacing(DS.Space.s2)
+        // Las tarjetas a 16 pt en todos los tamaños (la lista agrupada las metía 16 o 24 según el ancho) y los encabezados al
+        // ras de ellas, como en el resto de la app.
+        .listSectionMargins(.horizontal, DS.Space.gutter)
         // El espacio va pegado al selector (la lista agrupada dejaba un hueco grande arriba de su primera sección).
         .contentMargins(.top, DS.Space.s2, for: .scrollContent)
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
@@ -128,7 +142,7 @@ struct DownloadsView: View {
 
     /// Un ajuste de Descargas como interruptor (se guarda al momento, igual que en Ajustes).
     private func setting(_ key: WritableKeyPath<AppSettings, Bool>) -> Binding<Bool> {
-        Binding(get: { env.services.appSettings[keyPath: key] }, set: { value in env.services.settings.update { $0[keyPath: key] = value }; observer.objectWillChange.send() })
+        Binding(get: { env.services.appSettings[keyPath: key] }, set: { value in env.services.settings.update { $0[keyPath: key] = value }; observer.invalidate() })
     }
 
     /// Lo que se está bajando: póster, nombre, datos en SF Mono, el avance y pausar o seguir.
@@ -159,7 +173,7 @@ struct DownloadsView: View {
             }
         }
         .padding(.vertical, DS.Space.s1)
-        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
+        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
     }
 
     private func ringButton(_ item: DownloadItem, symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
@@ -241,7 +255,7 @@ struct DownloadsView: View {
         }
         .buttonStyle(.plain)
         .padding(.vertical, DS.Space.s1)   // aire arriba y abajo: al deslizar para borrar, el póster no se corta en las esquinas
-        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
+        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
         .contextMenu { fileMenu(item, title: title, model: model) }
     }
 
@@ -251,7 +265,7 @@ struct DownloadsView: View {
         ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: title))) {
             Label("Compartir el archivo", systemImage: "square.and.arrow.up")
         }
-        Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }
+        Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }
     }
 
     private func episodesText(_ count: Int) -> String {
@@ -277,8 +291,8 @@ struct DownloadSeasonRoute: Hashable { var metaID: String; var season: Int }
 
 /// Una serie descargada: con varias temporadas, una fila por temporada; con una sola, directo sus episodios.
 struct DownloadSeriesView: View {
-    @ObservedObject var observer: ModelObserver<DownloadsModel>
-    @EnvironmentObject private var env: AppEnvironment
+    var observer: ModelObserver<DownloadsModel>
+    @Environment(AppEnvironment.self) private var env
     let metaID: String
 
     var body: some View {
@@ -296,7 +310,7 @@ struct DownloadSeriesView: View {
                                     Text(verbatim: String(format: Strings.tr(season.items.count == 1 ? "%lld episodio" : "%lld episodios", language: env.services.appSettings.uiLanguage), season.items.count)).recipe(.footnote)
                                 }
                             }
-                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { for item in season.items { await observer.model.remove(item.id) } } }.tint(DS.danger) }
+                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { observer.model.delete(season.items.map(\.id)) }.tint(DS.danger) }
                         }
                     }
                     .downloadCard()
@@ -313,8 +327,8 @@ struct DownloadSeriesView: View {
 
 /// Los episodios descargados de una temporada: tocar uno lo reproduce; deslizar lo borra.
 struct DownloadSeasonView: View {
-    @ObservedObject var observer: ModelObserver<DownloadsModel>
-    @EnvironmentObject private var env: AppEnvironment
+    var observer: ModelObserver<DownloadsModel>
+    @Environment(AppEnvironment.self) private var env
     @State private var subtitlesFor: DownloadItem?
     let metaID: String
     let season: Int
@@ -338,7 +352,7 @@ struct DownloadSeasonView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }
+                    .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }
                     .contextMenu {
                         Button("Buscar subtítulos", systemImage: "captions.bubble") { subtitlesFor = item }
                         ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle))) {
@@ -361,7 +375,7 @@ struct DownloadSeasonView: View {
 struct DownloadSubtitlesSheet: View {
     let item: DownloadItem
     let model: DownloadsModel
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.locale) private var locale
     @State private var found: [SubtitleOption]?
     @State private var saved: [String: Int] = [:]
@@ -387,6 +401,7 @@ struct DownloadSubtitlesSheet: View {
                             .disabled(saving != nil || done >= options.count)
                         }
                     }
+                    .id("\(saved.sorted { $0.key < $1.key })-\(saving ?? "")")   // que se redibuje al guardar (ver `FlowChips`)
                 }
             } else {
                 HStack(spacing: DS.Space.s2) { ProgressView(); Text("Buscando subtítulos…").recipe(.footnote) }
@@ -402,8 +417,8 @@ struct DownloadSubtitlesSheet: View {
         saving = code
         let ok = await model.saveSubtitle(item, options[next])
         saving = nil
-        if ok { saved[code, default: 0] += 1; env.notify("Subtítulos guardados con la descarga.", tone: .success) }
-        else { env.notify("No pude bajar ese subtítulo: prueba otro.") }
+        if ok { saved[code, default: 0] += 1; env.notify("Subtítulos guardados con la descarga", tone: .success) }
+        else { env.notify("No pude bajar ese subtítulo", detail: "Prueba otro") }
     }
 
     /// El idioma de la app primero; luego, los que más tienen.

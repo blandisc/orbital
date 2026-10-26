@@ -10,6 +10,8 @@ public final class Services: ObservableModel {
     public let kv: KeyValueStore
     public let settings: SettingsStore
     public let titlePrefs: TitlePreferences
+    /// Lo que guardaste en Trakt y aún no llega (sin conexión, o con tu Orbital apagada): se manda en cuanto se pueda.
+    public let traktOutbox: TraktOutbox
     public let pending: PendingStore
     /// Lo último que se le contó a Trakt (o el problema): vive aquí, no en `WatchService`, porque `reconfigure()` lo rearma.
     public let scrobbleLog: ScrobbleLog
@@ -24,7 +26,8 @@ public final class Services: ObservableModel {
     public private(set) var cinemeta: Cinemeta { didSet { changed() } }
     public private(set) var localizer: Localizer { didSet { changed() } }
     /// IntroDB: dónde saltar la intro y el resumen (y cuándo empiezan los créditos).
-    public var introDB: IntroDB { IntroDB(http: http) }
+    public var introDB: IntroDB { IntroDB(http: http, recent: introDBRecent) }
+    private let introDBRecent = IntroDBRecent()
     public var jumpScares: JumpScares { JumpScares(http: http) }
 
     /// Los sustos de una película (id de IMDb), guardados la primera vez; nil si no hay mapa. El nombre en inglés y el año
@@ -61,6 +64,9 @@ public final class Services: ObservableModel {
     /// Quién publica el snapshot del widget (la app: baja y reduce las imágenes, lo escribe en el App Group y recarga el widget).
     /// `HomeModel` lo llama al terminar de actualizar Inicio.
     public var onWidgetSnapshot: (@MainActor (WidgetSnapshot) -> Void)?
+    /// Los títulos que Siri debe reconocer («Oye Siri, pon Los Simpson en Orbital»): cada uno con su nombre original (el que se
+    /// le pide a la consola) y, si es otro, su nombre en español. `HomeModel` los pasa al terminar de actualizar Inicio.
+    public var onSiriTitles: (@MainActor ([[String]]) -> Void)?
     private var widgetContinue: [HomeItem] = []
     private var widgetAirings: [Airing] = []
     /// Arma y publica el snapshot del widget con lo último que se sabe de «Seguir viendo» (Inicio) y de «Próximos estrenos»
@@ -80,6 +86,8 @@ public final class Services: ObservableModel {
     /// pintar. Antes nadie se enteraba y el modo oscuro o el carrusel no cambiaban hasta reabrir la app.
     public func settingsDidChange() { changed() }
 
+    /// Carpeta de lo que se guarda para enseñarlo al instante al abrir (stale-while-revalidate). nil = sin disco (pruebas).
+    let cacheRoot: URL?
     private let downloadTransport: DownloadTransport
     private let downloadsRoot: URL
     let freeSpace: @Sendable () -> Int64
@@ -87,8 +95,9 @@ public final class Services: ObservableModel {
     private let onDownloadsChange: @Sendable ([DownloadItem]) -> Void
 
     public init(http: HTTPClient, secrets: SecretsStore, kv: KeyValueStore, pending: PendingStore, downloadTransport: DownloadTransport,
-                downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64,
+                downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64, cacheRoot: URL? = nil,
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in }) {
+        self.cacheRoot = cacheRoot
         self.http = http; self.secrets = secrets; self.kv = kv; self.pending = pending; self.downloadTransport = downloadTransport
         self.downloadsRoot = downloadsRoot; self.freeSpace = freeSpace; self.clock = clock; self.onDownloadsChange = onDownloadsChange
         let scrobbleLog = ScrobbleLog(kv: kv)
@@ -96,12 +105,16 @@ public final class Services: ObservableModel {
         let settings = SettingsStore(kv)
         self.settings = settings
         self.titlePrefs = TitlePreferences(kv)
+        self.traktOutbox = TraktOutbox(kv)
         let stremio = StremioAPI(http: http)
         self.stremio = stremio
         let registry = AddonRegistry(http: http, account: stremio, auth: { secrets.get(SecretKey.stremioAuth) },
-                                     own: { (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init) }, clock: clock)
+                                     own: { (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init) },
+                                     disk: cacheRoot?.appendingPathComponent("addons"), clock: clock)
         let cinemeta = Cinemeta(http: http, cached: http is URLSessionHTTPClient ? URLSessionHTTPClient.publicCache("cinemeta") : nil,
-                                registry: registry, clock: clock)
+                                registry: registry,
+                                disk: cacheRoot?.appendingPathComponent("cinemeta"),
+                                clock: clock)
         let oneDrive = OneDrive(http: http, secrets: secrets, clientID: { settings.value.oneDriveClientID }, clock: clock)
         let oneDriveLibrary = OneDriveLibrary(drive: oneDrive, cinemeta: cinemeta, kv: kv, folder: { settings.value.oneDriveFolder }, clock: clock)
         let finder = StreamFinder(http: http, registry: registry, clock: clock)
@@ -114,8 +127,14 @@ public final class Services: ObservableModel {
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "") }, clock: clock)
         self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
+        // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
+        let origins = OriginBook(tmdb: { Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "") }, cinemeta: cinemeta)
+        let prefs = titlePrefs
+        Task { await finder.configure(origin: { kind, metaID in await origins.origin(kind: kind, metaID: metaID) },
+                                      checked: { key in prefs.checkedAudio(key) }) }
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs, library: oneDriveLibrary),
+                                   otherSource: Services.otherSource(finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    subtitles: Services.subtitleFetcher(http: http, finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    clock: clock, onChange: onDownloadsChange)
         super.init()
@@ -149,19 +168,32 @@ public final class Services: ObservableModel {
         }
     }
 
-    static func subtitleFetcher(http: HTTPClient, finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> [(name: String, data: Data)] {
+    /// La siguiente fuente para guardar (en el orden de siempre) que no sea una de las que ya no dieron el video.
+    static func otherSource(finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> DownloadSource? {
         { item in
-            let langs = titlePrefs.languages(for: item.metaID, settings: settings.value)
-            var languages = [settings.value.audio]
-            if !langs.subtitles.isEmpty { languages.append(langs.subtitles) }
-            var out: [(name: String, data: Data)] = []
-            for language in Set(languages) {
-                for (i, url) in (await finder.subtitles(kind: item.kind, videoID: item.videoID, language: language)).prefix(1).enumerated() {
-                    guard let response = try? await http.send(HTTPRequest(url: url, timeout: 20)), response.status == 200, !response.data.isEmpty else { continue }
-                    out.append((name: "\(language)\(i == 0 ? "" : "-\(i)").srt", data: response.data))
-                }
+            guard item.addon != OneDriveLibrary.addonName else { return nil }   // tu archivo de OneDrive no tiene otra fuente
+            let prefs = titlePrefs.languages(for: item.metaID, settings: settings.value).prefs
+            guard let sources = try? await finder.find(kind: item.kind, videoID: item.videoID, prefs: prefs, purpose: .download, fresh: true) else { return nil }
+            let skipped = Set(item.skippedReleases)
+            guard let next = sources.first(where: { $0.playbackURL != nil && !skipped.contains($0.release.isEmpty ? "#\($0.index)" : $0.release) }),
+                  let url = next.playbackURL else { return nil }
+            return DownloadSource(url: url, addon: next.addon, release: next.release, sourceIndex: next.index, size: next.size > 0 ? Int64(next.size) : nil)
+        }
+    }
+
+    /// Los subtítulos que se guardan con una descarga: TODOS los de español e inglés (y tus idiomas), hasta 50 por idioma,
+    /// los que aún no tiene (ni por id ni por enlace), de 3 en 3. Para que en el avión haya varios que probar si uno sale
+    /// desfasado. nil: sin red (se vuelve a intentar).
+    static func subtitleFetcher(http: HTTPClient, finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> SubtitleFetch? {
+        { item in
+            let s = settings.value
+            let languages = DownloadSubtitles.languages([titlePrefs.languages(for: item.metaID, settings: s).subtitles, s.subtitles, s.audio, s.uiLanguage])
+            guard let found = await finder.subtitleSearch(kind: item.kind, videoID: item.videoID) else { return nil }
+            let picks = DownloadSubtitles.pick(found, languages: languages, release: item.release, saved: item.allSavedSubtitles)
+            return await DownloadSubtitles.fetchAll(picks) { url in
+                guard let response = try? await http.send(HTTPRequest(url: url, timeout: 20)), response.status == 200 else { return nil }
+                return response.data
             }
-            return out
         }
     }
 
@@ -231,5 +263,27 @@ public final class Services: ObservableModel {
         await forYou.clearCache()
         await forYouRemote.clearCache()
         generation += 1
+    }
+}
+
+/// De dónde es cada título (idioma original y país), una vez por título: el audio de las versiones que no lo dicen.
+actor OriginBook {
+    private let tmdb: @Sendable () -> Tmdb
+    private let cinemeta: Cinemeta
+    private var known: [String: TitleOrigin] = [:]
+    init(tmdb: @escaping @Sendable () -> Tmdb, cinemeta: Cinemeta) { self.tmdb = tmdb; self.cinemeta = cinemeta }
+
+    func origin(kind: String, metaID: String) async -> TitleOrigin? {
+        if let hit = known[metaID] { return hit }
+        guard metaID.hasPrefix("tt") else { return nil }
+        let client = tmdb()
+        async let language = client.configured ? (try? await client.originalLanguage(imdb: metaID, kind: kind)) : nil
+        async let meta = try? await cinemeta.meta(kind: kind, id: metaID)
+        let info = await meta
+        // El año solo en películas (una serie dura años: sus episodios no dicen el del estreno).
+        let year = kind == "movie" ? (info?["year"]?.string ?? info?["releaseInfo"]?.string).flatMap { Int($0.prefix(4)) } : nil
+        let found = TitleOrigin(language: await language ?? nil, country: info?["country"]?.nonEmptyString, year: year)
+        if found.language != nil || found.country != nil { known[metaID] = found }
+        return found
     }
 }

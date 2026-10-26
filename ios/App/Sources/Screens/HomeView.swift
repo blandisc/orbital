@@ -3,11 +3,11 @@ import OrbitalCore
 import OrbitalModels
 
 struct HomeView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var home: ModelObserver<HomeModel>
-    @StateObject private var tvNow: ModelObserver<TVNowModel>
-    @StateObject private var inbox: ModelObserver<InboxModel>
-    @StateObject private var tint = ArtTint()
+    @Environment(AppEnvironment.self) private var env
+    @State private var home: ModelObserver<HomeModel>
+    @State private var tvNow: ModelObserver<TVNowModel>
+    @State private var inbox: ModelObserver<InboxModel>
+    @State private var tint = ArtTint()
     @State private var pendingCount = 0
     @State private var openTitle: TitleRoute?
     /// La tarjeta al frente del carrusel: su lugar en la vuelta infinita (`slot % cuántas`).
@@ -30,10 +30,10 @@ struct HomeView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
-        _home = StateObject(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services)))
+        _home = State(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services)))
         // El sondeo es de toda la app (arranca en RootView): aquí solo se ve.
-        _tvNow = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.tvNow))
-        _inbox = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.inbox))
+        _tvNow = State(wrappedValue: ModelObserver(AppEnvironment.shared.tvNow))
+        _inbox = State(wrappedValue: ModelObserver(AppEnvironment.shared.inbox))
     }
 
     var body: some View {
@@ -86,6 +86,9 @@ struct HomeView: View {
                             }
                         }
                 }
+                if model.spotlight.isEmpty, model.continueWatching.isEmpty, model.isLoading {
+                    FeedSkeleton()   // la primera vez: el lugar ya reservado mientras llega
+                }
                 if !model.continueWatching.isEmpty {
                     continueRail(model).perfTag("home.rail")
                 } else if !model.isLoading, model.spotlight.isEmpty {
@@ -130,10 +133,14 @@ struct HomeView: View {
                 .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .task(priority: .utility) {
-            await env.prefetchSimpsons()
             #if DEBUG
-            if Demo.isOn, Demo.open?.hasPrefix("simpsons") == true { rollingSimpsons = true }   // `-demo-open simpsons`: la ruleta sola
+            if Demo.isOn, Demo.open?.hasPrefix("simpsons") == true {   // `-demo-open simpsons`: la ruleta sola
+                await env.prefetchSimpsons(); rollingSimpsons = true; return
+            }
             #endif
+            // La ficha de Los Simpson (~650 KB) fuera del arranque: primero Inicio y sus imágenes; si tocas la dona antes, la pide ella.
+            try? await Task.sleep(for: .seconds(DS.Simpsons.prefetchDelay))
+            await env.prefetchSimpsons()
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
@@ -187,16 +194,14 @@ struct HomeView: View {
     /// Lo de Stremio, lo pendiente por subir y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo).
     private func reload(ifStale: Bool = false) async {
         if ifStale { await home.model.refreshIfStale() } else { await home.model.refresh() }
+        Perf.mark("home.done")
         let work = env.services.pending.load()      // una sola lectura por actualización, no una por cada pintado
         pendingCount = work.progress.count + work.traktWatched.count
         await tint.load(currentHero?.wide)
     }
 
-    /// El título con la barra encogida: lo más útil que haya.
-    private var scrolledTitle: Text {
-        if let airing = home.model.airingToday { return Text("Sale hoy: \(airing.series.title)") }
-        return Text(verbatim: "")   // sin nada que decir, solo el logotipo
-    }
+    /// El título con la barra encogida: nada, solo el logotipo (antes decía «Sale hoy: …» y no se quería ahí).
+    private var scrolledTitle: Text { Text(verbatim: "") }
 
     /// Solo cuando hay algo que decir: «N cambios por subir» (lo que viste sin internet). Al día, nada (no hace falta decirlo).
     private var syncText: Text? {
@@ -326,12 +331,11 @@ struct HomeView: View {
         }
     }
 
-    /// Por qué está en el carrusel. Lo de tendencia no lleva nada: ya lo dice el título de la sección («En tendencia»).
+    /// Por qué está en el carrusel. Lo de tendencia y lo popular no lleva nada: ya lo dice el título de la sección («En tendencia»).
     private func reasonText(_ reason: SuggestionReason) -> Text? {
         switch reason {
-        case .trending: nil
+        case .trending, .popular: nil
         case .recommended: Text("Para ti")
-        case .popular: Text("Popular")
         default: Text("Destacado")
         }
     }

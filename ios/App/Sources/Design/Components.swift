@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import CoreImage
 import OrbitalCore
+import OrbitalModels
 
 // Las piezas del catálogo de Orbital para iPhone. Una pantalla se arma con estas; si falta una, se agrega aquí.
 // Equivalencias con la TV: Chip, Badge, Progress, SectionHead, Card (PosterCard), FeatureTile (HeroCard), Mosaic (`Design/Mosaic.swift` ↔ `foryou-mosaic`), Button, Sheet.
@@ -134,7 +135,7 @@ struct DSSectionHead: View {
                 // Un solo lugar para el porqué de una sección en toda la app: arriba del título, en ámbar (como una revista).
                 // Antes unas lo ponían arriba en ámbar y otras abajo en gris.
                 if let line = eyebrow ?? meta { line.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2).multilineTextAlignment(.leading) }
-                HStack(alignment: .center, spacing: DS.Space.s2) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
                     title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
                         // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
                         // así lo de la derecha no queda alto.
@@ -307,22 +308,40 @@ struct BleedArt<Content: View>: View {
     /// Sin proporción llena el espacio que le den (con un mínimo, como el destacado); con ella, esa relación (la de la ficha).
     var aspect: CGFloat?
     var minHeight: CGFloat = 0
+    /// Dentro de un `ScrollView` (la ficha): al desplazar, el arte se recoge hacia este color (el del fondo detrás del arte,
+    /// `Backdrop.tone`). Ver `DS.TitleHero` y `OrbitalModels.HeroCollapse`. nil: arte quieto (el destacado de Inicio).
+    var collapse: Color? = nil
     @ViewBuilder var content: () -> Content
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         // En oscuro el arte se funde con el fondo de borde a borde; en claro es una tarjeta con esquinas (la sala oscura no se
         // funde con el papel: el texto claro de encima dejaría de leerse).
         ZStack(alignment: .bottomLeading) {
-            if scheme == .dark {
-                art.mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
-                                                .init(color: .black, location: DS.Backdrop.artFadeStart),
-                                                .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
-            } else {
-                art.clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+            Group {
+                if scheme == .dark {
+                    art.mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
+                                                    .init(color: .black, location: DS.Backdrop.artFadeStart),
+                                                    .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
+                } else {
+                    art.clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+                }
             }
+            // Al recogerse: se queda un poco atrás, se encoge apenas, se difumina al final y se desvanece. Todo con
+            // `visualEffect` (en el render, sin volver a medir ni a dibujar la imagen); al jalar hacia abajo se estira desde abajo.
+            .visualEffect { [on = collapse != nil, still = reduceMotion] view, proxy in
+                let s = Self.collapseState(proxy, on: on, still: still)
+                return view.offset(y: s.offset).scaleEffect(s.scale, anchor: .bottom).blur(radius: s.blur).opacity(s.artOpacity)
+            }
+            // El logo y la frase se van con el contenido (sin parallax) y antes que el arte: no se quedan detrás de los datos.
             content().onArt().padding(.horizontal, DS.Space.gutter).padding(.bottom, scheme == .dark ? DS.Space.s3 : DS.Space.s5)
+                .visualEffect { [on = collapse != nil, still = reduceMotion] view, proxy in
+                    let s = Self.collapseState(proxy, on: on, still: still)
+                    return view.scaleEffect(s.contentScale, anchor: .bottom).opacity(s.contentOpacity)
+                }
         }
+        .coordinateSpace(.named(Self.space))
         .frame(minHeight: minHeight)      // con letra grande crece en vez de encimar el texto
         .padding(.horizontal, scheme == .dark ? 0 : DS.Space.gutter)
         .accessibilityElement(children: .contain)
@@ -333,6 +352,37 @@ struct BleedArt<Content: View>: View {
             // El velo sube hasta donde empieza el texto: rótulo, logo y datos se leen aunque el arte sea claro.
             .overlay(LinearGradient(stops: [.init(color: .clear, location: DS.Backdrop.scrimStart), .init(color: DS.scrim, location: DS.Backdrop.scrimMid),
                                             .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom))
+            .overlay { if let collapse { veil(collapse) } }
+    }
+
+    /// Al recogerse, el arte se oscurece hacia el color del fondo: un velo parejo que crece poco a poco y un degradado que
+    /// sube desde abajo (como Apple TV y Música). Solo cambian su opacidad y su alto, en el render.
+    private func veil(_ color: Color) -> some View {
+        ZStack {
+            color.visualEffect { [still = reduceMotion] view, proxy in view.opacity(Self.collapseState(proxy, on: true, still: still).dim) }
+            LinearGradient(stops: [.init(color: color.opacity(DS.TitleHero.riseTopOpacity), location: 0), .init(color: color.opacity(DS.TitleHero.riseSolidOpacity), location: DS.TitleHero.riseSolidAt),
+                                   .init(color: color, location: 1)], startPoint: .top, endPoint: .bottom)
+                .visualEffect { [still = reduceMotion] view, proxy in
+                    let rise = Self.collapseState(proxy, on: true, still: still).rise
+                    return view.scaleEffect(x: 1, y: max(rise, DS.TitleHero.riseMin), anchor: .bottom).opacity(rise > 0 ? 1 : 0)
+                }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private nonisolated static var space: String { "bleed-art" }
+
+    /// Cuánto se ha recogido el arte entero (no la capa que pregunta): su lugar en el desplazamiento y su alto salen del
+    /// espacio con nombre del arte, así el logo, el velo y el arte usan la misma cuenta.
+    private nonisolated static func collapseState(_ proxy: GeometryProxy, on: Bool, still: Bool) -> HeroCollapse {
+        let tuning = HeroCollapse.Tuning(parallax: DS.TitleHero.parallax, shrink: DS.TitleHero.shrink, blur: DS.TitleHero.blur, blurFrom: DS.TitleHero.blurFrom,
+                                         dim: DS.TitleHero.dim, riseEnd: DS.TitleHero.riseEnd, fadeFrom: DS.TitleHero.fadeFrom,
+                                         contentFadeEnd: DS.TitleHero.contentFadeEnd, contentShrink: DS.TitleHero.contentShrink)
+        guard on, let hero = proxy.bounds(of: .named(space)) else { return HeroCollapse.at(minY: 0, height: 1, reduceMotion: true, tuning: tuning) }
+        // `bounds(of:)` es el arte entero visto desde esta capa: su origen es lo que esta capa está corrida dentro del arte.
+        let top = proxy.frame(in: .scrollView).minY + hero.minY
+        return HeroCollapse.at(minY: top, height: hero.height, reduceMotion: still, tuning: tuning)
     }
 }
 
@@ -363,7 +413,7 @@ struct TitleLogo: View {
                 // Su alto real (por su proporción, con el tope de siempre): una caja más alta que el logo dejaba un hueco
                 // entre el rótulo y el logo.
                 .frame(maxWidth: DS.Size.cardMax, maxHeight: fittedHeight, alignment: centered ? .bottom : .bottomLeading)
-                .shadow(color: DS.scrim, radius: DS.Space.s1)
+                .shadow(DS.Elevation.low)
                 .task(id: url) {
                     trimmed = LogoTrim.cached(u)
                     if trimmed == nil {
@@ -752,13 +802,42 @@ struct DSSeekBubble: View {
     }
 }
 
-/// La píldora «2×» mientras mantienes el dedo (como YouTube/Infuse): sobre vidrio, arriba al centro.
+/// La píldora «2×» mientras mantienes el dedo (como YouTube/Infuse): sobre vidrio, abajo al centro.
 struct DSSpeedPill: View {
+    /// Se quedó fijo en ×2 (deslizaste hacia abajo hasta que vibró): dice cómo quitarlo.
+    var locked = false
+    /// Mientras mantienes: el anillo se llena al deslizar hacia abajo (0…1).
+    var progress: Double = 0
+    /// El dedo sigue puesto: dice qué hace deslizar.
+    var holding = false
+    /// Ya iba fijo al apoyar el dedo: deslizar hacia arriba lo quita.
+    var unlocks = false
     var body: some View {
-        Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold)).foregroundStyle(DS.text)
-            .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
-            .glassEffect(.regular, in: Capsule())
-            .accessibilityHidden(true)
+        HStack(spacing: DS.Space.s2) {
+            if locked && !holding {
+                Image(systemName: "lock.fill").font(DS.TextRecipe.footnote.font.weight(.bold)).transition(.scale.combined(with: .opacity))
+            } else {
+                ZStack {
+                    Circle().stroke(DS.track, lineWidth: DS.PlayerPanel.ringWidth)
+                    Circle().trim(from: 0, to: progress).stroke(DS.text, style: StrokeStyle(lineWidth: DS.PlayerPanel.ringWidth, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                }
+                .frame(width: DS.PlayerPanel.ring * 0.75, height: DS.PlayerPanel.ring * 0.75)
+            }
+            Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold))
+            if holding {
+                (Text(Image(systemName: unlocks ? "arrow.up" : "arrow.down")) + Text(" ")
+                    + (unlocks ? Text("Desliza para quitar") : Text("Desliza para fijar")))
+                    .font(DS.TextRecipe.footnote.font)
+            } else if locked {
+                Text("Toca para quitar").font(DS.TextRecipe.footnote.font)
+            }
+        }
+        .foregroundStyle(DS.text)
+        .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+        .glassEffect(.regular, in: Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(locked ? "speed-pill-locked" : "speed-pill")
     }
 }
 
@@ -808,8 +887,7 @@ struct Backdrop: View {
             if immersive, let tint {
                 LinearGradient(colors: [tint.tint, tint.tint.mix(with: DS.backdropDeep, by: DS.Backdrop.immersiveDeep)], startPoint: .top, endPoint: .bottom)
                 RadialGradient(colors: [tint.accent.opacity(DS.Backdrop.immersiveGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.immersiveGlowRadius)
-            } else if let tint {
-                let tone = scheme == .dark ? tint.tint : tint.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix)
+            } else if let tone = Self.tone(tint, scheme: scheme) {
                 LinearGradient(stops: [.init(color: tone, location: 0), .init(color: DS.bg, location: DS.Backdrop.fadeTo)], startPoint: .top, endPoint: .bottom)
                 RadialGradient(colors: [tone.opacity(DS.Backdrop.lowGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.lowGlowRadius)
             }
@@ -817,6 +895,13 @@ struct Backdrop: View {
         .ignoresSafeArea()
         .animation(DS.Motion.tint(reduceMotion), value: tint)
         .accessibilityHidden(true)
+    }
+
+    /// El color de arriba del fondo (detrás del arte): el tono del arte en oscuro, ese tono muy claro sobre el papel en claro;
+    /// nil sin arte. El arte de la ficha se recoge hacia él (`BleedArt(collapse:)`).
+    static func tone(_ tint: ArtColors?, scheme: ColorScheme) -> Color? {
+        guard let tint else { return nil }
+        return scheme == .dark ? tint.tint : tint.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix)
     }
 }
 
@@ -827,14 +912,15 @@ extension View {
 
 /// Los colores del arte de lo que está al frente (`ArtPalette`, como la TV): se calculan de una miniatura y se recuerdan.
 @MainActor
-final class ArtTint: ObservableObject {
+@Observable
+final class ArtTint {
     /// nil: no hay arte (el fondo es el liso del modo y el botón principal, el de siempre).
-    @Published private(set) var colors: ArtColors?
+    private(set) var colors: ArtColors?
     private static var cache: [String: ArtColors] = [:]
     private static let cacheLimit = 64
 
     /// Lo último que se pidió: gana siempre (un arte anterior que llega tarde no pinta encima del de ahora).
-    private var requested: String?
+    @ObservationIgnored private var requested: String?
 
     init() {}
     /// Con el color ya sabido de ese arte (si se calculó antes, en esta sesión o en otra): la pantalla aparece ya pintada,
@@ -1058,21 +1144,29 @@ struct DSCapsuleLabel: View {
     let title: Text
     let symbol: String
     var symbolFirst = true
+    /// Elegido (un filtro puesto): en papel, como las opciones en cápsula.
+    var selected = false
+    /// Todo el ancho que le den (varias en rejilla, todas parejas); si no, lo de su texto.
+    var stretch = false
+    /// Un glifo a la derecha además del de la izquierda (el ⌄ de un menú en una cápsula con ícono).
+    var trailing: String?
 
     var body: some View {
         HStack(spacing: DS.HeaderControl.iconGap) {
-            if symbolFirst { icon }
-            title.font(DS.TextRecipe.secondary.font.weight(.semibold))
-            if !symbolFirst { icon }
+            if symbolFirst { icon(symbol) }
+            title.font(DS.TextRecipe.secondary.font.weight(.semibold)).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            if !symbolFirst { icon(symbol) }
+            if let trailing { icon(trailing) }
         }
-        .foregroundStyle(DS.text)
+        .foregroundStyle(selected ? DS.onPrimary : DS.text)
         .padding(.horizontal, DS.HeaderControl.padding)
+        .frame(maxWidth: stretch ? .infinity : nil)
         .frame(height: DS.HeaderControl.height)
-        .background(DS.fillStrong, in: Capsule())
+        .background(selected ? DS.primary : DS.fillStrong, in: Capsule())
         .frame(minHeight: DS.Size.touchTarget)   // se ve de 32 pt; se toca en 44
         .contentShape(Rectangle())
         .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
     }
 
-    private var icon: some View { Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.bold)).imageScale(.small) }
+    private func icon(_ name: String) -> some View { Image(systemName: name).font(DS.TextRecipe.footnote.font.weight(.bold)).imageScale(.small) }
 }

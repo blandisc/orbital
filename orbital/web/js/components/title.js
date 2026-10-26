@@ -63,6 +63,7 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
 
   let item = null;
   let details = null;
+  let plays = null; // { video_id, line }: cómo va a sonar «Ver» (lo dice el servidor)
   let buttons = [];
   let zone = "actions"; // "actions" | "episodes" | "more" | "cast"
   let action = 0;
@@ -203,7 +204,7 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
   function renderActions() {
     const t = details && !details.error ? target() : null;
     buttons = arrange(titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone(),
-      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length } }));
+      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays }));
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // Un renglón, como Apple TV: el principal con el botón del mando que lo hace (A / Enter) y, a su lado, los demás
     // redondos, solo con su ícono; el nombre sale debajo del enfocado, en su propio lugar (nada se mueve).
@@ -499,21 +500,27 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
    */
   async function prefetch(mine) {
     avail.hidden = true;
+    plays = null;
     const t = canPrefetch() && target();
     if (!t) return;
     // Mientras busca, el renglón ya ocupa su lugar (antes los chips llegaban tarde y el título brincaba).
-    mount(avail, h("span", { class: "title__avail-none" }, "Buscando fuentes…"));
+    mount(avail, h("span", { class: "title__avail-none" }, "Buscando versiones…"));
     avail.hidden = false;
     try {
       const data = await api.stremioSources(t.kind, t.id, t.video_id);
       if (mine !== token) return;
       const found = availability(Array.isArray(data?.sources) ? data.sources : []);
+      // Lo que se sale de lo que pediste para esta serie («Solo en castellano: no hay latino»), antes que lo demás.
+      if (data?.recommended?.note) found.unshift({ warn: data.recommended.note });
+      plays = data?.recommended?.line ? { video_id: t.video_id, line: data.recommended.line } : null;
+      renderActions(); // «Ver» dice cómo va a sonar
       // Un renglón de texto tenue (antes, cinco chips encima del arte): «4K · HDR · Inglés, Español · Al instante».
-      mount(avail, found.length ? found.map((c) => h("span", { class: ["title__avail-item", c === "Al instante" && "title__avail-item--good"] }, c))
-        : h("span", { class: "title__avail-none" }, "Sin fuentes por ahora"));
+      mount(avail, found.length ? found.map((c) => (c.warn ? h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, c.warn)
+        : h("span", { class: ["title__avail-item", c === "Al instante" && "title__avail-item--good"] }, c)))
+        : h("span", { class: "title__avail-none" }, "Sin versiones por ahora"));
     } catch (err) {
       if (mine === token) {
-        mount(avail, h("span", { class: "title__avail-none" }, err?.status === 404 ? "Sin fuentes por ahora" : "No pude buscar fuentes ahora"));
+        mount(avail, h("span", { class: "title__avail-none" }, err?.status === 404 ? "Sin versiones por ahora" : "No pude buscar versiones ahora"));
       }
     }
   }
@@ -664,15 +671,15 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
     : zone === "cast"
     ? [{ glyph: g.select, label: "Ver a la persona" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "episodes"
-    ? [episode() && { glyph: g.select, label: own && !own.have.has(episode().id) ? "Buscar fuente"
+    ? [episode() && { glyph: g.select, label: own && !own.have.has(episode().id) ? "Ver de internet"
       : episode().id === details?.resume?.video_id && details.resume.position > 0 ? "Continuar" : "Ver" },
-      episode() && { glyph: g.options, label: "Elegir versión" },
+      episode() && { glyph: g.options, label: "Versión" },
       episode() && onDownload && { glyph: g.alt, label: downloadOf(episode().id) ? "Descarga" : "Descargar" },
       seasons().length > 1 && { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
-    : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && !led() && { glyph: g.options, label: "Elegir versión" },
+    : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && !led() && { glyph: g.options, label: "Versión" },
       led() ? { glyph: g.rows, label: "Episodios" } : moreItems.length ? { glyph: g.rows, label: "Más como esto" } : castItems.length && { glyph: g.rows, label: "Reparto" },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));

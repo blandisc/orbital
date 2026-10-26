@@ -117,15 +117,23 @@ struct ListCard: View {
                     PosterView(url: url, title: name).frame(width: DS.Collections.stackPoster)
                         .rotationEffect(.degrees(i == 1 ? -DS.Collections.stackAngle : 0))
                         .offset(x: i == 1 ? 0 : DS.Space.s3, y: i == 1 ? DS.Space.s1 : 0)
-                        .shadow(color: DS.scrim, radius: DS.Space.s1, y: DS.Space.s1)
+                        .shadow(DS.Elevation.low.drop(DS.Space.s1))
                 }
             }
             .frame(width: DS.Collections.stackWidth, alignment: .leading)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(verbatim: name).recipe(.cardTitle).lineLimit(2)
-                HStack(spacing: DS.Space.s1) {
-                    SourceBadge(source: source)
-                    if let count { Text(verbatim: "\(count)").recipe(.caption) }
+                Text(verbatim: name).recipe(.cardTitle).lineLimit(2).minimumScaleFactor(DS.Size.titleShrink)
+                // El sello («STREMIO») no se parte, así que si con su conteo no cabe en la tarjeta, el conteo pasa abajo: antes la
+                // tarjeta pedía más que su columna y, en un iPhone de 375 pt, las dos se salían del margen.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: DS.Space.s1) {
+                        SourceBadge(source: source)
+                        if let count { Text(verbatim: "\(count)").recipe(.caption) }
+                    }
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        SourceBadge(source: source)
+                        if let count { Text(verbatim: "\(count)").recipe(.caption) }
+                    }
                 }
             }
             Spacer(minLength: 0)
@@ -142,13 +150,19 @@ struct BecauseSeed: Identifiable, Equatable {
     let id: String
     let title: String
     let poster: String?
+    /// Qué es y de qué año: «Serie · 2005».
+    var detail: String = ""
 }
+
+/// Las relacionadas del título de arriba: ya están, vienen en camino (el mazo ya cambió) o Trakt no tiene ninguna.
+enum BecauseRelated: Equatable { case ready, loading, none }
 
 /// «Porque viste X, te recomendamos»: el mazo de cartas de lo último que viste (la de arriba es el título elegido; se
 /// avienta a un lado o con ‹ › para pasar al siguiente) y abajo lo que Trakt relaciona con él. Sin elegir, cambia solo cada día.
 struct BecauseCard<Related: View>: View {
     let seeds: [BecauseSeed]
     let selected: String
+    var state: BecauseRelated = .ready
     var choose: (String) -> Void = { _ in }
     @ViewBuilder var related: () -> Related
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -159,9 +173,28 @@ struct BecauseCard<Related: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             deckHeader
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: DS.Space.s2) { related() }
-                    .environment(\.posterCaptions, false)
+            // Siempre del mismo alto: mientras llegan, unos pósters vacíos en su lugar (la tarjeta no brinca ni parece trabada).
+            Group {
+                switch state {
+                case .ready:
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: DS.Space.s2) { related() }
+                            .environment(\.posterCaptions, false)
+                    }
+                case .loading:
+                    HStack(spacing: DS.Space.s2) {
+                        ForEach(0..<DS.Collections.relatedPlaceholders, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.fill)
+                                .frame(width: DS.Collections.relatedPoster, height: DS.Collections.relatedPoster / DS.Poster.aspect)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .clipped()
+                    .accessibilityElement().accessibilityLabel(Text("Buscando recomendaciones"))
+                case .none:
+                    Text("Trakt aún no relaciona nada con este título. Prueba con otro.").recipe(.footnote)
+                        .frame(maxWidth: .infinity, minHeight: DS.Collections.relatedPoster / DS.Poster.aspect, alignment: .leading)
+                }
             }
             .id(selected)   // otro título: las relacionadas entran desde el principio
             .transition(.opacity)
@@ -179,11 +212,20 @@ struct BecauseCard<Related: View>: View {
                 guard !seeds.isEmpty else { return }
                 choose(seeds[(index + step + seeds.count) % seeds.count].id)
             }
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                Text("Porque viste").recipe(.secondary)
-                Text(verbatim: current?.title ?? "").recipe(.title).lineLimit(3)
+            // La columna mide siempre lo del mazo (el nombre tiene su lugar de dos renglones y las flechas van abajo): antes un
+            // nombre largo la estiraba y la tarjeta, con todo lo de abajo, cambiaba de alto al pasar de un título a otro.
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                // «Porque viste · 3 de 8»: en qué carta vas, en el mismo renglón (junto a las flechas no cabía en un iPhone angosto).
+                (Text("Porque viste") + (seeds.count > 1 ? Text(verbatim: " · ") + Text("\(index + 1) de \(seeds.count)") : Text(verbatim: "")))
+                    .recipe(.secondary).monospacedDigit().lineLimit(1)
+                Text(verbatim: current?.title ?? "").recipe(.title)
+                    .lineLimit(2, reservesSpace: true).minimumScaleFactor(DS.Collections.becauseTitleScale).allowsTightening(true)
+                    .contentTransition(.opacity)
+                // Qué es y de qué año.
+                Text(verbatim: current?.detail ?? "").recipe(.footnote).lineLimit(1)
+                    .contentTransition(.opacity)
+                Spacer(minLength: DS.Space.s2)
                 if seeds.count > 1 {
-                    Text("Avienta la carta para cambiar").recipe(.footnote)
                     HStack(spacing: DS.Space.s2) {
                         Button { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) } label: { Image(systemName: "chevron.left").font(.system(size: DS.Collections.deckNavGlyph, weight: .semibold)).frame(width: DS.Collections.deckNav, height: DS.Collections.deckNav) }   // ds-exception: la flecha se mide con su círculo, no con Dynamic Type
                             .accessibilityLabel(Text("Anterior"))
@@ -193,6 +235,7 @@ struct BecauseCard<Related: View>: View {
                     .buttonStyle(.glass).buttonBorderShape(.circle)
                 }
             }
+            .frame(minHeight: DS.Collections.deckHeight, alignment: .topLeading)
             Spacer(minLength: 0)
         }
     }
@@ -215,7 +258,7 @@ struct BecauseDeck: View {
                 let top = depth == 0
                 PosterView(url: seed.poster, title: seed.title)
                     .frame(width: DS.Collections.deckPoster)
-                    .shadow(color: DS.scrim, radius: DS.Space.s2, y: DS.Space.s1)
+                    .shadow(DS.Elevation.medium)
                     .scaleEffect(1 - CGFloat(depth) * DS.Collections.deckShrink)
                     .rotationEffect(.degrees(Double(depth) * DS.Collections.deckTurn + (top ? Double(drag) / Double(DS.Collections.deckThrow) * DS.Collections.deckTurn * 2 : 0)))
                     .offset(x: CGFloat(depth) * DS.Collections.deckShift + (top ? drag : 0), y: CGFloat(depth) * DS.Collections.deckShift)
@@ -284,7 +327,9 @@ struct YearCard: View {
 /// saludo. Al abrir, el anillo se dibuja y la luna cae en su lugar.
 struct AppMark: View {
     var body: some View {
-        OrbitalWordmark(size: DS.Size.headerWordmark, animated: true).foregroundStyle(DS.text).fixedSize()
+        let compact = UIScreen.main.bounds.width < DS.Size.compactWidth
+        OrbitalWordmark(size: compact ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
+            .foregroundStyle(DS.text).fixedSize()
     }
 }
 
@@ -309,7 +354,7 @@ struct StudioEmblem: View {
                 nameText.padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())
             }
         }
-        .shadow(color: DS.scrimStrong, radius: DS.Space.s2)
+        .shadow(DS.Elevation.high.drop(0))
         .padding(.horizontal, DS.Space.s2)
         .accessibilityHidden(true)
     }

@@ -8,9 +8,9 @@ struct GenreRoute: Hashable { var genre: String }
 /// «Buscar» (la pestaña de búsqueda nativa de iOS 26): sin escribir, el Top 10 de hoy en carrusel y los géneros para
 /// explorar; al escribir, los resultados en cuadrícula.
 struct BrowseView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var catalog: ModelObserver<CatalogModel>
-    @StateObject private var search: ModelObserver<SearchModel>
+    @Environment(AppEnvironment.self) private var env
+    @State private var catalog: ModelObserver<CatalogModel>
+    @State private var search: ModelObserver<SearchModel>
     @State private var query = ""
     /// Los resultados: todo, solo películas o solo series.
     @State private var kind: String = ""
@@ -18,7 +18,7 @@ struct BrowseView: View {
     @State private var showPopular = false
     @Environment(\.dynamicTypeSize) private var typeSize
     /// Los colores del n.º 1 de hoy: el fondo de la pantalla y las cifras del Top 10 toman su tono (como Inicio).
-    @StateObject private var tint: ArtTint
+    @State private var tint: ArtTint
     /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
 
     /// Cuántos de lo más popular van en el carrusel con puesto (un Top 10).
@@ -26,9 +26,9 @@ struct BrowseView: View {
 
     init() {
         let services = AppEnvironment.shared.services
-        _catalog = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.catalog))
-        _tint = StateObject(wrappedValue: ArtTint(cachedFor: AppEnvironment.shared.catalog.popular.first?.poster))
-        _search = StateObject(wrappedValue: ModelObserver(SearchModel(services)))
+        _catalog = State(wrappedValue: ModelObserver(AppEnvironment.shared.catalog))
+        _tint = State(wrappedValue: ArtTint(cachedFor: AppEnvironment.shared.catalog.popular.first?.poster))
+        _search = State(wrappedValue: ModelObserver(SearchModel(services)))
     }
 
     var body: some View {
@@ -197,7 +197,7 @@ struct BrowseView: View {
 struct GenreView: View {
     let genre: String
     let model: CatalogModel
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @State private var items: [CatalogItem] = []
     @State private var loaded = false
 

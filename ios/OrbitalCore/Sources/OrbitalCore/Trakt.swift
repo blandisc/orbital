@@ -45,6 +45,8 @@ public struct TraktEntry: Sendable, Equatable, Identifiable {
     public var genres: [String] = []
     /// La calificación de Trakt (0 a 10), con `extended=full`.
     public var rating: Double?
+    /// Cuándo lo viste (solo en el historial: «Porque viste» dice «la viste hace 3 días»).
+    public var watchedAt: Date?
     public var id: String { imdb }
 
     public static func == (a: TraktEntry, b: TraktEntry) -> Bool {
@@ -358,7 +360,9 @@ public actor Trakt {
             secrets.set(SecretKey.traktTokens, nil)
             throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.")
         }
-        guard let fresh = await borrow(), fresh.accessToken != old.access_token else {
+        // La consola no contestó (apagada, sin red): no es que Trakt cerrara tu sesión; se reintenta luego.
+        guard let fresh = await borrow() else { throw TraktError.network("tu Orbital no contesta para renovar la sesión") }
+        guard fresh.accessToken != old.access_token else {
             throw TraktError.auth("Trakt no acepta la sesión de tu Orbital: reconecta Trakt en la TV (Ajustes › Cuentas).")
         }
         adopt(fresh)
@@ -389,10 +393,23 @@ public actor Trakt {
     }
 
     public func lists() async throws -> [(id: String, name: String)] {
+        try await ownLists().map { ($0.id, $0.name) }
+    }
+
+    /// Una de tus listas, con cuándo cambió por última vez («Guardar en…» pone arriba las recientes).
+    public struct OwnList: Equatable, Sendable {
+        public var id: String
+        public var name: String
+        public var updatedAt: Date?
+        public init(id: String, name: String, updatedAt: Date? = nil) { self.id = id; self.name = name; self.updatedAt = updatedAt }
+    }
+
+    /// Tus listas tal como las acomodaste en Trakt, con su fecha de cambio (`updated_at`, o `created_at` si no viene).
+    public func ownLists() async throws -> [OwnList] {
         let rows = try await get("/users/me/lists")
         return (rows?.array ?? []).compactMap { row in
             guard let name = row["name"]?.string?.trimmingCharacters(in: .whitespaces), !name.isEmpty, let id = row["ids"]?["trakt"]?.intValue else { return nil }
-            return (String(id), name)
+            return OwnList(id: String(id), name: name, updatedAt: (row["updated_at"]?.string ?? row["created_at"]?.string).flatMap(TraktParsing.date))
         }
     }
 
@@ -490,7 +507,8 @@ public actor Trakt {
         let rows = try await get("/sync/history", [("limit", "40"), ("extended", "full")])?.array ?? []
         var seen = Set<String>(), out: [TraktEntry] = []
         for row in rows {
-            let entry = row["type"]?.string == "movie" ? TraktParsing.entry(row["movie"], kind: "movie") : TraktParsing.entry(row["show"], kind: "series")
+            var entry = row["type"]?.string == "movie" ? TraktParsing.entry(row["movie"], kind: "movie") : TraktParsing.entry(row["show"], kind: "series")
+            entry?.watchedAt = row["watched_at"]?.string.flatMap(TraktParsing.date)   // el historial viene del más nuevo al más viejo
             if let entry, seen.insert(entry.imdb).inserted { out.append(entry) }
             if out.count >= limit { break }
         }

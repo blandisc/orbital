@@ -14,21 +14,31 @@ struct TitleRoute: Hashable {
 }
 
 struct RootView: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// El reproductor y los avisos: solo la raíz se vuelve a pintar cuando cambian.
-    @ObservedObject private var ui = AppEnvironment.shared.ui
-    @StateObject private var session: ModelObserver<SessionModel>
-    @StateObject private var services: ModelObserver<Services>
+    private let ui = AppEnvironment.shared.ui
+    @State private var session: ModelObserver<SessionModel>
+    @State private var services: ModelObserver<Services>
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let env = AppEnvironment.shared
-        _session = StateObject(wrappedValue: ModelObserver(env.session))
-        _services = StateObject(wrappedValue: ModelObserver(env.services))
+        _session = State(wrappedValue: ModelObserver(env.session))
+        _services = State(wrappedValue: ModelObserver(env.services))
+    }
+
+    /// Desde dónde sigue en la TV: «desde 12:34», o «desde el principio» si apenas empezaba.
+    /// (Un `Text`, no un `String`: así sale en el idioma de la app y no en el del sistema.)
+    static func handoffFrom(_ position: Double) -> Text {
+        guard position >= DS.Toast.fromStartUnder else { return Text("desde el principio") }
+        let time = Duration.seconds(position).formatted(.time(pattern: position >= 3600 ? .hourMinuteSecond : .minuteSecond))
+        return Text("desde \(time)")
     }
 
     var body: some View {
+        @Bindable var env = env
+        let _ = services.model   // cualquier cambio de los servicios (idioma, cuenta) vuelve a pintar la raíz
         Group {
             switch session.model.state {
             case .signedIn: MainTabs().onAppear { Perf.mark("app.tabs") }
@@ -42,28 +52,29 @@ struct RootView: View {
             Button("Sí, marcar como visto") { if let r = env.askFinished { Task { await env.confirmFinished(r) } } }
             Button("No", role: .cancel) { env.askFinished = nil }
         } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }
-        // Los avisos, siempre arriba y del mismo tipo (`Toast`): «Pasó a tu Orbital · Deshacer» gana sobre los demás.
-        // Debajo del renglón de botones de arriba (atrás, TV, compartir, perfil): en esa franja se les encimaba.
-        .overlay(alignment: .top) {
+        // Los avisos, siempre abajo (al alcance del pulgar, sobre la barra de pestañas) y del mismo tipo (`Toast`).
+        // «Sigue en tu Orbital · Deshacer» gana: los demás esperan a que se vaya.
+        .overlay(alignment: .bottom) {
             Group {
                 if let h = ui.handoff {
-                    Toast(symbol: "tv", color: DS.accent, title: Text("Pasó a tu Orbital"),
-                          detail: Text("\(h.request.displayTitle) · sigue en \(Duration.seconds(h.position).formatted(.time(pattern: h.position >= 3600 ? .hourMinuteSecond : .minuteSecond)))"),
-                          actionTitle: "Deshacer", action: { Task { await env.undoHandoff() } }, seconds: DS.Timing.handoff, dismiss: { env.handoff = nil })
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                    // «Sigue en tu Orbital · Minions & Monstruos · desde 12:34»; si iba al principio, lo dice así (no «en 0:00»).
+                    Toast(tone: .success, title: Text("Sigue en tu Orbital"), detail: Text(verbatim: "\(h.request.displayTitle) · ") + Self.handoffFrom(h.position),
+                          actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", action: { Task { await env.undoHandoff() } },
+                          symbol: "tv", color: DS.brandMoon, seconds: DS.Timing.toastAction, dismiss: { env.handoff = nil })
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
                     BannerView()
                 }
             }
-            .padding(.top, DS.Size.touchTarget + DS.Space.s2)
-        }
-        // Los que traen botón, abajo, sobre la barra de pestañas: cambiar o deshacer sin estirar el dedo hasta arriba.
-        .overlay(alignment: .bottom) {
-            BannerView(withAction: true).padding(.bottom, DS.Size.tabBarClearance)
+            .padding(.bottom, DS.Size.tabBarClearance)
         }
         .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
         .animation(DS.Motion.base(reduceMotion), value: ui.banner)
         .task {
+            #if DEBUG
+            if Demo.isOn, let at = Demo.handoff { env.handoff = .init(request: Demo.handoffRequest, position: at) }
+            if Demo.isOn { Demo.showNotice(env) }
+            #endif
             _ = await env.services.watch.flushPending()
             // Con tu Orbital conectada: lo nuevo de la consola (otra clave, Trakt recién conectado allá) llega solo.
             if env.services.orbital.isConfigured { _ = try? await env.services.connectOrbital() }
@@ -92,7 +103,7 @@ struct RootView: View {
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).
             env.tvNow.setActive(phase == .active)
-            if phase == .active { Task { _ = await env.services.watch.flushPending() }; Task { await ReleaseNotifier.check() } }
+            if phase == .active { Task { _ = await env.services.watch.flushPending() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }; Task { await env.syncChoices() }; Task { await env.services.traktOutbox.flush(env.services.trakt) } }
             #if DEBUG
             if phase == .active { DemoHTTPClient.postReleaseAlert(language: env.services.appSettings.uiLanguage) }
             #endif
@@ -102,8 +113,9 @@ struct RootView: View {
                 let background = phase == .background
                 let id = background ? UIApplication.shared.beginBackgroundTask(withName: "orbital.downloads") : .invalid
                 Task {
-                    await env.services.downloads.setBackgrounded(background)
+                    // Primero el carril (lo que arranque la cola al irte ya nace en segundo plano), luego la cola.
                     await env.setDownloadsBackgrounded(background)
+                    await env.services.downloads.setBackgrounded(background)
                     if id != .invalid { UIApplication.shared.endBackgroundTask(id) }
                 }
             }
@@ -120,9 +132,9 @@ extension PlayRequest: @retroactive Identifiable { public var id: String { "\(me
 
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
 struct MainTabs: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @ObservedObject private var ui = AppEnvironment.shared.ui   // la ficha o la pestaña que se pide abrir
-    @StateObject private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
+    @Environment(AppEnvironment.self) private var env
+    private let ui = AppEnvironment.shared.ui   // la ficha o la pestaña que se pide abrir
+    @State private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
     @State private var showRemote = false
     /// El acompañante del juego abierto en la consola.
     @State private var showGame = false
@@ -262,40 +274,26 @@ struct MainTabs: View {
         if Demo.open == "settings" || Demo.open == "year" { paths[tab].append(SettingsRoute()) }
         if let title = Demo.title { paths[tab].append(TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)) }
         if let id = Demo.mediaTitle { paths[tab].append(MiMediaTitleRoute(id: id)) }
+        if let id = Demo.playDownload { Task { await env.playDownloaded(metaID: String(id.split(separator: ":").first ?? ""), videoID: id) } }
         #endif
     }
 }
 
 /// Un aviso de la app (sin Infuse, sin fuentes, descargando…), arriba como todos: se va solo; tocarlo lo cierra.
 struct BannerView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @ObservedObject private var ui = AppEnvironment.shared.ui
-    /// Arriba los avisos sin botón; abajo (al alcance del pulgar) los que traen uno («Guardada en Mi lista · Cambiar»).
-    var withAction = false
+    @Environment(AppEnvironment.self) private var env
+    private let ui = AppEnvironment.shared.ui
 
     var body: some View {
-        if let banner = ui.banner, (banner.action != nil) == withAction {
-            Toast(symbol: symbol(banner.tone), color: color(banner.tone), title: Text(verbatim: banner.text), detail: banner.detail.map { Text(verbatim: $0) },
-                  actionTitle: banner.action == nil ? nil : banner.actionTitle.map { LocalizedStringKey($0) } ?? "Ver", action: banner.action.map { a in { run(a) } },
-                  dismiss: { env.banner = nil })
-                .id(banner.text)
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .sensoryFeedback(banner.tone == .error ? .error : .success, trigger: banner)
+        if let banner = ui.banner {
+            let hasAction = banner.action != nil
+            Toast(tone: banner.tone, title: Text(verbatim: banner.text), detail: banner.detail.map { Text(verbatim: $0) },
+                  actionTitle: hasAction ? banner.actionTitle.map { LocalizedStringKey($0) } ?? "Ver" : nil, actionSymbol: banner.actionSymbol,
+                  action: hasAction ? { env.runBannerAction(banner) } : nil,
+                  seconds: Toast.duration(banner.tone, hasAction: hasAction), dismiss: { env.dismissBanner(banner.serial) })
+                .id(banner.serial)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .sensoryFeedback(banner.tone == .error || banner.tone == .warn ? .warning : .success, trigger: banner.serial)
         }
-    }
-
-    private func run(_ action: AppEnvironment.BannerAction) {
-        switch action {
-        case .downloads: env.openTab = AppEnvironment.downloadsTab
-        case .perform: env.bannerPerform?()
-        }
-    }
-
-    private func symbol(_ tone: DSNotice.Tone) -> String {
-        switch tone { case .info: "info.circle.fill"; case .success: "checkmark.circle.fill"; case .warn: "exclamationmark.triangle.fill"; case .error: "xmark.octagon.fill" }
-    }
-
-    private func color(_ tone: DSNotice.Tone) -> Color {
-        switch tone { case .info: DS.textMuted; case .success: DS.good; case .warn: DS.warning; case .error: DS.danger }
     }
 }

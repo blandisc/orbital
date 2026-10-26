@@ -31,7 +31,8 @@ def test_las_fuentes_dicen_si_el_espanol_es_latino_o_castellano():
     assert streams.spanish_dub("Los Simpsons (Completa Latino) 24") == "latino"
     assert streams.spanish_dub("Platinum ES-419") == "latino"
     assert streams.spanish_dub("Los Simpsons - Temporada 8 [HDTV][Castellano]") == "castellano"
-    assert streams.spanish_dub("Simpsons 🇪🇸 💾 1 GB") == ""  # Torrentio pone 🇪🇸 a cualquier «Spanish»: no dice cuál
+    # 🇪🇸 sola no dice cuál: muchos complementos la ponen a cualquier español (como el iPhone).
+    assert streams.spanish_dub("Simpsons 🇪🇸 💾 1 GB") == ""
     assert streams.spanish_dub("Dual Latino Castellano") == "latino"  # trae la pista latina
     assert streams.spanish_dub("Los Simpson: Español: Temporadas 1 A 10") == ""  # no lo dice
     assert streams.spanish_dub("Cast.Away 2000 SPANISH") == ""  # «Cast» del título no es castellano

@@ -36,7 +36,7 @@ KEYBOARD = False  # con teclado: los glifos dicen la tecla, no el botón del man
 # El botón del mando -> su tecla (las pistas son las mismas; solo cambia lo que dice cada glifo).
 KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LB RB": "RePág AvPág", "Home": "Ctrl Inicio"}
 # Dónde quedó cada cosa tocable, por capa: (x, y, ancho, alto, acción). Se rehace al dibujar la capa.
-targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": []}
+targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": [], "try": []}
 # Dónde va lo que no es ASS (el logo del título en pausa: una imagen que mpv pone encima): (x, y, ancho, alto) en el lienzo.
 placed: dict[str, tuple[float, float, float, float]] = {}
 LOGO_BOX = (860, 190)  # lo más que mide el logo en pausa, en el lienzo
@@ -117,7 +117,7 @@ def set_text_size(name: str | None) -> bool:
     return changed
 
 LANGUAGES = {
-    "en": "Inglés", "eng": "Inglés", "es": "Español", "spa": "Español", "es-419": "Español latino",
+    "en": "Inglés", "eng": "Inglés", "es": "Español", "spa": "Español", "es-419": "Español latino", "es-mx": "Español latino", "es-es": "Castellano",
     "fr": "Francés", "fre": "Francés", "fra": "Francés", "it": "Italiano", "ita": "Italiano", "de": "Alemán",
     "ger": "Alemán", "deu": "Alemán", "pt": "Portugués", "por": "Portugués", "ja": "Japonés", "jpn": "Japonés",
     "ko": "Coreano", "kor": "Coreano", "zh": "Chino", "chi": "Chino", "zho": "Chino", "ru": "Ruso", "rus": "Ruso",
@@ -146,14 +146,25 @@ def language(code: str | None) -> str:
     return LANGUAGES.get(code.lower(), code.upper() if len(code) <= 3 else code)
 
 
+def sub_kind(track: dict) -> str:
+    """«forced» (solo los letreros), «sdh» (para sordos: con [música], [risas]…) o «normal»."""
+    title = str(track.get("title") or "").strip().lower()
+    if track.get("forced") or "forced" in title or "forzad" in title:
+        return "forced"
+    if track.get("hearing-impaired") or "sdh" in title or title == "cc" or "sordos" in title or "hearing" in title:
+        return "sdh"
+    return "normal"
+
+
 def track_label(track: dict) -> str:
     """'Inglés · 5.1 · E-AC3' / 'Español · Forzados' / 'Pista 3'."""
     parts = [language(track.get("lang"))]
     title = (track.get("title") or "").strip()
     lowered = title.lower()
-    if track.get("forced") or "forced" in lowered or "forzad" in lowered:
+    kind = sub_kind(track)
+    if kind == "forced":
         parts.append("Forzados")
-    elif "sdh" in lowered or "cc" == lowered:
+    elif kind == "sdh":
         parts.append("Para sordos")
     elif title and language(track.get("lang")).lower() not in lowered and len(title) <= 28:
         parts.append(title)
@@ -750,7 +761,7 @@ GRID_NAME = 170  # el nombre del idioma, a la izquierda de sus casillas
 
 
 def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active: bool) -> list[str]:
-    """La cuadrícula de Versión (como «Elegir versión» de la ficha): un renglón por idioma, su nombre a la izquierda y
+    """La cuadrícula de Versión (como «Versión» de la ficha): un renglón por idioma, su nombre a la izquierda y
     sus calidades en casillas («1080p» y debajo «Al instante»); la enfocada, clara; la que ves, con contorno."""
     lines = []
     width = (col_w - GRID_NAME - 10 * 3) / 4  # hasta cuatro calidades: 4K, 1080p, 720p, SD
@@ -806,6 +817,13 @@ def _column(key: str, options: list[dict]) -> Column:
 
 
 SUB_STEP = .5  # s por paso de «Sincronía»
+
+
+def delay_label(delay: float) -> str:
+    """«A tiempo», «0,5 s antes», «1,0 s después» (negativo: los subtítulos salen antes)."""
+    if abs(delay) < .05:
+        return "A tiempo"
+    return f"{abs(delay):.1f} s {'antes' if delay < 0 else 'después'}".replace(".", ",")
 
 
 def sync_options(delay: float) -> list[dict]:
@@ -866,6 +884,52 @@ def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None
                      {"label": "Descargar en el iPhone", "action": ("iphone", "download"), "current": False}]
     columns.append(Column("playback", playback))
     return Panel("more", columns, 0)
+
+
+# --- «Probar otros» subtítulos: una franja arriba (los subtítulos y el video se siguen viendo abajo) ---------------
+@dataclass
+class SubTrial:
+    language: str  # «Español»
+    number: int  # el que está puesto (1…total); 0 = ahora sin subtítulos
+    total: int
+    origin: str = "video"  # «video» | «addon» (de tu complemento)
+    delay: float = 0.0  # la sincronía (s)
+    status: str = ""  # «Bajando el subtítulo…», «No hay más subtítulos en español», «Sin internet…»
+
+
+TRY_H = 96  # alto de la franja (con el dedo, un poco más: sus botones se tocan)
+TRY_ITEMS = [("◀ ▶", "Otro subtítulo"), ("↑ ↓", "Adelantar o atrasar"), ("A", "Este va bien"), ("B", "Dejar el de antes")]
+TRY_PILLS = [("◀ Anterior", "left"), ("Siguiente ▶", "right"), ("Antes", "up"), ("Después", "down"),
+             ("Este va bien", "a"), ("Dejar el de antes", "b")]
+
+
+def sub_trial_ass(trial: SubTrial) -> str:
+    """La franja de «Probar otros»: «Español · Subtítulo 2 de 5», de dónde viene y la sincronía; abajo, los botones.
+    Arriba (los subtítulos van abajo): así se lee la frase con cada subtítulo que pruebas."""
+    targets["try"] = []
+    h = TRY_H + (28 if TOUCH else 0)
+    lines = [rrect(0, 0, W, h, 0, PANEL, "18"), gradient(h, h + 48, 120, 255, 8)]
+    if trial.total <= 0:
+        title = f"{trial.language} · No hay subtítulos para probar"
+    elif trial.number <= 0:
+        title = f"{trial.language} · Ahora sin subtítulos · {trial.total} para probar"
+    else:
+        title = f"{trial.language} · Subtítulo {trial.number} de {trial.total}"
+    origin = "De tu complemento" if trial.origin == "addon" else "Del video"
+    detail = " · ".join(p for p in (origin if trial.number > 0 else "", f"Sincronía: {delay_label(trial.delay)}") if p)
+    title_w = text_width(title, 26, "bold")
+    status_w = min(text_width(trial.status, 22, "semi"), (W - 2 * MARGIN) * .4) if trial.status else 0
+    lines.append(text(MARGIN, 34, esc(fit(title, 26, W - 2 * MARGIN - status_w - 40, "bold")), 26, weight="bold", align=4))
+    room = W - 2 * MARGIN - title_w - 28 - status_w - 40
+    if room > 120:
+        lines.append(text(MARGIN + title_w + 28, 34, esc(fit(detail, 22, room, "semi")), 22, MUTED, weight="semi", align=4))
+    if trial.status:
+        lines.append(text(W - MARGIN, 34, esc(fit(trial.status, 22, status_w + 1, "semi")), 22, SOFT, weight="semi", align=6))
+    if TOUCH:
+        lines.append(pills(TRY_PILLS, 64, left=MARGIN, layer="try", h=48))
+    else:
+        lines.append(hints(TRY_ITEMS, 74, left=MARGIN, size=20))
+    return "\n".join(lines)
 
 
 # --- TV en vivo: la barra del canal y la guía de canales (Y) --------------------------------------------

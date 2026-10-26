@@ -90,4 +90,50 @@ final class CinemetaTests: XCTestCase {
         XCTAssertEqual(meta["name"]?.string, "Anime")
         XCTAssertFalse(http.calls.contains { $0.contains("cinemeta") }, "un id de kitsu no se le pregunta primero a Cinemeta")
     }
+
+    func testImdbMetaDoesNotWaitForAddons() async throws {
+        let http = FakeHTTP()
+        http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
+        http.json["https://anime.example/manifest.json"] = ["name": "Anime", "resources": ["meta"], "types": ["series"], "idPrefixes": ["tt"]]
+        let registry = AddonRegistry(http: http, account: nil, own: { ["https://anime.example"] })
+        _ = try await Cinemeta(http: http, registry: registry).meta(kind: "series", id: "tt0386676")
+        XCTAssertEqual(http.calls, ["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"], "Cinemeta respondió: los complementos ni se piden")
+    }
+
+    func testSimultaneousCatalogRequestsShareOneFetch() async throws {
+        let http = FakeHTTP()
+        let url = "https://v3-cinemeta.strem.io/catalog/movie/top.json"
+        http.json[url] = ["metas": [["id": "tt1", "name": "Dune", "type": "movie"]]]
+        http.delays[url] = 50
+        let cinemeta = Cinemeta(http: http)
+        async let a = cinemeta.catalog("movie")
+        async let b = cinemeta.catalog("movie")
+        let (first, second) = try await (a, b)
+        XCTAssertEqual(first.count, 1); XCTAssertEqual(second.count, 1)
+        XCTAssertEqual(http.calls.filter { $0 == url }.count, 1, "dos consumidores a la vez: una sola petición")
+    }
+
+    func testCatalogIsShownFromDiskAndRevalidatedWhenStale() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = "https://v3-cinemeta.strem.io/catalog/series/top.json"
+        let http = FakeHTTP()
+        http.json[url] = ["metas": [["id": "tt1", "name": "Viejo", "type": "series"]]]
+        let clock = Clock()
+        _ = try await Cinemeta(http: http, disk: dir, clock: { clock.now }).catalog("series")
+        XCTAssertEqual(http.calls.count, 1)
+
+        // Otra apertura, dentro del plazo: sale del disco sin red.
+        let fresh = try await Cinemeta(http: http, disk: dir, clock: { clock.now }).catalog("series")
+        XCTAssertEqual(fresh.first?["name"]?.string, "Viejo")
+        XCTAssertEqual(http.calls.count, 1)
+
+        // Pasado el plazo: enseña lo guardado al instante y revalida aparte.
+        clock.now = clock.now.addingTimeInterval(7 * 3600)
+        http.json[url] = ["metas": [["id": "tt2", "name": "Nuevo", "type": "series"]]]
+        let stale = try await Cinemeta(http: http, disk: dir, clock: { clock.now }).catalog("series")
+        XCTAssertEqual(stale.first?["name"]?.string, "Viejo")
+        for _ in 0..<200 where http.calls.count < 2 { try await Task.sleep(nanoseconds: 5_000_000) }
+        XCTAssertEqual(http.calls.count, 2, "revalida en segundo plano")
+    }
 }

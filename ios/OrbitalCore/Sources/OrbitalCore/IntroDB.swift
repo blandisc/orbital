@@ -16,10 +16,20 @@ public struct SkipSegments: Sendable, Equatable {
 public struct IntroDB: Sendable {
     public static let api = "https://api.introdb.app"
     let http: HTTPClient
-    public init(http: HTTPClient) { self.http = http }
+    /// Lo pedido hace poco (la ficha lo adelanta y el reproductor lo recoge): en vuelo o con marcas. Sin él, cada vez se pide.
+    let recent: IntroDBRecent?
+    public init(http: HTTPClient, recent: IntroDBRecent? = nil) { self.http = http; self.recent = recent }
 
     /// Las marcas de un video (`tt0944947:1:1` o `tt0133093`); nil sin id de IMDb, sin red o sin marcas.
     public func segments(videoID: String) async -> SkipSegments? {
+        guard let recent else { return await fetch(videoID: videoID) }
+        return await recent.shared(videoID) { await self.fetch(videoID: videoID) }
+    }
+
+    /// Las pide ya (al abrir la ficha, en cuanto se sabe el episodio) para que el reproductor las tenga al empezar.
+    public func warm(videoID: String) { Task { _ = await segments(videoID: videoID) } }
+
+    private func fetch(videoID: String) async -> SkipSegments? {
         let parts = videoID.split(separator: ":").map(String.init)
         guard let imdb = parts.first, imdb.range(of: #"^tt[0-9]{7,9}$"#, options: .regularExpression) != nil else { return nil }
         var components = URLComponents(string: Self.api + "/segments")!
@@ -40,5 +50,24 @@ public struct IntroDB: Sendable {
             return start...end
         }
         return SkipSegments(intro: range("intro"), recap: range("recap"), credits: range("outro"))
+    }
+}
+
+/// Las marcas en vuelo o recién traídas, por video (unos minutos; las pocas de una sesión).
+public actor IntroDBRecent {
+    static let lifetime: TimeInterval = 600
+    private var entries: [String: (at: Date, task: Task<SkipSegments?, Never>)] = [:]
+    public init() {}
+
+    func shared(_ videoID: String, _ work: @escaping @Sendable () async -> SkipSegments?) async -> SkipSegments? {
+        let now = Date()
+        if let hit = entries[videoID], now.timeIntervalSince(hit.at) < Self.lifetime { return await hit.task.value }
+        if entries.count > 32 { entries = entries.filter { now.timeIntervalSince($0.value.at) < Self.lifetime } }
+        let task = Task { await work() }
+        entries[videoID] = (now, task)
+        let found = await task.value
+        // Sin marcas (o sin red): el siguiente intento vuelve a preguntar (el reproductor reintenta).
+        if found == nil, entries[videoID]?.at == now { entries[videoID] = nil }
+        return found
     }
 }

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import re
 import threading
 import time
 from pathlib import Path
@@ -13,6 +14,11 @@ log = logging.getLogger(__name__)
 
 
 MAX_DISMISSED = 2000  # «No me interesa» guardados (los más viejos se olvidan)
+# Lo que se comparte con el iPhone de cada título (lo demás —«Continuar», oculto— es de la TV).
+SHARED_PREFS = ("audio", "spanish", "subtitles")
+_CHOICE_OK = {"audio": re.compile(r"^[a-z]{2,3}$"), "spanish": re.compile(r"^(es-419|es-ES)?$"),
+              "subtitles": re.compile(r"^([a-z]{2,3}|forced)?$")}
+MAX_OPENED = 500  # consolas (filas) con su última entrada; las que hace más que no abres se olvidan
 _NUMBER = "número"
 # Qué tipo lleva cada ajuste: un «abc» en video_idle_minutes impedía arrancar (int("abc")).
 SETTING_TYPES = {"audio": str, "dub": str, "subtitles": str, "quality": str, "text_size": str, "sub_scale": _NUMBER,
@@ -40,7 +46,7 @@ class State:
         # "inbox": lo que la TV le manda al iPhone y él aún no recoge (id → pendiente; ver companion.py).
         # "opened": cuándo entraste por última vez a cada consola (fila → cuándo): lo nuevo deja de anunciarse.
         self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}, "dismissed": {}, "inbox": {},
-                            "opened": {}}
+                            "opened": {}, "sync": {}}
         self._frozen = False  # no se pudo leer el archivo: se vive en memoria y NO se pisa
         if path and path.exists():
             self._load(path)
@@ -93,6 +99,8 @@ class State:
         self._data["dismissed"] = {k: number(v) for k, v in self._data["dismissed"].items()}
         self._data["settings"] = {k: v for k, v in self._data["settings"].items() if _setting_ok(k, v)}
         self._data["inbox"] = {k: v for k, v in self._data["inbox"].items() if isinstance(v, dict) and v.get("action") in ("open", "download")}
+        rev = self._data["sync"].get("rev")
+        self._data["sync"] = {"rev": rev if isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0 else 0}
 
     def _save(self) -> None:
         """Escritura atómica (no se corrompe si se apaga la consola). Si Windows no deja escribir (un
@@ -104,7 +112,7 @@ class State:
             try:
                 self.path.parent.mkdir(parents=True, exist_ok=True)
                 tmp = self.path.with_suffix(".tmp")
-                tmp.write_text(json.dumps(self._data, ensure_ascii=False, indent=1), encoding="utf-8")
+                tmp.write_text(json.dumps(self._data, ensure_ascii=False, indent=1), encoding="utf-8", errors="replace")
                 tmp.replace(self.path)
                 return
             except OSError as exc:
@@ -147,7 +155,12 @@ class State:
     def mark_opened(self, row_id: str, now: float | None = None) -> None:
         """Entraste a esa consola: lo que llegó antes ya no cuenta como «nuevo» en su tarjeta."""
         with self._lock:
-            self._data["opened"][row_id[:80]] = now or time.time()
+            opened = self._data["opened"]
+            key = row_id[:80]
+            opened.pop(key, None)
+            opened[key] = now or time.time()  # al final: las más viejas se van primero
+            while len(opened) > MAX_OPENED:  # cada fila nueva (búsquedas, colecciones) sumaba para siempre
+                del opened[next(iter(opened))]
             self._save()
 
     def opened(self, row_id: str) -> float:
@@ -174,10 +187,13 @@ class State:
 
     def _set_pref_unlocked(self, item_id: str, key: str, value) -> None:
         prefs = self._data["prefs"].setdefault(item_id, {})
+        changed = prefs.get(key) != value
         if value is None:
             prefs.pop(key, None)
         else:
             prefs[key] = value
+        if changed and key in SHARED_PREFS and item_id.startswith("stremio:"):
+            prefs["rev"] = self._bump()  # el iPhone lo recibe en su siguiente sincronización
         if not prefs:
             self._data["prefs"].pop(item_id)
 
@@ -236,6 +252,66 @@ class State:
                 for old in sorted(dismissed, key=dismissed.get)[:len(dismissed) - MAX_DISMISSED]:
                     del dismissed[old]
             self._save()
+
+    # --- elecciones compartidas con el iPhone (audio, variante, subtítulos de cada título) ---------------
+    def _bump(self) -> int:
+        sync = self._data["sync"]
+        sync["rev"] = int(sync.get("rev") or 0) + 1
+        return sync["rev"]
+
+    def choices_since(self, since: int, limit: int = 500) -> tuple[int, dict]:
+        """Lo que cambió en la TV después de `since` (0: todo lo que hay). {meta_id: {audio, spanish, subtitles, rev}}."""
+        with self._lock:
+            out = {}
+            for item_id, prefs in self._data["prefs"].items():
+                rev = prefs.get("rev") if isinstance(prefs.get("rev"), int) else 0
+                if not item_id.startswith("stremio:"):
+                    continue
+                has = any(isinstance(prefs.get(k), str) for k in SHARED_PREFS)
+                # Uno olvidado («Olvidar») viaja sin campos: el iPhone también lo olvida.
+                if (since == 0 and has) or (since > 0 and rev > since):
+                    out[item_id.split(":", 1)[1]] = {**{k: prefs[k] for k in SHARED_PREFS if isinstance(prefs.get(k), str)}, "rev": rev}
+            items = sorted(out.items(), key=lambda kv: kv[1]["rev"])[-limit:]
+            return int(self._data["sync"].get("rev") or 0), dict(items)
+
+    def apply_choice(self, meta_id: str, fields: dict, base_rev: int) -> bool:
+        """Lo que eligió el iPhone para un título. False si la TV lo cambió después de lo último que el iPhone vio (gana
+        la TV: el iPhone recibe su valor). Solo los campos compartidos y con valores válidos; un campo en None se olvida."""
+        valid = {k: v for k, v in fields.items() if k in SHARED_PREFS and (v is None or (isinstance(v, str) and _CHOICE_OK[k].match(v)))}
+        if not valid:
+            return True
+        with self._lock:
+            item_id = f"stremio:{meta_id}"
+            prefs = self._data["prefs"].get(item_id, {})
+            if (prefs.get("rev") or 0) > base_rev:
+                return False
+            prefs = self._data["prefs"].setdefault(item_id, {})
+            for key, value in valid.items():
+                if value is None:
+                    prefs.pop(key, None)
+                else:
+                    prefs[key] = value
+            prefs["rev"] = self._bump()
+            self._save()
+            return True
+
+    def forget_choices(self, meta_id: str) -> None:
+        """«Lo que recuerda cada título» › Olvidar: vuelve a lo de Ajustes (y el iPhone se entera)."""
+        with self._lock:
+            prefs = self._data["prefs"].get(f"stremio:{meta_id}")
+            if not prefs:
+                return
+            for key in SHARED_PREFS:
+                prefs.pop(key, None)
+            prefs["rev"] = self._bump()
+            self._save()
+
+    def remembered_titles(self) -> list[tuple[str, dict]]:
+        """Los títulos con audio o subtítulos propios (para Ajustes), del más reciente al más viejo."""
+        with self._lock:
+            rows = [(k.split(":", 1)[1], {key: v[key] for key in SHARED_PREFS if isinstance(v.get(key), str)}, v.get("rev") or 0)
+                    for k, v in self._data["prefs"].items() if k.startswith("stremio:") and any(isinstance(v.get(x), str) for x in SHARED_PREFS)]
+            return [(m, f) for m, f, _ in sorted(rows, key=lambda r: r[2], reverse=True)]
 
     def dismissed(self) -> set[str]:
         with self._lock:

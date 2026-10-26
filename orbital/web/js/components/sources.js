@@ -7,28 +7,33 @@ import { isOwnSource, languageLine, versionRows, versionStart, versionStep } fro
 import { h, hideAfterExit, mount } from "../core/dom.js";
 
 /**
- * «Elegir versión» (Y en la ficha): un panel que sube desde abajo, encima de la ficha. Lo normal es no necesitarlo: «Ver»
+ * «Versión» (Y en la ficha): un panel que sube desde abajo, encima de la ficha. Lo normal es no necesitarlo: «Ver»
  * arranca solo con la recomendada. Aquí, una fila por IDIOMA DE AUDIO (tu idioma primero, luego el original y los
  * demás) y en cada una solo las calidades que hay, la mejor de cada una. Abajo, en una línea, cómo sabemos el idioma
  * de la enfocada (lo dice el nombre, el sitio, es el original, tal vez, comprobado). X enseña todas las de esa fila y
  * calidad con su nombre técnico, como el iPhone.
- *   ↑/↓ idioma · ◀/▶ calidad · A ver · X todas las de aquí · B volver a la ficha
+ * En un episodio, LB/RB: «Solo este episodio» o «Desde aquí» (la serie sigue con el idioma de la que elijas).
+ *   ↑/↓ idioma · ◀/▶ calidad · A ver · X todas las de aquí · LB/RB alcance · B volver a la ficha
  */
 export function createSources({ onPlay, onMove, onClose, onChange }) {
-  const heading = h("div", { class: "sources__heading" }, "Elegir versión");
+  const heading = h("div", { class: "sources__heading" }, "Versión");
   const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
+  // Un episodio: ¿esta versión es solo para él o la serie sigue así? (LB/RB; como «Solo este | Desde aquí» del iPhone).
+  const scopeRow = h("div", { class: "sources__scope", hidden: true });
   const list = h("div", { class: "sources__list", role: "group" });
   const why = h("div", { class: "sources__why", role: "status" });
   const status = h("div", { class: "sources__status", role: "status" });
   const retry = h("div", { class: "sources__retry", hidden: true },
     Button({ label: "Reintentar", variant: "primary", onPress: () => request && open(request) }));
   const panel = h("div", { class: ["side-panel__panel", "sources__panel"] },
-    h("div", { class: "sources__head" }, heading, title, subtitle), status, retry, list, why);
-  const el = h("section", { class: ["side-panel", "side-panel--bottom", "sources"], hidden: true, "aria-label": "Elegir versión",
+    h("div", { class: "sources__head" }, heading, title, subtitle, scopeRow), status, retry, list, why);
+  const el = h("section", { class: ["side-panel", "side-panel--bottom", "sources"], hidden: true, "aria-label": "Versión",
     onClick: (e) => e.target === el && close() }, panel);
 
   let request = null; // { kind, id, video_id, title, item }
+  let recommended = null; // la que pone «Ver» (el servidor lo dice: con «Continuar», la de antes)
+  let fromHere = false; // «Desde aquí»: la serie sigue con el idioma de la versión que elijas
   let found = [];
   let rows = []; // versionRows(found): [{ code, name, role, options: [{ res, source, proof, all }] }]
   let at = { row: 0, col: 0 };
@@ -44,6 +49,8 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   const state = (src) => (isOwnSource(src) || src.cached ? ["Al instante", "good"] : src.debrid ? ["Tarda en empezar", "warn"] : [src.addon, null]);
 
   let start = { row: 0, col: 0 }; // dónde está la recomendada (una versión con dos idiomas sale en dos filas: se marca una)
+  // La recomendada es la que pone «Ver» (con «Continuar», la de antes); si el servidor no lo dice, la primera.
+  const best = () => found.find((s) => s.id === recommended) || found[0];
 
   function option(opt, r, c) {
     const [label, tone] = state(opt.source);
@@ -55,7 +62,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     h("span", { class: ["version__res", opt.res === "4K" && "version__res--4k"] }, opt.res),
     h("span", { class: ["version__state", tone && `version__state--${tone}`] }, label),
     h("span", { class: "version__facts" }, [...facts(opt.source).slice(0, 2), opt.proof === "maybe" && "tal vez"].filter(Boolean).join(" · ")),
-    r === start.row && c === start.col && opt.source === found[0] && Badge("Recomendada", { className: "version__badge" }),
+    r === start.row && c === start.col && opt.source === best() && Badge("Recomendada", { className: "version__badge" }),
     opt.source.other_title && Chip("¿Otro título?", { tone: "warn", className: "version__other" }));
     return button;
   }
@@ -124,13 +131,23 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
 
   function play(src) {
     if (!src || !request) return;
-    onPlay({ ...request, source: src.id });
+    onPlay({ ...request, source: src.id, remember: isEpisode() && fromHere });
   }
 
   let failed = false; // sin fuentes o con error: A reintenta y el pie lo dice
 
+  const isEpisode = () => request?.kind === "series" && !!request?.video_id;
+
+  function renderScope() {
+    scopeRow.hidden = !isEpisode();
+    const option = (on, label) => (on ? Badge(label) : Chip(label));
+    mount(scopeRow, isEpisode() ? [option(!fromHere, "Solo este episodio"), option(fromHere, "Desde aquí")] : []);
+  }
+
   async function open(req) {
     request = req;
+    fromHere = false;
+    renderScope();
     failed = false;
     const mine = ++token;
     cancelExit();
@@ -152,11 +169,12 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     try {
       const data = await api.stremioSources(req.kind, req.id, req.video_id);
       if (mine !== token) return;
-      if (!Array.isArray(data?.sources)) throw new Error("No pude leer las fuentes. Intenta de nuevo.");
+      if (!Array.isArray(data?.sources)) throw new Error("No pude leer las versiones. Intenta de nuevo.");
       found = data.sources;
+      recommended = data.recommended?.id ?? null;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
-      rows = versionRows(found, { audio: data.audio, dub: data.dub });
-      at = versionStart(rows, found[0]);
+      rows = versionRows(found, { audio: data.audio, spanish: data.spanish });
+      at = versionStart(rows, best());
       start = { ...at };
       subtitle.textContent = "«Al instante»: arranca en segundos. «Tarda en empezar»: Real-Debrid primero la descarga.";
       status.hidden = !!rows.length;
@@ -198,7 +216,11 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       return true;
     }
     if (action === "back" || action === "options") close();
-    else if (["up", "down", "left", "right"].includes(action) && rows.length) focus(versionStep(rows, at, action));
+    else if ((action === "prevsection" || action === "nextsection") && isEpisode()) {
+      fromHere = action === "nextsection";
+      renderScope();
+      onChange?.(); // el pie: «Solo este episodio» / «Desde aquí»
+    } else if (["up", "down", "left", "right"].includes(action) && rows.length) focus(versionStep(rows, at, action));
     else if (action === "alt" && rows[at.row]?.options[at.col]) {
       cell = { ...at };
       index = 0;
@@ -221,7 +243,9 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     const many = rows[at.row]?.options[at.col]?.all.length > 1;
     return [{ glyph: g.select, label: "Ver con esta" }, rows.length > 1 && { glyph: g.rows, label: "Idioma" },
       rows.some((r) => r.options.length > 1) && { glyph: g.rows === "↑↓" ? "← →" : "◀ ▶", label: "Calidad" },
-      many && { glyph: g.alt, label: "Todas las de aquí", secondary: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
+      many && { glyph: g.alt, label: "Todas las de aquí", secondary: true },
+      isEpisode() && { glyph: g.section, label: fromHere ? "Desde aquí" : "Solo este episodio", secondary: true },
+      { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
   };
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("side-panel--leaving"); } };

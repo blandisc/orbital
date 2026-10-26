@@ -9,7 +9,7 @@ import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -230,7 +230,7 @@ const ui = {
 const { back: touchBack, menu: touchMenu } = createTouchBack({ onBack: () => handleAction("back"), onMenu: () => handleAction("menu") });
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
-// Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Elegir versión») van
+// Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Versión») van
 // después de la lista abierta, ¿Qué vemos?, Tu año y el calendario: A en un póster las deja a la vista.
 document.getElementById("app").replaceWith(
   touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
@@ -1442,7 +1442,7 @@ function setOnline(online) {
 }
 
 // ---------------------------------------------------------------- películas y series
-/** La ficha (película o serie): datos, reparto, episodios, Continuar / Ver / Elegir fuente. */
+/** La ficha (película o serie): datos, reparto, episodios, Continuar / Ver / Versión. */
 function openTitle(item, restoreFocus = null) {
   const ref = titleRef(item);
   if (!ref) return;
@@ -1822,6 +1822,14 @@ async function runCommand(command, context = null) {
         traktFrom = { context };
         ui.traktLink.open("onedrive");
         return renderHints();
+      case "remembered":
+        return openMenu(rememberedMenu((await api.remembered()).titles || []), nested(context));
+      case "remembered-forget": {
+        const res = await api.forgetRemembered(command.id);
+        sound.play("select");
+        ui.toast.show(`${command.title} vuelve a lo de Ajustes`, { tone: "success" });
+        return openMenu(rememberedMenu(res.titles || []), context);
+      }
       case "onedrive-account":
         return openMenu(onedriveMenu(await api.onedrive()), nested(context));
       case "onedrive-folder": { // recorrer tus carpetas para elegir la de tus videos (solo las que tú abres)

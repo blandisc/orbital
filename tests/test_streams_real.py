@@ -74,7 +74,7 @@ def test_otro_titulo_baja_sin_esconderse():
     pradera = [s for s in found if "pradera" in s.release.lower()]
     assert len(pradera) == 3 and all(s.other_title for s in pradera)
     assert not any(s.other_title for s in found if "Money Heist" in s.release or "Бумажный" in s.release)
-    best = rank(found, Preferences(audio="es", dub="castellano", quality="1080p"), "series")
+    best = rank(found, Preferences(audio="es", spanish="es-ES", quality="1080p"), "series")
     assert "pradera" not in best[0].release.lower() and len(best) == len(found)  # abajo, pero sigue en la lista
 
 
@@ -84,9 +84,9 @@ def test_el_grupo_x264_pl_no_es_polaco():
 
 
 def test_preferir_latino_pone_primero_lo_latino():
-    best = rank(sources("Dune: Parte dos"), Preferences(audio="es", dub="latino", quality="4K"), "movie")
+    best = rank(sources("Dune: Parte dos"), Preferences(audio="es", spanish="es-419", quality="4K"), "movie")
     assert best[0].audio_langs.get("es-419") == "name" and best[0].cached
-    castellano = rank(sources("Dune: Parte dos"), Preferences(audio="es", dub="castellano", quality="1080p"), "movie")
+    castellano = rank(sources("Dune: Parte dos"), Preferences(audio="es", spanish="es-ES", quality="1080p"), "movie")
     assert "es-ES" in castellano[0].audio_langs
 
 
@@ -121,7 +121,7 @@ def _fake_watch(found, prefs, tmp_path):
     from orbital import watch
 
     finder = SimpleNamespace(cached=lambda kind, video, p: found)
-    fake = SimpleNamespace(language_for=lambda meta_id: (prefs, ""), streams=finder,
+    fake = SimpleNamespace(language_for=lambda meta_id: (prefs, ""), asked_language=lambda meta: (prefs, ""), streams=finder,
                            heard=watch.HeardTracks(tmp_path / "pistas.json"))
     fake._other_versions = lambda meta: watch.Watch._other_versions(fake, meta)
     fake._wanted_codes = watch.Watch._wanted_codes
@@ -130,7 +130,7 @@ def _fake_watch(found, prefs, tmp_path):
 
 def test_x_audio_ofrece_tu_idioma_en_otra_version(tmp_path):
     found = rank(sources("Dune: Parte dos"), Preferences(audio="en", quality="4K"), "movie")
-    fake, watch = _fake_watch(found, Preferences(audio="es", dub="latino", quality="4K"), tmp_path)
+    fake, watch = _fake_watch(found, Preferences(audio="es", spanish="es-419", quality="4K"), tmp_path)
     english = next(s for s in found if s.audio_langs == {"en": "original"})
     rows = watch.Watch._other_versions(fake, {"source": english.index, "kind": "movie", "video_id": "tt15239678",
                                                "meta_id": "tt15239678"})
@@ -142,8 +142,8 @@ def test_x_audio_ofrece_tu_idioma_en_otra_version(tmp_path):
 
 
 def test_al_empezar_dice_si_no_trae_tu_idioma_y_lo_recuerda(tmp_path):
-    found = rank(sources("Dune: Parte dos"), Preferences(audio="es", dub="latino", quality="4K"), "movie")
-    fake, watch = _fake_watch(found, Preferences(audio="es", dub="latino", quality="4K"), tmp_path)
+    found = rank(sources("Dune: Parte dos"), Preferences(audio="es", spanish="es-419", quality="4K"), "movie")
+    fake, watch = _fake_watch(found, Preferences(audio="es", spanish="es-419", quality="4K"), tmp_path)
     spa = next(s for s in found if "Eng 7.1-Fre 5.1-Spa" in s.release)  # «Spa»: no dice cuál
     meta = {"source": spa.index, "source_key": spa.key, "kind": "movie", "video_id": "tt15239678", "meta_id": "tt15239678"}
     tracks = [{"type": "audio", "lang": "eng"}, {"type": "audio", "lang": "fre"},
@@ -237,7 +237,7 @@ def test_una_en_otro_idioma_al_instante_no_le_gana_a_la_tuya_que_tarda():
 
 def test_cualquiera_en_espanol_no_avisa_ni_esconde(tmp_path):
     found = rank(sources("Dune: Parte dos"), Preferences(audio="es", quality="4K"), "movie")
-    fake, watch = _fake_watch(found, Preferences(audio="es", dub="", quality="4K"), tmp_path)
+    fake, watch = _fake_watch(found, Preferences(audio="es", quality="4K"), tmp_path)
     english = next(s for s in found if s.audio_langs == {"en": "original"})
     meta = {"source": english.index, "source_key": english.key, "kind": "movie", "video_id": "tt15239678",
             "meta_id": "tt15239678"}
@@ -249,8 +249,8 @@ def test_cualquiera_en_espanol_no_avisa_ni_esconde(tmp_path):
 
 
 def test_el_aviso_dice_cuantas_pistas_mas(tmp_path):
-    found = rank(sources("Dune: Parte dos"), Preferences(audio="es", dub="latino"), "movie")
-    fake, watch = _fake_watch(found, Preferences(audio="es", dub="latino"), tmp_path)
+    found = rank(sources("Dune: Parte dos"), Preferences(audio="es", spanish="es-419"), "movie")
+    fake, watch = _fake_watch(found, Preferences(audio="es", spanish="es-419"), tmp_path)
     src = found[-1]
     meta = {"source": src.index, "source_key": src.key, "kind": "movie", "video_id": "tt15239678", "meta_id": "tt15239678"}
     tracks = [{"type": "audio", "lang": code} for code in ("eng", "fre", "ger", "ita", "jpn")]
@@ -264,8 +264,8 @@ def test_la_lista_sirve_aunque_cambie_la_preferencia(monkeypatch):
     found = sources("Dune: Parte dos")
     import time as _time
     finder._cache["movie:tt1:es:4K:castellano"] = (_time.time(), found)
-    assert finder.get("movie", "tt1", Preferences(audio="es", quality="4K", dub="latino"), found[3].index) is found[3]
-    assert finder.cached("movie", "tt1", Preferences(audio="es", dub="latino"))[0].audio_langs.get("es-419")
+    assert finder.get("movie", "tt1", Preferences(audio="es", quality="4K", spanish="es-419"), found[3].index) is found[3]
+    assert finder.cached("movie", "tt1", Preferences(audio="es", spanish="es-419"))[0].audio_langs.get("es-419")
 
 
 def test_heard_tracks_con_bom(tmp_path):

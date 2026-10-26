@@ -4,9 +4,9 @@ import OrbitalModels
 
 /// «Para ti»: el mosaico (como en la TV, solo películas y series) y las listas (Trakt y plataformas).
 struct ParaTiView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var model: ModelObserver<ParaTiModel>
-    @StateObject private var tint = ArtTint()
+    @Environment(AppEnvironment.self) private var env
+    @State private var model: ModelObserver<ParaTiModel>
+    @State private var tint = ArtTint()
     /// El arte de la pieza enfocada del mosaico: el fondo de toda la pantalla toma su tono (nil en el ambiente o en Listas).
     @State private var focusedArt: String?
     /// La sugerencia enfocada del mosaico (su información va bajo él).
@@ -18,7 +18,10 @@ struct ParaTiView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
 
-    init() { _model = StateObject(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
+    /// Un iPhone de 375 pt o menos (SE, mini): la barra de arriba no da para todo junto al título.
+    static var narrow: Bool { UIScreen.main.bounds.width < DS.Size.compactWidth }
+
+    init() { _model = State(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
 
     var body: some View {
         let m = model.model
@@ -54,7 +57,7 @@ struct ParaTiView: View {
                         .id(item.imdb)
                     }
                 }
-            case .lists: ListsView(observer: model)
+            case .lists: ListsView(observer: model, onDecide: { deciding = true })
             }
         }
         .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio
@@ -65,8 +68,11 @@ struct ParaTiView: View {
         .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
+            // En Listas y en un iPhone angosto no cabían los cuatro botones junto al título («Para…»): «Decide por mí» pasa al índice.
+            if !(m.mode == .lists && Self.narrow) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
+                }
             }
             // Un solo selector en la pantalla (Todo · Series · Películas, en Listas): mosaico ↔ listas es este botón.
             ToolbarItem(placement: .topBarTrailing) {
@@ -85,7 +91,8 @@ struct ParaTiView: View {
                 }
             }
             // Sin separar el perfil: en una sola pastilla los botones caben junto al título aun en un SE («Para…» se cortaba).
-            ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
+            // En Listas, `ListsView` pone el índice de secciones y luego el perfil: así el perfil es siempre el último botón.
+            if m.mode == .mosaic { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -111,8 +118,9 @@ struct ParaTiView: View {
     private func decideSources(_ m: ParaTiModel) -> [DecideModel.Source] {
         let language = env.services.appSettings.uiLanguage
         var out: [DecideModel.Source] = []
-        if let because = m.because { out.append(.init(id: "because", name: String(format: Strings.tr("Porque viste %@", language: language), because.seed.title), items: because.items)) }
-        if !m.newOnPlatforms.isEmpty { out.append(.init(id: "new", name: Strings.tr("Nuevo en tus plataformas", language: language), items: m.newOnPlatforms)) }
+        let suggested = "Sugerencias"
+        if let because = m.because { out.append(.init(id: "because", name: String(format: Strings.tr("Porque viste %@", language: language), because.seed.title), origin: suggested, items: because.items)) }
+        if !m.newOnPlatforms.isEmpty { out.append(.init(id: "new", name: Strings.tr("Nuevo en tus plataformas", language: language), origin: suggested, items: m.newOnPlatforms)) }
         for plan in m.visibleShelves {
             let name: String = switch plan.id {
             case "watchlist": Strings.tr("Tu watchlist", language: language)
@@ -122,7 +130,12 @@ struct ParaTiView: View {
             case "popular": Strings.tr("Lo más popular", language: language)
             default: plan.title.isEmpty ? plan.id : plan.title
             }
-            out.append(.init(id: plan.id, name: name, items: m.items(for: plan)))
+            out.append(.init(id: plan.id, name: name, origin: suggested, items: m.items(for: plan)))
+        }
+        // Todas tus listas (tienes muchas): las que aún no se abren se piden solo si las eliges.
+        for list in m.traktLists where !out.contains(where: { $0.id == list.id }) && !list.title.isEmpty {
+            let origin = list.source.isEmpty ? (list.group == .mine ? "Trakt" : suggested) : list.source
+            out.append(.init(id: list.id, name: list.title, origin: origin, items: m.items(for: list), load: m.decideLoader(for: list)))
         }
         return out
     }
@@ -140,14 +153,14 @@ struct ParaTiView: View {
 
 /// Las acciones de una sugerencia (mantener el dedo sobre un póster, o «Más» en el destacado): ver, Mi lista, descargar, la TV y «No me interesa».
 struct SuggestionActions: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     let suggestion: Suggestion
     var includeWatch = true
     let onDismiss: (Suggestion) -> Void
 
     var body: some View {
         if includeWatch { Button("Ver", systemImage: "play.fill") { Task { await env.play(suggestion) } } }
-        Button("Guardar", systemImage: "plus") { Task { await env.addToLibrary(suggestion) } }
+        Button("Guardar", systemImage: "plus") { Task { await env.save(suggestion) } }   // a la lista por omisión (`SaveDestination`)
         Button("Descargar", systemImage: "arrow.down.circle") { Task { await env.download(suggestion) } }
         if env.services.orbital.isConfigured {
             Button("Ver en la TV", systemImage: "tv") { Task { await env.playOnTV(kind: suggestion.kind, metaID: suggestion.imdb, videoID: env.videoID(for: suggestion), title: suggestion.title) } }
@@ -244,17 +257,19 @@ enum KindFilter: String { case all, series, movie }
 
 /// «Para ti › Listas»: el filtro Todo · Series · Películas, un destacado y los estantes (cada uno dice de dónde viene).
 struct ListsView: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
-    @EnvironmentObject private var env: AppEnvironment
+    var observer: ModelObserver<ParaTiModel>
+    /// «Decide por mí» (en un iPhone angosto vive en el índice de arriba).
+    var onDecide: () -> Void = {}
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var openTitle: TitleRoute?
     /// Los colores del arte del destacado: su «Ver» toma el color claro, como en la TV.
-    @StateObject private var featuredTint = ArtTint()
+    @State private var featuredTint = ArtTint()
     /// La posición del carrusel del destacado (vuelta infinita: la tarjeta es la posición módulo cuántas hay).
     @State private var featuredSlot: Int?
     /// Premios, tus listas de Trakt y «Por año».
     /// Uno para toda la app: cambiar entre mosaico y listas ya no lo vuelve a pedir todo (Mi lista, años, estudios).
-    @StateObject private var collections = ModelObserver(Self.sharedCollections)
+    @State private var collections = ModelObserver(Self.sharedCollections)
     @MainActor static let sharedCollections = CollectionsModel(AppEnvironment.shared.services)
     /// El grupo que estás viendo (el índice de arriba lo marca).
     @State private var activeSection: CollectionSection = .forYou
@@ -343,6 +358,7 @@ struct ListsView: View {
                         if !slides.isEmpty { featuredCarousel(slides).perfTag("paraTi.hero") }
                       }
                     }
+                    if slides.isEmpty, model.shelves.isEmpty, model.isLoading { FeedSkeleton() }   // la primera vez, mientras llega
                     if let because = model.because { becauseCard(because) }
                     ForEach(generalShelves) { plan in shelf(plan).id(plan.id).perfTag("paraTi.shelf") }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.
@@ -411,6 +427,7 @@ struct ListsView: View {
         // Brincar a una sección: un menú en la barra (marca en cuál estás).
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { sectionMenu(proxy) }
+            ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
 
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
@@ -449,6 +466,10 @@ struct ListsView: View {
     /// Ir a una sección (el filtro Todo · Películas · Series va arriba de la lista, el mismo de toda la app).
     private func sectionMenu(_ proxy: ScrollViewProxy) -> some View {
         Menu {
+            if ParaTiView.narrow {
+                Button("Decide por mí", systemImage: "dice", action: onDecide)
+                Divider()
+            }
             ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
                 Button {
                     activeSection = section
@@ -481,16 +502,32 @@ struct ListsView: View {
 
     /// «Porque viste X»: una tarjeta propia (no una fila más) con lo que viste y lo relacionado.
     private func becauseCard(_ because: (seed: TraktEntry, items: [Suggestion])) -> some View {
-        let fromHistory = model.becauseSeeds.map { BecauseSeed(id: $0.imdb, title: $0.title, poster: String(format: ForYou.metahubPoster, $0.imdb)) }
-        let seeds = fromHistory.contains { $0.id == because.seed.imdb } ? fromHistory
-            : [BecauseSeed(id: because.seed.imdb, title: because.seed.title, poster: String(format: ForYou.metahubPoster, because.seed.imdb))] + fromHistory
-        return BecauseCard(seeds: seeds, selected: because.seed.imdb,
+        let fromHistory = model.becauseSeeds.map(becauseSeed)
+        let seeds = fromHistory.contains { $0.id == because.seed.imdb } ? fromHistory : [becauseSeed(because.seed)] + fromHistory
+        // El mazo sigue a lo que elegiste al momento; las relacionadas son las del título de arriba o, si aún no llegan, su lugar.
+        let selected = model.becauseSelected ?? because.seed.imdb
+        let state: BecauseRelated = because.seed.imdb != selected ? .loading : because.items.isEmpty ? .none : .ready
+        return BecauseCard(seeds: seeds, selected: selected, state: state,
                            choose: { id in if let seed = model.becauseSeeds.first(where: { $0.imdb == id }) { Task { await model.chooseBecause(seed) } } }) {
             ForEach(because.items) { s in
                 ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], width: DS.Collections.relatedPoster) { dismissed in Task { await model.dismiss(dismissed) } }
             }
         }
         .padding(.horizontal, DS.Space.gutter)
+        // Los pósters de los vecinos (lo siguiente que vas a tocar), de antemano: al cambiar ya están y no salen de a poco.
+        .task(id: "\(selected)-\(model.becausePreloaded.count)") {
+            guard let at = seeds.firstIndex(where: { $0.id == selected }), seeds.count > 1 else { return }
+            let neighbors = [seeds[(at + 1) % seeds.count].id, seeds[(at - 1 + seeds.count) % seeds.count].id]
+            ImagePipeline.shared.prefetchPosters(neighbors.flatMap { (model.becausePreloaded[$0] ?? []).prefix(DS.Collections.relatedPlaceholders + 1).map(\.poster) })
+        }
+    }
+
+    /// Un título de lo que viste, para el mazo: qué es y de qué año («Serie · 2005»). Sin «la viste hace…»: no gustó.
+    private func becauseSeed(_ e: TraktEntry) -> BecauseSeed {
+        let language = env.services.appSettings.uiLanguage
+        var parts = [Strings.tr(e.kind == "movie" ? "Película" : "Serie", language: language)]
+        if let year = e.year { parts.append(String(year)) }
+        return BecauseSeed(id: e.imdb, title: e.title, poster: String(format: ForYou.metahubPoster, e.imdb), detail: parts.joined(separator: " · "))
     }
 
     /// Un grupo de listas (de Trakt o de Stremio): tarjetas de dos en dos que abren la lista completa.
@@ -661,8 +698,8 @@ struct ListsView: View {
 
 /// La lista completa de un estante, en cuadrícula (el mismo título y logo del encabezado que se tocó).
 struct ListGridView: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
-    @ObservedObject var collections: ModelObserver<CollectionsModel>
+    var observer: ModelObserver<ParaTiModel>
+    var collections: ModelObserver<CollectionsModel>
     let shelfID: String
     private var model: ParaTiModel { observer.model }
 
@@ -704,7 +741,7 @@ struct ListGridView: View {
 
 /// El calendario completo («Por día» · «Semana»): la vista de Próximos estrenos de siempre, abierta desde el encabezado del estante.
 struct UpcomingScreen: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
+    var observer: ModelObserver<ParaTiModel>
 
     var body: some View {
         ScrollView { UpcomingView(observer: observer).padding(.bottom, DS.Space.s14) }
@@ -720,7 +757,7 @@ struct PlatformRoute: Hashable { var brand: String }
 /// Los rankings de una plataforma: su logo con su brillo arriba y, por ranking (Top 10 de Netflix, tendencia de JustWatch;
 /// series y películas), los pósters con su número grande en el color de la plataforma. Tocar uno abre su ficha.
 struct PlatformRankingsView: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
+    var observer: ModelObserver<ParaTiModel>
     let hub: PlatformHub
     private var model: ParaTiModel { observer.model }
     /// «Series» o «Películas» (pestañas grandes) y cuál de sus listas (pestañas de texto con el subrayado de la marca).

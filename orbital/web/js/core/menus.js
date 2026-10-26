@@ -388,8 +388,7 @@ export function powerConfirmMenu(action, running = null) {
 // --- Ajustes ------------------------------------------------------------------------------
 // Cada ajuste: sus valores de menos a más (▶ sube, ◀ baja; A pasa al siguiente y da la vuelta) y cómo se llaman.
 export const SETTING_VALUES = {
-  audio: [["en", "Inglés"], ["es", "Español"]],
-  dub: [["latino", "Latino"], ["castellano", "Castellano"], ["", "Cualquiera"]],
+  audio: [["en", "Inglés"], ["es-419", "Español latino"], ["es-ES", "Español de España"], ["es", "Español (cualquiera)"]],
   subtitles: [["en", "Inglés"], ["es", "Español"], ["forced", "Solo traducciones en pantalla"], ["", "Sin subtítulos"]],
   quality: [["720p", "720p"], ["1080p", "1080p"], ["4K", "4K"]],
   sub_scale: [[.85, "Pequeño"], [1, "Normal"], [1.25, "Grande"], [1.5, "Muy grande"]],
@@ -441,14 +440,14 @@ function edgeAware(key, value, step, page) {
 
 /** Un ícono por ajuste (antes, todos los de la página con el mismo). */
 const SETTING_ICONS = {
-  audio: "sound", dub: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
+  audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", haptics: "gamepad", game_idle_minutes: "gamepad",
   video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide",
 };
 
 const SETTING_PAGES = {
   playback: { title: "Películas y series", icon: "play", hint: "Idioma, subtítulos y calidad", options: [
-    ["audio", "Idioma", "En qué idioma prefieres oírlas"], ["dub", "Español", "Cuando sea en español: qué doblaje"],
+    ["audio", "Idioma", "En qué idioma prefieres oírlas"],
     ["subtitles", "Subtítulos", null], ["quality", "Calidad", null],
     ["sub_scale", "Letra de los subtítulos", null]] },
   display: { title: "Pantalla y sonido", icon: "display", hint: "Texto, márgenes, sonidos y vibración", options: [
@@ -638,7 +637,7 @@ export function settingsPage(page, settings) {
         { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
           ok: !!settings.stremio_linked,
           command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
-          hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
+          hint: settings.stremio_linked ? "Seguir viendo y complementos" : "Para películas y series" },
         settings.trakt?.configured ? { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
           ok: !!settings.trakt.linked,
           command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
@@ -654,14 +653,29 @@ export function settingsPage(page, settings) {
   }
   const def = Object.hasOwn(SETTING_PAGES, page) ? SETTING_PAGES[page] : null;
   if (!def) return settingsMenu(); // una página que no existe: los Ajustes, no una excepción
+  // Películas y series: además de lo de siempre, lo que cada título recuerda (y olvidarlo).
+  const extra = page === "playback"
+    ? [{ icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } }]
+    : [];
   return {
     title: def.title, crumb: def.title,
-    options: def.options.map(([key, label, hint]) => ({
+    options: [...def.options.map(([key, label, hint]) => ({
       icon: SETTING_ICONS[key] || def.icon, label, hint, value: settingLabel(key, settings[key]),
       command: { type: "setting", key, value: nextSetting(key, settings[key]), page },
       // ◀ baja y ▶ sube (antes las dos avanzaban)
       adjust: { left: edgeAware(key, settings[key], -1, page), right: edgeAware(key, settings[key], 1, page) },
-    })),
+    })), ...extra],
+  };
+}
+
+/** Lo que recuerda cada título: el idioma y los subtítulos que elegiste viéndolo. A lo olvida (vuelve a lo de Ajustes). */
+export function rememberedMenu(titles = []) {
+  return {
+    title: "Lo que recuerda cada título",
+    subtitle: "Lo que elegiste viendo cada uno; vale aquí y en tu iPhone. A lo olvida y vuelve a lo de Ajustes.",
+    options: titles.length
+      ? titles.map((t) => ({ icon: "play", label: t.title, value: t.line, command: { type: "remembered-forget", id: t.id, title: t.title } }))
+      : [{ icon: "info", label: "Ningún título recuerda nada todavía", hint: "Se llena al elegir audio o subtítulos viendo algo", inert: true }],
   };
 }
 
@@ -771,7 +785,7 @@ export function keysMenu(service) {
 export function stremioAccountMenu() {
   return {
     title: "Cuenta de Stremio",
-    subtitle: "Dejarás de ver Seguir viendo y tus fuentes.",
+    subtitle: "Dejarás de ver Seguir viendo y tus complementos.",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
@@ -883,7 +897,7 @@ const KEYBOARD_ROWS = [["Ir a Orbital · volver al juego", "Ctrl + Inicio"], ["V
 export const SHORTCUTS = {
   orbital: [["Abrir", "A"], ["Atrás", "B"], ["Opciones", "Y"], ["Otro emulador o la ficha", "X"],
     ["Cambiar de sección", "LB / RB"], ["Buscar", "Vista ⧉"], ["Menú", "☰"]],
-  player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y fuente", "Y"],
+  player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y versión", "Y"],
     ["Capítulo · episodio", "LB/RB · mantén LT/RT"], ["Volumen", "▲ ▼"], ["Salir", "Mantén B"]],
 };
 

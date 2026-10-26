@@ -11,18 +11,29 @@ protocol VideoPlayerEngine: PlayerEngine {
     var name: String { get }
     /// Lo que se puede llevar a una ventana de PiP ahora (cambia con cada fuente; nil antes de cargar).
     @MainActor var pictureInPicture: PictureInPictureContent? { get }
-    /// El zoom del video (botón y pellizco, como Infuse). «Ajustar al área segura» es ajustar: el recuadro más chico lo pone `PlayerScreen`.
+    /// El zoom del video (botón y pellizco, como Infuse). «Ajuste de aspecto» es ajustar: el recuadro más chico lo pone `PlayerScreen`.
     @MainActor func setZoom(_ zoom: VideoZoom)
     /// La ventana de PiP se abrió o se cerró (el motor sigue decodificando video en segundo plano mientras tanto).
     @MainActor func setPictureInPictureActive(_ active: Bool)
     /// Los subtítulos encima del video, si el motor no los pinta solo (AVPlayer sí; AetherEngine no).
-    @MainActor func subtitleOverlay(lifted: Bool, look: SubtitleLook, delay: Double) -> AnyView
+    /// `speedPill`: la píldora «2×» está a la vista y la línea tiene que quedar por encima.
+    @MainActor func subtitleOverlay(lifted: Bool, speedPill: Bool, look: SubtitleLook, delay: Double) -> AnyView
     /// Si los subtítulos los dibuja la app (y por eso se pueden adelantar o atrasar, y cambiar de estilo).
     var drawsSubtitles: Bool { get }
     /// «Sincronizar con una línea»: las frases de texto del subtítulo puesto desde ese segundo del archivo (vacío si no hay
     /// texto, p. ej. un PGS de imagen) y el segundo del cuadro que se ve ahora.
     @MainActor func subtitleLines(from seconds: Double, count: Int) -> [SubtitleLine]
     @MainActor var shownTime: Double { get }
+    /// Volver de segundo plano sin perder el video: el cuadro que está en pantalla (el motor suelta el video en pausa y en
+    /// segundo plano, y rearmarlo tarda). nil si el motor no sabe sacarlo.
+    @MainActor func stillFrame(maxSize: CGSize) async -> UIImage?
+    /// Ya hay video de verdad en la pantalla (nada que rearmar): se puede quitar el cuadro guardado.
+    @MainActor var showsVideo: Bool { get }
+}
+
+extension VideoPlayerEngine {
+    @MainActor func stillFrame(maxSize: CGSize) async -> UIImage? { nil }
+    @MainActor var showsVideo: Bool { true }
 }
 
 /// Una frase del subtítulo puesto, con el segundo en que el archivo la pone.
@@ -164,7 +175,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     @MainActor var pictureInPicture: PictureInPictureContent? { player.currentItem == nil ? nil : .playerLayer(layerView.playerLayer) }
     @MainActor func setZoom(_ zoom: VideoZoom) { layerView.playerLayer.videoGravity = zoom.gravity }
     @MainActor func setPictureInPictureActive(_ active: Bool) {}
-    @MainActor func subtitleOverlay(lifted: Bool, look: SubtitleLook, delay: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
+    @MainActor func subtitleOverlay(lifted: Bool, speedPill: Bool, look: SubtitleLook, delay: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
     var drawsSubtitles: Bool { false }
     @MainActor func subtitleLines(from seconds: Double, count: Int) -> [SubtitleLine] { [] }
     @MainActor var shownTime: Double { player.currentTime().seconds }

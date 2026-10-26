@@ -158,7 +158,7 @@ public final class MiMediaModel: ObservableModel {
         defer { scanning = false }
         do { _ = try await services.oneDriveLibrary.scan(); reload(); await loadSagas() }
         catch let e as OneDriveError { error = e.description }
-        catch { self.error = "No pudimos revisar tu OneDrive. Revisa tu conexión." }
+        catch { self.error = "No pude revisar tu OneDrive. Revisa tu conexión." }
     }
 
     /// Sagas (TMDB): cada película se pregunta una vez y se recuerda; solo salen las que tienen dos o más tuyas.

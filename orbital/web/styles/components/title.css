@@ -79,6 +79,7 @@
 .title__avail { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--type-secondary); }
 .title__avail-item + .title__avail-item::before { content: "·"; margin-right: var(--space-2); opacity: var(--opacity-faint); }
 .title__avail-item--good { color: var(--color-live); font-weight: var(--weight-medium); }
+.title__avail-item--warn { color: var(--color-warning); font-weight: var(--weight-medium); }
 .title__avail-none { color: var(--color-text-muted); }
 
 .title__status { color: var(--color-text-muted); font-size: var(--type-body); }

@@ -57,7 +57,7 @@ struct FanCard<Emblem: View>: View {
 
     @ViewBuilder private func card(_ index: Int) -> some View {
         PosterView(url: index < posters.count ? posters[index] : nil, title: name).frame(width: DS.PlatformFan.poster)
-            .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+            .shadow(DS.Elevation.high)
     }
 }
 

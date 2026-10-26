@@ -5,8 +5,8 @@ import OrbitalCore
 /// Ajustes › Descargas › «Probar la velocidad»: las cuatro medidas de `DownloadSpeedTest`, qué quieren decir y un botón para
 /// copiarlas.
 struct DownloadSpeedTestView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var test = DownloadSpeedTest()
+    @Environment(AppEnvironment.self) private var env
+    @State private var test = DownloadSpeedTest()
 
     var body: some View {
         Form {
@@ -20,7 +20,7 @@ struct DownloadSpeedTestView: View {
                     } label: { Text(LocalizedStringKey(DownloadSpeedTest.title(row.kind))) }
                 }
             } header: {
-                if let name = test.sourceName { Text(verbatim: name) }
+                if let status = test.status { Text(LocalizedStringKey(status)) } else if let name = test.sourceName { Text(verbatim: name) }
             } footer: {
                 Text("Unos segundos cada una, sin guardar nada. Hazla con Wi‑Fi y con la app abierta.")
             }
@@ -34,7 +34,7 @@ struct DownloadSpeedTestView: View {
                 .disabled(test.running)
                 .accessibilityIdentifier("speed-test-start")
                 if !test.running, test.rows.contains(where: { $0.bytesPerSecond != nil }) {
-                    Button("Copiar resultados") { UIPasteboard.general.string = test.report; env.notify("Copiado", tone: .success) }
+                    Button("Copiar resultados") { UIPasteboard.general.string = test.report }
                 }
             }
             .listRowBackground(DS.surface)
@@ -49,8 +49,8 @@ struct DownloadSpeedTestView: View {
         func value(_ kind: DownloadSpeedTest.Row.Kind) -> Double? { test.rows.first { $0.kind == kind }?.bytesPerSecond }
         guard !test.running, let internet = value(.internet), let single = value(.single), let eight = value(.eight), let background = value(.background) else { return nil }
         let best = max(single, eight)
-        if background < best * 0.6 { return "El tope es la forma en que baja iOS en segundo plano: dentro de la app baja bastante más rápido. Eso se arregla en Orbital." }
-        if eight > single * 1.6 { return "Real-Debrid limita cada conexión: con varias a la vez baja mucho más rápido. Eso se arregla en Orbital usando más conexiones." }
+        if background < best * 0.6 { return "Con la app abierta baja a toda velocidad; con la app cerrada iOS la frena mucho. Para bajar rápido, deja Orbital abierta: al salir, sigue sola, más lento." }
+        if eight > single * 1.6 { return "Real-Debrid limita cada conexión: con varias a la vez baja mucho más rápido, y así baja Orbital con la app abierta." }
         if best < internet * 0.5 { return "Real-Debrid te está dando menos que tu internet: puede ser su servidor de ese momento o la ruta hasta él." }
         return "Real-Debrid y la app ya van a la velocidad de tu internet: el tope es tu conexión."
     }

@@ -80,6 +80,7 @@ public final class DownloadsModel: ObservableModel {
         var lastPaint = Date.distantPast
         for await snapshot in services.downloads.makeUpdates() {
             let now = Date()
+            let snapshot = snapshot.filter { !deleting.contains($0.id) }
             if Self.shape(snapshot) == Self.shape(items), now.timeIntervalSince(lastPaint) < Self.progressInterval { continue }
             measure(snapshot, at: now)
             items = snapshot; freeBytes = freeSpace(); lastPaint = now
@@ -125,6 +126,20 @@ public final class DownloadsModel: ObservableModel {
     public func pause(_ id: String) async { await services.downloads.pause(id) }
     public func resume(_ id: String) async { await services.downloads.resume(id) }
     public func remove(_ id: String) async { await services.downloads.remove(id); Self.clearShared() }
+
+    /// Borrar desde la lista: el renglón se quita en el acto (el «Borrar» de deslizar lo anima al momento y la lista truena si
+    /// el dato sigue ahí o regresa con el siguiente avance) y el archivo se borra después.
+    public func delete(_ ids: [String]) {
+        let ids = Set(ids)
+        guard !ids.isEmpty else { return }
+        deleting.formUnion(ids)
+        items.removeAll { ids.contains($0.id) }
+        Task {
+            for id in ids { await remove(id) }
+            deleting.subtract(ids)
+        }
+    }
+    private var deleting: Set<String> = []
 
     /// «Buscar subtítulos» de una descarga: lo que hay en OpenSubtitles y tus complementos, con la huella del archivo (los de
     /// esa copia exacta primero).
@@ -179,7 +194,8 @@ public final class DownloadsModel: ObservableModel {
             return first
         }
         return PlayRequest(kind: item.kind, metaID: item.metaID, videoID: item.videoID, originalTitle: item.originalTitle, displayTitle: item.title,
-                           episodeLabel: item.subtitle, poster: item.poster, meta: meta, localFile: file, localSubtitles: subs)
+                           episodeLabel: item.subtitle, poster: item.poster, meta: meta, localFile: file, localSubtitles: subs,
+                           savedSubtitles: item.allSavedSubtitles)
     }
     /// Cuánto se espera la ficha antes de ver una descarga sin ella (segundos).
     static let offlineMetaWait = 3.0

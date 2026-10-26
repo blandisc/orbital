@@ -22,8 +22,12 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
     var delays: [String: Int] { get { lock.withLock { _delays } } set { lock.withLock { _delays = newValue } } }
     var calls: [String] { lock.withLock { _calls } }
     func bodies(_ url: String) -> [Data] { lock.withLock { _bodies[url] ?? [] } }
+    /// Modo avión: toda petición falla sin respuesta.
+    var offline: Bool { get { lock.withLock { _offline } } set { lock.withLock { _offline = newValue } } }
+    private var _offline = false
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         let key = request.url.absoluteString
+        if offline { throw URLError(.notConnectedToInternet) }
         lock.withLock { _calls.append(key); if let b = request.body { _bodies[key, default: []].append(b) } }
         if let ms = lock.withLock({ _delays[key] }) { try? await Task.sleep(nanoseconds: UInt64(ms) * 1_000_000) }
         let forced = lock.withLock { _statuses[key] }

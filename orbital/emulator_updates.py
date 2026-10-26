@@ -157,6 +157,8 @@ def manifest_version(exe: Path) -> str | None:
         data = json.loads((exe.parent / MANIFEST).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
+    if not isinstance(data, dict) or not isinstance(data.get("exe", exe.name), str):
+        return None
     if data.get("exe", exe.name).lower() != exe.name.lower():
         return None
     return data.get("version") if isinstance(data.get("version"), str) else None
@@ -248,13 +250,17 @@ def download(url: str, dest: Path, timeout: float = 30, limit: int = MAX_DOWNLOA
     tmp = dest.with_suffix(dest.suffix + ".part")
     size = 0
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/octet-stream"})
-    with urllib.request.urlopen(req, timeout=timeout) as res, open(tmp, "wb") as out:
-        while chunk := res.read(1024 * 1024):
-            size += len(chunk)
-            if size > limit:
-                raise InstallError("La descarga es demasiado grande.")
-            out.write(chunk)
-    tmp.replace(dest)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as res, open(tmp, "wb") as out:
+            while chunk := res.read(1024 * 1024):
+                size += len(chunk)
+                if size > limit:
+                    raise InstallError("La descarga es demasiado grande.")
+                out.write(chunk)
+        tmp.replace(dest)
+    except BaseException:
+        tmp.unlink(missing_ok=True)  # no se queda un .part tirado
+        raise
     return dest
 
 
@@ -299,9 +305,9 @@ def install_zip(zip_path: Path, exe: Path, version: str) -> None:
                     saved.append((copy, target))
             for member, target in plan:
                 target.parent.mkdir(parents=True, exist_ok=True)
+                written.append(target)  # antes de escribir: si falla a medias, también se quita
                 with archive.open(member) as src, open(target, "wb") as out:
                     shutil.copyfileobj(src, out)
-                written.append(target)
         except Exception as exc:
             for target in written:  # lo nuevo fuera…
                 target.unlink(missing_ok=True)

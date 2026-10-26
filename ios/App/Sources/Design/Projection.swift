@@ -45,7 +45,7 @@ struct Eyebrow: View {
 
     var body: some View {
         text.recipe(.eyebrow, color: accent ? DS.accent : onArt ? DS.onArtSecondary : nil).lineLimit(1)
-            .shadow(color: onArt ? DS.scrim : .clear, radius: DS.Space.s1)   // sobre la parte clara del arte, como el logo
+            .shadow(DS.Elevation.low.color(onArt ? DS.scrim : .clear))   // sobre la parte clara del arte, como el logo
     }
 }
 
@@ -106,16 +106,19 @@ struct DSOptionMenu<Item: Hashable & Identifiable>: View {
     let items: [Item]
     let label: (Item) -> Text
     @Binding var selection: Item
+    /// Del alto de un control (en una fila con otra cápsula, como en la ficha): sin el mínimo de 44 pt encima del relleno del
+    /// estilo, que la dejaba de ~56 pt con mucho aire arriba y abajo.
+    var compact = false
 
     var body: some View {
         Menu {
             Picker(selection: $selection) { ForEach(items) { label($0).tag($0) } } label: { EmptyView() }
         } label: {
             HStack(spacing: DS.Space.s2) {
-                label(selection).recipe(.cardTitle)
+                if compact { label(selection).recipe(.secondary, color: DS.text).fontWeight(.semibold) } else { label(selection).recipe(.cardTitle) }
                 Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
             }
-            .frame(minHeight: DS.Size.touchTarget)
+            .frame(minHeight: compact ? nil : DS.Size.touchTarget)
         }
         .buttonStyle(.bordered).buttonBorderShape(.capsule).tint(DS.text)
         .sensoryFeedback(.selection, trigger: selection)
@@ -153,7 +156,9 @@ struct ArtTile: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            Group {
+            // El arte va dentro de un `overlay` de un `Color.clear`: una imagen `scaledToFill` se pide su ancho de alto × proporción
+            // y empujaba la columna más allá del margen (en un iPhone de 375 pt las dos columnas se salían y se pegaban entre sí).
+            Color.clear.overlay {
                 if let asset { Image(asset).resizable().scaledToFill() }
                 else { PosterView(url: art, title: "", aspect: nil, bleed: true, maxPoints: DS.Image.card) }
             }
@@ -307,7 +312,7 @@ struct MosaicCaption<More: View>: View {
 struct WithArtColors<Content: View>: View {
     let url: String?
     @ViewBuilder let content: (ArtColors?) -> Content
-    @StateObject private var tint = ArtTint()
+    @State private var tint = ArtTint()
 
     var body: some View { content(tint.colors).task(id: url) { await tint.load(url) } }
 }

@@ -1,0 +1,434 @@
+[
+ {
+  "audio": "es",
+  "kind": "movie",
+  "order": [
+   0,
+   3,
+   2,
+   1,
+   5,
+   4
+  ],
+  "quality": "1080p",
+  "scores": {
+   "0": 1504.0,
+   "1": 1264.0,
+   "2": 1384.0,
+   "3": 1424.0,
+   "4": 609.0,
+   "5": 1041.0
+  },
+  "spanish": "es-419",
+  "streams": [
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Latino\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/0"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Castellano\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL\n👤 40 💾 1.2 GB\n🇪🇸",
+    "url": "https://rd.example/s/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.Dual-Lat\n👤 40 💾 1.3 GB",
+    "url": "https://rd.example/s/3"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "The.Simpsons.S08E23.1080p.WEB-DL\n👤 90 💾 1.2 GB\n🇬🇧",
+    "url": "https://rd.example/s/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Los.Simpson.S08E23.720p.HDTV.Castellano\n👤 10 💾 400 MB",
+    "url": "https://rd.example/s/5"
+   }
+  ]
+ },
+ {
+  "audio": "es",
+  "kind": "series",
+  "order": [
+   0,
+   3,
+   2,
+   1,
+   5,
+   4
+  ],
+  "quality": "1080p",
+  "scores": {
+   "0": 1504.0,
+   "1": 1264.0,
+   "2": 1384.0,
+   "3": 1424.0,
+   "4": 609.0,
+   "5": 1161.0
+  },
+  "spanish": "es-419",
+  "streams": [
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Latino\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/0"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Castellano\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL\n👤 40 💾 1.2 GB\n🇪🇸",
+    "url": "https://rd.example/s/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.Dual-Lat\n👤 40 💾 1.3 GB",
+    "url": "https://rd.example/s/3"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "The.Simpsons.S08E23.1080p.WEB-DL\n👤 90 💾 1.2 GB\n🇬🇧",
+    "url": "https://rd.example/s/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Los.Simpson.S08E23.720p.HDTV.Castellano\n👤 10 💾 400 MB",
+    "url": "https://rd.example/s/5"
+   }
+  ]
+ },
+ {
+  "audio": "es",
+  "kind": "movie",
+  "order": [
+   1,
+   2,
+   5,
+   0,
+   3,
+   4
+  ],
+  "quality": "1080p",
+  "scores": {
+   "0": 1264.0,
+   "1": 1504.0,
+   "2": 1384.0,
+   "3": 1184.0,
+   "4": 609.0,
+   "5": 1281.0
+  },
+  "spanish": "es-ES",
+  "streams": [
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Latino\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/0"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Castellano\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL\n👤 40 💾 1.2 GB\n🇪🇸",
+    "url": "https://rd.example/s/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.Dual-Lat\n👤 40 💾 1.3 GB",
+    "url": "https://rd.example/s/3"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "The.Simpsons.S08E23.1080p.WEB-DL\n👤 90 💾 1.2 GB\n🇬🇧",
+    "url": "https://rd.example/s/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Los.Simpson.S08E23.720p.HDTV.Castellano\n👤 10 💾 400 MB",
+    "url": "https://rd.example/s/5"
+   }
+  ]
+ },
+ {
+  "audio": "es",
+  "kind": "series",
+  "order": [
+   1,
+   5,
+   2,
+   0,
+   3,
+   4
+  ],
+  "quality": "1080p",
+  "scores": {
+   "0": 1264.0,
+   "1": 1504.0,
+   "2": 1384.0,
+   "3": 1184.0,
+   "4": 609.0,
+   "5": 1401.0
+  },
+  "spanish": "es-ES",
+  "streams": [
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Latino\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/0"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Castellano\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL\n👤 40 💾 1.2 GB\n🇪🇸",
+    "url": "https://rd.example/s/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.Dual-Lat\n👤 40 💾 1.3 GB",
+    "url": "https://rd.example/s/3"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "The.Simpsons.S08E23.1080p.WEB-DL\n👤 90 💾 1.2 GB\n🇬🇧",
+    "url": "https://rd.example/s/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Los.Simpson.S08E23.720p.HDTV.Castellano\n👤 10 💾 400 MB",
+    "url": "https://rd.example/s/5"
+   }
+  ]
+ },
+ {
+  "audio": "es",
+  "kind": "movie",
+  "order": [
+   0,
+   1,
+   2,
+   3,
+   5,
+   4
+  ],
+  "quality": "1080p",
+  "scores": {
+   "0": 1504.0,
+   "1": 1504.0,
+   "2": 1504.0,
+   "3": 1324.0,
+   "4": 609.0,
+   "5": 1281.0
+  },
+  "spanish": "",
+  "streams": [
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Latino\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/0"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Castellano\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL\n👤 40 💾 1.2 GB\n🇪🇸",
+    "url": "https://rd.example/s/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.Dual-Lat\n👤 40 💾 1.3 GB",
+    "url": "https://rd.example/s/3"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "The.Simpsons.S08E23.1080p.WEB-DL\n👤 90 💾 1.2 GB\n🇬🇧",
+    "url": "https://rd.example/s/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Los.Simpson.S08E23.720p.HDTV.Castellano\n👤 10 💾 400 MB",
+    "url": "https://rd.example/s/5"
+   }
+  ]
+ },
+ {
+  "audio": "es",
+  "kind": "series",
+  "order": [
+   0,
+   1,
+   2,
+   5,
+   3,
+   4
+  ],
+  "quality": "1080p",
+  "scores": {
+   "0": 1504.0,
+   "1": 1504.0,
+   "2": 1504.0,
+   "3": 1324.0,
+   "4": 609.0,
+   "5": 1401.0
+  },
+  "spanish": "",
+  "streams": [
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Latino\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/0"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Castellano\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL\n👤 40 💾 1.2 GB\n🇪🇸",
+    "url": "https://rd.example/s/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.Dual-Lat\n👤 40 💾 1.3 GB",
+    "url": "https://rd.example/s/3"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "The.Simpsons.S08E23.1080p.WEB-DL\n👤 90 💾 1.2 GB\n🇬🇧",
+    "url": "https://rd.example/s/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Los.Simpson.S08E23.720p.HDTV.Castellano\n👤 10 💾 400 MB",
+    "url": "https://rd.example/s/5"
+   }
+  ]
+ },
+ {
+  "audio": "en",
+  "kind": "movie",
+  "order": [
+   4,
+   3,
+   0,
+   1,
+   2,
+   5
+  ],
+  "quality": "1080p",
+  "scores": {
+   "0": 604.0,
+   "1": 604.0,
+   "2": 604.0,
+   "3": 1324.0,
+   "4": 1509.0,
+   "5": 381.0
+  },
+  "spanish": "",
+  "streams": [
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Latino\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/0"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Castellano\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL\n👤 40 💾 1.2 GB\n🇪🇸",
+    "url": "https://rd.example/s/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.Dual-Lat\n👤 40 💾 1.3 GB",
+    "url": "https://rd.example/s/3"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "The.Simpsons.S08E23.1080p.WEB-DL\n👤 90 💾 1.2 GB\n🇬🇧",
+    "url": "https://rd.example/s/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Los.Simpson.S08E23.720p.HDTV.Castellano\n👤 10 💾 400 MB",
+    "url": "https://rd.example/s/5"
+   }
+  ]
+ },
+ {
+  "audio": "en",
+  "kind": "series",
+  "order": [
+   4,
+   3,
+   0,
+   1,
+   2,
+   5
+  ],
+  "quality": "1080p",
+  "scores": {
+   "0": 604.0,
+   "1": 604.0,
+   "2": 604.0,
+   "3": 1324.0,
+   "4": 1509.0,
+   "5": 501.0
+  },
+  "spanish": "",
+  "streams": [
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Latino\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/0"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL.Castellano\n👤 40 💾 1.2 GB",
+    "url": "https://rd.example/s/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.WEB-DL\n👤 40 💾 1.2 GB\n🇪🇸",
+    "url": "https://rd.example/s/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Los.Simpson.S08E23.1080p.Dual-Lat\n👤 40 💾 1.3 GB",
+    "url": "https://rd.example/s/3"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "The.Simpsons.S08E23.1080p.WEB-DL\n👤 90 💾 1.2 GB\n🇬🇧",
+    "url": "https://rd.example/s/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Los.Simpson.S08E23.720p.HDTV.Castellano\n👤 10 💾 400 MB",
+    "url": "https://rd.example/s/5"
+   }
+  ]
+ }
+]

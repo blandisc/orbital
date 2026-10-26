@@ -403,6 +403,20 @@ def test_every_voice_request_is_written_down_to_find_what_fails(public, tmp_path
     assert entries[1]["ok"] is False
 
 
+def test_a_lone_surrogate_in_a_voice_request_does_not_break_it(public, tmp_path):
+    """Un «\\ud800» suelto en el JSON no es UTF-8 válido: voz.log reventaba al escribirlo y /api/voice daba 500."""
+    from orbital import voice_log
+
+    client, _ = public
+    r = client.post("/api/voice", content='{"intent": "LaunchGameIntent", "slots": {"game": "\\ud800"}}',
+                    headers={"Authorization": "Bearer secreto", "Content-Type": "application/json"})
+    assert r.status_code == 200
+    assert voice_log.read()[-1]["slots"] == {"game": "?"}  # se anota saneado
+    path = tmp_path / "otra" / "voz.log"
+    voice_log.record({"text": "abre \ud800 hades"}, path=path)  # nunca lanza
+    assert voice_log.read(path)[0]["text"] == "abre ? hades"
+
+
 def test_what_alexa_could_not_fit_goes_to_the_console_as_free_text(skill, monkeypatch):
     """«Alexa, pídele a mi consola que por favor ponga Interstellar»: antes caía en «No entendí» sin preguntarle a la consola."""
     sent = []

@@ -54,6 +54,8 @@ struct OrbitalWordmark: View {
     /// El tamaño de la letra de «orbital».
     var size: CGFloat
     var animated = false
+    /// Sin el planeta: solo la palabra y su luna (en un iPhone angosto no cabe todo en la barra de Inicio).
+    var showsMark = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var landed = false
     @State private var hops = 0
@@ -61,7 +63,7 @@ struct OrbitalWordmark: View {
     var body: some View {
         let still = !animated || reduceMotion
         HStack(alignment: .center, spacing: size * DS.Brand.markGap) {
-            OrbitalMark(size: size * DS.Brand.markScale, animated: animated)
+            if showsMark { OrbitalMark(size: size * DS.Brand.markScale, animated: animated) }
             HStack(alignment: .firstTextBaseline, spacing: size * DS.Brand.moonGap) {
                 Text(verbatim: "orbital").font(DS.Brand.wordFont(size)).tracking(size * DS.Brand.tracking)
                 // La luna, en el turquesa de la marca (como la barra de la TV y el ícono).

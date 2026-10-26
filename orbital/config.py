@@ -93,7 +93,6 @@ class StremioConfig:
     # Para elegir la fuente por ti: idioma del audio ("en", "es"…) y resolución ("1080p" o "4K").
     audio: str = "en"
     quality: str = "1080p"
-    dub: str = "latino"  # con audio en español: "latino", "castellano" o "" (cualquiera)
     subtitles: str = "en"  # "" = sin subtítulos
     # "orbital": reproductor propio (mpv) manejado con el mando; "stremio": el de Stremio.
     player: str = "orbital"

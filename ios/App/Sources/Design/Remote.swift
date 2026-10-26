@@ -321,7 +321,7 @@ struct ScareTimeline: View {
                         .offset(x: x(scare.time) - DS.Remote.scareMarkWidth / 2)
                 }
                 Circle().fill(DS.paper).frame(width: DS.Remote.playhead, height: DS.Remote.playhead)
-                    .shadow(color: DS.scrimStrong, radius: DS.Space.s1)
+                    .shadow(DS.Elevation.low.color(DS.scrimStrong))
                     .offset(x: x(position) - DS.Remote.playhead / 2)
             }
             .frame(height: geo.size.height)

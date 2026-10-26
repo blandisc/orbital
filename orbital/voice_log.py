@@ -24,15 +24,17 @@ def default_path() -> Path:
 def record(entry: dict, path: Path | None = None) -> None:
     """Anota un pedido. Nunca lanza: la voz no depende de su registro."""
     path = path or default_path()
-    line = json.dumps({"at": time.strftime("%Y-%m-%d %H:%M:%S"), **entry}, ensure_ascii=False)
     try:
+        line = json.dumps({"at": time.strftime("%Y-%m-%d %H:%M:%S"), **entry}, ensure_ascii=False)
         with _lock:
             path.parent.mkdir(parents=True, exist_ok=True)
             if path.is_file() and path.stat().st_size > MAX_BYTES:
                 path.replace(path.with_suffix(".log.1"))
-            with path.open("a", encoding="utf-8") as f:
+            # errors="replace": un surrogate suelto («\ud800» en el JSON del pedido) no es UTF-8 válido y
+            # reventaba la escritura (HTTP 500 en /api/voice); se anota como «?».
+            with path.open("a", encoding="utf-8", errors="replace") as f:
                 f.write(line + "\n")
-    except OSError as exc:
+    except (OSError, ValueError, TypeError) as exc:  # ValueError incluye UnicodeEncodeError
         log.debug("No pude anotar la voz: %s", exc)
 
 

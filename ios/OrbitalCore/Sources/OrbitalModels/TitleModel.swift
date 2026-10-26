@@ -60,6 +60,8 @@ public final class TitleModel: ObservableModel {
     /// La que va a sonar al tocar «Ver»: la recomendada (idioma, calidad y tamaño; la primera de «Elegir la fuente»). Su
     /// calidad es la que dice el botón (antes decía la mejor, 4K, y luego sonaba la recomendada en 1080p).
     public private(set) var recommendedSource: Source? { didSet { changed() } }
+    /// En qué idioma va a sonar la recomendada («es-419»): «Ver» dice «Latino · 1080p» (nada a escondidas).
+    public private(set) var recommendedLanguage: String? { didSet { changed() } }
     /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
     public private(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
     /// La calificación de Trakt (0–10), si alguien votó.
@@ -114,6 +116,9 @@ public final class TitleModel: ObservableModel {
         super.init()
         // El título que se muestra puede venir traducido: el ORIGINAL (lo que se guarda en Stremio) solo sale de Cinemeta, al cargar.
         if let hint { title = hint.title; poster = hint.poster }
+        // Si Trakt está conectado se sabe ya (sin red): «Guardar» va a tu watchlist desde el primer toque, no a Mi lista
+        // mientras llega `refreshState`.
+        traktAvailable = services.trakt?.linked ?? false
         // El fondo de metahub se conoce por el id: el arte empieza a bajar al abrir, no después de Cinemeta y la traducción
         // (3 a 5 viajes de red en una serie). Si Cinemeta trae otro, se cambia al llegar.
         if metaID.hasPrefix("tt") { background = String(format: ForYou.metahubBackground, metaID) }
@@ -125,6 +130,23 @@ public final class TitleModel: ObservableModel {
         // Lo tuyo en Stremio (avance, vistos) se pide a la vez que la ficha: no espera a Cinemeta ni a la traducción.
         let watch = services.watch, id = metaID
         let state = Task { await watch.rawItem(metaID: id) }
+        // Los complementos, a la vez que la ficha y lo tuyo: las fuentes ya no esperan a `addonCollectionGet` al final.
+        let finder = services.finder
+        Task { await finder.warmAddons() }
+        // Las fuentes, en cuanto se sabe qué video toca (película: ya; serie: con lo tuyo o la ficha): no esperan a la traducción
+        // ni al resto de la ficha. `loadBestSource` luego se une a esta misma petición (o la encuentra ya guardada).
+        let cinemeta = services.cinemeta, introDB = services.introDB, kind = kind
+        Task {
+            // Película: el video es ella misma (salvo un `video_id` raro guardado), así que no espera a lo tuyo. Serie: el
+            // episodio sale de lo tuyo y adivinarlo sería pedir fuentes de otro episodio.
+            if kind == "movie" { Task { await finder.warm(kind: kind, videoID: id) } }
+            let raw = await state.value
+            var video = Self.continueVideoID(kind: kind, metaID: id, raw: raw, seasons: [])
+            if video == nil, let meta = try? await cinemeta.meta(kind: kind, id: id) {
+                video = Self.continueVideoID(kind: kind, metaID: id, raw: raw, seasons: CinemetaParsing.seasons(meta))
+            }
+            if let video { introDB.warm(videoID: video); await finder.warm(kind: kind, videoID: video) }   // «Saltar intro» listo al reproducir
+        }
         do {
             let original = try await services.cinemeta.meta(kind: kind, id: metaID)
             meta = original
@@ -140,7 +162,7 @@ public final class TitleModel: ObservableModel {
             credits = CinemetaParsing.credits(local)
             seasons = CinemetaParsing.seasons(local)
             error = nil
-        } catch where !Task.isCancelled { self.error = "No pudimos cargar la ficha. Revisa tu conexión." } catch {}   // cancelado al salir: sin error falso
+        } catch where !Task.isCancelled { self.error = "No pude cargar la ficha. Revisa tu conexión." } catch {}   // cancelado al salir: sin error falso
         await refreshState(prefetched: await state.value)
     }
 
@@ -168,7 +190,15 @@ public final class TitleModel: ObservableModel {
             let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
             guard !Task.isCancelled else { return }
             bestSource = Source.best(found)
-            recommendedSource = found.first
+            // «Ver» dice lo que de verdad va a sonar: la versión con que lo dejaste (ese video), o la de su misma familia en el
+            // siguiente episodio; si no, la recomendada (lo mismo que elige el reproductor).
+            let resume = services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.source
+            let family = services.titlePrefs.lastChoice(metaID: metaID)?.binge
+            let first = found.first
+            recommendedSource = resume.flatMap { key in found.first { $0.key == key } }
+                ?? family.flatMap { f in found.first { $0.binge == f && $0.score > (first?.score ?? 0) - 700 } }
+                ?? first
+            recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
             sourceCheck = found.isEmpty ? .none : .available
         } catch {
             if !Task.isCancelled { sourceCheck = error is StreamFinderError ? .offline : .unknown }
@@ -211,7 +241,9 @@ public final class TitleModel: ObservableModel {
         watched = StremioLibrary.parseWatched(raw?["state"]?["watched"]?.string, videoIDs: ids)
         inLibrary = StremioLibrary.isInLibrary(raw)
         traktAvailable = await linked
-        inWatchlist = await keys.contains(metaID)
+        // Lo pendiente de mandar (guardado sin conexión) manda sobre lo que Trakt aún dice.
+        let onTrakt = await keys.contains(metaID)
+        inWatchlist = services.traktOutbox.pending(target: TraktOutbox.watchlist, imdb: metaID) ?? onTrakt
         inSomeList = await listed.contains(metaID)
         applyDownloads(await queue)
         if let state = StremioLibrary.state(of: raw)["video_id"]?.string, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
@@ -238,7 +270,11 @@ public final class TitleModel: ObservableModel {
 
     // MARK: ver
     /// El video con el que sigue el botón principal: donde ibas, o el primer episodio.
-    public var continueVideoID: String? {
+    public var continueVideoID: String? { Self.continueVideoID(kind: kind, metaID: metaID, raw: raw, seasons: seasons) }
+
+    /// La misma cuenta sin abrir la ficha (lo usa «¿Qué vemos?» para que «Ver» ponga el capítulo en que vas): con lo tuyo en
+    /// Stremio (`raw`) y las temporadas de Cinemeta.
+    nonisolated public static func continueVideoID(kind: String, metaID: String, raw: JSON?, seasons: [Season]) -> String? {
         let state = StremioLibrary.state(of: raw)
         if let video = state["video_id"]?.nonEmptyString, asInt(state["timeOffset"]) > 0 || kind == "series" { return video }
         if kind == "movie" { return metaID }
@@ -303,6 +339,25 @@ public final class TitleModel: ObservableModel {
     }
 
     // MARK: Mi lista y watchlist
+    /// Adónde va «Guardar» sin elegir (`SaveDestination.preferred`: tu watchlist con Trakt, si no Mi lista).
+    public var saveDestination: SaveDestination { .preferred(traktLinked: traktAvailable, metaID: metaID) }
+    /// Las fijas de «Guardar en…» y del menú de «Guardar», la de por omisión primero.
+    public var fixedDestinations: [SaveDestination] { SaveDestination.fixed(traktLinked: traktAvailable, metaID: metaID) }
+    /// Qué hace un toque en «Guardar».
+    public var quickSave: QuickSave {
+        QuickSave.decide(preferred: saveDestination, inLibrary: inLibrary, inWatchlist: inWatchlist,
+                         inOtherLists: lists.map { $0.contains(where: \.contains) } ?? inSomeList)
+    }
+
+    public func isSaved(in destination: SaveDestination) -> Bool { destination == .traktWatchlist ? inWatchlist : inLibrary }
+
+    public func toggle(_ destination: SaveDestination) async {
+        switch destination {
+        case .traktWatchlist: await toggleWatchlist()
+        case .stremioLibrary: await toggleLibrary()
+        }
+    }
+
     public func toggleLibrary() async {
         let target = !inLibrary
         inLibrary = target
@@ -317,6 +372,10 @@ public final class TitleModel: ObservableModel {
         do {
             try await trakt.setWatchlist(imdb: metaID, series: kind == "series", add: want)
             await services.forYou.clearCache()
+        } catch where TraktOutbox.retryable(error) {
+            // Sin conexión o con tu Orbital apagada: se queda guardado aquí y se manda en cuanto se pueda (no se pierde).
+            services.traktOutbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: metaID, series: kind == "series", add: want))
+            message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
         } catch { inWatchlist = !want; message = "No pude cambiar tu watchlist de Trakt: \(error)" }
     }
 
@@ -326,17 +385,30 @@ public final class TitleModel: ObservableModel {
         guard let trakt = services.trakt, trakt.linked, metaID.hasPrefix("tt") else { lists = []; return }
         loadingLists = true
         defer { loadingLists = false }
-        let all = (try? await trakt.lists()) ?? []
+        // Sin conexión: las listas que ya conocías (y lo pendiente encima), para poder elegir igual.
+        let outbox = services.traktOutbox
+        guard let all = try? await trakt.ownLists() else {
+            // Se recuerdan ya ordenadas (recientes primero): sin conexión salen en el mismo orden que la última vez.
+            let id = metaID
+            lists = outbox.cachedLists.map { SavedList(id: $0.id, name: $0.name, contains: outbox.pending(target: $0.id, imdb: id) ?? false) }
+            return
+        }
         let id = metaID
-        lists = await withTaskGroup(of: (Int, SavedList).self) { group in
+        let found = await withTaskGroup(of: (Int, SavedList).self) { group in
             for (i, l) in all.enumerated() {
-                group.addTask { (i, SavedList(id: l.id, name: l.name, contains: ((try? await trakt.listMembers(l.id)) ?? []).contains(id))) }
+                group.addTask { (i, SavedList(id: l.id, name: l.name, contains: ((try? await trakt.listMembers(l.id)) ?? []).contains(id), updatedAt: l.updatedAt)) }
             }
             var out: [(Int, SavedList)] = []
             for await r in group { out.append(r) }
             return out.sorted { $0.0 < $1.0 }.map(\.1)
         }
+        let ordered = SaveSheetPlan.order(found)
+        outbox.remember(lists: ordered.map { ($0.id, $0.name) })
+        lists = ordered
     }
+
+    /// Cuántas listas esperar en «Guardar en…» antes de que lleguen (las de la última vez): sus esqueletos apartan su lugar.
+    public var expectedListCount: Int { lists?.count ?? services.traktOutbox.cachedLists.count }
 
     public func toggleList(_ listID: String) async {
         guard let trakt = services.trakt, var all = lists, let i = all.firstIndex(where: { $0.id == listID }) else { return }
@@ -346,6 +418,9 @@ public final class TitleModel: ObservableModel {
         do {
             try await trakt.setListItem(listID: listID, imdb: metaID, series: kind == "series", add: want)
             await services.forYou.clearCache()
+        } catch where TraktOutbox.retryable(error) {
+            services.traktOutbox.enqueue(.init(target: listID, imdb: metaID, series: kind == "series", add: want))
+            message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
         } catch {
             if var back = lists, let j = back.firstIndex(where: { $0.id == listID }) { back[j].contains = !want; lists = back }
             message = "No pude cambiar tu lista de Trakt: \(error)"
@@ -357,7 +432,8 @@ public final class TitleModel: ObservableModel {
         guard let trakt = services.trakt, trakt.linked else { return }
         do {
             let made = try await trakt.createList(name: name)
-            lists = (lists ?? []) + [SavedList(id: made.id, name: made.name, contains: false)]
+            // Recién hecha: va arriba de tus listas (las fijas, abajo, no se mueven).
+            lists = SaveSheetPlan.order((lists ?? []) + [SavedList(id: made.id, name: made.name, contains: false, updatedAt: Date())])
             await toggleList(made.id)
         } catch { message = "No pude crear la lista: \(error)" }
     }
@@ -437,4 +513,10 @@ public struct SavedList: Identifiable, Equatable, Sendable {
     public let id: String
     public let name: String
     public var contains: Bool
+    /// Cuándo cambió en Trakt (las recientes van arriba en «Guardar en…»); nil sin conexión o si Trakt no lo dijo.
+    public var updatedAt: Date? = nil
+
+    public init(id: String, name: String, contains: Bool, updatedAt: Date? = nil) {
+        self.id = id; self.name = name; self.contains = contains; self.updatedAt = updatedAt
+    }
 }

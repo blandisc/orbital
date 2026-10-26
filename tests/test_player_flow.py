@@ -79,7 +79,7 @@ def test_when_no_source_works_it_says_so_and_closes():
     p, mpv = series_player(**{"time-pos": None, "duration": None})
     p.on_failed = lambda *a: False
     p.tick(p.segment, p.segment.loaded + player.STARTUP_TIMEOUT + 1, False)
-    assert "ninguna fuente" in mpv.overlays[3]
+    assert "ninguna versión" in mpv.overlays[3]
 
 
 def test_progress_is_saved_every_minute_not_only_at_the_end():
@@ -299,7 +299,7 @@ def test_player_versions_are_language_and_quality_like_the_ficha():
 
     found = [src(i, {"en": "original"}) for i in range(15)] + [src(15, {"en": "original"}, "4K"),
              src(20, {"es-419": "name"}), src(21, {"es-419": "name", "en": "name"}, "720p"), src(30, {"es-419": "name"}, "SD", ["CAM"])]
-    fake = SimpleNamespace(language_for=lambda meta_id: (streams.Preferences(audio="es", dub="latino"), "es"),
+    fake = SimpleNamespace(asked_language=lambda meta: (streams.Preferences(audio="es", spanish="es-419"), "es"),
                            stream_sources=lambda kind, video, prefs: found)
     grid = watch.Watch._player_sources(fake, {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1", "source": 14})
     assert [(r["label"], [c["label"] for c in r["cells"]]) for r in grid] == [("Latino", ["1080p", "720p"]),
@@ -308,7 +308,7 @@ def test_player_versions_are_language_and_quality_like_the_ficha():
     assert [(r["label"], c["label"]) for r in grid for c in r["cells"] if c["current"]] == [("Inglés", "1080p")]  # la 14 es de esa casilla
     assert grid[0]["cells"][0]["hint"] == "Al instante"
     # La lista de siempre (version_rows) sale de la misma cuadrícula.
-    flat = watch.version_rows(found, streams.Preferences(audio="es", dub="latino"), 14)
+    flat = watch.version_rows(found, streams.Preferences(audio="es", spanish="es-419"), 14)
     assert [o["label"] for o in flat] == ["Latino · 1080p", "Latino · 720p", "Inglés · 4K", "Inglés · 1080p", "Inglés · 720p"]
 
 
@@ -359,6 +359,7 @@ def test_a_chosen_version_that_does_not_open_goes_back_to_the_one_playing():
     loaded = []
     fake = SimpleNamespace(
         language_for=lambda meta_id: (streams.Preferences(), "es"),
+        asked_language=lambda meta: (streams.Preferences(), "es"),
         streams=SimpleNamespace(get=lambda kind, video, prefs, index: None),  # la lista ya caducó
         stream_sources=lambda kind, video, prefs: list(found.values()),
         _load_in_player=lambda *a, **k: loaded.append((a[4].index, k)) or True,

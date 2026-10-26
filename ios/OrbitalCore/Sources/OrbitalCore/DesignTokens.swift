@@ -54,6 +54,26 @@ public enum DesignTokens {
             case .danger: (palette["red-400"]!, "#c4362c")
             }
         }
+
+        /// «#rrggbb» de cada modo con «Aumentar contraste»: el texto más contrastado y el fondo más separado de las superficies.
+        public var highContrastHex: (dark: String, light: String) {
+            switch self {
+            case .background: ("#000000", "#ecebe5")
+            case .surface: (palette["ink-800"]!, "#ffffff")
+            case .surfaceRaised: (palette["ink-700"]!, "#dddbd4")
+            case .label: ("#ffffff", "#000000")
+            case .secondaryLabel: ("#d4d4da", "#3a3a40")
+            case .tertiaryLabel: ("#b4b4bb", "#48484f")
+            case .decorative: ("#6e6e76", "#85858c")
+            case .primary: ("#ffffff", "#000000")
+            case .onPrimary: ("#000000", "#ffffff")
+            case .accent: ("#ffffff", "#000000")
+            case .live: ("#99f6e4", "#065a51")
+            case .brandMoon: hex
+            case .warning: ("#fde68a", "#6e4600")
+            case .danger: ("#fca5a5", "#9b2219")
+            }
+        }
     }
 
     /// Las capas translúcidas (líneas, rellenos, velos) se calculan sobre el color de texto de cada modo: blanco en oscuro y
@@ -69,6 +89,17 @@ public enum DesignTokens {
         public static let hex: [String: String] = ["netflix": "#e60a14", "disney": "#456eff", "hbo": "#7a3dff", "prime": "#1a99ff",
                                                    "paramount": "#0063ff", "otra": "#c7c7d1"]
         public static func color(_ brand: String) -> String { hex[brand] ?? hex["otra"]! }
+    }
+
+    /// El color de cada lista (`DS.ListTint`): el de siempre en oscuro y, en claro, el mismo tono más oscuro para que el ícono
+    /// se distinga del papel (≥ 3:1 sobre el fondo y la superficie en los dos modos).
+    public enum ListTint {
+        public static let hex: [String: (dark: String, light: String)] = [
+            "watching": ("#ffb547", "#c97800"), "library": ("#59c7fa", "#0793d5"), "bookmark": ("#ff70ad", "#ff388d"),
+            "spark": ("#b58cff", "#a16eff"), "calendar": ("#2ec4a6", "#249b83"), "series": ("#7aa3ff", "#4f85ff"),
+            "trend": ("#ff7a59", "#ff4719"), "flame": ("#ff9e0a", "#c77800"), "list": ("#9ed16b", "#63982f"),
+            "addon": ("#c9a1ff", "#aa69ff"), "chart": ("#ff5e7d", "#ff4064"), "trophy": ("#ffd166", "#b88100"),
+        ]
     }
 
     /// Contraste WCAG entre dos colores «#rrggbb» (1…21).

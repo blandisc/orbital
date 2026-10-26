@@ -45,7 +45,7 @@ export function downloadAction(job) {
 export const episodesLed = (details, kind = "movie") =>
   !!details && !details.error && (details.kind || kind) === "series" && (details.seasons || []).some((s) => s.episodes?.length);
 
-export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null } = {}) {
+export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null, plays = null } = {}) {
   if (!details) return [];
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
@@ -89,6 +89,8 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   } else {
     out.push({ id: "play", primary: true, icon: "play", label: "Ver" });
   }
+  // Bajo «Ver», cómo va a sonar («Latino · 1080p · Sin subtítulos»), si es lo que ese botón pone (el mismo episodio).
+  if (out[0] && plays?.line && (!out[0].video_id || out[0].video_id === plays.video_id)) out[0].hint = plays.line;
   // + para agregar y ✓ cuando ya está, como el iPhone (la ★ en Juegos es «favorito»: dos cosas con el mismo ícono).
   // «Guardar» es la acción y «Mi lista» el lugar (design/vocabulario.json), como el iPhone.
   out.push(saved
@@ -102,7 +104,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   if (playable && phone) out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" });
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
   // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
-  if (playable) out.push({ id: "sources", icon: "list", label: "Elegir versión", short: "Versión" });
+  if (playable) out.push({ id: "sources", icon: "list", label: "Versión", short: "Versión" });
   if (restart) out.push(restart);
   if (playable && phone) out.push({ id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
   // Desde Mi media (tu OneDrive), como el iPhone: elegir cuál de tus versiones ver y corregir la ficha si no es esta.
@@ -179,12 +181,12 @@ const versionRes = (src) => (["4K", "1080p", "720p"].includes(src.resolution) ? 
 const JUNK = ["CAM", "Tráiler", "3D"];
 
 /**
- * «Elegir versión»: una fila por IDIOMA DE AUDIO y, en cada una, solo las calidades que hay (la mejor de cada una,
+ * «Versión»: una fila por IDIOMA DE AUDIO y, en cada una, solo las calidades que hay (la mejor de cada una,
  * en el orden del servidor). Sin casillas vacías ni contadores. Primero tu idioma (en español, el doblaje que
  * prefieres, luego «Español (no dice cuál)» y luego el otro), luego el original, luego el español que quede y luego
  * los demás.
  * Una fuente con varias pistas sale en cada fila de sus idiomas. Grabadas en el cine, tráileres y 3D no salen
- * (salvo que no haya otra cosa). `prefs`: { audio: "en" | "es", dub: "latino" | "castellano" | "" }.
+ * (salvo que no haya otra cosa). `prefs`: { audio: "en" | "es", spanish: "es-419" | "es-ES" | "" }.
  * Devuelve [{ code, name, role, options: [{ res, source, proof, all }] }]; `all`: las de esa fila y calidad (X).
  */
 export function versionRows(sources = [], prefs = {}) {
@@ -210,7 +212,7 @@ export function versionRows(sources = [], prefs = {}) {
       rows.set(lang.code, row);
     }
   }
-  const dub = { latino: "es-419", castellano: "es-ES" }[prefs.dub];
+  const dub = ["es-419", "es-ES"].includes(prefs.spanish) ? prefs.spanish : null;
   const mine = prefs.audio === "es" ? (dub ? [dub] : ["es-419", "es-ES"]) : [prefs.audio || "en"];
   const wanted = prefs.audio === "es" ? [...mine, "es", "es-419", "es-ES"] : mine;
   const spanish = ["es-419", "es-ES", "es"];
@@ -268,12 +270,19 @@ export function versionStep(rows, at, action) {
   return { row: r, col: same >= 0 ? same : Math.max(0, Math.min(col, rows[r].options.length - 1)) };
 }
 
+/** Los idiomas de una fuente, con el doblaje si lo dice: «Latino + Inglés» en vez de «Español + Inglés». */
+export const DUB_NAMES = { latino: "Latino", castellano: "Castellano" };
+export function sourceLanguages(src) {
+  const dub = DUB_NAMES[src?.dub];
+  return (src?.languages || []).map((l) => (dub && l === "Español" ? dub : l));
+}
+
 export function availability(sources = [], { top = 12 } = {}) {
   const list = sources.slice(0, top);
   if (!list.length) return [];
   const best = RES_ORDER.find((r) => list.some((s) => s.resolution === r));
   const hdr = list.some((s) => s.hdr?.includes("DV")) ? "Dolby Vision" : list.some((s) => s.hdr?.length) ? "HDR" : null;
   const atmos = list.some((s) => s.audio === "Atmos") ? "Dolby Atmos" : list.some((s) => s.audio === "5.1") ? "5.1" : null;
-  const languages = [...new Set(list.flatMap((s) => s.languages || []))].slice(0, 3);
+  const languages = [...new Set(list.flatMap(sourceLanguages))].slice(0, 3);
   return [best, hdr, atmos, languages.join(", "), list.some((s) => s.cached) ? "Al instante" : null].filter(Boolean);
 }

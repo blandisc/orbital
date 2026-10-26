@@ -382,6 +382,10 @@
             {
               "name": "language",
               "type": "LANGUAGE"
+            },
+            {
+              "name": "always",
+              "type": "ALWAYS"
             }
           ],
           "samples": [
@@ -398,7 +402,11 @@
             "ponga los subtítulos en {language}",
             "ponle subtítulos",
             "ponle subtítulos en {language}",
-            "subtítulos"
+            "subtítulos",
+            "pon subtítulos en {language} {always}",
+            "pon {always} subtítulos en {language}",
+            "pon los subtítulos {always} en {language}",
+            "pon los subtítulos en {language} {always}"
           ]
         },
         {
@@ -421,6 +429,10 @@
             {
               "name": "language",
               "type": "LANGUAGE"
+            },
+            {
+              "name": "always",
+              "type": "ALWAYS"
             }
           ],
           "samples": [
@@ -436,7 +448,13 @@
             "ponla en {language}",
             "pónmelo en {language}",
             "cámbialo a {language}",
-            "idioma en {language}"
+            "idioma en {language}",
+            "ponlo {always} en {language}",
+            "pon el audio {always} en {language}",
+            "pon el audio en {language} {always}",
+            "ponlo en {language} {always}",
+            "cambia el audio a {language} {always}",
+            "pónmelo {always} en {language}"
           ]
         },
         {
@@ -1017,8 +1035,28 @@
                 "value": "es",
                 "synonyms": [
                   "español",
+                  "spanish"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "es-419",
+                "synonyms": [
+                  "latino",
+                  "español latino",
+                  "español de México",
+                  "latin spanish"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "es-ES",
+                "synonyms": [
                   "castellano",
-                  "latino"
+                  "español de España",
+                  "castilian"
                 ]
               }
             },
@@ -1915,6 +1953,89 @@
             {
               "name": {
                 "value": "ve a la derecha"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson en latino"
+              }
+            },
+            {
+              "name": {
+                "value": "pon dune con subtítulos en inglés"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson siempre en latino"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson t5 e3 con subtítulos en inglés"
+              }
+            },
+            {
+              "name": {
+                "value": "pon subtítulos en inglés siempre"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el audio en latino"
+              }
+            },
+            {
+              "name": {
+                "value": "ponlo siempre en latino"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson en castellano"
+              }
+            },
+            {
+              "name": {
+                "value": "pon los simpson en latino siempre"
+              }
+            },
+            {
+              "name": {
+                "value": "ponlo siempre en castellano"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el audio en castellano"
+              }
+            },
+            {
+              "name": {
+                "value": "pon el audio en latino siempre"
+              }
+            },
+            {
+              "name": {
+                "value": "pon siempre subtítulos en inglés"
+              }
+            },
+            {
+              "name": {
+                "value": "pon dune con subtítulos"
+              }
+            }
+          ]
+        },
+        {
+          "name": "ALWAYS",
+          "values": [
+            {
+              "name": {
+                "value": "siempre",
+                "synonyms": [
+                  "para siempre"
+                ]
               }
             }
           ]

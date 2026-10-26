@@ -10,10 +10,10 @@ struct MiMediaFolderRoute: Hashable { let path: String }
 /// Descargas › Mi media: tu carpeta de OneDrive como biblioteca (como Infuse). Lo recién agregado, filtros, sagas, todas
 /// tus películas y series, y lo que no se reconoció para corregirlo. Lo que bajas al iPhone sale en «En el iPhone».
 struct MiMediaView<Top: View>: View {
-    @ObservedObject var observer: ModelObserver<MiMediaModel>
+    var observer: ModelObserver<MiMediaModel>
     /// Lo que va arriba de todo, deslizándose con lo demás («En el iPhone | Mi media»).
     @ViewBuilder var top: () -> Top
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @State private var fixing: OneDriveFile?
 
     var body: some View {
@@ -160,11 +160,11 @@ struct MiMediaView<Top: View>: View {
 /// Un título de Mi media: ver (donde ibas), bajar al iPhone, sus versiones (película) o sus episodios con los que faltan
 /// (serie), los datos del archivo y «Corregir ficha». Con el color de su arte, como la ficha.
 struct MiMediaTitleView: View {
-    @ObservedObject var observer: ModelObserver<MiMediaModel>
+    var observer: ModelObserver<MiMediaModel>
     let id: String
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var tint = ArtTint()
+    @State private var tint = ArtTint()
     @State private var seasons: [(season: Int, rows: [MiMediaModel.EpisodeRow])] = []
     @State private var season = 0
     @State private var next: String?
@@ -343,7 +343,7 @@ struct MiMediaTitleView: View {
             .disabled(row.missing)
             .accessibilityHint(row.missing ? Text("No está en tu carpeta") : Text("Ver"))
             if row.missing {
-                Button("Buscar fuente") {
+                Button("Buscar versión") {
                     if titleModel == nil { titleModel = TitleModel(env.services, kind: "series", metaID: t.imdb, hint: (t.name, t.poster)) }
                     findingSource = MissingEpisode(id: row.id)
                 }
@@ -401,10 +401,8 @@ struct MiMediaTitleView: View {
     private func report(_ outcome: TitleModel.DownloadOutcome, ownCopy: Bool = true) async {
         switch outcome {
         case .queued: break   // lo dice el anillo
-        case .noSources: env.notify(ownCopy ? "No encontré ese archivo en tu OneDrive." : "No hay fuentes de Real-Debrid para descargar.")
-        case .notEnoughSpace(let text): env.notify(text)
-        case .already: env.notify("Ya está descargado.", tone: .info)
-        case .failed(let text): env.notify(text)
+        case .noSources where ownCopy: env.notify("No encontré ese archivo en tu OneDrive", tone: .warn)
+        default: env.report(outcome)
         }
     }
 }
@@ -463,9 +461,9 @@ struct FixMatchSheet: View {
 
 /// Tu OneDrive tal cual, por carpetas: para lo que no se reconoce (o para ver un video suelto).
 struct MiMediaFolderView: View {
-    @ObservedObject var observer: ModelObserver<MiMediaModel>
+    var observer: ModelObserver<MiMediaModel>
     let path: String
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @State private var folders: [OneDriveFolder]?
     @State private var videos: [OneDriveFile] = []
     @State private var error: String?
@@ -501,6 +499,6 @@ struct MiMediaFolderView: View {
     }
 
     private func play(_ file: OneDriveFile) async {
-        do { env.play(try await observer.model.playRequest(file: file)) } catch { env.notify("No pude pedir el archivo a OneDrive.") }
+        do { env.play(try await observer.model.playRequest(file: file)) } catch { env.notify("No pude pedir el archivo a OneDrive", detail: "Revisa tu internet") }
     }
 }

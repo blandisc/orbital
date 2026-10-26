@@ -57,6 +57,23 @@ struct ShelfSkeleton: View {
     }
 }
 
+/// El lugar de un feed (Inicio, Para ti) la primera vez, mientras llega: la tarjeta del destacado y un estante, del mismo
+/// tamaño que lo de verdad (nada salta al llegar).
+struct FeedSkeleton: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            RoundedRectangle(cornerRadius: DS.Deck.radius).fill(DS.fill)
+                .frame(height: DS.Deck.height)
+                .padding(.horizontal, DS.Deck.sideMargin)
+            HStack(spacing: DS.Space.s3) { ShelfSkeleton() }
+                .padding(.horizontal, DS.Space.gutter)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .clipped()
+        }
+        .accessibilityHidden(true)
+    }
+}
+
 /// Un puesto del Top 10 al estilo Netflix: la cifra enorme en gris, parcialmente detrás del póster, que va encima a la derecha.
 struct RankedPosterCard: View {
     let rank: Int

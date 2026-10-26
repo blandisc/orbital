@@ -5,9 +5,9 @@ import OrbitalModels
 /// Ajustes: tu perfil arriba (el avatar se toca) y dos grupos de renglones que llevan a su página, cada uno con cómo
 /// está ahora: lo tuyo (apariencia, Inicio, idioma, reproducción, descargas) y las conexiones (Orbital, Trakt…).
 struct SettingsView: View {
-    @EnvironmentObject private var env: AppEnvironment
-    @StateObject private var settings: ModelObserver<SettingsModel>
-    @StateObject private var session: ModelObserver<SessionModel>
+    @Environment(AppEnvironment.self) private var env
+    @State private var settings: ModelObserver<SettingsModel>
+    @State private var session: ModelObserver<SessionModel>
     @State private var tmdbKey = ""
     @State private var newAddon = ""
     @State private var secret = ""
@@ -19,8 +19,8 @@ struct SettingsView: View {
 
     init() {
         let services = AppEnvironment.shared.services
-        _settings = StateObject(wrappedValue: ModelObserver(SettingsModel(services)))
-        _session = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.session))
+        _settings = State(wrappedValue: ModelObserver(SettingsModel(services)))
+        _session = State(wrappedValue: ModelObserver(AppEnvironment.shared.session))
     }
 
     var body: some View {
@@ -64,7 +64,7 @@ struct SettingsView: View {
                 }
                 if traktFromOrbital(model) {
                     // Trakt llega de tu Orbital: aquí no hay nada que configurar.
-                    SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: Text("Desde tu Orbital"))
+                    SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: Text("Desde tu Orbital"), linked: false)
                 } else {
                     NavigationLink { page("Trakt") { traktSection(model) } } label: {
                         SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))
@@ -222,10 +222,11 @@ struct SettingsView: View {
             Picker("Idioma de la app y de las fichas", selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } })) {
                 Text("Español").tag("es"); Text("English").tag("en")
             }
-            // «Español latino» es español, prefiriendo la pista latina cuando el video trae las dos.
-            Picker("Audio", selection: Binding(get: { s.audio == "es" && s.latinSpanish ? "es-419" : s.audio },
-                                               set: { v in model.update { $0.audio = v == "es-419" ? "es" : v; $0.latinSpanish = v == "es-419" } })) {
-                Text("Español").tag("es"); Text("Español latino").tag("es-419"); Text("English").tag("en")
+            // Latino o castellano: la versión y la pista de ese español primero; «cualquiera», el que haya. Las versiones que no
+            // dicen cuál van después de las que sí (y «Ver» en la ficha dice cuál va a sonar).
+            Picker("Audio", selection: Binding(get: { s.audio == "es" ? (s.latinSpanish ? "es-419" : s.castilianSpanish ? "es-ES" : "es") : s.audio },
+                                               set: { v in model.update { $0.audio = v.hasPrefix("es") ? "es" : v; $0.latinSpanish = v == "es-419"; $0.castilianSpanish = v == "es-ES" } })) {
+                Text("Español latino").tag("es-419"); Text("Español de España").tag("es-ES"); Text("Español (cualquiera)").tag("es"); Text("English").tag("en")
             }
         }
         .listRowBackground(DS.surface)
@@ -251,6 +252,11 @@ struct SettingsView: View {
             Toggle("Usar el estilo del iPhone", isOn: Binding(get: { s.subtitleSystemStyle }, set: { v in model.update { $0.subtitleSystemStyle = v } }))
         } footer: {
             Text("El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.")
+        }
+        .listRowBackground(DS.surface)
+        Section {
+            NavigationLink { RememberedTitlesView() } label: { Text("Lo que recuerda cada título") }
+                .accessibilityIdentifier("settings-remembered")
         }
         .listRowBackground(DS.surface)
     }
@@ -295,13 +301,15 @@ struct SettingsView: View {
                 guard v else { return }
                 Task {
                     if await ReleaseNotifier.requestPermission() { await ReleaseNotifier.check() }
-                    else { model.update { $0.releaseAlerts = false }; env.notify("Activa los avisos de Orbital en Ajustes del iPhone.", tone: .warn) }
+                    else { model.update { $0.releaseAlerts = false }; env.notify("Los avisos están apagados", detail: "Actívalos en Ajustes del iPhone", tone: .warn, actionTitle: "Abrir Ajustes") {
+                        if let url = URL(string: UIApplication.openNotificationSettingsURLString) { UIApplication.shared.open(url) }
+                    } }
                 }
             }))
             .tint(DS.switchOn)
             .accessibilityIdentifier("release-alerts")
         } footer: {
-            Text("De las series que sigues en Trakt. Te avisa cuando ya hay fuente en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.")
+            Text("De las series que sigues en Trakt. Te avisa cuando ya se puede ver en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.")
         }
         .listRowBackground(DS.surface)
         .disabled(!env.services.appSettings.traktEnabled)
@@ -461,3 +469,69 @@ struct SettingsView: View {
         return formatter.localizedString(for: date, relativeTo: now)
     }
 }
+
+/// Lo que recuerda cada título: el audio (latino, castellano…) y los subtítulos que elegiste viéndolo; vale aquí y en tu
+/// Orbital. Deslizar lo olvida (vuelve a lo de Ajustes, en los dos lados).
+struct RememberedTitlesView: View {
+    @Environment(AppEnvironment.self) private var env
+    @State private var rows: [Row] = []
+    @State private var names: [String: String] = [:]
+
+    struct Row: Identifiable, Equatable { let id: String; let line: String }
+
+    var body: some View {
+        List {
+            Section {
+                if rows.isEmpty {
+                    Text("Ningún título recuerda nada todavía").recipe(.secondary)
+                }
+                ForEach(rows) { row in
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        Text(verbatim: names[row.id] ?? row.id).recipe(.body)
+                        Text(verbatim: row.line).recipe(.footnote)
+                    }
+                    .swipeActions { Button("Olvidar", role: .destructive) { forget(row.id) } }
+                }
+            } footer: {
+                Text("Lo que elegiste viendo cada uno; vale aquí y en tu Orbital. Desliza para olvidarlo.")
+            }
+            .listRowBackground(DS.surface)
+        }
+        .scrollContentBackground(.hidden).background(Backdrop())
+        .navigationTitle(Text("Lo que recuerda cada título"))
+        .task { reload(); await loadNames() }
+    }
+
+    private func reload() {
+        let ui = env.services.appSettings.uiLanguage
+        rows = env.services.titlePrefs.remembered().map { id, value in
+            var parts: [String] = []
+            if let audio = value.audio {
+                let code = audio == "es" ? (value.spanish ?? "es") : audio
+                parts.append(code == "es" ? Strings.tr("Español", language: ui) : Streams.versionLanguageName(code, in: ui))
+            }
+            if let subs = value.subtitles {
+                parts.append(subs.isEmpty ? Strings.tr("Sin subtítulos", language: ui)
+                             : String(format: Strings.tr("Subtítulos: %@", language: ui), Streams.versionLanguageName(subs, in: ui)))
+            }
+            return Row(id: id, line: parts.joined(separator: " · "))
+        }
+        .sorted { $0.id < $1.id }
+    }
+
+    /// El nombre de cada título (Cinemeta, de caché casi siempre); sin él, su id.
+    private func loadNames() async {
+        for row in rows where names[row.id] == nil {
+            let cinemeta = env.services.cinemeta
+            var meta = try? await cinemeta.meta(kind: "series", id: row.id)
+            if meta?["name"]?.string == nil { meta = try? await cinemeta.meta(kind: "movie", id: row.id) }
+            if let name = meta?["name"]?.string { names[row.id] = name }
+        }
+    }
+
+    private func forget(_ id: String) {
+        env.services.titlePrefs.forget(metaID: id)
+        reload()
+    }
+}
+

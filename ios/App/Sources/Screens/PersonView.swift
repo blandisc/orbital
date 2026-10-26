@@ -5,7 +5,7 @@ import OrbitalModels
 /// Un título de TMDB (recomendación, saga, filmografía): busca su id de IMDb y abre la ficha de siempre.
 struct TmdbTitleView: View {
     let title: TmdbTitle
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @State private var route: TitleRoute?
     @State private var missing = false
 
@@ -28,7 +28,7 @@ struct TmdbTitleView: View {
 /// conocido primero, en la cuadrícula de pósters de la app. El nombre sube a la barra solo al deslizar (arriba ya está grande).
 struct PersonView: View {
     let route: PersonRoute
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @State private var person: PersonDetails?
     @State private var failed = false
     @State private var expanded = false

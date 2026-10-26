@@ -3,7 +3,7 @@ import Foundation
 /// Ningún complemento contestó (sin internet, o tus complementos caídos): no es lo mismo que «no hay fuentes».
 public enum StreamFinderError: Error, Sendable, CustomStringConvertible {
     case unreachable
-    public var description: String { "Sin conexión: no pudimos preguntar por fuentes. Revisa tu internet." }
+    public var description: String { "Sin conexión: no pude buscar dónde verlo. Revisa tu internet." }
 }
 
 /// Pide fuentes a los complementos que las dan (en paralelo) y las recuerda unos minutos.
@@ -30,6 +30,18 @@ public actor StreamFinder {
         self.http = http; self.registry = registry; self.clock = clock
     }
 
+    /// De dónde es un título (su idioma original y país), para el audio de lo que no lo dice; y lo comprobado al ver una
+    /// versión (sus pistas reales, por su huella `Source.key`).
+    private var origin: @Sendable (_ kind: String, _ metaID: String) async -> TitleOrigin? = { _, _ in nil }
+    private var checked: @Sendable (_ key: String) -> [AudioLanguage]? = { _ in nil }
+    public func configure(origin: @escaping @Sendable (_ kind: String, _ metaID: String) async -> TitleOrigin?,
+                          checked: @escaping @Sendable (_ key: String) -> [AudioLanguage]?) {
+        self.origin = origin; self.checked = checked
+        cache = [:]
+    }
+    /// Se comprobó el audio de una versión: lo que estaba ordenado con lo que se suponía ya no vale.
+    public func forgetSorted() { cache = [:] }
+
     private func fetch(_ addon: Addon, kind: String, videoID: String) async -> [JSON]? {
         // nil si la red falló (para no recordar «no hay» 10 minutos)
         guard let url = URL(string: "\(addon.base)/stream/\(kind)/\(uriComponent(videoID)).json") else { return nil }
@@ -44,16 +56,22 @@ public actor StreamFinder {
     /// Todas las fuentes ordenadas. `onlyPlayable`: en iOS solo sirven las de URL http(s) (Real-Debrid).
     /// `fresh`: se salta la caché (para pedir un enlace nuevo cuando el que se tenía caducó).
     public func find(kind: String, videoID: String, prefs: Preferences, purpose: Purpose = .watch, onlyPlayable: Bool = true, fresh: Bool = false) async throws -> [Source] {
-        let key = "\(kind):\(videoID):\(prefs.audio):\(prefs.quality):\(purpose):\(onlyPlayable)"
+        let key = "\(kind):\(videoID):\(prefs.wanted):\(prefs.quality):\(purpose):\(onlyPlayable)"
         if !fresh, let hit = cache[key], clock() < hit.expires { return hit.sources }
+        // De dónde es el título, a la vez que se pregunta a los complementos (no después: no se espera de más).
+        let metaID = String(videoID.split(separator: ":").first ?? Substring(videoID))
+        let lookup = origin
+        let originTask = Task { await lookup(kind, metaID) }
         let (serving, results) = try await ask(kind: kind, videoID: videoID, fresh: fresh)
         let failed = results.contains { $0 == nil }
+        let titleOrigin = await originTask.value
         var sources: [Source] = [], seen = Set<Int>()
         for (addon, streams) in zip(serving, results) {
             for stream in streams ?? [] {
                 var index = Streams.stableIndex(addonURL: addon.url, stream: stream)
                 while seen.contains(index) { index = (index + 1) % (1 << 31) }  // el mismo enlace dos veces: la segunda, el número siguiente
-                let source = Streams.parse(stream, addon: addon.name, transportURL: addon.url, index: index)
+                var source = Streams.parse(stream, addon: addon.name, transportURL: addon.url, index: index, origin: titleOrigin)
+                if let real = checked(source.key) { source.setAudio(real) }
                 if onlyPlayable && source.playbackURL == nil { continue }
                 // Una lista HLS o DASH no es un archivo: se ve, pero no se puede guardar en el teléfono.
                 if purpose == .download, let ext = source.playbackURL?.pathExtension.lowercased(), ["m3u8", "mpd"].contains(ext) { continue }
@@ -68,6 +86,11 @@ public actor StreamFinder {
         cache[key] = (clock().addingTimeInterval(failed ? Self.retryFailed : Self.cacheSeconds), ranked)
         return ranked
     }
+
+    /// Pregunta ya a los complementos por ese video (sin ordenar nada): el `find` que venga después se une o lo encuentra guardado.
+    public func warm(kind: String, videoID: String) async { _ = try? await ask(kind: kind, videoID: videoID, fresh: false) }
+    /// Pide ya la lista de complementos (`addonCollectionGet`, o la de disco y la nueva aparte) para que las fuentes no la esperen.
+    public func warmAddons() async { _ = try? await registry.addons() }
 
     /// Lo que contestaron los complementos para un video: de lo guardado (si no ha caducado y no se pide `fresh`), de una
     /// petición que ya va en camino, o se pregunta a todos a la vez.
@@ -132,15 +155,26 @@ public actor StreamFinder {
     /// Todos los subtítulos que hay para un video, de tus complementos y de OpenSubtitles; con la huella del archivo (una
     /// descarga), los que van sincronizados con esa copia exacta salen primero.
     public func subtitleOptions(kind: String, videoID: String, file: FileFingerprint? = nil) async -> [SubtitleOption] {
+        await subtitleSearch(kind: kind, videoID: videoID, file: file) ?? []
+    }
+
+    /// Lo mismo, pero nil si nadie contestó (sin red): así «no hay subtítulos» y «sin conexión» no se confunden.
+    public func subtitleSearch(kind: String, videoID: String, file: FileFingerprint? = nil) async -> [SubtitleOption]? {
         var bases = ((try? await registry.serving("subtitles", kind: kind, itemID: videoID)) ?? []).map(\.base)
         if !bases.contains(where: { $0.contains("opensubtitles") }) { bases.append(Self.builtInSubtitles) }
         let extra = file.map { "/videoHash=\($0.hash)&videoSize=\($0.size)" } ?? ""
         var out: [SubtitleOption] = []
-        await withTaskGroup(of: [SubtitleOption].self) { group in
+        var answered = false
+        await withTaskGroup(of: [SubtitleOption]?.self) { group in
             for base in bases {
                 group.addTask { [http] in
-                    guard let url = URL(string: "\(base)/subtitles/\(kind)/\(uriComponent(videoID))\(extra).json"),
-                          let subs = (try? await http.getJSON(url, timeout: 15))?["subtitles"]?.array else { return [] }
+                    guard let url = URL(string: "\(base)/subtitles/\(kind)/\(uriComponent(videoID))\(extra).json") else { return [] }
+                    let json: JSON?
+                    do { json = try await http.getJSON(url, timeout: 15) }
+                    catch let error as NetworkError where error.description.hasPrefix("HTTP") { return [] }   // contestó: no es falta de red
+                    catch { return nil }
+                    guard let subs = json?["subtitles"]?.array else { return [] }
+                    let source = base.contains("opensubtitles") ? "OpenSubtitles" : URL(string: base)?.host
                     return subs.compactMap { sub in
                         guard let text = sub["url"]?.string, let u = URL(string: text), ["http", "https"].contains(u.scheme?.lowercased() ?? ""),
                               let lang = sub["lang"]?.string else { return nil }
@@ -149,12 +183,15 @@ public actor StreamFinder {
                         let downloads = sub["downloads"]?.intValue ?? sub["download_count"]?.intValue
                         let hi = sub["hearing_impaired"]?.bool ?? sub["hearingImpaired"]?.bool ?? false
                         let forced = sub["foreign_parts_only"]?.bool ?? sub["forced"]?.bool ?? false
-                        return SubtitleOption(url: u, language: lang, release: release, downloads: downloads, hearingImpaired: hi, foreignOnly: forced)
+                        let fileID = sub["id"]?.string ?? sub["id"]?.intValue.map(String.init)
+                        return SubtitleOption(url: u, language: lang, release: release, downloads: downloads, hearingImpaired: hi, foreignOnly: forced,
+                                              source: source, fileID: fileID)
                     }
                 }
             }
-            for await found in group { out += found }
+            for await found in group { if let found { answered = true; out += found } }
         }
+        guard answered else { return nil }
         var seen = Set<URL>()
         return out.filter { seen.insert($0.url).inserted }
     }
@@ -168,10 +205,14 @@ public struct SubtitleOption: Sendable, Equatable, Identifiable {
     public var downloads: Int?
     public var hearingImpaired = false   // SDH/CC
     public var foreignOnly = false       // forzado: solo carteles o partes en otro idioma
+    /// De dónde salió («OpenSubtitles» o el servidor del complemento) y su id de archivo allá (para no guardarlo dos veces).
+    public var source: String?
+    public var fileID: String?
     public var id: URL { url }
-    public init(url: URL, language: String, release: String? = nil, downloads: Int? = nil, hearingImpaired: Bool = false, foreignOnly: Bool = false) {
+    public init(url: URL, language: String, release: String? = nil, downloads: Int? = nil, hearingImpaired: Bool = false, foreignOnly: Bool = false,
+                source: String? = nil, fileID: String? = nil) {
         self.url = url; self.language = language; self.release = release; self.downloads = downloads
-        self.hearingImpaired = hearingImpaired; self.foreignOnly = foreignOnly
+        self.hearingImpaired = hearingImpaired; self.foreignOnly = foreignOnly; self.source = source; self.fileID = fileID
     }
 }
 

@@ -7,7 +7,7 @@ import OrbitalModels
 ///   · Semana: una tira con los siete días (como la guía de la TV); al tocar uno, lo que sale ese día.
 /// Varios episodios el mismo día van juntos («T2 E4–E6»); lo de madrugada dice «Desde la madrugada». Pulsar abre la serie.
 struct UpcomingView: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
+    var observer: ModelObserver<ParaTiModel>
     @State private var picked: Date?
     @Environment(\.locale) private var locale
     private var model: ParaTiModel { observer.model }
@@ -159,7 +159,7 @@ struct AiringCard: View {
                 (dayName(airing.day, locale: locale) + Text(verbatim: " · \(airing.episodeLabel(AppEnvironment.shared.services.episodeLabel))"))
                     .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
             }
-            .frame(width: DS.Poster.episodeThumbWidth * 1.4)
+            .frame(width: DS.Poster.airingWidth)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)

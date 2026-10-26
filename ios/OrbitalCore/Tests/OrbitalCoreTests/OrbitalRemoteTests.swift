@@ -139,7 +139,8 @@ final class OrbitalRemoteTests: XCTestCase {
                      "audio": .object(["lang": "eng", "title": ""]),
                      "subtitle": .object(["off": false, "lang": "spa", "title": "Latino", "url": "https://subs/x.srt"])]),
         ])])
-        let item = try XCTUnwrap(try await OrbitalRemote(http: http, address: "tv.example", token: "x").snapshot().inbox.first)
+        let snapshot = try await OrbitalRemote(http: http, address: "tv.example", token: "x").snapshot()
+        let item = try XCTUnwrap(snapshot.inbox.first)
         XCTAssertEqual(item.choice?.videoID, "tt9")
         XCTAssertEqual(item.choice?.source, "Torrentio|abc|0", "la misma huella de fuente que el iPhone")
         XCTAssertEqual(item.choice?.audio, ResumeChoice.Track(language: "eng"))

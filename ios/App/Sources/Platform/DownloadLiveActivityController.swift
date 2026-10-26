@@ -41,8 +41,24 @@ final class DownloadLiveActivityController {
         for await items in downloads.makeUpdates() { await update(items) }
     }
 
+    /// Mientras corre la tarea continua de iOS, iOS enseña su propia actividad de la descarga: la de Orbital se quita para no
+    /// ver dos (vuelve cuando esa tarea se acaba; si se acaba con la app cerrada, al volver a abrirla).
+    private var suppressed = false
+
+    func setSuppressed(_ value: Bool) async {
+        guard suppressed != value else { return }
+        suppressed = value
+        if value, let activity {
+            await activity.end(nil, dismissalPolicy: .immediate)
+            self.activity = nil; last = nil
+        } else if !value {
+            await update(latest)
+        }
+    }
+
     func update(_ items: [DownloadItem]) async {
         latest = items
+        if suppressed { return }
         let pending = items.filter { $0.state == .downloading || $0.state == .queued || $0.state == .paused }
         guard !pending.isEmpty else { return await finish(items) }
         if batchStarted == nil { batchStarted = Date().timeIntervalSince1970 }

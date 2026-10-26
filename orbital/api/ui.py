@@ -14,8 +14,7 @@ from .deps import Deps
 
 # Ajustes que se pueden cambiar desde la interfaz (y sus valores válidos).
 SETTINGS = {
-    "audio": {"en", "es"},
-    "dub": {"latino", "castellano", ""},  # con audio en español: cuál doblaje (o cualquiera)
+    "audio": {"en", "es", "es-419", "es-ES"},
     "subtitles": {"en", "es", "forced", ""},
     "quality": {"4K", "1080p", "720p"},
     "sub_scale": {.85, 1.0, 1.25, 1.5},
@@ -84,7 +83,7 @@ def router(d: Deps) -> APIRouter:
     @r.get("/api/settings")
     def get_settings() -> dict:
         prefs = catalog.stream_prefs
-        return {"audio": prefs.audio, "dub": prefs.dub, "quality": prefs.quality, "subtitles": catalog.subtitles_lang,
+        return {"audio": prefs.audio, "quality": prefs.quality, "subtitles": catalog.subtitles_lang,
                 "sub_scale": float(catalog.watch.setting("sub_scale", 1.0) or 1.0), "text_size": "normal", "safe_area": 4,
                 "reduce_motion": False, "sounds": True, "haptics": True, "voice_tips": True,
                 "game_idle_minutes": d.config.sessions.game_idle_minutes,

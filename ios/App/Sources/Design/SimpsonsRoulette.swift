@@ -1,4 +1,5 @@
 import SwiftUI
+import OrbitalModels
 import OrbitalCore
 
 /// «Un Simpson al azar» como un cambio de canal en la tele de la sala de Los Simpson (≈1.2 s): la tele (morada, con su antena
@@ -6,7 +7,7 @@ import OrbitalCore
 /// verde; se queda en el elegido, la pantalla se ilumina, el nombre aparece y la imagen del episodio crece desde la pantalla
 /// hasta el lugar del video en el reproductor vertical (a lo ancho), donde empieza. Con «Reducir movimiento», directo al elegido.
 struct SimpsonsRoulette: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draw: AppEnvironment.SimpsonsDraw?
@@ -22,6 +23,8 @@ struct SimpsonsRoulette: View {
     @State private var screenRect: CGRect = .zero
     @State private var clicks = 0
     @State private var run: Task<Void, Never>?
+    /// El episodio que se está viendo, encima de la ruleta (al cerrarlo, la ruleta se va con él).
+    @State private var playing: PlayRequest?
     /// Dónde va el video en el reproductor vertical: la imagen crece hasta ahí (no a toda la pantalla).
     @AppStorage(PlayerScreen.portraitCenterKey) private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
 
@@ -61,6 +64,11 @@ struct SimpsonsRoulette: View {
         .sensoryFeedback(.success, trigger: landed) { _, now in now }
         .task { await roll() }
         .onDisappear { run?.cancel() }
+        // Al cerrar el reproductor, la ruleta ya cumplió: se va también, sin animación (debajo está Inicio, como siempre).
+        .fullScreenCover(item: $playing, onDismiss: {
+            var quiet = Transaction(); quiet.disablesAnimations = true
+            withTransaction(quiet) { dismiss() }
+        }) { request in PlayerScreen(request: request) }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Un Simpson al azar"))
     }
@@ -191,18 +199,13 @@ struct SimpsonsRoulette: View {
         }
     }
 
-    /// El reproductor entra y esta pantalla se va sin animación (si no, se veía Inicio un instante entre las dos).
+    /// El reproductor entra encima de la ruleta, sin animación: la imagen que creció queda bajo su negro de carga y el
+    /// episodio arranca ahí mismo. Antes la ruleta se cerraba primero y entre las dos se veía Inicio un instante.
     private func start() {
         run?.cancel()
         guard let draw else { return }
         var quiet = Transaction(); quiet.disablesAnimations = true
-        withTransaction(quiet) { dismiss() }
-        // En cuanto se quitó esta pantalla (no se pueden presentar dos a la vez), el reproductor, también sin animación.
-        let env = env
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(DS.Simpsons.handoff * 1_000_000_000))
-            withTransaction(quiet) { env.playSimpsons(draw) }
-        }
+        withTransaction(quiet) { playing = env.simpsonsRequest(draw) }
     }
 }
 

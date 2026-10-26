@@ -35,3 +35,35 @@ final class ReleaseAlertsTests: XCTestCase {
         XCTAssertEqual(calendar.component(.hour, from: early), 8)
     }
 }
+
+/// La revisión de estrenos de verdad (Trakt y complementos de mentira): un episodio sin fuentes todavía (su complemento no
+/// contesta) ya no se come el tiempo del que sí tiene fuente.
+@MainActor
+final class ReleaseAlertsCheckTests: XCTestCase {
+    func testASlowEpisodeNoLongerHidesOneThatHasASource() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.services.settings.update { $0.releaseAlerts = true }
+        let now = rig.clock.now
+        let cal = Calendar.current
+        let start = ForYou.dayString(cal.date(byAdding: .day, value: -2, to: cal.startOfDay(for: now))!, calendar: cal)
+        let aired = ISO8601DateFormatter().string(from: now.addingTimeInterval(-3 * 3600))
+        func row(_ imdb: String, _ title: String) -> JSON {
+            ["first_aired": .string(aired), "episode": ["season": 2, "number": 1, "title": "Estreno"],
+             "show": ["title": .string(title), "ids": ["imdb": .string(imdb), "trakt": 1]]]
+        }
+        rig.http.json["https://api.trakt.tv/calendars/my/shows/\(start)/4?extended=full"] = [row("tt0000001", "Sin fuentes aún"), row("tt0000002", "Ya tiene")]
+        // El primero: el complemento tarda (como uno que no tiene nada y no contesta); el segundo ya tiene fuente.
+        rig.http.delays["https://a.example/stream/series/tt0000001%3A2%3A1.json"] = 3_000
+        rig.http.json["https://a.example/stream/series/tt0000001%3A2%3A1.json"] = ["streams": []]
+        rig.http.json["https://a.example/stream/series/tt0000002%3A2%3A1.json"] = ["streams": [
+            ["name": "T\n1080p [RD+]", "title": "Show.S02E01.1080p.WEB-DL\n💾 2 GB", "url": "https://rd.example/e.mkv"]]]
+        let alerts = ReleaseAlerts(rig.services)
+        alerts.budget = 0.5
+        let started = Date()
+        let due = await alerts.due()
+        XCTAssertEqual(due.map(\.id), ["tt0000002:2:1"], "el que tiene fuente se avisa")
+        XCTAssertLessThan(Date().timeIntervalSince(started), 2, "no espera al lento: cabe en el tiempo de iOS")
+        XCTAssertEqual(alerts.report.pending.sorted(), ["tt0000001:2:1", "tt0000002:2:1"])
+        XCTAssertEqual(alerts.report.timedOut, ["tt0000001:2:1"], "la bitácora dice cuál no contestó a tiempo")
+    }
+}
