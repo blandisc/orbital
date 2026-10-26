@@ -28,6 +28,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import flags
+
+FLAG_H, FLAG_GAP = 22, 12  # la banderita junto al idioma (audio, subtítulos, versión)
 W, H = 1920, 1080  # coordenadas del lienzo: 1080 de alto y lo ancho que dé la pantalla (ver set_canvas)
 MARGIN = 96
 
@@ -731,7 +734,12 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                 room = (col_w - 70) * .45
                 hint = fit(hint, 20, col_w - 70 - room - 20)
             weight = "semi" if focused or current else "regular"
-            lines.append(text(x + 52, y + 27, esc(fit(option["label"], 24, room, weight)), 24, color, weight=weight, align=4))
+            left = x + 52
+            if option.get("flag"):  # la banderita del idioma, antes de su nombre (como en la interfaz)
+                lines += flags.ass(option["flag"], left, y + 27 - FLAG_H / 2, FLAG_H)
+                left += FLAG_H * flags.W / flags.H + FLAG_GAP
+                room -= left - x - 52
+            lines.append(text(left, y + 27, esc(fit(option["label"], 24, room, weight)), 24, color, weight=weight, align=4))
             if hint:
                 lines.append(text(x + col_w - 18, y + 27, esc(hint), 20, ON_LIGHT if focused else MUTED, align=6))
             if option.get("progress"):
@@ -757,7 +765,7 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
     return "\n".join(lines)
 
 
-GRID_NAME = 170  # el nombre del idioma, a la izquierda de sus casillas
+GRID_NAME = 215  # la banderita y el nombre del idioma («Castellano» entero), a la izquierda de sus casillas
 
 
 def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active: bool) -> list[str]:
@@ -767,7 +775,11 @@ def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active:
     width = (col_w - GRID_NAME - 10 * 3) / 4  # hasta cuatro calidades: 4K, 1080p, 720p, SD
     for i, row in enumerate(column.options[column.top:column.top + PANEL_ROWS], start=column.top):
         here = active and i == column.index
-        lines.append(text(x + 18, y + 27, esc(fit(row["label"], 24, GRID_NAME - 26, "semi" if here else "regular")), 24,
+        left = x + 18
+        if row.get("flag"):
+            lines += flags.ass(row["flag"], left, y + 27 - FLAG_H / 2, FLAG_H)
+            left += FLAG_H * flags.W / flags.H + FLAG_GAP
+        lines.append(text(left, y + 27, esc(fit(row["label"], 24, GRID_NAME - 8 - (left - x), "semi" if here else "regular")), 24,
                           TEXT if here or any(cell.get("current") for cell in row["cells"]) else SOFT,
                           weight="semi" if here else "regular", align=4))
         cx = x + GRID_NAME
@@ -808,7 +820,8 @@ def track_options(kind: str, tracks: list[dict], extra: list[dict] | None = None
     for t in tracks:
         if t.get("type") == kind:
             options.append({"label": track_label(t), "action": ("aid" if kind == "audio" else "sid", t["id"]),
-                            "current": bool(t.get("selected")), "lang": t.get("lang")})
+                            "current": bool(t.get("selected")), "lang": t.get("lang"),
+                            "flag": flags.flag_for(t.get("lang"), str(t.get("title") or ""))})
     return options + (extra or [])
 
 
@@ -842,8 +855,8 @@ def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | 
     y sigue donde ibas."""
     sizes = [{"label": name, "action": ("subscale", value), "current": abs(value - sub_scale) < .01}
              for value, name in SUB_SCALES]
-    other = [{"label": v["label"], "hint": v.get("hint", ""), "action": ("source", v["id"]), "current": False}
-             for v in versions or []]
+    other = [{"label": v["label"], "hint": v.get("hint", ""), "action": ("source", v["id"]), "current": False,
+              "flag": v.get("flag")} for v in versions or []]
     columns = [_column("audio", track_options("audio", tracks, other)), _column("sub", track_options("sub", tracks, extra_subs)),
                _column("size", sizes), _column("sync", sync_options(sub_delay))]
     return Panel("tracks", columns, next((i for i, c in enumerate(columns) if c.key == focus), 0))
@@ -861,7 +874,7 @@ def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None
              "hint": "Viendo" if e.get("current") else e.get("hint", ""), "progress": e.get("progress")}
             for e in episodes]))
     if sources and "cells" in sources[0]:  # idioma × calidad: empieza en la que ves (o en la primera, la recomendada)
-        rows = [{"label": r["label"], "cells": [{**cell, "action": ("source", cell["id"])} for cell in r["cells"]]}
+        rows = [{"label": r["label"], "flag": r.get("flag"), "cells": [{**cell, "action": ("source", cell["id"])} for cell in r["cells"]]}
                 for r in sources if r.get("cells")]
         at = next(((i, j) for i, r in enumerate(rows) for j, cell in enumerate(r["cells"]) if cell.get("current")), (0, 0))
         if rows:

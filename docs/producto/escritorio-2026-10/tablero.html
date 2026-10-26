@@ -61,7 +61,7 @@ footer { color: var(--muted); font-family: var(--mono); font-size: 12px; }
 </div>
 
 <script>
-const UPDATED = "25 oct 2026 · en la Lenovo: #9, #7, #1 y #2 listos con evidencia; #10 con código, falta verlo con mpv";
+const UPDATED = "25 oct 2026 · en la Lenovo: #9, #7, #1, #2 y #3 listos con evidencia; #10 con código, falta verlo con mpv";
 // estado: todo | doing | done ; tipo: Bug | Mejora | Propuesta | Investigación
 const ITEMS = [
   { n: 11, t: "Reproductor: pausa, botones y logo", tipo: "Bug", prio: true, estado: "doing",
@@ -83,8 +83,9 @@ const ITEMS = [
   { n: 2, t: "Dictado: borrar si pasaron más de 2 min", tipo: "Mejora", estado: "done",
     d: "Hoy el dictado siempre añade. Si lo escrito tiene más de 2 minutos, que lo reemplace.", nota: "Si lo escrito cambió hace más de 2 min, dictar lo reemplaza (y «Borrar todo» ofrece «Deshacer»); si es reciente, sigue escribiendo. Probado en la Lenovo con Edge, con la voz simulada y el reloj adelantado.",
     ev: ["evidencia/02-dictado.jpg"] },
-  { n: 3, t: "Banderitas en idiomas y subtítulos", tipo: "Mejora", estado: "todo",
-    d: "Mapear todos los lugares donde eliges idioma o subtítulo y ponerles bandera.", nota: "" },
+  { n: 3, t: "Banderitas en idiomas y subtítulos", tipo: "Mejora", estado: "done",
+    d: "Mapear todos los lugares donde eliges idioma o subtítulo y ponerles bandera.", nota: "Lugares: Elegir versión (filas, la lista de «todas las de aquí» y la línea de abajo), Ajustes › Idioma y Subtítulos, Versiones de tu carpeta y, en el reproductor, Audio, Subtítulos, «En otra versión» y Versión. Mapa igual al iPhone: latino y español sin decir cuál 🇲🇽, castellano 🇪🇸, inglés 🇺🇸, portugués 🇧🇷; dos audios, dos banderas. Una sola definición (orbital/flags.py) para la interfaz y mpv (Windows no dibuja los emoji de bandera). Probado en la Lenovo: Edge y mpv de verdad.",
+    ev: ["evidencia/03-version.jpg", "evidencia/03-fuentes.jpg", "evidencia/03-ajustes.jpg", "evidencia/03-reproductor-audio.jpg", "evidencia/03-reproductor-version.jpg"] },
   { n: 4, t: "Aparadores de temporadas y géneros", tipo: "Mejora", estado: "todo",
     d: "Halloween, Día de Muertos, Navidad y los géneros con icono y título, como Estudios y Plataformas. Alineado con el iPhone.", nota: "" },
   { n: 6, t: "Animación de entrada de Orbital", tipo: "Propuesta", estado: "todo",

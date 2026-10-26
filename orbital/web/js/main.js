@@ -1105,7 +1105,7 @@ function versionsMenu(play, versions) {
     icon: i === 0 ? "check" : "play",
     label: [v.resolution || "SD", ...(v.hdr || []).map((t) => (t === "DV" ? "Dolby Vision" : t)), v.audio, ...(v.languages || []).map((l) => lang[l] || l)]
       .filter(Boolean).join(" · "),
-    value: v.size ? gb(v.size) : "", hint: v.path || v.name,
+    value: v.size ? gb(v.size) : "", hint: v.path || v.name, flags: v.languages || [], // sus audios, con bandera
     command: { type: "own-play", play: { ...play, own: true, file_id: v.id } } })) };
 }
 

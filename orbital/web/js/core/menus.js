@@ -661,6 +661,7 @@ export function settingsPage(page, settings) {
     title: def.title, crumb: def.title,
     options: [...def.options.map(([key, label, hint]) => ({
       icon: SETTING_ICONS[key] || def.icon, label, hint, value: settingLabel(key, settings[key]),
+      valueFlag: key === "audio" || key === "subtitles" ? settings[key] : undefined, // su banderita (sheet.js · Flag)
       command: { type: "setting", key, value: nextSetting(key, settings[key]), page },
       // ◀ baja y ▶ sube (antes las dos avanzaban)
       adjust: { left: edgeAware(key, settings[key], -1, page), right: edgeAware(key, settings[key], 1, page) },

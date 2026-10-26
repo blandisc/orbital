@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 
-from . import companion, player, player_ui
+from . import companion, flags, player, player_ui
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
@@ -194,7 +194,7 @@ def version_grid(found: list[streams.Source], prefs: streams.Preferences, curren
                           "size": f"{src.size / 1e9:.1f} GB" if src.size else "",
                           "doubt": "Idioma dudoso" if cell["how"] == "maybe" else "",
                           "current": current is not None and current in cell["all"]})
-        out.append({"label": name, "cells": cells})
+        out.append({"label": name, "flag": flags.flag_for(row["code"]), "cells": cells})
     return out
 
 
@@ -1111,7 +1111,7 @@ class Watch:
                 seen.add(code)
                 # Corto: la columna Audio es angosta (con cuatro columnas cabe «Castellano» + «En otra · 1080p», medido con
                 # player_ui.text_width; «Latino · en otra versión» y «4K HDR · al instante» se cortaban).
-                out.append({"id": src.index, "code": code, "label": streams.LANG_NAMES.get(code, code),
+                out.append({"id": src.index, "code": code, "label": streams.LANG_NAMES.get(code, code), "flag": flags.flag_for(code),
                             "hint": f"En otra · {src.resolution or 'SD'}"})
         wanted = self._wanted_codes(prefs)
         out.sort(key=lambda o: o["code"] not in wanted)  # tu idioma primero (en español sin preferencia, los dos)

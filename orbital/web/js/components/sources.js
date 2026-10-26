@@ -5,6 +5,7 @@ import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
 import { isOwnSource, languageLine, versionRows, versionStart, versionStep } from "../core/watch.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
+import { Flag, Flags } from "./flag.js";
 
 /**
  * «Versión» (Y en la ficha): un panel que sube desde abajo, encima de la ficha. Lo normal es no necesitarlo: «Ver»
@@ -71,12 +72,15 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     cells = rows.map((row, r) => row.options.map((opt, c) => option(opt, r, c)));
     mount(list, rows.map((row, r) => h("div", { class: "versions__row", role: "group", "aria-label": row.name },
       h("div", { class: "versions__lang" },
-        h("span", { class: "versions__name" }, row.name),
+        h("span", { class: "versions__name" }, Flag(row.code), row.name),
         (row.role || row.options.every((o) => o.proof === "maybe")) &&
           h("span", { class: "versions__role" }, row.role || "Tal vez")),
       h("div", { class: "versions__options" }, cells[r]))));
     describe();
   }
+
+  /** Las banderas de los audios que sí trae (los «tal vez» no): una versión con dos audios lleva las dos. */
+  const sureFlags = (src) => Flags((src.audio_langs || []).filter((l) => l.proof !== "maybe").map((l) => l.code));
 
   /** La línea de abajo: lo que trae la enfocada y cómo lo sabemos. */
   function describe() {
@@ -85,7 +89,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     const src = opt.source;
     const more = opt.all.length > 1 ? `X: las ${opt.all.length} de aquí` : "";
     mount(why,
-      h("span", { class: "sources__why-langs" }, languageLine(src, rows[at.row].code) || src.languages?.join(" + ") || "No dice idioma"),
+      h("span", { class: "sources__why-langs" }, ...sureFlags(src), languageLine(src, rows[at.row].code) || src.languages?.join(" + ") || "No dice idioma"),
       h("span", { class: "sources__why-more" }, [src.other_title && "El nombre no dice este título", src.site, more].filter(Boolean).join(" · ")));
   }
 
@@ -93,7 +97,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     const opt = rows[cell.row].options[cell.col];
     items = opt.all;
     mount(list, h("div", { class: "sources__group", role: "group", "aria-label": `${rows[cell.row].name} · ${opt.res}` },
-      h("div", { class: "sources__group-title" }, `${rows[cell.row].name} · ${opt.res}`),
+      h("div", { class: "sources__group-title" }, Flag(rows[cell.row].code), `${rows[cell.row].name} · ${opt.res}`),
       ...items.map((src, i) => {
         const [label, tone] = state(src);
         return h("button", { class: ["source", i === index && "source--focused"], type: "button", role: "listitem",
@@ -101,7 +105,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
         h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
         h("span", { class: "source__main" },
           h("span", { class: "source__chips" }, Chip(label, { tone }), ...facts(src).map((f) => Chip(f))),
-          h("span", { class: "source__release" }, languageLine(src, rows[cell.row].code)),
+          h("span", { class: "source__release" }, ...sureFlags(src), languageLine(src, rows[cell.row].code)),
           h("span", { class: "source__release" }, [src.release, src.site].filter(Boolean).join(" · "))));
       })));
     mount(why);
