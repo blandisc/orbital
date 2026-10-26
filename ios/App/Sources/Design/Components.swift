@@ -1172,3 +1172,20 @@ struct DSCapsuleLabel: View {
 
     private func icon(_ name: String) -> some View { Image(systemName: name).font(DS.TextRecipe.footnote.font.weight(.bold)).imageScale(.small) }
 }
+
+extension Text {
+    /// La bandera de un idioma antes de su nombre («🇲🇽 Latino»), con su espacio; VoiceOver no la lee (dice solo el nombre).
+    /// Sin bandera conocida (el árabe, un código raro), nada. Varios idiomas, varias banderas («🇺🇸🇲🇽 Inglés + latino»).
+    static func flag(_ codes: [String]) -> Text {
+        let flagged = LanguageFlags.flagged("", codes)
+        return flagged.isEmpty ? Text(verbatim: "") : Text(verbatim: flagged + " ").accessibilityLabel(Text(verbatim: ""))
+    }
+    static func flag(_ code: String?) -> Text { flag(code.map { [$0] } ?? []) }
+
+    /// Un texto que ya trae sus banderas al principio («🇲🇽 Latino · 1080p»): igual a la vista, pero VoiceOver no las lee.
+    static func flagged(_ string: String) -> Text {
+        let rest = LanguageFlags.withoutFlags(string)
+        guard rest.count < string.count, string.hasSuffix(rest) else { return Text(verbatim: string) }
+        return Text(verbatim: String(string.dropLast(rest.count))).accessibilityLabel(Text(verbatim: "")) + Text(verbatim: rest)
+    }
+}

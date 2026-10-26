@@ -282,7 +282,7 @@ struct MiMediaTitleView: View {
                         Spacer()
                         Text(verbatim: ByteCountFormatter.string(fromByteCount: Int64(e.file.size), countStyle: .file)).recipe(.data)
                     }
-                    DataLine(parts: [languages.map { appLocale.localizedString(forLanguageCode: $0)?.capitalized(with: appLocale) ?? $0 }.joined(separator: ", "),
+                    DataLine(parts: [languages.map { LanguageFlags.flagged(appLocale.localizedString(forLanguageCode: $0)?.capitalized(with: appLocale) ?? $0, $0) }.joined(separator: ", "),
                                      e.file.added.map { env.message("Agregada") + " " + $0.formatted(Date.RelativeFormatStyle(presentation: .named, locale: appLocale)) } ?? ""])
                     Text(verbatim: e.file.path).recipe(.caption, color: DS.textFaint).lineLimit(2)
                     if t.entries.count > 1 {

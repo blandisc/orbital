@@ -226,7 +226,8 @@ struct SettingsView: View {
             // dicen cuál van después de las que sí (y «Ver» en la ficha dice cuál va a sonar).
             Picker("Audio", selection: Binding(get: { s.audio == "es" ? (s.latinSpanish ? "es-419" : s.castilianSpanish ? "es-ES" : "es") : s.audio },
                                                set: { v in model.update { $0.audio = v.hasPrefix("es") ? "es" : v; $0.latinSpanish = v == "es-419"; $0.castilianSpanish = v == "es-ES" } })) {
-                Text("Español latino").tag("es-419"); Text("Español de España").tag("es-ES"); Text("Español (cualquiera)").tag("es"); Text("English").tag("en")
+                (Text.flag("es-419") + Text("Español latino")).tag("es-419"); (Text.flag("es-ES") + Text("Español de España")).tag("es-ES")
+                Text("Español (cualquiera)").tag("es"); (Text.flag("en") + Text("English")).tag("en")
             }
         }
         .listRowBackground(DS.surface)
@@ -331,7 +332,7 @@ struct SettingsView: View {
     }
 
     @ViewBuilder private var languageOptions: some View {
-        Text("Español").tag("es"); Text("English").tag("en")
+        (Text.flag("es") + Text("Español")).tag("es"); (Text.flag("en") + Text("English")).tag("en")
     }
 
     @ViewBuilder private var qualityOptions: some View {
@@ -508,11 +509,11 @@ struct RememberedTitlesView: View {
             var parts: [String] = []
             if let audio = value.audio {
                 let code = audio == "es" ? (value.spanish ?? "es") : audio
-                parts.append(code == "es" ? Strings.tr("Español", language: ui) : Streams.versionLanguageName(code, in: ui))
+                parts.append(LanguageFlags.flagged(code == "es" ? Strings.tr("Español", language: ui) : Streams.versionLanguageName(code, in: ui), code))
             }
             if let subs = value.subtitles {
                 parts.append(subs.isEmpty ? Strings.tr("Sin subtítulos", language: ui)
-                             : String(format: Strings.tr("Subtítulos: %@", language: ui), Streams.versionLanguageName(subs, in: ui)))
+                             : String(format: Strings.tr("Subtítulos: %@", language: ui), LanguageFlags.flagged(Streams.versionLanguageName(subs, in: ui), subs)))
             }
             return Row(id: id, line: parts.joined(separator: " · "))
         }

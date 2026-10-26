@@ -508,7 +508,7 @@ struct LanguageSearchList: View {
                         ForEach(ready, id: \.code) { a in
                             Button { pick(a.code); dismiss() } label: {
                                 HStack {
-                                    Text(verbatim: name(a.code)).foregroundStyle(DS.text)
+                                    Text.flagged(name(a.code)).foregroundStyle(DS.text)
                                     Spacer()
                                     (a.count == 1 ? Text("1 versión") : Text("\(a.count) versiones")).recipe(.footnote)
                                 }
@@ -728,7 +728,7 @@ struct SubtitleDock: View {
             if audio.count > 1 || !otherVersions.isEmpty {
                 section(.audio, title: "Audio", value: audioValue) {
                     FlowChips(spacing: DS.Space.s1) {
-                        ForEach(audio) { a in pill(Text(verbatim: a.title), selected: a.selected) { pickAudio(a.id) } }
+                        ForEach(audio) { a in pill(Text.flagged(a.title), selected: a.selected) { pickAudio(a.id) } }
                         ForEach(otherVersions) { v in otherPill(v) }
                     }
                     .id(audio.map { "\($0.id)\($0.selected)" }.joined() + otherVersions.map(\.id).joined())   // que se redibuje al elegir (ver `FlowChips`)
@@ -739,7 +739,7 @@ struct SubtitleDock: View {
                 // Los idiomas llenan el renglón; «Buscar» (una acción, no una opción) es la lupa redonda al final, con contorno.
                 HStack(alignment: .top, spacing: DS.Space.s1) {
                     FlowChips(spacing: DS.Space.s1) {
-                        ForEach(languages) { l in pill(Text(verbatim: l.title), selected: l.selected, unavailable: l.unavailable) { pickLanguage(l.id) } }
+                        ForEach(languages) { l in pill(Text.flagged(l.title), selected: l.selected, unavailable: l.unavailable) { pickLanguage(l.id) } }
                     }
                     Button(action: otherLanguage) {
                         Image(systemName: "magnifyingglass").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
@@ -833,7 +833,7 @@ struct SubtitleDock: View {
     private func otherPill(_ v: Language) -> some View {
         Button { pickVersion(v.id) } label: {
             VStack(alignment: .leading, spacing: 0) {
-                Text(verbatim: v.title).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                Text.flagged(v.title).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
                 if let detail = v.detail { Text(verbatim: detail).recipe(.caption, color: v.guessed ? DS.warning : DS.primary) }
             }
             .lineLimit(1).fixedSize()
@@ -844,7 +844,7 @@ struct SubtitleDock: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: v.title + ", " + (v.detail ?? "")))
+        .accessibilityLabel(Text(verbatim: LanguageFlags.withoutFlags(v.title) + ", " + (v.detail ?? "")))
         .accessibilityHint(Text("Abre otra versión del video en el mismo punto"))
     }
 
@@ -855,7 +855,7 @@ struct SubtitleDock: View {
             Button(action: allVersions) {
                 VStack(spacing: DS.Space.s1) {
                     HStack(spacing: DS.Space.s1) {
-                        Text(verbatim: version.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                        Text.flagged(version.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                         if loading { ProgressView().controlSize(.mini) }
                     }
                     HStack(spacing: DS.Space.s1) {

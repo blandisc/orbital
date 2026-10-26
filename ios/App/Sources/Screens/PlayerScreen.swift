@@ -1100,7 +1100,7 @@ struct PlayerScreen: View {
     /// «Latino · 1080p»: el idioma que va a sonar y la calidad de una versión.
     private func versionText(_ src: Source) -> String {
         let ui = env.services.appSettings.uiLanguage
-        let language = Streams.playingLanguage(src, env.services.appSettings.preferences()).map { Streams.versionLanguageName($0.code, in: ui) }
+        let language = Streams.playingLanguage(src, env.services.appSettings.preferences()).map { LanguageFlags.flagged(Streams.versionLanguageName($0.code, in: ui), $0.code) }
         return ([language].compactMap { $0 } + src.qualitySummary).joined(separator: " · ")
     }
 
@@ -1521,7 +1521,7 @@ struct PlayerScreen: View {
         }
         .sheet(isPresented: $dockLanguages) {
             LanguageSearchList(codes: SubtitleLanguage.all, available: model.subtitleLanguages.filter { !["es", "en"].contains($0.code) },
-                               name: { Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: SubtitleLanguage.code($0) ?? $0)?.capitalized ?? $0 }) { code in
+                               name: { LanguageFlags.flagged(Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: SubtitleLanguage.code($0) ?? $0)?.capitalized ?? $0, SubtitleLanguage.code($0) ?? $0) }) { code in
                 Task { await model.chooseLanguage(code) }
             }
         }
@@ -1560,7 +1560,7 @@ struct PlayerScreen: View {
         let code = currentSubtitleCode(model).flatMap { $0 == "CC" ? nil : $0 } ?? "es"
         let versions = model.subtitleVersions(language: code)
         let locale = Locale(identifier: uiLanguage)
-        let name = locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code
+        let name = LanguageFlags.flagged(locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code, code)
         return NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -1596,7 +1596,7 @@ struct PlayerScreen: View {
         // Guardado con la descarga: «Español 2 · OpenSubtitles · para sordos» (la copia va debajo, en la hoja de versiones).
         if let saved = v.saved {
             let locale = Locale(identifier: env.services.appSettings.uiLanguage)
-            let language = locale.localizedString(forLanguageCode: v.language)?.capitalized(with: locale) ?? v.language
+            let language = LanguageFlags.flagged(locale.localizedString(forLanguageCode: v.language)?.capitalized(with: locale) ?? v.language, v.language)
             return ["\(language) \(v.savedNumber ?? index + 1)", saved.source,
                     saved.hearingImpaired ? tr("para sordos") : saved.foreignOnly ? tr("forzados") : nil].compactMap { $0 }.joined(separator: " · ")
         }
@@ -1611,7 +1611,7 @@ struct PlayerScreen: View {
     private func subtitleDockView(_ model: PlayerModel) -> some View {
         let settings = env.services.appSettings
         let locale = Locale(identifier: settings.uiLanguage)
-        let name = { (code: String) in locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code }
+        let name = { (code: String) in LanguageFlags.flagged(locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code, code) }
         let on = currentSubtitleCode(model).flatMap { $0 == "CC" ? nil : $0 }
         let off = model.snapshot.selectedSubtitle == nil
         var codes = ["es", "en"]
@@ -1658,14 +1658,14 @@ struct PlayerScreen: View {
         let audio: [SubtitleDock.Language] = audioTracks.compactMap { t in
             let code = TrackChooser.audioCode(t) ?? "t\(t.id)"
             guard seenAudio.insert(code).inserted else { return nil }
-            let title = TrackChooser.audioCode(t).map { Streams.versionLanguageName($0, in: ui) } ?? TrackChooser.label(t, locale: Locale(identifier: ui), technical: false)
+            let title = TrackChooser.audioCode(t).map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: ui), $0) } ?? TrackChooser.label(t, locale: Locale(identifier: ui), technical: false)
             return .init(id: String(t.id), title: title, selected: model.snapshot.selectedAudio == t.id)
         }
         // Los idiomas que solo trae otra versión: sin cine ni tráileres, la más parecida a la tuya y diciendo a qué va.
         let others: [SubtitleDock.Language] = model.otherVersionAudio(excluding: seenAudio).prefix(DS.PlayerPanel.otherVersionsShown).map { o in
             let speed = o.instant ? Strings.tr("en Real-Debrid", language: ui) : Strings.tr("Real-Debrid aún no la tiene", language: ui)
             let detail = "↻ " + ([o.sure ? nil : Strings.tr("se supone", language: ui), o.quality.isEmpty ? nil : o.quality, speed].compactMap { $0 }.joined(separator: " · "))
-            return .init(id: String(o.sourceIndex), title: o.code == "es" ? VersionLanguageRow.spanish(ui) : Streams.versionLanguageName(o.code, in: ui),
+            return .init(id: String(o.sourceIndex), title: LanguageFlags.flagged(o.code == "es" ? VersionLanguageRow.spanish(ui) : Streams.versionLanguageName(o.code, in: ui), o.code),
                          selected: false, detail: detail, guessed: !o.sure)
         }
         let otherLanguage = Dictionary(model.otherVersionAudio(excluding: seenAudio).map { (String($0.sourceIndex), $0.code) }, uniquingKeysWith: { a, _ in a })
@@ -1713,7 +1713,7 @@ struct PlayerScreen: View {
         guard let src = model.source else { return "" }
         // El idioma que de verdad suena (la pista puesta) gana a lo que decía el nombre.
         let heard = model.snapshot.audioTracks.first { $0.id == model.snapshot.selectedAudio }.flatMap(TrackChooser.audioCode)
-        let language = (heard ?? Streams.playingLanguage(src, env.services.appSettings.preferences())?.code).map { Streams.versionLanguageName($0, in: ui) }
+        let language = (heard ?? Streams.playingLanguage(src, env.services.appSettings.preferences())?.code).map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: ui), $0) }
         let size = src.size > 0 ? ByteCountFormatter.string(fromByteCount: Int64(src.size), countStyle: .file) : nil
         return ([language, src.resolution.isEmpty ? nil : src.resolution, size].compactMap { $0 }).joined(separator: " · ")
     }
@@ -1817,7 +1817,7 @@ struct PlayerScreen: View {
                 ?? s.selectedSubtitle.flatMap({ id in SubtitleLanguage.code(s.subtitleTracks.first { $0.id == id }?.language) }) else { return nil }
         let versions = model.subtitleVersions(language: language)
         let at = versions.firstIndex { $0.id == model.selectedVersionID }
-        let name = Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: language)?.capitalized ?? language
+        let name = LanguageFlags.flagged(Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: language)?.capitalized ?? language, language)
         // En el idioma de la app (no el del sistema: salía «1 of 3» con la app en español).
         let title = at.map { String(format: Strings.tr("%@ · %lld de %lld", language: env.services.appSettings.uiLanguage), name, $0 + 1, versions.count) } ?? name
         guard let at else { return (title, Text("Cargando…")) }

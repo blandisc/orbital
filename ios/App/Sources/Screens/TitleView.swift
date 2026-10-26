@@ -271,8 +271,8 @@ struct TitleView: View {
     @ViewBuilder private func primaryButtonLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> some View {
         // «Latino · 1080p · Dolby Vision»: en qué idioma y con qué calidad va a sonar.
         // «Latino» o «Castellano» solo si se sabe; si no, «Español» a secas (no «Español (no dice cuál)», que es para la lista).
-        let language = model.recommendedLanguage.map { $0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
-                                                                  : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage) }
+        let language = model.recommendedLanguage.map { LanguageFlags.flagged($0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
+                                                                  : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage), $0) }
         let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
         VStack(spacing: DS.Space.s1) {
             if model.continueVideoID == nil && !model.isLoading {
@@ -456,8 +456,8 @@ struct TitleView: View {
                     HStack(spacing: DS.Space.s2) {
                         Image(systemName: "list.bullet.rectangle").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
                         // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
-                        Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
-                             : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage)).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                        (Text.flag(wanted) + Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
+                             : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage))).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
                         Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
                     }
                 }
@@ -563,7 +563,7 @@ struct TitleView: View {
             rows.append((model.kind == "series" ? "Primer episodio" : "Estreno", date.formatted(Date.FormatStyle(date: .long, time: .omitted).locale(locale))))
         }
         if !model.info.runtime.isEmpty { rows.append(("Duración", model.info.runtime)) }
-        let languages = (model.extras?.languages ?? []).compactMap { locale.localizedString(forLanguageCode: $0)?.capitalized(with: locale) }
+        let languages = (model.extras?.languages ?? []).compactMap { code in (locale.localizedString(forLanguageCode: code)?.capitalized(with: locale)).map { LanguageFlags.flagged($0, code) } }
         if !languages.isEmpty { rows.append(("Idiomas", languages.prefix(4).joined(separator: ", "))) }
         if let best = model.bestSource {
             let items = QualityBadges.items(resolution: best.resolution, hdr: best.hdr, audio: best.audioBadges)
