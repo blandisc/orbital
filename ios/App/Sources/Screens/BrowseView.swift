@@ -128,9 +128,9 @@ struct BrowseView: View {
         .textInputAutocapitalization(.never)
         .scrollDismissesKeyboard(.immediately)
         .onChange(of: query) { kind = "" }   // otra búsqueda empieza con «Todo» (un filtro viejo dejaba la pantalla en blanco)
-        // El campo vive abajo (pestaña de búsqueda, como Trakt); al escribir, el título se queda arriba y los resultados
-        // empiezan bajo él (antes la barra se escondía y lo de arriba chocaba con la hora).
-        .searchPresentationToolbarBehavior(.avoidHidingContent)
+        // Al tocar el campo, iOS sube el campo bajo la hora y esconde el título (como en las apps de Apple). Antes se pedía
+        // `.searchPresentationToolbarBehavior(.avoidHidingContent)` para dejar el título, y en iOS 27 la lupa y el texto
+        // brincaban de lugar al abrir el campo.
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }

@@ -56,4 +56,15 @@ final class SettingsTests: XCTestCase {
         store.update { $0.videoZoom = VideoZoom.stretch.rawValue }
         XCTAssertEqual(VideoZoom(stored: SettingsStore(kv).value.videoZoom), .stretch)
     }
+
+    /// «Un Simpson al azar»: por omisión las clásicas (5–15); lo elegido se guarda, y un ajuste guardado antes de existir no se pierde.
+    func testSimpsonsSeasonsDefaultPersistAndOldData() throws {
+        XCTAssertEqual(AppSettings().simpsonsSeasons, Array(5...15))
+        let kv = InMemoryKeyValueStore()
+        SettingsStore(kv).update { $0.simpsonsSeasons = [1, 2, 30] }
+        XCTAssertEqual(SettingsStore(kv).value.simpsonsSeasons, [1, 2, 30])
+        let old = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"audio":"en"}"#.utf8))
+        XCTAssertEqual(old.audio, "en")
+        XCTAssertEqual(old.simpsonsSeasons, Array(5...15))
+    }
 }

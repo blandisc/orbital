@@ -15,6 +15,8 @@ struct SettingsView: View {
     @State private var orbitalToken = ""
     @State private var editingAvatar = false
     @State private var showsYear = false
+    /// Las temporadas de Los Simpson que existen (llegan de Cinemeta al abrir «Inicio y Para ti»).
+    @State private var simpsonsSeasons = Array(1...AppEnvironment.simpsonsKnownSeasons)
     @State private var showsTrakt = false
 
     init() {
@@ -212,6 +214,15 @@ struct SettingsView: View {
         } header: { Text("Cuánto falta") } footer: { Text("Cómo te dice la tarjeta lo que te queda por ver.") }
         .listRowBackground(DS.surface)
         .sensoryFeedback(.selection, trigger: s.homeDeck + s.homeTime)
+        Section {
+            SimpsonsSeasonsPicker(selected: s.simpsonsSeasons, available: simpsonsSeasons, classics: AppEnvironment.simpsonsClassics) { seasons in
+                model.update { $0.simpsonsSeasons = seasons }
+                env.simpsonsSeasonsChanged()
+            }
+            .padding(.vertical, DS.Space.s2)
+            .task { simpsonsSeasons = await env.simpsonsSeasonNumbers() }
+        } header: { Text("Un Simpson al azar") } footer: { Text("La dona de Inicio elige un episodio de estas temporadas.") }
+        .listRowBackground(DS.surface)
     }
 
     private func timeName(_ style: TimeStyle) -> LocalizedStringKey {

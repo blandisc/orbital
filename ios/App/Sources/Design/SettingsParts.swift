@@ -161,3 +161,33 @@ struct CheckRow: View {
     }
 }
 
+/// De qué temporadas sale «Un Simpson al azar»: dos atajos (las clásicas, todas) y una cápsula por temporada. Siempre queda
+/// al menos una (quitar la última no hace nada).
+struct SimpsonsSeasonsPicker: View {
+    let selected: [Int]
+    let available: [Int]
+    let classics: [Int]
+    let change: ([Int]) -> Void
+
+    var body: some View {
+        let chosen = Set(selected)
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
+                PanelChip(title: Text("Las clásicas (\(classics.first ?? 0)–\(classics.last ?? 0))"), selected: chosen == Set(classics)) { change(classics) }
+                PanelChip(title: Text("Todas"), selected: Set(available).isSubset(of: chosen)) { change(available) }
+            }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Size.touchTarget + DS.Space.s4), spacing: DS.Space.s2)], spacing: DS.Space.s2) {
+                ForEach(available, id: \.self) { season in
+                    PanelChip(title: Text(verbatim: "\(season)"), selected: chosen.contains(season)) {
+                        var next = chosen
+                        if next.contains(season) { next.remove(season) } else { next.insert(season) }
+                        if !next.isEmpty { change(next.sorted()) }
+                    }
+                    .accessibilityLabel(Text("Temporada \(season)"))
+                }
+            }
+        }
+        .sensoryFeedback(.selection, trigger: selected)
+        .accessibilityIdentifier("simpsons-seasons")
+    }
+}

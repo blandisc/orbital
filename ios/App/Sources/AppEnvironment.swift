@@ -541,8 +541,8 @@ final class AppEnvironment {
     }
 
     /// «Ver en la TV»: tu Orbital pone el título (la fuente recomendada, donde ibas; el avance vive en Stremio).
-    /// Un episodio de Los Simpson al azar, de la temporada 5 a la 15 (las buenas), aquí o en la TV.
-    /// Un Simpson al azar (T5–T15): los episodios (para la ruleta) y el elegido. nil si Cinemeta no contesta.
+    /// Un Simpson al azar (de las temporadas elegidas en Ajustes; por omisión T5–T15): los episodios (para la ruleta) y el
+    /// elegido. nil si Cinemeta no contesta.
     struct SimpsonsDraw: Equatable {
         var meta: JSON
         var name: String
@@ -556,10 +556,12 @@ final class AppEnvironment {
         let id = Self.simpsons
         guard let meta = try? await services.cinemeta.meta(kind: "series", id: id, persist: true) else { if !quiet { notify("No pude traer los episodios de Los Simpson", detail: "Revisa tu internet") }; return nil }
         // Leer ~700 episodios cuesta: fuera del hilo principal (si no, la animación de la tele se trababa).
-        let seasons = Self.simpsonsSeasons
+        let seasons = Set(services.appSettings.simpsonsSeasons)
         let pool = await Task.detached(priority: .userInitiated) {
-            CinemetaParsing.seasons(meta).filter { seasons.contains($0.season) }
-                .flatMap { season in season.episodes.map { (season: season.season, episode: $0) } }
+            let all = CinemetaParsing.seasons(meta).filter { $0.season > 0 }
+            // Si ninguna de las elegidas existe todavía (o no eligió ninguna), de todas.
+            let picked = all.filter { seasons.contains($0.season) }
+            return (picked.isEmpty ? all : picked).flatMap { season in season.episodes.map { (season: season.season, episode: $0) } }
         }.value
         guard pool.count > 1, let chosen = pool.randomElement() else { if !quiet { notify("No pude traer los episodios de Los Simpson", detail: "Revisa tu internet") }; return nil }
         let others = (0..<max(0, reelLength - 1)).compactMap { _ in pool.randomElement() }
@@ -603,7 +605,20 @@ final class AppEnvironment {
     static func simpsonsStill(season: Int, episode: Int) -> String { "https://episodes.metahub.space/\(simpsons)/\(season)/\(episode)/w780.jpg" }
 
     static let simpsons = "tt0096697"
-    static let simpsonsSeasons = 5...15
+    /// Las clásicas: el valor por omisión de «Un Simpson al azar».
+    static let simpsonsClassics = Array(5...15)
+    /// Hasta qué temporada se ofrece en Ajustes si Cinemeta no contesta.
+    static let simpsonsKnownSeasons = 37
+
+    /// Las temporadas que existen (para Ajustes), de lo que Cinemeta ya tiene guardado; si no contesta, 1 a 37.
+    func simpsonsSeasonNumbers() async -> [Int] {
+        guard let meta = try? await services.cinemeta.meta(kind: "series", id: Self.simpsons, persist: true) else { return Array(1...Self.simpsonsKnownSeasons) }
+        let found = await Task.detached(priority: .userInitiated) { CinemetaParsing.seasons(meta).map(\.season).filter { $0 > 0 } }.value
+        return found.isEmpty ? Array(1...Self.simpsonsKnownSeasons) : found.sorted()
+    }
+
+    /// Cambiaron las temporadas en Ajustes: el Simpson que ya estaba listo se descarta (podía ser de otra temporada).
+    func simpsonsSeasonsChanged() { nextSimpsons = nil }
 
     func playOnTV(kind: String, metaID: String, videoID: String?, title: String) async {
         do {
@@ -768,6 +783,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         ReleaseNotifier.register()
         OrbitalShortcuts.updateAppShortcutParameters()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)
         OpenRemoteIntent.open = { AppEnvironment.shared.ui.openRemote = true }   // el control del Centro de control abre el control
+        OpenSimpsonsIntent.open = { AppEnvironment.shared.ui.openSimpsons = true }   // «Un Simpson al azar» del Centro de control
         ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         DownloadFailureNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.
@@ -814,6 +830,8 @@ final class AppUI {
     var openTab: Int?
     /// El Centro de control pidió el control de tu Orbital.
     var openRemote = false
+    /// El Centro de control pidió «Un Simpson al azar»: Inicio abre la ruleta.
+    var openSimpsons = false
     /// Abrir Ajustes (desde un aviso, como «Tu sesión de Trakt se cerró · Conectar»).
     var openSettings = false
     /// Tocaste «Buscar» estando ya en Buscar: se abre el campo con el teclado listo.

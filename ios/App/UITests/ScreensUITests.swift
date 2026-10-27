@@ -130,6 +130,27 @@ final class ScreensUITests: XCTestCase {
         }
     }
 
+    /// Ajustes › Inicio y Para ti › «Un Simpson al azar»: las clásicas por omisión; tocar una temporada la agrega y «Las clásicas»
+    /// la regresa.
+    func testSimpsonsSeasonsPicker() {
+        app.launchArguments = ["-demo", "-demo-open", "settings", "-demo-no-idle"]
+        app.launch()
+        let home = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Inicio y Para ti'")).firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 20), "el renglón «Inicio y Para ti»")
+        home.tap()
+        let picker = app.descendants(matching: .any)["simpsons-seasons"].firstMatch
+        for _ in 0..<6 where !picker.exists || !picker.isHittable { app.swipeUp() }
+        let one = app.buttons["Temporada 1"].firstMatch, five = app.buttons["Temporada 5"].firstMatch
+        XCTAssertTrue(one.waitForExistence(timeout: 10), "las temporadas")
+        XCTAssertFalse(one.isSelected, "la 1 no viene elegida")
+        XCTAssertTrue(five.isSelected, "la 5 sí (las clásicas)")
+        one.tap()
+        XCTAssertTrue(waitUntil { one.isSelected }, "tocarla la agrega")
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.lifetime = .keepAlways; add(shot)
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Las clásicas'")).firstMatch.tap()
+        XCTAssertTrue(waitUntil { !one.isSelected }, "«Las clásicas» la quita")
+    }
+
     /// Buscar: al bajar despacio (como con el dedo, a 120 cuadros por segundo cada cuadro avanza poco), la barra se va igual.
     func testSearchBarHidesOnSlowScroll() {
         app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]

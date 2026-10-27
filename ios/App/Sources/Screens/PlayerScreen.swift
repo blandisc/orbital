@@ -247,9 +247,10 @@ struct PlayerScreen: View {
             if case .failed = model.phase { statusOverlays(model) } else {
                 GeometryReader { geo in
                     let rect = videoRect(in: geo.size)
-                    // La búsqueda de versiones, siempre al centro de la pantalla (todavía no hay video); lo demás, al del video.
-                    let searching = model.phase == .preparing && model.search != nil && !model.reconnecting
-                    statusOverlays(model).position(x: searching ? geo.size.width / 2 : rect.midX, y: searching ? geo.size.height / 2 : rect.midY)
+                    // La búsqueda de versiones, al centro de la pantalla (todavía no hay video); lo demás, al del video. En el iPod,
+                    // todo dentro de su pantalla: al centro del teléfono quedaba detrás de la pantalla y de la rueda.
+                    let searching = model.phase == .preparing && model.search != nil && !model.reconnecting && ipod == nil
+                    statusOverlays(model, room: rect.size).position(x: searching ? geo.size.width / 2 : rect.midX, y: searching ? geo.size.height / 2 : rect.midY)
                 }
                 .ignoresSafeArea(edges: landscape ? .all : [])
                 .allowsHitTesting(false)
@@ -281,7 +282,7 @@ struct PlayerScreen: View {
                 } else if ipod != nil {
                     // En el iPod, sobre lo de abajo de la pantalla (el nombre y el avance), como un aviso del aparato.
                     GeometryReader { geo in
-                        let screen = IPodLayout(in: geo.size).screen
+                        let screen = IPodLayout(in: geo.size, aspect: portraitAspect).screen
                         upNextCard(model, up).padding(.horizontal, DS.Space.gutter)
                             .frame(width: geo.size.width, height: screen.maxY - DS.Space.s2, alignment: .bottom)
                     }
@@ -1046,7 +1047,8 @@ struct PlayerScreen: View {
     }
 
     // MARK: estados
-    @ViewBuilder private func statusOverlays(_ model: PlayerModel) -> some View {
+    /// `room`: el tamaño del video (en el iPod, la órbita se achica para caber en su pantalla).
+    @ViewBuilder private func statusOverlays(_ model: PlayerModel, room: CGSize? = nil) -> some View {
         switch model.phase {
         // Volviendo a abrir el mismo video (al regresar a la app): solo la ruedita, sin letrero (antes «Reconectando…»).
         case .preparing where model.reconnecting: QuietSpinner()
@@ -1054,7 +1056,9 @@ struct PlayerScreen: View {
         case .preparing where model.search != nil:
             if let search = model.search {
                 SourceOrbit(found: max(search.found, model.source != nil ? 1 : 0), chosen: model.source != nil, failed: triedCount(model),
-                            title: orbitTitle(model, search), detail: orbitDetail(model, search), sideBySide: landscape)
+                            title: orbitTitle(model, search), detail: orbitDetail(model, search),
+                            size: ipod != nil ? min(DS.SourceOrbit.size, (room?.height ?? 0) * DS.SourceOrbit.ipodShare) : DS.SourceOrbit.size,
+                            sideBySide: landscape)
             }
         case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
         case .failed(let message):
@@ -1327,7 +1331,7 @@ struct PlayerScreen: View {
     /// El iPod: arriba ✕, AirPlay y «⋯» (los de siempre); la pantalla con el video, el nombre, la versión y el avance; la rueda.
     private func ipodChrome(_ model: PlayerModel, face: IPodFace) -> some View {
         GeometryReader { geo in
-            let layout = IPodLayout(in: geo.size)
+            let layout = IPodLayout(in: geo.size, aspect: portraitAspect)
             let shown = wheelTarget ?? (dragAxis == .horizontal ? seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
             let state = model.snapshot.state
             ZStack(alignment: .topLeading) {
@@ -1957,7 +1961,7 @@ struct PlayerScreen: View {
             return CGRect(x: free.midX - width / 2, y: free.midY - height / 2, width: width, height: height)
         }
         if landscape { return CGRect(x: 0, y: 0, width: size.width, height: size.height) }
-        if ipod != nil { return IPodLayout(in: size).video }   // dentro de la pantalla del iPod
+        if ipod != nil { return IPodLayout(in: size, aspect: portraitAspect).video }   // dentro de la pantalla del iPod
         // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).

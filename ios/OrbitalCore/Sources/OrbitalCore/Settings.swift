@@ -58,6 +58,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var oneDriveClientID = ""           // el «ID de la aplicación» de Microsoft Entra (no es secreto; la sesión va en el Keychain)
     public var oneDriveFolder = ""             // la carpeta de OneDrive con tus películas y series («Videos/Películas»)
     public var videoZoom = VideoZoom.fit.rawValue   // cómo llena la pantalla el video del reproductor (`VideoZoom`); se recuerda
+    public var simpsonsSeasons = Array(5...15)     // de qué temporadas sale «Un Simpson al azar» (por omisión, las clásicas)
 
     public init() {}
 
@@ -97,12 +98,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
         oneDriveClientID = try c.decodeIfPresent(String.self, forKey: .oneDriveClientID) ?? oneDriveClientID
         oneDriveFolder = try c.decodeIfPresent(String.self, forKey: .oneDriveFolder) ?? oneDriveFolder
         videoZoom = try c.decodeIfPresent(String.self, forKey: .videoZoom) ?? videoZoom
+        simpsonsSeasons = try c.decodeIfPresent([Int].self, forKey: .simpsonsSeasons) ?? simpsonsSeasons
     }
 
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
-        case homeDeck, homeTime, avatar, displayName, latinSpanish, castilianSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom
+        case homeDeck, homeTime, avatar, displayName, latinSpanish, castilianSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom, simpsonsSeasons
         case subtitleBackground, subtitlePosition, subtitlesOnSkipBack, forcedForForeignAudio, subtitleSystemStyle
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }

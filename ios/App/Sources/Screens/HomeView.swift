@@ -128,6 +128,11 @@ struct HomeView: View {
         .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .subtitle(syncText)
         .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette().navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)) }
+        .onChange(of: AppEnvironment.shared.ui.openSimpsons, initial: true) { _, wants in
+            guard wants else { return }
+            AppEnvironment.shared.ui.openSimpsons = false
+            rollingSimpsons = true
+        }
         .sheet(isPresented: $showingCalendar) {
             ReleaseCalendarView { route in showingCalendar = false; openTitle = route }
                 .presentationDetents([.large]).presentationDragIndicator(.visible)

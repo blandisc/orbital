@@ -10,6 +10,7 @@ struct OrbitalWidgets: WidgetBundle {
         NextUpWidget()
         DownloadLiveActivity()
         RemoteControlButton()   // el control de tu Orbital en el Centro de control (mismo kind de antes: el que ya estaba puesto revive)
+        SimpsonsControlButton()   // «Un Simpson al azar» en el Centro de control
     }
 }
 
