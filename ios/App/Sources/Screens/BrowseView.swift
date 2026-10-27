@@ -12,6 +12,8 @@ private final class ScrollOffset {
     var turn: CGFloat = 0
     /// Tu dedo arrastra o la lista sigue por el impulso: solo eso mueve la barra.
     var byYou = false
+    /// Tu dedo está en la pantalla: solo así vuelve la barra (el impulso y el rebote del final no la traen).
+    var dragging = false
 }
 
 /// Dónde vas en la lista y hasta dónde se puede bajar (cambia cuando la barra se esconde o vuelve).
@@ -87,11 +89,16 @@ struct BrowseView: View {
             let hide: Bool
             if y - scroll.turn > DS.Size.barScrollHide { hide = true; typing = false }   // al bajar se va, con el campo abierto o no
             else if typing { return }   // con el teclado arriba, el campo no se mueve
-            else if scroll.turn - y > DS.Size.barScrollHide { hide = false }
+            // Vuelve solo si tu dedo sube la lista: al llegar al final, el rebote regresa unos puntos y la barra se
+            // quedaba brincando entre salir y esconderse.
+            else if scroll.dragging, scroll.turn - y > DS.Size.barScrollHide { hide = false }
             else { return }
             if hide != barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = hide } }
         }
-        .onScrollPhaseChange { _, phase in scroll.byYou = phase == .interacting || phase == .decelerating }
+        .onScrollPhaseChange { _, phase in
+            scroll.byYou = phase == .interacting || phase == .decelerating
+            scroll.dragging = phase == .interacting
+        }
         .onChange(of: searching) { _, open in if open { barHidden = false } }
         .onChange(of: typing) { _, up in
             let hide = !up && scroll.y > DS.Size.barScrollHide   // el teclado se fue al deslizar hacia abajo

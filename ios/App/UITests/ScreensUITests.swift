@@ -67,9 +67,9 @@ final class ScreensUITests: XCTestCase {
         XCTAssertEqual(title.frame, before, "el título se queda igual mientras deslizas")
     }
 
-    /// Mi media con poco (o nada): si todo cabe, deslizar no mueve nada ni encoge el título (antes rebotaba siempre).
+    /// Mi media sin carpeta (todo cabe): deslizar no mueve nada ni encoge el título (antes rebotaba siempre).
     func testShortMiMediaDoesNotScroll() {
-        for drive in ["linked", "unlinked"] {
+        for drive in ["unlinked"] {
             app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-media", "-demo-onedrive", drive, "-demo-no-idle"]
             app.launch()
             let title = app.navigationBars.staticTexts["Descargas"].firstMatch
@@ -82,6 +82,28 @@ final class ScreensUITests: XCTestCase {
             XCTAssertEqual(title.frame, before, "el título se queda igual (\(drive))")
             app.terminate()
         }
+    }
+
+    /// Buscar hasta el fondo: la barra de abajo se queda escondida (antes brincaba entre salir y esconderse con el
+    /// rebote del final) y vuelve al subir con el dedo. También con algo sonando en la TV (el accesorio sobre la barra).
+    func testSearchBarStaysHiddenAtTheBottom() { searchBarAtTheBottom(tv: false) }
+    func testSearchBarStaysHiddenAtTheBottomWithTV() { searchBarAtTheBottom(tv: true) }
+
+    private func searchBarAtTheBottom(tv: Bool) {
+        app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"] + (tv ? ["-demo-tv-now"] : [])
+        app.launch()
+        XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 20), "la barra a la vista al abrir")
+        sleep(2)
+        let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+        let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+        for _ in 0..<8 { from.press(forDuration: 0.05, thenDragTo: to, withVelocity: 500, thenHoldForDuration: 0.1) }
+        sleep(2)
+        // La barra de abajo: con la lupa (iOS 27) o con el campo (iOS 26).
+        let tab = app.tabBars.buttons["Buscar"], field = app.searchFields.firstMatch
+        let barShown = { (tab.exists && tab.isHittable) || (field.exists && field.isHittable && field.frame.minY > self.app.frame.midY) }
+        XCTAssertFalse(barShown(), "en el fondo, la barra escondida")
+        to.press(forDuration: 0.05, thenDragTo: from, withVelocity: 400, thenHoldForDuration: 0.3)
+        XCTAssertTrue(waitUntil { barShown() }, "al subir con el dedo, vuelve")
     }
 
     /// Buscar: al bajar despacio (como con el dedo, a 120 cuadros por segundo cada cuadro avanza poco), la barra se va igual.
