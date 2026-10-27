@@ -470,6 +470,10 @@ enum DS {
         /// El aviso de pantalla bloqueada: el círculo al que se encoge el candado, y cuánto sube al irse.
         static let lockNoticeIcon: CGFloat = 36, lockNoticeRise: CGFloat = 28
         static let width: CGFloat = 420, radius: CGFloat = 30, rowRadius: CGFloat = 16, icon: CGFloat = 32
+        /// «Episodios»: el ancho de la imagen de cada episodio y qué tan tenue se ve uno que no se puede poner (sin descargar).
+        static let episodeThumb: CGFloat = 112, unavailableOpacity = 0.4
+        /// «Siguiente» en los controles aparece al llegar a esta parte del episodio (antes no estorba).
+        static let nextAt = 0.9
         /// El ancho del nombre del tamaño de subtítulos («Mediano») entre − y +: no brinca al cambiar.
         static let sizeValue: CGFloat = 72
         /// Tamaños de letra de muestra («Aa») para chico, mediano y grande.

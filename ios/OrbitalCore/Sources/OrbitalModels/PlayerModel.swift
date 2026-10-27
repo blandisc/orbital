@@ -291,6 +291,7 @@ public final class PlayerModel: ObservableModel {
         loadSegmentsIfNeeded()   // IntroDB solo depende del video: a la vez que las fuentes, no después
         if request.localFile == nil { let finder = finder; Task { await finder.warmAddons() } }   // los complementos, ya: no después de «dónde ibas»
         if request.localFile != nil, request.kind == "series", let next = nextEpisodeIDIgnoringLocal() { nextLocal = await localEpisode(request.metaID, next) }
+        nextUp = nextEpisodeID().map { ($0, episodeText($0).0) }   // para «Siguiente» (una vez: leer los episodios cuesta)
         guard mine == generation, !closing else { return }
         await prepare(startAt: nil, generation: mine)
     }
@@ -1293,6 +1294,46 @@ public final class PlayerModel: ObservableModel {
         }
     }
     #endif
+
+    /// El siguiente episodio y su «T5 E3», calculados al abrir (para el botón «Siguiente» de los controles).
+    public private(set) var nextUp: (videoID: String, label: String)? { didSet { changed() } }
+
+    /// Pone otro episodio de la serie: desde «Episodios» o «Siguiente». El que dejas queda guardado donde ibas (visto si pasaste
+    /// del 90 %) y el nuevo empieza desde el principio. Viendo un archivo descargado, solo otro descargado.
+    public func playEpisode(_ videoID: String) async {
+        guard !advancing, !closing, phase != .closed, let base = request, base.kind == "series", videoID != base.videoID else { return }
+        userTouched()
+        var local: LocalEpisode?
+        if base.localFile != nil {
+            guard let found = await localEpisode(base.metaID, videoID) else { return }
+            local = found
+        }
+        advancing = true
+        upNext = nil; upNextDeadline = nil
+        let task = Task { [weak self] in
+            guard let self else { return }
+            let watched = snapshot.duration > 0 && snapshot.position >= snapshot.duration * StremioLibrary.watchedAt
+            if !finalReported { await report(.stopped(finished: watched)) }
+            guard !closing, phase != .closed else { advancing = false; return }
+            var next = base
+            next.videoID = videoID; next.fromStart = true; next.binge = source?.binge
+            let (label, title) = episodeText(videoID)
+            next.episodeLabel = title.isEmpty ? label : "\(label) · \(title)"
+            if let local { next.localFile = local.file; next.localSubtitles = local.subtitles; next.savedSubtitles = local.saved }
+            advancing = false
+            await begin(next)
+        }
+        transition = task
+        await task.value
+    }
+
+    /// De estos episodios, cuáles se pueden poner ahora: todos, salvo viendo un archivo descargado (entonces solo los bajados).
+    public func playableEpisodes(_ ids: [String]) async -> Set<String> {
+        guard let request, request.localFile != nil else { return Set(ids) }
+        var out = Set<String>()
+        for id in ids where await localEpisode(request.metaID, id) != nil { out.insert(id) }
+        return out
+    }
 
     public func cancelUpNext() { userTouched(); upNext = nil; upNextDeadline = nil; upNextDismissed = true }
     public func playNextNow() async { userTouched(); await advance(auto: false)?.value }

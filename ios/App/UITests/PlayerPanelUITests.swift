@@ -26,6 +26,27 @@ final class PlayerPanelUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
+    /// «Episodios» (solo el ícono): abre la lista bajo el video, con el que suena marcado; tocar otro lo pone.
+    func testEpisodesButtonOpensTheListAndPlaysThePickedEpisode() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
+                               "-demo-player-portrait"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        let episodes = app.buttons["player-episodes"]
+        if !episodes.waitForExistence(timeout: 15) { app.tap() }
+        XCTAssertTrue(episodes.waitForExistence(timeout: 10), "el ícono «Episodios» en la barra")
+        XCTAssertEqual(episodes.label, "Episodios", "VoiceOver lo nombra aunque no tenga texto")
+        episodes.tap()
+        let six = app.buttons.matching(NSPredicate(format: "label CONTAINS 'episodio 6,'")).firstMatch
+        XCTAssertTrue(six.waitForExistence(timeout: 10), "la lista con el episodio 6")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'episodio 5,' AND value == 'Viendo'")).firstMatch.exists, "el que suena dice «Viendo»")
+        six.tap()
+        XCTAssertTrue(app.buttons["episodes-done"].waitForNonExistence(timeout: 5), "la lista se cierra al elegir")
+        app.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'E6'")).firstMatch.waitForExistence(timeout: 15), "ya suena el episodio 6")
+    }
+
     /// En vertical (abierta con `-demo-player audio`): bajo el video, con su título y «Listo», que la cierra.
     func testAudioAndSubtitlesInPortrait() {
         let app = XCUIApplication()
