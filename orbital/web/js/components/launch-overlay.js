@@ -120,6 +120,17 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
   let cancelExit = () => {};
   let shown = 0; // cada show: un arte que llega tarde de un lanzamiento anterior no pisa el de ahora
   let artPending = false; // se avisó al servidor que el arte viene en camino y todavía no se ve
+  const painted = { poster: null, hero: null, ambient: null }; // lo que se ve ahora, para volver a pintarlo
+
+  // Al abrir un juego, Orbital baja la tele a 1080p (display.py) con esta pantalla ya a la vista: Edge pierde lo que
+  // tenía dibujado y la portada quedaba como una tarjeta vacía (visto en la TV el 2026-10-26). Al cambiar el tamaño de
+  // la pantalla, se vuelve a poner lo que ya estaba (las imágenes ya están decodificadas: no se piden otra vez).
+  addEventListener("resize", () => {
+    if (el.hidden) return;
+    if (painted.poster) mount(poster, painted.poster.cloneNode());
+    if (painted.hero) mount(artSlot, painted.hero.cloneNode());
+    if (painted.ambient) paintAmbient(ambient, painted.ambient);
+  });
 
   /** La fase cambió (o empezó): el aviso de «tardando» se reinicia. */
   function restartSlow() {
@@ -146,6 +157,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
     art.then((img) => {
       if (!current()) return;
       if (img) {
+        painted.poster = img;
         mount(poster, img.cloneNode()); // una copia: la misma imagen puede ser también el fondo (ya decodificada, entra igual)
         cover.classList.add("launch__cover--ready");
       } else if (posterUrl) {
@@ -157,11 +169,13 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
       .catch(() => null);
     first.then((img) => {
       if (!current() || !img || !paintAmbient(ambient, img)) return;
+      painted.ambient = img;
       el.classList.add("launch--ambient");
     });
     // El nítido: solo con fondo propio del juego (no el de relleno).
     hero.then((img) => {
       if (!current() || !img || !heroUrl) return;
+      painted.hero = img;
       mount(artSlot, img.cloneNode());
       el.classList.add("launch--art");
     });
@@ -188,6 +202,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
     el.classList.remove("launch--art", "launch--ambient", "launch--plain", "launch--revealing");
     mount(artSlot);
     mount(poster);
+    painted.poster = painted.hero = painted.ambient = null;
     cover.classList.remove("launch__cover--ready", "launch__cover--missing");
     ambient.getContext("2d")?.clearRect(0, 0, ambient.width, ambient.height);
     const hasArt = Boolean(item.hero || item.image);

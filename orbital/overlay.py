@@ -1,12 +1,16 @@
-"""Aviso encima del juego mientras se mantiene el atajo de cerrar (Start + Select + Home; GameSir: LB + RB + Select):
-el juego en grande, qué mantener y una barra que se llena. También avisos breves sin barra («Control GameSir conectado ·
-Jugador 2»): con un juego al frente, la ventana de Orbital no se ve.
+"""Avisos encima del juego (con un juego al frente, la ventana de Orbital no se ve), en el mismo lenguaje que los de
+Orbital:
 
-Una ventana pequeña, centrada, siempre visible y que NO toma el foco: el juego sigue
-recibiendo el mando. Se dibuja con Tkinter (viene con Python) en su propio hilo.
-Las órdenes llegan por una cola; el hilo de Tk las atiende ~60 veces por segundo.
+- Notificación («GameSir conectado · Jugador 2», «Se desconectó el GameSir»): arriba a la derecha, donde salen los avisos
+  de Orbital (toast.css), con su ícono en un círculo (el número del jugador; ámbar si es una advertencia) y tan ancha como
+  su texto. Entra deslizándose desde la derecha y se va sola.
+- Acción (mantener el atajo de cerrar: Start + Select + Home; GameSir: LB + RB + Select): abajo al centro, como los
+  avisos de las consolas, con el juego en grande, qué mantener y una barra que se llena. Entra subiendo.
 
-Una barra recta en lugar de un anillo: Tk en Windows no suaviza círculos y se verían dentados.
+Una ventana pequeña, siempre visible y que NO toma el foco: el juego sigue recibiendo el mando. Se dibuja con Tkinter
+(viene con Python) en su propio hilo; las órdenes llegan por una cola que el hilo atiende ~60 veces por segundo. Se
+acomoda cada vez en la pantalla de ese momento (4K, 1080p para jugar, la de la Legion Go). Los círculos se dibujan con
+Pillow, suavizados (los de Tk salen dentados en Windows); las esquinas de la ventana las redondea Windows 11.
 """
 
 from __future__ import annotations
@@ -20,23 +24,48 @@ import time
 
 log = logging.getLogger(__name__)
 
-# Paleta del tema Orbital (styles/tokens.css)
-BG = "#18181c"
-TEXT = "#f5f4f0"
-MUTED = "#a3a3ab"
+# Paleta del tema Orbital (styles/themes/orbital.css)
+BG = "#1e1e23"  # --color-surface-raised (--palette-ink-800)
+TEXT = "#f5f4f0"  # --color-text
+MUTED = "#a3a3ab"  # --color-text-muted
 TRACK = "#2c2c32"
-FILL = "#f0574d"
-HAIRLINE = "#34343b"
+FILL = "#f0574d"  # el acento de la marca: la barra y el número del jugador
+WARN = "#f4c24d"  # --color-warning (--palette-amber-300)
+HAIRLINE = "#2f2f34"  # --color-hairline (blanco al 9 %) sobre el fondo
 
-# px lógicos (se escalan con el DPI). Ancho para títulos largos; abajo al centro (como los avisos de las consolas),
-# no en medio del juego.
+# Acción (cerrar): px lógicos (se escalan con el DPI), abajo al centro.
 WIDTH, HEIGHT = 560, 128
 PAD = 28
 BAR = 6
 FROM_TOP = .78  # dónde va su centro, en fracción del alto de la pantalla
-FADE_MS = 140
-RISE = 22  # px lógicos que sube el aviso breve al entrar (y baja al irse); con «Reducir movimiento», solo el fundido
-BADGE = 56  # px lógicos del círculo con el número del jugador
+# Notificación: arriba a la derecha, como toast.css (debajo de la barra de estado, al margen de la página).
+TOAST_HEIGHT = 84
+TOAST_MIN, TOAST_MAX = 340, 720  # px lógicos: tan ancha como su texto, entre estos dos
+TOAST_TOP = .07  # fracción del alto de la pantalla
+TOAST_RIGHT = .035  # fracción del ancho: el margen de la página
+ICON = 48  # px lógicos del círculo del ícono
+SLIDE = 28  # px lógicos que se desliza al entrar (y al irse); con «Reducir movimiento», solo el fundido
+# Por tiempo, con las curvas de la interfaz de Orbital: entra rápido y se asienta suave; se va acelerando hacia afuera.
+ENTER_MS, EXIT_MS = 320, 200
+POP_MS, POP_DELAY_MS = 420, 70  # el número del jugador crece un poco de más y se acomoda, ya con la tarjeta en su lugar
+POP_FRAMES = 12
+OPAQUE = 0.97
+
+
+def ease_out(p: float) -> float:
+    """Arranca rápido y se asienta (quíntica): la entrada."""
+    return 1 - (1 - p) ** 5
+
+
+def ease_in(p: float) -> float:
+    """Arranca despacio y se va acelerando (cúbica): la salida."""
+    return p ** 3
+
+
+def ease_back(p: float) -> float:
+    """Pasa un poco de su tamaño y regresa: el «pop» del número."""
+    c1 = 1.70158
+    return 1 + (c1 + 1) * (p - 1) ** 3 + c1 * (p - 1) ** 2
 
 
 def screen_rect() -> tuple[int, int, int, int]:
@@ -61,9 +90,10 @@ def screen_rect() -> tuple[int, int, int, int]:
     return 0, 0, user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
 
-def _badge_image(text: str, size: int, fill: str, ink: str):
-    """El círculo con el número del jugador, suavizado (los óvalos de Tk salen dentados en Windows): se dibuja al
-    cuádruple con Pillow y se reduce. None sin Pillow."""
+def _circle_image(text: str, size: int, tone: str, grow: float = 1.0):
+    """El ícono de la notificación: el número del jugador en un círculo del acento, o «!» en uno ámbar tenue (como el
+    ícono de los avisos de advertencia de Orbital). Dibujado al cuádruple con Pillow y reducido: suave. `grow`: su tamaño
+    dentro del lugar del ícono (el «pop» de la entrada). None sin Pillow."""
     try:
         from PIL import Image, ImageDraw, ImageFont, ImageTk
     except ImportError:
@@ -71,13 +101,27 @@ def _badge_image(text: str, size: int, fill: str, ink: str):
     big = size * 4
     image = Image.new("RGBA", (big, big), BG)
     draw = ImageDraw.Draw(image)
-    draw.ellipse((0, 0, big - 1, big - 1), fill=fill)
+    r = big / 2 * max(.05, min(1.12, grow)) / 1.12  # a 1.12 llena el lugar: el pop no se sale
+    box = (big / 2 - r, big / 2 - r, big / 2 + r - 1, big / 2 + r - 1)
+    if tone == "warn":
+        draw.ellipse(box, fill=_mix(WARN, BG, .18))
+        ink = WARN
+    else:
+        draw.ellipse(box, fill=FILL)
+        ink = TEXT
     try:
-        font = ImageFont.truetype("segoeuib.ttf", int(big * .5))
+        font = ImageFont.truetype("segoeuib.ttf", max(1, int(r * .96)))
     except OSError:
         font = ImageFont.load_default()
     draw.text((big / 2, big / 2), text, fill=ink, font=font, anchor="mm")
     return ImageTk.PhotoImage(image.resize((size, size), Image.LANCZOS))
+
+
+def _mix(color: str, base: str, amount: float) -> str:
+    """`amount` de `color` sobre `base` (como color-mix de CSS)."""
+    a = [int(color[i:i + 2], 16) for i in (1, 3, 5)]
+    b = [int(base[i:i + 2], 16) for i in (1, 3, 5)]
+    return "#" + "".join(f"{round(x * amount + y * (1 - amount)):02x}" for x, y in zip(a, b, strict=True))
 
 
 class GameOverlay:
@@ -96,11 +140,13 @@ class GameOverlay:
         return self._ready.wait(5)
 
     def show(self, title: str, detail: str, duration_ms: int) -> None:
+        """Acción: mantener el atajo de cerrar (la barra se llena en `duration_ms`)."""
         self._commands.put(("show", title, detail, duration_ms))
 
-    def notice(self, title: str, detail: str = "", seconds: float = 3.5, badge: str = "") -> None:
-        """Un aviso breve, sin barra, que se va solo; con `badge`, un círculo con ese número a la izquierda (el jugador)."""
-        self._commands.put(("notice", title, detail, int(seconds * 1000), badge))
+    def notice(self, title: str, detail: str = "", seconds: float = 3.5, badge: str = "", tone: str = "ok") -> None:
+        """Notificación arriba a la derecha que se va sola. `badge`: el texto de su círculo (el número del jugador, «!»);
+        `tone`: «ok» (el acento) o «warn» (ámbar)."""
+        self._commands.put(("notice", title, detail, int(seconds * 1000), badge, tone))
 
     def closing(self, title: str, detail: str = "") -> None:
         self._commands.put(("closing", title, detail))
@@ -124,109 +170,142 @@ class GameOverlay:
         root.attributes("-topmost", True)
         root.attributes("-alpha", 0.0)
         scale = root.winfo_fpixels("1i") / 96
-        w, h, pad = int(WIDTH * scale), int(HEIGHT * scale), int(PAD * scale)
-        sx, sy, sw, sh = screen_rect()
-        root.geometry(f"{w}x{h}+{sx + (sw - w) // 2}+{sy + int(sh * FROM_TOP) - h // 2}")
-        rise = int(RISE * scale)
-        badge_size = int(BADGE * scale)
+        px = lambda value: int(value * scale)  # noqa: E731 - px lógicos → de pantalla
+        pad, slide, icon = px(PAD), px(SLIDE), px(ICON)
 
-        canvas = tk.Canvas(root, width=w, height=h, bg=BG, highlightthickness=0, bd=0)
+        canvas = tk.Canvas(root, width=px(WIDTH), height=px(HEIGHT), bg=BG, highlightthickness=0, bd=0)
         canvas.pack()
-        canvas.create_rectangle(0, 0, w - 1, h - 1, outline=HAIRLINE, width=1)  # borde fino, como las hojas de Orbital
+        border = canvas.create_rectangle(0, 0, 1, 1, outline=HAIRLINE, width=1)  # borde fino, como las hojas de Orbital
         title_font = tkfont.Font(root, family="Segoe UI Variable Display Semibold", size=17)
         detail_font = tkfont.Font(root, family="Segoe UI Variable Text", size=11)
-        title = canvas.create_text(pad, pad - int(4 * scale), anchor="nw", fill=TEXT, font=title_font, text="")
-        detail = canvas.create_text(pad, pad + int(32 * scale), anchor="nw", fill=MUTED, font=detail_font, text="")
-        badge = canvas.create_image(pad, h // 2, anchor="w")
-        badge_art: dict[str, object] = {}  # las imágenes de Tk se pierden si nadie las guarda
-        bar_h = max(3, int(BAR * scale))
-        bar_y = h - pad - bar_h
-        track = canvas.create_rectangle(pad, bar_y, w - pad, bar_y + bar_h, fill=TRACK, width=0)
-        fill = canvas.create_rectangle(pad, bar_y, pad, bar_y + bar_h, fill=FILL, width=0)
+        toast_title = tkfont.Font(root, family="Segoe UI Variable Text Semibold", size=14)
+        toast_detail = tkfont.Font(root, family="Segoe UI Variable Text", size=11)
+        title = canvas.create_text(0, 0, anchor="nw", fill=TEXT, text="")
+        detail = canvas.create_text(0, 0, anchor="nw", fill=MUTED, text="")
+        badge = canvas.create_image(0, 0, anchor="w")
+        art: dict = {}  # las imágenes de Tk se pierden si nadie las guarda (el ícono y los cuadros del pop)
+        bar_h = max(3, px(BAR))
+        track = canvas.create_rectangle(0, 0, 0, 0, fill=TRACK, width=0)
+        fill = canvas.create_rectangle(0, 0, 0, 0, fill=FILL, width=0)
+        hwnd = _hwnd(root)
+        _style_window(hwnd)
+        # Para Tk queda "mostrada" (así no la vuelve a activar), pero Windows la esconde de verdad mientras no se usa
+        # (_hide): una ventana por capas encima de un juego a pantalla completa obliga a DWM a componer cada cuadro (más
+        # memoria de DWM y más batería). Mostrarla es SW_SHOWNOACTIVATE: nunca le quita el foco al juego.
+        root.deiconify()
+        _hide(hwnd)
+        state = {"start": 0.0, "duration": 1.0, "filling": False, "alpha": 0.0, "hide_at": None, "offset": 0.0,
+                 "base": (0, 0), "size": (px(WIDTH), px(HEIGHT)), "kind": "action", "anim": None, "pop": None}
 
-        def fit(text: str, font, room: int | None = None) -> str:
-            """Un renglón: un título largo se corta con «…» en vez de salirse de la ventana."""
-            room = room if room is not None else w - 2 * pad
+        def fit(text: str, font, room: int) -> str:
+            """Un renglón: un texto largo se corta con «…» en vez de salirse."""
             if font.measure(text) <= room:
                 return text
             while text and font.measure(text + "…") > room:
                 text = text[:-1]
             return text.rstrip() + "…"
 
-        hwnd = _hwnd(root)
-        _style_window(hwnd)
-        # Para Tk queda "mostrada" (así no la vuelve a activar), pero Windows la esconde de verdad
-        # mientras no se usa (_hide): antes se quedaba siempre visible con opacidad 0 encima del
-        # juego, y una ventana por capas encima de un juego a pantalla completa obliga a DWM a
-        # componer cada cuadro (más memoria de DWM y más batería) en vez de dejar pasar el juego
-        # directo. Mostrarla es SW_SHOWNOACTIVATE: nunca le quita el foco al juego.
-        root.deiconify()
-        _hide(hwnd)
-        state = {"start": 0.0, "duration": 1.0, "filling": False, "alpha": 0.0, "target": 0.0, "hide_at": None,
-                 "offset": 0.0, "base": (0, 0)}
-
-        def set_progress(fraction: float) -> None:
-            canvas.coords(fill, pad, bar_y, pad + (w - 2 * pad) * min(1.0, max(0.0, fraction)), bar_y + bar_h)
+        def resize(w: int, h: int) -> None:
+            state["size"] = (w, h)
+            canvas.config(width=w, height=h)
+            canvas.coords(border, 0, 0, w - 1, h - 1)
 
         def place(offset: float = 0.0) -> None:
-            """Centrado abajo en la pantalla de AHORA (ver screen_rect); `offset`: cuánto más abajo (la entrada sube)."""
+            """En la pantalla de AHORA (ver screen_rect): la notificación arriba a la derecha, la acción abajo al centro.
+            `offset`: cuánto le falta por deslizarse (hacia la derecha la notificación, hacia abajo la acción)."""
             sx, sy, sw, sh = screen_rect()
-            state["base"] = (sx + (sw - w) // 2, sy + int(sh * FROM_TOP) - h // 2)
+            w, h = state["size"]
+            if state["kind"] == "toast":
+                state["base"] = (sx + sw - w - int(sw * TOAST_RIGHT), sy + int(sh * TOAST_TOP))
+            else:
+                state["base"] = (sx + (sw - w) // 2, sy + int(sh * FROM_TOP) - h // 2)
             move(offset)
 
         def move(offset: float) -> None:
             state["offset"] = offset
             bx, by = state["base"]
-            root.geometry(f"{w}x{h}+{bx}+{by + int(offset)}")
+            w, h = state["size"]
+            dx, dy = (int(offset), 0) if state["kind"] == "toast" else (0, int(offset))
+            root.geometry(f"{w}x{h}+{bx + dx}+{by + dy}")
 
-        def layout(with_badge: bool) -> int:
-            """Con número de jugador, el texto va a la derecha del círculo y centrado en alto; sin él, como siempre."""
-            left = pad + badge_size + int(18 * scale) if with_badge else pad
-            canvas.coords(title, left, h // 2 - int(26 * scale) if with_badge else pad - int(4 * scale))
-            canvas.coords(detail, left, h // 2 + int(6 * scale) if with_badge else pad + int(32 * scale))
-            canvas.itemconfigure(badge, state="normal" if with_badge else "hidden")
-            return w - left - pad
+        def animate(to_offset: float, to_alpha: float, ms: int, curve) -> None:
+            """De donde esté ahora a (to_offset, to_alpha) en `ms`, con esa curva."""
+            state["anim"] = (time.monotonic(), ms / 1000, state["offset"], to_offset, state["alpha"], to_alpha, curve)
+
+        def enter() -> None:
+            """Aparece: se desliza a su lugar mientras se funde (desde donde esté, si ya se veía)."""
+            still = self.reduce_motion()
+            place(0 if still or state["alpha"] > 0 else slide)
+            _raise_no_activate(hwnd)
+            animate(0, OPAQUE, ENTER_MS, ease_out)
+
+        def leave() -> None:
+            animate(0 if self.reduce_motion() else slide * .6, 0.0, EXIT_MS, ease_in)
+
+        def set_progress(fraction: float) -> None:
+            w, h = state["size"]
+            bar_y = h - pad - bar_h
+            canvas.coords(track, pad, bar_y, w - pad, bar_y + bar_h)
+            canvas.coords(fill, pad, bar_y, pad + (w - 2 * pad) * min(1.0, max(0.0, fraction)), bar_y + bar_h)
+
+        def as_action(text: str, sub: str) -> None:
+            state["kind"] = "action"
+            resize(px(WIDTH), px(HEIGHT))
+            canvas.itemconfigure(badge, state="hidden")
+            for item in (track, fill):
+                canvas.itemconfigure(item, state="normal")
+            canvas.itemconfigure(title, font=title_font, text=fit(text, title_font, px(WIDTH) - 2 * pad))
+            canvas.itemconfigure(detail, font=detail_font, text=fit(sub, detail_font, px(WIDTH) - 2 * pad))
+            canvas.coords(title, pad, pad - px(4))
+            canvas.coords(detail, pad, pad + px(32))
+
+        def as_toast(text: str, sub: str, mark: str, tone: str) -> None:
+            state["kind"] = "toast"
+            for item in (track, fill):
+                canvas.itemconfigure(item, state="hidden")
+            image = _circle_image(mark, icon, tone) if mark else None
+            # El «pop» del número: sus cuadros se dibujan una vez aquí (en la animación solo se cambian).
+            frames = [] if image is None or self.reduce_motion() else \
+                [_circle_image(mark, icon, tone, ease_back(i / (POP_FRAMES - 1)) * 1.12) for i in range(POP_FRAMES)]
+            art["frames"] = frames
+            state["pop"] = time.monotonic() + POP_DELAY_MS / 1000 if frames else None
+            inner = px(18)
+            left = inner + (icon + px(16) if image is not None else px(8))
+            words = max(toast_title.measure(text), toast_detail.measure(sub))
+            w = max(px(TOAST_MIN), min(px(TOAST_MAX), left + words + px(28)))
+            h = px(TOAST_HEIGHT)
+            resize(w, h)
+            room = w - left - px(28)
+            if image is not None:
+                art["icon"] = image
+                canvas.itemconfigure(badge, image=frames[0] if frames else image, state="normal")
+                canvas.coords(badge, inner, h // 2)
+            else:
+                canvas.itemconfigure(badge, state="hidden")
+            canvas.itemconfigure(title, font=toast_title, text=fit(text, toast_title, room))
+            canvas.itemconfigure(detail, font=toast_detail, text=fit(sub, toast_detail, room))
+            two = bool(sub)
+            canvas.coords(title, left, h // 2 - (px(24) if two else px(12)))
+            canvas.coords(detail, left, h // 2 + px(2))
 
         def handle(cmd) -> None:
             kind = cmd[0]
-            if kind in ("show", "notice", "closing"):
-                place()  # en la pantalla de ahora (4K, 1080p para jugar, la de la Legion…)
-                bar = "hidden" if kind == "notice" else "normal"
-                canvas.itemconfigure(track, state=bar)
-                canvas.itemconfigure(fill, state=bar)
             if kind == "notice":
-                _, text, sub, duration, number = cmd
-                if number:
-                    art = _badge_image(number, badge_size, FILL, TEXT)
-                    if art is not None:
-                        badge_art["now"] = art
-                        canvas.itemconfigure(badge, image=art)
-                room = layout(bool(number) and "now" in badge_art)
-                canvas.itemconfigure(title, text=fit(text, title_font, room))
-                canvas.itemconfigure(detail, text=fit(sub, detail_font, room))
-                still = self.reduce_motion()
-                place(0 if still or state["alpha"] > 0 else rise)  # entra subiendo desde un poco más abajo
-                state.update(filling=False, target=0.97, hide_at=time.monotonic() + duration / 1000, rising=not still)
-                _raise_no_activate(hwnd)
-                return
-            if kind in ("show", "closing"):
-                layout(False)  # el de cerrar: sin círculo, con su barra
-            if kind == "show":
+                _, text, sub, duration, mark, tone = cmd
+                as_toast(text, sub, mark, tone)
+                state.update(filling=False, hide_at=time.monotonic() + duration / 1000)
+                enter()
+            elif kind == "show":
                 _, text, sub, duration = cmd
-                canvas.itemconfigure(title, text=fit(text, title_font))
-                canvas.itemconfigure(detail, text=fit(sub, detail_font))
-                # La misma entrada que el aviso de «Control conectado»: sube mientras aparece (una sola familia de avisos).
-                still = self.reduce_motion()
-                place(0 if still or state["alpha"] > 0 else rise)
-                state.update(start=time.monotonic(), duration=max(duration, 1) / 1000, filling=True, target=0.97, hide_at=None,
-                             rising=not still)
+                as_action(text, sub)
+                state.update(start=time.monotonic(), duration=max(duration, 1) / 1000, filling=True, hide_at=None)
                 set_progress(0)
-                _raise_no_activate(hwnd)
+                enter()
             elif kind == "closing":
-                canvas.itemconfigure(title, text=fit(cmd[1], title_font))
-                canvas.itemconfigure(detail, text=fit(cmd[2], detail_font))
+                as_action(cmd[1], cmd[2])
                 state["filling"] = False
                 set_progress(1)
+                place(state["offset"])
             elif kind == "hide":
                 state["hide_at"] = time.monotonic() + cmd[1] / 1000
                 state["filling"] = False
@@ -239,29 +318,33 @@ class GameOverlay:
                     break
             now = time.monotonic()
             if state["hide_at"] is not None and now >= state["hide_at"]:
-                state["target"], state["hide_at"] = 0.0, None
-            # El aviso breve sube al entrar y baja un poco al irse, al ritmo del fundido (curva de salida suave).
-            if state.get("rising"):
-                goal = 0.0 if state["target"] > 0 else rise * .5
-                gap = goal - state["offset"]
-                if abs(gap) > .5:
-                    move(state["offset"] + gap * .22)
-                elif state["target"] == 0 and state["alpha"] == 0:
-                    state["rising"] = False
+                state["hide_at"] = None
+                leave()
+            anim = state["anim"]
+            if anim is not None:  # deslizar y fundir a la vez, por tiempo y con su curva
+                t0, length, off0, off1, a0, a1, curve = anim
+                p = min(1.0, (now - t0) / length)
+                e = curve(p)
+                move(off0 + (off1 - off0) * e)
+                state["alpha"] = a0 + (a1 - a0) * e
+                root.attributes("-alpha", state["alpha"])
+                if p >= 1:
+                    state["anim"] = None
+                    if a1 == 0:
+                        _hide(hwnd)  # terminó de irse: fuera de la pantalla hasta la próxima
+            pop = state["pop"]
+            if pop is not None and now >= pop and art.get("frames"):
+                frames = art["frames"]
+                i = min(len(frames) - 1, int((now - pop) / (POP_MS / 1000) * len(frames)))
+                canvas.itemconfigure(badge, image=frames[i])
+                if i == len(frames) - 1:
+                    state["pop"] = None
             if state["filling"]:
                 set_progress((now - state["start"]) / state["duration"])
-            # Fundido de entrada/salida
-            step = 16 / FADE_MS
-            alpha = state["alpha"]
-            if alpha != state["target"]:
-                alpha = min(state["target"], alpha + step) if state["target"] > alpha else max(state["target"], alpha - step)
-                state["alpha"] = alpha
-                root.attributes("-alpha", alpha)
-                if alpha == 0.0:
-                    _hide(hwnd)  # terminó de desvanecerse: fuera de la pantalla hasta la próxima
-            # 60 vueltas por segundo solo mientras se ve (la barra se llena, el fundido); escondida, 10: una orden nueva
-            # tarda a lo mucho 100 ms en notarse (el aviso sale a los 250 ms de mantener el atajo) y no gasta CPU sin parar.
-            root.after(16 if state["alpha"] > 0 or state["target"] > 0 or state["filling"] else 100, tick)
+            # 60 vueltas por segundo solo mientras se ve; escondida, 10: una orden nueva tarda a lo mucho 100 ms en
+            # notarse (el aviso de cerrar sale a los 250 ms de mantener el atajo) y no gasta CPU sin parar.
+            busy = state["alpha"] > 0 or state["anim"] is not None or state["filling"]
+            root.after(16 if busy else 100, tick)
 
         self._ready.set()
         root.after(16, tick)

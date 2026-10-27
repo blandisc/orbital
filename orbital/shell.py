@@ -518,7 +518,8 @@ class ConsoleShell:
         if not connected:
             players.sync()
             if self.away_from_orbital() and self.overlay is not None:
-                self.overlay.notice(f"Se desconectó el control {name}", "")
+                self.overlay.notice(f"Se desconectó el {name}", "Enciéndelo o conéctalo para seguir jugando",
+                                    seconds=4.5, badge="!", tone="warn")
             else:
                 self.notify({"type": "toast", "tone": "warn", "message": f"Se desconectó el control {name}"})
             return
@@ -539,6 +540,24 @@ class ConsoleShell:
             self.overlay.notice(f"{name} {connected_word}", detail or f"Jugador {number}", seconds=4.5, badge=str(number))
         else:
             self.notify({"type": "toast", "tone": "success", "message": message, **({"detail": detail} if detail else {})})
+
+    TASK_VIEW_CLASS = "XamlExplorerHostIslandWindow"
+    TASK_VIEW_AFTER_GUIDE = 5.0  # s: la Vista de tareas que sale hasta este rato después de apretar el botón del centro
+
+    def dismiss_task_view(self, fg: int) -> bool:
+        """Desde 2025, mantener el botón del centro de un control abre la Vista de tareas de Windows (y no hay ajuste
+        para quitarlo): pasa al apagar el GameSir. Si la Vista de tareas sale justo después de apretar ese botón, se
+        cierra (Esc) y regresas a donde estabas. La que abres tú (Win+Tab, tres dedos) no se toca."""
+        gamepad = getattr(self, "gamepad", None)
+        if gamepad is None or not fg or self.win.exe_name(self.win.pid_of(fg)) != "explorer.exe":
+            return False
+        if time.monotonic() - gamepad.guide_at > self.TASK_VIEW_AFTER_GUIDE:
+            return False
+        if windows.class_name(fg) != self.TASK_VIEW_CLASS:
+            return False
+        send_key(0x1B)  # Esc: la Vista de tareas se cierra y queda al frente lo de antes
+        log.info("Cerré la Vista de tareas que abrió el botón del centro del control")
+        return True
 
     def own_pids(self) -> set[int]:
         """Los procesos de Orbital: este servidor, el supervisor que lo vigila y su ventana de Edge."""
@@ -664,6 +683,7 @@ class ConsoleShell:
                 if self.paused and self.win.pid_of(fg) in self.paused:
                     self.unpause()  # volvió al juego por su cuenta (Alt+Tab, clic): que siga
                 self.check_legion(fg, previous)
+                self.dismiss_task_view(fg)
                 if self.health is not None and self.is_orbital(self.win.foreground()):
                     self.health.flush()  # ya estás en Orbital: el aviso de memoria que esperaba
             except Exception:  # noqa: BLE001

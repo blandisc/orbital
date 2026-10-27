@@ -388,6 +388,7 @@ class GamepadWatcher:
         self.devices: dict[int, tuple[int, int]] = {}  # lugar -> (marca, modelo) de cada mando encendido
         self.last_used: int | None = None  # el lugar del último mando que apretó un botón (el Jugador 1 de un juego)
         self.last_input = time.monotonic()  # cuándo se apretó algo por última vez (para saber si la consola está sola)
+        self.guide_at = float("-inf")  # cuándo se apretó el botón del centro (Home/Xbox) por última vez (ver shell)
         self.connected_at: dict[int, float] = {}  # lugar -> cuándo llegó (el orden de los jugadores, ver players.py)
         self.versions: dict[tuple[int, int], int] = {}  # (marca, modelo) -> versión del producto (ver emulator_input)
         # (lugar, conectado, (marca, modelo)): un mando que llega o se va. No suena por los que ya estaban al arrancar
@@ -471,6 +472,8 @@ class GamepadWatcher:
                 if buttons & ~pressed[slot]:
                     self.last_used = slot
                     self.last_input = now
+                    if buttons & GUIDE and not pressed[slot] & GUIDE:
+                        self.guide_at = now
                 pressed[slot] = buttons
                 if connected:  # diagnóstico (entrada.log): lo que reporta XInput, solo cuando cambia
                     pad = state.Gamepad

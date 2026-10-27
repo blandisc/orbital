@@ -60,6 +60,15 @@ def trim_working_set(pids: set[int]) -> int:
     return done
 
 
+def class_name(hwnd: int) -> str:
+    """La clase de la ventana («XamlExplorerHostIslandWindow» es la Vista de tareas de Windows 11)."""
+    if not WIN or not hwnd:
+        return ""
+    buf = ctypes.create_unicode_buffer(256)
+    user32.GetClassNameW(hwnd, buf, 256)
+    return buf.value
+
+
 def is_window(hwnd: int) -> bool:
     return bool(WIN and hwnd and user32.IsWindow(hwnd) and user32.IsWindowVisible(hwnd))
 
