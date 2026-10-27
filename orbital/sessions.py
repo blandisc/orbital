@@ -414,11 +414,13 @@ class Sessions:
         self.state.record_session(item_id, seconds)
         if self._retry_quick_crash(item_id, title, seconds):
             return
-        display.resolution.restore()  # de vuelta a la resolución de la pantalla (Orbital y las películas, a 4K)
+        # Primero Orbital al frente y después la resolución de siempre: al revés, mientras la tele cambiaba de 1080p a 4K
+        # se asomaba el escritorio de Windows (visto en la TV el 2026-10-26).
         if self.kiosk is not None and not self.kiosk.exited_by_user:
             self.kiosk.open()  # al frente o, si alguien cerró la ventana, otra vez abierta
         else:
             system.bring_to_front()
+        display.resolution.restore()  # de vuelta a la resolución de la pantalla (Orbital y las películas, a 4K)
         health.note_dwm(f"de vuelta de {title}")
         # Se cerró solo a los pocos segundos: casi siempre es que no pudo abrir (falta la ROM, el
         # firmware, una clave…). No es "de vuelta de": se avisa como problema.

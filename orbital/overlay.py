@@ -1,16 +1,16 @@
-"""Avisos encima del juego (con un juego al frente, la ventana de Orbital no se ve), en el mismo lenguaje que los de
-Orbital:
+"""Avisos encima del juego (con un juego al frente, la ventana de Orbital no se ve), hechos con el sistema de diseño de
+Orbital (tokens.css, themes/orbital.css, toast.css):
 
 - Notificación («GameSir conectado · Jugador 2», «Se desconectó el GameSir»): arriba a la derecha, donde salen los avisos
-  de Orbital (toast.css), con su ícono en un círculo (el número del jugador; ámbar si es una advertencia) y tan ancha como
-  su texto. Entra deslizándose desde la derecha y se va sola.
-- Acción (mantener el atajo de cerrar: Start + Select + Home; GameSir: LB + RB + Select): abajo al centro, como los
-  avisos de las consolas, con el juego en grande, qué mantener y una barra que se llena. Entra subiendo.
+  de Orbital, con su forma (radio xl), su fondo, su borde fino y su sombra. El ícono en un círculo: el número del
+  jugador en el color de su lugar (como las luces de un control: coral, turquesa, ámbar, papel) o, si es advertencia,
+  «!» en ámbar tenue. Entra como los avisos (desliza 1,5 rem y aparece en 220 ms, ease-out) y el número hace un «pop».
+- Acción (mantener el atajo de cerrar): abajo al centro, el juego en grande, qué mantener y la barra que se llena.
 
-Una ventana pequeña, siempre visible y que NO toma el foco: el juego sigue recibiendo el mando. Se dibuja con Tkinter
-(viene con Python) en su propio hilo; las órdenes llegan por una cola que el hilo atiende ~60 veces por segundo. Se
-acomoda cada vez en la pantalla de ese momento (4K, 1080p para jugar, la de la Legion Go). Los círculos se dibujan con
-Pillow, suavizados (los de Tk salen dentados en Windows); las esquinas de la ventana las redondea Windows 11.
+Todo se mide en `rem`, la unidad de la interfaz (min(1,25 vw, 2 vh)): se ve igual de grande que Orbital en 4K, en 1080p
+para jugar o en la pantalla de la Legion. Se dibuja con Pillow (suavizado, con transparencia de verdad) y Windows lo pone
+encima con UpdateLayeredWindow: una ventana que no toma el foco (el juego sigue recibiendo el mando) y que los clics
+atraviesan. Tkinter solo pone el reloj y la cola de órdenes, en su propio hilo.
 """
 
 from __future__ import annotations
@@ -21,45 +21,55 @@ import queue
 import sys
 import threading
 import time
+from ctypes import wintypes
 
 log = logging.getLogger(__name__)
 
-# Paleta del tema Orbital (styles/themes/orbital.css)
-BG = "#1e1e23"  # --color-surface-raised (--palette-ink-800)
-TEXT = "#f5f4f0"  # --color-text
-MUTED = "#a3a3ab"  # --color-text-muted
-TRACK = "#2c2c32"
-FILL = "#f0574d"  # el acento de la marca: la barra y el número del jugador
-WARN = "#f4c24d"  # --color-warning (--palette-amber-300)
-HAIRLINE = "#2f2f34"  # --color-hairline (blanco al 9 %) sobre el fondo
+# --- el sistema de diseño (tokens.css y themes/orbital.css) --------------------------------------------------------------
+SURFACE = (30, 30, 35)  # --color-surface-raised (--palette-ink-800)
+TEXT = (245, 244, 240)  # --color-text (--palette-paper)
+MUTED = (163, 163, 171)  # --color-text-muted (--palette-ink-300)
+HAIRLINE = (255, 255, 255, 23)  # --color-hairline (blanco al 9 %)
+TRACK = (42, 42, 48)  # --palette-ink-700
+CORAL = (240, 87, 77)  # --palette-red-400 (la barra de cerrar)
+WARN = (244, 194, 77)  # --color-warning (--palette-amber-300)
+# El color de cada jugador, como las luces de un control: 1 coral, 2 turquesa, 3 ámbar, 4 papel.
+PLAYER_COLORS = {"1": CORAL, "2": (95, 214, 198), "3": WARN, "4": TEXT}
 
-# Acción (cerrar): px lógicos (se escalan con el DPI), abajo al centro.
-WIDTH, HEIGHT = 560, 128
-PAD = 28
-BAR = 6
-FROM_TOP = .78  # dónde va su centro, en fracción del alto de la pantalla
-# Notificación: arriba a la derecha, como toast.css (debajo de la barra de estado, al margen de la página).
-TOAST_HEIGHT = 84
-TOAST_MIN, TOAST_MAX = 340, 720  # px lógicos: tan ancha como su texto, entre estos dos
-TOAST_TOP = .07  # fracción del alto de la pantalla
-TOAST_RIGHT = .035  # fracción del ancho: el margen de la página
-ICON = 48  # px lógicos del círculo del ícono
-SLIDE = 28  # px lógicos que se desliza al entrar (y al irse); con «Reducir movimiento», solo el fundido
-# Por tiempo, con las curvas de la interfaz de Orbital: entra rápido y se asienta suave; se va acelerando hacia afuera.
-ENTER_MS, EXIT_MS = 320, 200
-POP_MS, POP_DELAY_MS = 420, 70  # el número del jugador crece un poco de más y se acomoda, ya con la tarjeta en su lugar
-POP_FRAMES = 12
-OPAQUE = 0.97
+# En rem (la unidad de la interfaz). Los de la notificación son los de toast.css.
+RADIUS = 1.1  # --radius-xl (dos renglones)
+ICON = 2.2  # .toast__icon
+PAD_LEFT, PAD_RIGHT, GAP = .5, 1.5, .75  # --space-2 · --space-6 · --space-3
+TOAST_MIN_W, TOAST_MAX_W, TOAST_H = 18, 34, 4.1
+TITLE_SIZE, DETAIL_SIZE = 1.07, .98  # --text-md · --text-sm
+SHADOW_Y, SHADOW_BLUR, SHADOW_ALPHA = 1.5, 4.0, .55  # --shadow-overlay: 0 1.5rem 4rem rgba(0,0,0,.55)
+ACTION_W, ACTION_H = 26, 6.2  # la acción de cerrar
+FROM_TOP = .78  # dónde va el centro de la acción, en fracción del alto
+SAFE_AREA = 4  # --safe-area: margen de la tele (Ajustes › Márgenes de la TV)
 
-
-def ease_out(p: float) -> float:
-    """Arranca rápido y se asienta (quíntica): la entrada."""
-    return 1 - (1 - p) ** 5
+# El movimiento (tokens.css): --duration-base / --ease-out y --duration-exit / --ease-in, como toast-in / toast-out.
+ENTER_MS, EXIT_MS = 220, 160
+EASE_OUT = (.16, 1, .3, 1)
+EASE_IN = (.5, 0, .75, 0)
+SLIDE_IN, SLIDE_OUT = 1.5, 1.0  # rem: toast-in viene de 1,5 rem a la derecha; toast-out se va 1 rem
+POP_MS, POP_DELAY_MS, POP_FRAMES = 380, 90, 12
 
 
-def ease_in(p: float) -> float:
-    """Arranca despacio y se va acelerando (cúbica): la salida."""
-    return p ** 3
+def bezier(p1x: float, p1y: float, p2x: float, p2y: float):
+    """cubic-bezier() de CSS: devuelve la curva como función de 0 a 1."""
+    def at(t: float, a: float, b: float) -> float:
+        return 3 * a * t * (1 - t) ** 2 + 3 * b * t * t * (1 - t) + t ** 3
+
+    def curve(x: float) -> float:
+        lo, hi = 0.0, 1.0
+        for _ in range(24):  # bisección: de sobra para 60 cuadros por segundo
+            mid = (lo + hi) / 2
+            if at(mid, p1x, p2x) < x:
+                lo = mid
+            else:
+                hi = mid
+        return at((lo + hi) / 2, p1y, p2y)
+    return curve
 
 
 def ease_back(p: float) -> float:
@@ -69,15 +79,13 @@ def ease_back(p: float) -> float:
 
 
 def screen_rect() -> tuple[int, int, int, int]:
-    """(x, y, ancho, alto) de la pantalla principal AHORA, en las mismas unidades que la ventana. GetSystemMetrics se
-    quedaba con el tamaño de cuando arrancó Orbital: con la tele bajada a 1080p para jugar (display.py) el aviso se
-    calculaba para 4K y quedaba fuera de la pantalla (y = 1556 en una de 1080, visto el 2026-10-26)."""
-
-    class _Rect(ctypes.Structure):
-        _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long), ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+    """(x, y, ancho, alto) de la pantalla principal AHORA, en pixeles reales. GetSystemMetrics se quedaba con el tamaño de
+    cuando arrancó Orbital: con la tele bajada a 1080p para jugar (display.py) el aviso se calculaba para 4K y quedaba
+    fuera de la pantalla (y = 1556 en una de 1080, visto el 2026-10-26)."""
 
     class _Info(ctypes.Structure):
-        _fields_ = [("cbSize", ctypes.c_ulong), ("rcMonitor", _Rect), ("rcWork", _Rect), ("dwFlags", ctypes.c_ulong)]
+        _fields_ = [("cbSize", ctypes.c_ulong), ("rcMonitor", wintypes.RECT), ("rcWork", wintypes.RECT),
+                    ("dwFlags", ctypes.c_ulong)]
 
     user32 = ctypes.windll.user32
     user32.MonitorFromPoint.restype = ctypes.c_void_p
@@ -90,43 +98,197 @@ def screen_rect() -> tuple[int, int, int, int]:
     return 0, 0, user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
 
-def _circle_image(text: str, size: int, tone: str, grow: float = 1.0):
-    """El ícono de la notificación: el número del jugador en un círculo del acento, o «!» en uno ámbar tenue (como el
-    ícono de los avisos de advertencia de Orbital). Dibujado al cuádruple con Pillow y reducido: suave. `grow`: su tamaño
-    dentro del lugar del ícono (el «pop» de la entrada). None sin Pillow."""
+def rem_for(width: int, height: int) -> float:
+    """La unidad de la interfaz en pixeles reales: --root-size = clamp(12px, min(1.25vw, 2vh), 44px)."""
+    return max(12.0, min(width * .0125, height * .02))
+
+
+# --- dibujar (Pillow) -------------------------------------------------------------------------------------------------
+def _font(size: float, weight: str):
+    from PIL import ImageFont
+
     try:
-        from PIL import Image, ImageDraw, ImageFont, ImageTk
-    except ImportError:
-        return None
+        font = ImageFont.truetype("SegUIVar.ttf", max(1, round(size)))  # Segoe UI Variable, la de la interfaz
+        names = [n.decode() if isinstance(n, bytes) else n for n in font.get_variation_names()]
+        pick = next((n for n in names if "Text" in n and weight in n), None) or next((n for n in names if weight in n), None)
+        if pick:
+            font.set_variation_by_name(pick)
+        return font
+    except (OSError, AttributeError, ValueError):
+        pass
+    for name in ("seguisb.ttf" if weight == "Semibold" else "segoeui.ttf", "segoeui.ttf"):
+        try:
+            return ImageFont.truetype(name, max(1, round(size)))
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def _fit(draw, text: str, font, room: float) -> str:
+    if draw.textlength(text, font=font) <= room:
+        return text
+    while text and draw.textlength(text + "…", font=font) > room:
+        text = text[:-1]
+    return text.rstrip() + "…"
+
+
+def _card(width: float, height: float, rem: float):
+    """La tarjeta con su sombra: (imagen RGBA, margen de la sombra). La sombra es la de --shadow-overlay."""
+    from PIL import Image, ImageDraw, ImageFilter
+
+    margin = round(SHADOW_BLUR * rem * .75)
+    w, h = round(width), round(height)
+    image = Image.new("RGBA", (w + 2 * margin, h + 2 * margin), (0, 0, 0, 0))
+    radius = round(RADIUS * rem)
+    shadow = Image.new("L", image.size, 0)
+    dy = round(SHADOW_Y * rem * .5)
+    ImageDraw.Draw(shadow).rounded_rectangle((margin, margin + dy, margin + w, margin + h + dy), radius,
+                                             fill=round(255 * SHADOW_ALPHA))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(SHADOW_BLUR * rem / 4))
+    image.putalpha(shadow)
+    # La tarjeta, suavizada: se dibuja al doble y se reduce.
+    big = Image.new("RGBA", (w * 2, h * 2), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(big)
+    draw.rounded_rectangle((0, 0, w * 2 - 1, h * 2 - 1), radius * 2, fill=SURFACE + (255,))
+    draw.rounded_rectangle((1, 1, w * 2 - 2, h * 2 - 2), radius * 2, outline=HAIRLINE, width=2)
+    image.alpha_composite(big.resize((w, h), Image.LANCZOS), (margin, margin))
+    return image, margin
+
+
+def _circle(text: str, size: int, color, tone: str, grow: float = 1.12):
+    """El ícono: el número del jugador en el color de su lugar, o «!» en ámbar tenue (advertencia). `grow`: su tamaño (el
+    «pop» de la entrada; a 1.12 llena su lugar)."""
+    from PIL import Image, ImageDraw
+
     big = size * 4
-    image = Image.new("RGBA", (big, big), BG)
+    image = Image.new("RGBA", (big, big), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    r = big / 2 * max(.05, min(1.12, grow)) / 1.12  # a 1.12 llena el lugar: el pop no se sale
-    box = (big / 2 - r, big / 2 - r, big / 2 + r - 1, big / 2 + r - 1)
+    r = big / 2 * max(.05, min(1.12, grow)) / 1.12
+    box = (big / 2 - r, big / 2 - r, big / 2 + r, big / 2 + r)
     if tone == "warn":
-        draw.ellipse(box, fill=_mix(WARN, BG, .18))
-        ink = WARN
+        draw.ellipse(box, fill=WARN + (46,))  # color-mix(… 18 %, transparent), como .toast__icon
+        ink = WARN + (255,)
     else:
-        draw.ellipse(box, fill=FILL)
-        ink = TEXT
-    try:
-        font = ImageFont.truetype("segoeuib.ttf", max(1, int(r * .96)))
-    except OSError:
-        font = ImageFont.load_default()
-    draw.text((big / 2, big / 2), text, fill=ink, font=font, anchor="mm")
-    return ImageTk.PhotoImage(image.resize((size, size), Image.LANCZOS))
+        draw.ellipse(box, fill=color + (255,))
+        ink = SURFACE + (255,) if sum(color) > 450 else TEXT + (255,)  # sobre el turquesa, el ámbar o el papel, tinta
+    draw.text((big / 2, big / 2), text, fill=ink, font=_font(r * .95, "Semibold"), anchor="mm")
+    return image.resize((size, size), Image.LANCZOS)
 
 
-def _mix(color: str, base: str, amount: float) -> str:
-    """`amount` de `color` sobre `base` (como color-mix de CSS)."""
-    a = [int(color[i:i + 2], 16) for i in (1, 3, 5)]
-    b = [int(base[i:i + 2], 16) for i in (1, 3, 5)]
-    return "#" + "".join(f"{round(x * amount + y * (1 - amount)):02x}" for x, y in zip(a, b, strict=True))
+def draw_toast(title: str, detail: str, mark: str, tone: str, rem: float, grow: float = 1.12):
+    """La notificación completa: (imagen, margen de la sombra)."""
+    from PIL import Image, ImageDraw
+
+    probe = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+    title_font, detail_font = _font(TITLE_SIZE * rem, "Semibold"), _font(DETAIL_SIZE * rem, "Regular")
+    icon = round(ICON * rem) if mark else 0
+    inset = (TOAST_H * rem - icon) / 2 if detail else (3 * rem - icon) / 2  # el círculo, centrado en su alto
+    left = (inset + icon + GAP * rem) if mark else 1.25 * rem
+    words = max(probe.textlength(title, font=title_font), probe.textlength(detail, font=detail_font) if detail else 0)
+    width = min(TOAST_MAX_W * rem, max(TOAST_MIN_W * rem, left + words + PAD_RIGHT * rem))
+    height = TOAST_H * rem if detail else 3 * rem
+    image, margin = _card(width, height, rem)
+    draw = ImageDraw.Draw(image)
+    room = width - left - PAD_RIGHT * rem
+    x, mid = margin + left, margin + height / 2
+    if mark:
+        circle = _circle(mark, icon, PLAYER_COLORS.get(mark, CORAL), tone, grow)
+        image.alpha_composite(circle, (round(margin + inset), round(mid - icon / 2)))
+    if detail:
+        draw.text((x, mid - .1 * rem), _fit(draw, title, title_font, room), fill=TEXT + (255,), font=title_font, anchor="ls")
+        draw.text((x, mid + .3 * rem), _fit(draw, detail, detail_font, room), fill=MUTED + (255,), font=detail_font,
+                  anchor="lt")
+    else:
+        draw.text((x, mid), _fit(draw, title, title_font, room), fill=TEXT + (255,), font=title_font, anchor="lm")
+    return image, margin
+
+
+def draw_action(title: str, detail: str, progress: float, rem: float, base=None):
+    """La acción de cerrar: (imagen, margen, base sin la barra, para reusarla en cada cuadro)."""
+    from PIL import ImageDraw
+
+    width, height = ACTION_W * rem, ACTION_H * rem
+    pad = 1.4 * rem
+    if base is None:
+        image, margin = _card(width, height, rem)
+        draw = ImageDraw.Draw(image)
+        room = width - 2 * pad
+        big, small = _font(1.5 * rem, "Semibold"), _font(DETAIL_SIZE * rem, "Regular")
+        draw.text((margin + pad, margin + 1.15 * rem), _fit(draw, title, big, room), fill=TEXT + (255,), font=big, anchor="lt")
+        draw.text((margin + pad, margin + 3.05 * rem), _fit(draw, detail, small, room), fill=MUTED + (255,), font=small,
+                  anchor="lt")
+        base = (image, margin)
+    image, margin = base[0].copy(), base[1]
+    draw = ImageDraw.Draw(image)
+    bar = max(3, round(.32 * rem))
+    y = margin + height - pad - bar
+    x0, x1 = margin + pad, margin + width - pad
+    draw.rounded_rectangle((x0, y, x1, y + bar), bar / 2, fill=TRACK + (255,))
+    if progress > 0:
+        draw.rounded_rectangle((x0, y, x0 + max(bar, (x1 - x0) * min(1.0, progress)), y + bar), bar / 2, fill=CORAL + (255,))
+    return image, margin, base
+
+
+# --- la ventana (UpdateLayeredWindow) ---------------------------------------------------------------------------------
+class _Blend(ctypes.Structure):
+    _fields_ = [("BlendOp", ctypes.c_ubyte), ("BlendFlags", ctypes.c_ubyte), ("SourceConstantAlpha", ctypes.c_ubyte),
+                ("AlphaFormat", ctypes.c_ubyte)]
+
+
+class _BitmapInfoHeader(ctypes.Structure):
+    _fields_ = [("biSize", wintypes.DWORD), ("biWidth", ctypes.c_long), ("biHeight", ctypes.c_long),
+                ("biPlanes", wintypes.WORD), ("biBitCount", wintypes.WORD), ("biCompression", wintypes.DWORD),
+                ("biSizeImage", wintypes.DWORD), ("biXPelsPerMeter", ctypes.c_long), ("biYPelsPerMeter", ctypes.c_long),
+                ("biClrUsed", wintypes.DWORD), ("biClrImportant", wintypes.DWORD)]
+
+
+class Surface:
+    """Una imagen RGBA con transparencia de verdad encima de todo, en (x, y) y con opacidad; moverla o cambiarle la
+    opacidad no la vuelve a dibujar."""
+
+    def __init__(self, hwnd: int) -> None:
+        self.hwnd = hwnd
+        self.size = (0, 0)
+        gdi = ctypes.windll.gdi32
+        gdi.CreateCompatibleDC.restype = ctypes.c_void_p
+        gdi.CreateDIBSection.restype = ctypes.c_void_p
+        gdi.SelectObject.restype = ctypes.c_void_p
+        self.dc = gdi.CreateCompatibleDC(None)
+        self.bitmap: int | None = None
+
+    def set_image(self, image) -> None:
+        from PIL import Image, ImageChops
+
+        w, h = image.size
+        r, g, b, a = image.split()
+        # Windows pide los colores premultiplicados por la transparencia, en orden BGRA y de abajo hacia arriba.
+        premult = Image.merge("RGBA", (ImageChops.multiply(b, a), ImageChops.multiply(g, a), ImageChops.multiply(r, a), a))
+        data = premult.tobytes("raw", "RGBA", 0, -1)
+        header = _BitmapInfoHeader(ctypes.sizeof(_BitmapInfoHeader), w, h, 1, 32, 0, 0, 0, 0, 0, 0)
+        bits = ctypes.c_void_p()
+        gdi = ctypes.windll.gdi32
+        bitmap = gdi.CreateDIBSection(ctypes.c_void_p(self.dc), ctypes.byref(header), 0, ctypes.byref(bits), None, 0)
+        if not bitmap or not bits.value:
+            return
+        ctypes.memmove(bits, data, len(data))
+        gdi.SelectObject(ctypes.c_void_p(self.dc), ctypes.c_void_p(bitmap))
+        if self.bitmap:
+            gdi.DeleteObject(ctypes.c_void_p(self.bitmap))
+        self.bitmap = bitmap
+        self.size = (w, h)
+
+    def show(self, x: float, y: float, alpha: float) -> None:
+        w, h = self.size
+        blend = _Blend(0, 0, max(0, min(255, round(alpha * 255))), 1)  # AC_SRC_OVER, AC_SRC_ALPHA
+        pos, size, src = wintypes.POINT(round(x), round(y)), wintypes.SIZE(w, h), wintypes.POINT(0, 0)
+        ctypes.windll.user32.UpdateLayeredWindow(ctypes.c_void_p(self.hwnd), None, ctypes.byref(pos), ctypes.byref(size),
+                                                 ctypes.c_void_p(self.dc), ctypes.byref(src), 0, ctypes.byref(blend), 2)
 
 
 class GameOverlay:
-    def __init__(self, reduce_motion=lambda: False) -> None:
-        self.reduce_motion = reduce_motion  # Ajustes › Pantalla › Reducir movimiento: sin el deslizamiento
+    def __init__(self, reduce_motion=lambda: False, safe_area=lambda: SAFE_AREA) -> None:
+        self.reduce_motion = reduce_motion  # Ajustes › Pantalla › Reducir movimiento: sin deslizar ni «pop»
+        self.safe_area = safe_area  # Ajustes › Márgenes de la TV: el mismo margen que los avisos de Orbital
         self._commands: queue.Queue = queue.Queue()
         self._ready = threading.Event()
         self._thread: threading.Thread | None = None
@@ -145,7 +307,7 @@ class GameOverlay:
 
     def notice(self, title: str, detail: str = "", seconds: float = 3.5, badge: str = "", tone: str = "ok") -> None:
         """Notificación arriba a la derecha que se va sola. `badge`: el texto de su círculo (el número del jugador, «!»);
-        `tone`: «ok» (el acento) o «warn» (ámbar)."""
+        `tone`: «ok» o «warn» (ámbar)."""
         self._commands.put(("notice", title, detail, int(seconds * 1000), badge, tone))
 
     def closing(self, title: str, detail: str = "") -> None:
@@ -154,196 +316,149 @@ class GameOverlay:
     def hide(self, delay_ms: int = 0) -> None:
         self._commands.put(("hide", delay_ms))
 
-    # ------------------------------------------------------------- hilo de Tk
+    # ------------------------------------------------------------- hilo de la ventana
     def _run(self) -> None:
         try:
-            ctypes.windll.shcore.SetProcessDpiAwareness(2)  # nítido en la pantalla de la Legion Go
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)  # pixeles reales: nítido en 4K y en la Legion
         except (AttributeError, OSError):
             pass
         import tkinter as tk
-        import tkinter.font as tkfont
 
-        root = tk.Tk()
+        root = tk.Tk()  # solo el reloj (after) y los mensajes de la ventana
         root.withdraw()
         root.overrideredirect(True)
-        root.configure(bg=BG)
         root.attributes("-topmost", True)
-        root.attributes("-alpha", 0.0)
-        scale = root.winfo_fpixels("1i") / 96
-        px = lambda value: int(value * scale)  # noqa: E731 - px lógicos → de pantalla
-        pad, slide, icon = px(PAD), px(SLIDE), px(ICON)
-
-        canvas = tk.Canvas(root, width=px(WIDTH), height=px(HEIGHT), bg=BG, highlightthickness=0, bd=0)
-        canvas.pack()
-        border = canvas.create_rectangle(0, 0, 1, 1, outline=HAIRLINE, width=1)  # borde fino, como las hojas de Orbital
-        title_font = tkfont.Font(root, family="Segoe UI Variable Display Semibold", size=17)
-        detail_font = tkfont.Font(root, family="Segoe UI Variable Text", size=11)
-        toast_title = tkfont.Font(root, family="Segoe UI Variable Text Semibold", size=14)
-        toast_detail = tkfont.Font(root, family="Segoe UI Variable Text", size=11)
-        title = canvas.create_text(0, 0, anchor="nw", fill=TEXT, text="")
-        detail = canvas.create_text(0, 0, anchor="nw", fill=MUTED, text="")
-        badge = canvas.create_image(0, 0, anchor="w")
-        art: dict = {}  # las imágenes de Tk se pierden si nadie las guarda (el ícono y los cuadros del pop)
-        bar_h = max(3, px(BAR))
-        track = canvas.create_rectangle(0, 0, 0, 0, fill=TRACK, width=0)
-        fill = canvas.create_rectangle(0, 0, 0, 0, fill=FILL, width=0)
         hwnd = _hwnd(root)
         _style_window(hwnd)
-        # Para Tk queda "mostrada" (así no la vuelve a activar), pero Windows la esconde de verdad mientras no se usa
-        # (_hide): una ventana por capas encima de un juego a pantalla completa obliga a DWM a componer cada cuadro (más
-        # memoria de DWM y más batería). Mostrarla es SW_SHOWNOACTIVATE: nunca le quita el foco al juego.
         root.deiconify()
         _hide(hwnd)
-        state = {"start": 0.0, "duration": 1.0, "filling": False, "alpha": 0.0, "hide_at": None, "offset": 0.0,
-                 "base": (0, 0), "size": (px(WIDTH), px(HEIGHT)), "kind": "action", "anim": None, "pop": None}
+        surface = Surface(hwnd)
+        ease_out, ease_in = bezier(*EASE_OUT), bezier(*EASE_IN)
+        state: dict = {"kind": None, "alpha": 0.0, "dx": 0.0, "dy": 0.0, "anim": None, "hide_at": None, "rem": 16.0,
+                       "spot": (0.0, 0.0), "filling": None, "base": None, "pop": None, "content": None}
 
-        def fit(text: str, font, room: int) -> str:
-            """Un renglón: un texto largo se corta con «…» en vez de salirse."""
-            if font.measure(text) <= room:
-                return text
-            while text and font.measure(text + "…") > room:
-                text = text[:-1]
-            return text.rstrip() + "…"
+        def measure() -> float:
+            _sx, _sy, sw, sh = screen_rect()
+            state["rem"] = rem_for(sw, sh)
+            return state["rem"]
 
-        def resize(w: int, h: int) -> None:
-            state["size"] = (w, h)
-            canvas.config(width=w, height=h)
-            canvas.coords(border, 0, 0, w - 1, h - 1)
-
-        def place(offset: float = 0.0) -> None:
-            """En la pantalla de AHORA (ver screen_rect): la notificación arriba a la derecha, la acción abajo al centro.
-            `offset`: cuánto le falta por deslizarse (hacia la derecha la notificación, hacia abajo la acción)."""
+        def put(image, margin: int, anchor: str) -> None:
+            """La imagen nueva en su lugar, en la pantalla de ahora: la notificación arriba a la derecha (top y right de
+            .toast), la acción abajo al centro."""
             sx, sy, sw, sh = screen_rect()
-            w, h = state["size"]
-            if state["kind"] == "toast":
-                state["base"] = (sx + sw - w - int(sw * TOAST_RIGHT), sy + int(sh * TOAST_TOP))
+            rem = state["rem"]
+            surface.set_image(image)
+            w, h = image.size
+            if anchor == "toast":
+                safe = self.safe_area()
+                top = (1.25 + 3 + .25) * rem + safe * .006 * sh  # calc(--space-5 + --safe-y + 3rem + --space-1)
+                right = max(rem, safe * .01 * sw)  # --page-gutter: max(--space-4, --safe-x)
+                state["spot"] = (sx + sw - right - (w - margin), sy + top - margin)
             else:
-                state["base"] = (sx + (sw - w) // 2, sy + int(sh * FROM_TOP) - h // 2)
-            move(offset)
+                state["spot"] = (sx + (sw - w) / 2, sy + sh * FROM_TOP - h / 2)
+            draw_now()
 
-        def move(offset: float) -> None:
-            state["offset"] = offset
-            bx, by = state["base"]
-            w, h = state["size"]
-            dx, dy = (int(offset), 0) if state["kind"] == "toast" else (0, int(offset))
-            root.geometry(f"{w}x{h}+{bx + dx}+{by + dy}")
+        def draw_now() -> None:
+            x, y = state["spot"]
+            surface.show(x + state["dx"], y + state["dy"], state["alpha"])
 
-        def animate(to_offset: float, to_alpha: float, ms: int, curve) -> None:
-            """De donde esté ahora a (to_offset, to_alpha) en `ms`, con esa curva."""
-            state["anim"] = (time.monotonic(), ms / 1000, state["offset"], to_offset, state["alpha"], to_alpha, curve)
+        def animate(dx: float, dy: float, alpha: float, ms: int, curve) -> None:
+            state["anim"] = (time.monotonic(), ms / 1000, state["dx"], dx, state["dy"], dy, state["alpha"], alpha, curve)
 
-        def enter() -> None:
-            """Aparece: se desliza a su lugar mientras se funde (desde donde esté, si ya se veía)."""
+        def enter(axis: str) -> None:
             still = self.reduce_motion()
-            place(0 if still or state["alpha"] > 0 else slide)
+            if state["alpha"] == 0:
+                state["dx"] = SLIDE_IN * state["rem"] if axis == "x" and not still else 0
+                state["dy"] = SLIDE_IN * state["rem"] if axis == "y" and not still else 0
             _raise_no_activate(hwnd)
-            animate(0, OPAQUE, ENTER_MS, ease_out)
+            draw_now()
+            animate(0, 0, 1.0, ENTER_MS, ease_out)
 
         def leave() -> None:
-            animate(0 if self.reduce_motion() else slide * .6, 0.0, EXIT_MS, ease_in)
+            shift = 0 if self.reduce_motion() else SLIDE_OUT * state["rem"]
+            dx, dy = (shift, 0) if state["kind"] == "toast" else (0, shift)
+            animate(dx, dy, 0.0, EXIT_MS, ease_in)
 
-        def set_progress(fraction: float) -> None:
-            w, h = state["size"]
-            bar_y = h - pad - bar_h
-            canvas.coords(track, pad, bar_y, w - pad, bar_y + bar_h)
-            canvas.coords(fill, pad, bar_y, pad + (w - 2 * pad) * min(1.0, max(0.0, fraction)), bar_y + bar_h)
+        def toast(cmd) -> None:
+            _, title, detail, duration, mark, tone = cmd
+            rem = measure()
+            state["kind"], state["filling"] = "toast", None
+            pop = bool(mark) and not self.reduce_motion()
+            state["content"] = (title, detail, mark, tone)
+            image, margin = draw_toast(title, detail, mark, tone, rem, grow=.05 if pop else 1.12)
+            put(image, margin, "toast")
+            state["pop"] = time.monotonic() + POP_DELAY_MS / 1000 if pop else None
+            state["hide_at"] = time.monotonic() + duration / 1000
+            enter("x")
 
-        def as_action(text: str, sub: str) -> None:
+        def action(title: str, detail: str, progress: float, fresh: bool) -> None:
+            rem = measure() if fresh else state["rem"]
+            if fresh or state["kind"] != "action":
+                state["base"] = None
+            image, margin, state["base"] = draw_action(title, detail, progress, rem, state["base"])
             state["kind"] = "action"
-            resize(px(WIDTH), px(HEIGHT))
-            canvas.itemconfigure(badge, state="hidden")
-            for item in (track, fill):
-                canvas.itemconfigure(item, state="normal")
-            canvas.itemconfigure(title, font=title_font, text=fit(text, title_font, px(WIDTH) - 2 * pad))
-            canvas.itemconfigure(detail, font=detail_font, text=fit(sub, detail_font, px(WIDTH) - 2 * pad))
-            canvas.coords(title, pad, pad - px(4))
-            canvas.coords(detail, pad, pad + px(32))
-
-        def as_toast(text: str, sub: str, mark: str, tone: str) -> None:
-            state["kind"] = "toast"
-            for item in (track, fill):
-                canvas.itemconfigure(item, state="hidden")
-            image = _circle_image(mark, icon, tone) if mark else None
-            # El «pop» del número: sus cuadros se dibujan una vez aquí (en la animación solo se cambian).
-            frames = [] if image is None or self.reduce_motion() else \
-                [_circle_image(mark, icon, tone, ease_back(i / (POP_FRAMES - 1)) * 1.12) for i in range(POP_FRAMES)]
-            art["frames"] = frames
-            state["pop"] = time.monotonic() + POP_DELAY_MS / 1000 if frames else None
-            inner = px(18)
-            left = inner + (icon + px(16) if image is not None else px(8))
-            words = max(toast_title.measure(text), toast_detail.measure(sub))
-            w = max(px(TOAST_MIN), min(px(TOAST_MAX), left + words + px(28)))
-            h = px(TOAST_HEIGHT)
-            resize(w, h)
-            room = w - left - px(28)
-            if image is not None:
-                art["icon"] = image
-                canvas.itemconfigure(badge, image=frames[0] if frames else image, state="normal")
-                canvas.coords(badge, inner, h // 2)
-            else:
-                canvas.itemconfigure(badge, state="hidden")
-            canvas.itemconfigure(title, font=toast_title, text=fit(text, toast_title, room))
-            canvas.itemconfigure(detail, font=toast_detail, text=fit(sub, toast_detail, room))
-            two = bool(sub)
-            canvas.coords(title, left, h // 2 - (px(24) if two else px(12)))
-            canvas.coords(detail, left, h // 2 + px(2))
+            put(image, margin, "action")
 
         def handle(cmd) -> None:
             kind = cmd[0]
             if kind == "notice":
-                _, text, sub, duration, mark, tone = cmd
-                as_toast(text, sub, mark, tone)
-                state.update(filling=False, hide_at=time.monotonic() + duration / 1000)
-                enter()
+                toast(cmd)
             elif kind == "show":
-                _, text, sub, duration = cmd
-                as_action(text, sub)
-                state.update(start=time.monotonic(), duration=max(duration, 1) / 1000, filling=True, hide_at=None)
-                set_progress(0)
-                enter()
+                _, title, detail, duration = cmd
+                state["filling"] = (time.monotonic(), max(duration, 1) / 1000, title, detail)
+                state["hide_at"], state["pop"] = None, None
+                action(title, detail, 0.0, fresh=True)
+                enter("y")
             elif kind == "closing":
-                as_action(cmd[1], cmd[2])
-                state["filling"] = False
-                set_progress(1)
-                place(state["offset"])
+                state["filling"] = None
+                action(cmd[1], cmd[2], 1.0, fresh=True)
             elif kind == "hide":
                 state["hide_at"] = time.monotonic() + cmd[1] / 1000
-                state["filling"] = False
+                state["filling"] = None
 
         def tick() -> None:
-            while True:
-                try:
-                    handle(self._commands.get_nowait())
-                except queue.Empty:
-                    break
-            now = time.monotonic()
-            if state["hide_at"] is not None and now >= state["hide_at"]:
-                state["hide_at"] = None
-                leave()
-            anim = state["anim"]
-            if anim is not None:  # deslizar y fundir a la vez, por tiempo y con su curva
-                t0, length, off0, off1, a0, a1, curve = anim
-                p = min(1.0, (now - t0) / length)
-                e = curve(p)
-                move(off0 + (off1 - off0) * e)
-                state["alpha"] = a0 + (a1 - a0) * e
-                root.attributes("-alpha", state["alpha"])
-                if p >= 1:
-                    state["anim"] = None
-                    if a1 == 0:
-                        _hide(hwnd)  # terminó de irse: fuera de la pantalla hasta la próxima
-            pop = state["pop"]
-            if pop is not None and now >= pop and art.get("frames"):
-                frames = art["frames"]
-                i = min(len(frames) - 1, int((now - pop) / (POP_MS / 1000) * len(frames)))
-                canvas.itemconfigure(badge, image=frames[i])
-                if i == len(frames) - 1:
-                    state["pop"] = None
-            if state["filling"]:
-                set_progress((now - state["start"]) / state["duration"])
+            try:
+                while True:
+                    try:
+                        handle(self._commands.get_nowait())
+                    except queue.Empty:
+                        break
+                now = time.monotonic()
+                if state["hide_at"] is not None and now >= state["hide_at"]:
+                    state["hide_at"] = None
+                    leave()
+                filling = state["filling"]
+                if filling is not None:
+                    t0, length, title, detail = filling
+                    action(title, detail, (now - t0) / length, fresh=False)
+                pop = state["pop"]
+                if pop is not None and now >= pop and state["kind"] == "toast":
+                    p = min(1.0, (now - pop) / (POP_MS / 1000))
+                    step = round(p * (POP_FRAMES - 1)) / (POP_FRAMES - 1)
+                    title, detail, mark, tone = state["content"]
+                    image, _margin = draw_toast(title, detail, mark, tone, state["rem"], grow=ease_back(step) * 1.12)
+                    surface.set_image(image)
+                    draw_now()
+                    if p >= 1:
+                        state["pop"] = None
+                anim = state["anim"]
+                if anim is not None:
+                    t0, length, dx0, dx1, dy0, dy1, a0, a1, curve = anim
+                    p = min(1.0, (now - t0) / length)
+                    e = curve(p)
+                    state["dx"], state["dy"] = dx0 + (dx1 - dx0) * e, dy0 + (dy1 - dy0) * e
+                    state["alpha"] = a0 + (a1 - a0) * e
+                    draw_now()
+                    if p >= 1:
+                        state["anim"] = None
+                        if a1 == 0:
+                            state["kind"] = None
+                            _hide(hwnd)  # se fue: fuera de la pantalla hasta la próxima
+            except Exception:  # noqa: BLE001 - un aviso roto nunca tumba el hilo
+                log.exception("Error dibujando el aviso encima del juego")
             # 60 vueltas por segundo solo mientras se ve; escondida, 10: una orden nueva tarda a lo mucho 100 ms en
             # notarse (el aviso de cerrar sale a los 250 ms de mantener el atajo) y no gasta CPU sin parar.
-            busy = state["alpha"] > 0 or state["anim"] is not None or state["filling"]
+            busy = state["alpha"] > 0 or state["anim"] is not None or state["filling"] is not None or state["pop"] is not None
             root.after(16 if busy else 100, tick)
 
         self._ready.set()
@@ -373,11 +488,6 @@ def _style_window(hwnd: int) -> None:
     style = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
     user32.SetWindowLongW(hwnd, GWL_EXSTYLE,
                           style | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT | WS_EX_LAYERED)
-    try:  # Windows 11: esquinas redondeadas nativas (suavizadas)
-        corner = ctypes.c_int(2)  # DWMWCP_ROUND
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 33, ctypes.byref(corner), ctypes.sizeof(corner))
-    except (AttributeError, OSError):
-        pass
 
 
 def _raise_no_activate(hwnd: int) -> None:
@@ -387,5 +497,5 @@ def _raise_no_activate(hwnd: int) -> None:
 
 
 def _hide(hwnd: int) -> None:
-    """La quita de la pantalla (ya con opacidad 0) para que no estorbe a DWM ni al juego."""
+    """La quita de la pantalla para que no estorbe a DWM ni al juego."""
     ctypes.windll.user32.ShowWindow(hwnd, SW_HIDE)
