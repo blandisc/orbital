@@ -4,6 +4,22 @@ import OrbitalModels
 
 /// Un género de «Explora» al que se navega (nombre de Cinemeta, en inglés).
 struct GenreRoute: Hashable { var genre: String }
+/// «Ver todo» de lo más popular hoy. Una ruta (no `isPresented`): así los títulos de adentro también se abren.
+struct PopularRoute: Hashable {}
+
+/// Cuánto se ha bajado en una lista, sin avisar a SwiftUI (no es `@Observable`).
+private final class ScrollOffset {
+    var y: CGFloat = 0
+    /// Dónde cambiaste de dirección por última vez: lo que llevas bajando (o subiendo) se cuenta desde ahí.
+    var turn: CGFloat = 0
+    /// Tu dedo arrastra o la lista sigue por el impulso: solo eso mueve la barra.
+    var byYou = false
+    /// Tu dedo está en la pantalla: solo así vuelve la barra (el impulso y el rebote del final no la traen).
+    var dragging = false
+}
+
+/// Dónde vas en la lista y hasta dónde se puede bajar (cambia cuando la barra se esconde o vuelve).
+private struct ScrollSpot: Equatable { var y: CGFloat; var bottom: CGFloat }
 
 /// «Buscar» (la pestaña de búsqueda nativa de iOS 26): sin escribir, el Top 10 de hoy en carrusel y los géneros para
 /// explorar; al escribir, los resultados en cuadrícula.
@@ -15,14 +31,18 @@ struct BrowseView: View {
     /// El campo abierto (con el teclado). Un segundo toque en la lupa cae en el campo y lo abre (iOS); si iOS avisa que
     /// tocaste «Buscar» otra vez (RootView), también se abre desde aquí.
     @State private var searching = false
+    /// El cursor en el campo. Al bajar, la barra se esconde aunque el campo esté abierto (antes se quedaba fija) y lo
+    /// suelta: con el campo vacío, iOS esconde el teclado pero deja el cursor ahí.
+    @FocusState private var typing: Bool
+    /// Cuánto has bajado: al irse el teclado ya abajo, la barra se esconde sin esperar otro deslizamiento. (En una caja:
+    /// cambia en cada cuadro del deslizamiento y no debe volver a pintar la pantalla.)
+    @State private var scroll = ScrollOffset()
     private let ui = AppEnvironment.shared.ui
     /// La barra de abajo (con el campo) se esconde al bajar y vuelve al subir: iOS no la encoge en la pestaña de búsqueda.
     @State private var barHidden = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Los resultados: todo, solo películas o solo series.
     @State private var kind: String = ""
-    /// «Ver todo» de lo más popular hoy.
-    @State private var showPopular = false
     @Environment(\.dynamicTypeSize) private var typeSize
     /// Los colores del n.º 1 de hoy: el fondo de la pantalla y las cifras del Top 10 toman su tono (como Inicio).
     @State private var tint: ArtTint
@@ -46,23 +66,57 @@ struct BrowseView: View {
             .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
             .padding(.bottom, DS.Space.s8)
         }
-        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { old, y in
+        // Solo el desplazamiento de verdad: el rebote al final de la página (que se pasa y regresa) no cuenta como subir.
+        .onScrollGeometryChange(for: ScrollSpot.self) { g in
+            let bottom = max(g.contentSize.height + g.contentInsets.top + g.contentInsets.bottom - g.containerSize.height, 0)
+            return ScrollSpot(y: min(g.contentOffset.y + g.contentInsets.top, bottom), bottom: bottom)
+        } action: { before, now in
+            let old = before.y, y = now.y
+            scroll.y = y
+            // Si iOS reacomoda al esconder o mostrar la barra, no cuenta: antes, al llegar al final, la barra se
+            // escondía, el contenido se reacomodaba y volvía a salir.
+            // Arriba del todo, siempre a la vista (también al volver arriba tocando la hora).
+            if y <= DS.Size.barScrollHide {
+                scroll.turn = y
+                if barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = false } }
+                return
+            }
+            // Cambió el alto de la pantalla (la barra se fue o volvió) o no lo moviste tú: no cuenta.
+            guard scroll.byYou, before.bottom == now.bottom else { scroll.turn = y; return }
+            // Lo recorrido desde el último cambio de dirección, no de un cuadro al otro: a 120 cuadros por segundo
+            // (ProMotion) cada cuadro avanza poco y la barra nunca se iba.
+            if (y > old) != (old > scroll.turn) { scroll.turn = old }
             let hide: Bool
-            if searching || y <= DS.Size.barScrollHide { hide = false }   // escribiendo o arriba del todo: siempre a la vista
-            else if y - old > DS.Size.barScrollHide { hide = true }
-            else if old - y > DS.Size.barScrollHide { hide = false }
+            if y - scroll.turn > DS.Size.barScrollHide { hide = true; typing = false }   // al bajar se va, con el campo abierto o no
+            else if typing { return }   // con el teclado arriba, el campo no se mueve
+            // Vuelve solo si tu dedo sube la lista: al llegar al final, el rebote regresa unos puntos y la barra se
+            // quedaba brincando entre salir y esconderse.
+            else if scroll.dragging, scroll.turn - y > DS.Size.barScrollHide { hide = false }
             else { return }
             if hide != barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = hide } }
         }
+        .onScrollPhaseChange { _, phase in
+            scroll.byYou = phase == .interacting || phase == .decelerating
+            scroll.dragging = phase == .interacting
+        }
         .onChange(of: searching) { _, open in if open { barHidden = false } }
+        .onChange(of: typing) { _, up in
+            let hide = !up && scroll.y > DS.Size.barScrollHide   // el teclado se fue al deslizar hacia abajo
+            if hide != barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = hide } }
+        }
         .toolbarVisibility(barHidden ? .hidden : .visible, for: .tabBar)
+        // Con el campo abierto, iOS 27 lo deja fijo arriba: al bajar por los resultados se va también la barra de arriba
+        // (título y campo) y vuelve al subir, con lo escrito.
+        .toolbarVisibility(barHidden && searching ? .hidden : .visible, for: .navigationBar)
         // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
         .environment(\.dynamicTypeSize, typeSize)
         .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        // La barra siempre a la vista al abrir Buscar (antes, a veces había que bajar para que saliera).
-        .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Películas y series"))
+        // Automático: a la vista al abrir y se guarda al bajar. En iOS 27, al esconderse la barra de abajo el campo sube
+        // bajo el título, y con `.always` se quedaba ahí fijo estorbando.
+        .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .automatic), prompt: Text("Películas y series"))
+        .searchFocused($typing)
         .onChange(of: ui.focusSearch, initial: true) { _, wants in
             guard wants else { return }
             ui.focusSearch = false
@@ -74,14 +128,14 @@ struct BrowseView: View {
         .textInputAutocapitalization(.never)
         .scrollDismissesKeyboard(.immediately)
         .onChange(of: query) { kind = "" }   // otra búsqueda empieza con «Todo» (un filtro viejo dejaba la pantalla en blanco)
-        // El campo vive abajo (pestaña de búsqueda, como Trakt); al escribir, el título se queda arriba y los resultados
-        // empiezan bajo él (antes la barra se escondía y lo de arriba chocaba con la hora).
-        .searchPresentationToolbarBehavior(.avoidHidingContent)
+        // Al tocar el campo, iOS sube el campo bajo la hora y esconde el título (como en las apps de Apple). Antes se pedía
+        // `.searchPresentationToolbarBehavior(.avoidHidingContent)` para dejar el título, y en iOS 27 la lupa y el texto
+        // brincaban de lugar al abrir el campo.
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }
-        .navigationDestination(isPresented: $showPopular) { PopularGridView(model: catalog.model) }
+        .navigationDestination(for: PopularRoute.self) { _ in PopularGridView(model: catalog.model) }
         .task(id: query) {
             if query.count >= 2 { Perf.begin("search") }
             try? await Task.sleep(nanoseconds: DS.Timing.searchDebounce)    // espera a que termines de escribir
@@ -177,9 +231,12 @@ struct BrowseView: View {
     /// tus plataformas). Películas y series alternadas, de Cinemeta.
     private func popular(_ model: CatalogModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Lo más popular hoy", action: { showPopular = true }, chevron: true,
-                          meta: Text("Lo que más se ve hoy en Stremio, películas y series"), source: .stremio)
-                .padding(.horizontal, DS.Space.gutter)
+            NavigationLink(value: PopularRoute()) {
+                DSSectionHead(title: "Lo más popular hoy", chevron: true,
+                              meta: Text("Lo que más se ve hoy en Stremio, películas y series"), source: .stremio)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                     ForEach(Array(model.popular.prefix(Self.popularCount).enumerated()), id: \.element.id) { index, item in

@@ -49,9 +49,14 @@ struct SimpsonsRoulette: View {
                         let inset = PlayerScreen.windowSafeArea
                         let safe = CGSize(width: geo.size.width, height: max(0, geo.size.height - inset.top - inset.bottom))
                         let rect = expanded ? PlayerScreen.portraitVideoRect(in: safe, center: portraitCenter).offsetBy(dx: 0, dy: inset.top) : screenRect
+                        let shape = RoundedRectangle(cornerRadius: expanded ? 0 : DS.Simpsons.screenRadius, style: .continuous)
                         PosterView(url: still, title: "", aspect: nil, bleed: true)
+                            // El viñeteado y el marco de la pantalla siguen encima de la imagen (antes la imagen los tapaba y la
+                            // tele se quedaba sin su contorno); al crecer hacia el reproductor se desvanecen.
+                            .overlay { Self.vignette.opacity(expanded ? 0 : 1) }
                             .frame(width: rect.width, height: rect.height)
-                            .clipShape(RoundedRectangle(cornerRadius: expanded ? 0 : DS.Simpsons.screenRadius, style: .continuous))
+                            .clipShape(shape)
+                            .overlay(shape.strokeBorder(DS.Simpsons.tvShade, lineWidth: DS.Simpsons.screenFrame).opacity(expanded ? 0 : 1))
                             .position(x: rect.midX, y: rect.midY)
                     }
                     .ignoresSafeArea()
@@ -113,6 +118,11 @@ struct SimpsonsRoulette: View {
         .accessibilityHidden(true)
     }
 
+    /// El viñeteado del cristal de una tele vieja.
+    private static var vignette: some View {
+        RadialGradient(colors: [.clear, .black.opacity(DesignTokens.Opacity.faint)], center: .center, startRadius: DS.Simpsons.screen / 4, endRadius: DS.Simpsons.screen * 0.75)
+    }
+
     /// La pantalla: cristal curvo con su marco, la imagen del canal, la estática, el número de canal y el brillo.
     private var screen: some View {
         let shape = RoundedRectangle(cornerRadius: DS.Simpsons.screenRadius, style: .continuous)
@@ -120,8 +130,7 @@ struct SimpsonsRoulette: View {
             Color.black
             if let still { PosterView(url: still, title: "", aspect: DS.Simpsons.screenAspect, bleed: true).opacity(staticOn ? DS.Simpsons.ghost : 1) }
             if staticOn { TVStatic().transition(.opacity) }
-            // El viñeteado del cristal de una tele vieja.
-            RadialGradient(colors: [.clear, .black.opacity(DesignTokens.Opacity.faint)], center: .center, startRadius: DS.Simpsons.screen / 4, endRadius: DS.Simpsons.screen * 0.75)
+            Self.vignette
             if !landed, clicks > 0 {
                 Text(verbatim: "CH \(DS.Simpsons.channels[(clicks - 1) % DS.Simpsons.channels.count])")
                     .font(.system(.title3, design: .monospaced).weight(.heavy)).foregroundStyle(DS.Simpsons.osd)

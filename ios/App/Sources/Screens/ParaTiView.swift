@@ -156,16 +156,30 @@ struct SuggestionActions: View {
     @Environment(AppEnvironment.self) private var env
     let suggestion: Suggestion
     var includeWatch = true
+    /// Dentro de una de tus listas (Inicio y su «Ver todo»): en vez de «Guardar» y «No me interesa», «Quitar de …» (eso hace
+    /// `onDismiss`); y en una película, «Marcar como vista».
+    var list: SaveDestination? = nil
+    /// Una película marcada como vista: Trakt la saca sola de tu watchlist (la pantalla la quita ya).
+    var onWatched: ((Suggestion) -> Void)? = nil
     let onDismiss: (Suggestion) -> Void
 
     var body: some View {
         if includeWatch { Button("Ver", systemImage: "play.fill") { Task { await env.play(suggestion) } } }
-        Button("Guardar", systemImage: "plus") { Task { await env.save(suggestion) } }   // a la lista por omisión (`SaveDestination`)
+        if list == nil { Button("Guardar", systemImage: "plus") { Task { await env.save(suggestion) } } }   // a la lista por omisión (`SaveDestination`)
         Button("Descargar", systemImage: "arrow.down.circle") { Task { await env.download(suggestion) } }
         if env.services.orbital.isConfigured {
             Button("Ver en la TV", systemImage: "tv") { Task { await env.playOnTV(kind: suggestion.kind, metaID: suggestion.imdb, videoID: env.videoID(for: suggestion), title: suggestion.title) } }
         }
-        Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { onDismiss(suggestion) }
+        if list != nil, suggestion.kind == "movie" {
+            Button("Marcar como vista", systemImage: "checkmark.circle") {
+                Task { if await env.markWatched(suggestion), list == .traktWatchlist { onWatched?(suggestion) } }
+            }
+        }
+        if let list {
+            Button(list == .traktWatchlist ? "Quitar de tu watchlist" : "Quitar de Mi lista", systemImage: "minus.circle", role: .destructive) { onDismiss(suggestion) }
+        } else {
+            Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { onDismiss(suggestion) }
+        }
     }
 }
 

@@ -51,15 +51,19 @@ enum IPodFace: String {
 }
 
 /// Dónde va cada parte, dentro del área segura: arriba los botones de siempre, la pantalla (con el video en `video`) y la rueda
-/// centrada en lo que queda.
+/// centrada en lo que queda. El hueco del video toma la forma del video (`aspect`): uno en 4:3, como Los Simpson, llena
+/// la pantalla a lo ancho sin franjas a los lados. Crece hasta donde la rueda aún cabe cómoda; de ahí en adelante, el video
+/// se ajusta dentro (franjas arriba y abajo).
 struct IPodLayout {
     let screen: CGRect, video: CGRect, wheel: CGRect
 
-    init(in size: CGSize) {
+    init(in size: CGSize, aspect: Double = Double(DS.Poster.stillAspect)) {
         let top = DS.Space.s2 * 2 + DS.Size.touchTarget
         let width = max(0, size.width - DS.IPod.inset * 2)
         let inner = max(0, width - DS.IPod.bezel * 2)
-        let videoHeight = inner / DS.Poster.stillAspect
+        let chrome = DS.IPod.bezel * 2 + DS.IPod.statusHeight + DS.IPod.infoHeight
+        let roomy = size.height - top - chrome - DS.Space.s4 * 2 - size.width * DS.IPod.wheelMinShare
+        let videoHeight = max(0, min(inner / CGFloat(max(aspect, 0.1)), max(roomy, inner / DS.Poster.stillAspect)))
         let height = DS.IPod.bezel * 2 + DS.IPod.statusHeight + videoHeight + DS.IPod.infoHeight
         screen = CGRect(x: DS.IPod.inset, y: top, width: width, height: height)
         video = CGRect(x: screen.minX + DS.IPod.bezel, y: screen.minY + DS.IPod.bezel + DS.IPod.statusHeight, width: inner, height: videoHeight)

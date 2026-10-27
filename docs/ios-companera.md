@@ -27,9 +27,10 @@ todavía no hay código de la app.
   tal cual (`alang`, `slang`, `subs-fallback-forced`…). **AVPlayer** queda como segunda vía para lo que
   libmpv hace peor (AirPlay de video, Dolby Vision real en archivos MP4/HLS). **Infuse** como plan B
   con un botón «Abrir en Infuse», no como primera versión (ver §7.3).
-- **Sincronización: la cuenta de Stremio es la fuente de verdad**, igual que en Orbital: el
-  `libraryItem` con su `state` (avance, `video_id`, bitfield `watched`). Se porta `stremio_api.py`
-  completo. **Trakt: opcional y después** (scrobble para tener historial), no para el avance.
+- **Sincronización: la cuenta de Stremio es la base, y Trakt avisa del avance también**, igual que en
+  Orbital: el `libraryItem` con su `state` (avance, `video_id`, bitfield `watched`). Se porta
+  `stremio_api.py` completo. Desde octubre de 2026 el avance se escribe en los dos (Stremio y scrobble a
+  Trakt) y al retomar se lee de los dos: se sigue desde lo más reciente (§6.2).
 - **Descargas**: `URLSession` en segundo plano con el enlace directo de Real-Debrid, guardando la URL
   «resolver» del complemento para pedir un enlace nuevo si el viejo caduca; subtítulos y ficha junto
   al video; el avance offline se encola y se sube al volver la red.
@@ -241,16 +242,18 @@ de Orbital y de Stremio, y al revés**:
 La API de Stremio **no es oficial ni está documentada** (Orbital lo dice en `stremio_api.py`); si
 cambia, falla en los dos lados a la vez y se arregla en los dos.
 
-### 6.2 ¿Trakt además?
-- **A favor**: historial completo y estadísticas, calendario de estrenos, recomendaciones (Orbital ya
-  las lee en «Para ti»), y si algún día usas Infuse, Infuse sincroniza con Trakt.
-- **En contra**: el avance «a medias» de Trakt (`/sync/playback`, scrobble `start/pause/stop`) es otra
-  fuente de verdad; mezclarlo con Stremio crea conflictos. Además Trakt endureció en 2025 los límites
-  de la cuenta gratuita (listas/colección/watchlist con tope de elementos) y la API pide registrar la
-  app **(verificar límites actuales)**.
-- **Recomendación**: Stremio para avance y «Seguir viendo»; Trakt solo como **destino de scrobble**
-  (marca vistos e historial), en una etapa posterior y desactivable. Si se hace, conviene que Orbital
-  también haga scrobble con su `trakt.py` (hoy solo lee) para que el historial no tenga huecos.
+### 6.2 Trakt además (hecho en octubre de 2026)
+- **Qué hace hoy**: cada app (consola e iPhone) tiene **su propia sesión** de Trakt (el iPhone la conecta con
+  un código de trakt.tv/activate; la consola ya no presta la suya). Las dos mandan scrobble
+  (`start/pause/stop` con el porcentaje real; Trakt marca visto desde 80 %), y al retomar las dos leen
+  `/sync/playback` y siguen desde lo **más reciente** entre Stremio (`lastWatched`) y Trakt (`paused_at`).
+  «Guardar» va a la watchlist de Trakt cuando está conectado, y a Mi lista de Stremio si no.
+- **Stremio sigue escribiéndose siempre**: es la cuenta base (biblioteca, «Seguir viendo», Mi lista,
+  complementos) y el respaldo cuando Trakt no está conectado. Sin Trakt, todo funciona como antes.
+- **A favor de Trakt**: historial completo y estadísticas, calendario de estrenos, recomendaciones
+  («Para ti»), y Infuse sincroniza con Trakt.
+- **En contra / riesgos**: límites de la cuenta gratuita (listas y watchlist con tope, una app conectada;
+  **verificar límites actuales**), tokens de 7 días y que la API pide registrar la app.
 
 ---
 
@@ -460,7 +463,7 @@ Fuentes al lado de cada punto. Lo marcado «sin confirmar» no se pudo comprobar
    comunidad, no regla oficial. El riesgo de §10 se mantiene. <https://real-debrid.com/terms>
 4. **Trakt, menos atractivo:** cuentas gratis con 1 app conectada (desde jul 2026), listas de 100;
    tokens de 7 días; sus términos prohíben apps que «promuevan la piratería»; hay reportes (sin
-   confirmar) de que crear apps de API pasó a ser solo VIP. Refuerza «Stremio manda, Trakt después».
+   confirmar) de que crear apps de API pasó a ser solo VIP. Es un riesgo a vigilar mientras Trakt convive con Stremio.
 
 ### Confirmado sin cambios
 

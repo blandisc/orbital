@@ -379,8 +379,13 @@ enum DS {
         /// Cada cuánto sale otro punto cuando las versiones llegan juntas; la luna que gira mientras se abre (a qué distancia del
         /// planeta, en veces su radio, y cuánto tarda la vuelta).
         static let revealStep = 0.03
-        static let moonOrbit: CGFloat = 0.85, moonSeconds = 1.2
+        static let moonOrbit: CGFloat = 0.85, moonSeconds = 2.2
+        /// La estela de la luna: qué parte de la vuelta ocupa, qué tan visible es su punta, su grosor y lo difuminado; y el
+        /// brillo de la luna.
+        static let moonTrail: CGFloat = 0.3, trailOpacity = 0.75, trailWidth: CGFloat = 4, trailBlur: CGFloat = 1, moonGlow: CGFloat = 3
         static let textWidth: CGFloat = 220
+        /// En el modo iPod, la órbita en veces el alto de su pantalla (deja lugar a los textos debajo).
+        static let ipodShare: CGFloat = 0.5
     }
 
     enum Brand {
@@ -518,8 +523,10 @@ enum DS {
         static let wheelBlackEdge = Color(red: 0.03, green: 0.03, blue: 0.03), labelBlack = Color(red: 0.8, green: 0.8, blue: 0.8)
         static let centerBlackTop = Color(red: 0.08, green: 0.08, blue: 0.09), centerBlackBottom = Color(red: 0.18, green: 0.18, blue: 0.19)
         // Medidas: margen a los lados, marco, esquinas, la barra de arriba, lo de abajo del video y la rueda.
-        static let inset: CGFloat = 22, bezel: CGFloat = 10, bezelRadius: CGFloat = 18, lcdRadius: CGFloat = 8
+        static let inset: CGFloat = 12, bezel: CGFloat = 6, bezelRadius: CGFloat = 14, lcdRadius: CGFloat = 8
         static let statusHeight: CGFloat = 26, infoHeight: CGFloat = 92, progressHeight: CGFloat = 10, line: CGFloat = 1
+        /// La rueda nunca baja de este ancho (en veces el del teléfono): hasta ahí puede crecer el video.
+        static let wheelMinShare: CGFloat = 0.52
         /// La rueda: qué parte del ancho ocupa, el botón del centro (parte del diámetro) y dónde van las letras (desde la orilla).
         static let wheelShare: CGFloat = 0.74, centerShare: CGFloat = 0.38, labelReach: CGFloat = 0.11
         /// Cada muesca de la rueda (en grados) busca 10 s; girando rápido (muescas a menos de `fastNotch` s), un minuto.

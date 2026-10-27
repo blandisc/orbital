@@ -128,6 +128,8 @@ struct DownloadsView: View {
         }
         .perfTag("downloads")   // «downloads.shown» con la lista (o el vacío), «downloads.image» con la primera imagen
         .listRowSpacing(DS.Space.s2)
+        // Si todo cabe (o está vacía), la lista no se mueve: antes bajaba sin nada que ver y el título se encogía.
+        .scrollBounceBehavior(.basedOnSize)
         // Las tarjetas a 16 pt en todos los tamaños (la lista agrupada las metía 16 o 24 según el ancho) y los encabezados al
         // ras de ellas, como en el resto de la app.
         .listSectionMargins(.horizontal, DS.Space.gutter)

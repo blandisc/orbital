@@ -250,13 +250,21 @@ struct MainTabs: View {
             ui.openSettings = false
             paths[tab].append(SettingsRoute())
         }
+        // «Un Simpson al azar» del Centro de control: a Inicio, que abre la ruleta (y apaga la bandera).
+        .onChange(of: ui.openSimpsons, initial: true) { _, wants in if wants { tab = 0 } }
         .onChange(of: ui.openRemote, initial: true) { _, wants in
             guard wants else { return }
             ui.openRemote = false
             // Sin tu Orbital conectada (el control del Centro de control abre la app igual): a Ajustes, donde se conecta.
             if tvNow.model.isConfigured { remoteLarge = true; showRemote = true } else { paths[tab].append(SettingsRoute()) }
         }
-        .task { forceDemoTab() }   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer
+        .task {
+            forceDemoTab()   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer
+            #if DEBUG
+            // `-demo-open control-simpsons`: como si tocaras «Un Simpson al azar» en el Centro de control (con `-demo-free-tabs`).
+            if Demo.isOn, Demo.open == "control-simpsons" { try? await Task.sleep(for: .seconds(2)); OpenSimpsonsIntent.open?() }
+            #endif
+        }
         #if DEBUG
         // iOS restaura la pestaña que viste la última vez (independiente de nuestro @State) y lo hace después de
         // aparecer y del `.task` de arriba: si en modo demo algo la cambia por detrás, se vuelve a pedir la tuya.
@@ -316,3 +324,4 @@ struct BannerView: View {
         }
     }
 }
+

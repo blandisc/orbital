@@ -79,16 +79,28 @@ struct SourceOrbit: View {
         .accessibilityHidden(true)
     }
 
-    /// La luna turquesa que gira alrededor del planeta mientras se abre la versión elegida.
+    /// La luna turquesa que gira alrededor del planeta mientras se abre la versión elegida: sin prisa, con un brillo suave y
+    /// una estela que se desvanece detrás (un arco de la misma órbita, de transparente a turquesa, que la sigue).
     private struct Moon: View {
         let radius: CGFloat
         var body: some View {
             TimelineView(.animation) { context in
                 let turn = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: DS.SourceOrbit.moonSeconds) / DS.SourceOrbit.moonSeconds
                 let angle = turn * 2 * .pi
-                Circle().fill(DS.brandMoon)
-                    .frame(width: DS.SourceOrbit.dot, height: DS.SourceOrbit.dot)
-                    .offset(x: radius * cos(angle), y: radius * sin(angle))
+                let trail = DS.SourceOrbit.moonTrail
+                ZStack {
+                    Circle().trim(from: 0, to: trail)
+                        .stroke(AngularGradient(colors: [.clear, DS.brandMoon.opacity(DS.SourceOrbit.trailOpacity)],
+                                                center: .center, startAngle: .zero, endAngle: .degrees(360 * Double(trail))),
+                                style: StrokeStyle(lineWidth: DS.SourceOrbit.trailWidth, lineCap: .round))
+                        .frame(width: radius * 2, height: radius * 2)
+                        .rotationEffect(.radians(angle) - .degrees(360 * Double(trail)))   // la punta del arco, justo en la luna
+                        .blur(radius: DS.SourceOrbit.trailBlur)
+                    Circle().fill(DS.brandMoon)
+                        .frame(width: DS.SourceOrbit.dot, height: DS.SourceOrbit.dot)
+                        .shadow(color: DS.brandMoon, radius: DS.SourceOrbit.moonGlow)
+                        .offset(x: radius * cos(angle), y: radius * sin(angle))
+                }
             }
         }
     }
