@@ -21,12 +21,16 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
   let busy = false;
   let cancelExit = () => {};
 
-  function tile(which, url, current) {
+  function tile(which, url, current, source) {
     const wide = which === "background";
     const art = url ? h("img", { class: "art-picker__image", src: sized(url, wide ? 320 : 160), alt: "", decoding: "async" })
       : h("span", { class: "art-picker__original" }, target?.kind === "game" ? "La automática" : "El de siempre");
-    return h("button", { class: ["tile", "art-picker__tile", wide && "art-picker__tile--wide", current && "art-picker__tile--current"],
-      type: "button", tabindex: "-1" }, art);
+    const button = h("button", { class: ["tile", "art-picker__tile", wide && "art-picker__tile--wide", current && "art-picker__tile--current"],
+      type: "button", tabindex: "-1", "aria-label": url ? `${source || "Imagen"}${current ? " · Ahora" : ""}` : "La de siempre" },
+      art, current ? h("span", { class: "art-picker__badge" }, "Ahora") : null);
+    // Debajo, de dónde viene (TheGamesDB, Steam, SteamGridDB…): ayuda a escoger la caja de tu región.
+    return { button, el: h("figure", { class: "art-picker__option" }, button,
+      h("figcaption", { class: "art-picker__source" }, url ? source || "" : "")) };
   }
 
   function render(choices) {
@@ -35,19 +39,30 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
       { which: "poster", label: target?.kind === "game" ? "Portada" : "Póster", urls: [null, ...choices.posters] },
       { which: "background", label: "Fondo", urls: [null, ...choices.backgrounds] },
     ].filter((row) => row.urls.length > 1).map((row) => ({
-      ...row, options: row.urls.map((url) => ({ url, el: tile(row.which, url, url ? current[row.which] === url : !current[row.which]) })),
+      ...row, options: row.urls.map((entry) => {
+        // Las películas mandan direcciones; los juegos, { url, source }.
+        const url = entry && typeof entry === "object" ? entry.url : entry;
+        const made = tile(row.which, url, url ? current[row.which] === url : !current[row.which], entry?.source);
+        return { url, el: made.el, button: made.button };
+      }),
     }));
+    // Mouse y toque: un clic (o un toque) elige esa imagen, como A sobre ella.
+    rows.forEach((row, r) => row.options.forEach((o, c) => o.button.addEventListener("click", () => {
+      focus = { r, c };
+      paint();
+      choose();
+    })));
     mount(body, rows.map((row) => h("div", {},
-      h("h3", { class: "art-picker__label" }, row.label),
+      h("h3", { class: "art-picker__label" }, `${row.label} · ${row.options.length - 1}`),
       h("div", { class: "art-picker__track" }, row.options.map((o) => o.el)))));
-    focus = { r: 0, c: 0 };
+    focus = { r: 0, c: Math.max(0, rows[0]?.options.findIndex((o) => o.button.classList.contains("art-picker__tile--current")) ?? 0) };
     paint();
   }
 
   function paint() {
     rows.forEach((row, r) => row.options.forEach((o, c) => {
       const on = r === focus.r && c === focus.c;
-      o.el.classList.toggle("tile--focused", on);
+      o.button.classList.toggle("tile--focused", on);
       if (on) o.el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: motion() });
     }));
   }
@@ -72,7 +87,11 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
     try {
       if (target.kind === "game") await api.setGameArt(target.id, row.which, option.url);
       else await api.setArt(target.metaId, row.which, option.url);
-      row.options.forEach((o) => o.el.classList.toggle("art-picker__tile--current", o === option));
+      row.options.forEach((o) => {
+        o.button.classList.toggle("art-picker__tile--current", o === option);
+        o.button.querySelector(".art-picker__badge")?.remove();
+      });
+      if (option.url) option.button.append(h("span", { class: "art-picker__badge" }, "Ahora"));
       onPicked?.(target, row.which, option.url);
     } finally {
       busy = false;

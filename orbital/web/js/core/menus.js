@@ -840,6 +840,12 @@ export const KEY_FORMS = {
     lead: "En rawg.io/apidocs crea una cuenta y pulsa «Get API key»: copia la clave que aparece.",
     fields: [{ name: "key", label: "Clave de RAWG", secret: true }],
   },
+  steamgriddb: {
+    service: "steamgriddb", label: "SteamGridDB", icon: "cover", hint: "Más portadas y fondos para tus juegos",
+    title: "Clave de SteamGridDB", submitLabel: "Guardar",
+    lead: "En steamgriddb.com entra con tu cuenta de Steam, ve a Preferences › API y copia la clave (API Key).",
+    fields: [{ name: "key", label: "Clave de SteamGridDB", secret: true }],
+  },
   onedrive: {
     service: "onedrive", label: "Clave de OneDrive", icon: "cloud", hint: "Para ver tus películas guardadas en OneDrive",
     title: "Clave de OneDrive", submitLabel: "Guardar",

@@ -5,6 +5,8 @@ Fuentes, en orden, y ninguna pide clave:
 - TheGamesDB: portada, fanart horizontal y logotipo de casi cualquier consola (se lee su web pública).
 - Steam: para juegos que también salieron en PC (portada, héroe y logotipo oficiales).
 - Wikipedia: último recurso para la portada, de cualquier consola (la imagen de la ficha del juego).
+- SteamGridDB (con tu clave, en Ajustes › Cuentas): la colección más grande de portadas y fondos, muchas sin la
+  clasificación de edad. Para «Elegir portada o fondo» y, si las demás no tienen, para llenar lo que falta.
 
 Cada imagen se valida antes de guardarla (media.good): una captura no pasa como portada ni un fondo
 chico como héroe. Lo que rechazaste no vuelve. Uso: python -m orbital.library.scraper [--force]
@@ -57,8 +59,15 @@ STEAM_SEARCH = "https://store.steampowered.com/api/storesearch/?term={term}&cc=u
 STEAM_ASSET = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{name}"
 WIKI_SEARCH = ("https://en.wikipedia.org/w/api.php?action=query&format=json&redirects=1&prop=pageimages|description"
                "&piprop=original&pilicense=any&generator=search&gsrlimit=3&gsrsearch={query}")
-# TheGamesDB tiene una ficha por región o edición del mismo juego (Metroid Dread: cinco). Se miran las mejores.
+SGDB_API = "https://www.steamgriddb.com/api/v2"
+# TheGamesDB tiene una ficha por región o edición del mismo juego (Metroid Dread: cinco). Se miran las mejores; para
+# elegir a mano, más.
 TGDB_EDITIONS = 3
+TGDB_EDITIONS_TO_CHOOSE = 8
+
+
+SOURCE_NAMES = {"thegamesdb": "TheGamesDB", "steam": "Steam", "wikipedia": "Wikipedia", "steamgriddb": "SteamGridDB",
+                "libretro": "libretro"}
 
 
 @dataclass
@@ -108,7 +117,7 @@ class Http:
         self._last: dict[str, float] = {}
         self._lock = threading.Lock()
 
-    def get(self, url: str) -> bytes | None:
+    def get(self, url: str, headers: dict[str, str] | None = None) -> bytes | None:
         host = urllib.parse.urlsplit(url).netloc
         with self._lock:
             wait = self._last.get(host, 0) + self.pause - time.monotonic()
@@ -116,7 +125,7 @@ class Http:
                 time.sleep(wait)
             self._last[host] = time.monotonic()
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
             with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
                 return read_body(res, timeout=TIMEOUT)
         except NET_ERRORS as exc:
@@ -183,12 +192,12 @@ class TheGamesDB:
         return [Candidate(names[folder], TGDB_IMAGE.format(path=path), self.name, rank=1 if folder == "screenshot" else 0)
                 for path, folder, _, _ in found if names[folder] in kinds]
 
-    def candidates(self, target: Target) -> list[Candidate]:
+    def candidates(self, target: Target, editions: int = TGDB_EDITIONS) -> list[Candidate]:
         platform = TGDB_PLATFORMS.get(target.system)
         if platform is None:
             return []
         title = clean(target.title)
-        games = self.search(title, platform, 0.75)[:TGDB_EDITIONS]
+        games = self.search(title, platform, 0.75)[:editions]
         # Las imágenes de todas las ediciones, de la más parecida a la menos: si rechazas la caja de una
         # (la de México, con el plástico del estuche), queda la de otra en vez de ninguna.
         found = [c for game in games for c in self.images(game, set(target.kinds))]
@@ -270,11 +279,49 @@ class Wikipedia:
         return []
 
 
+class SteamGridDB:
+    """steamgriddb.com: portadas (600×900) y fondos (héroes) hechos por la comunidad. Pide una clave gratuita."""
+
+    name = "steamgriddb"
+
+    def __init__(self, http: Http, key=lambda: "") -> None:
+        self.http, self.key = http, key
+
+    def _get(self, path: str):
+        key = self.key()
+        if not key:
+            return None
+        data = self.http.get(f"{SGDB_API}{path}", headers={"Authorization": f"Bearer {key}"})
+        try:
+            body = json.loads(data) if data else {}
+        except ValueError:
+            return None
+        return body.get("data") if isinstance(body, dict) and body.get("success") else None
+
+    def candidates(self, target: Target) -> list[Candidate]:
+        if not self.key() or not ({"cover", "hero"} & set(target.kinds)):
+            return []
+        title = clean(target.title)
+        found = self._get(f"/search/autocomplete/{urllib.parse.quote(title)}") or []
+        match = next((g for g in found if isinstance(g, dict) and similar(title, str(g.get("name", ""))) >= 0.85), None)
+        if not match:
+            return []
+        out: list[Candidate] = []
+        if "cover" in target.kinds:
+            grids = self._get(f"/grids/game/{match['id']}?dimensions=600x900&types=static&nsfw=false") or []
+            out += [Candidate("cover", g["url"], self.name) for g in grids if isinstance(g, dict) and g.get("url")]
+        if "hero" in target.kinds:
+            heroes = self._get(f"/heroes/game/{match['id']}?types=static&nsfw=false") or []
+            out += [Candidate("hero", g["url"], self.name) for g in heroes if isinstance(g, dict) and g.get("url")]
+        return out
+
+
 class Scraper:
-    def __init__(self, store: MediaStore | None = None, http: Http | None = None) -> None:
+    def __init__(self, store: MediaStore | None = None, http: Http | None = None, sgdb_key=lambda: "") -> None:
         self.store = store or MediaStore()
         self.http = http or Http()
-        self.providers = [Libretro(), TheGamesDB(self.http), Steam(self.http), Wikipedia(self.http)]
+        self.providers = [Libretro(), TheGamesDB(self.http), Steam(self.http), Wikipedia(self.http),
+                          SteamGridDB(self.http, sgdb_key)]
         self._sources_file = self.store.root / "fuentes.json"
 
     def sources(self) -> dict[str, str]:
@@ -363,22 +410,26 @@ class Scraper:
             log.info("%s: no encontré otra %s; se queda la de antes", target.title, kind)
         return found
 
-    def choices(self, target: Target) -> dict[str, list[str]]:
-        """Las portadas y fondos que hay para elegir (sin bajar nada): todas las ediciones de TheGamesDB, Steam y
-        Wikipedia; el arte oficial antes que las capturas."""
-        out: dict[str, list[str]] = {"cover": [], "hero": []}
+    def choices(self, target: Target) -> dict[str, list[dict]]:
+        """Las portadas y fondos que hay para elegir (sin bajar nada), cada uno con su fuente: SteamGridDB primero (arte
+        limpio, sin clasificación), luego las ediciones de TheGamesDB (cajas de cada región), Steam y Wikipedia; el arte
+        oficial antes que las capturas."""
+        out: dict[str, list[dict]] = {"cover": [], "hero": []}
+        seen: set[str] = set()
         want = replace(target, kinds=["cover", "hero"])
-        for provider in self.providers:
-            if isinstance(provider, Libretro):
-                continue  # direcciones armadas por el nombre de la ROM: la mayoría no existen
+        order = sorted((p for p in self.providers if not isinstance(p, Libretro)),  # Libretro: por nombre, casi nunca existen
+                       key=lambda p: not isinstance(p, SteamGridDB))
+        for provider in order:
             try:
-                found = provider.candidates(want)
+                found = provider.candidates(want, editions=TGDB_EDITIONS_TO_CHOOSE) if isinstance(provider, TheGamesDB) \
+                    else provider.candidates(want)
             except Exception:  # noqa: BLE001 - una fuente rota no deja sin opciones
                 log.exception("Falló %s con %s", provider.name, target.title)
                 continue
             for cand in sorted(found, key=lambda c: c.rank):
-                if cand.kind in out and cand.url not in out[cand.kind]:
-                    out[cand.kind].append(cand.url)
+                if cand.kind in out and cand.url not in seen:
+                    seen.add(cand.url)
+                    out[cand.kind].append({"url": cand.url, "source": SOURCE_NAMES.get(cand.source, cand.source)})
         return out
 
     def choose(self, target: Target, kind: str, url: str) -> Path | None:

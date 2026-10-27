@@ -504,7 +504,7 @@ class Catalog:
                     targets.append(Target(t.system, t.key, t.title, kinds))
             if not targets:
                 return 0
-            self._scraper = self._scraper or Scraper(self.media)
+            self._scraper = self._scraper or self._new_scraper()
             added = self._scraper.run(targets)
         except Exception:  # noqa: BLE001 - sin internet o una fuente caída: se queda el arte que hay
             log.exception("No pude buscar arte")
@@ -522,7 +522,7 @@ class Catalog:
         item = self.store.get(item_id)
         if item is None or not item.system or not item.media_key or kind not in KINDS:
             return False
-        self._scraper = self._scraper or Scraper(self.media)
+        self._scraper = self._scraper or self._new_scraper()
         current = {"cover": item.art_path, "hero": item.hero_path, "logo": item.logo_path}.get(kind)
         found = self._scraper.replace(Target(item.system, item.media_key, item.title, [kind]), kind, current)
         self.refresh()
@@ -532,8 +532,12 @@ class Catalog:
         item = self.store.get(item_id)
         if item is None or not item.system or not item.media_key:
             return None
-        self._scraper = self._scraper or Scraper(self.media)
+        self._scraper = self._scraper or self._new_scraper()
         return Target(item.system, item.media_key, item.title, ["cover", "hero"])
+
+    def _new_scraper(self) -> Scraper:
+        """Con la clave de SteamGridDB si la escribiste (Ajustes › Cuentas): se lee cada vez, así sirve en cuanto la pones."""
+        return Scraper(self.media, sgdb_key=lambda: self.foryou.key("steamgriddb_key") if self.foryou else "")
 
     def art_choices(self, item_id: str) -> dict | None:
         """«Elegir imagen» de un juego: las portadas y fondos que hay, y cuáles tiene ahora (como el de películas)."""

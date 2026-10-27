@@ -8,7 +8,7 @@
 const HOSTS = new Set(["images.metahub.space", "live.metahub.space", "episodes.metahub.space", "image.tmdb.org", "cdn.cloudflare.steamstatic.com",
   "cdn.akamai.steamstatic.com", "shared.cloudflare.steamstatic.com", "shared.akamai.steamstatic.com",
   "steamcdn-a.akamaihd.net", "thumbnails.libretro.com", "media.rawg.io", "walter-r2.trakt.tv",
-  "cdn.thegamesdb.net", "upload.wikimedia.org"]); // las dos últimas: «Elegir imagen» de los juegos
+  "cdn.thegamesdb.net", "upload.wikimedia.org", "cdn2.steamgriddb.com"]); // las dos últimas: «Elegir imagen» de los juegos
 const WIDTHS = [160, 240, 320, 480, 640, 960, 1280];
 
 /** El ancho fijo más cercano por arriba, contando la densidad de la pantalla. */

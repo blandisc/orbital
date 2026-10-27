@@ -102,7 +102,8 @@ def load_awards(path: Path = AWARDS_FILE) -> list[dict]:
     return awards
 
 
-KEYS = {"trakt": ("trakt_client_id", "trakt_client_secret"), "tmdb": ("tmdb_key",), "rawg": ("rawg_key",)}
+KEYS = {"trakt": ("trakt_client_id", "trakt_client_secret"), "tmdb": ("tmdb_key",), "rawg": ("rawg_key",),
+        "steamgriddb": ("steamgriddb_key",)}  # esta no es de Para ti: más portadas para tus juegos (scraper.SteamGridDB)
 KEY_PREFIX = "para_ti."
 
 
@@ -426,6 +427,11 @@ class ForYou:
             tmdb_api.Tmdb(values[0]).platforms(self.region)
         elif service == "rawg" and values[0]:
             rawg_api.Rawg(values[0]).games("best", size=1)
+        elif service == "steamgriddb" and values[0]:
+            from .library.scraper import Http, SteamGridDB
+
+            if SteamGridDB(Http(pause=0), lambda: values[0])._get("/search/autocomplete/mario") is None:  # noqa: SLF001
+                raise ValueError("SteamGridDB no aceptó esa clave: cópiala otra vez de Preferences › API.")
         changed = any(self.catalog.credentials.get(KEY_PREFIX + n) != (v or None) for n, v in zip(names, values, strict=True))
         if service == "trakt" and changed and self.trakt.linked:
             self.trakt.unlink()  # la sesión era de la otra aplicación de Trakt: ya no sirve
@@ -444,6 +450,7 @@ class ForYou:
                           # Lo último que el reproductor le contó a Trakt (o por qué no pudo): Ajustes › Cuentas.
                           "scrobble": self.catalog.watch.scrobbler.snapshot()},
                 "tmdb": self.tmdb.configured, "rawg": self.rawg.configured,
+                "steamgriddb": bool(self._key("steamgriddb_key")),
                 # Cuáles escribiste en Ajustes (esas se pueden quitar desde ahí; las de config.yaml, no).
                 "saved": [s for s, names in KEYS.items() if self.catalog.credentials.get(KEY_PREFIX + names[0])]}
 

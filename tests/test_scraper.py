@@ -299,8 +299,25 @@ def test_choices_list_every_cover_and_background_and_you_can_pick_one(tmp_path):
                            "front/121672-1.jpg": picture(600, 900)})
     target = Target("switch", "Dread", "Metroid Dread", ["cover"])
     found = s.choices(target)
-    assert [u.rsplit("/", 1)[1] for u in found["cover"]] == ["87675-1.jpg", "121672-1.jpg"]
-    assert [u.rsplit("/", 1)[1] for u in found["hero"]] == ["87675-1.jpg"]
-    s.store.reject("switch", "Dread", "cover", found["cover"][1])  # aunque la hubieras rechazado antes, la puedes elegir
-    assert s.choose(target, "cover", found["cover"][1]) is not None
+    assert [o["url"].rsplit("/", 1)[1] for o in found["cover"]] == ["87675-1.jpg", "121672-1.jpg"]
+    assert [o["url"].rsplit("/", 1)[1] for o in found["hero"]] == ["87675-1.jpg"]
+    assert {o["source"] for o in found["cover"]} == {"TheGamesDB"}  # de dónde viene, para escoger la de tu región
+    pick = found["cover"][1]["url"]
+    s.store.reject("switch", "Dread", "cover", pick)  # aunque la hubieras rechazado antes, la puedes elegir
+    assert s.choose(target, "cover", pick) is not None
     assert s.sources()["switch/Dread/cover"].endswith("121672-1.jpg")
+
+
+def test_steamgriddb_only_with_your_key_and_only_for_that_very_game(tmp_path):
+    from orbital.library.scraper import SteamGridDB
+
+    pages = {"search/autocomplete": b'{"success": true, "data": [{"id": 7, "name": "Luigi Mansion 3"}]}',
+             "grids/game/7": b'{"success": true, "data": [{"url": "https://cdn2.steamgriddb.com/grid/a.png"}]}',
+             "heroes/game/7": b'{"success": true, "data": [{"url": "https://cdn2.steamgriddb.com/hero/b.png"}]}'}
+    http = FakeHttp(pages)
+    http.get = lambda url, headers=None: next((v for k, v in pages.items() if k in url), None)
+    target = Target("switch", "Luigi", "Luigi's Mansion 3", ["cover", "hero"])
+    assert SteamGridDB(http, lambda: "").candidates(target) == []  # sin clave, nada (ni una consulta)
+    found = SteamGridDB(http, lambda: "clave").candidates(target)
+    assert [(c.kind, c.url.rsplit("/", 1)[1]) for c in found] == [("cover", "a.png"), ("hero", "b.png")]
+    assert SteamGridDB(http, lambda: "clave").candidates(Target("switch", "x", "Pikmin 4")) == []  # otro juego: no
