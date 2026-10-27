@@ -336,20 +336,19 @@ class KioskWindow:
             log.debug("No pude %s la barra de tareas: %s", "esconder" if hidden else "mostrar", exc)
 
     def park(self) -> bool:
-        """Modo juego: mientras juegas algo pesado, la ventana se minimiza y Windows saca su memoria de la RAM (Edge son
-        ~560–800 MB que el juego necesita más). No se cierra: cerrarla y reabrirla con Home dejaba ~2 s de pantalla negra
-        (probado en la TV el 2026-10-26); minimizada, Home la trae al instante (open → al frente). Devuelve si lo hizo."""
+        """Modo juego: mientras juegas algo pesado, Windows saca de la RAM la memoria de la ventana (Edge son ~560–800 MB
+        que el juego necesita más). La ventana se queda detrás del juego, sin cerrarse ni minimizarse (probado en la TV el
+        2026-10-26): cerrarla y reabrirla con Home dejaba ~2 s de pantalla negra, y minimizada, al terminar el juego se
+        asomaba el escritorio antes de que Orbital volviera. Tapada por el juego, Edge no dibuja nada. Devuelve si lo hizo."""
         if sys.platform != "win32" or not self.is_open or self.exited_by_user:
             return False
         from . import windows
 
-        hwnd = self.window()
-        if not hwnd:
-            return False
-        windows.minimize(hwnd)
         trimmed = windows.trim_working_set(self.pids())
+        if not trimmed:
+            return False
         self.parked = True
-        log.info("Modo juego: Orbital minimizada y fuera de la RAM mientras juegas (%d procesos)", trimmed)
+        log.info("Modo juego: la memoria de Orbital fuera de la RAM mientras juegas (%d procesos)", trimmed)
         return True
 
     def close(self) -> bool:

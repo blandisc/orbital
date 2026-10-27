@@ -82,6 +82,14 @@ function paintAmbient(canvas, img) {
  * `onArt(false)`: el arte viene en camino; `onArt(true)`: ya se ve (o se dio por perdido). El servidor espera a que se
  * vea un momento antes de quitar la pantalla (focus.py).
  */
+const POSTER_RATIO = .667; // una caja de juego o un póster: 2:3
+
+/** La proporción de la portada que llegó (ancho / alto), entre una caja angosta y una cuadrada. */
+export function posterRatio(img) {
+  const ratio = img?.naturalWidth && img?.naturalHeight ? img.naturalWidth / img.naturalHeight : POSTER_RATIO;
+  return Math.max(.55, Math.min(1, ratio));
+}
+
 export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onArt = () => {} } = {}) {
   const ambient = h("canvas", { class: "launch__ambient", width: AMBIENT.width, height: AMBIENT.height, "aria-hidden": "true" });
   const artSlot = h("div", { class: "launch__art", "aria-hidden": "true" });
@@ -146,6 +154,16 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
     onArt(true);
   }
 
+  /** La forma de la tarjeta (y de la órbita que la rodea). */
+  function setRatio(ratio) {
+    for (const node of [cover, orbit, front]) node.style.setProperty("--ratio", String(ratio));
+    requestAnimationFrame(() => { // cuánto se aplasta la pista para ser la elipse (alto / ancho de la órbita)
+      const squash = orbit.offsetWidth ? orbit.offsetHeight / orbit.offsetWidth : .3;
+      el.style.setProperty("--orbit-squash", String(squash));
+      el.style.setProperty("--orbit-unsquash", String(1 / squash));
+    });
+  }
+
   /** Las tres capas del arte, cada una cuando llega (y solo si sigue siendo este lanzamiento). */
   function loadArt(item, turn) {
     const heroUrl = item.hero && !item.extra?.placeholder_hero ? item.hero : null;
@@ -158,6 +176,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
       if (!current()) return;
       if (img) {
         painted.poster = img;
+        setRatio(posterRatio(img));
         mount(poster, img.cloneNode()); // una copia: la misma imagen puede ser también el fondo (ya decodificada, entra igual)
         cover.classList.add("launch__cover--ready");
       } else if (posterUrl) {
@@ -214,16 +233,10 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B", onA
     cover.dataset.initial = (item.title || "").trim().charAt(0).toUpperCase();
     el.classList.toggle("launch--no-cover", !item.image);
     if (!from?.rect?.width) from = null; // una tarjeta oculta (0×0) hacía crecer la portada desde la esquina
-    // Como mucho cuadrada: desde una tarjeta ancha (Inicio) la portada quedaba enorme y tapaba el arte del fondo.
-    const ratio = Math.min(from?.ratio ?? (item.image ? .667 : 1), 1);
-    cover.style.setProperty("--ratio", String(ratio));
-    orbit.style.setProperty("--ratio", String(ratio));
-    front.style.setProperty("--ratio", String(ratio));
-    requestAnimationFrame(() => { // cuánto se aplasta la pista para ser la elipse (alto / ancho de la órbita)
-      const squash = orbit.offsetWidth ? orbit.offsetHeight / orbit.offsetWidth : .3;
-      el.style.setProperty("--orbit-squash", String(squash));
-      el.style.setProperty("--orbit-unsquash", String(1 / squash));
-    });
+    // La forma de la portada es la de su imagen (una caja: 2:3), no la de la tarjeta de donde vino: abierta desde
+    // «Continuar» (miniaturas cuadradas) salía un cuadrito con la caja recortada (visto en la TV el 2026-10-26). Al
+    // llegar la imagen se ajusta a su proporción real (posterRatio). Como mucho cuadrada: una ancha taparía el fondo.
+    setRatio(item.image ? POSTER_RATIO : 1);
     setLabel("Abriendo");
     mount(leave, KeyHint(backGlyph(), "Cancelar")); // por si lo abriste sin querer (antes «Ocultar»: seguía abriéndose)
     title.textContent = item.title;

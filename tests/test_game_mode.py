@@ -14,9 +14,9 @@ class FakeProc:
         return None
 
 
-def test_parking_minimizes_and_frees_ram_without_closing(monkeypatch, tmp_path):
-    """Cerrarla y reabrirla con Home dejaba ~2 s de pantalla negra (probado en la TV): ahora se minimiza y Windows saca
-    su memoria de la RAM; Home la trae al instante, la misma página (sin la entrada de la marca)."""
+def test_parking_frees_ram_and_leaves_the_window_behind_the_game(monkeypatch, tmp_path):
+    """Cerrarla dejaba ~2 s de pantalla negra al volver; minimizada, al cerrar el juego se asomaba el escritorio. Ahora
+    se queda detrás del juego y solo suelta su memoria: Home y terminar el juego la encuentran ahí."""
     from orbital import windows
 
     monkeypatch.setattr(sys, "platform", "win32")
@@ -29,7 +29,7 @@ def test_parking_minimizes_and_frees_ram_without_closing(monkeypatch, tmp_path):
     monkeypatch.setattr(windows, "trim_working_set", lambda pids: calls.append(("trim", sorted(pids))) or len(pids))
     monkeypatch.setattr(kiosk.system, "focus_window", lambda hwnd: calls.append(("front", hwnd)) or True)
     assert k.park() and k.parked and k.is_open and not k.exited_by_user
-    assert calls == [("min", 77), ("trim", [1, 2, 3])]
+    assert calls == [("trim", [1, 2, 3])]  # sin minimizar
     assert k.open() and not k.parked and calls[-1] == ("front", 77)  # Home: la misma ventana al frente
     k.exited_by_user = True
     assert not k.park()  # saliste al escritorio: nada que minimizar

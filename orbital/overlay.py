@@ -3,8 +3,7 @@ Orbital (tokens.css, themes/orbital.css, toast.css):
 
 - Notificación («GameSir conectado · Jugador 2», «Se desconectó el GameSir»): arriba a la derecha, donde salen los avisos
   de Orbital, con su forma (radio xl), su fondo, su borde fino y su sombra. El ícono en un círculo: el número del
-  jugador en el color de su lugar (como las luces de un control: coral, turquesa, ámbar, papel) o, si es advertencia,
-  «!» en ámbar tenue. Entra como los avisos (desliza 1,5 rem y aparece en 220 ms, ease-out) y el número hace un «pop».
+  jugador en el azul de los controles de Orbital o, si es advertencia, «!» en ámbar tenue. Entra como los avisos (desliza 1,5 rem y aparece en 220 ms, ease-out) y el número hace un «pop».
 - Acción (mantener el atajo de cerrar): abajo al centro, el juego en grande, qué mantener y la barra que se llena.
 
 Todo se mide en `rem`, la unidad de la interfaz (min(1,25 vw, 2 vh)): se ve igual de grande que Orbital en 4K, en 1080p
@@ -33,8 +32,7 @@ HAIRLINE = (255, 255, 255, 23)  # --color-hairline (blanco al 9 %)
 TRACK = (42, 42, 48)  # --palette-ink-700
 CORAL = (240, 87, 77)  # --palette-red-400 (la barra de cerrar)
 WARN = (244, 194, 77)  # --color-warning (--palette-amber-300)
-# El color de cada jugador, como las luces de un control: 1 coral, 2 turquesa, 3 ámbar, 4 papel.
-PLAYER_COLORS = {"1": CORAL, "2": (95, 214, 198), "3": WARN, "4": TEXT}
+PAD_BLUE = (74, 138, 232)  # --palette-pad-blue: el azul de los controles en Orbital (el círculo del jugador)
 
 # En rem (la unidad de la interfaz). Los de la notificación son los de toast.css.
 RADIUS = 1.1  # --radius-xl (dos renglones)
@@ -155,9 +153,9 @@ def _card(width: float, height: float, rem: float):
     return image, margin
 
 
-def _circle(text: str, size: int, color, tone: str, grow: float = 1.12):
-    """El ícono: el número del jugador en el color de su lugar, o «!» en ámbar tenue (advertencia). `grow`: su tamaño (el
-    «pop» de la entrada; a 1.12 llena su lugar)."""
+def _circle(text: str, size: int, tone: str, grow: float = 1.12):
+    """El ícono: el número del jugador en el azul de los controles, o «!» en ámbar tenue (advertencia). `grow`: su tamaño
+    (el «pop» de la entrada; a 1.12 llena su lugar)."""
     from PIL import Image, ImageDraw
 
     big = size * 4
@@ -169,9 +167,13 @@ def _circle(text: str, size: int, color, tone: str, grow: float = 1.12):
         draw.ellipse(box, fill=WARN + (46,))  # color-mix(… 18 %, transparent), como .toast__icon
         ink = WARN + (255,)
     else:
-        draw.ellipse(box, fill=color + (255,))
-        ink = SURFACE + (255,) if sum(color) > 450 else TEXT + (255,)  # sobre el turquesa, el ámbar o el papel, tinta
-    draw.text((big / 2, big / 2), text, fill=ink, font=_font(r * .95, "Semibold"), anchor="mm")
+        draw.ellipse(box, fill=PAD_BLUE + (255,))
+        ink = TEXT + (255,)
+    # Centrado de verdad: con la caja que ocupa la figura (anchor «mm» centra la línea de texto y los números de Segoe
+    # quedaban un poco altos).
+    font = _font(r * .95, "Semibold")
+    left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+    draw.text((big / 2 - (left + right) / 2, big / 2 - (top + bottom) / 2), text, fill=ink, font=font)
     return image.resize((size, size), Image.LANCZOS)
 
 
@@ -192,7 +194,7 @@ def draw_toast(title: str, detail: str, mark: str, tone: str, rem: float, grow: 
     room = width - left - PAD_RIGHT * rem
     x, mid = margin + left, margin + height / 2
     if mark:
-        circle = _circle(mark, icon, PLAYER_COLORS.get(mark, CORAL), tone, grow)
+        circle = _circle(mark, icon, tone, grow)
         image.alpha_composite(circle, (round(margin + inset), round(mid - icon / 2)))
     if detail:
         draw.text((x, mid - .1 * rem), _fit(draw, title, title_font, room), fill=TEXT + (255,), font=title_font, anchor="ls")
