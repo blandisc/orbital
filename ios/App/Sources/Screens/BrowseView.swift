@@ -98,13 +98,17 @@ struct BrowseView: View {
             if hide != barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = hide } }
         }
         .toolbarVisibility(barHidden ? .hidden : .visible, for: .tabBar)
+        // Con el campo abierto, iOS 27 lo deja fijo arriba: al bajar por los resultados se va también la barra de arriba
+        // (título y campo) y vuelve al subir, con lo escrito.
+        .toolbarVisibility(barHidden && searching ? .hidden : .visible, for: .navigationBar)
         // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
         .environment(\.dynamicTypeSize, typeSize)
         .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        // La barra siempre a la vista al abrir Buscar (antes, a veces había que bajar para que saliera).
-        .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Películas y series"))
+        // Automático: a la vista al abrir y se guarda al bajar. En iOS 27, al esconderse la barra de abajo el campo sube
+        // bajo el título, y con `.always` se quedaba ahí fijo estorbando.
+        .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .automatic), prompt: Text("Películas y series"))
         .searchFocused($typing)
         .onChange(of: ui.focusSearch, initial: true) { _, wants in
             guard wants else { return }

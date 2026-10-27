@@ -67,6 +67,23 @@ final class ScreensUITests: XCTestCase {
         XCTAssertEqual(title.frame, before, "el título se queda igual mientras deslizas")
     }
 
+    /// Mi media con poco (o nada): si todo cabe, deslizar no mueve nada ni encoge el título (antes rebotaba siempre).
+    func testShortMiMediaDoesNotScroll() {
+        for drive in ["linked", "unlinked"] {
+            app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-media", "-demo-onedrive", drive, "-demo-no-idle"]
+            app.launch()
+            let title = app.navigationBars.staticTexts["Descargas"].firstMatch
+            XCTAssertTrue(title.waitForExistence(timeout: 20), "el título (\(drive))")
+            sleep(3)
+            let before = title.frame
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+            let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+            from.press(forDuration: 0.1, thenDragTo: to, withVelocity: 600, thenHoldForDuration: 0.5)
+            XCTAssertEqual(title.frame, before, "el título se queda igual (\(drive))")
+            app.terminate()
+        }
+    }
+
     /// Buscar: al bajar despacio (como con el dedo, a 120 cuadros por segundo cada cuadro avanza poco), la barra se va igual.
     func testSearchBarHidesOnSlowScroll() {
         app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
