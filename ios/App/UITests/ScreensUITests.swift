@@ -51,6 +51,54 @@ final class ScreensUITests: XCTestCase {
         XCTAssertFalse(app.keyboards.firstMatch.exists, "sin teclado todavía")
     }
 
+    /// Descargas vacía: no hay nada que bajar, así que deslizar no mueve nada (antes el título se encogía).
+    func testEmptyDownloadsDoesNotScroll() {
+        app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-no-idle"]
+        app.launch()
+        let empty = app.staticTexts["Nada descargado"]
+        XCTAssertTrue(empty.waitForExistence(timeout: 20), "el vacío de Descargas")
+        let title = app.navigationBars.staticTexts["Descargas"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 5), "el título")
+        sleep(1)
+        let before = title.frame
+        let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+        let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+        from.press(forDuration: 0.1, thenDragTo: to, withVelocity: 600, thenHoldForDuration: 0.5)
+        XCTAssertEqual(title.frame, before, "el título se queda igual mientras deslizas")
+    }
+
+    /// Buscar: al bajar despacio (como con el dedo, a 120 cuadros por segundo cada cuadro avanza poco), la barra se va igual.
+    func testSearchBarHidesOnSlowScroll() {
+        app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
+        app.launch()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 20), "la barra a la vista al abrir")
+        sleep(2)
+        let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+        let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+        from.press(forDuration: 0.1, thenDragTo: to, withVelocity: 300, thenHoldForDuration: 0.3)
+        XCTAssertTrue(waitUntil { !field.exists || !field.isHittable || field.frame.width < 120 }, "al bajar despacio, la barra se esconde")
+    }
+
+    /// Buscar con el campo abierto (vacío o con algo escrito): al bajar, la barra se esconde igual (antes se quedaba fija).
+    func testOpenFieldHidesOnScroll() { openFieldHidesOnScroll(typing: nil) }
+    func testTypedFieldHidesOnScroll() { openFieldHidesOnScroll(typing: "the") }
+
+    private func openFieldHidesOnScroll(typing text: String?) {
+        app.launchArguments = ["-demo", "-demo-tab", "0", "-demo-free-tabs", "-demo-no-idle"]
+        app.launch()
+        let tab = app.tabBars.buttons["Buscar"]
+        XCTAssertTrue(tab.waitForExistence(timeout: 20), "la lupa en la barra")
+        sleep(2)   // que termine de llegar Inicio
+        let spot = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: tab.frame.midX, dy: tab.frame.midY))
+        spot.tap(); Thread.sleep(forTimeInterval: 0.3); spot.tap()   // dos toques seguidos
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "el campo con el teclado")
+        if let text { app.typeText(text); sleep(4) }
+        let field = app.searchFields.firstMatch
+        app.swipeUp(); sleep(1); app.swipeUp()
+        XCTAssertTrue(waitUntil { !field.exists || !field.isHittable || field.frame.width < 120 }, "al bajar, la barra se esconde")
+    }
+
     /// Tocar la lupa dos veces (desde otra pestaña): el primer toque abre Buscar, el segundo el campo con el teclado.
     /// (También con la barra encogida: bajaste en Inicio y la lupa quedó sola a la derecha.)
     func testSecondTapOnSearchTabOpensTheField() { secondTapOpensTheField(minimized: false) }

@@ -5,6 +5,18 @@ import OrbitalModels
 /// Un género de «Explora» al que se navega (nombre de Cinemeta, en inglés).
 struct GenreRoute: Hashable { var genre: String }
 
+/// Cuánto se ha bajado en una lista, sin avisar a SwiftUI (no es `@Observable`).
+private final class ScrollOffset {
+    var y: CGFloat = 0
+    /// Dónde cambiaste de dirección por última vez: lo que llevas bajando (o subiendo) se cuenta desde ahí.
+    var turn: CGFloat = 0
+    /// Tu dedo arrastra o la lista sigue por el impulso: solo eso mueve la barra.
+    var byYou = false
+}
+
+/// Dónde vas en la lista y hasta dónde se puede bajar (cambia cuando la barra se esconde o vuelve).
+private struct ScrollSpot: Equatable { var y: CGFloat; var bottom: CGFloat }
+
 /// «Buscar» (la pestaña de búsqueda nativa de iOS 26): sin escribir, el Top 10 de hoy en carrusel y los géneros para
 /// explorar; al escribir, los resultados en cuadrícula.
 struct BrowseView: View {
@@ -15,6 +27,12 @@ struct BrowseView: View {
     /// El campo abierto (con el teclado). Un segundo toque en la lupa cae en el campo y lo abre (iOS); si iOS avisa que
     /// tocaste «Buscar» otra vez (RootView), también se abre desde aquí.
     @State private var searching = false
+    /// El cursor en el campo. Al bajar, la barra se esconde aunque el campo esté abierto (antes se quedaba fija) y lo
+    /// suelta: con el campo vacío, iOS esconde el teclado pero deja el cursor ahí.
+    @FocusState private var typing: Bool
+    /// Cuánto has bajado: al irse el teclado ya abajo, la barra se esconde sin esperar otro deslizamiento. (En una caja:
+    /// cambia en cada cuadro del deslizamiento y no debe volver a pintar la pantalla.)
+    @State private var scroll = ScrollOffset()
     private let ui = AppEnvironment.shared.ui
     /// La barra de abajo (con el campo) se esconde al bajar y vuelve al subir: iOS no la encoge en la pestaña de búsqueda.
     @State private var barHidden = false
@@ -46,15 +64,39 @@ struct BrowseView: View {
             .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
             .padding(.bottom, DS.Space.s8)
         }
-        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { old, y in
+        // Solo el desplazamiento de verdad: el rebote al final de la página (que se pasa y regresa) no cuenta como subir.
+        .onScrollGeometryChange(for: ScrollSpot.self) { g in
+            let bottom = max(g.contentSize.height + g.contentInsets.top + g.contentInsets.bottom - g.containerSize.height, 0)
+            return ScrollSpot(y: min(g.contentOffset.y + g.contentInsets.top, bottom), bottom: bottom)
+        } action: { before, now in
+            let old = before.y, y = now.y
+            scroll.y = y
+            // Si iOS reacomoda al esconder o mostrar la barra, no cuenta: antes, al llegar al final, la barra se
+            // escondía, el contenido se reacomodaba y volvía a salir.
+            // Arriba del todo, siempre a la vista (también al volver arriba tocando la hora).
+            if y <= DS.Size.barScrollHide {
+                scroll.turn = y
+                if barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = false } }
+                return
+            }
+            // Cambió el alto de la pantalla (la barra se fue o volvió) o no lo moviste tú: no cuenta.
+            guard scroll.byYou, before.bottom == now.bottom else { scroll.turn = y; return }
+            // Lo recorrido desde el último cambio de dirección, no de un cuadro al otro: a 120 cuadros por segundo
+            // (ProMotion) cada cuadro avanza poco y la barra nunca se iba.
+            if (y > old) != (old > scroll.turn) { scroll.turn = old }
             let hide: Bool
-            if searching || y <= DS.Size.barScrollHide { hide = false }   // escribiendo o arriba del todo: siempre a la vista
-            else if y - old > DS.Size.barScrollHide { hide = true }
-            else if old - y > DS.Size.barScrollHide { hide = false }
+            if y - scroll.turn > DS.Size.barScrollHide { hide = true; typing = false }   // al bajar se va, con el campo abierto o no
+            else if typing { return }   // con el teclado arriba, el campo no se mueve
+            else if scroll.turn - y > DS.Size.barScrollHide { hide = false }
             else { return }
             if hide != barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = hide } }
         }
+        .onScrollPhaseChange { _, phase in scroll.byYou = phase == .interacting || phase == .decelerating }
         .onChange(of: searching) { _, open in if open { barHidden = false } }
+        .onChange(of: typing) { _, up in
+            let hide = !up && scroll.y > DS.Size.barScrollHide   // el teclado se fue al deslizar hacia abajo
+            if hide != barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = hide } }
+        }
         .toolbarVisibility(barHidden ? .hidden : .visible, for: .tabBar)
         // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
         .environment(\.dynamicTypeSize, typeSize)
@@ -63,6 +105,7 @@ struct BrowseView: View {
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         // La barra siempre a la vista al abrir Buscar (antes, a veces había que bajar para que saliera).
         .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Películas y series"))
+        .searchFocused($typing)
         .onChange(of: ui.focusSearch, initial: true) { _, wants in
             guard wants else { return }
             ui.focusSearch = false

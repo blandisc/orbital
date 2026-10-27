@@ -71,6 +71,8 @@ struct MiMediaView<Top: View>: View {
             .padding(.vertical, DS.Space.s4)
         }
         .refreshable { await model.rescan() }
+        // Si todo cabe, no se mueve (el título no se encoge sin nada que bajar); para revisar, «Revisar ahora» en el menú.
+        .scrollBounceBehavior(.basedOnSize)
         .task { await model.load(); await model.localizeNames() }
         .onChange(of: model.all.map(\.imdb)) { Task { await model.localizeNames() } }
         .task { await model.followDownloads() }
