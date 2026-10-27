@@ -5,15 +5,16 @@ import { motion } from "../core/motion.js";
 import { ScreenHead } from "./ui.js";
 
 /**
- * Cambiar el arte de una película o serie: dos filas (Póster y Fondo) con lo que tiene TMDB, la primera casilla de cada
- * una es «El de siempre». La cruceta recorre, A elige (se ve ya en la biblioteca, Para ti y la ficha), B cierra.
+ * Cambiar el arte de una película o serie (lo que tiene TMDB) o de un juego (TheGamesDB, Steam y Wikipedia): dos filas
+ * (Póster/Portada y Fondo), la primera casilla de cada una es «El de siempre» («La automática» en un juego). La cruceta
+ * recorre, A elige (se ve ya en la biblioteca, Para ti y la ficha), B cierra.
  */
 export function createArtPicker({ onMove, onPicked, onClose }) {
   const lead = h("p", { class: "art-picker__lead" });
   const body = h("div", { class: "art-picker__body" });
   const el = h("section", { class: "art-picker screen", hidden: true, "aria-label": "Cambiar el arte" },
     h("div", { class: "art-picker__box" }, ScreenHead({ eyebrow: "Imagen", title: "Cambiar el arte" }), lead, body));
-  let target = null; // { kind, metaId, title }
+  let target = null; // { kind, metaId, title } o, de un juego, { kind: "game", id, title }
   let rows = []; // [{ which, label, options: [{ url, el }] }]
   let focus = { r: 0, c: 0 };
   let attempt = 0;
@@ -23,7 +24,7 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
   function tile(which, url, current) {
     const wide = which === "background";
     const art = url ? h("img", { class: "art-picker__image", src: sized(url, wide ? 320 : 160), alt: "", decoding: "async" })
-      : h("span", { class: "art-picker__original" }, "El de siempre");
+      : h("span", { class: "art-picker__original" }, target?.kind === "game" ? "La automática" : "El de siempre");
     return h("button", { class: ["tile", "art-picker__tile", wide && "art-picker__tile--wide", current && "art-picker__tile--current"],
       type: "button", tabindex: "-1" }, art);
   }
@@ -31,7 +32,7 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
   function render(choices) {
     const current = choices.current || {};
     rows = [
-      { which: "poster", label: "Póster", urls: [null, ...choices.posters] },
+      { which: "poster", label: target?.kind === "game" ? "Portada" : "Póster", urls: [null, ...choices.posters] },
       { which: "background", label: "Fondo", urls: [null, ...choices.backgrounds] },
     ].filter((row) => row.urls.length > 1).map((row) => ({
       ...row, options: row.urls.map((url) => ({ url, el: tile(row.which, url, url ? current[row.which] === url : !current[row.which]) })),
@@ -56,7 +57,7 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
     rows = [];
     mount(body, h("p", { class: "art-picker__status" }, "Buscando imágenes…"));
     try {
-      const choices = await api.artChoices(target.kind, target.metaId);
+      const choices = target.kind === "game" ? await api.gameArtChoices(target.id) : await api.artChoices(target.kind, target.metaId);
       if (mine === attempt) render(choices);
     } catch (err) {
       if (mine === attempt) mount(body, h("p", { class: "art-picker__status art-picker__status--error" }, err.message));
@@ -69,7 +70,8 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
     if (!option || busy) return;
     busy = true;
     try {
-      await api.setArt(target.metaId, row.which, option.url);
+      if (target.kind === "game") await api.setGameArt(target.id, row.which, option.url);
+      else await api.setArt(target.metaId, row.which, option.url);
       row.options.forEach((o) => o.el.classList.toggle("art-picker__tile--current", o === option));
       onPicked?.(target, row.which, option.url);
     } finally {

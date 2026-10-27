@@ -170,6 +170,19 @@ class MediaStore:
         self.root.mkdir(parents=True, exist_ok=True)
         self._rejected_file().write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
 
+    def unreject(self, system: str, key: str, kind: str, values: list[str]) -> None:
+        """Deshace un rechazo (no se encontró otra imagen: la de antes se queda, o la elegiste tú a mano)."""
+        data = self.rejected()
+        slot = f"{system}/{key}/{kind}"
+        kept = [v for v in data.get(slot, []) if v not in values]
+        if kept == data.get(slot, []):
+            return
+        if kept:
+            data[slot] = kept
+        else:
+            data.pop(slot, None)
+        self._rejected_file().write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+
     def is_rejected(self, system: str, key: str, kind: str, url: str) -> bool:
         return url in self.rejected().get(f"{system}/{key}/{kind}", [])
 

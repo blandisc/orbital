@@ -60,10 +60,8 @@ export function createBoot({ state, applySettings, openMenu, busy = () => false,
      * movimiento», quieta 0.5 s y un fundido de 0.3 s. */
     finish() {
       if (!el || el.classList.contains("boot--leaving")) return;
-      // De vuelta de un juego (?regreso): sin marca ni espera, solo el fundido del fondo.
-      const back = document.documentElement.dataset.regreso !== undefined;
-      const still = stillMotion() || back;
-      const wait = back ? 0 : Math.max(0, tokenMs(still ? "--delay-brand-still" : "--delay-brand-glide") - sinceIntro(el));
+      const still = stillMotion();
+      const wait = Math.max(0, tokenMs(still ? "--delay-brand-still" : "--delay-brand-glide") - sinceIntro(el));
       setTimeout(() => {
         welcome();
         const brand = el.querySelector(".boot__brand");

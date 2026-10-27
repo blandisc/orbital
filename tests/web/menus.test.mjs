@@ -17,7 +17,8 @@ test("opciones de un juego: solo lo que no hace otro botón, emulador e imagen e
   assert.deepEqual(runners.options.map((o) => o.label), ["Abrir con Eden", "Usar siempre Eden"]);
   assert.deepEqual(runners.options[0].command, { type: "launch", id: zelda.id, runner: "switch-eden" });
   assert.deepEqual(runners.options[1].command.prefs, { runner: "switch-eden" });
-  assert.deepEqual(artMenu(zelda).options.map((o) => o.command.kind), ["cover", "hero"]);
+  assert.deepEqual(artMenu(zelda).options.map((o) => o.command.kind || o.command.type), ["game-art-picker", "cover", "hero"]);
+  assert.deepEqual(artMenu(zelda).options[0].command, { type: "game-art-picker", id: zelda.id, title: zelda.title }); // elegir tú
 });
 
 test("opciones de un juego favorito y sin alternativas", () => {

@@ -84,8 +84,10 @@ export function runnerMenu(item) {
 /** Cambiar imagen: la portada o el fondo (la de ahora se descarta para siempre). */
 export function artMenu(item) {
   return {
-    title: "Cambiar imagen", crumb: "Imagen", subtitle: "La de ahora se descarta y busco otra.",
+    title: "Cambiar imagen", crumb: "Imagen", subtitle: "Elige tú entre las que hay, o deja que busque otra.",
     options: [
+      { icon: "grid", label: "Elegir portada o fondo", hint: "Todas las que encontré, con el control",
+        command: { type: "game-art-picker", id: item.id, title: item.title } },
       { icon: "cover", label: "Otra portada", command: { type: "art", id: item.id, kind: "cover", title: item.title } },
       { icon: "wide", label: "Otro fondo", command: { type: "art", id: item.id, kind: "hero", title: item.title } },
     ],

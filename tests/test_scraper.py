@@ -106,11 +106,12 @@ def test_dislike_rejects_the_image_and_brings_the_next_one(tmp_path):
     assert image_size(s.store.path("psp", "Renegade", "hero")) == (2560, 1440)
 
 
-def test_dislike_of_the_esde_image_hides_it(tmp_path):
+def test_dislike_of_the_esde_image_with_nothing_else_keeps_it(tmp_path):
+    # Antes se escondía y el juego quedaba sin imagen; ahora, sin otra que poner, se queda la de ES-DE.
     store = MediaStore(tmp_path / "media")
     s = Scraper(store, FakeHttp({}))
-    s.replace(Target("switch", "Mario Party", "Mario Party", ["hero"]), "hero")
-    assert store.is_rejected("switch", "Mario Party", "hero", "esde")
+    assert s.replace(Target("switch", "Mario Party", "Mario Party", ["hero"]), "hero") is None
+    assert not store.is_rejected("switch", "Mario Party", "hero", "esde")
 
 
 class FakeEsde:
@@ -225,8 +226,8 @@ def test_dislike_skips_the_same_picture_at_another_address(tmp_path):
     target = Target("psp", "Renegade", "Star Wars Battlefront: Renegade Squadron", ["hero"])
     s.fetch(target)
     assert s.sources()["psp/Renegade/hero"].endswith("12-1.jpg")
-    # 12-2 se ve igual que la rechazada: no se pone (queda el respaldo hasta que haya otra distinta).
-    assert s.replace(target, "hero") is None and s.store.path("psp", "Renegade", "hero") is None
+    # 12-2 se ve igual que la rechazada: no se pone, y como no hay otra distinta, se queda la de antes.
+    assert s.replace(target, "hero") is None and image_size(s.store.path("psp", "Renegade", "hero")) == (1920, 1080)
     # Una de verdad distinta sí entra.
     s.http.pages["fanart/12-2.jpg"] = picture(1920, 1080, flip=True)
     assert s.replace(target, "hero") is not None
@@ -277,3 +278,29 @@ def test_each_source_is_asked_only_for_what_is_missing(tmp_path):
     s.store.target("gc", "Pikmin", "cover", ".jpg").write_bytes(picture(600, 900))
     s.fetch(Target("gc", "Pikmin", "Pikmin", ["cover", "hero"]))
     assert not any("api.php" in u for u in s.http.asked)  # ya tiene caja: no se le pregunta a Wikipedia
+
+
+def test_dislike_with_nothing_else_keeps_the_picture_you_had(tmp_path):
+    # Luigi's Mansion 3: «Cambiar imagen» no encontró otra y el juego se quedó sin portada.
+    s = scraper(tmp_path, {"search.php": SEARCH.encode(), "game.php?id=12": GAME.encode(), "boxart/front/12-1.jpg": picture(600, 900)})
+    target = Target("psp", "Renegade", "Star Wars Battlefront: Renegade Squadron", ["cover"])
+    s.fetch(target)
+    before = s.store.path("psp", "Renegade", "cover").read_bytes()
+    assert s.replace(target, "cover") is None  # no hay otra
+    assert s.store.path("psp", "Renegade", "cover").read_bytes() == before  # pero la tuya sigue ahí
+    assert not s.store.rejected()  # y no queda rechazada
+
+
+def test_choices_list_every_cover_and_background_and_you_can_pick_one(tmp_path):
+    s = scraper(tmp_path, {"search.php": DREAD.encode(),
+                           "game.php?id=87675": b'<img src="https://cdn.thegamesdb.net/images/original/boxart/front/87675-1.jpg">'
+                                                b'<a href="https://cdn.thegamesdb.net/images/original/fanart/87675-1.jpg"></a>',
+                           "game.php?id=121672": b'<img src="https://cdn.thegamesdb.net/images/original/boxart/front/121672-1.jpg">',
+                           "front/121672-1.jpg": picture(600, 900)})
+    target = Target("switch", "Dread", "Metroid Dread", ["cover"])
+    found = s.choices(target)
+    assert [u.rsplit("/", 1)[1] for u in found["cover"]] == ["87675-1.jpg", "121672-1.jpg"]
+    assert [u.rsplit("/", 1)[1] for u in found["hero"]] == ["87675-1.jpg"]
+    s.store.reject("switch", "Dread", "cover", found["cover"][1])  # aunque la hubieras rechazado antes, la puedes elegir
+    assert s.choose(target, "cover", found["cover"][1]) is not None
+    assert s.sources()["switch/Dread/cover"].endswith("121672-1.jpg")

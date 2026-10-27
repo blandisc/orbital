@@ -43,6 +43,23 @@ def input_idle_seconds() -> float:
     return ((ctypes.windll.kernel32.GetTickCount() - info.dwTime) & 0xFFFFFFFF) / 1000  # type: ignore[attr-defined]
 
 
+def trim_working_set(pids: set[int]) -> int:
+    """Pide a Windows que saque de la RAM lo que esos procesos no están usando (EmptyWorkingSet): la memoria queda
+    libre para el juego y regresa sola, poco a poco, cuando el proceso la vuelve a tocar. Devuelve cuántos procesos."""
+    if not WIN:
+        return 0
+    done = 0
+    for pid in pids:
+        handle = kernel32.OpenProcess(0x1000 | 0x0100, False, pid)  # QUERY_LIMITED_INFORMATION | SET_QUOTA
+        if not handle:
+            continue
+        try:
+            done += bool(ctypes.windll.psapi.EmptyWorkingSet(handle))  # type: ignore[attr-defined]
+        finally:
+            kernel32.CloseHandle(handle)
+    return done
+
+
 def is_window(hwnd: int) -> bool:
     return bool(WIN and hwnd and user32.IsWindow(hwnd) and user32.IsWindowVisible(hwnd))
 

@@ -87,6 +87,26 @@ def router(d: Deps) -> APIRouter:
         found = await run_in_threadpool(catalog.replace_art, req.id, req.kind)
         return {"ok": True, "found": found}
 
+    @r.get("/api/game-art/{item_id:path}")
+    async def game_art_choices(item_id: str) -> dict:
+        """«Elegir imagen» de un juego: las portadas y fondos que hay (TheGamesDB, Steam, Wikipedia)."""
+        found = await run_in_threadpool(catalog.art_choices, item_id)
+        if found is None:
+            raise HTTPException(404, "Ese juego no tiene imágenes que elegir")
+        return found
+
+    @r.post("/api/game-art")
+    async def game_art_choose(body: dict) -> dict:
+        item_id, which, url = body.get("id"), body.get("which"), body.get("url")
+        if not isinstance(item_id, str) or which not in ("poster", "background") or (url is not None and not isinstance(url, str)):
+            raise HTTPException(422, "Elección inválida")
+        if url and not url.startswith("https://"):
+            raise HTTPException(422, "Esa imagen no es segura")
+        ok = await run_in_threadpool(catalog.choose_art, item_id, which, url or None)
+        if not ok:
+            raise HTTPException(409, "Esa imagen no sirve aquí (no bajó o no tiene la forma). Prueba otra.")
+        return {"ok": True}
+
     @r.get("/api/art/{item_id:path}")
     def art(item_id: str, kind: str = "cover", w: int | None = None) -> FileResponse:
         return art_response(catalog, item_id, kind, w)

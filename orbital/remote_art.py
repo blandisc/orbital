@@ -26,7 +26,8 @@ log = logging.getLogger(__name__)
 
 HOSTS = ("images.metahub.space", "live.metahub.space", "episodes.metahub.space", "image.tmdb.org", "cdn.cloudflare.steamstatic.com",
          "cdn.akamai.steamstatic.com", "shared.cloudflare.steamstatic.com", "shared.akamai.steamstatic.com",
-         "steamcdn-a.akamaihd.net", "thumbnails.libretro.com", "media.rawg.io", "walter-r2.trakt.tv")
+         "steamcdn-a.akamaihd.net", "thumbnails.libretro.com", "media.rawg.io", "walter-r2.trakt.tv",
+         "cdn.thegamesdb.net", "upload.wikimedia.org")  # las dos últimas: «Elegir imagen» de los juegos
 WIDTHS = (160, 240, 320, 480, 640, 960, 1280)
 MAX_BYTES = 12 * 1024 * 1024
 RETRY_AFTER = 15 * 60  # una imagen que no se pudo bajar no se vuelve a pedir en un rato (va la original)

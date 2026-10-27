@@ -377,7 +377,10 @@ def arrange_for(argv: list[str], order: list[Device], slots: list[int] | None = 
         ryujinx, yuzu = _configs(exe)
         changed = sum(arrange_eden(p, order, versions) for p in yuzu)
         if ryujinx:
-            profiles = ryujinx_profiles(ryujinx)
+            # También de sus respaldos: si un control se quedó fuera de la configuración (estaba apagado la última vez),
+            # su perfil sigue ahí y se le puede apartar el lugar (los de ahora mandan: van primero).
+            backups = [b for p in ryujinx for b in sorted(p.parent.glob(p.name + ".*"), reverse=True) if b.is_file()]
+            profiles = ryujinx_profiles(ryujinx + backups)
             changed += sum(arrange_ryujinx(p, order, profiles) for p in ryujinx)
         if changed:
             log.info("Controles: Jugador 1 = %s (y %d más) en %d archivo(s)", "%04X:%04X" % order[0], len(order) - 1, changed)

@@ -524,13 +524,16 @@ class ConsoleShell:
         gamepad.rumble(slot)
         message = f"Control {name} conectado · Jugador {number}"
         running = self.catalog.launcher.status()
+        log.info("%s", message)
         detail = ""
         if running and running.get("managed") and number > 1:
             exe = self.win.exe_name(int(running["pid"])) if running.get("pid") else ""
             detail = ("Ya puede jugar" if exe in self.LIVE_JOIN
                       else f"Para que juegue en {running['title']}: Home › Jugadores › Reiniciar con estos jugadores")
-        if self.away_from_orbital() and self.overlay is not None:
-            self.overlay.notice(message, detail)  # con un juego al frente, encima del juego (Orbital no se ve)
+        # Con un juego abierto, encima del juego (aunque todavía esté cargando: en un momento Orbital ya no se ve).
+        in_game = bool(running and running.get("managed")) or self.away_from_orbital()
+        if in_game and self.overlay is not None:
+            self.overlay.notice(message, detail)
         else:
             self.notify({"type": "toast", "tone": "success", "message": message, **({"detail": detail} if detail else {})})
 

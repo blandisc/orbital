@@ -151,10 +151,6 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         d.hub.loop = asyncio.get_running_loop()
-        if kiosk is not None:  # modo juego: mientras la ventana está cerrada, los avisos esperan (ver SseHub.hold)
-            loop = d.hub.loop  # por el hilo del servidor, en orden con los avisos (publish_threadsafe)
-            kiosk.on_park = lambda: loop.call_soon_threadsafe(d.hub.hold)
-            kiosk.on_unpark = lambda: loop.call_soon_threadsafe(d.hub.release)
         unsubscribe = catalog.events.subscribe(d.hub.publish_threadsafe)
         if shortcuts:
             # De verdad (no en pruebas): la interfaz abre ya, con su animación de arranque, mientras

@@ -318,7 +318,7 @@ class Scraper:
             log.info("Sin %s para %s (%s)", ", ".join(missing), target.title, target.system)
         return saved
 
-    def _download(self, target: Target, cand: Candidate) -> Path | None:
+    def _download(self, target: Target, cand: Candidate, chosen: bool = False) -> Path | None:
         data = self.http.get(cand.url)
         if not data or len(data) < 2048:
             return None
@@ -330,7 +330,7 @@ class Scraper:
         if not good(cand.kind, image_size(tmp), target.system):
             tmp.unlink()
             return None
-        if self.store.looks_rejected(target.system, target.key, cand.kind, tmp):  # la misma, con otra dirección
+        if not chosen and self.store.looks_rejected(target.system, target.key, cand.kind, tmp):  # la misma, otra dirección
             tmp.unlink()
             return None
         for other in IMAGE_EXTS:  # una sola imagen por tipo
@@ -343,15 +343,52 @@ class Scraper:
         return path
 
     def replace(self, target: Target, kind: str, current: Path | str | None = None) -> Path | None:
-        """«No me gusta»: rechaza la imagen actual (o la de ES-DE) y busca otra que no se vea igual."""
+        """«No me gusta»: rechaza la imagen actual (o la de ES-DE) y busca otra que no se vea igual. Si no hay otra, la
+        de antes se queda (antes se borraba y el juego quedaba sin imagen: Luigi's Mansion 3, 2026-10-26)."""
         slot = f"{target.system}/{target.key}/{kind}"
         current = current or self.store.path(target.system, target.key, kind)
         look = image_look(current) if current else None
-        if look:
-            self.store.reject(target.system, target.key, kind, f"look:{look}")
-        self.store.reject(target.system, target.key, kind, self.sources().get(slot, "esde"))
+        rejected = [f"look:{look}"] if look else []
+        rejected.append(self.sources().get(slot, "esde"))
+        for value in rejected:
+            self.store.reject(target.system, target.key, kind, value)
+        mine = self.store.path(target.system, target.key, kind)
+        saved = (mine, mine.read_bytes()) if mine else None
         self.store.remove(target.system, target.key, kind)
-        return self.fetch(Target(target.system, target.key, target.title, [kind])).get(kind)
+        found = self.fetch(Target(target.system, target.key, target.title, [kind])).get(kind)
+        if found is None:
+            self.store.unreject(target.system, target.key, kind, rejected)
+            if saved:
+                saved[0].write_bytes(saved[1])
+            log.info("%s: no encontré otra %s; se queda la de antes", target.title, kind)
+        return found
+
+    def choices(self, target: Target) -> dict[str, list[str]]:
+        """Las portadas y fondos que hay para elegir (sin bajar nada): todas las ediciones de TheGamesDB, Steam y
+        Wikipedia; el arte oficial antes que las capturas."""
+        out: dict[str, list[str]] = {"cover": [], "hero": []}
+        want = replace(target, kinds=["cover", "hero"])
+        for provider in self.providers:
+            if isinstance(provider, Libretro):
+                continue  # direcciones armadas por el nombre de la ROM: la mayoría no existen
+            try:
+                found = provider.candidates(want)
+            except Exception:  # noqa: BLE001 - una fuente rota no deja sin opciones
+                log.exception("Falló %s con %s", provider.name, target.title)
+                continue
+            for cand in sorted(found, key=lambda c: c.rank):
+                if cand.kind in out and cand.url not in out[cand.kind]:
+                    out[cand.kind].append(cand.url)
+        return out
+
+    def choose(self, target: Target, kind: str, url: str) -> Path | None:
+        """La elegiste tú: se baja, se valida (una captura no sirve de portada) y se pone, aunque antes la hubieras
+        rechazado."""
+        self.store.unreject(target.system, target.key, kind, [url])
+        path = self._download(target, Candidate(kind, url, "elegida"), chosen=True)
+        if path is None:
+            log.info("%s: la %s elegida no sirve (no bajó o no tiene la forma)", target.title, kind)
+        return path
 
     def run(self, targets: list[Target]) -> int:
         """Rellena lo que falte; devuelve cuántas imágenes nuevas guardó."""

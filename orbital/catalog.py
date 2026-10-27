@@ -20,6 +20,7 @@ import os
 import threading
 import time
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 from urllib.parse import quote
 
@@ -526,6 +527,38 @@ class Catalog:
         found = self._scraper.replace(Target(item.system, item.media_key, item.title, [kind]), kind, current)
         self.refresh()
         return found is not None
+
+    def _art_target(self, item_id: str):
+        item = self.store.get(item_id)
+        if item is None or not item.system or not item.media_key:
+            return None
+        self._scraper = self._scraper or Scraper(self.media)
+        return Target(item.system, item.media_key, item.title, ["cover", "hero"])
+
+    def art_choices(self, item_id: str) -> dict | None:
+        """«Elegir imagen» de un juego: las portadas y fondos que hay, y cuáles tiene ahora (como el de películas)."""
+        target = self._art_target(item_id)
+        if target is None:
+            return None
+        found = self._scraper.choices(target)
+        sources = self._scraper.sources()
+        slot = f"{target.system}/{target.key}"
+        return {"posters": found["cover"], "backgrounds": found["hero"],
+                "current": {"poster": sources.get(f"{slot}/cover"), "background": sources.get(f"{slot}/hero")}}
+
+    def choose_art(self, item_id: str, which: str, url: str | None) -> bool:
+        """Elegiste una portada o un fondo; sin `url`, «La automática»: Orbital vuelve a escoger."""
+        target = self._art_target(item_id)
+        kind = {"poster": "cover", "background": "hero"}.get(which)
+        if target is None or kind is None:
+            return False
+        if url:
+            ok = self._scraper.choose(target, kind, url) is not None
+        else:
+            self.media.remove(target.system, target.key, kind)
+            ok = bool(self._scraper.fetch(replace(target, kinds=[kind])))
+        self.refresh()
+        return ok
 
     def stremio_library(self) -> list[LibraryItem]:
         return [i for i in self.items() if i.source == "stremio"]

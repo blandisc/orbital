@@ -1563,9 +1563,13 @@ async function runCommand(command, context = null) {
         ui.toast.show(`Buscando otra imagen para ${command.title}…`);
         const res = await api.replaceArt(command.id, command.kind);
         sound.play("select");
-        ui.toast.show(res.found ? "Imagen nueva" : "No encontré otra · Queda una de respaldo", { tone: res.found ? "success" : "warn" });
+        ui.toast.show(res.found ? "Imagen nueva" : "No encontré otra · Se queda la que tenías", { tone: res.found ? "success" : "warn",
+          detail: res.found ? "" : "En «Elegir portada o fondo» puedes escoger entre todas" });
         return loadLibrary({ keepId: command.id });
       }
+      case "game-art-picker": // «Elegir portada o fondo» de un juego: el mismo selector que el de películas
+        ui.sheet.close();
+        return ui.artPicker.open({ kind: "game", id: command.id, title: command.title });
       case "phone-send":
         return sendToPhone(command);
       case "media-goto": { // Ir a…: los grupos de la sección, con una palomita en el que estás

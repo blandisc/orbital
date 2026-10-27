@@ -56,6 +56,8 @@ export const api = {
   /** «Cambiar el arte» de una película o serie: lo que hay en TMDB y elegir (url vacía: el de siempre). */
   artChoices: (kind, metaId) => request(`/api/stremio/art?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(metaId)}`),
   setArt: (metaId, which, url) => post("/api/stremio/art", { meta_id: metaId, which, url }),
+  gameArtChoices: (id) => request(`/api/game-art/${encodeURIComponent(id)}`),
+  setGameArt: (id, which, url) => post("/api/game-art", { id, which, url }),
   unhideAll: () => post("/api/prefs/unhide-all"),
   ui: () => request("/api/ui"),
   exitToDesktop: () => post("/api/ui/exit"),
