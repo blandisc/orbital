@@ -69,6 +69,24 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(again.continueWatching.map(\.metaID), ["tt0386676"])
     }
 
+    /// «Quitar de Mi lista» desde el menú: sale al instante y «Deshacer» la regresa a su mismo lugar (sin duplicarla).
+    func testRemovingFromMyListHidesAndUndoRestoresInPlace() async throws {
+        let rig = try ServicesRig()
+        rig.http.json[stremioGet] = ["result": [
+            ["_id": "tt1", "name": "Una", "type": "movie", "removed": false, "temp": false, "state": [:]],
+            ["_id": "tt2", "name": "Dos", "type": "movie", "removed": false, "temp": false, "state": [:]],
+            ["_id": "tt3", "name": "Tres", "type": "movie", "removed": false, "temp": false, "state": [:]]]]
+        let home = HomeModel(rig.services)
+        await home.refresh()
+        let before = home.myList.map(\.metaID)
+        XCTAssertEqual(before.count, 3)
+        home.setShown(before[1], in: .stremioLibrary, shown: false)
+        XCTAssertEqual(home.myList.map(\.metaID), [before[0], before[2]])
+        home.setShown(before[1], in: .stremioLibrary, shown: true)
+        home.setShown(before[1], in: .stremioLibrary, shown: true)
+        XCTAssertEqual(home.myList.map(\.metaID), before, "regresa en su lugar, una sola vez")
+    }
+
     func testSpotlightInterleavesListsWithoutRepeatsOrWhatYouAreWatching() {
         func s(_ id: String, _ kind: String) -> Suggestion { Suggestion(kind: kind, imdb: id, title: id, poster: "", wide: "", reason: .trending) }
         let trend = [s("tt1", "movie"), s("tt2", "movie")], series = [s("tt3", "series"), s("tt1", "movie")], popular = [s("tt4", "movie"), s("tt5", "movie")]

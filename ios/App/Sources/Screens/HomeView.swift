@@ -111,6 +111,7 @@ struct HomeView: View {
                          eyebrow: Text("Lo que guardaste"), source: .stremio) {
                         ForEach(model.myList) { item in
                             TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster), reflected: true)
+                                .contextMenu { listActions(suggestion(item), in: .stremioLibrary) }
                         }
                     }
                 }
@@ -189,7 +190,13 @@ struct HomeView: View {
         let items: [Suggestion] = route.id == "watchlist" ? home.model.traktPending
             : route.id == "foryou" ? home.model.forYouPicks : home.model.myList.map(suggestion)
         return ScrollView {
-            SortableGrid(listID: "home:\(route.id)", items: items) { s, width in TitleLink(route: s.route, width: width) }
+            SortableGrid(listID: "home:\(route.id)", items: items) { s, width in
+                if let list = route.list {
+                    TitleLink(route: s.route, width: width).contextMenu { listActions(s, in: list) }
+                } else {
+                    TitleLink(route: s.route, width: width)
+                }
+            }
                 .padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop(tint: tint.colors))
@@ -211,6 +218,14 @@ struct HomeView: View {
     /// Solo cuando hay algo que decir: «N cambios por subir» (lo que viste sin internet). Al día, nada (no hace falta decirlo).
     private var syncText: Text? {
         pendingCount > 0 ? Text("\(pendingCount) cambios por subir") : nil
+    }
+
+    /// Al dejar picado un título de una de tus listas: ver, descargar, en la TV, marcar como vista y quitarlo de la lista.
+    @ViewBuilder private func listActions(_ s: Suggestion, in list: SaveDestination) -> some View {
+        let model = home.model
+        SuggestionActions(suggestion: s, list: list, onWatched: { model.setShown($0.imdb, in: list, shown: false) }) { s in
+            Task { await env.remove(s, from: list) { shown in model.setShown(s.imdb, in: list, shown: shown) } }
+        }
     }
 
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
@@ -401,6 +416,7 @@ struct HomeView: View {
                             WatchlistCard(title: s.title, poster: s.poster, facts: facts, overview: s.overview).titleZoomSource(s.route)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu { listActions(s, in: .traktWatchlist) }
                     }
                 }
                 .scrollTargetLayout()

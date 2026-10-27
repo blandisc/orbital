@@ -50,7 +50,11 @@ struct ProfileButton: View {
 }
 
 /// Una lista de Inicio abierta completa desde su encabezado («Mi lista 12 ›»).
-struct HomeListRoute: Hashable { var id: String }
+struct HomeListRoute: Hashable {
+    var id: String
+    /// La lista tuya que enseña (para «Quitar de …» al dejar picado un título); «Para ti» y «Seguir viendo» no son una lista.
+    var list: SaveDestination? { id == "watchlist" ? .traktWatchlist : id == "mylist" ? .stremioLibrary : nil }
+}
 
 /// Una fila horizontal de portadas con su título; con `route`, el encabezado dice cuántos hay y abre la lista completa.
 struct Rail<Content: View>: View {

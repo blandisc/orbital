@@ -292,6 +292,27 @@ public final class HomeModel: ObservableModel {
         services.onSiriTitles?((continueWatching + myList).map { [$0.originalTitle, $0.title] })
     }
 
+    /// Quitado de tu watchlist o de Mi lista desde un menú (o regresado con «Deshacer»): cambia aquí al instante, en su
+    /// mismo lugar; la lista de verdad vive en Trakt o en Stremio y la siguiente carga ya llega así.
+    public func setShown(_ metaID: String, in destination: SaveDestination, shown: Bool) {
+        switch (destination, shown) {
+        case (.traktWatchlist, false):
+            guard let i = traktPending.firstIndex(where: { $0.imdb == metaID }) else { return }
+            hiddenPending[metaID] = (i, traktPending.remove(at: i))
+        case (.traktWatchlist, true):
+            guard let (i, s) = hiddenPending.removeValue(forKey: metaID), !traktPending.contains(where: { $0.imdb == metaID }) else { return }
+            traktPending.insert(s, at: min(i, traktPending.count))
+        case (.stremioLibrary, false):
+            guard let i = myList.firstIndex(where: { $0.metaID == metaID }) else { return }
+            hiddenMine[metaID] = (i, myList.remove(at: i))
+        case (.stremioLibrary, true):
+            guard let (i, item) = hiddenMine.removeValue(forKey: metaID), !myList.contains(where: { $0.metaID == metaID }) else { return }
+            myList.insert(item, at: min(i, myList.count))
+        }
+    }
+    private var hiddenPending: [String: (Int, Suggestion)] = [:]
+    private var hiddenMine: [String: (Int, HomeItem)] = [:]
+
     /// «Quitar de Seguir viendo».
     public func dismiss(_ item: HomeItem) async {
         dismissed.insert(item.metaID)   // al instante (sin esperar la carga en curso); la carga lo filtra

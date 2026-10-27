@@ -726,6 +726,34 @@ final class AppEnvironment {
         }
     }
 
+    /// «Quitar de tu watchlist» o «Quitar de Mi lista» desde el menú de un póster, con «Deshacer». `shown` le dice a la
+    /// pantalla si el título se ve: se quita al instante y regresa si falla o si deshaces.
+    func remove(_ s: Suggestion, from destination: SaveDestination, shown: @escaping (Bool) -> Void) async {
+        shown(false)
+        do {
+            try await setSaved(s, in: destination, add: false)
+            notify(removed: destination) { [weak self] in
+                shown(true)
+                Task { try? await self?.setSaved(s, in: destination, add: true) }
+            }
+        } catch {
+            shown(true)
+            let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar tu lista de Stremio"
+            notify(failure, detail: "\(error)", tone: .warn)
+        }
+    }
+
+    /// «Marcar como vista» (una película) desde el menú de un póster: en Stremio y en Trakt, como en la ficha.
+    func markWatched(_ s: Suggestion) async -> Bool {
+        do { try await services.watch.markWatched(kind: s.kind, metaID: s.imdb, videoID: s.imdb) } catch {
+            notify(format: "No pude marcar «%@» como vista", s.title, detail: "\(error)", tone: .warn)
+            return false
+        }
+        if let trakt = services.trakt, trakt.linked, let target = TraktTarget(videoID: s.imdb, kind: s.kind) { _ = try? await trakt.addToHistory(target, watchedAt: Date()) }
+        notify(format: "«%@» quedó como vista", s.title, tone: .success)
+        return true
+    }
+
     /// El aviso de «Guardar» (la ficha y los pósters): dónde quedó y, a la mano, cambiarlo (o deshacerlo).
     func notify(saved destination: SaveDestination, undo: Bool = false, perform: @escaping () -> Void) {
         let (text, detail) = destination == .traktWatchlist ? ("Guardada en tu watchlist", "Trakt") : ("Guardada en Mi lista", "Stremio")
