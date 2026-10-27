@@ -131,8 +131,12 @@ struct PlayerScreen: View {
     /// Subtítulos rápidos (el panel chico sobre el video) y su lista de idiomas.
     @State private var subtitleDock = false
     /// La hoja «Audio y subtítulos» tiene dos páginas: lo de siempre y «Versión» (por idioma o todas las fuentes).
-    enum DockPage { case media, version }
+    enum DockPage { case media, version, episodes }
     @State private var dockPage: DockPage = .media
+    /// Las temporadas de la serie que suena, para «Episodios» (se leen al abrirlo: son cientos de episodios).
+    @State private var episodeSeasons: [Season] = []
+    /// Viendo un archivo descargado, los episodios que también están bajados (los demás no se pueden poner).
+    @State private var playableEpisodes: Set<String>?
     @State private var dockOpens: SubtitleDock.Section? = .subtitles
     @State private var versionShowsAll = false
     /// Una versión que Real-Debrid aún no tiene: se pregunta antes de abrirla (puede tardar o no abrir).
@@ -346,6 +350,8 @@ struct PlayerScreen: View {
                     case "audio": openDock(.audio)
                     case "version": openDock(nil, version: true)
                     case "subtitle-versions": openDock(.subtitles); dockVersions = true   // todas las versiones del idioma puesto
+                    case "episodes": openEpisodes(model)   // `-demo-player episodes`: la lista de episodios
+                    case "near-end": await model.seek(to: model.snapshot.duration * 0.92); hideTask?.cancel(); controlsVisible = true   // con «Siguiente» a la vista
                     case "close": await close()
                     default: break
                     }
@@ -1147,6 +1153,7 @@ struct PlayerScreen: View {
                         Spacer()
                         HStack(spacing: DS.Space.s3) {
                             if model.snapshot.duration > 0 { scrubber(model) } else { Spacer() }
+                            nextEpisode(model)
                             skipIntro(model)
                         }
                     }
@@ -1180,7 +1187,7 @@ struct PlayerScreen: View {
                         if let up = model.upNext, !locked { upNextCard(model, up) }
                         if model.snapshot.duration > 0 { scrubber(model) }
                         // Su lugar está apartado aunque no salga: ±10 y el botón grande no brincan cuando aparece.
-                        HStack { Spacer(); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
+                        HStack(spacing: DS.Space.s2) { Spacer(); nextEpisode(model); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
                         if !fillsPortrait { Spacer(minLength: 0) }
                         if model.phase != .preparing { transport(model) }
                         if !fillsPortrait { Spacer(minLength: 0) }
@@ -1215,6 +1222,11 @@ struct PlayerScreen: View {
                 if !current.episodeLabel.isEmpty { Text(current.episodeLabel).recipe(.footnote).lineLimit(1) }
             }
             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
+            // «Episodios», solo el ícono (en una serie): la lista de la temporada sin parar el video.
+            if current.kind == "series", current.meta != nil {
+                PlayerCircleButton(symbol: "rectangle.stack", label: "Episodios") { openEpisodes(model) }
+                    .accessibilityIdentifier("player-episodes")
+            }
             SubtitleButton(code: currentSubtitleCode(model), state: subtitleState(model), loading: model.loadingSubtitle,
                            open: { openDock(.subtitles) },
                            toggle: { toggleSubtitles(model) })
@@ -1262,6 +1274,10 @@ struct PlayerScreen: View {
         return VStack(alignment: .leading, spacing: 0) {
             // La misma hoja que el botón de subtítulos (antes abría otra, «Ajustes del video», que hacía la mitad).
             // «Audio y subtítulos» ya no va aquí: se abre con el botón de subtítulos de la barra (era la misma hoja dos veces).
+            if current.kind == "series", current.meta != nil {
+                PlayerMenuRow(title: "Episodios", symbol: "rectangle.stack", detail: Text(verbatim: current.episodeLabel.components(separatedBy: " · ").first ?? "")) { openEpisodes(model) }
+                    .accessibilityIdentifier("player-episodes-row")
+            }
             if model.sourceChoices.count > 1 {
                 PlayerMenuRow(title: "Versión", symbol: "square.stack", detail: Text(verbatim: videoVersionShort(model))) { openDock(nil, version: true) }
                     .accessibilityIdentifier("player-versions")
@@ -1483,7 +1499,8 @@ struct PlayerScreen: View {
         GeometryReader { geo in
             let rect = videoRect(in: geo.size)
             let dock = Group {
-                if let syncLines { subtitleSyncView(model, lines: syncLines) }
+                if dockPage == .episodes { episodesPage(model) }
+                else if let syncLines { subtitleSyncView(model, lines: syncLines) }
                 else if dockPage == .version { versionPage(model) }
                 else {
                     // Si cabe, sin desplazarse ni rebotar (antes siempre iba en un ScrollView: en vertical se movía y al jalarlo
@@ -1500,7 +1517,7 @@ struct PlayerScreen: View {
                 HStack {
                     Spacer()
                     VStack(spacing: DS.Space.s2) {
-                        HStack(spacing: DS.Space.s2) {
+                        if dockPage != .episodes { HStack(spacing: DS.Space.s2) {
                             Picker(selection: Binding(get: { dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockPage = v ? .version : .media } })) {
                                 Text("Audio y subtítulos").tag(false)
                                 Text("Versión").tag(true)
@@ -1508,7 +1525,7 @@ struct PlayerScreen: View {
                             .pickerStyle(.segmented)
                             Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
                                 .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
-                        }
+                        } }
                         dock
                     }
                     .frame(width: DS.PlayerPanel.width)
@@ -1847,6 +1864,21 @@ struct PlayerScreen: View {
         }
     }
 
+    /// «Siguiente · T5 E3»: solo desde el 90 % del episodio (antes no estorba) y mientras no esté la tarjeta del final.
+    @ViewBuilder private func nextEpisode(_ model: PlayerModel) -> some View {
+        let s = model.snapshot
+        if let next = model.nextUp, model.upNext == nil, model.skipIntroTo == nil, s.duration > 0, s.position >= s.duration * DS.PlayerPanel.nextAt {
+            Button { Task { await model.playEpisode(next.videoID) } } label: {
+                Label { Text("Siguiente · \(next.label)") } icon: { Image(systemName: "forward.end.fill") }
+            }
+            .fontWeight(.semibold)
+            .buttonStyle(.glass).controlSize(.regular)
+            .fixedSize()
+            .transition(.opacity.combined(with: .move(edge: .trailing)))
+            .accessibilityIdentifier("player-next-episode")
+        }
+    }
+
     /// Retroceder, el botón grande y adelantar (solo cuando ya hay video: mientras busca fuente no hacen nada).
     private func transport(_ model: PlayerModel) -> some View {
         HStack(spacing: DS.Space.s8) {
@@ -2033,6 +2065,31 @@ struct PlayerScreen: View {
     /// Los márgenes seguros de la ventana (el video en horizontal ignora el área segura, así que no los trae su `GeometryReader`).
     static var windowSafeArea: UIEdgeInsets {
         UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.safeAreaInsets ?? .zero
+    }
+
+    /// «Episodios»: en vertical bajo el video y en horizontal a la derecha (donde va «Audio y subtítulos»); el video sigue.
+    private func openEpisodes(_ model: PlayerModel) {
+        withAnimation(DS.Motion.base(reduceMotion)) {
+            moreOpen = false; controlsVisible = false; dockPage = .episodes; subtitleDock = true
+        }
+        guard let meta = current.meta else { return }
+        let local = current.localFile != nil
+        Task {
+            if episodeSeasons.isEmpty {
+                episodeSeasons = await Task.detached(priority: .userInitiated) { CinemetaParsing.seasons(meta).filter { !$0.isSpecials } }.value
+            }
+            playableEpisodes = local ? await model.playableEpisodes(episodeSeasons.flatMap { $0.episodes.map(\.id) }) : nil
+        }
+    }
+
+    private func episodesPage(_ model: PlayerModel) -> some View {
+        EpisodesPanel(seasons: episodeSeasons, current: current.videoID, next: model.nextUp?.videoID, playable: playableEpisodes,
+                      pick: { id in closeEpisodes(); Task { await model.playEpisode(id) } },
+                      done: { closeEpisodes() })
+    }
+
+    private func closeEpisodes() {
+        withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media }
     }
 
     /// Abre la hoja «Audio y subtítulos» con un renglón abierto, o directo en «Versión».

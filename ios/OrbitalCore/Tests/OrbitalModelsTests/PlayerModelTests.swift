@@ -449,6 +449,22 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(state["video_id"]?.string, "tt0386676:1:2", "Stremio ya apunta al siguiente")
     }
 
+    /// «Episodios» y «Siguiente» en el reproductor: el siguiente ya se sabe al abrir, y elegir otro lo pone desde el principio.
+    func testPickingAnEpisodePlaysItFromTheStart() async throws {
+        let rig = try nextEpisodeRig()
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.model.nextUp?.videoID, "tt0386676:1:2")
+        XCTAssertEqual(rig.model.nextUp?.label, "T1 · E2")
+        await rig.model.handle(rig.playing(300))
+        await rig.model.playEpisode("tt0386676:1:2")
+        XCTAssertEqual(rig.model.request?.videoID, "tt0386676:1:2")
+        XCTAssertTrue(rig.model.request?.episodeLabel.contains("E2") == true)
+        XCTAssertEqual(rig.engine.loads.last?.start, 0, "desde el principio")
+        let loads = rig.engine.loads.count
+        await rig.model.playEpisode("tt0386676:1:2")
+        XCTAssertEqual(rig.engine.loads.count, loads, "el que ya suena no se vuelve a abrir")
+    }
+
     func testCancelingUpNextKeepsWatchingTheCurrentEpisode() async throws {
         let rig = try nextEpisodeRig()
         await rig.model.begin(rig.request())
