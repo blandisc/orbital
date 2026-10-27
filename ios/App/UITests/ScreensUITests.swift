@@ -106,6 +106,30 @@ final class ScreensUITests: XCTestCase {
         XCTAssertTrue(waitUntil { barShown() }, "al subir con el dedo, vuelve")
     }
 
+    /// Buscar › «Ver todo» de lo más popular hoy: abre la lista completa, un título se abre y se regresa, y funciona otra vez.
+    func testPopularSeeAllOpens() {
+        app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
+        app.launch()
+        // El encabezado entero es el botón: su nombre junta el título y «Ver todo».
+        let seeAll = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Ver todo'")).firstMatch
+        XCTAssertTrue(seeAll.waitForExistence(timeout: 20), "el botón «Ver todo»")
+        for round in 1...2 {
+            seeAll.tap()
+            let title = app.navigationBars.staticTexts["Lo más popular hoy"].firstMatch
+            XCTAssertTrue(title.waitForExistence(timeout: 10), "abre la lista completa (vez \(round))")
+            let poster = app.buttons["title-link"].firstMatch
+            XCTAssertTrue(poster.waitForExistence(timeout: 10), "con sus títulos (vez \(round))")
+            if round == 1 {
+                poster.tap()
+                XCTAssertTrue(waitUntil(10) { !title.exists }, "abre el título")
+                app.navigationBars.buttons.firstMatch.tap()
+                XCTAssertTrue(title.waitForExistence(timeout: 10), "regresa a la lista")
+            }
+            app.navigationBars.buttons.firstMatch.tap()
+            XCTAssertTrue(seeAll.waitForExistence(timeout: 10), "regresa a Buscar (vez \(round))")
+        }
+    }
+
     /// Buscar: al bajar despacio (como con el dedo, a 120 cuadros por segundo cada cuadro avanza poco), la barra se va igual.
     func testSearchBarHidesOnSlowScroll() {
         app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]

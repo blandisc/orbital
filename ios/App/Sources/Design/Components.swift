@@ -129,6 +129,12 @@ struct DSSectionHead: View {
     }
 
     var body: some View {
+        // Sin texto a la derecha, la acción es de todo el encabezado (el «Ver todo» de Buscar): antes solo se conectaba
+        // con `trailing` y la cápsula «Ver todo» no hacía nada al tocarla.
+        if trailing == nil, let action { Button(action: action) { head }.buttonStyle(.plain) } else { head }
+    }
+
+    private var head: some View {
         // Lo de la derecha («Ver todo», el número) va a la altura del título, no de la línea ámbar de arriba.
         HStack(alignment: .sectionTitle, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
