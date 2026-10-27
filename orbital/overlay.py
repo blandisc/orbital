@@ -4,7 +4,8 @@ Orbital (tokens.css, themes/orbital.css, toast.css):
 - Notificación («GameSir conectado · Jugador 2», «Se desconectó el GameSir»): arriba a la derecha, donde salen los avisos
   de Orbital, con su forma (radio xl), su fondo, su borde fino y su sombra. El ícono en un círculo: el número del
   jugador en el azul de los controles de Orbital o, si es advertencia, «!» en ámbar tenue. Entra como los avisos (desliza 1,5 rem y aparece en 220 ms, ease-out) y el número hace un «pop».
-- Acción (mantener el atajo de cerrar): abajo al centro, el juego en grande, qué mantener y la barra que se llena.
+- Acción (mantener el atajo de cerrar): la misma notificación, en el mismo lugar, con el ícono de apagar; el anillo coral
+  alrededor se llena mientras mantienes el atajo y, al cerrar, el círculo se llena entero («Volviendo a Orbital»).
 
 Todo se mide en `rem`, la unidad de la interfaz (min(1,25 vw, 2 vh)): se ve igual de grande que Orbital en 4K, en 1080p
 para jugar o en la pantalla de la Legion. Se dibuja con Pillow (suavizado, con transparencia de verdad) y Windows lo pone
@@ -41,8 +42,7 @@ PAD_LEFT, PAD_RIGHT, GAP = .5, 1.5, .75  # --space-2 · --space-6 · --space-3
 TOAST_MIN_W, TOAST_MAX_W, TOAST_H = 18, 34, 4.1
 TITLE_SIZE, DETAIL_SIZE = 1.07, .98  # --text-md · --text-sm
 SHADOW_Y, SHADOW_BLUR, SHADOW_ALPHA = 1.5, 4.0, .55  # --shadow-overlay: 0 1.5rem 4rem rgba(0,0,0,.55)
-ACTION_W, ACTION_H = 26, 6.2  # la acción de cerrar
-FROM_TOP = .78  # dónde va el centro de la acción, en fracción del alto
+RING = .16  # rem: el grueso del anillo que se llena al mantener el atajo de cerrar
 SAFE_AREA = 4  # --safe-area: margen de la tele (Ajustes › Márgenes de la TV)
 
 # El movimiento (tokens.css): --duration-base / --ease-out y --duration-exit / --ease-in, como toast-in / toast-out.
@@ -193,7 +193,7 @@ def draw_toast(title: str, detail: str, mark: str, tone: str, rem: float, grow: 
     draw = ImageDraw.Draw(image)
     room = width - left - PAD_RIGHT * rem
     x, mid = margin + left, margin + height / 2
-    if mark:
+    if mark and grow > 0:
         circle = _circle(mark, icon, tone, grow)
         image.alpha_composite(circle, (round(margin + inset), round(mid - icon / 2)))
     if detail:
@@ -205,29 +205,42 @@ def draw_toast(title: str, detail: str, mark: str, tone: str, rem: float, grow: 
     return image, margin
 
 
-def draw_action(title: str, detail: str, progress: float, rem: float, base=None):
-    """La acción de cerrar: (imagen, margen, base sin la barra, para reusarla en cada cuadro)."""
-    from PIL import ImageDraw
+def _power(size: int, progress: float, done: bool):
+    """El ícono de cerrar: el símbolo de apagar en un círculo tenue, con el anillo coral que se llena con `progress`
+    (de las 12 en punto, en el sentido del reloj). `done`: el círculo coral entero (ya se está cerrando)."""
+    from PIL import Image, ImageDraw
 
-    width, height = ACTION_W * rem, ACTION_H * rem
-    pad = 1.4 * rem
+    big = size * 4
+    image = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    ring = max(4, round(big * RING / ICON))
+    if done:
+        draw.ellipse((0, 0, big - 1, big - 1), fill=CORAL + (255,))
+    else:
+        draw.ellipse((0, 0, big - 1, big - 1), fill=CORAL + (46,))  # tenue, como el «!» de advertencia
+        if progress > 0:
+            draw.arc((ring / 2, ring / 2, big - 1 - ring / 2, big - 1 - ring / 2), -90, -90 + 360 * min(1.0, progress),
+                     fill=CORAL + (255,), width=ring)
+    ink = (TEXT if done else CORAL) + (255,)
+    r, stroke = big * .22, max(3, round(big * .075))
+    c = big / 2
+    draw.arc((c - r, c - r + big * .03, c + r, c + r + big * .03), -50, 230, fill=ink, width=stroke)
+    draw.line((c, c - r - big * .02, c, c + big * .02), fill=ink, width=stroke)
+    for x, y in ((c, c - r - big * .02), (c, c + big * .02)):  # puntas redondas
+        draw.ellipse((x - stroke / 2, y - stroke / 2, x + stroke / 2, y + stroke / 2), fill=ink)
+    return image.resize((size, size), Image.LANCZOS)
+
+
+def draw_action(title: str, detail: str, progress: float, rem: float, base=None, done: bool = False):
+    """La acción de cerrar, con la forma de la notificación: (imagen, margen, base sin el ícono, para reusarla en cada
+    cuadro)."""
     if base is None:
-        image, margin = _card(width, height, rem)
-        draw = ImageDraw.Draw(image)
-        room = width - 2 * pad
-        big, small = _font(1.5 * rem, "Semibold"), _font(DETAIL_SIZE * rem, "Regular")
-        draw.text((margin + pad, margin + 1.15 * rem), _fit(draw, title, big, room), fill=TEXT + (255,), font=big, anchor="lt")
-        draw.text((margin + pad, margin + 3.05 * rem), _fit(draw, detail, small, room), fill=MUTED + (255,), font=small,
-                  anchor="lt")
+        image, margin = draw_toast(title, detail, " ", "ok", rem, grow=0)
         base = (image, margin)
     image, margin = base[0].copy(), base[1]
-    draw = ImageDraw.Draw(image)
-    bar = max(3, round(.32 * rem))
-    y = margin + height - pad - bar
-    x0, x1 = margin + pad, margin + width - pad
-    draw.rounded_rectangle((x0, y, x1, y + bar), bar / 2, fill=TRACK + (255,))
-    if progress > 0:
-        draw.rounded_rectangle((x0, y, x0 + max(bar, (x1 - x0) * min(1.0, progress)), y + bar), bar / 2, fill=CORAL + (255,))
+    icon = round(ICON * rem)
+    inset = (TOAST_H * rem - icon) / 2
+    image.alpha_composite(_power(icon, progress, done), (round(margin + inset), round(margin + TOAST_H * rem / 2 - icon / 2)))
     return image, margin, base
 
 
@@ -345,19 +358,15 @@ class GameOverlay:
             return state["rem"]
 
         def put(image, margin: int, anchor: str) -> None:
-            """La imagen nueva en su lugar, en la pantalla de ahora: la notificación arriba a la derecha (top y right de
-            .toast), la acción abajo al centro."""
+            """La imagen nueva en su lugar, en la pantalla de ahora: arriba a la derecha (top y right de .toast)."""
             sx, sy, sw, sh = screen_rect()
             rem = state["rem"]
             surface.set_image(image)
             w, h = image.size
-            if anchor == "toast":
-                safe = self.safe_area()
-                top = (1.25 + 3 + .25) * rem + safe * .006 * sh  # calc(--space-5 + --safe-y + 3rem + --space-1)
-                right = max(rem, safe * .01 * sw)  # --page-gutter: max(--space-4, --safe-x)
-                state["spot"] = (sx + sw - right - (w - margin), sy + top - margin)
-            else:
-                state["spot"] = (sx + (sw - w) / 2, sy + sh * FROM_TOP - h / 2)
+            safe = self.safe_area()
+            top = (1.25 + 3 + .25) * rem + safe * .006 * sh  # calc(--space-5 + --safe-y + 3rem + --space-1)
+            right = max(rem, safe * .01 * sw)  # --page-gutter: max(--space-4, --safe-x)
+            state["spot"] = (sx + sw - right - (w - margin), sy + top - margin)
             draw_now()
 
         def draw_now() -> None:
@@ -378,8 +387,7 @@ class GameOverlay:
 
         def leave() -> None:
             shift = 0 if self.reduce_motion() else SLIDE_OUT * state["rem"]
-            dx, dy = (shift, 0) if state["kind"] == "toast" else (0, shift)
-            animate(dx, dy, 0.0, EXIT_MS, ease_in)
+            animate(shift, 0, 0.0, EXIT_MS, ease_in)
 
         def toast(cmd) -> None:
             _, title, detail, duration, mark, tone = cmd
@@ -393,11 +401,11 @@ class GameOverlay:
             state["hide_at"] = time.monotonic() + duration / 1000
             enter("x")
 
-        def action(title: str, detail: str, progress: float, fresh: bool) -> None:
+        def action(title: str, detail: str, progress: float, fresh: bool, done: bool = False) -> None:
             rem = measure() if fresh else state["rem"]
             if fresh or state["kind"] != "action":
                 state["base"] = None
-            image, margin, state["base"] = draw_action(title, detail, progress, rem, state["base"])
+            image, margin, state["base"] = draw_action(title, detail, progress, rem, state["base"], done=done)
             state["kind"] = "action"
             put(image, margin, "action")
 
@@ -410,10 +418,10 @@ class GameOverlay:
                 state["filling"] = (time.monotonic(), max(duration, 1) / 1000, title, detail)
                 state["hide_at"], state["pop"] = None, None
                 action(title, detail, 0.0, fresh=True)
-                enter("y")
+                enter("x")
             elif kind == "closing":
                 state["filling"] = None
-                action(cmd[1], cmd[2], 1.0, fresh=True)
+                action(cmd[1], cmd[2], 1.0, fresh=True, done=True)
             elif kind == "hide":
                 state["hide_at"] = time.monotonic() + cmd[1] / 1000
                 state["filling"] = None

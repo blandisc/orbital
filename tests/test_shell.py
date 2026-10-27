@@ -131,7 +131,7 @@ def test_hold_shows_overlay_in_game_and_closes_hard():
     # El juego en grande y qué mantener (sin mando que lo diga, sin atajo inventado).
     assert overlay.calls == [("show", "Mario Party Superstars", "Sigue manteniendo para cerrar")]
     shell.hold_complete()
-    assert overlay.calls[1:] == [("closing", "Cerrando Mario Party Superstars", "Eden"), ("hide",)]
+    assert overlay.calls[1:] == [("closing", "Mario Party Superstars", "Cerrando · Volviendo a Orbital"), ("hide",)]
     assert shell.catalog.launcher.stopped and shell.catalog.launcher.forced  # de golpe, sin "¿Seguro?"
 
 
@@ -185,7 +185,7 @@ def test_legion_l_twice_closes_the_game():
     win.fg = LEGION
     shell.check_legion(LEGION, previous=ORBITAL, now=101.2)  # segundo toque: ya estabas en Orbital
     assert shell.catalog.launcher.stopped and shell.catalog.launcher.forced and not win.suspended
-    assert win.fg == ORBITAL and ("closing", "Cerrando Mario Party Superstars", "Eden") in overlay.calls
+    assert win.fg == ORBITAL and ("closing", "Mario Party Superstars", "Cerrando · Volviendo a Orbital") in overlay.calls
     assert win.minimized == [LEGION, LEGION]  # Legion Space nunca se queda
 
 

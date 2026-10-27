@@ -286,7 +286,7 @@ class ConsoleShell:
         if target is None:
             return
         if self.overlay:
-            self.overlay.closing(f"Cerrando {target['title']}", target.get("runner") or "")
+            self.overlay.closing(target["title"], "Cerrando · Volviendo a Orbital")
         self.stop_game()
         if self.overlay:
             self.overlay.hide(delay_ms=350)
@@ -455,7 +455,7 @@ class ConsoleShell:
             self.hold = self.target(left["hwnd"]) or left["target"]
             log.info("Legion L dos veces: cierro %s", self.hold.get("title"))
             if self.overlay:
-                self.overlay.closing(f"Cerrando {self.hold.get('title') or 'el juego'}", self.hold.get("runner") or "")
+                self.overlay.closing(self.hold.get("title") or "El juego", "Cerrando · Volviendo a Orbital")
             self.stop_game()
             if self.overlay:
                 self.overlay.hide(delay_ms=350)
