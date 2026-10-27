@@ -169,3 +169,16 @@ def test_play_order_puts_the_last_controller_used_first():
     finally:
         gamepad._watcher = None
     assert gamepad.play_order() == []
+
+
+def test_ryujinx_keeps_a_place_for_known_controllers_that_are_off(tmp_path):
+    """El GameSir apagado al abrir el juego: se le aparta el lugar del Jugador 2, y al encenderlo Ryujinx lo toma solo
+    (antes había que reiniciar el juego)."""
+    legion_id, gamesir_id = "0-00000003-17ef-0000-eb61-000000007200", "0-00000003-3537-0000-4010-000000007200"
+    glob = tmp_path / "Config.json"
+    glob.write_text(json.dumps({"input_config": [ryujinx_pad(legion_id, "Player1"), ryujinx_pad(gamesir_id, "Player2")]}),
+                    encoding="utf-8")
+    profiles = emulator_input.ryujinx_profiles([glob])
+    emulator_input.arrange_ryujinx(glob, [LEGION], profiles)  # solo la Legion encendida
+    pads = json.loads(glob.read_text(encoding="utf-8"))["input_config"]
+    assert [(p["id"], p["player_index"]) for p in pads] == [(legion_id, "Player1"), (gamesir_id, "Player2")]

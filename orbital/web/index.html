@@ -7,6 +7,9 @@
   <title>Orbital</title>
   <link rel="icon" type="image/png" sizes="256" href="icons/orbital-256.png">
   <link rel="apple-touch-icon" href="icons/orbital-512.png">
+  <!-- De vuelta de un juego con el modo juego (kiosk.park): Orbital se reabre sin la entrada de la marca. Antes de
+       pintar nada, para que la marca no alcance a asomarse. -->
+  <script>if (/[?&]regreso\b/.test(location.search)) document.documentElement.dataset.regreso = "";</script>
   <link rel="stylesheet" href="styles/main.css">
   <script type="module" src="js/main.js"></script>
 </head>

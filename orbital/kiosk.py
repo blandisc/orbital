@@ -180,8 +180,11 @@ class KioskWindow:
     def open(self) -> bool:
         with self._lock:
             self.exited_by_user = False
+            url = self.url
             if self.parked:
                 self.parked = False
+                # De vuelta del juego: para ti Orbital nunca se fue, así que sin la entrada de la marca (?regreso).
+                url += ("&" if "?" in url else "?") + "regreso"
                 log.info("Modo juego: vuelvo a abrir la ventana de Orbital")
                 if self.on_unpark:
                     self.on_unpark()
@@ -204,7 +207,7 @@ class KioskWindow:
             close_orphans(self.profile_dir)
             mark_clean_exit(self.profile_dir)
             allow_microphone(self.profile_dir, self.url)
-            self._process = subprocess.Popen(build_command(exe, self.url, self.profile_dir),
+            self._process = subprocess.Popen(build_command(exe, url, self.profile_dir),
                                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             log.info("Interfaz abierta (pid %s)", self._process.pid)
             # La barra de Windows se ve como siempre (la pantalla completa de Orbital la tapa); solo se esconde mientras

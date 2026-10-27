@@ -242,6 +242,11 @@ def arrange_ryujinx(config: Path, order: list[Device], profiles: dict[Device, di
     players = assign(order, set(profiles))[:RYUJINX_PLAYERS]
     if not players:
         return False
+    # Los controles que Ryujinx ya conoce pero están apagados, con su lugar apartado después de los encendidos: Ryujinx
+    # vuelve a leer la lista cuando se conecta un control, así que si enciendes el GameSir a media partida, entra solo
+    # como el siguiente jugador. Mientras está apagado, para el juego no existe (Ryujinx salta lo que no está).
+    spare = [(device, 0) for device in profiles if device not in order]
+    players += spare[:RYUJINX_PLAYERS - len(players)]
     pads = [_ryujinx_entry(profiles[device], device, port, n) for n, (device, port) in enumerate(players)]
     taken = {p["player_index"] for p in pads}
     # Lo que no es un control acomodado aquí (el teclado, el modo portátil) se queda, salvo que use el lugar de uno.

@@ -6,6 +6,7 @@
   position: fixed; inset: 0; z-index: var(--z-boot); overflow: hidden; color: var(--color-text); font-family: var(--font-sans);
 }
 #boot::before { content: ""; position: absolute; inset: 0; background: var(--color-bg); } /* el fondo de la app: se funde aparte de la marca */
+html[data-regreso] #boot .boot__brand, html[data-regreso] #boot .boot__status { display: none; } /* de vuelta de un juego: solo el fondo, que se funde */
 /* La marca, armada igual que la de la barra (status-bar.css · .status-bar__brand) y más grande: al irse, solo se encoge. */
 #boot .boot__brand {
   position: absolute; left: 50%; top: 50%; display: inline-flex; align-items: center; gap: .6rem; font-size: var(--type-body);
