@@ -212,6 +212,18 @@ def test_loading_screen_covers_the_emulator_until_the_game_is_ready():
     assert events == [{"type": "launch-ready", "id": "x"}]
 
 
+def test_resolution_drops_in_the_black_after_the_loading_screen():
+    # La tele baja a 1080p en el negro entre la pantalla de carga y el juego: antes bajaba al pedir el juego y la
+    # pantalla de carga (con la portada) se veía a 1080p, borrosa.
+    win = FocusWindows()
+    win.open(3, "Eden | Mario Party Superstars")
+    order = []
+    bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Mario Party Superstars", "Eden",
+                        notify=lambda e: order.append(e["type"]), on_black=lambda: order.append("1080p"),
+                        timeout=5, win=win, sleep=lambda s: None)
+    assert order == ["launch-ready", "1080p"]
+
+
 def test_skip_shows_whatever_is_there():
     import threading
     win = FocusWindows()
