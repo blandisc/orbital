@@ -35,10 +35,54 @@ PAD = 28
 BAR = 6
 FROM_TOP = .78  # dónde va su centro, en fracción del alto de la pantalla
 FADE_MS = 140
+RISE = 22  # px lógicos que sube el aviso breve al entrar (y baja al irse); con «Reducir movimiento», solo el fundido
+BADGE = 56  # px lógicos del círculo con el número del jugador
+
+
+def screen_rect() -> tuple[int, int, int, int]:
+    """(x, y, ancho, alto) de la pantalla principal AHORA, en las mismas unidades que la ventana. GetSystemMetrics se
+    quedaba con el tamaño de cuando arrancó Orbital: con la tele bajada a 1080p para jugar (display.py) el aviso se
+    calculaba para 4K y quedaba fuera de la pantalla (y = 1556 en una de 1080, visto el 2026-10-26)."""
+
+    class _Rect(ctypes.Structure):
+        _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long), ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+
+    class _Info(ctypes.Structure):
+        _fields_ = [("cbSize", ctypes.c_ulong), ("rcMonitor", _Rect), ("rcWork", _Rect), ("dwFlags", ctypes.c_ulong)]
+
+    user32 = ctypes.windll.user32
+    user32.MonitorFromPoint.restype = ctypes.c_void_p
+    monitor = user32.MonitorFromPoint(ctypes.c_longlong(0), 1)  # MONITOR_DEFAULTTOPRIMARY
+    info = _Info()
+    info.cbSize = ctypes.sizeof(info)
+    if monitor and user32.GetMonitorInfoW(ctypes.c_void_p(monitor), ctypes.byref(info)):
+        r = info.rcMonitor
+        return r.left, r.top, r.right - r.left, r.bottom - r.top
+    return 0, 0, user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+
+
+def _badge_image(text: str, size: int, fill: str, ink: str):
+    """El círculo con el número del jugador, suavizado (los óvalos de Tk salen dentados en Windows): se dibuja al
+    cuádruple con Pillow y se reduce. None sin Pillow."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont, ImageTk
+    except ImportError:
+        return None
+    big = size * 4
+    image = Image.new("RGBA", (big, big), BG)
+    draw = ImageDraw.Draw(image)
+    draw.ellipse((0, 0, big - 1, big - 1), fill=fill)
+    try:
+        font = ImageFont.truetype("segoeuib.ttf", int(big * .5))
+    except OSError:
+        font = ImageFont.load_default()
+    draw.text((big / 2, big / 2), text, fill=ink, font=font, anchor="mm")
+    return ImageTk.PhotoImage(image.resize((size, size), Image.LANCZOS))
 
 
 class GameOverlay:
-    def __init__(self) -> None:
+    def __init__(self, reduce_motion=lambda: False) -> None:
+        self.reduce_motion = reduce_motion  # Ajustes › Pantalla › Reducir movimiento: sin el deslizamiento
         self._commands: queue.Queue = queue.Queue()
         self._ready = threading.Event()
         self._thread: threading.Thread | None = None
@@ -54,9 +98,9 @@ class GameOverlay:
     def show(self, title: str, detail: str, duration_ms: int) -> None:
         self._commands.put(("show", title, detail, duration_ms))
 
-    def notice(self, title: str, detail: str = "", seconds: float = 3.5) -> None:
-        """Un aviso breve, sin barra, que se va solo."""
-        self._commands.put(("notice", title, detail, int(seconds * 1000)))
+    def notice(self, title: str, detail: str = "", seconds: float = 3.5, badge: str = "") -> None:
+        """Un aviso breve, sin barra, que se va solo; con `badge`, un círculo con ese número a la izquierda (el jugador)."""
+        self._commands.put(("notice", title, detail, int(seconds * 1000), badge))
 
     def closing(self, title: str, detail: str = "") -> None:
         self._commands.put(("closing", title, detail))
@@ -81,9 +125,10 @@ class GameOverlay:
         root.attributes("-alpha", 0.0)
         scale = root.winfo_fpixels("1i") / 96
         w, h, pad = int(WIDTH * scale), int(HEIGHT * scale), int(PAD * scale)
-        x = (root.winfo_screenwidth() - w) // 2
-        y = int(root.winfo_screenheight() * FROM_TOP) - h // 2
-        root.geometry(f"{w}x{h}+{x}+{y}")
+        sx, sy, sw, sh = screen_rect()
+        root.geometry(f"{w}x{h}+{sx + (sw - w) // 2}+{sy + int(sh * FROM_TOP) - h // 2}")
+        rise = int(RISE * scale)
+        badge_size = int(BADGE * scale)
 
         canvas = tk.Canvas(root, width=w, height=h, bg=BG, highlightthickness=0, bd=0)
         canvas.pack()
@@ -92,14 +137,16 @@ class GameOverlay:
         detail_font = tkfont.Font(root, family="Segoe UI Variable Text", size=11)
         title = canvas.create_text(pad, pad - int(4 * scale), anchor="nw", fill=TEXT, font=title_font, text="")
         detail = canvas.create_text(pad, pad + int(32 * scale), anchor="nw", fill=MUTED, font=detail_font, text="")
+        badge = canvas.create_image(pad, h // 2, anchor="w")
+        badge_art: dict[str, object] = {}  # las imágenes de Tk se pierden si nadie las guarda
         bar_h = max(3, int(BAR * scale))
         bar_y = h - pad - bar_h
         track = canvas.create_rectangle(pad, bar_y, w - pad, bar_y + bar_h, fill=TRACK, width=0)
         fill = canvas.create_rectangle(pad, bar_y, pad, bar_y + bar_h, fill=FILL, width=0)
 
-        def fit(text: str, font) -> str:
+        def fit(text: str, font, room: int | None = None) -> str:
             """Un renglón: un título largo se corta con «…» en vez de salirse de la ventana."""
-            room = w - 2 * pad
+            room = room if room is not None else w - 2 * pad
             if font.measure(text) <= room:
                 return text
             while text and font.measure(text + "…") > room:
@@ -115,35 +162,64 @@ class GameOverlay:
         # directo. Mostrarla es SW_SHOWNOACTIVATE: nunca le quita el foco al juego.
         root.deiconify()
         _hide(hwnd)
-        state = {"start": 0.0, "duration": 1.0, "filling": False, "alpha": 0.0, "target": 0.0, "hide_at": None}
+        state = {"start": 0.0, "duration": 1.0, "filling": False, "alpha": 0.0, "target": 0.0, "hide_at": None,
+                 "offset": 0.0, "base": (0, 0)}
 
         def set_progress(fraction: float) -> None:
             canvas.coords(fill, pad, bar_y, pad + (w - 2 * pad) * min(1.0, max(0.0, fraction)), bar_y + bar_h)
 
-        def place() -> None:
-            """Centrado abajo en la pantalla de AHORA: al jugar, Orbital baja la tele a 1080p (display.py) y la posición
-            calculada al arrancar (a 4K) quedaba fuera de la pantalla."""
-            sw, sh = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
-            root.geometry(f"{w}x{h}+{(sw - w) // 2}+{int(sh * FROM_TOP) - h // 2}")
+        def place(offset: float = 0.0) -> None:
+            """Centrado abajo en la pantalla de AHORA (ver screen_rect); `offset`: cuánto más abajo (la entrada sube)."""
+            sx, sy, sw, sh = screen_rect()
+            state["base"] = (sx + (sw - w) // 2, sy + int(sh * FROM_TOP) - h // 2)
+            move(offset)
+
+        def move(offset: float) -> None:
+            state["offset"] = offset
+            bx, by = state["base"]
+            root.geometry(f"{w}x{h}+{bx}+{by + int(offset)}")
+
+        def layout(with_badge: bool) -> int:
+            """Con número de jugador, el texto va a la derecha del círculo y centrado en alto; sin él, como siempre."""
+            left = pad + badge_size + int(18 * scale) if with_badge else pad
+            canvas.coords(title, left, h // 2 - int(26 * scale) if with_badge else pad - int(4 * scale))
+            canvas.coords(detail, left, h // 2 + int(6 * scale) if with_badge else pad + int(32 * scale))
+            canvas.itemconfigure(badge, state="normal" if with_badge else "hidden")
+            return w - left - pad
 
         def handle(cmd) -> None:
             kind = cmd[0]
             if kind in ("show", "notice", "closing"):
-                place()
-            bar = "hidden" if kind == "notice" else "normal"
-            canvas.itemconfigure(track, state=bar)
-            canvas.itemconfigure(fill, state=bar)
+                place()  # en la pantalla de ahora (4K, 1080p para jugar, la de la Legion…)
+                bar = "hidden" if kind == "notice" else "normal"
+                canvas.itemconfigure(track, state=bar)
+                canvas.itemconfigure(fill, state=bar)
             if kind == "notice":
-                _, text, sub, duration = cmd
-                canvas.itemconfigure(title, text=fit(text, title_font))
-                canvas.itemconfigure(detail, text=fit(sub, detail_font))
-                state.update(filling=False, target=0.97, hide_at=time.monotonic() + duration / 1000)
+                _, text, sub, duration, number = cmd
+                if number:
+                    art = _badge_image(number, badge_size, FILL, TEXT)
+                    if art is not None:
+                        badge_art["now"] = art
+                        canvas.itemconfigure(badge, image=art)
+                room = layout(bool(number) and "now" in badge_art)
+                canvas.itemconfigure(title, text=fit(text, title_font, room))
+                canvas.itemconfigure(detail, text=fit(sub, detail_font, room))
+                still = self.reduce_motion()
+                place(0 if still or state["alpha"] > 0 else rise)  # entra subiendo desde un poco más abajo
+                state.update(filling=False, target=0.97, hide_at=time.monotonic() + duration / 1000, rising=not still)
                 _raise_no_activate(hwnd)
-            elif kind == "show":
+                return
+            if kind in ("show", "closing"):
+                layout(False)  # el de cerrar: sin círculo, con su barra
+            if kind == "show":
                 _, text, sub, duration = cmd
                 canvas.itemconfigure(title, text=fit(text, title_font))
                 canvas.itemconfigure(detail, text=fit(sub, detail_font))
-                state.update(start=time.monotonic(), duration=max(duration, 1) / 1000, filling=True, target=0.97, hide_at=None)
+                # La misma entrada que el aviso de «Control conectado»: sube mientras aparece (una sola familia de avisos).
+                still = self.reduce_motion()
+                place(0 if still or state["alpha"] > 0 else rise)
+                state.update(start=time.monotonic(), duration=max(duration, 1) / 1000, filling=True, target=0.97, hide_at=None,
+                             rising=not still)
                 set_progress(0)
                 _raise_no_activate(hwnd)
             elif kind == "closing":
@@ -164,6 +240,14 @@ class GameOverlay:
             now = time.monotonic()
             if state["hide_at"] is not None and now >= state["hide_at"]:
                 state["target"], state["hide_at"] = 0.0, None
+            # El aviso breve sube al entrar y baja un poco al irse, al ritmo del fundido (curva de salida suave).
+            if state.get("rising"):
+                goal = 0.0 if state["target"] > 0 else rise * .5
+                gap = goal - state["offset"]
+                if abs(gap) > .5:
+                    move(state["offset"] + gap * .22)
+                elif state["target"] == 0 and state["alpha"] == 0:
+                    state["rising"] = False
             if state["filling"]:
                 set_progress((now - state["start"]) / state["duration"])
             # Fundido de entrada/salida

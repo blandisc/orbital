@@ -483,7 +483,8 @@ class ConsoleShell:
         self.unpin_orbital()
         if self.overlay is None:
             from .overlay import GameOverlay
-            overlay = GameOverlay()
+            state = getattr(self.catalog, "state", None)
+            overlay = GameOverlay(reduce_motion=lambda: bool(state.settings().get("reduce_motion")) if state else False)
             self.overlay = overlay if overlay.start() else None
         self.gamepad = GamepadWatcher(self.on_gamepad, self.on_buttons)
         self.gamepad.on_pad = self.on_pad  # un control que llega o se va: su número de jugador, en pantalla
@@ -513,6 +514,7 @@ class ConsoleShell:
         from .players import name_of, players
 
         name = name_of(device)
+        connected_word = "conectado"
         if not connected:
             players.sync()
             if self.away_from_orbital() and self.overlay is not None:
@@ -522,18 +524,19 @@ class ConsoleShell:
             return
         number = players.joined(slot)
         gamepad.rumble(slot)
-        message = f"Control {name} conectado · Jugador {number}"
+        message = f"Control {name} {connected_word} · Jugador {number}"
         running = self.catalog.launcher.status()
         log.info("%s", message)
         detail = ""
         if running and running.get("managed") and number > 1:
             exe = self.win.exe_name(int(running["pid"])) if running.get("pid") else ""
-            detail = ("Ya puede jugar" if exe in self.LIVE_JOIN
-                      else f"Para que juegue en {running['title']}: Home › Jugadores › Reiniciar con estos jugadores")
+            detail = "Ya puede jugar" if exe in self.LIVE_JOIN or exe == "ryujinx.exe" \
+                else f"Para que juegue en {running['title']}: Home › Jugadores › Reiniciar con estos jugadores"
         # Con un juego abierto, encima del juego (aunque todavía esté cargando: en un momento Orbital ya no se ve).
         in_game = bool(running and running.get("managed")) or self.away_from_orbital()
         if in_game and self.overlay is not None:
-            self.overlay.notice(message, detail)
+            # La tarjeta encima del juego: el número del jugador en su círculo, el control y qué puede hacer.
+            self.overlay.notice(f"{name} {connected_word}", detail or f"Jugador {number}", seconds=4.5, badge=str(number))
         else:
             self.notify({"type": "toast", "tone": "success", "message": message, **({"detail": detail} if detail else {})})
 
