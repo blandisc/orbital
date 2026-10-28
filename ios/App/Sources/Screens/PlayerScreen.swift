@@ -213,6 +213,8 @@ struct PlayerScreen: View {
     /// carga un segundo).
     @State private var loadingShown = true
     @State private var loadingTask: Task<Void, Never>?
+    @State private var playedVideo: String?
+    @State private var playedAt = Date.distantPast
 
     var body: some View {
         let model = holder.model
@@ -476,7 +478,15 @@ struct PlayerScreen: View {
         }
         .task(id: current.videoID) { knownAspect = nil; await loadAmbient(); await loadLocalizedEpisodes() }
         .onChange(of: loadingNow(model), initial: true) { _, now in updateLoading(now, model) }
-        .onChange(of: landscape) { holder.engine.setZoom(zoom) }   // al girar, cada sentido con su zoom
+        // Al girar, cada sentido con su zoom; y otra vez cuando termina la animación del giro (el motor del iPhone a veces se
+        // quedaba con el «Llenar» de horizontal y la imagen seguía agrandada en vertical).
+        .onChange(of: landscape) {
+            holder.engine.setZoom(zoom)
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: DS.Timing.rotationSettle)
+                holder.engine.setZoom(zoom)
+            }
+        }
         .task(id: pendingSeek) { if pendingSeek != nil { try? await Task.sleep(nanoseconds: DS.Timing.seekPatience); pendingSeek = nil } }
         .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
         .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
@@ -1174,12 +1184,20 @@ struct PlayerScreen: View {
         !model.hasPlayed || model.phase == .preparing || model.snapshot.state == .loading || model.snapshot.state == .buffering
     }
 
+    /// Al abrir, la carga hasta que el video suena por primera vez. Desde ahí, solo si se atora de verdad: en los primeros
+    /// segundos el motor suele hacer un último ajuste (la pista de audio, el punto donde ibas) y se veía play → carga → play.
     private func updateLoading(_ now: Bool, _ model: PlayerModel) {
         loadingTask?.cancel()
-        guard now else { loadingShown = false; return }
-        if !model.hasPlayed { loadingShown = true; return }
+        let video = current.videoID
+        guard now else {
+            loadingShown = false
+            if model.snapshot.state == .playing && playedVideo != video { playedVideo = video; playedAt = Date() }
+            return
+        }
+        if playedVideo != video { loadingShown = true; return }
+        let settling = Date().timeIntervalSince(playedAt) < DS.Timing.loadingSettleWindow
         loadingTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: DS.Timing.quietSpinnerDelay)
+            try? await Task.sleep(nanoseconds: settling ? DS.Timing.loadingSettleDelay : DS.Timing.quietSpinnerDelay)
             guard !Task.isCancelled else { return }
             loadingShown = true
         }
@@ -1244,7 +1262,11 @@ struct PlayerScreen: View {
                         if let up = model.upNext, !locked { upNextCard(model, up) }
                         if model.snapshot.duration > 0 { scrubber(model) }
                         // Su lugar está apartado aunque no salga: ±10 y el botón grande no brincan cuando aparece.
-                        HStack(spacing: DS.Space.s2) { Spacer(); nextEpisode(model); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
+                        // Solo cuando hay algo que ofrecer: el botón grande ya va sobre el video, así que su lugar apartado sobraba
+                        // (dejaba una franja negra vacía bajo la barra, más notoria con el video hasta arriba).
+                        if offersSkipOrNext(model) {
+                            HStack(spacing: DS.Space.s2) { Spacer(); nextEpisode(model); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
+                        }
                         // Con el video hasta arriba, la barra de ✕ y el nombre baja aquí.
                         if raisedPortrait(rect) { topBar(model).padding(.top, DS.Space.s4) }
                         if !fillsPortrait { Spacer(minLength: 0) }
@@ -1981,6 +2003,12 @@ struct PlayerScreen: View {
     }
 
     /// «Siguiente · T5 E3»: solo desde el 90 % del episodio (antes no estorba) y mientras no esté la tarjeta del final.
+    /// ¿Hay «Saltar intro» o «Siguiente» que enseñar ahora?
+    private func offersSkipOrNext(_ model: PlayerModel) -> Bool {
+        let s = model.snapshot
+        return model.skipIntroTo != nil || (model.nextUp != nil && model.upNext == nil && s.duration > 0 && s.position >= s.duration * DS.PlayerPanel.nextAt)
+    }
+
     @ViewBuilder private func nextEpisode(_ model: PlayerModel) -> some View {
         let s = model.snapshot
         if let next = model.nextUp, model.upNext == nil, model.skipIntroTo == nil, s.duration > 0, s.position >= s.duration * DS.PlayerPanel.nextAt {
