@@ -64,6 +64,7 @@ def taskbar_hidden(fn, *args, **kwargs):
             if _taskbar_holds == 0:
                 windows.set_taskbar_visible(True)
 
+RESOLUTION_CHECK = 5.0  # s: con la tele en 1080p, cada cuánto se revisa que siga abierto el juego que la bajó
 QUICK_EXIT = 15  # s: un juego que se cierra antes, solo, seguramente no pudo abrir
 PARK_AFTER = 8.0  # s con el juego al frente antes de cerrar la ventana de Orbital (modo juego)
 
@@ -98,6 +99,7 @@ class Sessions:
         self.kiosk = None  # KioskWindow si Orbital abrió la interfaz (la reabre al cerrar un juego)
         # Antes de abrir algo, cerrar lo que estaba abierto (lo pone el servidor: shell.close_previous).
         self.before_launch: Callable[[str], None] | None = None
+        self._resolution_for: str | None = None  # el juego que bajó la tele a 1080p (ver _guard_resolution)
         self._reveal_skip = threading.Event()
         # El arte de la pantalla de carga (lo avisa la interfaz): cuándo empezó a esperarlo y cuándo ya se vio.
         self._art_pending_at: float | None = None
@@ -158,6 +160,8 @@ class Sessions:
             raise FileNotFoundError(errno.ENOENT, "No existe", argv[0])
         if self.before_launch and not keep:
             self.before_launch(item.id)
+        if not self.plays_lowered(item, runner):
+            display.resolution.restore()  # nada que no sea Switch o Xbox 360 se abre con la tele en 1080p
         if item.source in ("stremio", "cinemeta") or item.id == "media:stremio":
             self.open_stremio(item.uri if item.id != "media:stremio" else None, item.title)
             self.state.record_launch(item.id)
@@ -195,7 +199,7 @@ class Sessions:
             # Los juegos a ~1080p (la tele a 4K le cuesta 4 veces más a la gráfica) ANTES de lanzar: el emulador crea su
             # imagen del tamaño de la pantalla y no la rehace. Bajarla con el juego ya a 4K (en el negro tras la pantalla
             # de carga) dejaba en la tele solo su cuarto de arriba a la izquierda, como con zoom (visto el 2026-10-27).
-            lowered = self.lower_resolution()
+            lowered = self.lower_resolution(item)
             try:
                 proc = self.launcher.run(runner.argv if runner else item.argv, cwd=runner.cwd if runner else item.cwd)
             except BaseException:
@@ -209,8 +213,6 @@ class Sessions:
             self.watch_program_switch(item, runner.argv if runner else item.argv, runner.cwd if runner else item.cwd,
                                       runner.name if runner else None)
         elif item.uri:
-            if item.source == "steam" and item.steam_appid:
-                self.lower_resolution()
             if item.source == "steam" and item.steam_appid and self.config.steam.silent_start:
                 steam.ready_silent(steam.find_steam(self.config.steam.path))
             self.launcher.open_uri(item.uri)
@@ -279,15 +281,39 @@ class Sessions:
                          daemon=True, name="to-front").start()
         return True
 
-    def lower_resolution(self) -> bool:
-        """Al abrir un juego: ~1080p si no lo apagaste (Ajustes › Juegos y videos › Resolución al jugar)."""
-        if sys.platform != "win32" or self.state.settings().get("game_resolution", "lower") != "lower":
+    def plays_lowered(self, item: LibraryItem, runner=None) -> bool:
+        """¿Esto se juega a ~1080p? Solo un emulador de Switch o Xbox 360 y si no lo apagaste (Ajustes › Juegos y
+        videos › Resolución al jugar). Steam, las películas y las demás consolas se quedan en la de la pantalla."""
+        return (sys.platform == "win32" and bool(runner or item.argv) and item.system in display.SYSTEMS
+                and self.state.settings().get("game_resolution", "lower") == "lower")
+
+    def lower_resolution(self, item: LibraryItem) -> bool:
+        """Al abrir un juego de Switch o Xbox 360: ~1080p, y un vigilante que la regresa si el juego ya no está."""
+        if not self.plays_lowered(item, True):
             return False
         try:
-            return display.resolution.for_game()
+            lowered = display.resolution.for_game()
         except Exception:  # noqa: BLE001 - la resolución nunca impide abrir un juego
             log.exception("No pude bajar la resolución para jugar")
             return False
+        if display.resolution.lowered is not None:
+            self._resolution_for = item.id  # otro de Switch con la tele ya baja: ahora es de este
+            if lowered:
+                threading.Thread(target=self._guard_resolution, daemon=True, name="resolution-guard").start()
+        return lowered
+
+    def _guard_resolution(self, sleep=time.sleep) -> None:
+        """Mientras la tele está en 1080p: si el juego que la bajó ya no está (dos revisiones seguidas, para no
+        cortar un reintento o un reinicio con jugadores), se regresa. Así nunca se queda baja aunque se pierda el aviso
+        de cierre. Solo vive mientras la tele está baja."""
+        missing = 0
+        while display.resolution.lowered is not None:
+            sleep(RESOLUTION_CHECK)
+            status = self.launcher.status()
+            missing = 0 if status and status.get("id") == self._resolution_for else missing + 1
+            if missing >= 2:
+                log.info("La tele seguía en 1080p sin el juego que la bajó: de vuelta a la de la pantalla")
+                display.resolution.restore()
 
     def restart_with_players(self) -> bool:
         """Jugadores › «Reiniciar con estos jugadores»: cierra el juego y lo abre otra vez con el orden de ahora (los de

@@ -447,13 +447,9 @@ def test_double_launch_does_not_open_a_second_copy(library):
     assert len(library.launcher.ran) == 1
 
 
-def test_resolution_drops_before_the_emulator_opens(library, monkeypatch):
-    """La tele baja a 1080p ANTES de abrir el emulador: crea su imagen del tamaño de la pantalla y no la rehace. Bajarla
-    en el negro tras la pantalla de carga (con el juego ya a 4K) dejaba solo su cuarto de arriba a la izquierda en la
-    tele, como con zoom (visto el 2026-10-27 con Ryujinx)."""
+def _resolution_rig(library, monkeypatch):
+    """La tele a 4K de mentiras: anota cada cambio (y "emulador" al abrirlo), sin tocar nada real."""
     import sys
-
-    import pytest
 
     from orbital import display, sessions
 
@@ -466,9 +462,21 @@ def test_resolution_drops_before_the_emulator_opens(library, monkeypatch):
     # Con win32 de mentiras, ni la ventana real de Orbital al frente ni los contadores reales de Windows.
     monkeypatch.setattr(sessions.system, "bring_to_front", lambda *args, **kwargs: False)
     monkeypatch.setattr(sessions.health, "note_dwm", lambda moment: None)
+    monkeypatch.setattr(library.sessions, "_guard_resolution", lambda: None)  # el vigilante tiene su prueba
     run = library.launcher.run
     monkeypatch.setattr(library.launcher, "run", lambda argv, cwd=None: order.append("emulador") or run(argv, cwd))
     rom = next(i for i in library.items() if i.runners)
+    return order, fake, rom
+
+
+def test_resolution_drops_before_the_emulator_opens(library, monkeypatch):
+    """La tele baja a 1080p ANTES de abrir el emulador: crea su imagen del tamaño de la pantalla y no la rehace. Bajarla
+    en el negro tras la pantalla de carga (con el juego ya a 4K) dejaba solo su cuarto de arriba a la izquierda en la
+    tele, como con zoom (visto el 2026-10-27 con Ryujinx, Eden, xemu, Dolphin y Xenia)."""
+    import pytest
+
+    order, fake, rom = _resolution_rig(library, monkeypatch)
+    rom.system = "switch"
     library.sessions.launch(rom.id)
     assert order == [(1920, 1080, 60), "emulador"]
 
@@ -482,6 +490,56 @@ def test_resolution_drops_before_the_emulator_opens(library, monkeypatch):
     with pytest.raises(OSError):
         library.sessions.launch(rom.id)
     assert order[-2:] == [(1920, 1080, 60), "4K"] and fake.lowered is None  # si no abre, la tele no se queda en 1080p
+
+
+def test_only_switch_and_xbox_360_play_lowered(library, monkeypatch):
+    """Cada cambio es un parpadeo de la tele: solo los que más exigen. Xbox, GameCube, Steam… a la de la pantalla."""
+    order, fake, rom = _resolution_rig(library, monkeypatch)
+    for system in ("snes", "xbox", "gc", "gamecube", "ps2"):
+        rom.system = system
+        library.sessions.launch(rom.id)
+        library.launcher.finish(600)
+    library.sessions.launch("steam:367520")
+    assert "4K" not in order and (1920, 1080, 60) not in order
+
+    rom.system = "xbox360"
+    library.sessions.launch(rom.id)
+    assert order[-2:] == [(1920, 1080, 60), "emulador"]
+
+
+def test_lowered_tv_comes_back_before_opening_anything_else(library, monkeypatch):
+    """Con la tele en 1080p por un juego de Switch, abrir otra cosa sin cerrarlo (o perderse el aviso de cierre) la
+    regresa ANTES de abrirla: nada más se abre en 1080p."""
+    order, fake, rom = _resolution_rig(library, monkeypatch)
+    rom.system = "switch"
+    library.sessions.launch(rom.id)
+    library.sessions.launch("steam:367520", keep=True)
+    assert order[-1] == "4K" and fake.lowered is None
+
+
+def test_setting_off_never_lowers(library, monkeypatch):
+    order, fake, rom = _resolution_rig(library, monkeypatch)
+    rom.system = "switch"
+    library.sessions.state.set_setting("game_resolution", "native")
+    library.sessions.launch(rom.id)
+    assert order == ["emulador"]
+
+
+def test_resolution_guard_restores_when_the_game_is_gone(library, monkeypatch):
+    """Si el aviso de cierre se pierde, el vigilante regresa la tele: dos revisiones seguidas sin el juego (una sola
+    no, para no cortar un reintento o un reinicio con jugadores)."""
+    from orbital import display, sessions
+
+    order = []
+    fake = display.GameResolution(read=lambda: (3840, 2160, 60), modes=lambda: {(1920, 1080, 60)},
+                                  apply=lambda mode: order.append(mode or "4K") or True)
+    monkeypatch.setattr(sessions.display, "resolution", fake)
+    fake.for_game()
+    library.sessions._resolution_for = "switch:x"
+    statuses = iter([{"id": "switch:x"}, None, {"id": "switch:x"}, None, {"id": "media:player"}])
+    monkeypatch.setattr(library.launcher, "status", lambda: next(statuses))
+    library.sessions._guard_resolution(sleep=lambda s: None)
+    assert fake.lowered is None and order == [(1920, 1080, 60), "4K"]  # a la quinta: dos seguidas sin el juego
 
 
 def test_missing_emulator_keeps_the_running_game(library, tmp_path):
