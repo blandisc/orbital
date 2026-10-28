@@ -324,7 +324,7 @@ public final class PlayerModel: ObservableModel {
     /// Justo antes de cargar: de aquí en adelante lo que diga el motor es del video nuevo.
     private func startLoading() {
         loadSegmentsIfNeeded()
-        acceptingSnapshots = true; retrying = false; hasPlayed = false; tracksApplied = false; restoringInPlace = false
+        acceptingSnapshots = true; retrying = false; hasPlayed = false; tracksApplied = false; restoringInPlace = false; playRequest = nil
         // Otra fuente: el subtítulo externo (OpenSubtitles) se vuelve a sumar; antes se perdía al cambiar de fuente.
         addedExternalSubtitle = false; knownSubtitleIDs = []; addedTracks = [:]; pendingSubtitleURL = nil; addedSubtitleURLs = []
         scrobbleStarted = false   // otra carga (otra fuente, otro episodio): cuando suene, Trakt recibe el avance donde va
@@ -465,6 +465,7 @@ public final class PlayerModel: ObservableModel {
             return
         }
         if s.state == .playing && !hasPlayed { hasPlayed = true; startupDeadline = nil; phase = .playing; switchBack = nil }
+        if let request = playRequest, s.state == .playing, s.position > request.position + 0.3 { playRequest = nil }   // ya avanza
         // Rearmando el mismo video en pausa (al volver de segundo plano): en pausa también es «ya está». Antes se esperaba a que
         // sonara, se quedaba en «preparando» sin botones y a los 45 s cambiaba de fuente y arrancaba solo.
         if restoringInPlace, !hasPlayed, s.state == .paused, s.duration > 0 {
@@ -510,6 +511,7 @@ public final class PlayerModel: ObservableModel {
         let now = clock()
         defer { lastTick = now }
         if foregroundCheck != nil { await checkForegroundStall(now: now) }
+        if playRequest != nil { await checkPlayRequest(now: now) }
         if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying {
             if goBackAfterSwitch() { return }
             return await retryWithAnotherSource()?.value ?? ()
@@ -1026,9 +1028,28 @@ public final class PlayerModel: ObservableModel {
         if rate != 1 { await engine.setRate(rate) }
     }
 
-    public func togglePlay() async { userTouched(); snapshot.state == .playing ? await engine.pause() : await engine.play() }
-    public func play() async { userTouched(); await engine.play() }
-    public func pause() async { userTouched(); await engine.pause() }
+    public func togglePlay() async {
+        userTouched()
+        if snapshot.state == .playing { playRequest = nil; await engine.pause() } else { requestPlayback(); await engine.play() }
+    }
+    public func play() async { userTouched(); requestPlayback(); await engine.play() }
+    public func pause() async { userTouched(); playRequest = nil; await engine.pause() }
+
+    /// Pediste que sonara y todavía no avanza (sobre todo al volver de segundo plano, con el video soltado por el motor): la
+    /// pantalla enseña la carga en vez del play, y si en `foregroundStallSeconds` no avanza, el video se pide otra vez ahí mismo.
+    public var awaitingPlayback: Bool { playRequest != nil }
+    private var playRequest: (at: Date, position: Double)? { didSet { if (oldValue == nil) != (playRequest == nil) { changed() } } }
+    private func requestPlayback() {
+        guard hasPlayed, phase == .playing, !closing else { return }
+        playRequest = (clock(), snapshot.position)
+    }
+    private func checkPlayRequest(now: Date) async {
+        guard let request = playRequest else { return }
+        if snapshot.state == .playing, snapshot.position > request.position + 0.3 { playRequest = nil; return }   // ya suena
+        guard now.timeIntervalSince(request.at) >= Self.foregroundStallSeconds, !reconnecting, !retrying else { return }
+        playRequest = nil
+        await reloadCurrentSource(at: max(request.position, snapshot.position), resume: true)
+    }
     public func seek(to seconds: Double) async {
         userTouched()
         let target = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))

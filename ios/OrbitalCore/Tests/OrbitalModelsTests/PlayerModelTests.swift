@@ -63,6 +63,30 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertTrue(rig.engine.loads.isEmpty)
     }
 
+    func testPlayThatDoesNotMoveShowsLoadingAndReloadsAtTheSamePoint() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(300))
+        await rig.model.handle(rig.playing(300, state: .paused))   // pausado (por ejemplo, al volver a la app)
+        XCTAssertFalse(rig.model.awaitingPlayback, "en pausa no hay nada pendiente")
+        await rig.model.togglePlay()
+        XCTAssertTrue(rig.model.awaitingPlayback, "pediste que sonara y aún no avanza: la pantalla enseña la carga")
+        await rig.model.handle(rig.playing(300.1))
+        XCTAssertTrue(rig.model.awaitingPlayback, "dice que suena pero no avanza")
+        await rig.model.handle(rig.playing(301))
+        XCTAssertFalse(rig.model.awaitingPlayback, "ya avanza: se quita la carga")
+        // Otra vez, y ahora no avanza nunca: a los 8 s se pide el video otra vez en el mismo punto.
+        await rig.model.handle(rig.playing(301, state: .paused))
+        await rig.model.togglePlay()
+        let loadsBefore = rig.engine.loads.count
+        rig.clock.advance(PlayerModel.foregroundStallSeconds + 1)
+        await rig.model.tick()
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.count, loadsBefore + 1)
+        XCTAssertEqual(rig.engine.loads.last?.start ?? 0, 301, accuracy: 1)
+        XCTAssertFalse(rig.model.awaitingPlayback)
+    }
+
     func testStartupTimeoutTriesTheNextSourceAtTheSamePoint() async throws {
         let rig = try twoSources()
         await rig.model.begin(rig.request())

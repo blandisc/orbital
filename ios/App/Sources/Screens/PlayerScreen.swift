@@ -477,7 +477,7 @@ struct PlayerScreen: View {
             if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
         }
         .task(id: current.videoID) { knownAspect = nil; await loadAmbient(); await loadLocalizedEpisodes() }
-        .onChange(of: loadingNow(model), initial: true) { _, now in updateLoading(now, model) }
+        .onChange(of: loadingKind(model), initial: true) { _, kind in updateLoading(kind, model) }
         // Al girar, cada sentido con su zoom; y otra vez cuando termina la animación del giro (el motor del iPhone a veces se
         // quedaba con el «Llenar» de horizontal y la imagen seguía agrandada en vertical).
         .onChange(of: landscape) {
@@ -1124,7 +1124,7 @@ struct PlayerScreen: View {
     @ViewBuilder private func statusOverlays(_ model: PlayerModel) -> some View {
         switch model.phase {
         // Volviendo a abrir el mismo video (al regresar a la app): solo la ruedita, sin letrero (antes «Reconectando…»).
-        case .preparing where model.reconnecting: LoadingSpinner(delayed: true)
+        case .preparing where model.reconnecting: LoadingSpinner()
         // Abriendo o buscando versión: la misma animación, sin textos (antes la órbita decía qué complemento contestaba).
         case .preparing: LoadingSpinner()
         case .failed(let message):
@@ -1136,8 +1136,7 @@ struct PlayerScreen: View {
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:
             // Con o sin controles, la misma ruedita en el mismo lugar (antes, con controles, brincaba al botón grande).
-            if model.reconnecting { LoadingSpinner(delayed: true) }
-            else if loadingShown { LoadingSpinner() }
+            if loadingShown { LoadingSpinner() }
         }
     }
 
@@ -1164,42 +1163,46 @@ struct PlayerScreen: View {
         return prefs
     }
 
-    /// La única animación de carga del reproductor (`DSLoader`): abrir, buscar, volver a la app o llenar el búfer. Siempre igual y
-    /// al centro del video. `delayed`: solo si tarda más de un instante (al volver a la app lo normal es que el video regrese antes
-    /// y no se vea nada).
+    /// La única animación de carga del reproductor (`DSLoader`), dentro del botón grande y al centro del video. Cuándo sale lo
+    /// decide `loadingKind`.
     private struct LoadingSpinner: View {
-        var delayed = false
-        @State private var shown = false
         var body: some View {
             // El mismo botón grande con la carga dentro: con o sin controles se ve igual y en el mismo punto.
             PlayPauseButton(playing: false, loading: true) {}
-                .opacity(shown || !delayed ? 1 : 0)
-                .task { guard delayed else { return }; try? await Task.sleep(nanoseconds: DS.Timing.quietSpinnerDelay); shown = true }
                 .accessibilityIdentifier("player-loading")
         }
     }
 
-    /// ¿Está cargando ahora mismo? (Antes de sonar por primera vez, siempre.)
-    private func loadingNow(_ model: PlayerModel) -> Bool {
-        !model.hasPlayed || model.phase == .preparing || model.snapshot.state == .loading || model.snapshot.state == .buffering
+    /// Cuándo se ve la carga en el botón grande (una sola regla para todo el reproductor):
+    /// - `now`: abriendo el video (hasta que suena por primera vez) o pidiéndolo otra vez (se cortó, o al volver a la app). Al
+    ///   momento y sin asomar el play: ahí el play no haría nada.
+    /// - `soon`: pediste que sonara y aún no avanza, o se atoró sonando. Solo si dura (un momento; más en los primeros segundos,
+    ///   cuando el motor hace sus últimos ajustes): así pausar y seguir nunca enseñan la carga.
+    /// - `none`: listo, o en pausa sin nada pendiente.
+    enum LoadKind: Equatable { case none, soon, now }
+    private func loadingKind(_ model: PlayerModel) -> LoadKind {
+        if model.phase == .preparing || !model.hasPlayed || model.reconnecting { return .now }
+        if model.awaitingPlayback { return .soon }
+        if model.snapshot.state == .loading || model.snapshot.state == .buffering { return .soon }
+        return .none
     }
 
-    /// Al abrir, la carga hasta que el video suena por primera vez. Desde ahí, solo si se atora de verdad: en los primeros
-    /// segundos el motor suele hacer un último ajuste (la pista de audio, el punto donde ibas) y se veía play → carga → play.
-    private func updateLoading(_ now: Bool, _ model: PlayerModel) {
+    private func updateLoading(_ kind: LoadKind, _ model: PlayerModel) {
         loadingTask?.cancel()
         let video = current.videoID
-        guard now else {
+        switch kind {
+        case .none:
             loadingShown = false
             if model.snapshot.state == .playing && playedVideo != video { playedVideo = video; playedAt = Date() }
-            return
-        }
-        if playedVideo != video { loadingShown = true; return }
-        let settling = Date().timeIntervalSince(playedAt) < DS.Timing.loadingSettleWindow
-        loadingTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: settling ? DS.Timing.loadingSettleDelay : DS.Timing.quietSpinnerDelay)
-            guard !Task.isCancelled else { return }
+        case .now:
             loadingShown = true
+        case .soon:
+            let settling = playedVideo != video || Date().timeIntervalSince(playedAt) < DS.Timing.loadingSettleWindow
+            loadingTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: settling ? DS.Timing.loadingSettleDelay : DS.Timing.quietSpinnerDelay)
+                guard !Task.isCancelled else { return }
+                loadingShown = true
+            }
         }
     }
 
@@ -2028,7 +2031,7 @@ struct PlayerScreen: View {
         HStack(spacing: DS.Space.s8) {
             SkipButton(forward: false) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
             // Cargando: la animación va dentro del botón grande, en el mismo punto que sin controles (LoadingSpinner).
-            PlayPauseButton(playing: model.snapshot.state == .playing, loading: model.reconnecting || loadingShown) {
+            PlayPauseButton(playing: model.snapshot.state == .playing, loading: loadingShown) {
                 Task { await model.togglePlay() }; pulse()
             }
             SkipButton(forward: true) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
