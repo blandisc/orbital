@@ -19,6 +19,9 @@ struct SourceOrbit: View {
     var size: CGFloat = DS.SourceOrbit.size
     /// En horizontal: la órbita a la izquierda y los textos a su derecha (en vertical, uno sobre otro).
     var sideBySide = false
+    /// El centro de la órbita es el centro de la vista (los textos cuelgan debajo o a la derecha sin moverla): así queda en el
+    /// mismo punto que la ruedita de carga que sigue, al centro del video. Sin anclar (el iPod), todo cabe en su pantalla.
+    var anchored = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Cuántos puntos ya se ven: aunque las versiones lleguen todas juntas (ya estaban guardadas), salen una tras otra; y la
@@ -26,17 +29,22 @@ struct SourceOrbit: View {
     @State private var revealed = 0
 
     var body: some View {
-        let layout = sideBySide ? AnyLayout(HStackLayout(spacing: DS.Space.s6)) : AnyLayout(VStackLayout(spacing: DS.Space.s4))
-        layout {
-            orbit.frame(width: size, height: size)
-            VStack(alignment: sideBySide ? .leading : .center, spacing: DS.Space.s1) {
-                title.font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
-                if let also { also.font(DS.TextRecipe.footnote.font) }
-                if let detail { detail.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
+        Group {
+            if anchored {
+                orbit.frame(width: size, height: size)
+                    .overlay(alignment: sideBySide ? .trailing : .bottom) {
+                        texts.frame(width: sideBySide ? DS.SourceOrbit.textWidth : DS.SourceOrbit.stackedTextWidth, alignment: sideBySide ? .leading : .center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .alignmentGuide(.bottom) { $0[.top] - DS.Space.s4 }
+                            .alignmentGuide(.trailing) { $0[.leading] - DS.Space.s6 }
+                    }
+            } else {
+                let layout = sideBySide ? AnyLayout(HStackLayout(spacing: DS.Space.s6)) : AnyLayout(VStackLayout(spacing: DS.Space.s4))
+                layout {
+                    orbit.frame(width: size, height: size)
+                    texts.frame(minWidth: sideBySide ? DS.SourceOrbit.textWidth : nil, alignment: sideBySide ? .leading : .center)
+                }
             }
-            .multilineTextAlignment(sideBySide ? .leading : .center)
-            .frame(minWidth: sideBySide ? DS.SourceOrbit.textWidth : nil, alignment: sideBySide ? .leading : .center)
-            .contentTransition(.opacity)
         }
         .animation(DS.Motion.base(reduceMotion), value: revealed)
         .animation(DS.Motion.spring(reduceMotion), value: picked)
@@ -50,6 +58,16 @@ struct SourceOrbit: View {
                 try? await Task.sleep(for: .seconds(DS.SourceOrbit.revealStep))
             }
         }
+    }
+
+    private var texts: some View {
+        VStack(alignment: sideBySide ? .leading : .center, spacing: DS.Space.s1) {
+            title.font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+            if let also { also.font(DS.TextRecipe.footnote.font) }
+            if let detail { detail.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
+        }
+        .multilineTextAlignment(sideBySide ? .leading : .center)
+        .contentTransition(.opacity)
     }
 
     /// La elegida se marca cuando ya se ven todos los puntos.

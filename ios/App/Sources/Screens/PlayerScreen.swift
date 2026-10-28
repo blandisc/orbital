@@ -251,10 +251,9 @@ struct PlayerScreen: View {
             if case .failed = model.phase { statusOverlays(model) } else {
                 GeometryReader { geo in
                     let rect = videoRect(in: geo.size)
-                    // La búsqueda de versiones, al centro de la pantalla (todavía no hay video); lo demás, al del video. En el iPod,
-                    // todo dentro de su pantalla: al centro del teléfono quedaba detrás de la pantalla y de la rueda.
-                    let searching = model.phase == .preparing && model.search != nil && !model.reconnecting && ipod == nil
-                    statusOverlays(model, room: rect.size).position(x: searching ? geo.size.width / 2 : rect.midX, y: searching ? geo.size.height / 2 : rect.midY)
+                    // Todo lo que carga (la búsqueda de versiones y la ruedita) con su centro en el del video, siempre el mismo punto:
+                    // antes la búsqueda iba al centro de la pantalla y en vertical la ruedita que seguía brincaba hacia arriba.
+                    statusOverlays(model, room: rect.size).position(x: rect.midX, y: rect.midY)
                 }
                 .ignoresSafeArea(edges: landscape ? .all : [])
                 .allowsHitTesting(false)
@@ -1057,16 +1056,16 @@ struct PlayerScreen: View {
     @ViewBuilder private func statusOverlays(_ model: PlayerModel, room: CGSize? = nil) -> some View {
         switch model.phase {
         // Volviendo a abrir el mismo video (al regresar a la app): solo la ruedita, sin letrero (antes «Reconectando…»).
-        case .preparing where model.reconnecting: QuietSpinner()
+        case .preparing where model.reconnecting: LoadingSpinner(delayed: true)
         // Buscando versiones de verdad: la órbita con lo que contesta cada complemento.
         case .preparing where model.search != nil:
             if let search = model.search {
                 SourceOrbit(found: max(search.found, model.source != nil ? 1 : 0), chosen: model.source != nil, failed: triedCount(model),
                             title: orbitTitle(model, search), also: orbitAlso(model), detail: orbitDetail(model, search),
                             size: ipod != nil ? min(DS.SourceOrbit.size, (room?.height ?? 0) * DS.SourceOrbit.ipodShare) : DS.SourceOrbit.size,
-                            sideBySide: landscape)
+                            sideBySide: landscape, anchored: ipod == nil)
             }
-        case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
+        case .preparing: LoadingSpinner(caption: Text(preparingText(model)))
         case .failed(let message):
             // Una pantalla por cada caso (sin fuentes, ninguna sirvió, sin red…), sobre los controles, que se esconden.
             PlayerFailureView(failure: model.failure ?? .sourceDied, isEpisode: model.request?.kind == "series",
@@ -1075,8 +1074,9 @@ struct PlayerScreen: View {
                               close: { Task { await close() } })
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:
-            if model.reconnecting { QuietSpinner() }
-            else if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
+            // Con o sin controles, la misma ruedita en el mismo lugar (antes, con controles, brincaba al botón grande).
+            if model.reconnecting { LoadingSpinner(delayed: true) }
+            else if model.snapshot.state == .buffering || model.snapshot.state == .loading { LoadingSpinner() }
         }
     }
 
@@ -1144,12 +1144,24 @@ struct PlayerScreen: View {
         return prefs
     }
 
-    /// La ruedita sola, y solo si tarda más de un instante (lo normal es que el video vuelva antes y no se vea nada).
-    private struct QuietSpinner: View {
+    /// La única ruedita de carga del reproductor: abrir, buscar, volver a la app o llenar el búfer. Siempre del mismo tamaño y con su
+    /// centro en el centro del video (el letrero, si hay, va debajo sin moverla). `delayed`: solo si tarda más de un instante (al
+    /// volver a la app lo normal es que el video regrese antes y no se vea nada).
+    private struct LoadingSpinner: View {
+        var caption: Text? = nil
+        var delayed = false
         @State private var shown = false
         var body: some View {
-            ProgressView().tint(DS.text).opacity(shown ? 1 : 0)
-                .task { try? await Task.sleep(nanoseconds: DS.Timing.quietSpinnerDelay); shown = true }
+            ProgressView().tint(DS.text).controlSize(.large)
+                .overlay(alignment: .bottom) {
+                    if let caption {
+                        caption.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).fixedSize()
+                            .alignmentGuide(.bottom) { $0[.top] - DS.Space.s3 }
+                    }
+                }
+                .opacity(shown || !delayed ? 1 : 0)
+                .task { guard delayed else { return }; try? await Task.sleep(nanoseconds: DS.Timing.quietSpinnerDelay); shown = true }
+                .accessibilityIdentifier("player-loading")
         }
     }
 
@@ -1914,7 +1926,8 @@ struct PlayerScreen: View {
         HStack(spacing: DS.Space.s8) {
             SkipButton(forward: false) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
             if model.snapshot.state == .loading || model.snapshot.state == .buffering {
-                ProgressView().tint(DS.text).controlSize(.large).frame(width: DS.PlayerPanel.playButton, height: DS.PlayerPanel.playButton)
+                // Cargando: la ruedita va sola al centro del video (LoadingSpinner); aquí solo se guarda el lugar del botón.
+                Color.clear.frame(width: DS.PlayerPanel.playButton, height: DS.PlayerPanel.playButton)
             } else {
                 PlayPauseButton(playing: model.snapshot.state == .playing) { Task { await model.togglePlay() }; pulse() }
             }

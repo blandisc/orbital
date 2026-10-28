@@ -389,6 +389,8 @@ enum DS {
         /// brillo de la luna.
         static let moonTrail: CGFloat = 0.3, trailOpacity = 0.75, trailWidth: CGFloat = 4, trailBlur: CGFloat = 1, moonGlow: CGFloat = 3
         static let textWidth: CGFloat = 220
+        /// En vertical, el ancho de los textos bajo la órbita (cabe en el iPhone SE con sus márgenes).
+        static let stackedTextWidth: CGFloat = 280
         /// En el modo iPod, la órbita en veces el alto de su pantalla (deja lugar a los textos debajo).
         static let ipodShare: CGFloat = 0.5
     }
