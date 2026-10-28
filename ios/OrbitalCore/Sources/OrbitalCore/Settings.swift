@@ -107,7 +107,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case homeDeck, homeTime, avatar, displayName, latinSpanish, castilianSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom, simpsonsSeasons
         case subtitleBackground, subtitlePosition, subtitlesOnSkipBack, forcedForForeignAudio, subtitleSystemStyle
     }
-    public var traktEnabled: Bool { !traktClientID.isEmpty }
 
     /// Alto de la letra de los subtítulos como fracción del alto del video (lo que usan los reproductores de TV).
     public var subtitleHeightFraction: Double { ["small": 0.042, "large": 0.068][subtitleSize] ?? 0.054 }

@@ -286,7 +286,8 @@ final class AppEnvironment {
             SettingsStore(kv).update {
                 if let language = Demo.language { $0.uiLanguage = language }
                 if !Demo.noTV { $0.orbitalAddress = "tv.demo.invalid" }
-                if Demo.scrobble || Demo.airings || Demo.because || Demo.trakt { $0.traktClientID = "demo" }
+                // `-demo-trakt-builtin`: sin Client ID en Ajustes (el incluido en la app), como un iPhone sin consola.
+                if (Demo.scrobble || Demo.airings || Demo.because || Demo.trakt) && !Demo.traktBuiltIn { $0.traktClientID = "demo" }
                 if let style = Demo.value(after: "-demo-because-style") { $0.becauseStyle = style }
                 if let state = Demo.oneDrive, state != "off" { $0.oneDriveClientID = "demo" }
                 if Demo.oneDrive == "linked" { $0.oneDriveFolder = "Películas" }

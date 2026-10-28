@@ -574,8 +574,12 @@ final class ScreenModelsTests: XCTestCase {
         rig.http.json["https://api.trakt.tv/users/settings"] = ["user": ["username": "fer"]]
         let model = SettingsModel(rig.services)
         XCTAssertEqual(model.trakt, .unlinked)
+        XCTAssertFalse(model.traktLinked)
         await model.linkTrakt()
         XCTAssertEqual(model.trakt, .linked("fer"))
+        // Los avisos de estrenos se pueden prender: cuenta tu sesión, aunque el Client ID de Ajustes siga vacío (antes no).
+        XCTAssertTrue(model.traktLinked)
+        XCTAssertTrue(rig.services.appSettings.traktClientID.isEmpty)
         let body = try XCTUnwrap(JSON.parse(try XCTUnwrap(rig.http.bodies("https://api.trakt.tv/oauth/device/token").first)))
         XCTAssertEqual(body["client_id"]?.string, "INCLUIDO")
         XCTAssertNil(body["client_secret"], "las apps nuevas de Trakt no tienen secreto")

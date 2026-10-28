@@ -315,7 +315,7 @@ public final class ParaTiModel: ObservableModel {
         }
         rebuildBadges()
         // El aviso, solo si de verdad no hay nada que enseñar (las listas con puesto existen siempre, pero sin red llegan vacías).
-        if mosaic.isEmpty && shelves.allSatisfy({ items(for: $0).isEmpty }) { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
+        if mosaic.isEmpty && shelves.allSatisfy({ items(for: $0).isEmpty }) { error = services.trakt?.linked == true ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
         else { error = nil }
         await topUpMosaic()
         saveSnapshot()

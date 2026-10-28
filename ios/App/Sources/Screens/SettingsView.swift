@@ -326,8 +326,10 @@ struct SettingsView: View {
             Text("De las series que sigues en Trakt. Te avisa cuando ya se puede ver en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.")
         }
         .listRowBackground(DS.surface)
-        .disabled(!env.services.appSettings.traktEnabled)
-        if !env.services.appSettings.traktEnabled {
+        // Lo que cuenta es tu sesión de Trakt en el iPhone. Antes se pedía el Client ID de Ajustes, que quedó vacío desde que
+        // viene incluido en la app: con Trakt conectado decía «Conecta Trakt» y no dejaba prender los avisos.
+        .disabled(!model.traktLinked)
+        if !model.traktLinked {
             Section { Text("Conecta Trakt para saber qué series sigues.").recipe(.footnote) }.listRowBackground(DS.surface)
         }
     }

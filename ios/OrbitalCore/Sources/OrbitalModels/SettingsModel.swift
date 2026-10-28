@@ -54,6 +54,9 @@ public final class SettingsModel: ObservableModel {
 
     public func refreshScrobble() { scrobble = services.scrobbleLog.status }
 
+    /// Tu sesión de Trakt en el iPhone está conectada (con el Client ID incluido en la app o el de Ajustes › Avanzado).
+    public var traktLinked: Bool { if case .linked = trakt { return true } else { return false } }
+
     private func computeTraktState() -> TraktState {
         guard let t = services.trakt else { return .off }
         return t.linked ? .linked("") : .unlinked

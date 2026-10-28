@@ -183,6 +183,8 @@ enum Demo {
 
     /// `-demo-mosaic-bench`: el mosaico se desplaza y cambia de foco solo (ver `MosaicBench`) e imprime los fotogramas.
     static var mosaicBench: Bool { ProcessInfo.processInfo.arguments.contains("-demo-mosaic-bench") }
+    /// `-demo-trakt-builtin`: Trakt conectado con el Client ID incluido en la app (Ajustes sin Client ID).
+    static var traktBuiltIn: Bool { ProcessInfo.processInfo.arguments.contains("-demo-trakt-builtin") }
 
     /// Secretos de arranque: sesión iniciada y el complemento de demostración.
     static func secrets() -> InMemorySecrets {
