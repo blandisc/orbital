@@ -512,6 +512,7 @@ public final class PlayerModel: ObservableModel {
         defer { lastTick = now }
         if foregroundCheck != nil { await checkForegroundStall(now: now) }
         if playRequest != nil { await checkPlayRequest(now: now) }
+        if foregroundPending, acceptingSnapshots, !retrying { foregroundPending = false; await appDidBecomeActive() }
         if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying {
             if goBackAfterSwitch() { return }
             return await retryWithAnotherSource()?.value ?? ()
@@ -1028,9 +1029,12 @@ public final class PlayerModel: ObservableModel {
         if rate != 1 { await engine.setRate(rate) }
     }
 
+    /// Pausa si suena o si va a sonar (cargando o pediste play y aún no avanza): antes, en búfer el botón llamaba a «play» y la
+    /// pausa no hacía caso.
+    public var wantsToPlay: Bool { snapshot.state == .playing || snapshot.state == .buffering || playRequest != nil }
     public func togglePlay() async {
         userTouched()
-        if snapshot.state == .playing { playRequest = nil; await engine.pause() } else { requestPlayback(); await engine.play() }
+        if wantsToPlay { playRequest = nil; await engine.pause() } else { requestPlayback(); await engine.play() }
     }
     public func play() async { userTouched(); requestPlayback(); await engine.play() }
     public func pause() async { userTouched(); playRequest = nil; await engine.pause() }
@@ -1444,6 +1448,7 @@ public final class PlayerModel: ObservableModel {
     /// Volviendo de segundo plano: «Reconectando…» en vez de una pantalla negra, hasta que el video vuelve a avanzar.
     public private(set) var reconnecting = false { didSet { changed() } }
     private var backgrounded = false
+    private var foregroundPending = false
     private var resumeOnForeground = false
     /// Tras volver: si iba sonando y en este plazo no avanzó, el video se pide otra vez en el mismo punto.
     private var foregroundCheck: (deadline: Date, position: Double)?
@@ -1460,8 +1465,11 @@ public final class PlayerModel: ObservableModel {
     /// avanzar, se vuelve a pedir la misma fuente en el mismo punto (con enlace nuevo si el de Real-Debrid caducó).
     public func appDidBecomeActive() async {
         guard backgrounded else { return }
+        // Volviste justo mientras se cambiaba de versión: todavía no hay qué rearmar. Se queda pendiente y se revisa en cuanto la
+        // versión nueva esté lista (`tick`); antes se olvidaba y la pantalla quedaba negra con el play sin responder.
+        if !closing, !acceptingSnapshots || retrying { foregroundPending = true; return }
         backgrounded = false
-        guard hasPlayed, phase == .playing, !closing, acceptingSnapshots, !retrying else { return }
+        guard hasPlayed, phase == .playing, !closing else { return }
         let resume = resumeOnForeground
         let position = snapshot.position
         let mine = generation

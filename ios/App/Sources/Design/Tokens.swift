@@ -464,6 +464,8 @@ enum DS {
         /// El aviso de pantalla bloqueada: el círculo al que se encoge el candado, y cuánto sube al irse.
         static let lockNoticeIcon: CGFloat = 36, lockNoticeRise: CGFloat = 28
         static let width: CGFloat = 420, radius: CGFloat = 30, rowRadius: CGFloat = 16, icon: CGFloat = 32
+        /// En horizontal, lo más que ocupa el panel de la derecha (parte del ancho), para que en iPhone chicos quede video.
+        static let widthShare: CGFloat = 0.55
         /// «Episodios»: el ancho de la imagen de cada episodio y qué tan tenue se ve uno que no se puede poner (sin descargar).
         static let episodeThumb: CGFloat = 112, unavailableOpacity = 0.4
         /// «Siguiente» en los controles aparece al llegar a esta parte del episodio (antes no estorba).
@@ -899,6 +901,8 @@ enum DS {
         static let loadingSettleWindow: TimeInterval = 5
         static let loadingSettleDelay = UInt64(2.5 * 1e9)
         static let rotationSettle = UInt64(0.5 * 1e9)
+        /// Un toque en este rato después de que los controles empezaron a esconderse los vuelve a mostrar.
+        static let controlsFadeGrace: TimeInterval = 0.4
         /// El botón grande: un cambio del motor que no pediste se enseña si dura esto (al arrancar se detiene un instante).
         static let glyphSettle = UInt64(1.2 * 1e9)
         /// Cuánto se queda un aviso con salida («Sigue en tu Orbital · Deshacer», «Bajando · Otra»).

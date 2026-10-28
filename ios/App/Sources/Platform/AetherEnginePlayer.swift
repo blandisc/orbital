@@ -24,6 +24,11 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     var surface: AnyView { AnyView(AetherPlayerSurface(engine: engine).ignoresSafeArea()) }
 
     init() {
+        #if DEBUG
+        // `-demo-software-path`: todo por la ruta de software del motor (la que usan los MKV raros, como algunos de Los Simpson),
+        // para probar en el simulador fallas que antes solo salían en el iPhone.
+        if Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-software-path") { AetherEngine.setForceSoftwarePathForTesting(true) }
+        #endif
         engine = try! AetherEngine()
         // En pausa y en segundo plano el motor suelta el video tras este plazo; al volver hay que rearmarlo (un instante de
         // negro). iOS da ~30 s y soltarlo tarda ~3.5 s: con 25 s casi cualquier vuelta rápida a otra app regresa sin rearmar.

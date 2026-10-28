@@ -208,6 +208,7 @@ struct PlayerScreen: View {
     private var current: PlayRequest { holder.model.request ?? request }
     @State private var ambientURL: URL?
     @State private var knownAspect: Double?
+    @State private var aspectTitle: String?
     /// El alto que pide «Audio y subtítulos» en vertical (para subir el video lo justo y que quepa sin desplazarse).
     @State private var dockNeed: CGFloat = 0
     /// Lo que enseña el botón grande: la carga o el play. Al abrir, la carga hasta que el video de verdad suena (antes parpadeaba
@@ -216,6 +217,7 @@ struct PlayerScreen: View {
     @State private var loadingShown = true
     @State private var loadingTask: Task<Void, Never>?
     @State private var playedVideo: String?
+    @State private var controlsHiddenAt = Date.distantPast
     /// Lo que dice el botón grande (pausa o play): lo que tú pediste. Al tocarlo cambia al momento; si el motor se detiene o
     /// sigue solo, solo cambia si dura (al arrancar se detiene un instante para sus ajustes y el botón brincaba play → pausa → play).
     @State private var glyphPlaying = true
@@ -286,15 +288,21 @@ struct PlayerScreen: View {
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
             let controlsShown = controlsVisible && !locked && !failed(model) && !subtitleDock && ipod == nil
-            if controlsShown { controls(model).transition(.opacity) }
-            // ±10 y el botón grande, siempre al centro del video (en vertical también, encima de la imagen): el mismo punto donde
-            // está la imagen del episodio al abrir y donde se ve la carga.
-            if transportShown(model) {
-                GeometryReader { geo in
-                    let rect = videoRect(in: geo.size)
-                    transport(model).position(x: rect.midX, y: rect.midY)
+            // Los controles y ±10/botón grande en UN solo bloque con una sola transición: antes eran dos y, si el giro o el
+            // ocultamiento caían a la vez, podía quedar el ±10 flotando sin las barras.
+            if controlsShown {
+                ZStack {
+                    controls(model)
+                    // ±10 y el botón grande, siempre al centro del video (en vertical también, encima de la imagen): el mismo punto
+                    // donde está la imagen del episodio al abrir y donde se ve la carga.
+                    if model.phase != .preparing {
+                        GeometryReader { geo in
+                            let rect = videoRect(in: geo.size)
+                            transport(model).position(x: rect.midX, y: rect.midY)
+                        }
+                        .ignoresSafeArea(edges: landscape ? .all : [])
+                    }
                 }
-                .ignoresSafeArea(edges: landscape ? .all : [])
                 .transition(.opacity)
             }
             // Encima de los controles: en horizontal sobre la barra; en vertical, al pie (o sobre la barra si «Recortar»).
@@ -466,6 +474,11 @@ struct PlayerScreen: View {
             if value == .switchFailedBack {
                 return show(PlayerNotice(title: Strings.tr("Esa versión no abrió", language: ui0), detail: Strings.tr("Volviste a la que veías, en el mismo punto.", language: ui0), tone: .warn))
             }
+            // Una versión falló y se prueba otra: se dice (antes cambiaba a escondidas y solo se veía la carga más tiempo).
+            if case .triedAnotherSource(let attempt)? = value {
+                return show(PlayerNotice(title: String(format: Strings.tr("Probando otra versión (%lld)…", language: ui0), attempt),
+                                         detail: Strings.tr("La anterior no respondió. Sigue en el mismo punto.", language: ui0), tone: .info))
+            }
             if value == .notReadyOnRealDebrid {
                 return show(PlayerNotice(title: Strings.tr("Real-Debrid aún no la tiene", language: ui0), detail: Strings.tr("Mandó su aviso de «descargando». Puede tardar; prueba más tarde u otra versión.", language: ui0), tone: .warn))
             }
@@ -482,7 +495,14 @@ struct PlayerScreen: View {
         .onChange(of: model.snapshot.position) { _, position in
             if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
         }
-        .task(id: current.videoID) { knownAspect = nil; await loadAmbient(); await loadLocalizedEpisodes() }
+        .task(id: current.videoID) {
+            // Otro episodio de la misma serie: la proporción se conserva hasta que el motor mida la nueva (antes se borraba y un 4:3
+            // brincaba a 16:9 un momento). Otro título: se olvida.
+            if aspectTitle != current.metaID { knownAspect = nil; aspectTitle = current.metaID }
+            // ×2 fijo no pasa al siguiente episodio: cada episodio empieza a velocidad normal.
+            if isFastForwarding { endFastForward(holder.model, force: true) }
+            await loadAmbient(); await loadLocalizedEpisodes()
+        }
         .onChange(of: loadingKind(model), initial: true) { _, kind in updateLoading(kind, model) }
         .onChange(of: model.snapshot.state == .playing, initial: true) { _, playing in followEngineGlyph(playing, model) }
         // Al girar, cada sentido con su zoom; y otra vez cuando termina la animación del giro (el motor del iPhone a veces se
@@ -524,6 +544,8 @@ struct PlayerScreen: View {
             UIDevice.current.endGeneratingDeviceOrientationNotifications()
             UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait()
             UIScreen.main.brightness = CGFloat(originalBrightness)   // el brillo es del sistema: no se queda en lo que dejó el gesto
+            // Ningún reloj de la pantalla sigue vivo al cerrar (antes retenían el motor y podían escribir avisos tarde).
+            for task in [hideTask, frozenTask, zoomToastTask, indicatorHideTask, skipChainTask, flashTask, loadingTask, glyphTask] { task?.cancel() }
         }
     }
 
@@ -703,7 +725,9 @@ struct PlayerScreen: View {
                 // Un toque con dos dedos también puede contar como toque: ese no mueve los controles.
                 if Date().timeIntervalSince(twoFingerTapAt) < DS.Gesture.twoFingerTapGuard { return }
                 singleTapAt = Date()
-                controlsVisible.toggle(); if controlsVisible { scheduleHide() }
+                // Un toque justo mientras se desvanecen los vuelve a mostrar (no los alterna: «toqué y no salió nada»).
+                if !controlsVisible || Date().timeIntervalSince(controlsHiddenAt) < DS.Timing.controlsFadeGrace { controlsVisible = true } else { controlsVisible = false }
+                if controlsVisible { scheduleHide() }
             }
             // Tocar con dos dedos, en cualquier parte: pausa o sigue (como en Infuse y en la app TV de Apple).
             .gesture(TwoFingerTap {
@@ -1128,7 +1152,9 @@ struct PlayerScreen: View {
         hideTask = Task {
             try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
             // Con la barra de avance bajo el dedo, los controles no se esconden (se iría el slider a media búsqueda).
-            if !Task.isCancelled, !voiceOver, !moreOpen, scrubbing == nil, holder.model.snapshot.state == .playing { controlsVisible = false }
+            if !Task.isCancelled, !voiceOver, !moreOpen, scrubbing == nil, holder.model.snapshot.state == .playing {
+                controlsVisible = false; controlsHiddenAt = Date()
+            }
         }
     }
 
@@ -1221,7 +1247,7 @@ struct PlayerScreen: View {
     /// Tocar play o pausa (botón, doble toque, dos dedos, el iPod o VoiceOver): el botón cambia ya, sin esperar al motor.
     private func userTogglePlay(_ model: PlayerModel) {
         glyphTask?.cancel()
-        glyphPlaying = model.snapshot.state != .playing
+        glyphPlaying = !model.wantsToPlay
         Task { await model.togglePlay() }
     }
 
@@ -1259,11 +1285,12 @@ struct PlayerScreen: View {
                     VStack(spacing: DS.Space.s3) {
                         topBar(model)
                         Spacer()
-                        HStack(spacing: DS.Space.s3) {
-                            if model.snapshot.duration > 0 { scrubber(model) } else { Spacer() }
-                            nextEpisode(model)
-                            skipIntro(model)
+                        // «Saltar intro» y «Siguiente» encima de la barra, a la derecha (como en vertical): antes iban a su lado y la
+                        // barra se encogía al aparecer, con el punto brincando bajo el dedo.
+                        if offersSkipOrNext(model) {
+                            HStack(spacing: DS.Space.s3) { Spacer(); nextEpisode(model); skipIntro(model) }
                         }
+                        if model.snapshot.duration > 0 { scrubber(model) }
                     }
                     .padding(DS.Space.s6)
                 }
@@ -1682,7 +1709,7 @@ struct PlayerScreen: View {
                         } }
                         dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
                     }
-                    .frame(width: DS.PlayerPanel.width)
+                    .frame(width: Self.panelWidth(in: geo.size.width))
                 }
                 .padding(DS.Space.s3)
                 .frame(maxHeight: .infinity, alignment: .top)
@@ -2170,7 +2197,7 @@ struct PlayerScreen: View {
             // Con el panel: el cuadro completo, en su proporción y centrado en lo que queda libre a la izquierda (sin
             // pegarse a la orilla ni quedar bajo el panel).
             let left = Self.windowSafeArea.left + DS.Space.s4
-            let free = CGRect(x: left, y: 0, width: max(0, size.width - DS.PlayerPanel.width - DS.Space.s4 * 3 - left), height: size.height)
+            let free = CGRect(x: left, y: 0, width: max(0, size.width - Self.panelWidth(in: size.width) - DS.Space.s4 * 3 - left), height: size.height)
             let width = min(free.width, free.height * DS.Poster.stillAspect)
             let height = width / DS.Poster.stillAspect
             return CGRect(x: free.midX - width / 2, y: free.midY - height / 2, width: width, height: height)
@@ -2254,6 +2281,10 @@ struct PlayerScreen: View {
 
     /// Vertical con «Recortar»: el video a pantalla completa.
     private var fillsPortrait: Bool { !landscape && ipod == nil && (zoom == .fill || zoom == .stretch) }
+
+    /// El panel de la derecha en horizontal: 420 pt, pero nunca más de un poco más de la mitad del ancho (en un iPhone SE o mini
+    /// el video se quedaba en ~180 pt).
+    static func panelWidth(in total: CGFloat) -> CGFloat { min(DS.PlayerPanel.width, total * DS.PlayerPanel.widthShare) }
 
     /// El iPod se ve en vertical.
     private var ipod: IPodFace? { landscape ? nil : IPodFace(rawValue: ipodFace) }

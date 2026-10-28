@@ -87,6 +87,44 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertFalse(rig.model.awaitingPlayback)
     }
 
+    func testPauseWorksWhileLoading() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(300))
+        await rig.model.handle(rig.playing(300, state: .buffering))
+        XCTAssertTrue(rig.model.wantsToPlay)
+        await rig.model.togglePlay()
+        XCTAssertEqual(rig.engine.calls.last, "pause", "en búfer el botón pausa (antes pedía play y no hacía caso)")
+    }
+
+    func testBackFromBackgroundReloadsWhenTheEngineCannotRearm() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(300))
+        rig.model.appDidEnterBackgroundFully()
+        rig.engine.restores = false
+        let before = rig.engine.loads.count
+        await rig.model.appDidBecomeActive()
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.count, before + 1, "se pide el mismo video otra vez")
+        XCTAssertEqual(rig.engine.loads.last?.start ?? 0, 300, accuracy: 1)
+        XCTAssertTrue(rig.model.reconnecting, "y la pantalla enseña la carga")
+    }
+
+    func testBackFromBackgroundReloadsIfItDoesNotMoveIn8Seconds() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(300))
+        rig.model.appDidEnterBackgroundFully()
+        await rig.model.appDidBecomeActive()   // el motor dice que rearmó
+        let before = rig.engine.loads.count
+        await rig.model.handle(rig.playing(300))   // pero no avanza
+        rig.clock.advance(PlayerModel.foregroundStallSeconds + 1)
+        await rig.model.tick()
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.count, before + 1)
+    }
+
     func testStartupTimeoutTriesTheNextSourceAtTheSamePoint() async throws {
         let rig = try twoSources()
         await rig.model.begin(rig.request())

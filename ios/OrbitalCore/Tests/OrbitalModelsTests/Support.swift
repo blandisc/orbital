@@ -58,6 +58,9 @@ final class FakeEngine: PlayerEngine, @unchecked Sendable {
     private func note(_ s: String) { lock.withLock { _calls.append(s) } }
     func play() async { note("play") }
     func pause() async { note("pause") }
+    /// Lo que contesta al volver de segundo plano (false: no pudo rearmar el video).
+    var restores = true
+    func restoreAfterBackground(resume: Bool) async -> Bool { note("restore \(resume)"); return restores }
     func seek(to seconds: Double) async { note("seek \(Int(seconds))") }
     func stop() async { note("stop") }
     func selectAudio(_ id: Int?) async { note("audio \(id.map(String.init) ?? "none")") }

@@ -6898,6 +6898,17 @@
         }
       }
     },
+    "La anterior no respondió. Sigue en el mismo punto.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The previous one didn't respond. Same spot."
+          }
+        }
+      }
+    },
     "La consola": {
       "extractionState": "manual",
       "localizations": {
