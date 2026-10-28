@@ -5,7 +5,8 @@ import { ScreenHead } from "./ui.js";
 /**
  * Conectar el iPhone sin escribir nada: un QR que se escanea con la cámara del iPhone. Lleva la dirección del túnel
  * (la misma de Alexa) y su token; la app de Orbital se abre sola y queda conectada: «Ver en la TV», las claves de
- * «Para ti» y la sesión de Trakt salen de aquí. B cierra; Y lo vuelve a pedir (si se encendió Tailscale mientras tanto).
+ * «Para ti» y la sesión de Trakt salen de aquí. En cuanto el iPhone habla con Orbital (evento «phone-linked»), esta
+ * pantalla se cierra con «iPhone conectado» (main.js). B cierra; Y lo vuelve a pedir (si se encendió Tailscale mientras tanto).
  */
 export function createPhoneLink({ onMove, onClose }) {
   const qr = h("div", { class: "phone-link__qr" });
@@ -37,7 +38,7 @@ export function createPhoneLink({ onMove, onClose }) {
       status.classList.remove("phone-link__status--error");
       // El token va solo dentro del QR (la imagen), nunca en texto en pantalla.
       mount(qr, h("img", { class: "phone-link__image", src: `/api/companion/pair.svg?v=${mine}`, alt: "Código QR para conectar el iPhone" }));
-      mount(status, "Se conecta a ", h("strong", {}, info.host));
+      mount(status, "Se conecta a ", h("strong", {}, info.host), " · aquí te avisa cuando quede conectado");
     } catch (err) {
       if (mine !== attempt) return;
       mount(qr);

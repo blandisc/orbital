@@ -528,6 +528,12 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         ya no se presta: el iPhone conecta la suya con un código (cada app con su sesión)."""
         p = config.para_ti
         saw_phone()  # Ajustes › Cuentas: el iPhone está conectado (antes decía siempre «Conectar»)
+        # Lo primero que pide la app al escanear el QR: la TV lo celebra si tiene el QR a la vista (antes solo se quedaba
+        # el código, sin saber si ya había funcionado). Con el QR cerrado la interfaz no dice nada (la app también lo
+        # pide al abrirse).
+        bus = getattr(main_app.state, "bus", None)
+        if bus is not None:
+            bus.publish_threadsafe({"type": "phone-linked"})
         foryou = getattr(main_app.state.catalog, "foryou", None)
         key = foryou.key if foryou else (lambda name: getattr(p, name))  # las escritas en la TV, o las de config.yaml
         return {"tmdb_key": key("tmdb_key"), "trakt_client_id": key("trakt_client_id"), "region": p.region}

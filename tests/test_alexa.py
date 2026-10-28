@@ -257,6 +257,18 @@ def test_public_app_shares_para_ti_keys_with_the_iphone_but_never_the_secret_nor
     assert "trakt_session" not in got
 
 
+def test_scanning_the_qr_tells_the_tv_the_iphone_is_connected(public):
+    """Al escanear el QR, lo primero que pide la app es /api/companion: la TV recibe «phone-linked» y, con el QR a la vista,
+    dice «iPhone conectado» (antes solo se quedaba el código, sin éxito a la vista)."""
+    client, main = public
+    sent = []
+    main.state.bus = type("Bus", (), {"publish_threadsafe": lambda self, event: sent.append(event)})()
+    assert client.get("/api/companion").status_code == 401
+    assert sent == []  # sin token no avisa nada
+    client.get("/api/companion", headers={"Authorization": "Bearer secreto"})
+    assert sent == [{"type": "phone-linked"}]
+
+
 def test_main_app_rejects_tunnel_host_without_token(library):
     # Un túnel que apunte por error al puerto principal llega desde 127.0.0.1 con Host público.
     with TestClient(create_app(library.config, library), base_url="https://legion.ts.net", client=("127.0.0.1", 1)) as c:

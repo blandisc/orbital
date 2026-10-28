@@ -2196,6 +2196,14 @@ function handleEvent(event) {
     sound.play("select");
     ui.toast.show("Trakt conectado", { tone: "success", detail: event.name ? `Como ${event.name}` : "" });
     return;
+  } else if (event.type === "phone-linked") { // el iPhone escaneó el QR y ya habló con Orbital
+    if (!ui.phoneLink.isOpen) return; // la app también pregunta al abrirse: solo se celebra con el QR a la vista
+    if (phoneFrom) phoneFrom.done = true; // como «Trakt conectado»: no se reabre el menú viejo (diría «Conectar»)
+    ui.phoneLink.close();
+    sound.play("select");
+    ui.toast.show("iPhone conectado", { tone: "success", detail: "Ya es tu control y puedes mandar a la TV lo que ves" });
+    api.settings().then(applySettings).catch(() => {}); // Cuentas › iPhone: «✓ Conectado» la próxima vez
+    return;
   } else if (event.type === "onedrive-linked") {
     if (traktFrom) traktFrom.done = true;
     ui.traktLink.close({ cancel: false });
