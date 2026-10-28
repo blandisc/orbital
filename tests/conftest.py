@@ -132,6 +132,21 @@ def _no_real_emulator_updates(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_real_ytdlp(monkeypatch, tmp_path):
+    """Ninguna prueba baja yt-dlp de verdad ni usa el que ya tienes instalado (ni escribe en tu carpeta de Orbital)."""
+    from orbital import ytdlp
+
+    def offline(*args, **kwargs):
+        raise OSError("Sin conexión (pruebas)")
+
+    monkeypatch.setattr(ytdlp, "tools_dir", lambda: tmp_path / "tools")
+    monkeypatch.setattr(ytdlp, "http_get_json", offline)
+    monkeypatch.setattr(ytdlp, "http_get_text", offline)
+    monkeypatch.setattr(ytdlp, "download", offline)
+    monkeypatch.setattr(ytdlp, "which", lambda name: None)
+
+
+@pytest.fixture(autouse=True)
 def _no_real_stremio(monkeypatch):
     """Ninguna prueba habla con Stremio de verdad (un login de prueba salía a internet)."""
     from orbital.library import stremio_api
@@ -215,7 +230,7 @@ def library(tmp_path):
             "id": "snes", "name": "Super Nintendo", "executable": "retroarch",
             "args": ["-L", "snes9x", "{rom}"], "rom_dirs": [str(roms)], "extensions": ["sfc", ".SMC"],
         }],
-        "apps": [{"id": "yt", "name": "YouTube", "target": "https://youtube.com/tv", "category": "media"}],
+        "apps": [{"id": "web", "name": "Navegador", "target": "https://example.com", "category": "media"}],
     })
     catalog = Catalog(cfg, FakeLauncher())
     catalog.refresh()
@@ -266,6 +281,16 @@ def no_focus_threads(monkeypatch):
     monkeypatch.setattr(focus, "bring_game_to_front", lambda *args, **kwargs: False)
     # Ni fijar "siempre encima" una ventana real de Orbital que esté abierta mientras corren.
     monkeypatch.setattr(sessions.Sessions, "pin", staticmethod(lambda: None))
+
+
+@pytest.fixture(autouse=True)
+def no_real_resolution(monkeypatch):
+    """Que ninguna prueba cambie la resolución de la pantalla real: al abrir un emulador se baja a 1080p, y la suite
+    sobre la consola de la TV la hacía brincar entre 4K y 1080p (visto el 2026-10-27)."""
+    from orbital import display
+
+    monkeypatch.setattr(display, "resolution", display.GameResolution(read=lambda: None, apply=lambda mode: False))
+    monkeypatch.setattr(display, "_apply", lambda mode: False)
 
 
 @pytest.fixture
