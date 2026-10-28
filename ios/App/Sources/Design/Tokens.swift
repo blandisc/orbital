@@ -250,6 +250,8 @@ enum DS {
         static let indicatorInsetPortrait: CGFloat = DS.Space.s3, indicatorInsetLandscape: CGFloat = DS.Space.s8
         /// Un toque de un dedo y uno de dos tan juntos son el mismo toque (s).
         static let twoFingerTapGuard: TimeInterval = 0.35
+        /// Un pellizco que termina este rato después de girar el teléfono es el agarre, no un pellizco (no cambia el zoom).
+        static let pinchAfterRotationGuard: TimeInterval = 1.0
         /// La burbuja de buscar no se acerca más que esto a los bordes de la pantalla.
         static let seekBubbleSideMargin: CGFloat = 64
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del

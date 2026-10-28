@@ -49,6 +49,8 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(VideoZoom.stretch.next, .fit)
         XCTAssertEqual(VideoZoom.pinched(magnification: 1.4), .fill)
         XCTAssertEqual(VideoZoom.pinched(magnification: 0.7), .fit)
+        XCTAssertNil(VideoZoom.pinched(magnification: 1.05), "dos dedos que apenas se mueven no son un pellizco")
+        XCTAssertNil(VideoZoom.pinched(magnification: 0.9))
         XCTAssertEqual(VideoZoom(stored: "???"), .fit)
         let kv = InMemoryKeyValueStore()
         let store = SettingsStore(kv)

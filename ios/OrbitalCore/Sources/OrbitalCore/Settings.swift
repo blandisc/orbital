@@ -139,8 +139,14 @@ public enum VideoZoom: String, CaseIterable, Sendable {
         return all[(all.firstIndex(of: self)! + 1) % all.count]
     }
 
-    /// Pellizcar: abrir los dedos recorta, cerrarlos vuelve a ver el cuadro completo.
-    public static func pinched(magnification: Double) -> VideoZoom { magnification > 1 ? .fill : .fit }
+    /// Pellizcar: abrir los dedos (más de un 20 %) recorta, cerrarlos (a menos de 80 %) vuelve al cuadro completo. Entre medio
+    /// no cambia nada: dos dedos que se mueven un poco (pausar con dos dedos, sujetar el teléfono con los pulgares al girar) no
+    /// son un pellizco. Antes cualquier 1 % de más ponía «Recortar» y en vertical el video quedaba agrandado sin querer.
+    public static func pinched(magnification: Double) -> VideoZoom? {
+        if magnification > 1.2 { return .fill }
+        if magnification < 0.8 { return .fit }
+        return nil
+    }
 
     /// El nombre que dice el aviso y VoiceOver (la clave de `Localizable.xcstrings`).
     public var title: String {

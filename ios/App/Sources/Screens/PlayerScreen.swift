@@ -107,6 +107,8 @@ struct PlayerScreen: View {
     /// era uno solo y al volver de horizontal con «Llenar» el video quedaba en vertical a pantalla completa, recortado.
     @State private var landscapeZoom: VideoZoom = .fit
     @State private var portraitZoom: VideoZoom = .fit
+    /// Cuándo cambió el sentido: un pellizco que termina justo después (los pulgares al girar) no cuenta.
+    @State private var rotatedAt = Date.distantPast
     private var zoom: VideoZoom { landscape ? landscapeZoom : portraitZoom }
     @State private var zoomToast: VideoZoom?
     /// «Subtítulos desactivados» o «Español · 1 de 4», un momento, al apagar o prender con el botón.
@@ -486,6 +488,10 @@ struct PlayerScreen: View {
         // Al girar, cada sentido con su zoom; y otra vez cuando termina la animación del giro (el motor del iPhone a veces se
         // quedaba con el «Llenar» de horizontal y la imagen seguía agrandada en vertical).
         .onChange(of: landscape) {
+            rotatedAt = Date()
+            // Vertical vuelve siempre al cuadro completo al girar: si algo puso «Recortar» sin querer (un pellizco al sujetar el
+            // teléfono), el giro lo deshace.
+            portraitZoom = .fit
             holder.engine.setZoom(zoom)
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: DS.Timing.rotationSettle)
@@ -709,8 +715,9 @@ struct PlayerScreen: View {
             })
             .gesture(MagnifyGesture().onEnded { value in
                 // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
-                let target = VideoZoom.pinched(magnification: Double(value.magnification))
-                guard target != zoom else { return }
+                // Un pellizco que termina en el segundo siguiente al giro es el agarre, no una orden.
+                guard Date().timeIntervalSince(rotatedAt) > DS.Gesture.pinchAfterRotationGuard,
+                      let target = VideoZoom.pinched(magnification: Double(value.magnification)), target != zoom else { return }
                 setZoom(target)
             })
             .sensoryFeedback(.impact, trigger: zoom)
