@@ -109,6 +109,9 @@ struct PlayerScreen: View {
     @State private var portraitZoom: VideoZoom = .fit
     /// Cuándo cambió el sentido: un pellizco que termina justo después (los pulgares al girar) no cuenta.
     @State private var rotatedAt = Date.distantPast
+    #if DEBUG
+    @State private var lastPinch = 0.0
+    #endif
     private var zoom: VideoZoom { landscape ? landscapeZoom : portraitZoom }
     @State private var zoomToast: VideoZoom?
     /// «Subtítulos desactivados» o «Español · 1 de 4», un momento, al apagar o prender con el botón.
@@ -211,18 +214,9 @@ struct PlayerScreen: View {
     @State private var aspectTitle: String?
     /// El alto que pide «Audio y subtítulos» en vertical (para subir el video lo justo y que quepa sin desplazarse).
     @State private var dockNeed: CGFloat = 0
-    /// Lo que enseña el botón grande: la carga o el play. Al abrir, la carga hasta que el video de verdad suena (antes parpadeaba
-    /// el play entre dos estados de carga); ya sonando, solo si se atora más de un momento (antes, al pausar o seguir, salía la
-    /// carga un segundo).
-    @State private var loadingShown = true
-    @State private var loadingTask: Task<Void, Never>?
-    @State private var playedVideo: String?
+    /// Lo que enseña el botón grande (la carga o el play/pausa): una sola regla, probada en `PlayerPresentationTests`.
+    @State private var presentation = PlayerPresentation()
     @State private var controlsHiddenAt = Date.distantPast
-    /// Lo que dice el botón grande (pausa o play): lo que tú pediste. Al tocarlo cambia al momento; si el motor se detiene o
-    /// sigue solo, solo cambia si dura (al arrancar se detiene un instante para sus ajustes y el botón brincaba play → pausa → play).
-    @State private var glyphPlaying = true
-    @State private var glyphTask: Task<Void, Never>?
-    @State private var playedAt = Date.distantPast
 
     var body: some View {
         let model = holder.model
@@ -389,7 +383,6 @@ struct PlayerScreen: View {
             if Demo.isOn, let raw = Demo.value(after: "-demo-zoom") { landscapeZoom = VideoZoom(stored: raw); portraitZoom = VideoZoom(stored: raw) }   // `-demo-zoom fill`: para capturas
             if Demo.isOn, let face = Demo.value(after: "-demo-ipod") { ipodFace = face == "off" ? "" : face }   // `-demo-ipod black`
             #endif
-            engine.setZoom(zoom)
             pip.onActiveChange = { engine.setPictureInPictureActive($0) }
             nowPlaying.start(model: model)
             Task {
@@ -503,16 +496,19 @@ struct PlayerScreen: View {
             if isFastForwarding { endFastForward(holder.model, force: true) }
             await loadAmbient(); await loadLocalizedEpisodes()
         }
-        .onChange(of: loadingKind(model), initial: true) { _, kind in updateLoading(kind, model) }
-        .onChange(of: model.snapshot.state == .playing, initial: true) { _, playing in followEngineGlyph(playing, model) }
+        .onChange(of: PlayerPresentation.loadKind(model), initial: true) { _, kind in
+            presentation.update(kind, playing: model.snapshot.state == .playing, videoID: current.videoID)
+        }
+        .onChange(of: model.snapshot.state == .playing) { presentation.engineChanged { holder.model.snapshot.state == .playing } }
         // Al girar, cada sentido con su zoom; y otra vez cuando termina la animación del giro (el motor del iPhone a veces se
         // quedaba con el «Llenar» de horizontal y la imagen seguía agrandada en vertical).
+        // El motor recibe el zoom desde un solo lugar: cada vez que cambia el de este sentido (al girar, al pellizcar, desde el «⋯»).
+        .onChange(of: zoom, initial: true) { holder.engine.setZoom(zoom) }
         .onChange(of: landscape) {
             rotatedAt = Date()
             // Vertical vuelve siempre al cuadro completo al girar: si algo puso «Recortar» sin querer (un pellizco al sujetar el
             // teléfono), el giro lo deshace.
             portraitZoom = .fit
-            holder.engine.setZoom(zoom)
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: DS.Timing.rotationSettle)
                 holder.engine.setZoom(zoom)
@@ -545,7 +541,8 @@ struct PlayerScreen: View {
             UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait()
             UIScreen.main.brightness = CGFloat(originalBrightness)   // el brillo es del sistema: no se queda en lo que dejó el gesto
             // Ningún reloj de la pantalla sigue vivo al cerrar (antes retenían el motor y podían escribir avisos tarde).
-            for task in [hideTask, frozenTask, zoomToastTask, indicatorHideTask, skipChainTask, flashTask, loadingTask, glyphTask] { task?.cancel() }
+            for task in [hideTask, frozenTask, zoomToastTask, indicatorHideTask, skipChainTask, flashTask] { task?.cancel() }
+            presentation.cancel()
         }
     }
 
@@ -739,6 +736,9 @@ struct PlayerScreen: View {
             })
             .gesture(MagnifyGesture().onEnded { value in
                 // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
+                #if DEBUG
+                lastPinch = Double(value.magnification)   // para las pruebas de interfaz (sale en el renglón «Zoom» del «⋯»)
+                #endif
                 // Un pellizco que termina en el segundo siguiente al giro es el agarre, no una orden.
                 guard Date().timeIntervalSince(rotatedAt) > DS.Gesture.pinchAfterRotationGuard,
                       let target = VideoZoom.pinched(magnification: Double(value.magnification)), target != zoom else { return }
@@ -1075,7 +1075,6 @@ struct PlayerScreen: View {
             if landscape { landscapeZoom = target } else { portraitZoom = target }
             if !queueToast { zoomToast = target }
         }
-        holder.engine.setZoom(target)
         if landscape { env.services.settings.update { $0.videoZoom = target.rawValue } }   // el de vertical no se guarda
         guard !queueToast else { return }
         zoomToastTask?.cancel()
@@ -1174,7 +1173,7 @@ struct PlayerScreen: View {
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:
             // Con o sin controles, la misma ruedita en el mismo lugar (antes, con controles, brincaba al botón grande).
-            if loadingShown { LoadingSpinner() }
+            if presentation.showsLoading { LoadingSpinner() }
         }
     }
 
@@ -1202,7 +1201,7 @@ struct PlayerScreen: View {
     }
 
     /// La única animación de carga del reproductor (`DSLoader`), dentro del botón grande y al centro del video. Cuándo sale lo
-    /// decide `loadingKind`.
+    /// decide `PlayerPresentation`.
     private struct LoadingSpinner: View {
         var body: some View {
             // El mismo botón grande con la carga dentro: con o sin controles se ve igual y en el mismo punto.
@@ -1211,55 +1210,10 @@ struct PlayerScreen: View {
         }
     }
 
-    /// Cuándo se ve la carga en el botón grande (una sola regla para todo el reproductor):
-    /// - `now`: abriendo el video (hasta que suena por primera vez) o pidiéndolo otra vez (se cortó, o al volver a la app). Al
-    ///   momento y sin asomar el play: ahí el play no haría nada.
-    /// - `soon`: pediste que sonara y aún no avanza, o se atoró sonando. Solo si dura (un momento; más en los primeros segundos,
-    ///   cuando el motor hace sus últimos ajustes): así pausar y seguir nunca enseñan la carga.
-    /// - `none`: listo, o en pausa sin nada pendiente.
-    enum LoadKind: Equatable { case none, soon, now }
-    private func loadingKind(_ model: PlayerModel) -> LoadKind {
-        if model.phase == .preparing || !model.hasPlayed || model.reconnecting { return .now }
-        if model.awaitingPlayback { return .soon }
-        if model.snapshot.state == .loading || model.snapshot.state == .buffering { return .soon }
-        return .none
-    }
-
-    private func updateLoading(_ kind: LoadKind, _ model: PlayerModel) {
-        loadingTask?.cancel()
-        let video = current.videoID
-        switch kind {
-        case .none:
-            loadingShown = false
-            if model.snapshot.state == .playing && playedVideo != video { playedVideo = video; playedAt = Date() }
-        case .now:
-            loadingShown = true
-        case .soon:
-            let settling = playedVideo != video || Date().timeIntervalSince(playedAt) < DS.Timing.loadingSettleWindow
-            loadingTask = Task { @MainActor in
-                try? await Task.sleep(nanoseconds: settling ? DS.Timing.loadingSettleDelay : DS.Timing.quietSpinnerDelay)
-                guard !Task.isCancelled else { return }
-                loadingShown = true
-            }
-        }
-    }
-
     /// Tocar play o pausa (botón, doble toque, dos dedos, el iPod o VoiceOver): el botón cambia ya, sin esperar al motor.
     private func userTogglePlay(_ model: PlayerModel) {
-        glyphTask?.cancel()
-        glyphPlaying = !model.wantsToPlay
+        presentation.userToggled(toPlaying: !model.wantsToPlay)
         Task { await model.togglePlay() }
-    }
-
-    /// El motor cambió: el botón lo sigue solo si el cambio dura (`glyphSettle`), y entonces dice lo que de verdad pasa. Lo que
-    /// tocaste ya se ve desde el toque; un parpadeo del motor en medio no lo mueve.
-    private func followEngineGlyph(_ playing: Bool, _ model: PlayerModel) {
-        glyphTask?.cancel()
-        glyphTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: DS.Timing.glyphSettle)
-            guard !Task.isCancelled else { return }
-            glyphPlaying = model.snapshot.state == .playing
-        }
     }
 
     private func failed(_ model: PlayerModel) -> Bool { if case .failed = model.phase { true } else { false } }
@@ -1473,6 +1427,9 @@ struct PlayerScreen: View {
             PlayerMenuRow(title: "Zoom", symbol: zoom.symbol, detail: Text(verbatim: Strings.tr(zoom.title, language: language))) { setZoom(nextZoom) }
                 .accessibilityHint(Text("Cambia el zoom del video"))
                 .accessibilityIdentifier("player-zoom")
+                #if DEBUG
+                .accessibilityValue(Text(verbatim: Demo.isOn ? "pinch \(lastPinch)" : ""))
+                #endif
             if !landscape {
                 // Prender o apagar el iPod (y su color): no → blanco → negro → no.
                 PlayerMenuRow(title: "Modo iPod", symbol: "ipod", detail: Text(verbatim: Strings.tr(IPodFace.name(ipodFace), language: language))) {
@@ -2088,7 +2045,7 @@ struct PlayerScreen: View {
         HStack(spacing: DS.Space.s8) {
             SkipButton(forward: false) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
             // Cargando: la animación va dentro del botón grande, en el mismo punto que sin controles (LoadingSpinner).
-            PlayPauseButton(playing: glyphPlaying, loading: loadingShown) {
+            PlayPauseButton(playing: presentation.showsPlaying, loading: presentation.showsLoading) {
                 userTogglePlay(model); pulse()
             }
             SkipButton(forward: true) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }

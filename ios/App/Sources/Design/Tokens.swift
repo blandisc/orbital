@@ -894,17 +894,10 @@ enum DS {
         /// Cuánto espera una confirmación («¿Ver en la TV?») antes de cerrarse sola.
         static let confirm: UInt64 = 3_500_000_000
         static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)
-        /// Lo que se espera antes de enseñar la ruedita al volver a la app (casi siempre el video vuelve antes).
-        static let quietSpinnerDelay = UInt64(1 * 1e9)
-        /// La carga del botón grande: en los primeros segundos de un video ya sonando solo sale si se atora este rato (el motor
-        /// hace ajustes al arrancar); el giro de la pantalla tarda esto en asentarse.
-        static let loadingSettleWindow: TimeInterval = 5
-        static let loadingSettleDelay = UInt64(2.5 * 1e9)
+        /// El giro de la pantalla tarda esto en asentarse. (Cuándo sale la carga lo decide `PlayerPresentation`.)
         static let rotationSettle = UInt64(0.5 * 1e9)
         /// Un toque en este rato después de que los controles empezaron a esconderse los vuelve a mostrar.
         static let controlsFadeGrace: TimeInterval = 0.4
-        /// El botón grande: un cambio del motor que no pediste se enseña si dura esto (al arrancar se detiene un instante).
-        static let glyphSettle = UInt64(1.2 * 1e9)
         /// Cuánto se queda un aviso con salida («Sigue en tu Orbital · Deshacer», «Bajando · Otra»).
         static let toastAction = UInt64(8 * 1e9)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
