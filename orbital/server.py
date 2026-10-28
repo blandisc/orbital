@@ -183,7 +183,9 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             # Con DWM lleno los videos se traban: se libera antes de abrir uno (solo aquí: en pruebas reiniciaría DWM).
             from . import dwm_release
 
-            catalog.watch.player.before_open = dwm_release.fresh_for_video
+            catalog.watch.player.before_open = dwm_release.release_if_full
+            # Y al volver de un juego (los emuladores Vulkan le dejan memoria a DWM): mientras la tele regresa a 4K.
+            catalog.sessions.release_video_memory = lambda: dwm_release.release_if_full("al volver de un juego")
             threading.Thread(target=scan, daemon=True, name="first-scan").start()
         else:
             await run_in_threadpool(catalog.refresh)

@@ -99,6 +99,9 @@ class Sessions:
         self.kiosk = None  # KioskWindow si Orbital abrió la interfaz (la reabre al cerrar un juego)
         # Antes de abrir algo, cerrar lo que estaba abierto (lo pone el servidor: shell.close_previous).
         self.before_launch: Callable[[str], None] | None = None
+        # Al volver de un juego, liberar la memoria de video de Windows si quedó llena (lo pone el servidor: solo en la
+        # Orbital de verdad; en pruebas reiniciaría DWM). Ver dwm_release.release_if_full.
+        self.release_video_memory: Callable[[], bool] | None = None
         self._resolution_for: str | None = None  # el juego que bajó la tele a 1080p (ver _guard_resolution)
         self._reveal_skip = threading.Event()
         # El arte de la pantalla de carga (lo avisa la interfaz): cuándo empezó a esperarlo y cuándo ya se vio.
@@ -451,6 +454,13 @@ class Sessions:
             self.kiosk.open()  # al frente o, si alguien cerró la ventana, otra vez abierta
         else:
             system.bring_to_front()
+        if self.release_video_memory is not None and not item_id.startswith(("media:", "app:")):
+            # Un juego (los emuladores Vulkan le dejan ~100-250 MB a DWM cada vez, y Smash más mientras corre): si quedó
+            # lleno, se libera aquí, junto al parpadeo de volver a 4K, y no a media película (los videos se trababan).
+            try:
+                self.release_video_memory()
+            except Exception:  # noqa: BLE001 - liberar nunca impide volver a Orbital
+                log.exception("No pude liberar la memoria de video al volver de %s", title)
         display.resolution.restore()  # de vuelta a la resolución de la pantalla (Orbital y las películas, a 4K)
         health.note_dwm(f"de vuelta de {title}")
         # Se cerró solo a los pocos segundos: casi siempre es que no pudo abrir (falta la ROM, el
