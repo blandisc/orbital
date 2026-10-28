@@ -198,7 +198,8 @@ public final class PlayerModel: ObservableModel {
     private var consuming: Task<Void, Never>?
     private var transition: Task<Void, Never>?
     private var failedSources = Set<Int>()
-    private var hasPlayed = false
+    /// Ya sonó este video (el motor llegó a reproducir): hasta entonces la pantalla enseña la carga, no el play.
+    public private(set) var hasPlayed = false { didSet { if oldValue != hasPlayed { changed() } } }
     private var startupDeadline: Date?
     private var lastSnapshotAt: Date?
     private var lastSave: Date
@@ -284,6 +285,7 @@ public final class PlayerModel: ObservableModel {
         guard !closing, phase != .closed else { return }
         generation += 1
         let mine = generation
+        if self.request?.metaID != request.metaID { localizedMeta = nil }   // otra serie: su traducción llega aparte
         self.request = request
         resetForNewVideo()
         phase = .preparing
@@ -1263,8 +1265,16 @@ public final class PlayerModel: ObservableModel {
         }
     }
 
+    /// La ficha traducida a tu idioma (la pide la pantalla con el traductor de la app): los nombres de los episodios en
+    /// «Siguiente episodio» salen igual que en la ficha de la serie, no en inglés. Sin ella, la original.
+    public private(set) var localizedMeta: JSON?
+    public func useLocalizedMeta(_ meta: JSON, for videoID: String) {
+        guard request?.videoID == videoID else { return }
+        localizedMeta = meta
+    }
+
     private func episodeText(_ videoID: String) -> (String, String) {
-        guard let meta = request?.meta else { return ("", "") }
+        guard let meta = localizedMeta ?? request?.meta else { return ("", "") }
         for season in CinemetaParsing.seasons(meta) {
             if let ep = season.episodes.first(where: { $0.id == videoID }) { return (episodeLabel(season.season, ep.episode), ep.title) }
         }

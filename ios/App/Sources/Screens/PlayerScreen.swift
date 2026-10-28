@@ -205,6 +205,14 @@ struct PlayerScreen: View {
     /// Lo que suena ahora: cambia al pasar solo al siguiente episodio (el `request` es solo con el que se abrió).
     private var current: PlayRequest { holder.model.request ?? request }
     @State private var ambientURL: URL?
+    @State private var knownAspect: Double?
+    /// El alto que pide «Audio y subtítulos» en vertical (para subir el video lo justo y que quepa sin desplazarse).
+    @State private var dockNeed: CGFloat = 0
+    /// Lo que enseña el botón grande: la carga o el play. Al abrir, la carga hasta que el video de verdad suena (antes parpadeaba
+    /// el play entre dos estados de carga); ya sonando, solo si se atora más de un momento (antes, al pausar o seguir, salía la
+    /// carga un segundo).
+    @State private var loadingShown = true
+    @State private var loadingTask: Task<Void, Never>?
 
     var body: some View {
         let model = holder.model
@@ -403,6 +411,7 @@ struct PlayerScreen: View {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: DS.Timing.tick)
                 await model.tick()
+                if let aspect = engine.videoAspect, aspect != knownAspect { knownAspect = aspect }   // para cuando el motor la olvide
                 pip.update(engine.pictureInPicture)
                 nowPlaying.update(title: current.displayTitle, subtitle: current.episodeLabel, poster: current.poster, snapshot: model.snapshot)
             }
@@ -465,7 +474,8 @@ struct PlayerScreen: View {
         .onChange(of: model.snapshot.position) { _, position in
             if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
         }
-        .task(id: current.videoID) { await loadAmbient() }
+        .task(id: current.videoID) { knownAspect = nil; await loadAmbient(); await loadLocalizedEpisodes() }
+        .onChange(of: loadingNow(model), initial: true) { _, now in updateLoading(now, model) }
         .onChange(of: landscape) { holder.engine.setZoom(zoom) }   // al girar, cada sentido con su zoom
         .task(id: pendingSeek) { if pendingSeek != nil { try? await Task.sleep(nanoseconds: DS.Timing.seekPatience); pendingSeek = nil } }
         .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
@@ -1117,7 +1127,7 @@ struct PlayerScreen: View {
         default:
             // Con o sin controles, la misma ruedita en el mismo lugar (antes, con controles, brincaba al botón grande).
             if model.reconnecting { LoadingSpinner(delayed: true) }
-            else if model.snapshot.state == .buffering || model.snapshot.state == .loading { LoadingSpinner() }
+            else if loadingShown { LoadingSpinner() }
         }
     }
 
@@ -1156,6 +1166,22 @@ struct PlayerScreen: View {
                 .opacity(shown || !delayed ? 1 : 0)
                 .task { guard delayed else { return }; try? await Task.sleep(nanoseconds: DS.Timing.quietSpinnerDelay); shown = true }
                 .accessibilityIdentifier("player-loading")
+        }
+    }
+
+    /// ¿Está cargando ahora mismo? (Antes de sonar por primera vez, siempre.)
+    private func loadingNow(_ model: PlayerModel) -> Bool {
+        !model.hasPlayed || model.phase == .preparing || model.snapshot.state == .loading || model.snapshot.state == .buffering
+    }
+
+    private func updateLoading(_ now: Bool, _ model: PlayerModel) {
+        loadingTask?.cancel()
+        guard now else { loadingShown = false; return }
+        if !model.hasPlayed { loadingShown = true; return }
+        loadingTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: DS.Timing.quietSpinnerDelay)
+            guard !Task.isCancelled else { return }
+            loadingShown = true
         }
     }
 
@@ -1253,6 +1279,19 @@ struct PlayerScreen: View {
         }
     }
 
+    /// Los nombres de los episodios en tu idioma (el mismo traductor que la ficha, ya en caché si vienes de ella): «Episodios» y
+    /// «Siguiente episodio» dicen lo mismo que la ficha de la serie, no el inglés de Cinemeta.
+    private func loadLocalizedEpisodes() async {
+        let request = current
+        guard request.kind == "series", let meta = request.meta else { return }
+        let local = await env.services.localizer.meta(kind: "series", meta: meta)
+        guard !Task.isCancelled else { return }
+        holder.model.useLocalizedMeta(local, for: request.videoID)
+        if !episodeSeasons.isEmpty {
+            episodeSeasons = await Task.detached(priority: .userInitiated) { CinemetaParsing.seasons(local).filter { !$0.isSpecials } }.value
+        }
+    }
+
     /// La imagen del fondo ambiente: la del episodio si la ficha la trae; si no, el fondo de la serie (o película).
     private func loadAmbient() async {
         let request = current
@@ -1337,10 +1376,7 @@ struct PlayerScreen: View {
         return VStack(alignment: .leading, spacing: 0) {
             // La misma hoja que el botón de subtítulos (antes abría otra, «Ajustes del video», que hacía la mitad).
             // «Audio y subtítulos» ya no va aquí: se abre con el botón de subtítulos de la barra (era la misma hoja dos veces).
-            if current.kind == "series", current.meta != nil {
-                PlayerMenuRow(title: "Episodios", symbol: "rectangle.stack", detail: Text(verbatim: current.episodeLabel.components(separatedBy: " · ").first ?? "")) { openEpisodes(model) }
-                    .accessibilityIdentifier("player-episodes-row")
-            }
+            // «Episodios» va solo en su botón de la barra de arriba (no también aquí).
             if model.sourceChoices.count > 1 {
                 PlayerMenuRow(title: "Versión", symbol: "square.stack", detail: Text(verbatim: videoVersionShort(model))) { openDock(nil, version: true) }
                     .accessibilityIdentifier("player-versions")
@@ -1596,13 +1632,28 @@ struct PlayerScreen: View {
                 .padding(DS.Space.s3)
                 .frame(maxHeight: .infinity, alignment: .top)
             } else {
-                let top = min(rect.maxY + DS.Space.s4, geo.size.height * DS.PlayerPanel.dockPortraitMaxTop)
+                // Pegado abajo y del alto que pide: chico (subtítulos apagados) no deja hueco debajo; grande, el video sube para
+                // dejarle lugar (`videoRect`) y no hace falta desplazarse. Solo si ni así cabe, se desplaza por dentro.
+                let top = rect.maxY + DS.Space.s4
                 // Todo el panel recibe el toque (entre las pastillas pasaba al video de abajo).
                 dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
                     .frame(maxWidth: DS.PlayerPanel.dockWidth)
-                    .frame(maxHeight: geo.size.height - top - DS.Space.s2, alignment: .top)
-                    .padding(.horizontal, DS.Space.gutter).offset(y: top)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .frame(maxHeight: max(0, geo.size.height - top - DS.Space.s2), alignment: .bottom)
+                    .padding(.horizontal, DS.Space.gutter)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .padding(.bottom, DS.Space.s2)
+                    // Lo que mediría sin límite (invisible): cuánto debe subir el video.
+                    .background(alignment: .top) {
+                        if dockPage != .episodes, syncLines == nil {
+                            Group { dockPage == .version ? AnyView(versionPage(model)) : AnyView(subtitleDockView(model)) }
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: DS.PlayerPanel.dockWidth).padding(.horizontal, DS.Space.gutter)
+                                .hidden().allowsHitTesting(false).accessibilityHidden(true)
+                                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in
+                                    withAnimation(DS.Motion.base(reduceMotion)) { dockNeed = h }
+                                }
+                        }
+                    }
             }
         }
         .sheet(isPresented: $dockLanguages) {
@@ -1949,7 +2000,7 @@ struct PlayerScreen: View {
         HStack(spacing: DS.Space.s8) {
             SkipButton(forward: false) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
             // Cargando: la animación va dentro del botón grande, en el mismo punto que sin controles (LoadingSpinner).
-            PlayPauseButton(playing: model.snapshot.state == .playing, loading: model.reconnecting || model.snapshot.state == .loading || model.snapshot.state == .buffering) {
+            PlayPauseButton(playing: model.snapshot.state == .playing, loading: model.reconnecting || loadingShown) {
                 Task { await model.togglePlay() }; pulse()
             }
             SkipButton(forward: true) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
@@ -2068,7 +2119,12 @@ struct PlayerScreen: View {
         // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
-        let band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter, aspect: portraitAspect)
+        var band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter, aspect: portraitAspect)
+        // Con «Audio y subtítulos» abierto, si no cabe abajo, el video sube lo justo (hasta la orilla) y el panel se ve entero.
+        if subtitleDock && dockPage != .episodes && dockNeed > 0 {
+            let room = size.height - band.maxY - DS.Space.s4 - DS.Space.s2
+            band.origin.y -= min(max(0, dockNeed - room), band.minY)
+        }
         // «Ajuste de aspecto» en vertical: el cuadro con su margen a los lados, lejos de las esquinas redondeadas.
         if zoom == .fitSafeArea {
             let width = band.width - DS.Space.gutter * 2, height = width * band.height / max(band.width, 1)
@@ -2121,7 +2177,9 @@ struct PlayerScreen: View {
     }
 
     /// La proporción del cuadro que suena (la mide el motor al cargar); 16:9 mientras no se sabe.
-    private var portraitAspect: Double { holder.engine.videoAspect ?? Double(DS.Poster.stillAspect) }
+    /// Mientras el motor la vuelve a medir (al regresar a la app suelta el video y la olvida un momento), la última que midió de
+    /// este video: antes, al volver, un 4:3 se veía como 16:9 y la imagen se hacía más chica.
+    private var portraitAspect: Double { holder.engine.videoAspect ?? knownAspect ?? Double(DS.Poster.stillAspect) }
 
     /// VoiceOver: subir o bajar el video un tramo.
     private func stepVideo(_ step: Int, size: CGSize) {
@@ -2149,7 +2207,7 @@ struct PlayerScreen: View {
         withAnimation(DS.Motion.base(reduceMotion)) {
             moreOpen = false; controlsVisible = false; dockPage = .episodes; subtitleDock = true
         }
-        guard let meta = current.meta else { return }
+        guard let meta = holder.model.localizedMeta ?? current.meta else { return }   // en tu idioma, como en la ficha
         let local = current.localFile != nil
         Task {
             if episodeSeasons.isEmpty {
