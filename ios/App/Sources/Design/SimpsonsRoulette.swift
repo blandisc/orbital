@@ -181,6 +181,16 @@ struct SimpsonsRoulette: View {
         run = Task { @MainActor in
             func wait(_ s: Double) async { try? await Task.sleep(nanoseconds: UInt64(s * 1_000_000_000)) }
             withAnimation(.spring(duration: DS.Simpsons.appear, bounce: DS.Simpsons.bounce)) { shown = true }
+            // Desde el Centro de control la app acaba de abrir y las imágenes no estaban listas (desde la dona sí): la tele
+            // sintoniza con estática hasta que llegan (o hasta `imageWait`). Antes crecía en negro y la imagen salía al final.
+            staticOn = true
+            let stills = found.reel.map { AppEnvironment.simpsonsStill(season: $0.season, episode: $0.episode.episode) }
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask { await ImagePipeline.shared.warmPosters(stills) }
+                group.addTask { try? await Task.sleep(nanoseconds: UInt64(DS.Simpsons.imageWait * 1_000_000_000)) }
+                await group.next()
+                group.cancelAll()
+            }
             await wait(DS.Simpsons.appear * 0.7)
             // Clic, clic, clic: estática, el número del canal y su imagen.
             for i in 0..<found.reel.count where !Task.isCancelled {

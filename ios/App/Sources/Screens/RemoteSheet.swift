@@ -15,6 +15,14 @@ struct RemoteSheet: View {
     /// El alto del control completo, medido: la hoja estirada mide eso (sin hueco abajo) y, como no llega a la altura
     /// completa de la pantalla, iOS la deja de vidrio translúcido como la corta (a la altura completa la vuelve opaca).
     @State private var fullHeight: CGFloat = DS.Remote.padHeight * 4
+    /// Lo que mide el contenido ahora mismo; la hoja lo alcanza un instante después (`settle`), cuando el contenido dejó de
+    /// cambiar, y en una sola animación. Antes tomaba cada medida al vuelo: al pasar del menú de la TV al reproductor el
+    /// contenido cambiaba en dos pasos y la hoja bajaba y subía; al ocultar los sustos brincaba.
+    @State private var measuredCompact: CGFloat?
+    @State private var measuredFull: CGFloat?
+    @State private var settling: Task<Void, Never>?
+    /// La primera medida va directa (la hoja abre ya de su alto); la espera es solo para lo que cambia después.
+    @State private var measuredOnce = false
     @State private var text = ""
     /// Lo que ya tiene la TV de lo que escribiste (para mandar solo la diferencia).
     @State private var sentText = ""
@@ -33,9 +41,8 @@ struct RemoteSheet: View {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
                 header(model)
                     // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
-                    // Al cambiar (abrir los sustos), la hoja crece con la misma animación que su contenido; antes brincaba.
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                        if !large { withAnimation(DS.Motion.smooth(reduceMotion)) { compactHeight = min(height + DS.Space.s6 + DS.Space.s10, UIScreen.main.bounds.height * DS.Remote.maxShareFitted) } }
+                        if !large { measuredCompact = min(height + DS.Space.s6 + DS.Space.s10, UIScreen.main.bounds.height * DS.Remote.maxShareFitted); settle() }
                     }
                 // Lo completo aparece y se va con un fundido y un leve desplazamiento (antes subía entero desde abajo).
                 if large { full(model).transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: DS.Space.s6)), removal: .opacity)) }
@@ -45,7 +52,7 @@ struct RemoteSheet: View {
                 }
             }
             .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { fullHeight = min($0, UIScreen.main.bounds.height * DS.Remote.maxShareFitted) } }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { measuredFull = min($0, UIScreen.main.bounds.height * DS.Remote.maxShareFitted); settle() } }
         }
         .scrollDisabled(!large && compactHeight < UIScreen.main.bounds.height * DS.Remote.maxShareFitted)   // corta y sin caber (letra grande): se desliza
         .scrollBounceBehavior(.basedOnSize)
@@ -73,6 +80,25 @@ struct RemoteSheet: View {
         .sheet(isPresented: $showsGuide) {
             NavigationStack {
                 VoiceGuideView().toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { showsGuide = false } } }
+            }
+        }
+    }
+
+    /// La hoja alcanza lo que mide su contenido cuando este deja de cambiar, con la misma animación que lo de adentro.
+    private func settle() {
+        settling?.cancel()
+        if !measuredOnce {
+            measuredOnce = true
+            if let measuredCompact { compactHeight = measuredCompact }
+            if let measuredFull { fullHeight = measuredFull }
+            return
+        }
+        settling = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(DS.Remote.heightSettle * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            withAnimation(DS.Motion.smooth(reduceMotion)) {
+                if let measuredCompact { compactHeight = measuredCompact }
+                if let measuredFull { fullHeight = measuredFull }
             }
         }
     }
@@ -150,7 +176,7 @@ struct RemoteSheet: View {
                                onContinueHere: { onContinueHere(now) }, framed: false, scares: model.scares ?? [])
                 // Una película con mapa de sustos: un toque lo abre aquí mismo (la línea de tiempo, el siguiente y el aviso).
                 if let scares = model.scares {
-                    if showsScares { ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares).transition(.opacity.combined(with: .scale(scale: DS.Remote.revealScale, anchor: .top))) }
+                    if showsScares { ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares).transition(Self.reveal) }
                     Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares.toggle() } } label: {
                         Label(showsScares ? "Ocultar los sustos" : "Mapa de sustos · \(scares.count)", systemImage: showsScares ? "chevron.up" : "bolt.heart")
                             .recipe(.footnote, color: DS.text).fontWeight(.semibold)
@@ -221,31 +247,49 @@ struct RemoteSheet: View {
             // Reproduciendo o en vivo, el pad no se suma abajo (no cabía y repetía pausa, ±10, volumen, pistas y salir):
             // reemplaza lo de arriba cuando hace falta moverse por un panel de la TV (episodios, fuentes, la guía).
             case .player:
-                if showsPad { padMode(model) }
+                if showsPad { padMode(model).transition(Self.reveal) }
                 else {
-                    if let now = model.now { playerDeck(model, now) }
-                    volume(model)
+                    VStack(spacing: DS.Space.s4) {
+                        if let now = model.now { playerDeck(model, now) }
+                        volume(model)
+                    }
+                    .transition(Self.reveal)
                 }
             case .live:
-                if showsPad { padMode(model) }
+                if showsPad { padMode(model).transition(Self.reveal) }
                 else {
-                    liveDeck(model)
-                    volume(model)
+                    VStack(spacing: DS.Space.s4) {
+                        liveDeck(model)
+                        volume(model)
+                    }
+                    .transition(Self.reveal)
                 }
             case .typing:
-                typing(model, autoFocus: true)
-                navigation(model)
-                volume(model)
+                VStack(spacing: DS.Space.s4) {
+                    typing(model, autoFocus: true)
+                    navigation(model)
+                    volume(model)
+                }
+                .transition(Self.reveal)
             case .browse:
-                volume(model)
-                navigation(model)
-                typing(model, autoFocus: model.textField == true)
+                VStack(spacing: DS.Space.s4) {
+                    volume(model)
+                    navigation(model)
+                    typing(model, autoFocus: model.textField == true)
+                }
+                .transition(Self.reveal)
             }
         }
-        .animation(DS.Motion.base(reduceMotion), value: model.context)
-        .animation(DS.Motion.base(reduceMotion), value: showsPad)
+        // Lo de adentro cambia en la misma hoja: lo nuevo surge con un fundido y crece un poco desde arriba (`reveal`).
+        .animation(DS.Motion.smooth(reduceMotion), value: model.context)
+        .animation(DS.Motion.smooth(reduceMotion), value: showsPad)
+        .animation(DS.Motion.smooth(reduceMotion), value: model.now == nil)
         .onChange(of: model.context) { _, _ in showsPad = false }   // otra pantalla en la TV: vuelve a lo suyo
     }
+
+    /// Cómo surge lo que cambia dentro del control: un fundido y un leve crecimiento desde arriba (y se va con un fundido).
+    static let reveal = AnyTransition.asymmetric(insertion: .opacity.combined(with: .scale(scale: DS.Remote.revealScale, anchor: .top)),
+                                                 removal: .opacity)
 
     private func voice(_ model: TVNowModel) -> some View {
         // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…».
@@ -277,32 +321,36 @@ struct RemoteSheet: View {
     /// Reproduciendo: la línea de tiempo (o el mapa de sustos), los botones del reproductor y sus pistas.
     @ViewBuilder private func playerDeck(_ model: TVNowModel, _ now: OrbitalRemote.NowPlaying) -> some View {
         let series = now.kind == "series"
-        TimelineView(.periodic(from: model.fetchedAt, by: DS.NowPlaying.progressTick)) { context in
-            let position = now.position(at: context.date, since: model.fetchedAt)
-            if let scares = model.scares, showsScares {
-                VStack(spacing: DS.Space.s2) {
-                    ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares)
-                    Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares = false } } label: {
-                        Label("Ocultar los sustos", systemImage: "chevron.up").recipe(.footnote, color: DS.textMuted).frame(minHeight: DS.Size.touchTarget)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .transition(.opacity.combined(with: .scale(scale: DS.Remote.revealScale, anchor: .top)))
-            } else if let scares = model.scares {
-                // Los sustos en un renglón (la barra y cuánto falta para el siguiente); un toque abre el detalle.
-                Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares = true } } label: {
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        ScareTimeline(position: position, duration: now.duration, scares: scares)
-                        nextScare(scares, position: position)
-                    }
-                    .contentShape(Rectangle())
+        // El mapa abierto va fuera del reloj de la barra (que vuelve a pintar cada segundo): ahí adentro su entrada y su
+        // salida se cortaban a medias.
+        if let scares = model.scares, showsScares {
+            VStack(spacing: DS.Space.s2) {
+                ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares)
+                Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares = false } } label: {
+                    Label("Ocultar los sustos", systemImage: "chevron.up").recipe(.footnote, color: DS.textMuted).frame(minHeight: DS.Size.touchTarget)
                 }
                 .buttonStyle(.plain)
-                .transition(.opacity)
-                .accessibilityIdentifier("remote-scares")
-            } else {
-                ScareTimeline(position: position, duration: now.duration)
             }
+            .transition(Self.reveal)
+        } else {
+            TimelineView(.periodic(from: model.fetchedAt, by: DS.NowPlaying.progressTick)) { context in
+                let position = now.position(at: context.date, since: model.fetchedAt)
+                if let scares = model.scares {
+                    // Los sustos en un renglón (la barra y cuánto falta para el siguiente); un toque abre el detalle.
+                    Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares = true } } label: {
+                        VStack(alignment: .leading, spacing: DS.Space.s1) {
+                            ScareTimeline(position: position, duration: now.duration, scares: scares)
+                            nextScare(scares, position: position)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("remote-scares")
+                } else {
+                    ScareTimeline(position: position, duration: now.duration)
+                }
+            }
+            .transition(.opacity)
         }
         HStack(spacing: DS.Space.s2) {
             if series { RemoteKey(symbol: "backward.end.fill", title: Text("Anterior")) { Task { await model.press(.pageleft) } } }

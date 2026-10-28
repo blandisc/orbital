@@ -1,6 +1,7 @@
 import SwiftUI
 import UserNotifications
 import UIKit
+import WidgetKit
 import OrbitalCore
 import OrbitalModels
 
@@ -813,6 +814,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         OrbitalShortcuts.updateAppShortcutParameters()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)
         OpenRemoteIntent.open = { AppEnvironment.shared.ui.openRemote = true }   // el control del Centro de control abre el control
         OpenSimpsonsIntent.open = { AppEnvironment.shared.ui.openSimpsons = true }   // «Un Simpson al azar» del Centro de control
+        // Que el Centro de control vuelva a pintar nuestros botones con el ícono de esta versión (su galería guardaba los viejos).
+        ControlCenter.shared.reloadAllControls()
         ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         DownloadFailureNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.
