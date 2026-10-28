@@ -326,6 +326,15 @@ def test_settings_know_when_the_iphone_last_connected(public):
     assert state.settings()["companion_seen"] == first  # una escritura cada 10 min, no en cada petición
 
 
+def test_settings_know_the_iphone_is_open_right_now(public):
+    """«✓ Conectado» en Cuentas solo con la app hablando hace un momento: la hora exacta va en memoria (companion_live)."""
+    import time as _t
+    client, main = public
+    main.state.deps.extra.pop("phone_seen", None)
+    client.get("/api/companion/now", headers={"Authorization": "Bearer secreto"})
+    assert _t.time() - main.state.deps.extra["phone_seen"] < 5
+
+
 def test_the_iphone_open_counts_as_a_visit_too(public):
     """El iPhone abierto pide /api/companion/now cada 5 s: eso también es «lo usaste» (antes solo contaba al emparejarse)."""
     client, main = public

@@ -787,7 +787,7 @@ export function settingsPage(page, settings) {
           hint: settings.trakt.linked ? scrobbleHint(settings.trakt.scrobble) : "Listas y recomendaciones" }
           : settings.trakt && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "Configurar", hint: "Primero, la clave de Trakt (abajo)",
             command: { type: "keys", service: "trakt" } },
-        phoneRow(settings.companion_seen),
+        phoneRow(settings.companion_seen, Date.now(), settings.companion_live),
         onedriveRow(settings.onedrive),
         settings.para_ti && { heading: true, label: "Claves de Para ti" },
         ...(settings.para_ti ? Object.keys(KEY_FORMS).filter((s) => s !== "onedrive").map((service) => keyRow(service, settings.para_ti)) : []),
@@ -896,14 +896,17 @@ export function onedriveFolderMenu(path, folders) {
   };
 }
 
-/** El iPhone en Cuentas: conectado si la app habló con Orbital en los últimos 60 días (sigue abriendo el QR, para
- *  conectar otro o volver a conectarlo). Antes decía siempre «Conectar», aunque ya estuviera. */
-export function phoneRow(seen, now = Date.now()) {
-  const fresh = Number(seen) > 0 && now / 1000 - Number(seen) < 60 * 86400;
-  if (!fresh) return { icon: "phone", label: "iPhone", value: "Conectar", hint: "Con un código QR", command: { type: "phone-link" } };
+export const PHONE_LIVE = 120; // s: la app abierta pregunta cada 5 s; dos minutos sin saber de ella ya no es «conectado»
+
+/** El iPhone en Cuentas: «✓ Conectado» solo si la app habló con Orbital hace un momento (`live`, al segundo). Antes
+ *  bastaba con haberla usado en 60 días, y decía «Conectado» aunque el iPhone hubiera perdido la conexión. Si se usó
+ *  antes, cuándo (sin palomita). Siempre abre el QR: conectar otro o volver a conectarlo. */
+export function phoneRow(seen, now = Date.now(), live = 0) {
+  const row = { icon: "phone", label: "iPhone", command: { type: "phone-link" } };
+  if (Number(live) > 0 && now / 1000 - Number(live) < PHONE_LIVE) return { ...row, value: "✓ Conectado", ok: true, hint: "Abierto ahora" };
+  if (!(Number(seen) > 0 && now / 1000 - Number(seen) < 60 * 86400)) return { ...row, value: "Conectar", hint: "Con un código QR" };
   const ago = shortAgo(seen, now);
-  return { icon: "phone", label: "iPhone", value: "✓ Conectado", ok: true, command: { type: "phone-link" },
-    hint: ago === "ahora" ? "Lo usaste ahora" : ago === "ayer" ? "Lo usaste ayer" : `Lo usaste hace ${ago}` };
+  return { ...row, value: "Conectar", hint: ago === "ahora" ? "Lo usaste ahora" : ago === "ayer" ? "Lo usaste ayer" : `Lo usaste hace ${ago}` };
 }
 
 /** Un renglón de Cuentas: «Agregar» o «✓ Guardada» (escrita aquí: cambiar o quitar; o en config.yaml: se puede escribir otra).

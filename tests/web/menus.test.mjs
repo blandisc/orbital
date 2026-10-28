@@ -338,15 +338,20 @@ test("Seguir viendo: «Enviar al iPhone» y «Descargar en el iPhone» solo apar
   assert.ok(!labels(gameMenu(item, { phone: true, running: { id: "stremio:tt2", runner: "Orbital" } })).some((l) => l.includes("iPhone")));
 });
 
-test("cuentas: el iPhone dice si ya está conectado (antes siempre «Conectar»)", async () => {
+test("cuentas: el iPhone dice «Conectado» solo si la app habló hace un momento", async () => {
   const { phoneRow } = await import("../../orbital/web/js/core/menus.js");
   const now = Date.UTC(2026, 9, 16, 12);
   assert.equal(phoneRow(undefined, now).value, "Conectar");
-  const recent = phoneRow(now / 1000 - 2 * 3600, now);
-  assert.equal(recent.value, "✓ Conectado");
+  const open = phoneRow(now / 1000 - 3600, now, now / 1000 - 10); // preguntó hace 10 s
+  assert.equal(open.value, "✓ Conectado");
+  assert.equal(open.hint, "Abierto ahora");
+  // Usado hace 2 h y nada desde entonces: ya no dice «Conectado» (antes sí, aunque el iPhone hubiera perdido la conexión).
+  const recent = phoneRow(now / 1000 - 2 * 3600, now, now / 1000 - 2 * 3600);
+  assert.equal(recent.value, "Conectar");
+  assert.ok(!recent.ok);
   assert.equal(recent.hint, "Lo usaste hace 2 h");
   assert.equal(recent.command.type, "phone-link"); // sigue abriendo el QR (otro iPhone, o volver a conectarlo)
-  assert.equal(phoneRow(now / 1000 - 90 * 86400, now).value, "Conectar"); // hace meses: como si no
+  assert.equal(phoneRow(now / 1000 - 90 * 86400, now).hint, "Con un código QR"); // hace meses: como si no
 });
 
 test("Emuladores: cuál tiene versión nueva, cuál se instala aquí y el modo con ◀/▶", async () => {

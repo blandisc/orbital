@@ -97,7 +97,10 @@ def router(d: Deps) -> APIRouter:
                 "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last,
                 # «Para ti»: Ajustes › Cuentas enseña Trakt, TMDB y RAWG (y si su clave ya está).
                 "trakt": catalog.foryou.status()["trakt"], "para_ti": catalog.foryou.status(),
-                "onedrive": catalog.onedrive.status()}  # tus videos de OneDrive (Ajustes › Cuentas)
+                "onedrive": catalog.onedrive.status(),  # tus videos de OneDrive (Ajustes › Cuentas)
+                # La última vez que la app del iPhone habló con Orbital, al segundo (en memoria; companion_seen va a disco
+                # cada 10 min): «✓ Conectado» solo si es de hace un momento.
+                "companion_live": d.extra.get("phone_seen")}
 
     @r.post("/api/settings")
     def set_settings(body: dict) -> dict:

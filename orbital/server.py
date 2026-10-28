@@ -516,7 +516,11 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         return await main_app.state.run_voice(body, remote=True)
 
     def saw_phone() -> None:
-        """Para Ajustes › Cuentas («Conectado · Lo usaste hace 2 h»): una escritura cada 10 min como mucho."""
+        """Para Ajustes › Cuentas: en memoria, la hora exacta (¿está abierta ahora?) y en disco, una escritura cada 10
+        min como mucho («Lo usaste hace 2 h»)."""
+        deps = getattr(main_app.state, "deps", None)
+        if deps is not None:
+            deps.extra["phone_seen"] = time.time()
         state = getattr(main_app.state.catalog, "state", None)
         if state is not None and time.time() - float(state.settings().get("companion_seen") or 0) > 600:
             state.set_setting("companion_seen", time.time())
