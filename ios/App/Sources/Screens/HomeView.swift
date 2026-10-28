@@ -18,6 +18,8 @@ struct HomeView: View {
     @State private var topMovies = false
     /// La ruleta de «Un Simpson al azar».
     @State private var rollingSimpsons = false
+    /// De qué temporadas sale (dejar picada la dona › Temporadas…).
+    @State private var choosingSimpsonsSeasons = false
     /// Sale hoy › el mes completo.
     @State private var showingCalendar = false
     @Namespace private var simpsonsZoom
@@ -129,6 +131,7 @@ struct HomeView: View {
         .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .subtitle(syncText)
         .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette().navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)) }
+        .sheet(isPresented: $choosingSimpsonsSeasons) { SimpsonsSeasonsSheet() }
         .onChange(of: AppEnvironment.shared.ui.openSimpsons, initial: true) { _, wants in
             guard wants else { return }
             AppEnvironment.shared.ui.openSimpsons = false
@@ -160,9 +163,12 @@ struct HomeView: View {
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
-            // Un Simpson al azar (T5–T15): un toque, la ruleta, y empieza en el iPhone.
+            // Un Simpson al azar (T5–T15): un toque, la ruleta, y empieza en el iPhone. Dejarla picada: de qué temporadas sale.
             ToolbarItem(placement: .topBarTrailing) {
-                Button { rollingSimpsons = true } label: { Image("Glyphs/donut").renderingMode(.original) }
+                Menu {
+                    Button { rollingSimpsons = true } label: { Label("Un Simpson al azar", systemImage: "dice") }
+                    Button { choosingSimpsonsSeasons = true } label: { Label("Temporadas…", systemImage: "tv") }
+                } label: { Image("Glyphs/donut").renderingMode(.original) } primaryAction: { rollingSimpsons = true }
                     .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
                     .accessibilityLabel(Text("Un Simpson al azar"))
                     .accessibilityIdentifier("home-random-simpsons")
@@ -236,13 +242,12 @@ struct HomeView: View {
                    wide: item.background ?? "", reason: .inList("Mi lista"))
     }
 
-    /// Cómo se ve Inicio (carrusel, tiempo, avatar), en vivo: al cambiarlo en Ajustes, Inicio se vuelve a pintar.
+    /// Cómo se ve Inicio (carrusel, avatar), en vivo: al cambiarlo en Ajustes, Inicio se vuelve a pintar.
     private var look: AppSettings {
         var settings = env.services.appSettings
         #if DEBUG
-        if Demo.isOn {   // `-demo-deck fan`, `-demo-time arc`, `-demo-avatar comet`: para ver cada estilo en las capturas
+        if Demo.isOn {   // `-demo-deck fan`, `-demo-avatar comet`: para ver cada estilo en las capturas
             if let v = Demo.value(after: "-demo-deck") { settings.homeDeck = v }
-            if let v = Demo.value(after: "-demo-time") { settings.homeTime = v }
             if let v = Demo.value(after: "-demo-avatar") { settings.avatar = v }
         }
         #endif

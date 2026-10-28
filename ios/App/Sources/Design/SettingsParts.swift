@@ -56,80 +56,6 @@ struct ProfileCard: View {
     }
 }
 
-/// Una opción con su vista previa y su nombre; la elegida, con el borde del acento.
-struct StyleOption<Preview: View>: View {
-    let label: LocalizedStringKey
-    let selected: Bool
-    let action: () -> Void
-    @ViewBuilder var preview: () -> Preview
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: DS.Space.s2) {
-                preview().frame(maxWidth: .infinity).clipped()
-                Text(label).recipe(.footnote, color: selected ? DS.text : DS.textMuted).fontWeight(selected ? .semibold : .regular)
-            }
-            .padding(DS.Space.s2)
-            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.SettingsLook.optionRadius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: DS.SettingsLook.optionRadius, style: .continuous)
-                .stroke(selected ? DS.accent : .clear, lineWidth: DS.SettingsLook.optionRing))
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-/// El carrusel en chiquito: tres tarjetas que se deslizan solas de ida y vuelta con el efecto del estilo (el mismo
-/// `deckEffect` de Inicio). Con «Reducir movimiento», quietas con la del centro al frente.
-struct DeckStylePreview: View {
-    let style: DeckStyle
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private static let art = ["genre-drama", "genre-scifi", "genre-action"]
-
-    var body: some View {
-        TimelineView(.animation(paused: reduceMotion)) { context in
-            // De −0.6 a 0.6 lugares y de vuelta: se ve cómo pasan las de los lados al frente.
-            let shift = reduceMotion ? 0 : sin(context.date.timeIntervalSinceReferenceDate * DS.SettingsLook.deckPreviewSpeed) * 0.6   // ds-exception: amplitud del vaivén, en lugares
-            ZStack {
-                ForEach(Array(Self.art.enumerated()), id: \.offset) { index, art in
-                    let value = Double(index - 1) - shift
-                    Image(art).resizable().scaledToFill()
-                        .frame(width: DS.SettingsLook.deckPreviewCard.width, height: DS.SettingsLook.deckPreviewCard.height)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-                        .deckEffect(style, value: max(-1, min(1, value)), blur: DS.SettingsLook.deckPreviewBlur, drop: DS.SettingsLook.deckPreviewDrop)
-                        .offset(x: value * DS.SettingsLook.deckPreviewStep)
-                        .zIndex(-abs(value))
-                }
-            }
-            .frame(height: DS.SettingsLook.deckPreviewHeight)
-        }
-        .accessibilityHidden(true)
-    }
-}
-
-/// Cuánto falta en chiquito: una tarjeta del tamaño real (el indicador sale igual que en Inicio), reducida.
-struct TimeStylePreview: View {
-    let style: TimeStyle
-    private let minutes = 32, fraction = 0.62   // ds-exception: datos de muestra de la vista previa
-
-    var body: some View {
-        let card = DS.SettingsLook.timePreviewCard, scale = DS.SettingsLook.timePreviewScale
-        ZStack(alignment: .bottomLeading) {
-            Image("genre-drama").resizable().scaledToFill().frame(width: card.width, height: card.height).clipped()
-            LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
-            if style == .fill {
-                ProgressFillLabel(text: Text("Continuar"), minutes: minutes, fraction: fraction).padding(DS.Space.s4)
-            }
-            TimeBadge(style: style, minutes: minutes, fraction: fraction)
-        }
-        .frame(width: card.width, height: card.height)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Deck.radius, style: .continuous))
-        .scaleEffect(scale)
-        .frame(width: card.width * scale, height: card.height * scale)
-        .accessibilityHidden(true)
-    }
-}
-
 /// Un renglón con palomita (en qué listas está un título, «Guardar en…»): su glifo de color, el nombre y ✓ si está.
 struct CheckRow: View {
     let title: Text
@@ -189,5 +115,51 @@ struct SimpsonsSeasonsPicker: View {
         }
         .sensoryFeedback(.selection, trigger: selected)
         .accessibilityIdentifier("simpsons-seasons")
+    }
+}
+
+/// «Un Simpson al azar»: de qué temporadas sale el episodio, con lo guardado en Ajustes. La misma pieza en Ajustes y en la hoja
+/// que abre la dona de Inicio (déjala picada › Temporadas…). Las temporadas que existen llegan de Cinemeta al abrirla.
+struct SimpsonsSeasonsSection: View {
+    @Environment(AppEnvironment.self) private var env
+    @State private var selected = AppEnvironment.shared.services.appSettings.simpsonsSeasons
+    @State private var available = Array(1...AppEnvironment.simpsonsKnownSeasons)
+    /// Cómo se guarda (Ajustes lo pasa por su modelo para que su renglón se ponga al día); sin él, directo a los ajustes.
+    var save: (([Int]) -> Void)?
+
+    var body: some View {
+        Section {
+            SimpsonsSeasonsPicker(selected: selected, available: available, classics: AppEnvironment.simpsonsClassics) { seasons in
+                selected = seasons
+                if let save { save(seasons) } else { env.services.settings.update { $0.simpsonsSeasons = seasons }; env.services.settingsDidChange() }
+                env.simpsonsSeasonsChanged()
+            }
+            .padding(.vertical, DS.Space.s2)
+            .task { available = await env.simpsonsSeasonNumbers() }
+        } header: { Text("Temporadas") } footer: { Text("La dona de Inicio elige un episodio de estas temporadas.") }
+        .listRowBackground(DS.surface)
+    }
+
+    /// Lo elegido en pocas palabras, para el renglón de Ajustes: «Las clásicas», «Temporada 4» o «12 temporadas».
+    static func summary(_ seasons: [Int]) -> Text {
+        if Set(seasons) == Set(AppEnvironment.simpsonsClassics) { return Text("Las clásicas") }
+        if seasons.count == 1, let only = seasons.first { return Text("Temporada \(only)") }
+        return Text("\(seasons.count) temporadas")
+    }
+}
+
+/// La hoja de la dona de Inicio (déjala picada › Temporadas…): las mismas temporadas que en Ajustes.
+struct SimpsonsSeasonsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form { SimpsonsSeasonsSection() }
+                .tint(DS.accent)
+                .scrollContentBackground(.hidden).background(Backdrop())
+                .navigationTitle("Un Simpson al azar").navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dismiss() } } }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
