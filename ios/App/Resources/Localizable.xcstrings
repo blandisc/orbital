@@ -353,6 +353,17 @@
         }
       }
     },
+    "%lld por delante · 1 fuerte": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ahead · 1 big"
+          }
+        }
+      }
+    },
     "%lld por terminar": {
       "extractionState": "manual",
       "localizations": {

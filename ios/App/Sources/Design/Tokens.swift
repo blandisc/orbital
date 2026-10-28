@@ -333,6 +333,9 @@ enum DS {
         static func enter(_ reduce: Bool) -> Animation? { reduce ? nil : .easeOut(duration: DesignTokens.Motion.enter) }
         static func tint(_ reduce: Bool) -> Animation? { reduce ? nil : .easeInOut(duration: DesignTokens.Motion.tint) }
         static func spring(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.2) }
+        /// Un resorte sin rebote, para lo que cambia de alto y de forma a la vez (el control al estirarse o encogerse, los
+        /// sustos al abrirse): sigue a la hoja en lugar de ir por su lado.
+        static func smooth(_ reduce: Bool) -> Animation? { reduce ? nil : .smooth(duration: DesignTokens.Motion.slow) }
         /// Un rebote más marcado y corto: elegir un mosaico («¿Qué vemos?» › Más filtros).
         static func pop(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.base, bounce: 0.45) }
         /// El aviso de pantalla bloqueada entra con un fundido (también con «Reducir movimiento»).
@@ -735,6 +738,8 @@ enum DS {
 
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).
     enum Remote {
+        /// De qué tamaño parte lo que se despliega en el control (los sustos): crece desde arriba a su tamaño.
+        static let revealScale: CGFloat = 0.96
         /// La línea de tiempo con sustos: alto de la barra, de la marca leve y de la fuerte; el punto donde vas.
         static let timelineBar: CGFloat = 6, scareMark: CGFloat = 12, scareMarkMajor: CGFloat = 20, scareMarkWidth: CGFloat = 3
         static let playhead: CGFloat = 14
