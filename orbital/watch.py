@@ -742,10 +742,21 @@ class Watch:
                     return f"{prefix} E{episode['episode']}", episode["title"]
         return "", ""
 
+    @staticmethod
+    def _next_label(info: dict, video_id: str) -> str:
+        """«E3» (misma temporada) o «T6 E1» (cruza de temporada): el que sigue, para «⏭ Siguiente» y la pista RT del
+        reproductor. "" en el último (o si el que sigue aún no sale)."""
+        found = cinemeta.next_episode(info, video_id)
+        where = {e["id"]: (s["season"], e["episode"]) for s in cinemeta.seasons(info) for e in s["episodes"]}
+        if found is None or found not in where:
+            return ""
+        season, episode = where[found]
+        return f"E{episode}" if where.get(video_id, (None,))[0] == season else f"T{season} E{episode}"
+
     def _media_meta(self, kind: str, meta_id: str, video_id: str, title: str, source: streams.Source) -> dict:
         """Lo que el reproductor necesita saber del video (y lo que se guarda en Stremio). En pausa
         muestra también los datos y la sinopsis (del episodio, si la hay; si no, de la serie)."""
-        detail, facts, description, poster = "", "", "", None
+        detail, facts, description, poster, upcoming = "", "", "", None, ""
         try:
             info = self.cinemeta.meta(kind, meta_id)
         except cinemeta.CinemetaError:
@@ -759,10 +770,11 @@ class Watch:
             if kind == "series":
                 label, name = self._episode_label(info, video_id)
                 detail = " · ".join(p for p in (label, name) if p)
+                upcoming = self._next_label(info, video_id)
                 episode = next((e for s in cinemeta.seasons(info) for e in s["episodes"] if e["id"] == video_id), None)
                 description = (episode or {}).get("overview") or description
         return {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title, "detail": detail,
-                "facts": facts, "description": description, "poster": poster,
+                "facts": facts, "description": description, "poster": poster, "next": upcoming,
                 "source": source.index, "source_label": source_label(source), "binge": source.binge,
                 "source_key": source.key, "source_dub": source.dub, "tried": [source.index],
                 # La copia que ves («…WEB-DL-NTb»): «Probar otros» pone primero los subtítulos hechos para ella.
@@ -1238,16 +1250,19 @@ class Watch:
                                   asked=meta.get("asked"))
 
     def _season_episodes(self, meta: dict) -> list[dict]:
-        """Y › Episodios en el reproductor: los de la temporada que estás viendo."""
+        """Y › Episodios en el reproductor: todas las temporadas (cada episodio con su `season`; el panel abre en la que
+        ves y LB/RB las cambia), con el que ves y el que sigue marcados."""
         try:
             info = self.cinemeta.meta("series", meta["meta_id"])
         except cinemeta.CinemetaError:
             return []
-        for season in cinemeta.seasons(info):
-            if any(e["id"] == meta["video_id"] for e in season["episodes"]):
-                return [{"id": e["id"], "label": f"E{e['episode']} · {e['title']}", "current": e["id"] == meta["video_id"]}
-                        for e in season["episodes"]]
-        return []
+        seasons = cinemeta.seasons(info)
+        if not any(e["id"] == meta["video_id"] for s in seasons for e in s["episodes"]):
+            return []
+        upcoming = cinemeta.next_episode(info, meta["video_id"])
+        return [{"id": e["id"], "label": f"E{e['episode']} · {e['title']}", "season": s["season"],
+                 "current": e["id"] == meta["video_id"], "next": e["id"] == upcoming}
+                for s in seasons for e in s["episodes"]]
 
     def _jump_episode(self, meta: dict, video_id: str) -> bool | None:
         """Elegir un episodio desde el reproductor: lo pone donde ibas (o desde el principio)."""

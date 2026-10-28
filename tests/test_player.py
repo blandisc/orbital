@@ -246,6 +246,27 @@ def test_next_episode_crosses_seasons_and_skips_specials():
     assert cinemeta.next_episode(meta, "nope") is None
 
 
+def test_the_player_knows_the_next_episode_and_every_season(library):
+    """«⏭ Siguiente · E3» en la misma temporada, «T2 E1» al cruzar; nada en el último. Y › Episodios: todas las
+    temporadas (LB/RB), con el que ves y el que sigue marcados."""
+    from orbital.watch import Watch
+
+    meta = {"videos": [
+        {"id": "s:1:1", "season": 1, "episode": 1, "name": "Pilot"}, {"id": "s:1:2", "season": 1, "episode": 2, "name": "Diversity Day"},
+        {"id": "s:2:1", "season": 2, "episode": 1, "name": "The Dundies"}, {"id": "s:0:1", "season": 0, "episode": 1, "name": "Extra"},
+    ]}
+    assert Watch._next_label(meta, "s:1:1") == "E2"
+    assert Watch._next_label(meta, "s:1:2") == "T2 E1"
+    assert Watch._next_label(meta, "s:2:1") == ""
+    library.watch.cinemeta = type("Cinemeta", (), {"meta": lambda self, kind, meta_id: meta})()
+    episodes = library.watch._season_episodes({"meta_id": "s", "video_id": "s:1:2"})
+    assert [(e["season"], e["label"], e["current"], e["next"]) for e in episodes] == [
+        (1, "E1 · Pilot", False, False), (1, "E2 · Diversity Day", True, False), (2, "E1 · The Dundies", False, True),
+        (0, "E1 · Extra", False, False)]
+    column = player_ui.episodes_column(episodes)
+    assert [p["label"] for p in column.pages] == ["T1", "T2", "Especiales"] and column.page == 0 and column.index == 1
+
+
 def test_subtitles_from_subtitle_addons_in_your_language(monkeypatch):
     class Client:
         def request(self, method, params):
@@ -523,25 +544,84 @@ def test_from_the_phone_two_quick_episode_presses_go_two_episodes_ahead():
     assert asked == [2]
 
 
-def test_changing_episode_with_the_triggers_needs_a_hold_like_b():
-    """Un gatillo rozado no cambia nada (dice cómo se hace); mantenido, el anillo se llena y cambia."""
+def test_one_trigger_tap_changes_episode_with_a_notice_and_b_cancels():
+    """RT con un toque: «Episodio siguiente · B cancela» y, si no lo cancelas, el siguiente (antes había que mantenerlo).
+    Mantenido cuenta una vez: no salta dos episodios."""
     import time as _t
 
     p, mpv = make_player()
     p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1"}
     asked = []
     p.on_episode = lambda meta, delta: asked.append(delta) or True
-    p.EPISODE_HOLD, p.HOLD_SHOW_AFTER = .3, .05
+    p.EPISODE_WAIT = .15
     p.press("rt")
-    p.press("rt-up")
-    _t.sleep(.5)
-    assert asked == [] and "Mantén RT" in mpv.overlays[3]
-    p.press("lt")  # mantenido (sin soltar)
-    _t.sleep(.2)
-    assert "Episodio anterior" in mpv.overlays[6]
-    _t.sleep(.5)
-    assert asked == [-1] and mpv.overlays[6] is None
-    assert ("quit",) not in mpv.sent
+    assert "Episodio siguiente · B cancela" in mpv.overlays[3]
+    p.press("b")  # te arrepentiste
+    _t.sleep(.3)
+    assert asked == [] and "Sigues en este episodio" in mpv.overlays[3]
+    p.press("lt")
+    p.remote._repeats["lt"] = 5  # sigues manteniéndolo: las repeticiones no cuentan
+    p.press("lt")
+    p.press("lt-up")
+    _t.sleep(.3)
+    assert asked == [-1] and ("quit",) not in mpv.sent
+
+
+def test_keyboard_brackets_change_episode_with_one_press():
+    import time as _t
+
+    p, mpv = make_player()
+    p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1"}
+    asked = []
+    p.on_episode = lambda meta, delta: asked.append(delta) or True
+    p.EPISODE_WAIT = .1
+    try:
+        p.key("rt")  # la tecla ]
+        _t.sleep(.3)
+        assert asked == [1]
+    finally:
+        player_ui.set_input("gamepad")
+
+
+def test_paused_hints_say_rt_next_episode_only_when_there_is_one():
+    hud = player_ui.Hud(title="Los Simpson", detail="T5 E2 · Cape Feare", position=500, duration=1300, paused=True,
+                        series=True, next="E3")
+    assert "Siguiente episodio" in player_ui.hud_ass(hud) and "Mantén: episodio" not in player_ui.hud_ass(hud)
+    last = player_ui.Hud(title="Los Simpson", position=500, duration=1300, paused=True, series=True)
+    assert "Siguiente episodio" not in player_ui.hud_ass(last)
+    playing = player_ui.Hud(title="Los Simpson", position=500, duration=1300, series=True, next="T6 E1")
+    assert "Siguiente episodio" in player_ui.hud_ass(playing)
+    player_ui.set_input("keyboard")
+    try:
+        assert "]" in player_ui.hud_ass(hud)  # con teclado, la tecla
+    finally:
+        player_ui.set_input("gamepad")
+
+
+def test_paused_next_pill_only_with_a_next_episode_and_a_tap_goes_there():
+    import time as _t
+
+    p, mpv = make_player(pause=True, duration=1300.0, **{"time-pos": 500.0})
+    p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:5:2", "next": "T6 E1"}
+    asked = []
+    p.on_episode = lambda meta, delta: asked.append(delta) or True
+    p.EPISODE_WAIT = .1
+    player_ui.set_touch(True)
+    try:
+        p.show_hud()
+        assert "Siguiente · T6 E1" in mpv.overlays[1]
+        labels = [label for label, _ in player_ui._touch_items(p._hud(p.current), paused=True)]
+        assert labels.index("⏭ Siguiente · T6 E1") == labels.index("+10 s") + 1  # justo después de «+10 s»
+        pill = next(t for t in player_ui.targets["hud"] if t[4] == "next")
+        p.tap(pill[0] + 5, pill[1] + 5)
+        assert "Episodio siguiente · B cancela" in mpv.overlays[3]
+        _t.sleep(.3)
+        assert asked == [1]
+        p.current.meta = {**p.current.meta, "next": ""}  # el último: sin píldora
+        p.show_hud()
+        assert not any(t[4] == "next" for t in player_ui.targets["hud"]) and "Siguiente ·" not in mpv.overlays[1]
+    finally:
+        player_ui.set_touch(False)
 
 
 def test_next_file_resets_the_tracks_to_the_series_language():

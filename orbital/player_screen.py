@@ -1,12 +1,14 @@
 """Pantalla y mando del reproductor de Orbital (ver player.py). El dibujo vive en player_ui.py.
 
 Con el dedo (o el ratón): tocar enseña los botones (−10 s, Pausa, +10 s, Audio y subtítulos, Episodios,
-Salir); tocar la barra salta ahí; en un panel, tocar una opción la elige; tocar el video los esconde.
+Salir; en pausa, si hay, «⏭ Siguiente · E3», que hace lo mismo que RT); tocar la barra salta ahí; en un panel, tocar
+una opción la elige; tocar el video los esconde.
 Cualquier botón del mando vuelve a los glifos del mando.
 
 El mando, viendo algo:
   A pausa/seguir · ◀ ▶ adelantar/regresar (mantén: más rápido) · LB/RB capítulo (o 1 min) ·
-  LT/RT episodio · ▲ ▼ volumen · X Audio y subtítulos · Y Más (episodios, fuente, desde el principio) ·
+  RT siguiente episodio / LT anterior, con un toque (avisa y espera 2 s: B lo cancela; teclado ] y [) ·
+  ▲ ▼ volumen · X Audio y subtítulos · Y Más (episodios por temporada con LB/RB, fuente, desde el principio) ·
   B pregunta «¿Salir de …?» (A sigue viendo, B sale).
 
 En X, elegir audio o subtítulos no cierra el panel (B lo cierra) y, mientras está abierto, los subtítulos suben para
@@ -194,6 +196,7 @@ class PlayerScreen(SubtitleTrial):
             position=position, duration=duration, paused=bool(self._value("pause")) if paused is None else paused,
             audio=player_ui.current_label(tracks, "audio"), subtitles=player_ui.current_label(tracks, "sub"),
             source=meta.get("source_label", ""), series=meta.get("kind") == "series" and self.on_episode is not None,
+            next=meta.get("next", "") if meta.get("kind") == "series" and self.on_episode is not None else "",
             now=clock(),
             chapters=[float(c["time"]) for c in chapters], chapter_titles=[str(c.get("title") or "") for c in chapters],
             facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking,
@@ -489,6 +492,9 @@ class PlayerScreen(SubtitleTrial):
             if column.options:
                 column.index = max(0, min(len(column.options) - 1, column.index + (-1 if button == "up" else 1)))
                 self._draw_panel()
+        elif button in ("lb", "rb") and column.pages:  # Episodios: otra temporada
+            if column.turn(-1 if button == "lb" else 1):
+                self._draw_panel()
         elif button in ("lt", "rt"):  # una página de opciones (una lista de 170 canales no se recorre de a una)
             if column.options:
                 jump = player_ui.PANEL_ROWS * (-1 if button == "lt" else 1)
@@ -589,6 +595,8 @@ class PlayerScreen(SubtitleTrial):
             elif isinstance(action, tuple) and action[0] == "column":
                 self.menu.col = action[1]
                 self._draw_panel()
+            elif action in ("lb", "rb"):  # «‹ Temporada» / «Temporada ›»
+                self._menu_press(action)
             elif action == "close" or y < 560:  # tocar el video, arriba del panel, también lo cierra
                 self.close_menu()
             return
@@ -611,7 +619,9 @@ class PlayerScreen(SubtitleTrial):
             self._quit()
         elif action == "subs":
             self.try_subtitles()
-        elif action in ("a", "x", "y", "left", "right", "up", "down"):
+        elif action == "next":  # «⏭ Siguiente · E3»: lo mismo que RT
+            action = "rt"
+        if action in ("a", "x", "y", "left", "right", "up", "down", "rt"):
             self._touching = True
             try:
                 self.press(action)
@@ -676,15 +686,9 @@ class PlayerScreen(SubtitleTrial):
             self._hold_to_quit()
             return
         if button in ("lt-up", "rt-up"):
-            hold = getattr(self, "_episode_hold", None)
-            if hold is not None:  # soltaste antes de llenarse: no cambia, y dice cómo se hace
-                self._episode_hold = None
-                self._overlay(self.HOLD, None)
-                key = hold[0].upper()
-                self.toast(f"Mantén {key}: episodio {'siguiente' if hold[0] == 'rt' else 'anterior'}", 2.4)
-            return
+            return  # el episodio ya se pidió al oprimir
         if button in ("lt", "rt") and self.remote.held(button):
-            return  # mantenido: lo cuenta el anillo del episodio (y en un panel o en la TV en vivo, una vez)
+            return  # mantenido cuenta una vez (no dispara dos episodios), igual en un panel o en la TV en vivo
         if button == "x-up":
             self._release_x()
             return
@@ -755,9 +759,10 @@ class PlayerScreen(SubtitleTrial):
                 self.mpv.command("seek", delta * CHAPTER_SEEK, "relative")
                 self.show_hud(seeking=player_ui.seek_label(delta * CHAPTER_SEEK), position=self._expected_position(delta * CHAPTER_SEEK))
         elif button in ("lt", "rt"):
+            # Un toque basta (antes había que mantenerlo 0,8 s): avisa «Episodio siguiente · B cancela» y espera 2 s.
             meta = getattr(self.current, "meta", None) or {}
             if meta.get("kind") == "series" and self.on_episode:
-                self._hold_episode(button, meta)
+                self._queue_episode(meta, 1 if button == "rt" else -1)
         elif button in ("up", "down"):
             self._change_volume(1 if button == "up" else -1)
 
@@ -824,30 +829,6 @@ class PlayerScreen(SubtitleTrial):
                 time.sleep(1 / self.HOLD_FPS)
 
         threading.Thread(target=run, daemon=True, name="hold-to-quit").start()
-
-    EPISODE_HOLD = .8  # s con LT/RT mantenido para cambiar de episodio (un roce del gatillo ya no cambia nada)
-
-    def _hold_episode(self, button: str, meta: dict) -> None:
-        """LT/RT como B: hay que mantenerlo. El anillo se llena y, lleno, carga el episodio anterior o el siguiente."""
-        started = time.monotonic()
-        self._episode_hold = (button, started)
-        label = "Episodio siguiente" if button == "rt" else "Episodio anterior"
-
-        def run() -> None:
-            time.sleep(self.HOLD_SHOW_AFTER)
-            while getattr(self, "_episode_hold", None) == (button, started):
-                progress = (time.monotonic() - started) / self.EPISODE_HOLD
-                self._overlay(self.HOLD, player_ui.quit_hold_ass(min(1.0, progress), button.upper(), label))
-                if progress >= 1:
-                    self._episode_hold = None
-                    self._overlay(self.HOLD, None)
-                    self.toast(f"{label}…", 3)
-                    self._episode_steps = 1 if button == "rt" else -1
-                    self._step_episodes(meta)
-                    return
-                time.sleep(1 / self.HOLD_FPS)
-
-        threading.Thread(target=run, daemon=True, name="hold-episode").start()
 
     subs_taught = False  # ya se enseñó «mantén X» al abrir el panel (una vez por Orbital)
     SUBS_HOLD = .6  # s con X mantenido para entrar a «Probar subtítulos» (un toque de X sigue abriendo el panel)

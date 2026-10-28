@@ -37,7 +37,8 @@ MARGIN = 96
 TOUCH = False  # con el dedo: botones que se tocan en vez de glifos del mando
 KEYBOARD = False  # con teclado: los glifos dicen la tecla, no el botón del mando
 # El botón del mando -> su tecla (las pistas son las mismas; solo cambia lo que dice cada glifo).
-KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LB RB": "RePág AvPág", "Home": "Ctrl Inicio"}
+KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LT": "[", "RT": "]", "LB RB": "RePág AvPág",
+             "Home": "Ctrl Inicio"}
 # Dónde quedó cada cosa tocable, por capa: (x, y, ancho, alto, acción). Se rehace al dibujar la capa.
 targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": [], "try": []}
 # Dónde va lo que no es ASS (el logo del título en pausa: una imagen que mpv pone encima): (x, y, ancho, alto) en el lienzo.
@@ -408,6 +409,7 @@ class Hud:
     chapters: list[float] = field(default_factory=list)  # inicio de cada capítulo (s)
     chapter_titles: list[str] = field(default_factory=list)
     series: bool = False  # LT/RT cambian de episodio
+    next: str = ""  # «E3» o «T6 E1»: el episodio que sigue (la píldora «Siguiente» y la pista RT); "" si no hay
     now: str = ""  # la hora, arriba a la derecha
     facts: str = ""  # "2024 · ★ 8.5 · Ciencia ficción" (en pausa)
     description: str = ""  # sinopsis (en pausa)
@@ -509,9 +511,9 @@ def hud_ass(hud: Hud) -> str:
     lines.append(text(MARGIN, 878, esc(fit(info_line(hud), 22, min(1300, W - 2 * MARGIN), "semi")), 22, MUTED, weight="semi"))
     # A primero, como en todo Orbital; luego lo que se descubre (◀▶, LT/RT) y B al final.
     items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios y versión" if hud.series else "Versión"),
-             ("◀ ▶", "Adelantar"), *([("LT RT", "Mantén: episodio")] if hud.series else []), ("B", "Mantén: salir")]
+             ("◀ ▶", "Adelantar"), *([("RT", "Siguiente episodio")] if hud.next else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
-        items.pop(-2)  # si no caben (4:3): primero LT/RT, luego ◀▶
+        items.pop(-2)  # si no caben (4:3): primero RT, luego ◀▶
     bottom = _touch_bar(hud, 1000, paused=False) if TOUCH else hints(items, 1022, right=W - MARGIN)
     lines += [bar, _times(hud, BAR_Y + 28), bottom]
     return "\n".join(lines)
@@ -563,7 +565,8 @@ def paused_ass(hud: Hud) -> str:
     # «Probar subtítulos» a la vista (regla de las cuatro superficies): mantener X con el mando, S con el teclado y, con el
     # dedo o el mouse, su botón abajo.
     subs = ("S", "Probar subtítulos") if KEYBOARD else ("X", "Mantén: probar subtítulos")
-    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), subs, *([("LT RT", "Mantén: episodio")] if hud.series else []),
+    # Un toque de RT pasa al siguiente (con aviso: B lo cancela); solo se dice si hay siguiente.
+    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), subs, *([("RT", "Siguiente episodio")] if hud.next else []),
             ("B", "Mantén: salir")]
     room = max(260, W - 2 * MARGIN - hints_width(more) - 48)
     if TOUCH:
@@ -617,9 +620,11 @@ def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None 
 
 
 def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
-    """En pausa, Continuar, Audio y Episodios ya son botones grandes del bloque: abajo solo regresar, adelantar y salir."""
+    """En pausa, Continuar, Audio y Episodios ya son botones grandes del bloque: abajo regresar, adelantar, el
+    siguiente episodio (si hay; lo mismo que RT) y salir."""
     if paused:
-        return [("−10 s", "left"), ("+10 s", "right"), ("Probar subtítulos", "subs"), ("Salir", "quit")]
+        return [("−10 s", "left"), ("+10 s", "right"), *([(f"⏭ Siguiente · {hud.next}", "next")] if hud.next else []),
+                ("Probar subtítulos", "subs"), ("Salir", "quit")]
     return [("−10 s", "left"), ("Pausa", "a"), ("+10 s", "right"), ("Audio y subtítulos", "x"),
             ("Episodios y versión" if hud.series else "Versión", "y"), ("Salir", "quit")]
 
@@ -643,6 +648,18 @@ class Column:
     index: int = 0
     top: int = 0  # primera fila a la vista: la lista solo se desplaza cuando el foco llega al borde
     cell: int = 0  # en una cuadrícula (Versión: un renglón por idioma), la casilla enfocada del renglón
+    pages: list[dict] = field(default_factory=list)  # Episodios: una por temporada, {"label": "T5", "options": […]}
+    page: int = 0  # la temporada a la vista (LB/RB)
+
+    def turn(self, step: int) -> bool:
+        """Episodios: LB/RB, otra temporada (en la que estás viendo, el foco va al que ves). False si no hay más."""
+        if not 0 <= self.page + step < len(self.pages):
+            return False
+        self.page += step
+        self.options = self.pages[self.page]["options"]
+        self.index = next((i for i, o in enumerate(self.options) if o.get("current")), 0)
+        self.top = 0
+        return True
 
     @property
     def grid(self) -> bool:
@@ -713,8 +730,10 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
         if c:
             x += unit * weights[c - 1] + 64
         active = c == panel.col
-        lines.append(text(x + 18, 600, esc(TAB_NAMES.get(column.key, column.key)), 22, TEXT if active else MUTED,
-                          weight="semi"))
+        name = TAB_NAMES.get(column.key, column.key)
+        if column.pages:  # «Episodios · T5»: la temporada a la vista
+            name += f" · {column.pages[column.page]['label']}"
+        lines.append(text(x + 18, 600, esc(name), 22, TEXT if active else MUTED, weight="semi"))
         if TOUCH:
             targets["panel"].append((x, 580, col_w, 44, ("column", c)))
         # Antes la lista se recentraba en cada paso de la cruceta (todo brincaba); ahora solo se
@@ -752,7 +771,8 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                 room -= left - x - 52
             lines.append(text(left, y + 27, esc(fit(option["label"], 24, room, weight)), 24, color, weight=weight, align=4))
             if hint:
-                lines.append(text(x + col_w - 18, y + 27, esc(hint), 20, ON_LIGHT if focused else MUTED, align=6))
+                tint = ON_LIGHT if focused else NEXT if option.get("accent") else MUTED
+                lines.append(text(x + col_w - 18, y + 27, esc(hint), 20, tint, align=6))
             if option.get("progress"):
                 bar_w = col_w - 70
                 tint = ON_LIGHT if focused else TEXT
@@ -769,10 +789,13 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                                           "la que ves" if cell.get("current") else "") if p)
             note = f"{said}      Al instante: Real-Debrid ya la tiene y arranca en segundos"
         lines.append(text(MARGIN, 1022, esc(fit(note, 20, W - 2 * MARGIN - 420)), 20, MUTED, align=4))
+    seasons = len(panel.column.pages) > 1  # Episodios con más de una temporada: LB/RB (o sus botones) la cambian
     if TOUCH:
-        lines.append(pills([("Cerrar", "close")], 986, right=W - MARGIN, layer="panel"))
+        turn = [("‹ Temporada", "lb"), ("Temporada ›", "rb")] if seasons else []
+        lines.append(pills([*turn, ("Cerrar", "close")], 986, right=W - MARGIN, layer="panel"))
     else:
-        lines.append(hints([("◀ ▶", "Columna"), ("A", "Elegir"), ("B", "Cerrar")], 1022, right=W - MARGIN))
+        lines.append(hints([("◀ ▶", "Columna"), ("A", "Elegir"), *([("LB RB", "Temporada")] if seasons else []), ("B", "Cerrar")],
+                           1022, right=W - MARGIN))
     return "\n".join(lines)
 
 
@@ -881,10 +904,7 @@ def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None
     columns = []
     # Episodios primero (en una serie es lo que más se busca), luego Versión y Reproducción.
     if episodes:
-        columns.append(_column("episodes", [
-            {"label": e["label"], "action": ("episode", e["id"]), "current": bool(e.get("current")),
-             "hint": "Viendo" if e.get("current") else e.get("hint", ""), "progress": e.get("progress")}
-            for e in episodes]))
+        columns.append(episodes_column(episodes))
     if sources and "cells" in sources[0]:  # idioma × calidad: empieza en la que ves (o en la primera, la recomendada)
         rows = [{"label": r["label"], "flag": r.get("flag"), "cells": [{**cell, "action": ("source", cell["id"])} for cell in r["cells"]]}
                 for r in sources if r.get("cells")]
@@ -909,6 +929,26 @@ def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None
                      {"label": "Descargar en el iPhone", "action": ("iphone", "download"), "current": False}]
     columns.append(Column("playback", playback))
     return Panel("more", columns, 0)
+
+
+def episodes_column(episodes: list[dict]) -> Column:
+    """Y › Episodios: una página por temporada (`season` de cada episodio; LB/RB las cambia), empezando en la que ves.
+    El que ves dice «Viendo»; el que sigue, «Siguiente» (en ámbar)."""
+    pages: list[dict] = []
+    for e in episodes:
+        season = e.get("season")
+        label = "" if season is None else "Especiales" if season == 0 else f"T{season}"
+        if not pages or pages[-1]["label"] != label:
+            pages.append({"label": label, "options": []})
+        hint = "Viendo" if e.get("current") else "Siguiente" if e.get("next") else e.get("hint", "")
+        pages[-1]["options"].append({"label": e["label"], "action": ("episode", e["id"]), "current": bool(e.get("current")),
+                                     "hint": hint, "accent": bool(e.get("next")) and not e.get("current"),
+                                     "progress": e.get("progress")})
+    page = next((i for i, p in enumerate(pages) if any(o["current"] for o in p["options"])), 0)
+    column = _column("episodes", pages[page]["options"])
+    if len(pages) > 1 or pages[0]["label"]:
+        column.pages, column.page = pages, page
+    return column
 
 
 # --- «Probar otros» subtítulos: una franja arriba (los subtítulos y el video se siguen viendo abajo) ---------------
@@ -1013,6 +1053,7 @@ class LiveHud:
 
 
 # Qué dice y de qué color es cada estado del canal.
+NEXT = ass_color(PALETTE["amber-300"])  # «Siguiente» en Y › Episodios (--color-warning: el que sigue, no un error)
 LIVE = ass_color(PALETTE["teal-300"])  # «En vivo» del mismo color en toda la app (--color-live; antes verde aquí y rojo en TV)
 LIVE_STATUS = {"live": ("En vivo", LIVE), "tuning": ("Sintonizando…", MUTED), "nosignal": ("Sin señal", GLYPH["B"])}
 

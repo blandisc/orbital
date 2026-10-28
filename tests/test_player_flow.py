@@ -271,6 +271,52 @@ def test_more_lists_the_season_and_restarts():
     assert ("seek", 0, "absolute") in mpv.sent
 
 
+def test_episodes_mark_the_next_one_and_lb_rb_change_season():
+    p, mpv = series_player(**{"time-pos": 600.0, "duration": 1300.0})
+    p.current.meta["video_id"] = "s:1:2"
+    p.episodes_provider = lambda meta: [
+        {"id": "s:1:1", "label": "E1 · Pilot", "season": 1},
+        {"id": "s:1:2", "label": "E2 · Diversity Day", "season": 1, "current": True},
+        {"id": "s:2:1", "label": "E1 · The Dundies", "season": 2, "next": True},
+        {"id": "s:2:2", "label": "E2 · Sexual Harassment", "season": 2}]
+    p.press("y")
+    _wait_for(lambda: p.menu is not None)
+    column = p.menu.find("episodes")
+    assert "Episodios · T1" in mpv.overlays[2] and "Viendo" in mpv.overlays[2]
+    assert [o["label"] for o in column.options] == ["E1 · Pilot", "E2 · Diversity Day"] and column.index == 1
+    assert "Temporada" in mpv.overlays[2]  # la pista LB RB «Temporada»
+    p.press("rb")
+    assert "Episodios · T2" in mpv.overlays[2] and "Siguiente" in mpv.overlays[2]
+    assert column.options[0]["hint"] == "Siguiente" and column.options[0]["accent"]
+    p.press("rb")  # no hay T3: se queda
+    assert "Episodios · T2" in mpv.overlays[2]
+    p.press("lb")
+    assert "Episodios · T1" in mpv.overlays[2] and column.index == 1  # de vuelta, en el que ves
+
+
+def test_episodes_change_season_with_the_finger():
+    from orbital import player_ui
+
+    p, mpv = series_player(**{"time-pos": 600.0, "duration": 1300.0})
+    p.episodes_provider = lambda meta: [{"id": "s:1:1", "label": "E1 · Pilot", "season": 1, "current": True},
+                                        {"id": "s:2:1", "label": "E1 · The Dundies", "season": 2, "next": True}]
+    player_ui.set_touch(True)
+    try:
+        p.open_more()  # el botón «Episodios y versión» (press("y") volvería a los glifos del mando)
+        later = next(t for t in player_ui.targets["panel"] if t[4] == "rb")
+        p.tap(later[0] + 5, later[1] + 5)
+        assert "Episodios · T2" in mpv.overlays[2]
+    finally:
+        player_ui.set_touch(False)
+
+
+def _wait_for(ok, seconds: float = 1.0) -> None:
+    import time
+    end = time.monotonic() + seconds
+    while not ok() and time.monotonic() < end:
+        time.sleep(.01)
+
+
 def test_player_ui_pieces():
     from orbital import player_ui as ui
     assert ui.seek_label(10) == "+10 s" and ui.seek_label(-60) == "−1 min" and ui.seek_label(30) == "+30 s"
