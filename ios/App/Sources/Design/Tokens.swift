@@ -101,6 +101,8 @@ enum DS {
         // se queda y brilla, se sostiene en el canal elegido (0.7 s) y la imagen crece despacio desde la pantalla hasta
         // llenar el iPhone (1.1 s, arranque suave y aterrizaje largo), una pausa breve con la imagen llena y entra el video.
         static let reelLength = 3, warmWait: Double = 0.25
+        /// Lo más que la tele sintoniza esperando las imágenes de los episodios (desde el Centro de control no estaban listas).
+        static let imageWait: Double = 3
         /// Cuánto espera Inicio antes de preparar la ruleta (la ficha de ~650 KB no compite con el arranque).
         static let prefetchDelay: Double = 4
         static let appear: Double = 0.25, bounce: Double = 0.35, staticBurst: Double = 0.08, flip: Double = 0.1
@@ -740,6 +742,9 @@ enum DS {
     enum Remote {
         /// De qué tamaño parte lo que se despliega en el control (los sustos): crece desde arriba a su tamaño.
         static let revealScale: CGFloat = 0.96
+        /// Cuánto espera la hoja del control a que su contenido deje de cambiar antes de tomar su nuevo alto (en una sola
+        /// animación, en lugar de seguir cada paso).
+        static let heightSettle: Double = 0.12
         /// La línea de tiempo con sustos: alto de la barra, de la marca leve y de la fuerte; el punto donde vas.
         static let timelineBar: CGFloat = 6, scareMark: CGFloat = 12, scareMarkMajor: CGFloat = 20, scareMarkWidth: CGFloat = 3
         static let playhead: CGFloat = 14

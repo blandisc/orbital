@@ -37,7 +37,12 @@ final class PlayerPanelUITests: XCTestCase {
         if !episodes.waitForExistence(timeout: 15) { app.tap() }
         XCTAssertTrue(episodes.waitForExistence(timeout: 10), "el ícono «Episodios» en la barra")
         XCTAssertEqual(episodes.label, "Episodios", "VoiceOver lo nombra aunque no tenga texto")
-        episodes.tap()
+        // Los controles se esconden solos: si ya se fueron (o van de salida), un toque los trae antes de tocar «Episodios».
+        for _ in 0..<2 where !app.buttons["episodes-done"].exists {
+            if !(episodes.exists && episodes.isHittable) { app.tap(); _ = episodes.waitForExistence(timeout: 5) }
+            episodes.tap()
+            _ = app.buttons["episodes-done"].waitForExistence(timeout: 5)
+        }
         let six = app.buttons.matching(NSPredicate(format: "label CONTAINS 'episodio 6,'")).firstMatch
         XCTAssertTrue(six.waitForExistence(timeout: 10), "la lista con el episodio 6")
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'episodio 5,' AND value == 'Viendo'")).firstMatch.exists, "el que suena dice «Viendo»")
