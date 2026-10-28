@@ -692,6 +692,16 @@ extension DSEmptyState where Actions == EmptyView {
     }
 }
 
+/// Los íconos de los tipos, los mismos en toda la app (menús, la cápsula de lo elegido, los chips de filtros, el mosaico):
+/// Todo, Películas y Series. «tv» no: ese es «Ver en la TV».
+enum KindGlyph {
+    static let all = "square.grid.2x2", movie = "film", series = "play.rectangle.on.rectangle"
+    /// "" o nil es todo, «movie» o «series».
+    static func symbol(_ kind: String?) -> String {
+        switch kind { case "movie": movie; case "series": series; default: all }
+    }
+}
+
 /// El filtro de tipo de toda la app: Todo · Películas · Series (o solo Películas · Series), siempre el mismo control y en
 /// ese orden (antes había cinco: cápsulas, un menú, pestañas grandes, un segmentado y un botón en la barra).
 /// `kind`: "" es todo, «movie» o «series». `counts`: cuántas hay de cada uno (Buscar).
@@ -703,18 +713,29 @@ struct DSKindFilter: View {
     var compact = false
     /// Una lista que se despliega (tres opciones no caben junto al título): la cápsula con lo elegido y ⌄, como «Ver todo».
     var menu = false
+    /// En Inicio, el mismo menú cambia cómo se ven las tarjetas del carrusel: una sección aparte, «Vista del carrusel»
+    /// (Coverflow o Abanico, `DeckStyle`). Solo con `menu`.
+    var deck: Binding<String>?
 
     var body: some View {
         Group {
             if menu {
                 Menu {
-                    Picker(selection: $kind) { ForEach(options, id: \.0) { Text($0.1).tag($0.0) } } label: { EmptyView() }
+                    Picker(selection: $kind) { ForEach(options, id: \.0) { Label($0.1, systemImage: KindGlyph.symbol($0.0)).tag($0.0) } } label: { EmptyView() }
+                    if let deck {
+                        Section("Vista del carrusel") {
+                            Picker(selection: deck) {
+                                Label("Coverflow", systemImage: DeckStyle.coverflow.symbol).tag(DeckStyle.coverflow.rawValue)
+                                Label("Abanico", systemImage: DeckStyle.fan.symbol).tag(DeckStyle.fan.rawValue)
+                            } label: { EmptyView() }
+                        }
+                    }
                 } label: {
-                    DSCapsuleLabel(title: Text(options.first { $0.0 == kind }?.1 ?? "Todo"), symbol: "chevron.down", symbolFirst: false)
+                    DSCapsuleLabel(title: Text(options.first { $0.0 == kind }?.1 ?? "Todo"), symbol: KindGlyph.symbol(kind), trailing: "chevron.down")
                 }
                 .fixedSize()
                 .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
-                .sensoryFeedback(.selection, trigger: kind)
+                .sensoryFeedback(.selection, trigger: kind + (deck?.wrappedValue ?? ""))
             } else if compact {
                 // El switch chico del Top 10 (cápsula con lo elegido resaltado), a la derecha del título de su sección.
                 DSSegmented(options: options, selection: $kind).fixedSize()

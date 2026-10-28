@@ -573,7 +573,7 @@ private struct MosaicTileCell: View {
     }
 
     private var kindIcon: some View {
-        Image(systemName: tile.item.kind == "movie" ? "film" : "tv").font(DS.TextRecipe.caption.font.weight(.semibold))
+        Image(systemName: KindGlyph.symbol(tile.item.kind)).font(DS.TextRecipe.caption.font.weight(.semibold))
             .foregroundStyle(focused ? DS.onPrimary : DS.text)
             .padding(DS.Space.s1)
             // Sin enfoque, solo el glifo con una sombra suave (con 20 piezas a la vista una caja en cada una domina).

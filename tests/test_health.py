@@ -146,12 +146,12 @@ def test_before_a_video_dwm_is_released_only_when_it_holds_too_much():
     real = dwm_release.available, dwm_release.run
     dwm_release.available, dwm_release.run = (lambda: True), (lambda: runs.append(1) or True)
     try:
-        assert not dwm_release.fresh_for_video(measure=lambda: (1800, 300), sleep=waits.append)  # limpio: nada
-        assert not dwm_release.fresh_for_video(measure=lambda: None, sleep=waits.append)  # no se pudo medir: nada
-        assert dwm_release.fresh_for_video(measure=lambda: (12700, 300), sleep=waits.append)
+        assert not dwm_release.release_if_full("antes del video", measure=lambda: (1800, 300), sleep=waits.append)  # limpio: nada
+        assert not dwm_release.release_if_full("antes del video", measure=lambda: None, sleep=waits.append)  # no se pudo medir: nada
+        assert dwm_release.release_if_full("antes del video", measure=lambda: (12700, 300), sleep=waits.append)
         assert runs == [1] and waits == [dwm_release.BACK_AFTER]  # espera a que Windows vuelva a dibujar
         dwm_release.available = lambda: False
-        assert not dwm_release.fresh_for_video(measure=lambda: (12700, 300), sleep=waits.append)  # sin activar
+        assert not dwm_release.release_if_full("antes del video", measure=lambda: (12700, 300), sleep=waits.append)  # sin activar
     finally:
         dwm_release.available, dwm_release.run = real
 

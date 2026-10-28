@@ -159,10 +159,10 @@ struct SortableGrid<Cell: View>: View {
             } label: { Label("Ordenar", systemImage: "arrow.up.arrow.down") }
             if showsKindFilter {
                 Picker(selection: $filter.kind) {
-                    Text("Todo").tag(String?.none)
-                    Text("Series").tag(String?.some("series"))
-                    Text("Películas").tag(String?.some("movie"))
-                } label: { Label("Series o películas", systemImage: "film.stack") }
+                    Label("Todo", systemImage: KindGlyph.all).tag(String?.none)
+                    Label("Películas", systemImage: KindGlyph.movie).tag(String?.some("movie"))
+                    Label("Series", systemImage: KindGlyph.series).tag(String?.some("series"))
+                } label: { Label("Series o películas", systemImage: KindGlyph.symbol(filter.kind)) }
                 .pickerStyle(.menu)
             }
             if !genres.isEmpty {
@@ -197,7 +197,7 @@ struct SortableGrid<Cell: View>: View {
     private var activeChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Space.s2) {
-                if let kind = filter.kind { chip(kind == "movie" ? Text("Películas") : Text("Series")) { filter.kind = nil } }
+                if let kind = filter.kind { chip(Text(Image(systemName: KindGlyph.symbol(kind))) + Text(verbatim: " ") + (kind == "movie" ? Text("Películas") : Text("Series"))) { filter.kind = nil } }
                 if let genre = filter.genre { chip(Text(verbatim: genreName(genre))) { filter.genre = nil } }
                 if let min = filter.minRating { chip(ratingName(min)) { filter.minRating = nil } }
                 if let decade = filter.decade { chip(decadeName(decade)) { filter.decade = nil } }

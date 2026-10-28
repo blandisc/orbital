@@ -19,6 +19,8 @@ struct AllSourcesList: View {
     var secondary: (LocalizedStringKey, (Source) -> Void)?
     /// El idioma de la app, para los nombres de los idiomas.
     let uiLanguage: String
+    /// Tus idiomas (los de este título): el que va a sonar va primero en cada renglón.
+    var prefs: Preferences?
     /// Si la acción secundaria aplica a esa fuente (Descargar: solo un archivo, no una lista HLS).
     var offersSecondary: (Source) -> Bool = { _ in true }
 
@@ -261,15 +263,21 @@ struct AllSourcesList: View {
         return [source.resolution.isEmpty ? "SD" : source.resolution, AllSources.hdrBadge(source), size].compactMap { $0 }.joined(separator: " · ")
     }
 
-    /// «Inglés + latino», y «· se supone» (con cuáles, si no son todos) cuando nada lo dice.
+    /// «🇲🇽 Latino · también 🇺🇸 inglés»: el que va a sonar primero y marcado; los demás después, en gris. Y «· se supone»
+    /// (con cuáles, si no son todos) cuando nada lo dice.
     private func languages(_ source: Source) -> Text {
         let ui = uiLanguage
-        let items = AllSources.languageEvidence(source)
-        let names = items.enumerated().map { i, item in
-            let name = Streams.versionLanguageName(item.code, in: ui)
-            return i == 0 ? name : VersionLanguageRow.inline(name, ui)
+        let items = prefs.map { AllSources.languageEvidence(source, playingFirst: $0) } ?? AllSources.languageEvidence(source)
+        guard let first = items.first else { return Text(verbatim: "") }
+        var text = Text.flag(first.code) + Text(verbatim: Streams.versionLanguageName(first.code, in: ui)).foregroundStyle(DS.text).fontWeight(.semibold)
+        let rest = items.dropFirst()
+        if !rest.isEmpty {
+            text = text + Text(verbatim: " · ") + Text("también") + Text(verbatim: " ")
+            for (i, item) in rest.enumerated() {
+                if i > 0 { text = text + Text(verbatim: ", ") }
+                text = text + Text.flag(item.code) + Text(verbatim: VersionLanguageRow.inline(Streams.versionLanguageName(item.code, in: ui), ui))
+            }
         }
-        var text = Text.flag(items.map(\.code)) + Text(verbatim: names.joined(separator: " + "))
         let guessed = items.filter { $0.kind == .assumed }
         if !guessed.isEmpty {
             text = text + Text(verbatim: " · ") + Text("se supone")

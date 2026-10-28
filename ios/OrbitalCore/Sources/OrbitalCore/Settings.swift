@@ -50,7 +50,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var orbitalAddress = ""             // tu Orbital por el túnel («orbital.midominio.com»); el token va en el Keychain
     public var appearance = "system"           // «system» | «light» | «dark»: el modo de la app (por omisión, el del iPhone)
     public var homeDeck = "coverflow"          // el carrusel de Inicio: «coverflow» | «fan» (abanico)
-    public var homeTime = "pill"               // cuánto falta en la tarjeta: «pill» | «edge» | «fill» | «arc»
     public var releaseAlerts = false           // avisar cuando un episodio de lo que sigues ya se puede ver («Ya está para ver»)
     public var becauseStyle = "posters"        // «Porque viste» (Para ti): «posters» (mini pósters) | «deck» (mazo de cartas)
     public var avatar = "planet"               // tu avatar (Assets › Avatars)
@@ -90,7 +89,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         orbitalAddress = try c.decodeIfPresent(String.self, forKey: .orbitalAddress) ?? orbitalAddress
         appearance = try c.decodeIfPresent(String.self, forKey: .appearance) ?? appearance
         homeDeck = try c.decodeIfPresent(String.self, forKey: .homeDeck) ?? homeDeck
-        homeTime = try c.decodeIfPresent(String.self, forKey: .homeTime) ?? homeTime
         becauseStyle = try c.decodeIfPresent(String.self, forKey: .becauseStyle) ?? becauseStyle
         releaseAlerts = try c.decodeIfPresent(Bool.self, forKey: .releaseAlerts) ?? releaseAlerts
         avatar = try c.decodeIfPresent(String.self, forKey: .avatar) ?? avatar
@@ -104,7 +102,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
-        case homeDeck, homeTime, avatar, displayName, latinSpanish, castilianSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom, simpsonsSeasons
+        case homeDeck, avatar, displayName, latinSpanish, castilianSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom, simpsonsSeasons
         case subtitleBackground, subtitlePosition, subtitlesOnSkipBack, forcedForForeignAudio, subtitleSystemStyle
     }
 

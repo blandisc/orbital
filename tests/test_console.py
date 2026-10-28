@@ -74,6 +74,24 @@ def test_game_end_reopens_window_unless_user_exited(library, monkeypatch):
     assert kiosk.calls == ["open", "close"] and fronted == [1]
 
 
+def test_back_from_a_game_video_memory_is_released_with_orbital_in_front_before_4k(library, monkeypatch):
+    """Al volver de un juego, si DWM quedó lleno se libera ahí (junto al parpadeo de volver a 4K), con Orbital ya al
+    frente para que no se asome el escritorio. Un video no: ese ya se libera antes de abrirse (player.before_open)."""
+    from orbital import display
+
+    order = []
+    kiosk = FakeKiosk()
+    create_app(library.config, library, kiosk)
+    kiosk.open = lambda: order.append("orbital") or True
+    library.sessions.release_video_memory = lambda: order.append("liberar") or True
+    monkeypatch.setattr(display.resolution, "restore", lambda: order.append("4K") or True)
+    library.sessions.session_ended("emu:x", "Super Smash Bros. Ultimate", 1800)
+    assert order == ["orbital", "liberar", "4K"]
+    order.clear()
+    library.sessions.session_ended("media:player", "Sleepy Hollow", 1800)
+    assert "liberar" not in order
+
+
 def test_voice_exit_and_reopen(library):
     kiosk = FakeKiosk()
     voice = VoiceController(library, kiosk)

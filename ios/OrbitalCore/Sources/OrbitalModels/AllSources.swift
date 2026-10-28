@@ -168,6 +168,22 @@ public enum AllSources {
         return out.map { ($0.code, EvidenceKind(best[$0.code] ?? .maybe)) }
     }
 
+    /// Los mismos idiomas con el que va a sonar primero (con tus preferencias: «Latino + inglés» si quieres latino); los
+    /// demás, en el orden en que llegaron.
+    public static func languageEvidence(_ s: Source, playingFirst prefs: Preferences) -> [(code: String, kind: EvidenceKind)] {
+        var all = languageEvidence(s)
+        guard let playing = Streams.playingLanguage(s, prefs)?.code, let i = all.firstIndex(where: { $0.code == playing }), i > 0 else { return all }
+        all.insert(all.remove(at: i), at: 0)
+        return all
+    }
+
+    /// Los otros idiomas que de verdad trae la versión, además del que va a sonar (comprobados o dichos por el nombre o el
+    /// sitio; lo que solo se supone no cuenta): las banderas bajo «Elegimos Latino · 1080p».
+    public static func otherLanguages(_ s: Source, prefs: Preferences) -> [String] {
+        let playing = Streams.playingLanguage(s, prefs)?.code
+        return languageEvidence(s).filter { $0.kind != .assumed && $0.code != playing }.map(\.code)
+    }
+
     /// El nombre del archivo, si el complemento lo da y no es el mismo que el de la versión.
     public static func fileName(_ s: Source) -> String? {
         guard let name = s.stream["behaviorHints"]?["filename"]?.nonEmptyString, name != s.release else { return nil }
