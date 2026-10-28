@@ -214,6 +214,10 @@ struct PlayerScreen: View {
     @State private var loadingShown = true
     @State private var loadingTask: Task<Void, Never>?
     @State private var playedVideo: String?
+    /// Lo que dice el botón grande (pausa o play): lo que tú pediste. Al tocarlo cambia al momento; si el motor se detiene o
+    /// sigue solo, solo cambia si dura (al arrancar se detiene un instante para sus ajustes y el botón brincaba play → pausa → play).
+    @State private var glyphPlaying = true
+    @State private var glyphTask: Task<Void, Never>?
     @State private var playedAt = Date.distantPast
 
     var body: some View {
@@ -344,7 +348,7 @@ struct PlayerScreen: View {
         .defersSystemGestures(on: .vertical)
         // VoiceOver: frotar con dos dedos cierra; el doble toque con dos dedos pausa o sigue (los gestos de siempre de iOS).
         .accessibilityAction(.escape) { Task { await close() } }
-        .accessibilityAction(.magicTap) { Task { await holder.model.togglePlay() } }
+        .accessibilityAction(.magicTap) { userTogglePlay(holder.model) }
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
@@ -478,6 +482,7 @@ struct PlayerScreen: View {
         }
         .task(id: current.videoID) { knownAspect = nil; await loadAmbient(); await loadLocalizedEpisodes() }
         .onChange(of: loadingKind(model), initial: true) { _, kind in updateLoading(kind, model) }
+        .onChange(of: model.snapshot.state == .playing, initial: true) { _, playing in followEngineGlyph(playing, model) }
         // Al girar, cada sentido con su zoom; y otra vez cuando termina la animación del giro (el motor del iPhone a veces se
         // quedaba con el «Llenar» de horizontal y la imagen seguía agrandada en vertical).
         .onChange(of: landscape) {
@@ -682,7 +687,7 @@ struct PlayerScreen: View {
                 // Si ya venías sumando de ese lado, el doble toque cuenta como dos toques (+20 s).
                 if location.x < third { skip(model, forward: false, taps: 2) }
                 else if location.x > geo.size.width - third { skip(model, forward: true, taps: 2) }
-                else { Task { await model.togglePlay() }; flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
+                else { userTogglePlay(model); flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
             }
             .onTapGesture { location in
                 // Tras un doble toque en una orilla, cada toque sencillo del mismo lado suma otros 10 s (como YouTube).
@@ -699,7 +704,7 @@ struct PlayerScreen: View {
                 twoFingerTapAt = Date()
                 // Si el mismo toque ya alcanzó a contar como uno de un dedo, se deshace lo que hizo con los controles.
                 if Date().timeIntervalSince(singleTapAt) < DS.Gesture.twoFingerTapGuard { controlsVisible.toggle(); singleTapAt = .distantPast }
-                Task { await model.togglePlay() }
+                userTogglePlay(model)
                 flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill")
             })
             .gesture(MagnifyGesture().onEnded { value in
@@ -1206,6 +1211,24 @@ struct PlayerScreen: View {
         }
     }
 
+    /// Tocar play o pausa (botón, doble toque, dos dedos, el iPod o VoiceOver): el botón cambia ya, sin esperar al motor.
+    private func userTogglePlay(_ model: PlayerModel) {
+        glyphTask?.cancel()
+        glyphPlaying = model.snapshot.state != .playing
+        Task { await model.togglePlay() }
+    }
+
+    /// El motor cambió: el botón lo sigue solo si el cambio dura (`glyphSettle`), y entonces dice lo que de verdad pasa. Lo que
+    /// tocaste ya se ve desde el toque; un parpadeo del motor en medio no lo mueve.
+    private func followEngineGlyph(_ playing: Bool, _ model: PlayerModel) {
+        glyphTask?.cancel()
+        glyphTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: DS.Timing.glyphSettle)
+            guard !Task.isCancelled else { return }
+            glyphPlaying = model.snapshot.state == .playing
+        }
+    }
+
     private func failed(_ model: PlayerModel) -> Bool { if case .failed = model.phase { true } else { false } }
 
     /// ¿Se ven ±10 y el botón grande? Con los controles, ya con video (buscando versión no hacen nada).
@@ -1507,7 +1530,7 @@ struct PlayerScreen: View {
                           hold: { lock() },
                           back: { Task { await model.skip(-PlaybackRules.skipSeconds) } },
                           forward: { Task { await model.skip(PlaybackRules.skipSeconds) } },
-                          playPause: { Task { await model.togglePlay() } },
+                          playPause: { userTogglePlay(model) },
                           center: { openDock(.subtitles) },
                           turn: { turnWheel($0, model) },
                           turned: { releaseWheel(model) })
@@ -2031,8 +2054,8 @@ struct PlayerScreen: View {
         HStack(spacing: DS.Space.s8) {
             SkipButton(forward: false) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
             // Cargando: la animación va dentro del botón grande, en el mismo punto que sin controles (LoadingSpinner).
-            PlayPauseButton(playing: model.snapshot.state == .playing, loading: loadingShown) {
-                Task { await model.togglePlay() }; pulse()
+            PlayPauseButton(playing: glyphPlaying, loading: loadingShown) {
+                userTogglePlay(model); pulse()
             }
             SkipButton(forward: true) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
         }

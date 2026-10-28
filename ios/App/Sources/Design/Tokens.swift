@@ -897,6 +897,8 @@ enum DS {
         static let loadingSettleWindow: TimeInterval = 5
         static let loadingSettleDelay = UInt64(2.5 * 1e9)
         static let rotationSettle = UInt64(0.5 * 1e9)
+        /// El botón grande: un cambio del motor que no pediste se enseña si dura esto (al arrancar se detiene un instante).
+        static let glyphSettle = UInt64(1.2 * 1e9)
         /// Cuánto se queda un aviso con salida («Sigue en tu Orbital · Deshacer», «Bajando · Otra»).
         static let toastAction = UInt64(8 * 1e9)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
