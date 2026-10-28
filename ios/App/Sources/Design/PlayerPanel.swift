@@ -1151,6 +1151,9 @@ struct EpisodesPanel: View {
                             }
                         }
                     }
+                    // Solo a los lados: de su alto exacto y sin rebote vertical (antes se podía jalar arriba y abajo).
+                    .fixedSize(horizontal: false, vertical: true)
+                    .scrollBounceBehavior(.basedOnSize, axes: .vertical)
                     // Los episodios llegan después de abrir (se leen aparte): al llegar, a la temporada que suena.
                     .edgeFade()   // si no caben, las orillas se desvanecen en vez de cortarse
                     .onChange(of: seasons.count, initial: true) { proxy.scrollTo(shown, anchor: .center) }

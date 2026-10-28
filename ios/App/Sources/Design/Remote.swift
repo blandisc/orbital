@@ -364,11 +364,11 @@ private struct ScareStatus: View {
                 HStack(alignment: .firstTextBaseline) {
                     Label("Sustos", systemImage: "bolt.heart").recipe(.cardTitle).fixedSize()
                     Spacer()
-                    Text("\(left.count) por delante · \(majorCount) fuertes").recipe(.caption, color: DS.textMuted)
+                    summary(left: left.count, major: majorCount)
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Label("Sustos", systemImage: "bolt.heart").recipe(.cardTitle)
-                    Text("\(left.count) por delante · \(majorCount) fuertes").recipe(.caption, color: DS.textMuted)
+                    summary(left: left.count, major: majorCount)
                 }
             }
             ScareTimeline(position: position, duration: duration, scares: scares)
@@ -381,6 +381,11 @@ private struct ScareStatus: View {
         .padding(DS.Space.s4)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
 
+    }
+
+    /// «3 por delante · 1 fuerte»: con uno, en singular (decía «1 fuertes»).
+    private func summary(left: Int, major: Int) -> some View {
+        (major == 1 ? Text("\(Int(left)) por delante · 1 fuerte") : Text("\(Int(left)) por delante · \(Int(major)) fuertes")).recipe(.caption, color: DS.textMuted)
     }
 
     @ViewBuilder private func countdown(_ next: JumpScare?) -> some View {

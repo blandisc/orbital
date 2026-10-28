@@ -33,8 +33,12 @@ struct RemoteSheet: View {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
                 header(model)
                     // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !large { compactHeight = min($0 + DS.Space.s6 + DS.Space.s10, UIScreen.main.bounds.height * DS.Remote.maxShareFitted) } }
-                if large { full(model).transition(.opacity.combined(with: .move(edge: .bottom))) }
+                    // Al cambiar (abrir los sustos), la hoja crece con la misma animación que su contenido; antes brincaba.
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                        if !large { withAnimation(DS.Motion.smooth(reduceMotion)) { compactHeight = min(height + DS.Space.s6 + DS.Space.s10, UIScreen.main.bounds.height * DS.Remote.maxShareFitted) } }
+                    }
+                // Lo completo aparece y se va con un fundido y un leve desplazamiento (antes subía entero desde abajo).
+                if large { full(model).transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: DS.Space.s6)), removal: .opacity)) }
                 else {
                     Label("Estira hacia arriba para el control completo", systemImage: "chevron.compact.up")
                         .recipe(.caption, color: DS.textFaint).frame(maxWidth: .infinity)
@@ -55,7 +59,8 @@ struct RemoteSheet: View {
         .presentationBackgroundInteraction(.disabled)
         // Vidrio en las dos alturas (la estirada no llega a la altura completa, que iOS volvería opaca).
         .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }
-        .animation(DS.Motion.base(reduceMotion), value: large)
+        .animation(DS.Motion.smooth(reduceMotion), value: large)
+        .animation(DS.Motion.smooth(reduceMotion), value: showsScares)
         .onDisappear { speech.cancel(); model.setRemoteOpen(false) }
         .onAppear { model.setRemoteOpen(true) }   // con el control abierto, la TV se consulta más seguido
         .task(id: model.now?.metaID) { await model.loadScares() }   // el mapa de sustos de la película que suena
@@ -145,8 +150,8 @@ struct RemoteSheet: View {
                                onContinueHere: { onContinueHere(now) }, framed: false, scares: model.scares ?? [])
                 // Una película con mapa de sustos: un toque lo abre aquí mismo (la línea de tiempo, el siguiente y el aviso).
                 if let scares = model.scares {
-                    if showsScares { ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares).transition(.opacity.combined(with: .move(edge: .top))) }
-                    Button { withAnimation(DS.Motion.base(reduceMotion)) { showsScares.toggle() } } label: {
+                    if showsScares { ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares).transition(.opacity.combined(with: .scale(scale: DS.Remote.revealScale, anchor: .top))) }
+                    Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares.toggle() } } label: {
                         Label(showsScares ? "Ocultar los sustos" : "Mapa de sustos · \(scares.count)", systemImage: showsScares ? "chevron.up" : "bolt.heart")
                             .recipe(.footnote, color: DS.text).fontWeight(.semibold)
                             .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
@@ -277,14 +282,15 @@ struct RemoteSheet: View {
             if let scares = model.scares, showsScares {
                 VStack(spacing: DS.Space.s2) {
                     ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares)
-                    Button { withAnimation(DS.Motion.base(reduceMotion)) { showsScares = false } } label: {
+                    Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares = false } } label: {
                         Label("Ocultar los sustos", systemImage: "chevron.up").recipe(.footnote, color: DS.textMuted).frame(minHeight: DS.Size.touchTarget)
                     }
                     .buttonStyle(.plain)
                 }
+                .transition(.opacity.combined(with: .scale(scale: DS.Remote.revealScale, anchor: .top)))
             } else if let scares = model.scares {
                 // Los sustos en un renglón (la barra y cuánto falta para el siguiente); un toque abre el detalle.
-                Button { withAnimation(DS.Motion.base(reduceMotion)) { showsScares = true } } label: {
+                Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares = true } } label: {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         ScareTimeline(position: position, duration: now.duration, scares: scares)
                         nextScare(scares, position: position)
@@ -292,6 +298,7 @@ struct RemoteSheet: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .transition(.opacity)
                 .accessibilityIdentifier("remote-scares")
             } else {
                 ScareTimeline(position: position, duration: now.duration)

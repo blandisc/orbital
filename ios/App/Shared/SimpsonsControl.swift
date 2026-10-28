@@ -9,7 +9,7 @@ struct SimpsonsControlButton: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "mx.iracheta.orbital.simpsons") {
             ControlWidgetButton(action: OpenSimpsonsIntent()) {
-                Label { Text("Un Simpson al azar") } icon: { Image(systemName: "tv") }
+                Label { Text("Un Simpson al azar") } icon: { Image("simpsons.donut") }   // la dona de Los Simpson (símbolo propio)
             }
         }
         .displayName("Un Simpson al azar")

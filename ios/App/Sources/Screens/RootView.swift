@@ -25,16 +25,23 @@ struct RootView: View {
     /// La entrada de la app: solo al arrancar en frío (cada arranque arma una raíz nueva). En modo demo, solo con
     /// `-demo-splash` (las capturas no la esperan).
     @State private var splashing: Bool
+    /// Ya se armó la raíz una vez en este arranque (la entrada no se repite).
+    @MainActor private static var launched = false
 
     init() {
         let env = AppEnvironment.shared
         #if DEBUG
-        let splash = !Demo.isOn || ProcessInfo.processInfo.arguments.contains("-demo-splash")
+        let wanted = !Demo.isOn || ProcessInfo.processInfo.arguments.contains("-demo-splash")
         #else
-        let splash = true
+        let wanted = true
         #endif
+        // Solo la primera vez: SwiftUI vuelve a armar la raíz cuando cambia algo de la app (al emparejar tu Orbital con el QR,
+        // el idioma…). Antes cada vez volvía a marcar `ui.splashing` y el logotipo de Inicio se quedaba escondido para
+        // siempre (la entrada ya no corría para quitarlo).
+        let splash = wanted && !Self.launched
+        Self.launched = true
         _splashing = State(wrappedValue: splash)
-        env.ui.splashing = splash
+        if splash { env.ui.splashing = true }
         _session = State(wrappedValue: ModelObserver(env.session))
         _services = State(wrappedValue: ModelObserver(env.services))
     }
@@ -324,4 +331,5 @@ struct BannerView: View {
         }
     }
 }
+
 
