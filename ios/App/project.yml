@@ -45,7 +45,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"           # solo iPhone
         SWIFT_VERSION: "5.0"                  # la app en modo Swift 5; los paquetes ya van en Swift 6
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) AETHER_ENGINE"
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: AppIconNight   # Ajustes › Apariencia › Ícono: Cielo nocturno
@@ -63,6 +63,10 @@ targets:
       path: Build/Info.plist
       properties:
         CFBundleDisplayName: Orbital
+        # Cada instalación con su número (`CURRENT_PROJECT_VERSION=$(git rev-list --count HEAD)` al compilar): con «1» fijo iOS
+        # no refrescaba los íconos del Centro de control en su galería y no se podía saber qué versión tenía el iPhone.
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleDevelopmentRegion: es
         CFBundleLocalizations: [es, en]
         OrbitalTraktClientID: $(ORBITAL_TRAKT_CLIENT_ID)   # lo lee Services.bundledTraktClientID
@@ -128,7 +132,7 @@ targets:
         DEVELOPMENT_TEAM: B7KRCF776Z
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.0"
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         LOCALIZATION_PREFERS_STRING_CATALOGS: YES
         SWIFT_EMIT_LOC_STRINGS: YES
@@ -136,6 +140,8 @@ targets:
       path: Build/Widgets-Info.plist
       properties:
         CFBundleDisplayName: Orbital
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)   # el mismo número que la app (iOS lo exige)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleDevelopmentRegion: es
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
