@@ -228,19 +228,19 @@ enum DS {
         /// La franja de cada orilla donde el doble toque salta ±10 s (al centro, pausa o sigue).
         /// Doble toque: tres zonas parejas (izquierda −10 s, centro pausa, derecha +10 s), como YouTube.
         static let edgeShare: CGFloat = 1.0 / 3.0
-        /// Dobles toques seguidos del mismo lado se suman (+10, +20, +30 s) mientras no pase este rato.
-        static let skipChain: TimeInterval = 0.9
+        /// Tras un doble toque, cada toque más del mismo lado suma 10 s (+10, +20, +30) mientras no pase este rato.
+        static let skipChain: TimeInterval = 0.7
         /// ×2: deslizar hacia abajo esta distancia, desde donde apoyaste el dedo, lo fija. Si hasta el borde
         /// de abajo queda menos, se usa ese hueco, pero nunca menos de `fastForwardLockDragMin`. Hacia arriba,
         /// esta misma distancia lo quita al momento (sin esperar a soltar).
         static let fastForwardLockDrag: CGFloat = 60
         /// Lo menos que puede medir el deslizamiento hacia abajo cuando el dedo ya está cerca del borde.
         static let fastForwardLockDragMin: CGFloat = 40
-        /// Lo que llevas saltado tras 1, 2, 3… dobles toques seguidos: cada toque salta más que el anterior.
-        static let skipTotals = [10, 20, 40, 60, 90, 120]
         /// A cuántos segundos del destino ya se da por llegado un salto (el pulgar vuelve a seguir el avance).
         static let seekArrived: Double = 2
         static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)
+        /// La onda del doble toque: la media luna sale de la orilla y ocupa este tanto del alto del video.
+        static let rippleHeight: CGFloat = 1.5
         static let indicatorBarHeight: CGFloat = 120
         static let indicatorBarWidth: CGFloat = 4
         /// Lo que mide el indicador además de la barra (el ícono y su espacio), y lo más corta que puede quedar.
@@ -255,15 +255,17 @@ enum DS {
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
         /// `padding(DS.Space.s6)` de `controls`, con el slider y la hilera de tiempos debajo).
         static let seekBubbleBottomInset: CGFloat = 108
+        /// En vertical: del borde de abajo del video al centro de la burbuja (queda dentro de la imagen, sobre la barra).
+        static let seekBubblePortraitLift: CGFloat = 44
         /// La píldora «2×» en horizontal, dentro del área segura (igual que los controles): el borde de abajo
         /// queda un `s3` por encima de la hilera de tiempos y de la barra (`padding` de `controls` + `scrubHit`).
         static var fastForwardPillBottomInset: CGFloat {
-            DS.Space.s6 + DS.PlayerPanel.scrubHit + DS.Space.s3
+            DS.Space.s6 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s3
         }
-        /// «Recortar» en vertical, con los controles a la vista: encima de la barra (aire de abajo, el botón
-        /// grande, «Saltar intro» y la propia barra).
+        /// «Recortar» en vertical, con los controles a la vista: encima de la barra (aire de abajo, las píldoras de acciones,
+        /// «Saltar intro», la propia barra y sus tiempos).
         static var fastForwardPillFillInset: CGFloat {
-            DS.Space.s8 + DS.PlayerPanel.playButton + DS.Space.s3 + DS.Size.touchTarget + DS.Space.s3 + DS.PlayerPanel.scrubHit + DS.Space.s3
+            DS.Space.s8 + DS.Size.touchTarget + DS.Space.s3 + DS.Size.touchTarget + DS.Space.s3 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s3
         }
     }
 
@@ -379,6 +381,13 @@ enum DS {
         static let trail: CGFloat = 0.35, trailOpacity = 0.9
     }
 
+    /// El corazón de la ficha (`FavoriteButton`, tus favoritos de Trakt): lleno en frambuesa (el color de las listas con
+    /// puesto, que se lee en claro y en oscuro) y vacío con el color de los demás botones de la barra.
+    enum Favorites {
+        static let filled = ListTint.chart
+        static let symbol = "heart", symbolFilled = "heart.fill"
+    }
+
     enum Brand {
         static let box: CGFloat = 32
         static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8, ringStroke: CGFloat = 2.1
@@ -471,7 +480,10 @@ enum DS {
         static let skipGlyph: CGFloat = 32
         /// La barra de avance fina: el riel, la perilla (crece al arrastrar) y el alto que ocupa (se toca en
         /// `DS.Size.touchTarget`: la zona táctil sobresale arriba y abajo).
-        static let scrubTrack: CGFloat = 4, scrubKnob: CGFloat = 14, scrubKnobActive: CGFloat = 26, scrubHit: CGFloat = 32
+        static let scrubTrack: CGFloat = 3, scrubTrackActive: CGFloat = 10, scrubHit: CGFloat = 32
+        /// Las rayitas del fin de la intro y del inicio de los créditos: su grosor y cuánto sobresalen de la barra; la hilera de
+        /// tiempos bajo la barra.
+        static let scrubTickWidth: CGFloat = 1.5, scrubTickReach: CGFloat = 3, scrubTimes: CGFloat = 16
         /// El menú del «⋯»: su ancho.
         static let menuWidth: CGFloat = 272
         /// «Siguiente episodio»: el ancho de la imagen del episodio y el anillo de la cuenta atrás en «Ver ahora».
@@ -480,6 +492,8 @@ enum DS {
         static let topScrimHeight: CGFloat = 170
         /// El cuadro que se guarda al irse a segundo plano (para tenerlo a la vista al volver): lo más grande que se guarda.
         static let frozenFrameMax = CGSize(width: 1920, height: 1080)
+        /// El fondo ambiente en vertical: la imagen chica (se difumina, no hace falta más), cuánto se difumina y qué tan visible es.
+        static let ambientImage: CGFloat = 200, ambientBlur: CGFloat = 60, ambientOpacity = 0.5
     }
 
     /// «Modo iPod» del reproductor vertical: un iPod Classic blanco o negro (la caja, la pantalla con su marco y la rueda).

@@ -9,6 +9,7 @@ secrets.json (credentials.py).
   POST /oauth/device/token  {code, client_id[, client_secret]}     -> 200 sesión · 400 aún no · 404/409/410/418 se acabó · 429 más despacio
   POST /oauth/token         {refresh_token, … grant_type}         -> sesión nueva (la de Trakt dura poco)
   GET  /recommendations/{movies|shows} · /sync/watchlist · /users/me/lists(/{id}/items)
+  GET  /sync/favorites/{movies|shows} · POST /sync/favorites(/remove)  -> tus favoritos (el corazón; 420 = ya tienes 100)
   POST /scrobble/{start|pause|stop}   {movie|show+episode, progress}  -> 201 · 409 ya registrado · 401 renovar sesión
   GET  /{movies|shows}/trending · /{movies|shows}/popular · /sync/history/episodes · /shows/{id}/progress/watched
 
@@ -62,6 +63,8 @@ def scrobble_target(kind: str, meta_id: str, video_id: str | None) -> dict | Non
 
 
 PLAYBACK_TTL = 60  # s: el avance de Trakt (/sync/playback) se vuelve a pedir a lo más cada minuto (como el iPhone)
+FAVORITES_TTL = 60  # s: tus favoritos se guardan un minuto; pasado ese rato, se pregunta a /sync/last_activities si cambiaron
+FAVORITES_FULL = "Llegaste a 100 favoritos en Trakt: quita uno para agregar otro."  # el tope de Trakt (420)
 
 
 def playback_key(kind: str, meta_id: str, video_id: str | None) -> str | None:
@@ -124,6 +127,10 @@ class TraktError(Exception):
 
 class TraktAuthError(TraktError):
     """Trakt ya no acepta la sesión: hay que volver a conectar la cuenta."""
+
+
+class TraktFavoritesFull(TraktError):
+    """Ya tienes 100 favoritos en Trakt (respondió 420): hay que quitar uno para agregar otro."""
 
 
 @dataclass
@@ -216,6 +223,7 @@ class Trakt:
         self.timeout = timeout
         self._lock = threading.Lock()
         self._playback: tuple[float, dict[str, dict]] | None = None  # (cuándo se pidió, {llave: avance})
+        self._favorites: tuple[float, str | None, list[dict]] | None = None  # (cuándo, marca de last_activities, títulos)
 
     # --- cuenta -----------------------------------------------------------------------------
     @property
@@ -358,8 +366,9 @@ class Trakt:
             raise TraktError(f"Trakt respondió HTTP {status}")
 
     # --- guardar (como «Guardar en…» del iPhone) -------------------------------------------------
-    def _send(self, method: str, path: str, body: dict | None = None):
-        """Un cambio en tu cuenta: un 401 renueva la sesión una vez y reintenta."""
+    def _send(self, method: str, path: str, body: dict | None = None, errors: dict[int, TraktError] | None = None):
+        """Un cambio en tu cuenta: un 401 renueva la sesión una vez y reintenta. `errors`: el error de un código conocido
+        (el 420 de los favoritos) en vez de «HTTP 420»."""
         status, data = self._call(method, path, body=body)
         if status == 401:
             self._renew()
@@ -367,7 +376,7 @@ class Trakt:
         if status == 401:
             raise TraktAuthError("Trakt no acepta tu sesión: vuelve a conectarla en Ajustes › Cuentas.")
         if status not in (200, 201, 204):
-            raise TraktError(f"Trakt respondió HTTP {status}")
+            raise (errors or {}).get(status) or TraktError(f"Trakt respondió HTTP {status}")
         return data
 
     @staticmethod
@@ -383,6 +392,47 @@ class Trakt:
         if not str(list_id).isdigit():
             raise TraktError("Lista inválida")
         self._send("POST", f"/users/me/lists/{list_id}/items" + ("" if add else "/remove"), self._one(kind, imdb))
+
+    def set_favorite(self, kind: str, imdb: str, add: bool) -> None:
+        """Pone o quita un título de tus favoritos de Trakt (el corazón; aparte de la watchlist y de los favoritos de tus
+        JUEGOS, que viven en la consola). Con 100 ya no cabe otro: Trakt responde 420 y se dice qué hacer."""
+        body = self._one(kind, imdb)
+        try:
+            self._send("POST", "/sync/favorites" + ("" if add else "/remove"), body, errors={420: TraktFavoritesFull(FAVORITES_FULL)})
+        finally:
+            self._favorites = None  # la próxima lectura ya trae el cambio (o lo que de verdad quedó)
+
+    def favorites(self, now: float | None = None) -> list[dict]:
+        """Tus favoritos de Trakt (películas y series juntas, lo último que marcaste primero). Se guardan FAVORITES_TTL
+        segundos; pasado ese rato se pregunta primero a /sync/last_activities si cambiaron y solo entonces se bajan."""
+        now = time.time() if now is None else now
+        cached = self._favorites
+        if cached is not None:
+            when, stamp, items = cached
+            if now - when < FAVORITES_TTL:
+                return items
+            if stamp and self._favorites_stamp() == stamp:
+                self._favorites = (now, stamp, items)  # no cambiaron: otro rato con los mismos
+                return items
+        stamp = self._favorites_stamp()
+        rows = []
+        for kind in ("movies", "shows"):
+            got = self._get(f"/sync/favorites/{kind}", extended="full")
+            rows += [r for r in got if isinstance(r, dict)] if isinstance(got, list) else []
+        items = _typed(sorted(rows, key=lambda r: str(r.get("listed_at") or ""), reverse=True))
+        self._favorites = (now, stamp, items)
+        return items
+
+    def _favorites_stamp(self) -> str | None:
+        """Cuándo cambiaron tus favoritos en Trakt (desde cualquier app): `favorites.updated_at`. None si no se sabe."""
+        try:
+            data = self._get("/sync/last_activities")
+        except TraktAuthError:
+            raise
+        except TraktError:
+            return None
+        stamp = _dict(_dict(data).get("favorites")).get("updated_at")
+        return stamp if isinstance(stamp, str) and stamp else None
 
     # --- listas ------------------------------------------------------------------------------
     def username(self) -> str:

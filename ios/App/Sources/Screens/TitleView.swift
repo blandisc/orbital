@@ -221,12 +221,23 @@ struct TitleView: View {
                     .disabled(model.continueVideoID == nil)
                     .accessibilityLabel(Text("Ver en la TV"))
             }
+            // El corazón (tus favoritos de Trakt, aparte de «Guardar»): solo con Trakt conectado.
+            if model.canFavorite {
+                FavoriteButton(isFavorite: model.isFavorite) { Task { await toggleFavorite(model) } }
+            }
             // «Guardar» vive en la rejilla de acciones; arriba, compartir (la ficha de IMDb, que abre en cualquier app).
             if model.metaID.hasPrefix("tt"), let url = URL(string: "https://www.imdb.com/title/\(model.metaID)/") {
                 ShareLink(item: url, subject: Text(verbatim: model.title)) { Image(systemName: "square.and.arrow.up") }
                     .accessibilityLabel(Text("Compartir"))
             }
         }
+    }
+
+    /// El corazón cambia al instante; si Trakt lo acepta, un aviso con «Deshacer» (si no, regresa solo y la ficha dice por qué).
+    private func toggleFavorite(_ model: TitleModel) async {
+        guard await model.toggleFavorite() else { return }
+        env.notify(model.isFavorite ? "Agregada a tus favoritos" : "Quitada de tus favoritos", detail: "Trakt", tone: .info,
+                   actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { Task { await model.toggleFavorite() } }
     }
 
     private var artAccent: Color { tint.colors?.accent ?? DS.accent }

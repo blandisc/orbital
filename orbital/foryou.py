@@ -73,6 +73,8 @@ GENERIC_CATALOGS = {"popular", "year", "language", "search", "new", "featured", 
                     "last videos", "calendar videos", "realdebrid", "anime"}
 SKIP_ADDONS = ("cinemeta", "torrent", "opensubtitles", "local files")
 TRAKT_ADDON = "trakt integration"
+# Tus favoritos de Trakt (películas y series). Otro nombre que «favorites»: esa es la categoría de tus JUEGOS (catalog.py).
+TRAKT_FAVORITES = "trakt-favorites"
 
 # Las claves de cada servicio. Las que escribes en Ajustes › Cuentas se guardan cifradas con las
 # credenciales (como la sesión de Stremio) y mandan sobre las de config.yaml.
@@ -543,6 +545,9 @@ class ForYou:
                 {"id": "recs", "title": "Recomendadas", "icon": "spark", "source": "Trakt", "meta": "Por lo que has visto", "split": True},
                 {"id": "mine", "title": "Tus series", "icon": "series", "source": "Trakt", "meta": "Las que estás viendo"},
                 {"id": "watchlist", "title": "Tu watchlist", "icon": "bookmark", "source": "Trakt", "meta": "Lo que dejaste pendiente"},
+                # Tus favoritos de Trakt (el corazón). En pantalla no se llama solo «Favoritos»: así se llaman los de tus juegos.
+                {"id": TRAKT_FAVORITES, "title": "Series y películas favoritas", "icon": "heart", "source": "Trakt",
+                 "meta": "Las que marcaste con el corazón"},
                 # Dos formas de verlo (las píldoras de arriba): por día, o la semana como una guía de TV.
                 {"id": "estrenos", "title": "Próximos estrenos", "icon": "calendar", "source": "Trakt", "meta": "Las series que sigues",
                  "views": [{"id": "day", "label": "Por día"}, {"id": "week", "label": "Semana"}]},
@@ -657,11 +662,12 @@ class ForYou:
             return {imdb: rating for imdb, rating in pool.map(one, pairs) if rating}
 
     def saved_in(self, kind: str, imdb: str) -> dict:
-        """«Guardar en…» (como el iPhone): si el título está en tu watchlist y en cuáles de tus listas de Trakt. Se
-        pregunta a Trakt al momento (no a lo guardado en caché): lo que cambiaste en el iPhone ya cuenta."""
+        """«Guardar en…» (como el iPhone): si el título está en tu watchlist, en tus favoritos y en cuáles de tus listas de
+        Trakt. Se pregunta a Trakt al momento (no a lo guardado en caché): lo que cambiaste en el iPhone ya cuenta (los
+        favoritos, con su minuto y la marca de last_activities)."""
         t = self.trakt
         if not t.linked or not imdb.startswith("tt"):
-            return {"trakt": False, "watchlist": False, "lists": []}
+            return {"trakt": False, "watchlist": False, "favorite": False, "lists": []}
         lists = t.lists()
 
         def members(list_id: str) -> list[dict] | None:
@@ -672,18 +678,22 @@ class ForYou:
 
         with ThreadPoolExecutor(max_workers=6) as pool:
             watch = pool.submit(t.watchlist)
+            favs = pool.submit(t.favorites)
             found = [pool.submit(members, row["id"]) for row in lists]
             in_watch = any(e["imdb"] == imdb for e in watch.result())
+            in_favs = any(e["imdb"] == imdb for e in favs.result())
             out = [{**row, "contains": any(e["imdb"] == imdb for e in f.result() or [])}
                    for row, f in zip(lists, found, strict=True) if f.result() is not None]
-        return {"trakt": True, "watchlist": in_watch, "lists": out}
+        return {"trakt": True, "watchlist": in_watch, "favorite": in_favs, "lists": out}
 
     def save_to(self, kind: str, imdb: str, where: str, add: bool) -> None:
-        """Añadir o quitar de tu watchlist («watchlist») o de una de tus listas de Trakt («list:123»). Las filas de esa
-        lista se vuelven a pedir (en la TV y en Para ti)."""
+        """Añadir o quitar de tu watchlist («watchlist»), de tus favoritos de Trakt («favorites») o de una de tus listas
+        («list:123»). Las filas de esa lista se vuelven a pedir (en la TV y en Para ti)."""
         if where == "watchlist":
             self.trakt.set_watchlist(kind, imdb, add)
             self.cache.clear("trakt:watchlist")
+        elif where == "favorites":
+            self.trakt.set_favorite(kind, imdb, add)  # Trakt ya olvida lo que tenía guardado de tus favoritos
         elif where.startswith("list:") and where[5:].isdigit():
             self.trakt.set_list_item(where[5:], kind, imdb, add)
             self.cache.clear(f"trakt:list:{where[5:]}")
@@ -879,6 +889,8 @@ class ForYou:
             return [video_item(e, "Sigues viéndola") for e in self.cache.get("trakt:watching", MINE_TTL, t.watching)]
         if list_id == "watchlist":
             return [video_item(e, "En tu watchlist") for e in self.cache.get("trakt:watchlist", MINE_TTL, t.watchlist)]
+        if list_id == TRAKT_FAVORITES:  # ya se guardan un rato en Trakt (y se preguntan con last_activities)
+            return [video_item(e, "En tus favoritos") for e in t.favorites()]
         if list_id.startswith("list:"):
             lid = list_id.removeprefix("list:")
             name = next((r["name"] for r in self.cache.get("trakt:lists", MINE_TTL, t.lists) if r["id"] == lid), "tu lista")

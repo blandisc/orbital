@@ -27,6 +27,10 @@ private struct CatalogSample: View {
                 DSKindFilter(kind: $kind)
                 DSSegmented(options: [(0, "Películas"), (1, "Series")], selection: $segment)
                 HStack(spacing: DS.Space.s3) {
+                    FavoriteButton(isFavorite: false) {}
+                    FavoriteButton(isFavorite: true) {}
+                }
+                HStack(spacing: DS.Space.s3) {
                     DSIconButton(symbol: "plus", label: "Agregar") {}
                     DSIconButton(symbol: "play.fill", label: "Ver", prominent: true) {}
                     DSMoreMenu { Button("Compartir") {} }

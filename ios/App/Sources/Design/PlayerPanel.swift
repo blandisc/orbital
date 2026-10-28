@@ -299,20 +299,59 @@ struct Toast: View {
 /// Reproducir o pausar: el botón grande del centro, el único con círculo (de vidrio), entre ±10.
 struct PlayPauseButton: View {
     let playing: Bool
+    /// Cargando (abrir, buscar versión, volver a la app, llenar el búfer): la animación de carga vive dentro del botón, en su lugar.
+    var loading = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: playing ? "pause.fill" : "play.fill")
-                .font(.system(size: DS.PlayerPanel.playGlyph, weight: .bold))   // ds-exception: el glifo del botón grande se mide con el botón, no con Dynamic Type
-                .contentTransition(.symbolEffect(.replace))
-                .foregroundStyle(DS.text)
-                .frame(width: DS.PlayerPanel.playButton, height: DS.PlayerPanel.playButton)
-                .glassEffect(.regular.interactive(), in: Circle())
-                .contentShape(Circle())
+            Group {
+                if loading { DSLoader() }
+                else {
+                    Image(systemName: playing ? "pause.fill" : "play.fill")
+                        .font(.system(size: DS.PlayerPanel.playGlyph, weight: .bold))   // ds-exception: el glifo del botón grande se mide con el botón, no con Dynamic Type
+                        .contentTransition(.symbolEffect(.replace))
+                        .foregroundStyle(DS.text)
+                }
+            }
+            .frame(width: DS.PlayerPanel.playButton, height: DS.PlayerPanel.playButton)
+            .glassEffect(.regular.interactive(), in: Circle())
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(playing ? Text("Pausa") : Text("Continuar"))
+        .accessibilityLabel(loading ? Text("Cargando") : playing ? Text("Pausa") : Text("Continuar"))
+    }
+}
+
+/// La onda del doble toque: una media luna tenue que sale de la orilla del lado que tocaste, con tres flechas y lo que llevas
+/// sumado («+30 s»). El número crece en el mismo lugar con cada toque.
+struct SkipRipple: View {
+    let forward: Bool
+    let seconds: Int
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                Ellipse().fill(DS.fill)
+                    .frame(width: geo.size.width * 2, height: geo.size.height * DS.Gesture.rippleHeight)
+                    .offset(x: forward ? geo.size.width / 2 : -geo.size.width / 2)
+                VStack(spacing: DS.Space.s1) {
+                    HStack(spacing: 0) {
+                        ForEach(0..<3, id: \.self) { _ in Image(systemName: forward ? "arrowtriangle.forward.fill" : "arrowtriangle.backward.fill") }
+                    }
+                    .font(DS.TextRecipe.caption.font)
+                    .symbolEffect(.bounce, value: seconds)
+                    Text(verbatim: "\(forward ? "+" : "−")\(seconds) s").font(DS.TextRecipe.cardTitle.font.weight(.bold)).monospacedDigit()
+                        .contentTransition(.numericText())
+                }
+                .foregroundStyle(DS.text)
+                .shadow(DS.Elevation.high)   // se lee aunque la imagen sea clara
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .clipped()
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -328,6 +367,7 @@ struct SkipButton: View {
                 .font(.system(size: DS.PlayerPanel.skipGlyph, weight: .medium))   // ds-exception: el glifo se mide con el botón grande, no con Dynamic Type
                 .symbolEffect(.rotate.byLayer, options: .speed(2), value: taps)
                 .foregroundStyle(DS.text)
+                .shadow(DS.Elevation.high)   // sin fondo propio: ahora va sobre la imagen también en vertical
                 .frame(width: DS.PlayerPanel.sideButton, height: DS.PlayerPanel.sideButton)
                 .contentShape(Circle())
         }
@@ -336,44 +376,62 @@ struct SkipButton: View {
     }
 }
 
-/// La barra de avance fina (la misma en vertical y en horizontal): el riel, lo visto en el color de Orbital y una perilla
-/// chica que crece mientras la arrastras; al arrastrar, la intro, el resumen y los créditos se marcan más claros.
+/// La barra de avance (la misma en vertical y en horizontal), a todo lo ancho: delgada y sin perilla mientras miras, gruesa
+/// mientras la arrastras, con una burbuja encima que dice a qué minuto vas y cuánto saltas. Dos rayitas tenues marcan dónde
+/// termina la intro y dónde empiezan los créditos (desde ahí el episodio cuenta como visto); al arrastrar, los tramos se aclaran.
 struct PlayerScrubBar: View {
     let value: Double
     let duration: Double
     /// Los tramos marcados (intro, resumen, créditos), en segundos.
     var marks: [ClosedRange<Double>] = []
+    /// Las rayitas fijas: el fin de la intro y el inicio de los créditos (segundos).
+    var ticks: [Double] = []
+    /// Cómo se dice un minuto («11:16»).
+    var clock: (Double) -> String = { _ in "" }
     let change: (Double) -> Void
     let editing: (Bool) -> Void
     @State private var dragging = false
+    @State private var startValue: Double = 0
 
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
             let x = { (t: Double) in CGFloat(min(max(t / max(duration, 1), 0), 1)) * width }
+            let track = dragging ? DS.PlayerPanel.scrubTrackActive : DS.PlayerPanel.scrubTrack
             ZStack(alignment: .leading) {
-                Capsule().fill(DS.track).frame(height: DS.PlayerPanel.scrubTrack)
-                // Solo mientras arrastras (para no caer en la intro o los créditos): quieta, la marca de los créditos al final
-                // de la barra parecía una rayita gris suelta.
+                Capsule().fill(DS.track).frame(height: track)
                 ForEach(Array((dragging ? marks : []).enumerated()), id: \.offset) { _, mark in
                     Rectangle().fill(DS.textFaint)
-                        .frame(width: max(0, x(mark.upperBound) - x(mark.lowerBound)), height: DS.PlayerPanel.scrubTrack)
+                        .frame(width: max(0, x(mark.upperBound) - x(mark.lowerBound)), height: track)
                         .offset(x: x(mark.lowerBound))
                 }
-                Capsule().fill(DS.brandMoon).frame(width: x(value), height: DS.PlayerPanel.scrubTrack)
-                Circle().fill(DS.text)
-                    .frame(width: dragging ? DS.PlayerPanel.scrubKnobActive : DS.PlayerPanel.scrubKnob,
-                           height: dragging ? DS.PlayerPanel.scrubKnobActive : DS.PlayerPanel.scrubKnob)
-                    .offset(x: x(value) - (dragging ? DS.PlayerPanel.scrubKnobActive : DS.PlayerPanel.scrubKnob) / 2)
-                    .animation(.snappy, value: dragging)
+                Capsule().fill(DS.brandMoon).frame(width: max(track, x(value)), height: track)
+                ForEach(Array(ticks.enumerated()), id: \.offset) { _, tick in
+                    Rectangle().fill(DS.textMuted)
+                        .frame(width: DS.PlayerPanel.scrubTickWidth, height: track + DS.PlayerPanel.scrubTickReach * 2)
+                        .offset(x: x(tick) - DS.PlayerPanel.scrubTickWidth / 2)
+                }
             }
+            .animation(.snappy, value: dragging)
             .frame(width: width, height: DS.PlayerPanel.scrubHit)
+            .overlay(alignment: .topLeading) {
+                if dragging {
+                    let delta = value - startValue
+                    // La misma burbuja que al buscar arrastrando sobre el video (una sola forma de decir «a qué minuto vas»).
+                    DSSeekBubble(time: clock(value), delta: (delta >= 0 ? "+" : "−") + clock(abs(delta)))
+                        .fixedSize()
+                    .alignmentGuide(.leading) { d in d.width / 2 - min(max(x(value), d.width / 2), width - d.width / 2) }
+                    .alignmentGuide(.top) { d in d.height + DS.Space.s2 }
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
+                }
+            }
             // Ocupa 32 pt (no se mueve nada), pero se toca en 44: la zona sobresale lo mismo arriba y abajo.
             .contentShape(Rectangle().size(width: width, height: DS.Size.touchTarget)
                 .offset(y: (DS.PlayerPanel.scrubHit - DS.Size.touchTarget) / 2))
             .gesture(DragGesture(minimumDistance: 0)
                 .onChanged { g in
-                    if !dragging { dragging = true; editing(true) }
+                    if !dragging { startValue = value; dragging = true; editing(true) }
                     change(Double(min(max(g.location.x / max(width, 1), 0), 1)) * duration)
                 }
                 .onEnded { _ in dragging = false; editing(false) })

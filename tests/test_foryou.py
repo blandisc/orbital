@@ -197,8 +197,22 @@ def test_only_the_services_you_have_show_up(make_foryou, net):
     assert ids == ["trend", "popular", *CHART_LIST_IDS, "mygames"]  # Trakt sin cuenta: tendencias y popular sí
     net.on("GET", r"/users/me/lists$", (200, [{"name": "Ciencia ficción", "ids": {"trakt": 77}}]))
     linked = core(make_foryou(linked=True, rawg_key="r").lists())
-    assert linked[:5] == ["recs", "mine", "watchlist", "estrenos", "list:77"]
+    assert linked[:6] == ["recs", "mine", "watchlist", "trakt-favorites", "estrenos", "list:77"]
     assert linked[-4:] == ["mygames", "rawg:new", "rawg:popular", "rawg:best"]
+
+
+def test_trakt_favorites_are_a_list_apart_from_your_game_favorites(make_foryou, net):
+    """Tus favoritos de Trakt (el corazón del iPhone) son una lista más; no se llaman solo «Favoritos» (así se llaman los
+    de tus juegos) ni marcan la ★ de favorito de un juego."""
+    fy = make_foryou(linked=True)
+    net.on("GET", r"/sync/favorites/movies", (200, [{"type": "movie", "listed_at": "2026-01-01T00:00:00.000Z", "movie": movie("Dune", "tt1160419")}]))
+    net.on("GET", r"/sync/favorites/shows", (200, [{"type": "show", "listed_at": "2026-05-01T00:00:00.000Z", "show": show("Severance", "tt11280740")}]))
+    row = next(r for r in fy.lists() if r["id"] == foryou_mod.TRAKT_FAVORITES)
+    assert row["title"] == "Series y películas favoritas" and row["source"] == "Trakt" and row["group"] == "video"
+    items = fy.list_items(foryou_mod.TRAKT_FAVORITES)
+    assert [(i["title"], i["why"]) for i in items] == [("Severance", "En tus favoritos"), ("Dune", "En tus favoritos")]
+    assert not any(i.get("favorite") for i in items)
+    assert foryou_mod.TRAKT_FAVORITES != "favorites"  # «favorites» es la categoría de juegos (catalog.py)
 
 
 def test_streaming_platforms_come_from_tmdb_with_their_logo(make_foryou, net):

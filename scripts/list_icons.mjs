@@ -8,7 +8,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ICONS } from "../orbital/web/js/core/icons.js";
 
-export const LIST_ICONS = ["spark", "watching", "library", "bookmark", "series", "calendar", "list", "addon", "trend", "flame", "chart", "fresh", "trophy"];
+export const LIST_ICONS = ["spark", "watching", "library", "bookmark", "heart", "series", "calendar", "list", "addon", "trend", "flame", "chart", "fresh", "trophy"];
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 export const catalog = join(root, "ios/App/Resources/Assets.xcassets/Icons");
 

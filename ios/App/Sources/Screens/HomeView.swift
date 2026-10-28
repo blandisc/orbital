@@ -115,6 +115,13 @@ struct HomeView: View {
                         }
                     }
                 }
+                // Tus favoritos de Trakt (el corazón de la ficha), después de Mi lista; sin Trakt o sin favoritos, no se pinta.
+                if !model.favorites.isEmpty {
+                    Rail(title: "Favoritos", count: model.favorites.count, route: HomeListRoute(id: "favorites"),
+                         eyebrow: Text("Lo que marcaste con el corazón"), source: .trakt) {
+                        ForEach(model.favorites) { s in TitleLink(route: s.route, reflected: true) }
+                    }
+                }
             }
             .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
             .padding(.bottom, DS.Space.s2)      // la barra de pestañas ya deja su espacio: más aquí era aire muerto al final
@@ -188,7 +195,8 @@ struct HomeView: View {
     /// Con orden y filtros (películas o series, género, ocultar lo visto), como toda lista abierta desde «Ver todo».
     private func titleGrid(_ route: HomeListRoute) -> some View {
         let items: [Suggestion] = route.id == "watchlist" ? home.model.traktPending
-            : route.id == "foryou" ? home.model.forYouPicks : home.model.myList.map(suggestion)
+            : route.id == "foryou" ? home.model.forYouPicks
+            : route.id == "favorites" ? home.model.favorites : home.model.myList.map(suggestion)
         return ScrollView {
             SortableGrid(listID: "home:\(route.id)", items: items) { s, width in
                 if let list = route.list {
@@ -200,7 +208,8 @@ struct HomeView: View {
                 .padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop(tint: tint.colors))
-        .navigationTitle(route.id == "watchlist" ? Text("Tu watchlist") : route.id == "foryou" ? Text("Para ti") : Text("Mi lista")).navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(route.id == "watchlist" ? Text("Tu watchlist") : route.id == "foryou" ? Text("Para ti")
+                         : route.id == "favorites" ? Text("Favoritos") : Text("Mi lista")).navigationBarTitleDisplayMode(.inline)
     }
 
     /// Lo de Stremio, lo pendiente por subir y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo).

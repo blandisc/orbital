@@ -69,14 +69,15 @@ export const ICONS = {
   // «Para ti»: qué es (serie: una tele; película: claqueta) y cada lista. Los de las listas son un juego propio, el mismo
   // en el iPhone (scripts/list_icons.mjs los copia a su catálogo): trazo de Orbital y, como firma, la luna de la marca, un
   // punto que dice algo (dónde vas en «Seguir viendo», la punta de «En tendencia», el día de «Próximos», lo más alto del
-  // Top 10). Cada lista: spark recomendadas · watching seguir viendo · library Mi lista · bookmark watchlist · series tus
-  // series · calendar próximos · list tus listas · addon de un complemento · trend tendencia · flame popular · chart Top 10
+  // Top 10). Cada lista: spark recomendadas · watching seguir viendo · library Mi lista · bookmark watchlist · heart tus
+  // favoritos de Trakt (la luna, al centro del corazón) · series tus series · calendar próximos · list tus listas · addon de un complemento · trend tendencia · flame popular · chart Top 10
   // y plataformas · fresh novedades · trophy mejor calificados.
   series: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3l3 3 3-3"/><rect x="3.5" y="6" width="17" height="12.5" rx="2"/><path d="M9 21h6"/><circle cx="16.5" cy="10" r="1.6" fill="currentColor" stroke="none"/></svg>',
   movie: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="10" width="17" height="10.2" rx="2"/><path d="M3.9 9.2 18.6 5.4a1 1 0 0 1 1.2.7l.5 1.9-16 4.1-.5-1.8a1 1 0 0 1 .1-1.1z"/><path d="m8.4 8 2.3 2.2M12.9 6.9l2.3 2.2"/></svg>',
   cloud: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.5 9.6 4.5 4.5 0 0 0 7 18.5z"/></svg>',
   spark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 5.5c.7 4.6 2.4 6.3 7 7-4.6.7-6.3 2.4-7 7-.7-4.6-2.4-6.3-7-7 4.6-.7 6.3-2.4 7-7z"/><circle cx="18.5" cy="5.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
   watching: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75a8.25 8.25 0 1 1-8.25 8.25"/><path d="M10.4 9.1v5.8l4.7-2.9z"/><circle cx="6.17" cy="6.17" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  heart: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5c-4.6-3-7.75-5.9-7.75-9.4a4.1 4.1 0 0 1 7.75-2.1 4.1 4.1 0 0 1 7.75 2.1c0 3.5-3.15 6.4-7.75 9.4z"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>',
   bookmark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="9.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
   calendar: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="15.5" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg>',
   menu: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M4.5 12h15M4.5 17h15"/></svg>',

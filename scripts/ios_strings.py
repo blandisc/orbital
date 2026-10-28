@@ -19,6 +19,15 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Favoritos de Trakt: el corazón de la ficha y su fila en Inicio.
+    "Quitar de favoritos": "Remove from favorites",
+    "Agregar a favoritos": "Add to favorites",
+    "Agregada a tus favoritos": "Added to your favorites",
+    "Quitada de tus favoritos": "Removed from your favorites",
+    "Favoritos": "Favorites",
+    "Lo que marcaste con el corazón": "What you marked with the heart",
+    "No pude cambiar tus favoritos de Trakt: %@": "I couldn't change your Trakt favorites: %@",
+    "Llegaste a 100 favoritos en Trakt: quita uno para agregar otro.": "You've reached 100 favorites on Trakt: remove one to add another.",
     # Un Simpson al azar (Centro de control y Ajustes), «Quitar de …» en tus listas y «Episodios» en el reproductor.
     "Pone un episodio de Los Simpson al azar.": "Plays a random episode of The Simpsons.",
     "La dona de Inicio elige un episodio de estas temporadas.": "The donut on Home picks an episode from these seasons.",

@@ -991,6 +991,28 @@
         }
       }
     },
+    "Agregada a tus favoritos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to your favorites"
+          }
+        }
+      }
+    },
+    "Agregar a favoritos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to favorites"
+          }
+        }
+      }
+    },
     "Agregar complemento": {
       "extractionState": "manual",
       "localizations": {
@@ -5974,6 +5996,17 @@
         }
       }
     },
+    "Favoritos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorites"
+          }
+        }
+      }
+    },
     "Fecha inválida": {
       "extractionState": "manual",
       "localizations": {
@@ -7316,6 +7349,17 @@
         }
       }
     },
+    "Llegaste a 100 favoritos en Trakt: quita uno para agregar otro.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've reached 100 favorites on Trakt: remove one to add another."
+          }
+        }
+      }
+    },
     "Llena la pantalla deformando la imagen": {
       "extractionState": "manual",
       "localizations": {
@@ -7686,6 +7730,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you saved"
+          }
+        }
+      }
+    },
+    "Lo que marcaste con el corazón": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you marked with the heart"
           }
         }
       }
@@ -9534,6 +9589,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't change your Trakt watchlist: %@"
+          }
+        }
+      }
+    },
+    "No pude cambiar tus favoritos de Trakt: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't change your Trakt favorites: %@"
           }
         }
       }
@@ -11485,6 +11551,17 @@
         }
       }
     },
+    "Quitada de tus favoritos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removed from your favorites"
+          }
+        }
+      }
+    },
     "Quitar": {
       "extractionState": "manual",
       "localizations": {
@@ -11525,6 +11602,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remove from Continue Watching"
+          }
+        }
+      }
+    },
+    "Quitar de favoritos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from favorites"
           }
         }
       }

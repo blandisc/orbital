@@ -927,7 +927,7 @@ async function fetchMany(wanted, into = mediaItems) {
   }));
 }
 /** Lo de arriba primero (Destacados, lo general, Porque viste, lo nuevo, las plataformas); las colecciones, después. */
-const LATER = (w) => /^(award|studio|list|addon|genre|season):/.test(w.id) || ["watchlist", "mine", "mylist", "estrenos"].includes(w.id);
+const LATER = (w) => /^(award|studio|list|addon|genre|season):/.test(w.id) || ["watchlist", "trakt-favorites", "mine", "mylist", "estrenos"].includes(w.id);
 
 async function loadYears(count = 6) {
   const years = mediaLists.filter((l) => l.collection === "year").slice(yearsLoaded, yearsLoaded + count);
@@ -1042,7 +1042,7 @@ function openMiMedia() {
 
 /** «Versiones en tu carpeta» (como el iPhone): resolución, HDR, audio, idiomas y tamaño; A ve esa. */
 // --- «Guardar en…» (como el iPhone): en qué listas va un título, varias a la vez ---------------------------------------
-let saving = null; // { kind, id, title, library, trakt: null (buscando) | { trakt, watchlist, lists }, error }
+let saving = null; // { kind, id, title, library, trakt: null (buscando) | { trakt, watchlist, favorite, lists }, error }
 
 function saveMenu(s) {
   const row = (label, hint, on, where) => ({ icon: on ? "check" : "plus", label, hint, value: on ? "✓" : "", ok: on,
@@ -1051,7 +1051,9 @@ function saveMenu(s) {
   if (s.error) options.push({ icon: "info", label: s.error, command: { type: "stay" } });
   else if (!s.trakt) options.push({ icon: "refresh", label: "Buscando tus listas de Trakt…", command: { type: "stay" } });
   else if (s.trakt.trakt) {
-    options.push(row("Tu watchlist", "Trakt", s.trakt.watchlist, "watchlist"), { heading: true, label: "Tus listas de Trakt" });
+    // Tus favoritos de Trakt (el corazón del iPhone), aparte de la watchlist; Trakt guarda hasta 100.
+    options.push(row("Tu watchlist", "Trakt", s.trakt.watchlist, "watchlist"), row("Favoritos", "Trakt", !!s.trakt.favorite, "favorites"),
+      { heading: true, label: "Tus listas de Trakt" });
     if (!s.trakt.lists.length) options.push({ icon: "info", label: "Aún no tienes listas en Trakt", command: { type: "stay" } });
     for (const l of s.trakt.lists) options.push(row(l.name, "", l.contains, `list:${l.id}`));
   }
@@ -1080,10 +1082,12 @@ function toggleSave(where) {
   const s = saving;
   if (!s) return;
   const list = where.startsWith("list:") ? s.trakt?.lists.find((l) => `list:${l.id}` === where) : null;
-  const get = () => (where === "library" ? s.library : where === "watchlist" ? s.trakt?.watchlist : list?.contains);
+  const get = () => (where === "library" ? s.library : where === "watchlist" ? s.trakt?.watchlist
+    : where === "favorites" ? s.trakt?.favorite : list?.contains);
   const set = (value) => {
     if (where === "library") s.library = value;
     else if (where === "watchlist" && s.trakt) s.trakt.watchlist = value;
+    else if (where === "favorites" && s.trakt) s.trakt.favorite = value;
     else if (list) list.contains = value;
   };
   const add = !get();

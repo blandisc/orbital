@@ -27,6 +27,8 @@ public final class HomeModel: ObservableModel {
     public private(set) var continueWatching: [HomeItem] = [] { didSet { changed() } }
     public private(set) var myList: [HomeItem] = [] { didSet { changed() } }
     public private(set) var traktPending: [Suggestion] = [] { didSet { changed() } }
+    /// Tus favoritos de Trakt (el corazón de la ficha), lo último que marcaste primero. Vacío sin Trakt: la fila no se pinta.
+    public private(set) var favorites: [Suggestion] = [] { didSet { changed() } }
     /// «Destacado»: lo que abre Inicio. Lo en tendencia, lo popular de la semana y lo recomendado para ti, películas y series
     /// entreveradas, sin lo que ya estás viendo.
     public private(set) var spotlight: [Suggestion] = [] { didSet { changed() } }
@@ -96,11 +98,13 @@ public final class HomeModel: ObservableModel {
                 if !found.isEmpty { topItems[k] = found }
             }
             traktPending = ForYou.decode(saved["pending"])
+            favorites = ForYou.decode(saved["favorites"])
         }
     }
 
     private func saveLists() {
-        var lists: [String: [Suggestion]] = ["spotlight": spotlight, "forYou": forYouPicks, "pending": Array(traktPending.prefix(Self.rowLimit))]
+        var lists: [String: [Suggestion]] = ["spotlight": spotlight, "forYou": forYouPicks, "pending": Array(traktPending.prefix(Self.rowLimit)),
+                                                     "favorites": Array(favorites.prefix(Self.rowLimit))]
         for kind in ["series", "movie"] { lists["top:\(topBrand):\(kind)"] = top(kind: kind) }
         services.kv.set(Self.listsKey, data: try? JSONEncoder().encode(lists.compactMapValues { ForYou.encode($0) }))
     }
@@ -155,14 +159,18 @@ public final class HomeModel: ObservableModel {
 
     private var fetchedAirings: [Airing]?
 
-    /// Tu watchlist y lo que sale de tus series (Trakt).
+    /// Tu watchlist, tus favoritos y lo que sale de tus series (Trakt).
     private func loadTrakt(_ forYou: ForYou) async {
         async let airings = try? forYou.calendar(), pending = try? forYou.items(listID: "watchlist")
-        let (fetchedPending, newAirings) = await (pending, airings)
+        async let favs = try? forYou.items(listID: ForYou.favoritesList)
+        let (fetchedPending, newAirings, fetchedFavorites) = await (pending, airings, favs)
         // Cancelado o sin respuesta de Trakt: no se vacía «Tu watchlist» ni el «Próximo estreno» del widget.
         guard !Task.isCancelled else { return }
+        let linked = await forYou.traktLinked
         if let fetchedPending { traktPending = fetchedPending }   // toda (el renglón enseña los primeros; «Ver todo», todas)
-        else if !(await forYou.traktLinked) { traktPending = [] }   // desconectaste Trakt: ya no hay watchlist que enseñar
+        else if !linked { traktPending = [] }   // desconectaste Trakt: ya no hay watchlist que enseñar
+        if let fetchedFavorites { favorites = fetchedFavorites }
+        else if !linked { favorites = [] }      // ni favoritos
         if let newAirings { upcoming = Array(newAirings.prefix(10)); fetchedAirings = newAirings }
     }
 

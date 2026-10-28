@@ -170,9 +170,9 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
     return got.length ? card(`collection:${l.id}`, l.title, { type: "list", name: l.title, source, count: got.length, posters: got.slice(0, 2).map(posterOf), list: l },
       heroOf(got[0], source === "trakt" ? "Lista de Trakt" : "Lista de Stremio")) : null;
   };
-  // Como el iPhone: Tu watchlist, Tus series y luego tus listas personales.
-  const traktOrder = (l) => (l.id === "watchlist" ? 0 : l.id === "mine" ? 1 : 2);
-  const trakt = lists.filter((l) => ["watchlist", "mine"].includes(l.id) || l.id?.startsWith("list:"))
+  // Como el iPhone: Tu watchlist, tus favoritos (el corazón), Tus series y luego tus listas personales.
+  const traktOrder = (l) => ({ watchlist: 0, "trakt-favorites": 1, mine: 2 })[l.id] ?? 3;
+  const trakt = lists.filter((l) => ["watchlist", "trakt-favorites", "mine"].includes(l.id) || l.id?.startsWith("list:"))
     .sort((a, b) => traktOrder(a) - traktOrder(b)).map((l) => listCard(l, "trakt")).filter(Boolean);
   // Próximos estrenos también como tarjeta (como el iPhone, en Listas › Trakt): se abre con un día por pestaña («Semana»).
   const upcoming = byId.estrenos && listCard(byId.estrenos, "trakt");

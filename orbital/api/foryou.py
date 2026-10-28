@@ -28,7 +28,7 @@ class KeysRequest(BaseModel):
 class SaveRequest(BaseModel):
     kind: str
     id: str
-    where: str  # «watchlist» o «list:123»
+    where: str  # «watchlist», «favorites» (tus favoritos de Trakt) o «list:123»
     add: bool
 
 
@@ -61,7 +61,7 @@ def router(d: Deps) -> APIRouter:
 
     @r.get("/saved")
     def saved(kind: str, id: str) -> dict:
-        """«Guardar en…»: si está en tu watchlist y en cuáles de tus listas de Trakt."""
+        """«Guardar en…»: si está en tu watchlist, en tus favoritos y en cuáles de tus listas de Trakt."""
         if kind not in ("movie", "series"):
             raise HTTPException(400, "Tipo inválido")
         try:
@@ -73,14 +73,14 @@ def router(d: Deps) -> APIRouter:
 
     @r.post("/save")
     def save(body: SaveRequest) -> dict:
-        """Añadir o quitar de tu watchlist o de una de tus listas de Trakt."""
+        """Añadir o quitar de tu watchlist, de tus favoritos o de una de tus listas de Trakt."""
         if body.kind not in ("movie", "series"):
             raise HTTPException(400, "Tipo inválido")
         try:
             foryou.save_to(body.kind, body.id[:20], body.where[:40], body.add)
         except ValueError as exc:
             raise HTTPException(400, str(exc))
-        except trakt.TraktAuthError as exc:
+        except (trakt.TraktAuthError, trakt.TraktFavoritesFull) as exc:  # reconectar, o quitar un favorito: dicho tal cual
             raise HTTPException(409, str(exc))
         except SERVICE_ERRORS:
             raise HTTPException(502, "No pude cambiar tu lista de Trakt. Revisa tu conexión e inténtalo de nuevo.")

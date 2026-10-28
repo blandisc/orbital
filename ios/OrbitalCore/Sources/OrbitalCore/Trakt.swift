@@ -187,6 +187,12 @@ public enum TraktParsing {
         return precise.date(from: text) ?? ISO8601DateFormatter().date(from: text)
     }
 
+    /// Las filas de `/sync/favorites/movies` y `/sync/favorites/shows` juntas: lo que marcaste al último primero (por
+    /// `listed_at`), solo películas y series con IMDb, sin repetir.
+    public static func favorites(_ rows: [JSON]) -> [TraktEntry] {
+        typed(rows.filter { $0.object != nil }.sorted { ($0["listed_at"]?.string ?? "") > ($1["listed_at"]?.string ?? "") })
+    }
+
     /// Filas mezcladas («type»: movie/show) → solo películas y series con IMDb, sin repetir.
     public static func typed(_ rows: [JSON]?) -> [TraktEntry] {
         var found: [TraktEntry] = [], seen = Set<String>()
@@ -221,6 +227,13 @@ public actor Trakt {
     /// Lo que dejaste a medias (`/sync/playback`), guardado un momento: abrir varios títulos seguidos no pregunta cada vez.
     private var playbackCache: (at: Date, items: [TraktPlayback])?
     static let playbackCacheFor: TimeInterval = 60
+    /// Tus favoritos, guardados un momento con la marca de cuándo cambiaron en Trakt (`favorites.updated_at` de
+    /// `/sync/last_activities`): pasado el rato, si la marca no cambió no se vuelven a bajar las dos listas.
+    private var favoritesCache: (at: Date, stamp: String?, items: [TraktEntry])?
+    static let favoritesCacheFor: TimeInterval = 60
+    /// Trakt guarda hasta 100 favoritos (entre películas y series); al pasarse responde 420.
+    public static let favoritesLimit = 100
+    public static let favoritesFullMessage = "Llegaste a 100 favoritos en Trakt: quita uno para agregar otro."
 
     public init(http: HTTPClient, secrets: SecretsStore, clientID: String, clientSecret: String = "",
                 clock: @escaping @Sendable () -> Date = { Date() },
@@ -400,6 +413,31 @@ public actor Trakt {
         return TraktParsing.typed(sorted)
     }
 
+    /// Tus favoritos de Trakt (películas y series, lo último que marcaste primero), guardados `favoritesCacheFor` segundos.
+    /// Pasado ese rato se pregunta primero si cambiaron (una respuesta chiquita) y solo entonces se bajan otra vez.
+    public func favorites(fresh: Bool = false) async throws -> [TraktEntry] {
+        if !fresh, let cache = favoritesCache {
+            if clock().timeIntervalSince(cache.at) < Self.favoritesCacheFor { return cache.items }
+            if let stamp = cache.stamp, let now = try? await favoritesStamp(), now == stamp {
+                favoritesCache = (clock(), stamp, cache.items)   // no cambiaron: otro rato con los mismos
+                return cache.items
+            }
+        }
+        // La marca, las películas y las series, las tres a la vez. Sin marca (Trakt no la dio) se guardan igual, solo que la
+        // próxima vez se bajan completas.
+        async let stamp = try? favoritesStamp()
+        async let movies = get("/sync/favorites/movies", [("extended", "full")])
+        async let shows = get("/sync/favorites/shows", [("extended", "full")])
+        let items = TraktParsing.favorites((try await movies?.array ?? []) + (try await shows?.array ?? []))
+        favoritesCache = (clock(), await stamp ?? nil, items)
+        return items
+    }
+
+    /// Cuándo cambiaron tus favoritos por última vez en Trakt (cualquier dispositivo): `favorites.updated_at`.
+    func favoritesStamp() async throws -> String? {
+        try await get("/sync/last_activities")?["favorites"]?["updated_at"]?.nonEmptyString
+    }
+
     public func lists() async throws -> [(id: String, name: String)] {
         try await ownLists().map { ($0.id, $0.name) }
     }
@@ -558,6 +596,21 @@ public actor Trakt {
         let body: JSON = series ? ["shows": [["ids": ["imdb": .string(imdb)]]]] : ["movies": [["ids": ["imdb": .string(imdb)]]]]
         let (status, _) = try await write(add ? "/sync/watchlist" : "/sync/watchlist/remove", body)
         guard status == 200 || status == 201 else { throw TraktError.http(status) }
+    }
+
+    /// Pone o quita un título de tus favoritos de Trakt (el corazón). Con 100 ya no cabe otro: Trakt responde 420 y se dice
+    /// claro qué hacer (`favoritesFullMessage`).
+    public func setFavorite(imdb: String, series: Bool, add: Bool) async throws {
+        guard Self.isIMDb(imdb) else { throw TraktError.invalid("Título inválido") }
+        let (status, _) = try await write(add ? "/sync/favorites" : "/sync/favorites/remove", Self.itemBody(imdb: imdb, series: series))
+        favoritesCache = nil   // la próxima lectura ya trae el cambio
+        if status == 420 { throw TraktError.invalid(Self.favoritesFullMessage) }
+        guard status == 200 || status == 201 else { throw TraktError.http(status) }
+    }
+
+    /// `{"movies":[{"ids":{"imdb":…}}]}` o `{"shows":[…]}`: el cuerpo de la watchlist, las listas y los favoritos.
+    static func itemBody(imdb: String, series: Bool) -> JSON {
+        series ? ["shows": [["ids": ["imdb": .string(imdb)]]]] : ["movies": [["ids": ["imdb": .string(imdb)]]]]
     }
 
     /// Pone o quita un título de una de tus listas.

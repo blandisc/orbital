@@ -46,6 +46,12 @@ public final class TitleModel: ObservableModel {
     /// Está en alguna de tus listas de Trakt (sin abrir «Guardar en…»; al abrirla manda lo que diga cada lista).
     public private(set) var inSomeList = false { didSet { changed() } }
     public private(set) var traktAvailable = false { didSet { changed() } }
+    /// Está en tus favoritos de Trakt (el corazón de la ficha). Va aparte de «Guardar»: no cuenta para «Guardada».
+    public private(set) var isFavorite = false { didSet { changed() } }
+    /// El corazón solo se enseña con Trakt conectado y un título con IMDb (Trakt no conoce los demás).
+    public var canFavorite: Bool { traktAvailable && metaID.hasPrefix("tt") }
+    /// Cambios del corazón que aún no contesta Trakt: una lectura que llega mientras tanto no lo regresa a como estaba.
+    private var favoriteWrites = 0
     public private(set) var isLoading = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
     public private(set) var message: String? { didSet { changed() } }
@@ -236,6 +242,7 @@ public final class TitleModel: ObservableModel {
         async let linked = forYou.traktLinked
         async let keys = forYou.watchlistKeys()
         async let listed = forYou.listKeys()
+        async let favorites = forYou.favoriteKeys()
         async let queue = downloads.all
         if let prefetched { raw = prefetched } else { raw = await watch.rawItem(metaID: id) }
         let ids = meta.map(CinemetaParsing.seasonVideoIDs) ?? []
@@ -246,6 +253,8 @@ public final class TitleModel: ObservableModel {
         let onTrakt = await keys.contains(metaID)
         inWatchlist = services.traktOutbox.pending(target: TraktOutbox.watchlist, imdb: metaID) ?? onTrakt
         inSomeList = await listed.contains(metaID)
+        let favorite = await favorites.contains(metaID)
+        if favoriteWrites == 0 { isFavorite = favorite }
         applyDownloads(await queue)
         if let state = StremioLibrary.state(of: raw)["video_id"]?.string, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
         else if !seasons.contains(where: { $0.season == selectedSeason }) { selectedSeason = seasons.first { !$0.isSpecials }?.season ?? seasons.first?.season ?? 1 }
@@ -378,6 +387,33 @@ public final class TitleModel: ObservableModel {
             services.traktOutbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: metaID, series: kind == "series", add: want))
             message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
         } catch { inWatchlist = !want; message = "No pude cambiar tu watchlist de Trakt: \(error)" }
+    }
+
+    // MARK: favoritos de Trakt
+    /// El corazón: lo cambia al instante y lo manda a Trakt; si Trakt no lo acepta (sin red, o ya tienes 100) regresa a
+    /// como estaba y la ficha dice por qué. Devuelve si quedó como pediste (para ofrecer «Deshacer»).
+    @discardableResult
+    public func toggleFavorite() async -> Bool {
+        guard let trakt = services.trakt, trakt.linked, metaID.hasPrefix("tt") else { return false }
+        let want = !isFavorite
+        isFavorite = want
+        favoriteWrites += 1
+        defer { favoriteWrites -= 1 }
+        do {
+            try await trakt.setFavorite(imdb: metaID, series: kind == "series", add: want)
+            await services.forYou.clearCache()
+            return true
+        } catch {
+            isFavorite = !want
+            message = Self.favoriteFailure(error)
+            return false
+        }
+    }
+
+    /// Lo que dice la ficha si el corazón no se pudo cambiar: el tope de 100 tal cual (ya dice qué hacer); lo demás, con su causa.
+    nonisolated static func favoriteFailure(_ error: Error) -> String {
+        if case TraktError.invalid(let text)? = error as? TraktError { return text }
+        return "No pude cambiar tus favoritos de Trakt: \(error)"
     }
 
     // MARK: tus listas de Trakt

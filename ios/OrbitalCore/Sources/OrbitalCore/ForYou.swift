@@ -280,11 +280,13 @@ public actor ForYou {
     }
 
     private func raw(listID: String, kind: String) async throws -> [Suggestion] {
-        if let trakt, ["recs", "mine", "watchlist", "trend", "popular"].contains(listID) || listID.hasPrefix("list:") {
+        if let trakt, ["recs", "mine", "watchlist", Self.favoritesList, "trend", "popular"].contains(listID) || listID.hasPrefix("list:") {
             switch listID {
             case "recs": return try await remember("trakt:recs:\(kind)", ttl: Self.recsTTL) { try await trakt.recommendations(kind: kind) }.map { suggestion($0, .recommended) }
             case "mine": return try await remember("trakt:watching", ttl: Self.mineTTL) { try await trakt.watching() }.map { suggestion($0, .watching) }
             case "watchlist": return try await remember("trakt:watchlist", ttl: Self.mineTTL) { try await trakt.watchlist() }.map { suggestion($0, .inWatchlist) }
+            // Los favoritos ya se guardan un momento en `Trakt` (y se preguntan con `last_activities`): sin otra caché aquí.
+            case Self.favoritesList: return try await trakt.favorites().map { suggestion($0, .inList(Self.favoritesName)) }
             case "trend": return try await remember("trakt:trend:\(kind)", ttl: Self.recsTTL) { try await trakt.trending(kind: kind) }.map { suggestion($0, .trending) }
             case "popular": return try await remember("trakt:popular:\(kind)", ttl: Self.popularTTL) { try await trakt.popular(kind: kind) }.map { suggestion($0, .popular) }
             default:
@@ -613,6 +615,17 @@ public actor ForYou {
     }
 
     static let listKeysMax = 12
+
+    /// Tus favoritos de Trakt (el corazón de la ficha), aparte de tu watchlist y de Mi lista (Stremio).
+    public static let favoritesList = "favorites"
+    /// El nombre de la lista en el porqué de cada póster («En «Favoritos»»).
+    public static let favoritesName = "Favoritos"
+
+    /// Qué títulos (IMDb) están en tus favoritos de Trakt: el corazón lleno en la ficha. Vacío sin Trakt o sin respuesta.
+    public func favoriteKeys() async -> Set<String> {
+        guard let trakt, trakt.linked else { return [] }
+        return Set(((try? await trakt.favorites()) ?? []).map(\.imdb))
+    }
 }
 
 /// Una sugerencia tal como se guarda en el teléfono (`Suggestion` lleva una tupla y un motivo con datos).

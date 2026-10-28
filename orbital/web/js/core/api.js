@@ -99,7 +99,7 @@ export const api = {
   controllers: () => request("/api/controllers"),
   dismiss: (id) => post("/api/stremio/dismiss", { id }),
   setInLibrary: (kind, id, add) => post("/api/stremio/library", { kind, id, add }),
-  // «Guardar en…» (como el iPhone): tu watchlist y tus listas de Trakt.
+  // «Guardar en…» (como el iPhone): tu watchlist, tus favoritos y tus listas de Trakt.
   savedIn: (kind, id) => request(`/api/foryou/saved?kind=${kind}&id=${encodeURIComponent(id)}`),
   saveTo: (kind, id, where, add) => post("/api/foryou/save", { kind, id, where, add }),
   trailer: (kind, id, keep = false) => post("/api/stremio/trailer", { kind, id, keep }),

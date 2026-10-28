@@ -189,6 +189,8 @@ struct PlayerScreen: View {
     /// Dobles toques en una orilla: cuántos segundos llevan sumados y de qué lado (la burbuja va de ese lado).
     @State private var skipChain: (forward: Bool, seconds: Int, at: Date)?
     @State private var skipChainTask: Task<Void, Never>?
+    @State private var skipHaptic = 0
+    @State private var skipEdgeHaptic = 0
     /// ×2: lo que lleva el anillo al deslizar hacia abajo, antes de quedarse fijo.
     @State private var fastForwardProgress: Double = 0
     @State private var flashTask: Task<Void, Never>?
@@ -198,11 +200,13 @@ struct PlayerScreen: View {
 
     /// Lo que suena ahora: cambia al pasar solo al siguiente episodio (el `request` es solo con el que se abrió).
     private var current: PlayRequest { holder.model.request ?? request }
+    @State private var ambientURL: URL?
 
     var body: some View {
         let model = holder.model
         ZStack {
             if let face = ipod { Rectangle().fill(face.body).ignoresSafeArea() } else { DS.video.ignoresSafeArea() }
+            if !landscape && !fillsPortrait && ipod == nil { ambientLayer }
             GeometryReader { geo in
                 let rect = videoRect(in: geo.size)
                 ZStack {
@@ -253,7 +257,8 @@ struct PlayerScreen: View {
                     let rect = videoRect(in: geo.size)
                     // Todo lo que carga (la búsqueda de versiones y la ruedita) con su centro en el del video, siempre el mismo punto:
                     // antes la búsqueda iba al centro de la pantalla y en vertical la ruedita que seguía brincaba hacia arriba.
-                    statusOverlays(model).position(x: rect.midX, y: rect.midY)
+                    // Con los controles a la vista la carga va en su botón grande (mismo punto): aquí no se repite.
+                    if !(transportShown(model)) { statusOverlays(model).position(x: rect.midX, y: rect.midY) }
                 }
                 .ignoresSafeArea(edges: landscape ? .all : [])
                 .allowsHitTesting(false)
@@ -262,6 +267,16 @@ struct PlayerScreen: View {
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
             let controlsShown = controlsVisible && !locked && !failed(model) && !subtitleDock && ipod == nil
             if controlsShown { controls(model).transition(.opacity) }
+            // ±10 y el botón grande, siempre al centro del video (en vertical también, encima de la imagen): el mismo punto donde
+            // está la imagen del episodio al abrir y donde se ve la carga.
+            if transportShown(model) {
+                GeometryReader { geo in
+                    let rect = videoRect(in: geo.size)
+                    transport(model).position(x: rect.midX, y: rect.midY)
+                }
+                .ignoresSafeArea(edges: landscape ? .all : [])
+                .transition(.opacity)
+            }
             // Encima de los controles: en horizontal sobre la barra; en vertical, al pie (o sobre la barra si «Recortar»).
             if speedPillVisible { speedPill.transition(.opacity) }
             // El iPod no se esconde (es el aparato): con la pantalla bloqueada se ve pero no se toca.
@@ -271,8 +286,19 @@ struct PlayerScreen: View {
             // «Saltar intro» no depende de los controles (se esconden a los pocos segundos y con ellos se iba el botón):
             // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse. Con los controles a la
             // vista (en pausa, o con la ventana de PiP afuera) ya va dentro de ellos: antes salía dos veces.
-            else if !controlsShown && !locked && ipod == nil && model.skipIntroTo != nil {
-                VStack { Spacer(); HStack { Spacer(); skipIntro(model) } }.padding(landscape ? DS.Space.s6 : DS.Space.gutter).transition(.opacity)
+            // En vertical va justo debajo del video, a la derecha (donde sale con los controles); antes quedaba al pie de la
+            // pantalla, lejos de la imagen. Con un error a la vista, no.
+            else if !controlsShown && !locked && ipod == nil && !failed(model) && model.skipIntroTo != nil {
+                if landscape {
+                    VStack { Spacer(); HStack { Spacer(); skipIntro(model) } }.padding(DS.Space.s6).transition(.opacity)
+                } else {
+                    GeometryReader { geo in
+                        HStack { Spacer(); skipIntro(model) }
+                            .padding(.horizontal, DS.Space.gutter)
+                            .offset(y: videoRect(in: geo.size).maxY + DS.Space.s4)
+                    }
+                    .transition(.opacity)
+                }
             }
             // Bloqueado no se ve (ni se toca): si llega a cero, pasa solo al siguiente. En vertical va entre el video y la barra
             // (dentro de los controles, o sola si están escondidos); en horizontal, abajo a la derecha sobre la barra.
@@ -435,6 +461,7 @@ struct PlayerScreen: View {
         .onChange(of: model.snapshot.position) { _, position in
             if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
         }
+        .task(id: current.videoID) { await loadAmbient() }
         .task(id: pendingSeek) { if pendingSeek != nil { try? await Task.sleep(nanoseconds: DS.Timing.seekPatience); pendingSeek = nil } }
         .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
         .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
@@ -627,11 +654,14 @@ struct PlayerScreen: View {
             .contentShape(Rectangle())
             .onTapGesture(count: 2) { location in
                 let third = geo.size.width * DS.Gesture.edgeShare
-                if location.x < third { skip(model, forward: false) }
-                else if location.x > geo.size.width - third { skip(model, forward: true) }
+                // Si ya venías sumando de ese lado, el doble toque cuenta como dos toques (+20 s).
+                if location.x < third { skip(model, forward: false, taps: 2) }
+                else if location.x > geo.size.width - third { skip(model, forward: true, taps: 2) }
                 else { Task { await model.togglePlay() }; flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
             }
-            .onTapGesture {
+            .onTapGesture { location in
+                // Tras un doble toque en una orilla, cada toque sencillo del mismo lado suma otros 10 s (como YouTube).
+                if let forward = continuesSkip(at: location, width: geo.size.width) { skip(model, forward: forward); return }
                 // Con los subtítulos rápidos abiertos, tocar el video los cierra (y nada más).
                 if subtitleDock { withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false }; return }
                 // Un toque con dos dedos también puede contar como toque: ese no mueve los controles.
@@ -680,6 +710,8 @@ struct PlayerScreen: View {
             .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.fastForwardStart, maximumDistance: DS.Gesture.axisThreshold)
                 .onEnded { _ in if (touchStartX ?? geo.size.width) >= geo.size.width / 2 { holdFastForward(model) } })
             .sensoryFeedback(.impact, trigger: isFastForwarding)
+            .sensoryFeedback(.impact(weight: .light), trigger: skipHaptic)
+            .sensoryFeedback(.impact(weight: .heavy), trigger: skipEdgeHaptic)
             .sensoryFeedback(.success, trigger: fastForwardLocked)
         }
         .accessibilityHidden(true)
@@ -813,19 +845,13 @@ struct PlayerScreen: View {
             }
         }
         if let chain = skipChain {
-            // La burbuja del lado que tocaste, con lo que llevas sumado («+20 s»), como YouTube.
+            // La onda en media luna desde la orilla que tocaste, con flechas y lo que llevas sumado («+30 s»), como YouTube.
             GeometryReader { geo in
                 let rect = videoRect(in: geo.size)
-                VStack(spacing: DS.Space.s1) {
-                    Image(systemName: chain.forward ? "goforward" : "gobackward").font(DS.TextRecipe.cardTitle.font.weight(.bold))
-                    Text(verbatim: "\(chain.forward ? "+" : "−")\(chain.seconds) s").font(DS.TextRecipe.footnote.font.weight(.bold)).monospacedDigit()
-                        .contentTransition(.numericText())
-                }
-                .foregroundStyle(DS.text)
-                .frame(width: DS.Size.touchTarget * 2, height: DS.Size.touchTarget * 2)
-                .glassEffect(.regular, in: Circle())
-                // Sobre el video, al centro del tercio que tocaste (en vertical el video no llena la pantalla).
-                .position(x: chain.forward ? rect.maxX - rect.width / 6 : rect.minX + rect.width / 6, y: rect.midY)
+                let side = rect.width * DS.Gesture.edgeShare
+                SkipRipple(forward: chain.forward, seconds: chain.seconds)
+                    .frame(width: side, height: rect.height)
+                    .position(x: chain.forward ? rect.maxX - side / 2 : rect.minX + side / 2, y: rect.midY)
             }
             .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
@@ -845,8 +871,11 @@ struct PlayerScreen: View {
             let fraction = CGFloat(max(0, min(1, target / duration)))
             let rawX = DS.Space.gutter + (geo.size.width - DS.Space.gutter * 2) * fraction
             let x = min(max(rawX, DS.Gesture.seekBubbleSideMargin), geo.size.width - DS.Gesture.seekBubbleSideMargin)
+            // En vertical, dentro del borde de abajo del video, justo encima de la barra (antes flotaba en lo negro del pie).
+            let y = landscape || fillsPortrait || ipod != nil ? geo.size.height - DS.Gesture.seekBubbleBottomInset
+                : videoRect(in: geo.size).maxY - DS.Gesture.seekBubblePortraitLift
             DSSeekBubble(time: clock(target), delta: "\(delta >= 0 ? "+" : "−")\(clock(abs(delta)))")
-                .position(x: x, y: geo.size.height - DS.Gesture.seekBubbleBottomInset)
+                .position(x: x, y: y)
         }
         .transition(.opacity).allowsHitTesting(false)
     }
@@ -958,6 +987,8 @@ struct PlayerScreen: View {
         case "volume": verticalKind = .volume; indicator = (.volume, "speaker.wave.2.fill", 0.4); indicatorVisible = true
         case "seek": dragAxis = .horizontal; seekPositionAtDragStart = model.snapshot.position; seekPreview = model.snapshot.position + 80
         case "fastforward": holdFastForward(model)
+        case "controls": hideTask?.cancel(); controlsVisible = true
+        case "skip": skip(model, forward: true); skip(model, forward: true); skip(model, forward: true); skipChainTask?.cancel()
         case "fastforward-locked":
             hideTask?.cancel()
             rateBeforeFastForward = model.rate
@@ -994,16 +1025,17 @@ struct PlayerScreen: View {
         }
     }
 
-    /// Un ícono grande que aparece y se va (el doble toque se nota sin abrir los controles).
-    /// Doble toque en una orilla: ±10 s; seguidos del mismo lado cada uno salta más (10 → 20 → 40 → 60 → 90 → 120 s en
-    /// total) y la burbuja dice el total. Así tres toques ya son 40 s, no 30.
-    private func skip(_ model: PlayerModel, forward: Bool) {
+    /// Doble toque en una orilla: ±10 s. Mientras la onda sigue a la vista (`DS.Gesture.skipChain`), cada toque más del mismo lado
+    /// (sencillo o doble) suma otros 10 s, siempre 10: así se sabe dónde vas a caer (antes cada toque saltaba más, 10 → 20 → 40…).
+    /// Vibra leve en cada suma y firme si llegas al principio o al final.
+    private func skip(_ model: PlayerModel, forward: Bool, taps: Int = 1) {
         let now = Date()
         let chained = skipChain.map { $0.forward == forward && now.timeIntervalSince($0.at) < DS.Gesture.skipChain } ?? false
         let before = chained ? skipChain?.seconds ?? 0 : 0
-        let total = DS.Gesture.skipTotals.first { $0 > before } ?? before + DS.Gesture.skipTotals.last! - DS.Gesture.skipTotals.dropLast().last!
-        withAnimation(DS.Motion.base(reduceMotion)) { skipChain = (forward, total, now) }
-        let step = Double(total - before)
+        let step = PlaybackRules.skipSeconds * Double(chained ? taps : 1)
+        withAnimation(DS.Motion.base(reduceMotion)) { skipChain = (forward, before + Int(step), now) }
+        let target = model.snapshot.position + (forward ? step : -step)
+        if target <= 0 || (model.snapshot.duration > 0 && target >= model.snapshot.duration) { skipEdgeHaptic += 1 } else { skipHaptic += 1 }
         Task { await model.skip(forward ? step : -step) }
         skipChainTask?.cancel()
         skipChainTask = Task { @MainActor in
@@ -1013,6 +1045,16 @@ struct PlayerScreen: View {
         }
     }
 
+    /// ¿Este toque sencillo sigue sumando? Sí si la onda de un salto sigue a la vista y tocaste el mismo lado.
+    private func continuesSkip(at location: CGPoint, width: CGFloat) -> Bool? {
+        guard let chain = skipChain, Date().timeIntervalSince(chain.at) < DS.Gesture.skipChain else { return nil }
+        let third = width * DS.Gesture.edgeShare
+        if chain.forward && location.x > width - third { return true }
+        if !chain.forward && location.x < third { return false }
+        return nil
+    }
+
+    /// Un ícono grande que aparece y se va (el doble toque se nota sin abrir los controles).
     private func flash(_ symbol: String) {
         flashTask?.cancel()
         withAnimation(DS.Motion.base(reduceMotion)) { flashSymbol = symbol }
@@ -1104,7 +1146,8 @@ struct PlayerScreen: View {
         var delayed = false
         @State private var shown = false
         var body: some View {
-            DSLoader()
+            // El mismo botón grande con la carga dentro: con o sin controles se ve igual y en el mismo punto.
+            PlayPauseButton(playing: false, loading: true) {}
                 .opacity(shown || !delayed ? 1 : 0)
                 .task { guard delayed else { return }; try? await Task.sleep(nanoseconds: DS.Timing.quietSpinnerDelay); shown = true }
                 .accessibilityIdentifier("player-loading")
@@ -1112,6 +1155,11 @@ struct PlayerScreen: View {
     }
 
     private func failed(_ model: PlayerModel) -> Bool { if case .failed = model.phase { true } else { false } }
+
+    /// ¿Se ven ±10 y el botón grande? Con los controles, ya con video (buscando versión no hacen nada).
+    private func transportShown(_ model: PlayerModel) -> Bool {
+        controlsVisible && !locked && !failed(model) && !subtitleDock && ipod == nil && model.phase != .preparing
+    }
 
     // MARK: controles
     /// Una sola identidad en los dos sentidos («barra limpia»): arriba ✕, el nombre y el episodio, subtítulos, AirPlay y «⋯»
@@ -1128,8 +1176,6 @@ struct PlayerScreen: View {
                     topScrim
                     VStack(spacing: DS.Space.s3) {
                         topBar(model)
-                        Spacer()
-                        if model.phase != .preparing { transport(model) }
                         Spacer()
                         HStack(spacing: DS.Space.s3) {
                             if model.snapshot.duration > 0 { scrubber(model) } else { Spacer() }
@@ -1168,8 +1214,7 @@ struct PlayerScreen: View {
                         if model.snapshot.duration > 0 { scrubber(model) }
                         // Su lugar está apartado aunque no salga: ±10 y el botón grande no brincan cuando aparece.
                         HStack(spacing: DS.Space.s2) { Spacer(); nextEpisode(model); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
-                        // Pegado a la barra (antes flotaba a media pantalla, lejos del video).
-                        if model.phase != .preparing { transport(model) }
+                        quickActions(model)
                         // Con el video hasta arriba, la barra de ✕ y el nombre baja aquí.
                         if raisedPortrait(rect) { topBar(model).padding(.top, DS.Space.s4) }
                         if !fillsPortrait { Spacer(minLength: 0) }
@@ -1182,6 +1227,60 @@ struct PlayerScreen: View {
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
             }
         }
+    }
+
+    /// Vertical: lo más usado a un toque, en píldoras de vidrio bajo la barra (antes había que abrir «⋯»): audio y subtítulos,
+    /// los episodios (en una serie) y seguir en la TV.
+    private func quickActions(_ model: PlayerModel) -> some View {
+        HStack(spacing: DS.Space.s2) {
+            Button { openDock(nil) } label: { Label("Audio y subtítulos", systemImage: "captions.bubble") }
+                .accessibilityIdentifier("player-quick-media")
+            if current.kind == "series", current.meta != nil {
+                Button { openEpisodes(model) } label: { Label("Episodios", systemImage: "rectangle.stack") }
+                    .accessibilityIdentifier("player-episodes")
+            }
+            if canHandOffToTV(model) {
+                Button { Task { await continueOnTV() } } label: { Label("TV", systemImage: "tv") }
+                    .accessibilityIdentifier("player-quick-tv")
+            }
+            Spacer(minLength: 0)
+        }
+        .font(DS.TextRecipe.footnote.font.weight(.semibold))
+        .buttonStyle(.glass).controlSize(.regular)
+        .lineLimit(1)
+        .frame(minHeight: DS.Size.touchTarget)
+    }
+
+    /// Vertical: detrás de todo, la imagen del episodio (o de la serie) muy difuminada y tenue, como el modo ambiente de YouTube:
+    /// el color del video llega más allá del cuadro. Se apaga hacia abajo para que los controles se lean.
+    @ViewBuilder private var ambientLayer: some View {
+        if let url = ambientURL {
+            RemoteImage(url: url, maxPoints: DS.PlayerPanel.ambientImage) { phase in
+                if case .success(let image) = phase {
+                    image.resizable().scaledToFill()
+                        .blur(radius: DS.PlayerPanel.ambientBlur)
+                        .opacity(DS.PlayerPanel.ambientOpacity)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+            .overlay(LinearGradient(colors: [.clear, DS.video], startPoint: .center, endPoint: .bottom))
+            .ignoresSafeArea()
+            .allowsHitTesting(false).accessibilityHidden(true)
+            .transition(.opacity)
+        }
+    }
+
+    /// La imagen del fondo ambiente: la del episodio si la ficha la trae; si no, el fondo de la serie (o película).
+    private func loadAmbient() async {
+        let request = current
+        let meta = request.meta, videoID = request.videoID, metaID = request.metaID
+        let still = await Task.detached(priority: .utility) { () -> String? in
+            guard let meta else { return nil }
+            return CinemetaParsing.seasons(meta).flatMap(\.episodes).first { $0.id == videoID }?.thumbnail
+        }.value
+        let text = still ?? (metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, metaID) : request.poster)
+        ambientURL = text.flatMap(URL.init(string:))
     }
 
     /// El degradado oscuro de arriba: el nombre y el episodio se leen aunque el video sea claro.
@@ -1205,7 +1304,8 @@ struct PlayerScreen: View {
             }
             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
             // «Episodios», solo el ícono (en una serie): la lista de la temporada sin parar el video.
-            if current.kind == "series", current.meta != nil {
+            // En vertical va en las píldoras de abajo (`quickActions`).
+            if landscape, current.kind == "series", current.meta != nil {
                 PlayerCircleButton(symbol: "rectangle.stack", label: "Episodios") { openEpisodes(model) }
                     .accessibilityIdentifier("player-episodes")
             }
@@ -1867,11 +1967,9 @@ struct PlayerScreen: View {
     private func transport(_ model: PlayerModel) -> some View {
         HStack(spacing: DS.Space.s8) {
             SkipButton(forward: false) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
-            if model.snapshot.state == .loading || model.snapshot.state == .buffering {
-                // Cargando: la ruedita va sola al centro del video (LoadingSpinner); aquí solo se guarda el lugar del botón.
-                Color.clear.frame(width: DS.PlayerPanel.playButton, height: DS.PlayerPanel.playButton)
-            } else {
-                PlayPauseButton(playing: model.snapshot.state == .playing) { Task { await model.togglePlay() }; pulse() }
+            // Cargando: la animación va dentro del botón grande, en el mismo punto que sin controles (LoadingSpinner).
+            PlayPauseButton(playing: model.snapshot.state == .playing, loading: model.reconnecting || model.snapshot.state == .loading || model.snapshot.state == .buffering) {
+                Task { await model.togglePlay() }; pulse()
             }
             SkipButton(forward: true) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
         }
@@ -1890,27 +1988,34 @@ struct PlayerScreen: View {
                     .padding(.horizontal, DS.Remote.playhead / 2)
                     .scareWarning(position: model.snapshot.position, scares: scares, enabled: scareWarnings && model.snapshot.state == .playing)
             }
-            // Las horas a los lados de la barra fina (como en horizontal); la escena sigue al dedo mientras arrastras.
-            HStack(spacing: DS.Space.s3) {
-                Text(verbatim: clock(shown)).recipe(.data).monospacedDigit().fixedSize()
-                PlayerScrubBar(value: shown, duration: duration, marks: skipMarks(model),
-                               change: { scrubbing = $0; model.scrub(to: $0) },
-                               editing: { editing in
-                                   if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde
-                                   if let target = scrubbing { pendingSeek = target; scrubbing = nil; Task { await model.seek(to: target) } }
-                                   pulse()
-                               })
-                    .accessibilityElement()
-                    .accessibilityLabel(Text("Avance")).accessibilityValue(Text(verbatim: "\(clock(shown)) / \(clock(duration))"))
-                    // Con VoiceOver, deslizar arriba/abajo salta 10 s como los botones.
-                    .accessibilityAdjustableAction { d in
-                        Task { await model.skip(d == .increment ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
-                    }
-                    .accessibilityIdentifier("player-scrub")
-                // Lo que falta (sin la hora a la que terminas: no la querías).
-                Text(verbatim: "−\(clock(max(0, duration - shown)))").recipe(.data).monospacedDigit().fixedSize()
+            // La barra a todo lo ancho y, debajo, lo visto y lo que falta (sin la hora a la que terminas: no la querías).
+            PlayerScrubBar(value: shown, duration: duration, marks: skipMarks(model), ticks: skipTicks(model), clock: { clock($0) },
+                           change: { scrubbing = $0; model.scrub(to: $0) },
+                           editing: { editing in
+                               if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde
+                               if let target = scrubbing { pendingSeek = target; scrubbing = nil; Task { await model.seek(to: target) } }
+                               pulse()
+                           })
+                .accessibilityElement()
+                .accessibilityLabel(Text("Avance")).accessibilityValue(Text(verbatim: "\(clock(shown)) / \(clock(duration))"))
+                // Con VoiceOver, deslizar arriba/abajo salta 10 s como los botones.
+                .accessibilityAdjustableAction { d in
+                    Task { await model.skip(d == .increment ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
+                }
+                .accessibilityIdentifier("player-scrub")
+            HStack {
+                Text(verbatim: clock(shown)).recipe(.data).monospacedDigit()
+                Spacer()
+                Text(verbatim: "−\(clock(max(0, duration - shown)))").recipe(.data).monospacedDigit()
             }
+            .frame(height: DS.PlayerPanel.scrubTimes)
         }
+    }
+
+    /// Las rayitas fijas: dónde termina la intro y dónde empiezan los créditos.
+    private func skipTicks(_ model: PlayerModel) -> [Double] {
+        guard let segments = model.segments else { return [] }
+        return [segments.intro?.upperBound, segments.credits?.lowerBound].compactMap { $0 }
     }
 
     /// La intro, el resumen y los créditos (IntroDB), marcados en la barra.
