@@ -192,16 +192,20 @@ class Sessions:
             emulator_input.arrange_for(argv or [], players.devices(order), slots=order, versions=players.versions())
             # Orbital encima ANTES de lanzar: la ventana del emulador nunca se asoma.
             pinned = self.pin()
+            # Los juegos a ~1080p (la tele a 4K le cuesta 4 veces más a la gráfica) ANTES de lanzar: el emulador crea su
+            # imagen del tamaño de la pantalla y no la rehace. Bajarla con el juego ya a 4K (en el negro tras la pantalla
+            # de carga) dejaba en la tele solo su cuarto de arriba a la izquierda, como con zoom (visto el 2026-10-27).
+            lowered = self.lower_resolution()
             try:
                 proc = self.launcher.run(runner.argv if runner else item.argv, cwd=runner.cwd if runner else item.cwd)
             except BaseException:
                 self.unpin(pinned)
+                if lowered:
+                    display.resolution.restore()
                 raise
             self.launcher.track(item.id, item.title, proc, runner=runner.name if runner else None)
             self._last_launch = {"id": item.id, "runner": runner_id, "retried": retry}
-            # Los juegos a ~1080p (la tele a 4K le cuesta 4 veces más a la gráfica), en el negro de la entrada al juego.
-            self.revealing = self.to_front(item.id, item.title, runner.name if runner else None, pinned=pinned,
-                                           on_black=self.lower_resolution)
+            self.revealing = self.to_front(item.id, item.title, runner.name if runner else None, pinned=pinned)
             self.watch_program_switch(item, runner.argv if runner else item.argv, runner.cwd if runner else item.cwd,
                                       runner.name if runner else None)
         elif item.uri:
@@ -252,7 +256,7 @@ class Sessions:
             windows.set_topmost(pinned, False)
 
     def to_front(self, item_id: str, title: str = "", runner: str | None = None, pinned: int | None = None,
-                 ready=None, timeout: float = focus.READY_TIMEOUT, on_black=None) -> bool:
+                 ready=None, timeout: float = focus.READY_TIMEOUT) -> bool:
         """Pantalla de carga hasta que el juego esté listo (ver bring_game_to_front). Devuelve si la
         interfaz debe esperar el evento launch-ready en lugar de esconder "Abriendo" sola."""
         if sys.platform != "win32":
@@ -270,7 +274,7 @@ class Sessions:
 
         threading.Thread(target=reveal, args=(self.launcher, item_id, title, runner),
                          kwargs={"notify": self.events.publish, "skip": self._reveal_skip, "pinned": pinned,
-                                 "ready_check": ready, "timeout": timeout, "art_wait": self.art_wait, "on_black": on_black,
+                                 "ready_check": ready, "timeout": timeout, "art_wait": self.art_wait,
                                  "user_returned": lambda: self.returned_at > launched},
                          daemon=True, name="to-front").start()
         return True

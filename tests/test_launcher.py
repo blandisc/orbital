@@ -212,18 +212,6 @@ def test_loading_screen_covers_the_emulator_until_the_game_is_ready():
     assert events == [{"type": "launch-ready", "id": "x"}]
 
 
-def test_resolution_drops_in_the_black_after_the_loading_screen():
-    # La tele baja a 1080p en el negro entre la pantalla de carga y el juego: antes bajaba al pedir el juego y la
-    # pantalla de carga (con la portada) se veía a 1080p, borrosa.
-    win = FocusWindows()
-    win.open(3, "Eden | Mario Party Superstars")
-    order = []
-    bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Mario Party Superstars", "Eden",
-                        notify=lambda e: order.append(e["type"]), on_black=lambda: order.append("1080p"),
-                        timeout=5, win=win, sleep=lambda s: None)
-    assert order == ["launch-ready", "1080p"]
-
-
 def test_skip_shows_whatever_is_there():
     import threading
     win = FocusWindows()
@@ -457,6 +445,43 @@ def test_double_launch_does_not_open_a_second_copy(library):
     library.launcher.current["pid"] = 1234
     library.sessions.launch(rom.id)
     assert len(library.launcher.ran) == 1
+
+
+def test_resolution_drops_before_the_emulator_opens(library, monkeypatch):
+    """La tele baja a 1080p ANTES de abrir el emulador: crea su imagen del tamaño de la pantalla y no la rehace. Bajarla
+    en el negro tras la pantalla de carga (con el juego ya a 4K) dejaba solo su cuarto de arriba a la izquierda en la
+    tele, como con zoom (visto el 2026-10-27 con Ryujinx)."""
+    import sys
+
+    import pytest
+
+    from orbital import display, sessions
+
+    order = []
+    fake = display.GameResolution(read=lambda: (3840, 2160, 60), modes=lambda: {(1920, 1080, 60)},
+                                  apply=lambda mode: order.append(mode or "4K") or True)
+    monkeypatch.setattr(sessions.display, "resolution", fake)
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(library.sessions, "to_front", lambda *args, **kwargs: False)
+    # Con win32 de mentiras, ni la ventana real de Orbital al frente ni los contadores reales de Windows.
+    monkeypatch.setattr(sessions.system, "bring_to_front", lambda *args, **kwargs: False)
+    monkeypatch.setattr(sessions.health, "note_dwm", lambda moment: None)
+    run = library.launcher.run
+    monkeypatch.setattr(library.launcher, "run", lambda argv, cwd=None: order.append("emulador") or run(argv, cwd))
+    rom = next(i for i in library.items() if i.runners)
+    library.sessions.launch(rom.id)
+    assert order == [(1920, 1080, 60), "emulador"]
+
+    library.launcher.finish(600)  # al terminar, de vuelta a 4K
+    assert order[-1] == "4K"
+
+    def broken(argv, cwd=None):
+        raise OSError("no abre")
+
+    monkeypatch.setattr(library.launcher, "run", broken)
+    with pytest.raises(OSError):
+        library.sessions.launch(rom.id)
+    assert order[-2:] == [(1920, 1080, 60), "4K"] and fake.lowered is None  # si no abre, la tele no se queda en 1080p
 
 
 def test_missing_emulator_keeps_the_running_game(library, tmp_path):
