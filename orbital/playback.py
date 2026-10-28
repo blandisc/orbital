@@ -341,6 +341,12 @@ class Segment:
     next_tries: int = 0  # canal de Orbital: veces que no se pudo poner lo que sigue (al rato se vuelve a pedir)
     waits: int = 0  # «Cargando…» a media reproducción (esperas de búfer) y sus segundos: van al registro al cerrar
     waited: float = 0.0
+    # Los cuadros que mpv tiró al mostrar y al decodificar, la última vez que se miró (player._drops_tick), y cuántos
+    # tirones hubo: cada uno va al registro con su hora y su minuto (el video se congela, el audio sigue y el video corre
+    # para alcanzarlo). Antes solo se leía al cerrar, cuando mpv ya no contestaba: «? cuadros perdidos».
+    drops: int = 0
+    decoder_drops: int = 0
+    stutters: int = 0
     grace_until: float = 0.0  # otro archivo en la misma ventana: hasta entonces no se lee su posición (player.tick)
 
 

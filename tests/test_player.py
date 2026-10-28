@@ -1153,3 +1153,29 @@ def test_playing_bar_has_no_title_and_the_info_goes_to_the_bottom():
         assert max(t[0] + t[2] for t in bottom) == pytest.approx(player_ui.W - player_ui.MARGIN)  # a la derecha
     finally:
         player_ui.set_touch(False)
+
+
+def test_each_stutter_goes_to_the_log_with_its_minute(caplog):
+    """El video se congela, el audio sigue y el video corre para alcanzarlo: cada tirón (varios cuadros perdidos de golpe)
+    queda en el registro con su minuto y si fue al mostrar o al decodificar; uno suelto no. Al cerrar, el total
+    (antes «? cuadros perdidos»: se leía cuando mpv ya no contestaba)."""
+    import logging
+
+    p, mpv = make_player(**{"frame-drop-count": 0, "decoder-frame-drop-count": 0, "hwdec-current": "d3d11va",
+                            "video-codec": "HEVC", "demuxer-cache-duration": 600.0})
+    segment = player.Segment({"kind": "movie"}, "Sleepy Hollow", "u")
+    segment.playing, segment.position = True, 1265.0
+    with caplog.at_level(logging.INFO, logger="orbital.player"):
+        p._drops_tick(segment, False)
+        mpv.props["frame-drop-count"] = 1  # uno suelto: no se nota
+        p._drops_tick(segment, False)
+        mpv.props["frame-drop-count"] = 25  # un tirón
+        p._drops_tick(segment, False)
+        mpv.props["frame-drop-count"] = 40  # en pausa (adelantando) no cuenta
+        p._drops_tick(segment, True)
+        mpv.props.pop("frame-drop-count")  # al cerrar mpv ya no contesta: se queda lo último que se vio
+        p._close_segment(segment)
+    tirones = [r.getMessage() for r in caplog.records if r.getMessage().startswith("Tirón")]
+    assert len(tirones) == 1 and "minuto 21:05" in tirones[0] and "24 cuadros perdidos al mostrar" in tirones[0]
+    assert "d3d11va" in tirones[0] and "búfer 600 s" in tirones[0]
+    assert "40 cuadros perdidos (0 al decodificar), 1 tirones" in caplog.text

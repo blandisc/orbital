@@ -553,6 +553,7 @@ class OrbitalPlayer(PlayerScreen):
         elif jumped:  # saltaste: Trakt recibe el avance nuevo (en pausa, queda guardado como pausa)
             self._scrobble("pause" if paused else "start", segment)
         segment.last_tick = now
+        self._drops_tick(segment, paused)
         self._buffering_state(paused)
         if now - segment.last_save >= SAVE_EVERY and not paused:
             self._save_progress(segment)
@@ -567,6 +568,28 @@ class OrbitalPlayer(PlayerScreen):
                 self._fail(segment)
                 return
             self._at_end(segment)
+
+    STUTTER_FRAMES = 3  # cuadros perdidos en un segundo que ya se notan (a 24 cuadros por segundo, un octavo de segundo)
+
+    def _drops_tick(self, segment: Segment, paused: bool) -> None:
+        """Cada segundo, los cuadros que mpv tiró. Un tirón (varios de golpe) va al registro con su hora y su minuto, si fue
+        al mostrar (la pantalla o Windows no alcanzaron) o al decodificar (el video pide más de lo que da la gráfica), y
+        cómo estaban el equipo y el búfer: así se sabe qué lo causa sin tener que estar mirando (#tirones)."""
+        dropped, decoder = self.mpv.get("frame-drop-count"), self.mpv.get("decoder-frame-drop-count")
+        dropped = dropped if isinstance(dropped, int) and not isinstance(dropped, bool) else segment.drops
+        decoder = decoder if isinstance(decoder, int) and not isinstance(decoder, bool) else segment.decoder_drops
+        new, new_decoder = dropped - segment.drops, decoder - segment.decoder_drops
+        segment.drops, segment.decoder_drops = dropped, decoder
+        if paused or new + new_decoder < self.STUTTER_FRAMES or new < 0 or new_decoder < 0:
+            return
+        segment.stutters += 1
+        from . import health
+
+        cache = self.mpv.get("demuxer-cache-duration")
+        log.warning("Tirón en %s, minuto %s: %d cuadros perdidos al mostrar y %d al decodificar · %s, %s · búfer %s s · "
+                    "RAM libre %s MB", segment.title, player_ui.clock(segment.position), new, new_decoder,
+                    self.mpv.get("hwdec-current") or "sin aceleración", self.mpv.get("video-codec") or "?",
+                    f"{cache:.0f}" if isinstance(cache, (int, float)) else "?", health.free_ram_mb())
 
     def _live_tick(self, segment: Segment, now: float, paused: bool, pos, idle: bool) -> None:
         """Un vistazo por segundo a un canal: ¿ya hay imagen?, ¿se cortó? Sin duración, capítulos ni final."""
@@ -900,9 +923,10 @@ class OrbitalPlayer(PlayerScreen):
                 return
             segment.closed = True
         if segment.playing and not segment.live:  # cómo se vio: para saber, si «se trabó», si fue la red o la imagen (#12)
-            drops = self.mpv.get("frame-drop-count")
-            log.info("%s: %d min vistos, %d esperas de búfer (%.0f s), %s cuadros perdidos", segment.title,
-                     int(segment.watched // 60), segment.waits, segment.waited, drops if isinstance(drops, int) else "?")
+            self._drops_tick(segment, paused=True)  # lo último que haya (si mpv aún contesta), sin contarlo como tirón
+            log.info("%s: %d min vistos, %d esperas de búfer (%.0f s), %d cuadros perdidos (%d al decodificar), %d tirones",
+                     segment.title, int(segment.watched // 60), segment.waits, segment.waited, segment.drops,
+                     segment.decoder_drops, segment.stutters)
         if segment.live or segment.meta.get("synthetic"):
             return  # la tele (en vivo o un canal de Orbital) no guarda dónde ibas ni entra en «Seguir viendo»
         self._scrobble("stop", segment)  # Trakt: lo que llevabas (≥ 80 % lo marca visto)
