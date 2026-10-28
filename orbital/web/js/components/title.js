@@ -24,7 +24,7 @@ import { actionStep, availability, episodeStates, episodesLed, titleActions, tit
  */
 const touching = () => document.body.dataset.input === "touch";
 
-export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = () => {}, onDownload = null, downloadOf = () => null,
+export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = () => {}, onPerson = () => {}, onDownload = null, downloadOf = () => null,
   onVersions = () => {}, onFix = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
@@ -456,13 +456,10 @@ export function createTitle({ onPlay, onSources, onSave = () => {}, onPerson = (
     onSave({ kind: kindOf(), id: details.id || item.meta_id, title: details.title || item.title, library: !!details.in_library });
   }
 
-  async function trailer() {
-    onNotice("Abriendo el tráiler…");
-    try {
-      await api.trailer(kindOf(), details.id);
-    } catch (err) {
-      onNotice(err.message, true);
-    }
+  /** El tráiler se ve dentro de Orbital (su reproductor, con pantalla de carga): lo abre `launching.trailer`. */
+  function trailer() {
+    if (!details || details.error) return;
+    onTrailer({ kind: kindOf(), id: details.id || item.meta_id, title: details.title || item.title, item });
   }
 
   function sources(ep = null) {

@@ -118,6 +118,7 @@ const ui = {
   }),
   title: createTitle({
     onPlay: (play) => watch(play),
+    onTrailer: (play) => trailer(play),
     onSources: (play) => openSources(play),
     onSave: (info) => openSave(info),
     onPerson: (person) => openPerson(person),
@@ -1464,7 +1465,7 @@ function openingFrom() {
   return { rect, logoRect: logoRect?.width ? logoRect : null };
 }
 
-const { watch, launch, resumeRunning, playChannel } = createLaunching({
+const { watch, trailer, launch, resumeRunning, playChannel } = createLaunching({
   state, ui, current: () => current(), openMenu: (...args) => openMenu(...args), openTitle: (item) => openTitle(item),
   openSearch: (query) => openSearch(query), pollStatus: () => pollStatus(),
   // De dónde vuela la portada: la tarjeta enfocada de la vista en pantalla (no la fila oculta).
@@ -1538,6 +1539,8 @@ async function runCommand(command, context = null) {
       }
       case "watch":
         return watch({ ...command.play, keep: !!command.keep }, { confirmed: true });
+      case "trailer": // «Cerrar y abrir» el tráiler, tras la pregunta de un juego que estaba abierto
+        return trailer({ ...command.play, keep: !!command.keep }, { confirmed: true });
       case "tv": // «Cerrar y abrir» el canal, tras la pregunta de un juego que estaba abierto
         return playChannel(command.channel, command.category, { confirmed: true, keep: !!command.keep });
       case "title":

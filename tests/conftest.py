@@ -230,7 +230,7 @@ def library(tmp_path):
             "id": "snes", "name": "Super Nintendo", "executable": "retroarch",
             "args": ["-L", "snes9x", "{rom}"], "rom_dirs": [str(roms)], "extensions": ["sfc", ".SMC"],
         }],
-        "apps": [{"id": "web", "name": "Navegador", "target": "https://example.com", "category": "media"}],
+        "apps": [{"id": "yt", "name": "YouTube", "target": "https://youtube.com/tv", "category": "media"}],
     })
     catalog = Catalog(cfg, FakeLauncher())
     catalog.refresh()

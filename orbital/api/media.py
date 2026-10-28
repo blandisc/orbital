@@ -311,12 +311,12 @@ def router(d: Deps) -> APIRouter:
     def trailer(body: dict) -> dict:
         kind, meta_id = _title_ref(body, "Falta de qué título")
         try:
-            catalog.watch.play_trailer(kind, meta_id)
+            reveal = catalog.watch.play_trailer(kind, meta_id, keep=body.get("keep") is True)
         except LookupError as exc:
             raise HTTPException(404, str(exc))
         except cinemeta.CinemetaError:
             raise HTTPException(502, "No pude cargar el tráiler. Revisa tu conexión.")
-        return {"ok": True}
+        return {"ok": True, "reveal": reveal}
 
     @r.post("/dismiss")
     def dismiss(body: dict) -> dict:

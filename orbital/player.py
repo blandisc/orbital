@@ -872,6 +872,13 @@ class OrbitalPlayer(PlayerScreen):
             return self._fail_channel(segment)
         if segment.meta.get("synthetic"):
             return self._fail_synthetic(segment)
+        if segment.meta.get("clip"):  # un tráiler no tiene otra versión que probar
+            log.info("El tráiler de %s %s", segment.title, "se cortó" if segment.playing else "no arrancó")
+            self.toast("No pude reproducir el tráiler", 4)
+            timer = threading.Timer(4, lambda: self.segment is segment and self._quit())
+            timer.daemon = True
+            timer.start()
+            return None
         log.info("La fuente de %s %s", segment.title, "se cortó" if segment.playing else "no arrancó")
         retrying = False
         if self.on_failed:
@@ -900,8 +907,8 @@ class OrbitalPlayer(PlayerScreen):
 
     def _scrobble(self, action: str, segment: Segment) -> None:
         """Avisa a Trakt (en su propio hilo: la red no toca el video). Nunca un canal en vivo."""
-        if segment.live or segment.meta.get("synthetic") or not self.on_scrobble or not segment.duration:
-            return  # un canal de Orbital tampoco: es la tele de fondo
+        if segment.live or segment.meta.get("synthetic") or segment.meta.get("clip") or not self.on_scrobble or not segment.duration:
+            return  # un canal de Orbital tampoco (es la tele de fondo), ni un tráiler
         if action == "start":
             segment.scrobbling = True
         elif not segment.scrobbling:
@@ -913,7 +920,8 @@ class OrbitalPlayer(PlayerScreen):
     def _save_progress(self, segment: Segment) -> None:
         segment.last_save = time.monotonic()
         delta = segment.watched - segment.saved_watched
-        if segment.live or segment.meta.get("synthetic") or not self.on_progress or not segment.duration or delta <= 0:
+        if segment.live or segment.meta.get("synthetic") or segment.meta.get("clip") or not self.on_progress \
+                or not segment.duration or delta <= 0:
             return
         segment.saved_watched = segment.watched
         threading.Thread(target=self._safe, args=(self.on_progress, segment.meta, segment.position,
@@ -930,8 +938,8 @@ class OrbitalPlayer(PlayerScreen):
             log.info("%s: %d min vistos, %d esperas de búfer (%.0f s), %d cuadros perdidos (%d al decodificar), %d tirones",
                      segment.title, int(segment.watched // 60), segment.waits, segment.waited, segment.drops,
                      segment.decoder_drops, segment.stutters)
-        if segment.live or segment.meta.get("synthetic"):
-            return  # la tele (en vivo o un canal de Orbital) no guarda dónde ibas ni entra en «Seguir viendo»
+        if segment.live or segment.meta.get("synthetic") or segment.meta.get("clip"):
+            return  # la tele (en vivo o un canal de Orbital) y un tráiler no guardan dónde ibas ni entran en «Seguir viendo»
         self._scrobble("stop", segment)  # Trakt: lo que llevabas (≥ 80 % lo marca visto)
         if self.on_finished and segment.duration and not (segment.watched < 20 and segment.position >= segment.duration * .9):
             # (Casi nada visto y «al final»: un salto raro, no la película vista de principio a fin.)

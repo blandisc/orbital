@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 
-from . import companion, flags, player, player_ui
+from . import companion, flags, player, player_ui, ytdlp
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
@@ -349,6 +349,7 @@ class Watch:
         self.onedrive = None  # OneDriveLibrary (catalog.py la pone): «Tu OneDrive» como fuente
         self.downloads = None  # Downloads (catalog.py la pone): lo que bajaste para ver sin internet
         self.trailer_available = youtube_available  # «Tráiler» solo si el video existe (las pruebas lo cambian)
+        self.ytdlp = ytdlp.YtDlp()  # lo que le enseña a mpv a abrir YouTube (se baja y se actualiza solo; ver ytdlp.py)
         self.store = store
         self.events = events
         self.sessions = sessions
@@ -1050,6 +1051,9 @@ class Watch:
     def _source_failed(self, meta: dict, position: float, alive: bool) -> bool:
         """Una fuente no arrancó o se cortó: la siguiente mejor, en el mismo punto. True si se intenta."""
         title = meta.get("title") or "esto"
+        if meta.get("clip"):  # un tráiler no tiene otra versión
+            self.events.publish({"type": "toast", "ok": False, "message": "No pude reproducir el tráiler. Intenta de nuevo."})
+            return False
         back_to = meta.get("back_to")
         if alive and back_to is not None:
             # Cambiaste de versión a mano y esa no abrió: de vuelta a la que estabas viendo, en el mismo segundo (antes
@@ -1514,14 +1518,49 @@ class Watch:
             self.events.publish({"type": "library-changed"})
         threading.Thread(target=refresh, daemon=True, name="mi-lista").start()
 
-    def play_trailer(self, kind: str, meta_id: str) -> str:
-        """El tráiler en YouTube para TV (se maneja con el mando; Home vuelve a Orbital)."""
-        video = trailer_id(self.cinemeta.meta(kind, meta_id))
+    def play_trailer(self, kind: str, meta_id: str, keep: bool = False) -> bool:
+        """El tráiler dentro de Orbital: el mismo mpv de las películas, que abre el video de YouTube con yt-dlp (en tu idioma
+        si trae doblaje). Es un «clip»: no guarda avance, no avisa a Trakt, sin versiones ni episodios. Al terminar o con B
+        se regresa a la ficha. Devuelve si Orbital sigue tapando hasta la primera imagen."""
+        info = self.cinemeta.meta(kind, meta_id)
+        video = trailer_id(info)
         if not video or not self.trailer_available(video):
             raise LookupError("Este título no tiene tráiler")
-        url = f"https://www.youtube.com/tv#/watch?v={video}"
-        self.launcher.open_uri(url)
-        return url
+        try:
+            url = ytdlp.watch_url(video)
+        except ValueError:
+            raise LookupError("Este título no tiene tráiler")
+        mpv_exe = player.find_mpv()
+        if not mpv_exe:
+            raise LookupError("No encuentro mpv, el reproductor de Orbital. Instálalo desde Ajustes o revisa tu instalación.")
+        try:
+            ytdl = self.ytdlp.ensure()  # la primera vez lo baja (unos segundos)
+        except ytdlp.YtDlpError as exc:
+            raise LookupError(str(exc))
+        title = f"{info.get('name') or 'Tráiler'} · Tráiler"
+        current = self.player.segment
+        if current is not None and current.meta.get("clip") == video and not current.failed and not current.closed                 and self.player.playing:
+            log.info("El tráiler de %s ya está abierto: lo traigo al frente", title)
+            self.sessions.revealing = self.sessions.to_front("media:player", title, ready=lambda: True)
+            return self.sessions.revealing
+        meta = {"kind": "trailer", "clip": video, "title": title, "detail": "Tráiler", "trailer_of": meta_id}
+        if self.sessions.before_launch and not keep:
+            self.sessions.before_launch("media:player")
+        self._wire_player()
+        pinned = self.sessions.pin()
+        audio = self.stream_prefs.audio
+        try:
+            self.player.play(
+                self.launcher.run, mpv_exe, url, title, meta, audio=audio, subtitles="", ytdl=ytdl,
+                ytdl_format=ytdlp.video_format(audio),
+                started=lambda process: self.launcher.track("media:player", title, process, runner="Reproductor"))
+        except BaseException:
+            self.sessions.unpin(pinned)  # mpv no abrió: Orbital no se queda «siempre encima»
+            raise
+        # Resolver el video en YouTube tarda unos segundos: Orbital sigue tapando hasta la primera imagen.
+        self.sessions.revealing = self.sessions.to_front("media:player", title, pinned=pinned, timeout=player.STARTUP_TIMEOUT + 5,
+                                                         ready=lambda: bool(self.player.segment and self.player.segment.playing))
+        return self.sessions.revealing
 
     def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
         self._save_progress(meta, position, duration, watched, refresh=True)

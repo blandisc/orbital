@@ -93,6 +93,47 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
   }
 
   /**
+   * El tráiler de una película o serie, dentro del reproductor de Orbital (YouTube sin navegador). Como lo demás que abre el
+   * reproductor: si hay un juego abierto, primero se pregunta.
+   */
+  function trailer(play, { confirmed = false } = {}) {
+    const running = !confirmed && gameInTheWay(state.running, "media:player");
+    if (running) return openMenu(switchMenu({ running, title: `Tráiler de ${play.title}`, command: { type: "trailer", play } }));
+    return playTrailer(play);
+  }
+
+  async function playTrailer({ kind, id, title, item, keep = false }) {
+    if (offlineBlock(`El tráiler de ${title}`)) return;
+    if (!takeLaunchLock(state)) return;
+    sound.play("open");
+    rumble("launch");
+    state.launchingId = "media:player";
+    state.launchingTitle = title;
+    state.launchLockedUntil = Infinity; // mientras el servidor busca el video no se abre otra cosa encima
+    ui.launch.show({ ...(item || {}), title }, "Tráiler");
+    ui.launch.status("Buscando el tráiler");
+    ui.launch.keep(60_000, { waiting: true }); // la primera vez baja yt-dlp (unos segundos más)
+    try {
+      const res = await api.trailer(kind, id, keep);
+      state.launchingTitle = null;
+      state.launchLockedUntil = Date.now() + 3000;
+      if (res.reveal) { // Orbital tapa hasta que se ve la primera imagen (no una ventana negra)
+        ui.launch.hold();
+        ui.launch.status("Cargando video");
+      } else {
+        ui.launch.keep(1500);
+      }
+      pollStatus();
+    } catch (err) {
+      state.launchLockedUntil = 0;
+      state.launchingTitle = null;
+      ui.launch.hide();
+      sound.play("error");
+      ui.toast.show(err.message, { error: true });
+    }
+  }
+
+  /**
    * TV en vivo: sintoniza un canal en el reproductor de Orbital. Sin buscar fuentes (la dirección ya la tiene
    * el servidor), así que la pantalla de carga solo espera la primera imagen.
    */
@@ -208,5 +249,5 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     }
   }
 
-  return { watch, playStremio, playChannel, resumeRunning, launch };
+  return { watch, trailer, playStremio, playChannel, resumeRunning, launch };
 }

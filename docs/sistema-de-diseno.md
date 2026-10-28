@@ -240,6 +240,16 @@ video enseña o esconde los botones. En los paneles se toca la opción (o la col
 tarjetas, sus botones («Seguir viendo», «Salir»). mpv avisa dónde tocaste (`script-message orbital-tap`) y
 cualquier botón del mando vuelve a los glifos. Si el video se abrió con el dedo, empieza ya así.
 
+### Tráiler
+
+«Tráiler» en la ficha se ve **dentro de Orbital**, con el mismo mpv: `yt-dlp` le enseña a abrir el video de YouTube
+(`orbital/ytdlp.py`; Orbital lo baja solo a `%LOCALAPPDATA%\orbital\tools`, comprueba su huella SHA-256 y lo actualiza
+al rato de arrancar y cada 12 h). Es un *clip* (`meta["clip"]`): hasta 1080p y, si el video trae doblajes, el audio en tu
+idioma; no guarda avance, no avisa a Trakt, no entra en «Seguir viendo» y no tiene versiones ni episodios (la barra, la
+pausa y los botones táctiles no ofrecen «Versión», y Y no abre nada). Lo demás es igual: A pausa, ◀ ▶ adelanta, X audio,
+B mantenido (o «Salir» con el dedo) regresa a la ficha, y al terminar se cierra solo. Si hay un juego abierto, antes
+pregunta, como cualquier video. Si falla: «No pude reproducir el tráiler».
+
 ### TV en vivo
 
 Los canales usan el mismo mpv y la misma pantalla, pero no hay película que pausar ni a dónde adelantar:

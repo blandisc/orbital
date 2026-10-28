@@ -410,6 +410,7 @@ class Hud:
     chapter_titles: list[str] = field(default_factory=list)
     series: bool = False  # LT/RT cambian de episodio
     next: str = ""  # «E3» o «T6 E1»: el episodio que sigue (la píldora «Siguiente» y la pista RT); "" si no hay
+    clip: bool = False  # un tráiler: no tiene versiones ni episodios (sin la «Y»)
     now: str = ""  # la hora, arriba a la derecha
     facts: str = ""  # "2024 · ★ 8.5 · Ciencia ficción" (en pausa)
     description: str = ""  # sinopsis (en pausa)
@@ -507,7 +508,7 @@ def hud_ass(hud: Hud) -> str:
     # el idioma, los subtítulos y la versión (en el mismo lugar que en pausa) y a la derecha los botones (también ◀▶ y
     # RT, que antes solo se descubrían en pausa). Si no caben (4:3), se quitan primero los de menos uso.
     # A primero, como en todo Orbital; luego lo que se descubre (◀▶, LT/RT) y B al final.
-    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios y versión" if hud.series else "Versión"),
+    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), *([] if hud.clip else [("Y", "Episodios y versión" if hud.series else "Versión")]),
              ("◀ ▶", "Adelantar"), *([("RT", "Siguiente episodio")] if hud.next else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
         items.pop(-2)  # si no caben (4:3): primero RT, luego ◀▶
@@ -561,7 +562,8 @@ def paused_ass(hud: Hud) -> str:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
-    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios y versión" if hud.series else "Versión")], MARGIN, y))
+    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"),
+                          *([] if hud.clip else [("Y", "Episodios y versión" if hud.series else "Versión")])], MARGIN, y))
     bar, _ = progress_bar(hud)
     # «Probar subtítulos» a la vista (regla de las cuatro superficies): mantener X con el mando, S con el teclado y, con el
     # dedo o el mouse, su botón abajo.
@@ -627,7 +629,7 @@ def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
         return [("−10 s", "left"), ("+10 s", "right"), *([(f"⏭ Siguiente · {hud.next}", "next")] if hud.next else []),
                 ("Probar subtítulos", "subs"), ("Salir", "quit")]
     return [("−10 s", "left"), ("Pausa", "a"), ("+10 s", "right"), ("Audio y subtítulos", "x"),
-            ("Episodios y versión" if hud.series else "Versión", "y"), ("Salir", "quit")]
+            *([] if hud.clip else [("Episodios y versión" if hud.series else "Versión", "y")]), ("Salir", "quit")]
 
 
 def pills_width(items: Sequence[tuple[str, object]], gap: float = 16, size: int = 24) -> float:

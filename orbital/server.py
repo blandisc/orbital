@@ -177,6 +177,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             catalog.tv.start()  # revisa los canales de TV con calma (y cada ~6 h)
             catalog.foryou.warm()  # Para ti listo antes de que la TV o el iPhone lo pidan
             d.extra["emulator_updates"].start()  # versiones nuevas de los emuladores: avisa o instala (según Ajustes)
+            catalog.watch.ytdlp.start()  # yt-dlp (los tráilers): se baja solo y se mantiene al día
             # Un solo volumen: el reproductor mueve el de Windows (el de Ajustes rápidos y Alexa). Solo aquí, en la Orbital de
             # verdad: en pruebas movería el volumen real de la computadora.
             catalog.watch.player.system_volume = (system_audio.volume, system_audio.set_volume)
@@ -202,6 +203,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         if catalog.library_watch is not None:
             catalog.library_watch.stop()
         d.extra["emulator_updates"].stop()
+        catalog.watch.ytdlp.stop()
         if problems:
             logging.getLogger("orbital").removeHandler(problems)
         status.cancel()

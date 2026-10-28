@@ -197,6 +197,7 @@ class PlayerScreen(SubtitleTrial):
             audio=player_ui.current_label(tracks, "audio"), subtitles=player_ui.current_label(tracks, "sub"),
             source=meta.get("source_label", ""), series=meta.get("kind") == "series" and self.on_episode is not None,
             next=meta.get("next", "") if meta.get("kind") == "series" and self.on_episode is not None else "",
+            clip=bool(meta.get("clip")),
             now=clock(),
             chapters=[float(c["time"]) for c in chapters], chapter_titles=[str(c.get("title") or "") for c in chapters],
             facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking,
@@ -289,6 +290,8 @@ class PlayerScreen(SubtitleTrial):
 
     def open_more(self, still_wanted=lambda: True) -> None:
         meta = getattr(self.current, "meta", None) or {}
+        if meta.get("clip"):
+            return  # un tráiler no tiene episodios ni versiones
         episodes = self._safe(self.episodes_provider, meta) if self.episodes_provider and meta.get("kind") == "series" else None
         sources = self._safe(self.sources_provider, meta) if self.sources_provider and self.current else None
         if still_wanted() and self.current is not None:  # mientras buscaba pulsaste otra cosa: no aparece de golpe
