@@ -128,7 +128,7 @@ struct HomeView: View {
         // Arriba, el ícono y «Orbital» (el carácter de la app); al bajar, en medio, lo más útil que haya (lo que suena en la TV…).
         .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .subtitle(syncText)
-        .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette().navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)) }
+        .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette(tint: tint.colors).navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)) }
         .onChange(of: AppEnvironment.shared.ui.openSimpsons, initial: true) { _, wants in
             guard wants else { return }
             AppEnvironment.shared.ui.openSimpsons = false

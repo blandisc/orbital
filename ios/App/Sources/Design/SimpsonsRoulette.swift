@@ -7,6 +7,8 @@ import OrbitalCore
 /// verde; se queda en el elegido, la pantalla se ilumina, el nombre aparece y la imagen del episodio crece desde la pantalla
 /// hasta el lugar del video en el reproductor vertical (a lo ancho), donde empieza. Con «Reducir movimiento», directo al elegido.
 struct SimpsonsRoulette: View {
+    /// Los colores del fondo de Inicio: la ruleta sale sobre el mismo fondo (antes era otro y el cambio era de golpe).
+    var tint: ArtColors? = nil
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -30,10 +32,13 @@ struct SimpsonsRoulette: View {
 
     var body: some View {
         ZStack {
-                // Al crecer, el fondo se vuelve el negro del reproductor (la imagen queda como el video, no flotando en la sala).
-                (expanded ? DS.video : DS.backdropDeep).ignoresSafeArea()
+                // El mismo fondo de Inicio (con el tono de su destacado): la tele aparece sobre lo que ya veías. Al crecer, se
+                // oscurece despacio al negro del reproductor (la imagen queda como el video, no flotando en la sala).
+                Backdrop(tint: tint).ignoresSafeArea()
+                DS.video.ignoresSafeArea().opacity(expanded ? 1 : 0)
+                // El brillo de la tele entra con ella (antes ya estaba ahí desde el primer cuadro).
                 RadialGradient(colors: [DS.Simpsons.amarillo.opacity(DesignTokens.Opacity.faint), .clear], center: .center, startRadius: 0, endRadius: DS.Simpsons.glow)
-                    .ignoresSafeArea().opacity(expanded ? 0 : landed ? 1 : DS.Simpsons.ghost)
+                    .ignoresSafeArea().opacity(expanded ? 0 : landed ? 1 : shown ? DS.Simpsons.ghost : 0)
                 VStack(spacing: DS.Space.s6) {
                     Spacer(minLength: 0)
                     tv
