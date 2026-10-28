@@ -1134,3 +1134,22 @@ def test_each_buffer_wait_goes_to_the_log(caplog):
     text = caplog.text
     assert "Esperó al búfer" in text and "(min 30)" in text and "por delante 0.4 s" in text and "bajando a 4.0 Mbps" in text
     assert "1 esperas de búfer" in text and "3 cuadros perdidos" in text
+
+
+def test_playing_bar_has_no_title_and_the_info_goes_to_the_bottom():
+    """Reproduciendo, el título y «Película» sobran (son de la pausa): solo la barra, y abajo a la izquierda el idioma, los
+    subtítulos y la versión, en el mismo renglón que en pausa (antes subían encima de la barra)."""
+    hud = player_ui.Hud(title="Interstellar", detail="Película", position=600, duration=6000, audio="Inglés 5.1",
+                        subtitles="Español", source="2160p · Al instante")
+    ass = player_ui.hud_ass(hud)
+    assert "Interstellar" not in ass and "Película" not in ass
+    info = player_ui.esc(player_ui.fit(player_ui.info_line(hud), 22, 1200, "semi"))
+    line = next(row for row in ass.splitlines() if info in row)
+    assert r"\pos(96,1022)" in line
+    player_ui.set_touch(True)
+    try:
+        assert "Interstellar" not in player_ui.hud_ass(hud)
+        bottom = [t for t in player_ui.targets["hud"] if t[1] >= 990]
+        assert max(t[0] + t[2] for t in bottom) == pytest.approx(player_ui.W - player_ui.MARGIN)  # a la derecha
+    finally:
+        player_ui.set_touch(False)

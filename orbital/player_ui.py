@@ -481,7 +481,7 @@ def hud_ass(hud: Hud) -> str:
     targets["hud"] = []
     if hud.paused and not hud.seeking:
         return paused_ass(hud)
-    lines = [gradient(470, H, 255, 34, 20)]  # 20 pasos: dentro de SHADE_BUDGET a 4K
+    lines = [gradient(700, H, 255, 34, 20)]  # 20 pasos: dentro de SHADE_BUDGET a 4K; sin título, el velo empieza más abajo
     bar, knob = progress_bar(hud)
     if hud.seeking:  # adelantando: solo la barra y, sobre el punto, a dónde vas
         center = max(MARGIN + 220, min(W - MARGIN - 220, knob if knob is not None else W / 2))
@@ -503,19 +503,20 @@ def hud_ass(hud: Hud) -> str:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
     if hud.pip:
         lines.append(hints([("Home", "Ver en pequeño")], 56, left=MARGIN))
-    if hud.detail:
-        lines.append(text(MARGIN, 772, esc(fit(hud.detail, 24, min(1300, W - 2 * MARGIN), "semi")), 24, SOFT, weight="semi"))
-    lines.append(text(MARGIN, 806, esc(fit(hud.title, 48, min(1500, W - 2 * MARGIN), "bold")), 48, weight="bold"))
-    # Audio, subtítulos y fuente van bajo el título; abajo, todos los botones (también ◀▶ y LT/RT, que antes
-    # solo se descubrían en pausa). Si no caben (4:3), se quitan primero los de menos uso.
-    lines.append(text(MARGIN, 878, esc(fit(info_line(hud), 22, min(1300, W - 2 * MARGIN), "semi")), 22, MUTED, weight="semi"))
+    # Reproduciendo, sin título ni «Película»: eso (y la sinopsis) es de la pausa. Solo la barra; abajo a la izquierda
+    # el idioma, los subtítulos y la versión (en el mismo lugar que en pausa) y a la derecha los botones (también ◀▶ y
+    # RT, que antes solo se descubrían en pausa). Si no caben (4:3), se quitan primero los de menos uso.
     # A primero, como en todo Orbital; luego lo que se descubre (◀▶, LT/RT) y B al final.
     items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios y versión" if hud.series else "Versión"),
              ("◀ ▶", "Adelantar"), *([("RT", "Siguiente episodio")] if hud.next else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
         items.pop(-2)  # si no caben (4:3): primero RT, luego ◀▶
     bottom = _touch_bar(hud, 1000, paused=False) if TOUCH else hints(items, 1022, right=W - MARGIN)
-    lines += [bar, _times(hud, BAR_Y + 28), bottom]
+    lines += [bar, _times(hud, BAR_Y + 28)]
+    room = W - 2 * MARGIN - (pills_width(_touch_items(hud, paused=False)) if TOUCH else hints_width(items)) - 48
+    if room >= 260:  # si no cabe la línea de audio, se quita (está en X)
+        lines.append(text(MARGIN, 1022, esc(fit(info_line(hud), 22, min(1200, room), "semi")), 22, MUTED, weight="semi", align=4))
+    lines.append(bottom)
     return "\n".join(lines)
 
 
@@ -634,10 +635,9 @@ def pills_width(items: Sequence[tuple[str, object]], gap: float = 16, size: int 
 
 
 def _touch_bar(hud: Hud, y: float, *, paused: bool) -> str:
-    """Abajo, con el dedo: regresar, pausa, adelantar, audio y subtítulos, más, y salir (sin mantener B). En pausa va a
-    la derecha, junto a la línea de audio y subtítulos (al centro se encimaba sobre ella)."""
-    items = _touch_items(hud, paused=paused)
-    return pills(items, y, right=W - MARGIN, h=66) if paused else pills(items, y, center=W / 2, h=66)
+    """Abajo, con el dedo: regresar, pausa, adelantar, audio y subtítulos, más, y salir (sin mantener B). Va a la derecha,
+    junto a la línea de audio y subtítulos (al centro se encimaba sobre ella)."""
+    return pills(_touch_items(hud, paused=paused), y, right=W - MARGIN, h=66)
 
 
 # --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Episodios · Versión) ------------------------------------
