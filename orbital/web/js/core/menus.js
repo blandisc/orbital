@@ -555,7 +555,8 @@ const SETTING_PAGES = {
     ["video_home", "Home durante un video", "En pequeño: sigue en una esquina"],
     ["close_previous", "Abrir algo nuevo cierra lo anterior", null],
     ["game_mode", "Cerrar Orbital al jugar", "Más memoria para Switch, Wii U…"],
-    ["game_resolution", "Resolución al jugar", "Solo Switch y Xbox 360; lo demás, a la de la pantalla"]] },
+    ["game_resolution", "Resolución al jugar",
+      "Switch y Xbox 360 exigen mucho rendimiento: se juegan a 1080p para que corran fluidos. Lo demás se queda al máximo"]] },
 };
 
 export function settingsMenu() {
