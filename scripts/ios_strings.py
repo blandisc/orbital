@@ -19,6 +19,14 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Un Simpson al azar (Centro de control y Ajustes), «Quitar de …» en tus listas y «Episodios» en el reproductor.
+    "Pone un episodio de Los Simpson al azar.": "Plays a random episode of The Simpsons.",
+    "La dona de Inicio elige un episodio de estas temporadas.": "The donut on Home picks an episode from these seasons.",
+    "Las clásicas (%lld–%lld)": "The classics (%lld–%lld)",
+    "Quitar de tu watchlist": "Remove from your watchlist",
+    "No pude marcar «%@» como vista": "Couldn't mark “%@” as watched", "«%@» quedó como vista": "“%@” marked as watched",
+    "No descargado": "Not downloaded", "Temporada %lld, episodio %lld, %@": "Season %lld, episode %lld, %@",
+    "Siguiente · %@": "Next · %@", "T%lld": "S%lld",
     # La órbita de «Buscando la mejor versión».
     "Buscando en tus complementos": "Searching your add-ons", "1 versión encontrada": "1 version found",
     "%lld versiones encontradas": "%lld versions found", "%lld de %lld complementos": "%lld of %lld add-ons",

@@ -173,7 +173,7 @@ struct SimpsonsSeasonsPicker: View {
         let chosen = Set(selected)
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(spacing: DS.Space.s2) {
-                PanelChip(title: Text("Las clásicas (\(classics.first ?? 0)–\(classics.last ?? 0))"), selected: chosen == Set(classics)) { change(classics) }
+                PanelChip(title: Text("Las clásicas (\(Int(classics.first ?? 0))–\(Int(classics.last ?? 0)))"), selected: chosen == Set(classics)) { change(classics) }
                 PanelChip(title: Text("Todas"), selected: Set(available).isSubset(of: chosen)) { change(available) }
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Size.touchTarget + DS.Space.s4), spacing: DS.Space.s2)], spacing: DS.Space.s2) {

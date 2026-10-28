@@ -958,17 +958,6 @@
         }
       }
     },
-    "Adelántale": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skip ahead"
-          }
-        }
-      }
-    },
     "Afinemos": {
       "extractionState": "manual",
       "localizations": {
@@ -6909,6 +6898,17 @@
         }
       }
     },
+    "La dona de Inicio elige un episodio de estas temporadas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The donut on Home picks an episode from these seasons."
+          }
+        }
+      }
+    },
     "La elegimos por tu idioma, la calidad y el tamaño": {
       "extractionState": "manual",
       "localizations": {
@@ -7059,6 +7059,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The version stopped responding. Trying again picks up where you were, with another one if needed."
+          }
+        }
+      }
+    },
+    "Las clásicas (%lld–%lld)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The classics (%lld–%lld)"
           }
         }
       }
@@ -8999,6 +9010,17 @@
         }
       }
     },
+    "No descargado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not downloaded"
+          }
+        }
+      }
+    },
     "No dice idioma": {
       "extractionState": "manual",
       "localizations": {
@@ -9688,6 +9710,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't read the Stremio catalog: %@"
+          }
+        }
+      }
+    },
+    "No pude marcar «%@» como vista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't mark “%@” as watched"
           }
         }
       }
@@ -10880,6 +10913,17 @@
         }
       }
     },
+    "Pone un episodio de Los Simpson al azar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plays a random episode of The Simpsons."
+          }
+        }
+      }
+    },
     "Poner en la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -11573,6 +11617,17 @@
         }
       }
     },
+    "Quitar de tu watchlist": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from your watchlist"
+          }
+        }
+      }
+    },
     "Quitar filtros": {
       "extractionState": "manual",
       "localizations": {
@@ -11888,17 +11943,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Real-Debrid · with the app closed (background)"
-          }
-        }
-      }
-    },
-    "Reanuda": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume"
           }
         }
       }
@@ -13047,13 +13091,13 @@
         }
       }
     },
-    "Silencia": {
+    "Siguiente · %@": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mute"
+            "value": "Next · %@"
           }
         }
       }
@@ -13894,6 +13938,17 @@
         }
       }
     },
+    "T%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S%lld"
+          }
+        }
+      }
+    },
     "T%lld E%lld": {
       "extractionState": "manual",
       "localizations": {
@@ -14055,6 +14110,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Season %lld"
+          }
+        }
+      }
+    },
+    "Temporada %lld, episodio %lld, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season %lld, episode %lld, %@"
           }
         }
       }
@@ -16519,6 +16585,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "“%@” has no IMDb page: Trakt can’t record it."
+          }
+        }
+      }
+    },
+    "«%@» quedó como vista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” marked as watched"
           }
         }
       }

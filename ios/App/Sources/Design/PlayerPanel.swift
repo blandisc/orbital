@@ -1180,7 +1180,7 @@ struct EpisodesPanel: View {
                     .frame(width: DS.PlayerPanel.episodeThumb)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(verbatim: "E\(ep.episode)").recipe(.caption)
+                    Text(verbatim: "E" + String(ep.episode)).recipe(.caption)
                     Text(verbatim: ep.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
                     if now { Text("Viendo").recipe(.caption, color: DS.brandMoon).fontWeight(.semibold) }
                     else if upcoming { Text("Siguiente").recipe(.caption, color: DS.eyebrow).fontWeight(.semibold) }
@@ -1195,7 +1195,7 @@ struct EpisodesPanel: View {
         .buttonStyle(.plain)
         .disabled(!available)
         .opacity(available ? 1 : DS.PlayerPanel.unavailableOpacity)
-        .accessibilityLabel(Text("Temporada \(season), episodio \(ep.episode), \(ep.title)"))
+        .accessibilityLabel(Text("Temporada \(Int(season)), episodio \(Int(ep.episode)), \(ep.title)"))
         .accessibilityValue(now ? Text("Viendo") : upcoming ? Text("Siguiente") : Text(verbatim: ""))
         .accessibilityAddTraits(now ? .isSelected : [])
     }
