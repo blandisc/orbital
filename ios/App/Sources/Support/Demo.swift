@@ -701,6 +701,12 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             return HTTPResponse(status: 200, data: JSON.object(["streams": [["name": "[RD+] Demo\n1080p", "title": "Archivo.Grande.1080p.WEB-DL.mkv\n💾 125 MB 🇪🇸",
                                                                              "url": "https://proof.ovh.net/files/1Gb.dat"]]]).serialized())
         }
+        // `-demo-video <url>` solo (sin `-demo-versions`): una sola versión con ese video, para cualquier título (p. ej. el MKV 4:3
+        // de `scripts/ios_software_path.sh`, como los de Los Simpson). Antes solo valía junto con `-demo-versions`.
+        if let video = Demo.value(after: "-demo-video"), !ProcessInfo.processInfo.arguments.contains("-demo-versions") {
+            return HTTPResponse(status: 200, data: JSON.object(["streams": [["name": "[RD+] Demo\n480p", "title": "Demo.4x3.mkv\n💾 50 MB",
+                                                                             "url": .string(video)]]]).serialized())
+        }
         // `-demo-versions`: las versiones reales de Intensa-Mente 2 (nombres de Torrentio, octubre de 2026), con videos de prueba,
         // para ver «Elegir versión» con latino, castellano, el original y los demás.
         if ProcessInfo.processInfo.arguments.contains("-demo-versions") {
