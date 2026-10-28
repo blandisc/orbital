@@ -20,7 +20,7 @@ export function createState() {
     libraryLoaded: false,
     memory: {}, // id de fila -> último juego enfocado en esa fila
     allRows: [], // todas las filas; `rows` son las de la sección actual
-    section: "home", // Inicio, Juegos, Películas y series, Apps (LB/RB)
+    section: "home", // Inicio, Juegos, Películas y series, TV en vivo (LB/RB)
     sectionFocus: {}, // sección -> { rowId, itemId } donde te quedaste
     phone: false, // hay un iPhone conectado: se le puede enviar o hacer descargar (Y y la ficha)
     stremioLinked: false, // con cuenta: Orbital elige la fuente (si no, Stremio)

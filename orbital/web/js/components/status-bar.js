@@ -7,7 +7,7 @@ import { ICONS } from "../core/icons.js";
 const ALEXA_LIVE_SECONDS = 600;
 
 /** El ícono de cada sección en la barra (la palabra solo sale en la activa). */
-const SECTION_ICONS = { foryou: "spark", home: "home", games: "gamepad", media: "trailer", tv: "tv", apps: "grid" };
+const SECTION_ICONS = { foryou: "spark", home: "home", games: "gamepad", media: "trailer", tv: "tv" };
 
 /**
  * Barra superior: la marca (abre el menú), Buscar con su botón, las secciones como íconos —la activa se expande con su

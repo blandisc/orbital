@@ -11,7 +11,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 |---|---|---|
 | Encender la Legion Go y llegar a Orbital | Acceso directo de inicio (`pythonw -m orbital`) | ✅ |
 | Moverse entre juegos y filas | D-pad / stick; LT/RT saltan de 5 en 5 | ✅ |
-| Cambiar de sección (Para ti, Inicio, Juegos, Películas y series, TV en vivo, Apps) | LB / RB (también en TV en vivo: las categorías se cambian con LT / RT o con ↑↓ en su lista) | ✅ |
+| Cambiar de sección (Para ti, Inicio, Juegos, Películas y series, TV en vivo) | LB / RB (también en TV en vivo: las categorías se cambian con LT / RT o con ↑↓ en su lista) | ✅ |
 | Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar". Teclado grande: A escribe, X borra, Y espacio, **B vuelve**; Borrar todo (se vuelve Deshacer), Atrás, Dictar y Buscar. Con la caja vacía, tus búsquedas recientes. Resultados por grupo: En tu consola (juegos y apps), Películas, Series. Con un teclado físico se escribe directo | ✅ |
 | Películas y series | Abre en "Seguir viendo" ("T8 E23 · quedan 10 min"; A pone el episodio en el que ibas, directo; Y → Ver la ficha o Quitar de Seguir viendo); los catálogos debajo abren la ficha | ✅ |
 | Inicio | "Continuar": tus juegos y videos juntos, por fecha; lo que está abierto va primero con la píldora "Abierto" | ✅ (nuevo) |
@@ -97,7 +97,7 @@ y qué se midió).
 
 | Flujo | Cómo | Estado |
 |---|---|---|
-| Llegar a la sección | LB / RB hasta «TV en vivo» (entre Películas y series y Apps). Muestra los canales, con su logo y su número, por categorías | ✅ (nuevo) |
+| Llegar a la sección | LB / RB hasta «TV en vivo» (la última de la barra, después de Películas y series). Muestra los canales, con su logo y su número, por categorías | ✅ (nuevo) |
 | Cambiar de categoría | Las categorías están siempre a la vista a la izquierda: **↑↓** en la lista (o **LT / RT**, o deslizar de lado) pasan de una a otra (Todos · General · Noticias · Deportes…) y → entra a sus canales; **LB / RB** cambian de sección, así nunca te quedas atrapado. Las categorías con menos de 3 canales se juntan en «Otros» | ✅ (nuevo) |
 | Moverse por los canales | D-pad / stick; LT/RT saltan una pantalla (3 filas). La barra de arriba dice en qué canal vas («5 de 40»). ← desde la primera columna llega a las categorías | ✅ (nuevo) |
 | Logos | Cada canal con su logo, **parejo**: Orbital lo baja una vez, lo recorta y, si es oscuro, lo pone sobre una placa clara para que se lea sobre el fondo oscuro; queda guardado (funciona sin Internet y la TV no le pide imágenes a internet). Sin logo, las letras del nombre | ✅ (nuevo) |

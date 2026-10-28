@@ -138,8 +138,7 @@ export const SECTIONS = [
   // Inicio: una sola fila para retomar (juegos y videos juntos) y tus favoritos.
   { id: "home", title: "Inicio", rows: (id) => ["jump", "favorites"].includes(id), always: true },
   { id: "games", title: "Juegos", rows: (id) => ["recent", "steam", "geforcenow"].includes(id) || id.startsWith("emulators:") },
-  // Lo tuyo primero (Seguir viendo). Buscar es un atajo (botón Vista o la píldora de arriba), así
-  // que la fila de apps (Buscar, YouTube…) va al final.
+  // Lo tuyo primero (Seguir viendo). Buscar es un atajo (botón Vista o la píldora de arriba).
   // Con la curaduría de Para ti (core/curation.js) entre lo tuyo y lo popular: Top 10, plataformas, tus listas.
   // Como Para ti › Listas del iPhone (core/media-plan.js): el mismo orden y los mismos nombres. Mi lista vive en
   // «Listas de Stremio». Sin la fila «Multimedia» (Buscar, Stremio, YouTube): el usuario ya no la usa; Buscar es ⧉.
@@ -152,7 +151,7 @@ export const SECTIONS = [
   // TV en vivo: los canales de México (su propia vista, sin filas de biblioteca). Siempre a la vista: aunque
   // la lista aún no llegue, la sección dice qué está pasando en vez de desaparecer de la barra.
   { id: "tv", title: "TV en vivo", rows: () => false, always: true },
-  { id: "apps", title: "Apps", rows: (id) => id === "apps" },
+  // (Sin «Apps»: los accesos de config.yaml —apps:— siguen en la biblioteca, pero sin sección propia; se abren con Buscar o por voz.)
 ];
 
 /** Filas de una sección. Una sección vacía (p. ej. Inicio sin nada jugado) cae en Juegos. */

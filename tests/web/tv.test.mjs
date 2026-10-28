@@ -110,7 +110,8 @@ test("TV en vivo es una sección más de la barra, siempre a la vista y sin fila
   assert.ok(visibleSections([]).some((s) => s.id === "tv")); // aunque la biblioteca esté vacía
   assert.deepEqual(sectionRows([{ id: "jump", items: [1] }, { id: "apps", items: [1] }], "tv"), []);
   const ids = SECTIONS.map((s) => s.id);
-  assert.ok(ids.indexOf("tv") > ids.indexOf("media") && ids.indexOf("tv") < ids.indexOf("apps"));
+  assert.ok(ids.indexOf("tv") > ids.indexOf("media") && ids.at(-1) === "tv"); // la última de la barra (ya no hay «Apps»)
+  assert.ok(!ids.includes("apps"));
 });
 
 test("el pie de TV en vivo dice qué hace cada botón ahí", () => {

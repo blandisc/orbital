@@ -787,7 +787,7 @@ function goToSection(id, direction = 0) {
   renderSections();
 }
 
-/** Inicio, Juegos, Para ti y TV en vivo entran de lado, como las filas de Películas y Apps (la dirección de LB/RB). */
+/** Inicio, Juegos, Para ti y TV en vivo entran de lado, como las filas de Películas y series (la dirección de LB/RB). */
 function slideView(direction) {
   const view = inForYou() ? ui.foryou.el : inTv() ? ui.tv.el : inHome() ? ui.home.el : inGames() ? ui.games.el : null;
   if (!view || !direction) return;
@@ -2381,7 +2381,7 @@ api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => 
 
 // Enlaces directos: ?buscar=dune abre la búsqueda con ese texto; ?serie=tt0386676 su ficha.
 const params = new URLSearchParams(location.search);
-if (params.get("seccion")) state.section = params.get("seccion"); // home | games | media | apps
+if (params.get("seccion")) state.section = params.get("seccion"); // home | games | media
 if (params.get("buscar")) ui.search.open(params.get("buscar"));
 else if (params.get("serie") || params.get("pelicula")) {
   openView({ serie: params.get("serie"), pelicula: params.get("pelicula") });

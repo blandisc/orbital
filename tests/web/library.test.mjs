@@ -89,7 +89,6 @@ test("secciones: cada fila en su lugar; Inicio vacío cae en Juegos; secciones v
   assert.deepEqual(ids("games"), ["recent", "steam", "geforcenow", "emulators:switch"]);
   // «Seguir viendo» arriba de lo de Para ti (sin «Multimedia»); en el Inicio va mezclado con los juegos («jump»).
   assert.deepEqual(ids("media"), ["continue"]);
-  assert.deepEqual(ids("apps"), ["apps"]);
   const fresh = rows.filter((r) => !["jump", "recent", "continue", "favorites"].includes(r.id));
   assert.deepEqual(sectionRows(fresh, "home").map((r) => r.id), ["steam", "geforcenow", "emulators:switch"]);
   // «Para ti» siempre está, a la izquierda del Inicio, y «TV en vivo» también (sin filas: son su propia vista).

@@ -26,11 +26,11 @@ DIRECTIONS = {
 
 
 SECTIONS = {"juegos": "games", "peliculas": "media", "series": "media", "peliculas y series": "media",
-            "apps": "apps", "aplicaciones": "apps", "games": "games", "media": "media",
+            "games": "games", "media": "media",
             "mis juegos": "games", "para ti": "foryou", "recomendaciones": "foryou", "sugerencias": "foryou", "foryou": "foryou",
             "tv en vivo": "tv", "tele en vivo": "tv", "television en vivo": "tv", "la tele": "tv", "tele": "tv", "television": "tv",
             "la television": "tv", "canales": "tv", "los canales": "tv", "tv": "tv"}
-SECTION_NAMES = {"games": "Juegos", "media": "Películas y series", "apps": "Apps", "foryou": "Para ti", "tv": "la TV en vivo"}
+SECTION_NAMES = {"games": "Juegos", "media": "Películas y series", "foryou": "Para ti", "tv": "la TV en vivo"}
 CHANNEL_NEXT = {"next", "siguiente", "sube", "suba", "adelante", "otro"}
 CHANNEL_PREVIOUS = {"previous", "anterior", "baja", "baje", "atras", "el anterior"}
 QUICK_LOOKUP = 3.5  # s: Alexa corta a los ~8 s; si Trakt tarda, se enseña en pantalla y se dice que ahí está

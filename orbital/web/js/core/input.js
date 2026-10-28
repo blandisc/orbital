@@ -13,7 +13,7 @@ export const KEYMAP = {
 
 // Índices del mapeo estándar de la Gamepad API (Legion Go, Xbox, 8BitDo...).
 export const PADMAP = {
-  // LB/RB cambian de sección (Inicio, Juegos, Películas y series, Apps); LT/RT saltan de 5 en 5.
+  // LB/RB cambian de sección (Inicio, Juegos, Películas y series, TV en vivo); LT/RT saltan de 5 en 5.
   0: "select", 1: "back", 2: "alt", 3: "options", 4: "prevsection", 5: "nextsection", 6: "pageleft", 7: "pageright",
   // Vista (⧉) busca desde cualquier lugar; Menú (☰) abre el menú.
   8: "search", 9: "menu", 12: "up", 13: "down", 14: "left", 15: "right",

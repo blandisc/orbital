@@ -31,7 +31,7 @@ se controla con la voz a través de **Alexa**.
 | **ES-DE** | Si usas ES-DE, Orbital toma de ahí la carpeta de ROMs, los nombres del scraper, las portadas de `downloaded_media`, tus **favoritos** (fila propia) y oculta los juegos marcados como ocultos. También agrega un acceso a ES-DE. |
 | **Stremio** | Abre Stremio 4/5 y, si vinculas tu cuenta, muestra la fila **Seguir viendo** con pósters, progreso y episodio (T2 E4); con A abre directo la ficha de ese episodio. Por voz: "sigue viendo", "continúa The Office", "busca Dune en Stremio". |
 | **iPhone** | Con la app de iPhone conectada (Ajustes › Cuentas › iPhone), desde la TV puedes **Enviar al iPhone** o **Descargar en el iPhone** lo que ves (reproductor Y › Más, ficha, Seguir viendo); el iPhone lo recoge al abrir Orbital o, con suerte, en segundo plano. Ver `ios/README.md` › «Desde la TV» |
-| **Apps** | Cualquier ejecutable o URL (ES-DE, YouTube TV, Playnite…). |
+| **Apps** | Cualquier ejecutable o URL (`apps:` en `config.yaml`). Ya no tienen sección propia en la barra: se abren con Buscar (⧉) o por voz. |
 | **Voz** | `/api/voice` acepta intents de Alexa o texto libre en español ("abre hollow knight", "busca dune en stremio", "cierra el juego", "ve a la derecha"). |
 | **Para ti** | Qué ver o qué jugar, sin clave: el Top 10 oficial de Netflix de tu país (TSV público de `netflix.com/tudum`) y lo más visto de Disney+, HBO Max, Prime Video, Apple TV+ y Paramount+ (JustWatch); con Trakt, TMDB o RAWG conectados, suma tus recomendaciones, lo más popular en más plataformas y novedades de PC. |
 
