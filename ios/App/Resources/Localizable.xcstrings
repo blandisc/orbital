@@ -595,17 +595,6 @@
         }
       }
     },
-    "Abanico": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fan"
-          }
-        }
-      }
-    },
     "Abierto": {
       "extractionState": "manual",
       "localizations": {
@@ -3418,17 +3407,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stremio email"
-          }
-        }
-      }
-    },
-    "Coverflow": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Coverflow"
           }
         }
       }
@@ -14081,17 +14059,6 @@
         }
       }
     },
-    "Temporadas…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seasons…"
-          }
-        }
-      }
-    },
     "Tendencia": {
       "extractionState": "manual",
       "localizations": {
@@ -15848,17 +15815,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Comes inside the file"
-          }
-        }
-      }
-    },
-    "Vista del carrusel": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Carousel view"
           }
         }
       }

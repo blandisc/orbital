@@ -410,7 +410,7 @@ enum DS {
     }
 
     /// El carrusel de «En tendencia» en Inicio (`DeckCard`, `deckTransition`): tarjetas con lo que sigue a los lados, más
-    /// chicas, oscuras y desenfocadas; coverflow las gira en 3D y abanico las inclina desde abajo.
+    /// chicas, oscuras y desenfocadas, giradas en 3D (coverflow).
     enum Deck {
         /// Qué parte del ancho toma la tarjeta del frente (asoman las de los lados) y su alto.
         static let sideMargin: CGFloat = 66, height: CGFloat = 430
@@ -420,7 +420,6 @@ enum DS {
         /// Lo que pierde una tarjeta a un lugar de distancia: tamaño, nitidez y luz.
         static let sideShrink: CGFloat = 0.12, sideBlur: CGFloat = 3, sideDim: Double = 0.16
         static let coverflowAngle: Double = 38, perspective: CGFloat = 0.6
-        static let fanAngle: Double = 9, fanDrop: CGFloat = 24
         /// Donde empieza el velo (para que el texto se lea) y la sombra de la tarjeta.
         static let veilStart: CGFloat = 0.38, shadow: CGFloat = 24, shadowY: CGFloat = 14
     }

@@ -21,6 +21,23 @@ public struct OrbitalRemote: Sendable {
     private let http: HTTPClient
     public let base: URL?
     private let token: String
+    private let device: Device?
+
+    /// Qué aparato le habla a tu Orbital: iPhone e iPad usan el mismo token, y así la TV distingue cuál sigue conectado
+    /// (Ajustes › Cuentas: «iPhone de Fernando · ✓ Conectado» / «iPad · Lo usaste hace 3 h»). Va en cada petición como
+    /// `X-Orbital-Device` (el nombre, codificado para URL: puede traer acentos), `X-Orbital-Device-Kind` («iphone» o
+    /// «ipad») y `X-Orbital-Device-Id` (uno por instalación, para dos aparatos con el mismo nombre).
+    public struct Device: Sendable, Equatable {
+        public var name: String, kind: String, id: String
+        public init(name: String, kind: String, id: String) { self.name = name; self.kind = kind; self.id = id }
+
+        var headers: [String: String] {
+            var out = ["X-Orbital-Device-Kind": kind]
+            if let encoded = name.addingPercentEncoding(withAllowedCharacters: .alphanumerics), !name.isEmpty { out["X-Orbital-Device"] = encoded }
+            if !id.isEmpty { out["X-Orbital-Device-Id"] = id }
+            return out
+        }
+    }
 
     /// `orbital-ios://pair?u=<dirección>&t=<token>` (el QR de «Conectar iPhone» en la TV).
     public static func pairing(_ url: URL) -> (address: String, token: String)? {
@@ -30,8 +47,8 @@ public struct OrbitalRemote: Sendable {
         return (address, token)
     }
 
-    public init(http: HTTPClient, address: String, token: String) {
-        self.http = http; self.token = token.trimmingCharacters(in: .whitespacesAndNewlines)
+    public init(http: HTTPClient, address: String, token: String, device: Device? = nil) {
+        self.http = http; self.token = token.trimmingCharacters(in: .whitespacesAndNewlines); self.device = device
         self.base = Self.normalize(address)
     }
 
@@ -528,6 +545,7 @@ public struct OrbitalRemote: Sendable {
     private func send(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?, timeout: TimeInterval = 12) async throws -> JSON? {
         guard let base, !token.isEmpty else { throw Failure.notConfigured }
         var headers = ["Authorization": "Bearer \(token)"]
+        if let device { headers.merge(device.headers) { mine, _ in mine } }
         if body != nil { headers["Content-Type"] = "application/json" }
         var components = URLComponents(url: base.appendingPathComponent(path), resolvingAgainstBaseURL: false)
         if !query.isEmpty { components?.queryItems = query }

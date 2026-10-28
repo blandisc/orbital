@@ -306,7 +306,15 @@ final class AppEnvironment {
             http: Perf.isOn ? PerfHTTPClient(inner: URLSessionHTTPClient()) : URLSessionHTTPClient(), secrets: KeychainSecrets(service: Bundle.main.bundleIdentifier ?? "com.example.orbital.ios"),
             kv: UserDefaultsKeyValueStore(), pending: FilePendingStore(url: AppFiles.pendingWork), downloadTransport: transport,
             downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
-            cacheRoot: AppFiles.swrCache, onDownloadsChange: { DownloadIndex.save($0) })
+            cacheRoot: AppFiles.swrCache, onDownloadsChange: { DownloadIndex.save($0) }, device: thisDevice)
+    }
+
+    /// Este aparato para tu Orbital: su nombre (desde iOS 16, sin el permiso del nombre, iOS da solo «iPhone» o «iPad»), si
+    /// es iPhone o iPad y su id por instalación.
+    private static var thisDevice: OrbitalRemote.Device {
+        let device = UIDevice.current
+        return OrbitalRemote.Device(name: device.name, kind: device.userInterfaceIdiom == .pad ? "ipad" : "iphone",
+                                    id: device.identifierForVendor?.uuidString ?? "")
     }
 
     /// El aviso (con háptica, por el tono del aviso) de lo que pasó con lo que mandó la TV.

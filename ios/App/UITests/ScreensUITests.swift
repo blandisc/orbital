@@ -140,20 +140,6 @@ final class ScreensUITests: XCTestCase {
         checkSeasons()
     }
 
-    /// Inicio: dejar picada la dona abre su menú; «Temporadas…» abre las mismas temporadas en una hoja.
-    func testSimpsonsSeasonsFromDonut() {
-        app.launchArguments = ["-demo", "-demo-tab", "0", "-demo-no-idle"]
-        app.launch()
-        let donut = app.buttons["home-random-simpsons"].firstMatch
-        XCTAssertTrue(donut.waitForExistence(timeout: 20), "la dona en la barra de Inicio")
-        donut.press(forDuration: 1.0)
-        let seasons = app.buttons["Temporadas…"].firstMatch
-        XCTAssertTrue(seasons.waitForExistence(timeout: 5), "el menú de la dona con «Temporadas…»")
-        let menu = XCTAttachment(screenshot: app.screenshot()); menu.name = "menu"; menu.lifetime = .keepAlways; add(menu)
-        seasons.tap()
-        checkSeasons()
-    }
-
     private func checkSeasons() {
         let picker = app.descendants(matching: .any)["simpsons-seasons"].firstMatch
         for _ in 0..<6 where !picker.exists || !picker.isHittable { app.swipeUp() }

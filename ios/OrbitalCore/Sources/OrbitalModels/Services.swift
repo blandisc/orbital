@@ -98,13 +98,16 @@ public final class Services: ObservableModel {
     private let downloadsRoot: URL
     let freeSpace: @Sendable () -> Int64
     private let clock: @Sendable () -> Date
+    /// Qué aparato es (iPhone o iPad): va en cada petición a tu Orbital.
+    private let device: OrbitalRemote.Device?
     private let onDownloadsChange: @Sendable ([DownloadItem]) -> Void
 
     public init(http: HTTPClient, secrets: SecretsStore, kv: KeyValueStore, pending: PendingStore, downloadTransport: DownloadTransport,
                 downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64, cacheRoot: URL? = nil,
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in },
-                builtInTraktClientID: String = Services.bundledTraktClientID) {
+                builtInTraktClientID: String = Services.bundledTraktClientID, device: OrbitalRemote.Device? = nil) {
         self.cacheRoot = cacheRoot
+        self.device = device
         self.builtInTraktClientID = builtInTraktClientID
         self.http = http; self.secrets = secrets; self.kv = kv; self.pending = pending; self.downloadTransport = downloadTransport
         self.downloadsRoot = downloadsRoot; self.freeSpace = freeSpace; self.clock = clock; self.onDownloadsChange = onDownloadsChange
@@ -141,7 +144,7 @@ public final class Services: ObservableModel {
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
-        self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "") }, clock: clock)
+        self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "", device: device) }, clock: clock)
         self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
         let origins = OriginBook(tmdb: { Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "") }, cinemeta: cinemeta)
@@ -256,7 +259,7 @@ public final class Services: ObservableModel {
 
     /// Tu Orbital de la TV («Ver en la TV»), con la dirección y el token de Ajustes.
     public var orbital: OrbitalRemote {
-        OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "")
+        OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "", device: device)
     }
 
     public func now() -> Date { clock() }

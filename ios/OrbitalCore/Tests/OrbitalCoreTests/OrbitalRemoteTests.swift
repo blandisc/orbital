@@ -19,6 +19,18 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertEqual(sent["kind"]?.string, "series")
     }
 
+    func testEachRequestSaysWhichDevice() async throws {
+        let http = FakeHTTP()
+        http.json["https://tv.example/api/companion/now"] = ["now": .null]
+        let device = OrbitalRemote.Device(name: "iPad de Fernando", kind: "ipad", id: "ABC-123")
+        _ = try? await OrbitalRemote(http: http, address: "tv.example", token: "x", device: device).snapshot()
+        let headers = try XCTUnwrap(http.headers.last)
+        XCTAssertEqual(headers["X-Orbital-Device"], "iPad%20de%20Fernando")
+        XCTAssertEqual(headers["X-Orbital-Device-Kind"], "ipad")
+        XCTAssertEqual(headers["X-Orbital-Device-Id"], "ABC-123")
+        XCTAssertEqual(headers["Authorization"], "Bearer x")
+    }
+
     func testFailuresSayWhatToDo() async {
         let http = FakeHTTP()
         let remote = OrbitalRemote(http: http, address: "tv.example", token: "x")

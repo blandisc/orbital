@@ -460,16 +460,16 @@ final class ScreenModelsTests: XCTestCase {
     }
 
     /// Cambiar un ajuste avisa a quien escucha a los servicios (la app entera se vuelve a pintar): antes el modo oscuro o el
-    /// carrusel de Inicio no cambiaban hasta reabrir la app.
+    /// avatar no cambiaban hasta reabrir la app.
     @MainActor func testChangingASettingTellsTheApp() throws {
         let rig = try ServicesRig()
         let model = SettingsModel(rig.services)
         var told = 0
         let subscription = rig.services.onChange { told += 1 }
         model.update { $0.appearance = "light" }
-        model.update { $0.homeDeck = "fan" }
+        model.update { $0.avatar = "comet" }
         XCTAssertEqual(told, 2)
-        XCTAssertEqual(rig.services.appSettings.homeDeck, "fan")
+        XCTAssertEqual(rig.services.appSettings.avatar, "comet")
         subscription.cancel()
     }
 

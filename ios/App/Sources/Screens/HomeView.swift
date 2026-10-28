@@ -18,8 +18,6 @@ struct HomeView: View {
     @State private var topMovies = false
     /// La ruleta de «Un Simpson al azar».
     @State private var rollingSimpsons = false
-    /// De qué temporadas sale (dejar picada la dona › Temporadas…).
-    @State private var choosingSimpsonsSeasons = false
     /// Sale hoy › el mes completo.
     @State private var showingCalendar = false
     @Namespace private var simpsonsZoom
@@ -131,7 +129,6 @@ struct HomeView: View {
         .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .subtitle(syncText)
         .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette(tint: tint.colors).navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)) }
-        .sheet(isPresented: $choosingSimpsonsSeasons) { SimpsonsSeasonsSheet() }
         .onChange(of: AppEnvironment.shared.ui.openSimpsons, initial: true) { _, wants in
             guard wants else { return }
             AppEnvironment.shared.ui.openSimpsons = false
@@ -163,12 +160,9 @@ struct HomeView: View {
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
-            // Un Simpson al azar (T5–T15): un toque, la ruleta, y empieza en el iPhone. Dejarla picada: de qué temporadas sale.
+            // Un Simpson al azar (T5–T15): un toque, la ruleta, y empieza en el iPhone (las temporadas, en Ajustes).
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button { rollingSimpsons = true } label: { Label("Un Simpson al azar", systemImage: "dice") }
-                    Button { choosingSimpsonsSeasons = true } label: { Label("Temporadas…", systemImage: "list.number") }
-                } label: { Image("Glyphs/donut").renderingMode(.original) } primaryAction: { rollingSimpsons = true }
+                Button { rollingSimpsons = true } label: { Image("Glyphs/donut").renderingMode(.original) }
                     .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
                     .accessibilityLabel(Text("Un Simpson al azar"))
                     .accessibilityIdentifier("home-random-simpsons")
@@ -246,8 +240,7 @@ struct HomeView: View {
     private var look: AppSettings {
         var settings = env.services.appSettings
         #if DEBUG
-        if Demo.isOn {   // `-demo-deck fan`, `-demo-avatar comet`: para ver cada estilo en las capturas
-            if let v = Demo.value(after: "-demo-deck") { settings.homeDeck = v }
+        if Demo.isOn {   // `-demo-avatar comet`: para ver cada avatar en las capturas
             if let v = Demo.value(after: "-demo-avatar") { settings.avatar = v }
         }
         #endif
@@ -279,7 +272,6 @@ struct HomeView: View {
     /// abanico (Ajustes › Inicio); arriba, el filtro de películas o series. El fondo toma el color del que está al frente.
     private func spotlightCarousel(_ model: HomeModel) -> some View {
         let items = spotlightItems(model)
-        let deck = DeckStyle(rawValue: look.homeDeck) ?? .coverflow
         // Una vuelta infinita: las mismas tarjetas repetidas muchas veces y se empieza a la mitad; al llegar a la última
         // sigue la primera (y hacia atrás igual). Con una sola, no hay vuelta.
         let copies = items.count > 1 ? DS.Deck.loopCopies : 1
@@ -298,7 +290,7 @@ struct HomeView: View {
                         hero(items[slot % items.count])
                             .environment(\.solidButtons, true)   // la tarjeta se gira en 3D: sus botones sin vidrio (se deformaba)
                             .containerRelativeFrame(.horizontal)   // el ancho visible ya descuenta los márgenes: centrada, con las de los lados asomando
-                            .deckTransition(deck, reduceMotion: reduceMotion)
+                            .deckTransition(reduceMotion: reduceMotion)
                     }
                 }
                 .scrollTargetLayout()
@@ -322,12 +314,9 @@ struct HomeView: View {
         .sensoryFeedback(.selection, trigger: heroSlot) { old, _ in old != nil && !placingHero }
     }
 
-    /// Todo · Películas · Series: un botón chico (como el de Para ti), sin otro renglón. El mismo menú cambia la vista del
-    /// carrusel (Coverflow o Abanico), que ya no está en Ajustes.
+    /// Todo · Películas · Series: un botón chico (como el de Para ti), sin otro renglón.
     private func kindFilter(_ model: HomeModel) -> some View {
-        DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }), menu: true,
-                     deck: Binding(get: { look.homeDeck == DeckStyle.fan.rawValue ? DeckStyle.fan.rawValue : DeckStyle.coverflow.rawValue },
-                                   set: { v in env.services.settings.update { $0.homeDeck = v }; env.services.settingsDidChange() }))
+        DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }), menu: true)
             .accessibilityIdentifier("home-kind-filter")
     }
 
