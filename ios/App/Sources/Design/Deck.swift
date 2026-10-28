@@ -9,6 +9,11 @@ enum DeckStyle: String, CaseIterable {
     case coverflow
     /// Las de los lados se inclinan desde abajo, como cartas abiertas.
     case fan
+
+    /// Su ícono en el menú de Inicio (como los de Todo · Películas · Series, `KindGlyph`).
+    var symbol: String {
+        switch self { case .coverflow: "rectangle.3.group"; case .fan: "rectangle.portrait.on.rectangle.portrait.angled" }
+    }
 }
 
 extension View {

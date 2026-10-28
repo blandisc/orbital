@@ -90,6 +90,15 @@ final class AllSourcesTests: XCTestCase {
         XCTAssertEqual(evidence.map(\.kind), [.assumed, .name, .assumed, .checked, .site, .assumed])
     }
 
+    func testPlayingLanguageGoesFirst() {
+        let s = source(1, "1080p", audio: [AudioLanguage("en", .name), AudioLanguage("es-419", .name), AudioLanguage("fr", .maybe)])
+        let latino = Preferences(audio: "es", spanish: "es-419")
+        XCTAssertEqual(AllSources.languageEvidence(s, playingFirst: latino).map(\.code), ["es-419", "en", "fr"], "el que suena, primero")
+        XCTAssertEqual(AllSources.languageEvidence(s, playingFirst: Preferences(audio: "en")).map(\.code), ["en", "es-419", "fr"], "ya iba primero")
+        XCTAssertEqual(AllSources.otherLanguages(s, prefs: latino), ["en"], "los otros seguros, sin lo que solo se supone")
+        XCTAssertEqual(AllSources.otherLanguages(source(1, "1080p", audio: [AudioLanguage("es-419", .name)]), prefs: latino), [], "uno solo: nada más")
+    }
+
     func testFileNameAndBadge() {
         var s = source(1, "4K")
         s.release = "Movie.2024.2160p.DV"

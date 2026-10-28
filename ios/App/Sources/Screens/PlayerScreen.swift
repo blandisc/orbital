@@ -1062,7 +1062,7 @@ struct PlayerScreen: View {
         case .preparing where model.search != nil:
             if let search = model.search {
                 SourceOrbit(found: max(search.found, model.source != nil ? 1 : 0), chosen: model.source != nil, failed: triedCount(model),
-                            title: orbitTitle(model, search), detail: orbitDetail(model, search),
+                            title: orbitTitle(model, search), also: orbitAlso(model), detail: orbitDetail(model, search),
                             size: ipod != nil ? min(DS.SourceOrbit.size, (room?.height ?? 0) * DS.SourceOrbit.ipodShare) : DS.SourceOrbit.size,
                             sideBySide: landscape)
             }
@@ -1095,6 +1095,19 @@ struct PlayerScreen: View {
         let n = search.found
         if n > 1 { return Text("\(n) versiones encontradas") }
         return Text("Buscando en tus complementos")
+    }
+
+    /// Bajo «Elegimos 🇲🇽 Latino · 1080p», las banderas de los otros idiomas que trae («🇺🇸 🇪🇸»); VoiceOver dice
+    /// «También en inglés y castellano». Con uno solo, nada.
+    private func orbitAlso(_ model: PlayerModel) -> Text? {
+        guard let src = model.source, triedCount(model) == 0 else { return nil }
+        let codes = AllSources.otherLanguages(src, prefs: env.services.appSettings.preferences())
+        let flags = codes.compactMap { LanguageFlags.flag($0) }
+        guard !flags.isEmpty else { return nil }
+        let ui = env.services.appSettings.uiLanguage
+        let names = codes.map { VersionLanguageRow.inline(Streams.versionLanguageName($0, in: ui), ui) }
+        let list = names.count > 1 ? names.dropLast().joined(separator: ", ") + Strings.tr(" y ", language: ui) + (names.last ?? "") : names.joined()
+        return Text(verbatim: flags.joined(separator: " ")).accessibilityLabel(Text("También en \(list)"))
     }
 
     private func orbitDetail(_ model: PlayerModel, _ search: PlayerModel.SourceSearch) -> Text? {
@@ -1775,7 +1788,7 @@ struct PlayerScreen: View {
             ScrollView {
                 if versionShowsAll {
                     AllSourcesList(sources: model.sourceChoices, current: model.source?.index, currentIsPlaying: true,
-                                   primary: ("Cambiar a esta", { pickSource($0.index, model) }), secondary: nil, uiLanguage: ui)
+                                   primary: ("Cambiar a esta", { pickSource($0.index, model) }), secondary: nil, uiLanguage: ui, prefs: prefs)
                 } else {
                     VStack(alignment: .leading, spacing: DS.Space.s2) {
                         ForEach(rows.main + rows.more) { row in

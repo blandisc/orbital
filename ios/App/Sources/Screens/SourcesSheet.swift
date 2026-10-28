@@ -95,7 +95,8 @@ struct SourcesSheet: View {
                         if !model.ranked.isEmpty {
                             AllSourcesList(sources: model.ranked, current: model.recommendedIndex,
                                            primary: ("Ver", { pick($0, .watch) }), secondary: ("Descargar", { pick($0, .download) }),
-                                           uiLanguage: ui, offersSecondary: { s in s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false })
+                                           uiLanguage: ui, prefs: env.services.titlePrefs.languages(for: metaID, settings: env.services.appSettings).prefs,
+                                           offersSecondary: { s in s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false })
                         }
                     } else {
                         byLanguage(model, ui)

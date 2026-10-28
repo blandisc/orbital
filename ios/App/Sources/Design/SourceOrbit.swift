@@ -12,6 +12,8 @@ struct SourceOrbit: View {
     /// Cuántas se probaron y no arrancaron (sus puntos quedan apagados).
     let failed: Int
     let title: Text
+    /// Los otros idiomas que trae la elegida, solo sus banderas («🇺🇸 🇪🇸»), entre el título y el detalle.
+    var also: Text? = nil
     let detail: Text?
     /// El ancho de la órbita.
     var size: CGFloat = DS.SourceOrbit.size
@@ -29,6 +31,7 @@ struct SourceOrbit: View {
             orbit.frame(width: size, height: size)
             VStack(alignment: sideBySide ? .leading : .center, spacing: DS.Space.s1) {
                 title.font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+                if let also { also.font(DS.TextRecipe.footnote.font) }
                 if let detail { detail.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
             }
             .multilineTextAlignment(sideBySide ? .leading : .center)

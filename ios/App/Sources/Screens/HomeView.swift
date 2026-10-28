@@ -167,7 +167,7 @@ struct HomeView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button { rollingSimpsons = true } label: { Label("Un Simpson al azar", systemImage: "dice") }
-                    Button { choosingSimpsonsSeasons = true } label: { Label("Temporadas…", systemImage: "tv") }
+                    Button { choosingSimpsonsSeasons = true } label: { Label("Temporadas…", systemImage: "list.number") }
                 } label: { Image("Glyphs/donut").renderingMode(.original) } primaryAction: { rollingSimpsons = true }
                     .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
                     .accessibilityLabel(Text("Un Simpson al azar"))
@@ -322,9 +322,12 @@ struct HomeView: View {
         .sensoryFeedback(.selection, trigger: heroSlot) { old, _ in old != nil && !placingHero }
     }
 
-    /// Todo · Películas · Series: un botón chico (como el de Para ti), sin otro renglón.
+    /// Todo · Películas · Series: un botón chico (como el de Para ti), sin otro renglón. El mismo menú cambia la vista del
+    /// carrusel (Coverflow o Abanico), que ya no está en Ajustes.
     private func kindFilter(_ model: HomeModel) -> some View {
-        DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }), menu: true)
+        DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }), menu: true,
+                     deck: Binding(get: { look.homeDeck == DeckStyle.fan.rawValue ? DeckStyle.fan.rawValue : DeckStyle.coverflow.rawValue },
+                                   set: { v in env.services.settings.update { $0.homeDeck = v }; env.services.settingsDidChange() }))
             .accessibilityIdentifier("home-kind-filter")
     }
 

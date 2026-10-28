@@ -13971,6 +13971,17 @@
         }
       }
     },
+    "También en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also in %@"
+          }
+        }
+      }
+    },
     "También tenías": {
       "extractionState": "manual",
       "localizations": {
@@ -15841,6 +15852,17 @@
         }
       }
     },
+    "Vista del carrusel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carousel view"
+          }
+        }
+      }
+    },
     "Visto": {
       "extractionState": "manual",
       "localizations": {
@@ -16453,6 +16475,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "continue it on my iPhone"
+          }
+        }
+      }
+    },
+    "también": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "also"
           }
         }
       }
