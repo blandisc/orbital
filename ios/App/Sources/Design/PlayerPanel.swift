@@ -608,6 +608,8 @@ struct PlayerFailureView: View {
     let isEpisode: Bool
     let retry: () -> Void
     let infuse: (() -> Void)?
+    /// Hay otras versiones: elegir una ahí mismo (antes había que cerrar y volver a abrir).
+    var chooseVersion: (() -> Void)? = nil
     let close: () -> Void
 
     var body: some View {
@@ -653,6 +655,7 @@ struct PlayerFailureView: View {
                 option(Text("Cerrar"), primary: false, action: close)
             case .noneWorked, .sourceDied:
                 option(Text("Intentar de nuevo"), primary: true, action: retry)
+                if let chooseVersion { option(Text("Elegir otra versión"), primary: false, action: chooseVersion) }
                 if let infuse { option(Text("Abrir en Infuse"), primary: false, action: infuse) }
                 option(Text("Cerrar"), primary: false, action: close)
             }

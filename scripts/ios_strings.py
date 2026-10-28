@@ -28,6 +28,7 @@ TRANSLATIONS = {
     "No pude cambiar tus favoritos de Trakt": "I couldn't change your Trakt favorites",
     "Conecta Trakt en Ajustes": "Connect Trakt in Settings",
     "La anterior no respondió. Sigue en el mismo punto.": "The previous one didn't respond. Same spot.",
+    "Elegir otra versión": "Choose another version",
     "Las clásicas": "The classics",
     # Nombres de encabezados HTTP (no se ven en pantalla): iguales en los dos idiomas.
     "X-Orbital-Device": "X-Orbital-Device",
