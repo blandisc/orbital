@@ -1,10 +1,12 @@
-"""Resolución al jugar: los juegos a ~1080p y lo demás (Orbital, películas) a la resolución de la pantalla.
+"""Resolución al jugar: Switch y Xbox 360 a ~1080p; lo demás (Orbital, películas, los otros juegos) a la de la pantalla.
 
 Con la tele a 4K, la gráfica de la Legion Go compone 4 veces más píxeles en todo (el juego, Windows y cada ventana) y cada
 juego de Switch le deja a DWM ~100 MB que no devuelve (ver dwm_release.py): a 1080p, una cuarta parte. Los juegos de
 Switch corren a 720p o 1080p de todos modos; la tele reescala. Las películas sí aprovechan el 4K: no se tocan.
 
-Se baja al abrir un juego y se regresa al terminar. Se elige la resolución con la misma proporción de la pantalla (la tele
+Solo los emuladores que más le exigen a la gráfica (SYSTEMS): cada cambio de resolución es un parpadeo de la tele y un
+riesgo (si el emulador ya abrió a 4K, se ve un cuarto de su imagen, como con zoom), así que los demás no se tocan.
+Se baja ANTES de abrir el emulador (crea su imagen del tamaño de la pantalla y no la rehace) y se regresa al terminar. Se elige la resolución con la misma proporción de la pantalla (la tele
 16:9 → 1920×1080; la de la Legion, 16:10 → 1920×1200) y su misma frecuencia si existe. El cambio es temporal para Windows
 (CDS_FULLSCREEN): si Orbital se cierra de golpe, Windows regresa solo a la de siempre.
 """
@@ -20,6 +22,7 @@ from ctypes import wintypes
 log = logging.getLogger(__name__)
 
 Mode = tuple[int, int, int]  # ancho, alto, Hz
+SYSTEMS = frozenset({"switch", "xbox360"})  # los únicos que juegan a ~1080p (Ryujinx/Eden y Xenia)
 GAME_AREA = 1920 * 1200  # lo más grande que se usa al jugar
 ENUM_CURRENT_SETTINGS = -1
 CDS_FULLSCREEN = 0x4
