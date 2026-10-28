@@ -55,9 +55,11 @@ FRESH_MB = 3000
 BACK_AFTER = 2.5  # s que tarda Windows en volver a dibujar tras reiniciar DWM (la pantalla parpadea en ese rato)
 
 
-def fresh_for_video(measure=None, sleep=time.sleep) -> bool:
-    """Antes de abrir un video (con la pantalla de carga a la vista): si DWM retiene de más, se reinicia ahí, donde el
-    parpadeo no estorba, y el video arranca sin tirones. Solo con la tarea activada. Devuelve si lo hizo."""
+def release_if_full(moment: str = "antes del video", measure=None, sleep=time.sleep) -> bool:
+    """En un momento en que el parpadeo no estorba (antes de abrir un video, con la pantalla de carga; al volver de un
+    juego, cuando la tele ya va a parpadear al regresar a 4K): si DWM retiene de más, se reinicia ahí. Solo con la tarea
+    activada. Devuelve si lo hizo. La fuga es del driver de AMD (32.0.23044.19, del 2026-09-30): ver el informe de la
+    investigación en el commit que agregó esto."""
     if measure is None:
         from .health import dwm_gpu_mb as measure
     dwm = measure()
@@ -65,7 +67,7 @@ def fresh_for_video(measure=None, sleep=time.sleep) -> bool:
         return False
     if not run():
         return False
-    log.info("Memoria de video liberada antes del video (DWM tenía %d MB): sin tirones", dwm[0])
+    log.info("Memoria de video liberada %s (DWM tenía %d MB)", moment, dwm[0])
     sleep(BACK_AFTER)
     return True
 
