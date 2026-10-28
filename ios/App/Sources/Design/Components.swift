@@ -788,19 +788,51 @@ struct DSGestureIndicator: View {
     /// El largo de la barra: más corta cuando el video es bajito (en vertical va dentro de la imagen).
     var barHeight: CGFloat = DS.Gesture.indicatorBarHeight
 
+    /// Mínimo: el ícono y una barra delgada, sin panel ni porcentaje. Una sombra suave lo separa de una imagen clara.
     var body: some View {
         VStack(spacing: DS.Space.s2) {
-            Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
+            Image(systemName: symbol).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text)
             ZStack(alignment: .bottom) {
                 Capsule().fill(DS.track)
-                Capsule().fill(DS.primary).frame(height: barHeight * min(1, max(0, value)))
+                Capsule().fill(DS.text).frame(height: barHeight * min(1, max(0, value)))
             }
             .frame(width: DS.Gesture.indicatorBarWidth, height: barHeight)
-            Text("\(Int((value * 100).rounded())) %").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).monospacedDigit()
         }
-        .padding(.vertical, DS.Space.s4).padding(.horizontal, DS.Space.s3)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .shadow(DS.Elevation.medium)
         .accessibilityHidden(true)
+    }
+}
+
+/// La única animación de carga del reproductor (abrir, buscar versión, volver a la app, llenar el búfer): una órbita delgada con una
+/// luna turquesa que la recorre con su estela, la marca de Orbital sin textos. Con «Reducir movimiento», la luna late en su lugar.
+struct DSLoader: View {
+    var size: CGFloat = DS.Loader.size
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        TimelineView(.animation) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            let turn = reduceMotion ? 0.75 : t.truncatingRemainder(dividingBy: DS.Loader.seconds) / DS.Loader.seconds
+            let angle = turn * 2 * .pi
+            let radius = size / 2
+            let trail = DS.Loader.trail
+            ZStack {
+                Circle().stroke(DS.track, lineWidth: DS.Loader.ringWidth)
+                Circle().trim(from: 0, to: trail)
+                    .stroke(AngularGradient(colors: [.clear, DS.brandMoon.opacity(DS.Loader.trailOpacity)], center: .center,
+                                            startAngle: .zero, endAngle: .degrees(360 * Double(trail))),
+                            style: StrokeStyle(lineWidth: DS.Loader.trailWidth, lineCap: .round))
+                    .rotationEffect(.radians(angle) - .degrees(360 * Double(trail)))   // la punta de la estela, justo en la luna
+                Circle().fill(DS.brandMoon)
+                    .frame(width: DS.Loader.moon, height: DS.Loader.moon)
+                    .shadow(color: DS.brandMoon, radius: DS.Loader.moonGlow)
+                    .opacity(reduceMotion ? 0.55 + 0.45 * abs(sin(t * .pi / DS.Loader.seconds)) : 1)
+                    .offset(x: radius * cos(angle), y: radius * sin(angle))
+            }
+            .frame(width: size, height: size)
+        }
+        .accessibilityElement()
+        .accessibilityLabel(Text("Cargando"))
     }
 }
 

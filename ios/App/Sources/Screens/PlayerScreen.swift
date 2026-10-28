@@ -253,7 +253,7 @@ struct PlayerScreen: View {
                     let rect = videoRect(in: geo.size)
                     // Todo lo que carga (la búsqueda de versiones y la ruedita) con su centro en el del video, siempre el mismo punto:
                     // antes la búsqueda iba al centro de la pantalla y en vertical la ruedita que seguía brincaba hacia arriba.
-                    statusOverlays(model, room: rect.size).position(x: rect.midX, y: rect.midY)
+                    statusOverlays(model).position(x: rect.midX, y: rect.midY)
                 }
                 .ignoresSafeArea(edges: landscape ? .all : [])
                 .allowsHitTesting(false)
@@ -705,9 +705,11 @@ struct PlayerScreen: View {
                     // En vertical: arrastrar sobre el video es brillo (izquierda) o volumen (derecha), como en horizontal y en
                     // Infuse; desde la agarradera de abajo o lo negro de fuera, mueve el video (antes todo arrastre lo movía y
                     // se perdían el brillo y el volumen).
-                    case .vertical where !landscape && !fillsPortrait && ipod == nil
+                    // Con un panel abierto (Episodios, Audio y subtítulos) el video no se mueve: el panel cuelga de él y se movía
+                    // al arrastrar entre las pastillas de temporada.
+                    case .vertical where !subtitleDock && (!landscape && !fillsPortrait && ipod == nil
                                           && !videoRect(in: size).insetBy(dx: 0, dy: -DS.PlayerPanel.handleReach).contains(value.startLocation)
-                                          || startsOnHandle(value.startLocation, size: size):
+                                          || startsOnHandle(value.startLocation, size: size)):
                         movingVideo = true
                         portraitAtDragStart = Self.resolvedCenter(portraitCenter, in: size, aspect: portraitAspect)   // en vertical, arrastrar arriba o abajo mueve el video
                         controlsVisible = true                 // se mueve a la altura de los controles (sin ellos va al centro)
@@ -765,7 +767,7 @@ struct PlayerScreen: View {
                     if indicator.kind == .brightness { DSGestureIndicator(symbol: indicator.symbol, value: indicator.value, barHeight: place.bar); Spacer() }
                     else { Spacer(); DSGestureIndicator(symbol: indicator.symbol, value: indicator.value, barHeight: place.bar) }
                 }
-                .padding(.horizontal, DS.Space.s8)
+                .padding(.horizontal, landscape ? DS.Gesture.indicatorInsetLandscape : DS.Gesture.indicatorInsetPortrait)
                 .frame(width: geo.size.width)
                 .position(x: geo.size.width / 2, y: place.y)
             }
@@ -1052,20 +1054,12 @@ struct PlayerScreen: View {
     }
 
     // MARK: estados
-    /// `room`: el tamaño del video (en el iPod, la órbita se achica para caber en su pantalla).
-    @ViewBuilder private func statusOverlays(_ model: PlayerModel, room: CGSize? = nil) -> some View {
+    @ViewBuilder private func statusOverlays(_ model: PlayerModel) -> some View {
         switch model.phase {
         // Volviendo a abrir el mismo video (al regresar a la app): solo la ruedita, sin letrero (antes «Reconectando…»).
         case .preparing where model.reconnecting: LoadingSpinner(delayed: true)
-        // Buscando versiones de verdad: la órbita con lo que contesta cada complemento.
-        case .preparing where model.search != nil:
-            if let search = model.search {
-                SourceOrbit(found: max(search.found, model.source != nil ? 1 : 0), chosen: model.source != nil, failed: triedCount(model),
-                            title: orbitTitle(model, search), also: orbitAlso(model), detail: orbitDetail(model, search),
-                            size: ipod != nil ? min(DS.SourceOrbit.size, (room?.height ?? 0) * DS.SourceOrbit.ipodShare) : DS.SourceOrbit.size,
-                            sideBySide: landscape, anchored: ipod == nil)
-            }
-        case .preparing: LoadingSpinner(caption: Text(preparingText(model)))
+        // Abriendo o buscando versión: la misma animación, sin textos (antes la órbita decía qué complemento contestaba).
+        case .preparing: LoadingSpinner()
         case .failed(let message):
             // Una pantalla por cada caso (sin fuentes, ninguna sirvió, sin red…), sobre los controles, que se esconden.
             PlayerFailureView(failure: model.failure ?? .sourceDied, isEpisode: model.request?.kind == "series",
@@ -1078,47 +1072,6 @@ struct PlayerScreen: View {
             if model.reconnecting { LoadingSpinner(delayed: true) }
             else if model.snapshot.state == .buffering || model.snapshot.state == .loading { LoadingSpinner() }
         }
-    }
-
-    private func triedCount(_ model: PlayerModel) -> Int {
-        if case .triedAnotherSource(let n)? = model.notice { return n }
-        return 0
-    }
-
-    /// Lo que dice la órbita: a quién se le pregunta, cuántas llegaron y cuál se eligió (todo de la búsqueda real).
-    private func orbitTitle(_ model: PlayerModel, _ search: PlayerModel.SourceSearch) -> Text {
-        if let src = model.source {
-            let n = triedCount(model)
-            let version = versionText(src, model)
-            return n > 0 ? Text("Probando otra versión (\(n))…") : version.isEmpty ? Text("Elegimos una versión") : Text("Elegimos \(version)")
-        }
-        if search.found == 1 { return Text("1 versión encontrada") }
-        let n = search.found
-        if n > 1 { return Text("\(n) versiones encontradas") }
-        return Text("Buscando en tus complementos")
-    }
-
-    /// Bajo «Elegimos 🇲🇽 Latino · 1080p», las banderas de los otros idiomas que trae («🇺🇸 🇪🇸»); VoiceOver dice
-    /// «También en inglés y castellano». Con uno solo, nada.
-    private func orbitAlso(_ model: PlayerModel) -> Text? {
-        guard let src = model.source, triedCount(model) == 0 else { return nil }
-        let codes = AllSources.otherLanguages(src, prefs: heardPrefs(model))
-        let flags = codes.compactMap { LanguageFlags.flag($0) }
-        guard !flags.isEmpty else { return nil }
-        let ui = env.services.appSettings.uiLanguage
-        let names = codes.map { VersionLanguageRow.inline(Streams.versionLanguageName($0, in: ui), ui) }
-        let list = names.count > 1 ? names.dropLast().joined(separator: ", ") + Strings.tr(" y ", language: ui) + (names.last ?? "") : names.joined()
-        return Text(verbatim: flags.joined(separator: " ")).accessibilityLabel(Text("También en \(list)"))
-    }
-
-    private func orbitDetail(_ model: PlayerModel, _ search: PlayerModel.SourceSearch) -> Text? {
-        if let src = model.source { return triedCount(model) > 0 ? Text(verbatim: versionText(src, model)) : Text("Abriendo…") }
-        if search.addons.isEmpty { return nil }
-        let answeredCount = search.answered
-        if answeredCount > 0 { return Text("\(answeredCount) de \(search.addons.count) complementos") }
-        let names = search.addons.prefix(DS.SourceOrbit.namesShown).joined(separator: " · ")
-        let moreCount = search.addons.count - DS.SourceOrbit.namesShown
-        return moreCount > 0 ? Text("\(names) y \(moreCount) más") : Text(verbatim: names)
     }
 
     /// «Latino · 1080p»: el idioma que va a sonar y la calidad de una versión. El idioma solo si la versión lo dice (o ya se
@@ -1144,21 +1097,14 @@ struct PlayerScreen: View {
         return prefs
     }
 
-    /// La única ruedita de carga del reproductor: abrir, buscar, volver a la app o llenar el búfer. Siempre del mismo tamaño y con su
-    /// centro en el centro del video (el letrero, si hay, va debajo sin moverla). `delayed`: solo si tarda más de un instante (al
-    /// volver a la app lo normal es que el video regrese antes y no se vea nada).
+    /// La única animación de carga del reproductor (`DSLoader`): abrir, buscar, volver a la app o llenar el búfer. Siempre igual y
+    /// al centro del video. `delayed`: solo si tarda más de un instante (al volver a la app lo normal es que el video regrese antes
+    /// y no se vea nada).
     private struct LoadingSpinner: View {
-        var caption: Text? = nil
         var delayed = false
         @State private var shown = false
         var body: some View {
-            ProgressView().tint(DS.text).controlSize(.large)
-                .overlay(alignment: .bottom) {
-                    if let caption {
-                        caption.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).fixedSize()
-                            .alignmentGuide(.bottom) { $0[.top] - DS.Space.s3 }
-                    }
-                }
+            DSLoader()
                 .opacity(shown || !delayed ? 1 : 0)
                 .task { guard delayed else { return }; try? await Task.sleep(nanoseconds: DS.Timing.quietSpinnerDelay); shown = true }
                 .accessibilityIdentifier("player-loading")
@@ -1166,14 +1112,6 @@ struct PlayerScreen: View {
     }
 
     private func failed(_ model: PlayerModel) -> Bool { if case .failed = model.phase { true } else { false } }
-
-    private func preparingText(_ model: PlayerModel) -> LocalizedStringKey {
-        if case .triedAnotherSource(let n)? = model.notice { return "Probando otra versión (\(n))…" }
-        // Ya sabe qué abrir: la versión que elegiste o tu descarga. «Buscando la mejor fuente» ahí no era cierto.
-        if current.localFile != nil { return "Abriendo tu descarga…" }
-        if current.sourceIndex != nil { return "Abriendo la versión que elegiste…" }
-        return "Buscando la mejor versión…"
-    }
 
     // MARK: controles
     /// Una sola identidad en los dos sentidos («barra limpia»): arriba ✕, el nombre y el episodio, subtítulos, AirPlay y «⋯»
@@ -1209,7 +1147,7 @@ struct PlayerScreen: View {
                     if fillsPortrait {
                         LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     }
-                    topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+                    if !raisedPortrait(rect) { topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2) }
                     // Sin agarradera a la vista (se pidió quitarla): el video se sigue moviendo arrastrando desde su borde de abajo o
                     // desde lo negro. Para VoiceOver queda un elemento invisible con «Subir el video» y «Bajar el video».
                     if !fillsPortrait {
@@ -1230,8 +1168,10 @@ struct PlayerScreen: View {
                         if model.snapshot.duration > 0 { scrubber(model) }
                         // Su lugar está apartado aunque no salga: ±10 y el botón grande no brincan cuando aparece.
                         HStack(spacing: DS.Space.s2) { Spacer(); nextEpisode(model); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
-                        if !fillsPortrait { Spacer(minLength: 0) }
+                        // Pegado a la barra (antes flotaba a media pantalla, lejos del video).
                         if model.phase != .preparing { transport(model) }
+                        // Con el video hasta arriba, la barra de ✕ y el nombre baja aquí.
+                        if raisedPortrait(rect) { topBar(model).padding(.top, DS.Space.s4) }
                         if !fillsPortrait { Spacer(minLength: 0) }
                     }
                     .padding(.horizontal, DS.Space.gutter)
@@ -1568,7 +1508,7 @@ struct PlayerScreen: View {
                             Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
                                 .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
                         } }
-                        dock
+                        dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
                     }
                     .frame(width: DS.PlayerPanel.width)
                 }
@@ -1576,7 +1516,9 @@ struct PlayerScreen: View {
                 .frame(maxHeight: .infinity, alignment: .top)
             } else {
                 let top = min(rect.maxY + DS.Space.s4, geo.size.height * DS.PlayerPanel.dockPortraitMaxTop)
-                dock.frame(maxWidth: DS.PlayerPanel.dockWidth)
+                // Todo el panel recibe el toque (entre las pastillas pasaba al video de abajo).
+                dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
+                    .frame(maxWidth: DS.PlayerPanel.dockWidth)
                     .frame(maxHeight: geo.size.height - top - DS.Space.s2, alignment: .top)
                     .padding(.horizontal, DS.Space.gutter).offset(y: top)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -2054,11 +1996,13 @@ struct PlayerScreen: View {
     /// hasta aquí para que el episodio arranque donde ya está la imagen.
     /// Arriba nunca llega a la barra de botones (antes, subido hasta arriba, se encimaba con ✕ y el nombre) y abajo deja el
     /// lugar de los controles (la barra, «Saltar intro», ±10 y el botón grande).
+    /// Sin mover (center negativo) abre bajo la barra de botones; arrastrado, sube hasta la orilla y entonces la barra de ✕ y el
+    /// nombre baja con los demás controles (`raisedPortrait`).
     static func portraitVideoRect(in size: CGSize, center: Double, aspect: Double = Double(DS.Poster.stillAspect)) -> CGRect {
         let height = portraitHeight(in: size, aspect: aspect)
         let top = DS.PlayerPanel.portraitTopClearance
         let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
-        let y = min(max(top, size.height * center - height / 2), lowest)
+        let y = center < 0 ? min(top, lowest) : min(max(0, size.height * center - height / 2), lowest)
         return CGRect(x: 0, y: y, width: size.width, height: height)
     }
     /// Lo más arriba y lo más abajo que puede ir el video (como centro, parte del alto): debajo de la barra de botones y
@@ -2066,15 +2010,19 @@ struct PlayerScreen: View {
     static func portraitLimits(in size: CGSize, aspect: Double = Double(DS.Poster.stillAspect)) -> ClosedRange<Double> {
         guard size.height > 0 else { return Double(DS.PlayerPanel.portraitCenter)...Double(DS.PlayerPanel.portraitCenter) }
         let height = portraitHeight(in: size, aspect: aspect)
-        let top = DS.PlayerPanel.portraitTopClearance
-        let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
-        return Double((top + height / 2) / size.height)...Double((lowest + height / 2) / size.height)
+        let lowest = max(DS.PlayerPanel.portraitTopClearance, size.height - DS.PlayerPanel.portraitControlsReserve - height)
+        return Double((height / 2) / size.height)...Double((lowest + height / 2) / size.height)
     }
     /// El centro del video como fracción del alto: el que dejaste, o (negativo: sin mover) el de lo más arriba, donde
     /// `portraitVideoRect` lo pinta. Sin esto, arrastrar o mover con VoiceOver partía de -1 y el video no bajaba.
     static func resolvedCenter(_ stored: Double, in size: CGSize, aspect: Double = Double(DS.Poster.stillAspect)) -> Double {
         if stored >= 0 || size.height <= 0 { return stored }
-        return portraitLimits(in: size, aspect: aspect).lowerBound
+        return Double(portraitVideoRect(in: size, center: -1, aspect: aspect).midY / size.height)
+    }
+
+    /// El video subido hasta tapar la barra de ✕ y el nombre: esa barra pasa abajo, con los demás controles.
+    private func raisedPortrait(_ rect: CGRect) -> Bool {
+        !landscape && !fillsPortrait && ipod == nil && rect.minY < DS.PlayerPanel.portraitTopClearance - 1
     }
 
     /// El alto del video en vertical: de orilla a orilla en la proporción del cuadro. Un video más cuadrado que 16:9 (Los

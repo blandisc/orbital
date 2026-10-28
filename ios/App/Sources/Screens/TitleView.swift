@@ -725,6 +725,12 @@ struct EpisodeRowView: View {
                     ZStack(alignment: .bottom) {
                         PosterView(url: row.thumbnail, title: "\(row.number)", aspect: DS.Poster.stillAspect)
                         if let progress = row.progress { DSProgress(fraction: progress) }
+                        // Visto: la imagen se apaga y lleva un ojito (sin escribir «Visto»; la palomita va a la derecha).
+                        if row.watched {
+                            DS.scrim
+                            Image(systemName: "eye.fill").font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
+                                .frame(maxHeight: .infinity).accessibilityHidden(true)
+                        }
                     }
                     .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -752,12 +758,11 @@ struct EpisodeRowView: View {
         if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
     }
 
-    private var hasStatus: Bool { row.airs != nil || row.watched || row.leftMinutes > 0 || row.download == .done }
+    private var hasStatus: Bool { row.airs != nil || (!row.watched && row.leftMinutes > 0) || row.download == .done }
 
     @ViewBuilder private var status: some View {
         if let airs = row.airs { Text("Sale el \(airs, format: .dateTime.day().month(.abbreviated))") }
-        else if row.watched { Text("Visto") }
-        else if row.leftMinutes > 0 { Text(timeLeftText(minutes: row.leftMinutes)) }
+        else if !row.watched, row.leftMinutes > 0 { Text(timeLeftText(minutes: row.leftMinutes)) }
         else if row.download == .done { Text("Descargado") }
     }
 

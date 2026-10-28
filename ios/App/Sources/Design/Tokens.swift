@@ -242,10 +242,12 @@ enum DS {
         static let seekArrived: Double = 2
         static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)
         static let indicatorBarHeight: CGFloat = 120
-        static let indicatorBarWidth: CGFloat = 5
-        /// Lo que mide el indicador además de la barra (ícono, porcentaje, espacios y relleno), y lo más corta que puede quedar.
-        static let indicatorChrome: CGFloat = 88
+        static let indicatorBarWidth: CGFloat = 4
+        /// Lo que mide el indicador además de la barra (el ícono y su espacio), y lo más corta que puede quedar.
+        static let indicatorChrome: CGFloat = 32
         static let indicatorBarMin: CGFloat = 48
+        /// Qué tan lejos de la orilla va (en vertical, casi pegado; en horizontal, fuera de la zona de la cámara y los botones).
+        static let indicatorInsetPortrait: CGFloat = DS.Space.s3, indicatorInsetLandscape: CGFloat = DS.Space.s8
         /// Un toque de un dedo y uno de dos tan juntos son el mismo toque (s).
         static let twoFingerTapGuard: TimeInterval = 0.35
         /// La burbuja de buscar no se acerca más que esto a los bordes de la pantalla.
@@ -367,32 +369,14 @@ enum DS {
         static let still = 0.5, fade = 0.3
     }
 
-    /// La órbita de «Buscando la mejor versión» (`SourceOrbit`).
-    enum SourceOrbit {
-        static let size: CGFloat = 132
-        static let dot: CGFloat = 6, chosenDot: CGFloat = 16
-        static let ringWidth: CGFloat = 1.5, planetWidth: CGFloat = 3, sweepWidth: CGFloat = 2.4
-        static let planetShare: CGFloat = 0.24
-        static let maxDots = 24
-        /// Cada punto nuevo cae al ángulo áureo del anterior: se reparten parejos sin encimarse.
-        static let goldenAngle = 137.5
-        static let sweepSeconds = 1.6
-        static let sweepLength: CGFloat = 0.16
-        static let dimOpacity = 0.25, failedOpacity = 0.12
-        /// Cuántos complementos se nombran antes de «y N más», y el ancho mínimo de los textos junto a la órbita (horizontal).
-        static let namesShown = 3
-        /// Cada cuánto sale otro punto cuando las versiones llegan juntas; la luna que gira mientras se abre (a qué distancia del
-        /// planeta, en veces su radio, y cuánto tarda la vuelta).
-        static let revealStep = 0.03
-        static let moonOrbit: CGFloat = 0.85, moonSeconds = 2.2
-        /// La estela de la luna: qué parte de la vuelta ocupa, qué tan visible es su punta, su grosor y lo difuminado; y el
-        /// brillo de la luna.
-        static let moonTrail: CGFloat = 0.3, trailOpacity = 0.75, trailWidth: CGFloat = 4, trailBlur: CGFloat = 1, moonGlow: CGFloat = 3
-        static let textWidth: CGFloat = 220
-        /// En vertical, el ancho de los textos bajo la órbita (cabe en el iPhone SE con sus márgenes).
-        static let stackedTextWidth: CGFloat = 280
-        /// En el modo iPod, la órbita en veces el alto de su pantalla (deja lugar a los textos debajo).
-        static let ipodShare: CGFloat = 0.5
+    /// La animación de carga del reproductor (`DSLoader`): una órbita delgada con una luna turquesa que la recorre dejando estela.
+    /// Del tamaño del botón grande, para ocupar su lugar.
+    enum Loader {
+        static let size: CGFloat = 56
+        static let ringWidth: CGFloat = 1.5, trailWidth: CGFloat = 3, moon: CGFloat = 7, moonGlow: CGFloat = 4
+        /// Cuánto tarda una vuelta, qué parte de la órbita ocupa la estela y qué tan visible es su punta.
+        static let seconds = 1.4
+        static let trail: CGFloat = 0.35, trailOpacity = 0.9
     }
 
     enum Brand {
@@ -449,7 +433,7 @@ enum DS {
         static let offlineExtraLanguages = 2
         /// La agarradera va dentro del borde de abajo del video (sobre un velo): la rayita, a cuánto del borde, el alto del velo, la
         /// franja que la toma (dentro del video, desde abajo, y un poco por fuera) y el aire hasta la barra de avance.
-        static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap: CGFloat = 20
+        static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap: CGFloat = 12
         static let handleReach: CGFloat = 12
         /// Cuántas funciones da el video un brinquito (hacia abajo y de regreso) para enseñar que se mueve, y de qué tamaño (parte del alto).
         static let moveHintTimes = 3
