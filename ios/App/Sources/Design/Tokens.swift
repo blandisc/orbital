@@ -409,7 +409,7 @@ enum DS {
         static func wordFont(_ size: CGFloat) -> Font { .system(size: size, weight: .bold, design: .rounded) }
     }
 
-    /// El carrusel de «Seguir viendo» en Inicio (`DeckCard`, `deckTransition`): tarjetas con lo que sigue a los lados, más
+    /// El carrusel de «En tendencia» en Inicio (`DeckCard`, `deckTransition`): tarjetas con lo que sigue a los lados, más
     /// chicas, oscuras y desenfocadas; coverflow las gira en 3D y abanico las inclina desde abajo.
     enum Deck {
         /// Qué parte del ancho toma la tarjeta del frente (asoman las de los lados) y su alto.
@@ -423,15 +423,6 @@ enum DS {
         static let fanAngle: Double = 9, fanDrop: CGFloat = 24
         /// Donde empieza el velo (para que el texto se lea) y la sombra de la tarjeta.
         static let veilStart: CGFloat = 0.38, shadow: CGFloat = 24, shadowY: CGFloat = 14
-        /// El indicador de tiempo: la barrita de la píldora, el trazo del borde y del arco, y el tamaño de la órbita.
-        static let pillBar: CGFloat = 56, edgeStroke: CGFloat = 3, arcStroke: CGFloat = 2.5, arcSize: CGFloat = 150, arcInset: CGFloat = 14
-        /// La parte de la órbita que se ve dentro de la tarjeta (un cuarto) y su giro.
-        static let arcQuarter: CGFloat = 0.25, arcQuarterDegrees: Double = 90
-        /// El ancho del botón que se llena (con el de la TV al lado).
-        static let fillWidth: CGFloat = 200
-        static let moonDot: CGFloat = 9
-        /// El botón que se llena: el tono del avance y lo tenue de los minutos.
-        static let fillOpacity: Double = 0.55, fillMinutesOpacity: Double = 0.7
     }
 
     /// La ficha rica (como Infuse): caras del reparto, insignias de calidad, calificaciones, tráiler y logos.
@@ -580,18 +571,14 @@ enum DS {
         static let lowFraction = 0.1
     }
 
-    /// Ajustes: los renglones con su ícono de color y las vistas previas de cada estilo de Inicio.
+    /// Ajustes: los renglones con su ícono de color.
     enum SettingsLook {
         static let rowIcon: CGFloat = 28
         /// Lo que ocupa la flecha de un renglón que lleva a otra página.
         static let chevronSlot: CGFloat = 20
         static let profileAvatar: CGFloat = 60, editBadge: CGFloat = 22
-        /// La vista previa del carrusel: tres tarjetas chicas que se deslizan solas, de ida y vuelta.
-        static let deckPreviewHeight: CGFloat = 120, deckPreviewCard = CGSize(width: 58, height: 86), deckPreviewStep: CGFloat = 50
-        static let deckPreviewBlur: CGFloat = 1.5, deckPreviewDrop: CGFloat = 6, deckPreviewSpeed: Double = 0.9
-        /// La vista previa de cuánto falta: una tarjeta del tamaño real, reducida.
-        static let timePreviewCard = CGSize(width: 300, height: 190), timePreviewScale: CGFloat = 0.5
-        static let optionRadius: CGFloat = 18, optionRing: CGFloat = 2
+        /// El anillo de lo elegido (los días del calendario de estrenos).
+        static let optionRing: CGFloat = 2
     }
 
     /// El color de cada plataforma (su tarjeta en abanico, el brillo de su logo y de los números de sus rankings).

@@ -130,14 +130,31 @@ final class ScreensUITests: XCTestCase {
         }
     }
 
-    /// Ajustes › Inicio y Para ti › «Un Simpson al azar»: las clásicas por omisión; tocar una temporada la agrega y «Las clásicas»
-    /// la regresa.
+    /// Ajustes › «Un Simpson al azar»: las clásicas por omisión; tocar una temporada la agrega y «Las clásicas» la regresa.
     func testSimpsonsSeasonsPicker() {
         app.launchArguments = ["-demo", "-demo-open", "settings", "-demo-no-idle"]
         app.launch()
-        let home = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Inicio y Para ti'")).firstMatch
-        XCTAssertTrue(home.waitForExistence(timeout: 20), "el renglón «Inicio y Para ti»")
-        home.tap()
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Un Simpson al azar'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 20), "el renglón «Un Simpson al azar»")
+        row.tap()
+        checkSeasons()
+    }
+
+    /// Inicio: dejar picada la dona abre su menú; «Temporadas…» abre las mismas temporadas en una hoja.
+    func testSimpsonsSeasonsFromDonut() {
+        app.launchArguments = ["-demo", "-demo-tab", "0", "-demo-no-idle"]
+        app.launch()
+        let donut = app.buttons["home-random-simpsons"].firstMatch
+        XCTAssertTrue(donut.waitForExistence(timeout: 20), "la dona en la barra de Inicio")
+        donut.press(forDuration: 1.0)
+        let seasons = app.buttons["Temporadas…"].firstMatch
+        XCTAssertTrue(seasons.waitForExistence(timeout: 5), "el menú de la dona con «Temporadas…»")
+        let menu = XCTAttachment(screenshot: app.screenshot()); menu.name = "menu"; menu.lifetime = .keepAlways; add(menu)
+        seasons.tap()
+        checkSeasons()
+    }
+
+    private func checkSeasons() {
         let picker = app.descendants(matching: .any)["simpsons-seasons"].firstMatch
         for _ in 0..<6 where !picker.exists || !picker.isHittable { app.swipeUp() }
         let one = app.buttons["Temporada 1"].firstMatch, five = app.buttons["Temporada 5"].firstMatch
@@ -146,7 +163,7 @@ final class ScreensUITests: XCTestCase {
         XCTAssertTrue(five.isSelected, "la 5 sí (las clásicas)")
         one.tap()
         XCTAssertTrue(waitUntil { one.isSelected }, "tocarla la agrega")
-        let shot = XCTAttachment(screenshot: app.screenshot()); shot.lifetime = .keepAlways; add(shot)
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "seasons"; shot.lifetime = .keepAlways; add(shot)
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Las clásicas'")).firstMatch.tap()
         XCTAssertTrue(waitUntil { !one.isSelected }, "«Las clásicas» la quita")
     }

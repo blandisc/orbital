@@ -1244,17 +1244,6 @@
         }
       }
     },
-    "Arco orbital": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Orbit arc"
-          }
-        }
-      }
-    },
     "Ariel": {
       "extractionState": "manual",
       "localizations": {
@@ -1779,17 +1768,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete the download"
-          }
-        }
-      }
-    },
-    "Botón que se llena": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Filling button"
           }
         }
       }
@@ -2461,17 +2439,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Loading…"
-          }
-        }
-      }
-    },
-    "Carrusel": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Carousel"
           }
         }
       }
@@ -3664,28 +3631,6 @@
         }
       }
     },
-    "Cómo se acomodan las tarjetas de «Seguir viendo».": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "How the Continue Watching cards are arranged."
-          }
-        }
-      }
-    },
-    "Cómo te dice la tarjeta lo que te queda por ver.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "How the card tells you how much is left."
-          }
-        }
-      }
-    },
     "Cómo te llamamos": {
       "extractionState": "manual",
       "localizations": {
@@ -4760,17 +4705,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "The downloaded file can't be read. Delete it in Downloads and download it again."
-          }
-        }
-      }
-    },
-    "El borde avanza": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Progress border"
           }
         }
       }
@@ -6733,17 +6667,6 @@
         }
       }
     },
-    "Inicio y Para ti": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Home and For You"
-          }
-        }
-      }
-    },
     "Intenso": {
       "extractionState": "manual",
       "localizations": {
@@ -7070,6 +6993,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The version stopped responding. Trying again picks up where you were, with another one if needed."
+          }
+        }
+      }
+    },
+    "Las clásicas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The classics"
           }
         }
       }
@@ -11452,17 +11386,6 @@
         }
       }
     },
-    "Píldora de vidrio": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Glass pill"
-          }
-        }
-      }
-    },
     "Póngalo en castellano": {
       "extractionState": "manual",
       "localizations": {
@@ -14048,6 +13971,17 @@
         }
       }
     },
+    "También en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also in %@"
+          }
+        }
+      }
+    },
     "También tenías": {
       "extractionState": "manual",
       "localizations": {
@@ -14143,6 +14077,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Seasons"
+          }
+        }
+      }
+    },
+    "Temporadas…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seasons…"
           }
         }
       }
@@ -15907,6 +15852,17 @@
         }
       }
     },
+    "Vista del carrusel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carousel view"
+          }
+        }
+      }
+    },
     "Visto": {
       "extractionState": "manual",
       "localizations": {
@@ -16519,6 +16475,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "continue it on my iPhone"
+          }
+        }
+      }
+    },
+    "también": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "also"
           }
         }
       }

@@ -3,7 +3,7 @@ import OrbitalCore
 import OrbitalModels
 
 /// Ajustes: tu perfil arriba (el avatar se toca) y dos grupos de renglones que llevan a su página, cada uno con cómo
-/// está ahora: lo tuyo (apariencia, Inicio, idioma, reproducción, descargas) y las conexiones (Orbital, Trakt…).
+/// está ahora: lo tuyo (apariencia, Un Simpson al azar, idioma, reproducción, descargas) y las conexiones (Orbital, Trakt…).
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var settings: ModelObserver<SettingsModel>
@@ -15,8 +15,6 @@ struct SettingsView: View {
     @State private var orbitalToken = ""
     @State private var editingAvatar = false
     @State private var showsYear = false
-    /// Las temporadas de Los Simpson que existen (llegan de Cinemeta al abrir «Inicio y Para ti»).
-    @State private var simpsonsSeasons = Array(1...AppEnvironment.simpsonsKnownSeasons)
     @State private var showsTrakt = false
 
     init() {
@@ -42,8 +40,8 @@ struct SettingsView: View {
                 NavigationLink { page("Apariencia") { appearance(model) } } label: {
                     SettingsRow(title: "Apariencia", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, value: appearanceName(s.appearance))
                 }
-                NavigationLink { page("Inicio y Para ti") { home(model) } } label: {
-                    SettingsRow(title: "Inicio y Para ti", symbol: "house", tint: DS.ListTint.watching, value: s.homeDeck == DeckStyle.fan.rawValue ? Text("Abanico") : Text("Coverflow"))
+                NavigationLink { page("Un Simpson al azar") { SimpsonsSeasonsSection { seasons in model.update { $0.simpsonsSeasons = seasons } } } } label: {
+                    SettingsRow(title: "Un Simpson al azar", symbol: "dice", tint: DS.ListTint.watching, value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
                 }
                 NavigationLink { page("Idioma y subtítulos") { language(model) } } label: {
                     SettingsRow(title: "Idioma y subtítulos", symbol: "captions.bubble", tint: DS.ListTint.library, value: s.uiLanguage == "en" ? Text(verbatim: "English") : Text(verbatim: "Español"))
@@ -190,43 +188,6 @@ struct SettingsView: View {
         }
         .listRowBackground(DS.surface)
         Section("Ícono de la app") { AppIconPicker() }.listRowBackground(DS.surface)
-    }
-
-    /// Inicio: cada estilo se elige viéndolo (el carrusel se mueve solo; cuánto falta, sobre una tarjeta).
-    @ViewBuilder private func home(_ model: SettingsModel) -> some View {
-        let s = model.settings
-        Section {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
-                StyleOption(label: "Coverflow", selected: s.homeDeck != DeckStyle.fan.rawValue, action: { model.update { $0.homeDeck = DeckStyle.coverflow.rawValue } }) { DeckStylePreview(style: .coverflow) }
-                StyleOption(label: "Abanico", selected: s.homeDeck == DeckStyle.fan.rawValue, action: { model.update { $0.homeDeck = DeckStyle.fan.rawValue } }) { DeckStylePreview(style: .fan) }
-            }
-            .padding(.vertical, DS.Space.s2)
-            .accessibilityIdentifier("deck-options")
-        } header: { Text("Carrusel") } footer: { Text("Cómo se acomodan las tarjetas de «Seguir viendo».") }
-        .listRowBackground(DS.surface)
-        Section {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
-                ForEach(TimeStyle.allCases, id: \.self) { style in
-                    StyleOption(label: timeName(style), selected: s.homeTime == style.rawValue, action: { model.update { $0.homeTime = style.rawValue } }) { TimeStylePreview(style: style) }
-                }
-            }
-            .padding(.vertical, DS.Space.s2)
-        } header: { Text("Cuánto falta") } footer: { Text("Cómo te dice la tarjeta lo que te queda por ver.") }
-        .listRowBackground(DS.surface)
-        .sensoryFeedback(.selection, trigger: s.homeDeck + s.homeTime)
-        Section {
-            SimpsonsSeasonsPicker(selected: s.simpsonsSeasons, available: simpsonsSeasons, classics: AppEnvironment.simpsonsClassics) { seasons in
-                model.update { $0.simpsonsSeasons = seasons }
-                env.simpsonsSeasonsChanged()
-            }
-            .padding(.vertical, DS.Space.s2)
-            .task { simpsonsSeasons = await env.simpsonsSeasonNumbers() }
-        } header: { Text("Un Simpson al azar") } footer: { Text("La dona de Inicio elige un episodio de estas temporadas.") }
-        .listRowBackground(DS.surface)
-    }
-
-    private func timeName(_ style: TimeStyle) -> LocalizedStringKey {
-        switch style { case .pill: "Píldora de vidrio"; case .edge: "El borde avanza"; case .fill: "Botón que se llena"; case .arc: "Arco orbital" }
     }
 
     @ViewBuilder private func language(_ model: SettingsModel) -> some View {
