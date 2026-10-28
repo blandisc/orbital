@@ -774,6 +774,8 @@ enum DS {
 
     /// Medidas fijas.
     enum Size {
+        /// Cuánto se desvanece la orilla de una tira horizontal que no cabe (`edgeFade`).
+        static let edgeFade: CGFloat = 28
         /// La gota de los puntos de un carrusel: cuánto se alarga la activa y su resorte (respuesta y amortiguación).
         static let pageDotStretch: CGFloat = 2.6, pageDotSpring: Double = 0.38, pageDotDamping: Double = 0.62
         /// El logotipo arriba de Inicio (el tamaño de la letra de «orbital»).

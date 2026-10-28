@@ -1152,6 +1152,7 @@ struct EpisodesPanel: View {
                         }
                     }
                     // Los episodios llegan después de abrir (se leen aparte): al llegar, a la temporada que suena.
+                    .edgeFade()   // si no caben, las orillas se desvanecen en vez de cortarse
                     .onChange(of: seasons.count, initial: true) { proxy.scrollTo(shown, anchor: .center) }
                 }
             }

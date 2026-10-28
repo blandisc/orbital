@@ -1195,3 +1195,34 @@ extension Text {
         return Text(verbatim: String(string.dropLast(rest.count))).accessibilityLabel(Text(verbatim: "")) + Text(verbatim: rest)
     }
 }
+
+/// Una tira horizontal que no cabe (las temporadas de «Episodios»): en vez de cortarse en seco, se desvanece en la orilla
+/// donde hay más. A la izquierda solo cuando ya la recorriste; a la derecha mientras quede algo por ver.
+private struct HorizontalEdgeFade: ViewModifier {
+    @State private var more = EdgeMore()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    struct EdgeMore: Equatable { var leading = false, trailing = false }
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: EdgeMore.self) { g in
+                EdgeMore(leading: g.visibleRect.minX > 1, trailing: g.visibleRect.maxX < g.contentSize.width - 1)
+            } action: { _, now in
+                withAnimation(DS.Motion.base(reduceMotion)) { more = now }
+            }
+            .mask {
+                HStack(spacing: 0) {
+                    LinearGradient(colors: [more.leading ? .clear : .black, .black], startPoint: .leading, endPoint: .trailing).frame(width: DS.Size.edgeFade)
+                    Color.black
+                    LinearGradient(colors: [.black, more.trailing ? .clear : .black], startPoint: .leading, endPoint: .trailing).frame(width: DS.Size.edgeFade)
+                }
+            }
+    }
+}
+
+extension View {
+    /// Desvanece las orillas de un `ScrollView` horizontal que no cabe (ver `HorizontalEdgeFade`).
+    func edgeFade() -> some View { modifier(HorizontalEdgeFade()) }
+}
+
