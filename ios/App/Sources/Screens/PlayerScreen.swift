@@ -867,7 +867,9 @@ struct PlayerScreen: View {
             .transition(.opacity)
             .allowsHitTesting(false)
         }
-        if dragAxis == .horizontal, let target = seekPreview, let start = seekPositionAtDragStart {
+        // Buscar arrastrando sobre el video: la burbuja es la misma de la barra (los controles se ven mientras arrastras). Solo el
+        // iPod, que no tiene esa barra, usa la suya.
+        if ipod != nil, dragAxis == .horizontal, let target = seekPreview, let start = seekPositionAtDragStart {
             seekBubble(target: target, start: start)
         }
         if let notice, !lockNoticeVisible {
@@ -890,20 +892,15 @@ struct PlayerScreen: View {
                 .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
         if let zoomToast, !lockNoticeVisible {
-            // Siempre se ve: en horizontal arriba; en vertical sobre el video (arriba lo tapaba la barra), y si el modo no
-            // cambia nada en vertical, lo dice.
-            if landscape {
-                VStack { DSToastPill(text: LocalizedStringKey(zoomToast.title)); Spacer() }.padding(.top, DS.Space.s14)
-                    .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
-            } else {
-                GeometryReader { geo in
-                    let rect = videoRect(in: geo.size)
-                    DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: zoomToast == .fill ? Text("Llena la pantalla y recorta los lados")
-                                : zoomToast == .stretch ? Text("Llena la pantalla deformando la imagen") : nil)
-                        .position(x: rect.midX, y: rect.midY)
-                }
-                .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
+            // Los avisos de texto, todos en el mismo lugar (arriba, como el de subtítulos); antes el del zoom en vertical salía al
+            // centro del video. Al centro del video solo van los glifos de los gestos.
+            VStack {
+                DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: zoomToast == .fill ? Text("Llena la pantalla y recorta los lados")
+                            : zoomToast == .stretch ? Text("Llena la pantalla deformando la imagen") : nil)
+                Spacer()
             }
+            .padding(.top, DS.Space.s14)
+            .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
         if let chain = skipChain {
             // La onda en media luna desde la orilla que tocaste, con flechas y lo que llevas sumado («+30 s»), como YouTube.
@@ -917,10 +914,15 @@ struct PlayerScreen: View {
             .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
         if let flashSymbol, !controlsVisible {
-            Image(systemName: flashSymbol).font(DS.TextRecipe.display.font).foregroundStyle(DS.text)
-                .frame(width: DS.Size.touchTarget * 2, height: DS.Size.touchTarget * 2)
-                .glassEffect(.regular, in: Circle())
-                .transition(.scale.combined(with: .opacity)).allowsHitTesting(false).accessibilityHidden(true)
+            // Al centro del video (donde va el botón grande), no de la pantalla: en vertical quedaba debajo de la imagen.
+            GeometryReader { geo in
+                let rect = videoRect(in: geo.size)
+                Image(systemName: flashSymbol).font(DS.TextRecipe.display.font).foregroundStyle(DS.text)
+                    .frame(width: DS.Size.touchTarget * 2, height: DS.Size.touchTarget * 2)
+                    .glassEffect(.regular, in: Circle())
+                    .position(x: rect.midX, y: rect.midY)
+            }
+            .transition(.scale.combined(with: .opacity)).allowsHitTesting(false).accessibilityHidden(true)
         }
     }
 
@@ -932,9 +934,7 @@ struct PlayerScreen: View {
             let fraction = CGFloat(max(0, min(1, target / duration)))
             let rawX = DS.Space.gutter + (geo.size.width - DS.Space.gutter * 2) * fraction
             let x = min(max(rawX, DS.Gesture.seekBubbleSideMargin), geo.size.width - DS.Gesture.seekBubbleSideMargin)
-            // En vertical, dentro del borde de abajo del video, justo encima de la barra (antes flotaba en lo negro del pie).
-            let y = landscape || fillsPortrait || ipod != nil ? geo.size.height - DS.Gesture.seekBubbleBottomInset
-                : videoRect(in: geo.size).maxY - DS.Gesture.seekBubblePortraitLift
+            let y = geo.size.height - DS.Gesture.seekBubbleBottomInset   // solo el iPod: sobre su rueda
             DSSeekBubble(time: clock(target), delta: "\(delta >= 0 ? "+" : "−")\(clock(abs(delta)))")
                 .position(x: x, y: y)
         }
@@ -1256,7 +1256,7 @@ struct PlayerScreen: View {
                     if fillsPortrait {
                         LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     }
-                    if !raisedPortrait(rect) { topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2) }
+                    if !raisedPortrait(rect) { topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2).transition(.opacity) }
                     // Sin agarradera a la vista (se pidió quitarla): el video se sigue moviendo arrastrando desde su borde de abajo o
                     // desde lo negro. Para VoiceOver queda un elemento invisible con «Subir el video» y «Bajar el video».
                     if !fillsPortrait {
@@ -1272,9 +1272,10 @@ struct PlayerScreen: View {
                             .accessibilityIdentifier("player-drag-hint")
                     }
                     VStack(spacing: DS.Space.s3) {
-                        // «Siguiente episodio» entre el video y la barra (antes tapaba los controles).
-                        if let up = model.upNext, !locked { upNextCard(model, up) }
                         if model.snapshot.duration > 0 { scrubber(model) }
+                        // «Siguiente episodio» debajo de la barra: antes iba encima y la empujaba hacia abajo justo al final, quizá
+                        // mientras la arrastrabas.
+                        if let up = model.upNext, !locked { upNextCard(model, up) }
                         // Su lugar está apartado aunque no salga: ±10 y el botón grande no brincan cuando aparece.
                         // Solo cuando hay algo que ofrecer: el botón grande ya va sobre el video, así que su lugar apartado sobraba
                         // (dejaba una franja negra vacía bajo la barra, más notoria con el video hasta arriba).
@@ -1282,7 +1283,7 @@ struct PlayerScreen: View {
                             HStack(spacing: DS.Space.s2) { Spacer(); nextEpisode(model); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
                         }
                         // Con el video hasta arriba, la barra de ✕ y el nombre baja aquí.
-                        if raisedPortrait(rect) { topBar(model).padding(.top, DS.Space.s4) }
+                        if raisedPortrait(rect) { topBar(model).padding(.top, DS.Space.s4).transition(.opacity) }
                         if !fillsPortrait { Spacer(minLength: 0) }
                     }
                     .padding(.horizontal, DS.Space.gutter)
@@ -1291,6 +1292,8 @@ struct PlayerScreen: View {
                     .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+                // Al subir el video hasta arriba, la barra de ✕ y el nombre pasa abajo con un desvanecido (antes saltaba de golpe).
+                .animation(DS.Motion.base(reduceMotion), value: raisedPortrait(rect))
             }
         }
     }
@@ -2067,6 +2070,7 @@ struct PlayerScreen: View {
             }
             // La barra a todo lo ancho y, debajo, lo visto y lo que falta (sin la hora a la que terminas: no la querías).
             PlayerScrubBar(value: shown, duration: duration, marks: skipMarks(model), ticks: skipTicks(model), clock: { clock($0) },
+                           previewFrom: dragAxis == .horizontal ? seekPositionAtDragStart : nil,
                            change: { scrubbing = $0; model.scrub(to: $0) },
                            editing: { editing in
                                if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde
@@ -2178,47 +2182,21 @@ struct PlayerScreen: View {
         return band
     }
 
-    /// El video en vertical: de orilla a orilla, el alto sale del ancho y la proporción (sin tope, salvo que no quepa), a la
-    /// altura `center` (fracción del alto). `size` es el área segura. Lo usa también la ruleta de Los Simpson, que crece
-    /// hasta aquí para que el episodio arranque donde ya está la imagen.
-    /// Arriba nunca llega a la barra de botones (antes, subido hasta arriba, se encimaba con ✕ y el nombre) y abajo deja el
-    /// lugar de los controles (la barra, «Saltar intro», ±10 y el botón grande).
-    /// Sin mover (center negativo) abre bajo la barra de botones; arrastrado, sube hasta la orilla y entonces la barra de ✕ y el
-    /// nombre baja con los demás controles (`raisedPortrait`).
+    /// El video en vertical (lo usa también la ruleta de Los Simpson, que crece hasta aquí para que el episodio arranque donde ya
+    /// está la imagen). El cálculo vive en `PlayerLayout`, puro y probado.
     static func portraitVideoRect(in size: CGSize, center: Double, aspect: Double = Double(DS.Poster.stillAspect)) -> CGRect {
-        let height = portraitHeight(in: size, aspect: aspect)
-        let top = DS.PlayerPanel.portraitTopClearance
-        let lowest = max(top, size.height - DS.PlayerPanel.portraitControlsReserve - height)
-        let y = center < 0 ? min(top, lowest) : min(max(0, size.height * center - height / 2), lowest)
-        return CGRect(x: 0, y: y, width: size.width, height: height)
+        PlayerLayout.app.portraitRect(in: size, center: center, aspect: aspect)
     }
-    /// Lo más arriba y lo más abajo que puede ir el video (como centro, parte del alto): debajo de la barra de botones y
-    /// dejando el lugar de los controles.
     static func portraitLimits(in size: CGSize, aspect: Double = Double(DS.Poster.stillAspect)) -> ClosedRange<Double> {
-        guard size.height > 0 else { return Double(DS.PlayerPanel.portraitCenter)...Double(DS.PlayerPanel.portraitCenter) }
-        let height = portraitHeight(in: size, aspect: aspect)
-        let lowest = max(DS.PlayerPanel.portraitTopClearance, size.height - DS.PlayerPanel.portraitControlsReserve - height)
-        return Double((height / 2) / size.height)...Double((lowest + height / 2) / size.height)
+        PlayerLayout.app.portraitLimits(in: size, aspect: aspect)
     }
-    /// El centro del video como fracción del alto: el que dejaste, o (negativo: sin mover) el de lo más arriba, donde
-    /// `portraitVideoRect` lo pinta. Sin esto, arrastrar o mover con VoiceOver partía de -1 y el video no bajaba.
     static func resolvedCenter(_ stored: Double, in size: CGSize, aspect: Double = Double(DS.Poster.stillAspect)) -> Double {
-        if stored >= 0 || size.height <= 0 { return stored }
-        return Double(portraitVideoRect(in: size, center: -1, aspect: aspect).midY / size.height)
+        PlayerLayout.app.resolvedCenter(stored, in: size, aspect: aspect)
     }
 
     /// El video subido hasta tapar la barra de ✕ y el nombre: esa barra pasa abajo, con los demás controles.
     private func raisedPortrait(_ rect: CGRect) -> Bool {
         !landscape && !fillsPortrait && ipod == nil && rect.minY < DS.PlayerPanel.portraitTopClearance - 1
-    }
-
-    /// El alto del video en vertical: de orilla a orilla en la proporción del cuadro. Un video más cuadrado que 16:9 (Los
-    /// Simpson en 4:3) crece a lo alto en vez de quedar con franjas negras a los lados dentro de una banda 16:9; uno más
-    /// ancho (cine) se queda en la banda 16:9 de siempre. Nunca invade el lugar de los controles.
-    static func portraitHeight(in size: CGSize, aspect: Double) -> CGFloat {
-        let ratio = CGFloat(min(max(aspect, DS.PlayerPanel.portraitMinAspect), Double(DS.Poster.stillAspect)))
-        let room = max(size.width / DS.Poster.stillAspect, size.height - DS.PlayerPanel.portraitTopClearance - DS.PlayerPanel.portraitControlsReserve)
-        return min(size.width / ratio, room, size.height)
     }
 
     /// La proporción del cuadro que suena (la mide el motor al cargar); 16:9 mientras no se sabe.
@@ -2239,9 +2217,8 @@ struct PlayerScreen: View {
     /// Vertical con «Recortar»: el video a pantalla completa.
     private var fillsPortrait: Bool { !landscape && ipod == nil && (zoom == .fill || zoom == .stretch) }
 
-    /// El panel de la derecha en horizontal: 420 pt, pero nunca más de un poco más de la mitad del ancho (en un iPhone SE o mini
-    /// el video se quedaba en ~180 pt).
-    static func panelWidth(in total: CGFloat) -> CGFloat { min(DS.PlayerPanel.width, total * DS.PlayerPanel.widthShare) }
+    /// El panel de la derecha en horizontal (`PlayerLayout.sidePanelWidth`).
+    static func panelWidth(in total: CGFloat) -> CGFloat { PlayerLayout.app.sidePanelWidth(in: total) }
 
     /// El iPod se ve en vertical.
     private var ipod: IPodFace? { landscape ? nil : IPodFace(rawValue: ipodFace) }
@@ -2387,4 +2364,12 @@ private struct TwoFingerTap: UIGestureRecognizerRepresentable {
     func handleUIGestureRecognizerAction(_ recognizer: UITapGestureRecognizer, context: Context) {
         if recognizer.state == .ended { action() }
     }
+}
+
+extension PlayerLayout {
+    /// Las medidas del reproductor, de los tokens de diseño.
+    static let app = PlayerLayout(topClearance: DS.PlayerPanel.portraitTopClearance, controlsReserve: DS.PlayerPanel.portraitControlsReserve,
+                                  minAspect: DS.PlayerPanel.portraitMinAspect, wideAspect: DS.Poster.stillAspect,
+                                  defaultCenter: Double(DS.PlayerPanel.portraitCenter), panelWidth: DS.PlayerPanel.width,
+                                  panelShare: DS.PlayerPanel.widthShare)
 }

@@ -257,8 +257,6 @@ enum DS {
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
         /// `padding(DS.Space.s6)` de `controls`, con la hilera de tiempos debajo de la barra).
         static let seekBubbleBottomInset: CGFloat = 128
-        /// En vertical: del borde de abajo del video al centro de la burbuja (queda dentro de la imagen, sobre la barra).
-        static let seekBubblePortraitLift: CGFloat = 44
         /// La píldora «2×» en horizontal, dentro del área segura (igual que los controles): el borde de abajo
         /// queda un `s3` por encima de la hilera de tiempos y de la barra (`padding` de `controls` + `scrubHit`).
         static var fastForwardPillBottomInset: CGFloat {

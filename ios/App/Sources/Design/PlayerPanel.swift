@@ -71,6 +71,7 @@ struct UpNextCard: View {
     let total: Double
     let watchNow: () -> Void
     let cancel: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         // Arriba la imagen y cuál es; abajo los dos botones lado a lado, del mismo ancho y a todo lo ancho (antes iban uno
@@ -123,7 +124,7 @@ struct UpNextCard: View {
             Circle().stroke(DS.onPrimary.opacity(DesignTokens.Opacity.scrim), lineWidth: DS.PlayerPanel.ringWidth)
             Circle().trim(from: 0, to: progress).stroke(DS.onPrimary, style: StrokeStyle(lineWidth: DS.PlayerPanel.ringWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(DS.Motion.base(false), value: card.secondsLeft)
+                .animation(DS.Motion.base(reduceMotion), value: card.secondsLeft)   // respeta «Reducir movimiento»
             Text(verbatim: "\(card.secondsLeft)").recipe(.caption, color: DS.onPrimary).fontWeight(.bold).monospacedDigit()
         }
         .frame(width: DS.PlayerPanel.ring, height: DS.PlayerPanel.ring)
@@ -370,6 +371,8 @@ struct SkipButton: View {
                 .foregroundStyle(DS.text)
                 .shadow(DS.Elevation.high)   // sin fondo propio: ahora va sobre la imagen también en vertical
                 .frame(width: DS.PlayerPanel.sideButton, height: DS.PlayerPanel.sideButton)
+                // Un disco tenue detrás: sobre un cielo blanco la flecha se perdía aun con sombra.
+                .background(Circle().fill(DS.scrim).padding(DS.Space.s2))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -389,19 +392,24 @@ struct PlayerScrubBar: View {
     var ticks: [Double] = []
     /// Cómo se dice un minuto («11:16»).
     var clock: (Double) -> String = { _ in "" }
+    /// Buscando arrastrando sobre el video (no sobre la barra): desde dónde. La barra se ve igual que al arrastrarla, con la misma
+    /// burbuja en el mismo lugar.
+    var previewFrom: Double? = nil
     let change: (Double) -> Void
     let editing: (Bool) -> Void
     @State private var dragging = false
     @State private var startValue: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
             let x = { (t: Double) in CGFloat(min(max(t / max(duration, 1), 0), 1)) * width }
-            let track = dragging ? DS.PlayerPanel.scrubTrackActive : DS.PlayerPanel.scrubTrack
+            let active = dragging || previewFrom != nil
+            let track = active ? DS.PlayerPanel.scrubTrackActive : DS.PlayerPanel.scrubTrack
             ZStack(alignment: .leading) {
                 Capsule().fill(DS.track).frame(height: track)
-                ForEach(Array((dragging ? marks : []).enumerated()), id: \.offset) { _, mark in
+                ForEach(Array((active ? marks : []).enumerated()), id: \.offset) { _, mark in
                     Rectangle().fill(DS.textFaint)
                         .frame(width: max(0, x(mark.upperBound) - x(mark.lowerBound)), height: track)
                         .offset(x: x(mark.lowerBound))
@@ -413,12 +421,12 @@ struct PlayerScrubBar: View {
                         .offset(x: x(tick) - DS.PlayerPanel.scrubTickWidth / 2)
                 }
                 // El punto: dónde vas. Chico mientras miras, más grande mientras lo arrastras.
-                let knob = dragging ? DS.PlayerPanel.scrubKnobActive : DS.PlayerPanel.scrubKnob
+                let knob = active ? DS.PlayerPanel.scrubKnobActive : DS.PlayerPanel.scrubKnob
                 Circle().fill(DS.text).frame(width: knob, height: knob).offset(x: x(value) - knob / 2)
                     .shadow(DS.Elevation.low)
                 // Arrastrando: la burbuja arriba de la barra, centrada sobre el dedo (sin salirse de la barra ni tapar los tiempos).
-                if dragging {
-                    let delta = value - startValue
+                if active {
+                    let delta = value - (previewFrom ?? startValue)
                     DSSeekBubble(time: clock(value), delta: (delta >= 0 ? "+" : "−") + clock(abs(delta)))
                         .fixedSize()
                         .position(x: min(max(x(value), DS.Gesture.seekBubbleSideMargin), width - DS.Gesture.seekBubbleSideMargin),
@@ -427,7 +435,7 @@ struct PlayerScrubBar: View {
                         .allowsHitTesting(false)
                 }
             }
-            .animation(.snappy, value: dragging)
+            .animation(DS.Motion.base(reduceMotion), value: active)
             .frame(width: width, height: DS.PlayerPanel.scrubHit)
             // Ocupa 32 pt (no se mueve nada), pero se toca en 44: la zona sobresale lo mismo arriba y abajo.
             .contentShape(Rectangle().size(width: width, height: DS.Size.touchTarget)
@@ -769,6 +777,7 @@ struct SubtitleDock: View {
     /// El renglón abierto al aparecer (el botón de subtítulos abre Subtítulos).
     var initiallyOpen: Section? = .subtitles
     @State private var open: Section?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var opened = false
 
     var body: some View {
@@ -837,7 +846,7 @@ struct SubtitleDock: View {
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
         .accessibilityElement(children: .contain)
         .onAppear { if !opened { opened = true; open = initiallyOpen } }
-        .animation(DS.Motion.base(false), value: open)
+        .animation(DS.Motion.base(reduceMotion), value: open)
     }
 
     private var delayValue: String {
