@@ -133,8 +133,25 @@ public actor StremioReads {
 
 /// Funciones puras sobre el `libraryItem` (se portan de `stremio_api.py`; se prueban con sus mismos casos).
 public enum StremioLibrary {
-    /// Mismo umbral que Stremio para dar algo por visto.
+    /// Películas: mismo umbral que Stremio para dar algo por visto.
     public static let watchedAt = 0.9
+    /// Episodios: visto solo en el último tramo (el 5 %, entre 45 s y 90 s). El 90 % de un episodio de Los Simpson (22 min)
+    /// son los últimos 2 min 12 s, en plena escena final: uno quedó visto y salió de Seguir viendo antes de los créditos.
+    public static let episodeTail = 0.05, episodeTailMin = 45.0, episodeTailMax = 90.0
+    /// Una serie que ya ibas al día vuelve a Seguir viendo con su episodio nuevo si la viste en este plazo (días).
+    public static let returnDays = 400.0
+    /// Cuántas de esas series se revisan cada vez (las más recientes).
+    public static let returnChecks = 30
+
+    /// ¿Con esta posición ya se da por visto? (Segundos; sin duración, no.) Igual que `finished` de `stremio_api.py`.
+    public static func finished(position: Double, duration: Double, kind: String?) -> Bool {
+        guard duration > 0, duration.isFinite, position.isFinite else { return false }
+        if kind == "series" {
+            let tail = min(max(duration * episodeTail, episodeTailMin), episodeTailMax)
+            return position >= duration - tail
+        }
+        return position >= duration * watchedAt
+    }
 
     public static func iso(_ when: Double) -> String {
         let seconds = Int(floor(when))
@@ -168,7 +185,7 @@ public enum StremioLibrary {
         let state = state(of: raw)
         guard state["video_id"]?.string == videoID else { return 0 }
         let offset = asInt(state["timeOffset"]), duration = asInt(state["duration"])
-        if offset <= 0 || (duration != 0 && Double(offset) >= Double(duration) * watchedAt) { return 0 }
+        if offset <= 0 || finished(position: Double(offset) / 1000, duration: Double(duration) / 1000, kind: raw?["type"]?.string) { return 0 }
         return Double(offset) / 1000
     }
 
@@ -198,7 +215,7 @@ public enum StremioLibrary {
         if state["timesWatched"] == nil { state["timesWatched"] = 0 }
         if state["flaggedWatched"] == nil { state["flaggedWatched"] = 0 }
         if state["noNotif"] == nil { state["noNotif"] = false }
-        if durMs != 0 && Double(posMs) >= Double(durMs) * watchedAt {
+        if finished(position: Double(posMs) / 1000, duration: Double(durMs) / 1000, kind: kind) {
             state["timesWatched"] = .int(asInt(state["timesWatched"]) + 1)
             state["flaggedWatched"] = 1
             if let ids = videoIDs, ids.contains(videoID) {  // ✓ en ese episodio, en Orbital y en Stremio
@@ -301,11 +318,13 @@ public enum StremioLibrary {
         return (nil, nil)
     }
 
-    /// El libraryItem fuera de «Seguir viendo» (como el «Quitar» de Stremio).
-    public static func dismissed(_ raw: JSON, now: Double) -> JSON {
+    /// El libraryItem fuera de «Seguir viendo» (como el «Quitar» de Stremio). Con `videoID` (quitaste una serie que había vuelto
+    /// con su episodio nuevo), apunta a ese episodio para que no vuelva otra vez.
+    public static func dismissed(_ raw: JSON, now: Double, videoID: String? = nil) -> JSON {
         var item = raw.object ?? [:]
         var state = state(of: raw)
         state["timeOffset"] = 0
+        if let videoID { state["video_id"] = .string(videoID) }
         item["state"] = .object(state)
         item["_mtime"] = .string(iso(now))
         return .object(item)
@@ -336,6 +355,8 @@ public struct Watchable: Sendable, Equatable, Identifiable {
     public var lastWatched: Double?
     public var inContinue: Bool
     public var inLibrary: Bool
+    public var watched: String? = nil   // los episodios vistos, tal cual los guarda Stremio (parseWatched)
+    public var isNew = false            // ibas al día y ya salió el episodio que sigue: «Nuevo»
 
     public var progress: Double? {
         guard duration > 0, timeOffset > 0 else { return nil }
@@ -351,7 +372,20 @@ public struct Watchable: Sendable, Equatable, Identifiable {
     public static func == (a: Watchable, b: Watchable) -> Bool {
         a.id == b.id && a.type == b.type && a.name == b.name && a.poster == b.poster && a.videoID == b.videoID
             && a.timeOffset == b.timeOffset && a.duration == b.duration && a.lastWatched == b.lastWatched
-            && a.inContinue == b.inContinue && a.inLibrary == b.inLibrary
+            && a.inContinue == b.inContinue && a.inLibrary == b.inLibrary && a.watched == b.watched && a.isNew == b.isNew
+    }
+
+    /// ¿Es una serie fuera de Seguir viendo que viste hace poco? (Quizá ibas al día y ya salió el episodio que sigue.)
+    public func mayReturn(now: Double) -> Bool {
+        guard type == "series", timeOffset <= 0, videoID != nil, let lastWatched else { return false }
+        return now - lastWatched < StremioLibrary.returnDays * 86400
+    }
+
+    /// La serie de vuelta en Seguir viendo con su episodio nuevo, en su lugar según cuándo salió. En Stremio no se escribe nada.
+    public func returning(videoID: String, released: Double) -> Watchable {
+        var w = self
+        w.videoID = videoID; w.timeOffset = 1; w.duration = 0; w.lastWatched = released; w.inContinue = true; w.isNew = true
+        return w
     }
 }
 
@@ -375,7 +409,7 @@ extension StremioLibrary {
             id: id, type: kind, name: name, poster: raw["poster"]?.nonEmptyString, videoID: state["video_id"]?.nonEmptyString,
             timeOffset: offset, duration: asInt(state["duration"]), lastWatched: epoch(state["lastWatched"]),
             // Misma regla que stremio-core (LibraryItem::is_in_continue_watching).
-            inContinue: kind != "other" && offset > 0, inLibrary: !removed && !temp)
+            inContinue: kind != "other" && offset > 0, inLibrary: !removed && !temp, watched: state["watched"]?.nonEmptyString)
     }
 
     /// Tu biblioteca, lo último visto primero.

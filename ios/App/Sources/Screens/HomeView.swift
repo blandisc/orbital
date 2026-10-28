@@ -493,9 +493,11 @@ struct HomeView: View {
         .task(id: items.first?.imdb) { ImagePipeline.shared.prefetchPosters(items.map(\.poster)) }
     }
 
-    /// «T2 E5 · quedan 20 min».
+    /// «T2 E5 · quedan 20 min»; «Nuevo · T38 E5» si ibas al día y ya salió el episodio que sigue.
     private func continueData(_ item: HomeItem) -> [String] {
-        progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes).components(separatedBy: " · ")
+        let facts = progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes).components(separatedBy: " · ")
+        guard item.isNew == true else { return facts }
+        return [Strings.tr("Nuevo", language: AppEnvironment.shared.services.appSettings.uiLanguage)] + facts
     }
 
     /// «Sale hoy» (A + una portada): lo de hoy en grande con su hora; lo demás, en panorámicas. Sin nada hoy, «Sale pronto».
@@ -557,7 +559,7 @@ struct HomeView: View {
                 ForEach(shown) { item in
                     NavigationLink(value: route(item)) {
                         StillCard(title: item.title, art: item.background ?? item.poster,
-                                  data: progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes).components(separatedBy: " · "),
+                                  data: continueData(item),
                                   progress: item.progress, width: nil)
                     }
                     .buttonStyle(.plain)

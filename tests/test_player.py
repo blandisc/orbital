@@ -1191,3 +1191,17 @@ def test_each_stutter_goes_to_the_log_with_its_minute(caplog):
     assert len(tirones) == 1 and "minuto 21:05" in tirones[0] and "24 cuadros perdidos al mostrar" in tirones[0]
     assert "d3d11va" in tirones[0] and "búfer 600 s" in tirones[0]
     assert "40 cuadros perdidos (0 al decodificar), 1 tirones" in caplog.text
+
+
+def test_watch_now_in_the_credits_saves_the_episode_as_seen():
+    p, mpv = make_player()
+    saved = []
+    p.on_finished = lambda meta, pos, dur, watched: saved.append((pos, dur))
+    p.current.process = type("Proc", (), {"poll": lambda self: None})()
+    ep = player.Segment({"kind": "series", "video_id": "tt1:1:1"}, "Serie", "u1")
+    ep.playing, ep.position, ep.duration, ep.watched = True, 2400.0, 2640.0, 2300.0  # créditos largos: faltan 4 min
+    ep.upnext = {"label": "T1 E2", "title": "", "play": lambda: True}
+    p.segment = ep
+    p._play_next(ep, auto=False)  # «Ver ahora»
+    p._close_segment(ep)
+    assert saved == [(2640.0, 2640.0)]  # visto: se guarda al final, no a 4 min

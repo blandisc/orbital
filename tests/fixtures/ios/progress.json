@@ -79,16 +79,15 @@
    "posterShape": "poster",
    "removed": true,
    "state": {
-    "duration": 0,
-    "flaggedWatched": 1,
+    "duration": 3000000,
+    "flaggedWatched": 0,
     "lastWatched": "2025-10-09T08:53:20.000Z",
     "noNotif": false,
     "overallTimeWatched": 2700000,
-    "timeOffset": 1,
-    "timeWatched": 0,
-    "timesWatched": 1,
-    "video_id": "tt1:1:2",
-    "watched": "tt1:1:1:1:eJxjBAAAAgAC"
+    "timeOffset": 2750000,
+    "timeWatched": 2700000,
+    "timesWatched": 0,
+    "video_id": "tt1:1:1"
    },
    "temp": true,
    "type": "series"
@@ -128,15 +127,14 @@
    "removed": true,
    "state": {
     "duration": 3000000,
-    "flaggedWatched": 1,
+    "flaggedWatched": 0,
     "lastWatched": "2025-10-09T08:53:20.000Z",
     "noNotif": false,
     "overallTimeWatched": 2800000,
-    "timeOffset": 0,
+    "timeOffset": 2800000,
     "timeWatched": 2800000,
-    "timesWatched": 1,
-    "video_id": "tt1:1:3",
-    "watched": "tt1:1:3:3:eJxjAQAABQAF"
+    "timesWatched": 0,
+    "video_id": "tt1:1:3"
    },
    "temp": true,
    "type": "series"

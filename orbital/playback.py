@@ -341,6 +341,7 @@ class Segment:
     next_loading: float = 0.0  # cuándo se pidió el siguiente episodio (mientras carga, el final no cierra)
     upnext_dismissed: bool = False
     upnext_deadline: float | None = None
+    finished: bool = False  # llegó al final o pasaste al siguiente episodio: visto, aunque falte un poco de créditos
     paused_at: float | None = None  # canal de Orbital: desde cuándo está en pausa (al seguir, regresa al aire)
     duration_told: bool = False  # canal de Orbital: ya se le dijo cuánto dura de verdad este episodio
     next_tries: int = 0  # canal de Orbital: veces que no se pudo poner lo que sigue (al rato se vuelve a pedir)

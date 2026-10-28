@@ -288,11 +288,29 @@ public enum CinemetaParsing {
         return order.map { Season(season: $0, episodes: bySeason[$0]!.sorted { $0.episode < $1.episode }) }
     }
 
-    /// El episodio que sigue a `videoID` (pasa de temporada; los especiales no cuentan).
-    public static func nextEpisode(_ meta: JSON, after videoID: String) -> String? {
-        let ids = seasons(meta).filter { $0.season != 0 }.flatMap { $0.episodes.map(\.id) }
-        guard let i = ids.firstIndex(of: videoID), i + 1 < ids.count else { return nil }
-        return ids[i + 1]
+    /// El episodio que sigue a `videoID` (pasa de temporada; los especiales no cuentan). Uno que aún no se emite no cuenta
+    /// (como en la consola): al terminar el último que salió, la serie no se queda en Seguir viendo con uno que no existe.
+    public static func nextEpisode(_ meta: JSON, after videoID: String, now: Double = Date().timeIntervalSince1970) -> String? {
+        let episodes = seasons(meta).filter { $0.season != 0 }.flatMap(\.episodes)
+        guard let i = episodes.firstIndex(where: { $0.id == videoID }), i + 1 < episodes.count,
+              aired(episodes[i + 1].released, now: now) else { return nil }
+        return episodes[i + 1].id
+    }
+
+    /// ¿Ya salió? Sin fecha (o con una rara) se da por emitido. Medio día de margen por los husos horarios.
+    public static func aired(_ released: String?, now: Double = Date().timeIntervalSince1970) -> Bool {
+        guard let when = StremioLibrary.epoch(released.map(JSON.string)) else { return true }
+        return when <= now + 12 * 3600
+    }
+
+    /// Ibas al día: terminaste `videoID` y el siguiente aún no salía. Si ya salió (después de `since`, cuando lo terminaste),
+    /// su id y su fecha; si no, nil. Así la serie vuelve sola a Seguir viendo con su episodio nuevo.
+    public static func newEpisode(_ meta: JSON, after videoID: String, since: Double,
+                                  now: Double = Date().timeIntervalSince1970) -> (id: String, released: Double)? {
+        guard let next = nextEpisode(meta, after: videoID, now: now),
+              let episode = seasons(meta).flatMap(\.episodes).first(where: { $0.id == next }),
+              let when = StremioLibrary.epoch(episode.released.map(JSON.string)), when > since else { return nil }
+        return (next, when)
     }
 
     /// Une películas y series alternando tipos y respetando el orden de Cinemeta; solo sube una coincidencia exacta.

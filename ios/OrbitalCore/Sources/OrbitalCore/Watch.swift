@@ -394,9 +394,35 @@ public actor WatchService {
         return StremioLibrary.parseLibrary(try await stremio.library(authKey: key))
     }
 
+    /// Las series que ibas al día y ya tienen episodio nuevo, de vuelta en Seguir viendo («Nuevo»), en su lugar según cuándo
+    /// salió. Como en la consola (`_returning` de watch.py); Cinemeta tiene caché, así que la segunda vez es al instante.
+    public func withReturning(_ all: [Watchable]) async -> [Watchable] {
+        let now = clock().timeIntervalSince1970
+        let candidates = Array(all.filter { $0.mayReturn(now: now) }.prefix(StremioLibrary.returnChecks))
+        guard !candidates.isEmpty else { return all }
+        let cinemeta = self.cinemeta
+        let found = await withTaskGroup(of: (String, Watchable?).self) { group in
+            for w in candidates {
+                group.addTask {
+                    guard let videoID = w.videoID, let info = try? await cinemeta.meta(kind: "series", id: w.id),
+                          // lo quitaste a medias de Seguir viendo: no se terminó, no vuelve
+                          StremioLibrary.parseWatched(w.watched, videoIDs: CinemetaParsing.seasonVideoIDs(info)).contains(videoID),
+                          let new = CinemetaParsing.newEpisode(info, after: videoID, since: w.lastWatched ?? now, now: now)
+                    else { return (w.id, nil) }
+                    return (w.id, w.returning(videoID: new.id, released: new.released))
+                }
+            }
+            var out: [String: Watchable] = [:]
+            for await (id, w) in group { if let w { out[id] = w } }
+            return out
+        }
+        guard !found.isEmpty else { return all }
+        return all.map { found[$0.id] ?? $0 }.sorted { ($0.lastWatched ?? 0) > ($1.lastWatched ?? 0) }
+    }
+
     /// «Seguir viendo»: lo que dejaste a medias (o el siguiente episodio), sin lo que abriste un momento.
     public func continueWatching() async throws -> [Watchable] {
-        try await library().filter { w in
+        await withReturning(try await library()).filter { w in
             guard w.inContinue else { return false }
             let nextUp = w.type == "series" && w.timeOffset <= 1 && w.duration == 0 && w.episode.episode != nil
             return nextUp || (w.progress ?? 1) >= PlaybackRules.continueMinProgress
@@ -431,10 +457,10 @@ public actor WatchService {
         try await stremio.saveLibraryItem(authKey: key, item: item)
     }
 
-    /// «Quitar de Seguir viendo».
-    public func dismissContinue(metaID: String) async throws {
+    /// «Quitar de Seguir viendo». Con `newEpisode` (la serie había vuelto con ese episodio), no vuelve otra vez.
+    public func dismissContinue(metaID: String, newEpisode: String? = nil) async throws {
         guard let key = authKey(), let raw = try await stremio.libraryItem(authKey: key, id: metaID) else { return }
-        try await stremio.saveLibraryItem(authKey: key, item: StremioLibrary.dismissed(raw, now: clock().timeIntervalSince1970))
+        try await stremio.saveLibraryItem(authKey: key, item: StremioLibrary.dismissed(raw, now: clock().timeIntervalSince1970, videoID: newEpisode))
     }
 }
 

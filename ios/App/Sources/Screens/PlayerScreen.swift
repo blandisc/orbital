@@ -1985,7 +1985,7 @@ struct PlayerScreen: View {
         if current.localFile != nil {
             let id = DownloadItem.makeID(metaID: current.metaID, videoID: current.videoID)
             let snapshot = holder.model.snapshot
-            if snapshot.duration > 0, snapshot.position >= snapshot.duration * StremioLibrary.watchedAt {
+            if StremioLibrary.finished(position: snapshot.position, duration: snapshot.duration, kind: current.kind) {
                 Task { if let item = await env.services.downloads.item(id) { await DownloadsModel(env.services, freeSpace: { DiskSpace.freeBytes() }).afterWatching(item) } }
             }
         }

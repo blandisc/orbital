@@ -501,3 +501,57 @@ def test_search_retries_cinemeta_and_then_falls_back_to_trakt(linked, monkeypatc
     assert calls.count("series") == 2 and calls.count("movie") == 2  # una vez más antes de rendirse
     assert [r["title"] for r in data["results"]] == ["The Office"]
     assert "metahub.space/poster" in data["results"][0]["image"]
+
+
+def test_an_episode_counts_as_seen_only_in_its_last_stretch():
+    from orbital.library.stremio_api import finished, resume_seconds, with_progress
+    # Los Simpson (22 min): a 2 min del final (91 %) es la escena final, no los créditos.
+    assert not finished(1200, 1320, "series") and finished(1255, 1320, "series")  # el último minuto (66 s)
+    assert not finished(3400, 3600, "series") and finished(3515, 3600, "series")  # un episodio de una hora: 90 s
+    assert finished(9200, 10140, "movie") and not finished(9000, 10140, "movie")  # películas: 90 %, como Stremio
+    assert not finished(100, 0, "series")
+    item = with_progress(None, meta_id="tt1", kind="series", name="X", poster=None, video_id="tt1:38:4", position=1200,
+                         duration=1320, watched=1200, next_video=None, now=0)
+    assert item["state"]["timeOffset"] == 1_200_000  # sigue en Seguir viendo, y se retoma ahí
+    assert resume_seconds(item, "tt1:38:4") == 1200
+
+
+def test_a_series_you_caught_up_with_comes_back_when_the_new_episode_airs(tmp_path, monkeypatch):
+    from datetime import UTC, datetime
+
+    from orbital.library import cinemeta
+    from orbital.library.stremio_api import encode_watched
+
+    now = time.time()
+
+    def iso(t):
+        return datetime.fromtimestamp(t, UTC).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+    def show(meta_id, e5_at):
+        return {"id": meta_id, "name": meta_id, "videos": [
+            {"id": f"{meta_id}:38:{n}", "season": 38, "episode": n, "name": f"E{n}", "released": iso(at)}
+            for n, at in ((3, now - 20 * 86400), (4, now - 5 * 86400), (5, e5_at))]}
+
+    metas = {"tt1": show("tt1", now - 86400), "tt2": show("tt2", now + 5 * 86400), "tt3": show("tt3", now - 86400)}
+
+    def done(meta_id, watched=True):  # terminaste el E4 hace 3 días (ibas al día)
+        ids = [v["id"] for v in metas[meta_id]["videos"]]
+        return {"_id": meta_id, "name": meta_id, "type": "series", "removed": False, "temp": True,
+                "state": {"timeOffset": 0, "duration": 0, "video_id": f"{meta_id}:38:4", "lastWatched": iso(now - 3 * 86400),
+                          "watched": encode_watched({f"{meta_id}:38:4"} if watched else {f"{meta_id}:38:3"}, ids)}}
+
+    monkeypatch.setattr(cinemeta.Cinemeta, "meta", lambda self, kind, meta_id, localized=True: metas[meta_id])
+    fake = FakeStremio([done("tt1"), done("tt2"), done("tt3", watched=False)])
+    cfg = parse_config({"steam": {"enabled": False}, "esde": {"enabled": False}, "detect": {"enabled": False},
+                        "stremio": {"executable": "stremio-test"}})
+    cat = Catalog(cfg, FakeLauncher(), credentials=Credentials(tmp_path / "s.json"), stremio_client=fake)
+    cat.watch.link_stremio("clave-buena")
+    assert cat.watch.refresh_stremio()
+    row = {r["id"]: r for r in cat.grouped()}["continue"]["items"]
+    # tt1 vuelve con su E5 (ya salió); tt2 aún no (sale en 5 días); tt3 lo dejaste a medias (lo quitaste): no vuelve.
+    assert [(i["title"], i["subtitle"]) for i in row] == [("tt1", "Nuevo: T38 E5")]
+    back = next(i for i in cat.stremio_library() if i.id == "stremio:tt1")
+    assert back.extra["video_id"] == "tt1:38:5" and back.extra["new_episode"]
+    # «Quitar de Seguir viendo»: apunta al E5 para que no vuelva otra vez.
+    cat.watch.dismiss_continue("tt1")
+    assert fake.saved[-1]["state"]["video_id"] == "tt1:38:5" and fake.saved[-1]["state"]["timeOffset"] == 0

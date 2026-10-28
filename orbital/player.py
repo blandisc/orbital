@@ -943,8 +943,8 @@ class OrbitalPlayer(PlayerScreen):
         self._scrobble("stop", segment)  # Trakt: lo que llevabas (≥ 80 % lo marca visto)
         if self.on_finished and segment.duration and not (segment.watched < 20 and segment.position >= segment.duration * .9):
             # (Casi nada visto y «al final»: un salto raro, no la película vista de principio a fin.)
-            self._safe(self.on_finished, segment.meta, segment.position, segment.duration,
-                       segment.watched - segment.saved_watched)
+            self._safe(self.on_finished, segment.meta, segment.duration if segment.finished else segment.position,
+                       segment.duration, segment.watched - segment.saved_watched)
 
     def _in_background(self, fn, *args, failed: str) -> None:
         """Algo que tarda (cargar otro episodio, otra fuente) en su hilo; si falla, se avisa en pantalla."""
@@ -1079,6 +1079,7 @@ class OrbitalPlayer(PlayerScreen):
         """Llegó al final (mpv se queda en el último cuadro)."""
         if segment.closed:
             return
+        segment.finished = True
         if segment.meta.get("synthetic") and self.on_synthetic_end:
             if not segment.next_loading:  # el siguiente episodio del canal, una vez (si no se pudo, otra al rato)
                 segment.next_loading = time.monotonic()
@@ -1126,6 +1127,7 @@ class OrbitalPlayer(PlayerScreen):
         self._hide_card()
         self._quiet_episodes = self._quiet_episodes + 1 if auto else 0
         segment.upnext_dismissed = True  # que no se dispare dos veces
+        segment.finished = True  # «Ver ahora» en los créditos: este episodio ya se vio
         segment.next_loading = time.monotonic()
         self.toast(f"Cargando {info.get('label') or 'el siguiente episodio'}…", 6)
         self._in_background(info["play"], failed="No pude cargar el siguiente episodio")

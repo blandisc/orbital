@@ -88,7 +88,23 @@ class StremioAPI:
         self.request("datastorePut", {"authKey": auth_key, "collection": "libraryItem", "changes": [item]})
 
 
-WATCHED_AT = 0.9  # mismo umbral que Stremio para dar algo por visto
+WATCHED_AT = 0.9  # películas: mismo umbral que Stremio para dar algo por visto
+# Episodios: visto solo en el último tramo (el 5 %, entre 45 s y 90 s). El 90 % de un episodio de Los Simpson (22 min) son
+# los últimos 2 min 12 s, en plena escena final: el 28 de octubre uno quedó visto y salió de Seguir viendo antes de los
+# créditos. En una película el 10 % sí son los créditos.
+EPISODE_TAIL, EPISODE_TAIL_MIN, EPISODE_TAIL_MAX = .05, 45.0, 90.0
+RETURN_DAYS = 400  # una serie que ya ibas al día vuelve a Seguir viendo con su episodio nuevo si la viste en este plazo
+RETURN_CHECKS = 30  # cuántas de esas series se revisan cada vez (las más recientes)
+
+
+def finished(position: float, duration: float, kind: str | None) -> bool:
+    """¿Con esta posición ya se da por visto? (Segundos; sin duración, no.)"""
+    if not duration or duration <= 0:
+        return False
+    if kind == "series":
+        tail = min(max(duration * EPISODE_TAIL, EPISODE_TAIL_MIN), EPISODE_TAIL_MAX)
+        return position >= duration - tail
+    return position >= duration * WATCHED_AT
 
 
 def _iso(when: float) -> str:
@@ -115,7 +131,8 @@ def resume_seconds(raw: dict | None, video_id: str) -> float:
     if state.get("video_id") != video_id:
         return 0.0
     offset, duration = as_int(state.get("timeOffset")), as_int(state.get("duration"))
-    if offset <= 0 or (duration and offset >= duration * WATCHED_AT):
+    kind = raw.get("type") if isinstance(raw, dict) else None
+    if offset <= 0 or finished(offset / 1000, duration / 1000, kind):
         return 0.0
     return offset / 1000
 
@@ -145,7 +162,7 @@ def with_progress(raw: dict | None, *, meta_id: str, kind: str, name: str, poste
     state.setdefault("timesWatched", 0)
     state.setdefault("flaggedWatched", 0)
     state.setdefault("noNotif", False)
-    if dur_ms and pos_ms >= dur_ms * WATCHED_AT:
+    if finished(position, duration, kind):
         state["timesWatched"] = as_int(state["timesWatched"]) + 1
         state["flaggedWatched"] = 1
         if video_ids and video_id in video_ids:  # ✓ en ese episodio, en Orbital y en Stremio
@@ -210,11 +227,20 @@ def library_toggled(raw: dict | None, *, meta_id: str, kind: str, name: str, pos
     return item
 
 
-def dismissed(raw: dict, now: float) -> dict:
-    """El libraryItem fuera de "Seguir viendo" (como el "Quitar" de Stremio: sin avance pendiente)."""
+def may_return(w: Watchable, now: float) -> bool:
+    """¿Es una serie fuera de Seguir viendo que viste hace poco? (Quizá ibas al día y ya salió el episodio que sigue.)"""
+    return (w.type == "series" and w.time_offset <= 0 and bool(w.video_id) and w.last_watched is not None
+            and now - w.last_watched < RETURN_DAYS * 86400)
+
+
+def dismissed(raw: dict, now: float, video_id: str | None = None) -> dict:
+    """El libraryItem fuera de "Seguir viendo" (como el "Quitar" de Stremio: sin avance pendiente). Con `video_id` (quitaste
+    una serie que había vuelto con su episodio nuevo), apunta a ese episodio para que no vuelva otra vez."""
     item = dict(raw)
     state = dict(state_of(item))
     state["timeOffset"] = 0
+    if video_id:
+        state["video_id"] = video_id
     item["state"] = state
     item["_mtime"] = _iso(now)
     return item
@@ -232,6 +258,7 @@ class Watchable:
     last_watched: float | None  # epoch
     in_continue: bool
     in_library: bool = False  # en tu biblioteca de Stremio (Mi lista), no solo algo que viste
+    watched: str | None = None  # los episodios vistos, tal cual los guarda Stremio (parse_watched)
 
     @property
     def progress(self) -> float | None:
@@ -307,6 +334,7 @@ def parse_item(raw: dict) -> Watchable | None:
         # Misma regla que stremio-core (LibraryItem::is_in_continue_watching).
         in_continue=kind != "other" and offset > 0,
         in_library=not removed and not temp,
+        watched=state.get("watched") if isinstance(state.get("watched"), str) else None,
     )
 
 

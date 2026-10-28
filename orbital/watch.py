@@ -243,6 +243,15 @@ def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
     )
 
 
+def returning_item(w: stremio_api.Watchable, video_id: str, released: float) -> LibraryItem:
+    """Ibas al día y ya salió el episodio que sigue: la serie vuelve a Seguir viendo («Nuevo: T38 E5»), en su lugar según
+    cuándo salió. En tu cuenta de Stremio no se escribe nada: se deduce cada vez."""
+    item = stremio_item(replace(w, video_id=video_id, time_offset=1, duration=0, last_watched=released, in_continue=True))
+    item.subtitle = item.subtitle.replace("Sigue:", "Nuevo:", 1)
+    item.extra["new_episode"] = True
+    return item
+
+
 def trailer_id(info: dict) -> str | None:
     """El video de YouTube del tráiler (Cinemeta: trailerStreams[].ytId o trailers[].source)."""
     for stream in info.get("trailerStreams") or []:
@@ -462,12 +471,14 @@ class Watch:
         try:
             raw = self.stremio_client.library(self.credentials.get(STREMIO_KEY) or "")
             items = []
-            for w in stremio_api.parse_library(raw):
+            watchables = stremio_api.parse_library(raw)
+            for w in watchables:
                 try:
                     items.append(stremio_item(w))
                 except (TypeError, ValueError, AttributeError) as exc:
                     log.warning("Stremio: se salta %s (%s)", getattr(w, "id", "?"), exc)
             self.stremio_error = None
+            self._returning(items, watchables)
             self._enrich_continue(items)
         except stremio_api.StremioError as exc:
             log.warning("Stremio: %s", exc)
@@ -509,6 +520,31 @@ class Watch:
         self._save_stremio_cache(items)
         self.events.publish({"type": "library-changed"})
 
+    def _returning(self, items: list[LibraryItem], watchables: list[stremio_api.Watchable]) -> None:
+        """Las series que ibas al día y ya tienen episodio nuevo vuelven a Seguir viendo (con caché de Cinemeta: rápido)."""
+        now = time.time()
+        candidates = [w for w in watchables if stremio_api.may_return(w, now)][:stremio_api.RETURN_CHECKS]
+
+        def check(w: stremio_api.Watchable) -> tuple[stremio_api.Watchable, tuple[str, float] | None]:
+            try:
+                info = self.cinemeta.meta("series", w.id)
+            except cinemeta.CinemetaError:
+                return w, None
+            ids = [v["id"] for v in info.get("videos") or [] if isinstance(v, dict) and v.get("id")]
+            if w.video_id not in stremio_api.parse_watched(w.watched, ids):
+                return w, None  # lo quitaste a medias de Seguir viendo: no se terminó, no vuelve
+            return w, cinemeta.new_episode(info, w.video_id or "", w.last_watched or now, now)
+
+        if not candidates:
+            return
+        where = {i.id: n for n, i in enumerate(items)}
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            for w, found in pool.map(check, candidates):
+                n = where.get(f"stremio:{w.id}")
+                if found and n is not None:
+                    items[n] = returning_item(w, *found)
+                    log.info("Seguir viendo: %s vuelve con su episodio nuevo (%s)", w.name, found[0])
+
     def _enrich_continue(self, items: list[LibraryItem]) -> None:
         """Datos de Cinemeta para Seguir viendo (en paralelo y con caché: la segunda vez es al instante)."""
         self._enrich([i for i in items if i.category == "continue"])
@@ -541,7 +577,9 @@ class Watch:
             raise stremio_api.StremioError(stremio_api.NOT_LINKED)
         raw = self.stremio_client.library_item(auth, meta_id)
         if raw:
-            self.stremio_client.save_library_item(auth, stremio_api.dismissed(raw, time.time()))
+            back = next((i for i in self.stremio_items if i.extra.get("meta_id") == meta_id and i.extra.get("new_episode")), None)
+            self.stremio_client.save_library_item(
+                auth, stremio_api.dismissed(raw, time.time(), back.extra.get("video_id") if back else None))
         self.refresh_stremio()
         self.events.publish({"type": "library-changed"})
 

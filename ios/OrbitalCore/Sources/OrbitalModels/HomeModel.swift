@@ -17,6 +17,7 @@ public struct HomeItem: Sendable, Codable, Equatable, Identifiable {
     public var timeLeft: String
     public var leftMinutes: Int
     public var nextUp: Bool            // terminaste el anterior: «Sigue: T8 E24»
+    public var isNew: Bool?            // ibas al día y ya salió el episodio que sigue: «Nuevo» (opcional: la caché vieja no lo trae)
 }
 
 /// Inicio: «Seguir viendo», tu lista de Stremio y lo pendiente de tu watchlist de Trakt. Si no hay red se enseña
@@ -192,7 +193,7 @@ public final class HomeModel: ObservableModel {
     private func loadLibrary() async {
         do {
             _ = await services.watch.flushPending()          // primero se sube lo pendiente; así la lista ya lo trae
-            let all = try await services.watch.library()
+            let all = await services.watch.withReturning(try await services.watch.library())
             let continueItems = all.filter { w in
                 guard w.inContinue else { return false }
                 let nextUp = w.type == "series" && w.timeOffset <= 1 && w.duration == 0 && w.episode.episode != nil
@@ -281,7 +282,8 @@ public final class HomeModel: ObservableModel {
                             poster: w.id.hasPrefix("tt") ? String(format: ForYou.metahubPoster, w.id) : w.poster,
                             background: w.id.hasPrefix("tt") ? String(format: ForYou.metahubBackground, w.id) : nil,
                             videoID: w.videoID ?? (w.type == "movie" ? w.id : nil), progress: nextUp ? nil : w.progress, season: season, episode: episode,
-                            timeLeft: PlaybackRules.timeLeft(left), leftMinutes: PlaybackRules.minutesLeft(left), nextUp: nextUp)
+                            timeLeft: PlaybackRules.timeLeft(left), leftMinutes: PlaybackRules.minutesLeft(left), nextUp: nextUp,
+                            isNew: w.isNew ? true : nil)
         }
     }
 
@@ -318,6 +320,6 @@ public final class HomeModel: ObservableModel {
         dismissed.insert(item.metaID)   // al instante (sin esperar la carga en curso); la carga lo filtra
         continueWatching.removeAll { $0.metaID == item.metaID }
         publishWidget()
-        try? await services.watch.dismissContinue(metaID: item.metaID)
+        try? await services.watch.dismissContinue(metaID: item.metaID, newEpisode: item.isNew == true ? item.videoID : nil)
     }
 }

@@ -438,7 +438,7 @@ final class AppEnvironment {
             let watched = max(0, seconds - session.startPosition)
             let event = ProgressEvent(kind: r.kind, metaID: r.metaID, videoID: r.videoID, originalTitle: r.originalTitle, position: seconds, duration: session.duration,
                                       watched: min(watched, Date().timeIntervalSince(session.startedAt)), at: Date().timeIntervalSince1970)
-            await services.watch.report(event, phase: .stopped(finished: session.duration > 0 && seconds >= session.duration * StremioLibrary.watchedAt), scrobbleToTrakt: false)
+            await services.watch.report(event, phase: .stopped(finished: StremioLibrary.finished(position: seconds, duration: session.duration, kind: r.kind)), scrobbleToTrakt: false)
             // Infuse no dice la duración: si tampoco la sabemos, se pregunta si terminaste.
             if session.duration == 0, seconds > 60 { askFinished = r }
         }

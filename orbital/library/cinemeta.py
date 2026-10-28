@@ -264,17 +264,23 @@ def seasons(meta: dict) -> list[dict]:
              "episodes": sorted(by_season[s], key=lambda e: e["episode"])} for s in order]
 
 
-def aired(released, now: float | None = None) -> bool:
-    """¿Ya salió? Sin fecha (o con una rara) se da por emitido."""
+def released_at(released) -> float | None:
+    """La fecha de estreno de un episodio en segundos desde 1970 (None sin fecha o con una rara)."""
     if not isinstance(released, str) or not released:
-        return True
+        return None
     try:
         when = datetime.fromisoformat(released.replace("Z", "+00:00"))
     except ValueError:
-        return True
+        return None
     if when.tzinfo is None:
         when = when.replace(tzinfo=UTC)
-    return when.timestamp() <= (time.time() if now is None else now) + 12 * 3600
+    return when.timestamp()
+
+
+def aired(released, now: float | None = None) -> bool:
+    """¿Ya salió? Sin fecha (o con una rara) se da por emitido."""
+    when = released_at(released)
+    return when is None or when <= (time.time() if now is None else now) + 12 * 3600
 
 
 def next_episode(meta: dict, video_id: str, now: float | None = None) -> str | None:
@@ -287,6 +293,17 @@ def next_episode(meta: dict, video_id: str, now: float | None = None) -> str | N
         if i + 1 < len(episodes) and aired(episodes[i + 1]["released"], now):
             return ids[i + 1]
     return None
+
+
+def new_episode(meta: dict, video_id: str, since: float, now: float | None = None) -> tuple[str, float] | None:
+    """Ibas al día: terminaste `video_id` y el siguiente aún no salía. Si ya salió (después de `since`, cuando lo
+    terminaste), (su id, su fecha); si no, None. Así la serie vuelve sola a Seguir viendo con su episodio nuevo."""
+    following = next_episode(meta, video_id, now)
+    if following is None:
+        return None
+    episode = next(e for s in seasons(meta) for e in s["episodes"] if e["id"] == following)
+    when = released_at(episode["released"])
+    return (following, when) if when is not None and when > since else None
 
 
 def search_results(query: str, movies: list[dict], series: list[dict], limit: int = 18) -> list[dict]:

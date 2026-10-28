@@ -1312,7 +1312,7 @@ public final class PlayerModel: ObservableModel {
         upNext = nil; upNextDeadline = nil
         let task = Task { [weak self] in
             guard let self else { return }
-            let watched = snapshot.duration > 0 && snapshot.position >= snapshot.duration * StremioLibrary.watchedAt
+            let watched = StremioLibrary.finished(position: snapshot.position, duration: snapshot.duration, kind: base.kind)
             if !finalReported { await report(.stopped(finished: watched)) }
             guard !closing, phase != .closed else { advancing = false; return }
             var next = base
@@ -1360,7 +1360,7 @@ public final class PlayerModel: ObservableModel {
             guard let self else { return }
             if !finalReported { await report(.stopped(finished: true)) }
             guard !closing, phase != .closed else { advancing = false; return }
-            if request.localFile != nil, snapshot.duration > 0, snapshot.position >= snapshot.duration * StremioLibrary.watchedAt { onFinishedLocal?(request) }
+            if request.localFile != nil, StremioLibrary.finished(position: snapshot.position, duration: snapshot.duration, kind: request.kind) { onFinishedLocal?(request) }
             var next = request
             next.videoID = card.videoID; next.fromStart = true; next.binge = source?.binge
             next.episodeLabel = card.title.isEmpty ? card.label : "\(card.label) · \(card.title)"   // si no, se queda el del episodio anterior
@@ -1376,12 +1376,16 @@ public final class PlayerModel: ObservableModel {
     /// Espera a que termine el cambio de episodio en curso (para las pruebas y para la vista).
     public func waitForTransition() async { await transition?.value }
 
+    /// Un «final» a más de 90 s del final de verdad es la conexión que se cortó, no el episodio visto (como `CUT_MARGIN` en la consola).
+    static let cutMargin = 90.0
+    private var endIsReal: Bool { snapshot.duration <= 0 || snapshot.position >= snapshot.duration - Self.cutMargin }
+
     private func finishAndAdvance() async {
         if nextEpisodeID() != nil && !upNextDismissed && !stillWatchingPrompt {
             if upNext == nil, let next = nextEpisodeID() { let (l, t) = episodeText(next); upNext = UpNext(videoID: next, label: l, title: t, secondsLeft: 0) }
             advance(auto: true)
         } else {
-            if !finalReported { await report(.stopped(finished: true)) }
+            if !finalReported { await report(.stopped(finished: endIsReal)) }
             phase = .closed
             await engine.stop()
         }
@@ -1394,7 +1398,7 @@ public final class PlayerModel: ObservableModel {
         closing = true
         generation += 1                       // cualquier carga o cambio de episodio en curso queda sin efecto
         consuming?.cancel(); consuming = nil
-        let finished = reachedEnd || (snapshot.duration > 0 && snapshot.position >= snapshot.duration * StremioLibrary.watchedAt)
+        let finished = (reachedEnd && endIsReal) || StremioLibrary.finished(position: snapshot.position, duration: snapshot.duration, kind: request?.kind)
         // Primero se calla (la pantalla ya se fue); guardar en la red puede tardar.
         await engine.pause()
         if !finalReported { await report(.stopped(finished: finished)) }
