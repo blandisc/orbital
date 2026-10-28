@@ -753,6 +753,33 @@ final class AppEnvironment {
         }
     }
 
+    /// «Quitar de favoritos» desde un póster de Inicio: sale de la fila al momento y se ofrece «Deshacer». Sin conexión se queda
+    /// guardado en el iPhone y llega a Trakt en cuanto se pueda (como en la ficha).
+    func removeFavorite(_ s: Suggestion) async {
+        FavoriteChange.post(s, add: false)
+        do {
+            try await setFavorite(s, add: false)
+            notify("Quitada de tus favoritos", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { [weak self] in
+                FavoriteChange.post(s, add: true)
+                Task { try? await self?.setFavorite(s, add: true) }
+            }
+        } catch {
+            FavoriteChange.post(s, add: true)
+            notify("No pude cambiar tus favoritos de Trakt", detail: "\(error)", tone: .warn)
+        }
+    }
+
+    /// Pone o quita un favorito en Trakt; sin conexión, a la cola del iPhone (no es un error: llega después).
+    private func setFavorite(_ s: Suggestion, add: Bool) async throws {
+        guard let trakt = services.trakt, trakt.linked else { throw TraktError.auth("Conecta Trakt en Ajustes") }
+        do {
+            try await trakt.setFavorite(imdb: s.imdb, series: s.kind == "series", add: add)
+            await services.forYou.clearCache()
+        } catch where TraktOutbox.retryable(error) {
+            services.traktOutbox.enqueue(.init(target: TraktOutbox.favorites, imdb: s.imdb, series: s.kind == "series", add: add))
+        }
+    }
+
     /// «Marcar como vista» (una película) desde el menú de un póster: en Stremio y en Trakt, como en la ficha.
     func markWatched(_ s: Suggestion) async -> Bool {
         do { try await services.watch.markWatched(kind: s.kind, metaID: s.imdb, videoID: s.imdb) } catch {

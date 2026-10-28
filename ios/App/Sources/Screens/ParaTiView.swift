@@ -161,6 +161,8 @@ struct SuggestionActions: View {
     var list: SaveDestination? = nil
     /// Una película marcada como vista: Trakt la saca sola de tu watchlist (la pantalla la quita ya).
     var onWatched: ((Suggestion) -> Void)? = nil
+    /// En tus favoritos (Inicio y su «Ver todo»): «Quitar de favoritos» (eso hace `onDismiss`) en vez de «No me interesa».
+    var favorite = false
     let onDismiss: (Suggestion) -> Void
 
     var body: some View {
@@ -177,6 +179,8 @@ struct SuggestionActions: View {
         }
         if let list {
             Button(list == .traktWatchlist ? "Quitar de tu watchlist" : "Quitar de Mi lista", systemImage: "minus.circle", role: .destructive) { onDismiss(suggestion) }
+        } else if favorite {
+            Button("Quitar de favoritos", systemImage: "heart.slash", role: .destructive) { onDismiss(suggestion) }
         } else {
             Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { onDismiss(suggestion) }
         }

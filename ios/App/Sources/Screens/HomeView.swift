@@ -119,7 +119,7 @@ struct HomeView: View {
                 if !model.favorites.isEmpty {
                     Rail(title: "Favoritos", count: model.favorites.count, route: HomeListRoute(id: "favorites"),
                          eyebrow: Text("Lo que marcaste con el corazón"), source: .trakt) {
-                        ForEach(model.favorites) { s in TitleLink(route: s.route, reflected: true) }
+                        ForEach(model.favorites) { s in TitleLink(route: s.route, reflected: true).contextMenu { favoriteActions(s) } }
                     }
                 }
             }
@@ -201,6 +201,8 @@ struct HomeView: View {
             SortableGrid(listID: "home:\(route.id)", items: items) { s, width in
                 if let list = route.list {
                     TitleLink(route: s.route, width: width).contextMenu { listActions(s, in: list) }
+                } else if route.id == "favorites" {
+                    TitleLink(route: s.route, width: width).contextMenu { favoriteActions(s) }
                 } else {
                     TitleLink(route: s.route, width: width)
                 }
@@ -235,6 +237,11 @@ struct HomeView: View {
         SuggestionActions(suggestion: s, list: list, onWatched: { model.setShown($0.imdb, in: list, shown: false) }) { s in
             Task { await env.remove(s, from: list) { shown in model.setShown(s.imdb, in: list, shown: shown) } }
         }
+    }
+
+    /// Al dejar picado uno de tus favoritos: ver, guardar, descargar, en la TV y «Quitar de favoritos» (con «Deshacer»).
+    @ViewBuilder private func favoriteActions(_ s: Suggestion) -> some View {
+        SuggestionActions(suggestion: s, favorite: true) { s in Task { await env.removeFavorite(s) } }
     }
 
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }

@@ -595,6 +595,17 @@
         }
       }
     },
+    "Abanico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fan"
+          }
+        }
+      }
+    },
     "Abierto": {
       "extractionState": "manual",
       "localizations": {
@@ -1255,6 +1266,17 @@
         }
       }
     },
+    "Arco orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbit arc"
+          }
+        }
+      }
+    },
     "Ariel": {
       "extractionState": "manual",
       "localizations": {
@@ -1779,6 +1801,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete the download"
+          }
+        }
+      }
+    },
+    "Botón que se llena": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filling button"
           }
         }
       }
@@ -2454,6 +2487,17 @@
         }
       }
     },
+    "Carrusel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carousel"
+          }
+        }
+      }
+    },
     "Carteles en tu idioma si el audio es otro": {
       "extractionState": "manual",
       "localizations": {
@@ -2960,6 +3004,17 @@
         }
       }
     },
+    "Conecta Trakt en Ajustes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Trakt in Settings"
+          }
+        }
+      }
+    },
     "Conecta Trakt en este iPhone (Ajustes › Trakt).": {
       "extractionState": "manual",
       "localizations": {
@@ -3433,6 +3488,17 @@
         }
       }
     },
+    "Coverflow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coverflow"
+          }
+        }
+      }
+    },
     "Crea una aplicación en developer.trakt.tv y pega aquí su Client ID (las nuevas ya no dan secreto).": {
       "extractionState": "manual",
       "localizations": {
@@ -3627,6 +3693,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "How the “Continue watching” cards are laid out, how the time left is shown, and your avatar."
+          }
+        }
+      }
+    },
+    "Cómo se acomodan las tarjetas de «Seguir viendo».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How the Continue Watching cards are arranged."
+          }
+        }
+      }
+    },
+    "Cómo te dice la tarjeta lo que te queda por ver.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How the card tells you how much is left."
           }
         }
       }
@@ -4709,6 +4797,17 @@
         }
       }
     },
+    "El borde avanza": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progress border"
+          }
+        }
+      }
+    },
     "El código caducó. Vuelve a intentarlo.": {
       "extractionState": "manual",
       "localizations": {
@@ -5365,6 +5464,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "In your Trakt watchlist"
+          }
+        }
+      }
+    },
+    "En tus favoritos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In your favorites"
           }
         }
       }
@@ -6674,6 +6784,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Home"
+          }
+        }
+      }
+    },
+    "Inicio y Para ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home and For You"
           }
         }
       }
@@ -9593,6 +9714,17 @@
         }
       }
     },
+    "No pude cambiar tus favoritos de Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't change your Trakt favorites"
+          }
+        }
+      }
+    },
     "No pude cambiar tus favoritos de Trakt: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -11426,6 +11558,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No. %lld"
+          }
+        }
+      }
+    },
+    "Píldora de vidrio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glass pill"
           }
         }
       }
@@ -14037,17 +14180,6 @@
         }
       }
     },
-    "También en %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Also in %@"
-          }
-        }
-      }
-    },
     "También tenías": {
       "extractionState": "manual",
       "localizations": {
@@ -16072,6 +16204,39 @@
         }
       }
     },
+    "X-Orbital-Device": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "X-Orbital-Device"
+          }
+        }
+      }
+    },
+    "X-Orbital-Device-Id": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "X-Orbital-Device-Id"
+          }
+        }
+      }
+    },
+    "X-Orbital-Device-Kind": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "X-Orbital-Device-Kind"
+          }
+        }
+      }
+    },
     "Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital» o «Oye Siri, prende Orbital».": {
       "extractionState": "manual",
       "localizations": {
@@ -16519,17 +16684,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "continue it on my iPhone"
-          }
-        }
-      }
-    },
-    "también": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "also"
           }
         }
       }

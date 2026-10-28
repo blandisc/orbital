@@ -253,7 +253,8 @@ public final class TitleModel: ObservableModel {
         let onTrakt = await keys.contains(metaID)
         inWatchlist = services.traktOutbox.pending(target: TraktOutbox.watchlist, imdb: metaID) ?? onTrakt
         inSomeList = await listed.contains(metaID)
-        let favorite = await favorites.contains(metaID)
+        let onTraktFavorites = await favorites.contains(metaID)
+        let favorite = services.traktOutbox.pending(target: TraktOutbox.favorites, imdb: metaID) ?? onTraktFavorites
         if favoriteWrites == 0 { isFavorite = favorite }
         applyDownloads(await queue)
         if let state = StremioLibrary.state(of: raw)["video_id"]?.string, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
@@ -390,8 +391,9 @@ public final class TitleModel: ObservableModel {
     }
 
     // MARK: favoritos de Trakt
-    /// El corazón: lo cambia al instante y lo manda a Trakt; si Trakt no lo acepta (sin red, o ya tienes 100) regresa a
-    /// como estaba y la ficha dice por qué. Devuelve si quedó como pediste (para ofrecer «Deshacer»).
+    /// El corazón: lo cambia al instante y lo manda a Trakt. Sin conexión se queda guardado en el iPhone y llega a Trakt en
+    /// cuanto se pueda (como la watchlist); si Trakt no lo acepta (ya tienes 100) regresa a como estaba y la ficha dice por qué.
+    /// Inicio se entera al momento (`FavoriteChange`). Devuelve si quedó como pediste (para ofrecer «Deshacer»).
     @discardableResult
     public func toggleFavorite() async -> Bool {
         guard let trakt = services.trakt, trakt.linked, metaID.hasPrefix("tt") else { return false }
@@ -402,12 +404,17 @@ public final class TitleModel: ObservableModel {
         do {
             try await trakt.setFavorite(imdb: metaID, series: kind == "series", add: want)
             await services.forYou.clearCache()
-            return true
+        } catch where TraktOutbox.retryable(error) {
+            services.traktOutbox.enqueue(.init(target: TraktOutbox.favorites, imdb: metaID, series: kind == "series", add: want))
+            message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
         } catch {
             isFavorite = !want
             message = Self.favoriteFailure(error)
             return false
         }
+        FavoriteChange.post(Suggestion(kind: kind, imdb: metaID, title: title, poster: poster ?? String(format: ForYou.metahubPoster, metaID),
+                                       wide: background ?? "", reason: .inList(ForYou.favoritesName)), add: want)
+        return true
     }
 
     /// Lo que dice la ficha si el corazón no se pudo cambiar: el tope de 100 tal cual (ya dice qué hacer); lo demás, con su causa.

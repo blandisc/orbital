@@ -26,6 +26,7 @@ func badgeKey(_ reason: SuggestionReason) -> LocalizedStringKey {
     case .recommended: "Recomendada"
     case .watching: "Sigues viéndola"
     case .inWatchlist: "En tu watchlist"   // Trakt; la biblioteca de Stremio es «Mi lista» (glosario común con la TV)
+    case .inList(let name) where name == ForYou.favoritesName: "En tus favoritos"   // con su traducción (antes «In “Favoritos”»)
     case .inList(let name): name.isEmpty ? "En una de tus listas" : "En «\(name)»"
     case .trending: "En tendencia"
     case .popular: "Popular"

@@ -85,6 +85,13 @@ public final class HomeModel: ObservableModel {
     static let listsKey = "home-lists"
     public init(_ services: Services) {
         self.services = services
+        defer {
+            // El corazón de una ficha (o «Quitar de favoritos» aquí): la fila cambia al momento, sin esperar la recarga.
+            favoriteObserver = NotificationCenter.default.addObserver(forName: FavoriteChange.name, object: nil, queue: .main) { [weak self] note in
+                guard let change = FavoriteChange.read(note) else { return }
+                MainActor.assumeIsolated { self?.setFavorite(change.suggestion, shown: change.add) }
+            }
+        }
         topBrand = services.kv.data(Self.topBrandKey).flatMap { String(data: $0, encoding: .utf8) }.flatMap { b in Self.topServices.contains { $0.brand == b } ? b : nil } ?? "netflix"
         super.init()
         if let data = services.kv.data(Self.cacheKey), let cache = try? JSONDecoder().decode(Cache.self, from: data) {
@@ -321,6 +328,19 @@ public final class HomeModel: ObservableModel {
         }
     }
     private var hiddenPending: [String: (Int, Suggestion)] = [:]
+
+    /// Un título que entra o sale de tus favoritos: entra al principio (o donde estaba, si fue «Deshacer»); sale al instante.
+    public func setFavorite(_ s: Suggestion, shown: Bool) {
+        if shown {
+            guard !favorites.contains(where: { $0.imdb == s.imdb }) else { return }
+            let (i, saved) = hiddenFavorites.removeValue(forKey: s.imdb) ?? (0, s)
+            favorites.insert(saved, at: min(i, favorites.count))
+        } else if let i = favorites.firstIndex(where: { $0.imdb == s.imdb }) {
+            hiddenFavorites[s.imdb] = (i, favorites.remove(at: i))
+        }
+    }
+    private var hiddenFavorites: [String: (Int, Suggestion)] = [:]
+    private var favoriteObserver: NSObjectProtocol?
     private var hiddenMine: [String: (Int, HomeItem)] = [:]
 
     /// «Quitar de Seguir viendo».
@@ -330,4 +350,14 @@ public final class HomeModel: ObservableModel {
         publishWidget()
         try? await services.watch.dismissContinue(metaID: item.metaID, newEpisode: item.isNew == true ? item.videoID : nil)
     }
+}
+
+/// Aviso de que un título entró o salió de tus favoritos (desde la ficha o desde Inicio), para que Inicio lo refleje al momento.
+public enum FavoriteChange {
+    public static let name = Notification.Name("orbital.favorite-change")
+    public static func post(_ suggestion: Suggestion, add: Bool) {
+        NotificationCenter.default.post(name: name, object: nil, userInfo: ["change": Box(suggestion: suggestion, add: add)])
+    }
+    static func read(_ note: Notification) -> Box? { note.userInfo?["change"] as? Box }
+    final class Box: Sendable { let suggestion: Suggestion; let add: Bool; init(suggestion: Suggestion, add: Bool) { self.suggestion = suggestion; self.add = add } }
 }

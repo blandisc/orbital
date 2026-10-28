@@ -49,11 +49,31 @@ final class FavoritesModelTests: XCTestCase {
         XCTAssertFalse(added)
         XCTAssertFalse(title.isFavorite)
         XCTAssertEqual(title.message, Trakt.favoritesFullMessage)
-        // Sin red: regresa también, con la causa.
+        // Trakt caído o sin red: no se pierde. Se queda guardado en el iPhone (el corazón lleno) y sale en cuanto se pueda.
         rig.http.statuses["\(api)/sync/favorites"] = 500
-        _ = await title.toggleFavorite()
-        XCTAssertFalse(title.isFavorite)
-        XCTAssertTrue(title.message?.hasPrefix("No pude cambiar tus favoritos de Trakt") == true)
+        let queued = await title.toggleFavorite()
+        XCTAssertTrue(queued)
+        XCTAssertTrue(title.isFavorite)
+        XCTAssertEqual(rig.services.traktOutbox.pending(target: TraktOutbox.favorites, imdb: "tt0816692"), true)
+        XCTAssertTrue(title.message?.hasPrefix("Guardado en el iPhone") == true)
+        // Al volver Trakt, la cola lo manda.
+        rig.http.statuses["\(api)/sync/favorites"] = nil
+        _ = await rig.services.traktOutbox.flush(rig.services.trakt)
+        XCTAssertNil(rig.services.traktOutbox.pending(target: TraktOutbox.favorites, imdb: "tt0816692"))
+    }
+
+    func testHomeRowChangesAtOnce() async throws {
+        let rig = try linkedRig()
+        let home = HomeModel(rig.services)
+        await home.refresh()
+        let dune = Suggestion(kind: "movie", imdb: "tt1160419", title: "Dune", poster: "p", wide: "", reason: .inList(ForYou.favoritesName))
+        FavoriteChange.post(dune, add: true)   // el corazón de la ficha
+        XCTAssertEqual(home.favorites.map(\.imdb), ["tt1160419", "tt0816692"], "entra al principio sin esperar la recarga")
+        FavoriteChange.post(home.favorites[1], add: false)   // «Quitar de favoritos» en Inicio
+        XCTAssertEqual(home.favorites.map(\.imdb), ["tt1160419"])
+        FavoriteChange.post(Suggestion(kind: "movie", imdb: "tt0816692", title: "", poster: "", wide: "", reason: .inList("")), add: true)   // «Deshacer»
+        XCTAssertEqual(home.favorites.map(\.imdb), ["tt1160419", "tt0816692"], "vuelve a su lugar")
+        XCTAssertEqual(home.favorites[1].title, "Interstellar", "con lo que ya tenía")
     }
 
     func testHomeShowsFavoritesOnlyWithTrakt() async throws {
