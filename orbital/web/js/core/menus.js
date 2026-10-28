@@ -788,7 +788,7 @@ export function settingsPage(page, settings) {
           hint: settings.trakt.linked ? scrobbleHint(settings.trakt.scrobble) : "Listas y recomendaciones" }
           : settings.trakt && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "Configurar", hint: "Primero, la clave de Trakt (abajo)",
             command: { type: "keys", service: "trakt" } },
-        phoneRow(settings.companion_seen, Date.now(), settings.companion_live),
+        ...phoneRows(settings),
         onedriveRow(settings.onedrive),
         settings.para_ti && { heading: true, label: "Claves de Para ti" },
         ...(settings.para_ti ? Object.keys(KEY_FORMS).filter((s) => s !== "onedrive").map((service) => keyRow(service, settings.para_ti)) : []),
@@ -895,6 +895,19 @@ export function onedriveFolderMenu(path, folders) {
       !folders.length && { icon: "info", label: "Aquí no hay más carpetas", inert: true },
     ].filter(Boolean),
   };
+}
+
+/** Cuentas: un renglón por iPhone o iPad que conoce Orbital (la app dice quién es), el abierto ahora con «✓ Conectado»,
+ *  y al final «Conectar otro» con el QR. Sin aparatos con nombre (app vieja): el renglón de siempre. */
+export function phoneRows(settings, now = Date.now()) {
+  const known = settings.companion_devices || [];
+  if (!known.length) return [phoneRow(settings.companion_seen, now, settings.companion_live)];
+  const rows = known.map((device) => {
+    const kind = device.kind === "ipad" ? "iPad" : "iPhone";
+    const label = device.name && !["iphone", "ipad"].includes(device.name.toLowerCase()) ? device.name : kind;
+    return { ...phoneRow(device.seen, now, device.live), label };
+  });
+  return [...rows, { icon: "phone", label: "Conectar otro", value: "", hint: "iPhone o iPad, con un código QR", command: { type: "phone-link" } }];
 }
 
 export const PHONE_LIVE = 120; // s: la app abierta pregunta cada 5 s; dos minutos sin saber de ella ya no es «conectado»

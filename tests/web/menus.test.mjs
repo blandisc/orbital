@@ -354,6 +354,23 @@ test("cuentas: el iPhone dice «Conectado» solo si la app habló hace un moment
   assert.equal(phoneRow(now / 1000 - 90 * 86400, now).hint, "Con un código QR"); // hace meses: como si no
 });
 
+test("cuentas: un renglón por iPhone o iPad (la app dice quién es), y «Conectar otro»", async () => {
+  const { phoneRows } = await import("../../orbital/web/js/core/menus.js");
+  const now = Date.UTC(2026, 9, 28, 12);
+  const s = now / 1000;
+  // App vieja (sin aparatos con nombre): el renglón de siempre.
+  assert.deepEqual(phoneRows({ companion_seen: s - 10, companion_live: s - 10 }, now).map((r) => r.label), ["iPhone"]);
+  const rows = phoneRows({ companion_devices: [
+    { id: "a", name: "iPad", kind: "ipad", seen: s - 5, live: s - 5 },
+    { id: "b", name: "iPhone de Fernando", kind: "iphone", seen: s - 3 * 3600, live: null },
+  ] }, now);
+  assert.deepEqual(rows.map((r) => r.label), ["iPad", "iPhone de Fernando", "Conectar otro"]);
+  assert.equal(rows[0].value, "✓ Conectado"); // el iPad está abierto
+  assert.equal(rows[1].value, "Conectar"); // el iPhone, no: ya no dice «Conectado» por el iPad
+  assert.equal(rows[1].hint, "Lo usaste hace 3 h");
+  assert.equal(rows[2].command.type, "phone-link");
+});
+
 test("Emuladores: cuál tiene versión nueva, cuál se instala aquí y el modo con ◀/▶", async () => {
   const { emulatorsMenu, maintenanceMenu } = await import("../../orbital/web/js/core/menus.js");
   assert.ok(maintenanceMenu().options.some((o) => o.command.type === "emulators"));

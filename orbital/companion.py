@@ -23,6 +23,46 @@ def pair_link(url: str, token: str) -> str:
     return f"{SCHEME}?{urlencode({'u': url, 't': token}, quote_via=quote)}"
 
 
+DEVICE_KEEP = 6  # aparatos recordados en Cuentas (los más recientes)
+DEVICE_SAVE_EVERY = 600  # s: a disco una vez cada 10 min por aparato, como companion_seen
+
+
+def device_from(headers) -> dict | None:
+    """Qué aparato le habla a Orbital (la app manda X-Orbital-Device-Id, -Device y -Device-Kind desde 2026-10-28). None
+    sin id (una app vieja): cuenta solo como «el iPhone»."""
+    import re
+    from urllib.parse import unquote
+
+    device_id = re.sub(r"[^A-Za-z0-9-]", "", str(headers.get("x-orbital-device-id") or ""))[:64]
+    if not device_id:
+        return None
+    kind = str(headers.get("x-orbital-device-kind") or "").lower()
+    name = re.sub(r"[\x00-\x1f\x7f]", "", unquote(str(headers.get("x-orbital-device") or ""))).strip()[:60]
+    return {"id": device_id, "name": name, "kind": kind if kind in ("iphone", "ipad") else ""}
+
+
+def remember_device(state, live: dict, device: dict, now: float) -> None:
+    """La hora exacta en memoria (`live`: ¿abierto ahora?) y en disco cada 10 min o si es nuevo o cambió de nombre
+    («Lo usaste hace 2 h» aunque Orbital se reinicie)."""
+    live[device["id"]] = now
+    saved = dict(state.settings().get("companion_devices") or {})
+    before = saved.get(device["id"]) or {}
+    if (before.get("name") == device["name"] and before.get("kind") == device["kind"]
+            and now - float(before.get("seen") or 0) < DEVICE_SAVE_EVERY):
+        return
+    saved[device["id"]] = {"name": device["name"], "kind": device["kind"], "seen": now}
+    keep = sorted(saved, key=lambda k: float(saved[k].get("seen") or 0), reverse=True)[:DEVICE_KEEP]
+    state.set_setting("companion_devices", {k: saved[k] for k in keep})
+
+
+def devices(state, live: dict) -> list[dict]:
+    """Los aparatos para Cuentas, el más reciente primero: {id, name, kind, seen, live}."""
+    saved = state.settings().get("companion_devices") or {}
+    out = [{"id": k, "name": v.get("name") or "", "kind": v.get("kind") or "",
+            "seen": max(float(v.get("seen") or 0), float(live.get(k) or 0)), "live": live.get(k)} for k, v in saved.items()]
+    return sorted(out, key=lambda d: d["seen"], reverse=True)
+
+
 def pair_info(config, tailscale_url=None) -> dict:
     """Si se puede conectar el iPhone y, si no, qué falta (en palabras)."""
     token = config.server.token

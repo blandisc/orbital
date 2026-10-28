@@ -521,23 +521,27 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     async def voice_command(body: VoiceRequest) -> dict:
         return await main_app.state.run_voice(body, remote=True)
 
-    def saw_phone() -> None:
+    def saw_phone(request: Request | None = None) -> None:
         """Para Ajustes › Cuentas: en memoria, la hora exacta (¿está abierta ahora?) y en disco, una escritura cada 10
-        min como mucho («Lo usaste hace 2 h»)."""
+        min como mucho («Lo usaste hace 2 h»). Con la app nueva, por aparato (iPhone e iPad usan el mismo token, y la
+        tele decía «Conectado» por el iPad aunque el iPhone hubiera perdido la conexión)."""
         deps = getattr(main_app.state, "deps", None)
         if deps is not None:
             deps.extra["phone_seen"] = time.time()
         state = getattr(main_app.state.catalog, "state", None)
+        device = companion.device_from(request.headers) if request is not None else None
+        if device is not None and deps is not None and state is not None:
+            companion.remember_device(state, deps.extra.setdefault("phones", {}), device, time.time())
         if state is not None and time.time() - float(state.settings().get("companion_seen") or 0) > 600:
             state.set_setting("companion_seen", time.time())
 
     @public.get("/api/companion")
-    def companion_keys() -> dict:
+    def companion_keys(request: Request) -> dict:
         """La app del iPhone toma de aquí lo de «Para ti» para no escribirlo dos veces: la clave de TMDB, la aplicación
         de Trakt (su Client ID, que no es secreto; el secreto no sale de aquí) y el país. La sesión de Trakt de la consola
         ya no se presta: el iPhone conecta la suya con un código (cada app con su sesión)."""
         p = config.para_ti
-        saw_phone()  # Ajustes › Cuentas: el iPhone está conectado (antes decía siempre «Conectar»)
+        saw_phone(request)  # Ajustes › Cuentas: el iPhone está conectado (antes decía siempre «Conectar»)
         # Lo primero que pide la app al escanear el QR: la TV lo celebra si tiene el QR a la vista (antes solo se quedaba
         # el código, sin saber si ya había funcionado). Con el QR cerrado la interfaz no dice nada (la app también lo
         # pide al abrirse).
@@ -573,11 +577,11 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     _foryou_public_routes(public, main_app)
 
     @public.get("/api/companion/now")
-    def companion_now() -> dict:
+    def companion_now(request: Request) -> dict:
         """«Viendo en la TV» del iPhone: qué se ve ahora (o `null` si no hay nada abierto)."""
         # Lo que la TV le dejó al iPhone («Enviar» / «Descargar en el iPhone») viaja aquí: ni una petición de más.
         catalog = main_app.state.catalog
-        saw_phone()  # lo que el iPhone pide cada 5 s abierto (antes solo contaba /api/companion, que pide al emparejarse)
+        saw_phone(request)  # lo que el iPhone pide cada 5 s abierto (antes solo contaba /api/companion, que pide al emparejarse)
         return {"playing": companion.now_playing(catalog), "inbox": companion.inbox_pending(catalog.state),
                 "game": companion.game_now(catalog, main_app.state.shell),  # el modo acompañante (None sin juego)
                 # qué pantalla y si hay un campo de texto (el iPhone enseña «Escribir»); con el reproductor al frente,

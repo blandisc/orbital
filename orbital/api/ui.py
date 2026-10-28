@@ -9,7 +9,7 @@ import threading
 from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
-from .. import __version__, input_log, system
+from .. import __version__, companion, input_log, system
 from .deps import Deps
 
 # Ajustes que se pueden cambiar desde la interfaz (y sus valores válidos).
@@ -100,7 +100,9 @@ def router(d: Deps) -> APIRouter:
                 "onedrive": catalog.onedrive.status(),  # tus videos de OneDrive (Ajustes › Cuentas)
                 # La última vez que la app del iPhone habló con Orbital, al segundo (en memoria; companion_seen va a disco
                 # cada 10 min): «✓ Conectado» solo si es de hace un momento.
-                "companion_live": d.extra.get("phone_seen")}
+                "companion_live": d.extra.get("phone_seen"),
+                # Cada iPhone o iPad por separado (la app manda quién es): Cuentas los enseña uno por uno.
+                "companion_devices": companion.devices(catalog.state, d.extra.get("phones") or {})}
 
     @r.post("/api/settings")
     def set_settings(body: dict) -> dict:

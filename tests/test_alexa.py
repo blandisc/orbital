@@ -335,6 +335,22 @@ def test_settings_know_the_iphone_is_open_right_now(public):
     assert _t.time() - main.state.deps.extra["phone_seen"] < 5
 
 
+def test_each_device_is_known_by_name_so_the_ipad_does_not_pass_for_the_iphone(public):
+    """iPhone e iPad usan el mismo token: con la app nueva cada uno dice quién es y Cuentas los enseña por separado."""
+    client, main = public
+    auth = {"Authorization": "Bearer secreto"}
+    client.get("/api/companion/now", headers={**auth, "X-Orbital-Device-Id": "AAA-1", "X-Orbital-Device": "iPhone%20de%20Fer",
+                                              "X-Orbital-Device-Kind": "iphone"})
+    client.get("/api/companion/now", headers={**auth, "X-Orbital-Device-Id": "BBB-2", "X-Orbital-Device": "iPad",
+                                              "X-Orbital-Device-Kind": "ipad"})
+    client.get("/api/companion/now", headers=auth)  # una app vieja: sin aparato, no inventa uno
+    from orbital import companion
+    found = {d["id"]: d for d in companion.devices(main.state.catalog.state, main.state.deps.extra["phones"])}
+    assert set(found) == {"AAA-1", "BBB-2"}
+    assert found["AAA-1"]["name"] == "iPhone de Fer" and found["AAA-1"]["kind"] == "iphone" and found["AAA-1"]["live"]
+    assert found["BBB-2"]["kind"] == "ipad"
+
+
 def test_the_iphone_open_counts_as_a_visit_too(public):
     """El iPhone abierto pide /api/companion/now cada 5 s: eso también es «lo usaste» (antes solo contaba al emparejarse)."""
     client, main = public
