@@ -1089,7 +1089,8 @@ struct PlayerScreen: View {
     private func orbitTitle(_ model: PlayerModel, _ search: PlayerModel.SourceSearch) -> Text {
         if let src = model.source {
             let n = triedCount(model)
-            return n > 0 ? Text("Probando otra versión (\(n))…") : Text("Elegimos \(versionText(src))")
+            let version = versionText(src, model)
+            return n > 0 ? Text("Probando otra versión (\(n))…") : version.isEmpty ? Text("Elegimos una versión") : Text("Elegimos \(version)")
         }
         if search.found == 1 { return Text("1 versión encontrada") }
         let n = search.found
@@ -1101,7 +1102,7 @@ struct PlayerScreen: View {
     /// «También en inglés y castellano». Con uno solo, nada.
     private func orbitAlso(_ model: PlayerModel) -> Text? {
         guard let src = model.source, triedCount(model) == 0 else { return nil }
-        let codes = AllSources.otherLanguages(src, prefs: env.services.appSettings.preferences())
+        let codes = AllSources.otherLanguages(src, prefs: heardPrefs(model))
         let flags = codes.compactMap { LanguageFlags.flag($0) }
         guard !flags.isEmpty else { return nil }
         let ui = env.services.appSettings.uiLanguage
@@ -1111,7 +1112,7 @@ struct PlayerScreen: View {
     }
 
     private func orbitDetail(_ model: PlayerModel, _ search: PlayerModel.SourceSearch) -> Text? {
-        if let src = model.source { return triedCount(model) > 0 ? Text(verbatim: versionText(src)) : Text("Abriendo…") }
+        if let src = model.source { return triedCount(model) > 0 ? Text(verbatim: versionText(src, model)) : Text("Abriendo…") }
         if search.addons.isEmpty { return nil }
         let answeredCount = search.answered
         if answeredCount > 0 { return Text("\(answeredCount) de \(search.addons.count) complementos") }
@@ -1120,11 +1121,27 @@ struct PlayerScreen: View {
         return moreCount > 0 ? Text("\(names) y \(moreCount) más") : Text(verbatim: names)
     }
 
-    /// «Latino · 1080p»: el idioma que va a sonar y la calidad de una versión.
-    private func versionText(_ src: Source) -> String {
+    /// «Latino · 1080p»: el idioma que va a sonar y la calidad de una versión. El idioma solo si la versión lo dice (o ya se
+    /// comprobó): si nada lo dice, se suponía inglés y luego el archivo traía español («Elegimos Inglés» y sonaba latino).
+    private func versionText(_ src: Source, _ model: PlayerModel) -> String {
         let ui = env.services.appSettings.uiLanguage
-        let language = Streams.playingLanguage(src, env.services.appSettings.preferences()).map { LanguageFlags.flagged(Streams.versionLanguageName($0.code, in: ui), $0.code) }
+        let playing = Streams.playingLanguage(src, heardPrefs(model)).flatMap { AllSources.EvidenceKind($0.evidence) == .assumed ? nil : $0 }
+        let language = playing.map { LanguageFlags.flagged(Streams.versionLanguageName($0.code, in: ui), $0.code) }
         return ([language].compactMap { $0 } + src.qualitySummary).joined(separator: " · ")
+    }
+
+    /// Los idiomas con que el reproductor elige la pista (`PlayerModel.loadVideo`): los de este título y, al continuar, el
+    /// audio con que lo dejaste. Antes la órbita usaba los de Ajustes y podía decir un idioma y sonar otro.
+    private func heardPrefs(_ model: PlayerModel) -> Preferences {
+        let settings = env.services.appSettings
+        guard let request = model.request else { return settings.preferences() }
+        var prefs = env.services.titlePrefs.languages(for: request.metaID, settings: settings).prefs
+        if !request.fromStart, let last = env.services.titlePrefs.lastChoice(metaID: request.metaID)?.audio?.language,
+           let base = PlaybackRules.languageCode(last), !base.isEmpty, base != prefs.audio {
+            prefs.audio = base
+            prefs.spanish = ""
+        }
+        return prefs
     }
 
     /// La ruedita sola, y solo si tarda más de un instante (lo normal es que el video vuelva antes y no se vea nada).
@@ -1432,7 +1449,7 @@ struct PlayerScreen: View {
     private func ipodDetail(_ model: PlayerModel) -> String {
         if !current.episodeLabel.isEmpty { return current.episodeLabel }
         guard let src = model.source else { return "" }
-        return versionText(src)
+        return versionText(src, model)
     }
 
     // MARK: descargar
@@ -1747,7 +1764,7 @@ struct PlayerScreen: View {
         guard let src = model.source else { return "" }
         // El idioma que de verdad suena (la pista puesta) gana a lo que decía el nombre.
         let heard = model.snapshot.audioTracks.first { $0.id == model.snapshot.selectedAudio }.flatMap(TrackChooser.audioCode)
-        let language = (heard ?? Streams.playingLanguage(src, env.services.appSettings.preferences())?.code).map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: ui), $0) }
+        let language = (heard ?? Streams.playingLanguage(src, heardPrefs(model))?.code).map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: ui), $0) }
         let size = src.size > 0 ? ByteCountFormatter.string(fromByteCount: Int64(src.size), countStyle: .file) : nil
         return ([language, src.resolution.isEmpty ? nil : src.resolution, size].compactMap { $0 }).joined(separator: " · ")
     }

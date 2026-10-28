@@ -38,12 +38,16 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
         set { lock.withLock { _raw = newValue } }
     }
     var calls: [String] { lock.withLock { _calls } }
+    private var _headers: [[String: String]] = []
+    /// Los encabezados de cada petición, en orden.
+    var headers: [[String: String]] { lock.withLock { _headers } }
     func bodies(for url: String) -> [Data] { lock.withLock { _bodies[url] ?? [] } }
 
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         let key = request.url.absoluteString
         lock.withLock {
             _calls.append(key)
+            _headers.append(request.headers)
             if let body = request.body { _bodies[key, default: []].append(body) }
         }
         if let ms = lock.withLock({ _delays[key] }) { try? await Task.sleep(nanoseconds: UInt64(ms) * 1_000_000) }

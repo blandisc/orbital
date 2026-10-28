@@ -1,44 +1,28 @@
 import SwiftUI
 
-// El carrusel de «Seguir viendo» en Inicio: la tarjeta del frente nítida y las que siguen a los lados, más chicas, oscuras
-// y desenfocadas. Cómo se acomodan (coverflow o abanico) se elige en el mismo Inicio.
-
-/// Cómo se ven las tarjetas que siguen.
-enum DeckStyle: String, CaseIterable {
-    /// Las de los lados giran en 3D.
-    case coverflow
-    /// Las de los lados se inclinan desde abajo, como cartas abiertas.
-    case fan
-
-    /// Su ícono en el menú de Inicio (como los de Todo · Películas · Series, `KindGlyph`).
-    var symbol: String {
-        switch self { case .coverflow: "rectangle.3.group"; case .fan: "rectangle.portrait.on.rectangle.portrait.angled" }
-    }
-}
+// El carrusel de «En tendencia» en Inicio: la tarjeta del frente nítida y las que siguen a los lados, más chicas, oscuras,
+// desenfocadas y giradas en 3D (coverflow).
 
 extension View {
     /// El efecto del carrusel: según qué tan lejos del centro está la tarjeta (`phase.value`, −1 a 1), se achica, se
-    /// oscurece, se desenfoca y gira (coverflow) o se inclina (abanico). Con «Reducir movimiento», quietas.
-    func deckTransition(_ style: DeckStyle, reduceMotion: Bool) -> some View {
+    /// oscurece, se desenfoca y gira en 3D. Con «Reducir movimiento», quietas.
+    func deckTransition(reduceMotion: Bool) -> some View {
         scrollTransition(.interactive, axis: .horizontal) { content, phase in
-            content.deckEffect(style, value: reduceMotion ? 0 : phase.value)
+            content.deckEffect(value: reduceMotion ? 0 : phase.value)
         }
     }
 }
 
 extension VisualEffect {
     /// Lo que le pasa a una tarjeta a `value` lugares del centro (−1 a 1), dentro de `scrollTransition`.
-    func deckEffect(_ style: DeckStyle, value: Double) -> some VisualEffect {
+    func deckEffect(value: Double) -> some VisualEffect {
         let distance = abs(value)
         // El desenfoque se queda: además de alejar lo de los lados, dibuja cada tarjeta aparte antes de girarla; sin él, en
         // coverflow el vidrio de sus botones girado en 3D dejaba una capa con posición inválida y la app se cerraba.
         return scaleEffect(1 - distance * DS.Deck.sideShrink)
             .blur(radius: distance * DS.Deck.sideBlur)
             .brightness(-distance * DS.Deck.sideDim)
-            .rotation3DEffect(.degrees(style == .coverflow ? -value * DS.Deck.coverflowAngle : 0), axis: (x: 0, y: 1, z: 0),
-                              perspective: DS.Deck.perspective)
-            .rotationEffect(.degrees(style == .fan ? value * DS.Deck.fanAngle : 0), anchor: .bottom)
-            .offset(y: style == .fan ? distance * DS.Deck.fanDrop : 0)
+            .rotation3DEffect(.degrees(-value * DS.Deck.coverflowAngle), axis: (x: 0, y: 1, z: 0), perspective: DS.Deck.perspective)
     }
 }
 

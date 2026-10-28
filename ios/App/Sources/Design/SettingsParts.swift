@@ -118,8 +118,8 @@ struct SimpsonsSeasonsPicker: View {
     }
 }
 
-/// «Un Simpson al azar»: de qué temporadas sale el episodio, con lo guardado en Ajustes. La misma pieza en Ajustes y en la hoja
-/// que abre la dona de Inicio (déjala picada › Temporadas…). Las temporadas que existen llegan de Cinemeta al abrirla.
+/// «Un Simpson al azar» (Ajustes): de qué temporadas sale el episodio de la dona de Inicio. Las temporadas que existen llegan
+/// de Cinemeta al abrirla.
 struct SimpsonsSeasonsSection: View {
     @Environment(AppEnvironment.self) private var env
     @State private var selected = AppEnvironment.shared.services.appSettings.simpsonsSeasons
@@ -145,21 +145,5 @@ struct SimpsonsSeasonsSection: View {
         if Set(seasons) == Set(AppEnvironment.simpsonsClassics) { return Text("Las clásicas") }
         if seasons.count == 1, let only = seasons.first { return Text("Temporada \(only)") }
         return Text("\(seasons.count) temporadas")
-    }
-}
-
-/// La hoja de la dona de Inicio (déjala picada › Temporadas…): las mismas temporadas que en Ajustes.
-struct SimpsonsSeasonsSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            Form { SimpsonsSeasonsSection() }
-                .tint(DS.accent)
-                .scrollContentBackground(.hidden).background(Backdrop())
-                .navigationTitle("Un Simpson al azar").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dismiss() } } }
-        }
-        .presentationDetents([.medium, .large])
     }
 }
