@@ -8,7 +8,6 @@ struct HomeView: View {
     @State private var tvNow: ModelObserver<TVNowModel>
     @State private var inbox: ModelObserver<InboxModel>
     @State private var tint = ArtTint()
-    @State private var pendingCount = 0
     @State private var openTitle: TitleRoute?
     /// La tarjeta al frente del carrusel: su lugar en la vuelta infinita (`slot % cuántas`).
     @State private var heroSlot: Int?
@@ -134,7 +133,6 @@ struct HomeView: View {
         // cuántas tienes por terminar (y si no hay nada que decir, «Inicio»).
         // Arriba, el ícono y «Orbital» (el carácter de la app); al bajar, en medio, lo más útil que haya (lo que suena en la TV…).
         .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
-        .subtitle(syncText)
         .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette(tint: tint.colors).navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)) }
         .onChange(of: AppEnvironment.shared.ui.openSimpsons, initial: true) { _, wants in
             guard wants else { return }
@@ -214,22 +212,17 @@ struct HomeView: View {
                          : route.id == "favorites" ? Text("Favoritos") : Text("Mi lista")).navigationBarTitleDisplayMode(.inline)
     }
 
-    /// Lo de Stremio, lo pendiente por subir y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo).
+    /// Lo de Stremio y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo). Lo pendiente por subir
+    /// se sube solo y ya no se anuncia bajo el título («N cambios por subir»: no se quería ahí).
     private func reload(ifStale: Bool = false) async {
         if ifStale { await home.model.refreshIfStale() } else { await home.model.refresh() }
         Perf.mark("home.done")
-        let work = env.services.pending.load()      // una sola lectura por actualización, no una por cada pintado
-        pendingCount = work.progress.count + work.traktWatched.count
         await tint.load(currentHero?.wide)
     }
 
     /// El título con la barra encogida: nada, solo el logotipo (antes decía «Sale hoy: …» y no se quería ahí).
     private var scrolledTitle: Text { Text(verbatim: "") }
 
-    /// Solo cuando hay algo que decir: «N cambios por subir» (lo que viste sin internet). Al día, nada (no hace falta decirlo).
-    private var syncText: Text? {
-        pendingCount > 0 ? Text("\(pendingCount) cambios por subir") : nil
-    }
 
     /// Al dejar picado un título de una de tus listas: ver, descargar, en la TV, marcar como vista y quitarlo de la lista.
     @ViewBuilder private func listActions(_ s: Suggestion, in list: SaveDestination) -> some View {
