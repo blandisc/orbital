@@ -125,10 +125,35 @@ def test_video_memory_is_released_only_when_nobody_is_using_the_console(tmp_path
 def test_video_memory_is_never_released_in_a_game_or_below_the_threshold(tmp_path):
     release = FakeRelease()
     monitor(tmp_path, 5000, idle=lambda: 9999, release=release, running=lambda: "Mario Kart 8").check(now=1)
-    monitor(tmp_path, 5000, idle=lambda: 9999, release=release, busy=lambda: True).check(now=1)
+    monitor(tmp_path, 5000, idle=lambda: health.RELEASE_IDLE_AWAY - 1, release=release, busy=lambda: True).check(now=1)
     monitor(tmp_path, health.RELEASE_MB - 1, idle=lambda: 9999, release=release).check(now=1)
     monitor(tmp_path, 5000, idle=lambda: 9999, release=FakeRelease(ready=False)).check(now=1)  # sin activar: nada
     assert release.runs == 0
+
+
+def test_video_memory_is_released_with_another_window_in_front_after_a_long_while(tmp_path):
+    """En esta consola casi siempre hay otra ventana al frente (la terminal, el navegador): antes eso bastaba para no
+    liberar nunca, y DWM llegó a 15 GB (los videos se trababan). Con media hora sin que nadie toque nada, sí."""
+    release = FakeRelease()
+    monitor(tmp_path, 15000, idle=lambda: health.RELEASE_IDLE_AWAY + 1, release=release, busy=lambda: True).check(now=1)
+    assert release.runs == 1
+
+
+def test_before_a_video_dwm_is_released_only_when_it_holds_too_much():
+    from orbital import dwm_release
+
+    runs, waits = [], []
+    real = dwm_release.available, dwm_release.run
+    dwm_release.available, dwm_release.run = (lambda: True), (lambda: runs.append(1) or True)
+    try:
+        assert not dwm_release.fresh_for_video(measure=lambda: (1800, 300), sleep=waits.append)  # limpio: nada
+        assert not dwm_release.fresh_for_video(measure=lambda: None, sleep=waits.append)  # no se pudo medir: nada
+        assert dwm_release.fresh_for_video(measure=lambda: (12700, 300), sleep=waits.append)
+        assert runs == [1] and waits == [dwm_release.BACK_AFTER]  # espera a que Windows vuelva a dibujar
+        dwm_release.available = lambda: False
+        assert not dwm_release.fresh_for_video(measure=lambda: (12700, 300), sleep=waits.append)  # sin activar
+    finally:
+        dwm_release.available, dwm_release.run = real
 
 
 def test_sudden_dwm_growth_logs_who_was_in_front_and_measures_every_minute(tmp_path, caplog, monkeypatch):

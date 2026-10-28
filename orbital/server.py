@@ -180,6 +180,10 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             # Un solo volumen: el reproductor mueve el de Windows (el de Ajustes rápidos y Alexa). Solo aquí, en la Orbital de
             # verdad: en pruebas movería el volumen real de la computadora.
             catalog.watch.player.system_volume = (system_audio.volume, system_audio.set_volume)
+            # Con DWM lleno los videos se traban: se libera antes de abrir uno (solo aquí: en pruebas reiniciaría DWM).
+            from . import dwm_release
+
+            catalog.watch.player.before_open = dwm_release.fresh_for_video
             threading.Thread(target=scan, daemon=True, name="first-scan").start()
         else:
             await run_in_threadpool(catalog.refresh)

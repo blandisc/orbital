@@ -15,6 +15,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -45,6 +46,28 @@ def _schtasks(*args: str) -> bool:
 def available() -> bool:
     """¿Ya está activada (existe la tarea)?"""
     return _schtasks("/query", "/tn", TASK)
+
+
+# Con DWM así de lleno, los videos se traban: el video se congela un momento, el audio sigue y el video corre para
+# alcanzarlo (medido el 2026-10-27 con la misma película y la misma copia: con 12.7 GB, 18 cuadros perdidos en 15 min en
+# tres tirones; recién liberado, 0 en 45 min). Es lo mismo que pide la liberación en reposo (health.RELEASE_MB).
+FRESH_MB = 3000
+BACK_AFTER = 2.5  # s que tarda Windows en volver a dibujar tras reiniciar DWM (la pantalla parpadea en ese rato)
+
+
+def fresh_for_video(measure=None, sleep=time.sleep) -> bool:
+    """Antes de abrir un video (con la pantalla de carga a la vista): si DWM retiene de más, se reinicia ahí, donde el
+    parpadeo no estorba, y el video arranca sin tirones. Solo con la tarea activada. Devuelve si lo hizo."""
+    if measure is None:
+        from .health import dwm_gpu_mb as measure
+    dwm = measure()
+    if not dwm or dwm[0] < FRESH_MB or not available():
+        return False
+    if not run():
+        return False
+    log.info("Memoria de video liberada antes del video (DWM tenía %d MB): sin tirones", dwm[0])
+    sleep(BACK_AFTER)
+    return True
 
 
 def run() -> bool:

@@ -1155,6 +1155,18 @@ def test_playing_bar_has_no_title_and_the_info_goes_to_the_bottom():
         player_ui.set_touch(False)
 
 
+def test_video_memory_is_checked_before_opening_mpv():
+    """Antes de abrir mpv (con la pantalla de carga a la vista) se libera la memoria de video si hace falta: con DWM
+    lleno, el video se trababa cada pocos minutos."""
+    p, mpv = make_player()
+    p.current = None  # nada abierto todavía
+    order = []
+    p.before_open = lambda: order.append("liberar")
+    p.play(lambda argv: order.append("mpv") or type("P", (), {"poll": lambda self: None, "pid": 1})(), "mpv.exe", "u",
+           "Sleepy Hollow", {"kind": "movie"})
+    assert order[:2] == ["liberar", "mpv"]
+
+
 def test_each_stutter_goes_to_the_log_with_its_minute(caplog):
     """El video se congela, el audio sigue y el video corre para alcanzarlo: cada tirón (varios cuadros perdidos de golpe)
     queda en el registro con su minuto y si fue al mostrar o al decodificar; uno suelto no. Al cerrar, el total

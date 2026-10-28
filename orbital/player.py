@@ -240,6 +240,7 @@ class OrbitalPlayer(PlayerScreen):
         self.versions_provider = None  # (meta) -> [{"id", "label", "hint"}]: tu idioma en otra versión (X › Audio)
         self.on_switch_source = None  # (meta, id_fuente, posición)
         self.on_episode = None  # (meta, ±1): episodio anterior / siguiente
+        self.before_open = None  # () antes de abrir mpv: liberar la memoria de video de Windows si hace falta (server.py)
         self.episodes_provider = None  # (meta) -> [{"id", "label", "current", "progress"?}] de la temporada
         self.on_play_episode = None  # (meta, id_del_episodio): ver ese episodio
         self.on_sub_scale = None  # (escala): para recordarla
@@ -289,6 +290,8 @@ class OrbitalPlayer(PlayerScreen):
         self.stop()
         if self.segment is not None and self.segment.playing:
             self._close_segment(self.segment)  # lo visto del video anterior se guarda antes de soltarlo
+        if self.before_open is not None:  # con la pantalla de carga a la vista: DWM limpio, sin tirones (dwm_release)
+            self._safe(self.before_open)
         process = run(build_command(mpv_exe, url, title, subtitles=subtitles, bindings=input_conf(),
                                     sub_scale=self.sub_scale, **options))
         self.menu = None

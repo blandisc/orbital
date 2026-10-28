@@ -33,6 +33,9 @@ CSV_HEADER = "hora,ram_libre_mb,dwm_compartida_mb,dwm_dedicada_mb,orbital_mb,abi
 # Cada juego de Switch le deja ~100 MB a DWM: con más de esto y la consola sin usar, se libera solo (dwm_release.py).
 RELEASE_MB = 3000
 RELEASE_IDLE = 600  # s sin tocar nada (ni mando ni teclado) antes de liberar: la pantalla parpadea
+# Con otra ventana al frente (en esta consola casi siempre hay una: la terminal, el navegador) se espera más. Antes no
+# se liberaba nunca así, y DWM llegó a 15 GB: los videos se trababan (ver dwm_release.FRESH_MB).
+RELEASE_IDLE_AWAY = 1800
 RELEASE_EVERY = 3600  # s: como mucho una vez por hora
 # El 2026-10-24 DWM pasó de 0,6 a 52 GB en 25 min sin nada abierto: si crece así, medir cada minuto y anotar quién.
 FAST_GROWTH_MB = 1000
@@ -330,8 +333,9 @@ class HealthMonitor:
     def maybe_release(self, now: float, shared: int, running: str) -> bool:
         """Con DWM reteniendo mucho y la consola sin usar (nada abierto, nadie tocando), reiniciarlo para que suelte la
         memoria. Nunca en un juego o video ni con alguien usando la consola: la pantalla parpadea. Devuelve si lo hizo."""
-        if (self.release is None or shared < RELEASE_MB or running or self.busy()
-                or self.idle() < RELEASE_IDLE or now - self._last_release < RELEASE_EVERY):
+        idle = self.idle()
+        if (self.release is None or shared < RELEASE_MB or running or idle < RELEASE_IDLE
+                or (self.busy() and idle < RELEASE_IDLE_AWAY) or now - self._last_release < RELEASE_EVERY):
             return False
         if not self.release.available():
             return False
