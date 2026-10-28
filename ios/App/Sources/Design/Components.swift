@@ -807,6 +807,8 @@ struct DSGestureIndicator: View {
 /// luna turquesa que la recorre con su estela, la marca de Orbital sin textos. Con «Reducir movimiento», la luna late en su lugar.
 struct DSLoader: View {
     var size: CGFloat = DS.Loader.size
+    /// La órbita tenue de fondo; dentro del botón grande no va (la orilla del botón ya es la órbita).
+    var showsTrack = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -817,7 +819,7 @@ struct DSLoader: View {
             let radius = size / 2
             let trail = DS.Loader.trail
             ZStack {
-                Circle().stroke(DS.track, lineWidth: DS.Loader.ringWidth)
+                if showsTrack { Circle().stroke(DS.track, lineWidth: DS.Loader.ringWidth) }
                 Circle().trim(from: 0, to: trail)
                     .stroke(AngularGradient(colors: [.clear, DS.brandMoon.opacity(DS.Loader.trailOpacity)], center: .center,
                                             startAngle: .zero, endAngle: .degrees(360 * Double(trail))),

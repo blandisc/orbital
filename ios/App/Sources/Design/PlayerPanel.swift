@@ -306,7 +306,8 @@ struct PlayPauseButton: View {
     var body: some View {
         Button(action: action) {
             Group {
-                if loading { DSLoader() }
+                // La luna recorre la orilla del botón (antes un anillo más chico adentro: se veía como un disco gris raro).
+                if loading { DSLoader(size: DS.PlayerPanel.playButton - DS.Loader.buttonInset * 2, showsTrack: false) }
                 else {
                     Image(systemName: playing ? "pause.fill" : "play.fill")
                         .font(.system(size: DS.PlayerPanel.playGlyph, weight: .bold))   // ds-exception: el glifo del botón grande se mide con el botón, no con Dynamic Type
@@ -376,7 +377,7 @@ struct SkipButton: View {
     }
 }
 
-/// La barra de avance (la misma en vertical y en horizontal), a todo lo ancho: delgada y sin perilla mientras miras, gruesa
+/// La barra de avance (la misma en vertical y en horizontal), a todo lo ancho: delgada con un punto chico mientras miras, gruesa
 /// mientras la arrastras, con una burbuja encima que dice a qué minuto vas y cuánto saltas. Dos rayitas tenues marcan dónde
 /// termina la intro y dónde empiezan los créditos (desde ahí el episodio cuenta como visto); al arrastrar, los tramos se aclaran.
 struct PlayerScrubBar: View {
@@ -411,21 +412,23 @@ struct PlayerScrubBar: View {
                         .frame(width: DS.PlayerPanel.scrubTickWidth, height: track + DS.PlayerPanel.scrubTickReach * 2)
                         .offset(x: x(tick) - DS.PlayerPanel.scrubTickWidth / 2)
                 }
+                // El punto: dónde vas. Chico mientras miras, más grande mientras lo arrastras.
+                let knob = dragging ? DS.PlayerPanel.scrubKnobActive : DS.PlayerPanel.scrubKnob
+                Circle().fill(DS.text).frame(width: knob, height: knob).offset(x: x(value) - knob / 2)
+                    .shadow(DS.Elevation.low)
+                // Arrastrando: la burbuja arriba de la barra, centrada sobre el dedo (sin salirse de la barra ni tapar los tiempos).
+                if dragging {
+                    let delta = value - startValue
+                    DSSeekBubble(time: clock(value), delta: (delta >= 0 ? "+" : "−") + clock(abs(delta)))
+                        .fixedSize()
+                        .position(x: min(max(x(value), DS.Gesture.seekBubbleSideMargin), width - DS.Gesture.seekBubbleSideMargin),
+                                  y: DS.PlayerPanel.scrubHit / 2 - DS.PlayerPanel.scrubBubbleLift)
+                        .transition(.opacity)
+                        .allowsHitTesting(false)
+                }
             }
             .animation(.snappy, value: dragging)
             .frame(width: width, height: DS.PlayerPanel.scrubHit)
-            .overlay(alignment: .topLeading) {
-                if dragging {
-                    let delta = value - startValue
-                    // La misma burbuja que al buscar arrastrando sobre el video (una sola forma de decir «a qué minuto vas»).
-                    DSSeekBubble(time: clock(value), delta: (delta >= 0 ? "+" : "−") + clock(abs(delta)))
-                        .fixedSize()
-                    .alignmentGuide(.leading) { d in d.width / 2 - min(max(x(value), d.width / 2), width - d.width / 2) }
-                    .alignmentGuide(.top) { d in d.height + DS.Space.s2 }
-                    .transition(.opacity)
-                    .allowsHitTesting(false)
-                }
-            }
             // Ocupa 32 pt (no se mueve nada), pero se toca en 44: la zona sobresale lo mismo arriba y abajo.
             .contentShape(Rectangle().size(width: width, height: DS.Size.touchTarget)
                 .offset(y: (DS.PlayerPanel.scrubHit - DS.Size.touchTarget) / 2))

@@ -103,7 +103,11 @@ struct PlayerScreen: View {
     @State private var appActive = true
     @State private var lastNotch: Date?
     /// El zoom del video (botón de arriba y pellizco, como Infuse); se recuerda en ajustes. `zoomToast`: el aviso con su nombre.
-    @State private var zoom: VideoZoom = .fit
+    /// El zoom de cada sentido: el de horizontal se recuerda (Ajustes); el de vertical arranca siempre en el cuadro completo. Antes
+    /// era uno solo y al volver de horizontal con «Llenar» el video quedaba en vertical a pantalla completa, recortado.
+    @State private var landscapeZoom: VideoZoom = .fit
+    @State private var portraitZoom: VideoZoom = .fit
+    private var zoom: VideoZoom { landscape ? landscapeZoom : portraitZoom }
     @State private var zoomToast: VideoZoom?
     /// «Subtítulos desactivados» o «Español · 1 de 4», un momento, al apagar o prender con el botón.
     @State private var subtitleToast: String?
@@ -356,9 +360,9 @@ struct PlayerScreen: View {
             originalBrightness = Double(UIScreen.main.brightness)
             // `begin` va aparte: el plazo de arranque (45 s) tiene que seguir corriendo mientras carga.
             let engine = holder.engine
-            zoom = VideoZoom(stored: env.services.appSettings.videoZoom)
+            landscapeZoom = VideoZoom(stored: env.services.appSettings.videoZoom)
             #if DEBUG
-            if Demo.isOn, let raw = Demo.value(after: "-demo-zoom") { zoom = VideoZoom(stored: raw) }   // `-demo-zoom fill`: para capturas
+            if Demo.isOn, let raw = Demo.value(after: "-demo-zoom") { landscapeZoom = VideoZoom(stored: raw); portraitZoom = VideoZoom(stored: raw) }   // `-demo-zoom fill`: para capturas
             if Demo.isOn, let face = Demo.value(after: "-demo-ipod") { ipodFace = face == "off" ? "" : face }   // `-demo-ipod black`
             #endif
             engine.setZoom(zoom)
@@ -462,6 +466,7 @@ struct PlayerScreen: View {
             if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
         }
         .task(id: current.videoID) { await loadAmbient() }
+        .onChange(of: landscape) { holder.engine.setZoom(zoom) }   // al girar, cada sentido con su zoom
         .task(id: pendingSeek) { if pendingSeek != nil { try? await Task.sleep(nanoseconds: DS.Timing.seekPatience); pendingSeek = nil } }
         .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
         .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
@@ -1011,11 +1016,11 @@ struct PlayerScreen: View {
         let queueToast = topNoticesAreWaiting
         if queueToast { heldNotices.hold(.zoom(target), key: QueuedNoticeKey.zoom) }
         withAnimation(DS.Motion.base(reduceMotion)) {
-            zoom = target
+            if landscape { landscapeZoom = target } else { portraitZoom = target }
             if !queueToast { zoomToast = target }
         }
         holder.engine.setZoom(target)
-        env.services.settings.update { $0.videoZoom = target.rawValue }
+        if landscape { env.services.settings.update { $0.videoZoom = target.rawValue } }   // el de vertical no se guarda
         guard !queueToast else { return }
         zoomToastTask?.cancel()
         zoomToastTask = Task { @MainActor in
@@ -1214,7 +1219,6 @@ struct PlayerScreen: View {
                         if model.snapshot.duration > 0 { scrubber(model) }
                         // Su lugar está apartado aunque no salga: ±10 y el botón grande no brincan cuando aparece.
                         HStack(spacing: DS.Space.s2) { Spacer(); nextEpisode(model); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
-                        quickActions(model)
                         // Con el video hasta arriba, la barra de ✕ y el nombre baja aquí.
                         if raisedPortrait(rect) { topBar(model).padding(.top, DS.Space.s4) }
                         if !fillsPortrait { Spacer(minLength: 0) }
@@ -1227,28 +1231,6 @@ struct PlayerScreen: View {
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
             }
         }
-    }
-
-    /// Vertical: lo más usado a un toque, en píldoras de vidrio bajo la barra (antes había que abrir «⋯»): audio y subtítulos,
-    /// los episodios (en una serie) y seguir en la TV.
-    private func quickActions(_ model: PlayerModel) -> some View {
-        HStack(spacing: DS.Space.s2) {
-            Button { openDock(nil) } label: { Label("Audio y subtítulos", systemImage: "captions.bubble") }
-                .accessibilityIdentifier("player-quick-media")
-            if current.kind == "series", current.meta != nil {
-                Button { openEpisodes(model) } label: { Label("Episodios", systemImage: "rectangle.stack") }
-                    .accessibilityIdentifier("player-episodes")
-            }
-            if canHandOffToTV(model) {
-                Button { Task { await continueOnTV() } } label: { Label("TV", systemImage: "tv") }
-                    .accessibilityIdentifier("player-quick-tv")
-            }
-            Spacer(minLength: 0)
-        }
-        .font(DS.TextRecipe.footnote.font.weight(.semibold))
-        .buttonStyle(.glass).controlSize(.regular)
-        .lineLimit(1)
-        .frame(minHeight: DS.Size.touchTarget)
     }
 
     /// Vertical: detrás de todo, la imagen del episodio (o de la serie) muy difuminada y tenue, como el modo ambiente de YouTube:
@@ -1304,8 +1286,7 @@ struct PlayerScreen: View {
             }
             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
             // «Episodios», solo el ícono (en una serie): la lista de la temporada sin parar el video.
-            // En vertical va en las píldoras de abajo (`quickActions`).
-            if landscape, current.kind == "series", current.meta != nil {
+            if current.kind == "series", current.meta != nil {
                 PlayerCircleButton(symbol: "rectangle.stack", label: "Episodios") { openEpisodes(model) }
                     .accessibilityIdentifier("player-episodes")
             }

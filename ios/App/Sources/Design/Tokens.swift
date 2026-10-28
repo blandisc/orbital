@@ -253,8 +253,8 @@ enum DS {
         /// La burbuja de buscar no se acerca más que esto a los bordes de la pantalla.
         static let seekBubbleSideMargin: CGFloat = 64
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
-        /// `padding(DS.Space.s6)` de `controls`, con el slider y la hilera de tiempos debajo).
-        static let seekBubbleBottomInset: CGFloat = 108
+        /// `padding(DS.Space.s6)` de `controls`, con la hilera de tiempos debajo de la barra).
+        static let seekBubbleBottomInset: CGFloat = 128
         /// En vertical: del borde de abajo del video al centro de la burbuja (queda dentro de la imagen, sobre la barra).
         static let seekBubblePortraitLift: CGFloat = 44
         /// La píldora «2×» en horizontal, dentro del área segura (igual que los controles): el borde de abajo
@@ -262,10 +262,10 @@ enum DS {
         static var fastForwardPillBottomInset: CGFloat {
             DS.Space.s6 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s3
         }
-        /// «Recortar» en vertical, con los controles a la vista: encima de la barra (aire de abajo, las píldoras de acciones,
-        /// «Saltar intro», la propia barra y sus tiempos).
+        /// «Recortar» en vertical, con los controles a la vista: encima de la barra (aire de abajo, «Saltar intro», la propia
+        /// barra y sus tiempos).
         static var fastForwardPillFillInset: CGFloat {
-            DS.Space.s8 + DS.Size.touchTarget + DS.Space.s3 + DS.Size.touchTarget + DS.Space.s3 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s3
+            DS.Space.s8 + DS.Size.touchTarget + DS.Space.s3 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s3
         }
     }
 
@@ -379,6 +379,8 @@ enum DS {
         /// Cuánto tarda una vuelta, qué parte de la órbita ocupa la estela y qué tan visible es su punta.
         static let seconds = 1.4
         static let trail: CGFloat = 0.35, trailOpacity = 0.9
+        /// Dentro del botón grande: qué tan adentro de su orilla corre la luna.
+        static let buttonInset: CGFloat = 5
     }
 
     /// El corazón de la ficha (`FavoriteButton`, tus favoritos de Trakt): lleno en frambuesa (el color de las listas con
@@ -481,6 +483,8 @@ enum DS {
         /// La barra de avance fina: el riel, la perilla (crece al arrastrar) y el alto que ocupa (se toca en
         /// `DS.Size.touchTarget`: la zona táctil sobresale arriba y abajo).
         static let scrubTrack: CGFloat = 3, scrubTrackActive: CGFloat = 10, scrubHit: CGFloat = 32
+        /// El punto de la barra (quieta y arrastrando) y a qué altura sobre la barra va la burbuja del minuto (su centro).
+        static let scrubKnob: CGFloat = 12, scrubKnobActive: CGFloat = 22, scrubBubbleLift: CGFloat = 48
         /// Las rayitas del fin de la intro y del inicio de los créditos: su grosor y cuánto sobresalen de la barra; la hilera de
         /// tiempos bajo la barra.
         static let scrubTickWidth: CGFloat = 1.5, scrubTickReach: CGFloat = 3, scrubTimes: CGFloat = 16
