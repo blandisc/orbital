@@ -282,10 +282,28 @@ public final class PlayerModel: ObservableModel {
     /// Empieza a reproducir. Devuelve cuando el motor ya recibió la fuente (el video puede tardar unos segundos).
     /// La bitácora del reproductor en el registro del sistema (Consola de la Mac con el iPhone conectado, categoría «player»): qué
     /// se abrió, qué versión, cuándo sonó y por qué falló. Sin enlaces ni claves: solo ids de IMDb, el servidor y el motivo.
-    static let log = Logger(subsystem: "mx.iracheta.orbital", category: "player")
+    nonisolated static let log = Logger(subsystem: "mx.iracheta.orbital", category: "player")
+
+    /// La misma bitácora en un archivo de la app (`player-log.txt`, las últimas `logKeep` líneas), para leerla desde la Mac con
+    /// `devicectl` cuando algo no carga en el iPhone (el registro del sistema pide la clave de administrador).
+    nonisolated static let logFile = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("Orbital", isDirectory: true).appendingPathComponent("player-log.txt")
+    nonisolated static let logKeep = 400
+    nonisolated private static let logLock = NSLock()
+    nonisolated static func note(_ text: String) {
+        log.notice("\(text, privacy: .public)")
+        guard NSClassFromString("XCTestCase") == nil else { return }   // las pruebas no escriben en la Mac
+        let line = ISO8601DateFormatter().string(from: Date()) + " " + text
+        logLock.withLock {
+            let old = (try? String(contentsOf: logFile, encoding: .utf8))?.split(separator: "\n").map(String.init) ?? []
+            let kept = (old + [line]).suffix(logKeep).joined(separator: "\n") + "\n"
+            try? FileManager.default.createDirectory(at: logFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? kept.write(to: logFile, atomically: true, encoding: .utf8)
+        }
+    }
 
     public func begin(_ request: PlayRequest) async {
-        Self.log.notice("abrir \(request.kind, privacy: .public) \(request.videoID, privacy: .public) local=\(request.localFile != nil, privacy: .public)")
+        Self.note("abrir \(request.kind) \(request.videoID) local=\(request.localFile != nil)")
         subtitleDelay = 0
         ownAttempts = 0
         guard !closing, phase != .closed else { return }
@@ -375,7 +393,7 @@ public final class PlayerModel: ObservableModel {
                 }
                 defer { listening.cancel() }
                 sourceChoices = try await finder.find(kind: request.kind, videoID: request.videoID, prefs: langs.prefs)
-                Self.log.notice("versiones encontradas: \(self.sourceChoices.count, privacy: .public)")
+                Self.note("versiones encontradas: \(sourceChoices.count)")
                 if mine == generation { search?.choices = sourceChoices.count }
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
@@ -429,7 +447,7 @@ public final class PlayerModel: ObservableModel {
 
     /// Los mensajes de los motores pueden traer la dirección del video (con tu clave): nunca llegan a la pantalla.
     private func fail(_ message: String, _ kind: Failure) {
-        Self.log.error("falló \(String(describing: kind), privacy: .public): \(stripURLs(message), privacy: .public)")
+        Self.note("falló \(String(describing: kind)): \(stripURLs(message))")
         failure = kind
         phase = .failed(stripURLs(message)); startupDeadline = nil; reconnecting = false; foregroundCheck = nil
         if source != nil { Task { await engine.pause() } }   // con un video a medio cargar: que no siga una ruedita detrás
@@ -472,7 +490,7 @@ public final class PlayerModel: ObservableModel {
             if !goBackAfterSwitch() { retryWithAnotherSource() }
             return
         }
-        if s.state == .playing && !hasPlayed { Self.log.notice("suena en \(Int(s.position), privacy: .public) s"); hasPlayed = true; startupDeadline = nil; phase = .playing; switchBack = nil }
+        if s.state == .playing && !hasPlayed { Self.note("suena en \(Int(s.position)) s"); hasPlayed = true; startupDeadline = nil; phase = .playing; switchBack = nil }
         if let request = playRequest, s.state == .playing, s.position > request.position + 0.3 { playRequest = nil }   // ya avanza
         // Rearmando el mismo video en pausa (al volver de segundo plano): en pausa también es «ya está». Antes se esperaba a que
         // sonara, se quedaba en «preparando» sin botones y a los 45 s cambiaba de fuente y arrancaba solo.
@@ -522,6 +540,7 @@ public final class PlayerModel: ObservableModel {
         if playRequest != nil { await checkPlayRequest(now: now) }
         if foregroundPending, acceptingSnapshots, !retrying { foregroundPending = false; await appDidBecomeActive() }
         if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying {
+            Self.note("no arrancó en \(Int(PlaybackRules.startupTimeout)) s")
             if goBackAfterSwitch() { return }
             return await retryWithAnotherSource()?.value ?? ()
         }
@@ -547,7 +566,7 @@ public final class PlayerModel: ObservableModel {
         guard !retrying, !closing else { return transition }
         guard request?.localFile == nil else { fail("No pude abrir el archivo descargado.", .localFile); return nil }
         retrying = true; acceptingSnapshots = false; startupDeadline = nil
-        Self.log.notice("otra versión (ya fallaron \(self.failedSources.count + 1, privacy: .public))")
+        Self.note("otra versión (ya fallaron \(failedSources.count + 1))")
         if let source { failedSources.insert(source.index) }
         attempts = failedSources.count
         guard failedSources.count <= PlaybackRules.maxSourceRetries else { retrying = false; fail("Ninguna versión funcionó.", .noneWorked); return nil }
@@ -1026,7 +1045,7 @@ public final class PlayerModel: ObservableModel {
 
     /// Abre un video y le pone la velocidad elegida (el motor empieza cada video en 1).
     private func loadVideo(_ url: URL, at start: Double) async throws {
-        Self.log.notice("cargar desde \(url.host ?? "archivo", privacy: .public) en \(Int(start), privacy: .public) s")
+        Self.note("cargar desde \(url.host ?? "archivo") en \(Int(start)) s")
         if let request {
             // Lo que ya sabes que quieres, desde el primer cuadro: el audio y los subtítulos con que lo dejaste (o tus idiomas).
             let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
@@ -1475,6 +1494,7 @@ public final class PlayerModel: ObservableModel {
     /// avanzar, se vuelve a pedir la misma fuente en el mismo punto (con enlace nuevo si el de Real-Debrid caducó).
     public func appDidBecomeActive() async {
         guard backgrounded else { return }
+        Self.note("de vuelta a la app (sonaba: \(resumeOnForeground))")
         // Volviste justo mientras se cambiaba de versión: todavía no hay qué rearmar. Se queda pendiente y se revisa en cuanto la
         // versión nueva esté lista (`tick`); antes se olvidaba y la pantalla quedaba negra con el play sin responder.
         if !closing, !acceptingSnapshots || retrying { foregroundPending = true; return }
