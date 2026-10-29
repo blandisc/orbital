@@ -134,8 +134,15 @@ final class NowPlaying {
         artworkURL = poster
         Task {
             guard let (data, _) = try? await URLSession.shared.data(from: url), let image = UIImage(data: data) else { return }
-            artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+            artwork = Self.artwork(image)
         }
+    }
+
+    /// iOS pide la imagen desde su propia cola (no el hilo principal): armada aquí, fuera del actor principal, la función que
+    /// la entrega no exige el hilo principal. Dentro de la clase (`@MainActor`) heredaba el aislamiento y en modo Swift 6 la
+    /// app tronaba al empezar a reproducir con carátula (`dispatch_assert_queue`).
+    nonisolated private static func artwork(_ image: UIImage) -> MPMediaItemArtwork {
+        MPMediaItemArtwork(boundsSize: image.size) { _ in image }
     }
 
     func stop() {
