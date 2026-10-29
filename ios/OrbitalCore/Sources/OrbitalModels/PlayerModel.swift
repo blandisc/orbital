@@ -87,7 +87,7 @@ public final class PlayerModel: ObservableModel {
     public var subtitleOffsets: SubtitleOffsets?
     /// La versión a la que ya se le puso su ajuste (las que pone el arranque solo, sin pasar por `apply`, también).
     var offsetVersionID: String?
-    private func restoreOffsetIfVersionChanged() {
+    func restoreOffsetIfVersionChanged() {
         let id = selectedVersionID
         guard id != offsetVersionID else { return }
         offsetVersionID = id
@@ -112,7 +112,7 @@ public final class PlayerModel: ObservableModel {
     /// Velocidad de reproducción elegida (sigue igual en el siguiente episodio y al cambiar de fuente).
     public internal(set) var rate: Float = 1 { didSet { changed() } }
     public static let rates: [Float] = [0.75, 1, 1.25, 1.5, 2]
-    public private(set) var attempts = 0 { didSet { changed() } }
+    public internal(set) var attempts = 0 { didSet { changed() } }
 
     let engine: PlayerEngine
     let finder: StreamFinder
@@ -135,15 +135,15 @@ public final class PlayerModel: ObservableModel {
     public internal(set) var playbackSettled = false { didSet { if oldValue != playbackSettled { changed() } } }
     static let startupSettleSeconds: Double = 2
     var startupPosition: Double = 0
-    private var startupDeadline: Date?
+    var startupDeadline: Date?
     /// El motor ya abrió el archivo de la carga en curso (desde ahí, lo que diga es de este video).
     var engineOpened = true
-    private var lastSnapshotAt: Date?
-    private var lastSave: Date
-    private var watchedUnsaved = 0.0
+    var lastSnapshotAt: Date?
+    var lastSave: Date
+    var watchedUnsaved = 0.0
     var tracksApplied = false
     /// Rearmando el mismo video en pausa al volver de segundo plano (en pausa ya cuenta como «está»).
-    private var restoringInPlace = false
+    var restoringInPlace = false
     /// Cambiaste de versión a mano: a cuál y a qué segundo volver si la nueva no llega a sonar (falla después de abrir, se
     /// acaba el plazo o es el aviso de Real-Debrid). Antes caía a cualquier otra fuente.
     var switchBack: (source: Source, position: Double)?
@@ -170,23 +170,23 @@ public final class PlayerModel: ObservableModel {
     var addedExternalSubtitle = false
     var rescrobbleAfterSeek = false
     /// Trakt ya sabe que empezó este video (el `start` sale cuando el motor suena Y se sabe la duración).
-    private var scrobbleStarted = false
+    var scrobbleStarted = false
     /// Lo último que Trakt sabe: ¿está sonando (`start`) o en pausa (`pause`)?
-    private var scrobblePlaying = false
+    var scrobblePlaying = false
     var knownSubtitleIDs = Set<Int>()
     var preloadedNext = false
     var upNextDeadline: Date?
-    private var lastTick: Date?
+    var lastTick: Date?
     /// «Audio y subtítulos» está abierto (la tarjeta de «Siguiente» no se ve y su cuenta se detiene).
     public var panelOpen = false
     var upNextDismissed = false
     /// Modo demostración: el estado puesto a mano no lo recalcula el avance.
     var demoPinned = false
     var autoAdvances = 0
-    private var reachedEnd = false
+    var reachedEnd = false
     var finalReported = false
     /// Dónde seguir según Trakt cuando solo se sabe el porcentaje (sin la duración): se busca en cuanto el motor la dice.
-    private var pendingResumeFraction: Double?
+    var pendingResumeFraction: Double?
     var generation = 0
     var acceptingSnapshots = false     // false mientras se elige y se carga una fuente (lo que el motor diga entonces es del video anterior)
     var retrying = false
@@ -377,7 +377,7 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// Ya se sabe la duración: se va al punto que dio Trakt (una vez). El aviso de «Viendo» a Trakt sale ya con ese avance.
-    private func seekToPendingResume(_ s: EngineSnapshot) async {
+    func seekToPendingResume(_ s: EngineSnapshot) async {
         guard let fraction = pendingResumeFraction, s.duration > 0 else { return }
         pendingResumeFraction = nil
         let target = fraction * s.duration
@@ -403,149 +403,9 @@ public final class PlayerModel: ObservableModel {
     }
 
     // MARK: lo que dice el motor
-    func handle(_ raw: EngineSnapshot) async {
-        guard phase != .closed, acceptingSnapshots, !retrying else { return }
-        // Hasta que el motor abre el archivo nuevo, lo que diga es del video anterior (avisos que se quedaron formados): antes un
-        // «suena» viejo daba por arrancada una versión que no había abierto, se quitaba su plazo y cargaba para siempre.
-        if !engineOpened, raw.state != .loading, raw.state != .idle { return }
-        var s = raw
-        s.position = StremioLibrary.finite(s.position); s.duration = StremioLibrary.finite(s.duration)   // NaN o infinito (en vivo) no valen
-        let now = clock()
-        let previous = snapshot
-        // Segundos vistos: solo cuenta el tiempo en que estuvo reproduciendo (y sin saltos raros).
-        if previous.state == .playing, let last = lastSnapshotAt { watchedUnsaved += min(max(0, now.timeIntervalSince(last)), 5) }
-        lastSnapshotAt = now
-        snapshot = s
-        restoreOffsetIfVersionChanged()
-        if pendingResumeFraction != nil, s.state == .playing || s.state == .paused, !isPlaceholder(s) { await seekToPendingResume(s) }
-
-        if case .failed(let message) = s.state {
-            // Una fuente que se corta (antes o después de empezar) se cambia por otra en el mismo punto, como en Orbital.
-            // El cambio corre aparte: así los avisos repetidos del mismo fallo, que ya están en cola, se descartan mientras se carga la otra.
-            // La que elegiste a mano y no llegó a sonar: se vuelve a la tuya.
-            _ = message
-            if !goBackAfterSwitch() { retryWithAnotherSource() }
-            return
-        }
-        // El aviso de Real-Debrid (una versión que aún no tiene): no es el título. Nunca cuenta como visto, terminado ni pasa
-        // al siguiente episodio; se vuelve a la tuya (si la cambiaste a mano) o se prueba otra.
-        if !hasPlayed, isPlaceholder(s) {
-            if let source { failedSources.insert(source.index) }
-            notice = .notReadyOnRealDebrid
-            if !goBackAfterSwitch() { retryWithAnotherSource() }
-            return
-        }
-        if !hasPlayed, acceptingSnapshots, "\(s.state)" != lastLoggedState {   // antes de sonar: cada cambio del motor, con su tiempo
-            lastLoggedState = "\(s.state)"
-            Self.note(String(format: "motor: %@ (%.1f s)", lastLoggedState, clock().timeIntervalSince(loadStartedAt)))
-        }
-        if s.state == .playing && !hasPlayed { Self.note(String(format: "suena en %d s (%.1f s desde que empezó a cargar)", Int(s.position), clock().timeIntervalSince(loadStartedAt))); hasPlayed = true; startupPosition = s.position; startupDeadline = nil; phase = .playing; switchBack = nil }
-        if let request = playRequest, s.state == .playing, s.position > request.position + 0.3 { playRequest = nil }   // ya avanza
-        // Rearmando el mismo video en pausa (al volver de segundo plano): en pausa también es «ya está». Antes se esperaba a que
-        // sonara, se quedaba en «preparando» sin botones y a los 45 s cambiaba de fuente y arrancaba solo.
-        if restoringInPlace, !hasPlayed, s.state == .paused, s.duration > 0 {
-            hasPlayed = true; startupDeadline = nil; phase = .playing; restoringInPlace = false
-        }
-        if hasPlayed, !playbackSettled, s.state == .paused || s.state == .ended || (s.state == .playing && s.position >= startupPosition + Self.startupSettleSeconds) {
-            playbackSettled = true
-        }
-        if reconnecting, hasPlayed, foregroundCheck == nil, s.state == .playing || s.state == .paused { reconnecting = false }
-        if hasPlayed {
-            // Primero el audio y los subtítulos, pero sin detener al reproductor: si piden red (buscar subtítulos, la huella de la
-            // copia) y tardan, se terminan solos y el video sigue respondiendo. Antes la barra y la pausa no respondían hasta 30 s.
-            if !tracksApplied { await Self.waitBriefly(Task { await self.applyTracksOnce(s) }, seconds: Self.trackSetupWait) }
-            await selectNewSubtitleIfAny(s)
-            updateSkipIntro(s)
-            await evaluateUpNext(s, now: now)
-        }
-        guard phase != .closed, acceptingSnapshots else { return }
-        if hasPlayed { await scrobbleIfNeeded(s) }
-        if s.state == .ended && !reachedEnd { reachedEnd = true; await finishAndAdvance() }
-    }
-
-    /// Lo que Trakt debe saber ahora. El `start` sale cuando el motor de verdad suena (no al pedir el video) y ya se sabe la duración
-    /// (sin ella no hay porcentaje: se manda en cuanto aparece). Después se sigue lo que Trakt sabe, no la transición del motor:
-    /// pausar → `pause`; volver a sonar, aunque sea tras pasar por «cargando» (pausa, salto y seguir), → `start`; y un salto grande → `start`
-    /// con el avance nuevo (su «Viendo ahora» calcula cuándo terminas con el último aviso).
-    private func scrobbleIfNeeded(_ s: EngineSnapshot) async {
-        // Ya se dijo «terminé» (p. ej. «¿Sigues viendo?» pausa después): una pausa ahí dejaría en Trakt un «en pausa» de algo visto.
-        guard !finalReported, let known = event()?.duration, known > 0 else { return }
-        if !scrobbleStarted {
-            guard s.state == .playing else { return }
-            scrobbleStarted = true; scrobblePlaying = true; rescrobbleAfterSeek = false
-            await report(.started)
-        } else if s.state == .paused && scrobblePlaying {
-            scrobblePlaying = false
-            await report(.paused)
-        } else if s.state == .playing && (!scrobblePlaying || rescrobbleAfterSeek) {
-            scrobblePlaying = true; rescrobbleAfterSeek = false
-            await report(.started)
-        }
-    }
-
-    /// Cada segundo desde la vista: guardado cada minuto, plazo de arranque y cuenta atrás.
-    public func tick() async {
-        guard phase != .closed, !closing else { return }
-        let now = clock()
-        defer { lastTick = now }
-        // El reloj nunca se queda esperando una carga: si el motor se colgaba abriendo el archivo, `tick` no volvía, nadie revisaba
-        // el plazo y la pantalla cargaba para siempre (44 min en el iPhone el 29 oct). Lo largo corre aparte (`transition`).
-        if foregroundCheck != nil { checkForegroundStall(now: now) }
-        if playRequest != nil { checkPlayRequest(now: now) }
-        checkBufferingStall(now: now)
-        if foregroundPending, acceptingSnapshots, !retrying {
-            foregroundPending = false
-            transition = Task { [weak self] in await self?.appDidBecomeActive() }
-        }
-        if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying {
-            Self.note("no arrancó en \(Int(PlaybackRules.startupTimeout)) s")
-            if goBackAfterSwitch() { return }
-            _ = retryWithAnotherSource()   // corre aparte: el reloj sigue revisando
-            return
-        }
-        // En pausa la cuenta de «Siguiente» también se detiene (antes, al seguir, saltaba de golpe).
-        if snapshot.state != .playing, upNext != nil, let deadline = upNextDeadline {
-            upNextDeadline = deadline.addingTimeInterval(now.timeIntervalSince(lastTick ?? now))
-        }
-        if snapshot.state == .playing {
-            if now.timeIntervalSince(lastSave) >= PlaybackRules.saveEvery { await report(.tick) }
-            if var card = upNext, let deadline = upNextDeadline {
-                // Con un panel abierto la tarjeta no se ve: la cuenta se detiene (no cambia de episodio a escondidas).
-                if panelOpen { upNextDeadline = deadline.addingTimeInterval(now.timeIntervalSince(lastTick ?? now)); lastTick = now; return }
-                card.secondsLeft = max(0, Int(deadline.timeIntervalSince(now).rounded(.up)))
-                upNext = card
-                // Sin esperar: si el siguiente episodio se colgaba al abrir, el reloj se quedaba ahí y nadie revisaba su plazo.
-                if now >= deadline { _ = advance(auto: true) }
-            }
-        }
-    }
-
-    /// Cambia a otra fuente en el mismo punto. Marca el cambio de forma síncrona (lo que el motor diga ahora se ignora) y carga aparte.
-    @discardableResult
-    func retryWithAnotherSource() -> Task<Void, Never>? {
-        guard !retrying, !closing else { return transition }
-        guard request?.localFile == nil else { fail("No pude abrir el archivo descargado.", .localFile); return nil }
-        retrying = true; acceptingSnapshots = false; startupDeadline = nil
-        Self.note("otra versión (ya fallaron \(failedSources.count + 1))")
-        if let source { failedSources.insert(source.index) }
-        attempts = failedSources.count
-        guard failedSources.count <= PlaybackRules.maxSourceRetries else { retrying = false; fail("Ninguna versión funcionó.", .noneWorked); return nil }
-        notice = .triedAnotherSource(attempt: failedSources.count)
-        let position = snapshot.position
-        generation += 1
-        let mine = generation
-        phase = .preparing
-        let task = Task { [weak self] in
-            guard let self else { return }
-            await engine.stop()
-            await prepare(startAt: position > 5 ? position : nil, generation: mine)
-        }
-        transition = task
-        return task
-    }
 
     // MARK: guardado
-    private func event() -> ProgressEvent? {
+    func event() -> ProgressEvent? {
         guard let r = request else { return nil }
         let known = snapshot.duration > 0 ? snapshot.duration : CinemetaParsing.runtimeSeconds(r.meta.map { CinemetaParsing.describe($0).runtime } ?? "")
         return ProgressEvent(kind: r.kind, metaID: r.metaID, videoID: r.videoID, originalTitle: r.originalTitle, position: StremioLibrary.finite(snapshot.position),
@@ -644,112 +504,15 @@ public final class PlayerModel: ObservableModel {
     /// Volviendo de segundo plano: «Reconectando…» en vez de una pantalla negra, hasta que el video vuelve a avanzar.
     public internal(set) var reconnecting = false { didSet { changed() } }
     var backgrounded = false
-    private var foregroundPending = false
-    private var backgroundPosition = 0.0
+    var foregroundPending = false
+    var backgroundPosition = 0.0
     var loadStartedAt = Date.distantPast
     var lastLoggedState = ""
-    private var resumeOnForeground = false
+    var resumeOnForeground = false
     /// Tras volver: si iba sonando y en este plazo no avanzó, el video se pide otra vez en el mismo punto.
-    private var foregroundCheck: (deadline: Date, position: Double)?
-    static let foregroundStallSeconds: TimeInterval = 8
-    /// Ya sonaba y se detuvo a esperar datos (Real-Debrid o la red se atoraron): pasado este tiempo se pide otra vez en el mismo
-    /// punto. Antes se quedaba cargando para siempre; si la nueva petición tampoco arranca, su plazo prueba otra versión.
-    static let bufferingStallSeconds: TimeInterval = 20
-    private var bufferingSince: Date?
-    private func checkBufferingStall(now: Date) {
-        guard hasPlayed, phase == .playing, snapshot.state == .buffering || snapshot.state == .loading, acceptingSnapshots, !retrying, !reconnecting,
-              foregroundCheck == nil, playRequest == nil, !closing else { bufferingSince = nil; return }
-        guard let since = bufferingSince else { bufferingSince = now; return }
-        guard now.timeIntervalSince(since) >= Self.bufferingStallSeconds else { return }
-        bufferingSince = nil
-        Self.note("en búfer \(Int(now.timeIntervalSince(since))) s en \(Int(snapshot.position)) s: se pide otra vez")
-        startReload(at: snapshot.position, resume: true)
-    }
+    var foregroundCheck: (deadline: Date, position: Double)?
+    var bufferingSince: Date?
 
-    /// La app pasó a segundo plano de verdad (no solo el Centro de control): se recuerda si iba sonando.
-    public func appDidEnterBackgroundFully() {
-        guard hasPlayed, phase == .playing, !closing else { return }
-        backgrounded = true
-        resumeOnForeground = snapshot.state == .playing || snapshot.state == .buffering
-        backgroundPosition = snapshot.position   // al volver, el motor ya soltó el video y dice 0: este es el punto de verdad
-        Self.note("a segundo plano en \(Int(backgroundPosition)) s")
-    }
-
-    /// De vuelta al frente: el motor rearma su video (lo soltó en segundo plano); si no puede, o si el video no vuelve a
-    /// avanzar, se vuelve a pedir la misma fuente en el mismo punto (con enlace nuevo si el de Real-Debrid caducó).
-    public func appDidBecomeActive() async {
-        guard backgrounded else { return }
-        Self.note("de vuelta a la app (sonaba: \(resumeOnForeground))")
-        // Volviste justo mientras se cambiaba de versión: todavía no hay qué rearmar. Se queda pendiente y se revisa en cuanto la
-        // versión nueva esté lista (`tick`); antes se olvidaba y la pantalla quedaba negra con el play sin responder.
-        if !closing, !acceptingSnapshots || retrying { foregroundPending = true; return }
-        backgrounded = false
-        guard hasPlayed, phase == .playing, !closing else { return }
-        let resume = resumeOnForeground
-        let position = max(snapshot.position, backgroundPosition)   // antes: el 0 del motor y se volvía a cargar desde el principio
-        let mine = generation
-        // Sin aviso al volver: casi siempre el video sigue donde estaba. Solo si de verdad hay que pedirlo otra vez
-        // (el motor no pudo rearmarlo, o no avanzó en el plazo) se dice que está cargando.
-        // El plazo corre desde antes de rearmar: si el motor se colgaba rearmando (un enlace caducado tras mucho rato fuera), nada
-        // lo revisaba y cargaba para siempre.
-        if resume { foregroundCheck = (clock().addingTimeInterval(Self.foregroundStallSeconds), position) }
-        let restored = await engine.restoreAfterBackground(resume: resume)
-        guard mine == generation, !closing else { return }
-        if !restored { foregroundCheck = nil; return await reloadCurrentSource(at: position, resume: resume) }
-    }
-
-    /// El plazo tras volver: el video tenía que avanzar y no lo hizo (negro o congelado) → se pide de nuevo.
-    private func checkForegroundStall(now: Date) {
-        guard let check = foregroundCheck, !retrying, !reconnecting else { return }
-        if snapshot.state == .paused { foregroundCheck = nil; reconnecting = false; return }   // lo pausaste tú
-        if snapshot.state == .playing, snapshot.position > check.position + 0.5 { foregroundCheck = nil; reconnecting = false; return }
-        guard now >= check.deadline else { return }
-        foregroundCheck = nil
-        startReload(at: max(check.position, snapshot.position, backgroundPosition), resume: true)
-    }
-
-    /// Vuelve a abrir la fuente que sonaba en el mismo punto: la descarga, tu copia (enlace nuevo) o la de Real-Debrid
-    /// (con la lista renovada si ya caducó). Si tampoco abre, se prueba otra fuente como en cualquier corte.
-    /// Pide el video otra vez sin esperar a que cargue (para el reloj: él tiene que seguir revisando el plazo).
-    func startReload(at position: Double, resume: Bool) {
-        transition = Task { [weak self] in await self?.reloadCurrentSource(at: position, resume: resume) }
-    }
-
-    private func reloadCurrentSource(at position: Double, resume: Bool) async {
-        guard let request, !closing else { return }
-        reconnecting = true
-        generation += 1
-        let mine = generation
-        acceptingSnapshots = false
-        var url: URL?
-        if let file = request.localFile { url = file }
-        else if let current = source {
-            if request.ownCopy, !sourceChoices.contains(where: { $0.key == current.key }), let own = await ownSource?(request.videoID, current.index) {
-                source = own; url = own.playbackURL
-            } else {
-                if clock().timeIntervalSince(choicesAt) > Self.choicesLifetime {
-                    let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
-                    if let fresh = try? await finder.find(kind: request.kind, videoID: request.videoID, prefs: prefs, fresh: true) { sourceChoices = fresh; choicesAt = clock() }
-                }
-                let pick = sourceChoices.first(where: { $0.key == current.key }) ?? current
-                source = pick; url = pick.playbackURL
-            }
-        }
-        guard mine == generation, !closing else { return }
-        await engine.stop()   // suelta lo que el motor estuviera abriendo (si se colgó, la carga nueva no queda detrás)
-        guard mine == generation, !closing else { return }
-        startLoading()
-        phase = .preparing
-        restoringInPlace = !resume
-        guard let url else { await retryWithAnotherSource()?.value; return }
-        do {
-            try await loadVideo(url, at: position)
-            if !resume, mine == generation { await engine.pause() }
-        } catch {
-            guard mine == generation else { return }
-            await retryWithAnotherSource()?.value
-        }
-    }
 }
 
 extension Double {

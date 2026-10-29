@@ -8,11 +8,11 @@ struct TitleView: View {
     let route: TitleRoute
     @Environment(AppEnvironment.self) var env
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) var typeSize
+    @Environment(\.colorScheme) var scheme
     @Environment(\.openURL) private var openURL
     @State private var observer: ModelObserver<TitleModel>
-    @State private var tint = ArtTint()
+    @State var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
     /// La sinopsis completa (tocar «más»).
     @State private var fullSynopsis = false
@@ -160,7 +160,7 @@ struct TitleView: View {
     // MARK: partes
     /// Ancho / alto del arte: el de siempre si cabe; si no, más ancho (más bajito) hasta que las acciones queden sobre la
     /// barra de pestañas. Antes de medir, la proporción fija de los teléfonos bajitos.
-    private var heroAspect: CGFloat {
+    var heroAspect: CGFloat {
         let fallback = WindowMetrics.size.height < DS.TitleAction.shortScreen ? DS.TitleAction.heroAspectShort : DS.TitleAction.heroAspect
         guard contentWidth > 0, belowHero > 0 else { return fallback }
         let padding = scheme == .dark ? 0 : DS.Space.s4
@@ -172,45 +172,6 @@ struct TitleView: View {
         guard room > 0 else { return typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax }
         let cap = typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax
         return min(cap, max(DS.TitleAction.heroAspect, width / room))
-    }
-
-    /// El arte a sangre, más alto, con el logo (o el nombre) al centro y la frase de la película debajo, como un cartel de cine.
-    /// Al deslizar se recoge como en Apple TV: se queda un poco atrás, se oscurece hacia el color del fondo con un degradado que
-    /// sube desde abajo, se difumina al final; el logo se va antes. Con «Reducir movimiento», solo se oscurece y se desvanece.
-    private func hero(_ model: TitleModel) -> some View {
-        BleedArt(url: model.background ?? model.poster, title: model.title,
-                 aspect: heroAspect, collapse: Backdrop.tone(tint.colors, scheme: scheme) ?? DS.bg,
-                 fallback: model.background == nil ? nil : model.poster, tall: TallArtKey(imdb: model.metaID, kind: model.kind)) {
-            VStack(spacing: DS.Space.s2) {
-                TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, centered: true)
-                    .containerRelativeFrame(.horizontal) { width, _ in width * DS.TitleAction.logoWidth }
-                if let tagline = model.extras?.tagline {
-                    Text(verbatim: tagline).font(DS.TextRecipe.secondary.font.italic()).foregroundStyle(DS.onArtSecondary)
-                        .multilineTextAlignment(.center).lineLimit(2)
-                }
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .ignoresSafeArea(edges: .top)
-    }
-
-    /// Bajo el arte, al centro, un solo renglón: año · géneros · duración («2 h 25 min») y la clasificación («B») como insignia
-    /// con contorno al final; debajo, las calificaciones. La calidad de la que va a sonar (la recomendada) vive dentro de «Ver».
-    private func facts(_ model: TitleModel) -> some View {
-        let language = env.services.appSettings.uiLanguage
-        let minutes = Int(CinemetaParsing.runtimeSeconds(model.info.runtime) / 60)
-        let runtime = Vocabulary.runtimeText(minutes: minutes > 0 ? minutes : nil) ?? model.info.runtime
-        let facts = Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: runtime, rating: "")
-        return VStack(spacing: DS.Space.s4) {
-            HStack(spacing: DS.Space.s2) {
-                Text(verbatim: Vocabulary.factLine(facts)).recipe(.footnote).multilineTextAlignment(.center).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
-                if let certification = model.extras?.certification {
-                    QualityBadges(items: [certification]).fixedSize().accessibilityLabel(Text("Clasificación \(certification)"))
-                }
-            }
-            RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating, centered: true)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     /// Qué tan desvanecido va lo de arriba (0 con el arte a la vista, 1 ya recogido).

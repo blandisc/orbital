@@ -72,16 +72,21 @@ monolitos, modularidad, sistema de diseño y prácticas de Swift y SwiftUI. Tres
 | 3 | Extensión de widgets a Swift 6 | **Hecha** (`SWIFT_VERSION: "6.0"` también ahí) |
 | 4 | Los 12 archivos sobre 600 líneas | Partidos por responsabilidad, sin cambiar código: `ParaTiView` → `ListsView`, `ListGridView`, `ParaTiPieces`; `Demo` → `DemoHTTPClient`; `TitleView` → `EpisodeRows` y `TitleView+Acciones`; `ForYou` → `ForYouTypes` y `YearInReview`; `Trakt` → `TraktTypes`; `DecideModel` → `+Counts`; `Downloads` → `DownloadTypes`; `PlayerScreen+Gestos` → `+Candado`; `Mosaic` → `MosaicRuntime` y `FrameTicker`; `SubtitlePanel` → `SubtitleSync`; `BackgroundDownloadTransport` → `+Delegate`; `PlayerModel` → `PlayRequest`, `+Controls` y `+UpNext`. Quedan tres sobre el tope, en la lista de `FileBudgetTests`: `PlayerModel.swift` (758, de 1 634), `DemoHTTPClient.swift` (620) y `TitleView.swift` (619) |
 
-### Lo que sigue (si se quiere seguir)
+### Quinta pasada (misma fecha): la última ola
 
-1. `PlayerModel.swift` (758): lo que queda es arranque, motor, guardado, cierre y segundo plano; el siguiente corte natural es «volver de segundo plano».
-2. `TitleView.swift` (619) y `DemoHTTPClient.swift` (620): a un corte de caber.
-3. `usesCPUOnly` en `FocalPoint` (solo simulador) cuando Vision ofrezca un reemplazo.
+| # | Pendiente | Qué se hizo |
+|---|---|---|
+| 1 | `PlayerModel.swift` (758) | «Volver de segundo plano» → `PlayerModel+Background.swift`; «lo que dice el motor» → `PlayerModel+EngineEvents.swift`. Queda en 521 líneas (empezó el día en 1 634): la clase conserva el estado, el arranque, el guardado y el cierre; cada otra responsabilidad tiene su archivo |
+| 2 | `TitleView.swift` (619) | El arte y la línea de datos → `TitleView+Hero.swift`. Queda en 580 |
+| 3 | `DemoHTTPClient.swift` (620) | El Trakt de mentira y el calendario → `DemoHTTPClient+Trakt.swift`. Queda en 545 |
+| 4 | `usesCPUOnly` | Se queda: solo corre en el simulador (sin motor neuronal) y Vision no ofrece reemplazo; es un aviso, no un error |
+
+**La lista de `FileBudgetTests` quedó vacía**: ningún archivo de Swift de la app, los widgets o el paquete pasa de 600 líneas, y la prueba lo impide de aquí en adelante.
 
 ## Cómo se verificó
 
 - `xcodebuild build` (simulador, Xcode 26) en verde tras cada ronda.
-- `swift test` del paquete: 351 pruebas tras la cuarta pasada, 0 fallas (incluye `DesignTests`, `PlatformBoundaryTests` y las dos guardias nuevas).
+- `swift test` del paquete: 351 pruebas tras la quinta pasada, 0 fallas (incluye `DesignTests`, `PlatformBoundaryTests` y las dos guardias nuevas).
 - Ojo: mientras corría esta auditoría otra sesión editaba el mismo checkout (`PlayerModel.swift`, `Tokens.swift`, `TitleView.swift`, `ArtFit`, la web de la TV). Esos cambios no son de esta auditoría y no van en su commit.
 - No se instaló en un simulador ni en el iPhone: los dos simuladores encendidos los estaban usando otras sesiones y los
   cambios son de estructura (mismo código, otro lugar), no de comportamiento. Para verlo: `-demo -demo-title series:tt0386676

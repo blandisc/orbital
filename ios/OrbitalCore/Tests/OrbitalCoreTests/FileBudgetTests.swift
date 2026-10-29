@@ -15,11 +15,7 @@ final class FileBudgetTests: XCTestCase {
     static let roots = ["ios/App/Sources", "ios/App/Widgets", "ios/App/Shared", "ios/OrbitalCore/Sources"]
 
     /// Pendientes (ruta desde `ios/`): su tamaño el día de la auditoría (29 oct 2026). Solo puede bajar.
-    static let pending: [String: Int] = [
-        "OrbitalCore/Sources/OrbitalModels/PlayerModel.swift": 758,
-        "App/Sources/Support/DemoHTTPClient.swift": 620,
-        "App/Sources/Screens/TitleView.swift": 619,
-    ]
+    static let pending: [String: Int] = [:]   // vacía desde el 29 oct 2026: ningún archivo pasa de `budget`
 
     func testNoSwiftFileOutgrowsItsBudget() throws {
         let ios = repo.appendingPathComponent("ios")
