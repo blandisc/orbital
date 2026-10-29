@@ -2003,6 +2003,10 @@ const EVENTS = {
     loadLibrary();
     return pollStatus();
   },
+  "open-guide": () => { // «¿qué puedo decir?» por voz: la guía, encima de lo que esté
+    ui.status.pulseAlexa();
+    return runCommand({ type: "alexa-menu" });
+  },
   toast: (event) => {
     const voiceAction = voiceToastAction(event.action);
     ui.toast.show(event.message, { tone: event.tone || "", error: event.ok === false, voice: !!event.voice, countdown: event.countdown || 0,

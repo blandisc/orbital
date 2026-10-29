@@ -111,6 +111,26 @@ def test_voice_status_says_where_the_last_order_came_from(make_client):
         assert "ok" in after["recent"][0] and after["recent"][0]["speech"]
 
 
+def test_iphone_gets_the_hints_and_its_own_guide(make_client):
+    """El iPhone recibe las tres frases del momento con cada respuesta (y por /api/voice/hints antes de hablar); si pregunta
+    «¿qué puedo decir?», abre su guía y la tele no se abre sola. Alexa no recibe «hints»."""
+    with make_client(REMOTE) as c:
+        auth = {"Authorization": "Bearer secreto"}
+        queue = c.app.state.bus.subscribe()
+
+        def opened() -> bool:
+            seen = []
+            while not queue.empty():
+                seen.append(queue.get_nowait())
+            return any(e.get("type") == "open-guide" for e in seen)
+        assert c.get("/api/voice/hints", headers=auth).json() == {"moment": "home", "hints": ["pon The Office", "sigue viendo", "qué sale hoy"]}
+        phone = c.post("/api/voice", json={"text": "qué puedo decir", "source": "iphone"}, headers=auth).json()
+        assert phone["guide"] is True and phone["hints"] == ["pon The Office", "sigue viendo", "qué sale hoy"]
+        assert not opened()
+        alexa = c.post("/api/voice", json={"text": "qué puedo decir"}, headers=auth).json()
+        assert "hints" not in alexa and opened()
+
+
 def test_closed_event_reaches_ui(make_client, library):
     with make_client() as c:
         app_bus = c.app.state.bus

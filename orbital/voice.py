@@ -79,8 +79,12 @@ WAKES = {"LaunchGameIntent", "SearchMediaIntent", "WatchEpisodeIntent", "Continu
 OTHER_WINDOW = 30 * 60  # s: «otro» cambia lo último que pediste si fue hace menos de esto
 # Lo que se puede decir en cada momento: el segundo renglón del aviso en la tele. Solo frases de «Lo esencial»
 # (alexa/commands.json · core; una prueba lo comprueba) y solo con «Frases en pantalla» (voice_tips) en Sí.
-NEXT_SAY = {"series": ("pausa", "siguiente episodio"), "movie": ("pausa", "pon subtítulos"),
-            "home": ("pon The Office", "sigue viendo")}
+# Tres por momento: el iPhone enseña las tres como pista (/api/voice/hints y la respuesta a cada orden suya); la tele, las
+# dos primeras en el segundo renglón del aviso.
+MOMENT_SAY = {"series": ("pausa", "siguiente episodio", "pon subtítulos"), "movie": ("pausa", "pon subtítulos", "sube el volumen"),
+              "live": ("pon el canal ADN 40", "sube el volumen", "cierra el video"),
+              "home": ("pon The Office", "sigue viendo", "qué sale hoy")}
+NEXT_SAY = {moment: said[:2] for moment, said in MOMENT_SAY.items()}
 OTHER_SAY = "Si no es esa, di «otro»"  # una corrección, no una pista: sale siempre
 
 
@@ -134,6 +138,7 @@ class VoiceResult:
     heard: str | None = None
     intent: str | None = None
     choices: list[dict] | None = None  # varias con el mismo nombre: el iPhone las enseña para tocar
+    guide: bool = False  # «¿qué puedo decir?»: el iPhone abre su guía «Lo que puedes decir»
 
     def as_dict(self) -> dict:
         out = {"ok": self.ok, "speech": self.speech}
@@ -143,6 +148,8 @@ class VoiceResult:
             out["heard"] = self.heard
         if self.choices:
             out["choices"] = self.choices
+        if self.guide:
+            out["guide"] = True
         return out
 
 
@@ -254,6 +261,10 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     (re.compile(r"^(?:prende|prenda|prender|enciende|encienda|encender)\s+(?:la\s+)?(?:tele|television|tv|pantalla)$"),
      "OpenOrbitalIntent", None),
     (re.compile(r"^(?:otro|otra|el otro|la otra|ese no|esa no|no ese|no esa|pon otro|pon otra|otra opcion)$"), "OtherIntent", None),
+    # «¿Qué puedo decir?»: la guía en la tele (y el iPhone abre la suya: «guide» en la respuesta)
+    (re.compile(r"^(?:que\s+(?:le\s+|te\s+)?(?:puedo|se puede)\s+(?:decir|pedir)(?:le)?|ayuda|ayudame|como\s+te\s+hablo"
+                r"|(?:ensename|enseneme|ensena|ensene|muestrame|muestreme|muestra|muestre|dime)\s+(?:lo\s+que\s+puedo\s+decir|la\s+guia|que\s+puedo\s+decir)|abre\s+la\s+guia)$"),
+     "GuideIntent", None),
     (re.compile(r"^(?:pon|ponme|quiero ver|ver)?\s*(?:las\s+)?(?:noticias|el noticiero|un noticiero)$"), "LiveTvIntent", None, {"category": "noticias"}),
     # «pon algo», «algo de terror», «una comedia»: no es un título (antes buscaba un juego llamado «algo»)
     (re.compile(r"^(?:pon|ponme|quiero ver|ver|recomiendame|sugiereme)\s+algo(?:\s+(?:de|para)\s+(?P<genre>[a-z ]+))?$"
@@ -625,6 +636,20 @@ class VoiceController:
         """La tele prendida y en la entrada de Orbital (en segundo plano: Alexa no espera). Si ya lo está, no hace nada."""
         if self.tv is not None and getattr(self.tv, "enabled", False):
             self.tv.turn_on_soon()
+
+    def moment(self) -> str:
+        """Qué hay ahora: «live» (un canal al aire), «series» o «movie» (el reproductor) u «home» (nada puesto)."""
+        if self._live_on_air():
+            return "live"
+        if self.catalog.player.playing:
+            meta = getattr(self.catalog.player.current, "meta", None) or {}
+            return "series" if isinstance(meta, dict) and meta.get("kind") == "series" else "movie"
+        return "home"
+
+    def hints(self) -> dict:
+        """Las tres frases de este momento (las mismas que la tele enseña en el aviso): la pista del iPhone."""
+        moment = self.moment()
+        return {"moment": moment, "hints": list(MOMENT_SAY[moment])}
 
     def _tips_on(self) -> bool:
         state = getattr(self.catalog, "state", None)
@@ -1418,6 +1443,14 @@ class VoiceController:
             return bool(tv is not None and self.catalog.player.playing and tv.playing())
         except Exception:  # noqa: BLE001 - sin TV en vivo, lo de siempre
             return False
+
+    def _guide_intent(self, slots: dict) -> VoiceResult:
+        """«¿Qué puedo decir?»: la guía en la tele y, si preguntó el iPhone, la suya (`guide`). Dice tres frases de ahora."""
+        if self.kiosk is not None:
+            self.kiosk.open()
+        first, second, third = MOMENT_SAY[self.moment()]
+        return VoiceResult(f"Te enseño lo que puedes decir. Por ejemplo: {first}, {second} o {third}.", guide=True,
+                           events=[{"type": "open-guide"}])
 
     def _other_intent(self, slots: dict) -> VoiceResult:
         """«Otro», «esa no»: en la TV en vivo, el siguiente canal; si acabas de pedir algo por nombre, la siguiente que se

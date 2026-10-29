@@ -148,6 +148,7 @@
       {"say": "ve a juegos", "note": "Juegos, películas y series, apps, la tele."},
       {"say": "ve a películas y series", "note": "Esa sección."},
       {"say": "ve a inicio", "note": "La pantalla principal; también «regresa al inicio»."},
+      {"say": "qué puedo decir", "note": "Abre esta guía en la tele (o en el iPhone, si le preguntas a él)."},
       {"say": "ve atrás", "note": "Como el botón Atrás."},
       {"say": "ve a la derecha", "note": "O a la izquierda, arriba, abajo."}
     ]}

@@ -863,6 +863,21 @@
             "el otro",
             "otra opción"
           ]
+        },
+        {
+          "name": "GuideIntent",
+          "slots": [],
+          "samples": [
+            "qué puedo decir",
+            "qué le puedo decir",
+            "qué te puedo pedir",
+            "qué le puedo pedir",
+            "qué se puede decir",
+            "enséñame lo que puedo decir",
+            "muéstrame lo que puedo decir",
+            "muéstrame la guía",
+            "abre la guía"
+          ]
         }
       ],
       "types": [
@@ -2083,6 +2098,11 @@
             {
               "name": {
                 "value": "pon la tele en vivo"
+              }
+            },
+            {
+              "name": {
+                "value": "qué puedo decir"
               }
             }
           ]

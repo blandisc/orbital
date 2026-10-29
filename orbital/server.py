@@ -240,6 +240,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     _companion_routes(app, config)
     _remote_input_routes(app, config)
     app.state.run_voice = d.extra["run_voice"]
+    app.state.voice_hints = d.extra["voice_hints"]
     app.state.play_stremio = d.extra["play_stremio"]
     app.mount("/", WebFiles(directory=WEB_DIR, html=True), name="web")
     return app
@@ -523,6 +524,11 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     @public.post("/api/voice")
     async def voice_command(body: VoiceRequest) -> dict:
         return await main_app.state.run_voice(body, remote=True)
+
+    @public.get("/api/voice/hints")
+    async def voice_hints() -> dict:
+        """La pista del iPhone por el túnel: las tres frases de este momento (con token, como todo aquí)."""
+        return await run_in_threadpool(main_app.state.voice_hints)
 
     def saw_phone(request: Request | None = None) -> None:
         """Para Ajustes › Cuentas: en memoria, la hora exacta (¿está abierta ahora?) y en disco, una escritura cada 10

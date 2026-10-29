@@ -120,9 +120,14 @@ def router(d: Deps, is_local) -> APIRouter:
             result = await run_in_threadpool(d.voice.handle_text, body.text)
         else:
             raise HTTPException(422, "Envía 'intent' o 'text'")
+        iphone = body.source == "iphone"
         for event in result.events:
+            if iphone and event.get("type") == "open-guide":
+                continue  # preguntó el iPhone: abre su guía, no la de la tele
             d.hub.publish(event)
         out = result.as_dict()
+        if iphone:
+            out["hints"] = d.voice.hints()["hints"]  # la pista que enseña el iPhone después de cada orden
         # voz.log: qué se dijo y qué se entendió, para saber qué frases fallan de verdad.
         voice_log.record({"source": source, "intent": body.intent, "slots": body.slots,
                           "text": body.text, "understood": out.get("intent"), "ok": out.get("ok"), "speech": out.get("speech"),
@@ -130,6 +135,12 @@ def router(d: Deps, is_local) -> APIRouter:
         return out
 
     d.extra["run_voice"] = run_voice
+    d.extra["voice_hints"] = lambda: d.voice.hints()
+
+    @r.get("/api/voice/hints")
+    async def voice_hints() -> dict:
+        """Las tres frases de este momento: la pista del iPhone antes de hablar (las mismas del aviso de la tele)."""
+        return await run_in_threadpool(d.voice.hints)
 
     @r.post("/api/voice")
     async def voice_command(body: VoiceRequest, request: Request) -> dict:

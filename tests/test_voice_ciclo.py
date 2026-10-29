@@ -226,9 +226,9 @@ def test_el_segundo_renglon_sale_de_lo_esencial_y_solo_con_frases_en_pantalla(li
     import json
     from pathlib import Path
 
-    from orbital.voice import NEXT_SAY
+    from orbital.voice import MOMENT_SAY
     core = {c["say"] for c in json.loads((Path(__file__).parent.parent / "alexa" / "commands.json").read_text(encoding="utf-8"))["core"]}
-    assert {said for pair in NEXT_SAY.values() for said in pair} <= core
+    assert {said for three in MOMENT_SAY.values() for said in three} <= core
     voice = VoiceController(library)
     assert voice.handle_text("pon The Office").events[0]["detail"] == "Di «pausa» o «siguiente episodio»"
     library.state.set_setting("voice_tips", False)
@@ -237,3 +237,29 @@ def test_el_segundo_renglon_sale_de_lo_esencial_y_solo_con_frases_en_pantalla(li
     kiosk = SimpleNamespace(open=lambda: None)
     library.state.set_setting("voice_tips", True)
     assert VoiceController(library, kiosk=kiosk).handle_text("prende la tele").events[0]["detail"] == "Di «pon The Office» o «sigue viendo»"
+
+
+# --- lo que pidió el iPhone: «¿qué puedo decir?» y las frases del momento ------------------------------------------------
+@pytest.mark.parametrize("said", ["qué puedo decir", "¿Qué le puedo decir?", "qué te puedo pedir", "ayuda", "enséñame la guía",
+                                  "pídele a mi consola que me muestre la guía"])
+def test_que_puedo_decir_abre_la_guia(said):
+    assert parse_text(said) == ("GuideIntent", {}), said
+
+
+def test_la_guia_se_abre_en_la_tele_y_avisa_al_iphone(library):
+    result = VoiceController(library).handle_text("qué puedo decir")
+    assert result.ok and result.as_dict()["guide"] is True
+    assert result.events == [{"type": "open-guide"}]
+    assert result.speech == "Te enseño lo que puedes decir. Por ejemplo: pon The Office, sigue viendo o qué sale hoy."
+
+
+def test_las_frases_del_momento(library, monkeypatch):
+    voice = VoiceController(library)
+    assert voice.hints() == {"moment": "home", "hints": ["pon The Office", "sigue viendo", "qué sale hoy"]}
+    library.player = FakePlayer(playing=True)
+    library.player.current = SimpleNamespace(title="The Office", meta={"kind": "series"})
+    assert voice.hints()["hints"] == ["pausa", "siguiente episodio", "pon subtítulos"]
+    library.player.current = SimpleNamespace(title="Dune", meta={"kind": "movie"})
+    assert voice.hints()["moment"] == "movie"
+    monkeypatch.setattr(library.tv, "playing", lambda: "adn")
+    assert voice.hints()["moment"] == "live"

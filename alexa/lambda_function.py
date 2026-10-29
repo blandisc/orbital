@@ -199,6 +199,10 @@ def _handle(event: dict) -> dict:
     if not isinstance(name, str) or not name:
         return speak("No entendí. " + HELP, end=False)
     if name == "AMAZON.HelpIntent":
+        try:
+            call_orbital("GuideIntent")  # la guía en la tele (si la consola no contesta, la ayuda se dice igual)
+        except Unreachable:
+            pass
         return speak(HELP, end=False)
     if name in ("AMAZON.StopIntent", "AMAZON.CancelIntent"):
         return speak("Hasta luego.")
