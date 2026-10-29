@@ -212,7 +212,6 @@ struct PlayerScreen: View {
 
     /// Lo que suena ahora: cambia al pasar solo al siguiente episodio (el `request` es solo con el que se abrió).
     var current: PlayRequest { holder.model.request ?? request }
-    @State var ambientURL: URL?
     @State var knownAspect: Double?
     @State var aspectTitle: String?
     /// El alto que pide «Audio y subtítulos» en vertical (para subir el video lo justo y que quepa sin desplazarse).
@@ -225,15 +224,14 @@ struct PlayerScreen: View {
     @State var loadingLoggedAt = Date.distantPast
     /// El tamaño en que se acomoda el video (para la bitácora: si algo lo estira más que la pantalla, ahí se ve).
     @State var layoutSize: CGSize = .zero
+    /// Lo que miden los controles de abajo en vertical (para que nunca se salgan de la pantalla).
+    @State var controlsNeed: CGFloat = 0
 
     var body: some View {
         let model = holder.model
         ZStack {
             if let face = ipod { Rectangle().fill(face.body).ignoresSafeArea() } else { DS.video.ignoresSafeArea() }
-            // El fondo ambiente aparece (con un desvanecido) cuando el video ya suena: mientras carga, todo negro (antes la franja
-            // de arriba cambiaba de color a media carga).
-            Group { if !landscape && !fillsPortrait && ipod == nil && model.hasPlayed { ambientLayer } }
-                .animation(DS.Motion.base(reduceMotion), value: model.hasPlayed)
+            // Fondo negro, también en vertical (ya no la imagen del episodio difuminada detrás: distraía del video).
             GeometryReader { geo in
                 let rect = videoRect(in: geo.size)
                 ZStack {
@@ -510,7 +508,7 @@ struct PlayerScreen: View {
             if aspectTitle != current.metaID { knownAspect = nil; aspectTitle = current.metaID }
             // ×2 fijo no pasa al siguiente episodio: cada episodio empieza a velocidad normal.
             if isFastForwarding { endFastForward(holder.model, force: true) }
-            await loadAmbient(); await loadLocalizedEpisodes()
+            await loadLocalizedEpisodes()
         }
         .onChange(of: PlayerPresentation.loadKind(model), initial: true) { _, kind in
             presentation.update(kind, playing: model.snapshot.state == .playing, videoID: current.videoID)
@@ -547,7 +545,12 @@ struct PlayerScreen: View {
             Button("Salir", role: .cancel) { Task { await close() } }
         } message: { Text("Llevas tres episodios seguidos.") }
         // Con «Audio y subtítulos» abierto la tarjeta de «Siguiente» no se ve: su cuenta se detiene (no cambia de episodio a escondidas).
-        .onChange(of: subtitleDock) { _, open in holder.model.panelOpen = open }
+        .onChange(of: subtitleDock) { _, open in
+            holder.model.panelOpen = open
+            // Al cerrarlo se olvida su medida: al volver a abrirlo (quizá en otra página) el video ya no se acomodaba primero a la
+            // medida vieja y luego brincaba a la nueva.
+            if !open { dockNeed = 0 }
+        }
         // Girar el teléfono gira el video: el aviso de giro del sistema no llega con el candado de rotación puesto,
         // así que con el candado el video se queda como abrió. Con «Bloquear» se ignora.
         .onReceive(NotificationCenter.default.publisher(for: Orientation.deviceDidRotate)) { _ in

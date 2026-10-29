@@ -73,6 +73,26 @@ final class PlayerStuckUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Pausa"].waitForExistence(timeout: 5), "ya suena otra versión")
     }
 
+    /// El peor caso de abajo en vertical: el video hasta arriba (la barra de ✕ baja con los controles), la tarjeta de «Siguiente
+    /// episodio» y letra muy grande. Todo dentro de la pantalla (antes se salían por abajo).
+    func testTheControlsBelowTheVideoNeverLeaveTheScreen() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0386676", "-demo-open", "play",
+                               "-demo-player-portrait", "-demo-player-state", "upnext", "-player-portrait-center", "0",
+                               "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        sleep(12)
+        let close = app.buttons["player-close"]
+        for _ in 0..<3 where !close.exists { app.tap(); sleep(2) }   // un toque a la vez: dos seguidos los vuelven a esconder
+        XCTAssertTrue(close.exists, "con los controles a la vista")
+        shot("c1-abajo")
+        let screen = app.windows.firstMatch.frame
+        print("✕ en \(close.frame), pantalla \(screen)")
+        XCTAssertLessThanOrEqual(close.frame.maxY, screen.maxY, "la barra de ✕ dentro de la pantalla")
+        XCTAssertTrue(close.isHittable, "y se puede tocar")
+    }
+
     /// «Audio y subtítulos» en vertical: pegado abajo y del alto que pide, sin hueco debajo, al abrir y cerrar renglones, con los
     /// subtítulos apagados o prendidos, y al volver de «Versión».
     func testTheSubtitleDockSitsAtTheBottom() throws {

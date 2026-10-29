@@ -504,8 +504,6 @@ enum DS {
         static let topScrimHeight: CGFloat = 170
         /// El cuadro que se guarda al irse a segundo plano (para tenerlo a la vista al volver): lo más grande que se guarda.
         static let frozenFrameMax = CGSize(width: 1920, height: 1080)
-        /// El fondo ambiente en vertical: la imagen chica (se difumina, no hace falta más), cuánto se difumina y qué tan visible es.
-        static let ambientImage: CGFloat = 200, ambientBlur: CGFloat = 60, ambientOpacity = 0.5
     }
 
     /// «Modo iPod» del reproductor vertical: un iPod Classic blanco o negro (la caja, la pantalla con su marco y la rueda).

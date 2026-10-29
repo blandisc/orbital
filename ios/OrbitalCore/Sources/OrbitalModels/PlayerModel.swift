@@ -1078,6 +1078,7 @@ public final class PlayerModel: ObservableModel {
             let subs = choice?.subtitle?.off == true ? [] : [choice?.subtitle?.language, langs.subtitles].compactMap { $0 }.filter { !$0.isEmpty }
             await engine.prepare(audioLanguages: audio, subtitleLanguages: subs, externalSubtitles: request.localSubtitles)
         }
+        LoadProbe.start(url)   // en la bitácora: cuánto tarda el servidor, aparte del motor
         try await engine.load(url: url, startAt: start)
         engineOpened = true
         Self.note(String(format: "el motor abrió el archivo en %.1f s", clock().timeIntervalSince(loadStartedAt)))

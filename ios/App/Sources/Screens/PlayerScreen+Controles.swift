@@ -121,6 +121,7 @@ extension PlayerScreen {
                             .accessibilityAction(named: Text("Bajar el video")) { stepVideo(1, size: geo.size) }
                             .accessibilityIdentifier("player-drag-hint")
                     }
+                    VStack(spacing: 0) {
                     VStack(spacing: DS.Space.s3) {
                         if model.snapshot.duration > 0 { scrubber(model) }
                         // «Siguiente episodio» debajo de la barra: antes iba encima y la empujaba hacia abajo justo al final, quizá
@@ -134,38 +135,19 @@ extension PlayerScreen {
                         }
                         // Con el video hasta arriba, la barra de ✕ y el nombre baja aquí.
                         if raisedPortrait(rect) { topBar(model).padding(.top, DS.Space.s4).transition(.opacity) }
-                        if !fillsPortrait { Spacer(minLength: 0) }
+                    }
+                    // Lo que miden de verdad: con «Siguiente episodio», «Saltar intro» y la barra de ✕ a la vez (o letra grande) no
+                    // cabían en el lugar de abajo y se salían de la pantalla; entonces suben lo justo, sobre el borde del video.
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { controlsNeed = $0 }
+                    if !fillsPortrait { Spacer(minLength: 0) }
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     .padding(.bottom, fillsPortrait ? DS.Space.s8 : DS.Space.s4)
-                    .padding(.top, fillsPortrait ? 0 : rect.maxY + DS.PlayerPanel.handleGap)
+                    .padding(.top, fillsPortrait ? 0 : min(rect.maxY + DS.PlayerPanel.handleGap, max(0, geo.size.height - controlsNeed - DS.Space.s4)))
                     .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
             }
-        }
-    }
-
-    /// Vertical: detrás de todo, la imagen del episodio (o de la serie) muy difuminada y tenue, como el modo ambiente de YouTube:
-    /// el color del video llega más allá del cuadro. Se apaga hacia abajo para que los controles se lean.
-    @ViewBuilder var ambientLayer: some View {
-        if let url = ambientURL {
-            // La imagen va encima de un lienzo del tamaño de la pantalla: sola, al llenar el alto medía 1383 puntos de ancho (una
-            // imagen 16:9) y estiraba toda la pantalla; el video se veía agrandado y los controles quedaban fuera.
-            Color.clear.overlay {
-                RemoteImage(url: url, maxPoints: DS.PlayerPanel.ambientImage) { phase in
-                    if case .success(let image) = phase {
-                        image.resizable().scaledToFill()
-                            .blur(radius: DS.PlayerPanel.ambientBlur)
-                            .opacity(DS.PlayerPanel.ambientOpacity)
-                    }
-                }
-            }
-            .clipped()
-            .overlay(LinearGradient(colors: [.clear, DS.video], startPoint: .center, endPoint: .bottom))
-            .ignoresSafeArea()
-            .allowsHitTesting(false).accessibilityHidden(true)
-            .transition(.opacity)
         }
     }
 
@@ -180,18 +162,6 @@ extension PlayerScreen {
         if !episodeSeasons.isEmpty {
             episodeSeasons = await Task.detached(priority: .userInitiated) { CinemetaParsing.seasons(local).filter { !$0.isSpecials } }.value
         }
-    }
-
-    /// La imagen del fondo ambiente: la del episodio si la ficha la trae; si no, el fondo de la serie (o película).
-    func loadAmbient() async {
-        let request = current
-        let meta = request.meta, videoID = request.videoID, metaID = request.metaID
-        let still = await Task.detached(priority: .utility) { () -> String? in
-            guard let meta else { return nil }
-            return CinemetaParsing.seasons(meta).flatMap(\.episodes).first { $0.id == videoID }?.thumbnail
-        }.value
-        let text = still ?? (metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, metaID) : request.poster)
-        ambientURL = text.flatMap(URL.init(string:))
     }
 
     /// El degradado oscuro de arriba: el nombre y el episodio se leen aunque el video sea claro.
