@@ -4,6 +4,29 @@ Fecha: 29 oct 2026 (tres rondas el mismo día). Alcance: **solo la app de iPhone
 no cambia, salvo un requisito para la fase 3.
 Estado: propuesta para decidir; **no se implementa todavía**.
 
+## Resumen ejecutivo
+
+**En una frase.** Al abrir la app pones Real-Debrid (de ahí salen los videos) y Trakt (tu avance en la nube). Los
+complementos se manejan dentro de la app. Stremio queda de copia mientras probamos, y se suelta cuando la prueba sale
+bien. Versión visual con las maquetas: [`desacoplar-stremio/resumen.html`](desacoplar-stremio/resumen.html).
+
+**Lo primero.** Trakt quitó el aviso de «pausa» a fines de 2025, según el desarrollador de Infuse, y Orbital lo sigue
+usando. Hay que probarlo con tu cuenta (10 min) antes de construir nada.
+
+| Fase | Qué pasa |
+|---|---|
+| 1 · Probar | Trakt manda; Stremio recibe copia de todo |
+| 2 · Comparar | Dos semanas; la app anota si no coinciden |
+| 3 · Soltar | Solo Trakt (requiere que la consola lea Trakt) |
+
+**Decide tú:**
+
+1. ¿Solo Real-Debrid? Recomiendo que sí, con la puerta abierta a otros.
+2. ¿Respaldo a Trakt cada 5 min mientras ves? Recomiendo que sí.
+3. ¿Proteger el 80 % para que Trakt no marque visto antes de tiempo? Recomiendo que sí.
+
+El resto de este documento es el detalle para quien lo implemente.
+
 ## 1. Qué se pide, en una frase
 
 Que la app de iPhone funcione completa sin Stremio: los complementos (add-ons) y Real-Debrid se manejan
