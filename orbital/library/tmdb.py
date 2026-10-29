@@ -135,6 +135,14 @@ def image(path, size: str = "w500") -> str | None:
     return f"{IMAGES}/{size}{path}" if isinstance(path, str) and path.startswith("/") else None
 
 
+def _textless(raw: dict, group: str) -> str | None:
+    """La ruta de la imagen sin texto mejor votada de `images.<group>` (de `append_to_response=images`), o None."""
+    rows = (raw.get("images") or {}).get(group) if isinstance(raw.get("images"), dict) else None
+    rows = [r for r in rows or [] if isinstance(r, dict) and r.get("file_path") and r.get("iso_639_1") is None]
+    best = max(rows, key=lambda r: (float(r.get("vote_average") or 0), int(r.get("vote_count") or 0)), default=None)
+    return best["file_path"] if best else None
+
+
 def _year(text) -> int | None:
     return int(text[:4]) if isinstance(text, str) and text[:4].isdigit() else None
 
@@ -335,8 +343,10 @@ class Tmdb:
         return image(raw.get("logo_path"), "w300") if isinstance(raw, dict) else None
 
     def details(self, kind: str, tmdb_id: int) -> dict:
-        """Lo que hace falta para la ficha, en español; con su id de IMDb (None si TMDB no lo tiene)."""
-        raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}", append_to_response="external_ids")
+        """Lo que hace falta para la ficha, en español; con su id de IMDb (None si TMDB no lo tiene). El fondo, el mejor sin
+        texto (TMDB marca sin idioma los que no traen el título impreso; encima ya va el logo), pedido en la misma consulta;
+        si no hay, el de siempre."""
+        raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}", append_to_response="external_ids,images", include_image_language="null")
         external = raw.get("external_ids") if isinstance(raw.get("external_ids"), dict) else {}
         imdb = raw.get("imdb_id") or external.get("imdb_id")
         return {
@@ -348,7 +358,7 @@ class Tmdb:
             "runtime": _positive(raw.get("runtime")),
             "seasons": raw.get("number_of_seasons") if isinstance(raw.get("number_of_seasons"), int) else None,
             "episodes": raw.get("number_of_episodes") if isinstance(raw.get("number_of_episodes"), int) else None,
-            "poster": image(raw.get("poster_path")), "backdrop": image(raw.get("backdrop_path"), "w1280"),
+            "poster": image(raw.get("poster_path")), "backdrop": image(_textless(raw, "backdrops") or raw.get("backdrop_path"), "w1280"),
             # La calificación de TMDB (0–10), para la ficha («TMDB 84 %», como el iPhone); None sin votos.
             "rating": round(float(raw["vote_average"]), 1) if isinstance(raw.get("vote_average"), (int, float))
             and raw.get("vote_average") and (raw.get("vote_count") or 0) > 0 else None,

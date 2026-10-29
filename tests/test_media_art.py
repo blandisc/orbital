@@ -24,6 +24,24 @@ def test_tmdb_da_primero_las_imagenes_en_espanol(monkeypatch):
     assert found["backgrounds"] == ["https://image.tmdb.org/t/p/w1280/b.jpg", "https://image.tmdb.org/t/p/w1280/con-titulo.jpg"]
 
 
+def test_las_filas_de_tmdb_usan_el_fondo_sin_texto_en_la_misma_consulta(monkeypatch):
+    t = tmdb_api.Tmdb("clave")
+    asked = []
+
+    def get(path, **p):
+        asked.append(p)
+        return {"id": 1, "title": "Dune", "imdb_id": "tt1160419", "backdrop_path": "/con-titulo.jpg", "images": {"backdrops": [
+            {"file_path": "/sin-texto-b.jpg", "iso_639_1": None, "vote_average": 5.1},
+            {"file_path": "/sin-texto-a.jpg", "iso_639_1": None, "vote_average": 5.6}]}}
+
+    monkeypatch.setattr(t, "_get", get)
+    assert t.details("movie", 1)["backdrop"] == "https://image.tmdb.org/t/p/w1280/sin-texto-a.jpg"
+    assert len(asked) == 1 and "images" in asked[0]["append_to_response"] and asked[0]["include_image_language"] == "null"
+    # Sin fondos sin texto, el de siempre.
+    monkeypatch.setattr(t, "_get", lambda path, **p: {"id": 1, "title": "Dune", "backdrop_path": "/con-titulo.jpg", "images": {"backdrops": []}})
+    assert t.details("movie", 1)["backdrop"] == "https://image.tmdb.org/t/p/w1280/con-titulo.jpg"
+
+
 def test_elegir_arte_se_recuerda_y_se_ve_en_la_biblioteca_y_para_ti(library):
     show = LibraryItem(id="stremio:tt1", title="Futurama", category="continue", source="stremio", image="metahub.jpg",
                        hero="metahub-bg.jpg", extra={"meta_id": "tt1", "kind": "series"})
