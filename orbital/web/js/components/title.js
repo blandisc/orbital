@@ -654,83 +654,104 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   }
 
   /** Acción del mando o teclado. Devuelve true si la vista la consumió. */
+  /** B: con el mando, primero sube de los episodios a los botones; con el dedo, «Atrás» cierra (ese paso no se veía). En una
+   *  serie la lista es el punto de partida: de Más como esto o el reparto se vuelve a ella y, desde ella, B cierra. */
+  function back() {
+    const to = (zone === "more" || zone === "cast") && !touching() ? (led() ? "episodes" : "actions")
+      : zone === "about" ? "actions"
+        : zone === "episodes" && !led() && !touching() ? "actions" : null;
+    if (!to) return close();
+    zone = to;
+    onMove?.();
+    render();
+  }
+
+  /** «Ver más» de la sinopsis: A la despliega, ↓ regresa a los botones. */
+  function aboutKey(act) {
+    if (act === "select") toggleAbout();
+    else if (act === "down") { zone = "actions"; onMove?.(); render(); }
+  }
+
+  /** «Más como esto» y el reparto: ◀ ▶ recorren, ↑ ↓ cambian de fila, A abre. */
+  function panelKey(act) {
+    const cast = zone === "cast";
+    const count = cast ? castItems.length : moreItems.length;
+    let moved = false;
+    if (act === "left" && (cast ? castIndex : moreIndex) > 0) { if (cast) castIndex--; else moreIndex--; moved = true; }
+    else if (act === "right" && (cast ? castIndex : moreIndex) < count - 1) { if (cast) castIndex++; else moreIndex++; moved = true; }
+    else if (act === "up") {
+      zone = cast && moreItems.length ? "more" : led() ? "episodes" : "actions";
+      moved = true;
+      if (zone !== "more") render();
+    } else if (act === "down" && !cast && castItems.length) { zone = "cast"; moved = true; }
+    else if (act === "select") { if (cast) openPerson(); else openMore(); }
+    if (moved) { paintMore(); el.dataset.zone = zone; onMove?.(); }
+  }
+
+  /** Los botones (Ver, Tráiler, Guardar…). Devuelve si se movió, o null si ya se encargó de todo (cambió de zona). */
+  function actionsKey(act, series) {
+    if (["left", "right", "up", "down"].includes(act)) {
+      const next = actionStep(buttons.length, action, act);
+      // Los botones están arriba de la fila de episodios: ↓ baja a ella (o, sin episodios, a «Más como esto»).
+      if (next === "down") {
+        const below = series ? "episodes" : panelZone();
+        if (below) { zone = below; onMove?.(); render(); }
+        return null;
+      }
+      if (next === "up") {
+        // Arriba de los botones: «Ver más» de la sinopsis, si se corta.
+        if (!readMore.hidden && !readMore.classList.contains("title__read--idle")) { zone = "about"; onMove?.(); render(); }
+        return null;
+      }
+      if (next === null) return false;
+      action = next;
+      renderActions();
+      return true;
+    }
+    if (act === "select" && buttons[action]) run(buttons[action]);
+    else if (act === "options" && hasTarget()) sources();
+    else if ((act === "prevsection" || act === "nextsection") && series) {
+      // Cambiar de temporada desde los botones baja a los episodios: si no, el cambio no se ve.
+      setSeason(season + (act === "prevsection" ? -1 : 1));
+      zone = "episodes"; onMove?.(); render();
+      return null;
+    }
+    return false;
+  }
+
+  /** La fila de episodios: ◀ ▶ episodio, ↑ a los botones de la serie, ↓ a «Más como esto» y el reparto. */
+  function episodesKey(act) {
+    // Series largas (Los Simpson tiene 35 temporadas): LT/RT saltan de 5 en 5, como en las filas largas.
+    const seasonStep = { prevsection: -1, nextsection: 1, pageleft: -5, pageright: 5 }[act];
+    if (act === "left") return setIndex(index - 1);
+    if (act === "right") return setIndex(index + 1);
+    if (seasonStep) return setSeason(season + seasonStep);
+    if (act === "up") { zone = "actions"; render(); return true; }
+    if (act === "down") {
+      if (!panelZone()) return false;
+      zone = panelZone();
+      render();
+      return true;
+    }
+    // Temporada vacía: nada que ver (antes A ponía otro episodio, el de «Continuar» o T1 E1).
+    if (!episode()) return false;
+    if (act === "select") play(episode());
+    else if (act === "options") sources(episode());
+    else if (act === "alt" && onDownload) download(episode());
+    return false;
+  }
+
   function handle(act) {
     if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (act === "menu") return false; // ☰ abre el menú desde cualquier pantalla (como en Xbox)
     if (act === "search") { close(); return false; } // S: buscar otra cosa (la ficha se cierra y se abre Buscar)
-    if (act === "back") {
-      // Con el mando, B primero sube de los episodios a los botones; con el dedo, «Atrás» cierra (ese paso no se veía).
-      // En una serie la lista es el punto de partida: de Más como esto o el reparto se vuelve a ella y, desde ella, B cierra.
-      if ((zone === "more" || zone === "cast") && !touching()) { zone = led() ? "episodes" : "actions"; onMove?.(); render(); return true; }
-      if (zone === "about") { zone = "actions"; onMove?.(); render(); return true; }
-      if (zone === "episodes" && !led() && !touching()) { zone = "actions"; onMove?.(); render(); return true; }
-      close();
-      return true;
-    }
+    if (act === "back") { back(); return true; }
     if (!details) return true;
+    if (zone === "about") { aboutKey(act); return true; }
+    if (zone === "more" || zone === "cast") { panelKey(act); return true; }
     const series = kindOf() === "series" && seasons().length > 0;
-    let moved = false;
-    if (zone === "about") {
-      if (act === "select") toggleAbout();
-      else if (act === "down") { zone = "actions"; onMove?.(); render(); }
-      return true;
-    }
-    if (zone === "more") {
-      if (act === "left" && moreIndex > 0) { moreIndex--; moved = true; }
-      else if (act === "right" && moreIndex < moreItems.length - 1) { moreIndex++; moved = true; }
-      else if (act === "up") { zone = led() ? "episodes" : "actions"; moved = true; render(); }
-      else if (act === "down" && castItems.length) { zone = "cast"; moved = true; }
-      else if (act === "select") openMore();
-      if (moved) { paintMore(); el.dataset.zone = zone; onMove?.(); }
-      return true;
-    }
-    if (zone === "cast") {
-      if (act === "left" && castIndex > 0) { castIndex--; moved = true; }
-      else if (act === "right" && castIndex < castItems.length - 1) { castIndex++; moved = true; }
-      else if (act === "up") { zone = moreItems.length ? "more" : led() ? "episodes" : "actions"; moved = true; if (zone !== "more") render(); }
-      else if (act === "select") openPerson();
-      if (moved) { paintMore(); el.dataset.zone = zone; onMove?.(); }
-      return true;
-    }
-    if (zone === "actions") {
-      if (["left", "right", "up", "down"].includes(act)) {
-        const next = actionStep(buttons.length, action, act);
-        // Los botones están arriba de la fila de episodios: ↓ baja a ella (o, sin episodios, a «Más como esto»).
-        if (next === "down") {
-          const below = series ? "episodes" : panelZone();
-          if (below) { zone = below; onMove?.(); render(); }
-          return true;
-        }
-        if (next === "up") {
-          // Arriba de los botones: «Ver más» de la sinopsis, si se corta.
-          if (!readMore.hidden && !readMore.classList.contains("title__read--idle")) { zone = "about"; onMove?.(); render(); }
-          return true;
-        }
-        if (next !== null) { action = next; moved = true; }
-      } else if (act === "select" && buttons[action]) run(buttons[action]);
-      else if (act === "options" && hasTarget()) sources();
-      else if ((act === "prevsection" || act === "nextsection") && series) {
-        // Cambiar de temporada desde los botones baja a los episodios: si no, el cambio no se ve.
-        setSeason(season + (act === "prevsection" ? -1 : 1));
-        zone = "episodes"; onMove?.(); render(); return true;
-      }
-      if (moved) renderActions();
-    } else {
-      // La fila de episodios: ◀ ▶ episodio, ↑ a los botones de la serie, ↓ a «Más como esto» y el reparto.
-      if (act === "left") moved = setIndex(index - 1);
-      else if (act === "right") moved = setIndex(index + 1);
-      else if (act === "up") { zone = "actions"; moved = true; render(); }
-      else if (act === "down") { if (panelZone()) { zone = panelZone(); moved = true; render(); } }
-      else if (act === "prevsection") moved = setSeason(season - 1);
-      else if (act === "nextsection") moved = setSeason(season + 1);
-      // Series largas (Los Simpson tiene 35 temporadas): LT/RT saltan de 5 en 5, como en las filas largas.
-      else if (act === "pageleft") moved = setSeason(season - 5);
-      else if (act === "pageright") moved = setSeason(season + 5);
-      // Temporada vacía: nada que ver (antes A ponía otro episodio, el de «Continuar» o T1 E1).
-      else if (act === "select") { if (episode()) play(episode()); }
-      else if (act === "options") { if (episode()) sources(episode()); }
-      else if (act === "alt" && onDownload) { if (episode()) download(episode()); }
-    }
+    const moved = zone === "actions" ? actionsKey(act, series) : episodesKey(act);
+    if (moved === null) return true;
     el.dataset.zone = zone;
     if (moved) onMove?.();
     return true;
