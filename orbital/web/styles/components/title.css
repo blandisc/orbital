@@ -13,7 +13,7 @@
 /* El arte casi entero: solo se funde a la izquierda y abajo, donde va el texto (antes iba al 55 % y se perdía). */
 .title__backdrop {
   position: absolute; inset: 0; z-index: var(--z-behind);
-  opacity: .92; filter: saturate(1.08);
+  opacity: var(--opacity-solid); filter: saturate(1.08);
   -webkit-mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 22%, transparent) 0%, color-mix(in srgb, var(--mask-solid) 70%, transparent) 32%, var(--mask-solid) 58%), linear-gradient(0deg, transparent 0%, color-mix(in srgb, var(--mask-solid) 60%, transparent) 22%, var(--mask-solid) 50%);
   -webkit-mask-composite: source-in;
   mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 22%, transparent) 0%, color-mix(in srgb, var(--mask-solid) 70%, transparent) 32%, var(--mask-solid) 58%), linear-gradient(0deg, transparent 0%, color-mix(in srgb, var(--mask-solid) 60%, transparent) 22%, var(--mask-solid) 50%);
@@ -104,7 +104,7 @@
 .title__status--error {
   display: inline-flex; align-items: center; gap: var(--space-4); align-self: flex-start; max-width: 40rem;
   padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border-radius: var(--radius-lg); text-shadow: none;
-  background: var(--color-surface-raised); box-shadow: var(--shadow-overlay), inset 0 0 0 1px var(--color-hairline), inset .3rem 0 0 var(--color-danger);
+  background: var(--color-surface-raised); box-shadow: var(--shadow-overlay), var(--edge-hairline), inset .3rem 0 0 var(--color-danger);
   animation: rise-in var(--duration-enter) var(--ease-out);
 }
 .title__status-icon { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-fill); color: var(--color-danger); }
@@ -179,7 +179,7 @@
 .episode__thumb {
   position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--card-radius); overflow: hidden;
   background: var(--gradient-card) center / cover;
-  box-shadow: inset 0 0 0 1px var(--color-hairline);
+  box-shadow: var(--edge-hairline);
   transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-fast) var(--ease-out);
 }
 .episode__next { position: absolute; left: var(--inset-poster); top: var(--inset-poster); } /* «Continuar» / «Sigue»: el que ve A al abrir */

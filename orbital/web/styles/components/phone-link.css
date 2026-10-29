@@ -4,7 +4,7 @@
 .phone-link__box {
   display: flex; flex-direction: column; align-items: center; gap: var(--space-5); width: min(46rem, 100%);
   padding: var(--space-8); border-radius: var(--radius-2xl); text-align: center;
-  background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline), var(--shadow-overlay);
+  background: var(--color-surface); box-shadow: var(--edge-hairline), var(--shadow-overlay);
   animation: rise-in var(--duration-enter) var(--ease-out);
 }
 /* El QR trae su propio fondo blanco (las cámaras leen negro sobre blanco): aquí solo su medida y su radio. */

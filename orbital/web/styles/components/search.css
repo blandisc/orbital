@@ -32,7 +32,7 @@
 .search__query:empty { display: none; }
 .search__query:empty + .search__caret { margin-left: 0; }
 /* Pegado al texto: el campo separa sus piezas (gap) y el cursor parecía un espacio después de lo escrito. */
-.search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(2px - var(--space-3)); border-radius: 2px; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
+.search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(2px - var(--space-3)); border-radius: var(--radius-2xs); background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
 /* Dictando: la línea respira con el acento del juego. */
 .search__field--listening { border-color: var(--color-accent); animation: listening var(--duration-breathe) var(--ease-float) infinite; }

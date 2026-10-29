@@ -22,7 +22,7 @@ body[data-view="tv"] .hero, body[data-view="tv"] .shelf { display: none; }
 /* Arriba: la miniatura en vivo (o el logo mientras conecta o si el canal no da vista previa) y qué canal es. */
 .tv__now { flex: none; display: grid; grid-template-columns: minmax(0, var(--tv-preview-width)) minmax(0, 1fr); gap: var(--space-8); align-items: center; }
 .tv__preview { position: relative; aspect-ratio: 16 / 9; border-radius: var(--tile-radius); overflow: hidden; background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-hairline-strong), var(--shadow-card); }
+  box-shadow: var(--edge-strong), var(--shadow-card); }
 .tv__preview-logo { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-8); }
 .tv__preview-logo img { max-width: 70%; max-height: 70%; object-fit: contain; filter: var(--shadow-drop-sm); }
 .tv__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--duration-slow) var(--ease-out); }

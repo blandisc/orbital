@@ -16,7 +16,7 @@
    «orbital». Quieta: su entrada la hace la de arranque (boot.css), que llega volando a este mismo lugar. Al señalarla,
    la luna da un saltito en su órbita. */
 .status-bar__brand .mark { width: 2.05rem; height: 2.05rem; color: var(--color-text); overflow: visible; }
-.status-bar__brand .mark__ring { opacity: .7; }
+.status-bar__brand .mark__ring { opacity: var(--opacity-near); }
 .status-bar__moon {
   display: inline-block; width: .26em; height: .26em; margin-left: .1em; border-radius: 50%; background: var(--color-brand-moon);
   vertical-align: .62em; transition: translate var(--duration-slow) var(--ease-spring);
@@ -158,10 +158,10 @@
 .battery { display: inline-flex; align-items: center; gap: var(--space-2); font-variant-numeric: tabular-nums; }
 .battery__body {
   position: relative; display: grid; place-items: center; width: 1.85rem; height: .95rem;
-  border: 1.5px solid var(--color-text-muted); border-radius: 4px;
+  border: 1.5px solid var(--color-text-muted); border-radius: var(--radius-xs);
 }
-.battery__body::after { content: ""; position: absolute; right: -4.5px; top: 30%; width: 2.5px; height: 40%; background: var(--color-text-muted); border-radius: 0 2px 2px 0; }
-.battery__level { position: absolute; inset: 1.5px auto 1.5px 1.5px; width: calc(var(--battery-level, 0%) - 4px); background: var(--color-text-muted); border-radius: 2px; transition: width var(--duration-slow) var(--ease-out); }
+.battery__body::after { content: ""; position: absolute; right: -4.5px; top: 30%; width: 2.5px; height: 40%; background: var(--color-text-muted); border-radius: 0 var(--radius-2xs) var(--radius-2xs) 0; }
+.battery__level { position: absolute; inset: 1.5px auto 1.5px 1.5px; width: calc(var(--battery-level, 0%) - 4px); background: var(--color-text-muted); border-radius: var(--radius-2xs); transition: width var(--duration-slow) var(--ease-out); }
 .battery__body .icon--fill { position: relative; width: var(--icon-xs); height: var(--icon-xs); color: var(--color-text); filter: drop-shadow(0 0 2px var(--color-art-shade)); }
 .battery__percent { color: var(--color-text-muted); }
 .battery--low { color: var(--color-danger); }

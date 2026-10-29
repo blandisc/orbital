@@ -36,6 +36,7 @@
   --space-14: 3.5rem;
 
   /* Radios: rectángulos suaves, no burbujas */
+  --radius-2xs: .15rem; /* lo diminuto: el cursor de escribir, la batería, las casillas de Tu año */
   --radius-xs: .3rem;
   --radius-sm: .45rem;
   --radius-md: .6rem;
@@ -218,6 +219,12 @@
   --opacity-near: .72;
   --opacity-faint: .5;
   --opacity-text: .86;
+  /* Más grados con nombre: casi entero (el arte bajo el texto, un respaldo, el halo enfocado), lo que acompaña sin mandar
+     (halos, sombras sobre el arte, un dibujo de respaldo), lo lejano (las estrellas del fondo) y el grano del fondo. */
+  --opacity-solid: .9;
+  --opacity-soft: .55;
+  --opacity-dim: .35;
+  --opacity-grain: .035;
   --tile-gap: 1.1rem;
   /* Márgenes de una tarjeta (docs/sistema-de-diseno.md · «Tarjetas»): del borde a lo que lleva dentro, igual en los cuatro
      lados, y lo que va en una esquina (píldora, insignia, número) usa el mismo, así su borde se alinea con el texto. */
