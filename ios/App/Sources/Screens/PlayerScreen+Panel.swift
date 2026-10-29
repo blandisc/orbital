@@ -47,6 +47,14 @@ extension PlayerScreen {
                 }
                 .padding(DS.Space.s3)
                 .frame(maxHeight: .infinity, alignment: .top)
+            } else if dockPinned {
+                // iPad de pie: fijo bajo los controles (que siguen ahí), a todo lo ancho, y el video no se mueve.
+                let top = rect.maxY + DS.PlayerPanel.handleGap + max(controlsNeed, DS.PlayerPanel.pinnedControlsMin) + DS.Space.s4
+                dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
+                    .frame(maxHeight: max(0, geo.size.height - top - DS.Space.s2), alignment: .top)
+                    .padding(.horizontal, DS.Space.gutter)
+                    .padding(.top, top)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             } else {
                 // Pegado abajo y del alto que pide: chico (subtítulos apagados) no deja hueco debajo; grande, el video sube para
                 // dejarle lugar (`videoRect`) y no hace falta desplazarse. Solo si ni así cabe, se desplaza por dentro.

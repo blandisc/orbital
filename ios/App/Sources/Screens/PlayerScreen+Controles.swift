@@ -69,7 +69,7 @@ extension PlayerScreen {
 
     /// ¿Se ven ±10 y el botón grande? Con los controles, ya con video (buscando versión no hacen nada).
     func transportShown(_ model: PlayerModel) -> Bool {
-        controlsVisible && !padlock.locked && !failed(model) && !dockState.subtitleDock && ipod == nil && model.phase != .preparing
+        controlsVisible && !padlock.locked && !failed(model) && (!dockState.subtitleDock || dockPinned) && ipod == nil && model.phase != .preparing
     }
 
     // MARK: controles

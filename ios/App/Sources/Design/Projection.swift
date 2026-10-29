@@ -397,6 +397,8 @@ extension View {
     /// Receta: la respuesta al puntero de las piezas del catálogo (`PosterCard`, `RemoteKey`…), con su esquina redondeada.
     @ViewBuilder func pointerHover(_ kind: PointerHover) -> some View {
         switch kind {
+        // Sin `focusable` aquí: hacía tronar la app en iOS 26.3 al dibujar los pósters (29 oct) y en el simulador no movía
+        // el foco del teclado de todos modos.
         case .lift: contentShape(.hoverEffect, .rect(cornerRadius: DS.Radius.lg)).hoverEffect(.lift)
         case .highlight: contentShape(.hoverEffect, .rect(cornerRadius: DS.Radius.md)).hoverEffect(.highlight)
         }

@@ -89,7 +89,8 @@ final class IPadLayoutUITests: XCTestCase {
     func testLandscapeTour() throws {
         let dir = try XCTUnwrap(ProcessInfo.processInfo.environment["ORBITAL_HANDSHAKE"], "sin ORBITAL_HANDSHAKE")
         let screens: [(String, [String])] = [
-            ("inicio", ["-demo-tab", "0"]), ("parati", ["-demo-tab", "1"]), ("listas", ["-demo-tab", "1", "-demo-mode", "lists", "-demo-airings"]),
+            ("inicio", ["-demo-tab", "0"]), ("parati", ["-demo-tab", "1"]), ("mosaico", ["-demo-tab", "1", "-demo-mode", "mosaic"]),
+            ("reproductor-pie", ["-demo-title", "series:tt0386676", "-demo-open", "play"]), ("listas", ["-demo-tab", "1", "-demo-mode", "lists", "-demo-airings"]),
             ("ficha", ["-demo-tmdb", "-demo-title", "series:tt0386676"]), ("buscar", ["-demo-tab", "2"]),
             ("descargas", ["-demo-tab", "3", "-demo-downloads"]), ("control", ["-demo-tv-now", "-demo-open", "remote"]),
             ("decidir", ["-demo-tab", "1", "-demo-open", "decide"]), ("fuentes", ["-demo-title", "series:tt0386676", "-demo-open", "sources"]),
@@ -97,9 +98,9 @@ final class IPadLayoutUITests: XCTestCase {
         ]
         let only = ProcessInfo.processInfo.environment["ORBITAL_TOUR_ONLY"]?.split(separator: ",").map(String.init)
         for (name, args) in screens where only?.contains(name) ?? true {
-            open(args, .landscapeLeft)
-            sleep(name == "reproductor" || name == "decidir" ? 12 : 8)
-            if name == "reproductor" { app.tap(); sleep(1) }
+            open(args, name.hasSuffix("-pie") ? .portrait : .landscapeLeft)
+            sleep(name.hasPrefix("reproductor") || name == "decidir" ? 12 : 8)
+            if name.hasPrefix("reproductor") { app.tap(); sleep(1) }
             FileManager.default.createFile(atPath: "\(dir)/ready_\(name)", contents: nil)
             for _ in 0..<60 where !FileManager.default.fileExists(atPath: "\(dir)/done_\(name)") { sleep(1) }
         }

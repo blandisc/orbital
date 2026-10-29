@@ -26,7 +26,8 @@ extension PlayerScreen {
                 // Tras un doble toque en una orilla, cada toque sencillo del mismo lado suma otros 10 s (como YouTube).
                 if let forward = continuesSkip(at: location, width: geo.size.width) { skip(model, forward: forward); return }
                 // Con los subtítulos rápidos abiertos, tocar el video los cierra (y nada más).
-                if dockState.subtitleDock { withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false }; return }
+                // (Fijo en el iPad de pie, no: ahí tocar el video trae o esconde los controles, como siempre.)
+                if dockState.subtitleDock && !dockPinned { withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false }; return }
                 // Un toque con dos dedos también puede contar como toque: ese no mueve los controles.
                 if Date().timeIntervalSince(twoFingerTapAt) < DS.Gesture.twoFingerTapGuard { return }
                 singleTapAt = Date()

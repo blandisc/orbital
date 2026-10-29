@@ -45,6 +45,9 @@ final class IPhoneUnchangedUITests: XCTestCase {
         XCTAssertGreaterThan(drama.frame.minY, action.frame.maxY - 2, "Drama ya en el siguiente: dos por renglón")
         XCTAssertGreaterThan(action.frame.width, width * 0.4, "cada género ocupa casi la mitad del ancho")
         shot("buscar")
+        // Tocar un género abre su lista (las piezas del catálogo son enfocables para el teclado del iPad: el toque sigue igual).
+        action.tap()
+        XCTAssertTrue(app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 15), "tocar un género ya no abre su lista")
     }
 
     func testTitleAndSettingsUseTheFullWidth() {

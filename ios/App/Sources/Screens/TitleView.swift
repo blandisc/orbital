@@ -4,6 +4,7 @@ import OrbitalModels
 
 /// La ficha de una película o serie: continuar, guardar (en Mi lista, tu watchlist o tus listas), descargar, temporadas y episodios.
 struct TitleView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let route: TitleRoute
     @Environment(AppEnvironment.self) var env
@@ -38,43 +39,8 @@ struct TitleView: View {
 
     var body: some View {
         let model = observer.model
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                // Al deslizar, el arte se recoge (`BleedArt(collapse:)`): ver `hero`.
-                hero(model)
-                    .perfTag("title.hero").onAppear { Perf.mark("title.shown") }
-                VStack(alignment: .leading, spacing: DS.Space.s6) {
-                    VStack(alignment: .leading, spacing: DS.Space.s6) {
-                        facts(model)
-                        actions(model)
-                    }
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
-                    if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
-                    if let error = model.error, !model.isLoading {
-                        // No cargó (sin red, Cinemeta caído): lo dice y deja reintentar (antes «Cargando» se quedaba para siempre).
-                        VStack(alignment: .leading, spacing: DS.Space.s2) {
-                            DSNotice(verbatim: env.message(error), tone: .warn)
-                            Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.load() } }
-                                .buttonStyle(.glass).accessibilityIdentifier("title-retry")
-                        }
-                    }
-                    synopsis(model)
-                    creditLine(model)
-                    if model.kind == "series" { episodes(model) }
-                    // Sin TMDB, los créditos ya van en el renglón de arriba (antes salían dos veces: «Dirección · Con» y otra vez
-                    // «Reparto · Dirección · Guion»).
-                    if let extras = model.extras { rich(extras).padding(.horizontal, -DS.Space.gutter) }
-                    details(model)
-                }
-                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
-                .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: los datos no se le pegan
-                // Siempre se puede recoger el arte hasta que el nombre suba a la barra, aunque haya poco abajo (una película sin
-                // reparto ni saga): si no, en unas fichas se recogía y en otras no.
-                .frame(minHeight: viewport.height, alignment: .top)
-            }
-            // Ventana ancha (iPad, Mac): la ficha a un ancho de lectura, al centro; en el iPhone ocupa todo como siempre.
-            .frame(maxWidth: DS.TitleAction.readableWidth)
-            .frame(maxWidth: .infinity)
+        Group {
+            if twoColumns { twoColumnLayout(model) } else { oneColumnLayout(model) }
         }
         #if DEBUG
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazada (capturas del arte a medio recoger)
@@ -100,7 +66,7 @@ struct TitleView: View {
         // Recogido el arte, el nombre al centro de la barra, entre ‹ y los botones (como Apple TV): sigues sabiendo qué es. Se
         // dibuja aquí y no como elemento de la barra (en la barra transparente de la ficha el sistema no lo enseñaba).
         .overlay(alignment: .top) {
-            let shown = Double(min(1, max(0, (scrolled - heroHeight * DS.TitleAction.titleFrom) / max(heroHeight * DS.TitleAction.titleSpan, 1))))
+            let shown = twoColumns ? 0 : Double(min(1, max(0, (scrolled - heroHeight * DS.TitleAction.titleFrom) / max(heroHeight * DS.TitleAction.titleSpan, 1))))
             Text(verbatim: model.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
                 .padding(.horizontal, DS.TitleAction.barTitleInset)
                 .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
@@ -157,6 +123,85 @@ struct TitleView: View {
         }
     }
 
+    /// Una columna (iPhone, iPad de pie): el arte arriba y todo debajo, a un ancho de lectura en ventana ancha.
+    private func oneColumnLayout(_ model: TitleModel) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                // Al deslizar, el arte se recoge (`BleedArt(collapse:)`): ver `hero`.
+                hero(model)
+                    .perfTag("title.hero").onAppear { Perf.mark("title.shown") }
+                VStack(alignment: .leading, spacing: DS.Space.s6) {
+                    VStack(alignment: .leading, spacing: DS.Space.s6) {
+                        facts(model)
+                        actions(model)
+                    }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
+                    readingSections(model)
+                }
+                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
+                .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: los datos no se le pegan
+                // Siempre se puede recoger el arte hasta que el nombre suba a la barra, aunque haya poco abajo (una película sin
+                // reparto ni saga): si no, en unas fichas se recogía y en otras no.
+                .frame(minHeight: viewport.height, alignment: .top)
+            }
+            // Ventana ancha de pie (iPad, Mac angosta): la ficha a un ancho de lectura, al centro; en el iPhone ocupa todo.
+            .frame(maxWidth: DS.TitleAction.readableWidth)
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// Dos columnas (iPad acostado, Mac ancha): a la izquierda el arte, los datos y las acciones, siempre a la vista; a la
+    /// derecha lo que se lee (sinopsis, episodios, reparto…), que se recorre solo.
+    private func twoColumnLayout(_ model: TitleModel) -> some View {
+        HStack(alignment: .top, spacing: DS.Space.s6) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Space.s6) {
+                    hero(model)
+                        .perfTag("title.hero").onAppear { Perf.mark("title.shown") }
+                    VStack(alignment: .leading, spacing: DS.Space.s6) {
+                        facts(model)
+                        actions(model)
+                    }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
+                    .padding(.horizontal, DS.Space.gutter)
+                }
+                .padding(.bottom, DS.Space.s6)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(width: contentWidth)
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Space.s6) { readingSections(model) }
+                    .padding(.trailing, DS.Space.gutter).padding(.vertical, DS.Space.s6)
+            }
+        }
+    }
+
+    /// Lo que se lee bajo las acciones: avisos, sinopsis, créditos, episodios, la ficha rica y los detalles.
+    @ViewBuilder private func readingSections(_ model: TitleModel) -> some View {
+        if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
+        if let error = model.error, !model.isLoading {
+            // No cargó (sin red, Cinemeta caído): lo dice y deja reintentar (antes «Cargando» se quedaba para siempre).
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                DSNotice(verbatim: env.message(error), tone: .warn)
+                Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.load() } }
+                    .buttonStyle(.glass).accessibilityIdentifier("title-retry")
+            }
+        }
+        synopsis(model)
+        creditLine(model)
+        if model.kind == "series" { episodes(model) }
+        // Sin TMDB, los créditos ya van en el renglón de arriba (antes salían dos veces: «Dirección · Con» y otra vez
+        // «Reparto · Dirección · Guion»).
+        if let extras = model.extras { rich(extras).padding(.horizontal, -DS.Space.gutter) }
+        details(model)
+    }
+
+    /// ¿Dos columnas? Ancho regular, ventana más ancha que alta y espacio de sobra: el iPad acostado y la Mac. El iPad de
+    /// pie y el iPhone, una.
+    private var twoColumns: Bool {
+        horizontalSize == .regular && viewport.width > viewport.height && viewport.width >= DS.TitleAction.twoColumnWidth
+    }
+
     // MARK: partes
     /// Ancho / alto del arte: el de siempre si cabe; si no, más ancho (más bajito) hasta que las acciones queden sobre la
     /// barra de pestañas. Antes de medir, la proporción fija de los teléfonos bajitos.
@@ -175,10 +220,15 @@ struct TitleView: View {
     }
 
     /// Qué tan desvanecido va lo de arriba (0 con el arte a la vista, 1 ya recogido).
-    private var fade: Double { Double(min(1, max(0, scrolled / max(heroHeight * DS.TitleAction.fadeAt, 1)))) }
+    private var fade: Double {
+        if twoColumns { return 0 }   // en dos columnas el arte no se recoge: se queda a la izquierda
+        return Double(min(1, max(0, scrolled / max(heroHeight * DS.TitleAction.fadeAt, 1))))
+    }
     private var heroHeight: CGFloat { contentWidth > 0 ? contentWidth / heroAspect : 0 }
     /// El ancho de la ficha: el de la ventana, hasta el ancho de lectura (`DS.TitleAction.readableWidth`).
-    private var contentWidth: CGFloat { min(viewport.width, DS.TitleAction.readableWidth) }
+    private var contentWidth: CGFloat {
+        twoColumns ? min(DS.TitleAction.twoColumnArt, viewport.width * DS.TitleAction.twoColumnShare) : min(viewport.width, DS.TitleAction.readableWidth)
+    }
 
     /// Mi lista y En la TV: botones de ícono en la barra de arriba (con su nombre para VoiceOver).
     @ToolbarContentBuilder private func topBar(_ model: TitleModel) -> some ToolbarContent {

@@ -13,7 +13,13 @@ struct AppCommands: Commands {
             Button("Descargas") { open(tab: AppEnvironment.downloadsTab) }.keyboardShortcut("3")
             Button("Buscar") { open(tab: 2); AppEnvironment.shared.ui.focusSearch = true }.keyboardShortcut("f")
             Divider()
+            Button("Atrás") { AppEnvironment.shared.ui.goBack = true }.keyboardShortcut("[")
+            Divider()
             Button("Control de la TV") { AppEnvironment.shared.ui.openRemote = true }.keyboardShortcut("r")
+        }
+        // «Ajustes…» con ⌘, en el menú de la app, donde todo usuario de Mac lo busca.
+        CommandGroup(replacing: .appSettings) {
+            Button("Ajustes…") { AppEnvironment.shared.ui.openSettings = true }.keyboardShortcut(",")
         }
         CommandMenu("Reproducción") {
             Group {

@@ -20,6 +20,7 @@ OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
     "Ir": "Go",
+    "Ajustes…": "Settings…",
     "Control de la TV": "TV remote",
     "Cerrar el reproductor": "Close player",
     # Favoritos de Trakt: el corazón de la ficha y su fila en Inicio.
@@ -726,7 +727,8 @@ def used_literals() -> dict[str, str]:
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
         # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).
-        if "/Platform/" in f or f.endswith(("/Support/Demo.swift", "/Support/Perf.swift", "Previews.swift", "/Design/Tokens.swift", "/Design/MosaicBench.swift", "/Design/ModelObserver.swift")):
+        # El modo demostración (Demo.swift y sus partes Demo*.swift, como DemoHTTPClient): datos de mentira, no textos de pantalla.
+        if "/Platform/" in f or "/Support/Demo" in f or f.endswith(("/Support/Perf.swift", "Previews.swift", "/Design/Tokens.swift", "/Design/MosaicBench.swift", "/Design/ModelObserver.swift")):
             continue
         for number, line in enumerate(Path(f).read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.strip()

@@ -272,6 +272,11 @@ struct MainTabs: View {
         .onAppear(perform: openPendingTitle)
         .onChange(of: ui.pendingTitle) { openPendingTitle() }
         .onChange(of: ui.openTab) { _, new in if let new { tab = new; env.openTab = nil } }
+        .onChange(of: ui.goBack) { _, back in
+            guard back else { return }
+            ui.goBack = false
+            if !paths[tab].isEmpty { paths[tab].removeLast() }
+        }
         .onChange(of: ui.openSettings) { _, open in
             guard open else { return }
             ui.openSettings = false

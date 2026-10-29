@@ -100,6 +100,9 @@ extension DS {
         /// El ancho máximo de la ficha en ventanas anchas (iPad, Mac): a todo lo ancho, en horizontal el arte llenaba la
         /// pantalla y las acciones quedaban abajo, fuera de la vista. El iPhone (440 pt como mucho) no lo alcanza.
         static let readableWidth: CGFloat = 720
+        /// Dos columnas (arte y acciones a la izquierda, lo que se lee a la derecha) desde este ancho, con la ventana más
+        /// ancha que alta: el iPad acostado y la Mac. La columna del arte mide hasta `twoColumnArt` y no más de esa parte.
+        static let twoColumnWidth: CGFloat = 900, twoColumnArt: CGFloat = 440, twoColumnShare: CGFloat = 0.45
         /// El desvanecido bajo la barra de arriba (además de la barra) y a qué parte del arte ya está completo.
         static let topFade: CGFloat = 36, fadeAt: CGFloat = 0.85
         /// El nombre en la barra: empieza a salir a esta parte del arte y termina de salir en este tramo.

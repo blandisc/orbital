@@ -1209,6 +1209,17 @@
         }
       }
     },
+    "Ajustes…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings…"
+          }
+        }
+      }
+    },
     "Al instante": {
       "extractionState": "manual",
       "localizations": {
