@@ -119,9 +119,9 @@ final class PlayerPresentationTests: XCTestCase {
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(10))
         XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .now, "sonó, pero hasta que corra unos segundos sigue la carga")
-        await rig.model.handle(rig.playing(12.5))
+        await rig.model.handle(rig.playing(10.6))
         XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .none)
-        await rig.model.handle(rig.playing(12.5, state: .buffering))
+        await rig.model.handle(rig.playing(10.6, state: .buffering))
         XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .soon)
         await rig.model.handle(rig.playing(10, state: .paused))
         XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .none, "en pausa, nada")
@@ -131,7 +131,8 @@ final class PlayerPresentationTests: XCTestCase {
 
     /// El bug que no quedaba (29 oct): el motor dice «suena» a los 3 s con casi nada en el búfer y enseguida se detiene a llenarlo
     /// (o recarga para cambiar la pista de audio). Se veía carga → pausa → carga → pausa. La carga no se quita hasta que el video
-    /// corre de verdad: así se ve carga → pausa, nada más.
+    /// corre de verdad: así se ve carga → pausa, nada más. Y se quita en cuanto corre (medio segundo): con 2 s el video ya sonaba
+    /// con la ruedita encima.
     func testTheLoadStaysUntilTheVideoReallyRuns() async throws {
         let rig = try playerRig()
         await rig.model.begin(rig.request())
@@ -142,12 +143,12 @@ final class PlayerPresentationTests: XCTestCase {
         XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .now, "sigue la misma carga, no una nueva")
         await rig.model.handle(rig.playing(0.4, state: .loading))     // o recarga entera por la pista de audio
         XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .now)
-        await rig.model.handle(rig.playing(1.5))
+        await rig.model.handle(rig.playing(0.45))
         XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .now, "todavía no avanzó lo suficiente")
-        await rig.model.handle(rig.playing(2.2))
-        XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .none, "corre: pausa")
+        await rig.model.handle(rig.playing(0.6))
+        XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .none, "corre: pausa, sin esperar 2 s con el video sonando")
         XCTAssertTrue(rig.model.playbackSettled)
-        await rig.model.handle(rig.playing(2.2, state: .buffering))
+        await rig.model.handle(rig.playing(0.6, state: .buffering))
         XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .soon, "ya corriendo, un atorón es la regla de siempre")
     }
 
@@ -167,9 +168,9 @@ final class PlayerPresentationTests: XCTestCase {
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(0))
         await rig.model.seek(to: 600)
-        await rig.model.handle(rig.playing(600.5))
-        XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .now, "saltaste al arrancar: los 2 s cuentan desde ahí")
-        await rig.model.handle(rig.playing(602.5))
+        await rig.model.handle(rig.playing(600.3))
+        XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .now, "saltaste al arrancar: el medio segundo cuenta desde ahí")
+        await rig.model.handle(rig.playing(600.6))
         XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .none)
     }
 

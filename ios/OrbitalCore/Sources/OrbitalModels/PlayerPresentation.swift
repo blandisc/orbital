@@ -3,7 +3,7 @@ import Foundation
 /// Lo que enseña el botón grande del reproductor: la carga o el play/pausa. Antes vivía suelto en la pantalla, con relojes sin
 /// pruebas, y cada arreglo rompía otra cosa (carga que parpadeaba, play que brincaba, carga al pausar). Aquí, una sola regla y
 /// probada:
-/// - Carga **ya** (`now`): abriendo el video hasta que corre de verdad (`PlayerModel.playbackSettled`: unos segundos avanzados,
+/// - Carga **ya** (`now`): abriendo el video hasta que corre de verdad (`PlayerModel.playbackSettled`: medio segundo avanzado,
 ///   no el primer «suena» del motor, que enseguida se detiene a llenar el búfer o recarga por la pista de audio), o pidiéndolo otra
 ///   vez (se cortó, volver a la app). Ahí el play no haría nada, así que ni se asoma.
 /// - Carga **si dura** (`soon`): pediste que sonara y no avanza, o se atoró sonando. Un momento (`stallDelay`); más en los

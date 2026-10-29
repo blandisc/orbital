@@ -64,7 +64,7 @@ extension PlayerModel {
         userTouched()
         let target = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))
         if hasPlayed, abs(target - snapshot.position) >= PlaybackRules.rescrobbleJump { rescrobbleAfterSeek = true }
-        if !playbackSettled { startupPosition = target }   // un salto al arrancar: los 2 s se cuentan desde el punto nuevo
+        if !playbackSettled { startupPosition = target }   // un salto al arrancar: el medio segundo se cuenta desde el punto nuevo
         // Al soltar la barra con un arrastre en curso: la búsqueda final va en la misma fila (nunca dos a la vez, que
         // podían terminar en desorden y dejar la escena en un punto viejo) y sin la espera entre búsquedas.
         if let running = scrubTask {
