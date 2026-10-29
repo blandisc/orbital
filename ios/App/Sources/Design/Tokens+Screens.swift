@@ -194,7 +194,8 @@ extension DS {
     /// colecciones y el alto común de los tres logos.
     enum RatingBrand {
         static let trakt = Color(red: 0.93, green: 0.11, blue: 0.14)
-        static let markHeight: CGFloat = 18
+        /// Los logos, chicos y un poco apagados: son un dato bajo el nombre, no un titular.
+        static let markHeight: CGFloat = 14, markOpacity: Double = 0.85
     }
 
     /// «Lo que puedes decir»: el globo con la frase para empezar toma un poco del color de su lugar.

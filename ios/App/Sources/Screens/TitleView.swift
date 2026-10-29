@@ -258,7 +258,7 @@ struct TitleView: View {
         let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
         return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, version: version,
                               versionLabel: quality.isEmpty ? nil : Text("Se va a ver en: \(LanguageFlags.withoutFlags(quality.joined(separator: ", ")))"),
-                              play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil)
+                              play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil, tint: artAccent)
     }
 
     /// Guardar: un toque la guarda en la lista por omisión (tu watchlist con Trakt, si no Mi lista; `SaveDestination`), con un

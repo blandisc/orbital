@@ -28,6 +28,8 @@ struct QualityBadges: View {
 /// IMDb · TMDB · Trakt, cada una con el logotipo oficial de su servicio y su calificación real: IMDb de Cinemeta
 /// (`imdbRating`), TMDB de su `vote_average` ×10 y Trakt de su `rating` ×10. La que falta o vale 0 no se enseña. Los tres
 /// logos miden lo mismo de alto y van al mismo espacio; los números, de ancho fijo. El renglón guarda su alto (no brinca).
+/// Es un dato, no un titular: logos chicos y un poco apagados, números en gris (antes, a todo color y en negritas, pesaban
+/// más que el nombre de la serie).
 struct RatingsRow: View {
     let imdb: String?
     let tmdb: Double?
@@ -60,7 +62,7 @@ struct RatingsRow: View {
         HStack(spacing: DS.Space.s2) {
             RatingMark(service: service)
             // Entero y en un renglón (con letra grande «86 %» se partía y el % caía abajo).
-            value.font(DS.TextRecipe.secondary.font.weight(.semibold)).monospacedDigit().foregroundStyle(DS.text)
+            value.font(DS.TextRecipe.footnote.font.weight(.medium)).monospacedDigit().foregroundStyle(DS.textMuted)
                 .lineLimit(1).fixedSize()
         }
     }
@@ -75,7 +77,7 @@ struct RatingMark: View {
 
     var body: some View {
         Image("rating-" + service.rawValue).resizable().scaledToFit()
-            .frame(height: height)
+            .frame(height: height).opacity(DS.RatingBrand.markOpacity)
             .accessibilityLabel(Text(verbatim: service == .imdb ? "IMDb" : service == .tmdb ? "TMDB" : "Trakt"))
     }
 }
