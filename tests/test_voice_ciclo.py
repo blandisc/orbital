@@ -138,6 +138,7 @@ def test_otro_pone_la_siguiente_que_se_llama_igual(library, office, played):
     result = voice.handle_text("pon Dune")
     assert result.speech == "Poniendo Dune. Si no es esa, di otro."
     assert [c["meta_id"] for c in result.choices] == ["tt1160419", "tt0087182"]  # el iPhone las enseña para tocar
+    assert result.as_dict()["picked"] == "tt1160419"  # la que ya está puesta; la otra es para cambiar
     assert result.events[0]["detail"] == "Si no es esa, di «otro»"
     first = played[-1][0][1]
     assert voice.handle_text("otro").ok
@@ -151,6 +152,7 @@ def test_busca_con_varias_pregunta_cual(library, office, played):
     """«Busca Dune»: pediste buscar, así que se pregunta (en la tele y en el iPhone) en vez de poner una."""
     result = VoiceController(library).handle_text("busca Dune")
     assert played == [] and result.events[0]["type"] == "choose"
+    assert "picked" not in result.as_dict() and len(result.as_dict()["choices"]) == 2  # «busca»: nada puesto, a elegir
 
 
 def test_otro_sin_nada_antes_pregunta(library):

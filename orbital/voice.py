@@ -139,6 +139,7 @@ class VoiceResult:
     intent: str | None = None
     choices: list[dict] | None = None  # varias con el mismo nombre: el iPhone las enseña para tocar
     guide: bool = False  # «¿qué puedo decir?»: el iPhone abre su guía «Lo que puedes decir»
+    picked: str | None = None  # «pon Dune» con varias: la que ya se puso (las demás de `choices` son para cambiar)
 
     def as_dict(self) -> dict:
         out = {"ok": self.ok, "speech": self.speech}
@@ -150,6 +151,8 @@ class VoiceResult:
             out["choices"] = self.choices
         if self.guide:
             out["guide"] = True
+        if self.picked:
+            out["picked"] = self.picked
         return out
 
 
@@ -892,6 +895,7 @@ class VoiceController:
             result.speech += " Si no es esa, di otro."
             result.choices = [{k: o.get(k) for k in ("id", "title", "subtitle", "kind", "meta_id", "image", "hero")}
                               for o in matches[:6]]
+            result.picked = match["meta_id"]
             for event in result.events:
                 if event.get("type") == "toast":
                     event["detail"] = OTHER_SAY
