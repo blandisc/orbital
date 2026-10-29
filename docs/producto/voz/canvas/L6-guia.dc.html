@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Voz en el iPhone · 6 · Guía</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+
+/* Tokens reales de Orbital (design/tokens.json): paleta ink, roles del iPhone, radios y espacios. */
+:root{
+  --ink-1000:#070708; --bg:#0c0c0e; --ink-900:#131316; --surface:#18181c; --raised:#1e1e23; --ink-700:#2a2a30; --ink-500:#55555d;
+  --text:#f5f4f0; --muted:#a3a3ab; --faint:rgba(245,244,240,.5); --live:#5fd6c6; --warning:#f4c24d; --danger:#f0574d; --ok:#34c759;
+  --hairline:rgba(255,255,255,.09); --fill:rgba(255,255,255,.10); --fill-strong:rgba(255,255,255,.16);
+  --r-sm:7px; --r-md:10px; --r-lg:13px; --r-xl:18px; --r-xxl:22px;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+  --sf:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink-1000);color:var(--text);font:15px/1.4 var(--sf);-webkit-font-smoothing:antialiased}
+header.top{max-width:1180px;margin:0 auto;padding:48px 24px 8px}
+.eyebrow{color:var(--warning);font-size:13px;font-weight:600;letter-spacing:.02em}
+h1{font-size:34px;line-height:1.1;margin:6px 0 12px;font-weight:700;letter-spacing:-.01em}
+.lede{color:var(--muted);max-width:760px;font-size:16px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;color:var(--muted);font-size:13px}
+.legend b{color:var(--text)}
+nav.toc{max-width:1180px;margin:16px auto 0;padding:0 24px;display:flex;gap:8px;flex-wrap:wrap}
+nav.toc a{color:var(--text);text-decoration:none;font-size:13px;font-weight:600;background:var(--fill);padding:8px 14px;border-radius:999px}
+section.lamina{max-width:1180px;margin:0 auto;padding:56px 24px 8px;border-top:1px solid var(--hairline);margin-top:48px}
+.lamina h2{font-size:24px;font-weight:700;margin:4px 0 8px}
+.nota{background:var(--surface);border-radius:var(--r-xl);padding:16px 18px;max-width:820px;color:var(--muted);font-size:14px}
+.nota b{color:var(--text)}
+.nota ul{margin:6px 0 0 18px}
+.row{display:flex;gap:28px;flex-wrap:wrap;margin-top:24px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:10px;align-items:center}
+.tag{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px}
+.tag.hoy{background:var(--fill);color:var(--muted)}
+.tag.prop{background:rgba(95,214,198,.16);color:var(--live)}
+.cap{color:var(--muted);font-size:12.5px;max-width:300px;text-align:center}
+
+/* El teléfono: 300 × 650 (escala ~0,77 de un iPhone 17 Pro). */
+.phone{width:300px;height:650px;border-radius:46px;background:#000;padding:10px;box-shadow:0 0 0 2px #2b2b30,0 30px 60px rgba(0,0,0,.6);position:relative}
+.screen{width:100%;height:100%;border-radius:37px;overflow:hidden;position:relative;background:var(--bg)}
+.island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:86px;height:25px;background:#000;border-radius:20px;z-index:9}
+.status{height:44px;display:flex;justify-content:space-between;align-items:center;padding:6px 26px 0;font-size:13px;font-weight:600}
+/* Lo de atrás de la hoja: Inicio, atenuado. */
+.behind{position:absolute;inset:0;padding:44px 16px 0;opacity:.55}
+.behind .hero{height:210px;border-radius:var(--r-xl);background:linear-gradient(160deg,#4b2c1f,#1c1412 60%,#0c0c0e)}
+.behind .rowp{display:flex;gap:8px;margin-top:14px}
+.behind .rowp i{flex:1;height:120px;border-radius:var(--r-md);background:var(--surface)}
+.behind h4{font-size:17px;margin-top:14px}
+.dim{position:absolute;inset:0;background:rgba(7,7,8,.35)}
+/* La hoja de vidrio. */
+.sheet{position:absolute;left:0;right:0;bottom:0;border-radius:34px 34px 0 0;background:rgba(40,40,46,.72);backdrop-filter:blur(30px) saturate(1.4);-webkit-backdrop-filter:blur(30px) saturate(1.4);box-shadow:0 -1px 0 rgba(255,255,255,.12) inset;padding:8px 16px 18px}
+.grab{width:36px;height:5px;border-radius:3px;background:rgba(255,255,255,.35);margin:0 auto 14px}
+.home{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:110px;height:4px;border-radius:2px;background:rgba(255,255,255,.7);z-index:9}
+
+/* Piezas (las del catálogo: NowPlayingCard, RemoteKey, VoiceCommandBar, VoiceChoices, DSIconButton). */
+.np-eyebrow{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;font-weight:600}
+.np{display:flex;gap:12px;align-items:center;margin-top:8px}
+.poster{width:44px;aspect-ratio:2/3;border-radius:var(--r-sm);flex:none;display:flex;align-items:flex-end;padding:3px;font-size:7px;font-weight:700;line-height:1.05;color:rgba(255,255,255,.9);overflow:hidden}
+.poster.big{width:56px}
+.t{font-weight:600;font-size:14px}
+.sub{font-size:12px;color:var(--muted)}
+.capt{font-size:11px;color:var(--faint)}
+.bar{height:3px;border-radius:2px;background:rgba(255,255,255,.2);margin:12px 0 4px;position:relative}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--text);border-radius:2px}
+.times{display:flex;justify-content:space-between;font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
+.controls{display:flex;justify-content:space-around;align-items:center;margin-top:10px}
+.ib{width:44px;height:44px;border-radius:50%;background:var(--fill);display:flex;align-items:center;justify-content:center;font-size:16px}
+.ib.pri{background:var(--text);color:var(--ink-1000)}
+.hint{text-align:center;font-size:11px;color:var(--faint);margin-top:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.voicebar{display:flex;gap:8px}
+.vb{flex:1;display:flex;gap:12px;align-items:center;background:var(--fill);border-radius:var(--r-lg);padding:12px}
+.vb .m{width:44px;height:44px;border-radius:50%;background:var(--fill-strong);display:flex;align-items:center;justify-content:center;flex:none}
+.vb .m.on{background:var(--text);color:var(--ink-1000)}
+.qk{width:56px;background:var(--fill);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;font-weight:700}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.key{background:var(--fill);border-radius:var(--r-lg);height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:16px;position:relative}
+.key small{font-size:10px;color:var(--muted)}
+.key em{position:absolute;top:4px;right:7px;font-style:normal;font-size:9px;color:var(--faint)}
+.pad{height:150px;border-radius:var(--r-xxl);background:var(--fill);border:.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;flex-direction:column;margin-top:8px;color:var(--muted)}
+.vol{display:flex;align-items:center;gap:10px;background:var(--fill);border-radius:var(--r-lg);height:52px;padding:0 10px;margin-top:8px;font-size:15px}
+.vol .track{flex:1;height:6px;border-radius:3px;background:var(--fill);position:relative}
+.vol .track i{position:absolute;left:0;top:0;bottom:0;width:42%;border-radius:3px;background:var(--text)}
+.choice{display:flex;gap:12px;align-items:center;background:var(--fill);border-radius:var(--r-lg);padding:8px;margin-top:8px}
+.choice .grow{flex:1;min-width:0}
+.notice{border-radius:var(--r-lg);padding:12px;font-size:13px;margin-top:8px}
+
+/* Lo nuevo de la propuesta. */
+.micbig{width:76px;height:76px;border-radius:50%;background:var(--text);color:var(--ink-1000);display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:28px;box-shadow:0 0 0 8px rgba(245,244,240,.08)}
+.micbig.on{box-shadow:0 0 0 10px rgba(245,244,240,.14),0 0 0 22px rgba(245,244,240,.06)}
+.miclabel{text-align:center;font-weight:600;font-size:15px;margin-top:10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.chip{font-size:12.5px;font-weight:600;background:var(--fill);border-radius:999px;padding:8px 12px;white-space:nowrap}
+.minirow{display:flex;gap:10px;align-items:center;background:var(--fill);border-radius:var(--r-lg);padding:8px 10px}
+.wave{display:flex;gap:3px;align-items:center;justify-content:center;height:34px;margin-top:6px}
+.wave i{width:4px;border-radius:2px;background:var(--text);display:block}
+.said{font-size:20px;font-weight:600;text-align:center;line-height:1.25;margin-top:8px}
+.said .ghost{color:var(--faint)}
+.reply{background:var(--fill);border-radius:var(--r-lg);padding:12px}
+.understood{font-size:12px;color:var(--muted);margin-top:4px}
+.btns{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;text-align:center;font-weight:600;font-size:13px;background:var(--fill);border-radius:999px;padding:11px 8px}
+.btn.pri{background:var(--text);color:var(--ink-1000)}
+.path{display:flex;align-items:center;gap:6px;margin:12px 0 4px}
+.node{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;color:var(--muted);width:56px;text-align:center}
+.node .dot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--fill);font-size:15px}
+.link{flex:1;height:3px;border-radius:2px;position:relative}
+.link span{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;white-space:nowrap}
+.ok{background:var(--ok)} .bad{background:repeating-linear-gradient(90deg,var(--danger) 0 5px,transparent 5px 9px)}
+.grey{background:var(--ink-500)}
+
+/* Pantalla completa (guía). */
+.nav{display:flex;justify-content:space-between;align-items:center;padding:4px 16px 8px;font-size:15px}
+.nav b{font-size:15px}
+.nav .done{font-weight:600}
+.search{margin:0 16px 12px;background:var(--fill);border-radius:var(--r-md);padding:7px 10px;font-size:13px;color:var(--faint)}
+.scroll{padding:0 16px;overflow:hidden;height:540px}
+.sh{font-size:17px;font-weight:700;margin:14px 0 8px}
+.sh small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.card{background:var(--surface);border-radius:var(--r-xl);padding:12px}
+.phr{font-size:12.5px;font-weight:600;background:var(--fill);border-radius:13px 13px 13px 4px;padding:6px 10px;display:inline-block}
+.pnote{font-size:11px;color:var(--muted);margin:2px 0 8px 4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.grid2 .phr{display:block}
+.fold{display:flex;justify-content:space-between;align-items:center;padding:11px 2px;border-bottom:.5px solid var(--hairline);font-size:14px}
+.fold:last-child{border:0}
+.fold span{color:var(--muted);font-size:12px}
+.where{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border-radius:var(--r-xl);padding:12px;margin-bottom:8px}
+.where .ic{font-size:18px;width:28px;text-align:center}
+.pill{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:3px 9px;margin:4px 0}
+.chiprow{display:flex;gap:6px;overflow:hidden;margin:12px 0}
+.chiprow .chip{font-size:11.5px;padding:6px 10px}
+
+/* Siri. */
+.siri{width:520px;max-width:100%;background:var(--surface);border-radius:var(--r-xl);padding:18px}
+.siri h3{font-size:15px;margin-bottom:8px}
+.cnt{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.cnt small{font-size:13px;color:var(--muted);font-weight:400;display:block;margin-top:4px}
+.cloud{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}
+.cloud span{font-size:11px;background:var(--fill);border-radius:999px;padding:3px 8px;color:var(--muted)}
+.cloud span.keep{background:rgba(95,214,198,.16);color:var(--live);font-weight:600}
+.siriui{margin-top:14px;border-radius:var(--r-xl);padding:14px;background:linear-gradient(135deg,rgba(255,94,58,.18),rgba(90,120,255,.18) 50%,rgba(95,214,198,.18));font-size:13px}
+
+/* iPad. */
+.ipad{width:760px;max-width:100%;aspect-ratio:4/3;border-radius:28px;background:#000;padding:12px;box-shadow:0 0 0 2px #2b2b30,0 30px 60px rgba(0,0,0,.6)}
+.ipad .screen{border-radius:18px;display:flex}
+.ipad .main{flex:1;padding:24px;opacity:.7}
+.ipad .main .hero{height:46%;border-radius:var(--r-xl);background:linear-gradient(160deg,#1f3a4b,#12161c 60%,#0c0c0e)}
+.ipad .main .rowp{display:flex;gap:10px;margin-top:16px}
+.ipad .main .rowp i{flex:1;aspect-ratio:2/3;border-radius:var(--r-md);background:var(--surface)}
+.panel{width:300px;background:var(--ink-900);border-left:.5px solid var(--hairline);padding:16px;overflow:hidden}
+.panel .ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.panel .ph b{font-size:18px}
+.decision{background:rgba(244,194,77,.10);border:1px solid rgba(244,194,77,.35);border-radius:var(--r-xl);padding:14px 16px;max-width:820px;margin-top:16px;font-size:14px}
+.decision b{color:var(--warning)}
+footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);font-size:13px}
+
+
+body{margin:0;background:#070708}
+header.top{max-width:none;margin:0;padding:56px 48px 40px}
+section.lamina{max-width:none;margin:0;padding:48px 48px 56px;border-top:0}
+footer{max-width:none;margin:32px 0 0;padding:0}
+
+</style>
+</helmet>
+<div style="width: 1600px; min-height: 1250px; box-sizing: border-box; background: #070708; color: #f5f4f0; font: 15px/1.4 -apple-system, BlinkMacSystemFont, &quot;SF Pro Text&quot;, system-ui, sans-serif">
+<section class="lamina" id="l6">
+  <div class="eyebrow">LÁMINA 6</div>
+  <h2>«Lo que puedes decir»: lo esencial arriba</h2>
+  <div class="nota"><b>Qué cambia:</b> hoy la guía abre con tres tarjetas de «Dónde hablarle» y luego <b>118 frases</b> desplegadas en diez temas, una tras otra. La propuesta abre con <b>Lo esencial</b> (las diez de <code>core</code>, las mismas que enseñan la tele y Alexa), luego «Dónde hablarle» compacto y los temas <b>plegados</b> con su número de frases. Buscar sigue buscando en todo.<br><b>Por qué:</b> nadie lee 118 frases; diez se recuerdan.</div>
+  <div class="row">
+    <div class="col">
+      <span class="tag hoy">Hoy</span>
+      <div class="phone"><div class="screen"><div class="island"></div>
+        <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="nav"><span></span><b>Lo que puedes decir</b><span class="done">Listo</span></div>
+        <div class="search">🔍 Buscar una frase</div>
+        <div class="scroll">
+          <div class="sh">Dónde hablarle<small>Las frases de abajo funcionan igual en los tres.</small></div>
+          <div class="where"><div class="ic" style="color:#f4c24d">🎙</div><div><div class="t">En el control</div><span class="pill" style="background:rgba(244,194,77,.2)">«pon The Office»</span><div class="sub">Estira el control hacia arriba y toca «Dile a Orbital».</div></div></div>
+          <div class="where"><div class="ic" style="color:#b48cff">〰</div><div><div class="t">Con Siri</div><span class="pill" style="background:rgba(180,140,255,.2)">«Oye Siri, habla con Orbital»</span><div class="sub">Y cuando pregunte, la orden.</div></div></div>
+          <div class="where"><div class="ic" style="color:#5fd6c6">◉</div><div><div class="t">Con Alexa</div><span class="pill" style="background:rgba(95,214,198,.2)">«Alexa, pídele a mi consola que…»</span></div></div>
+          <div class="chiprow"><span class="chip">Cómo pedirlo</span><span class="chip">Solo en el iPhone</span><span class="chip">Prender la consola</span></div>
+          <div class="sh">Cómo pedirlo</div>
+          <div class="card"><span class="phr">«Alexa, pídele a mi consola que ponga The Office»</span><div class="pnote">…</div></div>
+        </div>
+        <div class="home"></div></div></div>
+      <p class="cap">Debajo siguen «Solo en el iPhone» y los diez temas abiertos: 118 frases en fila.</p>
+    </div>
+    <div class="col">
+      <span class="tag prop">Propuesta</span>
+      <div class="phone"><div class="screen"><div class="island"></div>
+        <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="nav"><span></span><b>Lo que puedes decir</b><span class="done">Listo</span></div>
+        <div class="search">🔍 Buscar entre 118 frases</div>
+        <div class="scroll">
+          <div class="sh" style="margin-top:4px">Lo esencial<small>Con estas diez haces casi todo. Igual en el iPhone, Siri y Alexa.</small></div>
+          <div class="card">
+            <div class="grid2">
+              <span class="phr">«prende la tele»</span><span class="phr">«pon The Office»</span>
+              <span class="phr">«sigue viendo»</span><span class="phr">«pausa»</span>
+              <span class="phr">«siguiente episodio»</span><span class="phr">«sube el volumen»</span>
+              <span class="phr">«pon el canal ADN 40»</span><span class="phr">«pon subtítulos»</span>
+              <span class="phr">«qué sale hoy»</span><span class="phr">«cierra el video»</span>
+            </div>
+            <div class="pnote" style="margin:8px 0 0">Toca una para mandarla a la TV · mantén para ver qué hace</div>
+          </div>
+          <div class="sh">Dónde hablarle</div>
+          <div class="card" style="padding:4px 12px">
+            <div class="fold"><b style="font-weight:600">🎙 Aquí, en el control</b><span>Toca el micrófono</span></div>
+            <div class="fold">〰 Siri<span>«Oye Siri, pausa en Orbital»</span></div>
+            <div class="fold">◉ Alexa<span>«pídele a mi consola que…»</span></div>
+          </div>
+          <div class="sh">Por tema</div>
+          <div class="card" style="padding:4px 12px">
+            <div class="fold">Películas y series<span>16 ›</span></div>
+            <div class="fold">Mientras ves algo<span>22 ›</span></div>
+            <div class="fold">Episodios<span>12 ›</span></div>
+            <div class="fold">Volumen y pantalla<span>12 ›</span></div>
+          </div>
+        </div>
+        <div class="home"></div></div></div>
+      <p class="cap">Sigue: Subtítulos e idioma 10 · Juegos 9 · TV en vivo 9 · Prender 7 · Para ti 5 · Moverte 5 · Solo en el iPhone · Si no funciona.</p>
+    </div>
+  </div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":1250}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
