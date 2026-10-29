@@ -143,14 +143,14 @@ struct ListsView: View {
                 // Las colecciones (con su carácter: en carrusel, con peso y reflejo), justo después de lo general.
                 // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas (el reflejo ya separa).
                 VStack(alignment: .leading, spacing: DS.Collections.groupGap) {
-                    if !model.platformHubs.isEmpty { platforms.reflectionTail().modifier(SectionSpy(section: .platforms, active: $activeSection)) }
+                    if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
                     if collections.model.tmdbReady {
-                        studiosSection.reflectionTail().modifier(SectionSpy(section: .studios, active: $activeSection))
-                        seasonsSection.reflectionTail().modifier(SectionSpy(section: .seasons, active: $activeSection))
-                        genresSection.reflectionTail().modifier(SectionSpy(section: .genres, active: $activeSection))
+                        studiosSection.modifier(SectionSpy(section: .studios, active: $activeSection))
+                        seasonsSection.modifier(SectionSpy(section: .seasons, active: $activeSection))
+                        genresSection.modifier(SectionSpy(section: .genres, active: $activeSection))
                     }
                     awards.modifier(SectionSpy(section: .awards, active: $activeSection))
-                    if collections.model.traktLinked { yearsSection.reflectionTail().modifier(SectionSpy(section: .years, active: $activeSection)) }
+                    if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
                 }
                 if !model.airings.isEmpty {   // vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
                     Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos"), source: .trakt) {
@@ -213,11 +213,11 @@ struct ListsView: View {
     private var platforms: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: "Tus plataformas", meta: Text("Sus rankings de hoy")).padding(.horizontal, DS.Space.gutter)
-            CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width) { hub in
+            CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { hub in
                 NavigationLink(value: PlatformRoute(brand: hub.brand)) {
                     PlatformFanCard(name: hub.name, logo: hub.logo, posters: model.cover(of: hub).map { Optional($0.poster) },
                                     tint: DS.PlatformTint.color(hub.brand))
-                        .reflected(weight: DS.PlatformTint.color(hub.brand))
+                        .rowReflection(weight: DS.PlatformTint.color(hub.brand))
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("platform-\(hub.brand)")
@@ -334,7 +334,7 @@ struct ListsView: View {
     private var studiosSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: "Estudios", meta: Text("Lo más visto de cada uno")).padding(.horizontal, DS.Space.gutter)
-            CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width) { studio in
+            CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { studio in
                 NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
                     CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
                                    posters: (collections.model.studioItems[studio.id] ?? []).prefix(3).map { Optional($0.poster) }, tint: DS.Collections.studio, captioned: false) {
@@ -353,7 +353,7 @@ struct ListsView: View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: "Temporadas", meta: Text("La de ahora, primero")).padding(.horizontal, DS.Space.gutter)
-            CenteredCarousel(items: collections.model.seasons, id: \.slug, cardWidth: DS.PlatformFan.width) { season in
+            CenteredCarousel(items: collections.model.seasons, id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { season in
                 let name = Strings.tr(season.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .season, id: season.slug)) {
                     CollectionCard(title: Text(verbatim: name), detail: Text(verbatim: Strings.tr(season.blurb, language: language)), name: name,
@@ -374,7 +374,7 @@ struct ListsView: View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: "Lo mejor del género", meta: Text("Las mejor calificadas del año")).padding(.horizontal, DS.Space.gutter)
-            CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width) { genre in
+            CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { genre in
                 let name = Strings.tr(genre.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .genre, id: genre.slug)) {
                     CollectionCard(title: Text(verbatim: name), detail: Text("Las mejor calificadas del año"), name: name,
@@ -394,9 +394,9 @@ struct ListsView: View {
     private var yearsSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: "Por año", meta: Text("Lo más popular de cada año")).padding(.horizontal, DS.Space.gutter)
-            CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth) { year in
+            CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth, reflected: true) { year in
                 NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {
-                    YearCard(year: year, posters: collections.model.yearPosters[year] ?? []).reflected()
+                    YearCard(year: year, posters: collections.model.yearPosters[year] ?? []).rowReflection()
                 }
                 .buttonStyle(.plain)
                 .task { await collections.model.loadYearPosters(year) }
@@ -421,12 +421,12 @@ struct ListsView: View {
         let items = model.items(for: plan)
         // El porqué arriba del título (como una revista) y los pósters con su reflejo: los renglones con más carácter.
         return Shelf(title: shelfTitle(plan),
-                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan), eyebrow: shelfMeta(plan)) {
+                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan), eyebrow: shelfMeta(plan),
+                     reflected: plan.style != .top10) {   // el Top 10 no lleva reflejo: abajo van su ▲ ▼ y la cifra
             ForEach(items) { s in
-                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], reflected: true) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
+                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
             }
         }
-        .reflectionTail()
         // Los Top 10 (y los rankings de plataformas), con sus pósters pedidos en cuanto llega la lista.
         .task(id: items.first?.imdb) { if plan.style == .top10 || plan.style == .platform { ImagePipeline.shared.prefetchPosters(items.prefix(DS.Size.searchPrefetch).map(\.poster)) } }
     }

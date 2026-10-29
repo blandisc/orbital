@@ -17,9 +17,16 @@ struct Shelf<Content: View>: View {
     var source: ListSource?
     /// El porqué arriba del título, en ámbar (va en lugar de `meta`, abajo).
     var eyebrow: Text?
+    /// Con el reflejo de cada póster debajo: el estante se lo pide a sus pósters y ajusta el aire con lo que sigue
+    /// (`reflectionTail`), igual que `Rail`. La pantalla no ajusta nada a mano.
+    var reflected = false
     @ViewBuilder var content: () -> Content
 
     var body: some View {
+        if reflected { shelf.environment(\.railReflected, true).reflectionTail() } else { shelf }
+    }
+
+    private var shelf: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             header.padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {

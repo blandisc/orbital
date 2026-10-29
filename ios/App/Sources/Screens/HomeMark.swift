@@ -80,9 +80,16 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
     let items: [Item]
     let id: KeyPath<Item, ID>
     let cardWidth: CGFloat
+    /// Con el reflejo de cada tarjeta debajo: el carrusel se lo pide a sus tarjetas (`rowReflection`) y ajusta el aire con lo que
+    /// sigue (`reflectionTail`). La pantalla no ajusta nada a mano.
+    var reflected = false
     @ViewBuilder var card: (Item) -> Card
 
     var body: some View {
+        if reflected { carousel.environment(\.railReflected, true).reflectionTail() } else { carousel }
+    }
+
+    private var carousel: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                 ForEach(items, id: id) { item in
@@ -99,6 +106,15 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
         .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         .scrollTargetBehavior(.viewAligned)
         .scrollClipDisabled()
+    }
+}
+
+/// `rowReflection`: el reflejo si la fila lo pide.
+private struct RowReflection: ViewModifier {
+    var weight: Color?
+    @Environment(\.railReflected) private var on
+    func body(content: Content) -> some View {
+        if on { content.modifier(Reflection(weight: weight)) } else { content }
     }
 }
 
@@ -147,8 +163,12 @@ extension View {
         .padding(.bottom, DS.Collections.reflection + DS.Collections.reflectionGap)
     }
 
-    /// Una sección cuya última fila lleva reflejo (sin texto debajo): la siguiente se monta sobre la parte desvanecida.
+    /// Una fila que termina en reflejo (sin texto debajo): lo que sigue se monta sobre la parte desvanecida. Lo aplican solas
+    /// las filas con `reflected: true` (`Rail`, `Shelf`, `CenteredCarousel`); una pantalla no lo pone a mano.
     func reflectionTail() -> some View { padding(.bottom, -DS.Collections.reflectionTail) }
+
+    /// El reflejo de una tarjeta, solo si su fila lo pide (`reflected: true`): la fila decide, no cada tarjeta.
+    func rowReflection(weight: Color? = nil) -> some View { modifier(RowReflection(weight: weight)) }
 
     /// Con su reflejo debajo y, si se da, el peso de su color (Colecciones).
     func reflected(weight: Color? = nil) -> some View { modifier(Reflection(weight: weight)) }

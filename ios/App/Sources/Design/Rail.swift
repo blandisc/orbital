@@ -64,13 +64,12 @@ struct TitleLink: View {
     var detail: Text?
     /// Cuántos renglones puede ocupar `detail` (2 con letra de accesibilidad en Buscar).
     var detailLines = 1
-    /// Con el reflejo del póster debajo. En una fila no se pide aquí: lo pone `Rail(reflected:)` para todos sus pósters.
-    var reflected = false
     @Environment(\.posterCaptions) private var captions
+    /// El reflejo del póster lo decide su fila (`Rail`, `Shelf` con `reflected: true`), nunca cada póster.
     @Environment(\.railReflected) private var railReflected
 
     var body: some View {
-        link.modifier(OptionalPosterReflection(on: (reflected || railReflected) && !captions, url: route.poster, title: route.title, width: width))
+        link.modifier(OptionalPosterReflection(on: railReflected && !captions, url: route.poster, title: route.title, width: width))
     }
 
     private var link: some View {

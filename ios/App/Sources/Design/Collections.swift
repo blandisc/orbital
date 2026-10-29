@@ -16,7 +16,10 @@ struct CollectionCard<Emblem: View>: View {
     var body: some View { bodyContent.pointerHover(.lift) }
     @ViewBuilder private var bodyContent: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            FanCard(name: name, posters: posters, tint: tint, emblem: emblem).reflected(weight: tint)
+            // Con nombre debajo (Premios) el reflejo es parte de la tarjeta; sin él (Estudios, Temporadas, Géneros) termina la fila
+            // y lo pide la fila (`CenteredCarousel(reflected:)`), que también ajusta el aire con lo que sigue.
+            if captioned { FanCard(name: name, posters: posters, tint: tint, emblem: emblem).reflected(weight: tint) }
+            else { FanCard(name: name, posters: posters, tint: tint, emblem: emblem).rowReflection(weight: tint) }
             if captioned {
                 VStack(alignment: .leading, spacing: 0) {
                     title.recipe(.cardTitle).lineLimit(1)

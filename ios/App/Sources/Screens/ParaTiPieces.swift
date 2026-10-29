@@ -49,8 +49,6 @@ struct ShelfPoster: View {
     var badge: PosterBadge? = nil
     /// El ancho del póster (más chico dentro de «Porque viste»).
     var width: CGFloat = DS.Poster.railWidth
-    /// El reflejo del póster debajo (no en el Top 10: abajo va su ▲ ▼ y la cifra).
-    var reflected = false
     let onDismiss: (Suggestion) -> Void
     @State private var taps = 0
 
@@ -60,7 +58,7 @@ struct ShelfPoster: View {
                 NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
             } else {
                 TitleLink(route: suggestion.route, badge: badge.map(badgeText), bookmarked: inList, rank: style == .platform ? suggestion.rank : nil, width: width,
-                          detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind), reflected: reflected)
+                          detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
             }
         }
         .simultaneousGesture(TapGesture().onEnded { taps += 1 })
