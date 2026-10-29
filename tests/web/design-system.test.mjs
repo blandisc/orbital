@@ -166,3 +166,12 @@ test("sin tokens muertos: cada token definido se usa en algún lado", () => {
     && !everything.includes(`"${name}"`) && !everything.includes(`'${name}'`)).sort();
   assert.deepEqual(unused, [], `Tokens que nadie usa (bórralos o úsalos): ${unused.join(", ")}`);
 });
+
+test("el mando solo se pide en core/pads.js (pedirlo una vez deja a Edge leyéndolo sin parar)", () => {
+  // docs/sistema-de-diseno.md § 5: desde la ventana no se puede soltar; desde el marco de pads.js, sí (Orbital quieta).
+  const offenders = JS_FILES.filter((file) => !file.endsWith(join("core", "pads.js")))
+    .flatMap((file) => read(file).split("\n").map((line, i) => [file, i, line]))
+    .filter(([, , line]) => /navigator\.getGamepads|["']gamepad(dis)?connected["']/.test(line.replace(/\/\/.*$/, "")))
+    .map(([file, i, line]) => `${file.slice(WEB.length + 1)}:${i + 1} ${line.trim().slice(0, 100)}`);
+  assert.deepEqual(offenders, [], `Usa core/pads.js (pads(), onConnected()):\n${offenders.join("\n")}`);
+});
