@@ -453,6 +453,12 @@ test("Voz: lo esencial primero, dónde hablarle con cuándo llegó lo último de
   const { whenSaid } = await import("../../orbital/web/js/core/menus.js");
   assert.equal(whenSaid("2026-10-29 15:43:56", new Date(2026, 9, 29, 20, 0)), "hoy 3:43 p. m.");
   assert.equal(whenSaid("rara"), "rara");
+  const { oneLine } = await import("../../orbital/web/js/core/menus.js");
+  assert.equal(oneLine("Poniendo The Office."), "Poniendo The Office.");
+  const long = oneLine("No encontré dónde ver Dune Parte Dos en latino con subtítulos en inglés desde el principio.");
+  assert.ok(long.endsWith("…") && long.length <= 57, long);
+  const mine = voiceLogMenu({ sources: {}, recent: [{ at: "2026-10-29 15:43", source: "local", text: "pon la tele", ok: true, speech: "Abriendo la TV en vivo." }] }, { now });
+  assert.equal(mine.options.find((o) => o.label === "«pon la tele»").value, "Esta consola");
   assert.equal(voiceLogMenu(null).options.find((o) => o.label === "Nada todavía").icon, "info");
 
   // Dos días sin una sola orden: la primera fila dice que la falla está antes de la consola.

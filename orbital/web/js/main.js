@@ -8,7 +8,7 @@ import { closedSummary, crashMessage } from "./core/format.js";
 import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
-import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
+import { footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
@@ -1702,6 +1702,27 @@ function openMenu(menu, options = {}) {
 
 /** «Zelda oculto · Y Deshacer»: unos segundos para arrepentirse (Y o tocar el aviso). */
 const UNDO_MS = 8000;
+
+/** Un aviso de voz con acción («No era eso», «Lo que puedes decir»): el botón que la hace mientras se ve, y con el mouse o
+ *  el dedo se toca en el aviso. */
+function offerVoiceAction(voiceAction) {
+  state.voiceAction = { ...voiceAction, until: Date.now() + UNDO_MS };
+  return { duration: UNDO_MS, action: { label: voiceAction.label, glyph: state.modality === "touch" ? "" : glyphs()[voiceAction.button],
+    onPress: () => runVoiceAction() } };
+}
+
+async function runVoiceAction() {
+  const voiceAction = state.voiceAction;
+  state.voiceAction = null;
+  ui.toast.dismiss();
+  if (!voiceAction) return;
+  if (voiceAction.kind === "guide") return runCommand({ type: "alexa-menu" });
+  // «No era eso»: cierra lo que abrió (como B en la pantalla de carga: no cuenta como jugado) y busca lo que oyó.
+  sound.play("back");
+  ui.launch.hide();
+  await api.stop({ cancelled: true }).catch(() => {});
+  return openSearch(voiceAction.query);
+}
 function offerUndoHide(command) {
   const undo = { id: command.id, until: Date.now() + UNDO_MS, where: focusKey() };
   state.undoHide = undo;
@@ -1751,6 +1772,10 @@ function handleAction(action, { repeat = false } = {}) {
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
   if (action === "options" && canUndoHide() && !ui.sheet.isOpen && !topOverlay()) {
     return undoHide();
+  }
+  // Un aviso de voz con acción a la vista: B «No era eso» o ☰ «Lo que puedes decir» (lo dice el aviso con su botón).
+  if (state.voiceAction && Date.now() < state.voiceAction.until && action === state.voiceAction.button && !ui.sheet.isOpen) {
+    return runVoiceAction();
   }
   // 1: ☰ en la ficha o en Fuentes abre el menú (antes pasaba a la búsqueda de abajo, que dictaba).
   if (action === "menu" && !ui.sheet.isOpen && (ui.title.isOpen || ui.sources.isOpen) && !ui.launch.visible) {
@@ -1948,8 +1973,9 @@ const EVENTS = {
     return pollStatus();
   },
   toast: (event) => {
+    const voiceAction = voiceToastAction(event.action);
     ui.toast.show(event.message, { tone: event.tone || "", error: event.ok === false, voice: !!event.voice, countdown: event.countdown || 0,
-      detail: event.detail || "" });
+      detail: event.detail || "", ...(voiceAction ? offerVoiceAction(voiceAction) : {}) });
     if (event.voice) ui.status.pulseAlexa();
     pollStatus();
   },

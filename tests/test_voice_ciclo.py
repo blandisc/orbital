@@ -138,7 +138,7 @@ def test_otro_pone_la_siguiente_que_se_llama_igual(library, office, played):
     result = voice.handle_text("pon Dune")
     assert result.speech == "Poniendo Dune. Si no es esa, di otro."
     assert [c["meta_id"] for c in result.choices] == ["tt1160419", "tt0087182"]  # el iPhone las enseña para tocar
-    assert result.events[0]["detail"] == "Di «otro» si no es esa"
+    assert result.events[0]["detail"] == "Si no es esa, di «otro»"
     first = played[-1][0][1]
     assert voice.handle_text("otro").ok
     second = played[-1][0][1]
@@ -206,7 +206,8 @@ def test_abrir_algo_parecido_dice_que_oyo(library):
     """«abre jades» abre Hades (se parece): el aviso dice qué oyó y cómo deshacerlo, no solo «Abriendo Hades»."""
     result = VoiceController(library).handle_text("abre jades")
     assert result.speech == "Abriendo Hades."
-    assert result.events[0]["detail"] == "Entendí «jades». Si no era, di «cierra el juego»"
+    assert result.events[0]["detail"] == "Entendí «jades»"
+    assert result.events[0]["action"] == {"type": "voice-undo", "query": "jades"}  # B «No era eso»
     exact = VoiceController(library).handle_text("abre hades")
     assert exact.events[0].get("detail") is None  # igual a lo dicho: el aviso de siempre
 
@@ -215,3 +216,24 @@ def test_lo_que_no_se_entiende_se_ve_en_la_tele(library):
     result = VoiceController(library).handle_text("bla bla bla")
     assert not result.ok and result.events[0]["type"] == "toast" and result.events[0]["ok"] is False
     assert result.events[0]["message"] == "No entendí «bla bla bla»"
+    assert result.events[0]["action"] == {"type": "voice-guide"}  # ☰ «Lo que puedes decir»
+    fallback = VoiceController(library).handle_intent("FallbackIntent")
+    assert fallback.events[0]["action"] == {"type": "voice-guide"}
+
+
+def test_el_segundo_renglon_sale_de_lo_esencial_y_solo_con_frases_en_pantalla(library, office, played):
+    """Decisión de Fernando: «Di …» solo con «Frases en pantalla» en Sí, y con frases de «Lo esencial» según el momento."""
+    import json
+    from pathlib import Path
+
+    from orbital.voice import NEXT_SAY
+    core = {c["say"] for c in json.loads((Path(__file__).parent.parent / "alexa" / "commands.json").read_text(encoding="utf-8"))["core"]}
+    assert {said for pair in NEXT_SAY.values() for said in pair} <= core
+    voice = VoiceController(library)
+    assert voice.handle_text("pon The Office").events[0]["detail"] == "Di «pausa» o «siguiente episodio»"
+    library.state.set_setting("voice_tips", False)
+    off = voice.handle_text("pon The Office").events[0]
+    assert "detail" not in off and off["message"] == "Poniendo The Office · T1 E1"
+    kiosk = SimpleNamespace(open=lambda: None)
+    library.state.set_setting("voice_tips", True)
+    assert VoiceController(library, kiosk=kiosk).handle_text("prende la tele").events[0]["detail"] == "Di «pon The Office» o «sigue viendo»"

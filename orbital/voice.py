@@ -77,9 +77,11 @@ MAX_SEEK = 6 * 3600  # s: nadie adelanta más de una película entera de golpe
 WAKES = {"LaunchGameIntent", "SearchMediaIntent", "WatchEpisodeIntent", "ContinueWatchingIntent", "LiveTvIntent",
          "RecommendIntent", "OpenStremioIntent", "OpenSteamIntent", "OtherIntent"}
 OTHER_WINDOW = 30 * 60  # s: «otro» cambia lo último que pediste si fue hace menos de esto
-# Lo que se puede decir con algo ya puesto: el segundo renglón del aviso en la tele.
-NEXT_SAY = {"series": "Di «pausa» o «siguiente episodio»", "movie": "Di «pausa» o «adelanta 30 segundos»",
-            "other": "Di «otro» si no es esa"}
+# Lo que se puede decir en cada momento: el segundo renglón del aviso en la tele. Solo frases de «Lo esencial»
+# (alexa/commands.json · core; una prueba lo comprueba) y solo con «Frases en pantalla» (voice_tips) en Sí.
+NEXT_SAY = {"series": ("pausa", "siguiente episodio"), "movie": ("pausa", "pon subtítulos"),
+            "home": ("pon The Office", "sigue viendo")}
+OTHER_SAY = "Si no es esa, di «otro»"  # una corrección, no una pista: sale siempre
 
 
 def spoken_number(value) -> float | None:
@@ -585,7 +587,7 @@ class VoiceController:
             said = f" «{heard}»" if heard and len(heard) <= 60 else ""
             speech = f"No entendí{said}. Prueba con: pon Dune, pausa o sube el volumen."
             toast = {"type": "toast", "message": f"No entendí{said}", "detail": "Prueba: «pon Dune», «pausa», «sube el volumen»",
-                     "ok": False, "voice": True}
+                     "ok": False, "tone": "warn", "voice": True, "action": {"type": "voice-guide"}}
             return VoiceResult(speech, ok=False, heard=heard, events=[toast])
         intent, slots = parsed
         if intent == "SearchMediaIntent" and re.match(r"(?:que\s+)?(?:busca|busque|buscar)\b", heard):
@@ -624,16 +626,29 @@ class VoiceController:
         if self.tv is not None and getattr(self.tv, "enabled", False):
             self.tv.turn_on_soon()
 
-    @staticmethod
-    def _playing_event(message: str, hint: str) -> dict:
-        """El aviso de la tele cuando algo se puso: qué, y en el segundo renglón lo que puedes decir ahora."""
-        return {"type": "toast", "message": message, "detail": hint, "ok": True, "voice": True}
+    def _tips_on(self) -> bool:
+        state = getattr(self.catalog, "state", None)
+        try:
+            return state.settings().get("voice_tips", True) is not False if state is not None else True
+        except Exception:  # noqa: BLE001 - sin ajustes, lo de siempre
+            return True
+
+    def _playing_event(self, message: str, moment: str) -> dict:
+        """El aviso de la tele cuando algo se puso: qué, y en el segundo renglón lo que puedes decir en este momento
+        (solo con «Frases en pantalla» en Sí)."""
+        event = {"type": "toast", "message": message, "ok": True, "voice": True}
+        if self._tips_on() and moment in NEXT_SAY:
+            first, second = NEXT_SAY[moment]
+            event["detail"] = f"Di «{first}» o «{second}»"
+        return event
 
     # --- intents -------------------------------------------------------------
     def _fallback_intent(self, slots: dict) -> VoiceResult:
         """Alexa no acomodó lo dicho en ningún intent (y no manda el texto): la skill lo avisa para que quede en voz.log y
         en la tele (antes contestaba sola y no quedaba rastro de qué falló)."""
-        return VoiceResult("No entendí eso. Prueba con: pausa, pon Dune o sube el volumen.", ok=False)
+        return VoiceResult("No entendí eso. Prueba con: pausa, pon Dune o sube el volumen.", ok=False,
+                           events=[{"type": "toast", "message": "Alexa no entendió", "detail": "Prueba: «pon Dune», «pausa»",
+                                    "ok": False, "tone": "warn", "voice": True, "action": {"type": "voice-guide"}}])
 
     def _launch_game_intent(self, slots: dict) -> VoiceResult:
         name = slots.get("game", "")
@@ -691,10 +706,9 @@ class VoiceController:
         self.catalog.sessions.launch(item.id, runner_id)
         speech = f"Abriendo {item.title} con {runner}." if runner else f"Abriendo {item.title}."
         said, title = normalize(name), normalize(item.title)
-        if said and said not in title:  # se parecía, no era igual («jades» → Hades): que se vea qué oyó
-            hint = f"Entendí «{name}». Si no era, di «cierra el juego»"
-            return VoiceResult(speech, events=[{"type": "toast", "message": f"Abriendo {item.title}", "detail": hint,
-                                                "ok": True, "voice": True}])
+        if said and said not in title:  # se parecía, no era igual («jades» → Hades): que se vea qué oyó, y deshacerlo
+            return VoiceResult(speech, events=[{"type": "toast", "message": f"Abriendo {item.title}", "detail": f"Entendí «{name}»",
+                                                "ok": True, "voice": True, "action": {"type": "voice-undo", "query": name}}])
         return VoiceResult(speech)
 
     def _closest_title(self, said: str) -> str | None:
@@ -855,7 +869,7 @@ class VoiceController:
                               for o in matches[:6]]
             for event in result.events:
                 if event.get("type") == "toast":
-                    event["detail"] = NEXT_SAY["other"]
+                    event["detail"] = OTHER_SAY
         return result
 
     def _play_match(self, match: dict, options: dict) -> VoiceResult:
@@ -869,7 +883,7 @@ class VoiceController:
                 return VoiceResult(problem, ok=False)
             start = " desde el principio" if options.get("from_start") else ""
             speech = f"Poniendo {match['title']}{how}{start}.{memo}"
-            return VoiceResult(speech, events=[self._playing_event(f"Poniendo {match['title']}", NEXT_SAY["movie"])])
+            return VoiceResult(speech, events=[self._playing_event(f"Poniendo {match['title']}", "movie")])
         return self._play_series(match["meta_id"], match["title"], kwargs, how, memo)
 
     def _play_series(self, meta_id: str, title: str, kwargs: dict, how: str, memo: str) -> VoiceResult:
@@ -894,7 +908,7 @@ class VoiceController:
         if problem:
             return VoiceResult(problem, ok=False)
         return VoiceResult(f"Poniendo {title}, temporada {season}, episodio {episode}{how}.{memo}",
-                           events=[self._playing_event(f"Poniendo {title} · T{season} E{episode}", NEXT_SAY["series"])])
+                           events=[self._playing_event(f"Poniendo {title} · T{season} E{episode}", "series")])
 
     def _resolve_title(self, query: str, kind: str | None = None) -> list[dict]:
         """Lo dicho → la película o serie que es. Cinemeta guarda el título en inglés: «El viaje de Chihiro» llega como
@@ -1014,8 +1028,8 @@ class VoiceController:
             return VoiceResult("No puedo abrir la pantalla de la consola desde aquí.", ok=False)
         self.kiosk.open()
         if self.tv is not None and self.tv.enabled:
-            return VoiceResult("Prendiendo la tele en Orbital.")
-        return VoiceResult("Abriendo la consola.")
+            return VoiceResult("Prendiendo la tele en Orbital.", events=[self._playing_event("Prendiendo la tele", "home")])
+        return VoiceResult("Abriendo la consola.", events=[self._playing_event("Abriendo la consola", "home")])
 
     def _navigate_intent(self, slots: dict) -> VoiceResult:
         said = normalize(slots.get("direction", ""))

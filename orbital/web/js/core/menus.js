@@ -175,7 +175,15 @@ export function voiceGroupMenu(group) {
   };
 }
 
-const VOICE_SOURCE_NAMES = { alexa: "Alexa", iphone: "iPhone o Siri", local: "Aquí" };
+const VOICE_SOURCE_NAMES = { alexa: "Alexa", iphone: "iPhone o Siri", local: "Esta consola" };
+
+/** La respuesta en un renglón: hasta `max` caracteres, cortada en una palabra con «…». */
+export function oneLine(text, max = 56) {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max - 12)).replace(/[\s.,;:]+$/u, "")}…`;
+}
 
 /** «2026-10-29 15:43:56» → «hoy 3:43 p. m.» o «21 oct 6:51 p. m.»: cuándo llegó, como se dice. */
 export function whenSaid(at, now = new Date()) {
@@ -208,7 +216,7 @@ export function voiceLogMenu(status = null, { now = Date.now() } = {}) {
       info("phone", "iPhone o Siri", sinceVoice(seen.iphone, now), undefined, !!seen.iphone),
       { heading: true, label: "Lo último que llegó" },
       ...(recent.length ? recent.slice(0, 12).map((e) => info(e.ok === false ? "warning" : "check", `«${said(e)}»`,
-        VOICE_SOURCE_NAMES[e.source] || e.source || "", [whenSaid(e.at, new Date(now)), e.speech].filter(Boolean).join(" · "), e.ok !== false))
+        VOICE_SOURCE_NAMES[e.source] || e.source || "", [whenSaid(e.at, new Date(now)), oneLine(e.speech)].filter(Boolean).join(" · "), e.ok !== false))
         : [info("info", "Nada todavía", "", "Prueba: en el iPhone, estira el control y di «pon la tele»")]),
     ],
   };

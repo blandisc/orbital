@@ -142,3 +142,15 @@ export function legendOf(list, glyphs) {
   }
   return legend;
 }
+
+/**
+ * La acción de un aviso de voz (el evento `toast` que manda la consola trae `action`):
+ * - `voice-undo`: abrió algo parecido a lo que oyó («jades» → Hades). B «No era eso» lo cierra y busca lo que oyó.
+ * - `voice-guide`: no entendió. ☰ «Lo que puedes decir».
+ * Devuelve { kind, label, button, query } (button: qué botón la hace, «back» o «menu»), o null.
+ */
+export function voiceToastAction(action) {
+  if (action?.type === "voice-undo") return { kind: "undo", label: "No era eso", button: "back", query: String(action.query || "") };
+  if (action?.type === "voice-guide") return { kind: "guide", label: "Lo que puedes decir", button: "menu", query: "" };
+  return null;
+}
