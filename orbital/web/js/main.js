@@ -451,16 +451,27 @@ setInterval(() => {
 /** Lo que el héroe enseñará al moverte (logo y fondo de las vecinas y de la fila de abajo), pedido antes: así el título
  *  estilizado ya está cuando llegas (antes se pedía al enfocarlo y una serie nueva tardaba en verse). */
 const preloaded = new Set();
+const decoded = []; // las últimas imágenes precargadas, ya decodificadas
+const DECODED_KEEP = 16;
 function preloadAround(r, c) {
   const rows = state.rows || [];
-  const near = [...(rows[r]?.items.slice(c + 1, c + 5) || []), ...(rows[r + 1]?.items.slice(0, 3) || [])];
-  for (const item of near) {
-    for (const url of [item?.extra?.logo && trimmedLogo(item.extra.logo), sized(item?.hero, innerWidth)]) {
-      if (!url || preloaded.has(url)) continue;
-      if (preloaded.size > 400) preloaded.clear();
-      preloaded.add(url);
-      new Image().src = url;
-    }
+  [...(rows[r]?.items.slice(c + 1, c + 5) || []), ...(rows[r + 1]?.items.slice(0, 3) || [])].forEach(warmArt);
+}
+
+/** El logo y el fondo de un título, descargados y decodificados de antemano (fuera del hilo principal): pintar un fondo
+ *  grande sin decodificar lo hacía dentro del cuadro (48 ms al avanzar el carrusel de Destacados). Las últimas imágenes se
+ *  conservan para que no se pierda lo decodificado. */
+function warmArt(item) {
+  for (const url of [item?.extra?.logo && trimmedLogo(item.extra.logo), sized(item?.hero, innerWidth)]) {
+    if (!url || preloaded.has(url)) continue;
+    if (preloaded.size > 400) preloaded.clear();
+    preloaded.add(url);
+    const img = new Image();
+    img.decoding = "async";
+    img.src = url;
+    img.decode().catch(() => {});
+    decoded.push(img);
+    if (decoded.length > DECODED_KEEP) decoded.shift();
   }
 }
 
@@ -861,16 +872,17 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     state.hidden = data.hidden || 0;
     // Las filas solo se ven en Películas y series; desde otra sección se arman de antemano, estacionadas (shelf.prepare).
     if (state.section === "media") ui.shelf.setRows(state.rows, { ...emptyFor("media"), popId: state.popId });
-    else ui.shelf.prepare(sectionRows(state.allRows, "media"));
+    prepareMedia();
     state.popId = null;
     if (!state.libraryLoaded) {
       // Los estantes de Películas y series (Top 10, plataformas, tus listas): al entrar ahí o un rato después de abrir,
       // no al arrancar (eran ~70 peticiones compitiendo con el Inicio).
       if (state.section === "media") wantCuration();
-      else setTimeout(() => (onScreen() ? wantCuration() : null), CURATION_DELAY_MS);
+      else setTimeout(() => { curationDue = true; if (onScreen()) wantCuration(); }, CURATION_DELAY_MS);
       loadDownloads(); // lo que bajaste para ver sin internet (fila «Descargas»)
       ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
       ui.foryou.load(); // en segundo plano: Para ti ya está listo cuando llegas (LB desde el Inicio)
+      ui.foryou.prepare(); // y estacionada desde ya (solo layout, sin imágenes): se arma durante la entrada, no en una pausa
       ui.tv.load(); // y la TV en vivo, para que los canales ya estén cuando llegas
     }
     state.libraryLoaded = true;
@@ -901,7 +913,25 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
 // lo que se ve arriba, luego las colecciones) y se ponen al día cada media hora; si Para ti no contesta, queda como estaba.
 let curated = [];
 let curating = null;
+/** Para ti y las filas de Películas y series, armadas de antemano mientras no se ven (estacionadas)… pero pasado el arranque
+ *  (sus ~150 imágenes competían con el Inicio en los primeros segundos) y en una pausa de lo que estés haciendo. */
+const PREPARE_AFTER_MS = 9000;
+let preparing = 0;
+let lastStir = 0;
+function prepareMedia() {
+  clearTimeout(preparing);
+  const now = performance.now();
+  if (now < PREPARE_AFTER_MS || now - lastStir < 1500) { preparing = setTimeout(prepareMedia, 1000); return; }
+  // Las filas traen ~200 portadas: con Orbital ya quieta, nunca mientras la usas.
+  if (document.body.dataset.still === undefined) { preparing = setTimeout(prepareMedia, 2000); return; }
+  if (state.section !== "media") {
+    const rows = sectionRows(state.allRows, "media");
+    ui.shelf.prepare(rows);
+    rows[0]?.items.slice(0, 2).forEach(warmArt); // lo primero que se ve al entrar: ya decodificado
+  }
+}
 let curationAsked = false;
+let curationDue = false; // ya pasó la espera del arranque (si nadie miraba, se pide al volver a la ventana)
 const CURATION_DELAY_MS = 15_000;
 /** La primera vez que hacen falta los estantes (y de ahí, solo cuando algo cambia o cada 30 min con alguien mirando). */
 function wantCuration() {
@@ -1389,7 +1419,7 @@ function applyCuration(rows) {
   curated = rows;
   if (!state.allRows) return;
   state.allRows = [...state.allRows.filter((row) => !row.id.startsWith("curated:")), ...rows];
-  if (state.section !== "media") return ui.shelf.prepare(sectionRows(state.allRows, "media")); // listas para cuando entres
+  if (state.section !== "media") return prepareMedia(); // listas para cuando entres
   const rowId = state.rows[state.focus.r]?.id;
   const itemId = current()?.id;
   state.rows = sectionRows(state.allRows, state.section);
@@ -2128,6 +2158,7 @@ for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventList
 const STILL_MS = 12_000;
 let stillTimer = 0;
 function stir() {
+  lastStir = performance.now();
   input.wake(); // si el mando estaba suelto (quieta), se vuelve a tomar
   delete document.body.dataset.still;
   clearTimeout(stillTimer);
@@ -2153,7 +2184,7 @@ document.addEventListener("visibilitychange", () => {
     pollStatus();
     pollSystem(); // lo que no se preguntó mientras un juego tapaba a Orbital
     refreshPhone();
-    wantCuration();
+    if (curationDue) wantCuration();
     loadLibrary();
     for (const event of deferred.take()) handleEvent(event);
   }

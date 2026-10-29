@@ -103,6 +103,12 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   const size = () => ({ W: el.clientWidth, H: el.clientHeight });
 
   // --- piezas -----------------------------------------------------------------------------------
+  // Hasta que el mosaico arranca por primera vez (entras a Para ti), sus piezas se arman sin pedir imágenes: Para ti se
+  // estaciona de antemano (layout listo) y sus ~50 imágenes llegan al entrar, como siempre, no en una pausa del Inicio.
+  let shown = false;
+  const waiting = [];
+  const art = (img, src) => { if (shown) img.src = src; else waiting.push([img, src]); return img; };
+
   function makeTile(item) {
     // Si falla, prueba la otra imagen; si también falla, se quita (y la pieza enseña su nombre).
     const swap = (img, other) => {
@@ -113,7 +119,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
         if (!node.querySelector(".foryou-mosaic__art")) node.classList.add("foryou-mosaic__tile--bare");
       });
     };
-    const poster = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", src: sized(item.image || item.hero || "", POSTER_PX), alt: "", decoding: "async" });
+    const poster = art(h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", alt: "", decoding: "async" }), sized(item.image || item.hero || "", POSTER_PX));
     // El arte ancho solo hace falta cuando su columna se enfoca (ahí todas pasan a lo ancho): se pide hasta entonces.
     // Antes cada pieza cargaba también su fondo ancho, aunque nunca se viera (el doble de memoria en Edge).
     // Sin fondo ancho, lo ancho es su póster: va entero sobre su copia desenfocada (ArtFit), no recortado a una franja.
@@ -134,7 +140,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     };
     const name = () => h("strong", { class: "foryou-mosaic__name" }, item.title);
     const kind = h("span", { class: "foryou-mosaic__kind", "aria-hidden": "true" }, svg(ICONS[iconName(item)] || ICONS.apps));
-    const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: sized(trimmedLogo(item.logo), 320), alt: item.title }) : name();
+    const logo = item.logo ? art(h("img", { class: "foryou-mosaic__logo", alt: item.title }), sized(trimmedLogo(item.logo), 320)) : name();
     if (item.logo) logo.addEventListener("error", () => logo.replaceWith(name()), { once: true });
     const node = h("div", { class: "foryou-mosaic__tile", role: "button", tabindex: "-1", "aria-label": item.title, onClick: () => tap(node) },
       poster, capsule, kind,
@@ -540,6 +546,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   function start() {
     if (running) return;
     running = true;
+    if (!shown) { shown = true; for (const [img, src] of waiting.splice(0)) img.src = src; }
     wake();
     if (pool.length) paint();
   }

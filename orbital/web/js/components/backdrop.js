@@ -5,18 +5,29 @@ import { settler } from "../core/motion.js";
 const SAMPLE = 24; // px: basta para el tono y es instantáneo
 const palettes = new Map(); // url -> { tint, accent }
 
+/** La misma imagen, chica (el servidor la reduce): para sacar el tono basta y es casi gratis. null si no pasa por él. */
+const tiny = (url) => (/^\/api\/(img|art)/.test(url) && /[?&]w=\d+/.test(url) ? url.replace(/([?&])w=\d+/, "$1w=160") : null);
+
 /** Tono de la imagen ya cargada (mismo origen: /api/art; de fuera, cargada con permiso CORS). null: no se pudo leer.
- *  img.decode() la decodifica fuera del hilo principal: dibujarla sin decodificar obligaba a hacerlo dentro del botón
- *  (~25 ms al entrar a Películas y series). */
+ *  Se lee de una copia de 160 px: dibujar el fondo grande en el lienzo obligaba a traerlo entero de la GPU (26 ms en cada
+ *  avance del carrusel de Destacados). */
 async function paletteOf(img, url) {
   if (palettes.has(url)) return palettes.get(url);
   let palette = null;
   try {
-    await img.decode();
+    let source = img;
+    const small = tiny(url);
+    if (small) {
+      source = new Image();
+      source.src = small;
+      await source.decode();
+    } else {
+      await img.decode();
+    }
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = SAMPLE;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(img, 0, 0, SAMPLE, SAMPLE);
+    ctx.drawImage(source, 0, 0, SAMPLE, SAMPLE);
     palette = paletteFor(dominantHue(ctx.getImageData(0, 0, SAMPLE, SAMPLE).data));
   } catch { /* imagen sin permiso de lectura: se prueba con CORS (remotePalette) */ }
   if (palette) palettes.set(url, palette);
@@ -98,16 +109,18 @@ export function createBackdrop({ settle = 150 } = {}) {
         applyPalette(paletteFor(null));
         swap(null, false);
       }, STALE_MS);
-      img.onload = () => {
+      img.onload = () => img.decode().catch(() => {}).then(() => {
         clearTimeout(stale);
         if (mine !== token) return;
+        // Ya decodificada (fuera del hilo principal): como fondo de CSS no hay `decoding="async"`, y pintarla sin decodificar
+        // lo hacía dentro del cuadro al entrar a Películas y series (37–48 ms).
         swap(url, poster, pixel);
         paletteOf(img, url).then((palette) => {
           if (mine !== token) return;
           if (palette) applyPalette(palette); // de fuera: el color anterior se queda hasta que llega el tono (sin parpadeo gris)
           else remotePalette(url, (p) => { if (mine === token) applyPalette(p); });
         });
-      };
+      });
       img.onerror = () => {
         clearTimeout(stale);
         if (mine !== token) return;
