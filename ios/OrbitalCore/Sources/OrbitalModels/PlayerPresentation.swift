@@ -9,6 +9,7 @@ import Foundation
 ///   primeros segundos de un video (`settleDelay`), cuando el motor hace sus últimos ajustes. Así pausar y seguir nunca la enseñan.
 /// - Sin carga (`none`): listo, o en pausa sin nada pendiente.
 /// Y el glifo dice lo que tú pediste al momento; si el motor cambia solo, lo sigue solo si el cambio dura (`glyphSettle`).
+/// Siempre lo opuesto a lo que pasa: sonando (o llenando el búfer), pausa; en pausa, play. Al abrir: carga → pausa, nada más.
 @MainActor
 public final class PlayerPresentation: ObservableModel {
     public enum LoadKind: Equatable, Sendable { case none, soon, now }
@@ -46,6 +47,9 @@ public final class PlayerPresentation: ObservableModel {
         loadingTask?.cancel()
         switch kind {
         case .none:
+            // Al terminar de cargar, el glifo dice lo que pasa de verdad (casi siempre «pausa»: ya suena). Antes se quedaba con
+            // lo que el motor dijo a media carga y, con el video sonando, enseñaba play.
+            if loading { glyphTask?.cancel(); playing = enginePlaying }
             loading = false
             if enginePlaying, playedVideo != videoID { playedVideo = videoID; playedAt = clock() }
         case .now:
@@ -71,7 +75,8 @@ public final class PlayerPresentation: ObservableModel {
         playing = toPlaying
     }
 
-    /// El motor cambió solo: el glifo lo sigue si el cambio dura; entonces dice lo que de verdad pasa (`current`).
+    /// El motor cambió solo: el glifo lo sigue si el cambio dura; entonces dice lo que de verdad pasa (`current`). `current`
+    /// cuenta llenar el búfer como sonar (`PlayerModel.wantsToPlay`): un atorón enseña la carga, nunca el play.
     public func engineChanged(current: @escaping @MainActor () -> Bool) {
         glyphTask?.cancel()
         guard !loading else { return }   // cargando, el botón enseña la carga: nada que seguir

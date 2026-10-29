@@ -86,6 +86,33 @@ final class PlayerPresentationTests: XCTestCase {
         XCTAssertTrue(p.showsPlaying, "al terminar de cargar dice pausa: va a sonar")
     }
 
+    /// El bug del 29 oct: carga → pausa → play → carga → play con el video sonando. Al terminar cualquier carga, el glifo
+    /// dice lo que pasa, aunque el motor lo haya volteado a medias.
+    func testAfterAStallTheGlyphSaysPauseIfItPlays() async {
+        let rig = Timing(), p = rig.presentation
+        p.update(.now, playing: false, videoID: "e1")
+        p.update(.none, playing: true, videoID: "e1")
+        XCTAssertTrue(p.showsPlaying, "carga → pausa")
+        rig.now += 2
+        p.engineChanged { false }   // el motor se detiene un instante antes de que salga la carga: el glifo se voltea a play…
+        await p.settle()
+        p.update(.soon, playing: true, videoID: "e1")   // …se atora llenando el búfer
+        await p.settle()
+        XCTAssertTrue(p.showsLoading)
+        p.engineChanged { true }    // vuelve a sonar mientras se ve la carga: esto solo no cambia el glifo
+        p.update(.none, playing: true, videoID: "e1")   // y termina la carga, sonando
+        await p.settle()
+        XCTAssertFalse(p.showsLoading)
+        XCTAssertTrue(p.showsPlaying, "suena: el botón dice pausa, no play")
+    }
+
+    func testIfItEndsLoadingPausedTheGlyphSaysPlay() async {
+        let rig = Timing(), p = rig.presentation
+        p.update(.now, playing: false, videoID: "e1")
+        p.update(.none, playing: false, videoID: "e1")   // volvió a la app en pausa
+        XCTAssertFalse(p.showsPlaying)
+    }
+
     func testTheLoadKindComesFromThePlayerState() async throws {
         let rig = try playerRig()
         XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .now, "sin haber sonado")

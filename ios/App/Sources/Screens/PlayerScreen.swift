@@ -511,9 +511,10 @@ struct PlayerScreen: View {
             await loadLocalizedEpisodes()
         }
         .onChange(of: PlayerPresentation.loadKind(model), initial: true) { _, kind in
-            presentation.update(kind, playing: model.snapshot.state == .playing, videoID: current.videoID)
+            presentation.update(kind, playing: model.wantsToPlay, videoID: current.videoID)
         }
-        .onChange(of: model.snapshot.state == .playing) { presentation.engineChanged { holder.model.snapshot.state == .playing } }
+        // Sonar o llenar el búfer cuentan igual (antes, cada búfer volteaba el glifo a play con el video sonando).
+        .onChange(of: model.wantsToPlay) { presentation.engineChanged { holder.model.wantsToPlay } }
         // Al girar, cada sentido con su zoom; y otra vez cuando termina la animación del giro (el motor del iPhone a veces se
         // quedaba con el «Llenar» de horizontal y la imagen seguía agrandada en vertical).
         // El motor recibe el zoom desde un solo lugar: cada vez que cambia el de este sentido (al girar, al pellizcar, desde el «⋯»).
