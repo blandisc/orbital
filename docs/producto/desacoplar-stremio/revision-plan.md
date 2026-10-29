@@ -3,6 +3,25 @@
 Sesión de revisión en la nube (sin Xcode ni Lenovo). Lee `main` @ 601fcad. No se escribió en ninguna cuenta.
 Versión visual: [`revision-plan.html`](revision-plan.html).
 
+## Qué es cada «corte»
+
+Un corte es una entrega: un paquete de trabajo que se construye, se prueba y se sube por su cuenta, y deja la app
+funcionando. La propuesta tiene cinco:
+
+| Corte | En simple | Dónde |
+|---|---|---|
+| A | Tu avance, lo visto y Mi lista viven en el celular y viajan por Trakt | iPhone |
+| B | Real-Debrid y los complementos se configuran dentro de la app | iPhone |
+| C | La guía de la primera vez y los Ajustes nuevos | iPhone |
+| D | Quitar «Stremio» de las listas públicas (Buscar, Para ti, Colecciones) | iPhone |
+| E | Lo mismo que A, pero en la TV: la consola lee y escribe en Trakt | Consola (Python) |
+
+## Decisiones de Fernando (29 oct, después de la revisión)
+
+- **Sí a MDBList** para Rotten Tomatoes en Para ti.
+- **Sí a Trakt «En tendencia»** para «Lo más popular hoy» y «Por género».
+- Pendiente: el OK al corte E (se le explicó qué es) y su plan de Trakt.
+
 ## Resumen para Fernando
 
 1. **Sí: Trakt va a ser lo que sincroniza el celular y la computadora; Stremio queda solo de respaldo.** Pero **hoy
@@ -80,7 +99,7 @@ cuenta, pero lleva su nombre y su criterio). Las rutas parten de `ios/`. ★ = n
 | «Seguir viendo» | Tu avance | cuenta (`HomeModel.swift` L208–219) | Teléfono + Trakt `/sync/playback` y `progress/watched` (corte A) |
 | «Quitar de Seguir viendo» | Escribe en Stremio | cuenta (`Watch.swift` L461) | Local + `DELETE /sync/playback/{id}` |
 | «Mi lista» y su cuadrícula | Sello STREMIO | cuenta (`HomeView.swift` L108–115) | **Se pierde lo de Stremio**; la fila es tu watchlist de Trakt |
-| Destacado sin Trakt | Popular de Cinemeta | Cinemeta (`HomeModel.swift` L249–251) | Desaparece (Trakt es obligatorio); si no contesta, la última copia |
+| Destacado: el respaldo de Cinemeta | Ya sale de Trakt (En tendencia y Lo más popular); solo si Trakt no devuelve nada usa lo popular de Cinemeta | Cinemeta (`HomeModel.swift` L242–252) | El destacado **se queda igual**, de Trakt. Solo se va el respaldo: si Trakt no contesta, la última copia guardada (y TMDB «tendencia del día» si hay clave) |
 | Aviso de sesión | «Tu sesión de Stremio se cerró…» | texto (`HomeView.swift` L42–47) | Sale; solo en Ajustes si conectaste Stremio |
 | ★ Widget «Lo siguiente para ti» | Los 3 primeros de Seguir viendo | cuenta (`WidgetSnapshotBuilder.swift`) | Sale solo de lo nuevo de Seguir viendo |
 | ★ Vocabulario de Siri | Títulos de Seguir viendo y Mi lista | cuenta (`HomeModel.swift` L309) | Igual, con las fuentes nuevas |

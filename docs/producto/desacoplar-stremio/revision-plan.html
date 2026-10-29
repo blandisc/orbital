@@ -79,6 +79,16 @@ a:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
 </header>
 
 <section>
+  <div class="tw"><table>
+    <thead><tr><th>Corte</th><th>Una entrega que se construye y se sube por su cuenta</th><th>Dónde</th></tr></thead>
+    <tbody>
+      <tr><td>A</td><td>Tu avance, lo visto y Mi lista viven en el celular y viajan por Trakt</td><td>iPhone</td></tr>
+      <tr><td>B</td><td>Real-Debrid y los complementos se configuran dentro de la app</td><td>iPhone</td></tr>
+      <tr><td>C</td><td>La guía de la primera vez y los Ajustes nuevos</td><td>iPhone</td></tr>
+      <tr><td>D</td><td>Quitar «Stremio» de las listas públicas</td><td>iPhone</td></tr>
+      <tr><td>E</td><td>Lo mismo que A, pero en la TV</td><td>Consola</td></tr>
+    </tbody>
+  </table></div>
   <div class="grid3">
     <div class="card ok"><h3>1 · Sincronización</h3><div class="big">Sí: Trakt manda, Stremio es copia</div><p>Falta un corte nuevo en la consola (<b>corte E</b>), en Python, del tamaño del corte A del iPhone. Va <b>junto con el A</b>, no al final.</p></div>
     <div class="card"><h3>2 · Stremio en el celular</h3><div class="big">43 lugares, todos con reemplazo</div><p>27 no estaban en la propuesta. Solo se pierde «Mi lista» de Stremio. <b>«Lo más popular hoy» pasa a Trakt «En tendencia».</b></p></div>
@@ -133,7 +143,7 @@ a:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
       <tr><td class="grp" colspan="3">Inicio</td></tr>
       <tr><td>Seguir viendo</td><td><span class="pill p-st">tu Stremio</span></td><td>Teléfono + Trakt</td></tr>
       <tr><td>Mi lista</td><td><span class="pill p-st">tu Stremio</span></td><td><span class="pill p-lost">se pierde</span> tu watchlist de Trakt</td></tr>
-      <tr><td>Destacado sin Trakt</td><td><span class="pill p-cm">Cinemeta</span></td><td>Desaparece (Trakt es obligatorio)</td></tr>
+      <tr><td>Destacado (su respaldo)</td><td><span class="pill p-tr">Trakt</span> y, si Trakt no da nada, <span class="pill p-cm">Cinemeta</span></td><td>Se queda igual, de Trakt; si no contesta, la última copia</td></tr>
       <tr><td>«Tu sesión de Stremio se cerró»</td><td><span class="pill p-tx">texto</span></td><td>Solo en Ajustes</td></tr>
       <tr><td>Widget y vocabulario de Siri <span class="pill p-new">nuevo</span></td><td><span class="pill p-st">tu Stremio</span></td><td>Lo nuevo de Seguir viendo</td></tr>
       <tr><td class="grp" colspan="3">Buscar</td></tr>
@@ -199,8 +209,8 @@ a:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
   <h2>Lo que necesito de ti para empezar</h2>
   <div class="asks">
     <div class="ask"><span class="num">1</span><p><b>OK al corte E</b>La consola lee y escribe en Trakt, junto con el corte A del iPhone.</p></div>
-    <div class="ask"><span class="num">2</span><p><b>OK a Trakt «En tendencia»</b>Para «Lo más popular hoy» y «Por género».</p></div>
-    <div class="ask"><span class="num">3</span><p><b>Rotten Tomatoes con MDBList</b>Si sí: crea tu cuenta (entras con Trakt) y pasa la clave de API en Ajustes de la consola.</p></div>
+    <div class="ask"><span class="num">2</span><p><b>Trakt «En tendencia» ✓</b>Aprobado para «Lo más popular hoy» y «Por género».</p></div>
+    <div class="ask"><span class="num">3</span><p><b>MDBList ✓</b>Aprobado. Falta tu cuenta (entras con Trakt) y la clave de API en Ajustes de la consola.</p></div>
     <div class="ask"><span class="num">4</span><p><b>Tu plan de Trakt</b>Gratis o VIP, para revisar el límite de la watchlist antes de que «Mi lista» dependa de ella.</p></div>
   </div>
   <p class="foot">Orden: A (iPhone) y E (consola) juntos; B y D en paralelo; luego C; la comparación de dos semanas cuando A y E estén listos. Detalle con archivos y líneas: <code>docs/producto/desacoplar-stremio/revision-plan.md</code>. Fuentes de Rotten Tomatoes: <a href="https://docs.mdblist.com/docs/api">MDBList API</a> · <a href="https://forums.plex.tv/t/ultimate-trakt-tv-list-setup-mdblist-com/632436">filtros de MDBList</a> · <a href="https://www.fandango.com/Terms-and-Policies">términos de Fandango</a> · <a href="https://github.com/deflix-tv/stremio-top-movies">Top Movies de Deflix</a>.</p>
