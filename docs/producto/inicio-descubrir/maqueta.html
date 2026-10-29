@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Inicio para descubrir · hoy vs propuesta</title>
+<style>
+:root{--ink1000:#070708;--ink950:#0c0c0e;--ink900:#131316;--ink850:#18181c;--ink800:#1e1e23;--ink700:#2a2a30;--ink500:#55555d;--ink300:#a3a3ab;--ink200:#cdcdd3;--paper:#f5f4f0;--amber:#f4c24d;--teal:#5fd6c6;--red:#f0574d}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0c;color:var(--paper);font:15px/1.35 -apple-system,"SF Pro Text",system-ui,sans-serif;padding:40px 48px;width:1560px}
+h1{font-size:28px;font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--ink300);margin-top:6px;font-size:16px}
+.row{display:flex;gap:56px;margin-top:32px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:14px}
+.tag{font-size:13px;font-weight:600;color:var(--ink300);text-transform:none}
+.tag b{color:var(--paper);font-size:18px;display:block;margin-bottom:2px}
+.phone{width:390px;height:844px;border-radius:52px;background:var(--ink950);border:10px solid #232327;overflow:hidden;position:relative;box-shadow:0 30px 80px #000a}
+.sb{height:44px;display:flex;justify-content:space-between;padding:14px 28px 0;font-size:14px;font-weight:600}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:6px 18px 10px}
+.nav .t{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.ic{width:32px;height:32px;border-radius:50%;background:var(--ink800);display:inline-block;margin-left:8px}
+.tabs{position:absolute;bottom:0;left:0;right:0;height:84px;background:#18181ce6;backdrop-filter:blur(20px);display:flex;justify-content:space-around;padding-top:10px;font-size:11px;color:var(--ink300);border-top:1px solid #ffffff14}
+.tabs span{display:flex;flex-direction:column;align-items:center;gap:4px}
+.tabs i{width:24px;height:24px;border-radius:7px;background:var(--ink700);display:block}
+.tabs .on{color:var(--paper)} .tabs .on i{background:var(--paper)}
+.sec{padding:14px 18px 6px;display:flex;justify-content:space-between;align-items:baseline}
+.sec h3{font-size:19px;font-weight:700}
+.sec small{color:var(--ink300);font-size:13px}
+.eyebrow{color:var(--ink300);font-size:12px;font-weight:600;padding:0 18px}
+.rail{display:flex;gap:10px;padding:6px 18px;overflow:hidden}
+.p{width:104px;height:156px;border-radius:10px;flex:none;position:relative}
+.w{width:240px;height:135px;border-radius:12px;flex:none;position:relative}
+.bar{position:absolute;left:10px;right:10px;bottom:9px;height:4px;border-radius:2px;background:#ffffff40}
+.bar::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--v,60%);background:var(--paper);border-radius:2px}
+.cap{position:absolute;left:10px;bottom:20px;font-size:13px;font-weight:700;text-shadow:0 1px 6px #000}
+.g1{background:linear-gradient(160deg,#3b5a7a,#141d2b)}.g2{background:linear-gradient(160deg,#7a3b3b,#2b1414)}
+.g3{background:linear-gradient(160deg,#4f7a3b,#172b14)}.g4{background:linear-gradient(160deg,#7a6a3b,#2b2414)}
+.g5{background:linear-gradient(160deg,#5b3b7a,#1d142b)}.g6{background:linear-gradient(160deg,#3b7a74,#142b28)}
+.g7{background:linear-gradient(160deg,#7a3b66,#2b1424)}
+.big{margin:4px 18px;height:430px;border-radius:22px;position:relative;overflow:hidden}
+.big .vel{position:absolute;inset:auto 0 0 0;height:60%;background:linear-gradient(transparent,#000d)}
+.big .in{position:absolute;left:18px;right:18px;bottom:18px}
+.dots{display:flex;gap:6px;justify-content:center;padding:8px}.dots i{width:6px;height:6px;border-radius:3px;background:var(--ink500)}.dots i:first-child{background:var(--paper);width:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:44px;border-radius:22px;padding:0 20px;font-weight:700;font-size:15px}
+.btn.pri{background:var(--paper);color:var(--ink1000)}.btn.sec{background:#ffffff26;color:var(--paper);backdrop-filter:blur(10px)}
+.note{position:absolute;right:-10px;background:var(--amber);color:#1a1300;font-size:12px;font-weight:700;padding:5px 9px;border-radius:8px;transform:translateX(100%);white-space:nowrap}
+.note::before{content:"";position:absolute;left:-6px;top:50%;margin-top:-6px;border:6px solid transparent;border-right-color:var(--amber);border-left:0}
+.mark{position:absolute;left:0;right:0;border:2px dashed var(--amber);border-radius:14px;pointer-events:none}
+.cont{margin:6px 18px 4px;height:84px;border-radius:16px;background:var(--ink850);display:flex;gap:12px;align-items:center;padding:10px;position:relative}
+.cont .th{width:112px;height:64px;border-radius:10px;flex:none;position:relative}
+.cont .tx{flex:1;min-width:0}.cont .tx b{display:block;font-size:15px}.cont .tx span{color:var(--ink300);font-size:13px}
+.play{width:40px;height:40px;border-radius:50%;background:var(--paper);flex:none;position:relative}
+.play::after{content:"";position:absolute;left:15px;top:12px;border:8px solid transparent;border-left:12px solid var(--ink1000);border-right:0}
+.chips{display:flex;gap:8px;padding:8px 18px 4px;overflow:hidden}
+.chip{height:34px;border-radius:17px;padding:0 14px;display:flex;align-items:center;font-size:14px;font-weight:600;background:var(--ink800);white-space:nowrap;flex:none}
+.chip.on{background:var(--paper);color:var(--ink1000)}
+.why{display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:700;background:#ffffff26;border-radius:10px;padding:4px 9px;backdrop-filter:blur(8px)}
+.meta{color:var(--ink200);font-size:13px;margin:6px 0 12px}
+.title{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.05;margin-top:10px}
+.legend{width:430px;display:flex;flex-direction:column;gap:14px;padding-top:40px}
+.legend div{background:var(--ink900);border:1px solid #ffffff12;border-radius:14px;padding:14px 16px}
+.legend b{display:block;font-size:15px;margin-bottom:4px}
+.legend p{color:var(--ink200);font-size:14px}
+.n{display:inline-flex;width:22px;height:22px;border-radius:11px;background:var(--amber);color:#1a1300;font-weight:800;font-size:13px;align-items:center;justify-content:center;margin-right:8px}
+.rk{position:relative;width:132px;flex:none;height:156px}
+.rk em{position:absolute;left:-4px;bottom:-18px;font-style:normal;font-size:118px;font-weight:900;color:var(--ink700);line-height:1}
+.rk .p{position:absolute;right:0;top:0}
+.sw{position:absolute;right:16px;top:16px;display:flex;gap:6px}
+.sw span{width:38px;height:38px;border-radius:19px;background:#00000066;backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;font-weight:800}
+</style></head><body>
+<h1>Inicio para descubrir · hoy vs propuesta</h1>
+<p class="sub">iPhone, al abrir la app, lo que se ve sin desplazar. Pósters de relleno: lo que importa es el orden y el peso.</p>
+<div class="row">
+
+<!-- HOY -->
+<div class="col">
+ <div class="tag"><b>Hoy</b>Inicio abre con tendencias de todos; lo tuyo queda abajo</div>
+ <div class="phone">
+  <div class="sb"><span>9:41</span><span>●●● 100%</span></div>
+  <div class="nav"><span class="t">Orbital</span><span><i class="ic"></i><i class="ic"></i><i class="ic"></i></span></div>
+  <div class="sec"><h3>En tendencia</h3><small>Todo · Películas · Series</small></div>
+  <div class="big g2" style="height:430px"><div class="vel"></div>
+   <div class="in"><div class="why">Lo más visto esta semana</div><div class="title">Una serie que<br>ve todo el mundo</div><div class="meta">Serie · 2026 · Drama</div>
+   <span class="btn pri">Ver</span> <span class="btn sec">Más</span></div></div>
+  <div class="dots"><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="sec"><h3>Seguir viendo</h3><small>3</small></div>
+  <div class="rail"><div class="w g1"><div class="bar"></div></div><div class="w g3"><div class="bar" style="--v:30%"></div></div></div>
+  <div class="mark" style="top:100px;height:540px"></div>
+  <div class="mark" style="top:648px;height:180px;border-color:var(--red)"></div>
+  <div class="tabs"><span class="on"><i></i>Inicio</span><span><i></i>Para ti</span><span><i></i>Descargas</span><span><i></i>Buscar</span></div>
+ </div>
+ <div class="tag" style="width:390px">Debajo siguen: «Para ti» (recomendaciones de Trakt), Top 10, Tu watchlist, Sale hoy, Mi lista, Favoritos. Muchas de esas listas también salen en la pestaña Para ti.</div>
+</div>
+
+<!-- PROPUESTA -->
+<div class="col">
+ <div class="tag"><b>Propuesta · «Esta noche»</b>Una sola respuesta arriba, con su porqué; lo tuyo a un toque</div>
+ <div class="phone">
+  <div class="sb"><span>9:41</span><span>●●● 100%</span></div>
+  <div class="nav"><span class="t" style="font-size:26px">Esta noche</span><span><i class="ic"></i><i class="ic"></i></span></div>
+  <div class="cont"><div class="th g1"><div class="bar" style="--v:70%;bottom:6px;left:6px;right:6px"></div></div>
+   <div class="tx"><b>Severance · T2 E7</b><span>Quedan 18 min · termina 9:59</span></div><div class="play"></div></div>
+  <div class="chips"><span class="chip on">Para ti</span><span class="chip">Menos de 1 h</span><span class="chip">Para reír</span><span class="chip">Película</span><span class="chip">Con alguien</span></div>
+  <div class="big g5" style="height:420px;margin-top:8px"><div class="vel"></div>
+   <div class="sw"><span>✕</span></div>
+   <div class="in"><div class="why">◎ Porque viste Dark</div>
+   <div class="title">Una película<br>que te va a gustar</div>
+   <div class="meta">Película · 1 h 52 · ★ 8.1 · Está en tu Real-Debrid</div>
+   <span class="btn pri">▶ Ver</span> <span class="btn sec">Tráiler</span> <span class="btn sec">Otra</span></div></div>
+  <div class="dots"><i></i><i></i><i></i></div>
+  <div class="sec"><h3>Porque viste Dark</h3><small>Ver todo</small></div>
+  <div class="rail"><div class="p g6"></div><div class="p g3"></div><div class="p g4"></div><div class="p g7"></div></div>
+  <div class="tabs"><span class="on"><i></i>Esta noche</span><span><i></i>Explorar</span><span><i></i>Descargas</span><span><i></i>Buscar</span></div>
+ </div>
+ <div class="tag" style="width:390px">Debajo: Sale hoy de lo que sigues · otro «Porque viste» · Top 10 en un solo estante (cambias de plataforma con un toque) · «Una joya» (bien calificada, poco vista) · Tus listas (Mi lista + watchlist + favoritos juntos).</div>
+</div>
+
+<div class="legend">
+ <div><b><span class="n">1</span>Lo tuyo primero, en un renglón</b><p>«Seguir viendo» deja de competir: un renglón compacto con el siguiente episodio y un play directo. Lo resuelves con un toque sin bajar, en cualquier iPhone.</p></div>
+ <div><b><span class="n">2</span>Una respuesta, no un catálogo</b><p>Con todo el catálogo del mundo, lo escaso es tu atención. Arriba va <i>una</i> sugerencia elegida para esta hora, con su porqué en palabras y si ya está lista para sonar. «Otra» o deslizar trae la siguiente; ✕ = «No me interesa» y aprende.</p></div>
+ <div><b><span class="n">3</span>Intención en un toque</b><p>Las fichas de arriba («Menos de 1 h», «Para reír», «Película»…) son el «¿Qué vemos?» que hoy está escondido tras un dado: re-eligen la sugerencia y los estantes de abajo al momento.</p></div>
+ <div><b><span class="n">4</span>Cada estante dice por qué</b><p>«Porque viste Dark», «Sale hoy de lo que sigues», «Una joya». Nada de «Trakt», «JustWatch» o «Stremio» en los títulos: el origen va en el detalle.</p></div>
+ <div><b><span class="n">5</span>Inicio decide, Explorar pasea</b><p>«Para ti» pasa a «Explorar»: mosaico, géneros, estudios, premios, años y plataformas. Sin repetir lo que ya sale en Inicio.</p></div>
+</div>
+</div>
+</body></html>
