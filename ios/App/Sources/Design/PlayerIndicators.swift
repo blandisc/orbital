@@ -71,6 +71,9 @@ struct DSLoader: View {
 struct DSSeekBubble: View {
     let time: String
     let delta: String
+    /// Pasando sobre un susto de la barra: cuál es (fuerte o leve, en su color, y lo que dice Where's The Jump). Va en su propia
+    /// cápsula encima de la burbuja, para que la burbuja no cambie de alto ni tape la barra.
+    var scare: JumpScare? = nil
 
     var body: some View {
         VStack(spacing: DS.Space.s1) {
@@ -79,7 +82,31 @@ struct DSSeekBubble: View {
         }
         .padding(.horizontal, DS.Space.s5).padding(.vertical, DS.Space.s3)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .overlay(alignment: .top) {
+            if let scare {
+                note(scare).alignmentGuide(.top) { $0[.bottom] + DS.Space.s2 }
+                    .transition(.opacity)
+            }
+        }
         .accessibilityHidden(true)
+    }
+
+    private func note(_ scare: JumpScare) -> some View {
+        let tone = scare.major ? DS.danger : DS.warning
+        return VStack(spacing: DS.Space.s1) {
+            HStack(spacing: DS.Space.s2) {
+                Circle().fill(tone).frame(width: DS.PlayerPanel.scareDot, height: DS.PlayerPanel.scareDot)
+                (scare.major ? Text("Susto fuerte") : Text("Susto leve")).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(tone)
+            }
+            if !scare.text.isEmpty {
+                Text(verbatim: scare.text).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text)
+                    .multilineTextAlignment(.center).lineLimit(2)
+            }
+        }
+        .frame(maxWidth: DS.PlayerPanel.scareNoteWidth)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
     }
 }
 

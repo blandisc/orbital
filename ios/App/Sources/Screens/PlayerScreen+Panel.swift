@@ -458,15 +458,12 @@ extension PlayerScreen {
         // Mientras el video llega a donde soltaste (una descarga tarda en buscar), el pulgar se queda ahí: antes regresaba al
         // punto viejo y parecía que no te hacía caso.
         let shown = scrubbing ?? (drag.dragAxis == .horizontal ? drag.seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
+        // Los sustos (Where's The Jump) van sobre la misma línea, como los capítulos de YouTube (antes, en una franja aparte
+        // encima, y no se entendía qué eran); en Ajustes › Reproductor se quitan.
+        let scares = scareMarks ? model.scares ?? [] : []
         return VStack(spacing: DS.Space.s1) {
-            // Los sustos (Where's The Jump), marcados sobre la barra; vibra unos segundos antes si pediste el aviso.
-            if let scares = model.scares {
-                ScareMarks(position: shown, duration: duration, scares: scares)
-                    .padding(.horizontal, DS.Remote.playhead / 2)
-                    .scareWarning(position: model.snapshot.position, scares: scares, enabled: scareWarnings && model.snapshot.state == .playing)
-            }
             // La barra a todo lo ancho y, debajo, lo visto y lo que falta (sin la hora a la que terminas: no la querías).
-            PlayerScrubBar(value: shown, duration: duration, marks: skipMarks(model), ticks: skipTicks(model), clock: { clock($0) },
+            PlayerScrubBar(value: shown, duration: duration, marks: skipMarks(model), ticks: skipTicks(model), scares: scares, clock: { clock($0) },
                            previewFrom: drag.dragAxis == .horizontal ? drag.seekPositionAtDragStart : nil,
                            change: { scrubbing = $0; model.scrub(to: $0) },
                            editing: { editing in
@@ -475,7 +472,7 @@ extension PlayerScreen {
                                pulse()
                            })
                 .accessibilityElement()
-                .accessibilityLabel(Text("Avance")).accessibilityValue(Text(verbatim: "\(clock(shown)) / \(clock(duration))"))
+                .accessibilityLabel(Text("Avance")).accessibilityValue(scrubValue(shown: shown, duration: duration, scares: scares))
                 // Con VoiceOver, deslizar arriba/abajo salta 10 s como los botones.
                 .accessibilityAdjustableAction { d in
                     Task { await model.skip(d == .increment ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
@@ -491,6 +488,24 @@ extension PlayerScreen {
             // arriba (antes, con todo el alto del área de toque en medio, se veían despegados).
             .padding(.top, -DS.Space.s2)
         }
+        // Vibra unos segundos antes de cada susto si pediste el aviso (con las marcas puestas o no).
+        .scareWarning(position: model.snapshot.position, scares: model.scares ?? [], enabled: scareWarnings && model.snapshot.state == .playing)
+        // Las primeras películas con sustos, un aviso dice qué son los puntos (sin eso no hay forma de saberlo).
+        .task(id: scares.isEmpty) {
+            guard !scares.isEmpty, scareHintSeen < DS.PlayerPanel.scareHintTimes else { return }
+            scareHintSeen += 1
+            let tr = { (k: String) in Strings.tr(k, language: env.services.appSettings.uiLanguage) }
+            show(PlayerNotice(title: tr("Los puntos de la barra son sustos"),
+                              detail: tr("Rojo, fuerte · ámbar, leve. Arrastra la barra para leer cada uno; se quitan en Ajustes › Reproductor."),
+                              tone: .info))
+        }
+    }
+
+    /// Lo que dice VoiceOver de la barra: el minuto y, en una película con sustos, cuántos quedan.
+    func scrubValue(shown: Double, duration: Double, scares: [JumpScare]) -> Text {
+        let time = Text(verbatim: "\(clock(shown)) / \(clock(duration))")
+        let ahead = scares.filter { $0.time > shown }.count
+        return scares.isEmpty ? time : time + Text(verbatim: ", ") + Text("\(ahead) sustos por delante")
     }
 
     /// Las rayitas fijas: dónde termina la intro y dónde empiezan los créditos.

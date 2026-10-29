@@ -6352,6 +6352,17 @@
         }
       }
     },
+    "En las películas de terror, puntos rojos (fuertes) y ámbar (leves) en la barra de avance, de Where's The Jump.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In horror movies, red (major) and amber (minor) dots on the progress bar, from Where's The Jump."
+          }
+        }
+      }
+    },
     "En latino": {
       "extractionState": "manual",
       "localizations": {
@@ -9264,6 +9275,17 @@
         }
       }
     },
+    "Los puntos de la barra son sustos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The dots on the bar are jump scares"
+          }
+        }
+      }
+    },
     "Los siguientes %@": {
       "extractionState": "manual",
       "localizations": {
@@ -9414,6 +9436,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mark as watched"
+          }
+        }
+      }
+    },
+    "Marcar los sustos en la barra": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark jump scares on the bar"
           }
         }
       }
@@ -13968,6 +14001,17 @@
         }
       }
     },
+    "Rojo, fuerte · ámbar, leve. Arrastra la barra para leer cada uno; se quitan en Ajustes › Reproductor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Red, major · amber, minor. Drag the bar to read each one; turn them off in Settings › Player."
+          }
+        }
+      }
+    },
     "Romance": {
       "extractionState": "manual",
       "localizations": {
@@ -15546,6 +15590,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thriller"
+          }
+        }
+      }
+    },
+    "Susto fuerte": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Major scare"
+          }
+        }
+      }
+    },
+    "Susto leve": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minor scare"
           }
         }
       }

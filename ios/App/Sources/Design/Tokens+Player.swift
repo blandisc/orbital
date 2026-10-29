@@ -132,6 +132,12 @@ extension DS {
         /// Las rayitas del fin de la intro y del inicio de los créditos: su grosor y cuánto sobresalen de la barra; la hilera de
         /// tiempos bajo la barra.
         static let scrubTickWidth: CGFloat = 1.5, scrubTickReach: CGFloat = 3, scrubTimes: CGFloat = 16
+        /// Los sustos sobre la barra: el punto de uno fuerte quieta y arrastrando (los leves miden `scareDotMinor` de eso), qué
+        /// tan cerca (parte de la película) cuenta como «encima» al arrastrar y el ancho de su nota sobre la burbuja.
+        static let scareDot: CGFloat = 7, scareDotActive: CGFloat = 12, scareDotMinor: CGFloat = 0.7
+        static let scareReach: Double = 0.006, scareNoteWidth: CGFloat = 220
+        /// Cuántas películas con sustos te avisa qué son las marcas (después ya lo sabes).
+        static let scareHintTimes = 2
         /// El menú del «⋯»: su ancho.
         static let menuWidth: CGFloat = 272
         /// «Siguiente episodio»: el ancho de la imagen del episodio y el anillo de la cuenta atrás en «Ver ahora».

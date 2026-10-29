@@ -414,28 +414,6 @@ private struct ScareStatus: View {
     }
 }
 
-/// Solo las marcas de los sustos (sin barra), para ponerlas sobre la barra de avance del reproductor del iPhone.
-struct ScareMarks: View {
-    let position: Double
-    let duration: Double
-    let scares: [JumpScare]
-
-    var body: some View {
-        GeometryReader { geo in
-            ForEach(Array(scares.enumerated()), id: \.offset) { _, scare in
-                Capsule()
-                    .fill(scare.time <= position ? DS.textFaint : (scare.major ? DS.danger : DS.warning))
-                    .frame(width: DS.Remote.scareMarkWidth, height: scare.major ? DS.Remote.scareMark : DS.Remote.scareMark / 2)
-                    .position(x: duration > 0 ? CGFloat(min(1, scare.time / duration)) * geo.size.width : 0, y: geo.size.height / 2)
-            }
-        }
-        .frame(height: DS.Remote.scareMark)
-        .accessibilityElement()
-        .accessibilityLabel(Text("Sustos"))
-        .accessibilityValue(Text("\(scares.filter { $0.time > position }.count) sustos por delante"))
-    }
-}
-
 extension View {
     /// Vibra unos segundos antes de cada susto (una vez por susto, aunque dos vengan juntos).
     func scareWarning(position: Double, scares: [JumpScare], enabled: Bool) -> some View {

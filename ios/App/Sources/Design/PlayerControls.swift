@@ -331,6 +331,8 @@ struct PlayPauseButton: View {
 /// La barra de avance (la misma en vertical y en horizontal), a todo lo ancho: delgada con un punto chico mientras miras, gruesa
 /// mientras la arrastras, con una burbuja encima que dice a qué minuto vas y cuánto saltas. Dos rayitas tenues marcan dónde
 /// termina la intro y dónde empiezan los créditos (desde ahí el episodio cuenta como visto); al arrastrar, los tramos se aclaran.
+/// Los sustos (Where's The Jump) son puntos sobre la misma línea, como los capítulos de YouTube: rojo fuerte, ámbar leve, gris
+/// los que ya pasaron. Al arrastrar cerca de uno, la burbuja dice cuál es y vibra.
 struct PlayerScrubBar: View {
     let value: Double
     let duration: Double
@@ -338,6 +340,8 @@ struct PlayerScrubBar: View {
     var marks: [ClosedRange<Double>] = []
     /// Las rayitas fijas: el fin de la intro y el inicio de los créditos (segundos).
     var ticks: [Double] = []
+    /// Los sustos de la película (vacío: no hay mapa o los quitaste en Ajustes).
+    var scares: [JumpScare] = []
     /// Cómo se dice un minuto («11:16»).
     var clock: (Double) -> String = { _ in "" }
     /// Buscando arrastrando sobre el video (no sobre la barra): desde dónde. La barra se ve igual que al arrastrarla, con la misma
@@ -368,6 +372,12 @@ struct PlayerScrubBar: View {
                         .frame(width: DS.PlayerPanel.scrubTickWidth, height: track + DS.PlayerPanel.scrubTickReach * 2)
                         .offset(x: x(tick) - DS.PlayerPanel.scrubTickWidth / 2)
                 }
+                // Los sustos, sobre la línea: crecen con ella al arrastrar; los leves, más chicos.
+                ForEach(Array(scares.enumerated()), id: \.offset) { _, scare in
+                    let dot = (active ? DS.PlayerPanel.scareDotActive : DS.PlayerPanel.scareDot) * (scare.major ? 1 : DS.PlayerPanel.scareDotMinor)
+                    Circle().fill(scare.time <= value ? DS.textFaint : (scare.major ? DS.danger : DS.warning))
+                        .frame(width: dot, height: dot).offset(x: x(scare.time) - dot / 2)
+                }
                 // El punto: dónde vas. Chico mientras miras, más grande mientras lo arrastras.
                 let knob = active ? DS.PlayerPanel.scrubKnobActive : DS.PlayerPanel.scrubKnob
                 Circle().fill(DS.text).frame(width: knob, height: knob).offset(x: x(value) - knob / 2)
@@ -375,7 +385,7 @@ struct PlayerScrubBar: View {
                 // Arrastrando: la burbuja arriba de la barra, centrada sobre el dedo (sin salirse de la barra ni tapar los tiempos).
                 if active {
                     let delta = value - (previewFrom ?? startValue)
-                    DSSeekBubble(time: clock(value), delta: (delta >= 0 ? "+" : "−") + clock(abs(delta)))
+                    DSSeekBubble(time: clock(value), delta: (delta >= 0 ? "+" : "−") + clock(abs(delta)), scare: nearest)
                         .fixedSize()
                         .position(x: min(max(x(value), DS.Gesture.seekBubbleSideMargin), width - DS.Gesture.seekBubbleSideMargin),
                                   y: DS.PlayerPanel.scrubHit / 2 - DS.PlayerPanel.scrubBubbleLift)
@@ -397,7 +407,17 @@ struct PlayerScrubBar: View {
         }
         .frame(height: DS.PlayerPanel.scrubHit)
         .sensoryFeedback(.selection, trigger: dragging)
+        // Arrastrando, cruzar un susto vibra como el tope de un capítulo.
+        .sensoryFeedback(.impact(weight: .light), trigger: nearScare) { _, new in new != nil }
     }
+
+    /// El susto bajo el punto mientras arrastras: la burbuja lo nombra y, al cruzarlo, vibra (su minuto).
+    private var nearest: JumpScare? {
+        guard dragging || previewFrom != nil, duration > 0 else { return nil }
+        let reach = DS.PlayerPanel.scareReach * duration
+        return scares.filter { abs($0.time - value) <= reach }.min { abs($0.time - value) < abs($1.time - value) }
+    }
+    private var nearScare: Double? { nearest?.time }
 }
 
 /// Un renglón del menú «⋯» del reproductor: el ícono, el nombre y, a la derecha, un dato (el zoom puesto).

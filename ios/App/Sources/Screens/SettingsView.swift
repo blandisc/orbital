@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var tmdbKey = ""
     @State private var newAddon = ""
     @State private var confirmSignOut = false
+    @AppStorage("scare-marks") private var scareMarks = true
     @State private var confirmUnlink = false
     @State private var orbitalToken = ""
     @State private var editingAvatar = false
@@ -250,9 +251,13 @@ struct SettingsView: View {
             Picker("Con datos móviles", selection: Binding(get: { s.cellularQuality }, set: { v in model.update { $0.cellularQuality = v } })) { qualityOptions }
         }
         .listRowBackground(DS.surface)
-        Section("Reproductor") {
+        Section {
             LabeledContent("Motor", value: PlayerEngines.aetherAvailable ? "AetherEngine" : "AVPlayer")
             Toggle("Abrir siempre en Infuse", isOn: Binding(get: { s.preferInfuse }, set: { v in model.update { $0.preferInfuse = v } }))
+            Toggle("Marcar los sustos en la barra", isOn: $scareMarks)
+                .accessibilityIdentifier("settings-scare-marks")
+        } header: { Text("Reproductor") } footer: {
+            Text("En las películas de terror, puntos rojos (fuertes) y ámbar (leves) en la barra de avance, de Where's The Jump.")
         }
         .listRowBackground(DS.surface)
     }
