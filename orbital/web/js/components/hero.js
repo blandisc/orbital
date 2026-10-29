@@ -9,8 +9,6 @@ import { appIcon } from "./card.js";
 import { PlatformMark } from "./ui.js";
 
 /** Información grande del juego seleccionado: sistema, título, datos y acciones. */
-/** Sin subtítulo propio, el nombre de la categoría en palabras (no «media» en minúsculas). */
-const CATEGORY_NAMES = { media: "Películas y series", apps: "App", games: "Juego" };
 
 export function createHero({ onAction }) {
   const eyebrow = h("div", { class: "hero__eyebrow" });

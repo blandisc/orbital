@@ -47,6 +47,8 @@ function applyPalette({ tint, accent }) {
  * y de las filas queda limpio). Con solo portada vertical, la portada se muestra nítida, como
  * la caja del juego, sobre un halo de su color. Fundido cruzado entre dos capas.
  */
+const STALE_MS = 600; // más que esto cargando: el fondo anterior ya no corresponde
+
 export function createBackdrop({ settle = 150 } = {}) {
   const makeLayer = () => {
     const art = h("div", { class: "backdrop__art" });
@@ -88,7 +90,15 @@ export function createBackdrop({ settle = 150 } = {}) {
         return swap(null, false);
       }
       const img = new Image();
+      // Si tarda (red lenta, sin internet), no se queda el arte de lo anterior detrás de lo nuevo (Hades detrás de una
+      // serie): se funde a neutro y la imagen entra cuando llegue.
+      const stale = setTimeout(() => {
+        if (mine !== token) return;
+        applyPalette(paletteFor(null));
+        swap(null, false);
+      }, STALE_MS);
       img.onload = () => {
+        clearTimeout(stale);
         if (mine !== token) return;
         const palette = paletteOf(img, url);
         if (palette) applyPalette(palette); // de fuera: el color anterior se queda hasta que llega el tono (sin parpadeo gris)
@@ -96,6 +106,7 @@ export function createBackdrop({ settle = 150 } = {}) {
         swap(url, poster, pixel);
       };
       img.onerror = () => {
+        clearTimeout(stale);
         if (mine !== token) return;
         applyPalette(paletteFor(null));
         swap(null, false);

@@ -41,6 +41,10 @@ const EDGE_MIN = 12; // px: menos que esto no vale la pena una columna de orilla
 const AMBIENT_LIFT_GAPS = 5;
 const IDLE_MS = 2000; // quieto 2 s: el mosaico empieza a subir solo (el iPhone igual: DesignTokens.Mosaic.idleSeconds)
 const RAMP_MS = 2400; // y arranca suave: de quieto a su ritmo en ~2,4 s, sin tirón
+// Orbital debe gastar casi nada quieta (los juegos usan la misma Legion Go): la deriva dura un rato, se frena igual de
+// suave y el ciclo se apaga. Mientras dura, un cuadro cada 33 ms basta (12–19 px/s: medio píxel por cuadro).
+const AMBIENT_MS = 90_000;
+const FRAME_MS = 33;
 const ALIVE_MS = 2200;
 const BUFFER = 360; // px de piezas de sobra debajo de lo visible (más, y se gastaban sugerencias que aún no se ven)
 
@@ -336,12 +340,17 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   }
 
   // --- ambiente: todo sube despacio, lo de arriba se va y abajo llegan nuevas -----------------------
+  const smooth = (t) => t * t * (3 - 2 * t);
   function tick(now) {
-    const dt = Math.min(.05, (now - last) / 1000);
+    if (now - last < FRAME_MS - 4) { frame = requestAnimationFrame(tick); return; }
+    const dt = Math.min(.08, (now - last) / 1000);
     last = now;
     if (mode === "ambient") {
-      const t = Math.min(1, (now - ambientSince) / RAMP_MS);
-      const ease = t * t * (3 - 2 * t); // acelera despacio y se asienta en su ritmo
+      const age = now - ambientSince;
+      const rest = Math.max(0, 1 - Math.max(0, age - AMBIENT_MS) / RAMP_MS);
+      // acelera despacio, se asienta en su ritmo y, pasado AMBIENT_MS, se frena hasta quedarse quieto
+      const ease = smooth(Math.min(1, age / RAMP_MS)) * smooth(rest);
+      if (!rest) { frame = 0; return; } // quieto del todo: sin ciclo (cualquier botón lo despierta)
       columns.forEach((col, c) => {
         if (col.edge && !col.active) return;
         col.offset += DRIFT[c] * ease * dt;

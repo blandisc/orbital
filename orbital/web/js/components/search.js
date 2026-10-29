@@ -191,7 +191,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
         pending = "";
         showResults([...local, ...data.results.filter((r) => !picking || (r.kind || r.extra?.kind) === picking.kind || !picking.kind)]);
         setHint(items.length ? count(items.length) : `Nada con «${q}». Prueba con otra palabra o menos letras.`);
-      } catch (err) {
+      } catch {
         if (mine !== token) return;
         pending = "";
         showResults(local); // sin las portadas vacías: no va a llegar nada
