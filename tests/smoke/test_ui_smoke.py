@@ -121,9 +121,11 @@ def test_screensaver_fills_the_screen_edges(page):
     left, right = [page.evaluate(f"(() => {{ const r = document.querySelectorAll('.foryou-mosaic__col')[{i}].getBoundingClientRect(); return [r.left, r.right]; }})()") for i in (6, 7)]
     assert left[0] < 0 < left[1] < width / 4 and 3 * width / 4 < right[0] < width < right[1]  # asoman por los dos lados
     assert all(page.locator(".foryou-mosaic__col").nth(i).locator(".foryou-mosaic__tile").count() > 0 for i in (6, 7))
-    page.evaluate("delete document.body.dataset.screensaver")  # sin protector, las de las orillas se retiran
-    page.wait_for_function("document.querySelectorAll('.foryou-mosaic__col:not([hidden])').length === 6", timeout=8000)
-    assert page.locator(".foryou-mosaic__col[hidden] .foryou-mosaic__tile").count() == 0
+    # Sin protector también se quedan: desde ff4561a1 las orillas llenan el margen de la TV siempre (antes solo con el
+    # protector; esta prueba esperaba que se retiraran y fallaba desde entonces).
+    page.evaluate("delete document.body.dataset.screensaver")
+    page.wait_for_timeout(600)
+    assert page.evaluate("document.querySelectorAll('.foryou-mosaic__col:not([hidden])').length") == 8
 
 
 PIXEL = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==")
@@ -186,13 +188,10 @@ def test_opening_a_game_and_coming_back(page, server):
 def test_diagnostics_screen(page):
     ready(page)
     page.locator(".status-bar__brand").click()  # el logo abre el menú
-    page.get_by_text("Ajustes", exact=True).first.click()
-    page.get_by_text("Mantenimiento", exact=True).first.click()  # lo técnico vive en Ajustes → Mantenimiento
-    # «Diagnóstico» queda justo donde estaba «Mantenimiento»: un toque ahí antes de 400 ms la hoja lo toma como
-    # doble toque y lo ignora a propósito (así un doble toque no confirma «¿Reiniciar?»). Una persona no es tan rápida.
-    page.locator(".sheet__title", has_text="Mantenimiento").wait_for()
-    page.wait_for_timeout(500)
-    page.get_by_text("Diagnóstico", exact=True).first.click()
+    page.locator(".sheet__item", has_text="Ajustes").click()  # Ajustes a pantalla completa
+    page.locator(".settings .rail__item", has_text="Sistema").click()  # lo técnico vive en Ajustes › Sistema
+    page.locator(".settings__page-title", has_text="Sistema").wait_for()
+    page.locator(".settings .sheet__item", has_text="Diagnóstico").click()
     page.get_by_text("Memoria libre").wait_for(timeout=15_000)
 
 

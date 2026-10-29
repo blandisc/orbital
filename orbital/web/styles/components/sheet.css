@@ -84,4 +84,4 @@
 /* Con el dedo: «Atrás» (arriba a la derecha) no tapa el título, las filas miden ~44 px y cada flecha de un ajuste se toca por separado. */
 [data-input="touch"] .sheet__title { padding-right: var(--touch-back-room); }
 [data-input="touch"] .sheet__item { min-height: var(--touch-target); }
-[data-input="touch"] .sheet__chev { min-width: var(--touch-target); min-height: var(--touch-target); opacity: .8; }.sheet__label .flag { margin-inline-end: var(--space-2); }
+[data-input="touch"] .sheet__chev { min-width: var(--touch-target); min-height: var(--touch-target); opacity: var(--opacity-text); }.sheet__label .flag { margin-inline-end: var(--space-2); }

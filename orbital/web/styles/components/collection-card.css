@@ -7,9 +7,9 @@
 /* El halo de su color (plataforma, premio, estudio): una luz baja detrás del abanico. */
 .collection__glow {
   position: absolute; inset: auto 12% -18% 12%; height: 55%; z-index: var(--z-behind); pointer-events: none;
-  background: radial-gradient(50% 60% at 50% 100%, var(--halo, var(--color-hairline)), transparent 72%); opacity: .55;
+  background: radial-gradient(50% 60% at 50% 100%, var(--halo, var(--color-hairline)), transparent 72%); opacity: var(--opacity-soft);
 }
-.card--focused .collection__glow { opacity: .9; }
+.card--focused .collection__glow { opacity: var(--opacity-solid); }
 /* El foco de .card (anillo y brillo), con el halo de su color si tiene; sin esto la sombra de arriba le ganaba. */
 .card--collection.card--focused { box-shadow: var(--ring-focus), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--halo, var(--art-accent)) 55%, transparent); }
 

@@ -1,0 +1,26 @@
+/* Ajustes a pantalla completa (js/components/settings.js): el riel de categorías a la izquierda y la lámina de la elegida.
+   Las filas son las de una hoja (sheet.css); aquí, la composición, la ayuda al pie y lo que cambia con el foco. */
+.settings { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--space-4); background: var(--color-bg); }
+.settings__title { font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); }
+.settings__body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-10); min-height: 0; }
+/* El riel de Juegos, en su columna (allá flota sobre la cuadrícula). Abierto, empuja la lámina en vez de taparla. */
+.settings .rail { position: relative; left: auto; top: auto; bottom: auto; height: 100%; }
+.settings__page { display: flex; flex-direction: column; min-height: 0; max-width: 66rem; }
+.settings__page-title { padding: 0 var(--space-3); font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: var(--leading-title); }
+.settings__lead { padding: var(--space-1) var(--space-3) var(--space-4); color: var(--color-text-muted); font-size: var(--type-body); }
+/* La lista se desplaza sola con el foco (y con la rueda o el dedo); sin barra a la vista. */
+.settings__list { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow-y: auto; scrollbar-width: none; padding-bottom: var(--space-4); }
+.settings__list > * { flex-shrink: 0; }
+.settings__row { cursor: pointer; }
+/* Con el riel abierto, la lámina es una vista previa: atenuada hasta entrar. */
+.settings[data-zone="rail"] .settings__list { opacity: var(--opacity-near); }
+/* Lo que falta: el ícono en ámbar (como un aviso `warn`). */
+.settings__row--warn .sheet__icon { color: var(--color-warning); background: color-mix(in oklab, var(--color-warning) 18%, transparent); }
+.settings__row--warn.sheet__item--focused .sheet__icon { color: inherit; background: var(--on-light-fill-strong); }
+/* La ayuda de la fila enfocada: una sola línea, al pie, sobre el pie de controles. */
+.settings__help { display: flex; align-items: center; gap: var(--space-3); max-width: 66rem; padding-top: var(--space-3); box-shadow: 0 -1px 0 var(--color-hairline);
+  color: var(--color-text-muted); font-size: var(--type-secondary); }
+.settings__help .icon { flex: none; width: var(--icon-sm); height: var(--icon-sm); }
+.settings__help-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Con el dedo: «Atrás» va arriba a la derecha; el título le deja su lugar. */
+[data-input="touch"] .settings__title { padding-right: var(--touch-back-room); }

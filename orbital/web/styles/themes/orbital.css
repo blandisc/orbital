@@ -14,6 +14,9 @@
   --color-fill-hover: rgba(255, 255, 255, .16);
   --color-hairline: rgba(255, 255, 255, .09);
   --color-hairline-strong: rgba(255, 255, 255, .28);
+  /* El borde fino de una superficie, por dentro (no ocupa lugar): normal y marcado. */
+  --edge-hairline: inset 0 0 0 1px var(--color-hairline);
+  --edge-strong: inset 0 0 0 1px var(--color-hairline-strong);
   --color-text: var(--palette-paper);
   --color-text-muted: var(--palette-ink-300);
   --color-text-faint: rgba(255, 255, 255, .5); /* ≥ 4,5:1 (antes .18: el placeholder no se leía) */

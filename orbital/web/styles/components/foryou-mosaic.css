@@ -8,6 +8,10 @@
 .foryou-mosaic__col { position: absolute; top: 0; bottom: 0; transition: left var(--duration-enter) var(--ease-out), width var(--duration-enter) var(--ease-out); }
 .foryou-mosaic__track { position: absolute; left: 0; right: 0; top: 0; will-change: transform; transition: transform var(--duration-enter) var(--ease-out); }
 .foryou-mosaic--drifting .foryou-mosaic__track { transition: none; }
+/* La deriva: cada tramo es una transición del compositor (sin JavaScript en cada cuadro); arranca y se frena suave. */
+.foryou-mosaic--gliding .foryou-mosaic__track { transition: transform var(--duration-glide) linear; }
+.foryou-mosaic--glide-in .foryou-mosaic__track { transition-timing-function: var(--ease-glide-in); }
+.foryou-mosaic--glide-out .foryou-mosaic__track { transition-timing-function: var(--ease-glide-out); }
 
 /* La entrada: las columnas suben con un fundido, una tras otra. */
 .foryou-mosaic--intro .foryou-mosaic__col { animation: foryou-col-in var(--duration-enter-long) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--stagger) * 1.5); }
@@ -15,13 +19,13 @@
 
 .foryou-mosaic__tile {
   position: absolute; left: 0; right: 0; overflow: hidden; border-radius: var(--tile-radius); background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-hairline);
+  box-shadow: var(--edge-hairline);
   transition: top var(--duration-enter) var(--ease-out), height var(--duration-enter) var(--ease-out),
     left var(--duration-enter) var(--ease-out), right var(--duration-enter) var(--ease-out),
     opacity var(--duration-enter) var(--ease-out), filter var(--duration-enter) var(--ease-out), box-shadow var(--duration-slow) var(--ease-out);
 }
 .foryou-mosaic--drifting .foryou-mosaic__tile { transition: opacity var(--duration-enter) var(--ease-out), filter var(--duration-enter) var(--ease-out); }
-.foryou-mosaic__tile::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--gradient-tile-shade); opacity: .55; }
+.foryou-mosaic__tile::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--gradient-tile-shade); opacity: var(--opacity-soft); }
 .foryou-mosaic__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity var(--duration-tint) var(--ease-out), transform var(--duration-alive) linear; }
 .foryou-mosaic__art--wide { opacity: 0; }
 .foryou-mosaic__tile--land .foryou-mosaic__art--poster { opacity: 0; }
@@ -43,7 +47,7 @@
 .foryou-mosaic__kind {
   position: absolute; left: var(--space-3); top: var(--space-3); z-index: var(--z-raised); display: grid; place-items: center;
   width: 2.2rem; height: 2.2rem; border-radius: 50%; color: var(--color-text);
-  background: var(--color-badge-bg); backdrop-filter: blur(var(--blur-glass)); box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  background: var(--color-badge-bg); backdrop-filter: blur(var(--blur-glass)); box-shadow: var(--edge-strong);
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
 }
 .foryou-mosaic__kind svg { width: var(--icon-md); height: var(--icon-md); fill: none; stroke: currentColor; stroke-width: var(--stroke-fine); stroke-linecap: round; stroke-linejoin: round; }

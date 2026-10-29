@@ -109,8 +109,10 @@ def router(d: Deps, is_local) -> APIRouter:
     r = APIRouter()
 
     async def run_voice(body: VoiceRequest, remote: bool) -> dict:
+        source = body.source or ("alexa" if remote else "local")
         if remote and body.source != "iphone":  # «Alexa se usó hace…» solo con Alexa, no con Siri ni el iPhone
             d.alexa_last = time.time()
+        d.extra.setdefault("voice_seen", {})[source] = time.time()  # Ajustes › Voz: cuándo llegó la última orden de cada lado
         started = time.monotonic()
         if body.intent:
             result = await run_in_threadpool(d.voice.handle_intent, body.intent, body.slots)
@@ -122,7 +124,7 @@ def router(d: Deps, is_local) -> APIRouter:
             d.hub.publish(event)
         out = result.as_dict()
         # voz.log: qué se dijo y qué se entendió, para saber qué frases fallan de verdad.
-        voice_log.record({"source": body.source or ("alexa" if remote else "local"), "intent": body.intent, "slots": body.slots,
+        voice_log.record({"source": source, "intent": body.intent, "slots": body.slots,
                           "text": body.text, "understood": out.get("intent"), "ok": out.get("ok"), "speech": out.get("speech"),
                           "ms": round((time.monotonic() - started) * 1000)})
         return out

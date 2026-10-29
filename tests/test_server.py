@@ -95,6 +95,22 @@ def test_system_and_alexa_indicator(make_client):
         assert c.get("/api/system", headers=auth).json()["alexa_last"] > 0
 
 
+def test_voice_status_says_where_the_last_order_came_from(make_client):
+    """Ajustes › Voz › «Qué ha oído la consola»: por dónde llegó la última orden (Alexa, el iPhone y Siri, aquí) y las últimas
+    con lo que se dijo y lo que se entendió. Sin eso, «la voz no funciona» no se podía ni ubicar."""
+    with make_client(REMOTE) as c:
+        auth = {"Authorization": "Bearer secreto"}
+        before = c.get("/api/voice/status", headers=auth).json()
+        assert before["sources"] == {"alexa": None, "iphone": None, "local": None} and before["recent"] == []
+        c.post("/api/voice", json={"text": "abre hades"}, headers=auth)
+        c.post("/api/voice", json={"text": "pon pausa", "source": "iphone"}, headers=auth)
+        after = c.get("/api/voice/status", headers=auth).json()
+        assert after["sources"]["alexa"] > 0 and after["sources"]["iphone"] > 0 and after["sources"]["local"] is None
+        assert [e["source"] for e in after["recent"]] == ["iphone", "alexa"]  # la más reciente primero
+        assert after["recent"][1]["text"] == "abre hades" and after["recent"][1]["understood"] == "LaunchGameIntent"
+        assert "ok" in after["recent"][0] and after["recent"][0]["speech"]
+
+
 def test_closed_event_reaches_ui(make_client, library):
     with make_client() as c:
         app_bus = c.app.state.bus
@@ -197,6 +213,7 @@ def test_auto_close_times_can_be_changed_from_orbital(make_client, library):
 
     with make_client() as c:
         assert c.get("/api/settings").json()["game_idle_minutes"] == 60
+        assert c.get("/api/settings").json()["tv"] == {"configured": False, "input": "hdmi1"}  # Ajustes › Tele y voz
         assert c.post("/api/settings", json={"game_idle_minutes": 120, "close_previous": False}).status_code == 200
         assert c.post("/api/settings", json={"game_idle_minutes": 7}).status_code == 422
     sessions = ConsoleShell(library).sessions
@@ -255,3 +272,13 @@ def test_the_interface_input_trace_lands_in_entrada_log(library, tmp_path):
         assert c.post("/api/ui/trace", json={"entries": entries}).json() == {"ok": True}
     lines = [_json.loads(x) for x in input_log.default_path().read_text(encoding="utf-8").splitlines()]
     assert [x["src"] for x in lines] == ["pad", "action"] and lines[0]["from"] == "ui" and lines[0]["focus"] is False
+
+
+def test_ui_says_whether_it_reads_the_controller_and_learns_if_the_server_sees_one(make_client):
+    """Quieta, la interfaz suelta el mando del navegador y el primer botón le llega del servidor (shell.forward_to_ui)."""
+    with make_client() as c:
+        shell = c.app.state.shell
+        assert c.post("/api/ui/pad", json={"listening": False}).json() == {"xinput": False}  # sin XInput en la prueba
+        assert shell.ui_pad is False
+        c.post("/api/ui/pad", json={"listening": True})
+        assert shell.ui_pad is True

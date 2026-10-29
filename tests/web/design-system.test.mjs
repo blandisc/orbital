@@ -30,6 +30,9 @@ const JS_FILES = ["components", "core", "app"].flatMap((dir) => {
 const stripComments = (line) => line.replace(/\/\*.*?\*\//g, "");
 const exceptionOf = (line) => line.match(/ds-exception:\s*([^*]+?)\s*\*\//)?.[1];
 
+// Una parada de una animación (`from {`, `50% {`, una @keyframes en una línea).
+const KEYFRAME = /@keyframes|(?:^|[\s{};])(?:from|to|\d+%)\s*\{/;
+
 /** Valores que deben ser tokens. */
 const RULES = [
   ["color", /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|(?<![-\w])(white|black)(?![-\w])/],
@@ -43,15 +46,19 @@ const RULES = [
   ["mayúsculas", /text-transform:\s*uppercase/],
   // La paleta cruda es del tema: un componente usa el nombre semántico (--color-…, --gradient-…).
   ["paleta", /var\(--palette-/],
+  // Una opacidad de estado dice qué es (--opacity-*); 0 y 1 no son grados. Dentro de @keyframes es movimiento: se deja.
+  ["opacidad", /opacity:\s*0?\.\d/, KEYFRAME],
+  ["radio", /border-radius:[^;]*?(?<![\w-])\d*\.?\d+(px|rem|em)\b/], // --radius-*
+  ["borde fino", /inset 0 0 0 1px var\(--color-hairline/], // --edge-hairline / --edge-strong
 ];
 
-test("CSS de componentes: colores, tiempos, capas y letra siempre con tokens", () => {
+test("CSS de componentes: colores, tiempos, capas, letra, opacidad, radios y bordes siempre con tokens", () => {
   const problems = [];
   for (const file of STYLE_FILES) {
     read(file).split("\n").forEach((line, i) => {
       const code = stripComments(line);
-      for (const [kind, rx] of RULES) {
-        if (!rx.test(code)) continue;
+      for (const [kind, rx, skip] of RULES) {
+        if (!rx.test(code) || skip?.test(code)) continue;
         const why = exceptionOf(line);
         if (why && DOC.includes(why)) continue;
         problems.push(`${file.slice(WEB.length + 1)}:${i + 1} [${kind}] ${line.trim().slice(0, 110)}${why ? "  ← excepción sin documentar" : ""}`);
@@ -158,4 +165,13 @@ test("sin tokens muertos: cada token definido se usa en algún lado", () => {
     && !everything.includes(`var(${name})`) && !everything.includes(`var(${name},`)
     && !everything.includes(`"${name}"`) && !everything.includes(`'${name}'`)).sort();
   assert.deepEqual(unused, [], `Tokens que nadie usa (bórralos o úsalos): ${unused.join(", ")}`);
+});
+
+test("el mando solo se pide en core/pads.js (pedirlo una vez deja a Edge leyéndolo sin parar)", () => {
+  // docs/sistema-de-diseno.md § 5: desde la ventana no se puede soltar; desde el marco de pads.js, sí (Orbital quieta).
+  const offenders = JS_FILES.filter((file) => !file.endsWith(join("core", "pads.js")))
+    .flatMap((file) => read(file).split("\n").map((line, i) => [file, i, line]))
+    .filter(([, , line]) => /navigator\.getGamepads|["']gamepad(dis)?connected["']/.test(line.replace(/\/\/.*$/, "")))
+    .map(([file, i, line]) => `${file.slice(WEB.length + 1)}:${i + 1} ${line.trim().slice(0, 100)}`);
+  assert.deepEqual(offenders, [], `Usa core/pads.js (pads(), onConnected()):\n${offenders.join("\n")}`);
 });

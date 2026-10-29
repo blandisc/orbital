@@ -1,6 +1,5 @@
 /* Juegos (js/components/games.js): riel de consolas, portadas y la ficha del juego, con las piezas de
    una vista con secciones (rail.css, browse.css, detail-panel.css). Ocupa todo el centro: el héroe no
    se usa aquí (la ficha lo sustituye). */
-body[data-view="games"] .hero, body[data-view="games"] .shelf { display: none; }
 
-.games { grid-row: 2 / 4; --browse-inset: var(--page-gutter); }
+.games { grid-row: 2 / 4; grid-column: 1; /* fija, como Para ti: se encima con la sección estacionada */ --browse-inset: var(--page-gutter); }

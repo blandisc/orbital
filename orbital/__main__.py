@@ -11,11 +11,10 @@ import time
 import urllib.request
 from pathlib import Path
 
-import uvicorn
-
 from .config import default_config_path, load_config
-from .kiosk import KioskWindow
-from .server import create_app, create_public_app
+
+# uvicorn, el servidor (FastAPI y todas sus rutas) y el kiosko se importan solo en el proceso que sirve: el vigilante
+# (supervisor) se queda vivo toda la sesión y antes cargaba todo eso sin usarlo (≈40 MB).
 
 log = logging.getLogger("orbital")
 
@@ -261,6 +260,8 @@ def serve(config, app, public_app) -> None:
     """Interfaz/API en server.port y, si está activo, el puerto de Alexa en server.public_port."""
     import asyncio
 
+    import uvicorn
+
     servers = [uvicorn.Server(uvicorn.Config(app, host=config.server.host, port=config.server.port, log_level="info"))]
     if public_app is not None:
         servers.append(uvicorn.Server(uvicorn.Config(public_app, host=config.server.host,
@@ -331,6 +332,9 @@ def main(argv: list[str] | None = None) -> None:
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    # Un hilo que truena queda en el registro con su hora y su nombre (sin esto, un traceback suelto en orbital.log).
+    threading.excepthook = lambda a: log.error("El hilo «%s» tronó", a.thread.name if a.thread else "?",
+                                               exc_info=(a.exc_type, a.exc_value, a.exc_traceback))
     config = load_config(args.config)
     log.info("Configuración: %s", config.source)
     from .runtime import log_paths, single_instance
@@ -378,6 +382,9 @@ def main(argv: list[str] | None = None) -> None:
             return
     if supervising:  # el candado es del vigilante; el Orbital de verdad corre como su hijo
         raise SystemExit(supervisor.run(raw_argv))
+    from .kiosk import KioskWindow
+    from .server import create_app, create_public_app
+
     holder: dict = {}
     kiosk = KioskWindow(url, config.ui.browser, keep_open=False,
                         on_closed=lambda: quit_orbital(holder.get("app"))) if mode == "browser" else None

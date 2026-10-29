@@ -18,6 +18,16 @@ const MOVE_GAP = 70; // ms: al mantener una flecha, un clic cada tanto (no una r
 
 let ctx;
 let lastMove = 0;
+let hush = 0;
+// Abrir el audio cuesta ~200 ms (el dispositivo): se abre durante la entrada (warm), no en el primer botón. Y un contexto
+// abierto procesa silencio sin parar: tras un rato sin sonar se suspende, y el siguiente sonido lo reanuda.
+const HUSH_MS = 4000;
+const open = () => {
+  try {
+    ctx ||= new AudioContext();
+  } catch { /* sin audio */ }
+  return ctx;
+};
 
 export const sound = {
   get enabled() { return storage.get(KEY, true); },
@@ -30,7 +40,10 @@ export const sound = {
       lastMove = now;
     }
     try {
-      ctx ||= new AudioContext();
+      if (!open()) return;
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      clearTimeout(hush);
+      hush = setTimeout(() => ctx.suspend().catch(() => {}), HUSH_MS);
       for (const [freq, start, dur, vol, to] of TONES[name] || []) {
         const osc = ctx.createOscillator();
         const filter = ctx.createBiquadFilter();
@@ -49,5 +62,10 @@ export const sound = {
         osc.stop(t + dur + .02);
       }
     } catch { /* sin audio: no pasa nada */ }
+  },
+  /** Durante la entrada (los botones aún no cuentan): abre el audio y lo deja suspendido hasta el primer sonido. */
+  warm() {
+    if (!this.enabled || !open()) return;
+    ctx.suspend().catch(() => {});
   },
 };

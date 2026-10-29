@@ -110,3 +110,9 @@ img { pointer-events: none; -webkit-user-drag: none; }
 
 /* Zonas que se recorren deslizando (core/swipe.js): el gesto es de Orbital, no del navegador. */
 .swipe-area { touch-action: none; }
+
+/* Una sección que no se ve (Para ti y las filas de Películas y series) queda «estacionada»: no se pinta, no se toca, no se
+   enfoca y el lector de pantalla no la lee, igual que con `hidden`, pero sigue con su layout hecho (se calcula cuando cambia,
+   fuera de los botones). Entrar ya no lo arma desde cero dentro del botón (Para ti: 66 ms; Películas y series: 1.200 objetos).
+   Sin content-visibility: con él, lo armado mientras estaba estacionado se calculaba igual al entrar. */
+.is-parked { visibility: hidden; pointer-events: none; }

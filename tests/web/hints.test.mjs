@@ -81,3 +81,11 @@ test("Inicio: LT/RT dicen a dónde saltan (Tus consolas desde arriba, Arriba des
   assert.ok(consoles.filter((i) => !i.offscreen).length <= 5);
   assert.equal(homeHints(g, { kind: "console", console: { last: null } }).some((i) => i.glyph === "LT RT"), false); // sin consolas, no hay a dónde saltar
 });
+
+test("aviso de voz: «No era eso» con B (cierra y busca lo que oyó) y «Lo que puedes decir» con ☰", async () => {
+  const { voiceToastAction } = await import("../../orbital/web/js/core/hints.js");
+  assert.deepEqual(voiceToastAction({ type: "voice-undo", query: "jades" }), { kind: "undo", label: "No era eso", button: "back", query: "jades" });
+  assert.deepEqual(voiceToastAction({ type: "voice-guide" }), { kind: "guide", label: "Lo que puedes decir", button: "menu", query: "" });
+  assert.equal(voiceToastAction(undefined), null);
+  assert.equal(voiceToastAction({ type: "otra-cosa" }), null);
+});

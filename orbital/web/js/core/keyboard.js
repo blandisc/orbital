@@ -43,3 +43,15 @@ export const DICTATION_FRESH_MS = 2 * 60 * 1000;
 
 /** Sobre qué texto escribe el dictado: lo que había (si lo escribiste hace poco) o nada (si ya pasó el rato). */
 export const dictationBase = (text, editedAt, now) => (now - editedAt < DICTATION_FRESH_MS ? text.trimEnd() : "");
+
+/**
+ * Qué decir cuando el dictado de Edge falla, por su código. El de la consola queda lejos de ti (la Legion Go está junto a la
+ * tele) y el servicio de voz de Edge a veces no contesta («network»): se dice la verdad y se señala el micrófono que sí
+ * funciona, el del control del iPhone.
+ */
+export function dictationProblem(code) {
+  if (code === "not-allowed" || code === "service-not-allowed") return "Orbital no tiene permiso para usar el micrófono.";
+  if (code === "network") return "El dictado de Edge no responde aquí. Usa el micrófono del control, en la app del iPhone.";
+  if (code === "audio-capture") return "No hay micrófono a la mano. Usa el micrófono del control, en la app del iPhone.";
+  return "No te escuché. Intenta de nuevo, o dicta desde la app del iPhone.";
+}

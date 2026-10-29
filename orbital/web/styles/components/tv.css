@@ -1,9 +1,8 @@
 /* TV en vivo (js/components/tv.js): a la izquierda las categorías, siempre a la vista; a la derecha, arriba, el canal
    enfocado en vivo (miniatura sin sonido) y abajo los canales de la categoría. La base de cada casilla es .tile (ui.css).
    El fondo es el espacio vivo del Inicio: aquí no hay arte que enseñar, los logos están en cada canal. */
-body[data-view="tv"] .hero, body[data-view="tv"] .shelf { display: none; }
 
-.tv { grid-row: 2 / 4; position: relative; min-height: 0; min-width: 0; display: grid; grid-template-columns: var(--tv-rail-width) minmax(0, 1fr);
+.tv { grid-row: 2 / 4; grid-column: 1; /* fija, como Para ti: se encima con la sección estacionada */ position: relative; min-height: 0; min-width: 0; display: grid; grid-template-columns: var(--tv-rail-width) minmax(0, 1fr);
   gap: var(--space-8); padding: var(--space-4) var(--page-gutter) var(--space-2); }
 
 /* Las categorías: una lista vertical con cuántos canales tiene cada una; la elegida, marcada aunque el foco esté en los canales. */
@@ -22,7 +21,7 @@ body[data-view="tv"] .hero, body[data-view="tv"] .shelf { display: none; }
 /* Arriba: la miniatura en vivo (o el logo mientras conecta o si el canal no da vista previa) y qué canal es. */
 .tv__now { flex: none; display: grid; grid-template-columns: minmax(0, var(--tv-preview-width)) minmax(0, 1fr); gap: var(--space-8); align-items: center; }
 .tv__preview { position: relative; aspect-ratio: 16 / 9; border-radius: var(--tile-radius); overflow: hidden; background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-hairline-strong), var(--shadow-card); }
+  box-shadow: var(--edge-strong), var(--shadow-card); }
 .tv__preview-logo { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-8); }
 .tv__preview-logo img { max-width: 70%; max-height: 70%; object-fit: contain; filter: var(--shadow-drop-sm); }
 .tv__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--duration-slow) var(--ease-out); }

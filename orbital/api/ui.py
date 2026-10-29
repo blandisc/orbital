@@ -83,6 +83,22 @@ def router(d: Deps) -> APIRouter:
         except (OSError, ValueError):
             return {"how": [], "groups": []}
 
+    @r.get("/api/voice/status")
+    async def voice_status() -> dict:
+        """Ajustes › Voz › «Qué ha oído la consola»: por dónde llegó la última orden (Alexa, el iPhone y Siri, aquí) y las
+        últimas con lo que se dijo, lo que se entendió y si salió bien. Cuando «la voz no funciona», esto dice si la falla
+        está antes de Orbital (no llega nada) o en la consola (llega y no se entiende o no se puede hacer)."""
+        from .. import voice_log
+        from ..alexa_setup import tailscale_url
+
+        entries = await run_in_threadpool(voice_log.read, None, 60)
+        seen = voice_log.last_seen(entries)
+        seen.update({k: v for k, v in (d.extra.get("voice_seen") or {}).items() if v})
+        recent = [{k: e.get(k) for k in ("at", "source", "text", "intent", "understood", "ok", "speech")} for e in entries[-12:]]
+        tunnel = await run_in_threadpool(tailscale_url) if d.alexa_ready else None
+        return {"sources": {"alexa": seen.get("alexa"), "iphone": seen.get("iphone"), "local": seen.get("local")},
+                "alexa": d.alexa_ready, "tunnel": tunnel, "phone_live": d.extra.get("phone_seen"), "recent": recent[::-1]}
+
     @r.get("/api/settings")
     def get_settings() -> dict:
         prefs = catalog.stream_prefs
@@ -95,6 +111,8 @@ def router(d: Deps) -> APIRouter:
                 "game_resolution": "lower",
                 **catalog.state.settings(),
                 "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last,
+                # Ajustes › Tele y voz: si la tele (Roku) se prende con Orbital y a qué entrada cambia («Probar» solo si está).
+                "tv": {"configured": bool(d.config.tv.host), "input": d.config.tv.input},
                 # «Para ti»: Ajustes › Cuentas enseña Trakt, TMDB y RAWG (y si su clave ya está).
                 "trakt": catalog.foryou.status()["trakt"], "para_ti": catalog.foryou.status(),
                 "onedrive": catalog.onedrive.status(),  # tus videos de OneDrive (Ajustes › Cuentas)
@@ -154,6 +172,14 @@ def router(d: Deps) -> APIRouter:
         view = {k: str(v)[:200] for k, v in (raw if isinstance(raw, dict) else {}).items() if k in VIEWS}
         d.hub.publish_threadsafe({"type": "reload", "view": view})
         return {"ok": True}
+
+    @r.post("/api/ui/pad")
+    def ui_pad(body: dict) -> dict:
+        """La interfaz dice si lee el mando ella misma (`listening`). Quieta lo suelta y el primer botón le llega del
+        servidor; responde si hay un mando XInput que el servidor vea (si no, la interfaz no lo suelta)."""
+        shell.ui_pad = body.get("listening") is not False if isinstance(body, dict) else True
+        watcher = getattr(shell, "gamepad", None)
+        return {"xinput": bool(getattr(watcher, "connected", False))}
 
     @r.post("/api/ui/show")
     def ui_show() -> dict:

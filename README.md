@@ -268,6 +268,8 @@ acción → Personalizado* → `pídele a mi consola que abra zelda`. Ideas: "mo
 `pídele a mi consola que siga viendo`; "apaga la consola" → `pídele a mi consola que salga al escritorio`;
 **"prende la consola" → `pídele a mi consola que prenda la consola`** (prende la tele, pone la entrada y muestra Orbital).
 
+Si la voz «no funciona», en la tele: ☰ › *Lo que puedes decir* › **Qué ha oído la consola** dice cuándo llegó la última orden de cada lado y qué entendió; si lo que dijiste no aparece ahí, no llegó a Orbital (Alexa, Siri o la conexión del iPhone). El replanteo completo está en [`docs/voz.md`](docs/voz.md).
+
 La lista completa de frases (la que enseñan la app de iPhone y Ajustes › Voz en la tele) está en
 [`alexa/commands.json`](alexa/commands.json); una prueba comprueba que cada una llega a un comando.
 

@@ -5,21 +5,22 @@ import { settler } from "../core/motion.js";
 const SAMPLE = 24; // px: basta para el tono y es instantáneo
 const palettes = new Map(); // url -> { tint, accent }
 
-/** Tono de la imagen ya cargada (mismo origen: /api/art; de fuera, cargada con permiso CORS). null: no se pudo leer. */
-function paletteOf(img, url) {
-  if (!palettes.has(url)) {
-    let palette = null;
-    try {
-      const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = SAMPLE;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      ctx.drawImage(img, 0, 0, SAMPLE, SAMPLE);
-      palette = paletteFor(dominantHue(ctx.getImageData(0, 0, SAMPLE, SAMPLE).data));
-    } catch { /* imagen sin permiso de lectura: se prueba con CORS (tonoDeFuera) */ }
-    if (palette) palettes.set(url, palette);
-    return palette;
-  }
-  return palettes.get(url);
+/** Tono de la imagen ya cargada (mismo origen: /api/art; de fuera, cargada con permiso CORS). null: no se pudo leer.
+ *  img.decode() la decodifica fuera del hilo principal: dibujarla sin decodificar obligaba a hacerlo dentro del botón
+ *  (~25 ms al entrar a Películas y series). */
+async function paletteOf(img, url) {
+  if (palettes.has(url)) return palettes.get(url);
+  let palette = null;
+  try {
+    await img.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = SAMPLE;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, SAMPLE, SAMPLE);
+    palette = paletteFor(dominantHue(ctx.getImageData(0, 0, SAMPLE, SAMPLE).data));
+  } catch { /* imagen sin permiso de lectura: se prueba con CORS (remotePalette) */ }
+  if (palette) palettes.set(url, palette);
+  return palette;
 }
 
 /** El arte de fuera (TMDB, Steam, metahub) no se deja leer tal cual: una copia aparte pedida con CORS da su tono.
@@ -27,7 +28,7 @@ function paletteOf(img, url) {
 function remotePalette(url, done) {
   const probe = new Image();
   probe.crossOrigin = "anonymous";
-  probe.onload = () => done(paletteOf(probe, url) || paletteFor(null));
+  probe.onload = () => paletteOf(probe, url).then((palette) => done(palette || paletteFor(null)));
   probe.onerror = () => { palettes.set(url, paletteFor(null)); done(paletteFor(null)); };
   // metahub, cuando no tiene la imagen a la mano, responde con una redirección (307) SIN permiso CORS (el destino, live.,
   // sí lo tiene): pedida con CORS fallaba y dejaba un error en la consola. Se pide directo al destino.
@@ -47,6 +48,8 @@ function applyPalette({ tint, accent }) {
  * y de las filas queda limpio). Con solo portada vertical, la portada se muestra nítida, como
  * la caja del juego, sobre un halo de su color. Fundido cruzado entre dos capas.
  */
+const STALE_MS = 600; // más que esto cargando: el fondo anterior ya no corresponde
+
 export function createBackdrop({ settle = 150 } = {}) {
   const makeLayer = () => {
     const art = h("div", { class: "backdrop__art" });
@@ -88,14 +91,25 @@ export function createBackdrop({ settle = 150 } = {}) {
         return swap(null, false);
       }
       const img = new Image();
-      img.onload = () => {
+      // Si tarda (red lenta, sin internet), no se queda el arte de lo anterior detrás de lo nuevo (Hades detrás de una
+      // serie): se funde a neutro y la imagen entra cuando llegue.
+      const stale = setTimeout(() => {
         if (mine !== token) return;
-        const palette = paletteOf(img, url);
-        if (palette) applyPalette(palette); // de fuera: el color anterior se queda hasta que llega el tono (sin parpadeo gris)
-        else remotePalette(url, (p) => { if (mine === token) applyPalette(p); });
+        applyPalette(paletteFor(null));
+        swap(null, false);
+      }, STALE_MS);
+      img.onload = () => {
+        clearTimeout(stale);
+        if (mine !== token) return;
         swap(url, poster, pixel);
+        paletteOf(img, url).then((palette) => {
+          if (mine !== token) return;
+          if (palette) applyPalette(palette); // de fuera: el color anterior se queda hasta que llega el tono (sin parpadeo gris)
+          else remotePalette(url, (p) => { if (mine === token) applyPalette(p); });
+        });
       };
       img.onerror = () => {
+        clearTimeout(stale);
         if (mine !== token) return;
         applyPalette(paletteFor(null));
         swap(null, false);

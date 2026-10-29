@@ -3,7 +3,7 @@ import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { motion } from "../core/motion.js";
 import { ERASE_WORD, typingGlyphs } from "../core/input.js";
-import { dictationBase } from "../core/keyboard.js";
+import { dictationBase, dictationProblem } from "../core/keyboard.js";
 import { storage } from "../core/storage.js";
 import { Card } from "./card.js";
 import { createKeyboard } from "./keyboard.js";
@@ -191,7 +191,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
         pending = "";
         showResults([...local, ...data.results.filter((r) => !picking || (r.kind || r.extra?.kind) === picking.kind || !picking.kind)]);
         setHint(items.length ? count(items.length) : `Nada con «${q}». Prueba con otra palabra o menos letras.`);
-      } catch (err) {
+      } catch {
         if (mine !== token) return;
         pending = "";
         showResults(local); // sin las portadas vacías: no va a llegar nada
@@ -270,7 +270,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
 
   function dictate() {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition) return setHint("El dictado no está disponible aquí. Usa el teclado o pídeselo a Alexa.");
+    if (!Recognition) return setHint("El dictado no está disponible aquí. Usa el teclado o el micrófono del control, en la app del iPhone.");
     if (listening) return listening.stop();
     const rec = new Recognition();
     rec.lang = "es-MX";
@@ -287,7 +287,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       render();
       schedule();
     };
-    rec.onerror = (event) => setHint(event.error === "not-allowed" ? "Orbital no tiene permiso para usar el micrófono." : "No te escuché. Intenta de nuevo.");
+    rec.onerror = (event) => setHint(dictationProblem(event.error));
     rec.onend = () => { listening = null; render(); };
     try {
       rec.start();

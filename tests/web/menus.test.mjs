@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { stepSetting } from "../../orbital/web/js/core/menus.js";
-import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, settingLabel, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch", system: "switch",
@@ -37,11 +37,12 @@ test("menú ☰: lo de todos los días; lo técnico en Ajustes → Mantenimiento
     ["Panel rápido", "Cerrar Zelda", "Mostrar juegos ocultos", "Jugadores", "¿Qué vemos?", "Tu año", "Cómo se usa", "Ajustes", "Apagar"]);
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
-  const maintenance = settingsPage("maintenance", {});
-  assert.deepEqual(maintenance.options.map((o) => o.command.type),
-    ["setup", "refresh", "folders", "windows", "diagnostics", "emulators", "update-check"]);
-  assert.deepEqual(settingsMenu().options.map((o) => o.label),
-    ["Películas y series", "Pantalla y sonido", "Juegos y videos", "Cuentas", "Mantenimiento"]);
+  // Ajustes: siete categorías en el riel; lo técnico en Sistema, lo de tus juegos en Jugar.
+  assert.deepEqual(SETTINGS_CATEGORIES.map((c) => c.title), ["Resumen", "Ver", "Jugar", "Tele y voz", "Pantalla y sonido", "Cuentas", "Sistema"]);
+  assert.deepEqual(settingsCategory("system", {}).options.map((o) => o.command.type), ["setup", "update-check", "diagnostics", "windows", "power-menu"]);
+  assert.deepEqual(settingsCategory("system", {}, { canExit: true }).options.at(-1).command, { type: "confirm-exit" });
+  assert.deepEqual(settingsCategory("play", {}).options.filter((o) => o.command && o.command.type !== "setting").map((o) => o.command.type),
+    ["emulators", "folders", "refresh"]);
 });
 
 test("salir al escritorio pide confirmación y empieza en Cancelar", () => {
@@ -93,20 +94,20 @@ test("confirmar apagar: Cancelar primero y aviso si hay un juego abierto", () =>
 });
 
 test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente", () => {
-  const page = settingsPage("playback", { audio: "en", dub: "latino", subtitles: "forced", quality: "1080p", sub_scale: 1 });
+  const page = settingsCategory("watch", { audio: "en", dub: "latino", subtitles: "forced", quality: "1080p", sub_scale: 1 });
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
     ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"],
-    ["Lo que recuerda cada título", undefined]]);
-  assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es-419", page: "playback" });
+    ["Cerrar videos olvidados en pausa", "—"], ["Home durante un video", "—"], ["Lo que recuerda cada título", undefined]]);
+  assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es-419", page: "watch" });
   // Latino, de España o cualquiera (como el iPhone); quien ya tenía «es» sigue en «cualquiera».
-  assert.equal(settingsPage("playback", { audio: "es" }).options[0].value, "Español (cualquiera)");
-  assert.equal(settingsPage("playback", { audio: "es-ES" }).options[0].value, "Español de España");
+  assert.equal(settingsCategory("watch", { audio: "es" }).options[0].value, "Español (cualquiera)");
+  assert.equal(settingsCategory("watch", { audio: "es-ES" }).options[0].value, "Español de España");
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
-  const accounts = settingsPage("accounts", { stremio_linked: false });
+  const accounts = settingsCategory("accounts", { stremio_linked: false });
   assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Stremio", "Conectar"], ["iPhone", "Conectar"]]);
   assert.deepEqual(accounts.options[0].command, { type: "stremio-login" });
   assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
-  const keys = settingsPage("accounts", { stremio_linked: true, trakt: { configured: false },
+  const keys = settingsCategory("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
   assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "✓ Conectada"], ["Trakt", "Configurar"], ["iPhone", "Conectar"], ["Claves de Para ti", undefined],
     ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["MDBList", "Agregar"], ["SteamGridDB", "Agregar"], ["Clave de Trakt", "Agregar"]]);
@@ -123,7 +124,7 @@ test("ajustes › Cuentas › Trakt: último scrobble en palabras, o el error", 
     "Último scrobble: The Office T2 · E5 · en pausa · hace 3 min");
   assert.equal(scrobbleHint({ last: null, error: null }, now), "Tus listas en Para ti · Último scrobble: aún nada");
   assert.equal(scrobbleHint({ last: null, error: "Trakt respondió HTTP 500" }, now), "Trakt no recibe lo que ves: Trakt respondió HTTP 500");
-  const row = settingsPage("accounts", { trakt: { configured: true, linked: true, scrobble: { last: null, error: "No pude conectar con Trakt" } } })
+  const row = settingsCategory("accounts", { trakt: { configured: true, linked: true, scrobble: { last: null, error: "No pude conectar con Trakt" } } })
     .options.find((o) => o.label === "Trakt");
   assert.match(row.hint, /^Trakt no recibe lo que ves/);
 });
@@ -269,7 +270,8 @@ test("un video abierto dice «Volver al video» y «Cerrar el video»", () => {
 test("ajustes y menús con datos incompletos no truenan", () => {
   assert.equal(settingLabel("game_idle_minutes", 90), "90 min");
   assert.equal(settingLabel("game_idle_minutes", 180), "3 horas");
-  for (const page of ["nope", undefined, "__proto__", "constructor"]) assert.ok(settingsPage(page, null).options);
+  for (const page of ["nope", undefined, "__proto__", "constructor"]) assert.ok(settingsCategory(page, null).options);
+  for (const c of SETTINGS_CATEGORIES) assert.equal(typeof settingsMeta(c.id, null), "string");
   assert.equal(nextSetting("nope", 3), 3);
   assert.ok(updateMenu({ available: 1 }).options.length === 2);
   assert.ok(foldersMenu({ emulators: [{ name: "Eden", rom_dirs: null }] }).options[0].hint);
@@ -314,7 +316,7 @@ test("ajustes: ◀ baja y ▶ sube, de menos a más y sin dar la vuelta", () => 
   assert.equal(stepSetting("sub_scale", 1, -1), .85);
   assert.equal(stepSetting("sub_scale", 1.5, 1), 1.5);
   assert.equal(stepSetting("safe_area", 4, 1), 6);
-  const page = settingsPage("display", { text_size: "large" });
+  const page = settingsCategory("display", { text_size: "large" });
   const size = page.options.find((o) => o.label === "Tamaño del texto");
   assert.equal(size.adjust.left.value, "normal");
   assert.equal(size.adjust.right.value, "xlarge");
@@ -372,8 +374,7 @@ test("cuentas: un renglón por iPhone o iPad (la app dice quién es), y «Conect
 });
 
 test("Emuladores: cuál tiene versión nueva, cuál se instala aquí y el modo con ◀/▶", async () => {
-  const { emulatorsMenu, maintenanceMenu } = await import("../../orbital/web/js/core/menus.js");
-  assert.ok(maintenanceMenu().options.some((o) => o.command.type === "emulators"));
+  const { emulatorsMenu } = await import("../../orbital/web/js/core/menus.js");
   const menu = emulatorsMenu({ mode: "avisar", items: [
     { id: "xemu", name: "xemu", installed: "0.8.137", latest: "v0.8.138", update: true, likely: false, can_install: true, page: "https://xemu.app/" },
     { id: "dolphin", name: "Dolphin", installed: null, latest: "2609a", update: true, likely: true, can_install: false, page: "https://dolphin-emu.org/download/" },
@@ -403,11 +404,11 @@ test("Emuladores: los que te faltan para juegos que ya tienes, arriba", async ()
 });
 
 test("Pantalla y sonido: el protector de pantalla (el mosaico) con su tiempo", async () => {
-  const { settingsPage } = await import("../../orbital/web/js/core/menus.js");
-  const page = settingsPage("display", { screensaver_minutes: 10 });
+  const page = settingsCategory("display", { screensaver_minutes: 10 });
   const row = page.options.find((o) => o.label === "Protector de pantalla");
   assert.equal(row.value, "10 min");
   assert.deepEqual(row.command, { type: "setting", key: "screensaver_minutes", value: 20, page: "display" });
+  assert.equal(row.choices, undefined); // cinco valores: uno a la vez con ‹ ›
 });
 
 test("Lo que puedes decir: la guía del iPhone (cómo decirlo, cada tema y si no funciona)", async () => {
@@ -422,6 +423,53 @@ test("Lo que puedes decir: la guía del iPhone (cómo decirlo, cada tema y si no
   assert.equal(voiceGroupMenu(guide.groups[0]).options[0].label, "«abre Hollow Knight»");
   assert.ok(voiceHelpMenu().options.length >= 4);
   assert.equal(alexaMenu(null).title, "Pídeselo a Alexa"); // sin la guía, los ejemplos de siempre
+});
+
+test("Voz: lo esencial primero, dónde hablarle con cuándo llegó lo último de cada lado, y «Qué ha oído la consola»", async () => {
+  const { alexaMenu, voiceLogMenu, voiceHelpMenu, sinceVoice } = await import("../../orbital/web/js/core/menus.js");
+  const now = 1_700_000_000_000;
+  const guide = { core: [{ say: "pausa", note: "Y «dale play»" }], how: [], groups: [{ title: "Juegos", icon: "gamecontroller", commands: [] }] };
+  const status = { alexa: true, sources: { alexa: now / 1000 - 8 * 86400, iphone: now / 1000 - 300, local: null },
+    recent: [{ at: "2026-10-21 18:51", source: "alexa", text: null, intent: "SearchMediaIntent", slots: { query: "los simpson" }, understood: null, ok: true, speech: "Poniendo The Simpsons." },
+      { at: "2026-10-21 18:38", source: "alexa", intent: "FallbackIntent", ok: false, speech: "No entendí eso." }] };
+  const menu = alexaMenu(guide, status, { now });
+  const labels = menu.options.map((o) => o.label);
+  assert.equal(labels[0], "Lo esencial");
+  assert.equal(labels[1], "«pausa»"); // lo esencial va antes que los temas
+  assert.ok(labels.indexOf("Lo esencial") < labels.indexOf("Dónde hablarle") && labels.indexOf("Dónde hablarle") < labels.indexOf("Por tema"));
+  const phone = menu.options.find((o) => o.label.startsWith("El micrófono del control"));
+  assert.equal(phone.value, "Hace 5 min");
+  assert.equal(menu.options.find((o) => o.label === "Alexa").value, "Hace 8 días");
+  const log = menu.options.find((o) => o.command?.type === "voice-log");
+  assert.equal(log.value, "Hace 5 min"); // lo último que llegó, de cualquier lado
+
+  const heard = voiceLogMenu(status, { now });
+  assert.equal(heard.options.find((o) => o.label === "Alexa").value, "Hace 8 días");
+  const rows = heard.options.filter((o) => o.label.startsWith("«"));
+  assert.equal(rows[0].label, "«SearchMediaIntent los simpson»"); // sin texto: el intent y lo dicho en sus huecos
+  assert.equal(rows[0].icon, "check");
+  assert.equal(rows[1].icon, "warning"); // lo que no salió, marcado
+  assert.ok(rows[0].hint.includes("Poniendo The Simpsons."));
+  assert.equal(rows[0].hint, "21 oct 6:51 p. m. · Poniendo The Simpsons."); // cuándo llegó, como se dice
+  const { whenSaid } = await import("../../orbital/web/js/core/menus.js");
+  assert.equal(whenSaid("2026-10-29 15:43:56", new Date(2026, 9, 29, 20, 0)), "hoy 3:43 p. m.");
+  assert.equal(whenSaid("rara"), "rara");
+  const { oneLine } = await import("../../orbital/web/js/core/menus.js");
+  assert.equal(oneLine("Poniendo The Office."), "Poniendo The Office.");
+  const long = oneLine("No encontré dónde ver Dune Parte Dos en latino con subtítulos en inglés desde el principio.");
+  assert.ok(long.endsWith("…") && long.length <= 57, long);
+  const mine = voiceLogMenu({ sources: {}, recent: [{ at: "2026-10-29 15:43", source: "local", text: "pon la tele", ok: true, speech: "Abriendo la TV en vivo." }] }, { now });
+  assert.equal(mine.options.find((o) => o.label === "«pon la tele»").value, "Esta consola");
+  assert.equal(voiceLogMenu(null).options.find((o) => o.label === "Nada todavía").icon, "info");
+
+  // Dos días sin una sola orden: la primera fila dice que la falla está antes de la consola.
+  const quiet = voiceHelpMenu({ sources: { alexa: now / 1000 - 8 * 86400 } }, { now });
+  assert.match(quiet.options[0].label, /ninguna orden/);
+  assert.equal(quiet.options[0].value, "Hace 8 días");
+  assert.notEqual(voiceHelpMenu(status, { now }).options[0].icon, "warning"); // con el iPhone hace 5 min, no
+  assert.equal(sinceVoice(null), "Nunca");
+  assert.equal(sinceVoice(now / 1000 - 90, now), "Hace 2 min");
+  assert.equal(sinceVoice(now / 1000 - 5 * 3600, now), "Hace 5 h");
 });
 
 test("abrir lo que ya está abierto: solo «Volver a…» (no «¿Cerrar X? Para abrir X»)", async () => {
@@ -480,4 +528,43 @@ test("Emuladores: la versión de Eden se elige con A o ◀/▶ y luego se ofrece
   const next = edenBuildMenu({ label: "Estándar" });
   assert.deepEqual(next.options[0].command, { type: "emulator-install-forced", id: "eden", name: "Eden Estándar" });
   assert.ok(!emulatorsMenu({ items: [] }).options.some((o) => o.label === "Versión de Eden")); // sin Eden, no sale
+});
+
+test("Ajustes: valores segmentados solo si caben (hasta cuatro y cortos); el elegido marcado y cada uno con su comando", () => {
+  assert.ok(segmentable("text_size") && segmentable("reduce_motion") && segmentable("safe_area") && segmentable("game_mode"));
+  assert.ok(!segmentable("audio") && !segmentable("subtitles") && !segmentable("screensaver_minutes"));
+  const size = settingsCategory("display", { text_size: "large" }).options.find((o) => o.label === "Tamaño del texto");
+  assert.deepEqual(size.choices.map((c) => [c.label, c.on]), [["Normal", false], ["Grande", true], ["Muy grande", false]]);
+  assert.deepEqual(size.choices[2].command, { type: "setting", key: "text_size", value: "xlarge", page: "display" });
+  assert.ok(size.help); // una línea al pie
+});
+
+test("Ajustes › Resumen: lo que falta primero (la voz que no llega, cuentas), lo demás en verde", () => {
+  const now = Date.UTC(2026, 9, 29, 12);
+  const voice = { sources: { alexa: now / 1000 - 8 * 86400, iphone: null } };
+  const settings = { alexa: true, stremio_linked: true, trakt: { configured: true, linked: false }, companion_devices: [{ seen: 1 }], tv: { configured: true } };
+  assert.deepEqual(settingsMissing(settings, { voice, now }).map((o) => o.label), ["La voz no ha llegado en 8 días", "Trakt sin conectar"]);
+  const page = settingsCategory("summary", settings, { voice, now });
+  assert.deepEqual(page.options.map((o) => o.label), ["Lo que falta", "La voz no ha llegado en 8 días", "Trakt sin conectar", "Ya está bien", "Stremio", "La tele"]);
+  assert.equal(settingsMeta("summary", settings, { voice, now }), "2 cosas por hacer");
+  // Sin saber de la voz (el servidor no contestó), no se inventa que falla.
+  assert.deepEqual(settingsMissing(settings, { now }).map((o) => o.label), ["Trakt sin conectar"]);
+  assert.equal(settingsCategory("summary", { stremio_linked: true, companion_devices: [{}] }).lead, "Todo está listo.");
+});
+
+test("Ajustes › Tele y voz: la tele, dónde hablarle con su última orden, la ayuda y «Frases en pantalla»", () => {
+  const now = Date.UTC(2026, 9, 29, 12);
+  const voice = { sources: { alexa: now / 1000 - 8 * 86400, iphone: now / 1000 - 300 } };
+  const page = settingsCategory("voice", { alexa: true, voice_tips: true, tv: { configured: true, input: "hdmi1" } }, { voice, now });
+  const by = (label) => page.options.find((o) => o.label.startsWith(label));
+  assert.equal(by("Se prende con Orbital").hint, "Y cambia sola a HDMI 1");
+  assert.deepEqual(by("Probar").command, { type: "voice-try", text: "prende la tele" });
+  assert.equal(by("iPhone").value, "Hace 5 min");
+  assert.ok(by("Alexa").warn && by("Alexa").value === "Hace 8 días");
+  assert.deepEqual(by("Frases en pantalla").choices.map((c) => c.on), [true, false]);
+  // Sin tele configurada: no hay «Probar», y la fila dice cómo se hace.
+  const bare = settingsCategory("voice", {});
+  assert.ok(!bare.options.some((o) => o.label.startsWith("Probar")));
+  assert.match(bare.options.find((o) => o.label === "La tele no se prende sola").help, /orbital tv setup/);
+  assert.equal(bare.options.find((o) => o.label === "Alexa").value, "Sin configurar");
 });

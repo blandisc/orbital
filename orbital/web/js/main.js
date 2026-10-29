@@ -8,9 +8,9 @@ import { closedSummary, crashMessage } from "./core/format.js";
 import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
-import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
+import { footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -32,6 +32,7 @@ import { createArtPicker } from "./components/art-picker.js";
 import { createListScreen, SORTS } from "./components/list-screen.js";
 import { createDecide } from "./components/decide.js";
 import { createYear } from "./components/year.js";
+import { createSettings } from "./components/settings.js";
 import { createCalendar } from "./components/calendar.js";
 import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
@@ -39,6 +40,9 @@ import { createViewer } from "./components/viewer.js";
 import { createTouchBack } from "./components/touch-back.js";
 import { createBoot } from "./app/boot.js";
 import { createLaunching } from "./app/launching.js";
+import { systemCommands } from "./app/system-commands.js";
+import { accountCommands } from "./app/account-commands.js";
+import { libraryCommands } from "./app/library-commands.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
@@ -47,6 +51,7 @@ import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows, m
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 import { sized } from "./core/images.js";
+import { onConnected as onPadConnected, pads as readPads } from "./core/pads.js";
 
 const state = createState();
 // La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
@@ -67,6 +72,8 @@ const current = () => (inForYou() || inTv() ? null : inHome() ? ui.home.current?
   : inGames() ? ui.games.current?.item ?? null
     : itemAt(state.rows, state.focus.r, state.focus.c));
 const glyphs = () => GLYPHS[state.modality];
+// ¿Alguien mira Orbital? Con un juego o un video al frente (o la ventana oculta), lo que corre de fondo espera.
+const onScreen = () => !document.hidden && !state.running?.front;
 // El atajo de Buscar se ve siempre, también tras tocar la pantalla: el del control (o teclado) que usaste antes. Antes, al
 // tocar «Películas y series» desaparecía y no volvía hasta picar un botón del mando.
 const searchGlyphs = () => ({ ...glyphs(), search: GLYPHS[state.modality === "touch" ? state.lastPhysical || "gamepad" : state.modality].search });
@@ -79,13 +86,13 @@ const ui = {
   home: createHome({
     outside: () => [ui.status.searchButton, ui.status.alexaButton], // Buscar y Alexa (arriba) también se alcanzan con ↑
     onFocus: (target) => homeFocused(target),
-    onPick: (target, id) => (ui.home.focusId === id ? homeActivate(target) : ui.home.focus(id)),
+    onPick: (target, id) => (ui.home.focusId === id && !justTouched() ? homeActivate(target) : ui.home.focus(id)),
     onAction: (action, target) => homeActivate(target, action),
   }),
   games: createGames({
     onAction: (action, item) => gamesActivate({ kind: "game", item }, action),
     onFocus: (target) => gamesFocused(target),
-    onPick: (target, id) => (ui.games.focusId === id ? gamesActivate(target) : ui.games.focus(id)),
+    onPick: (target, id) => (ui.games.focusId === id && !justTouched() ? gamesActivate(target) : ui.games.focus(id)),
   }),
   shelf: createShelf({ onPick: (r, c) => pick(r, c), onSwipe: (swipe) => onSwipe(swipe) }),
   hints: createHints({ onAction: (action) => handleAction(action) }),
@@ -205,6 +212,17 @@ const ui = {
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
+  // Ajustes a pantalla completa (☰ › Ajustes): el riel de categorías y la lámina de la elegida.
+  settings: createSettings({
+    load: async () => {
+      const [settings, voice] = await Promise.all([api.settings(), api.voiceStatus().catch(() => null)]);
+      applySettings(settings);
+      return { settings: state.settings, voice, canExit: !!state.canExit };
+    },
+    onCommand: (command) => runCommand(command),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
   year: createYear({
     load: () => api.forYouYear(),
     onPick: (item) => openTitle(item),
@@ -241,7 +259,7 @@ ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la 
 // Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Versión») van
 // después de la lista abierta, ¿Qué vemos?, Tu año y el calendario: A en un póster las deja a la vista.
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 markFocus(document.body); // «lo enfocado lleva aria-current», en todas las piezas
 
@@ -280,29 +298,17 @@ async function sendToPhone({ action, kind, metaId, videoId }) {
     refreshPhone(); // si ya no hay iPhone, las opciones se van
   }
 }
-/** La hoja de Cuentas en la que estabas (abriste la clave desde ahí, o desde «Cambiar»). */
-function accountsAt(context) {
-  if (!context) return null;
-  if (context.menu?.title === "Cuentas") return { index: context.index, stack: context.stack };
-  const parent = context.stack.at(-1);
-  return parent?.menu?.title === "Cuentas" ? { index: parent.index, stack: context.stack.slice(0, -1) } : null;
-}
-
 /** Una clave de Para ti guardada (o quitada): Cuentas al día y Para ti se vuelve a pedir. */
 async function keysSaved(form, status, { removed = false } = {}) {
   sound.play("select");
   if (form.service === "onedrive") { // su propio estado (no el de Para ti)
     ui.toast.show(removed ? "Quité la clave de OneDrive" : "Clave de OneDrive guardada · Ahora conéctalo", { tone: "success" });
-    const at = accountsAt(loginFrom?.context);
-    applySettings({ ...state.settings, onedrive: status });
-    if (at && !ui.sheet.isOpen && !topOverlay()) ui.sheet.open(settingsPage("accounts", state.settings), at);
+    applySettings({ ...state.settings, onedrive: status }); // Ajustes › Cuentas se repinta en su lugar
     return renderHints();
   }
   ui.toast.show(removed ? `Quité la clave de ${form.label}` : `${form.label} guardada · Para ti se actualiza`, { tone: "success" });
-  const at = accountsAt(loginFrom?.context);
-  applySettings({ ...state.settings, trakt: status.trakt, para_ti: status });
+  applySettings({ ...state.settings, trakt: status.trakt, para_ti: status }); // Ajustes › Cuentas se repinta en su lugar
   ui.foryou.load({ force: true });
-  if (at && !ui.sheet.isOpen && !topOverlay()) ui.sheet.open(settingsPage("accounts", state.settings), at);
   renderHints();
 }
 
@@ -324,7 +330,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.year, ui.calendar, ui.search];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.year, ui.calendar, ui.search, ui.settings];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -371,7 +377,6 @@ function renderHints() {
   }
   if (inGames() && !ui.sheet.isOpen) {
     const target = ui.games.current;
-    const item = target?.item;
     return ui.hints.render(gamesHints(g, target && { ...target, focusId: ui.games.focusId }));
   }
   if (inHome() && !ui.sheet.isOpen) {
@@ -459,8 +464,14 @@ function preloadAround(r, c) {
   }
 }
 
+// El toque que cambia del mando (o el teclado) al dedo solo enfoca: lo enfocado lo eligió el mando, no tú, y tocar el
+// destacado abría el juego al instante.
+let touchSince = 0;
+const justTouched = () => performance.now() - touchSince < 800;
+
 function setModality(modality) {
   if (state.modality === modality) return;
+  if (modality === "touch") touchSince = performance.now();
   state.modality = modality;
   if (modality !== "touch") state.lastPhysical = modality;
   document.body.dataset.input = modality;
@@ -489,6 +500,7 @@ function applySettings(settings) {
   ui.hero.tips = settings.voice_tips !== false && !onTheDevice();
   if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   if (inGames()) renderGames(); // los ajustes pueden cambiar glifos y textos
+  ui.settings.update({ settings }); // Ajustes abierto: el valor nuevo se ve en su lugar
 }
 
 /** ¿En la pantalla de la consola (sin tele)? La de la Legion Go es 16:10 y una tele 16:9. Ahí las frases para Alexa junto a
@@ -512,6 +524,11 @@ function altLabel(item) {
 /** Para ti, Inicio y Juegos tienen su propia vista; las demás secciones, héroe + filas. */
 function renderView() {
   document.body.dataset.view = inForYou() ? "foryou" : inTv() ? "tv" : inHome() ? "home" : inGames() ? "games" : "rows";
+  // El héroe y las filas (Películas y series) se estacionan fuera de su sección: conservan su layout y volver a ellas ya no
+  // lo arma desde cero dentro del botón (24 ms con 1.253 objetos). base.css · .is-parked
+  const rows = document.body.dataset.view === "rows";
+  ui.hero.el.classList.toggle("is-parked", !rows);
+  ui.shelf.el.classList.toggle("is-parked", !rows);
   if (inForYou()) ui.foryou.show();
   else ui.foryou.hide();
   if (inTv()) ui.tv.show();
@@ -768,6 +785,7 @@ function goToSection(id, direction = 0) {
   if (id === state.section) return;
   const list = visibleSections(state.allRows);
   if (!list.some((s) => s.id === id)) return; // una sección vacía no está en la barra: no se entra
+  if (id === "media") wantCuration();
   const from = list.findIndex((s) => s.id === state.section);
   const to = list.findIndex((s) => s.id === id);
   state.sectionFocus[state.section] = { rowId: state.rows[state.focus.r]?.id, itemId: current()?.id };
@@ -781,7 +799,8 @@ function goToSection(id, direction = 0) {
       : state.downloaded?.size ? "Sin internet: tus descargas se ven igual; lo demás vuelve con la conexión"
         : "Sin internet: ves lo último que se guardó; para ver algo necesitas conexión (o descárgalo antes)");
   }
-  ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Nada por aquí todavía", emptyText: "" }));
+  // Las filas solo se arman donde se ven (Películas y series); en Inicio, Juegos, Para ti y TV quedan estacionadas.
+  if (document.body.dataset.view === "rows") ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Nada por aquí todavía", emptyText: "" }));
   const saved = state.sectionFocus[id] || {};
   const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
   state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo
@@ -814,6 +833,7 @@ function stepSection(delta) {
 let libraryRetry = 0;
 
 // ---------------------------------------------------------------- arranque y regreso
+sound.warm(); // abrir el audio cuesta ~200 ms: mientras se ve la entrada, no en el primer botón
 const boot = createBoot({ state, applySettings: (settings) => applySettings(settings), openMenu: (menu) => openMenu(menu),
   busy: () => ui.launch.visible || ui.sheet.isOpen || !!topOverlay() });
 
@@ -840,14 +860,15 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     state.rows = sectionRows(state.allRows, state.section);
     renderSections();
     state.hidden = data.hidden || 0;
-    ui.shelf.setRows(state.rows, {
-      emptyTitle: state.section === "media" ? emptyFor("media").emptyTitle : "Aún no encontré juegos",
-      emptyText: state.section === "media" ? emptyFor("media").emptyText : "Instala Steam o pon tus emuladores en Descargas, el Escritorio o C:\\Emuladores, y abre ☰ → Actualizar biblioteca.",
-      popId: state.popId,
-    });
+    // Las filas solo se ven en Películas y series; desde otra sección se arman de antemano, estacionadas (shelf.prepare).
+    if (state.section === "media") ui.shelf.setRows(state.rows, { ...emptyFor("media"), popId: state.popId });
+    else ui.shelf.prepare(sectionRows(state.allRows, "media"));
     state.popId = null;
     if (!state.libraryLoaded) {
-      loadCuration(); // los estantes de Películas y series (Top 10, plataformas, tus listas), en segundo plano
+      // Los estantes de Películas y series (Top 10, plataformas, tus listas): al entrar ahí o un rato después de abrir,
+      // no al arrancar (eran ~70 peticiones compitiendo con el Inicio).
+      if (state.section === "media") wantCuration();
+      else setTimeout(() => (onScreen() ? wantCuration() : null), CURATION_DELAY_MS);
       loadDownloads(); // lo que bajaste para ver sin internet (fila «Descargas»)
       ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
       ui.foryou.load(); // en segundo plano: Para ti ya está listo cuando llegas (LB desde el Inicio)
@@ -881,6 +902,14 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
 // lo que se ve arriba, luego las colecciones) y se ponen al día cada media hora; si Para ti no contesta, queda como estaba.
 let curated = [];
 let curating = null;
+let curationAsked = false;
+const CURATION_DELAY_MS = 15_000;
+/** La primera vez que hacen falta los estantes (y de ahí, solo cuando algo cambia o cada 30 min con alguien mirando). */
+function wantCuration() {
+  if (curationAsked) return;
+  curationAsked = true;
+  loadCuration();
+}
 let mediaLists = [];
 const mediaItems = {}; // keyOf(lista, tipo) → títulos
 const mediaYears = {}; // year:AAAA → películas de ese año (se piden al verlas)
@@ -927,11 +956,14 @@ const fetchList = async (id, kind) => {
   if (res?.title) mediaHeads[id] = { title: res.title, meta: res.meta || "" };
   return res?.items || [];
 };
-async function fetchMany(wanted, into = mediaItems) {
-  const queue = [...wanted];
-  await Promise.all(Array.from({ length: 4 }, async () => {
-    for (let w = queue.shift(); w; w = queue.shift()) into[keyOf(w.id, w.kind)] = await fetchList(w.id, w.kind);
-  }));
+/** Varias listas en una sola petición (antes, una por estante: ~70 al arrancar). `key` dice dónde va cada una. */
+async function fetchMany(wanted, into = mediaItems, key = (l) => keyOf(l.id, l.kind)) {
+  if (!wanted.length) return;
+  const res = await api.forYouLists(wanted.map(({ id, kind }) => ({ id, kind: kind ?? null }))).catch(() => ({ lists: [] }));
+  for (const l of res.lists || []) {
+    if (l.title) mediaHeads[l.id] = { title: l.title, meta: l.meta || "" };
+    into[key(l)] = l.items || [];
+  }
 }
 /** Lo de arriba primero (Destacados, lo general, Porque viste, lo nuevo, las plataformas); las colecciones, después. */
 const LATER = (w) => /^(award|studio|list|addon|genre|season):/.test(w.id) || ["watchlist", "trakt-favorites", "mine", "mylist", "estrenos"].includes(w.id);
@@ -939,7 +971,7 @@ const LATER = (w) => /^(award|studio|list|addon|genre|season):/.test(w.id) || ["
 async function loadYears(count = 6) {
   const years = mediaLists.filter((l) => l.collection === "year").slice(yearsLoaded, yearsLoaded + count);
   yearsLoaded += years.length;
-  await Promise.all(years.map(async (l) => { mediaYears[l.id] = await fetchList(l.id, "movie"); }));
+  await fetchMany(years.map((l) => ({ id: l.id, kind: "movie" })), mediaYears, (l) => l.id);
   return years.length;
 }
 
@@ -1358,7 +1390,7 @@ function applyCuration(rows) {
   curated = rows;
   if (!state.allRows) return;
   state.allRows = [...state.allRows.filter((row) => !row.id.startsWith("curated:")), ...rows];
-  if (state.section !== "media") return;
+  if (state.section !== "media") return ui.shelf.prepare(sectionRows(state.allRows, "media")); // listas para cuando entres
   const rowId = state.rows[state.focus.r]?.id;
   const itemId = current()?.id;
   state.rows = sectionRows(state.allRows, state.section);
@@ -1368,16 +1400,19 @@ function applyCuration(rows) {
   renderView();
   setFocus(r, c, { silent: true });
 }
-setInterval(() => loadCuration(), 30 * 60_000);
+setInterval(() => (curationAsked && onScreen() ? loadCuration() : null), 30 * 60_000); // con un juego al frente, nada
 
 // Destacados en carrusel: quieto en esa fila, avanza solo al siguiente (y el héroe de arriba con él), como en el iPhone.
+// Da una vuelta y se queda en el que estabas: si nadie toca nada, Orbital deja de cambiar fondos (cada cambio repinta todo).
 const SPOTLIGHT_MS = 8000;
 let spotlightIdle = Date.now();
+let spotlightTurns = 0;
 setInterval(() => {
   const row = state.rows?.[state.focus.r];
   if (state.section !== "media" || !row?.spotlight || document.hidden || ui.sheet.isOpen || topOverlay() || saver.active) return;
-  if (Date.now() - spotlightIdle < SPOTLIGHT_MS) return;
+  if (Date.now() - spotlightIdle < SPOTLIGHT_MS || spotlightTurns >= row.items.length) return;
   spotlightIdle = Date.now();
+  spotlightTurns++;
   setFocus(state.focus.r, (state.focus.c + 1) % row.items.length, { silent: true });
 }, 1000);
 
@@ -1520,7 +1555,7 @@ function onSwipe({ r = state.focus.r, dc = 0, dr = 0 }) {
 function pick(r, c) {
   // Ratón/táctil: el primer toque selecciona, el segundo abre, igual que A: una lista o un género abren su lista (antes
   // se trataban como un juego y, con uno abierto, preguntaba «¿Cerrar Hades? Para abrir Óscar»).
-  if (r === state.focus.r && c === state.focus.c) {
+  if (r === state.focus.r && c === state.focus.c && !justTouched()) {
     const item = current();
     if (item?.source === "genre") return openGenre(item);
     if (item?.source === "collection") return openCollection(item);
@@ -1537,8 +1572,20 @@ const findItem = (id) => state.allRows.flatMap((row) => row.items).find((i) => i
 const stillThere = (context) => !context?.busy?.stale && (context?.isCurrent?.() ?? true);
 const nested = (context) => (context ? { stack: [...context.stack, { menu: context.menu, index: context.index }], busy: context.busy } : {});
 
+// Los comandos de la consola, de las cuentas y de tu biblioteca viven en su propia tabla (app/*-commands.js);
+// aquí quedan los de ver y jugar. Se arma al primer uso: para entonces todo lo de abajo ya existe.
+let commandTable = null;
+function commands() {
+  if (commandTable) return commandTable;
+  const deps = { alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps) };
+  return commandTable;
+}
+
 async function runCommand(command, context = null) {
   try {
+    const run = commands()[command.type];
+    if (run) return await run(command, context);
     switch (command.type) {
       case "launch":
         return launch(findItem(command.id), command.runner || null, { confirmed: !!command.confirmed, keep: !!command.keep, roomChecked: !!command.roomChecked });
@@ -1560,32 +1607,6 @@ async function runCommand(command, context = null) {
         return openTitle(command.ref);
       case "search":
         return openSearch(command.query || "");
-      case "prefs":
-        if (command.prefs.hidden) ui.toast.show(`Ocultando ${command.title || ""}…`.replace(" …", "…")); // si tarda, se nota
-        await api.setPrefs(command.id, command.prefs);
-        if (command.prefs.favorite) state.popId = command.id;
-        sound.play("select");
-        if (!command.prefs.hidden) {
-          if (command.message) ui.toast.show(command.message);
-          return loadLibrary({ keepId: command.id });
-        }
-        await loadLibrary({ keepId: command.id });
-        return offerUndoHide(command); // ya con la biblioteca nueva: se anota dónde quedó el foco
-      case "refresh":
-        return loadLibrary({ refresh: true });
-      case "art": {
-        ui.toast.show(`Buscando otra imagen para ${command.title}…`);
-        const res = await api.replaceArt(command.id, command.kind);
-        sound.play("select");
-        ui.toast.show(res.found ? "Imagen nueva" : "No encontré otra · Se queda la que tenías", { tone: res.found ? "success" : "warn",
-          detail: res.found ? "" : "En «Elegir portada o fondo» puedes escoger entre todas" });
-        return loadLibrary({ keepId: command.id });
-      }
-      case "game-art-picker": // «Elegir portada o fondo» de un juego: el mismo selector que el de películas
-        ui.sheet.close();
-        return ui.artPicker.open({ kind: "game", id: command.id, title: command.title });
-      case "phone-send":
-        return sendToPhone(command);
       case "media-goto": { // Ir a…: los grupos de la sección, con una palomita en el que estás
         const here = state.rows?.[state.focus.r]?.group;
         const present = GROUPS.filter((g) => state.rows.some((row) => row.group === g.id));
@@ -1605,110 +1626,6 @@ async function runCommand(command, context = null) {
         storage.set("orbital.media.filter", mediaFilter);
         sound.play("select");
         return buildCuration();
-      case "list-sort":
-        return ui.listScreen.sorter.setSort(command.value);
-      case "list-kind":
-        return ui.listScreen.sorter.setKind(command.value);
-      case "list-watched":
-        return ui.listScreen.sorter.setHideWatched(!ui.listScreen.sorter.settings.hideWatched);
-      case "list-genre-menu": {
-        const s = ui.listScreen.sorter;
-        const current = s.settings.genre;
-        return openMenu({ title: "Género", options: [
-          { icon: "spark", label: "Todos", value: current ? "" : "✓", command: { type: "list-genre", value: null } },
-          ...s.genres().map((g) => ({ icon: "spark", label: genreNames([g])[0], value: g === current ? "✓" : "",
-            command: { type: "list-genre", value: g, label: genreNames([g])[0] } }))] }, nested(context));
-      }
-      case "list-genre":
-        return ui.listScreen.sorter.setGenre(command.value, command.label || null);
-      case "media-art": // elegir otro póster o fondo de una película o serie
-        sound.play("open");
-        ui.artPicker.open({ kind: command.kind === "series" ? "series" : "movie", metaId: command.metaId, title: command.title });
-        return renderHints();
-      case "mylist":
-        await api.setInLibrary(command.kind, command.metaId, command.add);
-        sound.play("select");
-        ui.toast.show(command.add ? `Guardé ${command.title} en Mi lista` : `Quité ${command.title} de Mi lista`, { tone: "success" });
-        return loadLibrary();
-      case "dismiss":
-        await api.dismiss(command.id);
-        sound.play("select");
-        ui.toast.show(`Quité ${command.title} de Seguir viendo`, { tone: "success" });
-        return loadLibrary();
-      case "stop":
-        await api.stop();
-        return pollStatus();
-      case "confirm-stop":
-        return openMenu(stopMenu(command), nested(context));
-      case "power-menu":
-        return openMenu(powerMenu(), nested(context));
-      case "power-confirm":
-        return openMenu(powerConfirmMenu(command.action, state.running), nested(context));
-      case "power":
-        await api.power(command.action);
-        return ui.toast.show({ sleep: "Suspendiendo…", restart: "Reiniciando…", shutdown: "Apagando…" }[command.action]);
-      case "windows":
-        ui.toast.show("Buscando ventanas…");
-        return openMenu(windowsMenu((await api.windows()).windows), nested(context));
-      case "focus-window":
-        sound.play("select");
-        return await api.focusWindow(command.id); // await: si la ventana ya no está, el catch lo dice
-      case "resume":
-        return resumeRunning();
-      case "confirm-exit":
-        return openMenu(exitMenu(), nested(context));
-      case "exit":
-        await api.exitToDesktop();
-        return ui.toast.show("Saliendo al escritorio…");
-      case "unhide-all":
-        await api.unhideAll();
-        ui.toast.show("Juegos ocultos restaurados", { tone: "success" });
-        return loadLibrary();
-      case "settings":
-        if (!command.page) return openMenu(settingsMenu(), nested(context));
-        applySettings(await api.settings());
-        return openMenu(settingsPage(command.page, state.settings), nested(context));
-      case "setting": { // cambia y se queda en la misma página, en la misma opción
-        if (command.edge) { // ◀/▶ en el tope: no cambia nada, y se nota
-          sound.play("error");
-          rumble("edge");
-        } else {
-          applySettings(await api.setSettings({ [command.key]: command.value }));
-          sound.play("select");
-        }
-        if (stillThere(context)) ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
-        return renderHints();
-      }
-      case "own-play":
-        ui.sheet.close();
-        return watch(command.play);
-      case "od-folder":
-        return openMenu(await folderMenu(command.path), nested(context));
-      case "od-play-file":
-        ui.sheet.close();
-        return openListItem({ file: { id: command.id, name: command.name }, title: command.name });
-      case "od-fix-loose":
-        ui.sheet.close();
-        return fixTitle({ kind: command.kind, title: command.title, fileId: command.id });
-      case "od-rescan":
-        ui.sheet.close();
-        await api.onedriveScan().catch(() => {});
-        return ui.toast.show("Revisando tu carpeta de OneDrive · Mi media se actualiza sola");
-      case "download-play":
-        ui.sheet.close();
-        return launch(command.item);
-      case "download-retry":
-        ui.sheet.close();
-        await api.downloadRetry(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
-        return loadDownloads();
-      case "download-title":
-        ui.sheet.close();
-        return openTitle(command.item);
-      case "download-remove":
-        ui.sheet.close();
-        await api.downloadRemove(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
-        ui.toast.show(`Quité la descarga de ${command.title}`, { tone: "success" });
-        return loadDownloads();
       case "decide":
         ui.sheet.close();
         return openDecide();
@@ -1717,155 +1634,21 @@ async function runCommand(command, context = null) {
         sound.play("open");
         ui.year.open();
         return renderHints();
-      case "controls":
-        return openMenu(controlsMenu((await api.controllers().catch(() => ({ controllers: [] }))).controllers), nested(context));
-      case "runner-menu":
-        return openMenu(runnerMenu(command.item), nested(context));
       case "art-menu":
         return openMenu(artMenu(command.item), nested(context));
-      case "setup":
-        return openMenu(setupMenu(await api.setup()), nested(context));
-      case "quick":
-        return await openQuick(context);
-      case "music": { // controlar la música y quedarse en el panel, en la misma opción
-        await api.musicCommand(command.action);
-        sound.play("move");
-        await new Promise((resolve) => setTimeout(resolve, 350)); // que la app cambie de canción
-        const [q, music] = await Promise.all([api.quick(), api.music().catch(() => null)]);
-        if (stillThere(context)) ui.sheet.open(quickMenu(q, { running: state.running, music, legion: state.legion === true }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
-        return renderHints();
-      }
-      case "memory":
-        return openMenu(memoryMenu(await api.memory()), nested(context));
-      case "confirm-close-app":
-        return openMenu(closeAppConfirmMenu(command), nested(context));
-      case "players":
-        return openMenu(playersMenu(await api.players()), nested(context));
-      case "player-menu":
-        return openMenu(playerMenu(command), nested(context));
-      case "player-identify":
-        await api.identifyPlayer(command.slot);
-        return sound.play("select");
-      case "player-first": { // de vuelta a Jugadores, ya con el orden nuevo (sin la hoja del jugador en el «Atrás»)
-        await api.playerFirst(command.slot);
-        sound.play("select");
-        ui.toast.show("Listo: es el Jugador 1", { tone: "success" });
-        const stack = context?.stack ?? [];
-        return openMenu(playersMenu(await api.players()), { stack: stack.slice(0, Math.max(0, stack.length - 1)) });
-      }
-      case "players-restart-confirm":
-        return openMenu(playersRestartMenu(command), nested(context));
-      case "players-restart":
-        ui.sheet.close();
-        await api.restartWithPlayers();
-        return sound.play("open");
-      case "video-release": { // reiniciar DWM: suelta la memoria de video que se quedó (la pantalla parpadea)
-        ui.sheet.close();
-        const res = await api.releaseVideoMemory();
-        sound.play("select");
-        return ui.toast.show(res.before_mb ? `Memoria de video liberada · ${(res.before_mb / 1024).toFixed(1)} GB` : "Memoria de video liberada", { tone: "success" });
-      }
-      case "video-setup": { // la primera vez: Windows pide permiso en la pantalla
-        ui.toast.show("Windows te va a pedir permiso: elige «Sí» con el ratón, el teclado o tocando la pantalla");
-        const res = await api.setupVideoMemory();
-        sound.play(res.ok ? "select" : "error");
-        if (!res.ok) return ui.toast.show("No se activó: hace falta decir «Sí» en el aviso de Windows", { tone: "warn" });
-        ui.toast.show("Listo: Orbital la libera solo cuando no estés usando la consola", { tone: "success" });
-        return openMenu(memoryMenu(await api.memory()), { stack: context?.stack ?? [] });
-      }
-      case "close-app": {
-        const res = await api.closeApp(command.exe);
-        sound.play("select");
-        ui.toast.show(`Cerré ${command.name} · ${(res.freed_mb / 1024).toFixed(1)} GB libres de más`, { tone: "success" });
-        // De vuelta a la lista (sin la pregunta ni la lista vieja en el «Atrás»).
-        return openMenu(memoryMenu(await api.memory()), { stack: (context?.stack ?? []).slice(0, -1) });
-      }
-      case "tour": { // con el atajo del mando conectado
-        if (state.legion === undefined) {
-          const pads = (await api.controllers().catch(() => ({ controllers: [] }))).controllers;
-          state.legion = pads.some((c) => c.kind === "legion");
-          state.gamesir = pads.some((c) => c.kind === "gamesir");
-        }
-        ui.sheet.open(tourMenu(command.step, { legion: state.legion, gamesir: state.gamesir }), { index: 0, stack: [] });
-        return renderHints();
-      }
-      case "update-check":
-        ui.toast.show("Buscando una versión nueva…");
-        return openMenu(updateMenu(await api.checkUpdate(!!command.force)), nested(context));
-      case "update-apply":
-        await api.applyUpdate();
-        return ui.toast.show("Actualizando Orbital… puedes seguir usándolo.");
-      case "folders":
-        return openMenu(foldersMenu(await api.folders()), nested(context));
-      case "emulators":
-        if (command.force) ui.toast.show("Revisando versiones nuevas…");
-        return openMenu(emulatorsMenu(await api.emulatorUpdates(!!command.force)), command.force || command.again ? { index: context?.index ?? 0, stack: context?.stack ?? [] } : nested(context));
-      case "emulators-mode": {
-        applySettings(await api.setSettings({ emulator_updates: command.value }));
-        sound.play("select");
-        if (stillThere(context)) ui.sheet.open(emulatorsMenu(await api.emulatorUpdates()), { index: context?.index ?? 0, stack: context?.stack ?? [] });
-        return renderHints();
-      }
-      case "emulator-install":
-        await api.installEmulator(command.id);
-        return ui.toast.show(`Actualizando ${command.name}… puedes seguir usando Orbital.`);
-      case "emulator-menu":
-        return openMenu(emulatorMenu(command.emulator), nested(context));
-      case "eden-build": // cuál versión de Eden baja el actualizador; luego, instalarla ya o después
-        applySettings(await api.setSettings({ eden_build: command.value }));
-        sound.play("select");
-        return openMenu(edenBuildMenu(command), nested(context));
-      case "emulator-install-forced":
-        ui.sheet.close();
-        await api.installEmulatorForced(command.id);
-        return ui.toast.show(`Instalando ${command.name}… puedes seguir usando Orbital.`);
-      case "emulator-install-new":
-        await api.installNewEmulator(command.id);
-        return ui.toast.show(`Instalando ${command.name}… puedes seguir usando Orbital.`);
-      case "emulator-rollback":
-        await api.rollbackEmulator(command.id);
-        return ui.toast.show(`Regresando ${command.name} a la versión anterior…`);
-      case "quick-set": { // cambia y se queda en el panel, en la misma opción
-        const q = await api.setQuick(command.changes);
-        sound.play("move");
-        const music = await api.music().catch(() => null);
-        if (stillThere(context)) ui.sheet.open(quickMenu(q, { running: state.running, music, legion: state.legion === true }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
-        return renderHints();
-      }
-      case "captures":
-        state.captures = (await api.captures()).items;
-        return openMenu(capturesMenu(state.captures), nested(context));
       case "section":
         sound.play("select");
         return goToSection(command.id);
-      case "alexa-menu":
-        state.voiceGuide ??= await api.voiceCommands().catch(() => null);
-        return openMenu(alexaMenu(state.voiceGuide), nested(context));
-      case "voice-group": {
-        const group = state.voiceGuide?.groups?.[command.index];
-        return group ? openMenu(voiceGroupMenu(group), nested(context)) : undefined;
-      }
-      case "voice-help":
-        return openMenu(voiceHelpMenu(), nested(context));
       case "view-capture":
         sound.play("open");
         captureFrom = context ? { options: { stack: context.stack }, first: context.index - command.index } : null;
         ui.viewer.open(state.captures || [], command.index);
         return renderHints();
-      case "diagnostics":
-        return openMenu(diagnosticsMenu(await api.diagnostics()), nested(context));
       case "stremio-login":
         sound.play("open");
         loginFrom = { context };
         ui.login.open();
         return renderHints();
-      case "stremio-account":
-        return openMenu(stremioAccountMenu(), nested(context));
-      case "stremio-logout":
-        await api.stremioLogout();
-        state.stremioLinked = false;
-        ui.toast.show("Stremio desconectado");
-        return loadLibrary();
       case "trakt-link": // un código para escribir en trakt.tv/activate (el aviso llega por SSE)
         sound.play("open");
         traktFrom = { context };
@@ -1882,61 +1665,19 @@ async function runCommand(command, context = null) {
         loginFrom = { context };
         ui.login.open(keysForm(command.service));
         return renderHints();
-      case "keys-menu":
-        return openMenu(keysMenu(command.service), nested(context));
       case "keys-remove": {
         const status = command.service === "onedrive" ? await api.onedriveClient("")
           : await api.forYouKeys(command.service, KEY_FORMS[command.service].fields.map(() => ""));
         loginFrom = { context };
         return keysSaved(KEY_FORMS[command.service], status, { removed: true });
       }
-      case "trakt-account":
-        return openMenu(traktAccountMenu(), nested(context));
       case "onedrive-link": // un código para microsoft.com/link (el aviso llega por SSE)
         sound.play("open");
         traktFrom = { context };
         ui.traktLink.open("onedrive");
         return renderHints();
-      case "remembered":
-        return openMenu(rememberedMenu((await api.remembered()).titles || []), nested(context));
-      case "remembered-forget": {
-        const res = await api.forgetRemembered(command.id);
-        sound.play("select");
-        ui.toast.show(`${command.title} vuelve a lo de Ajustes`, { tone: "success" });
-        return openMenu(rememberedMenu(res.titles || []), context);
-      }
-      case "onedrive-account":
-        return openMenu(onedriveMenu(await api.onedrive()), nested(context));
-      case "onedrive-folder": { // recorrer tus carpetas para elegir la de tus videos (solo las que tú abres)
-        const res = await api.onedriveFolders(command.path || "");
-        return openMenu(onedriveFolderMenu(res.path || "", res.folders || []), nested(context));
-      }
-      case "onedrive-use": {
-        const status = await api.onedriveFolder(command.path);
-        applySettings({ ...state.settings, onedrive: status });
-        sound.play("select");
-        return ui.toast.show(`Busco tus videos en «${command.path}»`, { tone: "success" });
-      }
-      case "onedrive-scan":
-        await api.onedriveScan();
-        return ui.toast.show("Buscando lo nuevo en tu OneDrive…");
-      case "onedrive-unlink":
-        applySettings({ ...state.settings, onedrive: await api.onedriveUnlink() });
-        ui.toast.show("OneDrive desconectado");
-        return loadCuration();
-      case "trakt-unlink":
-        await api.traktUnlink();
-        ui.toast.show("Trakt desconectado");
-        return ui.foryou.load({ force: true });
-      case "foryou-dismiss":
-        await ui.foryou.dismiss(command.item);
-        sound.play("select");
-        return ui.toast.show("No te lo vuelvo a sugerir", { tone: "success" });
       case "stay":
         if (context && stillThere(context)) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
-        return renderHints();
-      case "save-toggle": // «Guardar en…»: se queda abierta, con la casilla ya cambiada
-        toggleSave(command.where);
         return renderHints();
       case "back": { // «Cancelar» en una pregunta: al menú de antes, donde estabas
         const previous = context?.stack?.at(-1);
@@ -1962,6 +1703,27 @@ function openMenu(menu, options = {}) {
 
 /** «Zelda oculto · Y Deshacer»: unos segundos para arrepentirse (Y o tocar el aviso). */
 const UNDO_MS = 8000;
+
+/** Un aviso de voz con acción («No era eso», «Lo que puedes decir»): el botón que la hace mientras se ve, y con el mouse o
+ *  el dedo se toca en el aviso. */
+function offerVoiceAction(voiceAction) {
+  state.voiceAction = { ...voiceAction, until: Date.now() + UNDO_MS };
+  return { duration: UNDO_MS, action: { label: voiceAction.label, glyph: state.modality === "touch" ? "" : glyphs()[voiceAction.button],
+    onPress: () => runVoiceAction() } };
+}
+
+async function runVoiceAction() {
+  const voiceAction = state.voiceAction;
+  state.voiceAction = null;
+  ui.toast.dismiss();
+  if (!voiceAction) return;
+  if (voiceAction.kind === "guide") return runCommand({ type: "alexa-menu" });
+  // «No era eso»: cierra lo que abrió (como B en la pantalla de carga: no cuenta como jugado) y busca lo que oyó.
+  sound.play("back");
+  ui.launch.hide();
+  await api.stop({ cancelled: true }).catch(() => {});
+  return openSearch(voiceAction.query);
+}
 function offerUndoHide(command) {
   const undo = { id: command.id, until: Date.now() + UNDO_MS, where: focusKey() };
   state.undoHide = undo;
@@ -2006,10 +1768,15 @@ function handleAction(action, { repeat = false } = {}) {
   }
   stir();
   if (saver.wake()) return; // con el protector de pantalla, el primer botón solo lo quita
-  spotlightIdle = Date.now(); // el carrusel de Destacados espera mientras te mueves
+  spotlightIdle = Date.now(); // el carrusel de Destacados espera mientras te mueves (y vuelve a dar su vuelta)
+  spotlightTurns = 0;
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
   if (action === "options" && canUndoHide() && !ui.sheet.isOpen && !topOverlay()) {
     return undoHide();
+  }
+  // Un aviso de voz con acción a la vista: B «No era eso» o ☰ «Lo que puedes decir» (lo dice el aviso con su botón).
+  if (state.voiceAction && Date.now() < state.voiceAction.until && action === state.voiceAction.button && !ui.sheet.isOpen) {
+    return runVoiceAction();
   }
   // 1: ☰ en la ficha o en Fuentes abre el menú (antes pasaba a la búsqueda de abajo, que dictaba).
   if (action === "menu" && !ui.sheet.isOpen && (ui.title.isOpen || ui.sources.isOpen) && !ui.launch.visible) {
@@ -2032,25 +1799,35 @@ function handleAction(action, { repeat = false } = {}) {
     }
     return renderHints();
   }
-  if (menuBusy) {
-    if (action === "back" && !menuBusy.done) { // B mientras un submenú carga: se cancela (antes aparecía después)
-      menuBusy.stale = true;
-      menuBusy = null;
-      sound.play("back");
-      return renderHints();
-    }
-    if (performance.now() < menuBusy.until) { if (!topOverlay()) return; }
-    else { // ya puedes moverte: si la opción sigue esperando, su menú ya no se abre encima de lo que hagas
-      if (!menuBusy.done) menuBusy.stale = true;
-      menuBusy = null;
-    }
-  }
+  if (menuStillLoading(action)) return;
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
   if (OVERLAYS.some((view) => view.handle(action, { repeat }))) return renderHints();
   if (inForYou()) return handleForYou(action, { repeat });
   if (inTv()) return handleTv(action, { repeat });
   if (inHome()) return handleHome(action, { repeat });
   if (inGames()) return handleGames(action, { repeat });
+  return handleRows(action, { repeat });
+}
+
+/** Una opción del menú esperaba al servidor: B la cancela y, mientras tanto, lo de atrás no recibe el botón (true). */
+function menuStillLoading(action) {
+  if (!menuBusy) return false;
+  if (action === "back" && !menuBusy.done) { // B mientras un submenú carga: se cancela (antes aparecía después)
+    menuBusy.stale = true;
+    menuBusy = null;
+    sound.play("back");
+    renderHints();
+    return true;
+  }
+  if (performance.now() < menuBusy.until) return !topOverlay();
+  // ya puedes moverte: si la opción sigue esperando, su menú ya no se abre encima de lo que hagas
+  if (!menuBusy.done) menuBusy.stale = true;
+  menuBusy = null;
+  return false;
+}
+
+/** Las filas de portadas (Películas y series). */
+function handleRows(action, { repeat = false } = {}) {
   const { r, c } = state.focus;
   const item = current();
   switch (action) {
@@ -2141,14 +1918,18 @@ function openView(view = {}, message = "") {
   if (view.seccion) goToSection(view.seccion);
 }
 
-function handleEvent(event) {
-  if (event.type === "status") return applyStatus(event.running);
-  if (event.type === "reload") { // tras actualizar Orbital (con `view`, abre esa vista al volver)
+// Lo que avisa el servidor (SSE), por tipo. Los que no regresan nada terminan preguntando el estado, igual que un aviso
+// que esta versión no conoce (algo cambió: mejor saberlo).
+const EVENTS = {
+  status: (event) => applyStatus(event.running),
+  // tras actualizar Orbital (con `view`, abre esa vista al volver)
+  reload: (event) => {
     const query = new URLSearchParams(event.view || {}).toString();
     return location.assign(location.pathname + (query ? `?${query}` : ""));
-  }
-  if (event.type === "open-view") return openView(event.view, event.message);
-  if (event.type === "choose") { // la voz encontró varias con el mismo nombre: ¿cuál?
+  },
+  "open-view": (event) => openView(event.view, event.message),
+  // la voz encontró varias con el mismo nombre: ¿cuál?
+  choose: (event) => {
     ui.status.pulseAlexa();
     return openMenu({
       title: event.message,
@@ -2157,16 +1938,18 @@ function handleEvent(event) {
         { icon: "search", label: "Ver todos los resultados", command: { type: "search", query: event.query } },
       ],
     });
-  }
-  if (event.type === "launch-ready") return ui.launch.reveal();
-  if (event.type === "switching") { // Xenia cambia de programa (Black Ops II: campaña ↔ Zombies): su pantalla de carga mientras se relanza
+  },
+  "launch-ready": (event) => ui.launch.reveal(),
+  // Xenia cambia de programa (Black Ops II: campaña ↔ Zombies): su pantalla de carga mientras se relanza
+  switching: (event) => {
     ui.launch.show(findItem(event.id) || { title: event.title }, event.detail || "");
     return ui.launch.keep(30_000);
-  }
-  if (event.type === "input") return handleAction(event.action); // el control remoto del iPhone, como el mando
-  if (event.type === "text") return remoteText(String(event.text || ""), !!event.submit, !!event.replace);
-  if (event.type === "settings") return event.settings && applySettings(event.settings);
-  if (event.type === "health") { // memoria casi llena
+  },
+  input: (event) => handleAction(event.action),  // el control remoto del iPhone, como el mando
+  text: (event) => remoteText(String(event.text || ""), !!event.submit, !!event.replace),
+  settings: (event) => event.settings && applySettings(event.settings),
+  // memoria casi llena
+  health: (event) => {
     // Con la ventana tapada (un juego o un video encima) no sale nada: ni sonido ni repintado, que
     // Orbital no se asome sobre el juego. Sale al volver a verse (visibilitychange).
     if (!deferred.offer(event)) return;
@@ -2174,43 +1957,55 @@ function handleEvent(event) {
     // Con un juego abierto, un aviso que no estorba; si no, la pregunta (con Reiniciar solo si sirve).
     if (state.running?.managed) return ui.toast.show(event.message, { error: true });
     return openMenu(healthMenu(event.message, { restart: event.restart !== false, release: event.release || null }));
-  }
-  if (event.type === "open-quick") return openQuick().catch((err) => ui.toast.show(err.message, { error: true }));
-  if (event.type === "emulator-update-done") {
+  },
+  "open-quick": (event) => openQuick().catch((err) => ui.toast.show(err.message, { error: true })),
+  "emulator-update-done": (event) => {
     sound.play(event.ok ? "select" : "error");
     return ui.toast.show(event.message, { tone: event.ok ? "success" : "error" });
-  }
-  if (event.type === "update-done") {
+  },
+  "update-done": (event) => {
     sound.play(event.ok ? "select" : "error");
     return ui.toast.show(event.message, { tone: event.ok ? "success" : "error" });
-  }
-  if (event.type === "resumed") { // volvió de suspender: ponerse al día
+  },
+  // volvió de suspender: ponerse al día
+  resumed: (event) => {
     pollSystem();
     loadLibrary();
     return pollStatus();
-  }
-  if (event.type === "toast") {
+  },
+  toast: (event) => {
+    const voiceAction = voiceToastAction(event.action);
     ui.toast.show(event.message, { tone: event.tone || "", error: event.ok === false, voice: !!event.voice, countdown: event.countdown || 0,
-      detail: event.detail || "" });
+      detail: event.detail || "", ...(voiceAction ? offerVoiceAction(voiceAction) : {}) });
     if (event.voice) ui.status.pulseAlexa();
-  } else if (event.type === "navigate") {
+    pollStatus();
+  },
+  navigate: (event) => {
     handleAction(event.direction);
-  } else if (event.type === "downloads") {
+    pollStatus();
+  },
+  downloads: (event) => {
     return event.id ? downloadProgress(event) : loadDownloads();
-  } else if (event.type === "library-changed") {
+  },
+  "library-changed": (event) => {
     loadLibrary();
     ui.title.refresh();
     return;
-  } else if (event.type === "remote-input") { // escribiste en el celular: el formulario se llena y se envía solo
+  },
+  // escribiste en el celular: el formulario se llena y se envía solo
+  "remote-input": (event) => {
     ui.login.remoteArrived(event.code);
     return;
-  } else if (event.type === "trakt-linked") {
+  },
+  "trakt-linked": (event) => {
     if (traktFrom) traktFrom.done = true;
     ui.traktLink.close({ cancel: false });
     sound.play("select");
     ui.toast.show("Trakt conectado", { tone: "success", detail: event.name ? `Como ${event.name}` : "" });
     return;
-  } else if (event.type === "phone-linked") { // el iPhone escaneó el QR y ya habló con Orbital
+  },
+  // el iPhone escaneó el QR y ya habló con Orbital
+  "phone-linked": (event) => {
     if (!ui.phoneLink.isOpen) return; // la app también pregunta al abrirse: solo se celebra con el QR a la vista
     if (phoneFrom) phoneFrom.done = true; // como «Trakt conectado»: no se reabre el menú viejo (diría «Conectar»)
     ui.phoneLink.close();
@@ -2218,34 +2013,50 @@ function handleEvent(event) {
     ui.toast.show("iPhone conectado", { tone: "success", detail: "Ya es tu control y puedes mandar a la TV lo que ves" });
     api.settings().then(applySettings).catch(() => {}); // Cuentas › iPhone: «✓ Conectado» la próxima vez
     return;
-  } else if (event.type === "onedrive-linked") {
+  },
+  "onedrive-linked": (event) => {
     if (traktFrom) traktFrom.done = true;
     ui.traktLink.close({ cancel: false });
     sound.play("select");
     ui.toast.show("OneDrive conectado · Ahora elige la carpeta de tus videos en Ajustes › Cuentas", { tone: "success" });
     api.onedrive().then((s) => applySettings({ ...state.settings, onedrive: s })).catch(() => {});
     return;
-  } else if (event.type === "onedrive-link-failed") {
+  },
+  "onedrive-link-failed": (event) => {
     sound.play("error");
     return ui.traktLink.failed(event.message);
-  } else if (event.type === "onedrive-changed") { // terminó de buscar tus videos: Mi media al día
+  },
+  // terminó de buscar tus videos: Mi media al día
+  "onedrive-changed": (event) => {
     api.onedrive().then((s) => applySettings({ ...state.settings, onedrive: s })).catch(() => {});
     return loadCuration();
-  } else if (event.type === "trakt-link-failed") {
+  },
+  "trakt-link-failed": (event) => {
     sound.play("error");
     return ui.traktLink.failed(event.message);
-  } else if (event.type === "foryou-changed") {
+  },
+  "foryou-changed": (event) => {
     return ui.foryou.load({ force: true });
-  } else if (event.type === "returned") { // Home o Legion L: el mando vuelve a Orbital ya (sin esperar al siguiente status)
+  },
+  // Home o Legion L: el mando vuelve a Orbital ya (sin esperar al siguiente status)
+  returned: (event) => {
     if (state.running?.front) state.running = { ...state.running, front: false };
-  } else if (event.type === "pip") { // Home con un video: se fue a la esquina; cómo regresarlo
+    pollStatus();
+  },
+  // Home con un video: se fue a la esquina; cómo regresarlo
+  pip: (event) => {
     if (state.running?.front) state.running = { ...state.running, front: false };
     return ui.toast.show(`${event.title} sigue en pequeño · Home lo regresa a pantalla completa`);
-  } else if (event.type === "studio-logos") { // llegaron los logos de los estudios: la fila de Estudios los enseña
+  },
+  // llegaron los logos de los estudios: la fila de Estudios los enseña
+  "studio-logos": (event) => {
     return loadCuration();
-  } else if (event.type === "tv-changed") { // terminó de revisar los canales
+  },
+  // terminó de revisar los canales
+  "tv-changed": (event) => {
     return ui.tv.load({ force: true });
-  } else if (event.type === "closed") {
+  },
+  closed: (event) => {
     ui.title.refresh(); // «Continuar» ya apunta al siguiente episodio (antes repetía el que acabas de ver)
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
     // Tampoco su «De vuelta de X» encima de «Abriendo Y» (Cerrar y abrir).
@@ -2267,7 +2078,13 @@ function handleEvent(event) {
       ui.toast.show(message, { heading, image: findItem(event.id)?.image });
     }
     loadLibrary({ keepId: event.id });
-  }
+    pollStatus();
+  },
+};
+
+function handleEvent(event) {
+  const on = Object.hasOwn(EVENTS, event.type) ? EVENTS[event.type] : null;
+  if (on) return on(event);
   pollStatus();
 }
 
@@ -2275,7 +2092,15 @@ function handleEvent(event) {
 // Con un video a pantalla completa el mando es del video, aunque Windows le deje el foco a Orbital (detrás): el servidor
 // se lo pasa al reproductor y aquí no se hace nada (antes A pausaba Y le daba «Ver» a la ficha: salía la carga con el logo).
 const videoInFront = () => state.running?.id === "media:player" && state.running.front === true;
-createInput({
+// Quieta, Orbital suelta el mando del navegador (pads.js: le costaba a Edge ~14 % de un núcleo sin parar) y el primer botón
+// le llega del servidor, que ya lee XInput para Home. Solo si el servidor ve un mando XInput y todos los que ve el
+// navegador lo son: un mando que solo ve el navegador (DInput, uno de PlayStation) no se suelta nunca.
+const padServer = { xinput: false };
+// Así nombra Edge a un mando XInput (entrada.log: «Xbox 360 Controller for Windows (STANDARD GAMEPAD)»); los controles de la
+// Legion en DInput llegan como «Legion-Controller … (Vendor: 17ef …)» y esos el servidor no los ve.
+const XINPUT_ID = /xinput|xbox/i;
+const tellPad = (listening) => api.uiPad(listening).then((r) => { padServer.xinput = !!r.xinput; }).catch(() => {});
+const input = createInput({
   onAction: (action, options) => { if (!videoInFront()) handleAction(action, options); },
   onModality: setModality,
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).
@@ -2284,7 +2109,10 @@ createInput({
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
   onTrace: (entry) => traceInput(entry),
   resting: () => document.body.dataset.still !== undefined,
+  canSleep: (pads) => padServer.xinput && pads.filter(Boolean).every((pad) => XINPUT_ID.test(pad.id || "")),
+  onReading: (listening) => tellPad(listening),
 });
+tellPad(true);
 // Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla
 // completa, solo con la hora (como el de Game Glance, con tus juegos y películas). Nunca con un juego o un video al frente
 // (Orbital ni se ve) ni con una ficha o un menú abiertos; cualquier botón, toque o voz lo quita y vuelve a donde estabas.
@@ -2327,6 +2155,7 @@ for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventList
 const STILL_MS = 12_000;
 let stillTimer = 0;
 function stir() {
+  input.wake(); // si el mando estaba suelto (quieta), se vuelve a tomar
   delete document.body.dataset.still;
   clearTimeout(stillTimer);
   stillTimer = setTimeout(() => { document.body.dataset.still = ""; }, STILL_MS);
@@ -2349,6 +2178,9 @@ document.addEventListener("visibilitychange", () => {
     // Home con un juego o un video abierto: Orbital al frente también aterriza (antes solo al cerrarlo).
     if (state.running && !ui.launch.visible) boot.land();
     pollStatus();
+    pollSystem(); // lo que no se preguntó mientras un juego tapaba a Orbital
+    refreshPhone();
+    wantCuration();
     loadLibrary();
     for (const event of deferred.take()) handleEvent(event);
   }
@@ -2362,10 +2194,10 @@ ui.tv.setGlyphs(glyphs());
 // (lo que enseña Legion Space), una vez.
 let legionTip = false;
 const legionStuck = () => {
-  const pads = [...(navigator.getGamepads?.() || [])].filter(Boolean);
+  const pads = readPads().filter(Boolean);
   return !pads.some(usablePad) && pads.some((pad) => /legion/i.test(pad.id || ""));
 };
-window.addEventListener("gamepadconnected", ({ gamepad }) => {
+onPadConnected((gamepad) => {
   if (legionTip || usablePad(gamepad) || !/legion/i.test(gamepad.id || "")) return;
   setTimeout(() => {
     if (legionTip || !legionStuck()) return;
@@ -2374,11 +2206,11 @@ window.addEventListener("gamepadconnected", ({ gamepad }) => {
   }, 10_000);
 });
 setInterval(pollStatus, 60_000); // red de seguridad: el estado llega por SSE al cambiar
-setInterval(pollSystem, 30_000);
+setInterval(() => (onScreen() ? pollSystem() : null), 30_000); // wifi e internet: solo si alguien mira la barra
 pollStatus();
 pollSystem();
 refreshPhone();
-setInterval(refreshPhone, 60_000); // si enciendes Tailscale o conectas el iPhone, las opciones aparecen solas
+setInterval(() => (onScreen() ? refreshPhone() : null), 60_000); // si enciendes Tailscale o conectas el iPhone, las opciones aparecen solas
 loadLibrary();
 api.settings().then(applySettings).catch(() => {});
 api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => {

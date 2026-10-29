@@ -365,6 +365,11 @@ def test_api_lists_details_dismiss_and_trakt(library, make_foryou):
         assert core(data["lists"]) == [*CHART_LIST_IDS, "mygames"] and data["mosaic"]
         assert c.get("/api/foryou/list", params={"id": "mygames"}).json()["items"]
         assert c.get("/api/foryou/list", params={"id": "nada"}).status_code == 404
+        # Los estantes de Películas y series en una sola petición: cada lista con lo suyo, y la que falla no tumba a las demás.
+        many = c.post("/api/foryou/lists", json={"lists": [{"id": "mygames"}, {"id": "nada", "kind": "movie"}]}).json()["lists"]
+        assert [(l["id"], l["kind"]) for l in many] == [("mygames", None), ("nada", "movie")]
+        assert many[0]["items"] == c.get("/api/foryou/list", params={"id": "mygames"}).json()["items"]
+        assert many[1]["items"] == [] and many[1]["status"] == 404
         assert c.post("/api/foryou/dismiss", json={"key": "lo que sea"}).status_code == 422
         assert c.post("/api/foryou/dismiss", json={"key": data["mosaic"][0]["key"]}).json() == {"ok": True}
         assert c.post("/api/foryou/trakt/link").status_code == 409  # sin la aplicación de Trakt en config.yaml

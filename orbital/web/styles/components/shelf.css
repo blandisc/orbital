@@ -3,6 +3,7 @@
    ni con los controles. La fila siguiente se desvanece en lugar de cortarse en seco. */
 /* Abajo, aire antes del pie: el título de la fila que asoma ya no queda pegado a las pistas («RePág AvPág…»). */
 .shelf {
+  grid-row: 3; grid-column: 1; /* ídem */
   height: calc(var(--row-height) + var(--row-peek)); overflow: hidden; margin-bottom: var(--space-3);
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--row-peek) - var(--space-2)), transparent);
   mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--row-peek) - var(--space-2)), transparent);

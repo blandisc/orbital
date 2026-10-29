@@ -112,9 +112,28 @@ export const ALEXA_EXAMPLES = [
   { icon: "sound", label: "«le suba al volumen»", hint: "O «le baje tantito», «ponga el volumen en 30»" },
 ];
 
-export function alexaMenu(guide = null) {
-  // «Lo que puedes decir» (como en el iPhone): cómo decirlo, cada tema con todas sus frases y qué hacer si no funciona.
-  // Las frases son las de alexa/commands.json (la misma lista que el iPhone). Sin la guía, los ejemplos de siempre.
+/** Cuándo llegó la última orden, como se dice: «Hace 5 min», «Hace 3 h», «Hace 8 días», «Nunca». */
+export function sinceVoice(seconds, now = Date.now()) {
+  if (!seconds) return "Nunca";
+  const min = Math.round((now / 1000 - seconds) / 60);
+  if (min < 1) return "Hace un momento";
+  if (min < 60) return `Hace ${min} min`;
+  if (min < 60 * 48) return `Hace ${Math.round(min / 60)} h`;
+  return `Hace ${Math.round(min / 1440)} días`;
+}
+
+/** Dónde hablarle: el micrófono del iPhone primero (es el que está en tu mano: el de la Legion queda junto a la tele), Alexa y Siri. */
+const VOICE_PLACES = [
+  { icon: "phone", label: "El micrófono del control, en el iPhone", source: "iphone",
+    hint: "Abre la app de Orbital, estira el control hacia arriba y toca «Dile a Orbital». Es el que mejor te oye." },
+  { icon: "assistant", label: "Alexa", source: "alexa", hint: "Empieza siempre con «Alexa, pídele a mi consola que…»; sin eso, Alexa intenta hacerlo sola." },
+  { icon: "mic", label: "Siri", source: "iphone", hint: "«Oye Siri, habla con Orbital» y luego la orden; o directo: «Oye Siri, pausa en Orbital»." },
+];
+
+export function alexaMenu(guide = null, status = null, { now = Date.now() } = {}) {
+  // «Lo que puedes decir»: primero lo esencial (diez frases que cubren el día), dónde hablarle (y cuándo llegó lo último de
+  // cada lado), cada tema con todas sus frases, qué ha oído la consola y qué hacer si no funciona. Las frases son las de
+  // alexa/commands.json (la misma lista que el iPhone). Sin la guía, los ejemplos de siempre.
   if (!guide?.groups?.length) {
     return {
       title: "Pídeselo a Alexa",
@@ -122,15 +141,22 @@ export function alexaMenu(guide = null) {
       options: ALEXA_EXAMPLES.map((e) => ({ ...e, command: { type: "stay" } })),
     };
   }
+  const seen = status?.sources || {};
+  const last = Math.max(0, ...Object.values(seen).filter(Boolean));
   return {
     title: "Lo que puedes decir", crumb: "Voz",
-    subtitle: "Con Alexa, el micrófono del control del iPhone o Siri: las mismas frases.",
+    subtitle: "Las mismas frases con el micrófono del iPhone, Alexa o Siri. No hace falta decirlas exacto.",
     options: [
-      { heading: true, label: "Cómo decirlo" },
-      ...(guide.how || []).map((h) => ({ icon: "assistant", label: `«${h.say}»`, hint: h.note, command: { type: "stay" } })),
+      { heading: true, label: "Lo esencial" },
+      ...(guide.core || []).map((c) => ({ icon: "assistant", label: `«${c.say}»`, hint: c.note, command: { type: "stay" } })),
+      { heading: true, label: "Dónde hablarle" },
+      ...VOICE_PLACES.map((p) => ({ icon: p.icon, label: p.label, hint: p.hint, value: sinceVoice(seen[p.source], now), command: { type: "stay" } })),
       { heading: true, label: "Por tema" },
       ...guide.groups.map((g, i) => ({ icon: GUIDE_ICONS[g.icon] || "assistant", label: g.title, value: String(g.commands.length),
         command: { type: "voice-group", index: i } })),
+      { heading: true, label: "Si algo no sale" },
+      { icon: "pulse", label: "Qué ha oído la consola", value: sinceVoice(last, now), hint: "Lo último que llegó, qué entendió y si lo pudo hacer",
+        command: { type: "voice-log" } },
       { icon: "info", label: "Si no funciona", command: { type: "voice-help" } },
     ],
   };
@@ -144,22 +170,77 @@ const GUIDE_ICONS = { gamecontroller: "gamepad", film: "movie", "play.rectangle"
 /** Un tema de la guía: todas sus frases, con lo que hace cada una. */
 export function voiceGroupMenu(group) {
   return {
-    title: group.title, crumb: group.title, subtitle: "Empieza con «Alexa, pídele a mi consola que…»",
+    title: group.title, crumb: group.title, subtitle: "Con Alexa: «Alexa, pídele a mi consola que…» y la frase.",
     options: group.commands.map((c) => ({ icon: "assistant", label: `«${c.say}»`, hint: c.note, command: { type: "stay" } })),
   };
 }
 
-/** Si la voz no funciona: lo que más pasa, en la tele. */
-export function voiceHelpMenu() {
+const VOICE_SOURCE_NAMES = { alexa: "Alexa", iphone: "iPhone o Siri", local: "Esta consola" };
+
+/** La respuesta en un renglón: hasta `max` caracteres, cortada en una palabra con «…». */
+export function oneLine(text, max = 56) {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max - 12)).replace(/[\s.,;:]+$/u, "")}…`;
+}
+
+/** «2026-10-29 15:43:56» → «hoy 3:43 p. m.» o «21 oct 6:51 p. m.»: cuándo llegó, como se dice. */
+export function whenSaid(at, now = new Date()) {
+  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/.exec(String(at || ""));
+  if (!m) return String(at || "");
+  const [, y, mo, d, h, mi] = m.map(Number);
+  const time = clock12(h, mi);
+  const today = y === now.getFullYear() && mo === now.getMonth() + 1 && d === now.getDate();
+  return today ? `hoy ${time}` : `${d} ${MONTHS[mo - 1]} ${time}`;
+}
+const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const clock12 = (h, mi) => `${h % 12 || 12}:${String(mi).padStart(2, "0")} ${h < 12 ? "a. m." : "p. m."}`;
+
+/**
+ * Qué ha oído la consola: cuándo llegó la última orden de cada lado y las últimas que llegaron, con lo que se dijo, lo
+ * que se entendió y lo que contestó. Si aquí no aparece lo que acabas de decir, la falla está antes de Orbital (Alexa no
+ * abrió la skill, Siri no reconoció la frase, el iPhone no alcanzó la consola); si aparece, está en la consola.
+ */
+export function voiceLogMenu(status = null, { now = Date.now() } = {}) {
+  const seen = status?.sources || {};
+  const recent = status?.recent || [];
+  const info = (icon, label, value, hint, ok) => ({ icon, label, value, hint, ok, command: { type: "stay" } });
+  const said = (e) => e.text || [e.intent, ...Object.values(e.slots || {})].filter(Boolean).join(" ") || "(sin texto)";
+  return {
+    title: "Qué ha oído la consola", crumb: "Oído",
+    subtitle: "Si lo que acabas de decir no aparece aquí, no llegó a Orbital: la falla está en Alexa, Siri o la conexión del iPhone.",
+    options: [
+      { heading: true, label: "Última orden de cada lado" },
+      info("assistant", "Alexa", sinceVoice(seen.alexa, now), status && !status.alexa ? "Sin configurar" : undefined, !!seen.alexa),
+      info("phone", "iPhone o Siri", sinceVoice(seen.iphone, now), undefined, !!seen.iphone),
+      { heading: true, label: "Lo último que llegó" },
+      ...(recent.length ? recent.slice(0, 12).map((e) => info(e.ok === false ? "warning" : "check", `«${said(e)}»`,
+        VOICE_SOURCE_NAMES[e.source] || e.source || "", [whenSaid(e.at, new Date(now)), oneLine(e.speech)].filter(Boolean).join(" · "), e.ok !== false))
+        : [info("info", "Nada todavía", "", "Prueba: en el iPhone, estira el control y di «pon la tele»")]),
+    ],
+  };
+}
+
+/** Si la voz no funciona: lo que más pasa, en la tele, con lo que la consola sabe (si llegó algo y cuándo). */
+export function voiceHelpMenu(status = null, { now = Date.now() } = {}) {
+  const seen = status?.sources || {};
+  const last = Math.max(0, ...Object.values(seen).filter(Boolean));
+  const quiet = !last || now / 1000 - last > 2 * 86400; // dos días sin una sola orden: lo que falla está antes de la consola
   return {
     title: "Si no funciona", crumb: "Si no funciona",
     options: [
-      { icon: "assistant", label: "Empieza con «pídele a mi consola que…»", hint: "Sin eso, Alexa intenta hacerlo ella sola", command: { type: "stay" } },
-      { icon: "search", label: "Revisa lo que entendió", hint: "Abajo sale «No entendí…» con lo que escuchó: dilo más despacio o búscalo", command: { type: "stay" } },
-      { icon: "grid", label: "Cuando hay varias", hint: "Si pides «pon Dune» y hay más de una, salen en la tele para elegir", command: { type: "stay" } },
-      { icon: "wifi", label: "Si Alexa no encuentra tu consola", hint: "Orbital tiene que estar encendida y con Internet", command: { type: "stay" } },
+      ...(quiet ? [{ icon: "warning", label: "A la consola no le ha llegado ninguna orden", value: sinceVoice(last, now),
+        hint: "Lo que falla está antes de Orbital: Alexa no abre la skill, Siri no reconoce la frase o el iPhone no alcanza la consola. Prueba primero con el micrófono del iPhone, en la misma red.",
+        command: { type: "stay" } }] : []),
+      { icon: "phone", label: "Primero, el micrófono del iPhone", hint: "Abre la app, estira el control, toca «Dile a Orbital» y di «pon la tele». Es el camino más corto y enseña «Entendí: …».", command: { type: "stay" } },
+      { icon: "assistant", label: "Alexa: di «pídele a mi consola que…»", hint: "Sin eso, Alexa intenta hacerlo ella sola. El nombre es «mi consola», no «Orbital»: el Echo no lo oye bien.", command: { type: "stay" } },
+      { icon: "assistant", label: "Alexa: revisa qué oyó", hint: "En la app Alexa › Más › Actividad está lo que transcribió. Si no dice «mi consola», no abrió la skill.", command: { type: "stay" } },
+      { icon: "wifi", label: "iPhone: «Tu Orbital no contesta»", hint: "Fuera de casa el iPhone entra por el túnel de Tailscale; si se traba, en la consola apágalo y préndelo (Tailscale › Funnel).", command: { type: "stay" } },
+      { icon: "search", label: "Revisa lo que entendió", hint: "«Qué ha oído la consola» enseña lo que llegó: si el nombre salió mal, dilo más despacio o búscalo escribiendo", command: { type: "stay" } },
+      { icon: "grid", label: "Cuando hay varias", hint: "Si pides «pon Dune» y hay más de una, salen en la tele (y en el iPhone) para elegir", command: { type: "stay" } },
+      { icon: "mic", label: "Dictar en Buscar, aquí", hint: "El micrófono de la Legion Go queda junto a la tele, lejos de ti, y el dictado de Edge a veces no responde: el del iPhone es el bueno.", command: { type: "stay" } },
       { icon: "power", label: "Si la tele no prende", hint: "En la tele: Configuración › Sistema › Energía › Inicio rápido de TV", command: { type: "stay" } },
-      { icon: "phone", label: "Desde el iPhone", hint: "El micrófono del control y Siri usan las mismas frases", command: { type: "stay" } },
     ],
   };
 }
@@ -182,7 +263,7 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
   options.push({ icon: "gamepad", label: "Jugadores", hint: "Quién es el Jugador 1, 2…", command: { type: "players" } });
   options.push({ icon: "spark", label: "¿Qué vemos?", hint: "Tres que caben en tu tiempo", command: { type: "decide" } });
   options.push({ icon: "chart", label: "Tu año", hint: "Lo que viste según Trakt", command: { type: "year" } });
-  options.push({ icon: "gamepad", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
+  options.push({ icon: "info", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
   if (alexa) options.push({ icon: "assistant", label: "Lo que puedes decir", hint: "Alexa, el iPhone y Siri", command: { type: "alexa-menu" } });
   options.push({ icon: "settings", label: "Ajustes", command: { type: "settings" } });
   options.push({ icon: "power", label: "Apagar", hint: "Suspender, reiniciar o apagar", command: { type: "power-menu" } });
@@ -539,51 +620,220 @@ const SETTING_ICONS = {
   game_mode: "memory", game_resolution: "hd",
 };
 
-const SETTING_PAGES = {
-  playback: { title: "Películas y series", icon: "play", hint: "Idioma, subtítulos y calidad", options: [
-    ["audio", "Idioma", "En qué idioma prefieres oírlas"],
-    ["subtitles", "Subtítulos", null], ["quality", "Calidad", null],
-    ["sub_scale", "Letra de los subtítulos", null]] },
-  display: { title: "Pantalla y sonido", icon: "display", hint: "Texto, márgenes, sonidos y vibración", options: [
-    ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
-    ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", "Ejemplos de qué decirle, en pantalla"],
-    ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null],
-    ["screensaver_minutes", "Protector de pantalla", "El mosaico de Para ti tras ese rato sin usarla"]] },
-  sessions: { title: "Juegos y videos", icon: "gamepad", hint: "Qué se cierra solo y cuándo", options: [
-    ["game_idle_minutes", "Cerrar juegos olvidados en pausa", "Lo no guardado se pierde"],
-    ["video_idle_minutes", "Cerrar videos olvidados en pausa", "Tu avance se guarda"],
-    ["video_home", "Home durante un video", "En pequeño: sigue en una esquina"],
-    ["close_previous", "Abrir algo nuevo cierra lo anterior", null],
-    ["game_mode", "Cerrar Orbital al jugar", "Más memoria para Switch, Wii U…"],
-    ["game_resolution", "Resolución al jugar",
-      "Switch y Xbox 360 exigen mucho rendimiento: se juegan a 1080p para que corran fluidos. Lo demás se queda al máximo"]] },
+/** Cada ajuste: su nombre y, en una línea, para qué sirve (la ayuda al pie de Ajustes mientras está enfocado). */
+const SETTING_TEXT = {
+  audio: ["Idioma", "En qué idioma prefieres oírlas. Si no lo hay, la ficha te lo dice antes de «Ver»."],
+  subtitles: ["Subtítulos", "Los que salen solos al empezar. En el reproductor, X los cambia."],
+  quality: ["Calidad", "La que se busca primero. 4K tarda más en empezar."],
+  sub_scale: ["Letra de los subtítulos", "El tamaño de los subtítulos en el reproductor."],
+  video_idle_minutes: ["Cerrar videos olvidados en pausa", "Un video en pausa se cierra solo después de ese rato. Tu avance se guarda."],
+  video_home: ["Home durante un video", "En pequeño: el video sigue en una esquina mientras usas Orbital."],
+  game_idle_minutes: ["Cerrar juegos olvidados en pausa", "Un juego en pausa se cierra solo después de ese rato. Lo no guardado se pierde."],
+  close_previous: ["Abrir algo nuevo cierra lo anterior", "Así no se quedan dos juegos o videos abiertos gastando memoria."],
+  game_mode: ["Cerrar Orbital al jugar", "Más memoria para Switch, Wii U y las consolas pesadas. Vuelve sola al salir del juego."],
+  game_resolution: ["Resolución al jugar", "Switch y Xbox 360 se juegan a 1080p para que corran fluidos. Lo demás, al máximo."],
+  text_size: ["Tamaño del texto", "Solo la letra, no el diseño. Se ve al instante."],
+  safe_area: ["Márgenes de la TV", "Si la tele corta los bordes, súbelo."],
+  reduce_motion: ["Reducir movimiento", "Cambios directos, sin deslizar ni acercar."],
+  sounds: ["Sonidos", "Los sonidos al moverte y elegir."],
+  haptics: ["Vibración del mando", "El mando vibra en los topes y al elegir."],
+  screensaver_minutes: ["Protector de pantalla", "El mosaico de Para ti después de ese rato sin usarla."],
+  voice_tips: ["Frases en pantalla", "Al pedir algo por voz, el aviso dice qué más puedes decir en ese momento."],
 };
 
-export function settingsMenu() {
+/** ¿Todos sus valores caben a la vista (valores segmentados)? Hasta cuatro y cortos; si no, uno a la vez con ‹ ›. */
+export function segmentable(key) {
+  const values = SETTING_VALUES[key] || [];
+  return values.length > 1 && values.length <= 4 && values.reduce((n, [, label]) => n + label.length, 0) <= 34;
+}
+
+/** Una fila de ajuste: su valor y cómo se cambia (A el siguiente, ◀/▶ el de al lado, o tocar uno de los segmentos). */
+function settingRow(key, settings, category) {
+  const [label, help] = SETTING_TEXT[key];
+  const value = settings[key];
   return {
-    title: "Ajustes",
-    options: [
-      ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, hint: def.hint, command: { type: "settings", page } })),
-      { icon: "account", label: "Cuentas", hint: "Stremio, Trakt, tu iPhone y claves de Para ti", command: { type: "settings", page: "accounts" } },
-      { icon: "wrench", label: "Mantenimiento", hint: "Revisar, carpetas, actualizar", command: { type: "settings", page: "maintenance" } },
-    ],
+    icon: SETTING_ICONS[key] || "settings", label, help, value: settingLabel(key, value),
+    valueFlag: key === "audio" || key === "subtitles" ? value : undefined, // su banderita (Flag)
+    choices: segmentable(key)
+      ? SETTING_VALUES[key].map(([v, text]) => ({ label: text, on: v === value, command: { type: "setting", key, value: v, page: category } }))
+      : undefined,
+    command: { type: "setting", key, value: nextSetting(key, value), page: category },
+    // ◀ baja y ▶ sube (antes las dos avanzaban)
+    adjust: { left: edgeAware(key, value, -1, category), right: edgeAware(key, value, 1, category) },
   };
 }
 
-/** Mantenimiento: lo técnico, junto y fuera del camino de todos los días. */
-export function maintenanceMenu() {
-  return {
-    title: "Mantenimiento", crumb: "Mantenimiento",
-    options: [
+/** Cuentas: Stremio, Trakt, cada iPhone, OneDrive y las claves de Para ti. */
+function accountRows(settings) {
+  return [
+    { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
+      ok: !!settings.stremio_linked, warn: !settings.stremio_linked,
+      command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
+      hint: settings.stremio_linked ? "Seguir viendo y complementos" : "Para películas y series" },
+    settings.trakt?.configured ? { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
+      ok: !!settings.trakt.linked,
+      command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
+      hint: settings.trakt.linked ? scrobbleHint(settings.trakt.scrobble) : "Listas y recomendaciones" }
+      : settings.trakt && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "Configurar", hint: "Primero, la clave de Trakt (abajo)",
+        command: { type: "keys", service: "trakt" } },
+    ...phoneRows(settings),
+    onedriveRow(settings.onedrive),
+    settings.para_ti && { heading: true, label: "Claves de Para ti" },
+    ...(settings.para_ti ? Object.keys(KEY_FORMS).filter((s) => s !== "onedrive").map((service) => keyRow(service, settings.para_ti)) : []),
+  ].filter(Boolean);
+}
+
+const DAY = 86400;
+/** Cuándo llegó la última orden de voz (de cualquier lado), en segundos de época; 0 si nunca, null si no se sabe. */
+function lastVoice(voice) {
+  if (!voice) return null;
+  return Math.max(0, ...Object.values(voice.sources || {}).filter(Boolean));
+}
+
+/** Lo que falta (Resumen): solo lo que de verdad cambia algo; cada uno dice por qué en una línea y A lo arregla. */
+export function settingsMissing(settings, { voice = null, now = Date.now() } = {}) {
+  settings ??= {};
+  const missing = [];
+  const last = lastVoice(voice);
+  const phones = (settings.companion_devices || []).length > 0 || !!settings.companion_seen;
+  if (voice && (settings.alexa || phones) && (!last || now / 1000 - last > 2 * DAY)) {
+    missing.push({ icon: "assistant", label: last ? `La voz no ha llegado en ${Math.round((now / 1000 - last) / DAY)} días` : "La voz nunca ha llegado",
+      hint: "Ni Alexa ni el iPhone han mandado nada: la falla está antes de la consola", value: "Ver qué ha oído", warn: true,
+      command: { type: "voice-log" } });
+  }
+  if (!settings.stremio_linked) {
+    missing.push({ icon: "trailer", label: "Stremio sin conectar", hint: "Sin Stremio no hay películas ni series", value: "Conectar", warn: true,
+      command: { type: "stremio-login" } });
+  }
+  if (settings.trakt?.configured && !settings.trakt.linked) {
+    missing.push({ icon: "spark", label: "Trakt sin conectar", hint: "Para tus listas, lo que viste y «Porque viste»", value: "Conectar", warn: true,
+      command: { type: "trakt-link" } });
+  }
+  if (!phones) {
+    missing.push({ icon: "phone", label: "Sin iPhone", hint: "Es el mejor micrófono y el control a distancia", value: "Conectar", warn: true,
+      command: { type: "phone-link" } });
+  }
+  return missing;
+}
+
+/** Las categorías de Ajustes, en el riel (pantalla `settings`). */
+export const SETTINGS_CATEGORIES = [
+  { id: "summary", title: "Resumen", icon: "check" },
+  { id: "watch", title: "Ver", icon: "play" },
+  { id: "play", title: "Jugar", icon: "gamepad" },
+  { id: "voice", title: "Tele y voz", icon: "tv" },
+  { id: "display", title: "Pantalla y sonido", icon: "display" },
+  { id: "accounts", title: "Cuentas", icon: "account" },
+  { id: "system", title: "Sistema", icon: "wrench" },
+];
+
+/** El dato de cada categoría en el riel abierto: «2 cosas por hacer», «Español latino · 1080p»… */
+export function settingsMeta(id, settings, { voice = null, now = Date.now() } = {}) {
+  settings ??= {};
+  switch (id) {
+    case "summary": {
+      const n = settingsMissing(settings, { voice, now }).length;
+      return n ? `${n} ${n === 1 ? "cosa" : "cosas"} por hacer` : "Todo listo";
+    }
+    case "watch": return `${settingLabel("audio", settings.audio)} · ${settingLabel("quality", settings.quality)}`;
+    case "play": return settings.game_idle_minutes ? `En pausa, se cierran en ${settingLabel("game_idle_minutes", settings.game_idle_minutes)}` : "En pausa, no se cierran";
+    case "voice": return voice ? `Voz: ${sinceVoice(lastVoice(voice), now).toLowerCase()}` : "La tele, Alexa y el iPhone";
+    case "display": return `Texto ${settingLabel("text_size", settings.text_size ?? "normal").toLowerCase()}`;
+    case "accounts": {
+      const rows = accountRows(settings).filter((r) => !r.heading && !["phone-link", "keys"].includes(r.command?.type));
+      return `${rows.filter((r) => r.ok).length} de ${rows.length} conectadas`;
+    }
+    default: return "Revisar y actualizar";
+  }
+}
+
+/**
+ * Una categoría de Ajustes, a pantalla completa: { title, lead, options }. Las opciones son las de una hoja (`sheet`)
+ * más `choices` (los valores segmentados, todos a la vista) y `help` (una línea al pie mientras está enfocada).
+ * `voice`: /api/voice/status (cuándo llegó lo último de cada lado); sin él, la voz se enseña sin fechas.
+ */
+export function settingsCategory(id, settings, { voice = null, now = Date.now(), canExit = false } = {}) {
+  settings ??= {};
+  const row = (key) => settingRow(key, settings, id);
+  switch (id) {
+    case "watch": return { title: "Ver", lead: "Cómo suenan y se ven las películas y series.", options: [
+      row("audio"), row("subtitles"), row("quality"), row("sub_scale"), row("video_idle_minutes"), row("video_home"),
+      { icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } },
+    ] };
+    case "play": return { title: "Jugar", lead: "Qué se cierra solo y cómo corren los juegos.", options: [
+      row("game_idle_minutes"), row("close_previous"), row("game_mode"), row("game_resolution"),
+      { heading: true, label: "Tus juegos" },
+      { icon: "gamepad", label: "Emuladores", hint: "Versiones nuevas y cómo se actualizan", command: { type: "emulators" } },
+      { icon: "folder", label: "Carpetas de juegos", hint: "Dónde busco tus juegos", command: { type: "folders" } },
+      { icon: "refresh", label: "Buscar juegos nuevos", hint: "Lo que copiaste desde la última vez", command: { type: "refresh" } },
+    ] };
+    case "voice": return { title: "Tele y voz", lead: "La tele se prende sola; tú le hablas desde el iPhone, Alexa o Siri.", options: voiceRows(settings, voice, now) };
+    case "display": return { title: "Pantalla y sonido", lead: "Lo que se ve y se oye en la consola.", options: [
+      row("text_size"), row("safe_area"), row("reduce_motion"), row("sounds"), row("haptics"), row("screensaver_minutes"),
+    ] };
+    case "accounts": return { title: "Cuentas", lead: "Lo que Orbital usa de afuera.", options: accountRows(settings) };
+    case "system": return { title: "Sistema", lead: "Lo técnico, fuera del camino de todos los días.", options: [
       { icon: "check", label: "Tu consola", hint: "Qué encontré y qué falta", command: { type: "setup" } },
-      { icon: "refresh", label: "Buscar juegos nuevos", command: { type: "refresh" } },
-      { icon: "folder", label: "Carpetas de juegos", command: { type: "folders" } },
-      { icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } },
-      { icon: "pulse", label: "Diagnóstico", command: { type: "diagnostics" } },
-      { icon: "gamepad", label: "Emuladores", hint: "Versiones nuevas", command: { type: "emulators" } },
-      { icon: "refresh", label: "Actualizar Orbital", command: { type: "update-check" } },
-    ],
-  };
+      { icon: "refresh", label: "Actualizar Orbital", hint: "Buscar una versión nueva", command: { type: "update-check" } },
+      { icon: "pulse", label: "Diagnóstico", hint: "Memoria, lo abierto y por qué se cerró lo último", command: { type: "diagnostics" } },
+      { icon: "windows", label: "Ventanas abiertas", hint: "Traer al frente una ventana perdida", command: { type: "windows" } },
+      { icon: "power", label: "Apagar", hint: "Suspender, reiniciar o apagar (también en ☰)", command: { type: "power-menu" } },
+      canExit && { icon: "exit", label: "Salir al escritorio", command: { type: "confirm-exit" } },
+    ].filter(Boolean) };
+    default: return summary(settings, voice, now);
+  }
+}
+
+/** Resumen: lo que falta primero; lo que ya está bien, en verde. */
+function summary(settings, voice, now) {
+  const missing = settingsMissing(settings, { voice, now });
+  const last = lastVoice(voice);
+  const fine = [
+    settings.stremio_linked && { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: "✓ Conectada", ok: true, command: { type: "stremio-account" } },
+    settings.trakt?.linked && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "✓ Conectada", ok: true, command: { type: "trakt-account" } },
+    settings.tv?.configured && { icon: "tv", label: "La tele", value: "✓ Se prende con Orbital", ok: true, command: { type: "settings", page: "voice" } },
+    last && now / 1000 - last <= 2 * DAY && { icon: "assistant", label: "La voz", value: `✓ ${sinceVoice(last, now)}`, ok: true, command: { type: "voice-log" } },
+  ].filter(Boolean);
+  return { title: "Resumen", lead: missing.length ? "Lo que falta, primero. Lo demás ya está bien." : "Todo está listo.", options: [
+    missing.length && { heading: true, label: "Lo que falta" }, ...missing,
+    fine.length && { heading: true, label: "Ya está bien" }, ...fine,
+  ].filter(Boolean) };
+}
+
+const TV_INPUTS = { hdmi1: "HDMI 1", hdmi2: "HDMI 2", hdmi3: "HDMI 3", hdmi4: "HDMI 4" };
+
+/** Tele y voz: la tele (Roku), dónde hablarle (con cuándo llegó lo último de cada lado) y la ayuda. */
+function voiceRows(settings, voice, now) {
+  const seen = voice?.sources || {};
+  const when = (source) => (voice ? sinceVoice(seen[source], now) : undefined);
+  const stale = (source) => !!voice && (!seen[source] || now / 1000 - seen[source] > 2 * DAY);
+  const tv = settings.tv || {};
+  return [
+    { heading: true, label: "La tele" },
+    tv.configured
+      ? { icon: "tv", label: "Se prende con Orbital", value: "✓ Roku TV", ok: true, hint: TV_INPUTS[tv.input] ? `Y cambia sola a ${TV_INPUTS[tv.input]}` : undefined,
+        help: "«Prende la tele» (por voz o aquí abajo) la enciende y la pone en la entrada de Orbital.", command: { type: "stay" } }
+      : { icon: "tv", label: "La tele no se prende sola", value: "Cómo", warn: true, command: { type: "voice-help" },
+        help: "Con una Roku TV en la misma red, Orbital la prende y cambia a su entrada. Se configura una vez en la consola: orbital tv setup." },
+    tv.configured && { icon: "power", label: "Probar: «prende la tele»", value: "Probar", hint: "La prende de verdad y la cambia a Orbital",
+      help: "Hace lo mismo que decírselo: prende la tele y cambia a la entrada de Orbital. Queda en «Qué ha oído la consola».",
+      command: { type: "voice-try", text: "prende la tele" } },
+    { heading: true, label: "Dónde hablarle" },
+    { icon: "phone", label: "iPhone: el micrófono del control", value: when("iphone"), ok: !stale("iphone"), command: { type: "voice-help" },
+      help: "Abre la app de Orbital y toca «Dile a Orbital». Es el que mejor te oye: el de la consola queda junto a la tele." },
+    settings.alexa
+      ? { icon: "assistant", label: "Alexa: «pídele a mi consola que…»", value: when("alexa"), ok: !stale("alexa"), warn: stale("alexa"), command: { type: "voice-help" },
+        help: "Empieza siempre con «Alexa, pídele a mi consola que…»; sin eso, Alexa intenta hacerlo sola." }
+      : { icon: "assistant", label: "Alexa", value: "Sin configurar", command: { type: "voice-help" },
+        help: "La skill «mi consola» se activa en la app Alexa; mientras, usa el iPhone." },
+    { icon: "mic", label: "Siri: «Oye Siri, pausa en Orbital»", command: { type: "voice-help" },
+      help: "Siri entiende las frases esenciales y los títulos de «Seguir viendo». Llega como el iPhone." },
+    { heading: true, label: "Ayuda" },
+    { icon: "pulse", label: "Qué ha oído la consola", hint: "Lo último que llegó y qué entendió", command: { type: "voice-log" } },
+    { icon: "list", label: "Lo que puedes decir", hint: "Las esenciales y el resto por tema", command: { type: "alexa-menu" } },
+    { icon: "info", label: "Si no funciona", command: { type: "voice-help" } },
+    settingRow("voice_tips", settings, "voice"),
+  ].filter(Boolean);
 }
 
 const EMULATOR_MODE_HINTS = {
@@ -768,49 +1018,6 @@ export function scrobbleHint(scrobble, now = Date.now()) {
   if (!last?.title) return "Tus listas en Para ti · Último scrobble: aún nada";
   const ago = lastPlayed(last.at, now, "").trim();
   return `Último scrobble: ${last.title} · ${SCROBBLE_ACTIONS[last.action] || last.action}${ago ? ` · ${ago}` : ""}`;
-}
-
-/** Una página de Ajustes con los valores actuales. */
-export function settingsPage(page, settings) {
-  settings ??= {};
-  if (page === "maintenance") return maintenanceMenu();
-  if (page === "accounts") {
-    return {
-      title: "Cuentas", crumb: "Cuentas",
-      options: [
-        { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
-          ok: !!settings.stremio_linked,
-          command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
-          hint: settings.stremio_linked ? "Seguir viendo y complementos" : "Para películas y series" },
-        settings.trakt?.configured ? { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
-          ok: !!settings.trakt.linked,
-          command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
-          hint: settings.trakt.linked ? scrobbleHint(settings.trakt.scrobble) : "Listas y recomendaciones" }
-          : settings.trakt && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "Configurar", hint: "Primero, la clave de Trakt (abajo)",
-            command: { type: "keys", service: "trakt" } },
-        ...phoneRows(settings),
-        onedriveRow(settings.onedrive),
-        settings.para_ti && { heading: true, label: "Claves de Para ti" },
-        ...(settings.para_ti ? Object.keys(KEY_FORMS).filter((s) => s !== "onedrive").map((service) => keyRow(service, settings.para_ti)) : []),
-      ].filter(Boolean),
-    };
-  }
-  const def = Object.hasOwn(SETTING_PAGES, page) ? SETTING_PAGES[page] : null;
-  if (!def) return settingsMenu(); // una página que no existe: los Ajustes, no una excepción
-  // Películas y series: además de lo de siempre, lo que cada título recuerda (y olvidarlo).
-  const extra = page === "playback"
-    ? [{ icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } }]
-    : [];
-  return {
-    title: def.title, crumb: def.title,
-    options: [...def.options.map(([key, label, hint]) => ({
-      icon: SETTING_ICONS[key] || def.icon, label, hint, value: settingLabel(key, settings[key]),
-      valueFlag: key === "audio" || key === "subtitles" ? settings[key] : undefined, // su banderita (sheet.js · Flag)
-      command: { type: "setting", key, value: nextSetting(key, settings[key]), page },
-      // ◀ baja y ▶ sube (antes las dos avanzaban)
-      adjust: { left: edgeAware(key, settings[key], -1, page), right: edgeAware(key, settings[key], 1, page) },
-    })), ...extra],
-  };
 }
 
 /** Lo que recuerda cada título: el idioma y los subtítulos que elegiste viéndolo. A lo olvida (vuelve a lo de Ajustes). */

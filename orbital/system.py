@@ -79,13 +79,16 @@ def parse_netsh(output: str) -> dict | None:
 
 
 _wifi_cache: tuple[float, dict | None] = (0.0, None)
+# La señal se lee abriendo `netsh` (un proceso nuevo cada vez). La interfaz pregunta cada 30 s: con 20 s de memoria cada
+# pregunta abría uno; con 60, uno por minuto (y ninguno con un juego al frente: la interfaz deja de preguntar).
+WIFI_TTL = 60
 
 
 def wifi() -> dict | None:
     global _wifi_cache
     if sys.platform != "win32":
         return None
-    if time.time() - _wifi_cache[0] < 20:
+    if time.time() - _wifi_cache[0] < WIFI_TTL:
         return _wifi_cache[1]
     try:
         out = subprocess.run(

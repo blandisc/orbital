@@ -1,7 +1,7 @@
 /* Inicio (js/components/home.js): solo el acomodo. Las piezas son tiles (tiles.css) y piezas base (ui.css).
    Ocupa el carril del héroe y de las filas; las demás secciones siguen con héroe + filas. */
 .home {
-  grid-row: 2 / 4; min-height: 0; overflow: hidden;
+  grid-row: 2 / 4; grid-column: 1; /* fija, como Para ti: se encima con la sección estacionada */ min-height: 0; overflow: hidden;
   padding: var(--space-5) var(--page-gutter) var(--space-5);
 }
 /* Con el dedo, abajo van «Atrás» y «Menú» (base.css): más altos que el pie que reemplazan; las consolas no quedan debajo. */
@@ -10,7 +10,6 @@
    Lo que sale por arriba se desvanece (no queda cortado en seco). */
 .home__scroll { position: relative; display: flex; flex-direction: column; gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out); }
 .home--scrolled { -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 12%); mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 12%); }
-body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 
 
 /* Arriba: el destacado (enseña lo enfocado) y «También tenías» en renglones a la derecha. El alto lo

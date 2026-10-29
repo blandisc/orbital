@@ -86,8 +86,11 @@ export function hideAfterExit(el, leavingClass, fallbackMs = 250) {
  * crece hacia adentro en vez de salirse del margen de la pantalla.
  */
 export function markGridEdge(card) {
-  const cards = [...card.parentElement.children];
-  const left = Math.min(...cards.map((c) => c.offsetLeft));
-  const right = Math.max(...cards.map((c) => c.offsetLeft + c.offsetWidth));
-  card.dataset.edge = card.offsetLeft <= left + 2 ? "start" : card.offsetLeft + card.offsetWidth >= right - 2 ? "end" : "";
+  // En el Top 10 la casilla de la cuadrícula es la tarjeta con su cifra (.card-ranked), no el póster: medido contra su
+  // cifra, el póster nunca era el de más a la izquierda, siempre «end», y crecía hacia la izquierda tapando el número.
+  const cell = card.parentElement?.classList.contains("card-ranked") ? card.parentElement : card;
+  const cells = [...cell.parentElement.children];
+  const left = Math.min(...cells.map((c) => c.offsetLeft));
+  const right = Math.max(...cells.map((c) => c.offsetLeft + c.offsetWidth));
+  card.dataset.edge = cell.offsetLeft <= left + 2 ? "start" : cell.offsetLeft + cell.offsetWidth >= right - 2 ? "end" : "";
 }

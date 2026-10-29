@@ -147,6 +147,8 @@ class RokuTv:
                     log.warning("La tele no prendió a tiempo")
                     return False
                 time.sleep(1.0)
+            if self._active_app(host) == f"tvinput.{self.config.input}":
+                return True  # ya está en la entrada de Orbital: «pon X» con la tele prendida no la vuelve a cambiar
             _request(host, f"/launch/tvinput.{self.config.input}", post=True)
             log.info("Tele prendida en %s", self.config.input)
             return True
@@ -155,6 +157,33 @@ class RokuTv:
             return False
         finally:
             self._busy.release()
+
+    @staticmethod
+    def _active_app(host: str) -> str:
+        """La app o entrada que está al frente («tvinput.hdmi1»); "" si no se sabe."""
+        try:
+            app = ET.fromstring(_request(host, "/query/active-app", timeout=2.0)).find("app")
+        except (OSError, ET.ParseError):
+            return ""
+        return app.get("id", "") if app is not None else ""
+
+    def turn_off(self) -> bool:
+        """«Apaga la tele»: la apaga (la Roku queda en reposo y «prende la tele» la despierta). True si se pudo pedir."""
+        if not self.enabled or not self._busy.acquire(blocking=False):
+            return False
+        try:
+            _request(self.config.host, "/keypress/PowerOff", post=True)
+            log.info("Tele apagada")
+            return True
+        except (OSError, ET.ParseError) as exc:
+            log.warning("No pude apagar la tele: %s", exc)
+            return False
+        finally:
+            self._busy.release()
+
+    def turn_off_soon(self) -> None:
+        if self.enabled:
+            threading.Thread(target=self.turn_off, name="tv-off", daemon=True).start()
 
     def turn_on_soon(self) -> None:
         """Igual que turn_on pero sin esperar (Alexa necesita su respuesta en segundos)."""

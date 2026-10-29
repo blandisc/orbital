@@ -17,7 +17,13 @@ ROOT = Path(__file__).resolve().parent.parent
 COMMANDS = json.loads((ROOT / "alexa" / "commands.json").read_text(encoding="utf-8"))
 MODEL = json.loads((ROOT / "alexa" / "interaction_model.es-MX.json").read_text(encoding="utf-8"))
 INTENTS = {i["name"] for i in MODEL["interactionModel"]["languageModel"]["intents"]}
-SAID = [c["say"] for g in COMMANDS["groups"] for c in g["commands"]]
+SAID = [c["say"] for c in COMMANDS["core"]] + [c["say"] for g in COMMANDS["groups"] for c in g["commands"]]
+
+
+def test_the_essentials_are_few_and_cover_the_day():
+    """Lo esencial: diez frases como mucho (se enseñan de entrada; las demás viven por tema), cada una con su nota."""
+    assert 6 <= len(COMMANDS["core"]) <= 10
+    assert all(c["note"] for c in COMMANDS["core"])
 
 
 @pytest.mark.parametrize("said", SAID)

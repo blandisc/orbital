@@ -122,7 +122,24 @@ export function createShelf({ onPick, onSwipe }) {
     return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered, seeds, rest, stage };
   }
 
+  // Las mismas filas con los mismos títulos (los mismos objetos: la biblioteca recargada trae objetos nuevos): no se rearma
+  // nada. Volver a Películas y series reconstruía ~1.200 elementos dentro del botón.
+  let shown = null;
+  const same = (a, b) => a && a.length === b.length && a.every((row, i) => row.id === b[i].id && row.title === b[i].title
+    && row.meta === b[i].meta && row.items.length === b[i].items.length && row.items.every((item, j) => item === b[i].items[j]));
+
+  function intro() {
+    if (introduced) return;
+    introduced = true;
+    rowEls[0]?.cards.slice(0, 10).forEach((card, i) => card.style.setProperty("--i", i));
+    el.classList.add("shelf--intro");
+    setTimeout(() => el.classList.remove("shelf--intro"), 1200);
+  }
+
   function setRows(rows, { emptyTitle, emptyText, popId } = {}) {
+    cancelPrepare();
+    if (rows.length && !popId && same(shown, rows)) { intro(); return setFocus(focus.r, focus.c); }
+    shown = rows.length ? rows : null;
     if (!rows.length) {
       rowEls = [];
       rowsEl.style.transform = ""; // si estabas en la fila 3, el aviso quedaba fuera de pantalla
@@ -133,13 +150,31 @@ export function createShelf({ onPick, onSwipe }) {
     }
     rowEls = rows.map((row, r) => makeRow(row, r, popId));
     mount(rowsEl, rowEls.map((x) => x.rowEl));
-    if (!introduced) {
-      introduced = true;
-      rowEls[0]?.cards.slice(0, 10).forEach((card, i) => card.style.setProperty("--i", i));
-      el.classList.add("shelf--intro");
-      setTimeout(() => el.classList.remove("shelf--intro"), 1200);
-    }
+    intro();
     setFocus(focus.r, focus.c);
+  }
+
+  // Con las filas estacionadas (otra sección al frente), se arman de antemano en pedacitos, en el tiempo libre del
+  // navegador: al entrar a Películas y series ya están (setRows ve las mismas y no rearma). Armarlas al entrar eran ~1.200
+  // elementos dentro del botón.
+  const idle = globalThis.requestIdleCallback ?? ((fn) => setTimeout(() => fn({ timeRemaining: () => 8 }), 16));
+  const unidle = globalThis.cancelIdleCallback ?? clearTimeout;
+  let preparing = 0;
+  function cancelPrepare() { unidle(preparing); preparing = 0; }
+  function prepare(rows) {
+    cancelPrepare();
+    if (!rows.length || same(shown, rows)) return;
+    const built = [];
+    const step = (deadline) => {
+      while (built.length < rows.length && deadline.timeRemaining() > 4) built.push(makeRow(rows[built.length], built.length, null));
+      if (built.length < rows.length) { preparing = idle(step); return; }
+      preparing = 0;
+      rowEls = built;
+      shown = rows;
+      mount(rowsEl, built.map((x) => x.rowEl));
+      setFocus(focus.r, focus.c);
+    };
+    preparing = idle(step);
   }
 
   function setFocus(r, c) {
@@ -170,6 +205,7 @@ export function createShelf({ onPick, onSwipe }) {
 
   /** Cambia solo una fila (las demás se quedan como están): moverte por «Porque viste» ya no rehace toda la biblioteca. */
   function updateRow(r, row) {
+    if (shown?.[r]) shown = shown.map((x, i) => (i === r ? row : x)); // lo que se ve ya es esta fila
     if (!rowEls[r]) return;
     const next = makeRow(row, r, null);
     rowEls[r].rowEl.replaceWith(next.rowEl);
@@ -220,10 +256,12 @@ export function createShelf({ onPick, onSwipe }) {
   /** Animación al cambiar de sección (dirección: 1 = a la derecha). */
   function slide(direction) {
     el.classList.remove("shelf--from-right", "shelf--from-left");
-    void el.offsetWidth;
+    // Para que la animación vuelva a empezar basta con que el navegador vea la clase quitada: getAnimations() actualiza solo
+    // los estilos. Antes `void el.offsetWidth` obligaba a calcular el layout de todas las filas dentro del botón (38 ms).
+    el.getAnimations?.({ subtree: true });
     el.classList.add(direction > 0 ? "shelf--from-right" : "shelf--from-left");
   }
 
   window.addEventListener("resize", () => { measure(); setFocus(focus.r, focus.c); });
-  return { el, setRows, updateRow, setFocus, bump, focused, slide };
+  return { el, setRows, prepare, updateRow, setFocus, bump, focused, slide };
 }

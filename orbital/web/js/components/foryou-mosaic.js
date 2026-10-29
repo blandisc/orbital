@@ -40,7 +40,11 @@ const EDGE_MIN = 12; // px: menos que esto no vale la pena una columna de orilla
 // separaciones con la animación y de ahí sigue la deriva (como el iPhone: DesignTokens.Mosaic.ambientLiftGaps).
 const AMBIENT_LIFT_GAPS = 5;
 const IDLE_MS = 2000; // quieto 2 s: el mosaico empieza a subir solo (el iPhone igual: DesignTokens.Mosaic.idleSeconds)
-const RAMP_MS = 2400; // y arranca suave: de quieto a su ritmo en ~2,4 s, sin tirón
+// Orbital debe gastar casi nada quieta (los juegos usan la misma Legion Go): la deriva la anima el compositor, por tramos
+// (--duration-glide, una transición de transform por columna; JavaScript solo trae piezas al empezar cada tramo, no en
+// cada cuadro). El primero arranca suave, el último se frena, y pasado AMBIENT_MS se queda quieto.
+const AMBIENT_MS = 90_000;
+const RAMP = .5; // los tramos de arranque y frenado recorren la mitad (--ease-glide-in/out llegan a la velocidad del resto)
 const ALIVE_MS = 2200;
 const BUFFER = 360; // px de piezas de sobra debajo de lo visible (más, y se gastaban sugerencias que aún no se ven)
 
@@ -52,6 +56,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   dragArea(el, {
     onStart: () => {
       clearTimeout(idleTimer);
+      freeze();
       el.classList.add("foryou-mosaic--drifting"); // sin transición: las columnas siguen al dedo al instante
       dragFrom = columns.map((col) => col.offset);
     },
@@ -79,10 +84,8 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   let running = false;
   let idleTimer = 0;
   let coveredSeen = false; // el temporizador de inactividad vio una capa encima (hoja, ficha…)
-  let ambientSince = 0; // cuándo empezó a subir solo (para arrancar suave)
   let aliveTimer = 0;
-  let frame = 0;
-  let last = 0;
+  let frame = 0; // el siguiente tramo de la deriva
 
   const reduced = reducedMotion;
   // Cambió el ancho (la ventana arrancó chica y luego pasó a pantalla completa, o de la Legion Go a la tele): las columnas
@@ -336,22 +339,40 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   }
 
   // --- ambiente: todo sube despacio, lo de arriba se va y abajo llegan nuevas -----------------------
-  function tick(now) {
-    const dt = Math.min(.05, (now - last) / 1000);
-    last = now;
-    if (mode === "ambient") {
-      const t = Math.min(1, (now - ambientSince) / RAMP_MS);
-      const ease = t * t * (3 - 2 * t); // acelera despacio y se asienta en su ritmo
-      columns.forEach((col, c) => {
-        if (col.edge && !col.active) return;
-        col.offset += DRIFT[c] * ease * dt;
-        while (col.tiles.length > 1 && col.tiles[0].top + col.tiles[0].h < col.offset - 80) col.tiles.shift().node.remove();
-        fill(col, c);
-      });
-      applyOffsets();
-    }
-    // Solo mientras deriva: enfocada en una pieza no hay nada que mover, y un ciclo de 60 por segundo sin trabajo gastaba CPU.
-    frame = running && mode === "ambient" ? requestAnimationFrame(tick) : 0;
+  const GLIDES = ["foryou-mosaic--gliding", "foryou-mosaic--glide-in", "foryou-mosaic--glide-out"];
+  const glideMs = () => parseFloat(getComputedStyle(el).getPropertyValue("--duration-glide")) * 1000 || 4000;
+
+  function glide(i) {
+    frame = 0;
+    if (!running || mode !== "ambient") return;
+    const ms = glideMs();
+    const last = Math.max(1, Math.round(AMBIENT_MS / ms)) - 1;
+    if (i > last || document.hidden) return freeze(); // quieto del todo: ningún ciclo (cualquier botón lo despierta)
+    el.classList.add(GLIDES[0]);
+    el.classList.toggle(GLIDES[1], i === 0);
+    el.classList.toggle(GLIDES[2], i === last);
+    const share = i === 0 || i === last ? RAMP : 1;
+    columns.forEach((col, c) => {
+      if (col.edge && !col.active) return;
+      while (col.tiles.length > 1 && col.tiles[0].top + col.tiles[0].h < col.offset - 80) col.tiles.shift().node.remove();
+      col.offset += DRIFT[c] * (ms / 1000) * share;
+      fill(col, c); // las piezas que el tramo va a enseñar ya están puestas
+    });
+    applyOffsets();
+    frame = setTimeout(() => glide(i + 1), ms);
+  }
+
+  /** Detiene la deriva donde va (a media transición): cada columna se queda en el punto que se ve. */
+  function freeze() {
+    clearTimeout(frame);
+    frame = 0;
+    if (!el.classList.contains(GLIDES[0])) return;
+    columns.forEach((col) => {
+      const y = new DOMMatrixReadOnly(getComputedStyle(col.track).transform).m42;
+      if (Number.isFinite(y)) col.offset = -y;
+    });
+    el.classList.remove(...GLIDES);
+    applyOffsets();
   }
 
   function goAmbient() {
@@ -360,14 +381,13 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     if (covered()) { coveredSeen = true; idleTimer = setTimeout(goAmbient, IDLE_MS); return; }
     if (coveredSeen) { coveredSeen = false; idleTimer = setTimeout(goAmbient, IDLE_MS); return; } // la capa se acaba de cerrar: otros 2 s de calma
     mode = "ambient";
-    ambientSince = performance.now();
-    if (!frame) { last = ambientSince; frame = requestAnimationFrame(tick); }
     if (columns.length && columns.every((col) => col.offset === columns[0].offset)) {
       columns.forEach((col, c) => { if (c % 2) col.offset += gap() * AMBIENT_LIFT_GAPS; });
       columns.forEach((col, c) => fill(col, c));
     }
     paint();
-    setTimeout(() => { if (mode === "ambient") el.classList.add("foryou-mosaic--drifting"); }, 560);
+    // al terminar de subir las impares (la transición de siempre), empieza la deriva
+    setTimeout(() => { if (mode === "ambient") { el.classList.add("foryou-mosaic--drifting"); glide(0); } }, 560);
   }
 
   /** Cualquier botón: reinicia la espera y, si estaba en ambiente, vuelve al foco.
@@ -378,6 +398,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     coveredSeen = false;
     if (running) idleTimer = setTimeout(goAmbient, IDLE_MS);
     if (mode === "focus") return false;
+    freeze();
     el.classList.remove("foryou-mosaic--drifting");
     const { H } = size();
     const col = columns[focus.col];
@@ -519,16 +540,13 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   function start() {
     if (running) return;
     running = true;
-    last = performance.now();
-    if (mode === "ambient") frame = requestAnimationFrame(tick);
     wake();
     if (pool.length) paint();
   }
 
   function stop() {
     running = false;
-    cancelAnimationFrame(frame);
-    frame = 0;
+    freeze();
     clearTimeout(idleTimer);
     clearTimeout(aliveTimer);
     if (mode === "ambient") { mode = "focus"; el.classList.remove("foryou-mosaic--drifting"); }

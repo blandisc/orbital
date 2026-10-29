@@ -9,7 +9,7 @@
 .calendar__grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: var(--space-2); }
 .calendar__cell {
   position: relative; overflow: hidden; isolation: isolate; border-radius: var(--radius-md); background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-hairline); color: var(--color-text);
+  box-shadow: var(--edge-hairline); color: var(--color-text);
   transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
 }
 .calendar__cell--blank { background: none; box-shadow: none; }

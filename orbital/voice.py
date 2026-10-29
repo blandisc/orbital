@@ -72,6 +72,16 @@ VOLUME_DOWN = {"down", "baja", "baje", "bajale", "bajarle", "menos"}
 # Alexa se llevan el resto): así dice «No encontré dónde ver…» en vez de «Poniendo…» y luego nada.
 VOICE_WAIT = 4.5
 MAX_SEEK = 6 * 3600  # s: nadie adelanta más de una película entera de golpe
+# Lo que pone algo en la pantalla: con la tele apagada (o en otra entrada) la prende y la pone en la de Orbital antes. Antes
+# solo «prende la consola» lo hacía, y «pon The Office» sonaba en una tele apagada.
+WAKES = {"LaunchGameIntent", "SearchMediaIntent", "WatchEpisodeIntent", "ContinueWatchingIntent", "LiveTvIntent",
+         "RecommendIntent", "OpenStremioIntent", "OpenSteamIntent", "OtherIntent"}
+OTHER_WINDOW = 30 * 60  # s: «otro» cambia lo último que pediste si fue hace menos de esto
+# Lo que se puede decir en cada momento: el segundo renglón del aviso en la tele. Solo frases de «Lo esencial»
+# (alexa/commands.json · core; una prueba lo comprueba) y solo con «Frases en pantalla» (voice_tips) en Sí.
+NEXT_SAY = {"series": ("pausa", "siguiente episodio"), "movie": ("pausa", "pon subtítulos"),
+            "home": ("pon The Office", "sigue viendo")}
+OTHER_SAY = "Si no es esa, di «otro»"  # una corrección, no una pista: sale siempre
 
 
 def spoken_number(value) -> float | None:
@@ -238,8 +248,12 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     (re.compile(r"^otro\s+(?:episodio|capitulo)$"), "NextEpisodeIntent", None),
     (re.compile(r"^a\s+que\s+hora\s+(?:termina|acaba|se acaba|sale)(?:\s+(?:el video|la pelicula|el episodio))?$"), "TimeLeftIntent", None),
     # «apaga», «sal del video»: cierra el video (nunca apaga la consola ni cierra un juego sin pedirlo)
-    (re.compile(r"^(?:sal|salte|salir|quita)\s+del\s+video$|^apaga(?:\s+(?:la\s+)?(?:tele|tv|television|pantalla|el video))?$"),
+    (re.compile(r"^apaga(?:r)?\s+(?:la\s+)?(?:tele|tv|television|pantalla)$"), "TurnOffTvIntent", None),
+    (re.compile(r"^(?:sal|salte|salir|quita)\s+del\s+video$|^apaga(?:\s+el\s+video)?$"),
      "CloseGameIntent", None, {"only": "video"}),
+    (re.compile(r"^(?:prende|prenda|prender|enciende|encienda|encender)\s+(?:la\s+)?(?:tele|television|tv|pantalla)$"),
+     "OpenOrbitalIntent", None),
+    (re.compile(r"^(?:otro|otra|el otro|la otra|ese no|esa no|no ese|no esa|pon otro|pon otra|otra opcion)$"), "OtherIntent", None),
     (re.compile(r"^(?:pon|ponme|quiero ver|ver)?\s*(?:las\s+)?(?:noticias|el noticiero|un noticiero)$"), "LiveTvIntent", None, {"category": "noticias"}),
     # «pon algo», «algo de terror», «una comedia»: no es un título (antes buscaba un juego llamado «algo»)
     (re.compile(r"^(?:pon|ponme|quiero ver|ver|recomiendame|sugiereme)\s+algo(?:\s+(?:de|para)\s+(?P<genre>[a-z ]+))?$"
@@ -323,9 +337,10 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
      "ChannelStepIntent", None, {"step": "previous"}),
     (re.compile(r"^(?:pon|ponga|sintoniza|sintonice|cambia a|cambie a|cambia al|cambie al|quiero ver)\s+(?:el\s+)?canal\s+(?P<v>.+)$"),
      "LiveTvIntent", "channel"),
-    (re.compile(r"^(?:pon|ponga|sintoniza|sintonice|quiero ver)\s+(?P<v>.+?)\s+en\s+vivo$"), "LiveTvIntent", "channel"),
+    (re.compile(r"^(?:pon|ponga|sintoniza|sintonice|quiero ver)\s+(?!(?:la\s+)?(?:tele|television|tv)\s+en\s+vivo$)(?P<v>.+?)\s+en\s+vivo$"),
+     "LiveTvIntent", "channel"),
     (re.compile(r"^(?:pon|ponga|abre|abra|quiero ver|prende|prenda)\s+(?:la\s+)?(?:tele|television|tv)(?:\s+en\s+vivo)?$"
-                r"|^(?:tele|television|tv)\s+en\s+vivo$"), "LiveTvIntent", None),
+                r"|^(?:tele|television|tv)\s+en\s+vivo$|^(?:pon|ponga|abre|abra)\s+los\s+canales$"), "LiveTvIntent", None),
     # Para ti: «qué sale hoy», «qué me recomiendas»
     (re.compile(r"^(?:que|cuales)\s+(?:episodios\s+|estrenos\s+|capitulos\s+)?(?:sale|salen|se estrena|se estrenan|hay)\s+"
                 r"(?:hoy|esta semana|manana|de nuevo|nuevos?)$|^(?:que\s+)?(?:proximos\s+)?estrenos(?:\s+hay)?$"), "UpcomingIntent", None),
@@ -561,6 +576,8 @@ class VoiceController:
         self.catalog = catalog
         self.kiosk = kiosk  # KioskWindow, o None si la interfaz no la abrió Orbital
         self.tv = tv  # roku.RokuTv: «abre Orbital» prende la tele y la pone en la entrada de Orbital
+        self._candidates: list[dict] = []  # lo que encontró la última búsqueda de un título (para «otro»)
+        self._last: dict | None = None  # lo último que se puso por nombre: {at, query, options, seen, candidates}
 
     def handle_text(self, text: str) -> VoiceResult:
         heard = tidy(normalize(text))
@@ -568,15 +585,23 @@ class VoiceController:
         if not parsed:
             # Decir qué se oyó ayuda más que «no entendí» a secas (Siri a veces transcribe otra cosa).
             said = f" «{heard}»" if heard and len(heard) <= 60 else ""
-            return VoiceResult(f"No entendí{said}. Prueba con: pon Dune, pausa o sube el volumen.", ok=False, heard=heard)
-        result = self.handle_intent(*parsed)
-        result.heard, result.intent = heard, parsed[0]
+            speech = f"No entendí{said}. Prueba con: pon Dune, pausa o sube el volumen."
+            toast = {"type": "toast", "message": f"No entendí{said}", "detail": "Prueba: «pon Dune», «pausa», «sube el volumen»",
+                     "ok": False, "tone": "warn", "voice": True, "action": {"type": "voice-guide"}}
+            return VoiceResult(speech, ok=False, heard=heard, events=[toast])
+        intent, slots = parsed
+        if intent == "SearchMediaIntent" and re.match(r"(?:que\s+)?(?:busca|busque|buscar)\b", heard):
+            slots = {**slots, "browse": "1"}  # «busca Dune»: pediste buscar, así que con varias se pregunta cuál
+        result = self.handle_intent(intent, slots)
+        result.heard, result.intent = heard, intent
         return result
 
     def handle_intent(self, intent: str, slots: dict[str, str] | None = None) -> VoiceResult:
         slots = {k: slot_text(v) if isinstance(v, str) else v for k, v in (slots.items() if isinstance(slots, dict) else ()) if v}
         slots = {k: v for k, v in slots.items() if v}
         log.info("Voz: %s %s", intent, slots)
+        if intent in WAKES or (intent == "ResumeIntent" and not self.catalog.player.playing):
+            self._wake_tv()
         # Solo los manejadores de intents (`_algo_intent`): el nombre viene de fuera (Alexa, el túnel).
         name = "_" + re.sub(r"(?<!^)(?=[A-Z])", "_", str(intent or "")).lower()
         handler = getattr(self, name, None) if name.endswith("_intent") and name.isidentifier() else None
@@ -596,11 +621,34 @@ class VoiceController:
             self.catalog.player.toast(result.speech, 4)
         return result
 
+    def _wake_tv(self) -> None:
+        """La tele prendida y en la entrada de Orbital (en segundo plano: Alexa no espera). Si ya lo está, no hace nada."""
+        if self.tv is not None and getattr(self.tv, "enabled", False):
+            self.tv.turn_on_soon()
+
+    def _tips_on(self) -> bool:
+        state = getattr(self.catalog, "state", None)
+        try:
+            return state.settings().get("voice_tips", True) is not False if state is not None else True
+        except Exception:  # noqa: BLE001 - sin ajustes, lo de siempre
+            return True
+
+    def _playing_event(self, message: str, moment: str) -> dict:
+        """El aviso de la tele cuando algo se puso: qué, y en el segundo renglón lo que puedes decir en este momento
+        (solo con «Frases en pantalla» en Sí)."""
+        event = {"type": "toast", "message": message, "ok": True, "voice": True}
+        if self._tips_on() and moment in NEXT_SAY:
+            first, second = NEXT_SAY[moment]
+            event["detail"] = f"Di «{first}» o «{second}»"
+        return event
+
     # --- intents -------------------------------------------------------------
     def _fallback_intent(self, slots: dict) -> VoiceResult:
         """Alexa no acomodó lo dicho en ningún intent (y no manda el texto): la skill lo avisa para que quede en voz.log y
         en la tele (antes contestaba sola y no quedaba rastro de qué falló)."""
-        return VoiceResult("No entendí eso. Prueba con: pausa, pon Dune o sube el volumen.", ok=False)
+        return VoiceResult("No entendí eso. Prueba con: pausa, pon Dune o sube el volumen.", ok=False,
+                           events=[{"type": "toast", "message": "Alexa no entendió", "detail": "Prueba: «pon Dune», «pausa»",
+                                    "ok": False, "tone": "warn", "voice": True, "action": {"type": "voice-guide"}}])
 
     def _launch_game_intent(self, slots: dict) -> VoiceResult:
         name = slots.get("game", "")
@@ -639,7 +687,12 @@ class VoiceController:
                 watch = self._watch_exact(name)
             except cinemeta.CinemetaError:
                 watch = None
-            return watch or VoiceResult(f"No encontré {name}. Di busca {name} para buscarlo.", ok=False)
+            if watch:
+                return watch
+            near = self._closest_title(name)
+            if near:
+                return VoiceResult(f"No encontré {name}. ¿Quisiste decir {near}? Di: abre {near}.", ok=False)
+            return VoiceResult(f"No encontré {name}. Di busca {name} para buscarlo.", ok=False)
         runner_id = None
         if runner:
             match = next((r for r in item.runners if normalize(r.name) == runner), None)
@@ -651,7 +704,24 @@ class VoiceController:
         if item.source == "search":  # «abre buscar»: la búsqueda de Orbital (no se «lanza»; cerraba el juego)
             return VoiceResult("Abriendo la búsqueda.", events=[self._show_view({"buscar": ""}, "Buscar")])
         self.catalog.sessions.launch(item.id, runner_id)
-        return VoiceResult(f"Abriendo {item.title} con {runner}." if runner else f"Abriendo {item.title}.")
+        speech = f"Abriendo {item.title} con {runner}." if runner else f"Abriendo {item.title}."
+        said, title = normalize(name), normalize(item.title)
+        if said and said not in title:  # se parecía, no era igual («jades» → Hades): que se vea qué oyó, y deshacerlo
+            return VoiceResult(speech, events=[{"type": "toast", "message": f"Abriendo {item.title}", "detail": f"Entendí «{name}»",
+                                                "ok": True, "voice": True, "action": {"type": "voice-undo", "query": name}}])
+        return VoiceResult(speech)
+
+    def _closest_title(self, said: str) -> str | None:
+        """El juego o app de tu biblioteca que más se parece a lo dicho («jades» → Hades), o None."""
+        target = normalize(said)
+        best, score = None, 0.0
+        for item in self.catalog.items():
+            if item.source in ("stremio", "cinemeta", "search", "genre", "collection"):
+                continue
+            ratio = SequenceMatcher(None, normalize(item.title), target).ratio()
+            if ratio > score:
+                best, score = item.title, ratio
+        return best if score >= .72 else None
 
     def _split_runner(self, name: str) -> tuple[str, str | None]:
         """ "zelda con eden" -> ("zelda", "eden") si "eden" es un emulador conocido.
@@ -691,7 +761,7 @@ class VoiceController:
         if item is not None:
             return self._watch_item(item, options)
         try:
-            exact = self._watch_exact(query, kind, options)
+            exact = self._watch_exact(query, kind, options, ask=bool(slots.get("browse")))
         except cinemeta.CinemetaError:  # sin catálogo: la búsqueda de Stremio
             self.catalog.sessions.search_media(query)
             return VoiceResult(f"Buscando {query} en Stremio.")
@@ -778,16 +848,32 @@ class VoiceController:
             self.kiosk.open()
         return {"type": "open-view", "view": view, "message": message}
 
-    def _watch_exact(self, query: str, kind: str | None = None, options: dict | None = None) -> VoiceResult | None:
-        """Cualquier película o serie, esté o no en tu biblioteca: la película se pone directo y la serie abre sus
-        episodios en Orbital. Varias igual de buenas: a elegir en pantalla. None si no hay nada claro."""
+    def _watch_exact(self, query: str, kind: str | None = None, options: dict | None = None, ask: bool = False) -> VoiceResult | None:
+        """Cualquier película o serie, esté o no en tu biblioteca: la película se pone directo y la serie arranca en su
+        episodio. Varias con el mismo nombre («Dune»): la primera (la más popular), y «otro» pone la siguiente; el iPhone
+        recibe todas para tocar la que es. Antes se pedía elegir en la tele con el control, que nadie tenía a la mano.
+        None si no hay nada claro."""
         matches = self._resolve_title(query, kind)
-        if len(matches) > 1:
+        if ask and len(matches) > 1:
             return self._ask_which(query, matches)
         match = matches[0] if matches else None
         if match is None:
             return None
         options = options or {}
+        ordered = matches + [c for c in self._candidates if c not in matches and (kind is None or c.get("kind") == kind)]
+        self._last = {"at": time.time(), "query": query, "options": options, "seen": [match["meta_id"]], "candidates": ordered}
+        result = self._play_match(match, options)
+        if len(matches) > 1 and result.ok:
+            result.speech += " Si no es esa, di otro."
+            result.choices = [{k: o.get(k) for k in ("id", "title", "subtitle", "kind", "meta_id", "image", "hero")}
+                              for o in matches[:6]]
+            for event in result.events:
+                if event.get("type") == "toast":
+                    event["detail"] = OTHER_SAY
+        return result
+
+    def _play_match(self, match: dict, options: dict) -> VoiceResult:
+        """Una película o serie ya resuelta: la película donde ibas (o desde el principio); la serie, su primer episodio."""
         kwargs, how = self._media_request(options)
         memo = f" {match['title']} quedará{how}." if kwargs.get("remember") else ""
         if match["kind"] == "movie":
@@ -796,11 +882,33 @@ class VoiceController:
             if problem:
                 return VoiceResult(problem, ok=False)
             start = " desde el principio" if options.get("from_start") else ""
-            return VoiceResult(f"Poniendo {match['title']}{how}{start}.{memo}")
-        if memo:  # una serie: se elige el episodio en pantalla; con «siempre», ya lo recuerda
-            self._remember_title(match["meta_id"], match["title"], kwargs)
-        return VoiceResult(f"Abriendo {match['title']}. Elige el episodio.{memo}",
-                           events=[self._show_view({"serie": match["meta_id"]}, f"Abriendo {match['title']}")])
+            speech = f"Poniendo {match['title']}{how}{start}.{memo}"
+            return VoiceResult(speech, events=[self._playing_event(f"Poniendo {match['title']}", "movie")])
+        return self._play_series(match["meta_id"], match["title"], kwargs, how, memo)
+
+    def _play_series(self, meta_id: str, title: str, kwargs: dict, how: str, memo: str) -> VoiceResult:
+        """«Pon The Office» sin haberla visto: su primer episodio que ya salió (antes abría la lista de episodios y te dejaba
+        frente a la tele sin el control). Sin la lista de episodios (Cinemeta caído), su ficha para elegir."""
+        try:
+            meta = self.catalog.cinemeta.meta("series", meta_id) or {}
+        except cinemeta.CinemetaError:
+            meta = {}
+        videos = [v for v in meta.get("videos") or [] if isinstance(v, dict) and v.get("id") and (v.get("season") or 0) > 0]
+        today = time.strftime("%Y-%m-%d")
+        aired = [v for v in videos if str(v.get("released") or "")[:10] <= today] or videos
+        first = min(aired, key=lambda v: (v.get("season") or 0, v.get("episode") or 0), default=None)
+        if first is None:
+            if memo:  # se elige el episodio en pantalla; con «siempre», ya lo recuerda
+                self._remember_title(meta_id, title, kwargs)
+            return VoiceResult(f"Abriendo {title}. Elige el episodio.{memo}",
+                               events=[self._show_view({"serie": meta_id}, f"Abriendo {title}")])
+        season, episode = first.get("season"), first.get("episode")
+        problem = self.catalog.watch.play_title("series", meta_id, first["id"], f"{title} · T{season} E{episode}",
+                                                wait=VOICE_WAIT - 2, **kwargs)
+        if problem:
+            return VoiceResult(problem, ok=False)
+        return VoiceResult(f"Poniendo {title}, temporada {season}, episodio {episode}{how}.{memo}",
+                           events=[self._playing_event(f"Poniendo {title} · T{season} E{episode}", "series")])
 
     def _resolve_title(self, query: str, kind: str | None = None) -> list[dict]:
         """Lo dicho → la película o serie que es. Cinemeta guarda el título en inglés: «El viaje de Chihiro» llega como
@@ -811,6 +919,7 @@ class VoiceController:
         movies = self.catalog.cinemeta.search("movie", query)
         series = self.catalog.cinemeta.search("series", query)
         results = [r for r in cinemeta.search_results(query, movies, series) if kind is None or r["kind"] == kind]
+        self._candidates = results  # «otro»: la siguiente de esta misma búsqueda
         exact = [r for r in results if normalize(r["title"]) == target]
         if exact:
             return exact
@@ -873,10 +982,7 @@ class VoiceController:
             start = " desde el principio" if options.get("from_start") else ""
             return VoiceResult(problem, ok=False) if problem else VoiceResult(f"Poniendo {item.title}{how}{start}.{memo}")
         if kind == "series" and meta_id:
-            if memo:
-                self._remember_title(meta_id, item.title, kwargs)
-            return VoiceResult(f"Abriendo {item.title}. Elige el episodio.{memo}",
-                               events=[self._show_view({"serie": meta_id}, f"Abriendo {item.title}")])
+            return self._play_series(meta_id, item.title, kwargs, how, memo)
         self.catalog.sessions.launch(item.id)
         return VoiceResult(f"Abriendo {item.title} en Stremio.")
 
@@ -921,7 +1027,9 @@ class VoiceController:
         if self.kiosk is None:
             return VoiceResult("No puedo abrir la pantalla de la consola desde aquí.", ok=False)
         self.kiosk.open()
-        return VoiceResult("Abriendo la consola.")
+        if self.tv is not None and self.tv.enabled:
+            return VoiceResult("Prendiendo la tele en Orbital.", events=[self._playing_event("Prendiendo la tele", "home")])
+        return VoiceResult("Abriendo la consola.", events=[self._playing_event("Abriendo la consola", "home")])
 
     def _navigate_intent(self, slots: dict) -> VoiceResult:
         said = normalize(slots.get("direction", ""))
@@ -1304,7 +1412,44 @@ class VoiceController:
             return VoiceResult(f"Audio en {name}.{memo}", events=[NO_TOAST])
         return VoiceResult(f"Este video no trae audio en {name}.", ok=False, events=[NO_TOAST])
 
+    def _live_on_air(self) -> bool:
+        tv = getattr(self.catalog, "tv", None)
+        try:
+            return bool(tv is not None and self.catalog.player.playing and tv.playing())
+        except Exception:  # noqa: BLE001 - sin TV en vivo, lo de siempre
+            return False
+
+    def _other_intent(self, slots: dict) -> VoiceResult:
+        """«Otro», «esa no»: en la TV en vivo, el siguiente canal; si acabas de pedir algo por nombre, la siguiente que se
+        llama así («pon Dune» puso la de 2021: «otro» pone la de 1984)."""
+        if self._live_on_air():
+            return self._channel_step_intent({"step": "next"})
+        last = self._last
+        if last and time.time() - last["at"] < OTHER_WINDOW:
+            rest = [c for c in last["candidates"] if c.get("meta_id") not in last["seen"]]
+            if rest:
+                pick = rest[0]
+                last["seen"].append(pick["meta_id"])
+                last["at"] = time.time()
+                return self._play_match(pick, last["options"])
+            return VoiceResult(f"No encontré otra que se llame {last['query']}. Di busca {last['query']} para verlas todas.", ok=False)
+        return VoiceResult("¿Otro qué? Por ejemplo: pon Dune y luego «otro», o «siguiente episodio».", ok=False)
+
+    def _turn_off_tv_intent(self, slots: dict) -> VoiceResult:
+        """«Apaga la tele»: guarda dónde ibas, cierra el video y apaga la tele (nunca cierra un juego ni apaga la consola)."""
+        closed = ""
+        if self.catalog.player.playing:
+            title = getattr(self.catalog.player.current, "title", "") or "el video"
+            self.catalog.player.stop()
+            closed = f"Guardé dónde ibas en {title}. "
+        if self.tv is None or not getattr(self.tv, "enabled", False):
+            return VoiceResult(f"{closed}Orbital no tiene una tele conectada para apagarla.", ok=bool(closed))
+        self.tv.turn_off_soon()
+        return VoiceResult(f"{closed}Apagando la tele.")
+
     def _next_episode_intent(self, slots: dict) -> VoiceResult:
+        if self._live_on_air():  # «siguiente» en la TV en vivo: el siguiente canal
+            return self._channel_step_intent({"step": "next"})
         if not self.catalog.player.playing and (done := self._music("next", "Siguiente canción.")):
             return done
         if (idle := self._playing()) is not None:
@@ -1344,6 +1489,8 @@ class VoiceController:
         return VoiceResult(f"Poniendo {label}.")
 
     def _previous_episode_intent(self, slots: dict) -> VoiceResult:
+        if self._live_on_air():  # «anterior» en la TV en vivo: el canal anterior
+            return self._channel_step_intent({"step": "previous"})
         if (idle := self._playing()) is not None:
             return idle
         label = self.catalog.watch.play_previous_episode()

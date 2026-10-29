@@ -14,7 +14,7 @@
 }
 /* Semanas en columnas (de domingo a sábado), como el mapa del iPhone y el de GitHub. */
 .year__map { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, var(--year-cell)); grid-auto-columns: var(--year-cell); gap: .2rem; }
-.year__cell { width: var(--year-cell); height: var(--year-cell); border-radius: .2rem; background: var(--color-year-empty); }
+.year__cell { width: var(--year-cell); height: var(--year-cell); border-radius: var(--radius-2xs); background: var(--color-year-empty); }
 .year__cell--movies { background: var(--color-year-movies); }
 .year__cell--series { background: var(--color-year-series); }
 .year__cell--both { background: var(--color-year-both); }

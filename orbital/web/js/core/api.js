@@ -62,6 +62,7 @@ export const api = {
   ui: () => request("/api/ui"),
   exitToDesktop: () => post("/api/ui/exit"),
   resume: () => post("/api/ui/resume"),
+  uiPad: (listening) => post("/api/ui/pad", { listening }), // ¿la interfaz lee el mando? (quieta lo suelta, ver pads.js)
   uiState: (body) => post("/api/ui/state", body), // qué hay al frente (el control del iPhone enseña «Escribir» si sirve)
   windows: () => request("/api/windows"),
   power: (action) => post("/api/power", { action }),
@@ -112,8 +113,11 @@ export const api = {
   focusWindow: (id) => post("/api/windows/focus", { id }),
   // «Para ti»
   voiceCommands: () => request("/api/voice/commands"),
+  voice: (text) => post("/api/voice", { text }), // una frase, como si se dijera (Ajustes › Tele y voz › Probar)
+  voiceStatus: () => request("/api/voice/status"), // por dónde llegó la última orden y las últimas que llegaron
   forYou: () => request("/api/foryou"),
   forYouList: (id, kind = null) => request(`/api/foryou/list?id=${encodeURIComponent(id)}${kind ? `&kind=${kind}` : ""}`),
+  forYouLists: (lists) => post("/api/foryou/lists", { lists }),
   forYouDetails: (key, kind = null) => request(`/api/foryou/details?key=${encodeURIComponent(key)}${kind ? `&kind=${kind}` : ""}`),
   forYouDismiss: (key) => post("/api/foryou/dismiss", { key }),
   forYouRatings: (items) => request(`/api/foryou/ratings?ids=${encodeURIComponent(items.map((i) => `${i.kind}:${i.meta_id}`).join(","))}`),

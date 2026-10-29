@@ -3,6 +3,7 @@
 import importlib.util
 import io
 import json
+import time
 from pathlib import Path
 
 import pytest
@@ -103,3 +104,15 @@ def test_public_port_limits_body_and_accepts_any_bearer_case(library):
             assert c.head("/api/ping", headers={"Authorization": f"Bearer {token}"}).status_code == 200
             big = c.post("/api/voice", headers={"Authorization": f"Bearer {token}"}, json={"text": "abre " + "a" * 100_000})
             assert big.status_code == 413
+
+
+def test_last_seen_per_source_survives_a_restart():
+    """Tras reiniciar, la tele sigue sabiendo cuándo llegó la última orden de cada lado (del voz.log, no solo de la memoria)."""
+    from orbital.voice_log import last_seen
+
+    entries = [{"at": "2026-10-20 17:56:09", "source": "alexa"}, {"at": "2026-10-21 18:51:47", "source": "alexa"},
+               {"at": "2026-10-19 18:36:44", "source": "iphone"}, {"at": "rara", "source": "iphone"}, {"at": "2026-10-01 00:00:00"}]
+    seen = last_seen(entries)
+    assert time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(seen["alexa"])) == "2026-10-21 18:51:47"
+    assert time.strftime("%Y-%m-%d", time.localtime(seen["iphone"])) == "2026-10-19"
+    assert "local" not in seen and last_seen([]) == {}

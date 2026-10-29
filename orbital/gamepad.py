@@ -144,6 +144,12 @@ def with_triggers(left: int, right: int) -> int:
 # Los sticks (cualquiera de los dos) como dirección, en bits aparte de la cruceta: en el reproductor
 # despiertan los controles y mueven el foco de los paneles, pero no adelantan ni suben el volumen.
 STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT = 0x40000, 0x80000, 0x100000, 0x200000
+
+# Los botones como acciones de la interfaz, igual que su PADMAP (web/js/core/input.js): View busca y Start abre el menú.
+UI_ACTIONS = ((DPAD_UP | STICK_UP, "up"), (DPAD_DOWN | STICK_DOWN, "down"), (DPAD_LEFT | STICK_LEFT, "left"),
+              (DPAD_RIGHT | STICK_RIGHT, "right"), (A_BUTTON, "select"), (B_BUTTON, "back"), (X_BUTTON, "alt"),
+              (Y_BUTTON, "options"), (LB_BUTTON, "prevsection"), (RB_BUTTON, "nextsection"), (LT, "pageleft"),
+              (RT, "pageright"), (BACK, "search"), (START, "menu"))
 # Como la interfaz (core/input.js): se activa al 55 % del recorrido y se suelta por debajo del 35 % (histéresis). Antes
 # era un solo umbral al 61 %: un stick que rondaba el borde se soltaba y se volvía a apretar solo, y en un panel el foco
 # brincaba o se trababa. Y la dirección se conserva hasta que cambia con claridad (en diagonal ya no alterna).
@@ -394,6 +400,7 @@ class GamepadWatcher:
         # (lugar, conectado, (marca, modelo)): un mando que llega o se va. No suena por los que ya estaban al arrancar
         # ni al despertar (ver QUIET).
         self.on_pad: Callable[[int, bool, tuple[int, int] | None], None] | None = None
+        self.connected = False  # hay al menos un mando XInput encendido (la interfaz quieta suelta el suyo solo si sí)
 
     def start(self) -> bool:
         if sys.platform != "win32":
@@ -516,4 +523,5 @@ class GamepadWatcher:
                         self.on_buttons(slot, buttons, now)
                     except Exception:  # noqa: BLE001
                         log.exception("Error en el control remoto")
-            self._stop.wait(self.POLL if any(was_connected) else self.POLL_IDLE)
+            self.connected = any(was_connected)
+            self._stop.wait(self.POLL if self.connected else self.POLL_IDLE)

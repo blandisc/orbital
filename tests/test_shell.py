@@ -490,3 +490,33 @@ def test_a_button_never_pulls_orbital_over_a_game_legion_space_or_the_desktop_yo
     away.kiosk.exited_by_user = True  # «Salir al escritorio»
     win3.fg = DESKTOP_APP
     assert away.wake_on_button(0, 0x1000, 10.0) is False
+
+
+def test_quiet_ui_gets_the_first_button_from_the_server_only_with_orbital_in_front_and_nothing_open():
+    """Orbital quieta suelta el mando del navegador (le costaba a Edge ~14 % de un núcleo): el primer botón le llega del
+    servidor como acción. Solo botones nuevos, nunca Home, y nunca con otra ventana al frente o algo abierto."""
+    shell, win, _ = make()
+    published = []
+    shell.catalog.events = type("Events", (), {"publish": lambda self, event: published.append(event)})()
+    win.fg = ORBITAL
+    shell.forward_to_ui(0, 0x1000)
+    assert published == []  # la interfaz lee el mando ella misma: nada que reenviar
+    shell.forward_to_ui(0, 0)
+    shell.ui_pad = False  # quieta: soltó el mando
+    shell.forward_to_ui(0, 0x1000)  # A
+    shell.forward_to_ui(0, 0x1000)  # sigue apretado: no cuenta otra vez
+    shell.forward_to_ui(0, 0x1000 | 0x0008)  # y la cruceta a la derecha, nueva
+    assert published == [{"type": "input", "action": "select"}, {"type": "input", "action": "right"}]
+    published.clear()
+    shell.forward_to_ui(0, 0)
+    shell.forward_to_ui(0, 0x0400 | 0x0100)  # Home + LB: atajo del servidor, no de la interfaz
+    win.fg = DESKTOP_APP
+    shell.forward_to_ui(0, 0)
+    shell.forward_to_ui(0, 0x2000)  # otra ventana al frente
+    assert published == []
+    busy, win2, _ = make(MANAGED)  # un juego abierto: sus botones nunca van a Orbital
+    busy.catalog.events = shell.catalog.events
+    busy.ui_pad = False
+    win2.fg = ORBITAL
+    busy.forward_to_ui(0, 0x1000)
+    assert published == []
