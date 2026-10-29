@@ -45,6 +45,40 @@ Antes, con `-demo-signed-out` la app abría la pantalla «Entra con tu cuenta de
 - «Marcar como no vista» existe en el modelo (`TitleModel.unmarkWatched`); falta ponerlo en el menú del episodio (corte C).
 - Fase 2 (comparar Trakt contra Stremio y anotarlo en la bitácora): pendiente.
 
+## Corte C · iPhone (29 oct 2026)
+
+**Quedó:**
+
+- La guía de la primera vez (`Screens/Onboarding/`, un archivo por tramo; modelo `OnboardingModel`): Bienvenida, Cómo
+  funciona, Real-Debrid (qué es y precio), tu clave (abrir real-debrid.com/apitoken, «Pegar», comprobación al momento:
+  incompleta, no reconocida o cuenta gratuita dicen qué hacer y «Continuar» se queda apagado), Complementos (los
+  recomendados ya armados con tu clave, con interruptores), Trakt (código grande, se avanza solo al aprobar), «Conectado
+  como…» con lo que se trajo, tu TV (con «Ahora no»; en la Mac no sale) y «Todo listo» con la invitación a Stremio aparte.
+  Sale una sola vez (si ya tienes Real-Debrid y Trakt, no) y se reabre en Ajustes › «Cómo funciona Orbital».
+  Demo: `-demo -demo-first-run`.
+- Ajustes › **Cuentas**: Real-Debrid (usuario, Premium, días y vencimiento, «Renovar», «Cambiar clave», «Quitar»; los avisos
+  a 14 y 3 días y el día que vence ya los programa el corte B), Trakt · principal, Stremio · respaldo (el único lugar con
+  «Stremio» fuera de la última pantalla de la guía) y Tu Orbital.
+- Ajustes › **Complementos**: en tu orden («Ordenar» y arrastrar), interruptor por complemento, qué aporta, «Importado»,
+  deslizar para quitar; «Agregar»: los recomendados que falten, pegar dirección, volver a importar.
+- El perfil dice solo lo que conectaste (Trakt · Real-Debrid · Orbital). El menú del episodio ya dice «Marcar como no
+  visto» cuando está visto.
+- Piezas nuevas al catálogo (`Design/Guide.swift`, tokens `DS.Guide`): `GuideSteps`, `GuidePage`, `GuidePiece`,
+  `GuideNumberedStep`, `GuideCode`, `AddonLabel`. `ios_strings.py --check` en verde (también «sustos por delante»);
+  `HomeView.swift` en 580 líneas.
+- Pruebas: `OnboardingModelTests` (sale una vez, Real-Debrid no deja avanzar hasta Premium y arma los recomendados, solo la
+  TV se salta, complementos ordenables y pegados, días en palabras). Paquete completo en verde y la app compila.
+
+![La guía](capturas/corte-c-guia.png) ![Ajustes](capturas/corte-c-ajustes.png)
+
+**Falta:**
+
+- «Escanear QR» dentro de la app (para complementos y para la TV): hoy la TV se conecta con la cámara del iPhone, como antes.
+- Comet y otros recomendados: la plantilla solo trae Torrentio y OpenSubtitles (corte B).
+- Pruebas de interfaz `OnboardingUITests` en SE, mini y Pro Max: no se corrieron (solo capturas de la primera pantalla y de
+  Ajustes en el simulador).
+- Probarlo con tu cuenta real de Real-Debrid y Trakt en el iPhone.
+
 ## Corte D · iPhone (29 oct 2026)
 
 **Quedó** (commits `def0a537` y el siguiente):

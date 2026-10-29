@@ -62,6 +62,8 @@ struct RootView: View {
         .background(DS.bg.ignoresSafeArea())
         .overlay { if splashing { LaunchSplash(target: ui.homeLogoFrame) { splashing = false; ui.splashing = false } } }
         .fullScreenCover(item: $env.playing) { request in PlayerScreen(request: request) }
+        // La guía de la primera vez (y la de Ajustes › «Cómo funciona Orbital»).
+        .fullScreenCover(isPresented: Binding(get: { ui.showingGuide }, set: { ui.showingGuide = $0 })) { OnboardingView { ui.showingGuide = false } }
         .sensoryFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
         .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {
             Button("Sí, marcar como visto") { if let r = env.askFinished { Task { await env.confirmFinished(r) } } }
@@ -89,6 +91,9 @@ struct RootView: View {
             #if DEBUG
             if Demo.isOn, let at = Demo.handoff { env.handoff = .init(request: Demo.handoffRequest, position: at) }
             if Demo.isOn { Demo.showNotice(env) }
+            if Demo.isOn { ui.showingGuide = Demo.firstRun } else if OnboardingModel.shouldShow(env.services) { ui.showingGuide = true }
+            #else
+            if OnboardingModel.shouldShow(env.services) { ui.showingGuide = true }
             #endif
             await env.services.syncLibrary()
             // Con tu Orbital conectada: lo nuevo de la consola (otra clave, Trakt recién conectado allá) llega solo.

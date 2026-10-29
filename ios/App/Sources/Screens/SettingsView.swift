@@ -5,12 +5,13 @@ import OrbitalModels
 /// Ajustes: tu perfil arriba (el avatar se toca) y dos grupos de renglones que llevan a su página, cada uno con cómo
 /// está ahora: lo tuyo (apariencia, Un Simpson al azar, idioma, reproducción, descargas) y las conexiones (Orbital, Trakt…).
 struct SettingsView: View {
-    @Environment(AppEnvironment.self) private var env
+    @Environment(AppEnvironment.self) var env
     @State private var settings: ModelObserver<SettingsModel>
-    @State private var session: ModelObserver<SessionModel>
+    @State var session: ModelObserver<SessionModel>
+    /// Tu Real-Debrid (Ajustes › Cuentas).
+    @State var debrid: ModelObserver<DebridModel>
     @State private var tmdbKey = ""
-    @State private var newAddon = ""
-    @State private var confirmSignOut = false
+    @State var confirmSignOut = false
     @AppStorage("scare-marks") private var scareMarks = true
     @State private var confirmUnlink = false
     @State private var orbitalToken = ""
@@ -22,6 +23,7 @@ struct SettingsView: View {
         let services = AppEnvironment.shared.services
         _settings = State(wrappedValue: ModelObserver(SettingsModel(services)))
         _session = State(wrappedValue: ModelObserver(AppEnvironment.shared.session))
+        _debrid = State(wrappedValue: ModelObserver(DebridModel(services)))
     }
 
     var body: some View {
@@ -60,19 +62,13 @@ struct SettingsView: View {
             .listRowBackground(DS.surface)
             // Con qué se conecta.
             Section {
-                // La Mac no se conecta con tu Orbital (`Services.allowsOrbital`): ahí no hay nada que configurar.
-                if env.services.allowsOrbital {
-                    NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
-                        SettingsRow(title: "Tu Orbital", symbol: "tv", tint: DS.ListTint.series, value: env.services.orbital.isConfigured ? Text("Conectada") : Text("Sin conectar"))
-                    }
+                // Real-Debrid, Trakt · principal, Stremio · respaldo y tu Orbital, cada una con su papel.
+                NavigationLink { page("Cuentas") { accounts(model) } } label: {
+                    SettingsRow(title: "Cuentas", symbol: "person.2.circle", tint: DS.ListTint.chart, value: debridValue)
                 }
-                if traktFromOrbital(model) {
-                    // Trakt llega de tu Orbital: aquí no hay nada que configurar.
-                    SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: Text("Desde tu Orbital"), linked: false)
-                } else {
-                    NavigationLink { page("Trakt") { traktSection(model) } } label: {
-                        SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))
-                    }
+                NavigationLink { AddonsSettings() } label: {
+                    SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon,
+                                value: env.services.addonList.isConfigured ? Text(verbatim: "\(env.services.addonList.installed.filter(\.enabled).count)") : Text("Configurar"))
                 }
                 // Tus películas y series de OneDrive como una fuente más (como en la TV).
                 NavigationLink { OneDriveSettings() } label: {
@@ -88,22 +84,15 @@ struct SettingsView: View {
             .listRowBackground(DS.surface)
             // Lo que casi no se toca: complementos, la clave de TMDB y el país.
             Section {
-                NavigationLink { page("Avanzado") { advanced(model) } } label: {
-                    SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text("Complementos, TMDB, país"))
+                NavigationLink { page("Avanzado") { suggestions(model) } } label: {
+                    SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text("TMDB, país"))
                 }
+                // La guía de la primera vez, otra vez.
+                Button { env.ui.showingGuide = true } label: {
+                    SettingsRow(title: "Cómo funciona Orbital", symbol: "questionmark.circle", tint: DS.ListTint.spark, linked: false)
+                }
+                .accessibilityIdentifier("settings-guide")
             }
-            .listRowBackground(DS.surface)
-            // Stremio es opcional: el respaldo que recibe una copia de lo que ves mientras dure la prueba.
-            Section {
-                if session.model.state == .signedIn {
-                    Label("Stremio · respaldo", systemImage: "person.crop.circle.badge.checkmark")
-                    Button("Cerrar sesión de Stremio", role: .destructive) { confirmSignOut = true }
-                } else {
-                    NavigationLink { LoginView(session: session.model) } label: {
-                        SettingsRow(title: "Stremio · respaldo", symbol: "arrow.triangle.2.circlepath", tint: DS.ListTint.addon, value: Text("Conectar"))
-                    }
-                }
-            } header: { Text("Cuenta") } footer: { Text("Lo que ves también se guarda ahí, como copia.") }
             .listRowBackground(DS.surface)
         }
         .tint(DS.accent)   // interruptores, selectores y botones del formulario: el acento (lo interactivo)
@@ -138,7 +127,7 @@ struct SettingsView: View {
             }
             .presentationDetents([.medium])
         }
-        .task { await model.loadTraktName(); await session.model.loadAddons() }
+        .task { await model.loadTraktName(); await debrid.model.load() }
         #if DEBUG
         .navigationDestination(isPresented: $showsYear) { YearView() }   // `-demo-open year`: para las capturas
         .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
@@ -148,7 +137,7 @@ struct SettingsView: View {
     }
 
     /// Una página de Ajustes: el mismo formulario y fondo.
-    private func page<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
+    func page<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         Form { content() }
             .tint(DS.accent)
             .scrollContentBackground(.hidden).background(Backdrop())
@@ -157,27 +146,16 @@ struct SettingsView: View {
     }
 
     /// Trakt conectado con la sesión que copió tu Orbital (no se configura aquí).
-    private func traktFromOrbital(_ model: SettingsModel) -> Bool {
+    func traktFromOrbital(_ model: SettingsModel) -> Bool {
         guard case .linked = model.trakt else { return false }
         return env.services.orbital.isConfigured
     }
 
-    /// «Avanzado»: complementos, y el país y la clave de TMDB de las sugerencias.
-    @ViewBuilder private func advanced(_ model: SettingsModel) -> some View {
-        Section {
-            NavigationLink { page("Complementos") { addons } } label: {
-                SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon, value: Text(verbatim: "\(session.model.addons.count)"))
-            }
-        }
-        .listRowBackground(DS.surface)
-        suggestions(model)
-    }
-
-    /// «Trakt · Orbital · Stremio»: solo lo que conectaste, bajo tu avatar.
+    /// «Trakt · Real-Debrid · Orbital»: solo lo que conectaste, bajo tu avatar (Stremio, el respaldo, solo en Cuentas).
     private func connections(_ model: SettingsModel) -> Text {
         var parts: [String] = []
         if case .linked = model.trakt { parts.append("Trakt") }
-        if session.model.state == .signedIn { parts.append("Stremio") }
+        if debrid.model.hasToken { parts.append("Real-Debrid") }
         if env.services.orbital.isConfigured { parts.append("Orbital") }
         if parts.isEmpty { return Text("Sin cuentas conectadas") }
         return Text("Conectado: \(parts.joined(separator: " · "))")
@@ -187,7 +165,7 @@ struct SettingsView: View {
         switch value { case "light": Text("Claro"); case "dark": Text("Oscuro"); default: Text("Como el iPhone") }
     }
 
-    private func traktValue(_ model: SettingsModel) -> Text {
+    func traktValue(_ model: SettingsModel) -> Text {
         switch model.trakt {
         case .linked(let name): name.isEmpty ? Text("Conectado") : Text(verbatim: name)
         case .linking: Text("Conectando…")
@@ -336,29 +314,12 @@ struct SettingsView: View {
         Text("4K").tag("4K"); Text("1080p").tag("1080p"); Text("720p").tag("720p")
     }
 
-    // MARK: complementos
-    private var addons: some View {
-        Section("Complementos") {
-            ForEach(session.model.addons, id: \.url) { addon in
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(addon.name).foregroundStyle(DS.text)
-                    Text(redact(addon.url)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)   // solo el servidor: la ruta lleva tu clave
-                }
-                .swipeActions { if session.model.ownAddonURLs.contains(addon.url) { Button("Quitar", role: .destructive) { Task { await session.model.removeAddon(url: addon.url) } }.tint(DS.danger) } }   // rojo, como en iOS
-            }
-            if let error = session.model.addonError { Text(verbatim: env.message(error)).foregroundStyle(DS.danger).font(DS.TextRecipe.footnote.font) }
-            TextField("Pegar la dirección de un complemento", text: $newAddon).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-            if !newAddon.isEmpty { Button("Agregar complemento") { Task { await session.model.addAddon(newAddon); if session.model.addonError == nil { newAddon = "" } } } }
-        }
-        .listRowBackground(DS.surface)
-    }
-
     // MARK: tu Orbital (la TV)
     private func imported(_ model: SettingsModel) -> String {
         model.importedFromOrbital.joined(separator: env.services.appSettings.uiLanguage == "en" ? " and " : " y ")
     }
 
-    @ViewBuilder private func orbitalSection(_ model: SettingsModel) -> some View {
+    @ViewBuilder func orbitalSection(_ model: SettingsModel) -> some View {
         let connected = env.services.orbital.isConfigured
         Section {
             if connected {
@@ -396,7 +357,7 @@ struct SettingsView: View {
     }
 
     // MARK: Trakt
-    @ViewBuilder private func traktSection(_ model: SettingsModel) -> some View {
+    @ViewBuilder func traktSection(_ model: SettingsModel) -> some View {
         Section("Trakt") {
             switch model.trakt {
             case .off:

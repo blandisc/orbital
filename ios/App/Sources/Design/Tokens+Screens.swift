@@ -220,6 +220,17 @@ extension DS {
     }
 
     /// Ajustes: los renglones con su ícono de color.
+    /// La guía de la primera vez: el grueso de las rayitas de los pasos, el ícono de cada pieza y el número de cada paso.
+    enum Guide {
+        static let stepBar: CGFloat = 4
+        static let pieceIcon: CGFloat = 40
+        static let stepNumber: CGFloat = 28
+        /// El código de Trakt: separación entre letras (se lee de lejos, desde la TV).
+        static let codeTracking: CGFloat = 4
+        /// Lo más ancho que crece una página de la guía (iPad, Mac): se lee como una columna.
+        static let readable: CGFloat = 560
+    }
+
     enum SettingsLook {
         static let rowIcon: CGFloat = 28
         /// Lo que ocupa la flecha de un renglón que lleva a otra página.

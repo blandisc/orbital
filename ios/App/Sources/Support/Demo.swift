@@ -24,6 +24,8 @@ enum Demo {
 
     static let addonURL = "https://demo.orbital.invalid/manifest.json"
     /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
+    /// `-demo-first-run`: la guía de la primera vez (sin Real-Debrid ni Trakt conectados).
+    static var firstRun: Bool { ProcessInfo.processInfo.arguments.contains("-demo-first-run") }
     static var noTV: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-tv") }
     /// `-demo-tv-now`: la tarjeta «Viendo en la TV» con datos de mentira (para verla en el simulador).
     static var tvNow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-now") || horror }

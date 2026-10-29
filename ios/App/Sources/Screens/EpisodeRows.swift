@@ -15,6 +15,7 @@ struct EpisodeRowView: View {
     let row: EpisodeRow
     let play: () -> Void
     let download: () -> Void
+    /// Marca como visto, o como no visto si ya lo estaba.
     let markWatched: () -> Void
     let chooseSource: () -> Void
     var resumeDownload: () -> Void = {}
@@ -60,7 +61,9 @@ struct EpisodeRowView: View {
     @ViewBuilder private func actions(download withDownload: Bool) -> some View {
         if withDownload { Button("Descargar", systemImage: "arrow.down.circle", action: download) }
         Button("Versión de este episodio…", systemImage: "list.bullet.rectangle", action: chooseSource)   // el mismo ícono que «Versión» de la ficha
-        Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
+        // Ya visto: «Marcar como no visto» (sale de lo visto aquí y en Trakt).
+        if row.watched { Button("Marcar como no visto", systemImage: "circle", action: markWatched) }
+        else { Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched) }
         if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
     }
 
