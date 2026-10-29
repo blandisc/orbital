@@ -19,11 +19,8 @@ usando. Hay que probarlo con tu cuenta (10 min) antes de construir nada.
 | 2 · Comparar | Dos semanas; la app anota si no coinciden |
 | 3 · Soltar | Solo Trakt (requiere que la consola lea Trakt) |
 
-**Decide tú:**
-
-1. ¿Solo Real-Debrid? Recomiendo que sí, con la puerta abierta a otros.
-2. ¿Respaldo a Trakt cada 5 min mientras ves? Recomiendo que sí.
-3. ¿Proteger el 80 % para que Trakt no marque visto antes de tiempo? Recomiendo que sí.
+**Decidido:** solo Real-Debrid; respaldo a Trakt cada 5 min; visto al 90 % (Trakt no lo marca antes).
+**En curso:** la prueba de 10 min contra la API de Trakt, en la Lenovo.
 
 El resto de este documento es el detalle para quien lo implemente.
 
@@ -390,14 +387,14 @@ edición.
 - Las listas públicas que hoy dicen «Stremio» pasan a Trakt (§4, corte D).
 - Los complementos no se escriben de regreso a la cuenta de Stremio: solo se importan una vez.
 
-**Pendientes:**
+**Decididas por Fernando en la segunda ronda (29 oct):**
 
-1. **¿Solo Real-Debrid, o también AllDebrid, Premiumize y TorBox?** Recomiendo solo Real-Debrid, con el protocolo
-   listo para los otros. Es el que usas.
-2. **El aviso de respaldo cada 5 minutos** (§5, punto 3). Recomiendo que sí: sin él, una batería muerta a media
-   película deja a la TV sin saber dónde ibas.
-3. **Proteger el punto de reanudación del 80 %** (§5, punto 4). Recomiendo que sí. Si no, cerrar una película con 20
-   minutos por delante la marca vista en Trakt.
+1. **Solo Real-Debrid**, con el protocolo listo para otros servicios después.
+2. **Aviso de respaldo a Trakt cada 5 minutos** mientras reproduces (§5, punto 3).
+3. **Visto al 90 %, no al 80 % de Trakt.** Hasta el 90 % (o hasta que empiezan los créditos), a Trakt se le manda
+   como mucho 79.9 % y no se marca visto. Desde ahí se manda el avance real y queda visto (§5, punto 4).
+
+El paso 0 (la prueba contra la API de Trakt) corre en la Lenovo, con la sesión de Trakt de la consola.
 
 ## 7. Orden y tamaño
 
