@@ -1,4 +1,5 @@
 import SwiftUI
+import OrbitalModels
 
 // El carrusel de «En tendencia» en Inicio: la tarjeta del frente nítida y las que siguen a los lados, más chicas, oscuras,
 // desenfocadas y giradas en 3D (coverflow).
@@ -35,11 +36,16 @@ struct DeckCard<Actions: View>: View {
     var data: [String] = []
     /// Abrir la ficha: VoiceOver con la acción «Ver ficha» sobre el nombre (la tarjeta, con su toque).
     var open: (() -> Void)?
+    /// El título: en una tarjeta alta (el teléfono) va su póster sin texto si lo tiene (`TallArtPicker`).
+    var tall: TallArtKey? = nil
     @ViewBuilder var actions: () -> Actions
+    @State private var tallBox: Bool?
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: background, title: title, aspect: nil, bleed: true, maxPoints: DS.Image.bleed)
+            TallArtPicker(key: tall, wide: background, tallBox: tallBox) { art, wide in
+                PosterView(url: art, title: title, aspect: nil, bleed: true, maxPoints: DS.Image.bleed, fallback: wide)
+            }
             LinearGradient(stops: [.init(color: .clear, location: DS.Deck.veilStart), .init(color: DS.scrimStrong, location: 1)],
                            startPoint: .top, endPoint: .bottom)
             VStack(alignment: .leading, spacing: DS.Space.s3) {
@@ -56,6 +62,7 @@ struct DeckCard<Actions: View>: View {
             .padding(DS.Space.s4)
         }
         .frame(height: DS.Deck.height)
+        .onGeometryChange(for: Bool.self) { Double($0.size.width / max($0.size.height, 1)) < ArtFit.tallBelow } action: { tallBox = $0 }
         .clipShape(RoundedRectangle(cornerRadius: DS.Deck.radius, style: .continuous))
         .shadow(color: DS.scrimStrong, radius: DS.Deck.shadow, y: DS.Deck.shadowY)
     }

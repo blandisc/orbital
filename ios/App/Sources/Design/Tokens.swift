@@ -228,7 +228,6 @@ enum DS {
     /// Brillo, volumen y buscar arrastrando (como Infuse): el umbral que decide el eje (el mismo número que usa
     /// `PlayerGestures`, la aritmética pura) y el tamaño del indicador.
     enum Gesture {
-        /// La franja de cada orilla donde el doble toque salta ±10 s (al centro, pausa o sigue).
         /// Doble toque: tres zonas parejas (izquierda −10 s, centro pausa, derecha +10 s), como YouTube.
         static let edgeShare: CGFloat = 1.0 / 3.0
         /// Tras un doble toque, cada toque más del mismo lado suma 10 s (+10, +20, +30) mientras no pase este rato.
@@ -242,6 +241,8 @@ enum DS {
         /// A cuántos segundos del destino ya se da por llegado un salto (el pulgar vuelve a seguir el avance).
         static let seekArrived: Double = 2
         static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)
+        /// Brillo y volumen: el recorrido de 0 a 1 es el alto del video, con tope de esta parte de la pantalla y este mínimo (`PlayerGestures.verticalTravel`).
+        static let verticalTravelShare: Double = 0.5, verticalTravelMin: Double = 120
         /// La onda del doble toque: la media luna sale de la orilla y ocupa este tanto del alto del video.
         static let rippleHeight: CGFloat = 1.5
         static let indicatorBarHeight: CGFloat = 120
@@ -450,7 +451,7 @@ enum DS {
         static let offlineExtraLanguages = 2
         /// La agarradera va dentro del borde de abajo del video (sobre un velo): la rayita, a cuánto del borde, el alto del velo, la
         /// franja que la toma (dentro del video, desde abajo, y un poco por fuera) y el aire hasta la barra de avance.
-        static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap: CGFloat = 12
+        static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap: CGFloat = 12, handleWidth: CGFloat = 64, handleHeight: CGFloat = 22, handleBar: CGFloat = 36, handleBarHeight: CGFloat = 5, handleLift: CGFloat = 1.1   // la cápsula de vidrio, su rayita y cuánto crece al arrastrar
         static let handleReach: CGFloat = 12
         /// Cuántas funciones da el video un brinquito (hacia abajo y de regreso) para enseñar que se mueve, y de qué tamaño (parte del alto).
         static let moveHintTimes = 3
@@ -483,10 +484,9 @@ enum DS {
         /// Mientras no lo mueves (`portraitCenter` < 0), el video queda a esta distancia bajo el área segura: la misma en todos los
         /// iPhone (antes era una fracción del alto y en un Pro Max quedaba cientos de puntos más abajo que en un SE).
         static let portraitTop: CGFloat = 24
-        /// En vertical sin controles a la vista, el video se centra.
         /// El botón de reproducir, más grande que ±10 (lo que más se toca).
         static let playButton: CGFloat = 76, playGlyph: CGFloat = 30, sideButton: CGFloat = 56
-        /// ±10: la flecha en círculo, sin fondo (el botón grande es el único con círculo).
+        /// ±10: la flecha en círculo, sin fondo (el botón grande es el único con círculo); va en la orilla del video, donde sale la onda del doble toque.
         static let skipGlyph: CGFloat = 32
         /// La barra de avance fina: el riel, la perilla (crece al arrastrar) y el alto que ocupa (se toca en
         /// `DS.Size.touchTarget`: la zona táctil sobresale arriba y abajo).

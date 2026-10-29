@@ -38,26 +38,26 @@ final class PlayerGesturesTests: XCTestCase {
 
     func testDraggingUpIncreasesValue() {
         // Toda la altura hacia arriba: del mínimo al máximo.
-        XCTAssertEqual(PlayerGestures.verticalValue(start: 0, dragHeight: -800, screenHeight: 800), 1, accuracy: 1e-9)
+        XCTAssertEqual(PlayerGestures.verticalValue(start: 0, dragHeight: -800, travel: 800), 1, accuracy: 1e-9)
         // La mitad de la altura: medio camino.
-        XCTAssertEqual(PlayerGestures.verticalValue(start: 0, dragHeight: -400, screenHeight: 800), 0.5, accuracy: 1e-9)
+        XCTAssertEqual(PlayerGestures.verticalValue(start: 0, dragHeight: -400, travel: 800), 0.5, accuracy: 1e-9)
     }
 
     func testDraggingDownDecreasesValue() {
-        XCTAssertEqual(PlayerGestures.verticalValue(start: 1, dragHeight: 800, screenHeight: 800), 0, accuracy: 1e-9)
+        XCTAssertEqual(PlayerGestures.verticalValue(start: 1, dragHeight: 800, travel: 800), 0, accuracy: 1e-9)
     }
 
     func testVerticalValueClampsAt0And1() {
-        XCTAssertEqual(PlayerGestures.verticalValue(start: 0.9, dragHeight: -1000, screenHeight: 800), 1, accuracy: 1e-9)
-        XCTAssertEqual(PlayerGestures.verticalValue(start: 0.1, dragHeight: 1000, screenHeight: 800), 0, accuracy: 1e-9)
+        XCTAssertEqual(PlayerGestures.verticalValue(start: 0.9, dragHeight: -1000, travel: 800), 1, accuracy: 1e-9)
+        XCTAssertEqual(PlayerGestures.verticalValue(start: 0.1, dragHeight: 1000, travel: 800), 0, accuracy: 1e-9)
     }
 
     func testVerticalValueStartsFromWhereYouGrabbedItNotFromTheCenter() {
-        XCTAssertEqual(PlayerGestures.verticalValue(start: 0.3, dragHeight: 0, screenHeight: 800), 0.3, accuracy: 1e-9)
+        XCTAssertEqual(PlayerGestures.verticalValue(start: 0.3, dragHeight: 0, travel: 800), 0.3, accuracy: 1e-9)
     }
 
     func testZeroHeightKeepsTheStartingValue() {
-        XCTAssertEqual(PlayerGestures.verticalValue(start: 0.4, dragHeight: -200, screenHeight: 0), 0.4)
+        XCTAssertEqual(PlayerGestures.verticalValue(start: 0.4, dragHeight: -200, travel: 0), 0.4)
     }
 
     // MARK: buscar arrastrando
@@ -114,5 +114,14 @@ final class PlayerGesturesTests: XCTestCase {
         XCTAssertEqual(PlayerGestures.fastForwardLockDistance(roomBelow: 50, preferred: 60, minimum: 40), 50)
         XCTAssertEqual(PlayerGestures.fastForwardLockDistance(roomBelow: 10, preferred: 60, minimum: 40), 40)
         XCTAssertEqual(PlayerGestures.fastForwardLockDistance(roomBelow: 0, preferred: 60, minimum: 40), 40)
+    }
+
+    /// 29 oct: «le doy todo para arriba y sube un pedacito». El recorrido es el alto del video (en vertical, ~220 puntos), con
+    /// tope de media pantalla en horizontal y un mínimo para que un roce no lo dispare.
+    func testVerticalTravelIsTheVideoHeightCappedToPartOfTheScreen() {
+        XCTAssertEqual(PlayerGestures.verticalTravel(videoHeight: 220, screenHeight: 850, share: 0.5, minimum: 120), 220)
+        XCTAssertEqual(PlayerGestures.verticalTravel(videoHeight: 390, screenHeight: 390, share: 0.5, minimum: 120), 195, "horizontal: media pantalla")
+        XCTAssertEqual(PlayerGestures.verticalTravel(videoHeight: 60, screenHeight: 850, share: 0.5, minimum: 120), 120, "nunca menos del mínimo")
+        XCTAssertEqual(PlayerGestures.verticalValue(start: 0, dragHeight: -220, travel: 220), 1, accuracy: 1e-9, "recorrer el video entero: al máximo")
     }
 }

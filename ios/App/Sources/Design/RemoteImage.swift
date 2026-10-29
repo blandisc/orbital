@@ -17,8 +17,8 @@ enum RemoteImagePhase { case loading, success(Image), failure }
 struct RemoteImage<Content: View>: View {
     let url: URL
     let maxPoints: CGFloat
-    /// La fase y, ya cargada, la forma de la imagen (para decidir si se recorta o va completa, `ArtFit`).
-    let content: (RemoteImagePhase, CGSize?) -> Content
+    /// La fase y, ya cargada, la imagen misma (su forma decide si se recorta o va completa, `ArtFit`; en ella se busca al sujeto).
+    let content: (RemoteImagePhase, UIImage?) -> Content
     @State private var loaded: UIImage?
     @State private var didFail = false
     @Environment(\.perfTag) private var perfTag
@@ -27,12 +27,12 @@ struct RemoteImage<Content: View>: View {
         self.url = url; self.maxPoints = maxPoints; self.content = { phase, _ in content(phase) }
     }
 
-    init(url: URL, maxPoints: CGFloat, @ViewBuilder sized: @escaping (RemoteImagePhase, CGSize?) -> Content) {
+    init(url: URL, maxPoints: CGFloat, @ViewBuilder sized: @escaping (RemoteImagePhase, UIImage?) -> Content) {
         self.url = url; self.maxPoints = maxPoints; self.content = sized
     }
 
     var body: some View {
-        content(phase, shown?.size).task(id: url) { await load() }
+        content(phase, shown).task(id: url) { await load() }
     }
 
     private var shown: UIImage? {

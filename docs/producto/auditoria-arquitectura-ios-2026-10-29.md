@@ -42,32 +42,28 @@ monolitos, modularidad, sistema de diseño y prácticas de Swift y SwiftUI. Tres
 | `try!` en la app | 3 | 2 (expresiones regulares fijas) |
 | Pruebas nuevas en el paquete | — | 15 (avisos 6, Simpson 7, dos guardias de arquitectura); 347 en total, todas en verde |
 
-## Pendientes que el auditor recomienda (no se hicieron en estas rondas)
+## Segunda pasada (misma fecha): las recomendaciones, hechas
 
-Por orden de valor. Ninguno es urgente; los dos primeros son los que más deuda cargan.
+| # | Recomendación | Qué se hizo |
+|---|---|---|
+| 1 | `PlayerModel.swift` (1 634 líneas) | «Pistas» y «versiones de subtítulos» salen a `PlayerModel+Tracks.swift` (205) y `PlayerModel+Subtitles.swift` (212): el estado guardado sigue en la clase (una extensión no puede tener propiedades), lo que se hace con él vive aparte. Lo que esas extensiones tocan pasó de `private` a interno del módulo (no público). `PlayerModel.swift` queda en 1 267. El paso siguiente, cuando haga falta, es un colaborador con su propia prueba |
+| 2 | Agrupar el estado de `PlayerScreen` | Cuatro grupos más con el patrón de `PlayerDragState`: `PlayerLockState` (candado, 7), `PlayerZoomState` (encuadre, 8), `PlayerDockState` (panel de abajo, 13) y `PlayerNoticeState` (avisos, 7). `PlayerScreen` pasa de 74 a 43 `@State`; los que quedan son de la vista misma (controles visibles, tareas, tamaños) |
+| 3 | `Screens/Shared.swift` | Partido: `Design/Rail.swift` (`Rail`, `TitleLink`, el reflejo: piezas puras), `Screens/TitleFacts.swift` (los datos en palabras, con el idioma explícito: ya no leen `AppEnvironment.shared`) y `Screens/TVCards.swift` (las dos tarjetas de la TV). `Shared.swift` queda con 20 líneas |
+| 4 | `AppEnvironment+Titles` como caso de uso | `OrbitalModels/TitleActions.swift`: por dónde empieza una serie, lista por omisión, guardar y quitar, favoritos, marcar como vista y el detalle de una descarga, con `TitleActionsTests` (6). `AppEnvironment+Titles.swift` (132 líneas) solo pone avisos, «Deshacer» y abre el reproductor |
+| 5 | Modo Swift 6 en la app | `SWIFT_STRICT_CONCURRENCY: complete` en `project.yml` (modo 5 todavía): una compilación completa enseña 127 avisos distintos, de ellos 33 serían errores en Swift 6 (conformancias `Equatable`/`VideoPlayerEngine` que cruzan al hilo principal, `NSCache` globales, cierres `sending`, capturas no `Sendable`) y el resto son APIs que iOS 26 dejó en desuso (`UIScreen.main`, `Text +`). Esa es la lista para subir a Swift 6 |
+| 6 | `project.yml` | `bundleIdPrefix` ya no es la plantilla `com.example` (cada target fija su identificador). `NSAllowsArbitraryLoads` se queda: no se conocen de antemano los dominios de los complementos |
+| 7 | Pruebas sin SwiftUI | Lo que bajó al paquete en estas dos pasadas trae 21 pruebas nuevas (avisos, Simpson, acciones sobre un título, dos guardias) |
 
-1. **`PlayerModel.swift` (1 634 líneas).** Un solo modelo con nueve secciones (arranque, motor, guardado, pistas, versiones
-   de subtítulos, controles, intro y siguiente, cierre, segundo plano). Sacar primero «versiones de subtítulos» (~220 líneas) y
-   «pistas» (~210) como colaboradores con su propia prueba; el resto ya tiene pruebas que lo cubren al mover.
-2. **Seguir agrupando el estado de `PlayerScreen`** con el patrón de `PlayerDragState`: candado (6 variables), panel de
-   subtítulos y páginas (10), zoom (8), avisos en cola (5). Meta: menos de 30 `@State` en la vista.
-3. **`Screens/Shared.swift`** es un cajón de sastre: funciones sueltas (`factStrings`, `progressFact`, `episodeText`) que leen
-   `AppEnvironment.shared`, dos tarjetas (`NowPlayingCard`, `FromTVCard`) y piezas puras (`Rail`, `TitleLink`) que pertenecen al
-   catálogo. Partirlo: piezas puras a `Design/`, tarjetas a `Screens/TVCards.swift`, funciones como métodos con el idioma explícito.
-4. **`AppEnvironment+Titles.swift`** (ver, guardar, quitar, marcar, descargar sobre una `Suggestion`) es un caso de uso
-   completo: moverlo a `OrbitalModels` como `TitleActions` con el aviso por cierre, y probarlo como `SimpsonsModel`.
-5. **Modo Swift 6 en la app.** El paquete va en Swift 6 pero la app compila en modo 5 (`SWIFT_VERSION: "5.0"` en
-   `project.yml`): los avisos de aislamiento no son errores. Subir por pasos (`SWIFT_STRICT_CONCURRENCY: complete` primero).
-6. **`project.yml`**: `bundleIdPrefix: com.example.orbital` es un resto de plantilla (el identificador real está en cada
-   target); `NSAllowsArbitraryLoads: true` está justificado (complementos con http) pero conviene acotarlo con
-   `NSExceptionDomains` cuando se sepa cuáles son.
-7. **Pruebas unitarias del target de la app.** Hoy solo hay XCUITest (lentas). Con `NoticeCenter` y `SimpsonsModel` en el
-   paquete el camino es ese: lo que se pueda probar sin SwiftUI, baja a `OrbitalModels`.
+### Lo que sigue (si se quiere seguir)
+
+1. Convertir las extensiones de `PlayerModel` en colaboradores (`SubtitleVersions`, `TrackSelection`) con su estado y su prueba.
+2. Atender los 33 avisos de aislamiento y luego poner `SWIFT_VERSION: "6.0"` en la app.
+3. Los archivos que siguen en la lista de `FileBudgetTests` (13): `PlayerPanel.swift` (1 223), `Tokens.swift` (1 014), `ParaTiView.swift` (936), `Demo.swift` (854), `TitleView.swift` (813)…
 
 ## Cómo se verificó
 
 - `xcodebuild build` (simulador, Xcode 26) en verde tras cada ronda.
-- `swift test` del paquete: 347 pruebas, 0 fallas (incluye `DesignTests`, `PlatformBoundaryTests` y las dos guardias nuevas).
+- `swift test` del paquete: 351 pruebas tras la segunda pasada, 0 fallas (incluye `DesignTests`, `PlatformBoundaryTests` y las dos guardias nuevas).
 - Ojo: mientras corría esta auditoría otra sesión editaba el mismo checkout (`PlayerModel.swift`, `Tokens.swift`, `TitleView.swift`, `ArtFit`, la web de la TV). Esos cambios no son de esta auditoría y no van en su commit.
 - No se instaló en un simulador ni en el iPhone: los dos simuladores encendidos los estaban usando otras sesiones y los
   cambios son de estructura (mismo código, otro lugar), no de comportamiento. Para verlo: `-demo -demo-title series:tt0386676

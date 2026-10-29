@@ -194,6 +194,15 @@ public struct Tmdb: Sendable {
         return (sagaID, name)
     }
 
+    /// El mejor póster sin texto de un título (TMDB marca sin idioma los que no traen el nombre impreso): el arte de un marco alto,
+    /// como la portada de la ficha en el iPhone. nil si no tiene.
+    public func textlessPoster(kind: String, tmdbID: Int) async throws -> String? {
+        let data = try await get("/\(Tmdb.kinds[kind] ?? "movie")/\(tmdbID)/images", [("include_image_language", "null")])
+        let rows = (data["posters"]?.array ?? []).filter { $0["iso_639_1"]?.string == nil && $0["file_path"]?.string != nil }
+        let best = rows.max { ($0["vote_average"]?.doubleValue ?? 0, $0["vote_count"]?.doubleValue ?? 0) < ($1["vote_average"]?.doubleValue ?? 0, $1["vote_count"]?.doubleValue ?? 0) }
+        return Tmdb.image(best?["file_path"], size: "w780")
+    }
+
     /// La ficha de un título de IMDb (lo de Trakt llega con sinopsis en inglés).
     public func find(imdb: String, kind: String) async throws -> TmdbDetails? {
         guard let id = try await findID(imdb: imdb, kind: kind) else { return nil }

@@ -325,59 +325,6 @@ struct PlayPauseButton: View {
     }
 }
 
-/// La onda del doble toque: una media luna tenue que sale de la orilla del lado que tocaste, con tres flechas y lo que llevas
-/// sumado («+30 s»). El número crece en el mismo lugar con cada toque.
-struct SkipRipple: View {
-    let forward: Bool
-    let seconds: Int
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                Ellipse().fill(DS.fill)
-                    .frame(width: geo.size.width * 2, height: geo.size.height * DS.Gesture.rippleHeight)
-                    .offset(x: forward ? geo.size.width / 2 : -geo.size.width / 2)
-                VStack(spacing: DS.Space.s1) {
-                    HStack(spacing: 0) {
-                        ForEach(0..<3, id: \.self) { _ in Image(systemName: forward ? "arrowtriangle.forward.fill" : "arrowtriangle.backward.fill") }
-                    }
-                    .font(DS.TextRecipe.caption.font)
-                    .symbolEffect(.bounce, value: seconds)
-                    Text(verbatim: "\(forward ? "+" : "−")\(seconds) s").font(DS.TextRecipe.cardTitle.font.weight(.bold)).monospacedDigit()
-                        .contentTransition(.numericText())
-                }
-                .foregroundStyle(DS.text)
-                .shadow(DS.Elevation.high)   // se lee aunque la imagen sea clara
-            }
-            .frame(width: geo.size.width, height: geo.size.height)
-            .clipped()
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-}
-
-/// ±10 s junto al botón grande: la flecha en círculo con el 10, sin fondo (se ve qué lado regresa y cuál adelanta).
-struct SkipButton: View {
-    let forward: Bool
-    let action: () -> Void
-    @State private var taps = 0
-
-    var body: some View {
-        Button { taps += 1; action() } label: {
-            Image(systemName: forward ? "goforward.10" : "gobackward.10")
-                .font(.system(size: DS.PlayerPanel.skipGlyph, weight: .medium))   // ds-exception: el glifo se mide con el botón grande, no con Dynamic Type
-                .symbolEffect(.rotate.byLayer, options: .speed(2), value: taps)
-                .foregroundStyle(DS.text)
-                .shadow(DS.Elevation.high)   // sin fondo propio: ahora va sobre la imagen también en vertical
-                .frame(width: DS.PlayerPanel.sideButton, height: DS.PlayerPanel.sideButton)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(forward ? Text("Adelantar 10 segundos") : Text("Retroceder 10 segundos"))
-    }
-}
-
 /// La barra de avance (la misma en vertical y en horizontal), a todo lo ancho: delgada con un punto chico mientras miras, gruesa
 /// mientras la arrastras, con una burbuja encima que dice a qué minuto vas y cuánto saltas. Dos rayitas tenues marcan dónde
 /// termina la intro y dónde empiezan los créditos (desde ahí el episodio cuenta como visto); al arrastrar, los tramos se aclaran.

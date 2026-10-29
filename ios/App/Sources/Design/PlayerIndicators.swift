@@ -136,3 +136,83 @@ struct DSToastPill: View {
             .glassEffect(.regular, in: Capsule())
     }
 }
+
+/// ±10 s: UNA sola pieza por lado, en la orilla del video, para el botón y para el doble toque (antes el botón iba junto al botón
+/// grande y la onda del doble toque salía en la orilla: dos cosas distintas para lo mismo). Quieta es la flecha en círculo con el
+/// 10; al saltar (tocándola o con doble toque en su tercio) la media luna sale de la orilla detrás de ella y el glifo dice lo que
+/// llevas sumado («+20 s»), como YouTube. Sin controles a la vista solo aparece mientras dura el salto.
+struct DSSkipControl: View {
+    let forward: Bool
+    /// Lo sumado en el salto en curso; nil: quieta.
+    var seconds: Int? = nil
+    /// Los controles están a la vista: el botón se ve y se toca.
+    var shown: Bool
+    let action: () -> Void
+    @State private var taps = 0
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                if seconds != nil {
+                    Ellipse().fill(DS.fill)
+                        .frame(width: geo.size.width * 2, height: geo.size.height * DS.Gesture.rippleHeight)
+                        .offset(x: forward ? geo.size.width / 2 : -geo.size.width / 2)
+                        .transition(.opacity)
+                        .allowsHitTesting(false)
+                }
+                Button { taps += 1; action() } label: {
+                    glyph
+                        .foregroundStyle(DS.text)
+                        .shadow(DS.Elevation.high)   // sin fondo propio: va sobre la imagen (se lee aunque sea clara)
+                        .frame(width: DS.PlayerPanel.sideButton, height: DS.PlayerPanel.sideButton)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .opacity(shown || seconds != nil ? 1 : 0)
+                .allowsHitTesting(shown)
+                .accessibilityLabel(forward ? Text("Adelantar 10 segundos") : Text("Retroceder 10 segundos"))
+                .accessibilityValue(seconds.map { Text(verbatim: "\(forward ? "+" : "−")\($0) s") } ?? Text(verbatim: ""))
+                .accessibilityIdentifier(forward ? "player-skip-forward" : "player-skip-back")
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .clipped()
+        }
+    }
+
+    @ViewBuilder private var glyph: some View {
+        if let seconds {
+            VStack(spacing: DS.Space.s1) {
+                HStack(spacing: 0) {
+                    ForEach(0..<3, id: \.self) { _ in Image(systemName: forward ? "arrowtriangle.forward.fill" : "arrowtriangle.backward.fill") }
+                }
+                .font(DS.TextRecipe.caption.font)
+                .symbolEffect(.bounce, value: seconds)
+                Text(verbatim: "\(forward ? "+" : "−")\(seconds) s").font(DS.TextRecipe.cardTitle.font.weight(.bold)).monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+        } else {
+            Image(systemName: forward ? "goforward.10" : "gobackward.10")
+                .font(.system(size: DS.PlayerPanel.skipGlyph, weight: .medium))   // ds-exception: el glifo se mide con el botón grande, no con Dynamic Type
+                .symbolEffect(.rotate.byLayer, options: .speed(2), value: taps)
+        }
+    }
+}
+
+/// La agarradera del video en vertical: una cápsula de vidrio con la rayita, montada sobre el borde de abajo del video (mitad
+/// dentro, mitad fuera), como la de las hojas de iOS. Dice dónde va el dedo para subir o bajar el video; mientras lo arrastras se
+/// ilumina y crece un poco. No toma el toque: el arrastre lo lee la capa de gestos (`startsOnHandle`).
+struct DSVideoHandle: View {
+    /// Se está arrastrando el video.
+    var active = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Capsule().fill(active ? DS.text : DS.textMuted)
+            .frame(width: DS.PlayerPanel.handleBar, height: DS.PlayerPanel.handleBarHeight)
+            .frame(width: DS.PlayerPanel.handleWidth, height: DS.PlayerPanel.handleHeight)
+            .glassEffect(.regular, in: Capsule())
+            .scaleEffect(active ? DS.PlayerPanel.handleLift : 1)
+            .animation(DS.Motion.base(reduceMotion), value: active)
+            .allowsHitTesting(false)
+    }
+}

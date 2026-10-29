@@ -237,6 +237,7 @@ struct MainTabs: View {
             }
         }
         .environment(\.openRemote, openRemoteAction)
+        .environment(\.tallArt, TallArtLookup(env.services.tallArt))   // el póster sin texto en los marcos altos (ficha, «En tendencia»)
         // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).
         // (Estirado, el control completo sirve aunque no haya video: se queda.)
         .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped, !remoteLarge { showRemote = false } }

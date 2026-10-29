@@ -23,6 +23,8 @@ struct BleedArt<Content: View>: View {
     var collapse: Color? = nil
     /// Si el arte no carga, esta otra (`PosterView.fallback`).
     var fallback: String? = nil
+    /// El título: si el marco es alto y tiene póster sin texto, va ese en vez de `url` (`TallArtPicker`).
+    var tall: TallArtKey? = nil
     @ViewBuilder var content: () -> Content
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -60,7 +62,9 @@ struct BleedArt<Content: View>: View {
     }
 
     private var art: some View {
-        PosterView(url: url, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed, fallback: fallback)
+        TallArtPicker(key: tall, wide: url, tallBox: aspect.map { Double($0) < ArtFit.tallBelow } ?? false) { art, wide in
+            PosterView(url: art, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed, fallback: wide ?? fallback)
+        }
             // El velo sube hasta donde empieza el texto: rótulo, logo y datos se leen aunque el arte sea claro.
             .overlay(LinearGradient(stops: [.init(color: .clear, location: DS.Backdrop.scrimStart), .init(color: DS.scrim, location: DS.Backdrop.scrimMid),
                                             .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom))

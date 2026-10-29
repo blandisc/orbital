@@ -74,13 +74,13 @@ extension PlayerScreen {
     /// Dónde va el video. Horizontal: toda la pantalla (o a la izquierda de «Audio y subtítulos»). Vertical: arriba, a todo lo
     /// ancho y en su proporción y de orilla a orilla (no apachurrado), a la altura que lo dejes al arrastrarlo.
     func videoRect(in size: CGSize) -> CGRect {
-        if landscape && zoom == .fitSafeArea && !subtitleDock {
+        if landscape && zoom == .fitSafeArea && !dockState.subtitleDock {
             // «Ajuste de aspecto» (Aspect Fit de Infuse): el cuadro nunca queda bajo la isla ni bajo el indicador de inicio.
             let inset = Self.windowSafeArea
             return CGRect(x: inset.left, y: inset.top, width: max(0, size.width - inset.left - inset.right),
                           height: max(0, size.height - inset.top - inset.bottom))
         }
-        if landscape && subtitleDock {
+        if landscape && dockState.subtitleDock {
             // Con el panel: el cuadro completo, en su proporción y centrado en lo que queda libre a la izquierda (sin
             // pegarse a la orilla ni quedar bajo el panel).
             let left = Self.windowSafeArea.left + DS.Space.s4
@@ -97,9 +97,9 @@ extension PlayerScreen {
         var band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter, aspect: portraitAspect)
         // Con «Audio y subtítulos» abierto, si no cabe abajo, el video sube lo justo (hasta la orilla) y el panel se ve entero.
         // (La vista de sincronizar con una frase no se mide: con la medida de otra página el video subía de más o de menos.)
-        if subtitleDock && dockPage != .episodes && syncLines == nil && dockNeed > 0 {
+        if dockState.subtitleDock && dockState.dockPage != .episodes && dockState.syncLines == nil && dockState.dockNeed > 0 {
             let room = size.height - band.maxY - DS.Space.s4 - DS.Space.s2
-            band.origin.y -= min(max(0, dockNeed - room), band.minY)
+            band.origin.y -= min(max(0, dockState.dockNeed - room), band.minY)
         }
         // «Ajuste de aspecto» en vertical: el cuadro con su margen a los lados, lejos de las esquinas redondeadas.
         if zoom == .fitSafeArea {
@@ -156,33 +156,33 @@ extension PlayerScreen {
     /// «Episodios»: en vertical bajo el video y en horizontal a la derecha (donde va «Audio y subtítulos»); el video sigue.
     func openEpisodes(_ model: PlayerModel) {
         withAnimation(DS.Motion.base(reduceMotion)) {
-            moreOpen = false; controlsVisible = false; dockPage = .episodes; subtitleDock = true
+            moreOpen = false; controlsVisible = false; dockState.dockPage = .episodes; dockState.subtitleDock = true
         }
         guard let meta = holder.model.localizedMeta ?? current.meta else { return }   // en tu idioma, como en la ficha
         let local = current.localFile != nil
         Task {
-            if episodeSeasons.isEmpty {
-                episodeSeasons = await Task.detached(priority: .userInitiated) { CinemetaParsing.seasons(meta).filter { !$0.isSpecials } }.value
+            if dockState.episodeSeasons.isEmpty {
+                dockState.episodeSeasons = await Task.detached(priority: .userInitiated) { CinemetaParsing.seasons(meta).filter { !$0.isSpecials } }.value
             }
-            playableEpisodes = local ? await model.playableEpisodes(episodeSeasons.flatMap { $0.episodes.map(\.id) }) : nil
+            dockState.playableEpisodes = local ? await model.playableEpisodes(dockState.episodeSeasons.flatMap { $0.episodes.map(\.id) }) : nil
         }
     }
 
     func episodesPage(_ model: PlayerModel) -> some View {
-        EpisodesPanel(seasons: episodeSeasons, current: current.videoID, next: model.nextUp?.videoID, playable: playableEpisodes,
+        EpisodesPanel(seasons: dockState.episodeSeasons, current: current.videoID, next: model.nextUp?.videoID, playable: dockState.playableEpisodes,
                       pick: { id in closeEpisodes(); Task { await model.playEpisode(id) } },
                       done: { closeEpisodes() })
     }
 
     func closeEpisodes() {
-        withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media }
+        withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media }
     }
 
     /// Abre la hoja «Audio y subtítulos» con un renglón abierto, o directo en «Versión».
     func openDock(_ section: SubtitleDock.Section?, version: Bool = false) {
-        dockOpens = section
+        dockState.dockOpens = section
         withAnimation(DS.Motion.base(reduceMotion)) {
-            moreOpen = false; controlsVisible = false; dockPage = version ? .version : .media; subtitleDock = true
+            moreOpen = false; controlsVisible = false; dockState.dockPage = version ? .version : .media; dockState.subtitleDock = true
         }
     }
 
@@ -203,7 +203,7 @@ extension PlayerScreen {
 
     /// Sigue al teléfono, salvo con el bloqueo puesto.
     func followDevice() {
-        guard !locked else { return }
+        guard !padlock.locked else { return }
         Orientation.followDevice()
     }
 

@@ -48,9 +48,9 @@ struct PosterView: View {
         frame
             .overlay {
                 if let url = shownURL, let u = URL(string: url) {
-                    RemoteImage(url: u, maxPoints: maxPoints) { phase, size in
+                    RemoteImage(url: u, maxPoints: maxPoints) { phase, source in
                         switch phase {
-                        case .success(let image): filled(image, size: size)
+                        case .success(let image): filled(image, source: source, key: url)
                         case .failure where !primaryFailed && fallback != nil: placeholder.onAppear { primaryFailed = true }
                         default: placeholder
                         }
@@ -59,11 +59,12 @@ struct PosterView: View {
             }
     }
 
-    /// Llena el marco y se recorta; si la imagen es mucho más angosta que el marco (un póster en un lugar ancho), va completa
-    /// sobre su copia difuminada: se ve el póster entero, no una tira del medio (`ArtFit`).
-    private func filled(_ image: Image, size: CGSize?) -> some View {
+    /// Llena el marco y se recorta (hacia el sujeto si el recorte es grande, `FocusedFill`); si la imagen es mucho más angosta
+    /// que el marco (un póster en un lugar ancho), va completa sobre su copia difuminada: se ve el póster entero, no una tira
+    /// del medio (`ArtFit`).
+    private func filled(_ image: Image, source: UIImage?, key: String) -> some View {
         GeometryReader { box in
-            if let size, ArtFit.choose(image: size, box: box.size) == .whole {
+            if let size = source?.size, ArtFit.choose(image: size, box: box.size) == .whole {
                 ZStack {
                     image.resizable().scaledToFill().frame(width: box.size.width, height: box.size.height).clipped()
                         .blur(radius: DS.Image.wholeBlur, opaque: true).overlay(DS.scrim)
@@ -71,7 +72,7 @@ struct PosterView: View {
                 }
                 .frame(width: box.size.width, height: box.size.height)
             } else {
-                image.resizable().scaledToFill().frame(width: box.size.width, height: box.size.height)
+                FocusedFill(image: image, source: source, key: key, box: box.size)
             }
         }
     }
@@ -123,3 +124,47 @@ struct PosterCard: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+/// La imagen llenando su marco. Si el recorte es grande (un fondo 16:9 en un marco alto, un póster en la portada de la ficha),
+/// se corre hacia el sujeto (`FocalPoint`: caras, o lo que llama la atención) en vez de quedarse en el centro. Mientras lo busca
+/// (una fracción de segundo, una sola vez por imagen) no se ve: así no brinca de lugar.
+private struct FocusedFill: View {
+    let image: Image
+    let source: UIImage?
+    let key: String
+    let box: CGSize
+    @State private var focus: CGPoint?
+    @State private var gaveUp = false
+
+    var body: some View {
+        let size = source?.size ?? .zero
+        let needed = source != nil && ArtFit.needsFocus(image: size, box: box)
+        let point = focus ?? FocalPoint.cached(key)
+        let drawn = ArtFit.filled(image: size, box: box)
+        Group {
+            if needed {
+                image.resizable().frame(width: drawn.width, height: drawn.height)
+                    .offset(ArtFit.offset(image: size, box: box, focus: point ?? CGPoint(x: 0.5, y: 0.5)))
+                    .opacity(point == nil && !gaveUp ? 0 : 1)
+            } else {
+                image.resizable().scaledToFill()
+            }
+        }
+        .frame(width: box.width, height: box.height)
+        .task(id: key) {
+            guard needed, point == nil, let source else { return }
+            focus = await FocalPoint.find(source, key: key)
+        }
+        .task(id: key) {
+            guard needed, point == nil else { return }
+            try? await Task.sleep(for: DS.Image.focusWait)
+            gaveUp = true   // si tarda, al centro (y si lo encuentra después, se corre)
+        }
+    }
+}
+
+extension DS.Image {
+    /// Lo más que se espera a encontrar al sujeto antes de mostrar la imagen al centro.
+    static let focusWait: Duration = .milliseconds(350)
+}
+

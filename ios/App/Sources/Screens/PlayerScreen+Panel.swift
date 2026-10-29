@@ -11,9 +11,9 @@ extension PlayerScreen {
         GeometryReader { geo in
             let rect = videoRect(in: geo.size)
             let dock = Group {
-                if dockPage == .episodes { episodesPage(model) }
-                else if let syncLines { subtitleSyncView(model, lines: syncLines) }
-                else if dockPage == .version { versionPage(model) }
+                if dockState.dockPage == .episodes { episodesPage(model) }
+                else if let syncLines = dockState.syncLines { subtitleSyncView(model, lines: syncLines) }
+                else if dockState.dockPage == .version { versionPage(model) }
                 else {
                     // Si cabe, sin desplazarse ni rebotar (antes siempre iba en un ScrollView: en vertical se movía y al jalarlo
                     // hacia abajo parecía «actualizar»); solo si un renglón abierto ya no cabe, se desplaza.
@@ -22,7 +22,7 @@ extension PlayerScreen {
                         // Nunca más alto que el panel: un ScrollView toma todo el alto que le dan y la tarjeta quedaba arriba con
                         // espacio muerto abajo (con un video 4:3, al cambiar de versión o de subtítulos).
                         ScrollView { subtitleDockView(model) }.scrollBounceBehavior(.basedOnSize)
-                            .frame(maxHeight: landscape || dockNeed <= 0 ? .infinity : dockNeed)
+                            .frame(maxHeight: landscape || dockState.dockNeed <= 0 ? .infinity : dockState.dockNeed)
                     }
                 }
             }
@@ -32,13 +32,13 @@ extension PlayerScreen {
                 HStack {
                     Spacer()
                     VStack(spacing: DS.Space.s2) {
-                        if dockPage != .episodes { HStack(spacing: DS.Space.s2) {
-                            Picker(selection: Binding(get: { dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockPage = v ? .version : .media } })) {
+                        if dockState.dockPage != .episodes { HStack(spacing: DS.Space.s2) {
+                            Picker(selection: Binding(get: { dockState.dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = v ? .version : .media } })) {
                                 Text("Audio y subtítulos").tag(false)
                                 Text("Versión").tag(true)
                             } label: { Text("Ver") }
                             .pickerStyle(.segmented)
-                            Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
+                            Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
                                 .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
                         } }
                         dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
@@ -60,49 +60,49 @@ extension PlayerScreen {
                     .padding(.bottom, DS.Space.s2)
                     // Lo que mediría sin límite (invisible): cuánto debe subir el video.
                     .background(alignment: .top) {
-                        if dockPage != .episodes, syncLines == nil {
-                            Group { dockPage == .version ? AnyView(versionPage(model)) : AnyView(subtitleDockView(model)) }
+                        if dockState.dockPage != .episodes, dockState.syncLines == nil {
+                            Group { dockState.dockPage == .version ? AnyView(versionPage(model)) : AnyView(subtitleDockView(model)) }
                                 .fixedSize(horizontal: false, vertical: true)
                                 .frame(maxWidth: DS.PlayerPanel.dockWidth).padding(.horizontal, DS.Space.gutter)
                                 .hidden().allowsHitTesting(false).accessibilityHidden(true)
                                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in
-                                    withAnimation(DS.Motion.base(reduceMotion)) { dockNeed = h }
+                                    withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockNeed = h }
                                 }
                         }
                     }
             }
         }
-        .sheet(isPresented: $dockLanguages) {
+        .sheet(isPresented: $dockState.dockLanguages) {
             LanguageSearchList(codes: SubtitleLanguage.all, available: model.subtitleLanguages.filter { !["es", "en"].contains($0.code) },
                                name: { LanguageFlags.flagged(Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: SubtitleLanguage.code($0) ?? $0)?.capitalized ?? $0, SubtitleLanguage.code($0) ?? $0) }) { code in
                 Task { await model.chooseLanguage(code) }
             }
         }
-        .sheet(isPresented: $dockVersions) { subtitleVersionsSheet(model) }
+        .sheet(isPresented: $dockState.dockVersions) { subtitleVersionsSheet(model) }
         .task { await model.ensureSubtitleSearch() }
-        .onDisappear { syncLines = nil; syncResult = nil; syncPicked = nil }
+        .onDisappear { dockState.syncLines = nil; dockState.syncResult = nil; dockState.syncPicked = nil }
     }
 
     /// Las frases que vienen (según el tiempo del subtítulo, no el del video), congeladas para poder tocarlas con calma.
     func startSync(_ model: PlayerModel) {
         let engine = holder.engine
-        syncLines = engine.subtitleLines(from: engine.shownTime - model.subtitleDelay - Self.syncLookBack, count: 3)
-        syncPicked = nil; syncResult = nil
+        dockState.syncLines = engine.subtitleLines(from: engine.shownTime - model.subtitleDelay - Self.syncLookBack, count: 3)
+        dockState.syncPicked = nil; dockState.syncResult = nil
     }
     /// Unos segundos hacia atrás: la frase que ya empezó a sonar también se puede tocar.
     static let syncLookBack = 2.0
 
     func subtitleSyncView(_ model: PlayerModel, lines: [SubtitleLine]) -> some View {
-        SubtitleSyncView(lines: lines, picked: syncPicked, result: syncResult,
+        SubtitleSyncView(lines: lines, picked: dockState.syncPicked, result: dockState.syncResult,
                          pick: { line in
                              // La oíste ahora: el subtítulo tenía que salir en este cuadro.
                              model.setSubtitleDelay(holder.engine.shownTime - line.start)
-                             syncPicked = line.start
-                             withAnimation(DS.Motion.base(reduceMotion)) { syncResult = model.subtitleDelay }
+                             dockState.syncPicked = line.start
+                             withAnimation(DS.Motion.base(reduceMotion)) { dockState.syncResult = model.subtitleDelay }
                          },
-                         confirm: { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { syncLines = nil } },
+                         confirm: { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.syncLines = nil } },
                          again: { withAnimation(DS.Motion.base(reduceMotion)) { startSync(model) } },
-                         back: { withAnimation(DS.Motion.base(reduceMotion)) { syncLines = nil } },
+                         back: { withAnimation(DS.Motion.base(reduceMotion)) { dockState.syncLines = nil } },
                          compact: landscape, language: env.services.appSettings.uiLanguage)
     }
 
@@ -135,7 +135,7 @@ extension PlayerScreen {
             }
             .navigationTitle(Text(verbatim: String(format: Strings.tr("%@ · %lld versiones", language: uiLanguage), name, versions.count)))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dockVersions = false } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dockState.dockVersions = false } } }
         }
         .presentationDetents([.medium, .large])
         .presentationBackgroundInteraction(.enabled(upThrough: .medium))
@@ -230,10 +230,10 @@ extension PlayerScreen {
             otherVersions: others, pickVersion: { id in if let n = Int(id) { pickSource(n, model, language: otherLanguage[id]) } },
             languages: languages,
             pickLanguage: { code in Task { if code.isEmpty { await model.selectSubtitle(nil) } else { await pickSubtitleLanguage(code, model) } } },
-            otherLanguage: { dockLanguages = true },
+            otherLanguage: { dockState.dockLanguages = true },
             version: version, loading: at == nil && !off, canStep: versions.count > 1,
             previous: { step(-1) }, next: { step(1) },
-            allVersions: { dockVersions = true },
+            allVersions: { dockState.dockVersions = true },
             check: check, confirm: { model.confirmInSync() },
             tryAnother: versions.count > 1 ? { Task { await model.tryAnotherVersion() } } : nil,
             tried: tried,
@@ -242,13 +242,13 @@ extension PlayerScreen {
             sync: canSync ? { withAnimation(DS.Motion.base(reduceMotion)) { startSync(model) } } : nil,
             sizeName: sizeNames[sizeAt],
             smaller: sizeAt > 0 ? { setSize(sizeAt - 1) } : nil, larger: sizeAt < 2 ? { setSize(sizeAt + 1) } : nil,
-            done: { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false } },
+            done: { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false } },
             compact: false, language: settings.uiLanguage,
             audioValue: currentAudio, subtitleValue: subtitleValue,
-            videoVersion: videoVersionText(model), openVersion: model.sourceChoices.count > 1 ? { withAnimation(DS.Motion.base(reduceMotion)) { dockPage = .version } } : nil,
+            videoVersion: videoVersionText(model), openVersion: model.sourceChoices.count > 1 ? { withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = .version } } : nil,
             showsHeader: !landscape,
             offlineNote: model.subtitlesOffline ? tr(current.localFile != nil ? "Sin conexión: solo los subtítulos del video y los guardados con la descarga." : "Sin conexión: solo los subtítulos del video.") : nil,
-            open: $dockOpens)
+            open: $dockState.dockOpens)
     }
 
     /// Tocar un idioma: pone su mejor versión; si no hay (sin red, o no existe), lo dice en vez de quedarse callado.
@@ -275,9 +275,9 @@ extension PlayerScreen {
     func pickSource(_ index: Int, _ model: PlayerModel, language: String? = nil) {
         guard index != model.source?.index else { return }
         if let src = model.sourceChoices.first(where: { $0.index == index }), !src.cached, src.debrid {
-            slowPick = index; return
+            dockState.slowPick = index; return
         }
-        withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media }
+        withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media }
         Task { await model.switchSource(to: index, language: language) }
     }
 
@@ -293,19 +293,19 @@ extension PlayerScreen {
             // En horizontal ya lo dice la pestaña de arriba (y se vuelve con ella).
             if !landscape {
                 HStack(spacing: DS.Space.s2) {
-                    Button { withAnimation(DS.Motion.base(reduceMotion)) { dockPage = .media } } label: { Image(systemName: "chevron.left") }
+                    Button { withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = .media } } label: { Image(systemName: "chevron.left") }
                         .buttonStyle(.glass).accessibilityLabel(Text("Atrás")).accessibilityIdentifier("version-back")
                     Text("Versión").recipe(.cardTitle)
                     Spacer()
                 }
             }
-            Picker(selection: $versionShowsAll) {
+            Picker(selection: $dockState.versionShowsAll) {
                 Text("Por idioma").tag(false)
                 Text("Todas las fuentes").tag(true)
             } label: { Text("Ver") }
             .pickerStyle(.segmented)
             ScrollView {
-                if versionShowsAll {
+                if dockState.versionShowsAll {
                     AllSourcesList(sources: model.sourceChoices, current: model.source?.index, currentIsPlaying: true,
                                    primary: ("Cambiar a esta", { pickSource($0.index, model) }), secondary: nil, uiLanguage: ui, prefs: prefs)
                 } else {
@@ -349,18 +349,18 @@ extension PlayerScreen {
     /// Un aviso breve arriba del video (sin tapar los controles), que VoiceOver también dice.
     func toast(_ text: String) async {
         if topNoticesAreWaiting {
-            heldNotices.hold(.subtitle(text), key: QueuedNoticeKey.subtitle)
+            notices.heldNotices.hold(.subtitle(text), key: QueuedNoticeKey.subtitle)
             return
         }
         await revealSubtitle(text)
     }
 
     func revealSubtitle(_ text: String) async {
-        withAnimation(DS.Motion.base(reduceMotion)) { subtitleToast = text }
+        withAnimation(DS.Motion.base(reduceMotion)) { notices.subtitleToast = text }
         UIAccessibility.post(notification: .announcement, argument: text)
         try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
         guard !Task.isCancelled else { return }
-        withAnimation(DS.Motion.base(reduceMotion)) { if subtitleToast == text { subtitleToast = nil } }
+        withAnimation(DS.Motion.base(reduceMotion)) { if notices.subtitleToast == text { notices.subtitleToast = nil } }
     }
 
     /// «Español · 3 de 7» y por qué está esa versión («WEB-DL · coincide con tu copia», «Del video»…); nil sin subtítulos.
@@ -417,16 +417,31 @@ extension PlayerScreen {
         }
     }
 
-    /// Retroceder, el botón grande y adelantar (solo cuando ya hay video: mientras busca fuente no hacen nada).
+    /// El botón grande (solo cuando ya hay video: mientras busca fuente no hace nada). ±10 ya no va a su lado: vive en las
+    /// orillas del video (`skipLayer`), donde también cae el doble toque.
     func transport(_ model: PlayerModel) -> some View {
-        HStack(spacing: DS.Space.s8) {
-            SkipButton(forward: false) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
-            // Cargando: la animación va dentro del botón grande, en el mismo punto que sin controles (LoadingSpinner).
-            PlayPauseButton(playing: presentation.showsPlaying, loading: presentation.showsLoading) {
-                userTogglePlay(model); pulse()
-            }
-            SkipButton(forward: true) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
+        // Cargando: la animación va dentro del botón grande, en el mismo punto que sin controles (LoadingSpinner).
+        PlayPauseButton(playing: presentation.showsPlaying, loading: presentation.showsLoading) {
+            userTogglePlay(model); pulse()
         }
+    }
+
+    /// ±10 s en las orillas del video: la misma pieza para el botón y para el doble toque (antes el botón iba junto al botón
+    /// grande y la onda salía en la orilla, dos cosas para una sola acción). Cada tercio del video es su zona: tocar la pieza o
+    /// doble toque ahí suman igual (`skip`), y la onda con lo sumado sale detrás de ella. Con los controles escondidos solo se ve
+    /// mientras dura el salto.
+    func skipLayer(_ model: PlayerModel, shown: Bool) -> some View {
+        GeometryReader { geo in
+            let rect = videoRect(in: geo.size)
+            let side = rect.width * DS.Gesture.edgeShare
+            ForEach([false, true], id: \.self) { forward in
+                let seconds = skipChain.flatMap { $0.forward == forward ? $0.seconds : nil }
+                DSSkipControl(forward: forward, seconds: seconds, shown: shown) { skip(model, forward: forward); pulse() }
+                    .frame(width: side, height: rect.height)
+                    .position(x: forward ? rect.maxX - side / 2 : rect.minX + side / 2, y: rect.midY)
+            }
+        }
+        .ignoresSafeArea(edges: landscape ? .all : [])
     }
 
     func scrubber(_ model: PlayerModel) -> some View {

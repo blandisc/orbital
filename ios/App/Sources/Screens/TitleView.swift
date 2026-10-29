@@ -180,7 +180,7 @@ struct TitleView: View {
     private func hero(_ model: TitleModel) -> some View {
         BleedArt(url: model.background ?? model.poster, title: model.title,
                  aspect: heroAspect, collapse: Backdrop.tone(tint.colors, scheme: scheme) ?? DS.bg,
-                 fallback: model.background == nil ? nil : model.poster) {
+                 fallback: model.background == nil ? nil : model.poster, tall: TallArtKey(imdb: model.metaID, kind: model.kind)) {
             VStack(spacing: DS.Space.s2) {
                 TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, centered: true)
                     .containerRelativeFrame(.horizontal) { width, _ in width * DS.TitleAction.logoWidth }

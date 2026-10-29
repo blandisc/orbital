@@ -25,6 +25,8 @@ public final class Services: ObservableModel {
     public let oneDriveLibrary: OneDriveLibrary
     public private(set) var cinemeta: Cinemeta { didSet { changed() } }
     public private(set) var localizer: Localizer { didSet { changed() } }
+    /// El póster sin texto de cada título, para los marcos altos (`TallArt`); la clave de TMDB se lee en cada consulta.
+    public let tallArt: TallArt
     /// IntroDB: dónde saltar la intro y el resumen (y cuándo empiezan los créditos).
     public var introDB: IntroDB { IntroDB(http: http, recent: introDBRecent, store: kv) }
     private let introDBRecent = IntroDBRecent()
@@ -142,6 +144,7 @@ public final class Services: ObservableModel {
         self.oneDrive = oneDrive; self.oneDriveLibrary = oneDriveLibrary
         let tmdb = Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX")
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
+        self.tallArt = TallArt(tmdb: { Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX") }, clock: clock, store: kv)
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, builtIn: builtInTraktClientID, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),

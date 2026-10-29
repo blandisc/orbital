@@ -496,6 +496,8 @@ private struct MosaicColumnLayer: View, Equatable {
 /// Una pieza del mosaico: su arte (portada o ancho), el ícono de su esquina, y si está enfocada, su
 /// etiqueta, el logo del título (o su nombre si no carga) y un dato de una línea.
 private struct MosaicTileCell: View {
+    @Environment(\.locale) private var locale
+    private var language: String { locale.language.languageCode?.identifier ?? "es" }
     let tile: MosaicTile
     let focused: Bool
     let dimmed: Bool
@@ -560,7 +562,7 @@ private struct MosaicTileCell: View {
                     if !inWatchlist, let platform = tile.item.platformName { PlatformBadge(name: platform) } else { DSBadge(text: inWatchlist ? "En tu watchlist" : badgeKey(tile.item.reason)) }
                     TitleLogo(url: tile.item.logo, title: tile.item.title)
                     ViewThatFits(in: .horizontal) {   // si no cabe, se quitan partes del medio antes de cortar
-                        ForEach(Array(factVariants(tile.item).enumerated()), id: \.offset) { _, text in text.lineLimit(1).fixedSize(horizontal: true, vertical: false) }
+                        ForEach(Array(factVariants(tile.item, language: language).enumerated()), id: \.offset) { _, text in text.lineLimit(1).fixedSize(horizontal: true, vertical: false) }
                     }
                     .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                 }

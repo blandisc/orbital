@@ -63,17 +63,6 @@ struct PlayerScreen: View {
     /// Cuándo fue el último toque de un dedo y el último de dos (para que uno de dos dedos no mueva también los controles).
     @State var singleTapAt = Date.distantPast
     @State var twoFingerTapAt = Date.distantPast
-    /// «Bloquear» (como Netflix): sin controles y la pantalla no responde a toques ni deslizamientos (para no pausar o adelantar
-    /// sin querer). Un toque enseña la cápsula de arriba con «Desbloquear».
-    @State var locked = false
-    /// La cápsula de «Pantalla bloqueada» (arriba). `showsUnlock`: tras un toque, con el botón. `collapsed`: ya es el
-    /// círculo del candado. `risen`: sube y se desvanece. `generation` descarta un cierre si llegó otro aviso.
-    @State var lockNoticeVisible = false
-    @State var lockNoticeShowsUnlock = false
-    @State var lockNoticeCollapsed = false
-    @State var lockNoticeRisen = false
-    @State var lockNoticeGeneration = 0
-    @State var unlockHide: Task<Void, Never>?
     @State var hideTask: Task<Void, Never>?
     /// El «⋯» de la barra horizontal abierto: mientras está, los controles no se esconden (si no, se cerraba solo).
     @State var moreOpen = false
@@ -103,28 +92,9 @@ struct PlayerScreen: View {
     /// en que empezó (se quedaba en «segundo plano» para siempre y el cuadro guardado no se quitaba).
     @State var appActive = true
     @State var lastNotch: Date?
-    /// El zoom del video (botón de arriba y pellizco, como Infuse); se recuerda en ajustes. `zoomToast`: el aviso con su nombre.
-    /// El zoom de cada sentido: el de horizontal se recuerda (Ajustes); el de vertical arranca siempre en el cuadro completo. Antes
-    /// era uno solo y al volver de horizontal con «Llenar» el video quedaba en vertical a pantalla completa, recortado.
-    @State var landscapeZoom: VideoZoom = .fit
-    @State var portraitZoom: VideoZoom = .fit
-    /// Cuándo cambió el sentido: un pellizco que termina justo después (los pulgares al girar) no cuenta.
-    @State var rotatedAt = Date.distantPast
-    @State var pinchStartedAt: Date?
-    @State var zoomBeforePinch: (zoom: VideoZoom, at: Date)?
     #if DEBUG
-    @State var lastPinch = 0.0
     #endif
-    var zoom: VideoZoom { landscape ? landscapeZoom : portraitZoom }
-    @State var zoomToast: VideoZoom?
-    /// «Subtítulos desactivados» o «Español · 1 de 4», un momento, al apagar o prender con el botón.
-    @State var subtitleToast: String?
-    /// Lo que pasó al pedir «Descargar» (el mismo aviso que en el resto de la app, arriba: abajo están los controles).
-    @State var notice: PlayerNotice?
-    /// Avisos que llegaron con la cápsula del candado en pantalla. Salen, en orden, cuando esa cápsula se va.
-    @State var heldNotices = HeldNotices<QueuedNotice>()
-    @State var heldDrain: Task<Void, Never>?
-    @State var heldDrainGeneration = 0
+    var zoom: VideoZoom { landscape ? framing.landscapeZoom : framing.portraitZoom }
     struct PlayerNotice: Equatable {
         var title: String, detail: String?, tone: DSNotice.Tone
         var showsDownloads = false
@@ -140,28 +110,8 @@ struct PlayerScreen: View {
         case zoom(VideoZoom)
     }
     enum QueuedNoticeKey: Hashable { case subtitle, zoom }
-    /// Subtítulos rápidos (el panel chico sobre el video) y su lista de idiomas.
-    @State var subtitleDock = false
     /// La hoja «Audio y subtítulos» tiene dos páginas: lo de siempre y «Versión» (por idioma o todas las fuentes).
     enum DockPage { case media, version, episodes }
-    @State var dockPage: DockPage = .media
-    /// Las temporadas de la serie que suena, para «Episodios» (se leen al abrirlo: son cientos de episodios).
-    @State var episodeSeasons: [Season] = []
-    /// Viendo un archivo descargado, los episodios que también están bajados (los demás no se pueden poner).
-    @State var playableEpisodes: Set<String>?
-    @State var dockOpens: SubtitleDock.Section? = .subtitles
-    @State var versionShowsAll = false
-    /// Una versión que Real-Debrid aún no tiene: se pregunta antes de abrirla (puede tardar o no abrir).
-    @State var slowPick: Int?
-    /// Lo que mide la hoja (para que en vertical ocupe lo suyo y, si no cabe, se recorra).
-    @State var dockLanguages = false
-    /// «Todas las versiones» desde el panel chico: media hoja (el video sigue a la vista arriba).
-    @State var dockVersions = false
-    /// «Sincronizar con una línea»: las frases congeladas (nil: no está abierto), la que tocaste y el ajuste que quedó.
-    @State var syncLines: [SubtitleLine]?
-    @State var syncPicked: Double?
-    @State var syncResult: Double?
-    @State var zoomToastTask: Task<Void, Never>?
     /// Cuántas veces se ha visto «Arrastra para mover» junto a la agarradera (se deja de decir después de unas pocas).
     @AppStorage("player-move-hint-seen") var moveHintSeen = 0
     /// En esta función se dice (se decide al abrir, para que no aparezca y desaparezca a media película).
@@ -173,8 +123,10 @@ struct PlayerScreen: View {
     @State var requestedVolume: Float?
     /// El estado del arrastre (brillo, volumen, buscar, 2×), aparte de la pantalla: `PlayerDragState`.
     @State var drag = PlayerDragState()
-    /// El ícono que aparece un momento al centro tras un doble toque (pausa, ±10 s).
-    @State var flashSymbol: String?
+    @State var padlock = PlayerLockState()
+    @State var framing = PlayerZoomState()
+    @State var dockState = PlayerDockState()
+    @State var notices = PlayerNoticeState()
     /// Dobles toques en una orilla: cuántos segundos llevan sumados y de qué lado (la burbuja va de ese lado).
     @State var skipChain: (forward: Bool, seconds: Int, at: Date)?
     @State var skipChainTask: Task<Void, Never>?
@@ -182,7 +134,6 @@ struct PlayerScreen: View {
     @State var skipEdgeHaptic = 0
     /// ×2: lo que lleva el anillo al deslizar hacia abajo, antes de quedarse fijo.
     @State var fastForwardProgress: Double = 0
-    @State var flashTask: Task<Void, Never>?
     /// Lo que mide la tarjeta de «Siguiente episodio» (para subir los subtítulos sobre ella).
     @State var upNextHeight: CGFloat = 0
     @State var rateBeforeFastForward: Float = 1
@@ -191,8 +142,6 @@ struct PlayerScreen: View {
     var current: PlayRequest { holder.model.request ?? request }
     @State var knownAspect: Double?
     @State var aspectTitle: String?
-    /// El alto que pide «Audio y subtítulos» en vertical (para subir el video lo justo y que quepa sin desplazarse).
-    @State var dockNeed: CGFloat = 0
     /// Lo que enseña el botón grande (la carga o el play/pausa): una sola regla, probada en `PlayerPresentationTests`.
     @State var presentation = PlayerPresentation()
     @State var controlsHiddenAt = Date.distantPast
@@ -223,7 +172,7 @@ struct PlayerScreen: View {
                         // quedaba a media imagen).
                         holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, speedPill: speedPillVisible && landscape, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
                             // Con la tarjeta de «Siguiente episodio» (abajo a la derecha, en horizontal) la línea sube sobre ella.
-                            .offset(y: landscape && model.upNext != nil && !locked && !subtitleDock ? -(upNextHeight + DS.Space.s6) : 0)
+                            .offset(y: landscape && model.upNext != nil && !padlock.locked && !dockState.subtitleDock ? -(upNextHeight + DS.Space.s6) : 0)
                             .transition(.opacity)
                     }
                 }
@@ -251,7 +200,7 @@ struct PlayerScreen: View {
             }
             .ignoresSafeArea(edges: landscape ? .all : [])   // en vertical el video respeta la isla y el indicador de inicio
             .onGeometryChange(for: CGSize.self) { $0.size } action: { layoutSize = $0 }
-            if locked { lockLayer } else { gestureLayer(model) }
+            if padlock.locked { lockLayer } else { gestureLayer(model) }
             SystemVolumeControl(volume: $requestedVolume)
                 .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
                 .allowsHitTesting(false).accessibilityHidden(true)
@@ -271,7 +220,7 @@ struct PlayerScreen: View {
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
             // Abriendo, la barra de arriba (✕ para salir) siempre se ve: antes un toque la escondía y no había cómo cancelar.
-            let controlsShown = (controlsVisible || model.phase == .preparing) && !locked && !failed(model) && !subtitleDock && ipod == nil
+            let controlsShown = (controlsVisible || model.phase == .preparing) && !padlock.locked && !failed(model) && !dockState.subtitleDock && ipod == nil
             // Los controles y ±10/botón grande en UN solo bloque con una sola transición: antes eran dos y, si el giro o el
             // ocultamiento caían a la vez, podía quedar el ±10 flotando sin las barras.
             if controlsShown {
@@ -289,18 +238,20 @@ struct PlayerScreen: View {
                 }
                 .transition(.opacity)
             }
+            // ±10 en las orillas del video, con o sin controles (sin ellos, solo mientras dura el salto del doble toque).
+            if model.phase != .preparing, !padlock.locked, !failed(model), !dockState.subtitleDock, ipod == nil { skipLayer(model, shown: controlsShown) }
             // Encima de los controles: en horizontal sobre la barra; en vertical, al pie (o sobre la barra si «Recortar»).
             if speedPillVisible { speedPill.transition(.opacity) }
             // El iPod no se esconde (es el aparato): con la pantalla bloqueada se ve pero no se toca.
             if let face = ipod, !failed(model) { ipodChrome(model, face: face).transition(.opacity) }
-            if (controlsShown || (ipod != nil && !locked)) && moreOpen { moreLayer(model) }
-            if subtitleDock && !locked { subtitleDockLayer(model).transition(.move(edge: .bottom).combined(with: .opacity)) }
+            if (controlsShown || (ipod != nil && !padlock.locked)) && moreOpen { moreLayer(model) }
+            if dockState.subtitleDock && !padlock.locked { subtitleDockLayer(model).transition(.move(edge: .bottom).combined(with: .opacity)) }
             // «Saltar intro» no depende de los controles (se esconden a los pocos segundos y con ellos se iba el botón):
             // con los controles escondidos queda solo, abajo a la derecha, como en Netflix o Infuse. Con los controles a la
             // vista (en pausa, o con la ventana de PiP afuera) ya va dentro de ellos: antes salía dos veces.
             // En vertical va justo debajo del video, a la derecha (donde sale con los controles); antes quedaba al pie de la
             // pantalla, lejos de la imagen. Con un error a la vista, no.
-            else if !controlsShown && !locked && ipod == nil && !failed(model) && model.skipIntroTo != nil {
+            else if !controlsShown && !padlock.locked && ipod == nil && !failed(model) && model.skipIntroTo != nil {
                 if landscape {
                     VStack { Spacer(); HStack { Spacer(); skipIntro(model) } }.padding(DS.Space.s6).transition(.opacity)
                 } else {
@@ -315,7 +266,7 @@ struct PlayerScreen: View {
             // Bloqueado no se ve (ni se toca): si llega a cero, pasa solo al siguiente. En vertical va entre el video y la barra
             // (dentro de los controles, o sola si están escondidos); en horizontal, abajo a la derecha sobre la barra.
             // Con el panel de subtítulos abierto, tampoco: se encimaba sobre él (sale al cerrarlo, si aún falta).
-            if let up = model.upNext, !locked, !subtitleDock {
+            if let up = model.upNext, !padlock.locked, !dockState.subtitleDock {
                 if landscape {
                     VStack { Spacer(); HStack { Spacer(); upNextCard(model, up).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { upNextHeight = $0 } } }
                         .padding(.horizontal, DS.Space.s6)
@@ -368,9 +319,9 @@ struct PlayerScreen: View {
             drag.originalBrightness = ScreenBrightness.value
             // `begin` va aparte: el plazo de arranque (45 s) tiene que seguir corriendo mientras carga.
             let engine = holder.engine
-            landscapeZoom = VideoZoom(stored: env.services.appSettings.videoZoom)
+            framing.landscapeZoom = VideoZoom(stored: env.services.appSettings.videoZoom)
             #if DEBUG
-            if Demo.isOn, let raw = Demo.value(after: "-demo-zoom") { landscapeZoom = VideoZoom(stored: raw); portraitZoom = VideoZoom(stored: raw) }   // `-demo-zoom fill`: para capturas
+            if Demo.isOn, let raw = Demo.value(after: "-demo-zoom") { framing.landscapeZoom = VideoZoom(stored: raw); framing.portraitZoom = VideoZoom(stored: raw) }   // `-demo-zoom fill`: para capturas
             if Demo.isOn, let face = Demo.value(after: "-demo-ipod") { ipodFace = face == "off" ? "" : face }   // `-demo-ipod black`
             #endif
             pip.onActiveChange = { engine.setPictureInPictureActive($0) }
@@ -385,7 +336,7 @@ struct PlayerScreen: View {
                     case "dock", "subtitles": openDock(.subtitles)
                     case "audio": openDock(.audio)
                     case "version": openDock(nil, version: true)
-                    case "subtitle-versions": openDock(.subtitles); dockVersions = true   // todas las versiones del idioma puesto
+                    case "subtitle-versions": openDock(.subtitles); dockState.dockVersions = true   // todas las versiones del idioma puesto
                     case "episodes": openEpisodes(model)   // `-demo-player episodes`: la lista de episodios
                     case "near-end": await model.seek(to: model.snapshot.duration * 0.92); hideTask?.cancel(); controlsVisible = true   // con «Siguiente» a la vista
                     case "close": await close()
@@ -399,7 +350,7 @@ struct PlayerScreen: View {
                 }
                 if Demo.isOn, let state = Demo.playerState {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
-                    if state == "locked" { lock() } else { model.demoState(state) }
+                    if state == "padlock.locked" { lock() } else { model.demoState(state) }
                 }
                 if Demo.isOn, let gesture = Demo.gesture {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
@@ -497,37 +448,37 @@ struct PlayerScreen: View {
         // El motor recibe el zoom desde un solo lugar: cada vez que cambia el de este sentido (al girar, al pellizcar, desde el «⋯»).
         .onChange(of: zoom, initial: true) { holder.engine.setZoom(zoom) }
         .onChange(of: landscape) {
-            PlayerModel.note("giro a \(landscape ? "horizontal" : "vertical") (zoom vertical era \(portraitZoom.rawValue))")
-            rotatedAt = Date()
+            PlayerModel.note("giro a \(landscape ? "horizontal" : "vertical") (zoom vertical era \(framing.portraitZoom.rawValue))")
+            framing.rotatedAt = Date()
             // Vertical vuelve siempre al cuadro completo al girar: si algo puso «Recortar» sin querer (un pellizco al sujetar el
             // teléfono), el giro lo deshace.
-            portraitZoom = .fit
+            framing.portraitZoom = .fit
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: DS.Timing.rotationSettle)
                 holder.engine.setZoom(zoom)
             }
         }
         .task(id: pendingSeek) { if pendingSeek != nil { try? await Task.sleep(nanoseconds: DS.Timing.seekPatience); pendingSeek = nil } }
-        .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
+        .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !padlock.locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
         .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
         // Una versión que Real-Debrid aún no tiene: la verdad antes de abrirla (puede tardar u horas; si manda su aviso, se vuelve).
-        .confirmationDialog(Text("Real-Debrid aún no tiene esta versión"), isPresented: Binding(get: { slowPick != nil }, set: { if !$0 { slowPick = nil } }), titleVisibility: .visible) {
+        .confirmationDialog(Text("Real-Debrid aún no tiene esta versión"), isPresented: Binding(get: { dockState.slowPick != nil }, set: { if !$0 { dockState.slowPick = nil } }), titleVisibility: .visible) {
             Button("Abrirla de todos modos") {
-                if let index = slowPick { withAnimation(DS.Motion.base(reduceMotion)) { subtitleDock = false; dockPage = .media }; Task { await model.switchSource(to: index) } }
-                slowPick = nil
+                if let index = dockState.slowPick { withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media }; Task { await model.switchSource(to: index) } }
+                dockState.slowPick = nil
             }
-            Button("Mejor no", role: .cancel) { slowPick = nil }
+            Button("Mejor no", role: .cancel) { dockState.slowPick = nil }
         } message: { Text("Empieza a bajarla y puede tardar minutos u horas. Si manda su aviso de «descargando», vuelves a la que ves en el mismo punto.") }
         .alert("¿Sigues viendo?", isPresented: Binding(get: { model.stillWatchingPrompt }, set: { _ in })) {
             Button("Seguir") { Task { await model.confirmStillWatching() } }
             Button("Salir", role: .cancel) { Task { await close() } }
         } message: { Text("Llevas tres episodios seguidos.") }
         // Con «Audio y subtítulos» abierto la tarjeta de «Siguiente» no se ve: su cuenta se detiene (no cambia de episodio a escondidas).
-        .onChange(of: subtitleDock) { _, open in
+        .onChange(of: dockState.subtitleDock) { _, open in
             holder.model.panelOpen = open
             // Al cerrarlo se olvida su medida: al volver a abrirlo (quizá en otra página) el video ya no se acomodaba primero a la
             // medida vieja y luego brincaba a la nueva.
-            if !open { dockNeed = 0 }
+            if !open { dockState.dockNeed = 0 }
         }
         // Girar el teléfono gira el video: el aviso de giro del sistema no llega con el candado de rotación puesto,
         // así que con el candado el video se queda como abrió. Con «Bloquear» se ignora.
@@ -536,16 +487,19 @@ struct PlayerScreen: View {
         }
         // El teclado y la barra de menús (iPad, Mac): las mismas acciones que los botones; con «Bloquear» no hacen nada.
         .focusedSceneValue(\.playerCommands, PlayerCommands(
-            togglePlay: { if !locked { userTogglePlay(holder.model) } },
-            skip: { forward in if !locked { skip(holder.model, forward: forward) } },
-            openDock: { if !locked { openDock(nil) } },
-            close: { if !locked { Task { await close() } } }))
+            togglePlay: { if !padlock.locked { userTogglePlay(holder.model) } },
+            skip: { forward in if !padlock.locked { skip(holder.model, forward: forward) } },
+            openDock: { if !padlock.locked { openDock(nil) } },
+            close: { if !padlock.locked { Task { await close() } } }))
         .onDisappear {
+            // Quitado de la pantalla sin cerrarse (otra pantalla lo reemplazó): el video no sigue sonando por detrás (29 oct: dos
+            // episodios de Los Simpson a la vez). `close` no hace nada si ya se cerró.
+            if !finished { let model = holder.model; Task { await model.close() } }
             Orientation.endDeviceNotifications()
             UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait()
             ScreenBrightness.value = drag.originalBrightness   // el brillo es del sistema: no se queda en lo que dejó el gesto
             // Ningún reloj de la pantalla sigue vivo al cerrar (antes retenían el motor y podían escribir avisos tarde).
-            for task in [hideTask, frozenTask, zoomToastTask, drag.indicatorHideTask, skipChainTask, flashTask] { task?.cancel() }
+            for task in [hideTask, frozenTask, framing.zoomToastTask, drag.indicatorHideTask, skipChainTask, notices.flashTask] { task?.cancel() }
             presentation.cancel()
         }
     }

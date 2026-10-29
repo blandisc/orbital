@@ -6,41 +6,14 @@ import OrbitalModels
 /// Lo que se hace con un título desde un póster o una tarjeta (Inicio, Para ti, «¿Qué vemos?», «Desde la TV»):
 /// ver, guardar, quitar, marcar como vista y descargar, con sus avisos y «Deshacer».
 extension AppEnvironment {
+    typealias SeriesStart = TitleActions.SeriesStart
+    func videoID(for s: Suggestion) -> String { titles.videoID(for: s) }
+    func seriesStart(_ s: Suggestion) async -> SeriesStart? { await titles.seriesStart(s) }
     /// Un título desde Inicio: reproduce directo donde ibas.
     func play(_ item: HomeItem) async {
         var label = ""
         if let episode = item.episode { label = Strings.episode(season: item.season, episode: episode, language: services.appSettings.uiLanguage) }
         await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.originalTitle, episodeLabel: label, poster: item.poster)
-    }
-
-    /// El video de una sugerencia: el episodio en curso, la película, o el primer episodio de una serie sin avance.
-    func videoID(for s: Suggestion) -> String {
-        if let next = s.next { return "\(s.imdb):\(next.season):\(next.episode)" }
-        return s.kind == "movie" ? s.imdb : "\(s.imdb):1:1"
-    }
-
-    /// Por dónde empieza una serie sugerida: el capítulo en que vas según Stremio (el mismo que «Continuar» de la ficha); si no
-    /// la has empezado, el que trae la sugerencia o el primero de verdad (no «1:1» a ciegas: hay series sin temporada 1).
-    struct SeriesStart {
-        var metaID: String, videoID: String, season: Int?, episode: Int?
-        /// Ibas a medias en ese capítulo: «Continuar T2 E5» en vez de «Ver T2 E5».
-        var isResume: Bool
-        var meta: JSON
-    }
-
-    func seriesStart(_ s: Suggestion) async -> SeriesStart? {
-        let watch = services.watch, id = s.imdb
-        async let raw = watch.rawItem(metaID: id)
-        guard let meta = try? await services.cinemeta.meta(kind: s.kind, id: s.imdb) else { return nil }
-        let seasons = CinemetaParsing.seasons(meta), mine = await raw
-        let state = StremioLibrary.state(of: mine)
-        let current = state["video_id"]?.nonEmptyString
-        let suggested = s.next.map { "\(s.imdb):\($0.season):\($0.episode)" }
-        guard let video = current != nil ? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, raw: mine, seasons: seasons)
-                                         : suggested ?? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, raw: nil, seasons: seasons) else { return nil }
-        let numbers = StremioLibrary.episodeNumbers(videoID: video, metaID: s.imdb)
-        return SeriesStart(metaID: s.imdb, videoID: video, season: numbers.season, episode: numbers.episode,
-                           isResume: current == video && asInt(state["timeOffset"]) > 1, meta: meta)
     }
 
     /// «Ver» desde Para ti o «¿Qué vemos?»: reproduce donde ibas (o desde el principio); una serie, por `seriesStart` (si ya se
@@ -60,28 +33,13 @@ extension AppEnvironment {
     /// «Guardar» desde el menú de un póster: lo mismo que un toque en «Guardar» de la ficha — a la lista por omisión
     /// (`SaveDestination`: tu watchlist con Trakt, si no Mi lista), con un aviso que se deshace.
     func save(_ s: Suggestion) async {
-        let destination = SaveDestination.preferred(traktLinked: services.trakt?.linked ?? false, metaID: s.imdb)
+        let destination = titles.preferredDestination(for: s)
         do {
-            try await setSaved(s, in: destination, add: true)
-            notify(saved: destination, undo: true) { [weak self] in Task { try? await self?.setSaved(s, in: destination, add: false) } }
+            try await titles.setSaved(s, in: destination, add: true)
+            notify(saved: destination, undo: true) { [weak self] in Task { try? await self?.titles.setSaved(s, in: destination, add: false) } }
         } catch {
             let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar tu lista de Stremio"
             notify(failure, detail: "\(error)", tone: .warn)   // la causa, traducida
-        }
-    }
-
-    /// Pone o quita un póster de una de las listas fijas. Trakt sin conexión: queda pendiente en el iPhone (como en la ficha).
-    private func setSaved(_ s: Suggestion, in destination: SaveDestination, add: Bool) async throws {
-        switch destination {
-        case .stremioLibrary:
-            try await services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: add)
-        case .traktWatchlist:
-            guard let trakt = services.trakt else { return }
-            do { try await trakt.setWatchlist(imdb: s.imdb, series: s.kind == "series", add: add) }
-            catch where TraktOutbox.retryable(error) {
-                services.traktOutbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: s.imdb, series: s.kind == "series", add: add))
-            }
-            await services.forYou.clearCache()
         }
     }
 
@@ -90,10 +48,10 @@ extension AppEnvironment {
     func remove(_ s: Suggestion, from destination: SaveDestination, shown: @escaping (Bool) -> Void) async {
         shown(false)
         do {
-            try await setSaved(s, in: destination, add: false)
+            try await titles.setSaved(s, in: destination, add: false)
             notify(removed: destination) { [weak self] in
                 shown(true)
-                Task { try? await self?.setSaved(s, in: destination, add: true) }
+                Task { try? await self?.titles.setSaved(s, in: destination, add: true) }
             }
         } catch {
             shown(true)
@@ -107,10 +65,10 @@ extension AppEnvironment {
     func removeFavorite(_ s: Suggestion) async {
         FavoriteChange.post(s, add: false)
         do {
-            try await setFavorite(s, add: false)
+            try await titles.setFavorite(s, add: false)
             notify("Quitada de tus favoritos", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { [weak self] in
                 FavoriteChange.post(s, add: true)
-                Task { try? await self?.setFavorite(s, add: true) }
+                Task { try? await self?.titles.setFavorite(s, add: true) }
             }
         } catch {
             FavoriteChange.post(s, add: true)
@@ -118,24 +76,12 @@ extension AppEnvironment {
         }
     }
 
-    /// Pone o quita un favorito en Trakt; sin conexión, a la cola del iPhone (no es un error: llega después).
-    private func setFavorite(_ s: Suggestion, add: Bool) async throws {
-        guard let trakt = services.trakt, trakt.linked else { throw TraktError.auth("Conecta Trakt en Ajustes") }
-        do {
-            try await trakt.setFavorite(imdb: s.imdb, series: s.kind == "series", add: add)
-            await services.forYou.clearCache()
-        } catch where TraktOutbox.retryable(error) {
-            services.traktOutbox.enqueue(.init(target: TraktOutbox.favorites, imdb: s.imdb, series: s.kind == "series", add: add))
-        }
-    }
-
     /// «Marcar como vista» (una película) desde el menú de un póster: en Stremio y en Trakt, como en la ficha.
     func markWatched(_ s: Suggestion) async -> Bool {
-        do { try await services.watch.markWatched(kind: s.kind, metaID: s.imdb, videoID: s.imdb) } catch {
+        do { try await titles.markWatched(s) } catch {
             notify(format: "No pude marcar «%@» como vista", s.title, detail: "\(error)", tone: .warn)
             return false
         }
-        if let trakt = services.trakt, trakt.linked, let target = TraktTarget(videoID: s.imdb, kind: s.kind) { _ = try? await trakt.addToHistory(target, watchedAt: Date()) }
         notify(format: "«%@» quedó como vista", s.title, tone: .success)
         return true
     }
@@ -159,10 +105,7 @@ extension AppEnvironment {
         switch outcome {
         case .queued:
             // Como el círculo de la ficha: qué se está bajando (calidad y tamaño) y a la mano, Descargas.
-            let item = await services.downloads.item(DownloadItem.makeID(metaID: s.imdb, videoID: videoID(for: s)))
-            let size = item?.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) }
-            let detail = [item?.quality, size].compactMap { $0 }.joined(separator: " · ")
-            notify("Bajando la recomendada", detail: detail.isEmpty ? nil : detail, tone: .success, action: .downloads)
+            notify("Bajando la recomendada", detail: await titles.downloadDetail(s), tone: .success, action: .downloads)
         default: report(outcome, downloaded: (s.imdb, videoID(for: s)))
         }
     }

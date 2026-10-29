@@ -43,11 +43,19 @@ public enum PlayerGestures {
         return max(0, min(target, duration))
     }
 
-    /// Brillo o volumen (0…1): arrastrar toda la altura de la pantalla hacia arriba los pone al máximo; hacia
-    /// abajo, al mínimo. Se parte siempre del valor que tenía al empezar el arrastre, no del centro de la pantalla.
-    public static func verticalValue(start: Double, dragHeight dy: Double, screenHeight: Double) -> Double {
-        guard screenHeight > 0 else { return start }
-        return max(0, min(1, start - dy / screenHeight))
+    /// Brillo o volumen (0…1): arrastrar `travel` puntos hacia arriba los pone al máximo; hacia abajo, al mínimo. Se parte
+    /// siempre del valor que tenía al empezar el arrastre, no del centro de la pantalla. `travel` lo decide la pantalla
+    /// (`verticalTravel`): antes era toda la altura del teléfono y en vertical, con el video de 220 puntos, recorrerlo entero
+    /// subía «un pedacito».
+    public static func verticalValue(start: Double, dragHeight dy: Double, travel: Double) -> Double {
+        guard travel > 0 else { return start }
+        return max(0, min(1, start - dy / travel))
+    }
+
+    /// Cuánto hay que arrastrar para ir de 0 a 1: el alto del video, y nunca más que `share` de la pantalla (en horizontal el
+    /// video es la pantalla entera y recorrerla toda era demasiado). Nunca menos de `minimum`, para que un roce no lo dispare.
+    public static func verticalTravel(videoHeight: Double, screenHeight: Double, share: Double, minimum: Double) -> Double {
+        max(minimum, min(videoHeight, screenHeight * share))
     }
 
     /// Cuánto hay que deslizar hacia abajo, desde donde apoyaste el dedo, para fijar el ×2. Si hasta el borde

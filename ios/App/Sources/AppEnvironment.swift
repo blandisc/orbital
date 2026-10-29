@@ -27,6 +27,8 @@ final class AppEnvironment {
     @ObservationIgnored lazy var oneDriveSetup = OneDriveModel(services)
     /// Premios, tus listas de Trakt y «Por año»: uno para toda la app (cambiar entre mosaico y listas no lo vuelve a pedir todo).
     @ObservationIgnored lazy var collections = CollectionsModel(services)
+    /// Ver, guardar, quitar, favoritos y marcar como vista desde un póster: la lógica en `TitleActions` (OrbitalModels, con pruebas).
+    @ObservationIgnored lazy var titles = TitleActions(services)
     /// «Un Simpson al azar»: la lógica vive en `SimpsonsModel` (OrbitalModels, con pruebas); aquí se le enchufan las imágenes y el aviso.
     @ObservationIgnored lazy var simpsons: SimpsonsModel = {
         let model = SimpsonsModel(services, reelLength: DS.Simpsons.reelLength)

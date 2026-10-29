@@ -333,7 +333,7 @@ struct HomeView: View {
         // La tarjeta abre la ficha con su propio toque; «Ver» va aparte (un botón dentro de un NavigationLink puede abrir la
         // ficha en vez de reproducir).
         DeckCard(title: s.title, background: s.wide, logo: s.logo ?? Artwork.logoURL(metaID: s.imdb),
-                 eyebrow: reasonText(s.reason), data: heroData(s), open: { openTitle = s.route }) {
+                 eyebrow: reasonText(s.reason), data: heroData(s), open: { openTitle = s.route }, tall: TallArtKey(imdb: s.imdb, kind: s.kind)) {
             HeroActions { heroButtons(s) }   // con letra grande, uno debajo del otro
         }
         .contentShape(Rectangle())
@@ -505,7 +505,7 @@ struct HomeView: View {
 
     /// «T2 E5 · quedan 20 min»; «Nuevo · T38 E5» si ibas al día y ya salió el episodio que sigue.
     private func continueData(_ item: HomeItem) -> [String] {
-        let facts = progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes).components(separatedBy: " · ")
+        let facts = progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes, language: env.language).components(separatedBy: " · ")
         guard item.isNew == true else { return facts }
         return [Strings.tr("Nuevo", language: AppEnvironment.shared.services.appSettings.uiLanguage)] + facts
     }

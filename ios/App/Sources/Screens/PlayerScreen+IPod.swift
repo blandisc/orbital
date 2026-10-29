@@ -56,7 +56,7 @@ extension PlayerScreen {
             .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
         }
         .environment(\.colorScheme, face.scheme)
-        .allowsHitTesting(!locked)
+        .allowsHitTesting(!padlock.locked)
     }
 
     /// Una muesca de la rueda: 10 s (de a minuto si giras rápido); el avance enseña a dónde vas.

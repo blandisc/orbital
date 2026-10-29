@@ -84,6 +84,8 @@ public struct LocalEpisode: Sendable, Equatable {
 /// (`generation`) y se revisa tras cada espera, y las instantáneas del motor se ignoran mientras se carga otra fuente.
 @MainActor
 public final class PlayerModel: ObservableModel {
+    // Lo de pistas y versiones de subtítulos vive en `PlayerModel+Tracks.swift` y `PlayerModel+Subtitles.swift`: lo que esas
+    // extensiones tocan es interno al módulo (no `private`), no público.
     public enum Phase: Equatable { case idle, preparing, playing, failed(String), closed }
     /// Por qué falló: cada caso tiene su pantalla y sus salidas (no un aviso rojo encima de los controles).
     public enum Failure: Equatable, Sendable {
@@ -135,10 +137,10 @@ public final class PlayerModel: ObservableModel {
     public private(set) var segments: SkipSegments? { didSet { changed() } }
     private var segmentsFor: String?
     public private(set) var stillWatchingPrompt = false { didSet { changed() } }
-    public private(set) var notice: PlayerNotice? { didSet { changed() } }
+    public internal(set) var notice: PlayerNotice? { didSet { changed() } }
     /// Sincronía de los subtítulos (s): positivo los atrasa, negativo los adelanta (como Infuse). Se recuerda por versión
     /// (`SubtitleOffsets`): al volver a esa versión de ese título, se pone sola.
-    public private(set) var subtitleDelay: Double = 0 { didSet { changed() } }
+    public internal(set) var subtitleDelay: Double = 0 { didSet { changed() } }
     public static let subtitleStep = 0.5, subtitleMaxDelay = 30.0
     public func nudgeSubtitles(by seconds: Double) { setSubtitleDelay(subtitleDelay + seconds) }
     public func resetSubtitleDelay() { setSubtitleDelay(0) }
@@ -155,10 +157,10 @@ public final class PlayerModel: ObservableModel {
         return file.isEmpty ? versionID : "\(file)|\(versionID)"
     }
     /// El ajuste que se puso solo al volver a una versión (para decir «Usamos tu ajuste de +1.5 s»).
-    public private(set) var restoredDelay: Double? { didSet { changed() } }
+    public internal(set) var restoredDelay: Double? { didSet { changed() } }
     public var subtitleOffsets: SubtitleOffsets?
     /// La versión a la que ya se le puso su ajuste (las que pone el arranque solo, sin pasar por `apply`, también).
-    private var offsetVersionID: String?
+    var offsetVersionID: String?
     private func restoreOffsetIfVersionChanged() {
         let id = selectedVersionID
         guard id != offsetVersionID else { return }
@@ -169,9 +171,9 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// Las versiones que ya probaste en este video (para no volver a las que no iban).
-    public private(set) var triedVersionIDs: Set<String> = [] { didSet { changed() } }
+    public internal(set) var triedVersionIDs: Set<String> = [] { didSet { changed() } }
     /// Elegiste otra versión: se pregunta un momento «¿Va a tiempo?».
-    public private(set) var askInSync = false { didSet { changed() } }
+    public internal(set) var askInSync = false { didSet { changed() } }
     public func confirmInSync() { askInSync = false; restoredDelay = nil }
     /// «Probar otra»: la siguiente del mismo idioma que no hayas probado (y se vuelve a preguntar).
     public func tryAnotherVersion() async {
@@ -186,19 +188,19 @@ public final class PlayerModel: ObservableModel {
     public static let rates: [Float] = [0.75, 1, 1.25, 1.5, 2]
     public private(set) var attempts = 0 { didSet { changed() } }
 
-    private let engine: PlayerEngine
-    private let finder: StreamFinder
+    let engine: PlayerEngine
+    let finder: StreamFinder
     private let watch: WatchService
-    private let titlePrefs: TitlePreferences
-    private let settings: SettingsStore
+    let titlePrefs: TitlePreferences
+    let settings: SettingsStore
     private let clock: @Sendable () -> Date
-    private let onCellular: @Sendable () -> Bool
+    let onCellular: @Sendable () -> Bool
     private let episodeLabel: @Sendable (Int, Int) -> String
     private let localEpisode: @Sendable (_ metaID: String, _ videoID: String) async -> LocalEpisode?
 
     private var consuming: Task<Void, Never>?
     private var transition: Task<Void, Never>?
-    private var failedSources = Set<Int>()
+    var failedSources = Set<Int>()
     /// Ya sonó este video (el motor llegó a reproducir): hasta entonces la pantalla enseña la carga, no el play.
     public private(set) var hasPlayed = false { didSet { if oldValue != hasPlayed { changed() } } }
     /// Ya corre de verdad: desde que sonó avanzó `startupSettleSeconds` (o lo pausaste). El motor dice «suena» con casi nada en
@@ -213,7 +215,7 @@ public final class PlayerModel: ObservableModel {
     private var lastSnapshotAt: Date?
     private var lastSave: Date
     private var watchedUnsaved = 0.0
-    private var tracksApplied = false
+    var tracksApplied = false
     /// Rearmando el mismo video en pausa al volver de segundo plano (en pausa ya cuenta como «está»).
     private var restoringInPlace = false
     /// Cambiaste de versión a mano: a cuál y a qué segundo volver si la nueva no llega a sonar (falla después de abrir, se
@@ -224,7 +226,7 @@ public final class PlayerModel: ObservableModel {
     /// Lo más que el reproductor espera a que se pongan el audio y los subtítulos antes de seguir atendiendo al video.
     static let trackSetupWait: Double = 1
     /// Cuántas versiones de subtítulos se han pedido: si eliges otra antes de que llegue la anterior, la anterior ya no se recuerda.
-    private var subtitleTicket = 0
+    var subtitleTicket = 0
 
     /// Espera una tarea hasta `seconds`; si tarda más, se sigue (la tarea termina sola).
     static func waitBriefly(_ task: Task<Void, Never>, seconds: Double) async {
@@ -239,13 +241,13 @@ public final class PlayerModel: ObservableModel {
     private func forgetSubtitleSearch() {
         foundSubtitles = nil; subtitleSearchFailed = false; subtitlesOffline = false; searchTask = nil
     }
-    private var addedExternalSubtitle = false
+    var addedExternalSubtitle = false
     private var rescrobbleAfterSeek = false
     /// Trakt ya sabe que empezó este video (el `start` sale cuando el motor suena Y se sabe la duración).
     private var scrobbleStarted = false
     /// Lo último que Trakt sabe: ¿está sonando (`start`) o en pausa (`pause`)?
     private var scrobblePlaying = false
-    private var knownSubtitleIDs = Set<Int>()
+    var knownSubtitleIDs = Set<Int>()
     private var preloadedNext = false
     private var upNextDeadline: Date?
     private var lastTick: Date?
@@ -259,7 +261,7 @@ public final class PlayerModel: ObservableModel {
     private var finalReported = false
     /// Dónde seguir según Trakt cuando solo se sabe el porcentaje (sin la duración): se busca en cuanto el motor la dice.
     private var pendingResumeFraction: Double?
-    private var generation = 0
+    var generation = 0
     private var acceptingSnapshots = false     // false mientras se elige y se carga una fuente (lo que el motor diga entonces es del video anterior)
     private var retrying = false
     private var advancing = false
@@ -267,7 +269,7 @@ public final class PlayerModel: ObservableModel {
     private var choicesAt = Date.distantPast
     private var nextLocal: LocalEpisode?
     private let skipSegments: @Sendable (String) async -> SkipSegments?
-    private let scareMap: @Sendable (String, String) async -> [JumpScare]?
+    let scareMap: @Sendable (String, String) async -> [JumpScare]?
     /// Tu copia de un video (Mi media), si la hay: se usa antes que las fuentes cuando `request.ownCopy`.
     public var ownSource: (@Sendable (_ videoID: String, _ preferred: Int?) async -> Source?)?
     /// Cuántas veces se pidió tu copia en este video: dos (su enlace dura ~1 h; si se venció a media película se pide otro), luego Real-Debrid.
@@ -640,438 +642,69 @@ public final class PlayerModel: ObservableModel {
     }
 
     // MARK: pistas
-    /// Las pistas reales de esta versión: quedan «comprobadas» (la próxima vez se sabe su idioma sin adivinar).
-    private func rememberCheckedAudio(_ s: EngineSnapshot) {
-        guard let source, titlePrefs.rememberChecked(key: source.key, codes: Self.realAudio(s.audioTracks, source: source)) else { return }
-        let finder = finder
-        Task { await finder.forgetSorted() }
-    }
 
-    /// Lo que trae esta versión no es lo que quieres (inglés y castellano, y quieres latino) y otra versión sí lo trae seguro:
-    /// se ofrece cambiar a esa, en el mismo segundo.
-    /// Las pistas de audio de un archivo como idiomas de versión. Una pista «spa» sin nombre no dice si es latino o castellano:
-    /// si el nombre de la versión sí lo dice, se queda esa variante (comprobar no puede empeorar el dato).
-    static func realAudio(_ tracks: [MediaTrack], source: Source?) -> [String] {
-        let variant = source?.audio.first { $0.base == "es" && $0.code != "es" && $0.evidence.solid }?.code
-        var codes: [String] = []
-        for track in tracks where track.kind == .audio {
-            guard var code = TrackChooser.audioCode(track) else { continue }
-            if code == "es", let variant { code = variant }
-            if !codes.contains(code) { codes.append(code) }
-        }
-        return codes
-    }
 
-    func offerVersionInYourLanguage(_ s: EngineSnapshot, prefs: Preferences) {
-        guard let current = source, let request else { return }
-        // La elegiste tú en «Elegir versión»: no se te ofrece otra.
-        if request.sourceIndex == current.index { return }
-        let have = Self.realAudio(s.audioTracks, source: current)
-        let want = prefs.wanted
-        guard !have.isEmpty, !have.contains(where: { $0 == want || (want.count == 2 && $0.hasPrefix(want)) }) else { return }
-        // Ni una que ya falló, ni una que ya se comprobó en otro idioma, ni una de cine, un tráiler u otra película.
-        let better = sourceChoices.first { choice in
-            guard choice.index != current.index, choice.playbackURL != nil, !failedSources.contains(choice.index),
-                  !choice.tags.contains("CAM"), !choice.tags.contains("Tráiler"), !choice.tags.contains(Streams.otherTitleTag) else { return false }
-            if let checked = titlePrefs.checkedAudio(choice.key) { return checked.contains { $0.code == want } }
-            return choice.audio.contains { $0.code == want && $0.evidence.solid }
-        }
-        guard let better else { return }
-        var unique: [String] = []
-        for code in have where !unique.contains(code) { unique.append(code) }
-        notice = .otherVersionHasYourLanguage(language: want, have: unique, sourceIndex: better.index)
-    }
 
-    private func applyTracksOnce(_ s: EngineSnapshot) async {
-        guard !tracksApplied, !s.audioTracks.isEmpty || !s.subtitleTracks.isEmpty, let request else { return }
-        tracksApplied = true
-        let mine = generation   // puede terminar después: si ya es otro video (u otra fuente), no se le toca
-        rememberCheckedAudio(s)
-        // Apagados en este título: eso gana a todo lo recordado.
-        let subtitlesOff = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).subtitles.isEmpty
-        // La versión que elegiste en este título: el subtítulo más parecido (gana a «Continuar» y a la regla).
-        let picked = subtitlesOff ? false : await applyRememberedPick(s)
-        guard mine == generation else { return }
-        // «Continuar»: las mismas pistas con que lo dejaste; lo que no se encuentre, con la regla de siempre.
-        // También en el siguiente episodio de la serie (antes solo en el mismo episodio exacto).
-        if !picked, !request.fromStart, let choice = titlePrefs.lastChoice(metaID: request.metaID), await applyResumeTracks(choice, s) { return }
-        let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
-        let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio, latin: langs.prefs.spanish == "es-419", castilian: langs.prefs.spanish == "es-ES")
-        if let audio, audio.id != s.selectedAudio { await engine.selectAudio(audio.id) }
-        // (Si la elegiste tú en «Elegir versión», ya sabías qué idioma trae: no se avisa.)
-        if TrackChooser.wrongAudio(s.audioTracks, language: langs.prefs.audio), request.sourceIndex == nil || request.sourceIndex != source?.index {
-            notice = .audioNotInYourLanguage
-        }
-        offerVersionInYourLanguage(s, prefs: langs.prefs)
-        let audioLanguage = PlaybackRules.languageCode(audio?.language) ?? langs.prefs.audio
-        if picked { return }
-        let mode: SubtitleMode = settings.value.onlyForcedSubtitles ? .forced : SubtitleMode(settings: langs.subtitles, onlyForced: false)
-        var sub = TrackChooser.subtitle(s.subtitleTracks, mode: mode, audioLanguage: audioLanguage)
-        knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
-        // Apagados, pero el audio es de otro idioma (ni el tuyo ni inglés): los carteles en tu idioma, si el video los trae.
-        if sub == nil, case .off = mode, settings.value.forcedForForeignAudio, let yours = SubtitleLanguage.code(settings.value.uiLanguage),
-           let heard = SubtitleLanguage.code(audioLanguage), heard != yours, heard != "en" {
-            sub = s.subtitleTracks.first { $0.isForced && TrackChooser.matches($0, yours) }
-        }
-        guard mine == generation else { return }
-        if let sub { await engine.selectSubtitle(sub.id) }
-        // El video no trae tu idioma (a lo más los carteles del audio): se busca en internet aunque haya puesto los carteles.
-        if case .language(let language) = mode, !(sub.map { TrackChooser.matches($0, language) } ?? false),
-           !(audio.map { TrackChooser.matches($0, language) } ?? false) {
-            // El video no trae subtítulos en tu idioma: se piden a tus complementos (OpenSubtitles…) o a la descarga.
-            await addExternalSubtitle(language: language)
-        }
-    }
 
-    /// Las pistas guardadas, si están en este video. true si los subtítulos quedaron como los dejaste (el audio, si se
-    /// encuentra, también); false para elegir con la regla de siempre.
-    private func applyResumeTracks(_ choice: ResumeChoice, _ s: EngineSnapshot) async -> Bool {
-        // La misma pista (idioma y nombre); si en este archivo se llama distinto (otro episodio, otra fuente), la del mismo idioma.
-        func find(_ tracks: [MediaTrack], _ saved: ResumeChoice.Track) -> MediaTrack? {
-            tracks.first { $0.language == saved.language && $0.title == saved.title }
-                ?? tracks.first { PlaybackRules.languageCode($0.language) != nil && PlaybackRules.languageCode($0.language) == PlaybackRules.languageCode(saved.language) && !$0.isForced }
-        }
-        if let audio = choice.audio, let track = find(s.audioTracks, audio), track.id != s.selectedAudio { await engine.selectAudio(track.id) }
-        guard let sub = choice.subtitle else { return false }
-        knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
-        if sub.off { await engine.selectSubtitle(nil); return true }
-        if let track = find(s.subtitleTracks, sub) { await engine.selectSubtitle(track.id); return true }
-        // Este archivo no los trae (otra fuente, o venían de la TV): los mismos de su complemento, o los de ese idioma.
-        if let text = sub.url, let url = URL(string: text), url.scheme == "https" || url.scheme == "http" {
-            addedExternalSubtitle = true
-            await engine.addSubtitle(url: url, language: sub.language)
-            return true
-        }
-        if let language = PlaybackRules.languageCode(sub.language) { await addExternalSubtitle(language: language); return true }
-        return false
-    }
 
-    /// La fuente y las pistas que tienes puestas ahora: para «Continuar» y para pasarlas a la TV («Ver en la TV»).
-    public func currentChoice() -> ResumeChoice? {
-        guard let request else { return nil }
-        func pick(_ tracks: [MediaTrack], _ selected: Int?) -> ResumeChoice.Track? {
-            guard !tracks.isEmpty else { return nil }
-            guard let selected, let t = tracks.first(where: { $0.id == selected }) else { return ResumeChoice.Track(off: true) }
-            return ResumeChoice.Track(language: t.language, title: t.title)
-        }
-        let audio = pick(snapshot.audioTracks, snapshot.selectedAudio).flatMap { $0.off ? nil : $0 }
-        return ResumeChoice(videoID: request.videoID, source: source?.key, audio: audio,
-                            subtitle: pick(snapshot.subtitleTracks, snapshot.selectedSubtitle), binge: source?.binge)
-    }
 
-    /// Junto a «dónde ibas»: la fuente y las pistas que tienes puestas (para «Continuar»).
-    private func rememberChoice() {
-        guard let request, snapshot.position >= PlaybackRules.rememberChoiceAfter, let choice = currentChoice() else { return }
-        titlePrefs.remember(metaID: request.metaID, choice: choice)
-    }
 
-    private func addExternalSubtitle(language: String) async {
-        guard let request, !addedExternalSubtitle else { return }
-        addedExternalSubtitle = true
-        var url = request.localSubtitles.first { $0.lastPathComponent.hasPrefix(language) }
-        // También para una descarga (si hay red): con la huella del archivo, el subtítulo de esa copia exacta.
-        if url == nil {
-            let file = request.localFile.flatMap(FileFingerprint.of)
-            url = await finder.subtitles(kind: request.kind, videoID: request.videoID, language: language, file: file).first
-        }
-        if let url { pendingSubtitleURL = url; await engine.addSubtitle(url: url, language: language) }
-    }
 
     /// «Buscar en internet» (Subtítulos del reproductor): todo lo que hay en OpenSubtitles y tus complementos, por idioma.
-    public private(set) var foundSubtitles: [SubtitleOption]? { didSet { changed() } }
+    public internal(set) var foundSubtitles: [SubtitleOption]? { didSet { changed() } }
     /// Los sustos de la película que suena (Where's The Jump), marcados en la barra; nil: no hay mapa.
-    public private(set) var scares: [JumpScare]? { didSet { changed() } }
+    public internal(set) var scares: [JumpScare]? { didSet { changed() } }
 
-    public func loadScares() async {
-        guard let r = request, r.kind == "movie", r.metaID.hasPrefix("tt") else { scares = nil; return }
-        let id = r.metaID
-        let found = await scareMap(id, r.originalTitle)
-        guard request?.metaID == id else { return }
-        scares = found
-    }
-    public private(set) var searchingSubtitles = false { didSet { changed() } }
+    public internal(set) var searchingSubtitles = false { didSet { changed() } }
 
-    /// Busca en internet. La búsqueda es del modelo, no de la vista que la pidió: antes corría en el `.task` del panel y
-    /// cerrarlo la cancelaba, la búsqueda cancelada se tomaba como «no hay nada» y ya no se volvía a buscar en ese video.
-    /// Si ya hay una en camino, se espera esa (antes se salía al momento y elegir un idioma no hacía nada).
-    public func searchSubtitles() async {
-        if let running = searchTask { return await running.value }
-        let task = Task { await self.runSubtitleSearch() }
-        searchTask = task
-        await task.value
-        if searchTask == task { searchTask = nil }
-    }
-    private var searchTask: Task<Void, Never>?
+    var searchTask: Task<Void, Never>?
 
-    private func runSubtitleSearch() async {
-        guard let request, !searchingSubtitles else { return }
-        let mine = generation
-        searchingSubtitles = true
-        defer { searchingSubtitles = false }
-        // La huella de tu copia (la descarga, o el video en línea con dos pedidos chicos): lo hecho para ella va primero.
-        var file = request.localFile.flatMap(FileFingerprint.of)
-        if file == nil, let url = source?.playbackURL, !url.isFileURL { file = await finder.fingerprint(of: url) }
-        guard generation == mine else { return }
-        let search = await finder.subtitleSearch(kind: request.kind, videoID: request.videoID, file: file)
-        guard generation == mine else { return }   // ya es otro video: no se le cuelgan los de este
-        // Nada (o sin red): se queda el botón para volver a intentar, con el aviso.
-        let found = search ?? []
-        foundSubtitles = found.isEmpty ? nil : found
-        subtitleSearchFailed = found.isEmpty
-        subtitlesOffline = search == nil
-    }
 
     /// No se encontró nada en la última búsqueda (o no había red).
-    public private(set) var subtitleSearchFailed = false { didSet { changed() } }
+    public internal(set) var subtitleSearchFailed = false { didSet { changed() } }
     /// La última búsqueda no llegó a internet (modo avión, sin señal): solo hay los del video y los guardados con la descarga.
-    public private(set) var subtitlesOffline = false { didSet { if oldValue != subtitlesOffline { changed() } } }
+    public internal(set) var subtitlesOffline = false { didSet { if oldValue != subtitlesOffline { changed() } } }
 
-    /// Hay subtítulos de ese idioma para poner ya (del video, guardados con la descarga o encontrados en internet).
-    public func hasSubtitles(language: String) -> Bool { !subtitleVersions(language: language).isEmpty }
     /// Los que ya se sumaron (no se suma dos veces el mismo).
-    public private(set) var addedSubtitleURLs: Set<URL> = [] { didSet { changed() } }
+    public internal(set) var addedSubtitleURLs: Set<URL> = [] { didSet { changed() } }
 
-    /// Suma el siguiente de ese idioma que aún no se sumó y lo activa.
-    public func addFoundSubtitle(language: String) async {
-        guard let option = foundSubtitles?.first(where: { $0.language == language && !addedSubtitleURLs.contains($0.url) }) else { return }
-        userTouched()
-        knownSubtitleIDs = Set(snapshot.subtitleTracks.map(\.id))
-        addedExternalSubtitle = true
-        addedSubtitleURLs.insert(option.url)
-        await engine.addSubtitle(url: option.url, language: option.language)
-    }
 
-    /// El motor ya sumó el subtítulo externo: se activa.
-    private func selectNewSubtitleIfAny(_ s: EngineSnapshot) async {
-        guard addedExternalSubtitle else { return }
-        let new = s.subtitleTracks.filter { !knownSubtitleIDs.contains($0.id) }
-        if let track = new.first {
-            knownSubtitleIDs.insert(track.id)
-            // El que se sumó de internet ya es esta pista: en la lista sale como «de internet», no «del video».
-            if let url = pendingSubtitleURL { addedTracks[url] = track.id; pendingSubtitleURL = nil }
-            await engine.selectSubtitle(track.id)
-        }
-    }
 
     // MARK: versiones de subtítulos («Subtítulos» del panel)
     /// Las elecciones de «Este va bien» por serie (las pone quien arma el reproductor).
     public var subtitlePicks: SubtitlePicks?
     /// Los subtítulos de internet ya sumados al video → su pista en el motor.
-    public private(set) var addedTracks: [URL: Int] = [:] { didSet { changed() } }
-    private var pendingSubtitleURL: URL? { didSet { changed() } }
-    /// Se está bajando un subtítulo de internet para ponerlo (el botón de subtítulos enseña que carga).
-    public var loadingSubtitle: Bool { pendingSubtitleURL != nil }
+    public internal(set) var addedTracks: [URL: Int] = [:] { didSet { changed() } }
+    var pendingSubtitleURL: URL? { didSet { changed() } }
     /// La tira para probar versiones sobre el video (el idioma que se está probando); nil: no se ve.
-    public private(set) var tryingSubtitles: String? { didSet { changed() } }
+    public internal(set) var tryingSubtitles: String? { didSet { changed() } }
 
-    /// El nombre de tu copia (la fuente o el archivo descargado): con él se ve qué subtítulo le va.
-    public var currentRelease: String? {
-        if let r = source?.release, !r.isEmpty { return r }
-        return request?.localFile?.lastPathComponent
-    }
 
-    /// Las pistas que de verdad vienen en el video (sin las que se sumaron de internet).
-    private var videoTracks: [MediaTrack] {
-        let added = Set(addedTracks.values)
-        return snapshot.subtitleTracks.filter { !added.contains($0.id) }
-    }
 
-    public var subtitleLanguages: [(code: String, count: Int)] {
-        SubtitleVersions.languages(tracks: videoTracks, found: foundSubtitles ?? [])
-    }
 
-    public func subtitleVersions(language: String) -> [SubtitleVersion] {
-        SubtitleVersions.ranked(language: language, tracks: videoTracks, found: foundSubtitles ?? [], release: currentRelease, playing: snapshot.selectedSubtitle,
-                                saved: savedByTrack)
-    }
 
-    /// Los subtítulos guardados con la descarga, por el nombre de su pista en el motor («es-3»).
-    private var savedByTrack: [String: SavedSubtitle] {
-        Dictionary((request?.savedSubtitles ?? []).map { ($0.trackName, $0) }, uniquingKeysWith: { a, _ in a })
-    }
 
-    /// El video trae (sin contar SDH ni forzados) subtítulos en ese idioma.
-    public func videoHasSubtitles(language: String) -> Bool {
-        videoTracks.contains { !SubtitleFilter.hides($0) && SubtitleLanguage.code($0.language) == language }
-    }
 
-    /// La versión puesta ahora (su `id`), o nil sin subtítulos.
-    public var selectedVersionID: String? {
-        guard let id = snapshot.selectedSubtitle else { return nil }
-        if let url = addedTracks.first(where: { $0.value == id })?.key { return url.absoluteString }
-        return "track-\(id)"
-    }
 
-    /// Busca en internet una sola vez por video (sin tocar «Buscar»).
-    public func ensureSubtitleSearch() async {
-        guard foundSubtitles == nil, !subtitleSearchFailed else { return }
-        await searchSubtitles()
-    }
 
-    /// Pone esa versión: la del video al momento; la de internet se baja, se suma y se activa (sin pausar).
-    public func selectVersion(_ version: SubtitleVersion, trying: Bool = false) async {
-        userTouched()
-        stopBriefSubtitles()
-        if let current = selectedVersionID, current != version.id { triedVersionIDs.insert(current) }
-        askInSync = true
-        if trying { tryingSubtitles = version.language }
-        subtitleTicket += 1
-        let ticket = subtitleTicket
-        await apply(version)
-        guard ticket == subtitleTicket else { return }   // ya elegiste otra mientras llegaba esta
-        rememberVersion(version)
-    }
 
-    /// Lo que elijas se recuerda al momento para ese título (serie o película), sin tener que tocar «Este va bien».
-    private func rememberVersion(_ version: SubtitleVersion) {
-        guard let request else { return }
-        titlePrefs.remember(metaID: request.metaID, subtitleTrack: version.language)
-        subtitlePicks?.remember(metaID: request.metaID, SubtitlePick(version))
-    }
 
-    private func apply(_ version: SubtitleVersion) async {
-        // El ajuste de tiempo que ya le habías dado a esta versión (o ninguno).
-        let saved = request.flatMap { subtitleOffsets?.offset(metaID: $0.metaID, versionID: offsetKey(version.id)) } ?? 0
-        subtitleDelay = saved
-        restoredDelay = saved == 0 ? nil : saved
-        offsetVersionID = version.id
-        switch version.origin {
-        case .embedded(let track): await engine.selectSubtitle(track.id)
-        case .internet(let option):
-            if let id = addedTracks[option.url] { await engine.selectSubtitle(id); return }
-            knownSubtitleIDs = Set(snapshot.subtitleTracks.map(\.id))
-            addedExternalSubtitle = true
-            pendingSubtitleURL = option.url
-            addedSubtitleURLs.insert(option.url)
-            await engine.addSubtitle(url: option.url, language: option.language)
-        }
-    }
 
-    /// El botón de subtítulos de los controles (un toque): la versión siguiente del idioma puesto, sin pausar ni abrir nada;
-    /// sin subtítulos, la mejor de tu idioma (`languages`: los tuyos, en orden). La primera vez busca también en internet, en
-    /// segundo plano, para que haya más versiones en la vuelta. Enseña la tira (‹ anterior y «Este va bien»).
-    /// Devuelve la versión puesta (nil: no hay ninguna en ese idioma).
-    @discardableResult
-    public func cycleSubtitle(languages: [String]) async -> SubtitleVersion? {
-        userTouched(); stopBriefSubtitles()
-        if foundSubtitles == nil, !searchingSubtitles, !subtitleSearchFailed { Task { await ensureSubtitleSearch() } }
-        let s = snapshot
-        let playing = s.selectedSubtitle.flatMap { id in SubtitleLanguage.code(s.subtitleTracks.first { $0.id == id }?.language) }
-        let language = playing ?? languages.first { !subtitleVersions(language: $0).isEmpty } ?? languages.first
-        guard let language else { return nil }
-        var versions = subtitleVersions(language: language)
-        if versions.isEmpty {   // el video no trae ese idioma: se espera a lo de internet
-            await ensureSubtitleSearch()
-            versions = subtitleVersions(language: language)
-        }
-        guard let next = SubtitleVersions.next(after: playing == nil ? nil : selectedVersionID, in: versions) else { return nil }
-        tryingSubtitles = language
-        await apply(next)
-        rememberVersion(next)
-        return next
-    }
 
     /// La versión que tenías antes de apagarlos (para prenderlos otra vez igual).
-    private var versionBeforeOff: SubtitleVersion?
+    var versionBeforeOff: SubtitleVersion?
 
-    /// Mantener presionado el botón: apaga los subtítulos o los vuelve a prender (lo que tenías, lo que elegiste en este
-    /// título o lo mejor de tus idiomas). Devuelve la versión puesta; nil si quedaron apagados (o no hay ninguna).
-    @discardableResult
-    public func toggleSubtitles(languages: [String]) async -> SubtitleVersion? {
-        userTouched(); stopBriefSubtitles()
-        if snapshot.selectedSubtitle != nil {
-            versionBeforeOff = allSubtitleVersions.first { $0.id == selectedVersionID } ?? versionBeforeOff
-            await selectSubtitle(nil)
-            return nil
-        }
-        if let back = versionBeforeOff, subtitleVersions(language: back.language).contains(where: { $0.id == back.id }) {
-            await selectVersion(back); return back
-        }
-        if let request, let pick = subtitlePicks?.pick(metaID: request.metaID), let best = pick.best(in: subtitleVersions(language: pick.language)) {
-            await selectVersion(best); return best
-        }
-        let language = languages.first { !subtitleVersions(language: $0).isEmpty } ?? languages.first
-        guard let language else { return nil }
-        return await chooseLanguage(language) ? allSubtitleVersions.first { $0.id == selectedVersionID } : nil
-    }
 
-    /// Tocar un idioma en la hoja: pone ya su mejor versión (antes había que tocar también una versión). Si el video no lo
-    /// trae, lo busca en internet primero. false si no hay ninguna.
-    @discardableResult
-    public func chooseLanguage(_ language: String) async -> Bool {
-        var versions = subtitleVersions(language: language)
-        if versions.isEmpty {
-            // Lo pediste tú: se busca aunque la anterior no haya encontrado nada (o se espera la que va en camino).
-            if foundSubtitles == nil { await searchSubtitles() }
-            versions = subtitleVersions(language: language)
-        }
-        guard let best = versions.first else { return false }
-        await selectVersion(best)
-        return true
-    }
 
-    /// Todas las versiones de todos los idiomas que hay ahora (para encontrar la puesta).
-    private var allSubtitleVersions: [SubtitleVersion] { subtitleLanguages.flatMap { subtitleVersions(language: $0.code) } }
 
-    /// ‹ › de la tira: la versión anterior o la siguiente del mismo idioma.
-    public func stepVersion(_ delta: Int) async {
-        guard let language = tryingSubtitles else { return }
-        let versions = subtitleVersions(language: language)
-        guard !versions.isEmpty else { return }
-        let at = versions.firstIndex { $0.id == selectedVersionID } ?? -1
-        let next = ((at + delta) % versions.count + versions.count) % versions.count
-        await apply(versions[next])
-        rememberVersion(versions[next])
-    }
 
-    public func dismissTry() { tryingSubtitles = nil }
 
-    /// «Este va bien»: cierra la tira y, en una serie, recuerda idioma y copia para el siguiente episodio.
-    public func confirmSubtitle() {
-        defer { tryingSubtitles = nil }
-        guard let request, let language = tryingSubtitles,
-              let version = subtitleVersions(language: language).first(where: { $0.id == selectedVersionID }) else { return }
-        subtitlePicks?.remember(metaID: request.metaID, SubtitlePick(version))
-    }
 
-    /// Al empezar un episodio: lo de «Este va bien» de la serie. true si se puso un subtítulo.
-    private func applyRememberedPick(_ s: EngineSnapshot) async -> Bool {
-        guard let request, let pick = subtitlePicks?.pick(metaID: request.metaID) else { return false }
-        knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
-        let embedded = subtitleVersions(language: pick.language)
-        // Una pista del video igual a la elegida, o el video no trae ese idioma: se busca también en internet.
-        let exact = embedded.first { (pick.name != nil && $0.name == pick.name) || (pick.group != nil && $0.traits.group == pick.group) }
-        if exact == nil && (pick.group != nil || pick.name != nil || embedded.isEmpty) { await ensureSubtitleSearch() }
-        guard request.videoID == self.request?.videoID, let best = pick.best(in: subtitleVersions(language: pick.language)) else { return false }
-        await apply(best)
-        return true
-    }
 
-    public func selectAudio(_ id: Int?) async {
-        userTouched()
-        await engine.selectAudio(id)
-        if let id, let track = snapshot.audioTracks.first(where: { $0.id == id }), let request {
-            titlePrefs.remember(metaID: request.metaID, audioTrack: track.language)
-        }
-    }
 
-    public func selectSubtitle(_ id: Int?) async {
-        userTouched(); stopBriefSubtitles()
-        await engine.selectSubtitle(id)
-        guard let request else { return }
-        if let id {
-            // Una pista sin etiqueta de idioma no se recuerda (y desde luego no apaga los subtítulos de la serie).
-            if let track = snapshot.subtitleTracks.first(where: { $0.id == id }), let language = track.language, !language.isEmpty {
-                titlePrefs.remember(metaID: request.metaID, subtitleTrack: language)
-            }
-        } else {
-            titlePrefs.remember(metaID: request.metaID, subtitleTrack: "")
-            subtitlePicks?.forget(metaID: request.metaID)
-        }
-    }
 
     // MARK: controles
-    private func userTouched() { autoAdvances = 0 }
+    func userTouched() { autoAdvances = 0 }
 
     public func setRate(_ value: Float) async { rate = value; await engine.setRate(value) }
 
@@ -1181,7 +814,7 @@ public final class PlayerModel: ObservableModel {
             await self.engine.selectSubtitle(nil)
         }
     }
-    private func stopBriefSubtitles() { briefSubtitles?.cancel(); briefSubtitles = nil }
+    func stopBriefSubtitles() { briefSubtitles?.cancel(); briefSubtitles = nil }
 
     /// Cambia de fuente en el mismo punto. Si la lista de fuentes es vieja (los enlaces de Real-Debrid caducan) se pide de nuevo.
     /// Cambiar de versión a mano (en la hoja, o un idioma que solo trae otra versión: `language`). Se pausa y se toma el

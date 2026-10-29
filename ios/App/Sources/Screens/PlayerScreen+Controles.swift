@@ -69,7 +69,7 @@ extension PlayerScreen {
 
     /// ¿Se ven ±10 y el botón grande? Con los controles, ya con video (buscando versión no hacen nada).
     func transportShown(_ model: PlayerModel) -> Bool {
-        controlsVisible && !locked && !failed(model) && !subtitleDock && ipod == nil && model.phase != .preparing
+        controlsVisible && !padlock.locked && !failed(model) && !dockState.subtitleDock && ipod == nil && model.phase != .preparing
     }
 
     // MARK: controles
@@ -107,13 +107,12 @@ extension PlayerScreen {
                         LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     }
                     if !raisedPortrait(rect) { topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2).transition(.opacity) }
-                    // Sin agarradera a la vista (se pidió quitarla): el video se sigue moviendo arrastrando desde su borde de abajo o
-                    // desde lo negro. Para VoiceOver queda un elemento invisible con «Subir el video» y «Bajar el video».
+                    // La agarradera, montada en el borde de abajo del video: se ve dónde va el dedo para subirlo o bajarlo (se pidió
+                    // que fuera evidente, 29 oct). El arrastre lo lee la capa de gestos (desde la agarradera o desde lo negro).
+                    // Para VoiceOver trae «Subir el video» y «Bajar el video».
                     if !fillsPortrait {
-                        Color.clear
-                            .frame(width: rect.width, height: DS.PlayerPanel.handleGrab)
-                            .padding(.top, rect.maxY - DS.PlayerPanel.handleGrab)
-                            .allowsHitTesting(false)
+                        DSVideoHandle(active: movingVideo)
+                            .position(x: rect.midX, y: rect.maxY)
                             .accessibilityElement()
                             .accessibilityLabel(Text("Mover el video"))
                             .accessibilityHint(Text("Arrastra hacia arriba o hacia abajo"))
@@ -126,7 +125,7 @@ extension PlayerScreen {
                         if model.snapshot.duration > 0 { scrubber(model) }
                         // «Siguiente episodio» debajo de la barra: antes iba encima y la empujaba hacia abajo justo al final, quizá
                         // mientras la arrastrabas.
-                        if let up = model.upNext, !locked { upNextCard(model, up) }
+                        if let up = model.upNext, !padlock.locked { upNextCard(model, up) }
                         // Su lugar está apartado aunque no salga: ±10 y el botón grande no brincan cuando aparece.
                         // Solo cuando hay algo que ofrecer: el botón grande ya va sobre el video, así que su lugar apartado sobraba
                         // (dejaba una franja negra vacía bajo la barra, más notoria con el video hasta arriba).
@@ -159,8 +158,8 @@ extension PlayerScreen {
         let local = await env.services.localizer.meta(kind: "series", meta: meta)
         guard !Task.isCancelled else { return }
         holder.model.useLocalizedMeta(local, for: request.videoID)
-        if !episodeSeasons.isEmpty {
-            episodeSeasons = await Task.detached(priority: .userInitiated) { CinemetaParsing.seasons(local).filter { !$0.isSpecials } }.value
+        if !dockState.episodeSeasons.isEmpty {
+            dockState.episodeSeasons = await Task.detached(priority: .userInitiated) { CinemetaParsing.seasons(local).filter { !$0.isSpecials } }.value
         }
     }
 
@@ -252,7 +251,7 @@ extension PlayerScreen {
                 .accessibilityHint(Text("Cambia el zoom del video"))
                 .accessibilityIdentifier("player-zoom")
                 #if DEBUG
-                .accessibilityValue(Text(verbatim: Demo.isOn ? "pinch \(lastPinch)" : ""))
+                .accessibilityValue(Text(verbatim: Demo.isOn ? "pinch \(framing.lastPinch)" : ""))
                 #endif
             if !landscape {
                 // Prender o apagar el iPod (y su color): no → blanco → negro → no.
@@ -325,7 +324,7 @@ extension PlayerScreen {
 
     func show(_ new: PlayerNotice) {
         if topNoticesAreWaiting {
-            heldNotices.hold(.player(new))
+            notices.heldNotices.hold(.player(new))
             return
         }
         reveal(new)
@@ -334,7 +333,7 @@ extension PlayerScreen {
     /// El aviso de arriba, ya en pantalla. VoiceOver lo dice en este momento, no cuando se encoló.
     func reveal(_ new: PlayerNotice) {
         UIAccessibility.post(notification: .announcement, argument: new.title)
-        withAnimation(DS.Motion.base(reduceMotion)) { notice = new }
+        withAnimation(DS.Motion.base(reduceMotion)) { notices.notice = new }
     }
 
     /// Un video que te pasaron (sin reconocer) no lo puede poner la TV.
