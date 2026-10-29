@@ -50,6 +50,30 @@ final class ForYouTests: XCTestCase {
         XCTAssertFalse(after.contains { $0.imdb == fresh[0].imdb })
     }
 
+    /// Dos pedidos iguales al mismo tiempo (las listas y el mosaico piden tus listas de Trakt) comparten una sola petición.
+    func testTwoCallersAtOnceShareOneRequest() async {
+        let http = FakeHTTP(); stubTrakt(http)
+        http.delays["\(api)/users/me/lists"] = 150
+        let forYou = makeForYou(http)
+        async let lists = forYou.lists()
+        async let mosaic = forYou.mosaic()
+        _ = await (lists, mosaic)
+        XCTAssertEqual(http.calls.filter { $0 == "\(api)/users/me/lists" }.count, 1)
+    }
+
+    /// Guardar en tu watchlist olvida solo la watchlist: lo demás de Para ti no se vuelve a pedir.
+    func testClearingOnePrefixKeepsTheRest() async {
+        let http = FakeHTTP(); stubTrakt(http)
+        let forYou = makeForYou(http)
+        _ = await forYou.mosaic()
+        let before = http.calls.count
+        await forYou.clearCache(["trakt:watchlist"])
+        _ = await forYou.mosaic()
+        let again = http.calls.dropFirst(before)
+        XCTAssertTrue(again.contains { $0.contains("/sync/watchlist") }, "la watchlist se vuelve a pedir")
+        XCTAssertFalse(again.contains { $0.contains("/recommendations/") }, "las recomendaciones siguen en caché")
+    }
+
     func testASavedSuggestionKeepsEverything() {
         var s = Suggestion(kind: "series", imdb: "tt1", title: "Uno", year: 2024, poster: "p", wide: "w", logo: "l", reason: .inList("Terror"), next: (2, 5), rank: 3)
         s.movement = -1; s.isNew = true

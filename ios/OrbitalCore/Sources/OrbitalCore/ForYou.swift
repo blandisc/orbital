@@ -136,6 +136,9 @@ public actor ForYou {
     private let kv: KeyValueStore
     private let clock: @Sendable () -> Date
     private var cache: [String: (expires: Date, value: Any)] = [:]
+    /// Lo que ya se está pidiendo: otra llamada igual espera esa misma respuesta (el actor atiende otra llamada mientras
+    /// espera la red, y `lists()` y `mosaic()` pedían tus listas de Trakt dos veces a la vez).
+    private var inflight: [String: Task<any Sendable, any Error>] = [:]
     private var dismissed: Set<String>
 
     public init(trakt: Trakt?, tmdb: Tmdb?, charts: Charts? = nil, addons: AddonRegistry? = nil, http: HTTPClient? = nil,
@@ -149,14 +152,25 @@ public actor ForYou {
     public var traktConfigured: Bool { trakt?.configured ?? false }
     public var tmdbConfigured: Bool { tmdb?.configured ?? false }
 
-    private func remember<T>(_ key: String, ttl: TimeInterval, _ load: () async throws -> T) async throws -> T {
+    private func remember<T: Sendable>(_ key: String, ttl: TimeInterval, _ load: @escaping @Sendable () async throws -> T) async throws -> T {
         if let hit = cache[key], clock() < hit.expires, let value = hit.value as? T { return value }
-        let value = try await load()
+        if let running = inflight[key], let value = try await running.value as? T { return value }
+        let task = Task<any Sendable, any Error> { try await load() }
+        inflight[key] = task
+        defer { if inflight[key] == task { inflight[key] = nil } }
+        guard let value = try await task.value as? T else { throw CancellationError() }
         cache[key] = (clock().addingTimeInterval(ttl), value)
         return value
     }
 
-    public func clearCache() { cache.removeAll() }
+    public func clearCache() { cache.removeAll(); inflight.removeAll() }
+
+    /// Olvida solo lo que empieza con alguno de estos prefijos (guardar en tu watchlist ya no tira todo Para ti).
+    public func clearCache(_ prefixes: [String]) {
+        let stale = { (key: String) in prefixes.contains { key.hasPrefix($0) } }
+        cache = cache.filter { !stale($0.key) }
+        inflight = inflight.filter { !stale($0.key) }
+    }
 
     /// «No me interesa»: esa sugerencia no vuelve a salir.
     /// Lo que marcaste «No me interesa» (también vale para el mosaico de lo popular).
@@ -170,7 +184,7 @@ public actor ForYou {
     // MARK: listas disponibles
     public func platforms() async -> [String: PlatformInfo] {
         guard let tmdb, tmdb.configured else { return [:] }
-        return (try? await remember("tmdb:platforms", ttl: Self.slowTTL) { try await tmdb.platforms(region: region()) }) ?? [:]
+        return (try? await remember("tmdb:platforms", ttl: Self.slowTTL) { try await tmdb.platforms(region: self.region()) }) ?? [:]
     }
 
     /// Tus listas de Trakt (recordadas un rato); vacío sin Trakt.
@@ -297,7 +311,7 @@ public actor ForYou {
         }
         if let platform = Tmdb.platforms.first(where: { $0.brand == listID }) { return try await platformItems(platform, kind: kind) }
         if listID.hasPrefix("addon:"), let entry = await addonCatalogs().first(where: { $0.id == listID }) {
-            return try await remember("\(listID):\(kind)", ttl: Self.recsTTL) { try await addonItems(entry, kind: kind) }
+            return try await remember("\(listID):\(kind)", ttl: Self.recsTTL) { try await self.addonItems(entry, kind: kind) }
         }
         if let charts, listID == "chart:netflix" { return try await charts.netflix(kind: kind).map { chartSuggestion($0, kind: kind, platform: "Netflix") } }
         if let charts, listID.hasPrefix("jw:"), let p = Charts.justWatchPlatforms.first(where: { "jw:\($0.brand)" == listID }) {
@@ -376,7 +390,7 @@ public actor ForYou {
     private func platformItems(_ platform: (brand: String, name: String, aliases: [String]), kind: String) async throws -> [Suggestion] {
         guard let tmdb, let info = await platforms()[platform.brand] else { return [] }
         return try await remember("tmdb:\(platform.brand):\(kind)", ttl: Self.popularTTL) {
-            let rows = try await tmdb.discover(kind: kind, providerID: info.id, region: region()).prefix(20)
+            let rows = try await tmdb.discover(kind: kind, providerID: info.id, region: self.region()).prefix(20)
             return await Self.suggestions(Array(rows), kind: kind, reason: .onPlatform(platform.name), tmdb: tmdb)
         }
     }
