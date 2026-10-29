@@ -79,10 +79,13 @@ extension DS {
         static let otherVersionsShown = 2
         /// Sin conexión, cuántos idiomas más (de los que sí hay) salen junto a Español e Inglés en Subtítulos.
         static let offlineExtraLanguages = 2
-        /// La agarradera va dentro del borde de abajo del video (sobre un velo): la rayita, a cuánto del borde, el alto del velo, la
-        /// franja que la toma (dentro del video, desde abajo, y un poco por fuera) y el aire hasta la barra de avance.
+        /// La agarradera, montada en el borde de abajo del video (mitad dentro, mitad fuera): la franja que la toma (dentro del
+        /// video, desde abajo, y un poco por fuera) y el aire entre el borde de abajo de la cápsula y el nombre del título.
         static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap: CGFloat = 12, handleWidth: CGFloat = 64, handleHeight: CGFloat = 22, handleBar: CGFloat = 36, handleBarHeight: CGFloat = 5, handleLift: CGFloat = 1.1   // la cápsula de vidrio, su rayita y cuánto crece al arrastrar
         static let handleReach: CGFloat = 12
+        /// Desde el borde del video hasta donde empiezan los controles: la mitad de la cápsula que cuelga por fuera más su aire
+        /// (antes se contaba el aire desde el borde del video y la cápsula quedaba a 1 pt del nombre, 29 oct).
+        static var handleClearance: CGFloat { handleHeight / 2 + handleGap }
         /// Cuántas funciones da el video un brinquito (hacia abajo y de regreso) para enseñar que se mueve, y de qué tamaño (parte del alto).
         static let moveHintTimes = 3
         static let moveNudge: Double = 0.025

@@ -151,7 +151,7 @@ extension PlayerScreen {
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     .padding(.bottom, fillsPortrait ? DS.Space.s8 : DS.Space.s4)
-                    .padding(.top, fillsPortrait ? 0 : min(rect.maxY + DS.PlayerPanel.handleGap, max(0, geo.size.height - controlsNeed - DS.Space.s4)))
+                    .padding(.top, fillsPortrait ? 0 : min(rect.maxY + DS.PlayerPanel.handleClearance, max(0, geo.size.height - controlsNeed - DS.Space.s4)))
                     .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
