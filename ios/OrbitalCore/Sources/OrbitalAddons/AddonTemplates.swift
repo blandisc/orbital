@@ -38,6 +38,29 @@ public enum AddonCatalog {
         return "\(torrentioBase)/\(parts.joined(separator: "|"))/manifest.json"
     }
 
+    public static let cometBase = "https://comet.elfhosted.com"
+
+    /// Comet (la instancia pública de ElfHosted) con Real-Debrid: su configuración va en la URL como JSON en base64
+    /// (`/{base64}/manifest.json`), como la arma su página. Solo lo cacheado en tu Real-Debrid. Viene apagado en la guía
+    /// hasta probarlo con una cuenta real.
+    public static let comet = AddonTemplate(
+        id: "comet", name: "Comet", summary: "Más fuentes de video, también de tu Real-Debrid", resources: ["stream"],
+        usesDebrid: true, onByDefault: false
+    ) { token, _ in
+        guard let token else { return nil }
+        let settings: [String: Any] = ["debridServices": [["service": "realdebrid", "apiKey": token]], "cachedOnly": true]
+        guard let json = try? JSONSerialization.data(withJSONObject: settings, options: [.sortedKeys]),
+              var text = String(data: json, encoding: .utf8) else { return nil }
+        // El base64 normal puede traer «/» o «+», que rompen la ruta: un espacio más al final del JSON (que no cambia nada)
+        // recorre los bytes hasta que sale limpio.
+        for _ in 0..<4 {
+            let encoded = Data(text.utf8).base64EncodedString()
+            if !encoded.contains("/"), !encoded.contains("+") { return "\(cometBase)/\(encoded)/manifest.json" }
+            text += " "
+        }
+        return nil
+    }
+
     /// OpenSubtitles (el oficial de Stremio): subtítulos, sin clave.
     public static let openSubtitles = AddonTemplate(
         id: "opensubtitles", name: "OpenSubtitles", summary: "Subtítulos en tu idioma", resources: ["subtitles"],
@@ -45,7 +68,7 @@ public enum AddonCatalog {
     ) { _, _ in "https://opensubtitles-v3.strem.io/manifest.json" }
 
     /// Los recomendados, en el orden en que se preguntan.
-    public static let recommended: [AddonTemplate] = [torrentio, openSubtitles]
+    public static let recommended: [AddonTemplate] = [torrentio, comet, openSubtitles]
 
     public static func template(_ id: String) -> AddonTemplate? { recommended.first { $0.id == id } }
 }

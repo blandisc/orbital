@@ -2,7 +2,8 @@ import SwiftUI
 import OrbitalModels
 
 /// Ajustes › Cuentas (maqueta 11): cada cuenta con su papel dicho en el título. Real-Debrid (de ahí salen los videos),
-/// Trakt · principal (lo tuyo entre aparatos), Stremio · respaldo (la copia, el único lugar donde dice Stremio) y tu Orbital.
+/// Trakt · principal (lo tuyo entre aparatos) y Stremio · respaldo (la copia, el único lugar donde dice Stremio). Tu Orbital
+/// vive aparte, en Ajustes › Orbital en la TV.
 extension SettingsView {
     /// Lo que dice el renglón «Cuentas»: cuánto le queda a tu Real-Debrid, o que falta.
     var debridValue: Text {
@@ -13,12 +14,9 @@ extension SettingsView {
     @ViewBuilder func accounts(_ model: SettingsModel) -> some View {
         debridSection
         Section {
-            if traktFromOrbital(model) {
-                SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: Text("Desde tu Orbital"), linked: false)
-            } else {
-                NavigationLink { page("Trakt") { traktSection(model) } } label: {
-                    SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))
-                }
+            // La sesión de Trakt siempre es la de este iPhone (la de la consola ya no se presta): se abre, se ve y se desconecta aquí.
+            NavigationLink { page("Trakt") { traktSection(model) } } label: {
+                SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))
             }
         } header: { Text("Trakt · principal") } footer: { Text("Guarda dónde te quedaste, lo que viste y Mi lista, para todos tus aparatos.") }
         .listRowBackground(DS.surface)
@@ -33,15 +31,6 @@ extension SettingsView {
             }
         } header: { Text("Stremio · respaldo") } footer: { Text("Lo que ves también se guarda ahí, como copia.") }
         .listRowBackground(DS.surface)
-        // La Mac no se conecta con tu Orbital (`Services.allowsOrbital`): ahí no hay nada que configurar.
-        if env.services.allowsOrbital {
-            Section {
-                NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
-                    SettingsRow(title: "Tu Orbital", symbol: "tv", tint: DS.ListTint.series, value: env.services.orbital.isConfigured ? Text("Conectada") : Text("Sin conectar"))
-                }
-            } header: { Text("Tu Orbital") }
-            .listRowBackground(DS.surface)
-        }
     }
 
     /// Real-Debrid: cómo está (días, vencimiento), «Renovar», «Cambiar clave» y «Quitar»; sin clave, el campo para pegarla.

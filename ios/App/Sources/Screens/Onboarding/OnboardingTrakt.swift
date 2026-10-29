@@ -17,7 +17,7 @@ struct OnboardingTrakt: View {
     var body: some View {
         let model = guide.model
         GuidePage(title: Text("Conecta Trakt"),
-                  message: Text("Guarda dónde te quedaste, lo que ya viste y tu lista, para que la TV, el iPad y la Mac sepan lo mismo. Es gratis."),
+                  message: Text("Guarda dónde te quedaste, lo que ya viste y tu lista, para que todos tus aparatos sepan lo mismo. Es gratis."),
                   step: step, primaryEnabled: model.canContinue(.trakt), next: next) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 switch settings.model.trakt {

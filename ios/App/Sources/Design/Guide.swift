@@ -142,3 +142,22 @@ struct AddonLabel: View {
         return imported ? Text("\(what) · \(Text("Importado"))") : what
     }
 }
+
+/// La ilustración de una página del tutorial de Orbital: un recuadro con un ícono grande en su color y, si hace falta, lo
+/// que se toca de verdad debajo (los botones «Ver» y «Ver en la TV»).
+struct GuideArt<Detail: View>: View {
+    let symbol: String
+    let tint: Color
+    @ViewBuilder var detail: Detail
+
+    var body: some View {
+        VStack(spacing: DS.Space.s4) {
+            Image(systemName: symbol).font(.system(size: DS.Guide.artSymbol)).foregroundStyle(tint)   // ds-exception: un dibujo, no texto: no crece con Dynamic Type
+            detail
+        }
+        .frame(maxWidth: .infinity, minHeight: DS.Guide.artHeight)
+        .padding(DS.Space.s4)
+        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .accessibilityHidden(true)   // es adorno: el título y la frase de la página ya lo dicen
+    }
+}

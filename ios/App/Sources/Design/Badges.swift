@@ -136,6 +136,13 @@ struct DSSectionHead: View {
         if trailing == nil, let action { Button(action: action) { head }.buttonStyle(.plain) } else { head }
     }
 
+    private var sectionTitle: some View {
+        title.recipe(.section).multilineTextAlignment(.leading)
+            // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
+            // así lo de la derecha no queda alto.
+            .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: .title2).capHeight / 2 }
+    }
+
     private var head: some View {
         // Lo de la derecha («Ver todo», el número) va a la altura del título, no de la línea ámbar de arriba.
         HStack(alignment: .sectionTitle, spacing: DS.Space.s2) {
@@ -143,13 +150,23 @@ struct DSSectionHead: View {
                 // Un solo lugar para el porqué de una sección en toda la app: arriba del título, en ámbar (como una revista).
                 // Antes unas lo ponían arriba en ámbar y otras abajo en gris.
                 if let line = eyebrow ?? meta { line.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2).multilineTextAlignment(.leading) }
-                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-                    title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
-                        // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
-                        // así lo de la derecha no queda alto.
-                        .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: .title2).capHeight / 2 }
-                    if let source { SourceBadge(source: source) }
-                }
+                // El título nunca se parte a media palabra por el sello («Aproba-das por…»). Un ícono (el jitomate) cabe
+                // siempre al lado; un sello con nombre, si no caben en un renglón, cede y baja bajo el título.
+                if let source, source.isIcon {
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                        sectionTitle.lineLimit(2)
+                        SourceBadge(source: source).alignmentGuide(.firstTextBaseline) { $0[.bottom] }   // el jitomate se para en la línea del título
+                    }
+                } else { ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                        sectionTitle.lineLimit(1)
+                        if let source { SourceBadge(source: source) }
+                    }
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        sectionTitle.lineLimit(2)
+                        if let source { SourceBadge(source: source) }
+                    }
+                } }
                 if eyebrow != nil, let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
             }
             Spacer(minLength: DS.Space.s2)

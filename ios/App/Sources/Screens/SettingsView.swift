@@ -18,6 +18,9 @@ struct SettingsView: View {
     @State private var editingAvatar = false
     @State private var showsYear = false
     @State private var showsTrakt = false
+    /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
+    @State private var orbitalSetup: OrbitalSetupStart?
+    @State private var confirmOrbitalOff = false
 
     init() {
         let services = AppEnvironment.shared.services
@@ -75,13 +78,10 @@ struct SettingsView: View {
                     SettingsRow(title: "OneDrive", symbol: "cloud", tint: DS.ListTint.library,
                                 value: env.services.oneDrive.linked ? Text("Conectado") : Text("Sin conectar"))
                 }
-                if env.services.allowsOrbital {   // la voz le da órdenes a tu Orbital
-                    NavigationLink { VoiceGuideView() } label: {
-                        SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
-                    }
-                }
             } header: { Text("Conexiones") }
             .listRowBackground(DS.surface)
+            // La app es de una sola pieza: lo de la consola sale solo con esto prendido (en la Mac no hay consola).
+            if env.services.allowsOrbital { orbitalSettings(model) }
             // Lo que casi no se toca: complementos, la clave de TMDB y el país.
             Section {
                 NavigationLink { page("Avanzado") { suggestions(model) } } label: {
@@ -102,6 +102,10 @@ struct SettingsView: View {
         .contentMargins(.bottom, DS.Space.s10, for: .scrollContent)
         .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()   // iPad y Mac: los renglones al centro
+        .sheet(item: $orbitalSetup) { start in OrbitalSetupView(tutorialOnly: start == .tutorial) }
+        .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {
+            Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); ReleaseNotifier.registerCategory(language: s.uiLanguage, tv: false) }
+        } message: { Text("Se esconden «Ver en la TV», el control y la voz. Lo que viste se queda: viaja por Trakt.") }
         .confirmationDialog("¿Cerrar sesión de Stremio?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Cerrar sesión", role: .destructive) { Task { await session.model.signOut() } }
         } message: { Text("Lo tuyo se queda en el iPhone y en Trakt; Stremio deja de recibir la copia.") }
@@ -136,6 +140,38 @@ struct SettingsView: View {
         #endif
     }
 
+    /// Ajustes › Orbital en la TV (maquetas 1 y 8): el interruptor y, prendido, tu Orbital, la voz y el tutorial otra vez.
+    @ViewBuilder private func orbitalSettings(_ model: SettingsModel) -> some View {
+        let on = model.settings.orbitalEnabled
+        Section {
+            Toggle(isOn: Binding(get: { on || orbitalSetup == .connect }, set: { want in
+                if want { orbitalSetup = .connect } else { confirmOrbitalOff = true }
+            })) {
+                Label { Text("Usar con tu Orbital").foregroundStyle(DS.text) } icon: {
+                    OrbitalMark(size: DS.Size.markSmall).frame(width: DS.SettingsLook.rowIcon)
+                }
+            }
+            .accessibilityIdentifier("settings-orbital")
+            if on {
+                NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
+                    SettingsRow(title: "Tu Orbital", symbol: "tv", tint: DS.ListTint.series,
+                                value: env.services.orbital.isConfigured ? Text("Conectada") : Text("Sin conectar"))
+                }
+                NavigationLink { VoiceGuideView() } label: {   // la voz le da órdenes a tu Orbital
+                    SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
+                }
+                Button { orbitalSetup = .tutorial } label: {
+                    SettingsRow(title: "Qué puedes hacer con la TV", symbol: "sparkles", tint: DS.ListTint.spark, linked: false)
+                }
+            }
+        } header: { Text("Orbital en la TV") } footer: {
+            on ? Text("Apágalo cuando quieras: la app vuelve a ser solo del iPhone. Lo que viste sigue en Trakt.")
+               : Text("¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el iPhone de control y hablarle.")
+        }
+        .listRowBackground(DS.surface)
+        .onChange(of: on) { _, now in ReleaseNotifier.registerCategory(language: model.settings.uiLanguage, tv: now) }
+    }
+
     /// Una página de Ajustes: el mismo formulario y fondo.
     func page<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         Form { content() }
@@ -143,12 +179,6 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden).background(Backdrop())
             .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
             .readableListWidth()
-    }
-
-    /// Trakt conectado con la sesión que copió tu Orbital (no se configura aquí).
-    func traktFromOrbital(_ model: SettingsModel) -> Bool {
-        guard case .linked = model.trakt else { return false }
-        return env.services.orbital.isConfigured
     }
 
     /// «Trakt · Real-Debrid · Orbital»: solo lo que conectaste, bajo tu avatar (Stremio, el respaldo, solo en Cuentas).
@@ -297,7 +327,7 @@ struct SettingsView: View {
     @ViewBuilder private func suggestions(_ model: SettingsModel) -> some View {
         let s = model.settings
         Section {
-            Picker("País (para lo popular en plataformas)", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v } })) {
+            Picker("País (para lo popular en plataformas)", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v; $0.regionChosen = true } })) {
                 ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
             }
             SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -351,7 +381,7 @@ struct SettingsView: View {
                 if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
             }
         } header: { Label { Text("Tu Orbital (la TV)") } icon: { OrbitalMark(size: DS.Size.markSmall) } } footer: {
-            Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y las claves de Para ti salen de ella. Trakt se conecta aparte en cada uno.")
+            Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas. Trakt se conecta aparte en cada uno.")
         }
         .listRowBackground(DS.surface)
     }
@@ -361,11 +391,11 @@ struct SettingsView: View {
         Section("Trakt") {
             switch model.trakt {
             case .off:
-                Text("Conecta tu Orbital (arriba) y Trakt queda listo. Si usas tu propia aplicación de Trakt, pega su Client ID en Avanzado.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+                Text("Falta la aplicación de Trakt. Si usas la tuya, pega su Client ID en Avanzado.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             case .unlinked:
                 // Un solo botón: el código y la página que manda Trakt (hoy auth.trakt.tv/activate). La sesión es de este iPhone; tu Orbital tiene la suya.
                 Button("Conectar Trakt") { Task { await model.linkTrakt() } }
-                Text("Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
+                Text("Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             case .linking(let code, let url):
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     Text("Escribe este código en \(url):").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
@@ -494,3 +524,9 @@ struct RememberedTitlesView: View {
     }
 }
 
+
+/// Cómo se abre la hoja de «Usar con tu Orbital»: a conectar (al prender el interruptor) o solo el tutorial.
+enum OrbitalSetupStart: Identifiable {
+    case connect, tutorial
+    var id: Self { self }
+}

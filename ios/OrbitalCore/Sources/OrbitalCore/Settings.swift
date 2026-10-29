@@ -39,6 +39,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var deleteWhenWatched = false
     public var warnCellularOverGB = 5.0
     public var region = "MX"                   // para «lo más popular en Netflix» (TMDB)
+    /// Ya hay país: lo elegiste en Ajustes o se trajo una vez de tu Orbital. Conectarla después ya no lo cambia.
+    public var regionChosen = false
     public var preferInfuse = false            // reproducir en Infuse en vez del reproductor propio
     public var traktClientID = ""            // el identificador no es secreto; el secreto de la aplicación va en el Keychain
     public var subtitleSize = "medium"         // «small» | «medium» | «large»: el tamaño de la letra de los subtítulos
@@ -48,6 +50,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var forcedForForeignAudio = true    // audio en otro idioma (ni el tuyo ni inglés): los carteles en tu idioma
     public var subtitleSystemStyle = false     // «Usar el estilo del iPhone» (Accesibilidad › Subtítulos): su color, fondo y tamaño
     public var orbitalAddress = ""             // tu Orbital por el túnel («orbital.midominio.com»); el token va en el Keychain
+    /// Ajustes › «Usar con tu Orbital»: la app es de una sola pieza y todo lo de la consola (Ver en la TV, el control, la voz,
+    /// «Desde la TV») sale solo con esto prendido. Lo guardado de antes con una consola ya emparejada llega prendido.
+    public var orbitalEnabled = false
     public var appearance = "system"           // «system» | «light» | «dark»: el modo de la app (por omisión, el del iPhone)
     public var releaseAlerts = false           // avisar cuando un episodio de lo que sigues ya se puede ver («Ya está para ver»)
     public var becauseStyle = "posters"        // «Porque viste» (Para ti): «posters» (mini pósters) | «deck» (mazo de cartas)
@@ -77,6 +82,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         deleteWhenWatched = try c.decodeIfPresent(Bool.self, forKey: .deleteWhenWatched) ?? deleteWhenWatched
         warnCellularOverGB = try c.decodeIfPresent(Double.self, forKey: .warnCellularOverGB) ?? warnCellularOverGB
         region = try c.decodeIfPresent(String.self, forKey: .region) ?? region
+        regionChosen = try c.decodeIfPresent(Bool.self, forKey: .regionChosen) ?? regionChosen
         preferInfuse = try c.decodeIfPresent(Bool.self, forKey: .preferInfuse) ?? preferInfuse
         traktClientID = try c.decodeIfPresent(String.self, forKey: .traktClientID) ?? traktClientID
         subtitleSize = try c.decodeIfPresent(String.self, forKey: .subtitleSize) ?? subtitleSize
@@ -95,13 +101,14 @@ public struct AppSettings: Codable, Equatable, Sendable {
         oneDriveFolder = try c.decodeIfPresent(String.self, forKey: .oneDriveFolder) ?? oneDriveFolder
         videoZoom = try c.decodeIfPresent(String.self, forKey: .videoZoom) ?? videoZoom
         simpsonsSeasons = try c.decodeIfPresent([Int].self, forKey: .simpsonsSeasons) ?? simpsonsSeasons
+        orbitalEnabled = try c.decodeIfPresent(Bool.self, forKey: .orbitalEnabled) ?? !orbitalAddress.isEmpty
     }
 
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
-        case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
+        case deleteWhenWatched, warnCellularOverGB, region, regionChosen, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
         case avatar, displayName, latinSpanish, castilianSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom, simpsonsSeasons
-        case subtitleBackground, subtitlePosition, subtitlesOnSkipBack, forcedForForeignAudio, subtitleSystemStyle
+        case subtitleBackground, subtitlePosition, subtitlesOnSkipBack, forcedForForeignAudio, subtitleSystemStyle, orbitalEnabled
     }
 
     /// Alto de la letra de los subtítulos como fracción del alto del video (lo que usan los reproductores de TV).

@@ -74,7 +74,7 @@ final class VoiceRouterTests: XCTestCase {
 final class VoiceAssistantTests: XCTestCase {
     private func connected() throws -> ServicesRig {
         let rig = try ServicesRig()
-        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.services.settings.update { $0.orbitalAddress = "tv.example"; $0.orbitalEnabled = true }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
         return rig
     }

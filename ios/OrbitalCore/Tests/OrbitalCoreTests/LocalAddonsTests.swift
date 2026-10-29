@@ -28,7 +28,7 @@ final class LocalAddonsTests: XCTestCase {
         http.json[try XCTUnwrap(URL(string: torrentio)).absoluteString] = ["name": "Torrentio", "resources": ["stream"], "types": ["movie", "series"]]
         http.json["https://opensubtitles-v3.strem.io/manifest.json"] = ["name": "OpenSubtitles v3", "resources": ["subtitles"], "types": ["movie"]]
         http.json["https://listas.example/manifest.json"] = ["name": "Listas", "resources": ["catalog"], "types": ["movie"]]
-        list.startWithRecommended()
+        list.startWithRecommended([AddonCatalog.torrentio, AddonCatalog.openSubtitles])
         let listas = list.add(url: "https://listas.example/manifest.json", name: "Listas", resources: ["catalog"])
         list.move(fromOffsets: IndexSet(integer: 2), toOffset: 0)
         list.setEnabled(AddonCatalog.openSubtitles.id, false)

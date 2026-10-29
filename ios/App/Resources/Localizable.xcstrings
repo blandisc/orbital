@@ -1417,6 +1417,17 @@
         }
       }
     },
+    "Apagar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off"
+          }
+        }
+      }
+    },
     "Apagar subtítulos": {
       "extractionState": "manual",
       "localizations": {
@@ -1486,6 +1497,71 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to type on the Trakt page shown. The session is only for this iPad: what you watch is reported, you pick up where you left off on your other devices, and your watchlist and lists show up."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to type on the Trakt page shown. The session is only for this iPhone: what you watch is reported, you pick up where you left off on your other devices, and your watchlist and lists show up."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to type on the Trakt page shown. The session is only for this Mac: what you watch is reported, you pick up where you left off on your other devices, and your watchlist and lists show up."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to type on the Trakt page shown. The session is only for this iPhone: what you watch is reported, you pick up where you left off on your other devices, and your watchlist and lists show up."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPad: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de esta Mac: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas."
                 }
               }
             }
@@ -1587,6 +1663,82 @@
           "stringUnit": {
             "state": "translated",
             "value": "Critically acclaimed"
+          }
+        }
+      }
+    },
+    "Apunta al código de la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point at the code on the TV"
+          }
+        }
+      }
+    },
+    "Apágalo cuando quieras: la app vuelve a ser solo del iPhone. Lo que viste sigue en Trakt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn it off anytime: the app goes back to being just for your iPad. What you watched stays in Trakt."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn it off anytime: the app goes back to being just for your iPhone. What you watched stays in Trakt."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn it off anytime: the app goes back to being just for your Mac. What you watched stays in Trakt."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn it off anytime: the app goes back to being just for your iPhone. What you watched stays in Trakt."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Apágalo cuando quieras: la app vuelve a ser solo del iPad. Lo que viste sigue en Trakt."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Apágalo cuando quieras: la app vuelve a ser solo del iPhone. Lo que viste sigue en Trakt."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Apágalo cuando quieras: la app vuelve a ser solo de la Mac. Lo que viste sigue en Trakt."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Apágalo cuando quieras: la app vuelve a ser solo del iPhone. Lo que viste sigue en Trakt."
+                }
+              }
+            }
           }
         }
       }
@@ -3589,6 +3741,17 @@
         }
       }
     },
+    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas. Trakt se conecta aparte en cada uno.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With your Orbital connected, “Watch on TV” plays on the console what you're watching here, where you left off. Trakt is connected separately on each."
+          }
+        }
+      }
+    },
     "Conecta Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -3846,6 +4009,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connect your OneDrive"
+          }
+        }
+      }
+    },
+    "Conecta tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your Orbital"
           }
         }
       }
@@ -6089,6 +6263,71 @@
         }
       }
     },
+    "El iPhone y la TV se reconocen una vez y ya.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPad and your TV recognize each other once, and that's it."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone and your TV recognize each other once, and that's it."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Mac and your TV recognize each other once, and that's it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone and your TV recognize each other once, and that's it."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El iPad y la TV se reconocen una vez y ya."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El iPhone y la TV se reconocen una vez y ya."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La Mac y la TV se reconocen una vez y ya."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El iPhone y la TV se reconocen una vez y ya."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.": {
       "extractionState": "manual",
       "localizations": {
@@ -6550,6 +6789,17 @@
         }
       }
     },
+    "En cualquier película o serie toca «Ver en la TV»: empieza en la sala justo donde ibas. Lo que veas allá sale arriba de la barra, en «En la TV».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On any movie or show, tap “Watch on TV”: it starts in the living room right where you left off. What's playing there shows above the tab bar, in “On TV”."
+          }
+        }
+      }
+    },
     "En el control": {
       "extractionState": "manual",
       "localizations": {
@@ -6785,6 +7035,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "On TV"
+          }
+        }
+      }
+    },
+    "En la TV abre Ajustes › Cuentas › iPhone. Aparece un código.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the TV, open Settings › Accounts › iPhone. A code appears."
           }
         }
       }
@@ -7207,6 +7468,17 @@
         }
       }
     },
+    "Escanear el código": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan the code"
+          }
+        }
+      }
+    },
     "Escribe este código en %@": {
       "extractionState": "manual",
       "localizations": {
@@ -7225,6 +7497,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Enter this code at %@:"
+          }
+        }
+      }
+    },
+    "Escribe la dirección y el token.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type the address and the token."
           }
         }
       }
@@ -7280,6 +7563,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "That email doesn't have a Stremio account."
+          }
+        }
+      }
+    },
+    "Ese código no es de Orbital. En la TV abre Ajustes › Cuentas › iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That code isn't from Orbital. On the TV, open Settings › Accounts › iPhone."
           }
         }
       }
@@ -7515,6 +7809,17 @@
         }
       }
     },
+    "Este aparato no puede leer el código.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device can't read the code."
+          }
+        }
+      }
+    },
     "Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas.": {
       "extractionState": "manual",
       "localizations": {
@@ -7621,6 +7926,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The partial file is missing"
+          }
+        }
+      }
+    },
+    "Falta la aplicación de Trakt. Si usas la tuya, pega su Client ID en Avanzado.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Trakt app is missing. If you use your own, paste its Client ID in Advanced."
           }
         }
       }
@@ -7863,6 +8179,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keeps where you left off, what you've watched and your list, so the TV, iPad and Mac know the same. It's free."
+          }
+        }
+      }
+    },
+    "Guarda dónde te quedaste, lo que ya viste y tu lista, para que todos tus aparatos sepan lo mismo. Es gratis.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It saves where you left off, what you've watched and your list, so all your devices know the same. It's free."
           }
         }
       }
@@ -8280,6 +8607,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No ranking for this service today."
+          }
+        }
+      }
+    },
+    "Háblale": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Talk to it"
           }
         }
       }
@@ -9404,6 +9742,17 @@
         }
       }
     },
+    "Lo encuentras cuando lo necesites; no hay que aprenderlo ahora.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You'll find it when you need it; no need to learn it now."
+          }
+        }
+      }
+    },
     "Lo mandó la TV: intenta desde su ficha": {
       "extractionState": "manual",
       "localizations": {
@@ -9642,6 +9991,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you saved"
+          }
+        }
+      }
+    },
+    "Lo que mandes desde la sala al iPhone llega a Inicio, para verlo en la cama.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you send from the living room to your iPad lands in Home, to watch in bed."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you send from the living room to your iPhone lands in Home, to watch in bed."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you send from the living room to your Mac lands in Home, to watch in bed."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you send from the living room to your iPhone lands in Home, to watch in bed."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que mandes desde la sala al iPad llega a Inicio, para verlo en la cama."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que mandes desde la sala al iPhone llega a Inicio, para verlo en la cama."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que mandes desde la sala a la Mac llega a Inicio, para verlo en la cama."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que mandes desde la sala al iPhone llega a Inicio, para verlo en la cama."
+                }
+              }
+            }
           }
         }
       }
@@ -10523,6 +10937,17 @@
         }
       }
     },
+    "Mientras juegas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "While you play"
+          }
+        }
+      }
+    },
     "Mini pósters": {
       "extractionState": "manual",
       "localizations": {
@@ -10837,6 +11262,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "More filters · %lld"
+          }
+        }
+      }
+    },
+    "Más fuentes de video, también de tu Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More video sources, also from your Real-Debrid"
           }
         }
       }
@@ -12512,6 +12948,28 @@
         }
       }
     },
+    "Orbital en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital on the TV"
+          }
+        }
+      }
+    },
+    "Orbital junta dos piezas. Te ayudamos a conectar cada una.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital puts two pieces together. We'll help you connect each one."
+          }
+        }
+      }
+    },
     "Orbital junta tres piezas. Te ayudamos a conectar cada una.": {
       "extractionState": "manual",
       "localizations": {
@@ -13579,6 +14037,17 @@
         }
       }
     },
+    "Prende «Usar con tu Orbital» en Ajustes para conectarla.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on “Use with your Orbital” in Settings to connect it."
+          }
+        }
+      }
+    },
     "Prender la consola": {
       "extractionState": "manual",
       "localizations": {
@@ -13850,6 +14319,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No. %lld"
+          }
+        }
+      }
+    },
+    "Pásalo a la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send it to the TV"
           }
         }
       }
@@ -14158,6 +14638,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What do you recommend"
+          }
+        }
+      }
+    },
+    "Qué puedes hacer con la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you can do with the TV"
           }
         }
       }
@@ -15096,6 +15587,17 @@
         }
       }
     },
+    "Saltar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip"
+          }
+        }
+      }
+    },
     "Saltar intro": {
       "extractionState": "manual",
       "localizations": {
@@ -15256,6 +15758,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "“%@” stopped"
+          }
+        }
+      }
+    },
+    "Se esconden «Ver en la TV», el control y la voz. Lo que viste se queda: viaja por Trakt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Watch on TV”, the remote and voice are hidden. What you watched stays: it travels through Trakt."
           }
         }
       }
@@ -15520,6 +16033,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "If Alexa says she can't, start with “pídele a mi consola que…” (ask my console to…): without it, Alexa tries to do it herself."
+          }
+        }
+      }
+    },
+    "Si abres un juego en la consola, el iPhone te muestra su guía, tus notas y un temporizador.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "If you open a game on the console, your iPad shows its guide, your notes and a timer."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "If you open a game on the console, your iPhone shows its guide, your notes and a timer."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "If you open a game on the console, your Mac shows its guide, your notes and a timer."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "If you open a game on the console, your iPhone shows its guide, your notes and a timer."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Si abres un juego en la consola, el iPad te muestra su guía, tus notas y un temporizador."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Si abres un juego en la consola, el iPhone te muestra su guía, tus notas y un temporizador."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Si abres un juego en la consola, la Mac te muestra su guía, tus notas y un temporizador."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Si abres un juego en la consola, el iPhone te muestra su guía, tus notas y un temporizador."
+                }
+              }
+            }
           }
         }
       }
@@ -17173,6 +17751,17 @@
         }
       }
     },
+    "Toca «En la TV» y luego el control: muévete por los menús, pausa y sube el volumen sin buscar el mando. También está en el Centro de control.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap “On TV” and then the remote: move through menus, pause and turn up the volume without looking for the controller. It's also in Control Center."
+          }
+        }
+      }
+    },
     "Toca «En la TV», estira la hoja hacia arriba y toca el micrófono. Habla con calma: cuando terminas, se detiene solo y te contesta en voz alta.": {
       "extractionState": "manual",
       "localizations": {
@@ -17180,6 +17769,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tap “On TV”, pull the sheet up and tap the microphone. Speak calmly: when you finish it stops on its own and answers out loud."
+          }
+        }
+      }
+    },
+    "Toca «Escanear el código» y apúntale.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap “Scan the code” and point at it."
           }
         }
       }
@@ -18007,6 +18607,17 @@
         }
       }
     },
+    "Tu Trakt, tu Real-Debrid y tu país se quedan como los tienes aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Trakt, your Real-Debrid and your country stay as you have them here."
+          }
+        }
+      }
+    },
     "Tu avance en la nube, en todos tus aparatos.": {
       "extractionState": "manual",
       "localizations": {
@@ -18145,6 +18756,136 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your account is free: you need Premium to watch."
+          }
+        }
+      }
+    },
+    "Tu iPhone es el control": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPad is the remote"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone is the remote"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Mac is the remote"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone is the remote"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPad es el control"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone es el control"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Mac es el control"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone es el control"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Tu iPhone y tu Orbital quedaron conectados.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPad and your Orbital are connected."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone and your Orbital are connected."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Mac and your Orbital are connected."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone and your Orbital are connected."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPad y tu Orbital quedaron conectados."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone y tu Orbital quedaron conectados."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Mac y tu Orbital quedaron conectados."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone y tu Orbital quedaron conectados."
+                }
+              }
+            }
           }
         }
       }
@@ -18653,6 +19394,17 @@
         }
       }
     },
+    "Usar con tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use with your Orbital"
+          }
+        }
+      }
+    },
     "Usar el estilo del iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -19022,6 +19774,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show the lists"
+          }
+        }
+      }
+    },
+    "Ver qué puedes hacer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See what you can do"
           }
         }
       }
@@ -19455,6 +20218,17 @@
         }
       }
     },
+    "Y también": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "And also"
+          }
+        }
+      }
+    },
     "Ya dejamos listos estos": {
       "extractionState": "manual",
       "localizations": {
@@ -19620,6 +20394,17 @@
         }
       }
     },
+    "Ya lo sé": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I know"
+          }
+        }
+      }
+    },
     "Ya no está en tu carpeta": {
       "extractionState": "manual",
       "localizations": {
@@ -19660,6 +20445,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You can watch whatever you want."
+          }
+        }
+      }
+    },
+    "Ya se conocen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They know each other now"
           }
         }
       }
@@ -20147,6 +20943,17 @@
         }
       }
     },
+    "¿Dejar de usar tu Orbital?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop using your Orbital?"
+          }
+        }
+      }
+    },
     "¿Desconectar OneDrive?": {
       "extractionState": "manual",
       "localizations": {
@@ -20286,6 +21093,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Did you finish it?"
+          }
+        }
+      }
+    },
+    "¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el iPhone de control y hablarle.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Have the Orbital console on your TV? Turn this on to send it what you watch, use your iPad as the remote and talk to it."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Have the Orbital console on your TV? Turn this on to send it what you watch, use your iPhone as the remote and talk to it."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Have the Orbital console on your TV? Turn this on to send it what you watch, use your Mac as the remote and talk to it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Have the Orbital console on your TV? Turn this on to send it what you watch, use your iPhone as the remote and talk to it."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el iPad de control y hablarle."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el iPhone de control y hablarle."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar la Mac de control y hablarle."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el iPhone de control y hablarle."
+                }
+              }
+            }
           }
         }
       }

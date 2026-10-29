@@ -66,6 +66,15 @@ final class FlowCaptureUITests: GuideUITestCase {
         launch(["-demo-tab", "1", "-demo-mode", "lists", "-demo-shelf", "critics"]); sleep(12); shot("30-para-ti-aprobadas-por-la-critica")
     }
 
+    /// Con tu Orbital conectada, Trakt se abre y se desconecta en Cuentas (antes decía «Desde tu Orbital» y no se tocaba).
+    func test6TraktWithOrbital() {
+        launch(["-demo-open", "settings", "-demo-rd", "premium", "-demo-trakt"])
+        XCTAssertTrue(row("Cuentas").waitForExistence(timeout: 20)); sleep(2)
+        open("Cuentas"); wait("Premium"); sleep(1); shot("32-cuentas-trakt-con-orbital")
+        open("Trakt"); sleep(2); shot("33-trakt-con-orbital")
+        XCTAssertTrue(app.buttons["Desconectar Trakt"].waitForExistence(timeout: 5), "con tu Orbital, Trakt también se desconecta aquí")
+    }
+
     func test5EpisodeMenu() {
         launch(["-demo-title", "series:tt0386676"])
         // Se marca visto el primero con su «⋯»; ya visto enseña su ✓ en vez del «⋯» y su menú se abre manteniéndolo presionado.

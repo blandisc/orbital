@@ -6,7 +6,7 @@ import XCTest
 final class TVNowModelTests: XCTestCase {
     func connected() throws -> ServicesRig {
         let rig = try ServicesRig()
-        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.services.settings.update { $0.orbitalAddress = "tv.example"; $0.orbitalEnabled = true }
         rig.secrets.set(SecretKey.orbitalToken, "secreto")
         return rig
     }

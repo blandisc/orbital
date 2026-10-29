@@ -209,7 +209,7 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertNil(title.consoleOverview, "sin consola no cambia nada")
         XCTAssertEqual(title.overview, cinemeta)
 
-        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.services.settings.update { $0.orbitalAddress = "tv.example"; $0.orbitalEnabled = true }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
         rig.http.json["https://tv.example/api/foryou/details?key=video:tt0386676&kind=series"] = ["overview": " Un falso documental. ", "logo_dark": true]
         await title.loadConsoleDetails()
@@ -405,7 +405,7 @@ final class ScreenModelsTests: XCTestCase {
     func testParaTiUsesTheConsolesForYouWhenConnected() async throws {
         let rig = try ServicesRig()
         rig.services.forYouFromConsole = true   // la ruta de la consola (la app, por omisión, calcula Para ti en el iPhone)
-        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.services.settings.update { $0.orbitalAddress = "tv.example"; $0.orbitalEnabled = true }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
         rig.http.json["https://tv.example/api/foryou"] = [
             "lists": [["id": "netflix", "title": "Netflix", "icon": "trailer", "source": "TMDB", "meta": "x", "split": true,
@@ -430,7 +430,7 @@ final class ScreenModelsTests: XCTestCase {
     /// local de siempre, sin aviso de error visible.
     func testParaTiFallsBackToLocalWhenTheConsoleDoesNotAnswerForYou() async throws {
         let rig = try ServicesRig(traktClientID: "cid")
-        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.services.settings.update { $0.orbitalAddress = "tv.example"; $0.orbitalEnabled = true }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
         // /api/foryou no se registra: la consola de mentira contesta 404, como una versión anterior sin esta ruta.
         TraktPublicListsTests.trending(rig, series: [("tt0386676", "The Office", 2005)], movies: [("tt1160419", "Dune", 2021)])
@@ -445,7 +445,7 @@ final class ScreenModelsTests: XCTestCase {
     /// con puesto (Top 10 de Netflix, tendencias de JustWatch) y solo le avisa a la consola lo que marcas «No me interesa».
     func testParaTiIsComputedOnThePhoneEvenWithYourOrbitalConnected() async throws {
         let rig = try ServicesRig(traktClientID: "cid")
-        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.services.settings.update { $0.orbitalAddress = "tv.example"; $0.orbitalEnabled = true }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
         rig.http.json["https://tv.example/api/foryou/dismiss"] = ["ok": true]
         TraktPublicListsTests.trending(rig, series: nil, movies: [("tt1160419", "Dune", 2021)])
@@ -476,7 +476,7 @@ final class ScreenModelsTests: XCTestCase {
     func testConnectingYourOrbitalKeepsTheTokenInTheKeychainAndChecksIt() async throws {
         let rig = try ServicesRig()
         let model = SettingsModel(rig.services)
-        model.update { $0.orbitalAddress = "tv.example" }
+        model.update { $0.orbitalAddress = "tv.example"; $0.orbitalEnabled = true }
         model.setOrbitalToken("  secreto ")
         XCTAssertEqual(rig.secrets.get(SecretKey.orbitalToken), "secreto")
         XCTAssertTrue(model.hasOrbitalToken)
@@ -503,7 +503,7 @@ final class ScreenModelsTests: XCTestCase {
     func testYourOrbitalFillsInTMDBAndTraktWithoutOverwritingWhatYouTyped() async throws {
         let rig = try ServicesRig()
         let model = SettingsModel(rig.services)
-        model.update { $0.orbitalAddress = "tv.example" }
+        model.update { $0.orbitalAddress = "tv.example"; $0.orbitalEnabled = true }
         model.setOrbitalToken("secreto")
         rig.http.json["https://tv.example/api/ping"] = ["ok": true]
         rig.http.json["https://tv.example/api/companion"] = ["tmdb_key": "tmdb123", "trakt_client_id": "cid456", "region": "US"]
@@ -517,6 +517,21 @@ final class ScreenModelsTests: XCTestCase {
         await model.checkOrbital()
         XCTAssertEqual(rig.secrets.get(SecretKey.tmdbKey), "tmdb123", "lo que ya tenías no se pisa")
         XCTAssertEqual(model.importedFromOrbital, [])
+    }
+
+    /// El país es como lo demás: solo si falta. La primera vez se trae de la consola; el que elegiste en Ajustes (o el que ya
+    /// se trajo) no lo pisa al volver a conectarla.
+    func testConnectingTheTVOnlyFillsTheCountryIfMissing() async throws {
+        let rig = try ServicesRig()
+        rig.http.json["https://legion.example/api/ping"] = ["ok": true]
+        rig.http.json["https://legion.example/api/companion"] = ["tmdb_key": "", "trakt_client_id": "", "region": "US"]
+        _ = try await rig.services.connectOrbital(address: "https://legion.example", token: "t")
+        XCTAssertEqual(rig.services.appSettings.region, "US", "sin elegir país: el de la consola")
+        let model = SettingsModel(rig.services)
+        model.update { $0.region = "MX"; $0.regionChosen = true }   // Ajustes › Avanzado › País
+        rig.http.json["https://legion.example/api/companion"] = ["tmdb_key": "", "trakt_client_id": "", "region": "ES"]
+        _ = try await rig.services.connectOrbital()
+        XCTAssertEqual(rig.services.appSettings.region, "MX", "el que elegiste se queda")
     }
 
     /// La sesión que antes prestaba la consola (sin refresh token) se olvida aquí SIN revocarla (revocarla desconectaría la

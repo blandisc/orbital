@@ -2,11 +2,12 @@ import Foundation
 import OrbitalCore
 
 /// La guía de la primera vez (`docs/producto/desacoplar-stremio/maquetas.html`, pantallas 1–10): Real-Debrid y Trakt son
-/// obligatorios; la TV y Stremio se pueden dejar para después. Se reabre desde Ajustes › «Cómo funciona Orbital».
+/// obligatorios; Stremio se puede dejar para después. La app es de una sola pieza: la guía no habla de la TV (tu Orbital se
+/// prende en Ajustes). Se reabre desde Ajustes › «Cómo funciona Orbital».
 @MainActor
 public final class OnboardingModel: ObservableModel {
     public enum Step: Int, CaseIterable, Hashable, Sendable {
-        case welcome, howItWorks, debridIntro, debridKey, addons, trakt, traktDone, tv, done
+        case welcome, howItWorks, debridIntro, debridKey, addons, trakt, traktDone, done
     }
     static let seenKey = "onboarding-seen"
 
@@ -39,14 +40,11 @@ public final class OnboardingModel: ObservableModel {
         }
     }
 
-    /// Solo la TV (y Stremio, en el último paso) tienen «Ahora no».
-    public func canSkip(_ step: Step) -> Bool { step == .tv }
-
     /// El paso que sigue (el de «Trakt conectado» solo si se conectó).
     public func next(after step: Step) -> Step? {
         guard let i = Step.allCases.firstIndex(of: step), i + 1 < Step.allCases.count else { return nil }
         let following = Step.allCases[i + 1]
-        if following == .traktDone, !settings.traktLinked { return .tv }
+        if following == .traktDone, !settings.traktLinked { return .done }
         return following
     }
 

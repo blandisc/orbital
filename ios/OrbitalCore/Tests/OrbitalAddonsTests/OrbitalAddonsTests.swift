@@ -21,12 +21,29 @@ final class AddonListTests: XCTestCase {
                        "https://torrentio.strem.fun/language=spanish|realdebrid=\(token)/manifest.json", "las opciones van limpias")
     }
 
+    /// Comet lleva su configuración (con tu clave) como JSON en base64 en la ruta, como la arma su página; sin «/» ni «+»
+    /// que rompan la ruta, y la clave se tapa en los textos aunque vaya en base64.
+    func testCometCarriesYourKeyInsideItsBase64ConfigAndItIsHiddenInLogs() throws {
+        let url = try XCTUnwrap(AddonCatalog.comet.manifestURL(token: token))
+        XCTAssertTrue(url.hasPrefix("https://comet.elfhosted.com/") && url.hasSuffix("/manifest.json"))
+        let segment = String(url.dropFirst("https://comet.elfhosted.com/".count).dropLast("/manifest.json".count))
+        XCTAssertFalse(segment.contains("/") || segment.contains("+"))
+        let config = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(Data(base64Encoded: segment))) as? [String: Any])
+        let services = try XCTUnwrap(config["debridServices"] as? [[String: String]])
+        XCTAssertEqual(services, [["service": "realdebrid", "apiKey": token]])
+        XCTAssertEqual(config["cachedOnly"] as? Bool, true)
+        XCTAssertNil(AddonCatalog.comet.manifestURL(token: nil), "sin clave no se arma")
+        XCTAssertFalse(AddonCatalog.comet.onByDefault, "apagado hasta probarlo con una cuenta real")
+        XCTAssertFalse(AddonRedaction.redact("No contestó \(url)", secrets: [token]).contains(segment))
+        XCTAssertEqual(AddonCatalog.recommended.map(\.id), ["torrentio", "comet", "opensubtitles"])
+    }
+
     func testOrderAndOffAreRespected() {
         let vault = InMemoryAddonVault()
         vault.setSecret(AddonKeys.realDebridToken, token)
         let list = AddonList(vault: vault)
         XCTAssertFalse(list.isConfigured)
-        list.startWithRecommended()
+        list.startWithRecommended([AddonCatalog.torrentio, AddonCatalog.openSubtitles])   // un pegado se llama como Comet
         XCTAssertTrue(list.isConfigured)
         let comet = list.add(url: "https://comet.example/abc/manifest.json", name: "Comet", resources: ["stream"])
         XCTAssertEqual(list.installed.map(\.name), ["Torrentio", "OpenSubtitles", "Comet"])

@@ -1,7 +1,7 @@
 import XCTest
 
 /// La guía de la primera vez (corte C), de punta a punta con la demo (`-demo-first-run`): clave incompleta, no reconocida,
-/// cuenta gratuita y buena; Trakt con su código; saltar la TV y Stremio; reabrir desde Ajustes. En cada paso el botón de
+/// cuenta gratuita y buena; Trakt con su código; saltar Stremio; reabrir desde Ajustes. En cada paso el botón de
 /// seguir tiene que quedar dentro de la pantalla (iPhone SE, mini y Pro Max).
 ///
 /// Con `TEST_RUNNER_SHOTS=<carpeta>` además guarda una captura de cada pantalla (`FlowCaptureUITests` usa lo mismo).
@@ -72,7 +72,7 @@ class GuideUITestCase: XCTestCase {
         let c: (String) -> Void = { name in if capture { self.shot(name) } }
         launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
         wait("Tus películas y series en tu bolsillo.", 20); c("01-bienvenida")
-        next(); wait("Orbital junta tres piezas"); c("02-como-funciona")
+        next(); wait("Orbital junta dos piezas"); XCTAssertFalse(app.staticTexts["Tu Orbital en la TV"].exists); c("02-como-funciona")
         next(); wait("Es un servicio de pago"); c("03-real-debrid")
         next(); wait("Con ella Orbital puede pedir videos")
         XCTAssertFalse(nextButton().isEnabled, "sin clave no se avanza")
@@ -85,9 +85,8 @@ class GuideUITestCase: XCTestCase {
         next(); wait("De dónde salen las versiones"); wait("Torrentio"); c("10-complementos")
         next(); wait("Esperando a que lo apruebes"); c("11-trakt-codigo")
         wait("Conectado como fernando", 20); wait("Trajimos", 15); c("12-trakt-conectado")
-        next(); wait("En la TV: Ajustes"); c("13-tu-tv")
-        let skip = app.buttons.matching(identifier: "guide-skip").allElementsBoundByIndex.last { $0.isHittable }
-        XCTAssertNotNil(skip, "la TV tiene «Ahora no»"); skip?.tap()
+        next()
+        XCTAssertFalse(app.staticTexts["Tu Orbital en la TV"].exists, "la guía no habla de la TV")
         wait("Ya puedes ver lo que quieras"); wait("¿Usas Stremio?"); c("14-todo-listo")
         next()
         XCTAssertTrue(app.tabBars.buttons.firstMatch.waitForExistence(timeout: 10) || app.buttons["Inicio"].waitForExistence(timeout: 5),

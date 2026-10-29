@@ -16,24 +16,18 @@ struct OnboardingWelcome: View {
     }
 }
 
-/// 2 · Cómo funciona: las tres piezas, qué hace cada una y cuáles son obligatorias.
+/// 2 · Cómo funciona: las dos piezas y qué hace cada una. La app es de una sola pieza: nada de la TV.
 struct OnboardingHowItWorks: View {
     let step: (current: Int, total: Int)
-    /// En la Mac la app no se conecta con tu Orbital: la pieza de la TV no sale.
-    let showsTV: Bool
     let next: () -> Void
 
     var body: some View {
-        GuidePage(title: Text("Cómo funciona"), message: Text("Orbital junta tres piezas. Te ayudamos a conectar cada una."), step: step, next: next) {
+        GuidePage(title: Text("Cómo funciona"), message: Text("Orbital junta dos piezas. Te ayudamos a conectar cada una."), step: step, next: next) {
             VStack(spacing: DS.Space.s3) {
                 GuidePiece(symbol: "bolt.horizontal.circle", tint: DS.ListTint.flame, title: Text(verbatim: "Real-Debrid"),
                            detail: Text("De aquí salen los videos."), tag: Text("Obligatorio"))
                 GuidePiece(symbol: "checkmark.seal", tint: DS.ListTint.chart, title: Text(verbatim: "Trakt"),
                            detail: Text("Tu avance en la nube, en todos tus aparatos."), tag: Text("Obligatorio"))
-                if showsTV {
-                    GuidePiece(symbol: "tv", tint: DS.ListTint.series, title: Text("Tu Orbital en la TV"),
-                               detail: Text("Manda lo que ves a la pantalla grande y usa el iPhone de control."), tag: Text("Opcional"))
-                }
             }
         }
     }

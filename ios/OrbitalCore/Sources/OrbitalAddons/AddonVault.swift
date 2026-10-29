@@ -37,6 +37,15 @@ public final class InMemoryAddonVault: AddonVault, @unchecked Sendable {
 public enum AddonRedaction {
     public static let mask = "•••"
     public static func redact(_ text: String, secrets: [String]) -> String {
-        secrets.filter { $0.count >= 6 }.reduce(text) { $0.replacingOccurrences(of: $1, with: mask) }
+        let secrets = secrets.filter { $0.count >= 6 }
+        let plain = secrets.reduce(text) { $0.replacingOccurrences(of: $1, with: mask) }
+        // Comet guarda la clave dentro de un tramo en base64 de la URL: ese tramo también se tapa.
+        var out = plain
+        for segment in plain.split(separator: "/") where segment.count >= 16 && segment.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "=" }) {
+            guard let data = Data(base64Encoded: String(segment)), let decoded = String(data: data, encoding: .utf8),
+                  secrets.contains(where: decoded.contains) else { continue }
+            out = out.replacingOccurrences(of: String(segment), with: mask)
+        }
+        return out
     }
 }

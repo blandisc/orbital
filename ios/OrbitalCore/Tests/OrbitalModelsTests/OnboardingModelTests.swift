@@ -35,16 +35,18 @@ final class OnboardingModelTests: XCTestCase {
         XCTAssertEqual(status.username, "fernando")
         XCTAssertTrue(guide.canContinue(.debridKey))
         XCTAssertTrue(rig.services.debrid.hasToken)
-        XCTAssertEqual(rig.services.addonList.installed.map(\.id), ["torrentio", "opensubtitles"], "los recomendados, armados con tu clave")
+        XCTAssertEqual(rig.services.addonList.installed.map(\.id), ["torrentio", "comet", "opensubtitles"], "los recomendados, armados con tu clave")
+        XCTAssertEqual(rig.services.addonList.installed.filter(\.enabled).map(\.id), ["torrentio", "opensubtitles"], "Comet, apagado")
         XCTAssertTrue(rig.services.addonList.enabledURLs().first?.contains("realdebrid=\(token)") == true)
     }
 
-    func testOnlyTheTVCanBeSkippedAndTraktDoneOnlyAfterLinking() throws {
+    func testTheGuideHasNoTVStepAndTraktDoneOnlyAfterLinking() throws {
         let rig = try ServicesRig(signedIn: false, traktClientID: "CID")
         let guide = OnboardingModel(rig.services)
-        XCTAssertEqual(OnboardingModel.Step.allCases.filter(guide.canSkip), [.tv])
+        XCTAssertEqual(OnboardingModel.Step.allCases.last, .done)
+        XCTAssertFalse(OnboardingModel.Step.allCases.map { "\($0)" }.contains("tv"), "la app es de una sola pieza: la TV se prende en Ajustes")
         XCTAssertFalse(guide.canContinue(.trakt), "Trakt es obligatorio")
-        XCTAssertEqual(guide.next(after: .trakt), .tv, "sin conectar no hay «Conectado como…»")
+        XCTAssertEqual(guide.next(after: .trakt), .done, "sin conectar no hay «Conectado como…»")
         let linked = OnboardingModel(try ServicesRig(signedIn: false, traktLinked: true, traktClientID: "CID").services)
         XCTAssertTrue(linked.canContinue(.trakt))
         XCTAssertEqual(linked.next(after: .trakt), .traktDone)
@@ -56,7 +58,7 @@ final class OnboardingModelTests: XCTestCase {
         rig.http.json["https://nuevo.example/KEY/manifest.json"] = ["name": "Comet", "resources": ["stream"], "types": ["movie"]]
         let addons = AddonsModel(rig.services)
         await addons.prepare()
-        XCTAssertEqual(Array(addons.items.map(\.id).prefix(2)), ["torrentio", "opensubtitles"], "los recomendados primero")
+        XCTAssertEqual(Array(addons.items.map(\.id).prefix(3)), ["torrentio", "comet", "opensubtitles"], "los recomendados primero")
         XCTAssertEqual(addons.items.last?.origin, .imported, "y lo que tenías pegado, importado una vez")
         let pasted = await addons.add(address: "stremio://nuevo.example/KEY")
         XCTAssertTrue(pasted)

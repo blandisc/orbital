@@ -57,12 +57,13 @@ enum ReleaseNotifier {
     @MainActor private static var checking = false
 
     /// Los botones del aviso (se registran una vez, al arrancar).
-    static func registerCategory(language: String) {
+    /// `tv`: con «Usar con tu Orbital» prendido, el botón «Ver en la TV»; apagado, no sale.
+    static func registerCategory(language: String, tv: Bool) {
         let actions = [
             UNNotificationAction(identifier: Action.watch, title: Strings.tr("Ver", language: language), options: [.foreground], icon: UNNotificationActionIcon(systemImageName: "play.fill")),
             UNNotificationAction(identifier: Action.tv, title: Strings.tr("Ver en la TV", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "tv")),
             UNNotificationAction(identifier: Action.download, title: Strings.tr("Descargar", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "arrow.down.circle")),
-        ]
+        ].filter { tv || $0.identifier != Action.tv }
         let release = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
                                              hiddenPreviewsBodyPlaceholder: Strings.tr("Un estreno ya está para ver", language: language), options: [])
         let group = UNNotificationCategory(identifier: groupCategory, actions: [

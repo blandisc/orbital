@@ -98,6 +98,8 @@ enum ListSource: Hashable {
         case .trakt: Text(verbatim: "Trakt"); case .addon: Text("Complemento"); case .critics: Text(verbatim: "Rotten Tomatoes"); case .orbital: Text(verbatim: "Orbital")
         }
     }
+    /// Rotten Tomatoes se dice con su ícono, no con su nombre: cabe junto a cualquier título.
+    var isIcon: Bool { self == .critics }
     var color: Color {
         switch self {
         case .trakt: DS.RatingBrand.trakt; case .addon: DS.Collections.addon; case .critics: DS.Collections.critics; case .orbital: DS.Collections.orbital
@@ -105,10 +107,19 @@ enum ListSource: Hashable {
     }
 }
 
-/// El sello de origen: el nombre del servicio en mayúsculas sobre su color.
+/// El sello de origen: el nombre del servicio en mayúsculas sobre su color. Rotten Tomatoes, con su jitomate (como los
+/// logos de calificación), aunque las series vengan de una lista de Trakt.
 struct SourceBadge: View {
     let source: ListSource
     var body: some View {
+        if source.isIcon {
+            // El jitomate, a la altura de las mayúsculas del título de sección (`DS.Size.markSmall`, como la marca de Orbital).
+            Image("rating-rotten-tomatoes").resizable().scaledToFit().frame(height: DS.Size.markSmall)
+                .accessibilityLabel(Text("De \(source.name)"))
+        } else { label }
+    }
+
+    private var label: some View {
         source.name.textCase(.uppercase)
             .font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Collections.badgeRadius / 10)   // negrita, como `.source-badge` de la TV
             .foregroundStyle(DS.paper)

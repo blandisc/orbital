@@ -229,6 +229,10 @@ extension DS {
         static let codeTracking: CGFloat = 4
         /// Lo más ancho que crece una página de la guía (iPad, Mac): se lee como una columna.
         static let readable: CGFloat = 560
+        /// La ilustración de una página del tutorial de Orbital (`GuideArt`): su alto y el del ícono grande.
+        static let artHeight: CGFloat = 220, artSymbol: CGFloat = 88
+        /// El recuadro que apunta al código de la TV en el lector (`QRScanner`).
+        static let scanFrame: CGFloat = 240
     }
 
     enum SettingsLook {

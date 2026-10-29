@@ -85,7 +85,7 @@ final class ShelfPlanTests: XCTestCase {
     // MARK: contra una consola de mentira
     private func consoleRig() throws -> ServicesRig {
         let rig = try ServicesRig()
-        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.services.settings.update { $0.orbitalAddress = "tv.example"; $0.orbitalEnabled = true }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
         rig.services.forYouFromConsole = true   // la ruta de la consola (en la app, Para ti se calcula en el iPhone)
         func row(_ id: String, rank: Int? = nil) -> JSON {

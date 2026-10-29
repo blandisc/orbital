@@ -219,3 +219,44 @@ su API. Las listas se cambian en `config.yaml` (`para_ti.critics_movies`, `criti
 - No hay sondeo aparte: si la TV está en Inicio sin tocarla, se entera al siguiente cambio de pantalla.
 - Quitar de Seguir viendo una serie al día solo se recuerda en la consola (Trakt no tiene «ocultar de la fila» por
   título sin usar `/users/hidden`).
+
+## Detalles · app de una sola pieza (29 oct 2026, noche)
+
+**Quedó:**
+
+- La guía ya no habla de la TV: sin el paso «Tu TV», sin «Tu Orbital en la TV · Opcional» en «Cómo funciona» («Orbital
+  junta dos piezas») y sin «TV · No conectada» en «Todo listo». Trakt: «…para que todos tus aparatos sepan lo mismo».
+- Ajustes › Cuentas › Trakt: con tu Orbital conectada ya no dice «Desde tu Orbital» sin poder tocarse; se abre y se
+  desconecta como siempre (la sesión de Trakt siempre es la del iPhone). Textos viejos fuera («Conecta tu Orbital (arriba) y
+  Trakt queda listo…», «sigues donde ibas en la TV»).
+- El país: conectar tu Orbital solo lo llena si no lo habías elegido (`AppSettings.regionChosen`), como la clave de TMDB y
+  el Client ID. Prueba `testConnectingTheTVOnlyFillsTheCountryIfMissing`.
+- «Aprobadas por la crítica»: el sello es el jitomate de Rotten Tomatoes (`Ratings/rating-rotten-tomatoes`, a la altura
+  del título) y el título ya no se parte a media palabra: el ícono cabe siempre al lado; un sello con nombre, si no cabe
+  en el renglón, baja bajo el título (`DSSectionHead`, `ViewThatFits`). En la consola no se pinta sello para esa sección (`SourceBadge` no tiene «critics»).
+- Comet en los recomendados (Torrentio · Comet · OpenSubtitles): la instancia pública de ElfHosted con tu Real-Debrid, su
+  configuración en base64 en la URL (`debridServices` + `cachedOnly`), apagado en la guía hasta probarlo con tu cuenta. La
+  clave también se tapa en textos aunque vaya en base64 (`AddonRedaction`). El manifiesto contesta con esa configuración
+  (probado el 29 oct con una clave de mentira).
+- Ajustes › **Orbital en la TV** › «Usar con tu Orbital» (maquetas aprobadas por Fernando:
+  https://claude.ai/artifact/FwxKwFe1Y19tTu6LLv3Vhw). Viene apagado (`AppSettings.orbitalEnabled`; quien ya tenía la
+  consola emparejada la conserva prendida). Al prenderlo, una hoja (`Screens/OrbitalSetup.swift`, modelo
+  `OrbitalSetupModel` con pruebas): conectar leyendo el código de la TV dentro de la app (`QRScanner`, VisionKit) o a mano,
+  «Ya se conocen» y un tutorial de tres páginas (Ver en la TV, el control, la voz y lo demás; pieza `GuideArt`). Si no
+  conecta, se queda apagado. Prendido: Tu Orbital, Voz y Siri y «Qué puedes hacer con la TV» (el tutorial otra vez).
+  Apagarlo pregunta y olvida la dirección y el token, también del llavero (`Services.turnOffOrbital`).
+- Apagado no se ve nada de Orbital: todo lo de la consola depende de `Services.orbitalOn` (Ver en la TV, «En la TV», el
+  control, la bandeja «Desde la TV», Para ti de la consola); «Tu Orbital» salió de Cuentas y «Voz y Siri» de Conexiones;
+  el aviso de estrenos no trae «Ver en la TV»; al abrir no se le pregunta nada a la consola. Siri contesta «Prende «Usar
+  con tu Orbital» en Ajustes…» si le pides algo de la TV.
+
+**Falta:**
+
+- Los atajos de Siri y el control del Centro de control no se pueden esconder (Apple los declara fijos en la app): siguen
+  ahí con el interruptor apagado; Siri contesta que lo prendas y «descarga X» sí funciona.
+- Leer el código con la cámara solo se puede probar en un iPhone (el simulador no tiene cámara: ofrece «Conectar a mano»).
+- `OnboardingUITests` y las capturas del flujo no se volvieron a correr (Fernando pidió saltarlas); la app compila y
+  `swift test` (706) y las pruebas web están en verde.
+- La clave de TMDB y el Id. de OneDrive incluidos en la app (propuesta en las maquetas 11 y 12; falta que Fernando decida y
+  pase el Id. de aplicación de OneDrive de la TV).
+- Probar Comet con la cuenta real de Real-Debrid (que salgan fuentes al tocar «Ver»).

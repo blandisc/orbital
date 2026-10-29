@@ -132,7 +132,7 @@ public final class Services: ObservableModel {
         // Al borrar la app se van los ajustes (UserDefaults) pero el Keychain se queda: la dirección de tu Orbital y la app de
         // Trakt se recuperan de ahí (antes, tras reinstalar, Trakt y «Para ti» no cargaban hasta volver a escanear el QR).
         if settings.value.orbitalAddress.isEmpty, let saved = secrets.get(SecretKey.orbitalAddress), !saved.isEmpty {
-            settings.update { $0.orbitalAddress = saved }
+            settings.update { $0.orbitalAddress = saved; $0.orbitalEnabled = true }   // apagarla borra esto: si está, la usabas
         }
         if settings.value.traktClientID.isEmpty, let saved = secrets.get(SecretKey.traktClientID), !saved.isEmpty {
             settings.update { $0.traktClientID = saved }
@@ -165,8 +165,10 @@ public final class Services: ObservableModel {
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
-        self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: allowsOrbital ? settings.value.orbitalAddress : "",
-                                                                 token: allowsOrbital ? secrets.get(SecretKey.orbitalToken) ?? "" : "", device: device) }, clock: clock)
+        self.forYouRemote = RemoteForYou(remote: {
+            let on = allowsOrbital && settings.value.orbitalEnabled
+            return OrbitalRemote(http: http, address: on ? settings.value.orbitalAddress : "", token: on ? secrets.get(SecretKey.orbitalToken) ?? "" : "", device: device)
+        }, clock: clock)
         self.watch = WatchService(library: library, stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt,
                                   pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         self.sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: traktOutbox, pending: pending, clock: clock)
@@ -250,12 +252,15 @@ public final class Services: ObservableModel {
     }
 
     /// Conecta tu Orbital (el QR de la TV o Ajustes) y trae de ella lo que falte aquí: la clave de TMDB, el Client ID de la
-    /// aplicación de Trakt y el país. Es un atajo: sin consola el iPhone usa el Client ID incluido en la app (o el de Ajustes ›
+    /// aplicación de Trakt y el país (si no lo elegiste). Es un atajo: sin consola el iPhone usa el Client ID incluido en la app (o el de Ajustes ›
     /// Avanzado). La sesión de Trakt NO se trae: el iPhone conecta la suya con un código. Devuelve qué se trajo («TMDB»,
     /// «Trakt»); lanza si no contesta.
     @discardableResult
     public func connectOrbital(address: String? = nil, token: String? = nil) async throws -> [String] {
         guard allowsOrbital else { return [] }   // la Mac no se empareja con tu Orbital (ni guarda la dirección)
+        // Emparejar (el QR o a mano) prende «Usar con tu Orbital»; sin emparejar y apagado no se le pregunta nada.
+        if address != nil || token != nil { settings.update { $0.orbitalEnabled = true } }
+        guard orbitalOn else { return [] }
         if let address { settings.update { $0.orbitalAddress = address }; secrets.set(SecretKey.orbitalAddress, address) }
         if let token { secrets.set(SecretKey.orbitalToken, token) }
         // Avisar ya (antes de preguntarle a la consola): el control y el sondeo aparecen aunque no se haya traído nada nuevo.
@@ -271,8 +276,9 @@ public final class Services: ObservableModel {
         // aunque aquí hubieras pegado otro.
         if !settings.value.traktClientID.isEmpty { secrets.set(SecretKey.traktClientID, settings.value.traktClientID) }
         if !settings.value.orbitalAddress.isEmpty { secrets.set(SecretKey.orbitalAddress, settings.value.orbitalAddress) }
-        let regionChanged = keys.region.count == 2 && keys.region != settings.value.region
-        if regionChanged { settings.update { $0.region = keys.region } }
+        // El país, como lo demás, solo si falta: el que elegiste aquí (o el que ya se trajo) no lo pisa la consola.
+        let regionChanged = keys.region.count == 2 && !settings.value.regionChosen && keys.region != settings.value.region
+        if keys.region.count == 2, !settings.value.regionChosen { settings.update { $0.region = keys.region; $0.regionChosen = true } }
         // Solo se rearma si algo cambió: rearmar tira las cachés (traducciones, listas) y vuelve a pintar toda la app, y esto
         // corre en cada arranque.
         // La sesión prestada de antes se olvida aquí SIN revocarla (revocarla desconectaría la consola): Ajustes ofrece conectar
@@ -285,12 +291,22 @@ public final class Services: ObservableModel {
     /// Tu Orbital de la TV («Ver en la TV»), con la dirección y el token de Ajustes. Sin `allowsOrbital` (la Mac) nunca queda
     /// configurado: ni control, ni «En la TV», ni lo que manda la TV, aunque el llavero traiga una dirección y un token.
     public var orbital: OrbitalRemote {
-        guard allowsOrbital else { return OrbitalRemote(http: http, address: "", token: "", device: device) }
+        guard orbitalOn else { return OrbitalRemote(http: http, address: "", token: "", device: device) }
         return OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "", device: device)
     }
 
     /// ¿Este aparato habla con tu Orbital? No en la Mac (decisión de Fernando, 29 oct 2026): ahí la app es solo para ver.
     public let allowsOrbital: Bool
+    /// ¿Prendiste «Usar con tu Orbital»? Apagado (como viene), no se ve nada de la consola: la app es de una sola pieza.
+    public var orbitalOn: Bool { allowsOrbital && settings.value.orbitalEnabled }
+
+    /// Apaga «Usar con tu Orbital»: se olvidan la dirección y el token (también del llavero) y la app queda sola otra vez.
+    /// Lo que viste sigue aquí y en Trakt; volver a prenderla pide emparejar de nuevo.
+    public func turnOffOrbital() {
+        settings.update { $0.orbitalEnabled = false; $0.orbitalAddress = "" }
+        secrets.set(SecretKey.orbitalAddress, nil); secrets.set(SecretKey.orbitalToken, nil)
+        changed()
+    }
 
     public func now() -> Date { clock() }
     public var authKey: String? { secrets.get(SecretKey.stremioAuth) }

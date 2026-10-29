@@ -15,7 +15,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         OpenSimpsonsIntent.open = { AppEnvironment.shared.ui.openSimpsons = true }   // «Un Simpson al azar» del Centro de control
         // Que el Centro de control vuelva a pintar nuestros botones con el ícono de esta versión (su galería guardaba los viejos).
         ControlCenter.shared.reloadAllControls()
-        ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
+        ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage, tv: AppEnvironment.shared.services.orbitalOn)
         DownloadFailureNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.
         UNUserNotificationCenter.current().delegate = self
