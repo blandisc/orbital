@@ -56,4 +56,87 @@ final class PlayerSoftwarePathUITests: XCTestCase {
         if !app.buttons["player-close"].exists { app.tap() }
         XCTAssertTrue(app.buttons["player-close"].waitForExistence(timeout: 5), "el reproductor sigue abierto")
     }
+
+    /// Lo que dice la barra de avance («2:07 / 9:59»), con los controles a la vista.
+    private func shownTime(_ app: XCUIApplication) -> Double {
+        if !app.otherElements["player-scrub"].exists && !app.sliders["player-scrub"].exists { app.tap(); sleep(1) }
+        let element = app.otherElements["player-scrub"].exists ? app.otherElements["player-scrub"] : app.sliders["player-scrub"]
+        let text = (element.value as? String) ?? ""
+        let first = text.components(separatedBy: " / ").first ?? ""
+        let parts = first.split(separator: ":").compactMap { Double($0) }
+        return parts.reduce(0) { $0 * 60 + $1 }
+    }
+
+    /// Volver a la app sigue donde ibas (antes se volvía a cargar desde 0:00) y la pantalla queda en orden.
+    func testBackFromBackgroundKeepsThePlace() throws {
+        let video = try XCTUnwrap(env["DEMO_VIDEO"], "sin DEMO_VIDEO: corre scripts/ios_software_path.sh")
+        let tag = env["DEMO_SOFTWARE"] == "1" ? "software" : "nativo"
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
+                               "-demo-player-portrait", "-demo-video", video] + (tag == "software" ? ["-demo-software-path"] : [])
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        sleep(30)
+        let before = shownTime(app)
+        shot("\(tag)-fondo-1-antes")
+        XCTAssertGreaterThan(before, 5, "ya iba avanzando")
+        XCUIDevice.shared.press(.home)
+        sleep(5)
+        app.activate()
+        for i in 1...4 { sleep(5); shot("\(tag)-fondo-2-vuelta-\(i * 5)s") }
+        let after = shownTime(app)
+        shot("\(tag)-fondo-3-despues")
+        XCTAssertGreaterThanOrEqual(after, before - 2, "sigue donde iba (\(before) → \(after)), no desde 0:00")
+        XCTAssertTrue(app.buttons["player-close"].exists, "con la barra de arriba")
+    }
+
+    /// Abre el MKV servido desde la Mac en vertical, con el video a la altura `center` (-1: donde abre).
+    private func launch(_ center: String) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-appearance", "dark", "-demo-no-idle", "-demo-title", "series:tt0096697", "-demo-open", "play",
+                               "-demo-player-portrait", "-demo-video", env["DEMO_VIDEO"] ?? "", "-player-portrait-center", center]
+            + (env["DEMO_SOFTWARE"] == "1" ? ["-demo-software-path"] : [])
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        sleep(12)
+        return app
+    }
+
+    /// En pausa, salir y volver: regresa en pausa en el mismo punto, con ✕ y la barra; play sigue de ahí.
+    /// Subir el video arrastrando hasta arriba: queda entero (sin cortarse bajo el reloj) y no brinca al soltarlo.
+    /// (Capturas p1…p5 y r1…r5 en SHOTS.)
+
+    func testPausedReturnThenPlay() throws {
+        _ = try XCTUnwrap(env["DEMO_VIDEO"])
+        let app = launch("0.5")
+        if !app.buttons["Pausa"].exists { app.tap(); sleep(1) }
+        app.buttons["Pausa"].tap(); sleep(1)
+        shot("p1-pausado")
+        XCUIDevice.shared.press(.home); sleep(6); app.activate(); sleep(3)
+        shot("p2-de-vuelta")
+        if !app.buttons["Continuar"].exists { app.tap(); sleep(1) }
+        shot("p3-con-controles")
+        app.buttons["Continuar"].tap(); sleep(1)
+        shot("p4-play-1s"); sleep(4); shot("p5-play-5s")
+    }
+    func testRaiseVideoByDragging() throws {
+        _ = try XCTUnwrap(env["DEMO_VIDEO"])
+        let app = launch("-1")
+        let win = app.windows.firstMatch
+        // la agarradera: el borde de abajo del video (cerca de y = 60 + alto 9/16 del ancho)
+        _ = win.frame
+        let start = win.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))   // lo negro de abajo: mueve el video
+        let mid = win.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.66))
+        let end = win.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+        shot("r1-antes")
+        start.press(forDuration: 0.05, thenDragTo: mid, withVelocity: 40, thenHoldForDuration: 0.6)
+        shot("r2-un-poco")
+        start.press(forDuration: 0.05, thenDragTo: end, withVelocity: 300, thenHoldForDuration: 0.2)
+        shot("r3-arriba-0s"); sleep(1); shot("r4-arriba-1s")
+        // Al soltar ya se ven los controles: un toque solo si no (otro toque los escondería).
+        if !app.buttons["player-close"].exists { app.tap(); sleep(1) }
+        shot("r5-controles")
+        XCTAssertTrue(app.buttons["player-close"].exists, "con la barra de ✕")
+        XCTAssertLessThan(app.buttons["player-close"].frame.maxY, app.windows.firstMatch.frame.maxY, "✕ dentro de la pantalla")
+    }
 }

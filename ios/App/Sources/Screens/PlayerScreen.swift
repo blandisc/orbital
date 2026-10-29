@@ -222,6 +222,8 @@ struct PlayerScreen: View {
     /// Desde cuándo se ve la carga y cuándo se anotó por última vez en la bitácora (para saber qué pasa en una carga larga).
     @State var loadingSince: Date?
     @State var loadingLoggedAt = Date.distantPast
+    /// El tamaño en que se acomoda el video (para la bitácora: si algo lo estira más que la pantalla, ahí se ve).
+    @State var layoutSize: CGSize = .zero
 
     var body: some View {
         let model = holder.model
@@ -235,7 +237,9 @@ struct PlayerScreen: View {
                 let rect = videoRect(in: geo.size)
                 ZStack {
                     if ipod != nil { DS.video }   // la pantalla del iPod: negro detrás del video
-                    holder.engine.surface
+                    // Bajo el reloj y la isla solo en horizontal. En vertical, si el video tocaba la orilla de arriba (subido hasta
+                    // arriba), se estiraba debajo del reloj y se cortaba su parte de arriba.
+                    holder.engine.surface.ignoresSafeArea(edges: landscape ? .all : [])
                     if let frozenFrame { frozenCover(frozenFrame).transition(.opacity) }
                     if dragAxis != .horizontal && !fillsPortrait {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
@@ -248,9 +252,8 @@ struct PlayerScreen: View {
                     }
                 }
                 .frame(width: rect.width, height: rect.height)
-                // Al arrastrarlo se levanta: un poco más chico, con esquinas y sombra (como al mover algo en iOS).
-                .clipShape(RoundedRectangle(cornerRadius: movingVideo ? DS.PlayerPanel.liftRadius : 0, style: .continuous))
-                .scaleEffect(movingVideo ? DS.PlayerPanel.liftScale : 1)
+                // Al arrastrarlo solo se nota con una sombra. Antes además se encogía y redondeaba: al soltar, el motor se quedaba con
+                // el cuadro de la animación y el video brincaba hacia arriba, cortado bajo el reloj.
                 .shadow(color: movingVideo ? DS.scrimStrong : .clear, radius: DS.PlayerPanel.liftShadow)
                 .offset(x: rect.minX, y: rect.minY)
                 // «Recortar» en vertical: los subtítulos con el tamaño de siempre (el de un cuadro a lo ancho), abajo; con los
@@ -270,6 +273,7 @@ struct PlayerScreen: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .ignoresSafeArea(edges: landscape ? .all : [])   // en vertical el video respeta la isla y el indicador de inicio
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { layoutSize = $0 }
             if locked { lockLayer } else { gestureLayer(model) }
             SystemVolumeControl(volume: $requestedVolume)
                 .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
@@ -592,11 +596,11 @@ extension PlayerScreen {
         if loadingSince == nil { loadingSince = now }
         guard now.timeIntervalSince(since) > 10, now.timeIntervalSince(loadingLoggedAt) > 15 else { return }
         loadingLoggedAt = now
-        let size = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow?.bounds.size }.first ?? .zero
+        let size = layoutSize
         let rect = videoRect(in: size)
-        PlayerModel.note(String(format: "carga larga %.0f s: fase=%@ motor=%@ pos=%.0f horizontal=%@ zoom=%@ rect=%.0f,%.0f %.0fx%.0f aspecto=%.2f controles=%@ reconectando=%@ esperaPlay=%@",
+        PlayerModel.note(String(format: "carga larga %.0f s: fase=%@ motor=%@ pos=%.0f horizontal=%@ zoom=%@ pantalla=%.0fx%.0f rect=%.0f,%.0f %.0fx%.0f aspecto=%.2f controles=%@ reconectando=%@ esperaPlay=%@",
                                 now.timeIntervalSince(since), "\(model.phase)", "\(model.snapshot.state)", model.snapshot.position,
-                                landscape ? "sí" : "no", zoom.rawValue, rect.minX, rect.minY, rect.width, rect.height, portraitAspect,
+                                landscape ? "sí" : "no", zoom.rawValue, size.width, size.height, rect.minX, rect.minY, rect.width, rect.height, portraitAspect,
                                 controlsVisible ? "sí" : "no", model.reconnecting ? "sí" : "no", model.awaitingPlayback ? "sí" : "no"))
     }
 }

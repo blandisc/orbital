@@ -21,7 +21,7 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     private var external: [(url: URL, language: String?)] = []
 
     nonisolated var snapshots: AsyncStream<EngineSnapshot> { hub.makeStream() }
-    var surface: AnyView { AnyView(AetherPlayerSurface(engine: engine).ignoresSafeArea()) }
+    var surface: AnyView { AnyView(AetherPlayerSurface(engine: engine)) }
 
     init() {
         #if DEBUG

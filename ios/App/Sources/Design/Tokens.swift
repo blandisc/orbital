@@ -452,8 +452,8 @@ enum DS {
         /// Cuántas funciones da el video un brinquito (hacia abajo y de regreso) para enseñar que se mueve, y de qué tamaño (parte del alto).
         static let moveHintTimes = 3
         static let moveNudge: Double = 0.025
-        /// Al arrastrarlo: se levanta (un poco más chico, con esquinas y sombra).
-        static let liftScale: CGFloat = 0.97, liftRadius: CGFloat = 14, liftShadow: CGFloat = 24
+        /// Al arrastrarlo: la sombra que lo levanta.
+        static let liftShadow: CGFloat = 24
         /// VoiceOver: cuánto sube o baja el video cada vez (parte del alto).
         static let voiceOverStep: Double = 0.1
         /// Subtítulos rápidos: ancho máximo del panel.

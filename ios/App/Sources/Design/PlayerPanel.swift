@@ -775,11 +775,11 @@ struct SubtitleDock: View {
     var showsHeader = true
     /// Sin conexión: qué subtítulos hay (los del video y los guardados con la descarga); nil con red.
     var offlineNote: String?
-    /// El renglón abierto al aparecer (el botón de subtítulos abre Subtítulos).
-    var initiallyOpen: Section? = .subtitles
-    @State private var open: Section?
+    /// El renglón abierto (el botón de subtítulos abre Subtítulos). Lo guarda la pantalla: el panel se dibuja tres veces (tal cual,
+    /// con desplazamiento si no cabe y una copia invisible que lo mide) y cada una recordaba el suyo; al abrir o cerrar un
+    /// renglón, la medida no cambiaba y la tarjeta quedaba arriba con espacio muerto abajo.
+    @Binding var open: Section?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var opened = false
 
     var body: some View {
         // Renglones que dicen lo que tienes puesto y se abren uno a la vez (antes todo a la vista: en horizontal no cabía y se
@@ -846,7 +846,6 @@ struct SubtitleDock: View {
         .padding(DS.Space.s4)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
         .accessibilityElement(children: .contain)
-        .onAppear { if !opened { opened = true; open = initiallyOpen } }
         .animation(DS.Motion.base(reduceMotion), value: open)
     }
 

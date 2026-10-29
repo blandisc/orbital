@@ -111,6 +111,23 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertTrue(rig.model.reconnecting, "y la pantalla enseña la carga")
     }
 
+    func testAReloadThatNeverStartsTriesAnotherVersionInsteadOfLoadingForever() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(300))
+        rig.model.appDidEnterBackgroundFully()
+        rig.engine.restores = false
+        await rig.model.appDidBecomeActive()   // se pide otra vez… y el motor nunca arranca
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.last?.start ?? 0, 300, accuracy: 1, "en el punto donde ibas, no desde 0:00")
+        let before = rig.engine.loads.count
+        rig.clock.advance(PlaybackRules.startupTimeout + 1)
+        await rig.model.tick()
+        await rig.model.waitForTransition()
+        XCTAssertGreaterThan(rig.engine.loads.count, before, "pasado el plazo prueba otra versión (antes: cargando para siempre)")
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/second.mkv")
+    }
+
     func testBackFromBackgroundReloadsIfItDoesNotMoveIn8Seconds() async throws {
         let rig = try twoSources()
         await rig.model.begin(rig.request())
@@ -586,6 +603,66 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.model.phase, .closed)
         let state = try XCTUnwrap(rig.saved().last?["state"])
         XCTAssertEqual(state["timeOffset"]?.intValue, 0, "terminada: sale de Seguir viendo")
+    }
+
+    /// El caso del iPhone el 29 oct: volviste a la app, el video no avanzó, se pidió otra vez… y el motor se colgó abriendo el
+    /// archivo. Antes el reloj se quedaba esperando esa carga, nadie revisaba el plazo y cargaba para siempre.
+    func testAHungEngineNeverFreezesTheClockAndAnotherVersionIsTried() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(300))
+        rig.model.appDidEnterBackgroundFully()
+        await rig.model.appDidBecomeActive()                 // el motor dice que rearmó…
+        await rig.model.handle(rig.playing(300))              // …pero no avanza
+        rig.engine.hangLoads = true
+        rig.clock.advance(PlayerModel.foregroundStallSeconds + 1)
+        await rig.model.tick()                                // se pide otra vez (y el motor se cuelga): el reloj vuelve igual
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(rig.engine.hungLoads, 1, "el motor quedó abriendo el archivo")
+        XCTAssertEqual(rig.engine.loads.last?.start ?? 0, 300, accuracy: 1, "en el punto donde ibas")
+        rig.clock.advance(PlaybackRules.startupTimeout + 1)
+        await rig.model.tick()                                // el plazo se revisa: se suelta esa carga y se prueba otra versión
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/second.mkv", "probó otra versión")
+        XCTAssertEqual(rig.engine.loads.last?.start ?? 0, 300, accuracy: 1)
+        await rig.engine.stop()                               // suelta la que quedó colgada para terminar la prueba
+    }
+
+    /// Con la carga trabada, elegir otra versión a mano la abre (antes quedaba detrás de la trabada y solo se veía la carga).
+    func testChoosingAnotherVersionWhileTheEngineIsStuckOpensIt() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(300))
+        rig.model.appDidEnterBackgroundFully()
+        await rig.model.appDidBecomeActive()
+        await rig.model.handle(rig.playing(300))
+        rig.engine.hangLoads = true
+        rig.clock.advance(PlayerModel.foregroundStallSeconds + 1)
+        await rig.model.tick()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(rig.engine.hungLoads, 1, "el motor quedó abriendo el archivo")
+        rig.engine.hangLoads = false
+        let second = try XCTUnwrap(rig.model.sourceChoices.first { $0.playbackURL?.absoluteString == "https://rd.example/second.mkv" })
+        await rig.model.switchSource(to: second.index)
+        XCTAssertEqual(rig.engine.hungLoads, 0, "se soltó la carga trabada")
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/second.mkv")
+        await rig.model.handle(rig.playing(301))
+        XCTAssertEqual(rig.model.phase, .playing, "suena la versión que elegiste")
+    }
+
+    func testAVersionThatNeverOpensGoesBackToTheOneYouWereWatching() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(600))
+        let other = try XCTUnwrap(rig.model.sourceChoices.first { $0.playbackURL?.absoluteString.contains("second") == true })
+        await rig.model.switchSource(to: other.index)   // la versión nueva nunca arranca (el motor se queda abriéndola)
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/second.mkv")
+        rig.clock.advance(PlaybackRules.startupTimeout + 1)
+        await rig.model.tick()
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/best.mkv", "vuelve a la que veías (antes: cargando para siempre)")
+        XCTAssertEqual(rig.engine.loads.last?.start ?? 0, 600, accuracy: 1, "en el mismo punto")
+        XCTAssertEqual(rig.model.notice, .switchFailedBack, "y lo dice")
     }
 
     func testSwitchSourceKeepsThePosition() async throws {

@@ -54,7 +54,12 @@ final class FakeEngine: PlayerEngine, @unchecked Sendable {
     func load(url: URL, startAt: Double) async throws {
         lock.withLock { _loads.append((url, startAt)) }
         if failing.contains(url.absoluteString) { throw NetworkError("no abre") }
+        // Como el motor del iPhone el 29 oct: se queda abriendo el archivo y no vuelve hasta que lo detienen.
+        if hangLoads { try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in lock.withLock { hung.append(c) } } }
     }
+    var hangLoads = false
+    private var hung: [CheckedContinuation<Void, Error>] = []
+    var hungLoads: Int { lock.withLock { hung.count } }
     private func note(_ s: String) { lock.withLock { _calls.append(s) } }
     func play() async { note("play") }
     func pause() async { note("pause") }
@@ -62,7 +67,11 @@ final class FakeEngine: PlayerEngine, @unchecked Sendable {
     var restores = true
     func restoreAfterBackground(resume: Bool) async -> Bool { note("restore \(resume)"); return restores }
     func seek(to seconds: Double) async { note("seek \(Int(seconds))") }
-    func stop() async { note("stop") }
+    func stop() async {
+        note("stop")
+        let pending = lock.withLock { let all = hung; hung = []; return all }
+        for c in pending { c.resume(throwing: CancellationError()) }
+    }
     func selectAudio(_ id: Int?) async { note("audio \(id.map(String.init) ?? "none")") }
     func selectSubtitle(_ id: Int?) async { note("sub \(id.map(String.init) ?? "none")") }
     func addSubtitle(url: URL, language: String?) async { lock.withLock { _subs.append(url) }; note("addsub \(language ?? "")") }

@@ -19,7 +19,10 @@ extension PlayerScreen {
                     // hacia abajo parecía «actualizar»); solo si un renglón abierto ya no cabe, se desplaza.
                     ViewThatFits(in: .vertical) {
                         subtitleDockView(model)
+                        // Nunca más alto que el panel: un ScrollView toma todo el alto que le dan y la tarjeta quedaba arriba con
+                        // espacio muerto abajo (con un video 4:3, al cambiar de versión o de subtítulos).
                         ScrollView { subtitleDockView(model) }.scrollBounceBehavior(.basedOnSize)
+                            .frame(maxHeight: landscape || dockNeed <= 0 ? .infinity : dockNeed)
                     }
                 }
             }
@@ -245,7 +248,7 @@ extension PlayerScreen {
             videoVersion: videoVersionText(model), openVersion: model.sourceChoices.count > 1 ? { withAnimation(DS.Motion.base(reduceMotion)) { dockPage = .version } } : nil,
             showsHeader: !landscape,
             offlineNote: model.subtitlesOffline ? tr(current.localFile != nil ? "Sin conexión: solo los subtítulos del video y los guardados con la descarga." : "Sin conexión: solo los subtítulos del video.") : nil,
-            initiallyOpen: dockOpens)
+            open: $dockOpens)
     }
 
     /// Tocar un idioma: pone su mejor versión; si no hay (sin red, o no existe), lo dice en vez de quedarse callado.

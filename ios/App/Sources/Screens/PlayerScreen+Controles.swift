@@ -150,14 +150,17 @@ extension PlayerScreen {
     /// el color del video llega más allá del cuadro. Se apaga hacia abajo para que los controles se lean.
     @ViewBuilder var ambientLayer: some View {
         if let url = ambientURL {
-            RemoteImage(url: url, maxPoints: DS.PlayerPanel.ambientImage) { phase in
-                if case .success(let image) = phase {
-                    image.resizable().scaledToFill()
-                        .blur(radius: DS.PlayerPanel.ambientBlur)
-                        .opacity(DS.PlayerPanel.ambientOpacity)
+            // La imagen va encima de un lienzo del tamaño de la pantalla: sola, al llenar el alto medía 1383 puntos de ancho (una
+            // imagen 16:9) y estiraba toda la pantalla; el video se veía agrandado y los controles quedaban fuera.
+            Color.clear.overlay {
+                RemoteImage(url: url, maxPoints: DS.PlayerPanel.ambientImage) { phase in
+                    if case .success(let image) = phase {
+                        image.resizable().scaledToFill()
+                            .blur(radius: DS.PlayerPanel.ambientBlur)
+                            .opacity(DS.PlayerPanel.ambientOpacity)
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .clipped()
             .overlay(LinearGradient(colors: [.clear, DS.video], startPoint: .center, endPoint: .bottom))
             .ignoresSafeArea()

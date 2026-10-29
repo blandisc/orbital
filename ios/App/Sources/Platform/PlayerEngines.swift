@@ -179,7 +179,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
         return view
     }()
 
-    @MainActor var surface: AnyView { AnyView(AVPlayerSurface(view: layerView).ignoresSafeArea()) }
+    @MainActor var surface: AnyView { AnyView(AVPlayerSurface(view: layerView)) }
     @MainActor var pictureInPicture: PictureInPictureContent? { player.currentItem == nil ? nil : .playerLayer(layerView.playerLayer) }
     @MainActor func setZoom(_ zoom: VideoZoom) { layerView.playerLayer.videoGravity = zoom.gravity }
     @MainActor func setPictureInPictureActive(_ active: Bool) {}

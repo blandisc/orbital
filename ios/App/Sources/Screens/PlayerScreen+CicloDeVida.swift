@@ -25,7 +25,7 @@ extension PlayerScreen {
     /// El cuadro guardado, con el mismo zoom que el video.
     @ViewBuilder func frozenCover(_ image: UIImage) -> some View {
         switch zoom {
-        case .fill: Image(uiImage: image).resizable().scaledToFill().frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
+        case .fill: Color.clear.overlay { Image(uiImage: image).resizable().scaledToFill() }.clipped()   // sin crecer más que el video
         case .stretch: Image(uiImage: image).resizable()
         default: Image(uiImage: image).resizable().scaledToFit()
         }

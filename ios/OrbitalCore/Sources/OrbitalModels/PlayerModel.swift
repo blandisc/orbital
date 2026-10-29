@@ -350,10 +350,12 @@ public final class PlayerModel: ObservableModel {
     private func startLoading() {
         loadSegmentsIfNeeded()
         acceptingSnapshots = true; retrying = false; hasPlayed = false; tracksApplied = false; restoringInPlace = false; playRequest = nil
+        // Toda carga tiene su plazo (abrir, volver a pedirla al regresar a la app, cambiar de versión): antes solo la primera; si el
+        // motor se quedaba abriendo el archivo al volver a la app, la pantalla cargaba para siempre (3 min en el iPhone el 29 oct).
+        startupDeadline = clock().addingTimeInterval(PlaybackRules.startupTimeout)
         // Otra fuente: el subtítulo externo (OpenSubtitles) se vuelve a sumar; antes se perdía al cambiar de fuente.
         addedExternalSubtitle = false; knownSubtitleIDs = []; addedTracks = [:]; pendingSubtitleURL = nil; addedSubtitleURLs = []
         scrobbleStarted = false   // otra carga (otra fuente, otro episodio): cuando suene, Trakt recibe el avance donde va
-        startupDeadline = clock().addingTimeInterval(PlaybackRules.startupTimeout)
     }
 
     /// Elige fuente y la carga. `startAt` solo se pasa al reintentar con otra fuente (se sigue en el mismo punto).
@@ -419,6 +421,7 @@ public final class PlayerModel: ObservableModel {
             do { try await loadVideo(url, at: start); return }
             catch {
                 guard mine == generation else { return }
+                Self.note("no abrió en \(Int(clock().timeIntervalSince(loadStartedAt))) s (\(String(describing: error).prefix(80))): otra versión")
                 failedSources.insert(found.index)
                 attempts = failedSources.count
                 if failedSources.count > PlaybackRules.maxSourceRetries { return fail("Ninguna versión funcionó.", .noneWorked) }
@@ -541,13 +544,19 @@ public final class PlayerModel: ObservableModel {
         guard phase != .closed, !closing else { return }
         let now = clock()
         defer { lastTick = now }
-        if foregroundCheck != nil { await checkForegroundStall(now: now) }
-        if playRequest != nil { await checkPlayRequest(now: now) }
-        if foregroundPending, acceptingSnapshots, !retrying { foregroundPending = false; await appDidBecomeActive() }
+        // El reloj nunca se queda esperando una carga: si el motor se colgaba abriendo el archivo, `tick` no volvía, nadie revisaba
+        // el plazo y la pantalla cargaba para siempre (44 min en el iPhone el 29 oct). Lo largo corre aparte (`transition`).
+        if foregroundCheck != nil { checkForegroundStall(now: now) }
+        if playRequest != nil { checkPlayRequest(now: now) }
+        if foregroundPending, acceptingSnapshots, !retrying {
+            foregroundPending = false
+            transition = Task { [weak self] in await self?.appDidBecomeActive() }
+        }
         if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying {
             Self.note("no arrancó en \(Int(PlaybackRules.startupTimeout)) s")
             if goBackAfterSwitch() { return }
-            return await retryWithAnotherSource()?.value ?? ()
+            _ = retryWithAnotherSource()   // corre aparte: el reloj sigue revisando
+            return
         }
         // En pausa la cuenta de «Siguiente» también se detiene (antes, al seguir, saltaba de golpe).
         if snapshot.state != .playing, upNext != nil, let deadline = upNextDeadline {
@@ -1084,12 +1093,12 @@ public final class PlayerModel: ObservableModel {
         guard hasPlayed, phase == .playing, !closing else { return }
         playRequest = (clock(), snapshot.position)
     }
-    private func checkPlayRequest(now: Date) async {
+    private func checkPlayRequest(now: Date) {
         guard let request = playRequest else { return }
         if snapshot.state == .playing, snapshot.position > request.position + 0.3 { playRequest = nil; return }   // ya suena
         guard now.timeIntervalSince(request.at) >= Self.foregroundStallSeconds, !reconnecting, !retrying else { return }
         playRequest = nil
-        await reloadCurrentSource(at: max(request.position, snapshot.position), resume: true)
+        startReload(at: max(request.position, snapshot.position), resume: true)
     }
     public func seek(to seconds: Double) async {
         userTouched()
@@ -1175,6 +1184,10 @@ public final class PlayerModel: ObservableModel {
         self.request?.sourceIndex = index
         let subtitlesWereOn = snapshot.selectedSubtitle != nil
         source = choice; phase = .preparing
+        // Suelta lo que el motor estuviera abriendo: si la versión de antes se quedó cargando, la nueva quedaba formada detrás de
+        // ella y la pantalla solo enseñaba la carga (el iPhone el 29 oct).
+        await engine.stop()
+        guard mine == generation, !closing else { return }
         startLoading()
         if let previous { switchBack = (previous, position) }
         forgetSubtitleSearch()   // otro archivo: «coincide con tu copia» se vuelve a calcular con su huella
@@ -1525,17 +1538,22 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// El plazo tras volver: el video tenía que avanzar y no lo hizo (negro o congelado) → se pide de nuevo.
-    private func checkForegroundStall(now: Date) async {
+    private func checkForegroundStall(now: Date) {
         guard let check = foregroundCheck else { return }
         if snapshot.state == .paused { foregroundCheck = nil; reconnecting = false; return }   // lo pausaste tú
         if snapshot.state == .playing, snapshot.position > check.position + 0.5 { foregroundCheck = nil; reconnecting = false; return }
         guard now >= check.deadline else { return }
         foregroundCheck = nil
-        await reloadCurrentSource(at: max(check.position, snapshot.position, backgroundPosition), resume: true)
+        startReload(at: max(check.position, snapshot.position, backgroundPosition), resume: true)
     }
 
     /// Vuelve a abrir la fuente que sonaba en el mismo punto: la descarga, tu copia (enlace nuevo) o la de Real-Debrid
     /// (con la lista renovada si ya caducó). Si tampoco abre, se prueba otra fuente como en cualquier corte.
+    /// Pide el video otra vez sin esperar a que cargue (para el reloj: él tiene que seguir revisando el plazo).
+    private func startReload(at position: Double, resume: Bool) {
+        transition = Task { [weak self] in await self?.reloadCurrentSource(at: position, resume: resume) }
+    }
+
     private func reloadCurrentSource(at position: Double, resume: Bool) async {
         guard let request, !closing else { return }
         reconnecting = true
@@ -1556,6 +1574,8 @@ public final class PlayerModel: ObservableModel {
                 source = pick; url = pick.playbackURL
             }
         }
+        guard mine == generation, !closing else { return }
+        await engine.stop()   // suelta lo que el motor estuviera abriendo (si se colgó, la carga nueva no queda detrás)
         guard mine == generation, !closing else { return }
         startLoading()
         phase = .preparing
