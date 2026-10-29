@@ -1,0 +1,164 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital · Cómo descubrir: tres propuestas</title>
+<style>
+:root{color-scheme:dark;--bg:#0c0c0e;--s1:#131316;--s2:#1e1e23;--s3:#2a2a30;--mute:#a3a3ab;--soft:#cdcdd3;--paper:#f5f4f0;--amber:#f4c24d;--teal:#5fd6c6;--red:#f0574d}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--paper);font:16px/1.45 -apple-system,"SF Pro Text",system-ui,sans-serif;padding:28px 20px 60px;max-width:1240px;margin:auto}
+h1{font-size:30px;letter-spacing:-.02em;line-height:1.1}
+.lead{color:var(--soft);margin:10px 0 0;max-width:760px;font-size:17px}
+.levers{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0 34px}
+.lever{background:var(--s1);border:1px solid #ffffff12;border-radius:14px;padding:14px}
+.lever b{display:block;font-size:15px;margin-bottom:4px}.lever span{color:var(--mute);font-size:14px}
+.prop{display:grid;grid-template-columns:340px 1fr;gap:34px;align-items:start;margin:0 0 54px;padding-top:26px;border-top:1px solid #ffffff14}
+.tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--bg);background:var(--paper);border-radius:6px;padding:3px 8px;margin-bottom:10px}
+h2{font-size:26px;letter-spacing:-.01em;line-height:1.15}
+.hook{color:var(--amber);font-weight:600;margin:6px 0 14px;font-size:17px}
+.txt p{color:var(--soft);margin:0 0 12px}
+.txt h3{font-size:14px;color:var(--mute);margin:18px 0 8px;font-weight:600}
+.txt ul{padding-left:18px;color:var(--soft)}.txt li{margin:4px 0}
+.gp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.gp div{background:var(--s1);border-radius:12px;padding:12px;font-size:14px;color:var(--soft)}
+.gp b{display:block;color:var(--paper);margin-bottom:4px}
+.phone{width:340px;height:700px;border-radius:46px;border:9px solid #26262b;background:var(--bg);overflow:hidden;position:relative;box-shadow:0 24px 70px #000a}
+.sb{height:40px;display:flex;justify-content:space-between;padding:13px 24px 0;font-size:13px;font-weight:600}
+.nav{padding:4px 16px 8px;display:flex;justify-content:space-between;align-items:center}.nav b{font-size:26px;letter-spacing:-.02em}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:74px;background:#18181ce8;border-top:1px solid #ffffff14;display:flex;justify-content:space-around;padding-top:9px;font-size:10px;color:var(--mute)}
+.tabs span{display:flex;flex-direction:column;align-items:center;gap:3px}.tabs i{width:22px;height:22px;border-radius:6px;background:var(--s3)}.tabs .on{color:var(--paper)}.tabs .on i{background:var(--paper)}
+.sec{display:flex;justify-content:space-between;align-items:baseline;padding:12px 16px 2px}.sec b{font-size:17px}.sec small{color:var(--mute);font-size:12px}
+.sub{color:var(--mute);font-size:12px;padding:0 16px 6px}
+.rail{display:flex;gap:9px;padding:6px 16px;overflow:hidden}
+.p{width:92px;height:138px;border-radius:9px;flex:none;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:7px;font-size:11px;font-weight:700;line-height:1.15;text-shadow:0 1px 4px #000}
+.p.seen{opacity:.35}.p .ck{position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:9px;background:var(--paper);color:var(--bg);font-size:12px;display:flex;align-items:center;justify-content:center}
+.g1{background:linear-gradient(160deg,#3b5a7a,#101826)}.g2{background:linear-gradient(160deg,#7a3b3b,#261010)}.g3{background:linear-gradient(160deg,#4f7a3b,#132610)}.g4{background:linear-gradient(160deg,#8a6a2b,#261d0c)}.g5{background:linear-gradient(160deg,#5b3b7a,#1a1026)}.g6{background:linear-gradient(160deg,#2b7a72,#0c2624)}.g7{background:linear-gradient(160deg,#7a2b5e,#260c1d)}.g8{background:linear-gradient(160deg,#555,#161616)}
+.ring{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:conic-gradient(var(--amber) calc(var(--v)*1%),var(--s3) 0)}
+.ring span{width:36px;height:36px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.debt{margin:8px 16px;background:var(--s1);border-radius:16px;padding:12px;display:flex;gap:12px;align-items:center}
+.debt div b{display:block;font-size:14px}.debt div span{color:var(--mute);font-size:12px}
+.hero{margin:6px 16px;border-radius:18px;height:250px;position:relative;overflow:hidden}
+.hero .v{position:absolute;inset:auto 0 0 0;height:70%;background:linear-gradient(transparent,#000e)}
+.hero .in{position:absolute;left:14px;right:14px;bottom:14px}
+.pill{display:inline-block;font-size:11px;font-weight:700;background:#ffffff2e;border-radius:9px;padding:3px 8px}
+.ti{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:6px 0 2px;line-height:1.05}.me{font-size:12px;color:var(--soft)}
+.btns{display:flex;gap:7px;margin-top:9px}.b{height:34px;border-radius:17px;padding:0 14px;display:flex;align-items:center;font-size:13px;font-weight:700;background:#ffffff26}.b.w{background:var(--paper);color:var(--bg)}
+.feed{position:absolute;inset:0;background:linear-gradient(180deg,#1d2a3a 0%,#0b1119 55%,#000 100%)}
+.feed .play{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);width:66px;height:66px;border-radius:50%;background:#ffffff26;display:flex;align-items:center;justify-content:center;font-size:24px}
+.feed .side{position:absolute;right:12px;bottom:170px;display:flex;flex-direction:column;gap:16px;align-items:center;font-size:10px;color:var(--soft)}
+.feed .side i{width:40px;height:40px;border-radius:20px;background:#ffffff26;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:17px;color:var(--paper)}
+.feed .bot{position:absolute;left:16px;right:70px;bottom:96px}
+.feed .bar{position:absolute;left:16px;right:16px;bottom:84px;height:3px;background:#ffffff33;border-radius:2px}.feed .bar::after{content:"";display:block;width:38%;height:100%;background:var(--paper);border-radius:2px}
+.chips{display:flex;gap:7px;padding:8px 16px;overflow:hidden}.chip{flex:none;height:30px;border-radius:15px;padding:0 12px;display:flex;align-items:center;font-size:12.5px;font-weight:600;background:#ffffff1f}.chip.on{background:var(--paper);color:var(--bg)}
+.note{margin:4px 16px 0;background:var(--s1);border-radius:14px;padding:12px;font-size:13px;color:var(--soft);line-height:1.4}.note b{color:var(--paper)}
+.theme{margin:8px 16px;border-radius:16px;overflow:hidden;background:var(--s1)}
+.theme .top{height:74px;display:flex;align-items:flex-end;padding:10px 12px;font-weight:800;font-size:16px;line-height:1.1}
+.theme .bt{padding:8px 12px 10px;font-size:12px;color:var(--mute)}
+.axis{width:100%;border-collapse:collapse;margin:8px 0 40px;font-size:15px}.axis th,.axis td{text-align:left;padding:10px 12px;border-bottom:1px solid #ffffff12;vertical-align:top}.axis th{color:var(--mute);font-weight:600;font-size:13px}
+.rec{background:linear-gradient(135deg,#2a2412,#131316);border:1px solid #f4c24d55;border-radius:18px;padding:20px;margin-top:10px}.rec h2{font-size:22px}.rec p{color:var(--soft);margin-top:8px}
+.src{color:var(--mute);font-size:13px;margin-top:30px}.src a{color:var(--soft)}
+@media (max-width:860px){.prop{grid-template-columns:1fr}.phone{margin:auto}.levers{grid-template-columns:1fr}}
+</style></head><body>
+
+<h1>¿Cómo se te antoja algo cuando tienes todo?</h1>
+<p class="lead">Tres propuestas para presentar películas y series en Orbital (iPhone y TV). No son pantallas sueltas: son tres formas distintas de segmentar el catálogo del mundo. Cada una jala una palanca diferente del antojo.</p>
+<div class="levers">
+ <div class="lever"><b>1 · La deuda</b><span>«Esto ya lo debí haber visto». Lo que todos citan y a ti te falta.</span></div>
+ <div class="lever"><b>2 · Verlo</b><span>Un pedazo de la película engancha más que cualquier póster o sinopsis.</span></div>
+ <div class="lever"><b>3 · La sorpresa con voz</b><span>«¿Por qué nadie me dijo de esto?». Alguien que te lo cuenta para ti.</span></div>
+</div>
+
+<!-- PROPUESTA A -->
+<div class="prop">
+ <div class="phone">
+  <div class="sb"><span>9:41</span><span>●●● 100%</span></div>
+  <div class="nav"><b>Te falta</b><span class="pill">Trakt: 1 284 vistas</span></div>
+  <div class="debt"><div class="ring" style="--v:34"><span>34%</span></div><div><b>Las 100 que todos citan</b><span>Llevas 34. La que más te va a gustar: <b style="display:inline;color:var(--paper)">Oldboy</b></span></div></div>
+  <div class="sec"><b>Clásicos que tú no has visto</b><small>Ver 66</small></div>
+  <div class="sub">Por lo que ves, empieza por estos</div>
+  <div class="rail"><div class="p g2">El Padrino</div><div class="p g1">Blade Runner</div><div class="p g5">Amélie</div><div class="p g3">Ciudad de Dios</div></div>
+  <div class="sec"><b>Nolan: te faltan 3 de 12</b><small>tu director</small></div>
+  <div class="rail"><div class="p g8 seen">Inception<span class="ck">✓</span></div><div class="p g4">The Prestige</div><div class="p g6">Memento</div><div class="p g8 seen">Dunkirk<span class="ck">✓</span></div></div>
+  <div class="sec"><b>Ganadoras del Óscar</b><small>12 de 50</small></div>
+  <div class="tabs"><span class="on"><i></i>Hoy</span><span><i></i>Te falta</span><span><i></i>Descargas</span><span><i></i>Buscar</span></div>
+ </div>
+ <div class="txt">
+  <span class="tag">PROPUESTA A</span>
+  <h2>«Te falta»: colecciones con tu avance</h2>
+  <div class="hook">Palanca: la deuda. «Esto ya lo debí haber visto.»</div>
+  <p>Orbital cruza lo que ya viste (Trakt) con listas que la cultura ya decidió: las 100 que todos citan, las ganadoras del Óscar, la filmografía de tus directores, «las de los 2000», los clásicos mexicanos. Cada colección enseña <b>cuánto llevas</b> y te propone la siguiente que mejor te va a caer.</p>
+  <p>El antojo sale de la colección incompleta: un anillo al 34 % pide terminarse, y «te faltan 3 de Nolan» es una invitación concreta, no un género.</p>
+  <h3>Cómo segmenta</h3>
+  <ul><li>Por canon (listas famosas, premios, décadas, países).</li><li>Por persona: directores y actores que ya te gustaron.</li><li>Dentro de cada colección, ordenado por lo que más te va a gustar.</li></ul>
+  <h3>De dónde salen los datos</h3>
+  <ul><li>Tu historial de Trakt (ya conectado); los premios ya están en <code>design/awards.json</code>; filmografías y listas famosas de TMDB y Trakt.</li></ul>
+  <div class="gp"><div><b>Ganas</b>Motivo claro y personal para ver algo; sensación de progreso; funciona igual en la TV (anillos grandes) que en el iPhone.</div><div><b>Pierdes</b>Puede sentirse como tarea; sirve menos para «algo ligero para hoy»; sin Trakt no hay avance que enseñar.</div></div>
+ </div>
+</div>
+
+<!-- PROPUESTA B -->
+<div class="prop">
+ <div class="phone">
+  <div class="feed">
+   <div class="sb"><span>9:41</span><span>●●● 100%</span></div>
+   <div class="chips"><span class="chip on">Para ti</span><span class="chip">Me rio</span><span class="chip">Tensión</span><span class="chip">&lt; 1 h</span><span class="chip">Lloro</span></div>
+   <div class="play">▶</div>
+   <div class="side"><span><i>＋</i>Guardar</span><span><i>✕</i>No</span><span><i>📺</i>En la TV</span></div>
+   <div class="bot"><span class="pill">La escena del pasillo · 0:42</span><div class="ti" style="font-size:22px">Oldboy</div><div class="me">Película · 2003 · ★ 8.4 · Lista para ver</div><div class="btns"><span class="b w">▶ Ver desde el inicio</span></div></div>
+   <div class="bar"></div>
+   <div class="tabs"><span><i></i>Hoy</span><span class="on"><i></i>Antojo</span><span><i></i>Descargas</span><span><i></i>Buscar</span></div>
+  </div>
+ </div>
+ <div class="txt">
+  <span class="tag">PROPUESTA B</span>
+  <h2>«Antojo»: primero lo ves, luego lo eliges</h2>
+  <div class="hook">Palanca: verlo. Un pedazo engancha más que un póster.</div>
+  <p>Una pantalla vertical, a pantalla completa, con tráilers y escenas de 30 a 60 segundos. Deslizas hacia arriba para la siguiente; «Guardar» la manda a tu lista; «Ver» la pone desde el inicio, ya lista con Real-Debrid. Arriba, botones de ánimo («Me rio», «Tensión», «Menos de 1 h») cambian lo que sale.</p>
+  <p>Es justo hacia donde va la industria: Netflix lanzó en 2026 su feed vertical «Clips» y Disney+ el suyo, «Verts». En la TV se ve como un destacado que reproduce el tráiler sin sonido cuando te quedas quieto.</p>
+  <h3>Cómo segmenta</h3>
+  <ul><li>Por ánimo y por tiempo, no por género.</li><li>Lo que deslizas rápido le baja peso a lo parecido; lo que guardas, le sube.</li></ul>
+  <h3>De dónde salen los datos</h3>
+  <ul><li>Tráilers y videos de TMDB (YouTube); Orbital ya reproduce tráilers en la ficha.</li></ul>
+  <div class="gp"><div><b>Ganas</b>Lo más antojable de las tres; descubres sin leer; enseña cosas que nunca hubieras tocado por el póster.</div><div><b>Pierdes</b>Gasta datos y batería; los tráilers a veces cuentan de más; depende de que YouTube tenga el video; adictivo de más si no se cuida.</div></div>
+ </div>
+</div>
+
+<!-- PROPUESTA C -->
+<div class="prop">
+ <div class="phone">
+  <div class="sb"><span>9:41</span><span>●●● 100%</span></div>
+  <div class="nav"><b>La función</b><span class="pill">Miércoles 29</span></div>
+  <div class="hero g5"><div class="v"></div><div class="in"><span class="pill">La de hoy · se va en 6 días</span><div class="ti">Coherence</div><div class="me">Película · 1 h 29 · ★ 7.2</div><div class="btns"><span class="b w">▶ Ver</span><span class="b">Tráiler</span></div></div></div>
+  <div class="note"><b>Por qué esta, para ti:</b> te tragaste Dark en dos semanas. Esta es una cena entre amigos que se rompe en realidades paralelas, filmada en cinco noches con 50 mil dólares. Casi nadie la vio en cines.</div>
+  <div class="sec"><b>Temas de la semana</b><small>4</small></div>
+  <div class="theme"><div class="top g1">Oficinas que dan miedo<br><span style="font-weight:600;font-size:12px;color:var(--soft)">Si te gustó Severance</span></div><div class="bt">6 títulos · contados en dos líneas cada uno</div></div>
+  <div class="tabs"><span class="on"><i></i>La función</span><span><i></i>Explorar</span><span><i></i>Descargas</span><span><i></i>Buscar</span></div>
+ </div>
+ <div class="txt">
+  <span class="tag">PROPUESTA C</span>
+  <h2>«La función»: una al día, contada para ti</h2>
+  <div class="hook">Palanca: la sorpresa con voz. «¿Por qué nadie me dijo de esto?»</div>
+  <p>Como MUBI, que programa una película al día y la acompaña de un texto editorial, pero hecha para ti. Cada día Orbital programa <b>una</b> película o serie con una nota corta que explica por qué es para ti (qué viste que se le parece, un dato que da curiosidad) y que se va en unos días. Debajo, 3 o 4 «temas de la semana» con historia: «Oficinas que dan miedo», «Antes de que salga Dune 3», «Lo que se habla en México».</p>
+  <p>La nota la escribe un modelo de lenguaje (Claude) con tu historial y los datos del título, revisada contra reglas fijas (sin spoilers, dos frases, un dato verificable) y guardada en la consola: se calcula una vez al día.</p>
+  <h3>Cómo segmenta</h3>
+  <ul><li>Por historia y tema, no por categoría.</li><li>Por momento: lo que estrena, lo que se habla, la temporada (Halloween, Navidad, el Óscar).</li></ul>
+  <h3>De dónde salen los datos</h3>
+  <ul><li>Tu historial (Trakt), TMDB y Trakt para los títulos; un modelo de lenguaje para las notas y los temas.</li></ul>
+  <div class="gp"><div><b>Ganas</b>Una sola decisión al día; se siente hecho a mano; cada título llega con una razón que da ganas; es lo más distinto de Netflix.</div><div><b>Pierdes</b>Si la nota no le atina, se nota mucho; cuesta un poco por uso del modelo; menos opciones a la vista para quien quiere pasear.</div></div>
+ </div>
+</div>
+
+<h2 style="font-size:22px;margin-bottom:6px">Cómo segmenta cada una</h2>
+<table class="axis">
+ <tr><th></th><th>A · Te falta</th><th>B · Antojo</th><th>C · La función</th></tr>
+ <tr><td>Pregunta que contesta</td><td>¿Qué me estoy perdiendo?</td><td>¿Qué se me antoja ahorita?</td><td>¿Qué veo hoy?</td></tr>
+ <tr><td>Unidad</td><td>Colección con avance</td><td>Escena de 30–60 s</td><td>Una película y una nota</td></tr>
+ <tr><td>Esfuerzo para ti</td><td>Bajo: eliges de una lista corta</td><td>Mínimo: deslizas</td><td>Nulo: ya está elegida</td></tr>
+ <tr><td>Mejor en</td><td>TV e iPhone</td><td>iPhone</td><td>TV e iPhone</td></tr>
+ <tr><td>Construirlo</td><td>Medio: los datos ya existen</td><td>Medio-alto: reproductor de tráilers y feed</td><td>Medio: notas con un modelo de lenguaje</td></tr>
+</table>
+
+<div class="rec">
+ <h2>Mi recomendación: C como portada, A como su despensa</h2>
+ <p>«La función» resuelve el «no sé qué ver» con una sola respuesta que se siente hecha para ti, y su nota es lo que despierta el «¿por qué no he visto esto?». «Te falta» vive debajo y en Explorar como colecciones con avance, para cuando quieres la deuda. «Antojo» (B) lo dejaría como apuesta después: es lo más llamativo, pero es lo más caro de construir y de usar (datos, batería, tráilers que cuentan de más).</p>
+</div>
+
+<p class="src">Referencias: <a href="https://qz.com/622316/netflix-knows-exactly-how-long-youll-look-for-something-to-watch-before-giving-up">Netflix: 60–90 s antes de rendirse</a> · <a href="https://www.dezeen.com/2017/12/20/netflix-targets-film-artwork-depending-users-viewing-habits-design-technology/">Netflix: la imagen se elige para cada persona</a> · <a href="https://www.itsnicethat.com/articles/mubi-curation">MUBI: una película al día</a> · <a href="https://www.tvtechnology.com/platform/streaming/netflix-upgrades-mobile-experience-introduces-clips-vertical-feed">Netflix «Clips», feed vertical (2026)</a> · <a href="https://addons.mozilla.org/firefox/addon/letterboxd-toolkit/">Anillos de avance en listas famosas (Letterboxd Toolkit)</a></p>
+</body></html>
