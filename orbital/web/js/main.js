@@ -1396,13 +1396,16 @@ function applyCuration(rows) {
 setInterval(() => (curationAsked && onScreen() ? loadCuration() : null), 30 * 60_000); // con un juego al frente, nada
 
 // Destacados en carrusel: quieto en esa fila, avanza solo al siguiente (y el héroe de arriba con él), como en el iPhone.
+// Da una vuelta y se queda en el que estabas: si nadie toca nada, Orbital deja de cambiar fondos (cada cambio repinta todo).
 const SPOTLIGHT_MS = 8000;
 let spotlightIdle = Date.now();
+let spotlightTurns = 0;
 setInterval(() => {
   const row = state.rows?.[state.focus.r];
   if (state.section !== "media" || !row?.spotlight || document.hidden || ui.sheet.isOpen || topOverlay() || saver.active) return;
-  if (Date.now() - spotlightIdle < SPOTLIGHT_MS) return;
+  if (Date.now() - spotlightIdle < SPOTLIGHT_MS || spotlightTurns >= row.items.length) return;
   spotlightIdle = Date.now();
+  spotlightTurns++;
   setFocus(state.focus.r, (state.focus.c + 1) % row.items.length, { silent: true });
 }, 1000);
 
@@ -1737,7 +1740,8 @@ function handleAction(action, { repeat = false } = {}) {
   }
   stir();
   if (saver.wake()) return; // con el protector de pantalla, el primer botón solo lo quita
-  spotlightIdle = Date.now(); // el carrusel de Destacados espera mientras te mueves
+  spotlightIdle = Date.now(); // el carrusel de Destacados espera mientras te mueves (y vuelve a dar su vuelta)
+  spotlightTurns = 0;
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
   if (action === "options" && canUndoHide() && !ui.sheet.isOpen && !topOverlay()) {
     return undoHide();
@@ -1763,25 +1767,35 @@ function handleAction(action, { repeat = false } = {}) {
     }
     return renderHints();
   }
-  if (menuBusy) {
-    if (action === "back" && !menuBusy.done) { // B mientras un submenú carga: se cancela (antes aparecía después)
-      menuBusy.stale = true;
-      menuBusy = null;
-      sound.play("back");
-      return renderHints();
-    }
-    if (performance.now() < menuBusy.until) { if (!topOverlay()) return; }
-    else { // ya puedes moverte: si la opción sigue esperando, su menú ya no se abre encima de lo que hagas
-      if (!menuBusy.done) menuBusy.stale = true;
-      menuBusy = null;
-    }
-  }
+  if (menuStillLoading(action)) return;
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
   if (OVERLAYS.some((view) => view.handle(action, { repeat }))) return renderHints();
   if (inForYou()) return handleForYou(action, { repeat });
   if (inTv()) return handleTv(action, { repeat });
   if (inHome()) return handleHome(action, { repeat });
   if (inGames()) return handleGames(action, { repeat });
+  return handleRows(action, { repeat });
+}
+
+/** Una opción del menú esperaba al servidor: B la cancela y, mientras tanto, lo de atrás no recibe el botón (true). */
+function menuStillLoading(action) {
+  if (!menuBusy) return false;
+  if (action === "back" && !menuBusy.done) { // B mientras un submenú carga: se cancela (antes aparecía después)
+    menuBusy.stale = true;
+    menuBusy = null;
+    sound.play("back");
+    renderHints();
+    return true;
+  }
+  if (performance.now() < menuBusy.until) return !topOverlay();
+  // ya puedes moverte: si la opción sigue esperando, su menú ya no se abre encima de lo que hagas
+  if (!menuBusy.done) menuBusy.stale = true;
+  menuBusy = null;
+  return false;
+}
+
+/** Las filas de portadas (Películas y series). */
+function handleRows(action, { repeat = false } = {}) {
   const { r, c } = state.focus;
   const item = current();
   switch (action) {
@@ -1872,14 +1886,18 @@ function openView(view = {}, message = "") {
   if (view.seccion) goToSection(view.seccion);
 }
 
-function handleEvent(event) {
-  if (event.type === "status") return applyStatus(event.running);
-  if (event.type === "reload") { // tras actualizar Orbital (con `view`, abre esa vista al volver)
+// Lo que avisa el servidor (SSE), por tipo. Los que no regresan nada terminan preguntando el estado, igual que un aviso
+// que esta versión no conoce (algo cambió: mejor saberlo).
+const EVENTS = {
+  status: (event) => applyStatus(event.running),
+  // tras actualizar Orbital (con `view`, abre esa vista al volver)
+  reload: (event) => {
     const query = new URLSearchParams(event.view || {}).toString();
     return location.assign(location.pathname + (query ? `?${query}` : ""));
-  }
-  if (event.type === "open-view") return openView(event.view, event.message);
-  if (event.type === "choose") { // la voz encontró varias con el mismo nombre: ¿cuál?
+  },
+  "open-view": (event) => openView(event.view, event.message),
+  // la voz encontró varias con el mismo nombre: ¿cuál?
+  choose: (event) => {
     ui.status.pulseAlexa();
     return openMenu({
       title: event.message,
@@ -1888,16 +1906,18 @@ function handleEvent(event) {
         { icon: "search", label: "Ver todos los resultados", command: { type: "search", query: event.query } },
       ],
     });
-  }
-  if (event.type === "launch-ready") return ui.launch.reveal();
-  if (event.type === "switching") { // Xenia cambia de programa (Black Ops II: campaña ↔ Zombies): su pantalla de carga mientras se relanza
+  },
+  "launch-ready": (event) => ui.launch.reveal(),
+  // Xenia cambia de programa (Black Ops II: campaña ↔ Zombies): su pantalla de carga mientras se relanza
+  switching: (event) => {
     ui.launch.show(findItem(event.id) || { title: event.title }, event.detail || "");
     return ui.launch.keep(30_000);
-  }
-  if (event.type === "input") return handleAction(event.action); // el control remoto del iPhone, como el mando
-  if (event.type === "text") return remoteText(String(event.text || ""), !!event.submit, !!event.replace);
-  if (event.type === "settings") return event.settings && applySettings(event.settings);
-  if (event.type === "health") { // memoria casi llena
+  },
+  input: (event) => handleAction(event.action),  // el control remoto del iPhone, como el mando
+  text: (event) => remoteText(String(event.text || ""), !!event.submit, !!event.replace),
+  settings: (event) => event.settings && applySettings(event.settings),
+  // memoria casi llena
+  health: (event) => {
     // Con la ventana tapada (un juego o un video encima) no sale nada: ni sonido ni repintado, que
     // Orbital no se asome sobre el juego. Sale al volver a verse (visibilitychange).
     if (!deferred.offer(event)) return;
@@ -1905,43 +1925,54 @@ function handleEvent(event) {
     // Con un juego abierto, un aviso que no estorba; si no, la pregunta (con Reiniciar solo si sirve).
     if (state.running?.managed) return ui.toast.show(event.message, { error: true });
     return openMenu(healthMenu(event.message, { restart: event.restart !== false, release: event.release || null }));
-  }
-  if (event.type === "open-quick") return openQuick().catch((err) => ui.toast.show(err.message, { error: true }));
-  if (event.type === "emulator-update-done") {
+  },
+  "open-quick": (event) => openQuick().catch((err) => ui.toast.show(err.message, { error: true })),
+  "emulator-update-done": (event) => {
     sound.play(event.ok ? "select" : "error");
     return ui.toast.show(event.message, { tone: event.ok ? "success" : "error" });
-  }
-  if (event.type === "update-done") {
+  },
+  "update-done": (event) => {
     sound.play(event.ok ? "select" : "error");
     return ui.toast.show(event.message, { tone: event.ok ? "success" : "error" });
-  }
-  if (event.type === "resumed") { // volvió de suspender: ponerse al día
+  },
+  // volvió de suspender: ponerse al día
+  resumed: (event) => {
     pollSystem();
     loadLibrary();
     return pollStatus();
-  }
-  if (event.type === "toast") {
+  },
+  toast: (event) => {
     ui.toast.show(event.message, { tone: event.tone || "", error: event.ok === false, voice: !!event.voice, countdown: event.countdown || 0,
       detail: event.detail || "" });
     if (event.voice) ui.status.pulseAlexa();
-  } else if (event.type === "navigate") {
+    pollStatus();
+  },
+  navigate: (event) => {
     handleAction(event.direction);
-  } else if (event.type === "downloads") {
+    pollStatus();
+  },
+  downloads: (event) => {
     return event.id ? downloadProgress(event) : loadDownloads();
-  } else if (event.type === "library-changed") {
+  },
+  "library-changed": (event) => {
     loadLibrary();
     ui.title.refresh();
     return;
-  } else if (event.type === "remote-input") { // escribiste en el celular: el formulario se llena y se envía solo
+  },
+  // escribiste en el celular: el formulario se llena y se envía solo
+  "remote-input": (event) => {
     ui.login.remoteArrived(event.code);
     return;
-  } else if (event.type === "trakt-linked") {
+  },
+  "trakt-linked": (event) => {
     if (traktFrom) traktFrom.done = true;
     ui.traktLink.close({ cancel: false });
     sound.play("select");
     ui.toast.show("Trakt conectado", { tone: "success", detail: event.name ? `Como ${event.name}` : "" });
     return;
-  } else if (event.type === "phone-linked") { // el iPhone escaneó el QR y ya habló con Orbital
+  },
+  // el iPhone escaneó el QR y ya habló con Orbital
+  "phone-linked": (event) => {
     if (!ui.phoneLink.isOpen) return; // la app también pregunta al abrirse: solo se celebra con el QR a la vista
     if (phoneFrom) phoneFrom.done = true; // como «Trakt conectado»: no se reabre el menú viejo (diría «Conectar»)
     ui.phoneLink.close();
@@ -1949,34 +1980,50 @@ function handleEvent(event) {
     ui.toast.show("iPhone conectado", { tone: "success", detail: "Ya es tu control y puedes mandar a la TV lo que ves" });
     api.settings().then(applySettings).catch(() => {}); // Cuentas › iPhone: «✓ Conectado» la próxima vez
     return;
-  } else if (event.type === "onedrive-linked") {
+  },
+  "onedrive-linked": (event) => {
     if (traktFrom) traktFrom.done = true;
     ui.traktLink.close({ cancel: false });
     sound.play("select");
     ui.toast.show("OneDrive conectado · Ahora elige la carpeta de tus videos en Ajustes › Cuentas", { tone: "success" });
     api.onedrive().then((s) => applySettings({ ...state.settings, onedrive: s })).catch(() => {});
     return;
-  } else if (event.type === "onedrive-link-failed") {
+  },
+  "onedrive-link-failed": (event) => {
     sound.play("error");
     return ui.traktLink.failed(event.message);
-  } else if (event.type === "onedrive-changed") { // terminó de buscar tus videos: Mi media al día
+  },
+  // terminó de buscar tus videos: Mi media al día
+  "onedrive-changed": (event) => {
     api.onedrive().then((s) => applySettings({ ...state.settings, onedrive: s })).catch(() => {});
     return loadCuration();
-  } else if (event.type === "trakt-link-failed") {
+  },
+  "trakt-link-failed": (event) => {
     sound.play("error");
     return ui.traktLink.failed(event.message);
-  } else if (event.type === "foryou-changed") {
+  },
+  "foryou-changed": (event) => {
     return ui.foryou.load({ force: true });
-  } else if (event.type === "returned") { // Home o Legion L: el mando vuelve a Orbital ya (sin esperar al siguiente status)
+  },
+  // Home o Legion L: el mando vuelve a Orbital ya (sin esperar al siguiente status)
+  returned: (event) => {
     if (state.running?.front) state.running = { ...state.running, front: false };
-  } else if (event.type === "pip") { // Home con un video: se fue a la esquina; cómo regresarlo
+    pollStatus();
+  },
+  // Home con un video: se fue a la esquina; cómo regresarlo
+  pip: (event) => {
     if (state.running?.front) state.running = { ...state.running, front: false };
     return ui.toast.show(`${event.title} sigue en pequeño · Home lo regresa a pantalla completa`);
-  } else if (event.type === "studio-logos") { // llegaron los logos de los estudios: la fila de Estudios los enseña
+  },
+  // llegaron los logos de los estudios: la fila de Estudios los enseña
+  "studio-logos": (event) => {
     return loadCuration();
-  } else if (event.type === "tv-changed") { // terminó de revisar los canales
+  },
+  // terminó de revisar los canales
+  "tv-changed": (event) => {
     return ui.tv.load({ force: true });
-  } else if (event.type === "closed") {
+  },
+  closed: (event) => {
     ui.title.refresh(); // «Continuar» ya apunta al siguiente episodio (antes repetía el que acabas de ver)
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
     // Tampoco su «De vuelta de X» encima de «Abriendo Y» (Cerrar y abrir).
@@ -1998,7 +2045,13 @@ function handleEvent(event) {
       ui.toast.show(message, { heading, image: findItem(event.id)?.image });
     }
     loadLibrary({ keepId: event.id });
-  }
+    pollStatus();
+  },
+};
+
+function handleEvent(event) {
+  const on = Object.hasOwn(EVENTS, event.type) ? EVENTS[event.type] : null;
+  if (on) return on(event);
   pollStatus();
 }
 
