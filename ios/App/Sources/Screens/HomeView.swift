@@ -107,7 +107,7 @@ struct HomeView: View {
                 if !model.upcoming.isEmpty { upcoming(model) }
                 if !model.myList.isEmpty {
                     Rail(title: "Mi lista", count: model.myList.count, route: HomeListRoute(id: "mylist"),
-                         eyebrow: Text("Lo que guardaste"), source: .stremio, reflected: true) {
+                         eyebrow: Text("Lo que guardaste"), reflected: true) {
                         ForEach(model.myList) { item in
                             TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster))
                                 .contextMenu { listActions(suggestion(item), in: .stremioLibrary) }

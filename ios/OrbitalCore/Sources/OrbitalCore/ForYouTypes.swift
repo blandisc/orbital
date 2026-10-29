@@ -102,10 +102,12 @@ public struct ForYouList: Sendable, Equatable, Identifiable, Codable {
     public var brand: String?          // netflix | disney | hbo
     public var logo: String?
     public var splitsKinds: Bool       // tiene «Series | Películas»
-    /// De dónde sale («Trakt», «Stremio», «Netflix», «JustWatch»…) y el dato secundario del estante («Esta semana en
-    /// México»). Solo los trae la consola; local, la interfaz los pone según el id.
+    /// De dónde sale («Trakt», «Complemento», «Netflix», «JustWatch», «Rotten Tomatoes»…) y el dato secundario del estante
+    /// («Esta semana en México»). Solo los trae la consola; local, la interfaz los pone según el id.
     public var source = ""
     public var meta = ""
+    /// El origen de un catálogo de tus complementos.
+    public static let addonSource = "Complemento"
 
     public init(id: String, title: String, group: ForYouGroup, brand: String? = nil, logo: String? = nil, splitsKinds: Bool, source: String = "", meta: String = "") {
         self.id = id; self.title = title; self.group = group; self.brand = brand; self.logo = logo; self.splitsKinds = splitsKinds

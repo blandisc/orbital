@@ -26,11 +26,6 @@ struct ParaTiView: View {
     var body: some View {
         let m = model.model
         VStack(spacing: DS.Space.s2) {
-            if m.isGeneric, m.mode == .mosaic, !m.mosaic.isEmpty {
-                Text("Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.")
-                    .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, DS.Space.gutter)
-            }
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(verbatim: env.message(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
             case .mosaic:

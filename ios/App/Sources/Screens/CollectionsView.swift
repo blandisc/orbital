@@ -4,10 +4,10 @@ import OrbitalModels
 
 /// Los grupos de Para ti › Listas, en orden (el menú «Ir a una sección» los lista así).
 enum CollectionSection: CaseIterable, Hashable {
-    case forYou, platforms, studios, seasons, genres, awards, years, airings, trakt, stremio, yourYear
+    case forYou, platforms, studios, seasons, genres, awards, years, airings, trakt, addons, yourYear
     var title: Text {
         switch self {
-        case .forYou: Text("Para ti"); case .trakt: Text("Listas de Trakt"); case .stremio: Text("Listas de Stremio")
+        case .forYou: Text("Para ti"); case .trakt: Text("Listas de Trakt"); case .addons: Text("De tus complementos")
         case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .studios: Text("Estudios"); case .years: Text("Por año")
         case .seasons: Text("Temporadas"); case .genres: Text("Lo mejor del género")
         case .airings: Text("Próximos estrenos"); case .yourYear: Text("Tu año")
@@ -19,7 +19,7 @@ enum CollectionSection: CaseIterable, Hashable {
         switch self {
         case .forYou: "sparkles"; case .platforms: "play.tv"; case .studios: "film.stack"; case .awards: "trophy"
         case .seasons: "leaf"; case .genres: "medal"
-        case .years: "calendar"; case .airings: "calendar.badge.clock"; case .trakt: "list.bullet.rectangle"; case .stremio: "rectangle.stack"
+        case .years: "calendar"; case .airings: "calendar.badge.clock"; case .trakt: "list.bullet.rectangle"; case .addons: "puzzlepiece.extension"
         case .yourYear: "square.grid.3x3.fill"
         }
     }

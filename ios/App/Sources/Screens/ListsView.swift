@@ -32,17 +32,17 @@ struct ListsView: View {
     private var generalShelves: [ShelfPlan] { model.visibleShelves.filter { $0.list.group != .platforms && listSource($0) == nil } }
 
     /// Si un estante es una lista tuya, de dónde: tu watchlist, tus series y tus listas son de Trakt; los catálogos de tus
-    /// complementos, de Stremio.
+    /// complementos, de cada complemento.
     private func listSource(_ plan: ShelfPlan) -> ListSource? {
         if plan.id == "watchlist" || plan.id == "mine" || plan.id.hasPrefix("list:") { return .trakt }
-        if plan.id.hasPrefix("addon:") { return .stremio }
+        if plan.id.hasPrefix("addon:") { return .addon }
         return nil
     }
 
     /// Una tarjeta del grupo de listas: el nombre, su pila de pósters y adónde lleva.
     struct ListCardItem: Identifiable {
         let id: String, name: String, posters: [String], count: Int?
-        /// Un estante abre su lista completa; Mi lista de Stremio, su colección.
+        /// Un estante abre su lista completa; una colección, la suya.
         var shelf: ShelfRoute?
         var collection: CollectionRoute?
     }
@@ -51,14 +51,9 @@ struct ListsView: View {
         model.visibleShelves.filter { listSource($0) == .trakt }.map(card)
     }
 
-    private var stremioCards: [ListCardItem] {
-        var cards: [ListCardItem] = []
-        let mine = collections.model.myList
-        if !mine.isEmpty {
-            cards.append(ListCardItem(id: "mylist", name: Strings.tr("Mi lista", language: env.services.appSettings.uiLanguage),
-                                      posters: mine.prefix(2).map(\.poster), count: mine.count, collection: CollectionRoute(kind: .myList, id: "mylist")))
-        }
-        return cards + model.visibleShelves.filter { listSource($0) == .stremio }.map(card)
+    /// Los catálogos de tus complementos. «Mi lista» ya no va aquí: vive en Inicio y en tu watchlist de Trakt.
+    private var addonCards: [ListCardItem] {
+        model.visibleShelves.filter { listSource($0) == .addon }.map(card)
     }
 
     private func card(_ plan: ShelfPlan) -> ListCardItem {
@@ -158,9 +153,9 @@ struct ListsView: View {
                     }
                     .modifier(SectionSpy(section: .airings, active: $activeSection))
                 }
-                // Al final, las listas: las de Trakt y las de Stremio, aparte.
+                // Al final, las listas: las de Trakt y las de tus complementos, aparte.
                 if !traktLists.isEmpty { listGroup(title: "Listas de Trakt", source: .trakt, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection)) }
-                if !stremioCards.isEmpty { listGroup(title: "Listas de Stremio", source: .stremio, cards: stremioCards).modifier(SectionSpy(section: .stremio, active: $activeSection)) }
+                if !addonCards.isEmpty { listGroup(title: "De tus complementos", source: .addon, cards: addonCards).modifier(SectionSpy(section: .addons, active: $activeSection)) }
                 // Tu año (lo que viste, día por día): aquí a la vista, no escondido en tu perfil.
                 if collections.model.traktLinked {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
@@ -257,7 +252,7 @@ struct ListsView: View {
         switch section {
         case .forYou: true
         case .trakt: !traktLists.isEmpty
-        case .stremio: !stremioCards.isEmpty
+        case .addons: !addonCards.isEmpty
         case .platforms: !model.platformHubs.isEmpty
         case .awards: !collections.model.awards.isEmpty
         case .studios, .seasons, .genres: collections.model.tmdbReady
@@ -297,7 +292,7 @@ struct ListsView: View {
         return BecauseSeed(id: e.imdb, title: e.title, poster: String(format: ForYou.metahubPoster, e.imdb), detail: parts.joined(separator: " · "))
     }
 
-    /// Un grupo de listas (de Trakt o de Stremio): tarjetas de dos en dos que abren la lista completa.
+    /// Un grupo de listas (de Trakt o de tus complementos): tarjetas de dos en dos que abren la lista completa.
     private func listGroup(title: LocalizedStringKey, source: ListSource, cards: [ListCardItem]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: title).padding(.horizontal, DS.Space.gutter)
@@ -405,14 +400,15 @@ struct ListsView: View {
     }
 
     // MARK: estantes
-    /// De dónde viene una fila general: lo de Trakt (recomendadas, tendencias, populares), lo de Stremio (catálogos), o tu Orbital.
+    /// De dónde viene una fila general: lo de Trakt (recomendadas, tendencias, populares), un complemento (sus catálogos), o
+    /// tu Orbital. Lo popular de Cinemeta que todavía manda la consola va sin sello.
     private func shelfSource(_ plan: ShelfPlan) -> ListSource? {
         switch plan.id {
         case "recs", "trend", "popular", "mine", "watchlist": return .trakt
-        case "cinemeta": return .stremio
+        case "cinemeta": return nil
         default:
             if plan.id.hasPrefix("list:") { return .trakt }
-            if plan.id.hasPrefix("addon:") { return .stremio }
+            if plan.id.hasPrefix("addon:") || plan.list.source == ForYouList.addonSource { return .addon }
             return model.source == .console ? .orbital : nil
         }
     }
@@ -431,10 +427,10 @@ struct ListsView: View {
         .task(id: items.first?.imdb) { if plan.style == .top10 || plan.style == .platform { ImagePipeline.shared.prefetchPosters(items.prefix(DS.Size.searchPrefetch).map(\.poster)) } }
     }
 
-    /// Sin ninguna fuente tuya: lo más popular de Stremio y una invitación (un botón, no una tarjeta gris).
+    /// Sin ninguna fuente tuya: lo que está en tendencia en Trakt y una invitación (un botón, no una tarjeta gris).
     @ViewBuilder private var sourcesFallback: some View {
         if !model.mosaic.isEmpty {
-            Shelf(title: Text("Lo más popular en Stremio"), meta: Text("Sin Trakt ni Orbital, esto es lo que ve todo el mundo")) {
+            Shelf(title: Text("En tendencia"), meta: Text("Lo que más se está viendo ahora"), source: .trakt) {
                 ForEach(model.mosaic) { s in
                     ShelfPoster(suggestion: s, style: .plain, inList: false) { dismissed in Task { await model.dismiss(dismissed) } }
                 }

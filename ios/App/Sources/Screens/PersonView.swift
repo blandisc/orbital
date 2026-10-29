@@ -12,7 +12,7 @@ struct TmdbTitleView: View {
     var body: some View {
         Group {
             if let route { TitleView(route: route) }
-            else if missing { DSEmptyState(symbol: "film", title: Text("Este título no está en Stremio")) }
+            else if missing { DSEmptyState(symbol: "film", title: Text("No encontré este título")) }
             else { ProgressView() }
         }
         .task {

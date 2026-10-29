@@ -244,24 +244,8 @@ public final class HomeModel: ObservableModel {
         // Lo de todos (no lo tuyo): tendencia y popular, películas y series. Lo tuyo va abajo, en «Para ti».
         async let tm = try? forYou.items(listID: "trend", kind: "movie"), ts = try? forYou.items(listID: "trend", kind: "series")
         async let pm = try? forYou.items(listID: "popular", kind: "movie"), ps = try? forYou.items(listID: "popular", kind: "series")
-        let trakt = await [tm ?? [], ts ?? [], pm ?? [], ps ?? []]
-        if trakt.contains(where: { !$0.isEmpty }) { return trakt }
-        // Sin Trakt: lo popular de hoy en Stremio (Cinemeta), para que Inicio no abra vacío.
-        async let cm = try? services.cinemeta.catalog("movie"), cs = try? services.cinemeta.catalog("series")
-        let (movies, series) = await (cm, cs)
-        return [Self.popularSuggestions("movie", movies ?? []), Self.popularSuggestions("series", series ?? [])]
-    }
-
-    private static func popularSuggestions(_ kind: String, _ metas: [JSON]) -> [Suggestion] {
-        metas.compactMap { meta in
-            guard let id = meta["id"]?.string, id.hasPrefix("tt"), let name = meta["name"]?.string else { return nil }
-            let info = CinemetaParsing.describe(meta)
-            var s = Suggestion(kind: kind, imdb: id, title: name, year: Int(info.year.prefix(4)), overview: info.description,
-                               poster: String(format: ForYou.metahubPoster, id), wide: String(format: ForYou.metahubBackground, id),
-                               logo: String(format: ForYou.metahubLogo, id), reason: .popular)
-            s.genres = info.genres
-            return s
-        }
+        // Si Trakt no contesta, se queda el destacado guardado de la última vez (`loadSpotlight` no lo vacía).
+        return await [tm ?? [], ts ?? [], pm ?? [], ps ?? []]
     }
 
     /// Entrevera las listas (una de cada una por vuelta), sin repetir y sin lo que ya estás viendo.

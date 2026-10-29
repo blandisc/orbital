@@ -120,7 +120,7 @@ public final class ParaTiModel: ObservableModel {
     public static let maxAiringDays = 84
     private var loadingMoreAirings = false
     public private(set) var error: String? { didSet { changed() } }
-    /// El mosaico es lo popular de Stremio (sin Trakt ni TMDB todavía): la pantalla invita a conectarlos.
+    /// El mosaico es lo que está en tendencia en Trakt (nada tuyo todavía): la pantalla invita a conectar tus fuentes.
     public private(set) var isGeneric = false { didSet { changed() } }
     /// De dónde vino lo que se ve ahora: la pantalla lo enseña en un pie discreto.
     public private(set) var source: Source = .phone { didSet { changed() } }
@@ -165,9 +165,9 @@ public final class ParaTiModel: ObservableModel {
         let covered = Set(shown.filter { !$0.isFallback && $0.style == .top10 }.compactMap(\.list.brand))
         return shown.filter { !$0.isFallback || !covered.contains($0.list.brand ?? "") }
     }
-    /// Ninguna fuente dio estantes: el feed cae a lo popular de Stremio y a la invitación a conectar fuentes.
+    /// Ninguna fuente dio estantes: el feed cae a lo que está en tendencia y a la invitación a conectar fuentes.
     public var feedIsEmpty: Bool { !isLoading && visibleShelves.isEmpty }
-    /// Mostrar «Conecta Trakt o tu Orbital»: no hay ninguna fuente tuya (solo lo popular de Stremio).
+    /// Mostrar «Conecta Trakt o tu Orbital»: no hay ninguna fuente tuya (solo lo que está en tendencia).
     public var needsSources: Bool { feedIsEmpty || isGeneric }
     /// «Series · Películas» solo tiene sentido si algún estante lo respeta.
     public var hasKindSplit: Bool { shelves.contains(where: \.splitsKinds) }
@@ -331,7 +331,7 @@ public final class ParaTiModel: ObservableModel {
     private func phoneMosaic(_ forYou: ForYou, keepSaved: Bool) async {
         let fresh = await forYou.mosaic()
         if !keepSaved, !fresh.isEmpty || mosaic.isEmpty { mosaic = fresh }
-        // Sin Trakt ni TMDB el mosaico no quedaría vacío: lo más popular de Stremio (Cinemeta no pide claves).
+        // Sin nada tuyo el mosaico no quedaría vacío: lo que está en tendencia en Trakt (no pide tu sesión).
         isGeneric = mosaic.isEmpty
         if isGeneric { mosaic = await popular() }
     }
@@ -354,7 +354,7 @@ public final class ParaTiModel: ObservableModel {
     }
 
     /// Con pocas sugerencias el mosaico repetía la misma portada en toda la pantalla: se completa con lo que ya
-    /// trajeron los estantes (alternados, sin repetir) y, si aún faltan, con lo popular de Stremio.
+    /// trajeron los estantes (alternados, sin repetir) y, si aún faltan, con lo que está en tendencia en Trakt.
     private func topUpMosaic() async {
         guard mosaic.count < MosaicPool.minimumVariety else { return }
         let fromShelves = visibleShelves.map { items(for: $0) }
@@ -543,7 +543,7 @@ public final class ParaTiModel: ObservableModel {
         }
     }
 
-    /// Lo más popular de Cinemeta, series y películas alternadas, en tu idioma.
+    /// Lo que más se está viendo ahora en Trakt («En tendencia»), series y películas alternadas, en tu idioma.
     private func popular() async -> [Suggestion] {
         async let series = popular("series"), movies = popular("movie")
         let dismissed = await services.forYou.dismissedIDs()
@@ -551,18 +551,15 @@ public final class ParaTiModel: ObservableModel {
     }
 
     private func popular(_ kind: String) async -> [Suggestion] {
-        guard let metas = try? await services.cinemeta.catalog(kind) else { return [] }
-        let top = Array(metas.prefix(ForYou.mosaicSize / 2))
-        let localized = await services.localizer.catalog(kind: kind, metas: top)
-        return zip(top, localized).compactMap { original, translated in
-            guard let id = original["id"]?.string, id.hasPrefix("tt"), let name = original["name"]?.string,
-                  let poster = CinemetaParsing.medium(original["poster"]?.string) else { return nil }
-            let info = CinemetaParsing.describe(translated)
-            let minutes = Int(CinemetaParsing.runtimeSeconds(info.runtime) / 60)
-            return Suggestion(kind: kind, imdb: id, title: translated["name"]?.string ?? name, year: Int(info.year.prefix(4)),
-                              runtime: minutes > 0 ? minutes : nil,
-                              overview: info.description, poster: poster, wide: original["background"]?.string ?? poster,
-                              logo: "https://images.metahub.space/logo/medium/\(id)/img", reason: .popular)
+        guard let found = try? await services.forYou.items(listID: "trend", kind: kind) else { return [] }
+        let top = Array(found.prefix(ForYou.mosaicSize / 2))
+        let metas = top.map { JSON.object(["id": .string($0.imdb), "name": .string($0.title)]) }
+        let localized = await services.localizer.catalog(kind: kind, metas: metas)
+        return zip(top, localized).map { s, translated in
+            var s = s
+            if let name = translated["name"]?.string, !name.isEmpty { s.title = name }
+            if let overview = translated["description"]?.string, !overview.isEmpty { s.overview = overview }
+            return s
         }
     }
 

@@ -173,16 +173,16 @@ final class ShelfPlanTests: XCTestCase {
                        "un fallo no se guarda como estante vacío: la siguiente carga lo vuelve a pedir")
     }
 
-    func testEmptyFeedFallsBackToPopularAndInvitesToConnectSources() async throws {
-        let rig = try ServicesRig()
-        rig.http.json["https://v3-cinemeta.strem.io/catalog/series/top.json"] = ["metas": [["id": "tt0386676", "type": "series", "name": "The Office", "poster": "https://p/poster/small/1.jpg", "background": "https://b/1.jpg"]]]
-        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top.json"] = ["metas": []]
+    /// Trakt conectado pero sin nada tuyo: el mosaico y el destacado salen de lo que está en tendencia, y se invita a sumar fuentes.
+    func testNothingOfYoursFallsBackToTrendingAndInvitesToConnectSources() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "cid")
+        TraktPublicListsTests.trending(rig, series: [("tt0386676", "The Office", 2005)], movies: [])
         let model = ParaTiModel(rig.services)
         await model.load()
-        XCTAssertTrue(model.feedIsEmpty)
+        XCTAssertTrue(model.isGeneric)
         XCTAssertTrue(model.needsSources)
-        XCTAssertEqual(model.featured?.item.imdb, "tt0386676", "el destacado sale de lo popular de Stremio")
-        XCTAssertNil(model.featured?.shelfID)
+        XCTAssertEqual(model.mosaic.map(\.imdb), ["tt0386676"])
+        XCTAssertEqual(model.featured?.item.imdb, "tt0386676", "el destacado sale de lo que está en tendencia")
     }
 }
 

@@ -375,22 +375,20 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertNotNil(model.error)
     }
 
-    func testParaTiWithoutTraktOrTMDBShowsWhatIsPopularOnStremio() async throws {
-        let rig = try ServicesRig()
-        rig.http.json["https://v3-cinemeta.strem.io/catalog/series/top.json"] = ["metas": [
-            ["id": "tt0386676", "type": "series", "name": "The Office", "poster": "https://p/poster/small/1.jpg", "background": "https://b/1.jpg", "releaseInfo": "2005–2013"],
-            ["id": "kitsu:1", "type": "series", "name": "Sin IMDb", "poster": "https://p/2.jpg"]]]
-        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top.json"] = ["metas": [
-            ["id": "tt1160419", "type": "movie", "name": "Dune", "poster": "https://p/3.jpg", "releaseInfo": "2021", "runtime": "155 min"]]]
+    /// Trakt conectado pero sin nada tuyo todavía (ni recomendadas ni watchlist): el mosaico es lo que está en tendencia.
+    func testParaTiWithNothingOfYoursShowsWhatIsTrendingOnTrakt() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "cid")
+        TraktPublicListsTests.trending(rig, series: [("tt0386676", "The Office", 2005), ("kitsu:1", "Sin IMDb", 2020)], movies: [("tt1160419", "Dune", 2021)])
         let model = ParaTiModel(rig.services)
         await model.load()
         XCTAssertTrue(model.isGeneric)
         XCTAssertNil(model.error)
         XCTAssertEqual(model.mosaic.map(\.imdb), ["tt0386676", "tt1160419"], "series y películas alternadas; sin IMDb no se puede ver")
-        XCTAssertEqual(model.mosaic.first?.poster, "https://p/poster/medium/1.jpg")
-        XCTAssertEqual(model.mosaic.first?.wide, "https://b/1.jpg")
+        XCTAssertEqual(model.mosaic.first?.poster, String(format: ForYou.metahubPoster, "tt0386676"))
+        XCTAssertEqual(model.mosaic.first?.wide, String(format: ForYou.metahubBackground, "tt0386676"))
         XCTAssertEqual(model.mosaic.last?.year, 2021); XCTAssertEqual(model.mosaic.last?.runtime, 155)
-        XCTAssertEqual(model.mosaic.allSatisfy { $0.reason == .popular }, true)
+        XCTAssertEqual(model.mosaic.allSatisfy { $0.reason == .trending }, true)
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("cinemeta") && $0.contains("/top.json") }, "lo popular ya no sale de Cinemeta")
         await model.dismiss(model.mosaic[0])
         await model.refresh()
         XCTAssertEqual(model.mosaic.map(\.imdb), ["tt1160419"], "«No me interesa» también vale aquí")
@@ -424,31 +422,26 @@ final class ScreenModelsTests: XCTestCase {
     /// Si tu Orbital está conectada pero no contesta «Para ti» (versión anterior, o no responde), se cae a la lógica
     /// local de siempre, sin aviso de error visible.
     func testParaTiFallsBackToLocalWhenTheConsoleDoesNotAnswerForYou() async throws {
-        let rig = try ServicesRig()
+        let rig = try ServicesRig(traktClientID: "cid")
         rig.services.settings.update { $0.orbitalAddress = "tv.example" }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
         // /api/foryou no se registra: la consola de mentira contesta 404, como una versión anterior sin esta ruta.
-        rig.http.json["https://v3-cinemeta.strem.io/catalog/series/top.json"] = ["metas": [
-            ["id": "tt0386676", "type": "series", "name": "The Office", "poster": "https://p/poster/small/1.jpg", "background": "https://b/1.jpg", "releaseInfo": "2005–2013"]]]
-        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top.json"] = ["metas": [
-            ["id": "tt1160419", "type": "movie", "name": "Dune", "poster": "https://p/3.jpg", "releaseInfo": "2021", "runtime": "155 min"]]]
+        TraktPublicListsTests.trending(rig, series: [("tt0386676", "The Office", 2005)], movies: [("tt1160419", "Dune", 2021)])
         let model = ParaTiModel(rig.services)
         await model.load()
         XCTAssertEqual(model.source, .phone)
-        XCTAssertTrue(model.isGeneric)
-        XCTAssertEqual(model.mosaic.map(\.imdb), ["tt0386676", "tt1160419"])
+        XCTAssertEqual(model.mosaic.map(\.imdb), ["tt0386676", "tt1160419"], "sin tu sesión de Trakt, su tendencia")
         XCTAssertNil(model.error)
     }
 
     /// El iPhone calcula Para ti él mismo aunque tu Orbital esté conectada (no depende de que conteste): trae sus propias listas
     /// con puesto (Top 10 de Netflix, tendencias de JustWatch) y solo le avisa a la consola lo que marcas «No me interesa».
     func testParaTiIsComputedOnThePhoneEvenWithYourOrbitalConnected() async throws {
-        let rig = try ServicesRig()
+        let rig = try ServicesRig(traktClientID: "cid")
         rig.services.settings.update { $0.orbitalAddress = "tv.example" }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
         rig.http.json["https://tv.example/api/foryou/dismiss"] = ["ok": true]
-        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top.json"] = ["metas": [
-            ["id": "tt1160419", "type": "movie", "name": "Dune", "poster": "https://p/3.jpg", "releaseInfo": "2021"]]]
+        TraktPublicListsTests.trending(rig, series: nil, movies: [("tt1160419", "Dune", 2021)])
         let model = ParaTiModel(rig.services)
         await model.load()
         XCTAssertEqual(model.source, .phone)
@@ -665,9 +658,8 @@ final class ScreenModelsTests: XCTestCase {
 @MainActor
 final class CatalogAndSourcesTests: XCTestCase {
     func testCatalogShowsMoviesAndSeriesAndHandlesAFailedHalf() async throws {
-        let rig = try ServicesRig()
-        let movies = try Fixtures.json("cinemeta/search_movie_dune.json")
-        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top.json"] = ["metas": movies]
+        let rig = try ServicesRig(traktClientID: "cid")
+        TraktPublicListsTests.trending(rig, series: nil, movies: [("tt1160419", "Dune", 2021), ("tt15239678", "Dune: Part Two", 2024)], limit: 50)
         let model = CatalogModel(rig.services)
         await model.load()
         XCTAssertFalse(model.movies.isEmpty)

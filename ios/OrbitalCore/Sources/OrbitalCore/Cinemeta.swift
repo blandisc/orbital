@@ -4,7 +4,7 @@ public enum CinemetaError: Error, Sendable, CustomStringConvertible {
     case network(String), unexpected, notFound
     public var description: String {
         switch self {
-        case .network(let reason): return "No pude leer el catálogo de Stremio: \(reason)"
+        case .network(let reason): return "No pude leer el catálogo: \(reason)"
         case .unexpected: return "Respuesta inesperada de Cinemeta"
         case .notFound: return "Título no encontrado"
         }

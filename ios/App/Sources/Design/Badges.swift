@@ -116,7 +116,7 @@ struct DSSectionHead: View {
     var chevron = false
     /// La línea gris de abajo.
     var meta: Text?
-    /// De dónde viene (Trakt, Stremio, tu Orbital): su sello junto al título.
+    /// De dónde viene (Trakt, tus complementos, tu Orbital): su sello junto al título.
     var source: ListSource?
     /// El porqué, en una línea ámbar arriba del título («Lo que dejaste pendiente»), como en una revista.
     var eyebrow: Text?

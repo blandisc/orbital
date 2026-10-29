@@ -225,8 +225,9 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                           list("chart:netflix", "Top 10 en Netflix", "Netflix", "Esta semana en México", split: true, brand: "netflix", logo: logo("tt1160419")),
                           list("jw:disney", "Tendencias en Disney+", "JustWatch", "Tendencia en JustWatch · México", split: true, brand: "disney", logo: logo("tt4154796")),
                           list("trend", "En tendencia", "Trakt", "Lo más visto esta semana", split: true),
-                          list("addon:cat", "Clásicos", "Stremio", "De Cinemeta", split: false),
-                          list("addon:empty", "Un catálogo vacío", "Stremio", "De nadie", split: false)],
+                          list("critics", "Aprobadas por la crítica", "Rotten Tomatoes", "Certified Fresh y series Fresh", split: true),
+                          list("addon:cat", "Clásicos", "Complemento", "De Clásicos del cine", split: false),
+                          list("addon:empty", "Un catálogo vacío", "Complemento", "De nadie", split: false)],
                 "mosaic": [Self.demoRow("tt1160419", "Dune", 2021, "movie", rank: 1, why: "En Netflix")],
             ]
             return HTTPResponse(status: 200, data: overview.serialized())
@@ -287,6 +288,9 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         case "trend":
             return [("tt0137523", "El club de la pelea", 1999, "movie"), ("tt0111161", "Cadena perpetua", 1994, "movie"), ("tt0133093", "Matrix", 1999, "movie"),
                     ("tt0110912", "Tiempos violentos", 1994, "movie"), ("tt0068646", "El padrino", 1972, "movie")].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "En tendencia") }
+        case "critics":
+            return [("tt15239678", "Dune: Part Two", 2024, "movie", 92), ("tt7366338", "Chernobyl", 2019, "series", 96), ("tt11280740", "Severance", 2022, "series", 97),
+                    ("tt0816692", "Interstellar", 2014, "movie", 73)].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "\($0.4) % en Rotten Tomatoes") }
         case "addon:cat":
             return [("tt0099685", "Buenos muchachos", 1990, "movie"), ("tt0114369", "Seven", 1995, "movie"), ("tt0109830", "Forrest Gump", 1994, "movie"),
                     ("tt0120737", "El señor de los anillos", 2001, "movie")].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "Popular") }

@@ -276,16 +276,20 @@ public actor Trakt {
         return TraktParsing.typed(try await get("/users/me/lists/\(id)/items", [("extended", "full")])?.array)
     }
 
-    public func trending(kind: String, limit: Int = 30) async throws -> [TraktEntry] {
-        let rows = try await get("/\(TraktParsing.kinds[kind]!)/trending", auth: false, [("limit", String(limit)), ("extended", "full")])
+    /// Lo que más se está viendo ahora; con `genres` («science-fiction»), solo de ese género («Por género» en Buscar).
+    public func trending(kind: String, limit: Int = 30, genres: String? = nil) async throws -> [TraktEntry] {
+        var params = [("limit", String(limit)), ("extended", "full")]
+        if let genres { params.append(("genres", genres)) }
+        let rows = try await get("/\(TraktParsing.kinds[kind]!)/trending", auth: false, params)
         let key = kind == "movie" ? "movie" : "show"
         return (rows?.array ?? []).compactMap { TraktParsing.entry($0[key], kind: kind) }
     }
 
-    /// Lo más popular; con `years` («2024» o «1990-1999»), solo de esos años («Por año» en Colecciones).
-    public func popular(kind: String, limit: Int = 30, years: String? = nil) async throws -> [TraktEntry] {
+    /// Lo más popular; con `years` («2024» o «1990-1999»), solo de esos años («Por año» en Colecciones), y con `genres`, de ese género.
+    public func popular(kind: String, limit: Int = 30, years: String? = nil, genres: String? = nil) async throws -> [TraktEntry] {
         var params = [("limit", String(limit)), ("extended", "full")]
         if let years { params.append(("years", years)) }
+        if let genres { params.append(("genres", genres)) }
         let rows = try await get("/\(TraktParsing.kinds[kind]!)/popular", auth: false, params)
         return (rows?.array ?? []).compactMap { TraktParsing.entry($0, kind: kind) }
     }
@@ -356,7 +360,7 @@ public actor Trakt {
         return out
     }
 
-    /// Buscar películas y series por nombre (el respaldo de Buscar cuando Cinemeta no contesta). No pide tu sesión.
+    /// Buscar películas y series por nombre (lo primero que pregunta Buscar; Cinemeta es el respaldo). No pide tu sesión.
     public func search(_ query: String, limit: Int = 20) async throws -> [TraktEntry] {
         let rows = try await get("/search/movie,show", auth: false, [("query", query), ("limit", String(limit)), ("extended", "full")])?.array ?? []
         return rows.compactMap { row in

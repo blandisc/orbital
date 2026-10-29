@@ -1,7 +1,7 @@
 import SwiftUI
 import OrbitalModels
 
-/// El nombre de una de las listas fijas de «Guardar» con su servicio en gris: «Tu watchlist (Trakt)», «Mi lista (Stremio)».
+/// El nombre de una de las listas fijas de «Guardar» con su servicio en gris: «Tu watchlist (Trakt)»; «Mi lista» va sola.
 /// Lo comparten el menú de «Guardar» de la ficha y la hoja «Guardar en…».
 struct SaveDestinationName: View {
     let destination: SaveDestination
@@ -11,7 +11,7 @@ struct SaveDestinationName: View {
     static func text(_ destination: SaveDestination) -> Text {
         switch destination {
         case .traktWatchlist: Text("\(Text("Tu watchlist"))\(Text(verbatim: " (Trakt)").foregroundStyle(DS.textMuted))")
-        case .stremioLibrary: Text("\(Text("Mi lista"))\(Text(verbatim: " (Stremio)").foregroundStyle(DS.textMuted))")
+        case .stremioLibrary: Text("Mi lista")
         }
     }
 

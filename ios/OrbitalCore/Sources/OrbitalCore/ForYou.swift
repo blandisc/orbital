@@ -101,10 +101,10 @@ public actor ForYou {
             out += [ForYouList(id: "trend", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true),
                     ForYouList(id: "popular", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true)]
         }
-        // Los catálogos de tus complementos de Stremio (como `addon_catalogs` en la TV).
+        // Los catálogos de tus complementos (como `addon_catalogs` en la TV): su sello dice «Complemento».
         for entry in await catalogs {
             out.append(ForYouList(id: entry.id, title: entry.title, group: .discover, brand: nil, logo: nil, splitsKinds: entry.kinds.count > 1,
-                                  source: "Stremio", meta: "De \(entry.addon)"))
+                                  source: ForYouList.addonSource, meta: "De \(entry.addon)"))
         }
         // Las listas con puesto, como en la TV: el Top 10 oficial de Netflix y la tendencia de cada plataforma en JustWatch.
         // Ninguna pide clave; si una no trae nada, su estante no se pinta (y entra el respaldo de TMDB de esa marca).

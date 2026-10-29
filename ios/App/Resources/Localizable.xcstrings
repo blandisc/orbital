@@ -3030,17 +3030,6 @@
         }
       }
     },
-    "Cinemeta no contestó": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cinemeta didn't respond"
-          }
-        }
-      }
-    },
     "Claro": {
       "extractionState": "manual",
       "localizations": {
@@ -3234,6 +3223,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Share the file"
+          }
+        }
+      }
+    },
+    "Complemento": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add-on"
           }
         }
       }
@@ -4551,6 +4551,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "From your Orbital"
+          }
+        }
+      }
+    },
+    "De tus complementos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From your add-ons"
           }
         }
       }
@@ -6990,28 +7001,6 @@
         }
       }
     },
-    "Este título no está en Stremio": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This title isn't on Stremio"
-          }
-        }
-      }
-    },
-    "Este título no está en Stremio.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This title isn't on Stremio."
-          }
-        }
-      }
-    },
     "Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas.": {
       "extractionState": "manual",
       "localizations": {
@@ -8549,17 +8538,6 @@
         }
       }
     },
-    "Listas de Stremio": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stremio lists"
-          }
-        }
-      }
-    },
     "Listas de Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -8890,28 +8868,6 @@
         }
       }
     },
-    "Lo más popular en Stremio": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Most popular on Stremio"
-          }
-        }
-      }
-    },
-    "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What's popular on Stremio. Connect Trakt in Settings and the mosaic is built from your stuff."
-          }
-        }
-      }
-    },
     "Lo más popular hoy": {
       "extractionState": "manual",
       "localizations": {
@@ -9077,13 +9033,24 @@
         }
       }
     },
-    "Lo que más se ve hoy en Stremio, películas y series": {
+    "Lo que más se está viendo ahora": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "What's most watched today on Stremio, movies and shows"
+            "value": "What people are watching right now"
+          }
+        }
+      }
+    },
+    "Lo que más se está viendo ahora, películas y series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What people are watching right now, movies and shows"
           }
         }
       }
@@ -10603,6 +10570,17 @@
         }
       }
     },
+    "No encontré este título": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find this title"
+          }
+        }
+      }
+    },
     "No encontré nada con ese nombre.": {
       "extractionState": "manual",
       "localizations": {
@@ -11065,13 +11043,24 @@
         }
       }
     },
-    "No pude cambiar tu lista de Stremio": {
+    "No pude buscar. Revisa tu conexión.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I couldn't change your Stremio list"
+            "value": "I couldn't search. Check your connection."
+          }
+        }
+      }
+    },
+    "No pude cambiar Mi lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't change My list"
           }
         }
       }
@@ -11153,6 +11142,17 @@
         }
       }
     },
+    "No pude cargar lo popular. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't load what's popular. Check your connection."
+          }
+        }
+      }
+    },
     "No pude conectar con Stremio: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -11219,24 +11219,13 @@
         }
       }
     },
-    "No pude leer el catálogo de Stremio. Revisa tu conexión.": {
+    "No pude leer el catálogo: %@": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I couldn't read the Stremio catalog. Check your connection."
-          }
-        }
-      }
-    },
-    "No pude leer el catálogo de Stremio: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I couldn't read the Stremio catalog: %@"
+            "value": "I couldn't read the catalog: %@"
           }
         }
       }
@@ -14803,17 +14792,6 @@
         }
       }
     },
-    "Sin Trakt ni Orbital, esto es lo que ve todo el mundo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Without Trakt or Orbital, this is what everyone is watching"
-          }
-        }
-      }
-    },
     "Sin ajuste": {
       "extractionState": "manual",
       "localizations": {
@@ -15326,17 +15304,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Right stick"
-          }
-        }
-      }
-    },
-    "Stremio al día": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stremio up to date"
           }
         }
       }

@@ -2,7 +2,7 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Un género de «Explora» al que se navega (nombre de Cinemeta, en inglés).
+/// Un género de «Explora» al que se navega (nombre en inglés: `CatalogModel.traktGenre` lo pasa a Trakt).
 struct GenreRoute: Hashable { var genre: String }
 /// «Ver todo» de lo más popular hoy. Una ruta (no `isPresented`): así los títulos de adentro también se abren.
 struct PopularRoute: Hashable {}
@@ -227,13 +227,13 @@ struct BrowseView: View {
         }
     }
 
-    /// «Lo más popular hoy»: el Top 10 de Stremio en carrusel, con la cifra grande (el mismo lenguaje que los rankings de
-    /// tus plataformas). Películas y series alternadas, de Cinemeta.
+    /// «Lo más popular hoy»: el Top 10 de lo que más se está viendo ahora en Trakt, en carrusel, con la cifra grande (el
+    /// mismo lenguaje que los rankings de tus plataformas). Películas y series alternadas.
     private func popular(_ model: CatalogModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             NavigationLink(value: PopularRoute()) {
                 DSSectionHead(title: "Lo más popular hoy", chevron: true,
-                              meta: Text("Lo que más se ve hoy en Stremio, películas y series"), source: .stremio)
+                              meta: Text("Lo que más se está viendo ahora, películas y series"), source: .trakt)
             }
             .buttonStyle(.plain)
             .padding(.horizontal, DS.Space.gutter)
@@ -297,7 +297,7 @@ struct GenreView: View {
         .navigationTitle(Text(verbatim: Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre))
         .navigationBarTitleDisplayMode(.inline)   // como toda pantalla de adentro
         .task {
-            // Primero lo de Cinemeta (se ve ya); luego los mismos títulos en tu idioma.
+            // Primero lo de Trakt (se ve ya); luego los mismos títulos en tu idioma.
             await model.genre(genre) { items = $0; loaded = true }
             loaded = true
         }

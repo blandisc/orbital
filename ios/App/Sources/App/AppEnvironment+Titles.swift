@@ -38,7 +38,7 @@ extension AppEnvironment {
             try await titles.setSaved(s, in: destination, add: true)
             notify(saved: destination, undo: true) { [weak self] in Task { try? await self?.titles.setSaved(s, in: destination, add: false) } }
         } catch {
-            let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar tu lista de Stremio"
+            let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar Mi lista"
             notify(failure, detail: "\(error)", tone: .warn)   // la causa, traducida
         }
     }
@@ -55,7 +55,7 @@ extension AppEnvironment {
             }
         } catch {
             shown(true)
-            let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar tu lista de Stremio"
+            let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar Mi lista"
             notify(failure, detail: "\(error)", tone: .warn)
         }
     }
@@ -88,7 +88,7 @@ extension AppEnvironment {
 
     /// El aviso de «Guardar» (la ficha y los pósters): dónde quedó y, a la mano, cambiarlo (o deshacerlo).
     func notify(saved destination: SaveDestination, undo: Bool = false, perform: @escaping () -> Void) {
-        let (text, detail) = destination == .traktWatchlist ? ("Guardada en tu watchlist", "Trakt") : ("Guardada en Mi lista", "Stremio")
+        let (text, detail): (String, String?) = destination == .traktWatchlist ? ("Guardada en tu watchlist", "Trakt") : ("Guardada en Mi lista", nil)
         if undo { notify(text, detail: detail, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", perform: perform) }
         else { notify(text, detail: detail, actionTitle: "Cambiar", perform: perform) }
     }

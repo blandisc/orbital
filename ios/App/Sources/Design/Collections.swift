@@ -87,28 +87,29 @@ enum AwardNames {
     }
 }
 
-/// De dónde viene una lista: su sello junto al título (Trakt, Stremio o tu Orbital).
+/// De dónde viene una lista: su sello junto al título (Trakt, uno de tus complementos o tu Orbital).
 enum ListSource: Hashable {
-    case trakt, stremio, orbital
-    var name: String { switch self { case .trakt: "Trakt"; case .stremio: "Stremio"; case .orbital: "Orbital" } }
-    var color: Color { switch self { case .trakt: DS.RatingBrand.trakt; case .stremio: DS.Collections.stremio; case .orbital: DS.Collections.orbital } }
+    case trakt, addon, orbital
+    /// El nombre del servicio tal cual; «Complemento», en el idioma de la app.
+    var name: Text { switch self { case .trakt: Text(verbatim: "Trakt"); case .addon: Text("Complemento"); case .orbital: Text(verbatim: "Orbital") } }
+    var color: Color { switch self { case .trakt: DS.RatingBrand.trakt; case .addon: DS.Collections.addon; case .orbital: DS.Collections.orbital } }
 }
 
 /// El sello de origen: el nombre del servicio en mayúsculas sobre su color.
 struct SourceBadge: View {
     let source: ListSource
     var body: some View {
-        Text(verbatim: source.name.uppercased())
+        source.name.textCase(.uppercase)
             .font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Collections.badgeRadius / 10)   // negrita, como `.source-badge` de la TV
             .foregroundStyle(DS.paper)
             .padding(.horizontal, DS.Space.s1 + DS.Size.hairline).padding(.vertical, DS.Size.hairline)
-            .lineLimit(1).fixedSize()   // un sello no se parte en dos renglones («STRE / MIO»)
+            .lineLimit(1).fixedSize()   // un sello no se parte en dos renglones («COMPLE / MENTO»)
             .background(source.color, in: RoundedRectangle(cornerRadius: DS.Collections.badgeRadius, style: .continuous))
             .accessibilityLabel(Text("De \(source.name)"))
     }
 }
 
-/// Una lista en «Listas de Trakt» o «Listas de Stremio»: dos pósters en pila, su nombre, su sello y cuántos tiene.
+/// Una lista en «Listas de Trakt» o «De tus complementos»: dos pósters en pila, su nombre, su sello y cuántos tiene.
 struct ListCard: View {
     let name: String
     let source: ListSource
