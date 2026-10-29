@@ -155,9 +155,15 @@ def demo(url):
             if name == "para_ti":
                 page.wait_for_timeout(30000)
                 r["reposo_cpu_pct"]["para_ti_40s"] = idle()
+                page.wait_for_timeout(50000)
+                r["reposo_cpu_pct"]["para_ti_100s"] = idle()  # pasado el tope del ambiente (90 s)
             if name == "peliculas_series":
                 # X en un destacado: «Episodios», la ficha (A reproduciría). -1 = no se abrió en 8 s.
-                page.evaluate("window.__ficha = window.__visible('.title')")
+                for _ in range(6):  # LT hasta el primer grupo (Destacados), venga de donde venga el foco
+                    page.keyboard.press("PageUp")
+                    page.wait_for_timeout(120)
+                page.wait_for_timeout(600)
+                page.evaluate("void (window.__ficha = window.__visible('section.screen.title'))")  # sin void, evaluate esperaría la promesa antes de X
                 page.keyboard.press("x")
                 r["ficha_ms"] = round(page.evaluate("window.__ficha"))
                 page.wait_for_timeout(1500)
