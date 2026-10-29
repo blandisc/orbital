@@ -104,6 +104,12 @@ enum AppWindows {
     static var scene: UIWindowScene? { UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first }
     static var all: [UIWindow] { UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows) }
 
+    /// Pone en la escena el tamaño mínimo de ventana (`WindowMetrics.minimum`): en la Mac y en el iPad. En el iPhone no hace
+    /// nada (la ventana es la pantalla).
+    static func applyMinimumSize() {
+        scene?.sizeRestrictions?.minimumSize = WindowMetrics.minimum
+    }
+
     /// Los márgenes seguros de la ventana principal (el video en horizontal ignora el área segura y no los trae su `GeometryReader`).
     static var safeArea: UIEdgeInsets {
         UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.safeAreaInsets ?? .zero

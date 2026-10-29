@@ -15,6 +15,10 @@ final class WindowMetrics {
     /// Para los tokens (`DS`), que no están atados al hilo principal: solo se leen al pintar, que siempre es en él.
     nonisolated static var size: CGSize { MainActor.assumeIsolated { shared.size } }
 
+    /// Lo más chico que puede quedar la ventana en la Mac y en el iPad (Stage Manager, ventanas de iPadOS 26): el iPhone SE,
+    /// el tamaño más chico en el que la app está probada. Así ningún acomodo se rompe al achicar la ventana.
+    static let minimum = CGSize(width: 375, height: 667)
+
     func update(_ new: CGSize) {
         guard new.width > 0, new.height > 0, new != size else { return }
         size = new

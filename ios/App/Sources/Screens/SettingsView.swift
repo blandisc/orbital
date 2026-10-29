@@ -59,8 +59,11 @@ struct SettingsView: View {
             .listRowBackground(DS.surface)
             // Con qué se conecta.
             Section {
-                NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
-                    SettingsRow(title: "Tu Orbital", symbol: "tv", tint: DS.ListTint.series, value: env.services.orbital.isConfigured ? Text("Conectada") : Text("Sin conectar"))
+                // La Mac no se conecta con tu Orbital (`Services.allowsOrbital`): ahí no hay nada que configurar.
+                if env.services.allowsOrbital {
+                    NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
+                        SettingsRow(title: "Tu Orbital", symbol: "tv", tint: DS.ListTint.series, value: env.services.orbital.isConfigured ? Text("Conectada") : Text("Sin conectar"))
+                    }
                 }
                 if traktFromOrbital(model) {
                     // Trakt llega de tu Orbital: aquí no hay nada que configurar.
@@ -75,8 +78,10 @@ struct SettingsView: View {
                     SettingsRow(title: "OneDrive", symbol: "cloud", tint: DS.ListTint.library,
                                 value: env.services.oneDrive.linked ? Text("Conectado") : Text("Sin conectar"))
                 }
-                NavigationLink { VoiceGuideView() } label: {
-                    SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
+                if env.services.allowsOrbital {   // la voz le da órdenes a tu Orbital
+                    NavigationLink { VoiceGuideView() } label: {
+                        SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
+                    }
                 }
             } header: { Text("Conexiones") }
             .listRowBackground(DS.surface)

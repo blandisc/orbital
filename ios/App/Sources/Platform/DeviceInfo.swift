@@ -39,6 +39,9 @@ final class Connectivity: @unchecked Sendable {
 /// es iPhone o iPad y su id por instalación. La TV solo acepta `iphone` e `ipad` (`orbital/companion.py`): la Mac
 /// («Diseñada para iPad») se presenta como iPad hasta que la TV conozca `mac` (Etapa 2 de `docs/producto/ipad-y-mac-2026-10.md`).
 enum ThisDevice {
+    /// La Mac no habla con tu Orbital: es solo para ver (decisión de Fernando, 29 oct 2026). El iPhone y el iPad, sí.
+    static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac
+
     static var forOrbital: OrbitalRemote.Device {
         let device = UIDevice.current
         return OrbitalRemote.Device(name: device.name, kind: device.userInterfaceIdiom == .pad ? "ipad" : "iphone",

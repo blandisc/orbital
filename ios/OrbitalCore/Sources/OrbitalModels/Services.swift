@@ -105,8 +105,10 @@ public final class Services: ObservableModel {
     public init(http: HTTPClient, secrets: SecretsStore, kv: KeyValueStore, pending: PendingStore, downloadTransport: DownloadTransport,
                 downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64, cacheRoot: URL? = nil,
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in },
-                builtInTraktClientID: String = Services.bundledTraktClientID, device: OrbitalRemote.Device? = nil) {
+                builtInTraktClientID: String = Services.bundledTraktClientID, device: OrbitalRemote.Device? = nil,
+                allowsOrbital: Bool = true) {
         self.cacheRoot = cacheRoot
+        self.allowsOrbital = allowsOrbital
         self.device = device
         self.builtInTraktClientID = builtInTraktClientID
         self.http = http; self.secrets = secrets; self.kv = kv; self.pending = pending; self.downloadTransport = downloadTransport
@@ -144,7 +146,8 @@ public final class Services: ObservableModel {
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
-        self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "", device: device) }, clock: clock)
+        self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: allowsOrbital ? settings.value.orbitalAddress : "",
+                                                                 token: allowsOrbital ? secrets.get(SecretKey.orbitalToken) ?? "" : "", device: device) }, clock: clock)
         self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
         let origins = OriginBook(tmdb: { Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "") }, cinemeta: cinemeta)
@@ -231,6 +234,7 @@ public final class Services: ObservableModel {
     /// «Trakt»); lanza si no contesta.
     @discardableResult
     public func connectOrbital(address: String? = nil, token: String? = nil) async throws -> [String] {
+        guard allowsOrbital else { return [] }   // la Mac no se empareja con tu Orbital (ni guarda la dirección)
         if let address { settings.update { $0.orbitalAddress = address }; secrets.set(SecretKey.orbitalAddress, address) }
         if let token { secrets.set(SecretKey.orbitalToken, token) }
         // Avisar ya (antes de preguntarle a la consola): el control y el sondeo aparecen aunque no se haya traído nada nuevo.
@@ -257,10 +261,15 @@ public final class Services: ObservableModel {
         return got
     }
 
-    /// Tu Orbital de la TV («Ver en la TV»), con la dirección y el token de Ajustes.
+    /// Tu Orbital de la TV («Ver en la TV»), con la dirección y el token de Ajustes. Sin `allowsOrbital` (la Mac) nunca queda
+    /// configurado: ni control, ni «En la TV», ni lo que manda la TV, aunque el llavero traiga una dirección y un token.
     public var orbital: OrbitalRemote {
-        OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "", device: device)
+        guard allowsOrbital else { return OrbitalRemote(http: http, address: "", token: "", device: device) }
+        return OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "", device: device)
     }
+
+    /// ¿Este aparato habla con tu Orbital? No en la Mac (decisión de Fernando, 29 oct 2026): ahí la app es solo para ver.
+    public let allowsOrbital: Bool
 
     public func now() -> Date { clock() }
     public var authKey: String? { secrets.get(SecretKey.stremioAuth) }

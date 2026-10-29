@@ -258,7 +258,8 @@ struct BrowseView: View {
     private var explore: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: "Por género", meta: Text("Lo más popular de cada uno"))
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
+            // Dos en cualquier iPhone (de 343 a 408 pt de contenido); en el iPad caben 4 o 5 en vez de dos mosaicos enormes.
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.genreTileMin), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
                 ForEach(CatalogModel.exploreGenres, id: \.self) { genre in
                     NavigationLink(value: GenreRoute(genre: genre)) { ArtTile(title: Text(verbatim: genreName(genre)), asset: Self.genreAsset(genre)) }
                         .buttonStyle(.plain)

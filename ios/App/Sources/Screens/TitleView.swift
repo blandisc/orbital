@@ -72,6 +72,9 @@ struct TitleView: View {
                 // reparto ni saga): si no, en unas fichas se recogía y en otras no.
                 .frame(minHeight: viewport.height, alignment: .top)
             }
+            // Ventana ancha (iPad, Mac): la ficha a un ancho de lectura, al centro; en el iPhone ocupa todo como siempre.
+            .frame(maxWidth: DS.TitleAction.readableWidth)
+            .frame(maxWidth: .infinity)
         }
         #if DEBUG
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazada (capturas del arte a medio recoger)
@@ -159,13 +162,13 @@ struct TitleView: View {
     /// barra de pestañas. Antes de medir, la proporción fija de los teléfonos bajitos.
     private var heroAspect: CGFloat {
         let fallback = WindowMetrics.size.height < DS.TitleAction.shortScreen ? DS.TitleAction.heroAspectShort : DS.TitleAction.heroAspect
-        guard viewport.width > 0, belowHero > 0 else { return fallback }
+        guard contentWidth > 0, belowHero > 0 else { return fallback }
         let padding = scheme == .dark ? 0 : DS.Space.s4
         // `viewport` ya es el alto entre la barra de arriba y la de pestañas, y el contenido empieza bajo la de arriba (el arte
         // solo se extiende detrás de ella): lo libre es eso menos lo de abajo del arte. Antes se sumaba el margen de arriba y
         // la segunda fila de acciones quedaba debajo de las pestañas.
         let room = viewport.height - belowHero - padding - DS.Space.s3
-        let width = viewport.width - (scheme == .dark ? 0 : DS.Space.gutter * 2)
+        let width = contentWidth - (scheme == .dark ? 0 : DS.Space.gutter * 2)
         guard room > 0 else { return typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax }
         let cap = typeSize.isAccessibilitySize ? DS.TitleAction.heroAspectMaxLarge : DS.TitleAction.heroAspectMax
         return min(cap, max(DS.TitleAction.heroAspect, width / room))
@@ -211,7 +214,9 @@ struct TitleView: View {
 
     /// Qué tan desvanecido va lo de arriba (0 con el arte a la vista, 1 ya recogido).
     private var fade: Double { Double(min(1, max(0, scrolled / max(heroHeight * DS.TitleAction.fadeAt, 1)))) }
-    private var heroHeight: CGFloat { viewport.width > 0 ? viewport.width / heroAspect : 0 }
+    private var heroHeight: CGFloat { contentWidth > 0 ? contentWidth / heroAspect : 0 }
+    /// El ancho de la ficha: el de la ventana, hasta el ancho de lectura (`DS.TitleAction.readableWidth`).
+    private var contentWidth: CGFloat { min(viewport.width, DS.TitleAction.readableWidth) }
 
     /// Mi lista y En la TV: botones de ícono en la barra de arriba (con su nombre para VoiceOver).
     @ToolbarContentBuilder private func topBar(_ model: TitleModel) -> some ToolbarContent {

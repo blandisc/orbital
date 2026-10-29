@@ -11,6 +11,9 @@ struct RemoteSheet: View {
     var tvNow: ModelObserver<TVNowModel>
     @Binding var large: Bool
     let onContinueHere: (OrbitalRemote.NowPlaying) -> Void
+    /// En un panel fijo a la derecha (ventana ancha: iPad horizontal, Mac) en vez de una hoja: con título y «Cerrar», siempre
+    /// completo. Sin esto, la hoja de siempre (el iPhone no cambia).
+    var close: (() -> Void)? = nil
     @State private var compactHeight: CGFloat = DS.Remote.padHeight
     /// El alto del control completo, medido: la hoja estirada mide eso (sin hueco abajo) y, como no llega a la altura
     /// completa de la pantalla, iOS la deja de vidrio translúcido como la corta (a la altura completa la vuelve opaca).
@@ -39,6 +42,13 @@ struct RemoteSheet: View {
         let model = tvNow.model
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
+                if let close {
+                    HStack {
+                        Text("Control de la TV").recipe(.section)
+                        Spacer(minLength: DS.Space.s2)
+                        DSIconButton(symbol: "xmark", label: "Cerrar", action: close).accessibilityIdentifier("remote-panel-close")
+                    }
+                }
                 header(model)
                     // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in

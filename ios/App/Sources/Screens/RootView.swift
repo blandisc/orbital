@@ -177,11 +177,19 @@ struct MainTabs: View {
         _tab = State(initialValue: initial)
     }
 
-    /// Abrir el control (si hay TV configurada); aparte para que el compilador no se ahogue con el cuerpo.
+    /// Abrir el control (si hay TV configurada); aparte para que el compilador no se ahogue con el cuerpo. Como panel, el
+    /// mismo botón lo cierra.
     private var openRemoteAction: (() -> Void)? {
         guard tvNow.model.isConfigured else { return nil }
-        return { remoteLarge = tvNow.model.now == nil || sizeClass == .regular; showRemote = true }
+        return {
+            if remoteAsPanel && showRemote { showRemote = false; return }
+            remoteLarge = tvNow.model.now == nil || sizeClass == .regular; showRemote = true
+        }
     }
+
+    /// Ventana ancha (iPad horizontal, Mac): el control va en un panel fijo a la derecha y se navega a la vez. Angosta (iPad
+    /// de pie, dos apps en pantalla): la tarjeta. En el iPhone el ancho nunca es regular: la hoja de siempre.
+    private var remoteAsPanel: Bool { sizeClass == .regular && WindowMetrics.size.width >= DS.Remote.panelWindowWidth }
 
     var body: some View {
         // Tocar «Buscar» estando ya en Buscar abre el campo con el teclado (TabView avisa aunque la pestaña no cambie).
@@ -200,6 +208,13 @@ struct MainTabs: View {
         }
         // iPhone: la barra de abajo de siempre. iPad y Mac: la barra de arriba que se abre como barra lateral.
         .tabViewStyle(.sidebarAdaptable)
+        // El control como panel fijo a la derecha en ventana ancha (el inspector de SwiftUI); si la ventana se angosta con
+        // el panel abierto, pasa solo a la tarjeta (`remoteAsPanel`).
+        .inspector(isPresented: Binding(get: { showRemote && remoteAsPanel }, set: { if !$0 { showRemote = false } })) {
+            RemoteSheet(tvNow: tvNow, large: .constant(true), onContinueHere: { now in showRemote = false; openNowPlaying(now) },
+                        close: { showRemote = false })
+                .inspectorColumnWidth(min: DS.Remote.panelMin, ideal: DS.Remote.panelIdeal, max: DS.Remote.panelMax)
+        }
         // En Buscar iOS no encoge la barra (lleva el campo): ahí se esconde entera al bajar (BrowseView).
         .tabBarMinimizeBehavior(tab == 2 ? .never : .onScrollDown)
         .onChange(of: tab) { _, t in if t == 2 { Perf.begin("stab"); Perf.mark("stab.tap") } }
@@ -248,7 +263,7 @@ struct MainTabs: View {
         .onChange(of: tvNow.model.game?.id) { _, id in if id != nil, Demo.isOn, Demo.open == "game" { showGame = true } }   // `-demo-open game`
         #endif
         // Se cerró un juego en la consola: su resumen.
-        .sheet(isPresented: $showRemote) {
+        .sheet(isPresented: Binding(get: { showRemote && !remoteAsPanel }, set: { if !$0 { showRemote = false } })) {
             RemoteSheet(tvNow: tvNow, large: $remoteLarge, onContinueHere: { now in showRemote = false; openNowPlaying(now) })
         }
         .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel
@@ -267,7 +282,9 @@ struct MainTabs: View {
             guard wants else { return }
             ui.openRemote = false
             // Sin tu Orbital conectada (el control del Centro de control abre la app igual): a Ajustes, donde se conecta.
-            if tvNow.model.isConfigured { remoteLarge = true; showRemote = true } else { paths[tab].append(SettingsRoute()) }
+            // Como panel, ⌘R (y el control del Centro de control) lo abre y lo cierra.
+            if tvNow.model.isConfigured { if remoteAsPanel && showRemote { showRemote = false } else { remoteLarge = true; showRemote = true } }
+            else { paths[tab].append(SettingsRoute()) }
         }
         .task {
             forceDemoTab()   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer

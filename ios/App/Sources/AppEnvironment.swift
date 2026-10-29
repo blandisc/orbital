@@ -297,7 +297,8 @@ final class AppEnvironment {
             let services = Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
                                     downloadTransport: transport, downloadsRoot: Demo.demoDownloadsRoot,
                                     savedDownloads: Demo.downloads, freeSpace: { DiskSpace.freeBytes() },
-                                    cacheRoot: Demo.persist ? AppFiles.swrCache.appendingPathComponent("demo") : nil)
+                                    cacheRoot: Demo.persist ? AppFiles.swrCache.appendingPathComponent("demo") : nil,
+                                    allowsOrbital: ThisDevice.talksToOrbital)
             services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira
             return services
         }
@@ -306,7 +307,8 @@ final class AppEnvironment {
             http: Perf.isOn ? PerfHTTPClient(inner: URLSessionHTTPClient()) : URLSessionHTTPClient(), secrets: KeychainSecrets(service: Bundle.main.bundleIdentifier ?? "com.example.orbital.ios"),
             kv: UserDefaultsKeyValueStore(), pending: FilePendingStore(url: AppFiles.pendingWork), downloadTransport: transport,
             downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
-            cacheRoot: AppFiles.swrCache, onDownloadsChange: { DownloadIndex.save($0) }, device: ThisDevice.forOrbital)
+            cacheRoot: AppFiles.swrCache, onDownloadsChange: { DownloadIndex.save($0) }, device: ThisDevice.forOrbital,
+            allowsOrbital: ThisDevice.talksToOrbital)
     }
 
     /// El aviso (con háptica, por el tono del aviso) de lo que pasó con lo que mandó la TV.

@@ -780,6 +780,13 @@ def mac_es(text: str) -> str:
     return text
 
 
+# Textos que en la Mac dicen otra cosa: la Mac no se conecta con tu Orbital (`Services.allowsOrbital`). (español, inglés)
+MAC_ONLY = {
+    "Conecta Trakt o tu Orbital": ("Conecta Trakt", "Connect Trakt"),
+    "Conecta Trakt (en tu Orbital o en Ajustes) para ver tu año.": ("Conecta Trakt en Ajustes para ver tu año.", "Connect Trakt in Settings to see your year."),
+}
+
+
 def varies_by_device(key: str) -> bool:
     return "iPhone" in key and not any(literal in key for literal in DEVICE_LITERAL)
 
@@ -787,7 +794,10 @@ def varies_by_device(key: str) -> bool:
 def build() -> dict:
     strings = {}
     for key, english in sorted(TRANSLATIONS.items()):
-        if varies_by_device(key):
+        if key in MAC_ONLY:
+            mac, mac_en = MAC_ONLY[key]
+            localizations = {"es": by_device(key, key, mac), "en": by_device(english, english, mac_en)}
+        elif varies_by_device(key):
             localizations = {"es": by_device(key, key.replace("iPhone", "iPad"), mac_es(key)),
                              "en": by_device(english, english.replace("iPhone", "iPad"), english.replace("iPhone", "Mac"))}
         else:

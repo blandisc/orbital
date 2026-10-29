@@ -186,6 +186,9 @@ enum DS {
     enum TitleAction {
         /// El nombre en la barra no pasa por debajo del ‹ ni de los botones de la derecha.
         static let barTitleInset: CGFloat = 110
+        /// El ancho máximo de la ficha en ventanas anchas (iPad, Mac): a todo lo ancho, en horizontal el arte llenaba la
+        /// pantalla y las acciones quedaban abajo, fuera de la vista. El iPhone (440 pt como mucho) no lo alcanza.
+        static let readableWidth: CGFloat = 720
         /// El desvanecido bajo la barra de arriba (además de la barra) y a qué parte del arte ya está completo.
         static let topFade: CGFloat = 36, fadeAt: CGFloat = 0.85
         /// El nombre en la barra: empieza a salir a esta parte del arte y termina de salir en este tramo.
@@ -735,6 +738,11 @@ enum DS {
 
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).
     enum Remote {
+        /// Desde qué ancho de ventana el control va en un panel fijo a la derecha (iPad horizontal, Mac) en vez de una
+        /// tarjeta: el iPad de pie (de 820 a 1024 pt) se queda con la tarjeta, que no aprieta el contenido.
+        static let panelWindowWidth: CGFloat = 1000
+        /// El ancho del panel: el de un iPhone, para el que está hecho el control.
+        static let panelMin: CGFloat = 360, panelIdeal: CGFloat = 390, panelMax: CGFloat = 440
         /// De qué tamaño parte lo que se despliega en el control (los sustos): crece desde arriba a su tamaño.
         static let revealScale: CGFloat = 0.96
         /// Cuánto espera la hoja del control a que su contenido deje de cambiar antes de tomar su nuevo alto (en una sola
@@ -950,6 +958,8 @@ enum DS {
         /// En ventanas anchas (iPad, Mac) caben más columnas: ninguna celda pasa de este ancho (con 4 fijas, en un iPad
         /// horizontal cada póster medía ~280 pt).
         static let gridCellMax: CGFloat = 160
+        /// El ancho mínimo de un mosaico de género en Buscar (dos por renglón en todo iPhone; más en el iPad).
+        static let genreTileMin: CGFloat = 160
         /// Cuántas columnas en `width` (el ancho del contenido, con sus márgenes).
         static func gridColumns(for width: CGFloat) -> Int {
             guard width >= gridWideWidth else { return gridColumns }

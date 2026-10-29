@@ -11,6 +11,7 @@ final class IPadLayoutUITests: XCTestCase {
 
     override func setUpWithError() throws {
         try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "solo en iPad")
+        if name.contains("LandscapeTour") { try XCTSkipIf(ProcessInfo.processInfo.environment["ORBITAL_HANDSHAKE"] == nil, "solo con ORBITAL_HANDSHAKE") }
         continueAfterFailure = true
         app = XCUIApplication()
         try? FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
@@ -56,14 +57,51 @@ final class IPadLayoutUITests: XCTestCase {
     /// «¿Qué vemos?» es una tarjeta de su alto (antes salía cortada a ~70 pt) y el control abre completo.
     func testSheetsAreFullSizeCards() {
         open(["-demo-tab", "1", "-demo-open", "decide"], .portrait)
-        let shuffle = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Barajar'")).firstMatch
-        XCTAssertTrue(shuffle.waitForExistence(timeout: 40), "¿Qué vemos? no enseña «Barajar»")
-        XCTAssertTrue(shuffle.isHittable, "«Barajar» queda cortado")
+        // «Más filtros» va al pie de la tarjeta y sale siempre (con sugerencia o con «Nada con…» si un filtro guardado no deja opciones).
+        let filters = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Más filtros'")).firstMatch
+        XCTAssertTrue(filters.waitForExistence(timeout: 40), "¿Qué vemos? no enseña «Más filtros»")
+        XCTAssertTrue(filters.isHittable, "la tarjeta queda cortada: «Más filtros» no se alcanza")
         shot("decidir-v")
         open(["-demo-tv-now", "-demo-open", "remote"], .landscapeLeft)
         let type = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Escribir en la TV' OR placeholderValue CONTAINS 'Escribir en la TV'")).firstMatch
         XCTAssertTrue(type.waitForExistence(timeout: 30), "el control no abre completo")
         shot("control-h")
+    }
+
+    /// El control en horizontal es un panel fijo a la derecha (se navega a la vez); de pie, la tarjeta de siempre.
+    func testRemoteIsAPanelWhenWideAndACardWhenNarrow() {
+        open(["-demo-tv-now", "-demo-open", "remote"], .landscapeLeft)
+        let close = app.buttons["remote-panel-close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 30), "en horizontal el control va en un panel con «Cerrar»")
+        let paraTi = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Para ti")).firstMatch
+        XCTAssertTrue(paraTi.isHittable, "con el panel abierto se sigue navegando")
+        close.tap()
+        XCTAssertFalse(close.waitForExistence(timeout: 3), "«Cerrar» cierra el panel")
+        open(["-demo-tv-now", "-demo-open", "remote"], .portrait)
+        let pause = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Escribir en la TV' OR placeholderValue CONTAINS 'Escribir en la TV'")).firstMatch
+        XCTAssertTrue(pause.waitForExistence(timeout: 30), "de pie el control abre completo")
+        XCTAssertFalse(app.buttons["remote-panel-close"].exists, "de pie es tarjeta, no panel")
+        shot("control-v")
+    }
+
+    /// Capturas derechas en horizontal: XCUITest las da giradas, así que la prueba avisa (`ready_<nombre>`) y un guion aparte
+    /// toma la foto con `simctl io screenshot` y responde (`done_<nombre>`). Solo corre con `ORBITAL_HANDSHAKE` (una carpeta).
+    func testLandscapeTour() throws {
+        let dir = try XCTUnwrap(ProcessInfo.processInfo.environment["ORBITAL_HANDSHAKE"], "sin ORBITAL_HANDSHAKE")
+        let screens: [(String, [String])] = [
+            ("inicio", ["-demo-tab", "0"]), ("parati", ["-demo-tab", "1"]), ("listas", ["-demo-tab", "1", "-demo-mode", "lists", "-demo-airings"]),
+            ("ficha", ["-demo-tmdb", "-demo-title", "series:tt0386676"]), ("buscar", ["-demo-tab", "2"]),
+            ("descargas", ["-demo-tab", "3", "-demo-downloads"]), ("control", ["-demo-tv-now", "-demo-open", "remote"]),
+            ("decidir", ["-demo-tab", "1", "-demo-open", "decide"]), ("fuentes", ["-demo-title", "series:tt0386676", "-demo-open", "sources"]),
+            ("reproductor", ["-demo-title", "series:tt0386676", "-demo-open", "play"]), ("ajustes", ["-demo-open", "settings"]),
+        ]
+        for (name, args) in screens {
+            open(args, .landscapeLeft)
+            sleep(name == "reproductor" || name == "decidir" ? 12 : 8)
+            if name == "reproductor" { app.tap(); sleep(1) }
+            FileManager.default.createFile(atPath: "\(dir)/ready_\(name)", contents: nil)
+            for _ in 0..<60 where !FileManager.default.fileExists(atPath: "\(dir)/done_\(name)") { sleep(1) }
+        }
     }
 
     /// El reproductor en horizontal (como se ve una película en el iPad).
