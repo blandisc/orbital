@@ -17,10 +17,11 @@ def test_tmdb_da_primero_las_imagenes_en_espanol(monkeypatch):
     t = tmdb_api.Tmdb("clave")
     monkeypatch.setattr(t, "_get", lambda path, **p: {
         "posters": [{"file_path": "/en.jpg", "iso_639_1": "en", "vote_average": 9}, {"file_path": "/es.jpg", "iso_639_1": "es", "vote_average": 1}],
-        "backdrops": [{"file_path": "/b.jpg", "iso_639_1": None}]})
+        "backdrops": [{"file_path": "/con-titulo.jpg", "iso_639_1": "es", "vote_average": 9}, {"file_path": "/b.jpg", "iso_639_1": None}]})
     found = t.images("series", 1)
     assert found["posters"] == ["https://image.tmdb.org/t/p/w500/es.jpg", "https://image.tmdb.org/t/p/w500/en.jpg"]
-    assert found["backgrounds"] == ["https://image.tmdb.org/t/p/w1280/b.jpg"]
+    # Los fondos sin texto van primero: encima ya va el logo.
+    assert found["backgrounds"] == ["https://image.tmdb.org/t/p/w1280/b.jpg", "https://image.tmdb.org/t/p/w1280/con-titulo.jpg"]
 
 
 def test_elegir_arte_se_recuerda_y_se_ve_en_la_biblioteca_y_para_ti(library):

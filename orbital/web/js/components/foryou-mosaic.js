@@ -3,6 +3,7 @@ import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, p
 import { ICONS } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { reducedMotion, settler } from "../core/motion.js";
+import { ArtFit } from "./art-fit.js";
 import { Badge, PlatformBadge } from "./ui.js";
 import { dragArea, hoverArea } from "../core/swipe.js";
 import { tokenPx } from "../core/tokens.js";
@@ -112,23 +113,28 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     const poster = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", src: sized(item.image || item.hero || "", POSTER_PX), alt: "", decoding: "async" });
     // El arte ancho solo hace falta cuando su columna se enfoca (ahí todas pasan a lo ancho): se pide hasta entonces.
     // Antes cada pieza cargaba también su fondo ancho, aunque nunca se viera (el doble de memoria en Edge).
-    const wide = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--wide", alt: "", decoding: "async" });
+    // Sin fondo ancho, lo ancho es su póster: va entero sobre su copia desenfocada (ArtFit), no recortado a una franja.
+    let wide = null;
     swap(poster, sized(item.image_fallback || item.hero, POSTER_PX));
-    swap(wide, sized(item.image, WIDE_PX));
     // En la columna enfocada, un juego de Steam sin foco enseña su cápsula (lleva el juego y su nombre); el «hero» es un
     // fondo pensado para el logo encima, así que solo sale en la pieza enfocada, con el logo.
     const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", alt: "", decoding: "async" });
     if (capsule) capsule.addEventListener("error", () => capsule.remove(), { once: true });
     const loadWide = () => {
-      if (!wide.getAttribute("src")) wide.src = sized(item.hero || item.image || "", WIDE_PX);
+      if (!wide && (item.hero || item.image)) {
+        wide = ArtFit(sized(item.hero || item.image, WIDE_PX), { poster: !item.hero, ratio: 16 / 9, fallback: item.hero && item.image ? sized(item.image, WIDE_PX) : null,
+          className: ["foryou-mosaic__art", "foryou-mosaic__art--wide"],
+          onError: () => { if (!node.querySelector(".foryou-mosaic__art")) node.classList.add("foryou-mosaic__tile--bare"); } });
+        node.insertBefore(wide, capsule || kind); // encima del póster y debajo de la cápsula
+      }
       if (capsule && !capsule.getAttribute("src")) capsule.src = sized(item.wide, WIDE_PX);
     };
     const name = () => h("strong", { class: "foryou-mosaic__name" }, item.title);
+    const kind = h("span", { class: "foryou-mosaic__kind", "aria-hidden": "true" }, svg(ICONS[iconName(item)] || ICONS.apps));
     const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: sized(trimmedLogo(item.logo), 320), alt: item.title }) : name();
     if (item.logo) logo.addEventListener("error", () => logo.replaceWith(name()), { once: true });
     const node = h("div", { class: "foryou-mosaic__tile", role: "button", tabindex: "-1", "aria-label": item.title, onClick: () => tap(node) },
-      poster, wide, capsule,
-      h("span", { class: "foryou-mosaic__kind", "aria-hidden": "true" }, svg(ICONS[iconName(item)] || ICONS.apps)),
+      poster, capsule, kind,
       h("div", { class: "foryou-mosaic__info" },
         // Un solo renglón de texto (la insignia es flex: con pedazos sueltos se perdía el espacio, «enNetflix»).
         item.why && whyBadge(item.why), logo,

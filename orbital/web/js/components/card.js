@@ -5,6 +5,7 @@ import { SYSTEMS, systemColor, systemOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { clampRatio, coverRatio, needsInternet } from "../core/library.js";
+import { ArtFit } from "./art-fit.js";
 import { Badge, Progress } from "./ui.js";
 
 /** Portada de un juego/app. Si no hay imagen (o falla), muestra el ícono de su tipo y el título. */
@@ -81,17 +82,22 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     card.style.setProperty("--glow", systemColor(systemOf(item)));
     card.append(h("span", { class: "card__stand-in", "aria-hidden": "true" },
       h("img", { class: "card__stand-in-photo", src: `img/consoles/${SYSTEMS[systemOf(item)].photo}`, alt: "", decoding: "async" })));
+  } else if (item.image && wide) {
+    // Ancha (Destacados): siempre 16:9. Si su imagen es un póster (no había fondo ancho), va entero sobre su copia
+    // desenfocada (ArtFit), no recortado a una franja del centro. Del tamaño en que se ve (~500 px).
+    card.append(ArtFit(sized(item.image, 520), { ratio: WIDE_RATIO, className: "card__image",
+      onReady: ({ instant, el }) => el.classList.add("card__image--loaded", ...(instant ? ["card__image--instant"] : [])),
+      onError: () => { card.classList.replace("card--has-art", "card--no-art"); card.prepend(fallback()); } }));
   } else if (item.image) {
     // Sin loading="lazy": las filas de abajo están fuera de vista y cada portada aparecería
     // vacía un instante al cambiar de fila. Son archivos locales; se cargan de una vez.
-    // Ancha: del tamaño en que se ve (~500 px; antes se pedía como póster, a 240, y se veía borrosa).
-    const img = h("img", { class: "card__image", src: wide ? sized(item.image, 520) : coverSrc(item.image), alt: "", decoding: "async" });
+    const img = h("img", { class: "card__image", src: coverSrc(item.image), alt: "", decoding: "async" });
     // Ya cargada antes (volviste a esa consola o fila): se ve al instante, sin volver a fundirse.
     if (img.complete && img.naturalWidth) img.classList.add("card__image--loaded", "card__image--instant");
     img.addEventListener("load", () => {
       img.classList.add("card__image--loaded");
       const real = clampRatio(img.naturalWidth / img.naturalHeight);
-      if (!wide && Math.abs(real - Number(card.dataset.ratio)) > .02) { // la ancha siempre es 16:9 (no un recorte cuadrado)
+      if (Math.abs(real - Number(card.dataset.ratio)) > .02) {
         setRatio(real);
         onRatio?.();
       }

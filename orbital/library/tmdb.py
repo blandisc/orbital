@@ -423,16 +423,18 @@ class Tmdb:
         return imdb if isinstance(imdb, str) and imdb.startswith("tt") else None
 
     def images(self, kind: str, tmdb_id: int, limit: int = 18) -> dict[str, list[str]]:
-        """Los pósters y fondos de un título (para «Cambiar el arte»): primero los en español, luego inglés y sin texto."""
+        """Los pósters y fondos de un título (para «Cambiar el arte»). Pósters: primero en español, luego inglés y sin texto.
+        Fondos: primero los sin texto (TMDB los marca sin idioma): las apps ya ponen el logo encima y un fondo con el título
+        impreso lo repetía."""
         raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}/images", include_image_language="es,en,null", language="es")
-        order = {"es": 0, "en": 1, None: 2}
 
-        def pick(rows, size):
+        def pick(rows, size, order):
             rows = [r for r in rows or [] if isinstance(r, dict) and r.get("file_path")]
             rows.sort(key=lambda r: (order.get(r.get("iso_639_1"), 3), -float(r.get("vote_average") or 0)))
             return [url for r in rows[:limit] if (url := image(r["file_path"], size))]
 
-        return {"posters": pick(raw.get("posters"), "w500"), "backgrounds": pick(raw.get("backdrops"), "w1280")}
+        return {"posters": pick(raw.get("posters"), "w500", {"es": 0, "en": 1, None: 2}),
+                "backgrounds": pick(raw.get("backdrops"), "w1280", {None: 0, "es": 1, "en": 2})}
 
     def original(self, imdb: str, kind: str) -> dict:
         """El idioma original de un título y sus nombres, para saber en qué idioma viene una fuente que no lo dice:

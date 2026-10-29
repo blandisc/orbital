@@ -75,6 +75,12 @@ test("Tus plataformas: una tarjeta por marca con su top 3 en abanico; el ranking
   assert.deepEqual(netflix.collection.posters, ["p/n1", "p/n2", "p/n3"]);
   assert.equal(netflix.title, "Netflix");
   assert.equal(netflix.hero, "h/n1"); // el héroe de arriba enseña su N.º 1
+  // Sin fondo ancho, el héroe no finge uno con el póster: el fondo de la pantalla lo pone como póster (no recortado).
+  const all = items(keyOf);
+  all[keyOf("chart:netflix", "series")] = [v("n1", "series", { rank: 1, hero: undefined })];
+  const bare = mediaRows(LISTS, all).find((r) => r.id === "curated:platforms").items.find((c) => c.collection.brand === "netflix");
+  assert.equal(bare.hero, null);
+  assert.equal(bare.image, "p/n1");
 });
 
 test("premios, estudios, años y listas son tarjetas con lo que dice el iPhone", async () => {

@@ -1,0 +1,22 @@
+/* ArtFit (js/components/art-fit.js): el arte de una caja ancha. Llena la caja; si es un póster vertical, el póster va
+   nítido y entero sobre una copia de sí mismo muy desenfocada (como el fondo de ambiente con solo portada, backdrop.css).
+   Quien lo usa lo acomoda: dónde cae el póster (--art-fit-x), cuánto aire le deja (--art-fit-pad) y de qué altura se
+   toma el recorte cuando llena (--art-fit-y). */
+:where(.art-fit) { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; pointer-events: none; } /* :where: quien lo usa lo pone donde quiera (absoluto en la ficha, el destacado o el mosaico) */
+.art-fit > * { transition: opacity var(--duration-base) var(--ease-out); }
+.art-fit:not(.art-fit--ready) > * { opacity: 0; } /* hasta saber cómo va: nada de recorte primero y póster después */
+.art-fit--instant > * { transition: none; }
+.art-fit__fill {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  object-position: 50% var(--art-fit-y, 50%);
+}
+/* La copia desenfocada que llena la caja (también la del estuche del destacado, tiles.js · caseArt). */
+.art-fit__blur {
+  position: absolute; inset: -2rem; width: calc(100% + 4rem); height: calc(100% + 4rem); object-fit: cover;
+  filter: blur(var(--blur-case)) saturate(1.25) brightness(.7);
+}
+/* El póster entero: del alto de la caja menos su aire; a la derecha por omisión (el texto de estas cajas va a la izquierda). */
+.art-fit__poster {
+  position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box; padding: var(--art-fit-pad, var(--space-3));
+  object-fit: contain; object-position: var(--art-fit-x, 88%) 50%; filter: var(--shadow-drop);
+}

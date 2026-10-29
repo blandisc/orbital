@@ -12,13 +12,20 @@
 .title--series .title__actions { margin-bottom: var(--space-6); }
 /* El arte casi entero: solo se funde a la izquierda y abajo, donde va el texto (antes iba al 55 % y se perdía). */
 .title__backdrop {
-  position: absolute; inset: 0; z-index: var(--z-behind); background-size: cover; background-position: center 25%;
+  position: absolute; inset: 0; z-index: var(--z-behind);
   opacity: .92; filter: saturate(1.08);
   -webkit-mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 22%, transparent) 0%, color-mix(in srgb, var(--mask-solid) 70%, transparent) 32%, var(--mask-solid) 58%), linear-gradient(0deg, transparent 0%, color-mix(in srgb, var(--mask-solid) 60%, transparent) 22%, var(--mask-solid) 50%);
   -webkit-mask-composite: source-in;
   mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 22%, transparent) 0%, color-mix(in srgb, var(--mask-solid) 70%, transparent) 32%, var(--mask-solid) 58%), linear-gradient(0deg, transparent 0%, color-mix(in srgb, var(--mask-solid) 60%, transparent) 22%, var(--mask-solid) 50%);
   mask-composite: intersect;
 }
+/* Cada fondo es una capa (ArtFit): el nuevo entra fundido encima del anterior (title.js · paintArt). Si es un póster, va
+   entero arriba a la derecha, donde el arte no se funde, sobre su copia desenfocada (antes, recortado: solo nubes). */
+.title__art {
+  position: absolute; inset: 0; --art-fit-y: 25%; --art-fit-x: 100%;
+  --art-fit-pad: calc(var(--space-14) + var(--safe-y)) var(--page-gutter) 30vh 50vw;
+}
+.title--series .title__art { --art-fit-pad: calc(var(--space-14) + var(--safe-y)) var(--page-gutter) 40vh 50vw; }
 /* En una serie la fila de episodios ocupa el tercio de abajo: el arte se funde antes. */
 .title--series .title__backdrop {
   -webkit-mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 22%, transparent) 0%, color-mix(in srgb, var(--mask-solid) 70%, transparent) 32%, var(--mask-solid) 58%), linear-gradient(0deg, transparent 18%, color-mix(in srgb, var(--mask-solid) 60%, transparent) 40%, var(--mask-solid) 66%);

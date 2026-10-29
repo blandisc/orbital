@@ -61,8 +61,10 @@
 .shelf__stage--focused { opacity: 1; box-shadow: var(--ring-focus), var(--shadow-card); }
 .shelf__row:not(.shelf__row--current) .shelf__stage { opacity: var(--opacity-off); }
 .shelf__stage-art {
-  position: absolute; inset: 0; z-index: var(--z-behind); border-radius: inherit; background-size: cover; background-position: center 25%;
+  position: absolute; inset: 0; z-index: var(--z-behind); border-radius: inherit; overflow: hidden;
+  --art-fit-y: 25%; --art-fit-pad: var(--inset-card); /* ArtFit: el recorte, arriba; un póster, con el aire de la tarjeta */
 }
+.shelf__stage-art > .art-fit { position: absolute; inset: 0; } /* el nuevo título entra encima del anterior */
 /* Una sombra de abajo y de lado: el logo y los puntos se leen sobre cualquier arte. */
 .shelf__stage::after { content: ""; position: absolute; inset: 0; z-index: var(--z-behind); border-radius: inherit;
   background: linear-gradient(0deg, var(--color-scrim), transparent 60%), linear-gradient(90deg, var(--color-scrim), transparent 70%); }

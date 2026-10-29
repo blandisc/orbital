@@ -1,14 +1,16 @@
 import { api } from "../core/api.js";
 import { Badge, Chip, Pill, Progress } from "./ui.js";
+import { ArtFit } from "./art-fit.js";
 import { Card } from "./card.js";
 import { PersonChip } from "./people.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
+import { sized } from "../core/images.js";
 import { genres, runtime } from "../core/format.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Glyph } from "./glyph.js";
 import { flight, motion, reducedMotion } from "../core/motion.js";
-import { tokenPx } from "../core/tokens.js";
+import { tokenMs, tokenPx } from "../core/tokens.js";
 import { actionStep, availability, episodeStates, episodesLed, titleActions, titleProgress } from "../core/watch.js";
 
 /**
@@ -23,6 +25,8 @@ import { actionStep, availability, episodeStates, episodesLed, titleActions, tit
  *   · A ve (Orbital elige la mejor versión y arranca) · Y elige la versión · B vuelve.
  */
 const touching = () => document.body.dataset.input === "touch";
+// La miniatura de un episodio mide --episode-width (~19rem): se pide de ese tamaño (core/images.js · sized).
+const EPISODE_PX = 360;
 
 export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = () => {}, onPerson = () => {}, onDownload = null, downloadOf = () => null,
   onVersions = () => {}, onFix = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
@@ -92,8 +96,39 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   const seasons = () => details?.seasons ?? [];
   const episode = () => seasons()[season]?.episodes[index] ?? null;
 
+  let shownArt = null; // la dirección del fondo que ya se ve (o que está cargando para verse)
+
+  /**
+   * El fondo de la ficha. Uno nuevo se carga primero y entra fundido sobre el anterior (antes se cambiaba de golpe a
+   * media carga); si es un póster (`poster`, o resulta más angosto que la pantalla), con el tratamiento de póster.
+   */
+  function paintArt({ url, poster = false } = {}) {
+    if (!url) return;
+    const src = sized(url, innerWidth);
+    if (src === shownArt) return;
+    shownArt = src;
+    backdrop.append(ArtFit(src, { poster, ratio: innerWidth / innerHeight, className: "title__art",
+      onReady: ({ el: fresh }) => {
+        if (!fresh.isConnected) return; // de una ficha que ya se cerró
+        // Ya se ve el nuevo: el de abajo se quita cuando termina el fundido.
+        const older = [...backdrop.children].filter((layer) => layer !== fresh && layer.compareDocumentPosition(fresh) & Node.DOCUMENT_POSITION_FOLLOWING);
+        setTimeout(() => older.forEach((layer) => layer.remove()), tokenMs("--duration-base"));
+      },
+      onError: () => { if (shownArt === src) shownArt = null; } })); // no cargó: se queda el que estaba
+  }
+
+  /**
+   * Qué fondo lleva la ficha (`data`: lo que trajo el servidor; null al abrir). Si el título ya traía su fondo ancho, ese se
+   * queda (antes se cambiaba al de la ficha a media carga); si solo traía su póster, el de la ficha en cuanto llega. Tras
+   * «Cambiar el arte» (`item.pickedArt`), el de la ficha: es tu elección.
+   */
+  function artOf(data) {
+    if (item.hero && !item.pickedArt) return { url: item.hero };
+    return data?.background ? { url: data.background } : { url: item.image, poster: true };
+  }
+
   function fillInfo(info) {
-    backdrop.style.backgroundImage = cssUrl(info.background);
+    paintArt(info.art);
     name.textContent = info.title || "";
     logo.hidden = !info.logo;
     if (info.logo) logo.src = trimmedLogo(info.logo);
@@ -120,8 +155,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   /** Lo que llega aparte (TMDB y Trakt): la frase, la clasificación, los créditos y «Más como esto». */
   function applyExtras(x) {
     extras = x || null;
-    if (details) fillInfo({ ...details, title: details.title || item.title, background: details.background || item.hero || item.image,
-      ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
+    if (details) fillInfo({ ...details, title: details.title || item.title, art: artOf(details), ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
     moreItems = (x?.more || []).filter((m) => m.meta_id && m.meta_id !== item?.meta_id);
     moreIndex = 0;
     mount(moreRow, moreItems.map((m, i) => {
@@ -268,7 +302,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
           onMove?.();
         },
       },
-      h("span", { class: "episode__thumb", style: { backgroundImage: cssUrl(ep.thumbnail) } },
+      // Encima del degradado de respaldo (title.css): sin miniatura, o si no carga, se queda el degradado.
+      h("span", { class: "episode__thumb", style: ep.thumbnail ? { backgroundImage: `${cssUrl(sized(ep.thumbnail, EPISODE_PX))}, var(--gradient-card)` } : null },
         ep.id === details?.resume?.video_id && Badge(details.resume.position > 0 ? "Continuar" : "Sigue", { className: "episode__next" }),
         st.watched && h("span", { class: "episode__check", "aria-label": "Visto" }, svg(ICONS.check)),
         Chip(String(ep.episode), { plate: true, className: "episode__number" }),
@@ -490,8 +525,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       api.titleExtras(kind, id).then((x) => { if (mine === token) applyExtras(x); }).catch(() => {});
       showRatings({ imdb: Number(data.rating) || null }, mine);
       api.titleRatings(kind, id).then((r) => showRatings({ ...r, imdb: r?.imdb ?? (Number(data.rating) || null) }, mine)).catch(() => {});
-      fillInfo({ ...data, title: data.title || item.title, background: data.background || item.hero || item.image,
-        ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
+      fillInfo({ ...data, title: data.title || item.title, art: artOf(data), ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
       states = episodeStates(data, Date.now());
       prefetch(mine);
       // Abre en el episodio en el que ibas (no en T1 E1).
@@ -602,7 +636,9 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     season = 0;
     index = 0;
     states = new Map();
-    fillInfo({ title: info.title, background: info.hero || info.image, ...(info.extra || {}) });
+    mount(backdrop); // el arte de la ficha anterior no se funde con este
+    shownArt = null;
+    fillInfo({ title: info.title, ...(info.extra || {}), art: artOf(null) }); // el fondo elegido aquí gana a lo de `extra`
     mount(tabs);
     mount(list);
     el.hidden = false;
@@ -742,6 +778,13 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     get focusState() { return { zone, castIndex }; },
     /** Vuelve a pedir la ficha (al regresar de ver algo: «Continuar T3 E6», los ✓, el progreso). */
     refresh() { if (!el.hidden && item) load({ quiet: true }); },
+    /** «Cambiar el arte» de este título: la ficha toma ya tu elección (el fondo, o el póster si no tiene fondo). */
+    artPicked(metaId, which, url) {
+      if (el.hidden || !item || item.meta_id !== metaId) return;
+      if (which === "background") item = { ...item, pickedArt: true };
+      else if (which === "poster" && url) item = { ...item, image: url };
+      load({ quiet: true });
+    },
     /** Cambió una descarga: el botón (y, si cambió de estado, los episodios) al día, sin mover el foco. */
     downloadsChanged(statusChanged = false) {
       if (el.hidden || !details || details.error) return;

@@ -4,6 +4,7 @@ import { kicker, platformColor, stageKind, SYSTEMS, systemColor, systemOf, thumb
 import { ICONS, platformMark, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { alternativeRunner, clampRatio, coverRatio, isGame, isSeries, isWatchable, needsInternet, primaryLabel } from "../core/library.js";
+import { ArtFit } from "./art-fit.js";
 import { Button } from "./button.js";
 import { Badge, PlatformMark, Progress } from "./ui.js";
 
@@ -42,7 +43,18 @@ function artOr(src, fallback, className) {
  *  portada desenfocada de fondo y la caja encima, con su forma, del lado derecho. */
 function caseArt(item) {
   return h("span", { class: "tile__case", style: { "--case-ratio": String(clampRatio(coverRatio(item))) } },
-    art(item.image, "tile__case-blur"), art(item.image, "tile__case-box"));
+    art(item.image, "art-fit__blur"), art(item.image, "tile__case-box"));
+}
+
+// El destacado mide ~1000 px de ancho en la TV (core/images.js · sized lo pide de ese tamaño, no el original de 8 MB).
+const FEATURE_PX = 1040;
+
+/** Arte del destacado. Un video sin fondo ancho trae solo su póster: va con el tratamiento de póster (ArtFit), no
+ *  recortado a lo ancho; uno con fondo también pasa por ArtFit, por si su «fondo» resulta ser otro póster. */
+function featureArt(item) {
+  if (!isWatchable(item)) return art(sized(item.hero || item.image, FEATURE_PX));
+  const src = item.hero || item.image;
+  return src ? ArtFit(sized(src, FEATURE_PX), { poster: !item.hero, className: "tile__art" }) : null;
 }
 
 /** Logotipo del destacado; si no carga, su lugar lo toma el título en texto. */
@@ -93,7 +105,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
   const boxed = stageKind(item) === "case";
   return tile(focusId, ["tile--feature", isWatchable(item) && "tile--feature-video", boxed && "tile--feature-case", !boxed && item.extra?.placeholder_hero && "tile--placeholder",
     !boxed && item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
-    boxed ? caseArt(item) : art(item.hero || item.image),
+    boxed ? caseArt(item) : featureArt(item),
     h("span", { class: "tile__shade tile--feature__shade" }),
     platform(item, ["tile__platform--pill", "tile--feature__store"]),
     h("div", { class: "tile--feature__body" },

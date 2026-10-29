@@ -1,5 +1,10 @@
-import { h, hideAfterExit, mount } from "../core/dom.js";
+import { cssUrl, h, hideAfterExit, mount } from "../core/dom.js";
+import { sized } from "../core/images.js";
 import { ScreenHead } from "./ui.js";
+
+// Del tamaño en que se ven (core/images.js): una casilla del mes (~1/7 de la pantalla) y el póster chico de la lista.
+const CELL_PX = 240;
+const THUMB_PX = 60;
 
 /**
  * Próximos estrenos en vista calendario (como «Sale hoy › el mes» del iPhone): el mes de las series que sigues, cada día
@@ -55,7 +60,7 @@ export function createCalendar({ load, onPick, onMove, onClose, onChange = () =>
     mount(grid, cells.map((c, i) => {
       if (!c) return h("span", { class: "calendar__cell calendar__cell--blank", "aria-hidden": "true" });
       const shows = airings(c.iso);
-      const art = shows.slice(0, 2).map((s) => h("span", { class: "calendar__art", style: s.image ? { backgroundImage: `url("${s.image}")` } : null }));
+      const art = shows.slice(0, 2).map((s) => h("span", { class: "calendar__art", style: s.image ? { backgroundImage: cssUrl(sized(s.image, CELL_PX)) } : null }));
       return h("button", {
         class: ["calendar__cell", c.iso === today && "calendar__cell--today", c.iso < today && "calendar__cell--past",
           shows.length > 0 && "calendar__cell--busy", shows.length > 1 && "calendar__cell--split"],
@@ -76,7 +81,7 @@ export function createCalendar({ load, onPick, onMove, onClose, onChange = () =>
     mount(list, shows.length ? shows.map((s, i) => h("button", {
       class: ["calendar__show", zone === "list" && i === row && "calendar__show--focused"], type: "button", tabindex: "-1", role: "listitem",
       onClick: () => onPick?.(s),
-    }, s.image ? h("img", { class: "calendar__thumb", src: s.image, alt: "", loading: "lazy" }) : h("span", { class: "calendar__thumb" }),
+    }, s.image ? h("img", { class: "calendar__thumb", src: sized(s.image, THUMB_PX), alt: "", loading: "lazy" }) : h("span", { class: "calendar__thumb" }),
     h("span", { class: "calendar__show-text" },
       h("strong", { class: "calendar__show-title" }, s.title),
       h("span", { class: "calendar__show-meta" }, [s.episode_label, s.time, s.network].filter(Boolean).join(" · ")))))

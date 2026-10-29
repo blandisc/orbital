@@ -7,7 +7,7 @@
 /* Esquinas limpias: el arte (que se acerca al enfocar) y su sombra curvan igual que la tarjeta, y la orilla fina va encima.
    Antes, en Edge, la capa del arte a veces se salía del recorte redondeado y dejaba una sombra en las esquinas. */
 .tile--feature > .tile__art, .tile--feature > .tile__shade { border-radius: inherit; }
-.tile--feature-video > .tile__art { object-position: center 25%; } /* película o serie, ancha y bajita: el recorte se toma arriba
+.tile--feature-video > .tile__art { --art-fit-y: 25%; --art-fit-pad: var(--inset-feature); } /* película o serie, ancha y bajita: el recorte se toma arriba
    (donde van las caras), como la ficha; del centro salía la barbilla. Los juegos no: su arte va pensado al centro. */
 .tile--feature::after {
   content: ""; position: absolute; inset: 0; z-index: var(--z-raised); border-radius: inherit; pointer-events: none;
@@ -61,7 +61,6 @@
 /* Estuche: solo hay caja (GBA cuadrada, Switch alta). Su portada desenfocada llena el fondo y la caja
    va encima, con su forma, del lado derecho; el texto queda a la izquierda, sin pisarla. */
 .tile__case { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.tile__case-blur { position: absolute; inset: -2rem; width: calc(100% + 4rem); height: calc(100% + 4rem); object-fit: cover; filter: blur(var(--blur-case)) saturate(1.25) brightness(.7); }
 .tile__case-box {
   position: absolute; top: 7%; right: 6%; height: 58%; aspect-ratio: var(--case-ratio, .7); object-fit: cover;
   border-radius: var(--radius-sm); box-shadow: var(--shadow-card), 0 0 0 1px var(--color-hairline-strong); rotate: -2deg;

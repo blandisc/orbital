@@ -1,10 +1,14 @@
-import { cssUrl, h, mount } from "../core/dom.js";
+import { h, mount } from "../core/dom.js";
 import { centeredOffset, rowOffset } from "../core/library.js";
 import { swipeArea, swipeSteps } from "../core/swipe.js";
 import { logoUrl } from "../core/foryou.js";
+import { sized } from "../core/images.js";
 import { tokenPx } from "../core/tokens.js";
+import { ArtFit } from "./art-fit.js";
 import { Card, RankedCard } from "./card.js";
 import { CollectionCard, SourceBadge } from "./collection-card.js";
+
+const STAGE_PX = 640; // «Porque viste»: el panel mide --because-stage-width (30rem, más con el texto grande)
 
 /**
  * Filas de tarjetas. Muestra una fila a la vez (la siguiente asoma) y desplaza la
@@ -65,7 +69,15 @@ export function createShelf({ onPick, onSwipe }) {
       shown = i;
       const item = seedItems[i] || info;
       const id = item.seed || item.meta_id;
-      art.style.backgroundImage = cssUrl(item.hero || info.image);
+      // Su propio arte: el fondo ancho o, sin él, su póster con el tratamiento de póster (antes caía al póster de la fila,
+      // que es de otro título). El nuevo entra encima del anterior y, ya listo, se queda solo con él (sin parpadeo).
+      const src = item.hero || item.image;
+      if (src) {
+        art.append(ArtFit(sized(src, STAGE_PX), { poster: !item.hero, onReady: ({ el: fresh }) => {
+          const layers = [...art.children];
+          layers.slice(0, Math.max(0, layers.indexOf(fresh) - 1)).forEach((old) => old.remove());
+        } }));
+      } else mount(art);
       name.textContent = item.title;
       name.hidden = false;
       logo.hidden = true;

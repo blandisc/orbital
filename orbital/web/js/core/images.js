@@ -28,3 +28,16 @@ export function sized(url, cssWidth, ratio) {
   try { host = new URL(url).hostname; } catch { return url; }
   return url.startsWith("https://") && HOSTS.has(host) ? `/api/img?w=${w}&u=${encodeURIComponent(url)}` : url;
 }
+
+/**
+ * Un póster vertical en una caja ancha: recortado a lo ancho solo quedaba una franja borrosa del centro (nubes, una
+ * barbilla). Si la caja es más de 1,25 veces más ancha (en proporción) que la imagen, es «muy angosta para su caja» y va
+ * con el tratamiento de póster (`ArtFit`: nítida y entera sobre una copia muy desenfocada de sí misma).
+ */
+export const TOO_NARROW = 1.25;
+
+/** `boxRatio` y `imageRatio`: ancho / alto. Sin medidas (0, NaN) no decide nada: se deja como estaba (cubrir). */
+export function tooNarrow(boxRatio, imageRatio, limit = TOO_NARROW) {
+  if (!(boxRatio > 0) || !(imageRatio > 0)) return false;
+  return boxRatio / imageRatio > limit;
+}

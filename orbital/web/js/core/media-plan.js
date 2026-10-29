@@ -73,7 +73,8 @@ const EYEBROW = { award: "Premio", studio: "Estudio", year: "Por año", genre: "
 const card = (id, title, collection, extra = {}) => ({ id, title, source: "collection", collection, subtitle: collection.detail || "", ...extra });
 
 /** El héroe de arriba con una tarjeta enfocada: el fondo de su primer título y lo que la tarjeta es. */
-const heroOf = (first, eyebrow) => ({ image: first?.hero || first?.image, hero: first?.hero || first?.image, extra: { eyebrow, description: "" } });
+// Sin fondo ancho, `hero` va vacío: así el fondo de la pantalla sabe que es un póster (backdrop · poster) y no lo recorta.
+const heroOf = (first, eyebrow) => ({ image: first?.hero || first?.image, hero: first?.hero || null, extra: { eyebrow, description: "" } });
 
 /**
  * Las filas de la sección, en el orden del iPhone. `filter`: "all" | "series" | "movie" (☰ › Mostrar).

@@ -125,6 +125,19 @@ test("cada imagen se pide al tamaño en que se ve", async () => {
   assert.equal(sized("img/placeholders/a.jpg", 240, 1), "img/placeholders/a.jpg");
 });
 
+test("un póster en una caja ancha va con el tratamiento de póster, no recortado", async () => {
+  const { tooNarrow, TOO_NARROW } = await import("../../orbital/web/js/core/images.js");
+  assert.equal(TOO_NARROW, 1.25);
+  assert.equal(tooNarrow(16 / 9, 2 / 3), true); // un póster en la ficha o en una tarjeta ancha
+  assert.equal(tooNarrow(16 / 9, 16 / 9), false); // un fondo ancho en su caja
+  assert.equal(tooNarrow(2.2, 16 / 9), false); // un fondo 16:9 en el destacado, más bajito: se recorta poco, se llena
+  assert.equal(tooNarrow(16 / 9, 4 / 3), true); // una captura 4:3 en 16:9: 1,33 > 1,25
+  assert.equal(tooNarrow(16 / 9, 1.5), false); // 3:2 en 16:9: 1,19, se llena
+  assert.equal(tooNarrow(0, 2 / 3), false); // sin medidas no decide (se deja como estaba)
+  assert.equal(tooNarrow(16 / 9, NaN), false);
+  assert.equal(tooNarrow(16 / 9, 1, 2), false); // el límite se puede cambiar
+});
+
 test("Películas y series: Destacados, debajo Seguir viendo y luego lo de Para ti en su orden, sin «Multimedia»", async () => {
   const { sectionRows } = await import("../../orbital/web/js/core/library.js");
   const rows = [{ id: "media" }, { id: "continue" }, { id: "curated:recs" }, { id: "curated:platforms" }, { id: "curated:spotlight" }, { id: "movies" }];

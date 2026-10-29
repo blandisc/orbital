@@ -178,7 +178,12 @@ const ui = {
   }),
   artPicker: createArtPicker({
     onMove: () => sound.play("move"),
-    onPicked: (target) => { sound.play("select"); ui.toast.show(`Arte nuevo para ${target.title}`, { tone: "success" }); loadLibrary(); },
+    onPicked: (target, which, url) => {
+      sound.play("select");
+      ui.toast.show(`Arte nuevo para ${target.title}`, { tone: "success" });
+      loadLibrary();
+      if (target.metaId) ui.title.artPicked(target.metaId, which, url); // la ficha abierta debajo toma tu elección ya
+    },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   // Una lista abierta de Películas y series (una tarjeta: plataforma, premio, estudio, año, tu lista, un género).
