@@ -23,9 +23,12 @@ python scripts/perf_budget.py real --seconds 60 --out tele.json
   un menú que casi siempre es rápido pero a veces se traba se percibe lento.
 - **% de un núcleo**: 100 % = un núcleo entero ocupado. La Legion Go tiene 8; aun así, lo que Orbital usa en reposo
   baja los cuadros del juego y la batería.
-- **Demo vs. tele**: la demo (Edge sin ventana) dibuja por software, así que exagera la CPU en absoluto; sirve para
-  comparar antes y después y para medir la respuesta a botones. El reposo, la GPU y la memoria de verdad se miden en
-  la tele.
+- **Demo vs. tele**: la demo corre en un Edge sin ventana que sí usa la GPU (el auditor lo comprobó: ANGLE sobre la Radeon),
+  así que también mide GPU; sirve para comparar antes y después y para la respuesta a botones. El reposo de la máquina, la
+  memoria de los procesos y la GPU con la pantalla de verdad se miden en la tele. Los números de la medición independiente
+  (con su método) están en la sección «Línea base».
+- **Cuidado con lo que no ve el hilo principal**: la CPU de la página (`TaskDuration`) no incluye composición, GPU ni el
+  proceso principal de Edge. Este último gastaba 14 % fijo solo por pedir el mando una vez (ver `core/pads.js`).
 
 ## Presupuestos
 

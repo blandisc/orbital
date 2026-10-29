@@ -36,7 +36,7 @@ BUDGET = {
     "boton_p95_ms": 100,
     "cambio_seccion_p95_ms": 150,    # LB/RB → la sección nueva pintada
     "ficha_ms": 300,                 # A → la ficha a la vista (con datos locales)
-    "tareas_largas": 0,              # tareas de más de 50 ms al moverse
+    "tareas_largas": 0,              # tareas de más de 50 ms en todo el recorrido
     "reposo_cpu_pct": 2.0,           # de un núcleo, la página quieta (cualquier sección)
     "memoria_js_mb": 60,
     "api_local_p95_ms": 50,          # status, ui, settings, library (en caché)
@@ -125,7 +125,7 @@ def demo(url):
             return round((b["TaskDuration"] - a["TaskDuration"]) / seconds * 100, 1)
 
         def keys(seq, gap=180):
-            page.evaluate("window.__perf.inputs = []; window.__perf.long = []")
+            page.evaluate("window.__perf.inputs = []")  # las tareas largas no se borran: cuentan las de todo el recorrido
             for k in seq:
                 page.keyboard.press(k)
                 page.wait_for_timeout(gap)
@@ -140,6 +140,7 @@ def demo(url):
         r["peticiones_por_ruta"] = {k: api.count(k) for k in sorted(set(api), key=api.count, reverse=True)[:6]}
         page.keyboard.press("Escape")  # el asistente de primera vez
         page.wait_for_timeout(1500)
+        page.evaluate("window.__perf.long = []")  # desde aquí, todo el recorrido (secciones, ficha, flechas)
 
         moves, longs = [], []
         perf = keys(["ArrowRight", "ArrowRight", "ArrowLeft", "ArrowLeft", "ArrowDown", "ArrowUp"] * 3)
@@ -177,6 +178,7 @@ def demo(url):
                 page.wait_for_timeout(1500)
         r["boton_p50_ms"], r["boton_p95_ms"] = pct(moves, 50), pct(moves, 95)
         r["cambio_seccion_p95_ms"] = pct(sections, 95)
+        longs = page.evaluate("window.__perf.long")  # acumuladas (antes se borraban en cada tanda y daba 0 sin serlo)
         r["tareas_largas"] = len(longs)
         r["tareas_largas_ms"] = sorted(longs, reverse=True)[:5]
         m = metrics()

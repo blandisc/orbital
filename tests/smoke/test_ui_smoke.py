@@ -121,9 +121,11 @@ def test_screensaver_fills_the_screen_edges(page):
     left, right = [page.evaluate(f"(() => {{ const r = document.querySelectorAll('.foryou-mosaic__col')[{i}].getBoundingClientRect(); return [r.left, r.right]; }})()") for i in (6, 7)]
     assert left[0] < 0 < left[1] < width / 4 and 3 * width / 4 < right[0] < width < right[1]  # asoman por los dos lados
     assert all(page.locator(".foryou-mosaic__col").nth(i).locator(".foryou-mosaic__tile").count() > 0 for i in (6, 7))
-    page.evaluate("delete document.body.dataset.screensaver")  # sin protector, las de las orillas se retiran
-    page.wait_for_function("document.querySelectorAll('.foryou-mosaic__col:not([hidden])').length === 6", timeout=8000)
-    assert page.locator(".foryou-mosaic__col[hidden] .foryou-mosaic__tile").count() == 0
+    # Sin protector también se quedan: desde ff4561a1 las orillas llenan el margen de la TV siempre (antes solo con el
+    # protector; esta prueba esperaba que se retiraran y fallaba desde entonces).
+    page.evaluate("delete document.body.dataset.screensaver")
+    page.wait_for_timeout(600)
+    assert page.evaluate("document.querySelectorAll('.foryou-mosaic__col:not([hidden])').length") == 8
 
 
 PIXEL = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==")
