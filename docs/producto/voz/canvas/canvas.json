@@ -162,7 +162,7 @@
    "y": 8624,
    "w": 402,
    "h": 874,
-   "title": "Propuesta · la guía, más sencilla (se abre con el «?»)"
+   "title": "Propuesta · la guía gráfica, pulida (se abre con el «?»)"
   },
   "6-siri.dc.html": {
    "x": 0,
@@ -333,7 +333,7 @@
    "w": 520,
    "size": "m",
    "fill": "orange",
-   "text": "Se llega por el «?» junto al micrófono (hoja corta, estirado e iPad), por Ajustes › Voz y Siri, diciendo «qué puedo decir», «ayuda» o «muéstrame la guía» (ya hecho en la consola, falta tu visto bueno; dicho en el iPhone abre la guía del iPhone, no la de la tele) y desde un «No entendí».\n\nLa guía, más sencilla:\n1. «Ahora» arriba: las tres frases del momento, las mismas de la pista. Si la abres viendo una serie, salen las de serie.\n2. Lo esencial: las otras siete, una por renglón, con una línea de qué hace.\n3. Todo lo demás plegado en «Más frases · 118».\n4. Siri y Alexa al final, en dos renglones.\nTocar cualquier frase la manda a la tele y cierra la guía."
+   "text": "Se llega por el «?» junto al micrófono (hoja corta, estirado e iPad), por Ajustes › Voz y Siri, diciendo «qué puedo decir», «ayuda» o «muéstrame la guía» (ya hecho en la consola, falta tu visto bueno; dicho en el iPhone abre la guía del iPhone, no la de la tele) y desde un «No entendí».\n\nLa guía, gráfica y pulida:\n1. «Ahora» arriba: las tres frases del momento en tarjetas verde agua, las mismas de la pista.\n2. Lo esencial: las otras siete en tarjetas con ícono y una línea de qué hacen.\n3. Dónde hablarle en tres tarjetas chicas (aquí, Siri, Alexa).\n4. Todo lo demás plegado en «Más frases, por tema».\nTocar cualquier frase la manda a la tele y cierra la guía."
   },
   "t8": {
    "x": 0,
