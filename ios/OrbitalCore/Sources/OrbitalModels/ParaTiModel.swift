@@ -229,7 +229,8 @@ public final class ParaTiModel: ObservableModel {
 
     private static func platformName(_ list: ForYouList) -> String {
         guard let brand = list.brand else { return list.title }
-        return Tmdb.platforms.first { $0.brand == brand }?.name ?? brand.capitalized
+        // «Prime Video», no «Prime»: el nombre de JustWatch si TMDB no la tiene (la píldora la reconoce por ese nombre).
+        return Tmdb.platforms.first { $0.brand == brand }?.name ?? Charts.justWatchPlatforms.first { $0.brand == brand }?.name ?? brand.capitalized
     }
 
     public func load() async {

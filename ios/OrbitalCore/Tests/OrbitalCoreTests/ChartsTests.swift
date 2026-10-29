@@ -75,4 +75,12 @@ final class ChartsTests: XCTestCase {
         XCTAssertEqual(second.map(\.movement), [1, nil])
         XCTAssertEqual(second.map(\.isNew), [false, true])
     }
+
+    func testPlatformBrandIsFoundByNameOrById() {
+        XCTAssertEqual(Charts.brand(named: "Prime Video"), "prime")
+        XCTAssertEqual(Charts.brand(named: "Prime"), "prime", "así llegaba Prime Video a la píldora de Para ti")
+        XCTAssertEqual(Charts.brand(named: "Paramount+"), "paramount")
+        XCTAssertEqual(Charts.brand(named: "Top 10 en Netflix"), "netflix")
+        XCTAssertNil(Charts.brand(named: "Lo más visto"))
+    }
 }

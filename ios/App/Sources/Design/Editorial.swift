@@ -99,7 +99,8 @@ struct WatchlistCard: View {
 
 /// «En Netflix», «En Disney+»: la píldora de una plataforma en su color, con su logo chico (el ícono de la app) y el texto en
 /// blanco. Con `rank`, su puesto en esa plataforma: el logo ya dice dónde, así que solo lleva «N.º 1» (en un póster, chica).
-/// Si no es una plataforma conocida, la cápsula de vidrio de siempre con el texto completo.
+/// Si no es una plataforma conocida, la cápsula de vidrio de siempre: «En Max» o, con `rank`, solo «N.º 3» (el texto completo
+/// no cabía en un póster y se cortaba en «N.º 3 e…»); VoiceOver sí dice de dónde.
 struct PlatformBadge: View {
     let name: String
     var rank: Int? = nil
@@ -119,16 +120,14 @@ struct PlatformBadge: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(spoken)
         } else {
-            styled(full)
+            styled(short)
                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1).glassEffect(.regular, in: Capsule())
                 .accessibilityLabel(spoken)
         }
     }
 
-    /// Junto al logo: «N.º 1» o «En Netflix».
+    /// «N.º 1» o «En Netflix».
     private var short: Text { if let n = rank { Text("N.º \(n)") } else { Text("En \(name)") } }
-    /// Sin logo, el nombre va en el texto: «N.º 1 en Max».
-    private var full: Text { if let n = rank { Text("N.º \(n) en \(name)") } else { Text("En \(name)") } }
     private var spoken: Text { if let n = rank { Text("Número \(n) en \(name)") } else { Text("En \(name)") } }
     private func styled(_ text: Text) -> some View { text.recipe(.caption, color: DS.paper).fontWeight(.semibold).lineLimit(1) }
 }

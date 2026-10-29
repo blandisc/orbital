@@ -56,7 +56,8 @@ public actor Charts {
     public static func brand(named name: String) -> String? {
         let folded = fold(name)
         if folded.contains("netflix") { return "netflix" }
-        return justWatchPlatforms.first { fold($0.name) == folded || folded.contains(fold($0.name)) }?.brand
+        // También por su id («prime», «appletv»): así llega el nombre cuando no hay uno bonito.
+        return justWatchPlatforms.first { $0.brand == folded || fold($0.name) == folded || folded.contains(fold($0.name)) }?.brand
     }
     /// El logo de una plataforma (el de Netflix aparte: no es una lista de JustWatch).
     public static func platformLogo(_ brand: String) -> String? { brand == "netflix" ? netflixLogo : justWatchLogo(brand) }
