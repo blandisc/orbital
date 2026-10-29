@@ -23,14 +23,14 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
     if (item?.key) detailTimer = setTimeout(() => fetchDetails(item), 250);
   };
   const mosaic = createForYouMosaic({ onFocus: (item) => focused(item), onPick: (item) => activate(item), covered });
-  const el = h("section", { class: "foryou is-parked", "aria-label": "Para ti" }, h("div", { class: "foryou__stage" }, mosaic.el), notice);
+  const el = h("section", { class: "foryou is-parked", hidden: true, "aria-label": "Para ti" }, h("div", { class: "foryou__stage" }, mosaic.el), notice);
 
   let data = null;
   let loading = null;
   let loads = 0;
 
   function paint() {
-    if (el.classList.contains("is-parked")) return; // estacionada (oculta): el mosaico no arranca
+    if (el.hidden || el.classList.contains("is-parked")) return; // oculta o estacionada: el mosaico no arranca
     mosaic.start();
     focused(mosaic.current);
   }
@@ -117,7 +117,10 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
 
   return {
     el, load, handle, hints, dismiss,
-    show: () => { el.classList.remove("is-parked"); if (!data) load(); paint(); },
+    show: () => { el.hidden = false; el.classList.remove("is-parked"); if (!data) load(); paint(); },
+    // Con Orbital quieta (main.js · prepareParked): de oculta a estacionada, para que su layout y sus imágenes se hagan en
+    // tiempo libre y no al entrar. Al arrancar sigue oculta: sus ~50 imágenes competían con el Inicio.
+    prepare: () => { el.hidden = false; },
     hide: () => { mosaic.stop(); el.classList.add("is-parked"); }, // estacionada, no hidden: conserva su layout (base.css)
     setGlyphs: () => paint(),
     wake: () => mosaic.wake(),

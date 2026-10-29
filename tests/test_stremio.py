@@ -555,3 +555,29 @@ def test_a_series_you_caught_up_with_comes_back_when_the_new_episode_airs(tmp_pa
     # «Quitar de Seguir viendo»: apunta al E5 para que no vuelva otra vez.
     cat.watch.dismiss_continue("tt1")
     assert fake.saved[-1]["state"]["video_id"] == "tt1:38:5" and fake.saved[-1]["state"]["timeOffset"] == 0
+
+
+def test_a_meta_missing_everywhere_is_not_asked_again_but_a_network_error_is():
+    """Una ficha que no existe (404 en todas las fuentes) se recuerda: antes cada GET de la biblioteca volvía a buscar los
+    títulos de un complemento ajeno a Cinemeta varias veces por segundo. Un error de red sí se vuelve a intentar."""
+    import pytest
+
+    from orbital.library import cinemeta
+
+    calls = []
+    client = cinemeta.Cinemeta()
+
+    def get(path, base=None):
+        calls.append(path)
+        raise cinemeta.CinemetaError("No pude leer el catálogo de Stremio: HTTP Error 404: Not Found" if "beeg" in path
+                                     else "No pude leer el catálogo de Stremio: The read operation timed out")
+
+    client._get = get
+    for _ in range(3):
+        with pytest.raises(cinemeta.CinemetaError):
+            client.meta("movie", "beeg:1631656671")
+    assert len(calls) == 1  # la primera vez se pregunta; las demás, no
+    for _ in range(2):
+        with pytest.raises(cinemeta.CinemetaError):
+            client.meta("movie", "tt3089630")
+    assert len(calls) == 3  # sin conexión: se vuelve a intentar

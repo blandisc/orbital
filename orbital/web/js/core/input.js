@@ -284,10 +284,9 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
       trace({ src: "action", from: "pad", action, repeat: repeater.isRepeat(action) });
       onAction(action, { repeat: repeater.isRepeat(action) });
     });
-    // Con Orbital quieta (`resting`), el mando se lee 15 veces por segundo en vez de 60: el primer botón tarda a lo mucho
-    // 66 ms y despierta todo. Y sin requestAnimationFrame: pedir un cuadro obliga a Edge a armar uno aunque no haya nada
-    // que dibujar (el proceso del navegador se quedaba en 14 % de un núcleo con todo quieto). Leer el mando no necesita
-    // cuadros; solo mientras lo usas se lee al ritmo de la pantalla.
+    // El mando se lee con temporizadores, nunca pidiendo cuadros: requestAnimationFrame obliga a Edge a armar uno aunque no
+    // haya nada que dibujar (la página se quedaba arriba del 2 % los 12 s después de cada tecla). 60 lecturas por segundo
+    // mientras lo usas, 30 si lleva 2 s sin botones (el primero tarda a lo mucho 33 ms) y 15 con Orbital quieta.
     if (resting() && !active.size) {
       // Y si se puede, ni eso: se suelta el mando del navegador (pads.js) y el primer botón llega del servidor.
       if (canSleep(pads)) {
@@ -298,18 +297,19 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
         onReading(false);
         return;
       }
-      setTimeout(() => loop(performance.now()), 66);
-    } else requestAnimationFrame(loop);
+      next(66);
+    } else next(active.size || now - lastPad < 2000 ? 16 : 33);
   };
+  const next = (ms) => setTimeout(() => loop(performance.now()), ms);
   acquirePads();
-  requestAnimationFrame(loop);
+  next(16);
   /** Cualquier botón, tecla, toque o aviso: si el mando estaba suelto, se vuelve a tomar. */
   function wake() {
     if (!sleeping) return;
     sleeping = false;
     acquirePads();
     swallowUntil = performance.now() + 250; // lo que ya venía apretado (el botón que despertó) no se repite
-    requestAnimationFrame(loop);
+    next(16);
   }
   return { wake };
 }

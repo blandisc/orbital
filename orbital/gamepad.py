@@ -382,6 +382,9 @@ class GamepadWatcher:
     POLL = 1 / 30
     POLL_IDLE = 1 / 4
     QUIET = 3.0  # s tras arrancar o despertar en que los mandos que aparecen ya estaban: no se avisan
+    # Preguntarle a XInput por un lugar vacío es lo caro (era el 40 % de lo que gastaba el servidor quieto): los vacíos se
+    # revisan una vez por segundo; un mando que llega tarda a lo mucho eso en notarse. Los conectados, a POLL.
+    EMPTY_EVERY = 1.0
 
     def __init__(self, on_event: Callable[[str], None],
                  on_buttons: Callable[[int, int, float], None] | None = None) -> None:
@@ -442,16 +445,22 @@ class GamepadWatcher:
         stick_state: list[tuple[int, ...]] = [()] * 4  # la dirección de cada stick en la vuelta anterior (histéresis)
         traced: list[tuple | None] = [None] * 4  # lo último anotado en entrada.log, por lugar
         quiet_until = time.monotonic() + self.QUIET
+        probe_at = [0.0] * 4  # cuándo volver a preguntar por cada lugar vacío
         while not self._stop.is_set():
             now = time.monotonic()
             if self._redetect.is_set():
                 self._redetect.clear()
                 was_connected = [False] * 4
+                probe_at = [0.0] * 4
                 quiet_until = now + self.QUIET
                 # Nada queda "mantenido" de antes de dormir (sin disparar eventos al soltar).
                 self._detectors = [ComboDetector() for _ in range(4)]
             for slot, detector in enumerate(self._detectors):
+                if not was_connected[slot] and now < probe_at[slot]:
+                    continue  # vacío la última vez: se vuelve a preguntar en EMPTY_EVERY
                 connected = get_state(slot, ctypes.byref(state)) == 0
+                if not connected:
+                    probe_at[slot] = now + self.EMPTY_EVERY
                 if connected and not was_connected[slot] and ids:
                     # Un mando nuevo en este lugar: su atajo de cerrar depende de la marca.
                     found = ids(slot)
