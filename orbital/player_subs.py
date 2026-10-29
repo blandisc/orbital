@@ -38,7 +38,7 @@ class SubtitleTrial:
     TRY = 10  # su capa (encima de la barra y los avisos)
     TRY_BACK = 8  # s que regresa al cambiar de subtítulo: la misma frase con el nuevo
     TRY_PRELOAD_WAIT = 1.0  # s sin moverte antes de bajar el siguiente de internet
-    SUBS_OVER_PANEL = 50  # sub-pos (% del alto) con el panel X abierto: los subtítulos se ven encima del panel
+    SUBS_OVER_PANEL = 46  # sub-pos (% del alto) con el panel X abierto: los subtítulos se ven encima del panel (desde 520)
 
     _try: dict | None = None
     _subs_lifted: float | None = None  # el sub-pos de antes de abrir el panel X (None: no se movieron)

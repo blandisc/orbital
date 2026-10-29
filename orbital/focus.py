@@ -132,10 +132,20 @@ def keep_game_in_front(launcher: Launcher, item_id: str, win, user_returned=lamb
     return fixed
 
 
+def reveal_once(on_reveal, done: bool) -> bool:
+    """Llama `on_reveal` si no se llamó ya; nunca impide mostrar el juego. Devuelve que ya se llamó."""
+    if on_reveal is not None and not done:
+        try:
+            on_reveal()
+        except Exception:  # noqa: BLE001 - lo que empieza al verse nunca impide mostrarlo
+            log.exception("Falló lo que empieza al verse")
+    return True
+
+
 def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runner: str | None = None,
                         notify=None, skip: threading.Event | None = None, timeout: float = READY_TIMEOUT,
                         win=None, sleep=time.sleep, pinned: int | None = None, ready_check=None,
-                        user_returned=None, clock=time.time, art_wait=None) -> bool:
+                        user_returned=None, clock=time.time, art_wait=None, on_reveal=None) -> bool:
     """Pantalla de carga hasta que el juego esté listo, y luego un fundido de Orbital al juego.
 
     Mientras el emulador abre se ven sus ventanas feas (la lista de juegos de Eden, una consola…).
@@ -146,12 +156,15 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
     Si ya estás en otra cosa, no se pelea por el foco. `skip`: B en la pantalla de carga.
     `pinned`: la ventana de Orbital ya fijada encima antes de lanzar (pin_orbital).
     `ready_check()`: otra señal de "listo" (el reproductor: hasta la primera imagen, no una ventana negra).
-    `art_wait()`: cuántos segundos más espera el arte de la pantalla de carga para verse (0 = ya; ver Sessions.art_wait)."""
+    `art_wait()`: cuántos segundos más espera el arte de la pantalla de carga para verse (0 = ya; ver Sessions.art_wait).
+    `on_reveal()`: lo que empieza justo cuando se ve (en el negro de la salida de la pantalla de carga): un tráiler que
+    esperaba en pausa. Sin pantalla de carga, al final. Una sola vez."""
     if win is None:
         if sys.platform != "win32":
             return False
         from . import windows as win
     notify = notify or (lambda event: None)
+    revealed = False
     orbital = pin_orbital(win) if pinned is None else pinned
     target = 0
     started = clock()
@@ -215,6 +228,7 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
                     sleep(min(max(left, .05), .2))  # nunca esperas diminutas (con un resto de 1e-16 no avanzaba)
             notify({"type": "launch-ready", "id": item_id})  # la pantalla de carga hace su salida
             sleep(FADE_TO_BLACK)
+            revealed = reveal_once(on_reveal, revealed)
             if target and win.foreground() != target:
                 win.focus(target)  # el juego al frente, aún debajo de Orbital (que sigue encima)
             # Del negro de la pantalla de carga al juego, sin fundir la ventana de Orbital encima: volverla
@@ -227,6 +241,7 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
                 # Sin "siempre encima", Windows deja a Orbital arriba de las ventanas normales: encima
                 # del juego aunque el juego tenga el foco. Se manda detrás.
                 win.place_below(orbital, target)
+    reveal_once(on_reveal, revealed)
     if not target:
         return False
     fg = win.foreground()

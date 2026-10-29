@@ -706,6 +706,9 @@ TAB_NAMES = {"audio": "Audio", "sub": "Subtítulos", "size": "Tamaño de los sub
              "source": "Versión", "playback": "Reproducción", "category": "Categoría", "channels": "Canales",
              "seek": "Adelantar", "volume": "Volumen", "episode": "Episodio"}
 PANEL_ROWS = 6  # filas visibles por columna; el resto se desplaza con el foco
+# Dónde empieza el panel (X, Y): 40 más arriba que antes, que la sexta fila terminaba en 998 y la fila de abajo (botones,
+# la nota de Versión, «Cerrar» con el dedo desde 986) empezaba ahí mismo: se encimaban (visto en la TV el 2026-10-29).
+PANEL_TOP = 520
 
 
 def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str:
@@ -713,7 +716,7 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
     # Una superficie sólida (como las hojas de Orbital) para leer sobre cualquier escena, con una
     # transición corta arriba; el video sigue visible encima.
     targets["panel"] = []
-    lines = [gradient(440, 560, 255, 40, 16), rrect(0, 560, W, H - 560, 0, PANEL, "28")]
+    lines = [gradient(PANEL_TOP - 120, PANEL_TOP, 255, 40, 16), rrect(0, PANEL_TOP, W, H - PANEL_TOP, 0, PANEL, "28")]
     if playing or muted:
         label = " · ".join(p for p in ("Sigue reproduciendo" if playing else "", "sin sonido" if muted else "") if p)
         label = label[:1].upper() + label[1:]
@@ -735,9 +738,9 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
         name = TAB_NAMES.get(column.key, column.key)
         if column.pages:  # «Episodios · T5»: la temporada a la vista
             name += f" · {column.pages[column.page]['label']}"
-        lines.append(text(x + 18, 600, esc(name), 22, TEXT if active else MUTED, weight="semi"))
+        lines.append(text(x + 18, PANEL_TOP + 40, esc(name), 22, TEXT if active else MUTED, weight="semi"))
         if TOUCH:
-            targets["panel"].append((x, 580, col_w, 44, ("column", c)))
+            targets["panel"].append((x, PANEL_TOP + 20, col_w, 44, ("column", c)))
         # Antes la lista se recentraba en cada paso de la cruceta (todo brincaba); ahora solo se
         # desplaza cuando el foco sale de las filas a la vista.
         if column.index < column.top:
@@ -745,7 +748,7 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
         elif column.index >= column.top + PANEL_ROWS:
             column.top = column.index - PANEL_ROWS + 1
         column.top = first = max(0, min(column.top, len(column.options) - PANEL_ROWS))
-        y = 644  # filas de 54 cada 60: la sexta termina antes de la fila de botones (en 16:10 se encimaban)
+        y = PANEL_TOP + 84  # filas de 54 cada 60: la sexta termina (958) bien antes de la fila de botones
         if not column.options:
             lines.append(text(x + 18, y + 27, "Nada que elegir aquí", 24, MUTED, align=4))
         if column.grid:
@@ -782,7 +785,7 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                           rrect(x + 52, y + 47, max(4, bar_w * min(1, option["progress"])), 4, 2, tint)]
             y += 60
         if len(column.options) > PANEL_ROWS:  # en el encabezado, a la derecha: abajo se encimaba con la nota de Fuentes
-            lines.append(text(x + col_w - 18, 602, f"{column.index + 1} de {len(column.options)}", 20, MUTED, align=9))
+            lines.append(text(x + col_w - 18, PANEL_TOP + 42, f"{column.index + 1} de {len(column.options)}", 20, MUTED, align=9))
     if panel.column.key == "source":  # la enfocada en palabras y qué quiere decir «Al instante», donde se elige
         note = "Al instante: Real-Debrid ya la tiene guardada y arranca en segundos. Las demás primero se descargan y pueden tardar."
         if panel.column.grid and panel.column.chosen:

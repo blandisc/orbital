@@ -21,6 +21,7 @@ La TV en vivo usa los mismos botones con otro sentido (no hay a dónde adelantar
 from __future__ import annotations
 
 import logging
+import math
 import threading
 import time
 
@@ -574,6 +575,9 @@ class PlayerScreen(SubtitleTrial):
             if isinstance(action, str):
                 self._try_press(action)
             return
+        if self._episode_steps and self._episode_timer is not None and player_ui.hit("card", x, y) == "b":
+            self._cancel_episode()  # «Cancelar» en la cuenta atrás del cambio de episodio
+            return
         if self._card is not None:
             action = player_ui.hit("card", x, y)
             if action == "a":
@@ -600,7 +604,7 @@ class PlayerScreen(SubtitleTrial):
                 self._draw_panel()
             elif action in ("lb", "rb"):  # «‹ Temporada» / «Temporada ›»
                 self._menu_press(action)
-            elif action == "close" or y < 560:  # tocar el video, arriba del panel, también lo cierra
+            elif action == "close" or y < player_ui.PANEL_TOP:  # tocar el video, arriba del panel, también lo cierra
                 self.close_menu()
             return
         self._tap_video(x, y)
@@ -647,7 +651,9 @@ class PlayerScreen(SubtitleTrial):
         if player_ui.set_input("keyboard"):
             self._redraw_for_input()
         if button == "esc":
-            if self.menu is None and self._card is None and self._try is None:
+            if self._episode_steps and self._episode_timer is not None:
+                button = "b"  # Esc en la cuenta atrás del cambio de episodio: cancelar (la tarjeta dice «Esc Cancelar»)
+            elif self.menu is None and self._card is None and self._try is None:
                 self._quiet_episodes = 0
                 self._show_card({"kind": "quit", "title": self.current.title})
                 return
@@ -712,9 +718,7 @@ class PlayerScreen(SubtitleTrial):
             self._menu_press(button)
             return
         if button == "b" and self._episode_steps and self._episode_timer is not None:
-            self._episode_timer.cancel()  # LT/RT sin querer: B lo deshace antes de que cargue
-            self._episode_timer, self._episode_steps = None, 0
-            self.toast("Sigues en este episodio", 2)
+            self._cancel_episode()  # LT/RT sin querer: B lo deshace antes de que cargue
             return
         # «¿Sigues viendo?»: salir es «Mantén B», como en todo el reproductor (un toque no saca del video).
         still = self._card is not None and self._card["kind"] == "still"
@@ -881,26 +885,67 @@ class PlayerScreen(SubtitleTrial):
 
     # s: RT, RT seguidos suman (dos episodios adelante) antes de cargar; y da tiempo de arrepentirse con B
     # (en la Legion Go en la mano, los gatillos se rozan sin querer).
-    EPISODE_WAIT = 2.0
+    EPISODE_WAIT = 3.0
+    EPISODE_CARD = 9  # capa de la cuenta atrás del cambio de episodio (como la tarjeta «Siguiente episodio»)
 
     def _queue_episode(self, meta: dict, step: int) -> None:
-        """LT/RT: se cuentan las pulsaciones y, cuando paras, se carga ese episodio (antes dos RT
-        rápidos cargaban el mismo «siguiente» dos veces)."""
+        """LT/RT: se cuentan las pulsaciones y, cuando paras, se carga ese episodio (antes dos RT rápidos cargaban el
+        mismo «siguiente» dos veces). Mientras, la tarjeta de «Siguiente episodio» con la cuenta atrás en su anillo y
+        «B Cancelar»: se ve cuándo va a cambiar y hasta cuándo se puede arrepentir (antes solo un aviso que se iba)."""
         self._episode_steps += step
         n = self._episode_steps
-        if n == 0:
-            self.toast("Sigues en este episodio", 2)
-        elif abs(n) == 1:
-            self.toast(("Episodio siguiente" if n > 0 else "Episodio anterior") + " · B cancela", 3)
-        else:
-            self.toast(f"{abs(n)} episodios {'adelante' if n > 0 else 'atrás'} · B cancela", 3)
         if self._episode_timer:
             self._episode_timer.cancel()
+        if n == 0:  # RT y luego LT: de vuelta en el mismo
+            self._episode_timer = None
+            self._stop_episode_card()
+            self.toast("Sigues en este episodio", 2)
+            return
+        if abs(n) == 1:
+            title = "Siguiente" + (f" · {meta['next']}" if n > 0 and meta.get("next") else "") if n > 0 else "Anterior"
+        else:
+            title = f"{abs(n)} episodios {'adelante' if n > 0 else 'atrás'}"
         self._episode_timer = threading.Timer(self.EPISODE_WAIT, self._step_episodes, args=(meta,))
         self._episode_timer.daemon = True
         self._episode_timer.start()
+        self._episode_countdown(title)
+
+    def _episode_countdown(self, title: str) -> None:
+        """La tarjeta con el anillo que se vacía y los segundos que faltan, redibujada 10 veces por segundo."""
+        started = time.monotonic()
+        self._episode_anim = started
+
+        def draw() -> bool:
+            left = self.EPISODE_WAIT - (time.monotonic() - started)
+            if left <= 0 or getattr(self, "_episode_anim", None) != started:
+                return False
+            self._overlay(self.EPISODE_CARD, player_ui.upnext_ass(
+                title, "Cambio de episodio", seconds=math.ceil(left), progress=left / self.EPISODE_WAIT,
+                actions=[("B", "Cancelar")]))
+            return True
+
+        draw()  # ya, sin esperar al hilo: la tarjeta sale en cuanto oprimes RT
+
+        def run() -> None:
+            while draw():
+                time.sleep(.1)
+
+        threading.Thread(target=run, daemon=True, name="episode-countdown").start()
+
+    def _stop_episode_card(self) -> None:
+        self._episode_anim = None
+        self._overlay(self.EPISODE_CARD, None)
+
+    def _cancel_episode(self) -> None:
+        """B (o «Cancelar» con el dedo) durante la cuenta atrás: no cambia nada."""
+        if self._episode_timer is not None:
+            self._episode_timer.cancel()
+        self._episode_timer, self._episode_steps = None, 0
+        self._stop_episode_card()
+        self.toast("Sigues en este episodio", 2)
 
     def _step_episodes(self, meta: dict) -> None:
+        self._stop_episode_card()
         delta, self._episode_steps = self._episode_steps, 0
         if delta and self.current is not None:
             self._in_background(self.on_episode, meta, delta, failed="No pude cambiar de episodio")

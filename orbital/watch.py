@@ -1590,14 +1590,17 @@ class Watch:
         try:
             self.player.play(
                 self.launcher.run, mpv_exe, url, title, meta, audio=audio, subtitles="", ytdl=ytdl,
-                ytdl_format=ytdlp.video_format(audio),
+                ytdl_format=ytdlp.video_format(audio), paused=True,  # empieza cuando se va la pantalla de carga
                 started=lambda process: self.launcher.track("media:player", title, process, runner="Reproductor"))
         except BaseException:
             self.sessions.unpin(pinned)  # mpv no abrió: Orbital no se queda «siempre encima»
             raise
         # Resolver el video en YouTube tarda unos segundos: Orbital sigue tapando hasta la primera imagen.
         self.sessions.revealing = self.sessions.to_front("media:player", title, pinned=pinned, timeout=player.STARTUP_TIMEOUT + 5,
-                                                         ready=lambda: bool(self.player.segment and self.player.segment.playing))
+                                                         ready=lambda: bool(self.player.segment and self.player.segment.playing),
+                                                         on_reveal=self.player.release_start)
+        if not self.sessions.revealing:
+            self.player.release_start()  # sin pantalla de carga que esperar (fuera de Windows): ya
         return self.sessions.revealing
 
     def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:

@@ -195,6 +195,16 @@ def test_game_ready_detection():
     assert not game_ready([("Cargando shaders…", False)], "Zelda", None)
 
 
+def test_what_waits_for_the_reveal_starts_after_launch_ready_once():
+    win = FocusWindows()
+    win.open(3, "Eden | Mario Party Superstars")
+    order = []
+    bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Mario Party Superstars", "Eden",
+                        notify=lambda e: order.append(e["type"]), on_reveal=lambda: order.append("empieza"),
+                        timeout=5, win=win, sleep=lambda s: None)
+    assert order == ["launch-ready", "empieza"]
+
+
 def test_loading_screen_covers_the_emulator_until_the_game_is_ready():
     win = FocusWindows()
     win.open(2, "Eden 0.0.3")  # la lista de juegos de Eden: fea, tapada

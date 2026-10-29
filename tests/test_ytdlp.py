@@ -106,7 +106,10 @@ def test_the_mpv_command_gets_ytdlp_only_when_asked():
 # ---------------------------------------------------------------- abrir el tráiler
 class FakePlayer:
     def __init__(self):
-        self.played, self.segment, self.playing = [], None, False
+        self.played, self.segment, self.playing, self.released = [], None, False, 0
+
+    def release_start(self):
+        self.released += 1
 
     def play(self, run, mpv_exe, url, title, meta, **options):
         self.played.append((mpv_exe, url, title, meta, options))
@@ -141,6 +144,18 @@ def test_the_trailer_opens_in_orbitals_player_not_in_the_browser(trailers, libra
     assert meta["clip"] == "LY19rHKAaAg" and meta["kind"] == "trailer" and meta["detail"] == "Tráiler"
     assert options["ytdl"] == str(watch.ytdlp.exe) and options["subtitles"] == ""
     assert options["ytdl_format"] == ytdlp.video_format(options["audio"])
+    # Abre en pausa y empieza cuando se va la pantalla de carga (antes arrancaba uno o dos segundos antes de verse).
+    assert options["paused"] is True
+
+
+def test_the_trailer_starts_when_the_loading_screen_leaves(trailers, library, monkeypatch):
+    watch, fake = trailers
+    reveals = []
+    monkeypatch.setattr(library.sessions, "to_front", lambda *a, **k: reveals.append(k["on_reveal"]) or True)
+    watch.play_trailer("movie", "tt0816692")
+    assert fake.released == 0  # todavía con la pantalla de carga
+    reveals[0]()
+    assert fake.released == 1
 
 
 def test_keep_leaves_what_was_open(trailers, library):

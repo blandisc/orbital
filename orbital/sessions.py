@@ -278,7 +278,7 @@ class Sessions:
             windows.set_topmost(pinned, False)
 
     def to_front(self, item_id: str, title: str = "", runner: str | None = None, pinned: int | None = None,
-                 ready=None, timeout: float = focus.READY_TIMEOUT) -> bool:
+                 ready=None, timeout: float = focus.READY_TIMEOUT, on_reveal=None) -> bool:
         """Pantalla de carga hasta que el juego esté listo (ver bring_game_to_front). Devuelve si la
         interfaz debe esperar el evento launch-ready en lugar de esconder "Abriendo" sola."""
         if sys.platform != "win32":
@@ -296,7 +296,7 @@ class Sessions:
 
         threading.Thread(target=reveal, args=(self.launcher, item_id, title, runner),
                          kwargs={"notify": self.events.publish, "skip": self._reveal_skip, "pinned": pinned,
-                                 "ready_check": ready, "timeout": timeout, "art_wait": self.art_wait,
+                                 "ready_check": ready, "timeout": timeout, "art_wait": self.art_wait, "on_reveal": on_reveal,
                                  "user_returned": lambda: self.returned_at > launched},
                          daemon=True, name="to-front").start()
         return True

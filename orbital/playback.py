@@ -242,10 +242,12 @@ def track_properties(audio: str, subtitles: str) -> list[tuple[str, str]]:
 def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: str = "en",
                   subtitles: str = "en", sub_files: list[str] | None = None, bindings: str | None = None,
                   sub_scale: float = 1.0, live: bool = False, user_agent: str | None = None,
-                  referrer: str | None = None, ytdl: str | None = None, ytdl_format: str | None = None) -> list[str]:
+                  referrer: str | None = None, ytdl: str | None = None, ytdl_format: str | None = None,
+                  paused: bool = False) -> list[str]:
     """`live`: un canal de TV (caché corta, reconexión, sin posición que recordar). `user_agent` y `referrer`
     son los del canal; los canales siguientes los llevan en su propio `loadfile` (ver OrbitalPlayer.tune).
-    `ytdl`: dónde está yt-dlp, para abrir un video de YouTube (ver ytdlp.py); `ytdl_format`, qué calidad y audio pedirle."""
+    `ytdl`: dónde está yt-dlp, para abrir un video de YouTube (ver ytdlp.py); `ytdl_format`, qué calidad y audio pedirle.
+    `paused`: abre en pausa con el primer cuadro listo (un tráiler: empieza cuando se va la pantalla de carga)."""
     # Por delante 200 MiB y hacia atrás 25 MiB, escrito aquí para que una versión nueva de mpv no cambie el valor de
     # fábrica sin que se note. Antes 400 + 50: con Los Simpson al aire mpv llegaba a 1 GB en una consola de 12 GB que
     # también corre los juegos. 200 MiB siguen siendo ~3 min de un 1080p y ~30 s de un 4K remux por delante.
@@ -270,6 +272,8 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         cmd.append(f"--user-agent={user_agent or LIVE_USER_AGENT}")
         if referrer:
             cmd.append(f"--referrer={referrer}")
+    if paused:
+        cmd.append("--pause=yes")
     if ytdl:
         cmd += ["--ytdl=yes", f"--script-opts=ytdl_hook-ytdl_path={ytdl}"]
         if ytdl_format:

@@ -240,6 +240,7 @@ class OrbitalPlayer(PlayerScreen):
         self.versions_provider = None  # (meta) -> [{"id", "label", "hint"}]: tu idioma en otra versión (X › Audio)
         self.on_switch_source = None  # (meta, id_fuente, posición)
         self.on_episode = None  # (meta, ±1): episodio anterior / siguiente
+        self._held = False  # abrió en pausa hasta que se vaya la pantalla de carga (release_start): un tráiler
         self.before_open = None  # () antes de abrir mpv: liberar la memoria de video de Windows si hace falta (server.py)
         self.episodes_provider = None  # (meta) -> [{"id", "label", "current", "progress"?}] de la temporada
         self.on_play_episode = None  # (meta, id_del_episodio): ver ese episodio
@@ -292,6 +293,7 @@ class OrbitalPlayer(PlayerScreen):
             self._close_segment(self.segment)  # lo visto del video anterior se guarda antes de soltarlo
         if self.before_open is not None:  # con la pantalla de carga a la vista: DWM limpio, sin tirones (dwm_release)
             self._safe(self.before_open)
+        self._held = bool(options.get("paused"))
         process = run(build_command(mpv_exe, url, title, subtitles=subtitles, bindings=input_conf(),
                                     sub_scale=self.sub_scale, **options))
         self.menu = None
@@ -454,6 +456,10 @@ class OrbitalPlayer(PlayerScreen):
                     self._check_memory(playback, segment)
                 self._fit_canvas()
                 paused = bool(self.mpv.get("pause"))
+                if self._held:  # esperando a que se vaya la pantalla de carga: esa pausa no es tuya (sin barra ni aviso)
+                    if segment.playing and now - segment.loaded > self.HOLD_MAX:
+                        self.release_start()  # la pantalla de carga nunca avisó: que no se quede detenido
+                    paused = False
                 if paused != was_paused and segment.playing:
                     self.show_hud()  # pausado con un toque en la pantalla (o por otro lado): que se vea la barra
                     if paused:
@@ -573,6 +579,17 @@ class OrbitalPlayer(PlayerScreen):
             self._at_end(segment)
 
     STUTTER_FRAMES = 3  # cuadros perdidos en un segundo que ya se notan (a 24 cuadros por segundo, un octavo de segundo)
+
+    HOLD_MAX = 20.0  # s: si la pantalla de carga nunca avisa que se fue, el clip empieza igual
+
+    def release_start(self) -> None:
+        """Se fue la pantalla de carga: el clip, que abrió en pausa con su primer cuadro listo, empieza ahora. Antes empezaba
+        en cuanto había imagen, uno o dos segundos antes de verse (visto en la TV con un tráiler el 2026-10-29)."""
+        if not self._held:
+            return
+        self._held = False
+        self.mpv.command("set_property", "pause", False)
+        self._ask("pause", False)
 
     def _drops_tick(self, segment: Segment, paused: bool) -> None:
         """Cada segundo, los cuadros que mpv tiró. Un tirón (varios de golpe) va al registro con su hora y su minuto, si fue

@@ -43,7 +43,7 @@ def test_choosing_a_subtitle_keeps_the_panel_open_and_lifts_the_subtitles():
     mpv.props["sub-pos"] = 95
     p.press("x")
     p.press("right")  # Subtítulos
-    assert p.menu.column.key == "sub" and ("set_property", "sub-pos", 50) in mpv.sent
+    assert p.menu.column.key == "sub" and ("set_property", "sub-pos", 46) in mpv.sent
     labels = [o["label"] for o in p.menu.options]
     assert "Probar otros" in labels and labels[-1].startswith("Buscar en español")
     p.press("down")  # de «Español · Latino» a «Español · Para sordos»

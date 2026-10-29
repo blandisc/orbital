@@ -111,7 +111,7 @@ def test_audio_menu_lists_tracks_and_switches():
         "Inglés · 5.1 · E-AC3", "Español · Latino · Estéreo · AAC"]
     assert [c.key for c in p.menu.columns] == ["audio", "sub", "size", "sync"]
     assert p.menu.index == 0 and "Tamaño de los subtítulos" in mpv.overlays[2] and mpv.overlays.get(1) is None
-    assert ("set_property", "sub-pos", 50) in mpv.sent  # con el panel abierto, los subtítulos suben y se ven encima
+    assert ("set_property", "sub-pos", 46) in mpv.sent  # con el panel abierto, los subtítulos suben y se ven encima
     p.press("down")
     p.press("a")
     # Elegir no cierra el panel: se prueba otra pista sin volver a abrirlo (B lo cierra).
@@ -539,26 +539,28 @@ def test_from_the_phone_two_quick_episode_presses_go_two_episodes_ahead():
     p.EPISODE_WAIT = .1
     p.phone_button("pageright")  # en el teléfono no se mantiene: cada toque cuenta
     p.phone_button("pageright")
-    assert "2 episodios adelante" in mpv.overlays[3]
+    assert "2 episodios adelante" in mpv.overlays[p.EPISODE_CARD]
     _t.sleep(.4)
     assert asked == [2]
 
 
 def test_one_trigger_tap_changes_episode_with_a_notice_and_b_cancels():
-    """RT con un toque: «Episodio siguiente · B cancela» y, si no lo cancelas, el siguiente (antes había que mantenerlo).
-    Mantenido cuenta una vez: no salta dos episodios."""
+    """RT con un toque: la tarjeta «Cambio de episodio · Siguiente · E2» con la cuenta atrás en su anillo y «B Cancelar»;
+    si no lo cancelas, el siguiente (antes había que mantenerlo). Mantenido cuenta una vez: no salta dos episodios."""
     import time as _t
 
     p, mpv = make_player()
-    p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1"}
+    p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1", "next": "E2"}
     asked = []
     p.on_episode = lambda meta, delta: asked.append(delta) or True
-    p.EPISODE_WAIT = .15
+    p.EPISODE_WAIT = .5
     p.press("rt")
-    assert "Episodio siguiente · B cancela" in mpv.overlays[3]
+    card = mpv.overlays[p.EPISODE_CARD]
+    assert "Cambio de episodio" in card and "Siguiente · E2" in card and "Cancelar" in card
     p.press("b")  # te arrepentiste
-    _t.sleep(.3)
-    assert asked == [] and "Sigues en este episodio" in mpv.overlays[3]
+    _t.sleep(.6)
+    assert asked == [] and "Sigues en este episodio" in mpv.overlays[3] and mpv.overlays[p.EPISODE_CARD] is None
+    p.EPISODE_WAIT = .15
     p.press("lt")
     p.remote._repeats["lt"] = 5  # sigues manteniéndolo: las repeticiones no cuentan
     p.press("lt")
@@ -614,7 +616,7 @@ def test_paused_next_pill_only_with_a_next_episode_and_a_tap_goes_there():
         assert labels.index("⏭ Siguiente · T6 E1") == labels.index("+10 s") + 1  # justo después de «+10 s»
         pill = next(t for t in player_ui.targets["hud"] if t[4] == "next")
         p.tap(pill[0] + 5, pill[1] + 5)
-        assert "Episodio siguiente · B cancela" in mpv.overlays[3]
+        assert "Cambio de episodio" in mpv.overlays[p.EPISODE_CARD]
         _t.sleep(.3)
         assert asked == [1]
         p.current.meta = {**p.current.meta, "next": ""}  # el último: sin píldora
@@ -804,7 +806,7 @@ def test_source_counter_sits_in_the_header_not_on_the_note():
     panel.col = next(i for i, c in enumerate(panel.columns) if c.key == "source")
     panel.columns[panel.col].index = 6
     ass = player_ui.panel_ass(panel)
-    assert re.search(r"\\an9\\pos\(\d+,602\)[^}]*}7 de 12", ass)
+    assert re.search(r"\\an9\\pos\(\d+,562\)[^}]*}7 de 12", ass)
     assert "Al instante: Real-Debrid" in ass
 
 
@@ -1153,6 +1155,22 @@ def test_playing_bar_has_no_title_and_the_info_goes_to_the_bottom():
         assert max(t[0] + t[2] for t in bottom) == pytest.approx(player_ui.W - player_ui.MARGIN)  # a la derecha
     finally:
         player_ui.set_touch(False)
+
+
+def test_a_clip_opens_paused_and_starts_when_released_without_the_pause_bar():
+    """Un tráiler abre en pausa con su primer cuadro listo y empieza cuando se va la pantalla de carga; esa pausa no
+    es tuya: ni barra «En pausa» ni barra al seguir."""
+    from orbital.playback import build_command
+
+    assert "--pause=yes" in build_command("mpv.exe", "u", "Tráiler", paused=True)
+    assert "--pause=yes" not in build_command("mpv.exe", "u", "Película")
+    p, mpv = make_player(pause=True)
+    p._held = True
+    p.release_start()
+    assert ("set_property", "pause", False) in mpv.sent and not p._held
+    sent = len(mpv.sent)
+    p.release_start()  # una sola vez
+    assert len(mpv.sent) == sent
 
 
 def test_video_memory_is_checked_before_opening_mpv():
