@@ -6,8 +6,8 @@ Estado: propuesta para decidir; **no se implementa todavía**.
 ## 1. Qué se pide, en una frase
 
 Que la app de iPhone funcione completa sin Stremio: los complementos (add-ons) y Real-Debrid se manejan
-dentro de la app, con una guía al abrirla por primera vez; la cuenta de Stremio queda **solo para sincronizar**
-(avance, visto, Mi lista) con la TV, igual que hoy Trakt es opcional.
+dentro de la app, con una guía al abrirla por primera vez; **Trakt** es el que sincroniza el avance, lo visto y Mi lista
+entre aparatos y con la nube; Stremio queda como importación opcional.
 
 ## 2. Cómo está hoy (medido en `main` @ 58464353)
 
@@ -37,15 +37,15 @@ Al abrir Orbital por primera vez ves una guía de 5 pasos, cada uno con «Saltar
    los recomendados listos (Torrentio primero) y les pone tu clave de Real-Debrid sola. «Activar los recomendados»
    o «Lo configuro después».
 4. **Tu TV (opcional).** Escanea el QR de la consola. Ya existe (`orbital-ios://pair`).
-5. **Sincronizar (opcional).** «¿Usas Stremio o Trakt? Conéctalos para que lo que ves aquí aparezca allá». Las dos
-   se explican como lo que son: **respaldo y espejo**, no requisito. Aquí se avisa claro: *si quieres que la TV y el
-   iPhone compartan el avance, conecta Stremio* (la consola sigue usando esa cuenta).
+5. **Sincronizar (opcional).** «Conecta Trakt para que tu avance, lo visto y Mi lista te sigan en la TV, el iPad y
+   la Mac». Se explica como lo que es: la copia en la nube, no un requisito. Debajo, discreto: «¿Vienes de Stremio?
+   Trae lo tuyo una vez».
 
 Después de la guía, cambia Ajustes:
 
 - **Cuentas** se divide en: *Real-Debrid* (estado, días que quedan, fecha de vencimiento, «Renovar» que abre la web,
-  avisos a 14 y 3 días y el día que vence), *Stremio* (sincronización: conectada / no; última sincronización; «Importar
-  mis complementos de Stremio» una vez), *Trakt* y *Tu Orbital* como hoy.
+  avisos a 14 y 3 días y el día que vence), *Trakt* (la sincronización: conectada / no, última
+  sincronización), *Stremio* (solo «Importar» avance, Mi lista y complementos, una vez) y *Tu Orbital* como hoy.
 - **Complementos** sube de «Avanzado» a sección propia: lista ordenable, interruptor por complemento, «Agregar» con
   tres caminos (recomendados, pegar URL, escanear QR), y en cada uno qué aporta (fuentes, catálogos, subtítulos) y si
   está usando tu Real-Debrid. Los que vinieron de Stremio se marcan «Importado».
@@ -60,61 +60,140 @@ Y en toda la app desaparece la palabra «Stremio» salvo en la sección de sincr
 |---|---|---|
 | Quien usa la app | Entra sin cuenta de terceros. Sabe cuándo pagar Real-Debrid antes de que falle un viernes en la noche. Entiende qué es cada pieza. | Un paso más la primera vez (la guía). |
 | El producto | El iPhone deja de depender de una API no oficial para existir. Si Stremio cambia, se rompe la sincronización, no la app. | Dos lugares donde vive el avance (teléfono y Stremio): hay que fusionar bien. |
-| La TV | Nada cambia. | Si alguien no conecta Stremio en el iPhone, la TV no ve su avance. Se avisa en el paso 5. |
+| La TV | Nada cambia en esta etapa. | Para que siga viendo el avance del iPhone, la consola tiene que leer Trakt como fuente principal (ver corte A). |
 
 ## 4. La propuesta técnica (para la sesión que lo implemente)
 
 Tres cortes, en este orden. Cada uno deja la app funcionando y se puede entregar solo.
 
-### Corte A · La biblioteca vive en el teléfono; Stremio es un sincronizador
+### Corte A · Lo tuyo vive en el teléfono; Trakt lo lleva a la nube
 
-Hoy `WatchService` lee y escribe `libraryItem` de Stremio en cada paso. Propuesta:
+*Actualizado el 29 oct: Fernando decidió que el sincronizador entre dispositivos sea **Trakt**, no Stremio.*
 
-- Nuevo almacén local `LocalLibrary` (actor, archivo JSON o SwiftData en `AppFiles`; una entrada por título con
-  `timeOffset`, `duration`, `watched` (el mismo bitfield), `inLibrary`, `removed`, `lastWatched`, `mtime`). Es la
-  **fuente de verdad** del iPhone. `Watchable` se queda como modelo; deja de significar «ítem de Stremio».
-- Protocolo `LibrarySync` con dos implementaciones: `StremioSync` (lo que hoy hace `StremioAPI` + `StremioLibrary`,
-  movido a su archivo) y, más adelante, `TraktSync` (hoy Trakt ya hace `playback`/`history`; se formaliza).
-  Operaciones: `pull() -> [Watchable]`, `push([Watchable])`, con regla de fusión **gana el `mtime` más nuevo por
-  título** (es la regla que ya aplica `flushPending`, Watch.swift L362–389).
-- `WatchService` escribe siempre en `LocalLibrary` y encola el `push` a los sincronizadores conectados. `PendingWork`
-  se queda como cola de salida por sincronizador.
-- `RootView` deja de bloquear: `SessionModel.State` ya no es la puerta; la app abre a `MainTabs` siempre. `LoginView`
-  se convierte en la hoja «Conectar Stremio» dentro de Ajustes y del paso 5 de la guía.
-- `HomeModel` sin Stremio: «Seguir viendo» y «Mi lista» salen de `LocalLibrary`; `sessionExpired` solo pinta un aviso
-  en la sección de sincronización.
+**Qué es «lo tuyo».** Tres cosas, y cada una tiene su lugar en Trakt:
 
-Migración: al actualizar, si hay `authKey` en el llavero, el primer `pull` llena `LocalLibrary` y nadie nota nada.
+| Lo tuyo | En el teléfono | En Trakt | Ya existe en `Trakt.swift` |
+|---|---|---|---|
+| **Avance** (dónde te quedaste) | segundos exactos y duración | `/sync/playback` (en porcentaje) vía `scrobble` start/pause/stop | Sí: `playback`, `scrobble` |
+| **Visto** (✓ por película o episodio) | marca por título y episodio | `/sync/history` | Sí: `history`, `addToHistory`, `watchedIDs` |
+| **Mi lista** (lo que guardaste) | lista local | `/sync/watchlist` | Sí: `watchlist`, `setWatchlist` |
 
-Pruebas que cambian: `WatchTests`, `ContinueReturnTests`, `ScreenModelsTests.testSignInStoresOnlyTheSessionKey`;
-nuevas: fusión por `mtime`, arranque sin cuenta, migración.
+**Cómo conviven el teléfono y Trakt.** El teléfono es la verdad para la pantalla; Trakt es la copia en la nube que
+comparten tus aparatos.
 
-### Corte B · Módulo `OrbitalAddons` y Real-Debrid como cuenta propia
+```
+ Tú tocas algo                 Al abrir la app, al volver de segundo plano
+      │                        o al jalar para actualizar
+      ▼                                     │
+ ┌──────────────┐  cola de salida   ┌──────┴───────┐
+ │ LocalLibrary │ ────────────────► │    Trakt     │ ◄── la TV, el iPad, la Mac
+ │ (el teléfono)│ ◄──────────────── │   (la nube)  │     escriben lo mismo
+ └──────────────┘  solo lo que      └──────────────┘
+   la pantalla      cambió
+   lee de aquí      (last_activities)
+```
 
-Nuevo target del paquete `ios/OrbitalCore/Package.swift`: **`OrbitalAddons`**, sin `import` de nada de Stremio.
+1. **Escribir: primero el teléfono, luego Trakt.** Pausar, terminar, marcar visto o guardar se escribe al instante
+   en `LocalLibrary` (la pantalla responde sin red) y se encola para Trakt. Las colas ya existen
+   (`TraktOutbox`, `PendingWork`); se juntan en una sola.
+2. **Leer: solo lo que cambió.** Al abrir, se pide `/sync/last_activities` (una llamada pequeña con la hora del último
+   cambio de cada cosa). Si el avance cambió desde la última vez, se baja `/sync/playback`; si cambió lo visto,
+   el historial desde esa hora; si cambió la watchlist, la watchlist. Si nada cambió, no se baja nada.
+3. **Fusionar, una regla por cosa:**
+   - *Avance*: gana el más reciente por título (`paused_at` de Trakt contra la hora local). Si gana el local, se
+     usan los segundos exactos del teléfono; si gana Trakt, se convierte el porcentaje a segundos con la duración.
+   - *Visto*: se suma. Lo que está visto en cualquier lado queda visto. Desmarcar es un acto explícito que se manda
+     a Trakt (`/sync/history/remove`).
+   - *Mi lista*: espejo de la watchlist de Trakt; agregar y quitar viajan por la cola.
+4. **Sin conexión.** Todo funciona y se acumula. Al volver la red, antes de mandar un avance viejo se compara con
+   Trakt: si Trakt tiene uno más nuevo (lo viste en la TV mientras tanto), el viejo se descarta. Trakt no deja fechar
+   un scrobble en el pasado, así que esta comparación es la que evita retroceder tu avance.
+5. **Sin Trakt.** La app funciona completa en un solo aparato. Al conectar Trakt, lo local se sube una vez.
 
-- `InstalledAddon { id, manifestURL, name, resources, enabled, order, origin (.recommended | .pasted | .importedFromStremio), debrid: DebridProvider? }`.
-  Se guarda en `KeyValueStore` (lo no secreto) y la URL completa en el llavero (`SecretKey.addon(id)`), como ya se
-  hace con las descargas.
-- `AddonCatalog`: los recomendados con **plantilla** de URL. Torrentio: `https://torrentio.strem.fun/realdebrid={CLAVE}/manifest.json`
-  (más opciones de calidad e idioma como parámetros de la plantilla). Comet y MediaFusion después, si hacen falta.
-  La clave se inyecta al construir la URL, nunca se teclea.
-- `AddonRegistry` se queda, pero su entrada es `[InstalledAddon]` local; `fromAccount` (Addons.swift L145–151) se
-  vuelve `StremioSync.importAddons()` y solo corre cuando el usuario toca «Importar». No escribimos de regreso a la
-  cuenta de Stremio (`addonCollectionSet`) en esta etapa: la cuenta es solo sincronización de biblioteca.
-- `DebridProvider` (protocolo) con `RealDebrid` primero: `GET https://api.real-debrid.com/rest/1.0/user` con
-  `Authorization: Bearer <clave>`; devuelve `type` (premium/free), `premium` (segundos restantes) y `expiration`.
-  Se guarda en `SecretKey.realDebridToken`. `DebridStatus { username, isPremium, daysLeft, expiration }` con caché de
-  un día y refresco al abrir Ajustes o la guía. (AllDebrid, Premiumize y TorBox encajan en el mismo protocolo; no se
-  hacen ahora.)
-- Avisos: reutilizar la sección «Avisos» (notificaciones locales que ya existen para estrenos) con tres fechas:
-  14 días, 3 días y el día del vencimiento. Texto: «Tu Real-Debrid vence el 21 de marzo. Renuévalo para seguir viendo».
-- `Streams.swift` sigue detectando `[RD+]` por nombre (es lo que manda el complemento), pero el texto «Ya está en tu
-  Real-Debrid» solo se enseña si hay proveedor configurado; si no, «Listo para ver».
+**Stremio** queda como **importación única** («Traer mi avance, lo visto y Mi lista de Stremio»), opcional, para
+quien viene de ahí. Ya no se escribe en la cuenta de Stremio desde el iPhone.
 
-Pruebas: manifest de plantilla con clave inyectada y redactada en logs (`redact`), orden y apagado respetados por
-`serving(resource:)`, parse de `/user` con cuenta premium, gratuita y clave inválida (401), cálculo de días, los tres
-avisos programados una sola vez. Demo: `DemoHTTPClient` ya finge `api.strem.io`; se agrega `api.real-debrid.com`.
+**Lo que hay que resolver antes de implementar:**
+
+- **La TV.** Hoy la consola lee el avance de Stremio y usa Trakt de respaldo. Para que el iPhone y la TV se sigan
+  entendiendo solo por Trakt, la consola tiene que leer `/sync/playback` como fuente principal (o el iPhone sigue
+  escribiendo también en Stremio mientras tanto). Es un cambio en la consola, fuera de este alcance, pero es
+  requisito para no perder la continuidad TV ↔ iPhone.
+- **Cuenta gratuita de Trakt.** Tiene límites (entre ellos, de apps conectadas; la de Stremio ya ocupa una). Hay que
+  confirmar con tu cuenta qué cabe antes de depender de ella.
+- **Anime con ids de Kitsu.** Trakt no los reconoce: esos títulos se quedan solo en el teléfono.
+- **Precisión.** Trakt guarda el avance en porcentaje con decimales; en una película de 2 h eso es del orden de
+  segundos, suficiente. El teléfono guarda los segundos exactos para lo suyo.
+- **Ritmo.** Trakt limita las escrituras a una por segundo. El scrobble actual (al iniciar, pausar, saltar y cerrar)
+  queda muy por debajo.
+
+Cambios en código: `LocalLibrary` (actor nuevo, archivo en `AppFiles`); `WatchService` lee y escribe ahí y deja de
+depender de `StremioAPI`; `ResumePoint.latest` compara local contra Trakt en vez de Stremio contra Trakt;
+`SaveDestination` pasa a «Mi lista local + watchlist de Trakt si está conectado»; `RootView` deja de exigir sesión;
+`StremioAPI` + `StremioLibrary` se quedan solo para la importación.
+
+Pruebas nuevas: fusión de avance (local más nuevo, Trakt más nuevo, empate), visto que se suma, desmarcar que viaja,
+avance viejo descartado al volver la red, arranque sin ninguna cuenta, importación de Stremio.
+
+### Corte B · Los complementos y Real-Debrid se manejan dentro de la app
+
+**El problema de hoy, en simple.** Para tener fuentes, alguien entra a la web de Torrentio, pega su clave de
+Real-Debrid, y Torrentio le da una URL larga con la clave escondida adentro. Esa URL se instala en la cuenta de
+Stremio, y el iPhone la lee de ahí. Consecuencias:
+
+- Sin Stremio no hay fuentes.
+- La app no sabe que tienes Real-Debrid ni cuánto te queda. Si vence, solo ves «no hay fuentes», sin explicación.
+- Cambiar de clave es ir a otra web, reconfigurar y volver a instalar.
+
+**Lo que propongo: dos cosas en Ajustes, y la app une las dos.**
+
+```
+ ┌───────────────────────┐      ┌────────────────────────────┐
+ │  Tu Real-Debrid       │      │  Tus complementos          │
+ │  clave (una vez)      │─────►│  ☑ Torrentio   (usa tu RD) │
+ │  fernando · Premium   │ la   │  ☑ Comet       (usa tu RD) │
+ │  quedan 143 días      │ app  │  ☐ OpenSubtitles           │
+ │  vence 21 mar 2027    │ mete │  + Agregar                 │
+ │  [Renovar]            │ la   └─────────────┬──────────────┘
+ └───────────────────────┘ clave              │ al tocar «Ver»
+                                              ▼
+                        cada complemento, en tu orden, busca versiones
+                        → Real-Debrid las entrega → el reproductor
+```
+
+1. **Tu Real-Debrid.** Pegas la clave una vez (sale de real-debrid.com/apitoken). La app la comprueba en el momento
+   con la API de Real-Debrid (`/rest/1.0/user`, solo lectura) y muestra usuario, si es Premium, días que quedan y
+   fecha de vencimiento. Avisa a 14 días, a 3 días y el día que vence. Botón «Renovar» que abre la web. Si vence,
+   al tocar «Ver» dice «Tu Real-Debrid venció hace 2 días» en vez de «no hay fuentes».
+2. **Tus complementos.** Viven en el teléfono, no en una cuenta. Los recomendados vienen armados: la app construye
+   la misma URL que te daría la web de Torrentio, con tu clave, sin que la teclees. Puedes prender y apagar cada uno,
+   ordenarlos (cuál se pregunta primero), agregar uno pegando su URL o escaneando un QR, e importar una vez los que
+   tengas en Stremio. Cada uno dice qué aporta (fuentes, catálogos, subtítulos) y si usa tu Real-Debrid.
+3. **Cambiar la clave** la cambia en todos los complementos recomendados de una vez.
+
+Lo que pasa al tocar «Ver» **no cambia**: la app pregunta a los complementos, el complemento habla con Real-Debrid
+y devuelve el enlace. Solo cambia de dónde sale la lista y que la app ya sabe el estado de tu cuenta.
+
+**Por qué un módulo aparte (`OrbitalAddons`).** Un target nuevo en `ios/OrbitalCore/Package.swift` que no conoce a
+Stremio ni a Trakt. Así se prueba solo, no se rompe si cambia una cuenta y sirve igual para una futura app de
+Apple TV. Adentro:
+
+- `InstalledAddon { id, nombre, recursos, encendido, orden, origen (recomendado · pegado · importado), usaDebrid }`.
+  Lo no secreto en `KeyValueStore`; la URL completa en el llavero (`SecretKey.addon(id)`), como ya se hace con las
+  descargas.
+- `AddonCatalog`: los recomendados como **plantilla** (Torrentio:
+  `https://torrentio.strem.fun/realdebrid={CLAVE}/manifest.json`, con calidad e idioma como opciones). La URL se
+  arma al vuelo con la clave del llavero.
+- `DebridProvider` (protocolo) con `RealDebrid` primero → `DebridStatus { usuario, esPremium, díasQueQuedan,
+  vence }`, guardado un día y refrescado al abrir Ajustes. AllDebrid, Premiumize o TorBox caben después sin tocar lo demás.
+- `AddonRegistry` (hoy en `Addons.swift`) se queda, pero lee la lista local en orden y respeta el apagado; su lectura
+  de la cuenta de Stremio pasa a la importación.
+- Las etiquetas `[RD+]` de las fuentes se siguen leyendo igual (las manda el complemento); «Ya está en tu
+  Real-Debrid» solo se enseña si tienes Real-Debrid configurado.
+
+Pruebas: plantilla con la clave inyectada y tapada en bitácoras (`redact`), orden y apagado respetados, lectura de
+`/user` con cuenta Premium, gratuita, vencida y clave inválida, cálculo de días, avisos programados una sola vez,
+cambio de clave que regenera las URLs. La demo finge `api.real-debrid.com` como ya finge `api.strem.io`.
 
 ### Corte C · La guía (onboarding) y los Ajustes nuevos
 
@@ -145,7 +224,7 @@ avisos programados una sola vez. Demo: `DemoHTTPClient` ya finge `api.strem.io`;
 | Fusión mal hecha entre teléfono y Stremio (se pierde un avance) | Regla única: gana el `mtime` más nuevo por título, probada con casos cruzados; el `pull` nunca borra lo local, solo lo marca `removed` si Stremio lo dice con fecha más nueva |
 | Real-Debrid cambia su API o sus términos | Solo usamos `/user` (lectura); si falla, la app sigue sirviendo con la clave que ya está en las URLs. Nada se bloquea por no poder leer el estado |
 | La clave de Real-Debrid queda en más lugares | Un solo secreto (`realDebridToken`) y las URLs se **derivan**; `redact` ya tapa la clave en pantalla y bitácoras. Cambiar la clave regenera las URLs de los recomendados |
-| Alguien se queda sin Stremio y no entiende por qué la TV no ve su avance | Lo dice el paso 5 y la sección Stremio en Ajustes («La TV usa esta cuenta para ver tu avance») |
+| La TV y el iPhone dejan de compartir el avance | La consola lee `/sync/playback` de Trakt antes de quitar la escritura a Stremio desde el iPhone; hasta entonces, el iPhone sigue escribiendo también en Stremio |
 | Más pantallas = más mantenimiento | La guía reutiliza piezas del catálogo y sus textos viven en un solo archivo de vocabulario |
 
 ## 6. Decisiones que son tuyas
@@ -165,7 +244,7 @@ avisos programados una sola vez. Demo: `DemoHTTPClient` ya finge `api.strem.io`;
 
 | Corte | Qué entrega | Tamaño estimado |
 |---|---|---|
-| A · Biblioteca local + Stremio como sincronizador | Entrar sin cuenta; avance y Mi lista en el teléfono; migración invisible | Grande (el corazón de `WatchService`, `HomeModel`, `TitleModel`, `RootView`) |
+| A · Lo tuyo en el teléfono + Trakt como sincronizador | Entrar sin cuenta; avance y Mi lista en el teléfono; migración invisible | Grande (el corazón de `WatchService`, `HomeModel`, `TitleModel`, `RootView`) |
 | B · `OrbitalAddons` + Real-Debrid | Complementos locales con orden y apagado; plantillas con la clave; días restantes y avisos | Medio |
 | C · Guía + Ajustes nuevos | Onboarding de 5 pasos; secciones Complementos, Real-Debrid y Stremio; barrido de textos | Medio, casi todo interfaz |
 
