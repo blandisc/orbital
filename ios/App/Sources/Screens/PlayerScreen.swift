@@ -73,7 +73,6 @@ struct PlayerScreen: View {
     @State var scrubbing: Double?
     /// A dónde se pidió ir y el video todavía no llega.
     @State var pendingSeek: Double?
-    @AppStorage("scare-warnings") var scareWarnings = true
     /// Los sustos marcados en la barra (Ajustes › Reproductor) y cuántas veces ya se avisó qué son.
     @AppStorage("scare-marks") var scareMarks = true
     @AppStorage("scare-hint-seen") var scareHintSeen = 0

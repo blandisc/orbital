@@ -488,8 +488,7 @@ extension PlayerScreen {
             // arriba (antes, con todo el alto del área de toque en medio, se veían despegados).
             .padding(.top, -DS.Space.s2)
         }
-        // Vibra unos segundos antes de cada susto si pediste el aviso (con las marcas puestas o no).
-        .scareWarning(position: model.snapshot.position, scares: model.scares ?? [], enabled: scareWarnings && model.snapshot.state == .playing)
+        // Sin vibrar antes de cada susto: en el iPhone estás viendo la película (el aviso con vibración es del control de la TV).
         // Las primeras películas con sustos, un aviso dice qué son los puntos (sin eso no hay forma de saberlo).
         .task(id: scares.isEmpty) {
             guard !scares.isEmpty, scareHintSeen < DS.PlayerPanel.scareHintTimes else { return }

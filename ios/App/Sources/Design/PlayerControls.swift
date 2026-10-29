@@ -332,7 +332,7 @@ struct PlayPauseButton: View {
 /// mientras la arrastras, con una burbuja encima que dice a qué minuto vas y cuánto saltas. Dos rayitas tenues marcan dónde
 /// termina la intro y dónde empiezan los créditos (desde ahí el episodio cuenta como visto); al arrastrar, los tramos se aclaran.
 /// Los sustos (Where's The Jump) son puntos sobre la misma línea, como los capítulos de YouTube: rojo fuerte, ámbar leve, gris
-/// los que ya pasaron. Al arrastrar cerca de uno, la burbuja dice cuál es y vibra.
+/// los que ya pasaron. Al arrastrar cerca de uno, la burbuja dice cuál es (sin vibrar: estás viendo una película).
 struct PlayerScrubBar: View {
     let value: Double
     let duration: Double
@@ -407,17 +407,14 @@ struct PlayerScrubBar: View {
         }
         .frame(height: DS.PlayerPanel.scrubHit)
         .sensoryFeedback(.selection, trigger: dragging)
-        // Arrastrando, cruzar un susto vibra como el tope de un capítulo.
-        .sensoryFeedback(.impact(weight: .light), trigger: nearScare) { _, new in new != nil }
     }
 
-    /// El susto bajo el punto mientras arrastras: la burbuja lo nombra y, al cruzarlo, vibra (su minuto).
+    /// El susto bajo el punto mientras arrastras: la burbuja lo nombra.
     private var nearest: JumpScare? {
         guard dragging || previewFrom != nil, duration > 0 else { return nil }
         let reach = DS.PlayerPanel.scareReach * duration
         return scares.filter { abs($0.time - value) <= reach }.min { abs($0.time - value) < abs($1.time - value) }
     }
-    private var nearScare: Double? { nearest?.time }
 }
 
 /// Un renglón del menú «⋯» del reproductor: el ícono, el nombre y, a la derecha, un dato (el zoom puesto).
