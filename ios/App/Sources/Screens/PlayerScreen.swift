@@ -109,6 +109,8 @@ struct PlayerScreen: View {
     @State var portraitZoom: VideoZoom = .fit
     /// Cuándo cambió el sentido: un pellizco que termina justo después (los pulgares al girar) no cuenta.
     @State var rotatedAt = Date.distantPast
+    @State var pinchStartedAt: Date?
+    @State var zoomBeforePinch: (zoom: VideoZoom, at: Date)?
     #if DEBUG
     @State var lastPinch = 0.0
     #endif
@@ -509,6 +511,7 @@ struct PlayerScreen: View {
         // El motor recibe el zoom desde un solo lugar: cada vez que cambia el de este sentido (al girar, al pellizcar, desde el «⋯»).
         .onChange(of: zoom, initial: true) { holder.engine.setZoom(zoom) }
         .onChange(of: landscape) {
+            PlayerModel.note("giro a \(landscape ? "horizontal" : "vertical") (zoom vertical era \(portraitZoom.rawValue))")
             rotatedAt = Date()
             // Vertical vuelve siempre al cuadro completo al girar: si algo puso «Recortar» sin querer (un pellizco al sujetar el
             // teléfono), el giro lo deshace.

@@ -188,20 +188,31 @@ extension PlayerScreen {
             // Tocar con dos dedos, en cualquier parte: pausa o sigue (como en Infuse y en la app TV de Apple).
             .gesture(TwoFingerTap {
                 twoFingerTapAt = Date()
+                // Un toque con dos dedos también le llega al pellizco (iOS lo mide como si los dedos se abrieran): si ya alcanzó a
+                // cambiar el zoom, se deshace. Así pausar con dos dedos nunca deja la imagen agrandada.
+                if let undo = zoomBeforePinch, Date().timeIntervalSince(undo.at) < DS.Gesture.pinchTapGuard {
+                    zoomBeforePinch = nil; setZoom(undo.zoom, cause: "deshecho: era un toque con dos dedos")
+                }
                 // Si el mismo toque ya alcanzó a contar como uno de un dedo, se deshace lo que hizo con los controles.
                 if Date().timeIntervalSince(singleTapAt) < DS.Gesture.twoFingerTapGuard { controlsVisible.toggle(); singleTapAt = .distantPast }
                 userTogglePlay(model)
                 flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill")
             })
-            .gesture(MagnifyGesture().onEnded { value in
+            .gesture(MagnifyGesture().onChanged { _ in if pinchStartedAt == nil { pinchStartedAt = Date() } }.onEnded { value in
                 // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
+                let lasted = pinchStartedAt.map { Date().timeIntervalSince($0) } ?? 0
+                pinchStartedAt = nil
                 #if DEBUG
                 lastPinch = Double(value.magnification)   // para las pruebas de interfaz (sale en el renglón «Zoom» del «⋯»)
                 #endif
-                // Un pellizco que termina en el segundo siguiente al giro es el agarre, no una orden.
+                // No cuentan: un pellizco justo al girar (el agarre), uno instantáneo o uno junto a un toque con dos dedos (pausar):
+                // iOS los reporta como si abrieras los dedos y la imagen quedaba agrandada en vertical sin querer.
                 guard Date().timeIntervalSince(rotatedAt) > DS.Gesture.pinchAfterRotationGuard,
+                      lasted >= DS.Gesture.pinchMinDuration,
+                      Date().timeIntervalSince(twoFingerTapAt) > DS.Gesture.pinchTapGuard,
                       let target = VideoZoom.pinched(magnification: Double(value.magnification)), target != zoom else { return }
-                setZoom(target)
+                zoomBeforePinch = (zoom, Date())
+                setZoom(target, cause: String(format: "pellizco %.2f× en %.2f s", Double(value.magnification), lasted))
             })
             .sensoryFeedback(.impact, trigger: zoom)
             .simultaneousGesture(dragGesture(model, size: geo.size))
@@ -527,7 +538,8 @@ extension PlayerScreen {
     func pulse() { controlsVisible = true; scheduleHide() }
 
     /// Cambia el zoom (botón o pellizco), lo recuerda para la próxima vez y avisa un momento cuál quedó.
-    func setZoom(_ target: VideoZoom) {
+    func setZoom(_ target: VideoZoom, cause: String = "menú") {
+        PlayerModel.note("zoom \(landscape ? "horizontal" : "vertical") → \(target.rawValue) (\(cause))")
         let queueToast = topNoticesAreWaiting
         if queueToast { heldNotices.hold(.zoom(target), key: QueuedNoticeKey.zoom) }
         withAnimation(DS.Motion.base(reduceMotion)) {

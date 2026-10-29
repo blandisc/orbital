@@ -290,7 +290,7 @@ public final class PlayerModel: ObservableModel {
         .appendingPathComponent("Orbital", isDirectory: true).appendingPathComponent("player-log.txt")
     nonisolated static let logKeep = 400
     nonisolated private static let logLock = NSLock()
-    nonisolated static func note(_ text: String) {
+    nonisolated public static func note(_ text: String) {
         log.notice("\(text, privacy: .public)")
         guard NSClassFromString("XCTestCase") == nil else { return }   // las pruebas no escriben en la Mac
         let line = ISO8601DateFormatter().string(from: Date()) + " " + text
