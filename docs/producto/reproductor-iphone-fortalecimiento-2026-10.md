@@ -57,3 +57,24 @@ No se reescriben gestos, modelo ni motor, ni se tocan decisiones de diseño ya t
 | `PlayerDock` | audio y subtítulos, versión, episodios, sincronía | UITests |
 | `IPodMode` | modo iPod | — |
 | `PlayerLifecycle` | primer plano, cuadro congelado, PiP, Now Playing, giro | Parcial |
+
+## Estado al 29 oct 2026 (versión 1126 en el iPhone)
+
+Después de aplicar el reporte aparecieron fallas en el iPhone; se reprodujeron en el simulador y quedaron cerradas con su prueba:
+
+| Falla | Causa | Arreglo |
+|---|---|---|
+| Cargando para siempre (3 min o más) | `tick()` esperaba la carga; si el motor se colgaba, nadie revisaba el plazo | El reloj nunca espera: lo largo corre en `transition`; toda carga tiene plazo de 45 s |
+| Cambiar de versión solo enseñaba la carga | La nueva quedaba detrás de la trabada | `engine.stop()` antes de cargar (también al volver a pedirla) |
+| Siguiente episodio automático trabado | `tick` esperaba `advance` | Ya no lo espera |
+| Un «suena» viejo contaba para la versión nueva | `acceptingSnapshots` no distinguía cargas | Se ignora el motor hasta que abre el archivo (`engineOpened`) |
+| Al volver, el motor se colgaba rearmando | El plazo empezaba después de rearmar | Empieza antes; búfer de más de 20 s se pide otra vez |
+| Pantalla negra con franja de color arriba | El fondo ambiente medía 1383 puntos y estiraba la pantalla | Se quitó el fondo ambiente (fondo negro, pedido de Fernando) |
+| «Audio y subtítulos» arriba con espacio muerto | Tres copias del panel con su propio renglón abierto | El renglón abierto vive en la pantalla (`dockOpens`) |
+| Controles de abajo fuera de la pantalla | Lugar fijo de 260 puntos | Se miden y suben lo justo |
+
+Pruebas: `PlayerModelTests` (motor que se cuelga en carga y al rearmar) y `PlayerStuckUITests` con
+`scripts/ios_video_server.py … v=1` (una versión que nunca contesta); todo junto en `scripts/ios_software_path.sh`.
+
+Tiempo de carga medido en el iPhone: 3 a 4 s. Los 28 s de una noche fueron de Real-Debrid preparando el archivo. No sirve medir
+el servidor con una segunda conexión al mismo archivo: Real-Debrid la hace esperar y compite con el video.
