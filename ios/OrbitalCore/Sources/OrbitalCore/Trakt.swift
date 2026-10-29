@@ -20,7 +20,7 @@ public actor Trakt {
     private let pause: @Sendable (TimeInterval) async -> Void
     private var lastWrite = Date.distantPast
     /// Lo que dejaste a medias (`/sync/playback`), guardado un momento: abrir varios títulos seguidos no pregunta cada vez.
-    private var playbackCache: (at: Date, items: [TraktPlayback])?
+    var playbackCache: (at: Date, items: [TraktPlayback])?
     static let playbackCacheFor: TimeInterval = 60
     /// Tus favoritos, guardados un momento con la marca de cuándo cambiaron en Trakt (`favorites.updated_at` de
     /// `/sync/last_activities`): pasado el rato, si la marca no cambió no se vuelven a bajar las dos listas.
@@ -145,7 +145,7 @@ public actor Trakt {
         } catch let error as NetworkError { throw TraktError.network("\(error)") }
     }
 
-    private func get(_ path: String, auth: Bool = true, _ params: [(String, String)] = []) async throws -> JSON? {
+    func get(_ path: String, auth: Bool = true, _ params: [(String, String)] = []) async throws -> JSON? {
         var (status, data) = try await call("GET", path, auth: auth, params: params)
         if status == 401 && auth {
             // Como en las escrituras: se renueva la sesión UNA vez antes de darla por perdida.
@@ -158,18 +158,18 @@ public actor Trakt {
     }
 
     /// Una escritura a la vez y como máximo una por segundo (límite de Trakt).
-    private func write(_ path: String, _ body: JSON) async throws -> (Int, JSON?) {
+    func write(_ path: String, _ body: JSON?, method: String = "POST") async throws -> (Int, JSON?) {
         // El turno se reserva ANTES de esperar: dos escrituras a la vez salen con un segundo de diferencia, en orden.
         let now = clock()
         let slot = max(now, lastWrite.addingTimeInterval(1))
         lastWrite = slot
         let wait = slot.timeIntervalSince(now)
         if wait > 0 { await pause(wait) }
-        var result = try await call("POST", path, body: body)
+        var result = try await call(method, path, body: body)
         if result.0 == 401 {
             // Un 401 no siempre es el final: se renueva la sesión UNA vez y se reintenta.
             try await renewAfterRejection()
-            result = try await call("POST", path, body: body)
+            result = try await call(method, path, body: body)
             if result.0 == 401 { secrets.set(SecretKey.traktTokens, nil); Trakt.announceSessionLost(); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
         }
         return result
@@ -385,7 +385,7 @@ public actor Trakt {
     /// Lo que dejaste a medias en cualquier dispositivo (películas y episodios), guardado `playbackCacheFor` segundos.
     public func playback(fresh: Bool = false) async throws -> [TraktPlayback] {
         if !fresh, let cache = playbackCache, clock().timeIntervalSince(cache.at) < Self.playbackCacheFor { return cache.items }
-        let items = (try await get("/sync/playback")?.array ?? []).compactMap(TraktParsing.playback)
+        let items = (try await get("/sync/playback", [("extended", "full")])?.array ?? []).compactMap(TraktParsing.playback)
         playbackCache = (clock(), items)
         return items
     }

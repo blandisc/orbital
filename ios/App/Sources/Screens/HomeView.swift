@@ -39,15 +39,7 @@ struct HomeView: View {
         let model = home.model
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                if model.sessionExpired {
-                    // Antes se decía «Sin conexión» para siempre: era la sesión de Stremio, y no había cómo salir.
-                    VStack(alignment: .leading, spacing: DS.Space.s2) {
-                        DSNotice(text: "Tu sesión de Stremio se cerró. Vuelve a entrar para ver lo que tienes a medias y tu lista.", tone: .warn)
-                        Button("Volver a entrar", systemImage: "person.crop.circle") { Task { await env.session.signOut() } }
-                            .buttonStyle(.glass).accessibilityIdentifier("home-relogin")
-                    }
-                    .padding(.horizontal, DS.Space.gutter)
-                } else if model.offline {
+                if model.offline {
                     VStack(alignment: .leading, spacing: DS.Space.s2) {
                         DSNotice(text: "Sin conexión: se ve lo último que guardé.", tone: .warn)
                         Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.refresh() } }
@@ -105,15 +97,6 @@ struct HomeView: View {
                 if model.hasAnyTop { topTen(model) }
                 if !model.traktPending.isEmpty { watchlist(model) }
                 if !model.upcoming.isEmpty { upcoming(model) }
-                if !model.myList.isEmpty {
-                    Rail(title: "Mi lista", count: model.myList.count, route: HomeListRoute(id: "mylist"),
-                         eyebrow: Text("Lo que guardaste"), reflected: true) {
-                        ForEach(model.myList) { item in
-                            TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster))
-                                .contextMenu { listActions(suggestion(item), in: .stremioLibrary) }
-                        }
-                    }
-                }
                 // Tus favoritos de Trakt (el corazón de la ficha), después de Mi lista; sin Trakt o sin favoritos, no se pinta.
                 if !model.favorites.isEmpty {
                     Rail(title: "Favoritos", count: model.favorites.count, route: HomeListRoute(id: "favorites"),
@@ -197,7 +180,7 @@ struct HomeView: View {
     private func titleGrid(_ route: HomeListRoute) -> some View {
         let items: [Suggestion] = route.id == "watchlist" ? home.model.traktPending
             : route.id == "foryou" ? home.model.forYouPicks
-            : route.id == "favorites" ? home.model.favorites : home.model.myList.map(suggestion)
+            : home.model.favorites
         return ScrollView {
             SortableGrid(listID: "home:\(route.id)", items: items, collections: env.collections) { s, width in
                 if let list = route.list {
@@ -211,11 +194,11 @@ struct HomeView: View {
                 .padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop(tint: tint.colors))
-        .navigationTitle(route.id == "watchlist" ? Text("Tu watchlist") : route.id == "foryou" ? Text("Para ti")
-                         : route.id == "favorites" ? Text("Favoritos") : Text("Mi lista")).navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(route.id == "watchlist" ? Text("Mi lista") : route.id == "foryou" ? Text("Para ti") : Text("Favoritos"))
+        .navigationBarTitleDisplayMode(.inline)
     }
 
-    /// Lo de Stremio y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo). Lo pendiente por subir
+    /// Lo tuyo y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo). Lo pendiente por subir
     /// se sube solo y ya no se anuncia bajo el título («N cambios por subir»: no se quería ahí).
     private func reload(ifStale: Bool = false) async {
         if ifStale { await home.model.refreshIfStale() } else { await home.model.refresh() }
@@ -241,12 +224,6 @@ struct HomeView: View {
     }
 
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
-
-    /// Un título de Mi lista como sugerencia (para ordenarlo y filtrarlo como las demás listas).
-    private func suggestion(_ item: HomeItem) -> Suggestion {
-        Suggestion(kind: item.kind, imdb: item.metaID, title: item.title, poster: item.poster ?? String(format: ForYou.metahubPoster, item.metaID),
-                   wide: item.background ?? "", reason: .inList("Mi lista"))
-    }
 
     /// Cómo se ve Inicio (carrusel, avatar), en vivo: al cambiarlo en Ajustes, Inicio se vuelve a pintar.
     private var look: AppSettings {
@@ -408,13 +385,13 @@ struct HomeView: View {
         }
     }
 
-    /// «Tu watchlist»: tarjetas con póster, datos y sinopsis en dos renglones que se deslizan juntos (cada renglón de Inicio
+    /// «Mi lista» (tu watchlist de Trakt, también sin Trakt en el teléfono): tarjetas con póster, datos y sinopsis en dos renglones que se deslizan juntos (cada renglón de Inicio
     /// con su forma: el destacado en carrusel, lo que sigues en panorámicas, lo pendiente en fichas y Mi lista en pósters).
     private func watchlist(_ model: HomeModel) -> some View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             NavigationLink(value: HomeListRoute(id: "watchlist")) {
-                DSSectionHead(title: Text("Tu watchlist"), count: model.traktPending.count, chevron: true, source: .trakt, eyebrow: Text("Lo que dejaste pendiente"))
+                DSSectionHead(title: Text("Mi lista"), count: model.traktPending.count, chevron: true, eyebrow: Text("Lo que dejaste pendiente"))
             }
             .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
@@ -426,7 +403,7 @@ struct HomeView: View {
                             WatchlistCard(title: s.title, poster: s.poster, facts: facts, overview: s.overview).titleZoomSource(s.route)
                         }
                         .buttonStyle(.plain)
-                        .contextMenu { listActions(s, in: .traktWatchlist) }
+                        .contextMenu { listActions(s, in: .myList) }
                     }
                 }
                 .scrollTargetLayout()

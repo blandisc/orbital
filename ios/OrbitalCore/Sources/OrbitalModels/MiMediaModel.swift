@@ -143,12 +143,12 @@ public final class MiMediaModel: ObservableModel {
         return item
     }
 
-    /// Con qué sigue «Ver» en una serie: donde ibas (Stremio), si ese episodio está en tu carpeta; si no, el primero que tienes.
+    /// Con qué sigue «Ver» en una serie: donde ibas (lo tuyo en el teléfono, al día con Trakt), si ese episodio está en tu
+    /// carpeta; si no, el primero que tienes.
     public func continueVideo(_ title: OneDriveLibrary.Title) async -> String? {
         let have = Set(title.entries.map(\.videoID))
         if title.kind == "movie" { return title.imdb }
-        if let auth = services.authKey, let item = try? await services.stremio.libraryItem(authKey: auth, id: title.imdb),
-           let video = StremioLibrary.state(of: item)["video_id"]?.nonEmptyString, have.contains(video) { return video }
+        if let video = await services.watch.entry(metaID: title.imdb)?.videoID, have.contains(video) { return video }
         return title.entries.sorted { ($0.file.info.season ?? 0, $0.file.info.episode ?? 0) < ($1.file.info.season ?? 0, $1.file.info.episode ?? 0) }.first?.videoID
     }
 

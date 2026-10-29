@@ -93,10 +93,17 @@ struct SettingsView: View {
                 }
             }
             .listRowBackground(DS.surface)
+            // Stremio es opcional: el respaldo que recibe una copia de lo que ves mientras dure la prueba.
             Section {
-                Label("Stremio conectado", systemImage: "person.crop.circle.badge.checkmark")
-                Button("Cerrar sesión", role: .destructive) { confirmSignOut = true }
-            } header: { Text("Cuenta") }
+                if session.model.state == .signedIn {
+                    Label("Stremio · respaldo", systemImage: "person.crop.circle.badge.checkmark")
+                    Button("Cerrar sesión de Stremio", role: .destructive) { confirmSignOut = true }
+                } else {
+                    NavigationLink { LoginView(session: session.model) } label: {
+                        SettingsRow(title: "Stremio · respaldo", symbol: "arrow.triangle.2.circlepath", tint: DS.ListTint.addon, value: Text("Conectar"))
+                    }
+                }
+            } header: { Text("Cuenta") } footer: { Text("Lo que ves también se guarda ahí, como copia.") }
             .listRowBackground(DS.surface)
         }
         .tint(DS.accent)   // interruptores, selectores y botones del formulario: el acento (lo interactivo)
@@ -108,7 +115,7 @@ struct SettingsView: View {
         .readableListWidth()   // iPad y Mac: los renglones al centro
         .confirmationDialog("¿Cerrar sesión de Stremio?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Cerrar sesión", role: .destructive) { Task { await session.model.signOut() } }
-        } message: { Text("Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en el iPhone.") }
+        } message: { Text("Lo tuyo se queda en el iPhone y en Trakt; Stremio deja de recibir la copia.") }
         .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {
             Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
         } message: { Text("Dejan de salir tu watchlist, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }
@@ -166,11 +173,13 @@ struct SettingsView: View {
         suggestions(model)
     }
 
-    /// «Stremio · Trakt · Orbital»: qué está conectado, bajo tu avatar.
+    /// «Trakt · Orbital · Stremio»: solo lo que conectaste, bajo tu avatar.
     private func connections(_ model: SettingsModel) -> Text {
-        var parts = ["Stremio"]
+        var parts: [String] = []
         if case .linked = model.trakt { parts.append("Trakt") }
+        if session.model.state == .signedIn { parts.append("Stremio") }
         if env.services.orbital.isConfigured { parts.append("Orbital") }
+        if parts.isEmpty { return Text("Sin cuentas conectadas") }
         return Text("Conectado: \(parts.joined(separator: " · "))")
     }
 

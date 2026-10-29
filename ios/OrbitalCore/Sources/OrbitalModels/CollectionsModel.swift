@@ -45,10 +45,10 @@ public final class CollectionsModel: ObservableModel {
 
     public var traktLinked: Bool { services.trakt?.linked ?? false }
 
-    /// Mi lista de Stremio (tu biblioteca), lo último que agregaste o viste primero.
+    /// Mi lista (el teléfono, al día con tu watchlist de Trakt), lo último que agregaste primero.
     public func loadMyList() async {
-        guard let all = try? await services.watch.library() else { return }
-        myList = all.filter(\.inLibrary).sorted { ($0.lastWatched ?? 0) > ($1.lastWatched ?? 0) }.compactMap { w in
+        let listed = Dictionary(services.library.all.map { ($0.metaID, $0.listedAt ?? 0) }, uniquingKeysWith: max)
+        myList = await services.watch.library().filter(\.inLibrary).sorted { (listed[$0.id] ?? 0) > (listed[$1.id] ?? 0) }.compactMap { w in
             guard w.type == "movie" || w.type == "series" else { return nil }
             var s = Suggestion(art: w.id, kind: w.type, title: w.name, year: nil, reason: .inList("Mi lista"))
             if let poster = w.poster, !poster.isEmpty { s.poster = poster }

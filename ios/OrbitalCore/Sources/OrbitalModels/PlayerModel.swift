@@ -189,6 +189,7 @@ public final class PlayerModel: ObservableModel {
     var finalReported = false
     /// Dónde seguir según Trakt cuando solo se sabe el porcentaje (sin la duración): se busca en cuanto el motor la dice.
     var pendingResumeFraction: Double?
+    var pendingResumeRewind = 0.0     // vino de otro aparato: unos segundos antes (`ResumePoint.otherDeviceRewind`)
     var generation = 0
     var acceptingSnapshots = false     // false mientras se elige y se carga una fuente (lo que el motor diga entonces es del video anterior)
     var retrying = false
@@ -374,7 +375,7 @@ public final class PlayerModel: ObservableModel {
     /// cuando el motor diga cuánto dura (`seekToPendingResume`).
     private func resumeStart(_ resume: Task<ResumePoint, Never>?) async -> Double {
         guard let point = await resume?.value else { return 0 }
-        pendingResumeFraction = point.fraction
+        pendingResumeFraction = point.fraction; pendingResumeRewind = point.rewind
         return point.seconds
     }
 
@@ -382,7 +383,7 @@ public final class PlayerModel: ObservableModel {
     func seekToPendingResume(_ s: EngineSnapshot) async {
         guard let fraction = pendingResumeFraction, s.duration > 0 else { return }
         pendingResumeFraction = nil
-        let target = fraction * s.duration
+        let target = max(0, fraction * s.duration - pendingResumeRewind)
         guard target > 5, abs(target - s.position) > 5 else { return }
         if !playbackSettled { startupPosition = target }   // los 2 s de arranque se cuentan desde donde va a seguir
         await engine.seek(to: target)
@@ -426,7 +427,7 @@ public final class PlayerModel: ObservableModel {
         if case .started = phase {} else { rememberChoice() }
         let outcome = await watch.report(event, phase: phase)
         if case .started = phase { return }
-        if outcome.savedToStremio || outcome.queued { lastSave = clock() } else { watchedUnsaved += reserved }
+        if outcome.saved { lastSave = clock() } else { watchedUnsaved += reserved }
     }
 
     // MARK: pistas
@@ -500,7 +501,7 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// Al pasar a segundo plano: se guarda ya (iOS puede suspender la app).
-    public func appDidEnterBackground() async { if hasPlayed, phase != .closed, !closing { await report(.tick) } }
+    public func appDidEnterBackground() async { if hasPlayed, phase != .closed, !closing { await report(.background) } }
 
     // MARK: volver de segundo plano
     /// Volviendo de segundo plano: «Reconectando…» en vez de una pantalla negra, hasta que el video vuelve a avanzar.

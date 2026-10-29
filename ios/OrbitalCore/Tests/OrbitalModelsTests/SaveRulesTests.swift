@@ -7,49 +7,41 @@ import OrbitalCore
 @MainActor
 final class SaveRulesTests: XCTestCase {
     // MARK: lista por omisión
-    func testTraktWatchlistIsTheDefaultWhenTraktIsLinked() {
-        XCTAssertEqual(SaveDestination.preferred(traktLinked: true, metaID: "tt0386676"), .traktWatchlist)
-        XCTAssertEqual(SaveDestination.preferred(traktLinked: false, metaID: "tt0386676"), .stremioLibrary, "sin Trakt, Mi lista como siempre")
-        XCTAssertEqual(SaveDestination.preferred(traktLinked: true, metaID: "kitsu:123"), .stremioLibrary, "Trakt no conoce lo que no tiene IMDb")
-    }
-
-    func testFixedDestinationsPutTheDefaultFirst() {
-        XCTAssertEqual(SaveDestination.fixed(traktLinked: true, metaID: "tt1"), [.traktWatchlist, .stremioLibrary])
-        XCTAssertEqual(SaveDestination.fixed(traktLinked: false, metaID: "tt1"), [.stremioLibrary])
+    /// Una sola lista fija: Mi lista (el teléfono, y tu watchlist de Trakt si está conectado). Ya no hay «Mi lista (Stremio)».
+    func testMyListIsTheOnlyFixedDestination() {
+        XCTAssertEqual(SaveDestination.preferred(traktLinked: true, metaID: "tt0386676"), .myList)
+        XCTAssertEqual(SaveDestination.preferred(traktLinked: false, metaID: "kitsu:123"), .myList)
+        XCTAssertEqual(SaveDestination.fixed(traktLinked: true, metaID: "tt1"), [.myList])
+        XCTAssertEqual(SaveDestination.fixed(traktLinked: false, metaID: "tt1"), [.myList])
     }
 
     func testQuickSave() {
-        let w = SaveDestination.traktWatchlist, s = SaveDestination.stremioLibrary
-        XCTAssertEqual(QuickSave.decide(preferred: w, inLibrary: false, inWatchlist: false, inOtherLists: false), .add(w))
-        XCTAssertEqual(QuickSave.decide(preferred: w, inLibrary: false, inWatchlist: true, inOtherLists: false), .remove(w))
-        XCTAssertEqual(QuickSave.decide(preferred: w, inLibrary: true, inWatchlist: false, inOtherLists: false), .choose, "ya está en Mi lista: que elija")
-        XCTAssertEqual(QuickSave.decide(preferred: w, inLibrary: false, inWatchlist: true, inOtherLists: true), .choose)
-        XCTAssertEqual(QuickSave.decide(preferred: s, inLibrary: false, inWatchlist: false, inOtherLists: false), .add(s))
-        XCTAssertEqual(QuickSave.decide(preferred: s, inLibrary: true, inWatchlist: false, inOtherLists: false), .remove(s))
+        XCTAssertEqual(QuickSave.decide(inList: false, inOtherLists: false), .add(.myList))
+        XCTAssertEqual(QuickSave.decide(inList: true, inOtherLists: false), .remove(.myList))
+        XCTAssertEqual(QuickSave.decide(inList: true, inOtherLists: true), .choose)
+        XCTAssertEqual(QuickSave.decide(inList: false, inOtherLists: true), .choose)
     }
 
-    func testTheTitleSavesToTheWatchlistFromTheFirstTap() async throws {
-        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
-        rig.http.json[stremioGet] = ["result": []]
-        rig.http.json["https://api.trakt.tv/sync/watchlist?extended=full&sort_by=added&sort_how=desc"] = []
+    func testTheTitleSavesToMyListAndTheWatchlistFromTheFirstTap() async throws {
+        let rig = try ServicesRig(signedIn: false, traktLinked: true, traktClientID: "CID")
         rig.http.json["https://api.trakt.tv/sync/watchlist"] = [:]
         let title = TitleModel(rig.services, kind: "movie", metaID: "tt0816692")
-        XCTAssertEqual(title.saveDestination, .traktWatchlist, "se sabe sin esperar a la red")
+        XCTAssertEqual(title.saveDestination, .myList, "se sabe sin esperar a la red")
         await title.load()
-        XCTAssertEqual(title.quickSave, .add(.traktWatchlist))
-        await title.toggle(.traktWatchlist)
-        XCTAssertTrue(title.isSaved(in: .traktWatchlist))
-        XCTAssertFalse(title.inLibrary, "Mi lista no se toca")
-        XCTAssertEqual(title.quickSave, .remove(.traktWatchlist))
+        XCTAssertEqual(title.quickSave, .add(.myList))
+        await title.toggle(.myList)
+        XCTAssertTrue(title.isSaved(in: .myList))
+        XCTAssertEqual(title.quickSave, .remove(.myList))
         let sent = try XCTUnwrap(rig.http.bodies("https://api.trakt.tv/sync/watchlist").first.flatMap(JSON.parse))
         XCTAssertEqual(sent["movies"]?.array?.first?["ids"]?["imdb"]?.string, "tt0816692")
     }
 
-    func testWithoutTraktTheTitleSavesToMyList() throws {
-        let rig = try ServicesRig()
+    func testWithoutTraktMyListStaysOnThePhone() async throws {
+        let rig = try ServicesRig(signedIn: false)
         let title = TitleModel(rig.services, kind: "movie", metaID: "tt0816692")
-        XCTAssertEqual(title.saveDestination, .stremioLibrary)
-        XCTAssertEqual(title.fixedDestinations, [.stremioLibrary])
+        await title.toggle(.myList)
+        XCTAssertEqual(rig.services.library.entry("tt0816692")?.inList, true)
+        XCTAssertEqual(rig.services.traktOutbox.pending.map(\.imdb), ["tt0816692"], "llega a Trakt cuando lo conectes")
     }
 
     // MARK: «Guardar en…»

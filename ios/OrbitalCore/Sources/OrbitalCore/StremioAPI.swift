@@ -356,6 +356,7 @@ public struct Watchable: Sendable, Equatable, Identifiable {
     public var inContinue: Bool
     public var inLibrary: Bool
     public var watched: String? = nil   // los episodios vistos, tal cual los guarda Stremio (parseWatched)
+    public var seen: Set<String>? = nil // los episodios vistos ya leídos (la biblioteca del teléfono)
     public var isNew = false            // ibas al día y ya salió el episodio que sigue: «Nuevo»
 
     public var progress: Double? {
@@ -372,7 +373,7 @@ public struct Watchable: Sendable, Equatable, Identifiable {
     public static func == (a: Watchable, b: Watchable) -> Bool {
         a.id == b.id && a.type == b.type && a.name == b.name && a.poster == b.poster && a.videoID == b.videoID
             && a.timeOffset == b.timeOffset && a.duration == b.duration && a.lastWatched == b.lastWatched
-            && a.inContinue == b.inContinue && a.inLibrary == b.inLibrary && a.watched == b.watched && a.isNew == b.isNew
+            && a.inContinue == b.inContinue && a.inLibrary == b.inLibrary && a.watched == b.watched && a.seen == b.seen && a.isNew == b.isNew
     }
 
     /// ¿Es una serie fuera de Seguir viendo que viste hace poco? (Quizá ibas al día y ya salió el episodio que sigue.)

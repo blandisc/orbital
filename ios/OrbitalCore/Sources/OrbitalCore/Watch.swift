@@ -87,58 +87,76 @@ public struct ProgressEvent: Sendable, Equatable, Codable {
     enum Keys: String, CodingKey { case kind, metaID, videoID, originalTitle, position, duration, watched, at, finished }
 }
 
-/// Dónde seguir: el segundo exacto (Stremio, o Trakt convertido con la duración conocida) o, si de Trakt solo se sabe el
-/// porcentaje y aún no la duración, la fracción (0–1) para buscarla en cuanto el reproductor la diga.
+/// Dónde seguir: el segundo exacto (lo de este teléfono, o Trakt convertido con la duración conocida) o, si de Trakt solo se
+/// sabe el porcentaje y aún no la duración, la fracción (0–1) para buscarla en cuanto el reproductor la diga.
 public struct ResumePoint: Sendable, Equatable {
     public var seconds: Double
     public var fraction: Double?
-    public init(seconds: Double = 0, fraction: Double? = nil) { self.seconds = seconds; self.fraction = fraction }
+    /// Segundos que se regresan al usar la fracción (vino de otro aparato).
+    public var rewind: Double = 0
+    public init(seconds: Double = 0, fraction: Double? = nil, rewind: Double = 0) { self.seconds = seconds; self.fraction = fraction; self.rewind = rewind }
     public static let start = ResumePoint()
+    /// Al seguir donde ibas en OTRO aparato se regresan 10 s (como la consola): cubre el redondeo de Trakt y los logos.
+    public static let otherDeviceRewind = 10.0
 
     /// El segundo donde seguir con una duración ya conocida (0 si no se sabe dónde).
     public func seconds(duration: Double) -> Double {
         guard let fraction else { return seconds }
-        return duration > 0 ? fraction * duration : seconds
+        return duration > 0 ? max(0, fraction * duration - rewind) : seconds
     }
 
-    /// Lo MÁS RECIENTE entre tu biblioteca de Stremio (`lastWatched`, `timeOffset`) y la pausa de Trakt (`paused_at`,
-    /// `progress`). Así se sigue donde lo dejaste en otro dispositivo aunque solo uno de los dos se haya enterado. El porcentaje
-    /// de Trakt se vuelve segundos con la duración de Stremio de ese mismo video; sin ella, queda como fracción.
-    public static func latest(stremio raw: JSON?, videoID: String, trakt: TraktPlayback?) -> ResumePoint {
-        let fromStremio = StremioLibrary.resumeSeconds(raw, videoID: videoID)
-        guard let trakt else { return ResumePoint(seconds: fromStremio) }
-        let state = StremioLibrary.state(of: raw)
-        let sameVideo = state["video_id"]?.string == videoID
-        let stremioAt = sameVideo ? StremioLibrary.epoch(state["lastWatched"]) : nil
-        // Stremio lo vio después (o lo terminó después): manda Stremio, aunque diga «desde el principio».
-        if let stremioAt, stremioAt >= trakt.pausedAt.timeIntervalSince1970 { return ResumePoint(seconds: fromStremio) }
+    /// Lo MÁS RECIENTE entre este teléfono y la pausa de Trakt (`paused_at`, `progress`): así se sigue donde lo dejaste en
+    /// otro aparato aunque aquí no se haya visto. El porcentaje de Trakt se vuelve segundos con la duración que este teléfono
+    /// conoce de ese mismo video; sin ella, queda como fracción (el reproductor la usa con la duración del archivo).
+    public static func latest(local entry: LibraryEntry?, videoID: String, trakt: TraktPlayback?) -> ResumePoint {
+        let same = entry.map { $0.videoID == videoID && !$0.nextUp } ?? false
+        var mine = ResumePoint.start
+        if same, let entry, entry.position > 0,
+           !StremioLibrary.finished(position: entry.position, duration: entry.duration, kind: entry.kind) {
+            mine = entry.fraction.map { ResumePoint(seconds: entry.position, fraction: $0, rewind: otherDeviceRewind) } ?? ResumePoint(seconds: entry.position)
+        }
+        guard let trakt else { return mine }
+        // Lo de aquí es más nuevo (o es lo que este teléfono mismo le mandó a Trakt): manda aquí.
+        if same, let entry, trakt.pausedAt.timeIntervalSince1970 <= entry.localStamp { return mine }
         let fraction = trakt.progress / 100
-        // Casi nada, o ya casi visto (Trakt lo marca visto desde el 80 %): desde el principio, como hace Stremio.
-        guard fraction >= PlaybackRules.continueMinProgress, fraction < StremioLibrary.watchedAt else { return ResumePoint(seconds: fromStremio) }
-        let durationMs = sameVideo ? (state["duration"]?.doubleValue ?? 0) : 0
-        if durationMs > 0 { return ResumePoint(seconds: fraction * durationMs / 1000) }
-        return ResumePoint(seconds: 0, fraction: fraction)
+        // Casi nada, o ya casi visto (Trakt lo marca visto desde el 80 %): lo de aquí.
+        guard fraction >= PlaybackRules.continueMinProgress, fraction < StremioLibrary.watchedAt else { return mine }
+        if same, let entry, entry.duration > 0, entry.fraction == nil {
+            return ResumePoint(seconds: max(0, fraction * entry.duration - otherDeviceRewind))
+        }
+        return ResumePoint(seconds: 0, fraction: fraction, rewind: otherDeviceRewind)
     }
 }
 
-/// Lo que espera para subirse cuando vuelva la red (avance a Stremio y vistos a Trakt).
+/// Lo que espera para subirse cuando vuelva la red: la copia a Stremio, y lo que va a Trakt (vistos, desmarcados, tu avance y
+/// lo que quitaste de «Seguir viendo»). Lo del teléfono ya quedó guardado: esto solo es el viaje.
 public struct PendingWork: Sendable, Equatable, Codable {
+    /// La copia a Stremio (mientras dure la prueba).
     public var progress: [ProgressEvent] = []
     public var traktWatched: [TraktWatched] = []
+    /// «Marcar como no vista» que aún no llega a Trakt (y que una sincronización no debe regresar).
+    public var traktUnwatched: [TraktTarget] = []
+    /// Tu avance que no llegó a Trakt: al volver la red se manda solo si Trakt no tiene uno más nuevo.
+    public var traktProgress: [ProgressEvent] = []
+    /// Lo que quitaste de «Seguir viendo» (id del título y cuándo): se borra de Trakt lo que estaba a medias hasta esa hora.
+    public var playbackRemovals: [TraktWatched] = []
     public init() {}
     public struct TraktWatched: Sendable, Equatable, Codable {
         public var target: TraktTarget
         public var at: Double
         public init(target: TraktTarget, at: Double) { self.target = target; self.at = at }
     }
-    public var isEmpty: Bool { progress.isEmpty && traktWatched.isEmpty }
+    public var isEmpty: Bool { progress.isEmpty && traktWatched.isEmpty && traktUnwatched.isEmpty && traktProgress.isEmpty && playbackRemovals.isEmpty }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
         progress = try c.decodeIfPresent([ProgressEvent].self, forKey: .progress) ?? []
         traktWatched = try c.decodeIfPresent([TraktWatched].self, forKey: .traktWatched) ?? []
+        traktUnwatched = try c.decodeIfPresent([TraktTarget].self, forKey: .traktUnwatched) ?? []
+        traktProgress = try c.decodeIfPresent([ProgressEvent].self, forKey: .traktProgress) ?? []
+        playbackRemovals = try c.decodeIfPresent([TraktWatched].self, forKey: .playbackRemovals) ?? []
     }
-    enum Keys: String, CodingKey { case progress, traktWatched }
+    enum Keys: String, CodingKey { case progress, traktWatched, traktUnwatched, traktProgress, playbackRemovals }
 }
 
 public protocol PendingStore: Sendable {
@@ -174,11 +192,15 @@ public enum PlaybackPhase: Sendable, Equatable {
     case started                  // empezó o reanudó
     case tick                     // cada minuto
     case paused
+    /// La app se fue a segundo plano (el audio puede seguir sonando): se guarda y a Trakt se le manda una pausa.
+    case background
     case stopped(finished: Bool)  // se cerró el reproductor (finished: llegó al final)
 }
 
 public struct ReportOutcome: Sendable, Equatable {
-    public var savedToStremio = false
+    /// Quedó guardado en el teléfono.
+    public var saved = false
+    /// La copia a Stremio quedó en la cola (sin conexión).
     public var queued = false
 }
 
@@ -196,285 +218,3 @@ enum WatchError: Error, CustomStringConvertible {
     var description: String { "No encontré ese título." }
 }
 
-/// Guarda lo que ves: en tu cuenta de Stremio (eje de todo, lo leen la app, Orbital y Stremio) y en Trakt
-/// (scrobble). Lo que no se pueda subir (sin internet) espera en una cola y se sube al volver, sin pisar
-/// cambios más nuevos hechos en otro lado.
-public actor WatchService {
-    private let stremio: StremioAPI
-    private let authKey: @Sendable () -> String?
-    private let cinemeta: Cinemeta
-    private let trakt: Trakt?
-    private let pending: PendingStore
-    private let clock: @Sendable () -> Date
-    private let gate: FlushGate
-    private let scrobbleLog: ScrobbleLog?
-
-    public init(stremio: StremioAPI, authKey: @escaping @Sendable () -> String?, cinemeta: Cinemeta, trakt: Trakt? = nil,
-                pending: PendingStore, clock: @escaping @Sendable () -> Date = { Date() }, gate: FlushGate = FlushGate(),
-                scrobbleLog: ScrobbleLog? = nil) {
-        self.stremio = stremio; self.authKey = authKey; self.cinemeta = cinemeta; self.trakt = trakt; self.pending = pending; self.clock = clock; self.gate = gate
-        self.scrobbleLog = scrobbleLog
-    }
-
-    func authKeyValue() -> String? { authKey() }
-    func stremioClient() -> StremioAPI { stremio }
-
-    /// Dónde ibas en segundos: lo más reciente entre Stremio y Trakt (0 si no se sabe). Si de Trakt solo se sabe el porcentaje
-    /// (sin la duración), lo de Stremio (Infuse recibe segundos, no puede buscar después).
-    public func resumePosition(metaID: String, videoID: String, kind: String? = nil) async -> Double {
-        let (point, stremio) = await resume(metaID: metaID, videoID: videoID, kind: kind)
-        return point.fraction == nil ? point.seconds : stremio
-    }
-
-    /// Dónde seguir: lo más reciente entre tu biblioteca de Stremio y lo que Trakt guardó al pausar o cerrar en otro dispositivo.
-    /// Sin Trakt conectado, exactamente lo de Stremio.
-    public func resumePoint(metaID: String, videoID: String, kind: String? = nil) async -> ResumePoint {
-        await resume(metaID: metaID, videoID: videoID, kind: kind).point
-    }
-
-    private func resume(metaID: String, videoID: String, kind: String?) async -> (point: ResumePoint, stremio: Double) {
-        // Los dos a la vez: Trakt guarda lo suyo un minuto (`Trakt.playback`), así que casi siempre no espera nada.
-        let target = TraktTarget(videoID: videoID, kind: kind ?? (videoID == metaID ? "movie" : "series"))
-        async let paused = Self.paused(trakt, target)
-        var item: JSON?
-        if let key = authKey() { item = try? await stremio.libraryItem(authKey: key, id: metaID, maxAge: StremioAPI.recentRead) }
-        let point = ResumePoint.latest(stremio: item, videoID: videoID, trakt: await paused)
-        return (point, StremioLibrary.resumeSeconds(item, videoID: videoID))
-    }
-
-    /// `scrobbleToTrakt: false` para Infuse, que ya avisa a Trakt con su propia conexión (así no se duplica).
-    @discardableResult
-    public func report(_ event: ProgressEvent, phase: PlaybackPhase, scrobbleToTrakt: Bool = true) async -> ReportOutcome {
-        var outcome = ReportOutcome()
-        if scrobbleToTrakt { await scrobble(event, phase) }
-        switch phase {
-        case .started: return outcome
-        case .tick, .paused:
-            outcome = await saveProgress(event, final: false)
-        case .stopped(let finished):
-            var final = event
-            final.finished = finished || event.finished
-            outcome = await saveProgress(final, final: true)
-        }
-        return outcome
-    }
-
-    /// ¿Vale la pena volver a intentarlo más tarde? (sin red, servidor caído, límite de peticiones o sesión por reconectar)
-    static func shouldRetry(_ error: TraktError) -> Bool {
-        switch error {
-        case .network, .auth: return true
-        case .http(let status): return status >= 500 || status == 429 || status == 408
-        case .invalid: return false
-        }
-    }
-
-    private func scrobble(_ event: ProgressEvent, _ phase: PlaybackPhase) async {
-        guard let trakt, trakt.linked else { return }
-        guard let target = TraktTarget(videoID: event.videoID, kind: event.kind) else {
-            // Sin IMDb (un complemento con sus propios ids) Trakt no lo reconoce: se dice una vez, al empezar, en vez de callar.
-            if case .started = phase { scrobbleLog?.recordFailure("«\(Self.scrobbleTitle(event))» no tiene ficha de IMDb: Trakt no lo puede registrar.") }
-            return
-        }
-        guard event.duration > 0 else { return }
-        let percent = min(100, max(0, event.position / event.duration * 100))
-        let action: ScrobbleAction
-        switch phase {
-        case .started: action = .start
-        case .tick: return                 // Trakt ya sabe que sigues viendo
-        case .paused: action = .pause
-        case .stopped: action = .stop
-        }
-        do {
-            let result = try await trakt.scrobble(action, target, progress: percent)
-            // 409 = ya estaba registrado: no es un error. Menos de 1 % (422) no cuenta como aviso.
-            if result != .ignored { scrobbleLog?.recordSent(title: Self.scrobbleTitle(event), action: action, at: clock()) }
-        } catch let error as TraktError {
-            scrobbleLog?.recordFailure(error.description)
-            // Sin conexión (o Trakt con problemas) al terminar: lo visto (≥ 80 %) se sube después con su fecha real.
-            if Self.shouldRetry(error), case .stopped = phase, percent >= 80 { enqueue(trakt: .init(target: target, at: event.at)) }
-        } catch {
-            scrobbleLog?.recordFailure("\(error)")
-        }
-    }
-
-    private static func paused(_ trakt: Trakt?, _ target: TraktTarget?) async -> TraktPlayback? {
-        guard let trakt, trakt.linked, let target else { return nil }
-        return await trakt.paused(target)
-    }
-
-    /// «The Office T2 · E5» o «Dune»: cómo se dice lo último que se mandó.
-    static func scrobbleTitle(_ event: ProgressEvent) -> String {
-        guard event.kind == "series", let target = TraktTarget(videoID: event.videoID, kind: "series"),
-              let season = target.season, let episode = target.episode else { return event.originalTitle }
-        return "\(event.originalTitle) T\(season) · E\(episode)"
-    }
-
-    private func enqueue(trakt item: PendingWork.TraktWatched) {
-        var work = pending.load()
-        // El mismo título cerrado dos veces sin red es UN visionado, no dos.
-        work.traktWatched.removeAll { $0.target == item.target && abs($0.at - item.at) < 12 * 3600 }
-        work.traktWatched.append(item)
-        pending.save(work)
-    }
-
-    /// Guarda en Stremio dónde te quedaste. `final`: se cerró el reproductor.
-    private func saveProgress(_ event: ProgressEvent, final: Bool) async -> ReportOutcome {
-        var outcome = ReportOutcome()
-        guard authKey() != nil else { return outcome }
-        // Se abrió y se cerró sin ver nada: no se toca tu biblioteca (salvo que se haya dicho que se terminó).
-        if final && !event.finished && event.watched < PlaybackRules.minWatchedToSave && event.position < PlaybackRules.minPositionToSave { return outcome }
-        do {
-            try await write(event)
-            outcome.savedToStremio = true
-        } catch {
-            var work = pending.load()
-            work.progress.append(event)
-            pending.save(work)
-            outcome.queued = true
-        }
-        return outcome
-    }
-
-    private func write(_ event: ProgressEvent) async throws {
-        guard let key = authKey() else { return }
-        let info = try? await cinemeta.meta(kind: event.kind, id: event.metaID)  // la ficha ORIGINAL
-        let raw = try await stremio.libraryItem(authKey: key, id: event.metaID)
-        // El nombre que se escribe es el de Cinemeta (original). Sin él y sin un item previo no se inventa uno: se reintenta luego.
-        let name = info?["name"]?.nonEmptyString ?? raw?["name"]?.nonEmptyString ?? (event.originalTitle.isEmpty ? nil : event.originalTitle)
-        guard let name else { throw WatchError.noTitle }
-        let videoIDs = info.map { CinemetaParsing.seasonVideoIDs($0) } ?? []
-        let next = event.kind == "series" ? info.flatMap { CinemetaParsing.nextEpisode($0, after: event.videoID) } : nil
-        var position = StremioLibrary.finite(event.position), duration = StremioLibrary.finite(event.duration)
-        if event.finished {   // se dijo que se terminó: cuenta como visto aunque falte un poco o no se sepa la duración
-            duration = max(duration, position, 1)
-            position = duration
-        }
-        let item = StremioLibrary.withProgress(
-            raw, metaID: event.metaID, kind: event.kind, name: name, poster: info?["poster"]?.string,
-            videoID: event.videoID, position: position, duration: duration, watched: StremioLibrary.finite(event.watched), nextVideo: next,
-            now: event.at, videoIDs: videoIDs.isEmpty ? nil : videoIDs)
-        try await stremio.saveLibraryItem(authKey: key, item: item)
-    }
-
-    /// Sube lo que quedó esperando. Un avance viejo no pisa algo más nuevo hecho en otro dispositivo (Orbital, Stremio).
-    /// Solo uno a la vez; lo que llegue a la cola mientras tanto se conserva.
-    @discardableResult
-    public func flushPending() async -> PendingWork {
-        guard gate.enter() else { return pending.load() }
-        defer { gate.leave() }
-        let snapshot = pending.load()
-        guard !snapshot.isEmpty else { return snapshot }
-        var retryProgress: [ProgressEvent] = [], retryTrakt: [PendingWork.TraktWatched] = []
-        for event in snapshot.progress.sorted(by: { $0.at < $1.at }) {
-            guard let key = authKey() else { retryProgress.append(event); continue }
-            do {
-                if let raw = try await stremio.libraryItem(authKey: key, id: event.metaID),
-                   let newer = StremioLibrary.epoch(raw["_mtime"]), newer > event.at + 1 { continue }  // el remoto es más nuevo: no se pisa
-                try await write(event)
-            } catch { retryProgress.append(event) }
-        }
-        for watched in snapshot.traktWatched {
-            guard let trakt, trakt.linked else { retryTrakt.append(watched); continue }
-            do { try await trakt.addToHistory(watched.target, watchedAt: Date(timeIntervalSince1970: watched.at)) }
-            catch let error as TraktError { if Self.shouldRetry(error) { retryTrakt.append(watched) } }
-            catch {}
-        }
-        // Lo que se subió sale; lo que falló se queda; lo que llegó durante el vaciado también se queda.
-        let current = pending.load()
-        var next = PendingWork()
-        next.progress = current.progress.filter { !snapshot.progress.contains($0) } + retryProgress
-        next.traktWatched = current.traktWatched.filter { !snapshot.traktWatched.contains($0) } + retryTrakt
-        pending.save(next)
-        return next
-    }
-
-    // MARK: biblioteca de Stremio
-    public func library() async throws -> [Watchable] {
-        guard let key = authKey() else { throw StremioError.api("Conecta tu cuenta de Stremio en Ajustes") }
-        return StremioLibrary.parseLibrary(try await stremio.library(authKey: key))
-    }
-
-    /// Las series que ibas al día y ya tienen episodio nuevo, de vuelta en Seguir viendo («Nuevo»), en su lugar según cuándo
-    /// salió. Como en la consola (`_returning` de watch.py); Cinemeta tiene caché, así que la segunda vez es al instante.
-    public func withReturning(_ all: [Watchable]) async -> [Watchable] {
-        let now = clock().timeIntervalSince1970
-        let candidates = Array(all.filter { $0.mayReturn(now: now) }.prefix(StremioLibrary.returnChecks))
-        guard !candidates.isEmpty else { return all }
-        let cinemeta = self.cinemeta
-        let found = await withTaskGroup(of: (String, Watchable?).self) { group in
-            for w in candidates {
-                group.addTask {
-                    guard let videoID = w.videoID, let info = try? await cinemeta.meta(kind: "series", id: w.id),
-                          // lo quitaste a medias de Seguir viendo: no se terminó, no vuelve
-                          StremioLibrary.parseWatched(w.watched, videoIDs: CinemetaParsing.seasonVideoIDs(info)).contains(videoID),
-                          let new = CinemetaParsing.newEpisode(info, after: videoID, since: w.lastWatched ?? now, now: now)
-                    else { return (w.id, nil) }
-                    return (w.id, w.returning(videoID: new.id, released: new.released))
-                }
-            }
-            var out: [String: Watchable] = [:]
-            for await (id, w) in group { if let w { out[id] = w } }
-            return out
-        }
-        guard !found.isEmpty else { return all }
-        return all.map { found[$0.id] ?? $0 }.sorted { ($0.lastWatched ?? 0) > ($1.lastWatched ?? 0) }
-    }
-
-    /// «Seguir viendo»: lo que dejaste a medias (o el siguiente episodio), sin lo que abriste un momento.
-    public func continueWatching() async throws -> [Watchable] {
-        await withReturning(try await library()).filter { w in
-            guard w.inContinue else { return false }
-            let nextUp = w.type == "series" && w.timeOffset <= 1 && w.duration == 0 && w.episode.episode != nil
-            return nextUp || (w.progress ?? 1) >= PlaybackRules.continueMinProgress
-        }
-    }
-
-    /// Mi lista. El nombre del item nuevo sale de Cinemeta (original), no del título que se muestra.
-    public func setInLibrary(kind: String, metaID: String, title: String, poster: String?, add: Bool) async throws {
-        guard let key = authKey() else { throw StremioError.api("Conecta tu cuenta de Stremio en Ajustes") }
-        let raw = try await stremio.libraryItem(authKey: key, id: metaID)
-        var name = raw?["name"]?.nonEmptyString
-        var art = poster
-        if raw == nil {
-            let info = try? await cinemeta.meta(kind: kind, id: metaID)
-            name = info?["name"]?.nonEmptyString
-            art = info?["poster"]?.string ?? poster
-        }
-        guard let finalName = name else { throw WatchError.noTitle }
-        try await stremio.saveLibraryItem(authKey: key, item: StremioLibrary.libraryToggled(raw, metaID: metaID, kind: kind, name: finalName, poster: art, add: add, now: clock().timeIntervalSince1970))
-    }
-
-    /// Marca un episodio (o la película) como visto en Stremio, releyendo el item para no pisar lo de otro dispositivo.
-    public func markWatched(kind: String, metaID: String, videoID: String) async throws {
-        guard let key = authKey() else { throw StremioError.api("Conecta tu cuenta de Stremio en Ajustes") }
-        let info = try? await cinemeta.meta(kind: kind, id: metaID)
-        let raw = try await stremio.libraryItem(authKey: key, id: metaID)
-        guard let name = info?["name"]?.nonEmptyString ?? raw?["name"]?.nonEmptyString else { throw WatchError.noTitle }
-        let ids = info.map { CinemetaParsing.seasonVideoIDs($0) } ?? []
-        let next = kind == "series" ? info.flatMap { CinemetaParsing.nextEpisode($0, after: videoID) } : nil
-        let item = StremioLibrary.markWatched(raw, metaID: metaID, kind: kind, name: name, poster: info?["poster"]?.string, videoID: videoID,
-                                              videoIDs: ids, nextVideo: next, now: clock().timeIntervalSince1970)
-        try await stremio.saveLibraryItem(authKey: key, item: item)
-    }
-
-    /// «Quitar de Seguir viendo». Con `newEpisode` (la serie había vuelto con ese episodio), no vuelve otra vez.
-    public func dismissContinue(metaID: String, newEpisode: String? = nil) async throws {
-        guard let key = authKey(), let raw = try await stremio.libraryItem(authKey: key, id: metaID) else { return }
-        try await stremio.saveLibraryItem(authKey: key, item: StremioLibrary.dismissed(raw, now: clock().timeIntervalSince1970, videoID: newEpisode))
-    }
-}
-
-extension WatchService {
-    /// El libraryItem tal cual lo guarda Stremio (para leer el bitfield de «visto» y dónde ibas).
-    public func rawItem(metaID: String) async -> JSON? {
-        guard let key = authKeyValue(), let item = try? await stremioClient().libraryItem(authKey: key, id: metaID, maxAge: StremioAPI.recentRead) else { return nil }
-        return item
-    }
-}
-
-extension CinemetaParsing {
-    /// Los ids de todos los videos en el orden del catálogo (para el bitfield de «visto»).
-    public static func seasonVideoIDs(_ meta: JSON) -> [String] {
-        (meta["videos"]?.array ?? []).compactMap { $0["id"]?.nonEmptyString }
-    }
-}

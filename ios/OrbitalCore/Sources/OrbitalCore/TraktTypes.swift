@@ -84,8 +84,11 @@ public struct TraktPlayback: Sendable, Equatable {
     public var progress: Double
     public var pausedAt: Date
     public var target: TraktTarget
-    public init(id: Int, progress: Double, pausedAt: Date, target: TraktTarget) {
-        self.id = id; self.progress = progress; self.pausedAt = pausedAt; self.target = target
+    /// El nombre en Trakt (el de la película o el de la serie) y los minutos que dura ese video (`extended=full`).
+    public var title = ""
+    public var runtime: Int?
+    public init(id: Int, progress: Double, pausedAt: Date, target: TraktTarget, title: String = "", runtime: Int? = nil) {
+        self.id = id; self.progress = progress; self.pausedAt = pausedAt; self.target = target; self.title = title; self.runtime = runtime
     }
 }
 
@@ -172,7 +175,10 @@ public enum TraktParsing {
         guard let id = row["id"]?.intValue, let progress = row["progress"]?.doubleValue, progress > 0,
               let stamp = row["paused_at"]?.string, let at = date(stamp) else { return nil }
         let target: TraktTarget
-        if row["type"]?.string == "episode" {
+        let isEpisode = row["type"]?.string == "episode"
+        let item = isEpisode ? row["show"] : row["movie"]
+        let minutes = (isEpisode ? row["episode"]?["runtime"]?.intValue ?? item?["runtime"]?.intValue : item?["runtime"]?.intValue).flatMap { $0 > 0 ? $0 : nil }
+        if isEpisode {
             guard let imdb = row["show"]?["ids"]?["imdb"]?.string, Trakt.isIMDb(imdb),
                   let season = row["episode"]?["season"]?.intValue, let number = row["episode"]?["number"]?.intValue else { return nil }
             target = TraktTarget(imdb: imdb, season: season, episode: number)
@@ -180,7 +186,7 @@ public enum TraktParsing {
             guard let imdb = row["movie"]?["ids"]?["imdb"]?.string, Trakt.isIMDb(imdb) else { return nil }
             target = TraktTarget(imdb: imdb)
         }
-        return TraktPlayback(id: id, progress: min(100, progress), pausedAt: at, target: target)
+        return TraktPlayback(id: id, progress: min(100, progress), pausedAt: at, target: target, title: item?["title"]?.string ?? "", runtime: minutes)
     }
 
     /// «2025-10-16T01:00:00.000Z» (con o sin milésimas).

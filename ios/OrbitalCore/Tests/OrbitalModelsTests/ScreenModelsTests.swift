@@ -45,12 +45,17 @@ final class ScreenModelsTests: XCTestCase {
     }
 
     // MARK: inicio
-    func testHomeShowsContinueWatchingMyListAndFallsBackToTheLastCopyOffline() async throws {
-        let rig = try ServicesRig()
-        rig.http.json[stremioGet] = ["result": [
-            ["_id": "tt0386676", "name": "The Office", "type": "series", "removed": true, "temp": true, "state": ["video_id": "tt0386676:2:5", "timeOffset": 600_000, "duration": 1_320_000, "lastWatched": "2025-01-02T00:00:00.000Z"]],
-            ["_id": "tt1160419", "name": "Dune", "type": "movie", "removed": false, "temp": false, "state": [:]],
-            ["_id": "tt9", "name": "Abierta un momento", "type": "movie", "removed": true, "temp": true, "state": ["video_id": "tt9", "timeOffset": 1000, "duration": 6_000_000]]]]
+    /// «Seguir viendo» y Mi lista salen del teléfono (sin cuenta de Stremio) y abren al instante con la copia de la última vez.
+    func testHomeShowsContinueWatchingAndMyListFromThePhone() async throws {
+        let rig = try ServicesRig(signedIn: false)
+        let lib = rig.services.library
+        lib.update("tt0386676", make: { LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office") }) {
+            $0.videoID = "tt0386676:2:5"; $0.position = 600; $0.duration = 1320; $0.updatedAt = 1_735_776_000
+        }
+        lib.update("tt1160419", make: { LibraryEntry(metaID: "tt1160419", kind: "movie", name: "Dune") }) { $0.inList = true; $0.listedAt = 1 }
+        lib.update("tt9", make: { LibraryEntry(metaID: "tt9", kind: "movie", name: "Abierta un momento") }) {
+            $0.videoID = "tt9"; $0.position = 1; $0.duration = 6000; $0.updatedAt = 2
+        }
         let home = HomeModel(rig.services)
         await home.refresh()
         XCTAssertEqual(home.continueWatching.map(\.metaID), ["tt0386676"])
@@ -58,33 +63,27 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(home.continueWatching.first?.timeLeft, "quedan 12 min")
         XCTAssertEqual(home.continueWatching.first?.progress ?? 0, 600.0 / 1320.0, accuracy: 0.001)
         XCTAssertEqual(home.myList.map(\.metaID), ["tt1160419"])
-        XCTAssertFalse(home.offline)
-        // Sin red: se enseña lo último que se vio, con aviso.
-        rig.http.json[stremioGet] = nil
-        rig.http.statuses[stremioGet] = 500
+        XCTAssertEqual(home.traktPending.map(\.imdb), ["tt1160419"], "Mi lista se pinta en el renglón de la watchlist")
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("api.strem.io") }, "sin Stremio conectado no se le pregunta nada")
         let again = HomeModel(rig.services)
         XCTAssertEqual(again.continueWatching.map(\.metaID), ["tt0386676"], "la copia guardada se ve al instante")
-        await again.refresh()
-        XCTAssertTrue(again.offline)
-        XCTAssertEqual(again.continueWatching.map(\.metaID), ["tt0386676"])
     }
 
     /// «Quitar de Mi lista» desde el menú: sale al instante y «Deshacer» la regresa a su mismo lugar (sin duplicarla).
     func testRemovingFromMyListHidesAndUndoRestoresInPlace() async throws {
-        let rig = try ServicesRig()
-        rig.http.json[stremioGet] = ["result": [
-            ["_id": "tt1", "name": "Una", "type": "movie", "removed": false, "temp": false, "state": [:]],
-            ["_id": "tt2", "name": "Dos", "type": "movie", "removed": false, "temp": false, "state": [:]],
-            ["_id": "tt3", "name": "Tres", "type": "movie", "removed": false, "temp": false, "state": [:]]]]
+        let rig = try ServicesRig(signedIn: false)
+        for (i, id) in ["tt1", "tt2", "tt3"].enumerated() {
+            rig.services.library.update(id, make: { LibraryEntry(metaID: id, kind: "movie", name: id) }) { $0.inList = true; $0.listedAt = Double(10 - i) }
+        }
         let home = HomeModel(rig.services)
         await home.refresh()
-        let before = home.myList.map(\.metaID)
-        XCTAssertEqual(before.count, 3)
-        home.setShown(before[1], in: .stremioLibrary, shown: false)
-        XCTAssertEqual(home.myList.map(\.metaID), [before[0], before[2]])
-        home.setShown(before[1], in: .stremioLibrary, shown: true)
-        home.setShown(before[1], in: .stremioLibrary, shown: true)
-        XCTAssertEqual(home.myList.map(\.metaID), before, "regresa en su lugar, una sola vez")
+        let before = home.traktPending.map(\.imdb)
+        XCTAssertEqual(before, ["tt1", "tt2", "tt3"])
+        home.setShown(before[1], shown: false)
+        XCTAssertEqual(home.traktPending.map(\.imdb), [before[0], before[2]])
+        home.setShown(before[1], shown: true)
+        home.setShown(before[1], shown: true)
+        XCTAssertEqual(home.traktPending.map(\.imdb), before, "regresa en su lugar, una sola vez")
     }
 
     func testSpotlightInterleavesListsWithoutRepeatsOrWhatYouAreWatching() {
@@ -98,7 +97,9 @@ final class ScreenModelsTests: XCTestCase {
         let rig = try ServicesRig(tmdbKey: "K")
         rig.services.settings.update { $0.uiLanguage = "es" }
         rig.services.reconfigure()
-        rig.http.json[stremioGet] = ["result": [["_id": "tt0386676", "name": "The Office", "type": "series", "state": ["video_id": "tt0386676:1:1", "timeOffset": 500_000, "duration": 1_320_000]]]]
+        rig.services.library.update("tt0386676", make: { LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office") }) {
+            $0.videoID = "tt0386676:1:1"; $0.position = 500; $0.duration = 1320; $0.updatedAt = 1
+        }
         rig.http.json["https://api.themoviedb.org/3/find/tt0386676?external_source=imdb_id&api_key=K&language=es-MX"] = ["tv_results": [["id": 2316]]]
         rig.http.json["https://api.themoviedb.org/3/tv/2316?language=es-MX&api_key=K"] = ["name": "La Oficina", "overview": "x", "genres": [], "seasons": []]
         let home = HomeModel(rig.services)
@@ -170,6 +171,11 @@ final class ScreenModelsTests: XCTestCase {
             "state": ["video_id": "tt0386676:1:3", "timeOffset": 660_000, "duration": 1_320_000,
                       "watched": .string(StremioLibrary.encodeWatched(["tt0386676:1:1", "tt0386676:1:2"], videoIDs: CinemetaParsing.seasonVideoIDs(try Fixtures.json("cinemeta/meta_series_tt0386676.json"))) ?? "")]]]]
         rig.http.json[stremioPut] = ["result": ["success": true]]
+        // Lo mismo en el teléfono (la ficha lee de aquí; Stremio solo recibe copia).
+        rig.services.library.update("tt0386676", make: { LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office") }) {
+            $0.videoID = "tt0386676:1:3"; $0.position = 660; $0.duration = 1320; $0.updatedAt = 1_759_000_000
+            $0.seen = ["tt0386676:1:1", "tt0386676:1:2"]; $0.inList = true; $0.listedAt = 1
+        }
         return rig
     }
 
@@ -237,54 +243,55 @@ final class ScreenModelsTests: XCTestCase {
     /// verdad (los especiales no cuentan como primero).
     func testContinueVideoWithoutOpeningTheTitle() throws {
         let seasons = CinemetaParsing.seasons(try Fixtures.json("cinemeta/meta_series_tt0386676.json"))
-        let going: JSON = ["state": ["video_id": "tt0386676:2:5", "timeOffset": 0]]
-        XCTAssertEqual(TitleModel.continueVideoID(kind: "series", metaID: "tt0386676", raw: going, seasons: seasons), "tt0386676:2:5")
-        XCTAssertEqual(TitleModel.continueVideoID(kind: "series", metaID: "tt0386676", raw: nil, seasons: seasons), "tt0386676:1:1")
-        XCTAssertEqual(TitleModel.continueVideoID(kind: "movie", metaID: "tt0816692", raw: nil, seasons: []), "tt0816692")
+        var going = LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office")
+        going.videoID = "tt0386676:2:5"; going.nextUp = true
+        XCTAssertEqual(TitleModel.continueVideoID(kind: "series", metaID: "tt0386676", entry: going, seasons: seasons), "tt0386676:2:5")
+        XCTAssertEqual(TitleModel.continueVideoID(kind: "series", metaID: "tt0386676", entry: nil, seasons: seasons), "tt0386676:1:1")
+        XCTAssertEqual(TitleModel.continueVideoID(kind: "movie", metaID: "tt0816692", entry: nil, seasons: []), "tt0816692")
     }
 
-    func testMyListToggleWritesOnlyLibraryFlagsToStremioAndRollsBackOnError() async throws {
+    /// Mi lista: cambia en el teléfono al instante, viaja a tu watchlist de Trakt y a Stremio solo como copia (sin tocar el avance).
+    func testMyListToggleIsLocalTravelsToTraktAndCopiesToStremio() async throws {
         let rig = try titleRig()
+        rig.secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(1_760_000_000 + 86400)}"#)
+        rig.services.settings.update { $0.traktClientID = "CID" }
+        rig.services.reconfigure()
+        rig.http.json["https://api.trakt.tv/sync/watchlist"] = [:]
+        rig.http.json["https://api.trakt.tv/sync/watchlist/remove"] = [:]
         let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
         await title.load()
+        XCTAssertTrue(title.inLibrary)
         await title.toggleLibrary()
         XCTAssertFalse(title.inLibrary)
-        let sent = try XCTUnwrap(rig.http.bodies(stremioPut).last.flatMap(JSON.parse))
-        let item = try XCTUnwrap(sent["changes"]?.array?.first)
-        XCTAssertEqual(item["removed"]?.bool, true)
-        XCTAssertEqual(item["state"]?["video_id"]?.string, "tt0386676:1:3", "el avance no se toca")
+        XCTAssertEqual(rig.services.library.entry("tt0386676")?.inList, false)
+        let sent = try XCTUnwrap(rig.http.bodies("https://api.trakt.tv/sync/watchlist/remove").first.flatMap(JSON.parse))
+        XCTAssertEqual(sent["shows"]?.array?.first?["ids"]?["imdb"]?.string, "tt0386676")
+        let copy = try XCTUnwrap(rig.http.bodies(stremioPut).last.flatMap(JSON.parse)?["changes"]?.array?.first)
+        XCTAssertEqual(copy["removed"]?.bool, true)
+        XCTAssertEqual(copy["state"]?["video_id"]?.string, "tt0386676:1:3", "el avance de Stremio no se toca")
+        // Stremio falla: Mi lista cambia igual (la copia no manda) y no hay error en pantalla.
         rig.http.statuses[stremioPut] = 500
         await title.toggleLibrary()
-        XCTAssertFalse(title.inLibrary, "falló: vuelve a como estaba")
-        XCTAssertNotNil(title.message)
+        XCTAssertTrue(title.inLibrary)
+        XCTAssertNil(title.message)
     }
 
-    func testTraktWatchlistToggle() async throws {
-        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
-        rig.http.json[stremioGet] = ["result": []]
-        rig.http.json["https://api.trakt.tv/sync/watchlist?extended=full&sort_by=added&sort_how=desc"] = []
-        rig.http.json["https://api.trakt.tv/sync/watchlist"] = [:]
-        let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
-        await title.load()
-        XCTAssertTrue(title.traktAvailable)
-        XCTAssertFalse(title.inWatchlist)
-        await title.toggleWatchlist()
-        XCTAssertTrue(title.inWatchlist)
-        let sent = try XCTUnwrap(rig.http.bodies("https://api.trakt.tv/sync/watchlist").first.flatMap(JSON.parse))
-        XCTAssertEqual(sent["shows"]?.array?.first?["ids"]?["imdb"]?.string, "tt0386676")
-    }
-
-    func testMarkingWatchedUpdatesTheBitfieldAndMovesToNext() async throws {
+    /// Marcar visto: ✓ en el teléfono, a Trakt (`/sync/history`) y copia en Stremio (el bitfield), con el título original.
+    func testMarkingWatchedIsLocalAndCopiesTheBitfieldToStremio() async throws {
         let rig = try ServicesRig()
         rig.http.json[stremioGet] = ["result": []]
         rig.http.json[stremioPut] = ["result": ["success": true]]
         let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
         await title.load()
         await title.markWatched("tt0386676:1:1")
+        XCTAssertTrue(title.rows.first { $0.id == "tt0386676:1:1" }?.watched == true)
+        XCTAssertEqual(rig.services.library.entry("tt0386676")?.videoID, "tt0386676:1:2", "pasa al siguiente")
         let item = try XCTUnwrap(rig.http.bodies(stremioPut).last.flatMap(JSON.parse)?["changes"]?.array?.first)
         let ids = CinemetaParsing.seasonVideoIDs(try Fixtures.json("cinemeta/meta_series_tt0386676.json"))
         XCTAssertEqual(StremioLibrary.parseWatched(item["state"]?["watched"]?.string, videoIDs: ids), ["tt0386676:1:1"])
         XCTAssertEqual(item["name"]?.string, "The Office", "con el título original")
+        await title.unmarkWatched("tt0386676:1:1")
+        XCTAssertFalse(title.rows.first { $0.id == "tt0386676:1:1" }?.watched == true)
     }
 
     func testDownloadingPicksAModerateSourceAndKeepsTheLinkOutOfTheQueue() async throws {

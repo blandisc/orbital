@@ -35,17 +35,17 @@ final class TitleActionsTests: XCTestCase {
         XCTAssertNil(start)
     }
 
-    func testPreferredDestinationIsStremioWithoutTrakt() throws {
-        XCTAssertEqual(TitleActions(try ServicesRig().services).preferredDestination(for: suggestion()), .stremioLibrary)
-        XCTAssertEqual(TitleActions(try ServicesRig(traktLinked: true, traktClientID: "demo").services).preferredDestination(for: suggestion()), .traktWatchlist)
+    func testPreferredDestinationIsMyList() throws {
+        XCTAssertEqual(TitleActions(try ServicesRig().services).preferredDestination(for: suggestion()), .myList)
     }
 
-    func testSavingToStremioWritesTheLibrary() async throws {
+    func testSavingKeepsItOnThePhoneAndCopiesToStremio() async throws {
         let rig = try ServicesRig()
         rig.http.json[stremioGet] = ["result": []]
         rig.http.json[stremioPut] = ["result": ["success": true]]
-        try await TitleActions(rig.services).setSaved(suggestion(), in: .stremioLibrary, add: true)
-        XCTAssertEqual(rig.http.bodies(stremioPut).count, 1, "una escritura a la biblioteca de Stremio")
+        try await TitleActions(rig.services).setSaved(suggestion(), add: true)
+        XCTAssertEqual(rig.services.library.entry(suggestion().imdb)?.inList, true)
+        XCTAssertEqual(rig.http.bodies(stremioPut).count, 1, "una copia a la biblioteca de Stremio")
     }
 
     func testFavoritesNeedTrakt() async throws {

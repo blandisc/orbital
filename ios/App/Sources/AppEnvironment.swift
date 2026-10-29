@@ -339,7 +339,7 @@ final class AppEnvironment {
 
     /// Un video de fuera: se copia a la app (los de hace días se borran), se reconoce por el nombre del archivo (Cinemeta: nombre,
     /// año, temporada y episodio) y se reproduce. Reconocido, el reproductor le busca subtítulos en OpenSubtitles con la huella
-    /// del archivo (los de esa copia exacta) y guarda tu avance en Stremio; sin reconocer, se ve igual, sin guardar nada.
+    /// del archivo (los de esa copia exacta) y guarda tu avance en el teléfono y en Trakt; sin reconocer, se ve igual, sin guardar nada.
     private func openFile(_ url: URL) async {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }

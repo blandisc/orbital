@@ -91,6 +91,7 @@ final class Rig {
     let http = FakeHTTP(), clock = Clock(), engine = FakeEngine(), kv = InMemoryKeyValueStore(), pending = InMemoryPendingStore()
     let settings: SettingsStore, titlePrefs: TitlePreferences, finder: StreamFinder, watch: WatchService, model: PlayerModel
     let series: JSON
+    let library: LocalLibrary
 
     init(streams: [String: [JSON]] = [:], remote: JSON? = nil, trakt: Trakt? = nil, scrobbleLog: ScrobbleLog? = nil) throws {
         series = try Fixtures.json("cinemeta/meta_series_tt0386676.json")
@@ -111,7 +112,19 @@ final class Rig {
         titlePrefs = TitlePreferences(kv)
         finder = StreamFinder(http: http, registry: registry, clock: { clock.now })
         let cinemeta = Cinemeta(http: http, clock: { clock.now })
-        watch = WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: { clock.now }, scrobbleLog: scrobbleLog)
+        // Lo de `remote` como si ya se hubiera traído de Stremio al teléfono (la app ya no le pregunta a Stremio dónde ibas).
+        let library = LocalLibrary()
+        if let remote, let id = remote["_id"]?.string {
+            let state = StremioLibrary.state(of: remote)
+            var entry = LibraryEntry(metaID: id, kind: "series", name: remote["name"]?.string ?? "The Office")
+            entry.videoID = state["video_id"]?.string
+            entry.position = Double(state["timeOffset"]?.intValue ?? 0) / 1000; entry.duration = Double(state["duration"]?.intValue ?? 0) / 1000
+            entry.updatedAt = StremioLibrary.epoch(state["lastWatched"]) ?? 0
+            library.update(id, make: { entry }) { _ in }
+        }
+        self.library = library
+        watch = WatchService(library: library, stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: cinemeta, trakt: trakt, pending: pending,
+                             clock: { clock.now }, scrobbleLog: scrobbleLog, sleep: { _ in })
         model = PlayerModel(engine: engine, finder: finder, watch: watch, titlePrefs: titlePrefs, settings: settings, clock: { clock.now })
     }
 

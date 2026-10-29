@@ -706,6 +706,12 @@ TRANSLATIONS = {
     "Acción": "Action", "Aventura": "Adventure", "Animación": "Animation", "Comedia": "Comedy", "Crimen": "Crime", "Documental": "Documentary",
     "Drama": "Drama", "Familia": "Family", "Fantasía": "Fantasy", "Terror": "Horror", "Misterio": "Mystery", "Romance": "Romance",
     "Ciencia ficción": "Science fiction", "Suspenso": "Thriller",
+    # Desacoplar Stremio, corte A: lo tuyo vive en el teléfono y viaja por Trakt; Stremio es un respaldo opcional.
+    "Cerrar sesión de Stremio": "Sign out of Stremio", "Stremio · respaldo": "Stremio · backup", "Sin cuentas conectadas": "No accounts connected",
+    "Conecta tu cuenta de Stremio como respaldo: lo que veas también se guarda ahí, como copia.": "Connect your Stremio account as a backup: what you watch is also saved there, as a copy.",
+    "Lo que ves también se guarda ahí, como copia.": "What you watch is also saved there, as a copy.",
+    "Lo tuyo se queda en el iPhone y en Trakt; Stremio deja de recibir la copia.": "Your stuff stays on the iPhone and on Trakt; Stremio stops getting the copy.",
+    "No pude cambiar Mi lista": "I couldn't change My List",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",

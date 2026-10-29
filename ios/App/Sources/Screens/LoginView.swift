@@ -1,7 +1,8 @@
 import SwiftUI
 import OrbitalModels
 
-/// Entrar con tu cuenta de Stremio (el eje de todo): lo que ves aquí aparece en Orbital y al revés.
+/// Conectar tu cuenta de Stremio como respaldo (Ajustes › Cuenta): lo que ves también se guarda ahí, como copia, y lo que
+/// tenías en Stremio pasa una vez al teléfono.
 struct LoginView: View {
     @State private var signingIn = false
     let session: SessionModel
@@ -9,6 +10,7 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @FocusState private var focus: Field?
+    @Environment(\.dismiss) private var dismiss
     enum Field { case email, password }
 
     init(session: SessionModel) {
@@ -23,7 +25,7 @@ struct LoginView: View {
                     // La marca de la TV: el anillo se dibuja y la luna cae en su lugar, como al arrancar Orbital.
                     OrbitalWordmark(size: DS.Size.wordmark, animated: true).foregroundStyle(DS.text)
                         .padding(.bottom, DS.Space.s2)
-                    Text("Entra con tu cuenta de Stremio. Lo que veas aquí aparece en Orbital y al revés.")
+                    Text("Conecta tu cuenta de Stremio como respaldo: lo que veas también se guarda ahí, como copia.")
                         .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
                 }
                 VStack(spacing: DS.Space.s3) {
@@ -37,7 +39,7 @@ struct LoginView: View {
                 }
                 if case .failed(let message) = observer.model.state { DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .error) }
                 Button(action: signIn) {
-                    HStack { if observer.model.state == .signingIn { ProgressView() }; Text("Entrar") }.frame(maxWidth: .infinity)
+                    HStack { if observer.model.state == .signingIn { ProgressView() }; Text("Conectar") }.frame(maxWidth: .infinity)
                 }
                 .dsPrimaryButton().controlSize(.large)
                 .disabled(observer.model.state == .signingIn || email.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty)
@@ -48,6 +50,7 @@ struct LoginView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background(Backdrop())
+        .onChange(of: observer.model.state) { _, state in if state == .signedIn { dismiss() } }   // conectado: de vuelta a Ajustes
     }
 
     /// Una vez: dar Enter dos veces mientras entra no manda dos inicios de sesión.

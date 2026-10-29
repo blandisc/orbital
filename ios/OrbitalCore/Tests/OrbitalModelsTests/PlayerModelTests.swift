@@ -17,7 +17,7 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         XCTAssertEqual(rig.engine.loads.count, 1)
         XCTAssertEqual(rig.engine.loads[0].url.absoluteString, "https://rd.example/best.mkv", "la que ya está en Real-Debrid primero")
-        XCTAssertEqual(rig.engine.loads[0].start, 300, "continúa donde ibas según Stremio")
+        XCTAssertEqual(rig.engine.loads[0].start, 300, "continúa donde ibas (lo del teléfono)")
         XCTAssertEqual(rig.model.phase, .preparing)
         await rig.model.handle(rig.playing(300))
         XCTAssertEqual(rig.model.phase, .playing)
@@ -788,7 +788,7 @@ final class PlayerModelTests: XCTestCase {
         let trakt = Trakt(http: probe, secrets: secrets, clientID: "CID", clock: { Date(timeIntervalSince1970: 1_760_000_000) }, pause: { _ in })
         let rig = try Rig(remote: remote, trakt: trakt)
         rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("a")]]
-        probe.json["https://api.trakt.tv/sync/playback"] = paused
+        probe.json["https://api.trakt.tv/sync/playback?extended=full"] = paused
         for action in ["start", "pause", "stop"] { probe.json["https://api.trakt.tv/scrobble/\(action)"] = [:] }
         return (rig, probe)
     }
@@ -796,13 +796,13 @@ final class PlayerModelTests: XCTestCase {
     static let pausedOnTheTV: JSON = [["progress": 50, "paused_at": "2025-10-09T08:00:00.000Z", "id": 7, "type": "episode",
                                        "episode": ["season": 1, "number": 1], "show": ["ids": ["imdb": "tt0386676"]]]]
 
-    /// Lo dejaste en la TV después que en el iPhone: se sigue donde dice Trakt, con la duración que Stremio ya conoce.
+    /// Lo dejaste en la TV después que en el iPhone: se sigue donde dice Trakt (10 s antes), con la duración que el teléfono ya conoce.
     func testResumesFromTraktWhenItsPauseIsNewerThanStremio() async throws {
         let (rig, _) = try traktRig(remote: ["_id": "tt0386676", "state": ["video_id": "tt0386676:1:1", "timeOffset": 300_000, "duration": 1_320_000,
                                                                           "lastWatched": "2025-10-08T08:00:00.000Z"]],
                                     paused: Self.pausedOnTheTV)
         await rig.model.begin(rig.request())
-        XCTAssertEqual(rig.engine.loads.first?.start, 660, "50 % de 1320 s (Trakt es más reciente)")
+        XCTAssertEqual(rig.engine.loads.first?.start, 650, "50 % de 1320 s menos 10 s (Trakt es más reciente)")
     }
 
     func testStremioStillWinsWhenItIsNewer() async throws {
@@ -820,8 +820,8 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         XCTAssertEqual(rig.engine.loads.first?.start, 0)
         await rig.model.handle(rig.playing(0, duration: 2000))
-        XCTAssertTrue(rig.engine.calls.contains("seek 1000"))
-        await rig.model.handle(rig.playing(1000, duration: 2000))
+        XCTAssertTrue(rig.engine.calls.contains("seek 990"), "50 % de 2000 s, 10 s antes (viene de otro aparato)")
+        await rig.model.handle(rig.playing(990, duration: 2000))
         XCTAssertEqual(rig.engine.calls.filter { $0.hasPrefix("seek") }.count, 1, "una sola vez")
         let progress = try XCTUnwrap(JSON.parse(try XCTUnwrap(probe.bodies("https://api.trakt.tv/scrobble/start").first))?["progress"]?.doubleValue)
         XCTAssertEqual(progress, 50, accuracy: 0.5)
@@ -832,7 +832,7 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request(fromStart: true))
         await rig.model.handle(rig.playing(0, duration: 2000))
         XCTAssertFalse(rig.engine.calls.contains { $0.hasPrefix("seek") })
-        XCTAssertFalse(probe.calls.contains { $0.hasSuffix("/sync/playback") })
+        XCTAssertFalse(probe.calls.contains { $0.contains("/sync/playback") })
     }
 
     /// Pausar manda `pause` con el avance exacto (una vez por pausa) y cerrar manda `stop`: Trakt guarda ese punto para el otro
@@ -1184,7 +1184,8 @@ final class PlayerModelRobustnessTests: XCTestCase {
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(1200))
         await rig.model.appDidEnterBackground()
-        XCTAssertEqual(scrobbles(probe), ["start"])
-        XCTAssertFalse(try rig.saved().isEmpty, "el avance sí se guarda en Stremio (iOS puede suspender la app)")
+        XCTAssertEqual(scrobbles(probe), ["start", "pause"], "una pausa, no un cierre: Trakt guarda dónde ibas por si iOS suspende la app")
+        XCTAssertEqual(rig.library.entry("tt0386676")?.position, 1200, "en el teléfono sí se guarda")
+        XCTAssertFalse(try rig.saved().isEmpty, "y la copia a Stremio")
     }
 }

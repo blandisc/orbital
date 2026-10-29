@@ -6,16 +6,17 @@ final class WatchTests: XCTestCase {
     let get = "https://api.strem.io/api/datastoreGet", put = "https://api.strem.io/api/datastorePut"
 
     struct Rig {
-        let http: FakeHTTP, service: WatchService, pending: InMemoryPendingStore, clock: Clock
+        let http: FakeHTTP, service: WatchService, pending: InMemoryPendingStore, clock: Clock, library: LocalLibrary
     }
 
-    func makeRig(trakt: Trakt? = nil, remote: JSON? = nil) -> Rig {
-        let http = FakeHTTP(), pending = InMemoryPendingStore(), clock = Clock()
+    func makeRig(trakt: Trakt? = nil, remote: JSON? = nil, signedIn: Bool = true) -> Rig {
+        let http = FakeHTTP(), pending = InMemoryPendingStore(), clock = Clock(), library = LocalLibrary()
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
         http.json[get] = ["result": remote.map { [$0] } ?? []]
         http.json[put] = ["result": ["success": true]]
-        let service = WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: Cinemeta(http: http), trakt: trakt, pending: pending, clock: { clock.now })
-        return Rig(http: http, service: service, pending: pending, clock: clock)
+        let service = WatchService(library: library, stremio: StremioAPI(http: http), authKey: { signedIn ? "KEY" : nil }, cinemeta: Cinemeta(http: http),
+                                   trakt: trakt, pending: pending, clock: { clock.now })
+        return Rig(http: http, service: service, pending: pending, clock: clock, library: library)
     }
 
     func event(_ rig: Rig, position: Double = 600, duration: Double = 1320, watched: Double = 120, video: String = "tt0386676:1:1", title: String = "The Office (US)") -> ProgressEvent {
@@ -27,10 +28,12 @@ final class WatchTests: XCTestCase {
         return try XCTUnwrap(body["changes"]?.array?.first)
     }
 
-    func testSavesProgressToStremioWithTheOriginalTitle() async throws {
+    func testSavesOnThePhoneAndCopiesToStremioWithTheOriginalTitle() async throws {
         let rig = makeRig()
         let outcome = await rig.service.report(event(rig, title: "La Oficina"), phase: .tick)  // el llamador pasó el título traducido por error
-        XCTAssertTrue(outcome.savedToStremio)
+        XCTAssertTrue(outcome.saved)
+        let mine = try XCTUnwrap(rig.library.entry("tt0386676"))
+        XCTAssertEqual(mine.videoID, "tt0386676:1:1"); XCTAssertEqual(mine.position, 600); XCTAssertEqual(mine.duration, 1320)
         let item = try savedItem(rig)
         XCTAssertEqual(item["name"]?.string, series["name"]?.string, "el nombre sale de Cinemeta (original), no del título traducido")
         XCTAssertEqual(item["state"]?["video_id"]?.string, "tt0386676:1:1")
@@ -40,6 +43,9 @@ final class WatchTests: XCTestCase {
     func testFinishingAnEpisodeMarksItWatchedAndMovesToTheNext() async throws {
         let rig = makeRig()
         await rig.service.report(event(rig, position: 1300, duration: 1320, watched: 1300), phase: .stopped(finished: true))
+        let mine = try XCTUnwrap(rig.library.entry("tt0386676"))
+        XCTAssertEqual(mine.videoID, "tt0386676:1:2"); XCTAssertTrue(mine.nextUp); XCTAssertEqual(mine.seen, ["tt0386676:1:1"])
+        XCTAssertTrue(mine.inContinue, "sigue en «Seguir viendo» con el siguiente")
         let state = try XCTUnwrap(savedItem(rig)["state"])
         XCTAssertEqual(state["video_id"]?.string, "tt0386676:1:2")
         XCTAssertEqual(state["timeOffset"]?.intValue, 1)
@@ -50,14 +56,25 @@ final class WatchTests: XCTestCase {
     func testOpeningAndClosingWithoutWatchingDoesNotTouchTheLibrary() async {
         let rig = makeRig()
         let outcome = await rig.service.report(event(rig, position: 5, watched: 5), phase: .stopped(finished: false))
-        XCTAssertFalse(outcome.savedToStremio)
+        XCTAssertFalse(outcome.saved)
+        XCTAssertNil(rig.library.entry("tt0386676"))
         XCTAssertTrue(rig.http.bodies(for: put).isEmpty)
     }
 
-    func testWithoutInternetProgressIsQueuedAndUploadedLater() async throws {
+    /// Sin Stremio conectado (cualquiera que no sea Fernando) todo queda en el teléfono y a Stremio no se le pregunta nada.
+    func testWithoutStremioNothingIsCopied() async throws {
+        let rig = makeRig(signedIn: false)
+        let outcome = await rig.service.report(event(rig), phase: .paused)
+        XCTAssertTrue(outcome.saved); XCTAssertFalse(outcome.queued)
+        XCTAssertEqual(rig.library.entry("tt0386676")?.position, 600)
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("api.strem.io") })
+    }
+
+    func testWithoutInternetTheStremioCopyIsQueuedAndUploadedLater() async throws {
         let rig = makeRig()
         rig.http.statuses[put] = 500
         let outcome = await rig.service.report(event(rig), phase: .paused)
+        XCTAssertTrue(outcome.saved, "en el teléfono sí quedó")
         XCTAssertTrue(outcome.queued)
         XCTAssertEqual(rig.pending.load().progress.count, 1)
         rig.http.statuses[put] = 200
@@ -89,24 +106,28 @@ final class WatchTests: XCTestCase {
         XCTAssertEqual(left.progress.count, 1)
     }
 
-    func testResumeUsesStremioPositionOnlyForTheSameVideo() async {
-        let remote: JSON = ["_id": "tt0386676", "state": ["video_id": "tt0386676:1:2", "timeOffset": 300_000, "duration": 1_320_000]]
-        let rig = makeRig(remote: remote)
+    func testResumeUsesThePhonePositionOnlyForTheSameVideo() async {
+        let rig = makeRig()
+        rig.library.update("tt0386676", make: { LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office") }) {
+            $0.videoID = "tt0386676:1:2"; $0.position = 300; $0.duration = 1320; $0.updatedAt = 1
+        }
         let same = await rig.service.resumePosition(metaID: "tt0386676", videoID: "tt0386676:1:2")
         let other = await rig.service.resumePosition(metaID: "tt0386676", videoID: "tt0386676:1:3")
         XCTAssertEqual(same, 300); XCTAssertEqual(other, 0)
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("api.strem.io") }, "dónde ibas ya no se le pregunta a Stremio")
     }
 
     func testContinueWatchingSkipsBarelyOpenedTitles() async throws {
-        let items: JSON = [
-            ["_id": "tt1", "name": "A medias", "type": "movie", "state": ["video_id": "tt1", "timeOffset": 600_000, "duration": 6_000_000, "lastWatched": "2025-01-02T00:00:00.000Z"]],
-            ["_id": "tt2", "name": "Abierta un momento", "type": "movie", "state": ["video_id": "tt2", "timeOffset": 10_000, "duration": 6_000_000]],
-            ["_id": "tt3", "name": "Sigue", "type": "series", "state": ["video_id": "tt3:1:2", "timeOffset": 1, "duration": 0]]]
-        let http = FakeHTTP()
-        http.json[get] = ["result": items]
-        let service = WatchService(stremio: StremioAPI(http: http), authKey: { "K" }, cinemeta: Cinemeta(http: http), pending: InMemoryPendingStore())
-        let list = try await service.continueWatching()
-        XCTAssertEqual(Set(list.map(\.name)), ["A medias", "Sigue"])
+        let rig = makeRig()
+        func add(_ id: String, _ kind: String, _ name: String, _ change: (inout LibraryEntry) -> Void) {
+            rig.library.update(id, make: { LibraryEntry(metaID: id, kind: kind, name: name) }, change)
+        }
+        add("tt1", "movie", "A medias") { $0.videoID = "tt1"; $0.position = 600; $0.duration = 6000; $0.updatedAt = 3 }
+        add("tt2", "movie", "Abierta un momento") { $0.videoID = "tt2"; $0.position = 10; $0.duration = 6000; $0.updatedAt = 2 }
+        add("tt3", "series", "Sigue") { $0.videoID = "tt3:1:2"; $0.nextUp = true; $0.updatedAt = 1 }
+        add("tt4", "movie", "Quitada") { $0.videoID = "tt4"; $0.position = 600; $0.duration = 6000; $0.hiddenAt = 5 }
+        let list = await rig.service.continueWatching()
+        XCTAssertEqual(list.map(\.name), ["A medias", "Sigue"])
     }
 
     func testScrobbleFollowsPlaybackAndQueuesWatchedWhenOffline() async throws {
@@ -149,7 +170,7 @@ final class WatchTests: XCTestCase {
     func testStartedDoesNotWriteToStremio() async {
         let rig = makeRig()
         let outcome = await rig.service.report(event(rig), phase: .started)
-        XCTAssertFalse(outcome.savedToStremio)
+        XCTAssertFalse(outcome.saved)
         XCTAssertTrue(rig.http.bodies(for: put).isEmpty)
     }
 
@@ -168,12 +189,13 @@ final class WatchTests: XCTestCase {
     }
 
     func makeRigSharing(http: FakeHTTP, trakt: Trakt?, clock: Clock) -> Rig {
-        let pending = InMemoryPendingStore()
+        let pending = InMemoryPendingStore(), library = LocalLibrary()
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
         http.json[get] = ["result": []]
         http.json[put] = ["result": ["success": true]]
-        let service = WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: Cinemeta(http: http), trakt: trakt, pending: pending, clock: { clock.now })
-        return Rig(http: http, service: service, pending: pending, clock: clock)
+        let service = WatchService(library: library, stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: Cinemeta(http: http), trakt: trakt,
+                                   pending: pending, clock: { clock.now }, sleep: { _ in })
+        return Rig(http: http, service: service, pending: pending, clock: clock, library: library)
     }
 }
 
@@ -225,7 +247,7 @@ final class WatchRobustnessTests: XCTestCase {
     func testUserSaysTheyFinishedSoItIsMarkedWatchedEvenWithoutAKnownDuration() async throws {
         let (service, http, _, clock) = make()
         let outcome = await service.report(event(clock, position: 1, duration: 1, watched: 0, finished: false), phase: .stopped(finished: true))
-        XCTAssertTrue(outcome.savedToStremio, "«Sí, lo terminé» no se descarta por el umbral de segundos vistos")
+        XCTAssertTrue(outcome.saved, "«Sí, lo terminé» no se descarta por el umbral de segundos vistos")
         let item = try XCTUnwrap(http.bodies(for: put).last.flatMap(JSON.parse)?["changes"]?.array?.first)
         XCTAssertEqual(item["state"]?["video_id"]?.string, "tt0386676:1:2")
         let ids = CinemetaParsing.seasonVideoIDs(series)
@@ -249,16 +271,18 @@ final class WatchRobustnessTests: XCTestCase {
         XCTAssertEqual(pending.load().progress.count, 1)
     }
 
-    func testMyListWithoutCinemetaDoesNotWriteATranslatedTitle() async throws {
+    func testMyListWithoutCinemetaDoesNotWriteATranslatedTitleToStremio() async throws {
         let (service, http, _, _) = make()
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = nil
         http.statuses["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = 500
-        do { try await service.setInLibrary(kind: "series", metaID: "tt0386676", title: "La Oficina", poster: nil, add: true); XCTFail() } catch {}
-        XCTAssertTrue(http.bodies(for: put).isEmpty)
+        await service.setInLibrary(kind: "series", metaID: "tt0386676", title: "La Oficina", poster: nil, add: true)
+        XCTAssertTrue(http.bodies(for: put).isEmpty, "a Stremio no se le escribe un nombre traducido")
+        let mine = await service.entry(metaID: "tt0386676")
+        XCTAssertEqual(mine?.inList, true, "en el teléfono sí queda")
         // Con Cinemeta, el nombre es el original aunque el que se muestre sea otro.
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
         http.statuses["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = nil
-        try await service.setInLibrary(kind: "series", metaID: "tt0386676", title: "La Oficina", poster: nil, add: true)
+        await service.setInLibrary(kind: "series", metaID: "tt0386676", title: "La Oficina", poster: nil, add: true)
         let item = try XCTUnwrap(http.bodies(for: put).last.flatMap(JSON.parse)?["changes"]?.array?.first)
         XCTAssertEqual(item["name"]?.string, series["name"]?.string)
     }
@@ -354,64 +378,71 @@ final class StremioRobustnessTests: XCTestCase {
     }
 }
 
-/// Dónde seguir: lo más reciente entre Stremio y Trakt.
+/// Dónde seguir: lo más reciente entre este teléfono y Trakt.
 final class ResumeTests: XCTestCase {
-    let get = "https://api.strem.io/api/datastoreGet"
-
-    // MARK: dónde seguir: Stremio o Trakt, lo más reciente
-    func stremioItem(video: String = "tt0386676:2:5", offsetMs: Int = 300_000, durationMs: Int = 1_320_000, at: String) -> JSON {
-        ["_id": "tt0386676", "state": ["video_id": .string(video), "timeOffset": .int(offsetMs), "duration": .int(durationMs), "lastWatched": .string(at)]]
+    func local(video: String = "tt0386676:2:5", position: Double = 300, duration: Double = 1320, at: String) -> LibraryEntry {
+        var e = LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office")
+        e.videoID = video; e.position = position; e.duration = duration; e.updatedAt = TraktParsing.date(at)!.timeIntervalSince1970
+        return e
     }
     func pause(_ progress: Double, at: String) -> TraktPlayback {
         TraktPlayback(id: 1, progress: progress, pausedAt: TraktParsing.date(at)!, target: TraktTarget(imdb: "tt0386676", season: 2, episode: 5))
     }
 
-    func testTraktWinsWhenItsPauseIsNewerAndItsPercentBecomesSecondsWithStremiosDuration() {
-        let raw = stremioItem(at: "2026-10-25T10:00:00.000Z")                       // en el iPhone, 300 s
-        let point = ResumePoint.latest(stremio: raw, videoID: "tt0386676:2:5", trakt: pause(50, at: "2026-10-25T21:00:00.000Z"))  // en la TV, después
-        XCTAssertEqual(point, ResumePoint(seconds: 660), "50 % de 1320 s")
+    func testTraktWinsWhenItsPauseIsNewerAndItsPercentBecomesSecondsWithThePhonesDuration() {
+        let mine = local(at: "2026-10-25T10:00:00.000Z")                       // en el iPhone, 300 s
+        let point = ResumePoint.latest(local: mine, videoID: "tt0386676:2:5", trakt: pause(50, at: "2026-10-25T21:00:00.000Z"))  // en la TV, después
+        XCTAssertEqual(point, ResumePoint(seconds: 650), "50 % de 1320 s, 10 s antes (otro aparato)")
     }
 
-    func testStremioWinsWhenItIsNewer() {
-        let raw = stremioItem(at: "2026-10-26T10:00:00.000Z")
-        let point = ResumePoint.latest(stremio: raw, videoID: "tt0386676:2:5", trakt: pause(50, at: "2026-10-25T21:00:00.000Z"))
-        XCTAssertEqual(point, ResumePoint(seconds: 300))
+    func testThePhoneWinsWhenItIsNewerOrTied() {
+        let newer = local(at: "2026-10-26T10:00:00.000Z")
+        XCTAssertEqual(ResumePoint.latest(local: newer, videoID: "tt0386676:2:5", trakt: pause(50, at: "2026-10-25T21:00:00.000Z")), ResumePoint(seconds: 300))
+        let tied = local(at: "2026-10-25T21:00:00.000Z")
+        XCTAssertEqual(ResumePoint.latest(local: tied, videoID: "tt0386676:2:5", trakt: pause(50, at: "2026-10-25T21:00:00.000Z")), ResumePoint(seconds: 300), "empate: el del teléfono (segundos exactos)")
     }
 
-    func testWithoutStremioTheTraktPercentWaitsForTheDuration() {
-        let point = ResumePoint.latest(stremio: nil, videoID: "tt0386676:2:5", trakt: pause(25, at: "2026-10-25T21:00:00.000Z"))
-        XCTAssertEqual(point, ResumePoint(seconds: 0, fraction: 0.25))
-        XCTAssertEqual(point.seconds(duration: 2000), 500, "en cuanto el reproductor sabe cuánto dura")
+    func testTheEchoOfWhatThisPhoneSentDoesNotWin() {
+        var mine = local(at: "2026-10-25T10:00:00.000Z")
+        mine.pushedAt = TraktParsing.date("2026-10-25T10:00:05.000Z")!.timeIntervalSince1970
+        let echo = pause(22.7, at: "2026-10-25T10:00:06.000Z")    // Trakt guardó lo que mandó este teléfono, con su propia hora
+        XCTAssertEqual(ResumePoint.latest(local: mine, videoID: "tt0386676:2:5", trakt: echo), ResumePoint(seconds: 300))
+    }
+
+    func testWithoutThePhoneTheTraktPercentWaitsForTheDuration() {
+        let point = ResumePoint.latest(local: nil, videoID: "tt0386676:2:5", trakt: pause(25, at: "2026-10-25T21:00:00.000Z"))
+        XCTAssertEqual(point.fraction, 0.25)
+        XCTAssertEqual(point.seconds(duration: 2000), 490, "en cuanto el reproductor sabe cuánto dura (10 s antes)")
         XCTAssertEqual(point.seconds(duration: 0), 0)
-        // Otro episodio en Stremio: su duración no sirve para este.
-        let other = ResumePoint.latest(stremio: stremioItem(video: "tt0386676:2:4", at: "2026-10-20T10:00:00Z"), videoID: "tt0386676:2:5",
+        // Otro episodio en el teléfono: su duración no sirve para este.
+        let other = ResumePoint.latest(local: local(video: "tt0386676:2:4", at: "2026-10-20T10:00:00Z"), videoID: "tt0386676:2:5",
                                        trakt: pause(25, at: "2026-10-25T21:00:00.000Z"))
         XCTAssertEqual(other.fraction, 0.25)
     }
 
-    func testWithoutTraktItIsExactlyStremio() {
-        XCTAssertEqual(ResumePoint.latest(stremio: stremioItem(at: "2026-10-25T10:00:00Z"), videoID: "tt0386676:2:5", trakt: nil), ResumePoint(seconds: 300))
+    func testWithoutTraktItIsExactlyThePhone() {
+        XCTAssertEqual(ResumePoint.latest(local: local(at: "2026-10-25T10:00:00Z"), videoID: "tt0386676:2:5", trakt: nil), ResumePoint(seconds: 300))
     }
 
-    func service(stremio: [JSON]) -> WatchService {
-        let http = FakeHTTP(), clock = Clock(), secrets = InMemorySecrets()
+    func service(local entry: LibraryEntry?) -> WatchService {
+        let http = FakeHTTP(), clock = Clock(), secrets = InMemorySecrets(), library = LocalLibrary()
+        if let entry { library.update(entry.metaID, make: { entry }) { _ in } }
         secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(clock.now.timeIntervalSince1970 + 86400)}"#)
         let trakt = Trakt(http: http, secrets: secrets, clientID: "CID", clock: { clock.now }, pause: { _ in })
-        http.json[get] = ["result": .array(stremio)]
-        http.json["https://api.trakt.tv/sync/playback"] = [["progress": 50, "paused_at": "2026-10-25T21:00:00.000Z", "id": 7, "type": "episode",
-                                                            "episode": ["season": 2, "number": 5], "show": ["ids": ["imdb": "tt0386676"]]]]
-        return WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: Cinemeta(http: http), trakt: trakt,
+        http.json["https://api.trakt.tv/sync/playback?extended=full"] = [["progress": 50, "paused_at": "2026-10-25T21:00:00.000Z", "id": 7, "type": "episode",
+                                                                          "episode": ["season": 2, "number": 5], "show": ["ids": ["imdb": "tt0386676"]]]]
+        return WatchService(library: library, stremio: StremioAPI(http: http), authKey: { nil }, cinemeta: Cinemeta(http: http), trakt: trakt,
                             pending: InMemoryPendingStore(), clock: { clock.now })
     }
 
     func testResumePointAsksTraktForThatEpisodeAndInfuseGetsSeconds() async throws {
-        let both = service(stremio: [stremioItem(at: "2026-10-25T10:00:00.000Z")])
+        let both = service(local: local(at: "2026-10-25T10:00:00.000Z"))
         let point = await both.resumePoint(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")
-        XCTAssertEqual(point, ResumePoint(seconds: 660))
+        XCTAssertEqual(point, ResumePoint(seconds: 650))
         let seconds = await both.resumePosition(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")
-        XCTAssertEqual(seconds, 660)
-        // Solo el porcentaje (sin la duración de Stremio): Infuse recibe lo de Stremio, que sí son segundos.
-        let onlyTrakt = service(stremio: [])
+        XCTAssertEqual(seconds, 650)
+        // Solo el porcentaje (sin la duración en el teléfono): Infuse recibe lo del teléfono, que sí son segundos.
+        let onlyTrakt = service(local: nil)
         let fraction = await onlyTrakt.resumePoint(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")
         XCTAssertEqual(fraction.fraction, 0.5)
         let infuse = await onlyTrakt.resumePosition(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")

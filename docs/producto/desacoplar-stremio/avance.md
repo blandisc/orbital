@@ -4,6 +4,47 @@ Notas cortas de cada corte al terminar: qué quedó y qué falta. El plan está 
 [`revision-plan.md`](revision-plan.md) y la propuesta en
 [`../desacoplar-stremio-iphone-2026-10-29.md`](../desacoplar-stremio-iphone-2026-10-29.md).
 
+## Corte A · iPhone (29 oct 2026)
+
+**Quedó** (commit «iPhone, corte A: lo tuyo vive en el teléfono…»):
+
+- `LocalLibrary` (`OrbitalCore/LocalLibrary.swift`, archivo `library.json`): dónde ibas (segundos exactos), lo visto por
+  episodio y Mi lista viven en el teléfono. Inicio, la ficha, «¿Qué vemos?», Mi media, Colecciones, el widget y el
+  vocabulario de Siri leen de ahí. Stremio ya no se lee para nada (solo se importa una vez).
+- Se entra sin cuenta de Stremio (`RootView`). Stremio se conecta en Ajustes › Cuenta › «Stremio · respaldo» y recibe copia
+  de todo (avance, visto, Mi lista, quitar de Seguir viendo); si falla, no se avisa y se reintenta.
+- `LibrarySync`: al abrir, al volver a la app y al deslizar en Inicio sube lo de aquí y pregunta `/sync/last_activities`;
+  solo baja lo que cambió: `/sync/playback` (lo que dejaste a medias en la TV ya sale en «Seguir viendo», el hueco de la
+  prueba del 29 oct), `/sync/watched/*` + `/shows/{id}/progress/watched` de las 30 series más recientes, y la watchlist.
+  La ficha de una serie pide además su `progress/watched` para los ✓.
+- Fusión por título: gana lo más reciente (empate: el teléfono); lo visto se suma; lo que Trakt devuelve hasta 2 min después
+  de que este teléfono le escribió es eco, no algo nuevo.
+- Escribir en Trakt con las mismas reglas que la consola (`TraktProgressRule`, igual a `orbital/scrobble.py` `plan`): nunca
+  < 1 %, como mucho 79.9 % hasta visto (90 % en películas, últimos 45–90 s en episodios, o créditos), ya visto al menos 80 %;
+  respaldo cada 5 min (`start` + 2 s + `pause`); tras un respaldo, `start` antes de la pausa o el cierre; pausa al ir a
+  segundo plano. Al retomar lo de otro aparato se regresan 10 s.
+- Sin red: «Marcar como vista» (`POST /sync/history`), «no vista» (`/sync/history/remove`), «Quitar de Seguir viendo»
+  (`DELETE /sync/playback/{id}`) y tu avance esperan en la cola; el avance viejo se descarta si Trakt ya tiene uno más nuevo.
+- Mi lista = watchlist de Trakt: una sola lista fija en «Guardar» y en Inicio (el renglón «Mi lista» con las tarjetas de
+  la watchlist). Sin Trakt se queda en el teléfono y sube al conectarlo.
+- Pruebas: `LibrarySyncTests` (regla de %, respaldo, segundo plano, 85 %, fusión con empate, visto que se suma, watchlist con
+  pendientes, avance viejo descartado, quitar, desmarcar que viaja, solo lo que cambió, importar de Stremio), `ResumeTests`,
+  y las de Inicio y la ficha sin cuenta de Stremio. `swift test` completo en verde y la app compila con D y E ya en `main`.
+
+![Entrar sin cuenta de Stremio](capturas/corte-a-entrar-sin-cuenta.png)
+
+Antes, con `-demo-signed-out` la app abría la pantalla «Entra con tu cuenta de Stremio»; ahora abre Inicio.
+
+**Falta:**
+
+- Probarlo con la cuenta real en el iPhone (aquí solo demo y clientes falsos): pausar en la TV y ver que salga en
+  «Seguir viendo» del iPhone al volver a la app.
+- Al conectar Trakt por primera vez, lo que solo estaba en el teléfono no se sube de golpe (sí lo que hagas después).
+- Si otro aparato borra un avance a medias (sin terminarlo), el iPhone lo sigue enseñando hasta que lo quites o avances.
+- Anime con ids de Kitsu: solo en el teléfono (Trakt no los conoce).
+- «Marcar como no vista» existe en el modelo (`TitleModel.unmarkWatched`); falta ponerlo en el menú del episodio (corte C).
+- Fase 2 (comparar Trakt contra Stremio y anotarlo en la bitácora): pendiente.
+
 ## Corte D · iPhone (29 oct 2026)
 
 **Quedó** (commits `def0a537` y el siguiente):

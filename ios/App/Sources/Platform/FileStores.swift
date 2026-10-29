@@ -24,6 +24,8 @@ enum AppFiles {
     }
 
     static var pendingWork: URL { support.appendingPathComponent("pending.json") }
+    /// Lo tuyo (avance, visto, Mi lista): la biblioteca del teléfono (`LocalLibrary`). Entra en el respaldo de iCloud.
+    static var library: URL { support.appendingPathComponent("library.json") }
     static var downloadIndex: URL { support.appendingPathComponent("downloads.json") }
 }
 

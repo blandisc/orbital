@@ -20,13 +20,16 @@ public struct HomeItem: Sendable, Codable, Equatable, Identifiable {
     public var isNew: Bool?            // ibas al día y ya salió el episodio que sigue: «Nuevo» (opcional: la caché vieja no lo trae)
 }
 
-/// Inicio: «Seguir viendo», tu lista de Stremio y lo pendiente de tu watchlist de Trakt. Si no hay red se enseña
-/// lo último que se vio (con aviso), no una pantalla vacía.
+/// Inicio: «Seguir viendo» y Mi lista (lo tuyo en el teléfono, al día con Trakt). Sin red se enseña lo del teléfono, no una
+/// pantalla vacía.
 @MainActor
 public final class HomeModel: ObservableModel {
     public private(set) var continueWatching: [HomeItem] = [] { didSet { changed() } }
     public private(set) var myList: [HomeItem] = [] { didSet { changed() } }
+    /// Mi lista como la pinta Inicio: lo del teléfono, con los datos de tu watchlist de Trakt (sinopsis, año) si ya llegaron.
     public private(set) var traktPending: [Suggestion] = [] { didSet { changed() } }
+    /// Tu watchlist tal como la dio Trakt (con sus datos), para vestir Mi lista.
+    private var watchlistDetails: [Suggestion] = []
     /// Tus favoritos de Trakt (el corazón de la ficha), lo último que marcaste primero. Vacío sin Trakt: la fila no se pinta.
     public private(set) var favorites: [Suggestion] = [] { didSet { changed() } }
     /// «Destacado»: lo que abre Inicio. Lo en tendencia, lo popular de la semana y lo recomendado para ti, películas y series
@@ -74,8 +77,6 @@ public final class HomeModel: ObservableModel {
     /// Lo primero que sale hoy: la portada de Inicio y el título al bajar («Sale hoy: Severance»).
     public var airingToday: Airing? { upcoming.first { Calendar.current.isDateInToday($0.day) } }
     public private(set) var offline = false { didSet { changed() } }
-    /// Stremio cerró tu sesión (no es falta de red): Inicio lo dice y deja volver a entrar.
-    public private(set) var sessionExpired = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
     private let services: Services
     static let cacheKey = "home-cache"
@@ -97,6 +98,12 @@ public final class HomeModel: ObservableModel {
         if let data = services.kv.data(Self.cacheKey), let cache = try? JSONDecoder().decode(Cache.self, from: data) {
             continueWatching = cache.continueWatching; myList = cache.myList
         }
+        defer {
+            // Lo tuyo cambió (lo viste, lo guardaste, llegó algo de Trakt): Inicio se vuelve a armar con lo del teléfono.
+            libraryObserver = NotificationCenter.default.addObserver(forName: LocalLibrary.changed, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { guard let self else { return }; Task { await self.showLibrary() } }
+            }
+        }
         if let data = services.kv.data(Self.listsKey), let saved = try? JSONDecoder().decode([String: Data].self, from: data) {
             spotlight = ForYou.decode(saved["spotlight"]); forYouPicks = ForYou.decode(saved["forYou"])
             for kind in ["series", "movie"] {
@@ -104,13 +111,13 @@ public final class HomeModel: ObservableModel {
                 let found = ForYou.decode(saved["top:" + k])
                 if !found.isEmpty { topItems[k] = found }
             }
-            traktPending = ForYou.decode(saved["pending"])
+            watchlistDetails = ForYou.decode(saved["pending"])
             favorites = ForYou.decode(saved["favorites"])
         }
     }
 
     private func saveLists() {
-        var lists: [String: [Suggestion]] = ["spotlight": spotlight, "forYou": forYouPicks, "pending": Array(traktPending.prefix(Self.rowLimit)),
+        var lists: [String: [Suggestion]] = ["spotlight": spotlight, "forYou": forYouPicks, "pending": Array(watchlistDetails.prefix(Self.rowLimit * 3)),
                                                      "favorites": Array(favorites.prefix(Self.rowLimit))]
         for kind in ["series", "movie"] { lists["top:\(topBrand):\(kind)"] = top(kind: kind) }
         services.kv.set(Self.listsKey, data: try? JSONEncoder().encode(lists.compactMapValues { ForYou.encode($0) }))
@@ -126,7 +133,6 @@ public final class HomeModel: ObservableModel {
     private var lastRefresh: Date?
 
     public func refresh() async {
-        guard services.isSignedIn else { return }
         // Una a la vez: deslizar, volver de ver algo y volver a la app pedían todo a la vez y la que terminaba al último
         // pisaba a las demás (y regresaba lo que acababas de quitar). La que llega mientras otra corre, espera a esa.
         // Si ya va una, al terminar se da otra pasada (lo que pidió esta, p. ej. tu avance recién guardado, ya no se pierde).
@@ -174,8 +180,9 @@ public final class HomeModel: ObservableModel {
         // Cancelado o sin respuesta de Trakt: no se vacía «Tu watchlist» ni el «Próximo estreno» del widget.
         guard !Task.isCancelled else { return }
         let linked = await forYou.traktLinked
-        if let fetchedPending { traktPending = fetchedPending }   // toda (el renglón enseña los primeros; «Ver todo», todas)
-        else if !linked { traktPending = [] }   // desconectaste Trakt: ya no hay watchlist que enseñar
+        if let fetchedPending { watchlistDetails = fetchedPending }   // toda (el renglón enseña los primeros; «Ver todo», todas)
+        else if !linked { watchlistDetails = [] }
+        dressList()
         if let fetchedFavorites { favorites = fetchedFavorites }
         else if !linked { favorites = [] }      // ni favoritos
         if let newAirings { upcoming = Array(newAirings.prefix(10)); fetchedAirings = newAirings }
@@ -204,32 +211,54 @@ public final class HomeModel: ObservableModel {
         if let m, !m.isEmpty { topItems["\(brand):movie"] = Array(m.prefix(10)) }
     }
 
-    /// «Seguir viendo» y «Mi lista» (Stremio, con los nombres en tu idioma).
+    /// «Seguir viendo» y «Mi lista»: primero lo del teléfono (al instante), luego lo que cambió en Trakt.
     private func loadLibrary() async {
-        do {
-            _ = await services.watch.flushPending()          // primero se sube lo pendiente; así la lista ya lo trae
-            let all = await services.watch.withReturning(try await services.watch.library())
-            let continueItems = all.filter { w in
-                guard w.inContinue else { return false }
-                let nextUp = w.type == "series" && w.timeOffset <= 1 && w.duration == 0 && w.episode.episode != nil
-                return nextUp || (w.progress ?? 1) >= PlaybackRules.continueMinProgress
-            }
-            let mine = all.filter(\.inLibrary)
-            async let continued = items(continueItems), listed = items(mine)   // las dos traducciones a la vez
-            continueWatching = await continued.filter { !dismissed.contains($0.metaID) }
-            myList = await listed
-            offline = false; sessionExpired = false; error = nil
-            // Lo que ya estás viendo no se repite arriba.
-            let watching = Set(continueWatching.map(\.metaID))
-            if spotlight.contains(where: { watching.contains($0.imdb) }) { spotlight.removeAll { watching.contains($0.imdb) } }
-            services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(continueWatching: continueWatching, myList: myList)))
-        } catch where !Task.isCancelled {   // cancelado (cambio de pestaña): no es estar sin conexión
-            // La sesión caducó: Stremio contesta (no es la red), pero ya no reconoce la clave.
-            if case StremioError.api(let message) = error, message.lowercased().contains("session") {
-                sessionExpired = true; offline = false
-            } else { offline = true }
-            self.error = "\(error)"
-        } catch {}
+        await showLibrary()
+        await services.syncLibrary()
+        guard !Task.isCancelled else { return }
+        await showLibrary()
+    }
+
+    /// Lo del teléfono, con los nombres en tu idioma.
+    func showLibrary() async {
+        let all = await services.watch.withReturning(await services.watch.library())
+        let continueItems = all.filter { w in
+            guard w.inContinue else { return false }
+            let nextUp = w.type == "series" && w.timeOffset <= 1 && w.duration == 0 && w.episode.episode != nil
+            return nextUp || (w.progress ?? 1) >= PlaybackRules.continueMinProgress
+        }
+        // Mi lista en el orden en que la guardaste (lo último primero).
+        let listed = Dictionary(services.library.all.filter(\.inList).map { ($0.metaID, $0.listedAt ?? 0) }, uniquingKeysWith: max)
+        let mine = all.filter(\.inLibrary).sorted { (listed[$0.id] ?? 0) > (listed[$1.id] ?? 0) }
+        async let continued = items(continueItems), saved = items(mine)   // las dos traducciones a la vez
+        let (c, m) = await (continued, saved)
+        guard !Task.isCancelled else { return }
+        continueWatching = c.filter { !dismissed.contains($0.metaID) }
+        myList = m
+        offline = false; error = nil
+        dressList()
+        // Lo que ya estás viendo no se repite arriba.
+        let watching = Set(continueWatching.map(\.metaID))
+        if spotlight.contains(where: { watching.contains($0.imdb) }) { spotlight.removeAll { watching.contains($0.imdb) } }
+        services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(continueWatching: continueWatching, myList: myList)))
+        publishWidget()
+    }
+
+    /// Mi lista con lo que trajo Trakt de cada título (sinopsis, año, géneros); lo que aún no está allá, con lo del teléfono.
+    private func dressList() {
+        let details = Dictionary(watchlistDetails.map { ($0.imdb, $0) }, uniquingKeysWith: { a, _ in a })
+        let shown = myList.map { item in details[item.metaID] ?? Self.suggestion(item) }
+        let ids = Set(shown.map(\.imdb))
+        // Lo que Trakt ya tiene y el teléfono aún no (la primera sincronización), al final; lo que quitaste aquí, no.
+        let waiting = services.traktOutbox.pending.filter { $0.target == TraktOutbox.watchlist && !$0.add }.map(\.imdb)
+        let extra = myList.isEmpty && services.library.isEmpty ? watchlistDetails.filter { !ids.contains($0.imdb) && !waiting.contains($0.imdb) } : []
+        let next = (shown + extra).filter { hiddenPending[$0.imdb] == nil }
+        if next != traktPending { traktPending = next }
+    }
+
+    static func suggestion(_ item: HomeItem) -> Suggestion {
+        Suggestion(kind: item.kind, imdb: item.metaID, title: item.title, poster: item.poster ?? String(format: ForYou.metahubPoster, item.metaID),
+                   wide: item.background ?? String(format: ForYou.metahubBackground, item.metaID), reason: .inList("Mi lista"))
     }
 
     private func loadSpotlight(_ forYou: ForYou) async {
@@ -293,22 +322,14 @@ public final class HomeModel: ObservableModel {
         services.onSiriTitles?((continueWatching + myList).map { [$0.originalTitle, $0.title] })
     }
 
-    /// Quitado de tu watchlist o de Mi lista desde un menú (o regresado con «Deshacer»): cambia aquí al instante, en su
-    /// mismo lugar; la lista de verdad vive en Trakt o en Stremio y la siguiente carga ya llega así.
-    public func setShown(_ metaID: String, in destination: SaveDestination, shown: Bool) {
-        switch (destination, shown) {
-        case (.traktWatchlist, false):
+    /// Quitado de Mi lista desde un menú (o regresado con «Deshacer»): cambia aquí al instante, en su mismo lugar.
+    public func setShown(_ metaID: String, in destination: SaveDestination = .myList, shown: Bool) {
+        if !shown {
             guard let i = traktPending.firstIndex(where: { $0.imdb == metaID }) else { return }
             hiddenPending[metaID] = (i, traktPending.remove(at: i))
-        case (.traktWatchlist, true):
+        } else {
             guard let (i, s) = hiddenPending.removeValue(forKey: metaID), !traktPending.contains(where: { $0.imdb == metaID }) else { return }
             traktPending.insert(s, at: min(i, traktPending.count))
-        case (.stremioLibrary, false):
-            guard let i = myList.firstIndex(where: { $0.metaID == metaID }) else { return }
-            hiddenMine[metaID] = (i, myList.remove(at: i))
-        case (.stremioLibrary, true):
-            guard let (i, item) = hiddenMine.removeValue(forKey: metaID), !myList.contains(where: { $0.metaID == metaID }) else { return }
-            myList.insert(item, at: min(i, myList.count))
         }
     }
     private var hiddenPending: [String: (Int, Suggestion)] = [:]
@@ -325,14 +346,14 @@ public final class HomeModel: ObservableModel {
     }
     private var hiddenFavorites: [String: (Int, Suggestion)] = [:]
     private var favoriteObserver: NSObjectProtocol?
-    private var hiddenMine: [String: (Int, HomeItem)] = [:]
+    private var libraryObserver: NSObjectProtocol?
 
     /// «Quitar de Seguir viendo».
     public func dismiss(_ item: HomeItem) async {
         dismissed.insert(item.metaID)   // al instante (sin esperar la carga en curso); la carga lo filtra
         continueWatching.removeAll { $0.metaID == item.metaID }
         publishWidget()
-        try? await services.watch.dismissContinue(metaID: item.metaID, newEpisode: item.isNew == true ? item.videoID : nil)
+        await services.watch.dismissContinue(metaID: item.metaID, newEpisode: item.isNew == true ? item.videoID : nil)
     }
 }
 

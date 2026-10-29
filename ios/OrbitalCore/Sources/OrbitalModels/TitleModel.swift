@@ -36,13 +36,13 @@ public final class TitleModel: ObservableModel {
     public private(set) var seasons: [Season] = [] { didSet { changed() } }
     public private(set) var selectedSeason = 1 { didSet { changed() } }
     public private(set) var rows: [EpisodeRow] = [] { didSet { changed() } }
+    /// En Mi lista (el teléfono, al día con tu watchlist de Trakt).
     public private(set) var inLibrary = false { didSet { changed() } }
-    public private(set) var inWatchlist = false { didSet { changed() } }
     /// Tus listas de Trakt y si este título está en cada una («Guardar en…»); `nil` mientras no se han pedido.
     public private(set) var lists: [SavedList]? { didSet { changed() } }
     public private(set) var loadingLists = false { didSet { changed() } }
     /// ¿Está guardado en algún lado? (Mi lista, tu watchlist o una de tus listas): el botón dice «Guardado».
-    public var isSaved: Bool { inLibrary || inWatchlist || (lists.map { $0.contains(where: \.contains) } ?? inSomeList) }
+    public var isSaved: Bool { inLibrary || (lists.map { $0.contains(where: \.contains) } ?? inSomeList) }
     /// Está en alguna de tus listas de Trakt (sin abrir «Guardar en…»; al abrirla manda lo que diga cada lista).
     public private(set) var inSomeList = false { didSet { changed() } }
     public private(set) var traktAvailable = false { didSet { changed() } }
@@ -75,7 +75,8 @@ public final class TitleModel: ObservableModel {
     private let services: Services
     private var meta: JSON?                // la ficha ORIGINAL
     private var localized: JSON?
-    private var raw: JSON?
+    /// Lo tuyo de este título en el teléfono (dónde ibas, lo visto, Mi lista).
+    private var entry: LibraryEntry?
     private var watched = Set<String>()
     private var downloadStates: [String: DownloadState] = [:]
     private var downloadProgress: [String: Double] = [:]
@@ -134,7 +135,7 @@ public final class TitleModel: ObservableModel {
         defer { isLoading = false }
         // Lo tuyo en Stremio (avance, vistos) se pide a la vez que la ficha: no espera a Cinemeta ni a la traducción.
         let watch = services.watch, id = metaID
-        let state = Task { await watch.rawItem(metaID: id) }
+        let state = Task { await watch.entry(metaID: id) }
         // Los complementos, a la vez que la ficha y lo tuyo: las fuentes ya no esperan a `addonCollectionGet` al final.
         let finder = services.finder
         Task { await finder.warmAddons() }
@@ -145,10 +146,10 @@ public final class TitleModel: ObservableModel {
             // Película: el video es ella misma (salvo un `video_id` raro guardado), así que no espera a lo tuyo. Serie: el
             // episodio sale de lo tuyo y adivinarlo sería pedir fuentes de otro episodio.
             if kind == "movie" { Task { await finder.warm(kind: kind, videoID: id) } }
-            let raw = await state.value
-            var video = Self.continueVideoID(kind: kind, metaID: id, raw: raw, seasons: [])
+            let mine = await state.value
+            var video = Self.continueVideoID(kind: kind, metaID: id, entry: mine, seasons: [])
             if video == nil, let meta = try? await cinemeta.meta(kind: kind, id: id) {
-                video = Self.continueVideoID(kind: kind, metaID: id, raw: raw, seasons: CinemetaParsing.seasons(meta))
+                video = Self.continueVideoID(kind: kind, metaID: id, entry: mine, seasons: CinemetaParsing.seasons(meta))
             }
             if let video { introDB.warm(videoID: video); await finder.warm(kind: kind, videoID: video) }   // «Saltar intro» listo al reproducir
         }
@@ -169,6 +170,11 @@ public final class TitleModel: ObservableModel {
             error = nil
         } catch where !Task.isCancelled { self.error = "No pude cargar la ficha. Revisa tu conexión." } catch {}   // cancelado al salir: sin error falso
         await refreshState(prefetched: await state.value)
+        // Los episodios que viste en otro aparato (Trakt), aunque la serie no esté entre las recientes: llegan y se repinta.
+        if kind == "series", metaID.hasPrefix("tt"), services.trakt?.linked == true {
+            let sync = services.sync, id = metaID, name = originalTitle
+            Task { [weak self] in await sync.pullShow(imdb: id, name: name); await self?.refreshState() }
+        }
     }
 
     /// La sinopsis de la ficha: la que el iPhone tradujo con TMDB (en el idioma de la app); la de tu Orbital solo si aquí no
@@ -233,31 +239,26 @@ public final class TitleModel: ObservableModel {
         if let text = json["overview"]?.nonEmptyString?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty { consoleOverview = text }
     }
 
-    /// Lo que cambia viendo, descargando o marcando: lo tuyo en Stremio, Trakt y las descargas.
+    /// Lo que cambia viendo, descargando o marcando: lo tuyo en el teléfono, Trakt y las descargas.
     public func refreshState() async { await refreshState(prefetched: nil) }
 
-    /// Lo tuyo en Stremio, Trakt y las descargas: las cuatro consultas a la vez.
-    private func refreshState(prefetched: JSON??) async {
+    /// Lo tuyo en el teléfono, Trakt y las descargas: las consultas a la vez.
+    private func refreshState(prefetched: LibraryEntry?? = nil) async {
         let forYou = services.forYou, downloads = services.downloads, watch = services.watch, id = metaID
         async let linked = forYou.traktLinked
-        async let keys = forYou.watchlistKeys()
         async let listed = forYou.listKeys()
         async let favorites = forYou.favoriteKeys()
         async let queue = downloads.all
-        if let prefetched { raw = prefetched } else { raw = await watch.rawItem(metaID: id) }
-        let ids = meta.map(CinemetaParsing.seasonVideoIDs) ?? []
-        watched = StremioLibrary.parseWatched(raw?["state"]?["watched"]?.string, videoIDs: ids)
-        inLibrary = StremioLibrary.isInLibrary(raw)
+        if let prefetched { entry = prefetched } else { entry = await watch.entry(metaID: id) }
+        watched = entry?.seen ?? []
+        inLibrary = entry?.inList ?? false
         traktAvailable = await linked
-        // Lo pendiente de mandar (guardado sin conexión) manda sobre lo que Trakt aún dice.
-        let onTrakt = await keys.contains(metaID)
-        inWatchlist = services.traktOutbox.pending(target: TraktOutbox.watchlist, imdb: metaID) ?? onTrakt
         inSomeList = await listed.contains(metaID)
         let onTraktFavorites = await favorites.contains(metaID)
         let favorite = services.traktOutbox.pending(target: TraktOutbox.favorites, imdb: metaID) ?? onTraktFavorites
         if favoriteWrites == 0 { isFavorite = favorite }
         applyDownloads(await queue)
-        if let state = StremioLibrary.state(of: raw)["video_id"]?.string, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
+        if let state = entry?.videoID, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
         else if !seasons.contains(where: { $0.season == selectedSeason }) { selectedSeason = seasons.first { !$0.isSpecials }?.season ?? seasons.first?.season ?? 1 }
         buildRows()
     }
@@ -265,29 +266,30 @@ public final class TitleModel: ObservableModel {
     public func select(season: Int) { selectedSeason = season; buildRows() }
 
     private func buildRows() {
-        let state = StremioLibrary.state(of: raw)
-        let current = state["video_id"]?.string
-        let offset = asInt(state["timeOffset"]), duration = asInt(state["duration"])
+        let current = entry?.nextUp == false ? entry?.videoID : nil
+        let progress = entry?.progress, left = max(0, (entry?.duration ?? 0) - (entry?.position ?? 0))
         rows = (seasons.first { $0.season == selectedSeason }?.episodes ?? []).map { ep in
-            let ongoing = ep.id == current && offset > 1 && duration > 0
+            let ongoing = ep.id == current && progress != nil && (entry?.duration ?? 0) > 0
             let seasonNumber = selectedSeason
             return EpisodeRow(id: ep.id, season: seasonNumber, number: ep.episode, title: ep.title, hasTitle: ep.hasTitle, overview: ep.overview, thumbnail: ep.thumbnail,
-                              watched: watched.contains(ep.id), progress: ongoing ? min(1, Double(offset) / Double(duration)) : nil,
-                              timeLeft: ongoing ? PlaybackRules.timeLeft(Double(duration - offset) / 1000) : "",
-                              leftMinutes: ongoing ? PlaybackRules.minutesLeft(Double(duration - offset) / 1000) : 0, download: downloadStates[ep.id],
+                              watched: watched.contains(ep.id), progress: ongoing ? progress : nil,
+                              timeLeft: ongoing ? PlaybackRules.timeLeft(left) : "",
+                              leftMinutes: ongoing ? PlaybackRules.minutesLeft(left) : 0, download: downloadStates[ep.id],
                               airs: Self.airDate(ep.released))
         }
     }
 
     // MARK: ver
     /// El video con el que sigue el botón principal: donde ibas, o el primer episodio.
-    public var continueVideoID: String? { Self.continueVideoID(kind: kind, metaID: metaID, raw: raw, seasons: seasons) }
+    public var continueVideoID: String? { Self.continueVideoID(kind: kind, metaID: metaID, entry: entry, seasons: seasons) }
 
     /// La misma cuenta sin abrir la ficha (lo usa «¿Qué vemos?» para que «Ver» ponga el capítulo en que vas): con lo tuyo en
-    /// Stremio (`raw`) y las temporadas de Cinemeta.
-    nonisolated public static func continueVideoID(kind: String, metaID: String, raw: JSON?, seasons: [Season]) -> String? {
-        let state = StremioLibrary.state(of: raw)
-        if let video = state["video_id"]?.nonEmptyString, asInt(state["timeOffset"]) > 0 || kind == "series" { return video }
+    /// el teléfono (`entry`) y las temporadas de Cinemeta.
+    nonisolated public static func continueVideoID(kind: String, metaID: String, entry: LibraryEntry?, seasons: [Season]) -> String? {
+        if let video = entry?.videoID, !video.isEmpty, (entry?.position ?? 0) > 0 || kind == "series" {
+            // Ibas al día y terminaste el último que había: «Ver» pone ese (no hay siguiente todavía).
+            return video
+        }
         if kind == "movie" { return metaID }
         return seasons.first { !$0.isSpecials }?.episodes.first?.id
     }
@@ -295,8 +297,7 @@ public final class TitleModel: ObservableModel {
     /// «Continuar T2 E5» / «Reproducir» / «Reproducir T1 E1».
     public var continueLabel: (isResume: Bool, season: Int?, episode: Int?) {
         guard let video = continueVideoID else { return (false, nil, nil) }
-        let state = StremioLibrary.state(of: raw)
-        let resume = state["video_id"]?.string == video && asInt(state["timeOffset"]) > 1
+        let resume = entry?.videoID == video && entry?.nextUp == false && (entry?.position ?? 0) > 1
         if kind == "series" {
             let numbers = StremioLibrary.episodeNumbers(videoID: video, metaID: metaID)
             if let s = numbers.season, let e = numbers.episode { return (resume, s, e) }
@@ -308,9 +309,8 @@ public final class TitleModel: ObservableModel {
     /// del episodio típico de la serie). nil si no se sabe. Con esto la ficha dice «terminas a las 23:21».
     public var minutesToFinish: Int? {
         guard continueVideoID != nil else { return nil }
-        let state = StremioLibrary.state(of: raw)
-        let duration = asInt(state["duration"]), offset = asInt(state["timeOffset"])
-        if continueLabel.isResume, duration > offset, offset > 0 { return max(1, PlaybackRules.minutesLeft(Double(duration - offset) / 1000)) }
+        let duration = entry?.duration ?? 0, offset = entry?.position ?? 0
+        if continueLabel.isResume, duration > offset, offset > 0 { return max(1, PlaybackRules.minutesLeft(duration - offset)) }
         let runtime = Int(CinemetaParsing.runtimeSeconds(info.runtime) / 60)
         return runtime > 0 ? runtime : nil
     }
@@ -318,10 +318,7 @@ public final class TitleModel: ObservableModel {
     /// Cuánto llevas visto de lo que pone el botón principal (0…1); nil si no ibas a medias.
     public var resumeFraction: Double? {
         guard continueLabel.isResume else { return nil }
-        let state = StremioLibrary.state(of: raw)
-        let duration = asInt(state["duration"]), offset = asInt(state["timeOffset"])
-        guard duration > 0, offset > 0 else { return nil }
-        return min(1, Double(offset) / Double(duration))
+        return entry?.progress
     }
 
     public func playRequest(videoID: String? = nil, fromStart: Bool = false) -> PlayRequest? {
@@ -349,45 +346,26 @@ public final class TitleModel: ObservableModel {
         return nil
     }
 
-    // MARK: Mi lista y watchlist
-    /// Adónde va «Guardar» sin elegir (`SaveDestination.preferred`: tu watchlist con Trakt, si no Mi lista).
+    // MARK: Mi lista
+    /// Adónde va «Guardar» sin elegir: Mi lista (el teléfono y tu watchlist de Trakt).
     public var saveDestination: SaveDestination { .preferred(traktLinked: traktAvailable, metaID: metaID) }
-    /// Las fijas de «Guardar en…» y del menú de «Guardar», la de por omisión primero.
+    /// Las fijas de «Guardar en…» y del menú de «Guardar».
     public var fixedDestinations: [SaveDestination] { SaveDestination.fixed(traktLinked: traktAvailable, metaID: metaID) }
     /// Qué hace un toque en «Guardar».
     public var quickSave: QuickSave {
-        QuickSave.decide(preferred: saveDestination, inLibrary: inLibrary, inWatchlist: inWatchlist,
-                         inOtherLists: lists.map { $0.contains(where: \.contains) } ?? inSomeList)
+        QuickSave.decide(inList: inLibrary, inOtherLists: lists.map { $0.contains(where: \.contains) } ?? inSomeList)
     }
 
-    public func isSaved(in destination: SaveDestination) -> Bool { destination == .traktWatchlist ? inWatchlist : inLibrary }
+    public func isSaved(in destination: SaveDestination) -> Bool { inLibrary }
 
-    public func toggle(_ destination: SaveDestination) async {
-        switch destination {
-        case .traktWatchlist: await toggleWatchlist()
-        case .stremioLibrary: await toggleLibrary()
-        }
-    }
+    public func toggle(_ destination: SaveDestination) async { await toggleLibrary() }
 
+    /// Mi lista: cambia aquí al instante y viaja a tu watchlist de Trakt (sin conexión, en cuanto haya).
     public func toggleLibrary() async {
         let target = !inLibrary
         inLibrary = target
-        do { try await services.watch.setInLibrary(kind: kind, metaID: metaID, title: originalTitle, poster: poster, add: target) }
-        catch { inLibrary = !target; message = "No pude cambiar tu lista de Stremio: \(error)" }
-    }
-
-    public func toggleWatchlist() async {
-        guard let trakt = services.trakt, trakt.linked, metaID.hasPrefix("tt") else { return }
-        let want = !inWatchlist
-        inWatchlist = want
-        do {
-            try await trakt.setWatchlist(imdb: metaID, series: kind == "series", add: want)
-            await services.forYou.clearCache(["trakt:watchlist"])   // solo la watchlist: lo demás de Para ti sigue válido
-        } catch where TraktOutbox.retryable(error) {
-            // Sin conexión o con tu Orbital apagada: se queda guardado aquí y se manda en cuanto se pueda (no se pierde).
-            services.traktOutbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: metaID, series: kind == "series", add: want))
-            message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
-        } catch { inWatchlist = !want; message = "No pude cambiar tu watchlist de Trakt: \(error)" }
+        await services.watch.setInLibrary(kind: kind, metaID: metaID, title: originalTitle, poster: poster, add: target, outbox: services.traktOutbox)
+        await services.forYou.clearCache(["trakt:watchlist"])   // solo la watchlist: lo demás de Para ti sigue válido
     }
 
     // MARK: favoritos de Trakt
@@ -482,11 +460,16 @@ public final class TitleModel: ObservableModel {
         } catch { message = "No pude crear la lista: \(error)" }
     }
 
-    /// Marca un episodio (o la película) como visto en Stremio y en Trakt. Se relee el item antes de escribir: lo que
-    /// hayas hecho en otro dispositivo no se pisa, y marcar un episodio anterior no mueve tu punto de «Seguir viendo».
+    /// Marca un episodio (o la película) como visto: en el teléfono al instante y en Trakt (y la copia a Stremio). Marcar un
+    /// episodio anterior no mueve tu punto de «Seguir viendo».
     public func markWatched(_ videoID: String) async {
-        do { try await services.watch.markWatched(kind: kind, metaID: metaID, videoID: videoID) } catch { message = "No pude marcarlo: \(error)"; return }
-        if let trakt = services.trakt, trakt.linked, let target = TraktTarget(videoID: videoID, kind: kind) { _ = try? await trakt.addToHistory(target, watchedAt: Date()) }
+        await services.watch.markWatched(kind: kind, metaID: metaID, videoID: videoID, name: originalTitle)
+        await refreshState()
+    }
+
+    /// «Marcar como no visto»: sale de lo visto aquí y en Trakt.
+    public func unmarkWatched(_ videoID: String) async {
+        await services.watch.unmarkWatched(kind: kind, metaID: metaID, videoID: videoID)
         await refreshState()
     }
 

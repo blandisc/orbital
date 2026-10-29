@@ -15,7 +15,7 @@ public final class TitleActions {
         return s.kind == "movie" ? s.imdb : "\(s.imdb):1:1"
     }
 
-    /// Por dónde empieza una serie sugerida: el capítulo en que vas según Stremio (el mismo que «Continuar» de la ficha); si no
+    /// Por dónde empieza una serie sugerida: el capítulo en que vas (lo tuyo en el teléfono; el mismo que «Continuar» de la ficha); si no
     /// la has empezado, el que trae la sugerencia o el primero de verdad (no «1:1» a ciegas: hay series sin temporada 1).
     public struct SeriesStart: Sendable {
         public var metaID: String, videoID: String, season: Int?, episode: Int?
@@ -26,37 +26,27 @@ public final class TitleActions {
 
     public func seriesStart(_ s: Suggestion) async -> SeriesStart? {
         let watch = services.watch, id = s.imdb
-        async let raw = watch.rawItem(metaID: id)
+        async let entry = watch.entry(metaID: id)
         guard let meta = try? await services.cinemeta.meta(kind: s.kind, id: s.imdb) else { return nil }
-        let seasons = CinemetaParsing.seasons(meta), mine = await raw
-        let state = StremioLibrary.state(of: mine)
-        let current = state["video_id"]?.nonEmptyString
+        let seasons = CinemetaParsing.seasons(meta), mine = await entry
+        let current = mine?.videoID
         let suggested = s.next.map { "\(s.imdb):\($0.season):\($0.episode)" }
-        guard let video = current != nil ? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, raw: mine, seasons: seasons)
-                                         : suggested ?? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, raw: nil, seasons: seasons) else { return nil }
+        guard let video = current != nil ? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, entry: mine, seasons: seasons)
+                                         : suggested ?? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, entry: nil, seasons: seasons) else { return nil }
         let numbers = StremioLibrary.episodeNumbers(videoID: video, metaID: s.imdb)
         return SeriesStart(metaID: s.imdb, videoID: video, season: numbers.season, episode: numbers.episode,
-                           isResume: current == video && asInt(state["timeOffset"]) > 1, meta: meta)
+                           isResume: current == video && mine?.nextUp == false && (mine?.position ?? 0) > 1, meta: meta)
     }
 
-    /// A qué lista va «Guardar» sin elegir: tu watchlist de Trakt si está conectado, si no Mi lista de Stremio.
+    /// A qué lista va «Guardar» sin elegir: Mi lista (el teléfono y tu watchlist de Trakt).
     public func preferredDestination(for s: Suggestion) -> SaveDestination {
         SaveDestination.preferred(traktLinked: services.trakt?.linked ?? false, metaID: s.imdb)
     }
 
-    /// Pone o quita un título de una de las listas fijas. Trakt sin conexión: queda pendiente en el iPhone (como en la ficha).
-    public func setSaved(_ s: Suggestion, in destination: SaveDestination, add: Bool) async throws {
-        switch destination {
-        case .stremioLibrary:
-            try await services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: add)
-        case .traktWatchlist:
-            guard let trakt = services.trakt else { return }
-            do { try await trakt.setWatchlist(imdb: s.imdb, series: s.kind == "series", add: add) }
-            catch where TraktOutbox.retryable(error) {
-                services.traktOutbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: s.imdb, series: s.kind == "series", add: add))
-            }
-            await services.forYou.clearCache()
-        }
+    /// Pone o quita un título de Mi lista: en el teléfono al instante; a Trakt por la cola (sin conexión, en cuanto haya).
+    public func setSaved(_ s: Suggestion, in destination: SaveDestination = .myList, add: Bool) async throws {
+        await services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: add, outbox: services.traktOutbox)
+        await services.forYou.clearCache(["trakt:watchlist"])
     }
 
     /// Pone o quita un favorito en Trakt; sin conexión, a la cola del iPhone (no es un error: llega después).
@@ -70,10 +60,10 @@ public final class TitleActions {
         }
     }
 
-    /// «Marcar como vista» (una película): en Stremio y, si está conectado, en Trakt. Lanza si Stremio no pudo.
+    /// «Marcar como vista» (una película): en el teléfono al instante y en Trakt (`/sync/history`; sin conexión, en cuanto
+    /// haya). Stremio recibe copia si lo conectaste.
     public func markWatched(_ s: Suggestion, at date: Date = Date()) async throws {
-        try await services.watch.markWatched(kind: s.kind, metaID: s.imdb, videoID: s.imdb)
-        if let trakt = services.trakt, trakt.linked, let target = TraktTarget(videoID: s.imdb, kind: s.kind) { _ = try? await trakt.addToHistory(target, watchedAt: date) }
+        await services.watch.markWatched(kind: s.kind, metaID: s.imdb, videoID: s.imdb, name: s.title, at: date)
     }
 
     /// Lo que se está bajando de una sugerencia, para decirlo («1080p · 2.4 GB»), si la cola ya lo sabe.

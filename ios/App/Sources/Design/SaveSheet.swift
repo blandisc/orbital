@@ -1,27 +1,18 @@
 import SwiftUI
 import OrbitalModels
 
-/// El nombre de una de las listas fijas de «Guardar» con su servicio en gris: «Tu watchlist (Trakt)»; «Mi lista» va sola.
-/// Lo comparten el menú de «Guardar» de la ficha y la hoja «Guardar en…».
+/// El nombre de la lista fija de «Guardar»: «Mi lista» (vive en el teléfono y es tu watchlist de Trakt). Lo comparten el menú
+/// de «Guardar» de la ficha y la hoja «Guardar en…».
 struct SaveDestinationName: View {
     let destination: SaveDestination
 
     var body: some View { Self.text(destination) }
 
-    static func text(_ destination: SaveDestination) -> Text {
-        switch destination {
-        case .traktWatchlist: Text("\(Text("Tu watchlist"))\(Text(verbatim: " (Trakt)").foregroundStyle(DS.textMuted))")
-        case .stremioLibrary: Text("Mi lista")
-        }
-    }
+    static func text(_ destination: SaveDestination) -> Text { Text("Mi lista") }
 
-    static func symbol(_ destination: SaveDestination) -> String {
-        destination == .traktWatchlist ? "bookmark" : "rectangle.stack"
-    }
+    static func symbol(_ destination: SaveDestination) -> String { "bookmark" }
 
-    static func tint(_ destination: SaveDestination) -> Color {
-        destination == .traktWatchlist ? DS.ListTint.bookmark : DS.ListTint.library
-    }
+    static func tint(_ destination: SaveDestination) -> Color { DS.ListTint.bookmark }
 }
 
 /// El lugar de una lista que todavía no llega: el mismo `CheckRow` (mismo alto, mismo relleno) en modo de marcador, sin

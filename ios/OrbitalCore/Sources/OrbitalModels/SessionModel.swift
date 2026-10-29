@@ -1,7 +1,7 @@
 import Foundation
 import OrbitalCore
 
-/// Cuenta de Stremio (el eje de todo) y tus complementos propios.
+/// Cuenta de Stremio (opcional: el respaldo que recibe una copia de lo que ves) y tus complementos propios.
 @MainActor
 public final class SessionModel: ObservableModel {
     public enum State: Equatable { case signedOut, signingIn, signedIn, failed(String) }
@@ -12,7 +12,7 @@ public final class SessionModel: ObservableModel {
 
     public init(_ services: Services) {
         self.services = services
-        state = services.isSignedIn ? .signedIn : .signedOut
+        state = services.stremioConnected ? .signedIn : .signedOut
         super.init()
     }
 
@@ -25,7 +25,7 @@ public final class SessionModel: ObservableModel {
             services.secrets.set(SecretKey.stremioAuth, key)   // la contraseña no se guarda: solo la clave de sesión
             await services.resetAccountCaches()
             state = .signedIn
-            _ = await services.watch.flushPending()
+            await services.syncLibrary()   // lo de Stremio pasa al teléfono una vez
         } catch let error as StremioError {
             state = .failed(error.description)
         } catch { state = .failed("\(error)") }

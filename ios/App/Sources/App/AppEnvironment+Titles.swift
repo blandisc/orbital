@@ -31,19 +31,18 @@ extension AppEnvironment {
     }
 
     /// «Guardar» desde el menú de un póster: lo mismo que un toque en «Guardar» de la ficha — a la lista por omisión
-    /// (`SaveDestination`: tu watchlist con Trakt, si no Mi lista), con un aviso que se deshace.
+    /// (`SaveDestination`: Mi lista, que es tu watchlist de Trakt), con un aviso que se deshace.
     func save(_ s: Suggestion) async {
         let destination = titles.preferredDestination(for: s)
         do {
             try await titles.setSaved(s, in: destination, add: true)
             notify(saved: destination, undo: true) { [weak self] in Task { try? await self?.titles.setSaved(s, in: destination, add: false) } }
         } catch {
-            let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar Mi lista"
-            notify(failure, detail: "\(error)", tone: .warn)   // la causa, traducida
+            notify("No pude cambiar Mi lista", detail: "\(error)", tone: .warn)   // la causa, traducida
         }
     }
 
-    /// «Quitar de tu watchlist» o «Quitar de Mi lista» desde el menú de un póster, con «Deshacer». `shown` le dice a la
+    /// «Quitar de Mi lista» desde el menú de un póster, con «Deshacer». `shown` le dice a la
     /// pantalla si el título se ve: se quita al instante y regresa si falla o si deshaces.
     func remove(_ s: Suggestion, from destination: SaveDestination, shown: @escaping (Bool) -> Void) async {
         shown(false)
@@ -55,8 +54,7 @@ extension AppEnvironment {
             }
         } catch {
             shown(true)
-            let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar Mi lista"
-            notify(failure, detail: "\(error)", tone: .warn)
+            notify("No pude cambiar Mi lista", detail: "\(error)", tone: .warn)
         }
     }
 
@@ -76,7 +74,7 @@ extension AppEnvironment {
         }
     }
 
-    /// «Marcar como vista» (una película) desde el menú de un póster: en Stremio y en Trakt, como en la ficha.
+    /// «Marcar como vista» (una película) desde el menú de un póster: en el teléfono y en Trakt, como en la ficha.
     func markWatched(_ s: Suggestion) async -> Bool {
         do { try await titles.markWatched(s) } catch {
             notify(format: "No pude marcar «%@» como vista", s.title, detail: "\(error)", tone: .warn)
@@ -88,14 +86,13 @@ extension AppEnvironment {
 
     /// El aviso de «Guardar» (la ficha y los pósters): dónde quedó y, a la mano, cambiarlo (o deshacerlo).
     func notify(saved destination: SaveDestination, undo: Bool = false, perform: @escaping () -> Void) {
-        let (text, detail): (String, String?) = destination == .traktWatchlist ? ("Guardada en tu watchlist", "Trakt") : ("Guardada en Mi lista", nil)
-        if undo { notify(text, detail: detail, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", perform: perform) }
-        else { notify(text, detail: detail, actionTitle: "Cambiar", perform: perform) }
+        if undo { notify("Guardada en Mi lista", actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", perform: perform) }
+        else { notify("Guardada en Mi lista", actionTitle: "Cambiar", perform: perform) }
     }
 
     /// El aviso al quitar con un toque: de dónde salió, con «Deshacer».
     func notify(removed destination: SaveDestination, undo: @escaping () -> Void) {
-        notify(destination == .traktWatchlist ? "Quitada de tu watchlist" : "Quitada de Mi lista", tone: .info, actionTitle: "Deshacer",
+        notify("Quitada de Mi lista", tone: .info, actionTitle: "Deshacer",
                actionSymbol: "arrow.uturn.backward", perform: undo)
     }
 

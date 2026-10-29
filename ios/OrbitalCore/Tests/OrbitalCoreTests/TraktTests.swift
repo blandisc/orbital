@@ -278,20 +278,20 @@ final class TraktTests: XCTestCase {
     /// la renueva.
     func testPausedPicksTheMostRecentAndIsCachedBriefly() async throws {
         let http = FakeHTTP(), clock = Clock()
-        http.json["\(api)/sync/playback"] = Self.playbackRows
+        http.json["\(api)/sync/playback?extended=full"] = Self.playbackRows
         let trakt = makeTrakt(http, clock: clock)
         let episode = await trakt.paused(TraktTarget(imdb: "tt0386676", season: 2, episode: 5))
         XCTAssertEqual(episode?.id, 13)
         let none = await trakt.paused(TraktTarget(imdb: "tt0386676", season: 1, episode: 1))
         XCTAssertNil(none)
-        XCTAssertEqual(http.calls.filter { $0.hasSuffix("/sync/playback") }.count, 1, "la segunda pregunta sale de lo guardado")
+        XCTAssertEqual(http.calls.filter { $0.contains("/sync/playback") }.count, 1, "la segunda pregunta sale de lo guardado")
         clock.now = clock.now.addingTimeInterval(61)
         _ = await trakt.paused(TraktTarget(imdb: "tt1160419"))
-        XCTAssertEqual(http.calls.filter { $0.hasSuffix("/sync/playback") }.count, 2, "pasado el minuto se vuelve a preguntar")
+        XCTAssertEqual(http.calls.filter { $0.contains("/sync/playback") }.count, 2, "pasado el minuto se vuelve a preguntar")
         http.json["\(api)/scrobble/pause"] = [:]
         try await trakt.scrobble(.pause, TraktTarget(imdb: "tt1160419"), progress: 40)
         _ = await trakt.paused(TraktTarget(imdb: "tt1160419"))
-        XCTAssertEqual(http.calls.filter { $0.hasSuffix("/sync/playback") }.count, 3, "tras tu propia pausa, lo nuevo")
+        XCTAssertEqual(http.calls.filter { $0.contains("/sync/playback") }.count, 3, "tras tu propia pausa, lo nuevo")
     }
 
     func testPausedWithoutASessionAsksNothing() async {

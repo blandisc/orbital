@@ -27,11 +27,11 @@ struct SuggestionActions: View {
         }
         if list != nil, suggestion.kind == "movie" {
             Button("Marcar como vista", systemImage: "checkmark.circle") {
-                Task { if await env.markWatched(suggestion), list == .traktWatchlist { onWatched?(suggestion) } }
+                Task { if await env.markWatched(suggestion), list != nil { onWatched?(suggestion) } }
             }
         }
         if let list {
-            Button(list == .traktWatchlist ? "Quitar de tu watchlist" : "Quitar de Mi lista", systemImage: "minus.circle", role: .destructive) { onDismiss(suggestion) }
+            Button("Quitar de Mi lista", systemImage: "minus.circle", role: .destructive) { onDismiss(suggestion) }
         } else if favorite {
             Button("Quitar de favoritos", systemImage: "heart.slash", role: .destructive) { onDismiss(suggestion) }
         } else {

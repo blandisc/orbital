@@ -16,5 +16,5 @@ struct ProfileButton: View {
 struct HomeListRoute: Hashable {
     var id: String
     /// La lista tuya que enseña (para «Quitar de …» al dejar picado un título); «Para ti» y «Seguir viendo» no son una lista.
-    var list: SaveDestination? { id == "watchlist" ? .traktWatchlist : id == "mylist" ? .stremioLibrary : nil }
+    var list: SaveDestination? { id == "watchlist" ? .myList : nil }
 }

@@ -57,12 +57,8 @@ struct RootView: View {
     var body: some View {
         @Bindable var env = env
         let _ = services.model   // cualquier cambio de los servicios (idioma, cuenta) vuelve a pintar la raíz
-        Group {
-            switch session.model.state {
-            case .signedIn: MainTabs().onAppear { Perf.mark("app.tabs") }
-            default: LoginView(session: session.model)
-            }
-        }
+        // Se entra sin cuenta de Stremio: lo tuyo vive en el teléfono (y viaja por Trakt). Stremio se conecta en Ajustes, como respaldo.
+        MainTabs().onAppear { Perf.mark("app.tabs") }
         .background(DS.bg.ignoresSafeArea())
         .overlay { if splashing { LaunchSplash(target: ui.homeLogoFrame) { splashing = false; ui.splashing = false } } }
         .fullScreenCover(item: $env.playing) { request in PlayerScreen(request: request) }
@@ -94,7 +90,7 @@ struct RootView: View {
             if Demo.isOn, let at = Demo.handoff { env.handoff = .init(request: Demo.handoffRequest, position: at) }
             if Demo.isOn { Demo.showNotice(env) }
             #endif
-            _ = await env.services.watch.flushPending()
+            await env.services.syncLibrary()
             // Con tu Orbital conectada: lo nuevo de la consola (otra clave, Trakt recién conectado allá) llega solo.
             if env.services.orbital.isConfigured { _ = try? await env.services.connectOrbital() }
         }
@@ -122,7 +118,7 @@ struct RootView: View {
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).
             env.tvNow.setActive(phase == .active)
-            if phase == .active { Task { _ = await env.services.watch.flushPending() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }; Task { await env.syncChoices() }; Task { await env.services.traktOutbox.flush(env.services.trakt) } }
+            if phase == .active { Task { await env.services.syncLibrary() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }; Task { await env.syncChoices() } }
             #if DEBUG
             if phase == .active { DemoHTTPClient.postReleaseAlert(language: env.services.appSettings.uiLanguage) }
             #endif

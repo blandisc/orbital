@@ -13,6 +13,8 @@ public final class Services: ObservableModel {
     /// Lo que guardaste en Trakt y aún no llega (sin conexión, o con tu Orbital apagada): se manda en cuanto se pueda.
     public let traktOutbox: TraktOutbox
     public let pending: PendingStore
+    /// Lo tuyo en el teléfono (avance, visto, Mi lista): la verdad para la pantalla. Trakt es la copia que comparten tus aparatos.
+    public let library: LocalLibrary
     /// Lo último que se le contó a Trakt (o el problema): vive aquí, no en `WatchService`, porque `reconfigure()` lo rearma.
     public let scrobbleLog: ScrobbleLog
     private let flushGate = FlushGate()
@@ -51,6 +53,8 @@ public final class Services: ObservableModel {
     /// «Para ti» de tu Orbital (la consola), cuando está conectada; `ParaTiModel` decide si la usa.
     public private(set) var forYouRemote: RemoteForYou { didSet { changed() } }
     public private(set) var watch: WatchService { didSet { changed() } }
+    /// Trae de Trakt lo que cambió en tus otros aparatos (`/sync/last_activities`) y lo junta con lo del teléfono.
+    public private(set) var sync: LibrarySync
     public private(set) var downloads: Downloads { didSet { changed() } }
     /// «Para ti» de tu Orbital en vez de calcularlo en el iPhone. Apagado: el iPhone lo calcula él mismo (Trakt, el Top 10 de
     /// Netflix, las tendencias de JustWatch, TMDB) y no depende de que la consola conteste; la consola solo se entera de lo
@@ -104,7 +108,7 @@ public final class Services: ObservableModel {
     private let device: OrbitalRemote.Device?
     private let onDownloadsChange: @Sendable ([DownloadItem]) -> Void
 
-    public init(http: HTTPClient, secrets: SecretsStore, kv: KeyValueStore, pending: PendingStore, downloadTransport: DownloadTransport,
+    public init(http: HTTPClient, secrets: SecretsStore, kv: KeyValueStore, pending: PendingStore, library: LocalLibrary = LocalLibrary(), downloadTransport: DownloadTransport,
                 downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64, cacheRoot: URL? = nil,
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in },
                 builtInTraktClientID: String = Services.bundledTraktClientID, device: OrbitalRemote.Device? = nil,
@@ -113,7 +117,7 @@ public final class Services: ObservableModel {
         self.allowsOrbital = allowsOrbital
         self.device = device
         self.builtInTraktClientID = builtInTraktClientID
-        self.http = http; self.secrets = secrets; self.kv = kv; self.pending = pending; self.downloadTransport = downloadTransport
+        self.http = http; self.secrets = secrets; self.kv = kv; self.pending = pending; self.library = library; self.downloadTransport = downloadTransport
         self.downloadsRoot = downloadsRoot; self.freeSpace = freeSpace; self.clock = clock; self.onDownloadsChange = onDownloadsChange
         let scrobbleLog = ScrobbleLog(kv: kv)
         self.scrobbleLog = scrobbleLog
@@ -151,7 +155,9 @@ public final class Services: ObservableModel {
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: allowsOrbital ? settings.value.orbitalAddress : "",
                                                                  token: allowsOrbital ? secrets.get(SecretKey.orbitalToken) ?? "" : "", device: device) }, clock: clock)
-        self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
+        self.watch = WatchService(library: library, stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt,
+                                  pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
+        self.sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: traktOutbox, pending: pending, clock: clock)
         // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
         let origins = OriginBook(tmdb: { Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "") }, cinemeta: cinemeta)
         let prefs = titlePrefs
@@ -276,7 +282,17 @@ public final class Services: ObservableModel {
 
     public func now() -> Date { clock() }
     public var authKey: String? { secrets.get(SecretKey.stremioAuth) }
-    public var isSignedIn: Bool { authKey != nil }
+    /// ¿Conectaste Stremio? Es opcional (respaldo): recibe una copia de lo que ves mientras dure la prueba.
+    public var stremioConnected: Bool { authKey != nil }
+
+    /// Al abrir, al volver a la app o al deslizar: primero sube lo de aquí (para que no regrese como estaba), luego trae de
+    /// Trakt lo que cambió en tus otros aparatos. La primera vez con Stremio conectado, lo de Stremio pasa al teléfono.
+    public func syncLibrary(force: Bool = false) async {
+        await watch.importFromStremio(kv: kv)
+        await traktOutbox.flush(trakt)
+        await watch.flushPending()
+        await sync.pull(force: force)
+    }
     public var appSettings: AppSettings { settings.value }
 
     /// Tras cambiar una clave (TMDB, Trakt): se rearman las piezas que dependen de ellas.
@@ -289,16 +305,19 @@ public final class Services: ObservableModel {
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, builtIn: builtInTraktClientID, clock: clock)
         let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock)
         forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: charts, addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
-        watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
+        watch = WatchService(library: library, stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt,
+                             pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
+        sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: traktOutbox, pending: pending, clock: clock)
         generation += 1
     }
 
-    /// Al cerrar sesión: lo pendiente y lo guardado de la cuenta anterior no se sube ni se muestra con la siguiente.
+    /// Al cerrar la sesión de Stremio: la copia pendiente para esa cuenta no se sube a la siguiente. Lo tuyo sigue en el teléfono.
     public func clearAccountData() {
-        pending.save(PendingWork())
+        var work = pending.load()
+        work.progress = []
+        pending.save(work)
         scrobbleLog.clear()
-        kv.set("home-cache", data: nil)
-        kv.set("recent-searches", data: nil)   // lo que buscaste no pasa a la siguiente cuenta
+        kv.set(WatchService.importedKey, data: nil)   // otra cuenta de Stremio se importa otra vez
     }
 
     /// Los complementos o la cuenta cambiaron: se vuelve a preguntar todo.
