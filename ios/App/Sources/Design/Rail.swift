@@ -54,6 +54,8 @@ struct Rail<Content: View>: View {
 struct TitleLink: View {
     let route: TitleRoute
     var badge: LocalizedStringKey?
+    /// Su puesto en una plataforma: la píldora con su logo (`PlatformBadge`).
+    var platformRank: (rank: Int, platform: String)?
     /// Está en tu watchlist: un marcador en la esquina (sin texto que se corte en un póster angosto).
     var bookmarked = false
     /// El puesto en un Top 10 (chart de Netflix, JustWatch…), si la lista lo trae.
@@ -75,7 +77,7 @@ struct TitleLink: View {
     private var link: some View {
         NavigationLink(value: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                PosterCard(title: route.title, poster: route.poster, badge: badge, bookmarked: bookmarked, rank: rank, progress: progress, width: width)
+                PosterCard(title: route.title, poster: route.poster, badge: badge, platformRank: platformRank, bookmarked: bookmarked, rank: rank, progress: progress, width: width)
                     .titleZoomSource(route)
                 // En una tira (Editorial) el póster habla solo; en una cuadrícula (resultados, géneros) el nombre ayuda a distinguir.
                 if captions {

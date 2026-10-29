@@ -57,7 +57,7 @@ struct ShelfPoster: View {
             if style == .top10, let rank = suggestion.rank {
                 NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
             } else {
-                TitleLink(route: suggestion.route, badge: badge.map(badgeText), bookmarked: inList, rank: style == .platform ? suggestion.rank : nil, width: width,
+                TitleLink(route: suggestion.route, badge: badge.flatMap(badgeText), platformRank: platformRank, bookmarked: inList, rank: style == .platform ? suggestion.rank : nil, width: width,
                           detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
             }
         }
@@ -65,12 +65,18 @@ struct ShelfPoster: View {
         .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
         .contextMenu { SuggestionActions(suggestion: suggestion, onDismiss: onDismiss) }
     }
+
+    /// «N.º 3 en Netflix» no va en texto: es la píldora de la plataforma, con su logo.
+    private var platformRank: (rank: Int, platform: String)? {
+        if case .rank(let n, let platform) = badge { return (n, platform) }
+        return nil
+    }
 }
 
-/// «Sale hoy», «Sale mañana», «Sale el viernes» o «N.º 3 en Netflix».
-@MainActor func badgeText(_ badge: PosterBadge) -> LocalizedStringKey {
+/// «Sale hoy», «Sale mañana» o «Sale el viernes». El puesto en una plataforma va en su píldora (`PlatformBadge`).
+@MainActor func badgeText(_ badge: PosterBadge) -> LocalizedStringKey? {
     switch badge {
-    case .rank(let n, let platform): return "N.º \(n) en \(platform)"
+    case .rank: return nil
     case .airs(let day):
         if Calendar.current.isDateInToday(day) { return "Sale hoy" }
         if Calendar.current.isDateInTomorrow(day) { return "Sale mañana" }

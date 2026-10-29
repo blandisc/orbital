@@ -10109,6 +10109,17 @@
         }
       }
     },
+    "N.º %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No. %lld"
+          }
+        }
+      }
+    },
     "N.º %lld en %@": {
       "extractionState": "manual",
       "localizations": {
@@ -11534,6 +11545,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "New on your platforms"
+          }
+        }
+      }
+    },
+    "Número %lld en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number %lld on %@"
           }
         }
       }

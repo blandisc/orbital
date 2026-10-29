@@ -23,6 +23,11 @@ private struct CatalogSample: View {
                     DSIconBadge(symbol: "bookmark.fill", label: "En tu lista")
                     DSRankBadge(rank: 1)
                 }
+                HStack(spacing: DS.Space.s2) {
+                    PlatformBadge(name: "Netflix")
+                    PlatformBadge(name: "Disney+", rank: 1)
+                    PlatformBadge(name: "Otra", rank: 8)
+                }
                 DSProgress(fraction: 0.4)
                 DSKindFilter(kind: $kind)
                 DSSegmented(options: [(0, "Películas"), (1, "Series")], selection: $segment)

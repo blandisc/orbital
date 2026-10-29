@@ -400,7 +400,7 @@ TRANSLATIONS = {
     # Para ti › Listas como feed de estantes (CEN-50)
     "Lo que sale de las series que sigues": "What is coming out from the shows you follow", "Agregada a tu lista.": "Added to your list.", "Conecta Trakt o tu Orbital": "Connect Trakt or your Orbital",
     "De todos los tiempos": "All time", "Lo más popular en Stremio": "Most popular on Stremio", "Lo más visto esta semana": "Most watched this week",
-    "Lo que dejaste pendiente": "What you left for later", "Lo tuyo": "Yours", "N.º %lld en %@": "No. %lld on %@", "Por lo que has visto": "Based on what you've watched",
+    "Lo que dejaste pendiente": "What you left for later", "Lo tuyo": "Yours", "N.º %lld en %@": "No. %lld on %@", "N.º %lld": "No. %lld", "Número %lld en %@": "Number %lld on %@", "Por lo que has visto": "Based on what you've watched",
     "Recomendada por Trakt": "Recommended by Trakt", "Sin Trakt ni Orbital, esto es lo que ve todo el mundo": "Without Trakt or Orbital, this is what everyone is watching",
     "Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.": "Your watchlist, your recommendations and your platforms' Top 10 show up here.",
     "Buenos días": "Good morning", "Buenas tardes": "Good afternoon", "Buenas noches": "Good evening", "También tenías": "You also had",

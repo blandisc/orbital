@@ -105,6 +105,8 @@ struct PosterCard: View {
     let title: String
     let poster: String?
     var badge: LocalizedStringKey?
+    /// Su puesto en una plataforma («N.º 1» en la píldora de Disney+, con su logo): gana a `badge`.
+    var platformRank: (rank: Int, platform: String)?
     /// En tu watchlist: un marcador (ícono) en la esquina.
     var bookmarked = false
     /// El puesto en un Top 10: sustituye a `badge` en la esquina (una sola pieza, no dos encimadas).
@@ -117,6 +119,7 @@ struct PosterCard: View {
         ZStack(alignment: .topLeading) {
             PosterView(url: poster, title: title)
             if let rank { DSRankBadge(rank: rank).padding(DS.Space.s2) }
+            else if let platformRank { PlatformBadge(name: platformRank.platform, rank: platformRank.rank).padding(DS.Space.s2) }
             else if let badge { DSBadge(text: badge).padding(DS.Space.s2) }
             else if bookmarked { DSIconBadge(symbol: "bookmark.fill", label: "En tu watchlist").padding(DS.Space.s2) }
             if let progress { VStack { Spacer(); DSProgress(fraction: progress) } }

@@ -98,28 +98,37 @@ struct WatchlistCard: View {
 }
 
 /// «En Netflix», «En Disney+»: la píldora de una plataforma en su color, con su logo chico (el ícono de la app) y el texto en
-/// blanco. Si no es una plataforma conocida, la cápsula de vidrio de siempre con el texto.
+/// blanco. Con `rank`, su puesto en esa plataforma: el logo ya dice dónde, así que solo lleva «N.º 1» (en un póster, chica).
+/// Si no es una plataforma conocida, la cápsula de vidrio de siempre con el texto completo.
 struct PlatformBadge: View {
     let name: String
+    var rank: Int? = nil
 
     var body: some View {
-        let label = Text("En \(name)").recipe(.caption, color: DS.paper).fontWeight(.semibold)
-        if let brand = Charts.brand(named: name) {
+        if let brand = Charts.brand(named: name), let logo = Charts.platformLogo(brand).flatMap(URL.init(string:)) {
             HStack(spacing: DS.Space.s1) {
-                if let logo = Charts.platformLogo(brand).flatMap(URL.init(string:)) {
-                    RemoteImage(url: logo, maxPoints: DS.PlatformBadge.logo) { phase in
-                        if case .success(let image) = phase { image.resizable().scaledToFit() } else { Color.clear }
-                    }
-                    .frame(width: DS.PlatformBadge.logo, height: DS.PlatformBadge.logo)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.PlatformBadge.logoRadius, style: .continuous))
+                RemoteImage(url: logo, maxPoints: DS.PlatformBadge.logo) { phase in
+                    if case .success(let image) = phase { image.resizable().scaledToFit() } else { Color.clear }
                 }
-                label
+                .frame(width: DS.PlatformBadge.logo, height: DS.PlatformBadge.logo)
+                .clipShape(RoundedRectangle(cornerRadius: DS.PlatformBadge.logoRadius, style: .continuous))
+                styled(short)
             }
             .padding(.leading, DS.Space.s1).padding(.trailing, DS.Space.s2).padding(.vertical, DS.Space.s1)
             .background(DS.PlatformTint.color(brand), in: Capsule())
-            .accessibilityElement(children: .combine)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(spoken)
         } else {
-            label.padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1).glassEffect(.regular, in: Capsule())
+            styled(full)
+                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1).glassEffect(.regular, in: Capsule())
+                .accessibilityLabel(spoken)
         }
     }
+
+    /// Junto al logo: «N.º 1» o «En Netflix».
+    private var short: Text { if let n = rank { Text("N.º \(n)") } else { Text("En \(name)") } }
+    /// Sin logo, el nombre va en el texto: «N.º 1 en Max».
+    private var full: Text { if let n = rank { Text("N.º \(n) en \(name)") } else { Text("En \(name)") } }
+    private var spoken: Text { if let n = rank { Text("Número \(n) en \(name)") } else { Text("En \(name)") } }
+    private func styled(_ text: Text) -> some View { text.recipe(.caption, color: DS.paper).fontWeight(.semibold).lineLimit(1) }
 }
