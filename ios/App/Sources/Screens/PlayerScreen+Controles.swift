@@ -73,12 +73,12 @@ extension PlayerScreen {
     }
 
     // MARK: controles
-    /// Una sola identidad en los dos sentidos («barra limpia»): arriba ✕, el nombre y el episodio, subtítulos, AirPlay y «⋯»
-    /// (lo demás: audio y subtítulos, zoom, ventana, la TV, descargar y bloquear); la barra fina con las horas a los lados;
-    /// ±10 (flecha en círculo) y el botón grande de vidrio; «Saltar intro», una cápsula sólida.
-    /// Horizontal: arriba la barra de botones, al centro ±10 y el botón grande, abajo la barra con «Saltar intro» a su lado.
-    /// Vertical: la barra pegada al video, «Saltar intro» debajo a la derecha, ±10 y el botón grande al centro de lo que queda
-    /// y, al pie, cómo mover el video. Nada tapa la imagen ni los subtítulos.
+    /// Una sola identidad en los dos sentidos: arriba solo botones (✕, episodios, subtítulos, AirPlay y «⋯»); abajo el nombre
+    /// completo y grande (el episodio encima, en gris) justo sobre la barra de avance, como Infuse. Antes el nombre iba arriba,
+    /// apretado entre cinco botones y cortado con nombres largos (29 oct). ±10 (flecha en círculo) y el botón grande, sin cambios.
+    /// Horizontal: arriba los botones, al centro ±10 y el botón grande, abajo el nombre («Saltar intro» a su derecha) y la barra.
+    /// Vertical: los botones arriba; bajo el video el nombre y la barra. Con el video hasta arriba, los botones bajan debajo de la
+    /// barra (arriba ya no hay lugar). Nada tapa la imagen ni los subtítulos.
     func controls(_ model: PlayerModel) -> some View {
         GeometryReader { geo in
             if landscape {
@@ -88,10 +88,11 @@ extension PlayerScreen {
                     VStack(spacing: DS.Space.s3) {
                         topBar(model)
                         Spacer()
-                        // «Saltar intro» y «Siguiente» encima de la barra, a la derecha (como en vertical): antes iban a su lado y la
-                        // barra se encogía al aparecer, con el punto brincando bajo el dedo.
-                        if offersSkipOrNext(model) {
-                            HStack(spacing: DS.Space.s3) { Spacer(); nextEpisode(model); skipIntro(model) }
+                        // El nombre sobre la barra y, a su derecha, «Saltar intro» y «Siguiente» (encima de la barra, no a su lado:
+                        // antes la barra se encogía al aparecer, con el punto brincando bajo el dedo).
+                        HStack(alignment: .bottom, spacing: DS.Space.s3) {
+                            playerTitle
+                            if offersSkipOrNext(model) { nextEpisode(model); skipIntro(model) }
                         }
                         if model.snapshot.duration > 0 { scrubber(model) }
                     }
@@ -122,6 +123,7 @@ extension PlayerScreen {
                     }
                     VStack(spacing: 0) {
                     VStack(spacing: DS.Space.s3) {
+                        playerTitle
                         if model.snapshot.duration > 0 { scrubber(model) }
                         // «Siguiente episodio» debajo de la barra: antes iba encima y la empujaba hacia abajo justo al final, quizá
                         // mientras la arrastrabas.
@@ -132,7 +134,7 @@ extension PlayerScreen {
                         if offersSkipOrNext(model) {
                             HStack(spacing: DS.Space.s2) { Spacer(); nextEpisode(model); skipIntro(model) }.frame(minHeight: DS.Size.touchTarget)
                         }
-                        // Con el video hasta arriba, la barra de ✕ y el nombre baja aquí.
+                        // Con el video hasta arriba, los botones de arriba bajan aquí.
                         if raisedPortrait(rect) { topBar(model).padding(.top, DS.Space.s4).transition(.opacity) }
                     }
                     // Lo que miden de verdad: con «Siguiente episodio», «Saltar intro» y la barra de ✕ a la vez (o letra grande) no
@@ -173,16 +175,25 @@ extension PlayerScreen {
         .ignoresSafeArea().allowsHitTesting(false)
     }
 
-    /// La barra de arriba, igual en los dos sentidos: ✕, el nombre y el episodio, subtítulos, AirPlay y «⋯».
+    /// El nombre, abajo sobre la barra y a todo lo ancho: el episodio en gris y, debajo, el título grande; en dos renglones si
+    /// no cabe (nunca cortado a la mitad como en la barra de arriba).
+    var playerTitle: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            if !current.episodeLabel.isEmpty { Text(current.episodeLabel).recipe(.footnote).lineLimit(2) }
+            Text(current.displayTitle).recipe(.section, color: DS.text).lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("player-title")
+    }
+
+    /// La barra de arriba, igual en los dos sentidos: solo botones. ✕ a la izquierda; episodios, subtítulos, AirPlay y «⋯» a la
+    /// derecha. El nombre vive abajo (`playerTitle`).
     func topBar(_ model: PlayerModel) -> some View {
         HStack(alignment: .center, spacing: DS.Space.s3) {
             PlayerCircleButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
                 .accessibilityIdentifier("player-close")
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(current.displayTitle).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
-                if !current.episodeLabel.isEmpty { Text(current.episodeLabel).recipe(.footnote).lineLimit(1) }
-            }
-            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
+            Spacer(minLength: 0)
             // «Episodios», solo el ícono (en una serie): la lista de la temporada sin parar el video.
             if current.kind == "series", current.meta != nil {
                 PlayerCircleButton(symbol: "rectangle.stack", label: "Episodios") { openEpisodes(model) }
