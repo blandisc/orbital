@@ -78,3 +78,12 @@ Pruebas: `PlayerModelTests` (motor que se cuelga en carga y al rearmar) y `Playe
 
 Tiempo de carga medido en el iPhone: 3 a 4 s. Los 28 s de una noche fueron de Real-Debrid preparando el archivo. No sirve medir
 el servidor con una segunda conexión al mismo archivo: Real-Debrid la hace esperar y compite con el video.
+
+## 29 oct, segunda pasada: carga → pausa → carga, y la ruleta que giraba sola
+
+| Falla | Causa | Arreglo |
+|---|---|---|
+| El botón grande hacía carga → pausa → carga → pausa en cada video | El motor dice «suena» a los 3 s con casi nada en el búfer y enseguida se detiene a llenarlo (el video avanzaba 3 s en 9 s de reloj); además, cambiar la pista de audio al arrancar recarga todo el video en AetherEngine (`selectAudioTrack` → `reloadWithAudioOverride`) | La carga no se quita con el primer «suena» sino cuando el video de verdad corre: 2 s avanzados (`PlayerModel.playbackSettled`), o en cuanto lo pausas. Lo que pase en medio (búfer, recarga, salto) sigue siendo la misma carga |
+| Con el video en la ventana de PiP (o al salir de la app) empezaban episodios de Los Simpson al azar debajo | La ruleta vuelve a «aparecer» con el reproductor encima (el sistema la vuelve a presentar) y su `.task` giraba otra vez: a los ~5 s (la animación completa) abría otro episodio al azar en lugar del que sonaba. En la bitácora: «a segundo plano» y 5 s después «abrir series tt0096697:10:20» | La ruleta gira una sola vez: no gira si ya hay un episodio encima ni cuando se está cerrando |
+
+Pruebas: `PlayerPresentationTests` (`testTheLoadStaysUntilTheVideoReallyRuns`, pausar al arrancar, saltar al arrancar, video nuevo).

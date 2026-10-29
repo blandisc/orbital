@@ -201,6 +201,12 @@ public final class PlayerModel: ObservableModel {
     private var failedSources = Set<Int>()
     /// Ya sonó este video (el motor llegó a reproducir): hasta entonces la pantalla enseña la carga, no el play.
     public private(set) var hasPlayed = false { didSet { if oldValue != hasPlayed { changed() } } }
+    /// Ya corre de verdad: desde que sonó avanzó `startupSettleSeconds` (o lo pausaste). El motor dice «suena» con casi nada en
+    /// el búfer y enseguida se detiene a llenarlo, o recarga todo para cambiar la pista de audio: hasta que corre, la pantalla sigue
+    /// enseñando la carga. Antes el botón hacía carga → pausa → carga → pausa en cada video.
+    public private(set) var playbackSettled = false { didSet { if oldValue != playbackSettled { changed() } } }
+    static let startupSettleSeconds: Double = 2
+    private var startupPosition: Double = 0
     private var startupDeadline: Date?
     /// El motor ya abrió el archivo de la carga en curso (desde ahí, lo que diga es de este video).
     private var engineOpened = true
@@ -335,7 +341,7 @@ public final class PlayerModel: ObservableModel {
     private func resetForNewVideo() {
         failure = nil
         triedVersionIDs = []; askInSync = false; restoredDelay = nil; offsetVersionID = nil; stopBriefSubtitles()
-        failedSources = []; hasPlayed = false; startupDeadline = nil; lastSnapshotAt = nil; watchedUnsaved = 0
+        failedSources = []; hasPlayed = false; playbackSettled = false; startupDeadline = nil; lastSnapshotAt = nil; watchedUnsaved = 0
         scrobbleStarted = false; scrobblePlaying = false; rescrobbleAfterSeek = false
         tracksApplied = false; addedExternalSubtitle = false; knownSubtitleIDs = []; preloadedNext = false
         upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; reachedEnd = false; finalReported = false
@@ -351,7 +357,7 @@ public final class PlayerModel: ObservableModel {
     /// Justo antes de cargar: de aquí en adelante lo que diga el motor es del video nuevo.
     private func startLoading() {
         loadSegmentsIfNeeded()
-        acceptingSnapshots = true; retrying = false; hasPlayed = false; tracksApplied = false; restoringInPlace = false; playRequest = nil
+        acceptingSnapshots = true; retrying = false; hasPlayed = false; playbackSettled = false; tracksApplied = false; restoringInPlace = false; playRequest = nil
         engineOpened = false
         // Toda carga tiene su plazo (abrir, volver a pedirla al regresar a la app, cambiar de versión): antes solo la primera; si el
         // motor se quedaba abriendo el archivo al volver a la app, la pantalla cargaba para siempre (3 min en el iPhone el 29 oct).
@@ -448,6 +454,7 @@ public final class PlayerModel: ObservableModel {
         pendingResumeFraction = nil
         let target = fraction * s.duration
         guard target > 5, abs(target - s.position) > 5 else { return }
+        if !playbackSettled { startupPosition = target }   // los 2 s de arranque se cuentan desde donde va a seguir
         await engine.seek(to: target)
         snapshot.position = target
     }
@@ -504,12 +511,15 @@ public final class PlayerModel: ObservableModel {
             lastLoggedState = "\(s.state)"
             Self.note(String(format: "motor: %@ (%.1f s)", lastLoggedState, clock().timeIntervalSince(loadStartedAt)))
         }
-        if s.state == .playing && !hasPlayed { Self.note(String(format: "suena en %d s (%.1f s desde que empezó a cargar)", Int(s.position), clock().timeIntervalSince(loadStartedAt))); hasPlayed = true; startupDeadline = nil; phase = .playing; switchBack = nil }
+        if s.state == .playing && !hasPlayed { Self.note(String(format: "suena en %d s (%.1f s desde que empezó a cargar)", Int(s.position), clock().timeIntervalSince(loadStartedAt))); hasPlayed = true; startupPosition = s.position; startupDeadline = nil; phase = .playing; switchBack = nil }
         if let request = playRequest, s.state == .playing, s.position > request.position + 0.3 { playRequest = nil }   // ya avanza
         // Rearmando el mismo video en pausa (al volver de segundo plano): en pausa también es «ya está». Antes se esperaba a que
         // sonara, se quedaba en «preparando» sin botones y a los 45 s cambiaba de fuente y arrancaba solo.
         if restoringInPlace, !hasPlayed, s.state == .paused, s.duration > 0 {
             hasPlayed = true; startupDeadline = nil; phase = .playing; restoringInPlace = false
+        }
+        if hasPlayed, !playbackSettled, s.state == .paused || s.state == .ended || (s.state == .playing && s.position >= startupPosition + Self.startupSettleSeconds) {
+            playbackSettled = true
         }
         if reconnecting, hasPlayed, foregroundCheck == nil, s.state == .playing || s.state == .paused { reconnecting = false }
         if hasPlayed {
@@ -1089,10 +1099,12 @@ public final class PlayerModel: ObservableModel {
     public var wantsToPlay: Bool { snapshot.state == .playing || snapshot.state == .buffering || playRequest != nil }
     public func togglePlay() async {
         userTouched()
-        if wantsToPlay { playRequest = nil; await engine.pause() } else { requestPlayback(); await engine.play() }
+        if wantsToPlay { playRequest = nil; settleStartup(); await engine.pause() } else { requestPlayback(); await engine.play() }
     }
     public func play() async { userTouched(); requestPlayback(); await engine.play() }
-    public func pause() async { userTouched(); playRequest = nil; await engine.pause() }
+    public func pause() async { userTouched(); playRequest = nil; settleStartup(); await engine.pause() }
+    /// Pausaste en los primeros segundos: el arranque ya no es carga (el botón dice play al momento, sin esperar al motor).
+    private func settleStartup() { if hasPlayed { playbackSettled = true } }
 
     /// Pediste que sonara y todavía no avanza (sobre todo al volver de segundo plano, con el video soltado por el motor): la
     /// pantalla enseña la carga en vez del play, y si en `foregroundStallSeconds` no avanza, el video se pide otra vez ahí mismo.
@@ -1113,6 +1125,7 @@ public final class PlayerModel: ObservableModel {
         userTouched()
         let target = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))
         if hasPlayed, abs(target - snapshot.position) >= PlaybackRules.rescrobbleJump { rescrobbleAfterSeek = true }
+        if !playbackSettled { startupPosition = target }   // un salto al arrancar: los 2 s se cuentan desde el punto nuevo
         // Al soltar la barra con un arrastre en curso: la búsqueda final va en la misma fila (nunca dos a la vez, que
         // podían terminar en desorden y dejar la escena en un punto viejo) y sin la espera entre búsquedas.
         if let running = scrubTask {
