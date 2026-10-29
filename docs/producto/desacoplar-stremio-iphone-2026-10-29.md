@@ -20,7 +20,8 @@ usando. Hay que probarlo con tu cuenta (10 min) antes de construir nada.
 | 3 · Soltar | Solo Trakt (requiere que la consola lea Trakt) |
 
 **Decidido:** solo Real-Debrid; respaldo a Trakt cada 5 min; visto al 90 % (Trakt no lo marca antes).
-**En curso:** la prueba de 10 min contra la API de Trakt, en la Lenovo.
+**Prueba de Trakt hecha (29 oct):** la pausa funciona, guarda 2 o 3 decimales, pide al menos 1 %, y el iPhone y la
+consola ya se pasan el avance por Trakt en los dos sentidos. Falta que «Seguir viendo» del iPhone lea Trakt (corte A).
 
 El resto de este documento es el detalle para quien lo implemente.
 
@@ -300,9 +301,54 @@ guardan unas horas, como hoy las de Cinemeta.
 lo más reciente entre Stremio y Trakt, pasar el porcentaje de Trakt a segundos con la duración del video y, en la
 consola, retroceder 10 s. Eso sigue en pie. Lo nuevo es lo que cambia si Trakt pasa a ser el principal.*
 
-### Lo que se encontró
+### Resultado de la prueba contra Trakt (29 oct, Lenovo, cuenta blandisc)
 
-**1. Trakt cambió su API y nuestro código no.** Desde finales de 2025, según el desarrollador de Infuse, Trakt quitó
+Se hizo con la sesión de Trakt de la consola y una película de prueba (Night of the Living Dead, 1968). Al terminar,
+la cuenta quedó como estaba, salvo una entrada al 37.5 % que se dejó a propósito para comprobarla en el iPhone.
+
+| Qué se mandó | Qué contestó Trakt | Qué guardó |
+|---|---|---|
+| `start` 10 % | 201 | Nada: `start` no guarda avance |
+| `pause` 12.34 % | 201 | 12.34 exacto |
+| `start` 20 % después de esa pausa | 201 | **Borró** la entrada en pausa |
+| `stop` 45.67 % | 201, como «pause» | Entrada nueva, 45.67 exacto |
+| `stop` 0.5 % | **422 `progress_too_low`** | Nada |
+| `stop` 1.5 % y 3 % | 201 | 1.5 y 3 |
+| `stop` 85 % | 201, como «scrobble» | Marcada vista; avance borrado |
+
+Segunda prueba, con otra película (The General, 1926):
+
+| Qué se mandó | Qué contestó Trakt | Qué guardó |
+|---|---|---|
+| `start` 10 % y `pause` 20 % | 201 | Entrada en 20; «Viendo ahora» se apaga al pausar |
+| Otra `pause` 30 % sin `start` en medio | 201, **mismo id** | La misma entrada, ahora en 30; **`paused_at` no cambia** |
+| `stop` 40 % sin `start` en medio | 201, como «pause» | La misma entrada, en 40; `paused_at` igual |
+
+Y la prueba de verdad, sin planearla: Fernando abrió en el iPhone la película que la consola dejó al 37.5 %. El iPhone
+**arrancó ahí** (leyó el avance de la Lenovo) y, al pausar, **escribió el suyo**: 45.098 %, que la Lenovo vio en
+Trakt al momento. La sincronización entre aparatos por Trakt funciona en los dos sentidos, con 3 decimales.
+
+Lo que significa:
+
+- **La pausa sigue viva.** El aviso del foro de Infuse no aplica hoy. Las bitácoras de la consola lo confirman: el
+  único rechazo de hoy fue una pausa al 0 %. Un `stop` por debajo del 80 % hace lo mismo que `pause`.
+- **Precisión: sin problema.** Guarda al menos 2 decimales tal cual se mandan. En una película de 2 h, el error es de
+  menos de 1 s.
+- **Mínimo de alrededor de 1 %.** Por debajo, Trakt contesta 422. No hay que mandar avances menores al 1 %.
+- **`start` borra el avance guardado.** Mientras reproduces, Trakt no tiene ningún punto de reanudación hasta la
+  siguiente pausa o cierre. Esto cambia el diseño del respaldo cada 5 min (punto 3 de abajo).
+- **Cada pausa crea una entrada con id nuevo.** La fusión va por título, nunca por id (ya era así).
+- **Hoy el iPhone no arma «Seguir viendo» con Trakt.** Fernando abrió la app después de la prueba y la película al
+  37.5 % no apareció. Es lo que hace el código: «Seguir viendo» sale solo de la biblioteca de Stremio
+  (`HomeModel.loadLibrary`), y el avance de Trakt solo se lee al darle «Ver» (`WatchService.resumePoint`). El corte A
+  tiene que armar «Seguir viendo» con lo local más `/sync/playback` de Trakt. Hoy, lo que avanzas en un aparato que
+  solo escribe en Trakt no aparece en el Inicio del iPhone.
+- **El 80 % se confirmó.** Un cierre al 85 % marca visto y borra el avance. La decisión de Fernando (visto al 90 %)
+  se cumple mandando como mucho 79.9 % hasta el 90 % o los créditos.
+
+### Lo que se encontró antes de la prueba (para el registro)
+
+**1. ~~Trakt cambió su API y nuestro código no.~~ Descartado por la prueba: la pausa funciona.** Desde finales de 2025, según el desarrollador de Infuse, Trakt quitó
 el aviso de pausa (`/scrobble/pause`), y el aviso de cierre (`/scrobble/stop`) ahora pide un avance mínimo. Infuse
 tuvo que corregirlo en su versión 8.3.5 (17 dic 2025), y en enero un usuario reportó que el problema regresó. La
 app del iPhone (`Trakt.swift` L430, `ScrobbleAction.pause`) y la consola (`orbital/scrobble.py`) **siguen mandando
@@ -351,14 +397,14 @@ edición.
 
 ### Qué se propone
 
-1. **Primero, probar con tu cuenta (unos 10 min, la sesión que implemente).** Mandar `pause` y ver si contesta 404.
-   Mandar `stop` al 45.67 % y leer `/sync/playback` para saber los decimales. Mandar `stop` al 0.5 % y al 2 % para
-   encontrar el mínimo. El resultado se apunta aquí.
-2. **Dejar de usar `pause`.** Al pausar, al ir a segundo plano y al cerrar se manda `stop` con el avance real, y al
-   seguir, `start`. Trakt queda al día cada vez que sueltas el teléfono.
-3. **Un aviso de respaldo cada 5 minutos** mientras reproduces: `stop` seguido de `start` al momento. En el peor caso
-   se pierden 5 min entre aparatos. Trakt permite una escritura por segundo, así que sobra margen. El costo es que
-   «Viendo ahora» en Trakt puede parpadear un instante. Si resulta molesto, se sube a 10 min.
+1. **Prueba hecha** (arriba). La pausa funciona, guarda 2 decimales y pide al menos 1 %.
+2. **Seguir usando `pause`**, y además mandarla al ir a segundo plano (hoy no se avisa). Nunca por debajo del 1 %.
+3. **Respaldo cada 5 minutos, ya diseñado con la prueba:** `start` y, 2 s después, `pause` con el avance real.
+   - No sirve `pause` y luego `start`: el `start` borra la pausa y, si el teléfono muere después, Trakt no tiene nada.
+   - Tampoco sirve repetir `pause` sola: actualiza el avance, pero **`paused_at` se queda en la hora de la primera
+     pausa**. Otro aparato creería que ese avance es viejo y perdería contra uno más antiguo.
+   - `start` + `pause` crea una entrada nueva con la hora de ese momento. Entre los dos avisos no hay avance guardado
+     durante unos 2 s. «Viendo ahora» en Trakt se prende 2 s cada 5 min y se apaga; es solo cosmético.
 4. **Proteger el punto de reanudación del 80 %.** Si cierras entre el 80 % y el final real (créditos, o el 90 %), a
    Trakt se le manda 79.9 % y no se marca visto. El teléfono guarda el segundo exacto. Otro aparato retomaría como
    mucho 12 min antes en una película de 2 h, o 4 min antes en un episodio. Al llegar a los créditos, se manda el
@@ -394,19 +440,18 @@ edición.
 3. **Visto al 90 %, no al 80 % de Trakt.** Hasta el 90 % (o hasta que empiezan los créditos), a Trakt se le manda
    como mucho 79.9 % y no se marca visto. Desde ahí se manda el avance real y queda visto (§5, punto 4).
 
-El paso 0 (la prueba contra la API de Trakt) corre en la Lenovo, con la sesión de Trakt de la consola.
+El paso 0 (la prueba contra la API de Trakt) se hizo en la Lenovo el 29 oct: resultados en §5.
 
 ## 7. Orden y tamaño
 
 | Paso | Qué entrega | Tamaño |
 |---|---|---|
-| 0 · Prueba con la cuenta de Trakt | Saber si `pause` sigue vivo, los decimales y el mínimo de `stop` (§5) | 10 min |
+| 0 · Prueba con la cuenta de Trakt | **Hecha el 29 oct** (§5): la pausa funciona, 2–3 decimales, mínimo 1 % | — |
 | A · Lo tuyo en el teléfono + Trakt principal + Stremio de copia | Entrar sin Stremio; avance, visto y Mi lista locales con Trakt; fase 1 de la transición; reglas de §5 | Grande |
 | B · `OrbitalAddons` + Real-Debrid | Complementos locales con orden y apagado; la clave en las plantillas; días restantes y avisos | Medio |
 | C · Guía + Ajustes nuevos | Las 10 pantallas del flujo y Ajustes (Cuentas, Complementos) | Medio, casi todo interfaz |
 | D · Listas públicas de Trakt | Buscar, Para ti y Colecciones sin «Stremio»; búsqueda con Trakt primero | Chico |
 | Fase 2 y 3 | Comparación automática dos semanas; luego soltar Stremio (con la consola leyendo Trakt) | Chico en el iPhone |
 
-El paso 0 va antes que todo: si `pause` ya no existe, el corte A cambia. B y D se pueden hacer en paralelo con A
-porque no se tocan.
+B y D se pueden hacer en paralelo con A porque no se tocan.
 
