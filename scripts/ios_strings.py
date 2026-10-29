@@ -49,7 +49,6 @@ TRANSLATIONS = {
     "Lo que más se está viendo ahora, películas y series": "What people are watching right now, movies and shows",
     "No encontré este título": "I couldn't find this title",
     "No pude buscar. Revisa tu conexión.": "I couldn't search. Check your connection.",
-    "No pude cambiar Mi lista": "I couldn't change My list",
     "No pude cargar lo popular. Revisa tu conexión.": "I couldn't load what's popular. Check your connection.",
     "No pude leer el catálogo: %@": "I couldn't read the catalog: %@",
     "Complemento": "Add-on",
