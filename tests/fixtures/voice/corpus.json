@@ -414,7 +414,19 @@
   },
   {
    "text": "Apaga la tele",
-   "intent": "CloseGameIntent"
+   "intent": "TurnOffTvIntent"
+  },
+  {
+   "text": "Prende la tele",
+   "intent": "OpenOrbitalIntent"
+  },
+  {
+   "text": "Otro",
+   "intent": "OtherIntent"
+  },
+  {
+   "text": "Esa no",
+   "intent": "OtherIntent"
   },
   {
    "text": "Apaga",

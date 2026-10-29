@@ -38,6 +38,8 @@ class FakeRoku:
                 fake.posts.append(self.path)
                 if self.path == "/keypress/PowerOn":
                     fake.power = "PowerOn"
+                if self.path == "/keypress/PowerOff":
+                    fake.power = "DisplayOff"
                 self._send("")
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
@@ -65,6 +67,20 @@ def test_already_on_only_switches_input(fake):
     fake.power = "PowerOn"
     assert roku.RokuTv(TvConfig(host="127.0.0.1")).turn_on()
     assert fake.posts == ["/launch/tvinput.hdmi1"]
+
+
+def test_already_on_the_input_switches_nothing(fake):
+    """«pon X» con la tele ya prendida en la entrada de Orbital: no se vuelve a pedir la entrada (la tele parpadea)."""
+    fake.power, fake.app = "PowerOn", '<app id="tvinput.hdmi1" type="tvin">HDMI 1</app>'
+    assert roku.RokuTv(TvConfig(host="127.0.0.1")).turn_on()
+    assert fake.posts == []
+
+
+def test_turn_off(fake):
+    fake.power = "PowerOn"
+    assert roku.RokuTv(TvConfig(host="127.0.0.1")).turn_off()
+    assert fake.posts == ["/keypress/PowerOff"] and fake.power == "DisplayOff"
+    assert not roku.RokuTv(TvConfig(host="")).turn_off()
 
 
 def test_without_host_does_nothing(fake):

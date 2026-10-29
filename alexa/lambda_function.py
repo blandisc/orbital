@@ -40,8 +40,8 @@ ALEXA_SKILL_ID = _SETTINGS["skill_id"]
 TIMEOUT = 6  # s en TOTAL para hablar con la consola: Alexa corta a los ~8 s
 MAX_SPEECH = 600  # Alexa acepta hasta 8000 caracteres; nadie quiere oír tanto
 
-HELP = ("Puedes decir: abre Hollow Knight, quiero ver Interstellar, sigue viendo, pon el canal ADN 40, "
-        "qué sale hoy, pausa, adelanta cinco minutos, salta la intro o sube el volumen. "
+HELP = ("Puedes decir: prende la tele, pon The Office, sigue viendo, pausa, siguiente episodio, sube el volumen, "
+        "pon el canal ADN 40 o apaga la tele. "
         "La lista completa está en la app de Orbital del iPhone, en Ajustes.")
 # Sin coincidencia: corto y con ejemplos de lo que sí se puede (la ayuda entera era demasiado larga para repetirla).
 FALLBACK = "No entendí eso. Prueba con: quiero ver Interstellar, pon la tele o qué sale hoy."

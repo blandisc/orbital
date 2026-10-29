@@ -59,6 +59,25 @@ enseña la guía si Alexa está configurada.
 - Guía: `core` con las diez frases, copiada al iPhone (`AlexaCommands.json`; la app ignora las claves que no
   conoce hasta que la use).
 
+## 3b. Fase 2, el ciclo (hecho en la misma rama)
+
+- **Poner implica prender.** Toda orden que pone algo (película, serie, episodio, seguir viendo, canal, juego, «otro»)
+  prende la tele y la pone en la entrada de Orbital en segundo plano (`WAKES` en `voice.py`). Si ya está en esa entrada,
+  la Roku no recibe nada (`roku.RokuTv.turn_on` mira la app activa).
+- **Una serie se pone.** Sin progreso en Stremio, su primer episodio que ya salió (sin especiales); con progreso, donde
+  ibas, como antes. Sin la lista de episodios (Cinemeta caído), su ficha para elegir.
+- **Ante la duda, la más popular.** «pon Dune» pone la primera, dice «Si no es esa, di otro» y el iPhone recibe todas
+  para tocar. «busca Dune» sí pregunta (pediste buscar).
+- **«otro»**: la siguiente de la misma búsqueda (30 min); en la TV en vivo, el siguiente canal.
+- **«siguiente» / «anterior»** con un canal al aire cambian de canal.
+- **«prende la tele»** prende la tele (antes abría la TV en vivo; los canales son «pon la tele en vivo» o «pon los
+  canales»). **«apaga la tele»** guarda dónde ibas, cierra el video y apaga la tele; «apaga» a secas solo cierra el video.
+- **Avisos con segundo renglón:** lo que puedes decir ahora («Di «pausa» o «siguiente episodio»»), qué oyó cuando abrió
+  algo parecido («Entendí «jades». Si no era, di «cierra el juego»»), y lo no entendido también se ve en la tele.
+- **Alexa:** el modelo (`alexa/interaction_model.es-MX.json`) suma `TurnOffTvIntent`, `OtherIntent` y «prende la tele»
+  en `OpenOrbitalIntent`. **Hay que pegarlo otra vez en la consola de Alexa** (y la skill, por la ayuda nueva).
+- Pruebas: `tests/test_voice_ciclo.py` y `tests/test_roku.py`.
+
 ## 4. Lo que sigue (por orden)
 
 ### Fase 2, iPhone (Mac): el micrófono como primera opción

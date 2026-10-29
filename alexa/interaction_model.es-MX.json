@@ -255,7 +255,17 @@
             "enciende la consola",
             "encienda la consola",
             "prende orbital",
-            "enciende orbital"
+            "enciende orbital",
+            "prende la tele",
+            "prenda la tele",
+            "enciende la tele",
+            "encienda la tele",
+            "prende la pantalla",
+            "prenda la pantalla",
+            "prende la televisión",
+            "prenda la televisión",
+            "enciende la pantalla",
+            "encienda la pantalla"
           ]
         },
         {
@@ -722,14 +732,14 @@
             "pon la televisión",
             "ponga la televisión",
             "pon la tele en vivo",
-            "prende la tele",
-            "prenda la tele",
             "quiero ver la tele",
             "tele en vivo",
             "televisión en vivo",
             "pon los canales",
             "abre la tele",
-            "abra la tele"
+            "abra la tele",
+            "ponga los canales",
+            "ponga la tele en vivo"
           ]
         },
         {
@@ -822,6 +832,36 @@
             "{brightness} el brillo {amount} puntos",
             "ponga el brillo en {level}",
             "ponga el brillo al {level}"
+          ]
+        },
+        {
+          "name": "TurnOffTvIntent",
+          "slots": [],
+          "samples": [
+            "apaga la tele",
+            "apague la tele",
+            "apaga la televisión",
+            "apague la televisión",
+            "apaga la pantalla",
+            "apague la pantalla",
+            "apagar la tele"
+          ]
+        },
+        {
+          "name": "OtherIntent",
+          "slots": [],
+          "samples": [
+            "otro",
+            "otra",
+            "pon otro",
+            "ponga otro",
+            "pon otra",
+            "ponga otra",
+            "esa no",
+            "ese no",
+            "la otra",
+            "el otro",
+            "otra opción"
           ]
         }
       ],
@@ -2023,6 +2063,26 @@
             {
               "name": {
                 "value": "pon dune con subtítulos"
+              }
+            },
+            {
+              "name": {
+                "value": "prende la tele"
+              }
+            },
+            {
+              "name": {
+                "value": "apaga la tele"
+              }
+            },
+            {
+              "name": {
+                "value": "otro"
+              }
+            },
+            {
+              "name": {
+                "value": "pon la tele en vivo"
               }
             }
           ]
