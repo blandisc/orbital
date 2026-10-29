@@ -222,7 +222,10 @@ struct PlayerScreen: View {
         let model = holder.model
         ZStack {
             if let face = ipod { Rectangle().fill(face.body).ignoresSafeArea() } else { DS.video.ignoresSafeArea() }
-            if !landscape && !fillsPortrait && ipod == nil { ambientLayer }
+            // El fondo ambiente aparece (con un desvanecido) cuando el video ya suena: mientras carga, todo negro (antes la franja
+            // de arriba cambiaba de color a media carga).
+            Group { if !landscape && !fillsPortrait && ipod == nil && model.hasPlayed { ambientLayer } }
+                .animation(DS.Motion.base(reduceMotion), value: model.hasPlayed)
             GeometryReader { geo in
                 let rect = videoRect(in: geo.size)
                 ZStack {
@@ -281,7 +284,8 @@ struct PlayerScreen: View {
             }
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
-            let controlsShown = controlsVisible && !locked && !failed(model) && !subtitleDock && ipod == nil
+            // Abriendo, la barra de arriba (✕ para salir) siempre se ve: antes un toque la escondía y no había cómo cancelar.
+            let controlsShown = (controlsVisible || model.phase == .preparing) && !locked && !failed(model) && !subtitleDock && ipod == nil
             // Los controles y ±10/botón grande en UN solo bloque con una sola transición: antes eran dos y, si el giro o el
             // ocultamiento caían a la vez, podía quedar el ±10 flotando sin las barras.
             if controlsShown {

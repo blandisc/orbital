@@ -60,6 +60,7 @@ final class PlayerPresentationTests: XCTestCase {
 
     func testTheGlyphFollowsYourTapAtOnceAndTheEngineOnlyIfItLasts() async {
         let rig = Timing(), p = rig.presentation
+        p.update(.none, playing: true, videoID: "e1")   // ya cargó
         p.userToggled(toPlaying: false)
         XCTAssertFalse(p.showsPlaying, "tocaste pausa: cambia ya")
         var engine = true
@@ -72,6 +73,17 @@ final class PlayerPresentationTests: XCTestCase {
         p.userToggled(toPlaying: false)   // tocar cancela lo que el motor iba a cambiar
         await p.settle()
         XCTAssertFalse(p.showsPlaying)
+    }
+
+    func testWhileLoadingTheGlyphDoesNotFlipAndEndsOnPause() async {
+        let rig = Timing(), p = rig.presentation
+        p.update(.now, playing: false, videoID: "e1")
+        p.engineChanged { false }   // el motor se detiene un instante mientras carga…
+        await p.settle()
+        XCTAssertTrue(p.showsPlaying, "…y el glifo no se entera (antes: carga → play → pausa)")
+        p.update(.none, playing: true, videoID: "e1")
+        XCTAssertFalse(p.showsLoading)
+        XCTAssertTrue(p.showsPlaying, "al terminar de cargar dice pausa: va a sonar")
     }
 
     func testTheLoadKindComesFromThePlayerState() async throws {

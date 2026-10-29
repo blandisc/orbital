@@ -13,7 +13,7 @@ import Foundation
 public final class PlayerPresentation: ObservableModel {
     public enum LoadKind: Equatable, Sendable { case none, soon, now }
 
-    public static let settleWindow: TimeInterval = 5, settleDelay: TimeInterval = 2.5, stallDelay: TimeInterval = 1
+    public static let settleWindow: TimeInterval = 5, settleDelay: TimeInterval = 1.2, stallDelay: TimeInterval = 0.8
     public static let glyphSettle: TimeInterval = 1.2
 
     public var showsLoading: Bool { track(); return loading }
@@ -50,6 +50,10 @@ public final class PlayerPresentation: ObservableModel {
             if enginePlaying, playedVideo != videoID { playedVideo = videoID; playedAt = clock() }
         case .now:
             loading = true
+            // Mientras carga, el glifo no sigue al motor (que arranca, se detiene un instante y sigue); al terminar de cargar
+            // dice «pausa» (va a sonar). Antes se veía carga → play → pausa.
+            glyphTask?.cancel()
+            playing = true
         case .soon:
             let settling = playedVideo != videoID || clock().timeIntervalSince(playedAt) < Self.settleWindow
             let wait = settling ? Self.settleDelay : Self.stallDelay
@@ -70,6 +74,7 @@ public final class PlayerPresentation: ObservableModel {
     /// El motor cambió solo: el glifo lo sigue si el cambio dura; entonces dice lo que de verdad pasa (`current`).
     public func engineChanged(current: @escaping @MainActor () -> Bool) {
         glyphTask?.cancel()
+        guard !loading else { return }   // cargando, el botón enseña la carga: nada que seguir
         glyphTask = Task { [weak self, sleep] in
             await sleep(Self.glyphSettle)
             guard !Task.isCancelled else { return }

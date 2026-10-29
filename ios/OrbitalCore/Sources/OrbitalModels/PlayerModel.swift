@@ -1,5 +1,6 @@
 import Foundation
 import OrbitalCore
+import os
 
 /// Qué se va a reproducir. `originalTitle` es el nombre de Cinemeta (lo que se guarda en Stremio);
 /// `displayTitle` es el de tu idioma (lo que se muestra).
@@ -279,7 +280,12 @@ public final class PlayerModel: ObservableModel {
 
     // MARK: arranque
     /// Empieza a reproducir. Devuelve cuando el motor ya recibió la fuente (el video puede tardar unos segundos).
+    /// La bitácora del reproductor en el registro del sistema (Consola de la Mac con el iPhone conectado, categoría «player»): qué
+    /// se abrió, qué versión, cuándo sonó y por qué falló. Sin enlaces ni claves: solo ids de IMDb, el servidor y el motivo.
+    static let log = Logger(subsystem: "mx.iracheta.orbital", category: "player")
+
     public func begin(_ request: PlayRequest) async {
+        Self.log.notice("abrir \(request.kind, privacy: .public) \(request.videoID, privacy: .public) local=\(request.localFile != nil, privacy: .public)")
         subtitleDelay = 0
         ownAttempts = 0
         guard !closing, phase != .closed else { return }
@@ -369,6 +375,7 @@ public final class PlayerModel: ObservableModel {
                 }
                 defer { listening.cancel() }
                 sourceChoices = try await finder.find(kind: request.kind, videoID: request.videoID, prefs: langs.prefs)
+                Self.log.notice("versiones encontradas: \(self.sourceChoices.count, privacy: .public)")
                 if mine == generation { search?.choices = sourceChoices.count }
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
@@ -422,6 +429,7 @@ public final class PlayerModel: ObservableModel {
 
     /// Los mensajes de los motores pueden traer la dirección del video (con tu clave): nunca llegan a la pantalla.
     private func fail(_ message: String, _ kind: Failure) {
+        Self.log.error("falló \(String(describing: kind), privacy: .public): \(stripURLs(message), privacy: .public)")
         failure = kind
         phase = .failed(stripURLs(message)); startupDeadline = nil; reconnecting = false; foregroundCheck = nil
         if source != nil { Task { await engine.pause() } }   // con un video a medio cargar: que no siga una ruedita detrás
@@ -464,7 +472,7 @@ public final class PlayerModel: ObservableModel {
             if !goBackAfterSwitch() { retryWithAnotherSource() }
             return
         }
-        if s.state == .playing && !hasPlayed { hasPlayed = true; startupDeadline = nil; phase = .playing; switchBack = nil }
+        if s.state == .playing && !hasPlayed { Self.log.notice("suena en \(Int(s.position), privacy: .public) s"); hasPlayed = true; startupDeadline = nil; phase = .playing; switchBack = nil }
         if let request = playRequest, s.state == .playing, s.position > request.position + 0.3 { playRequest = nil }   // ya avanza
         // Rearmando el mismo video en pausa (al volver de segundo plano): en pausa también es «ya está». Antes se esperaba a que
         // sonara, se quedaba en «preparando» sin botones y a los 45 s cambiaba de fuente y arrancaba solo.
@@ -539,6 +547,7 @@ public final class PlayerModel: ObservableModel {
         guard !retrying, !closing else { return transition }
         guard request?.localFile == nil else { fail("No pude abrir el archivo descargado.", .localFile); return nil }
         retrying = true; acceptingSnapshots = false; startupDeadline = nil
+        Self.log.notice("otra versión (ya fallaron \(self.failedSources.count + 1, privacy: .public))")
         if let source { failedSources.insert(source.index) }
         attempts = failedSources.count
         guard failedSources.count <= PlaybackRules.maxSourceRetries else { retrying = false; fail("Ninguna versión funcionó.", .noneWorked); return nil }
@@ -1017,6 +1026,7 @@ public final class PlayerModel: ObservableModel {
 
     /// Abre un video y le pone la velocidad elegida (el motor empieza cada video en 1).
     private func loadVideo(_ url: URL, at start: Double) async throws {
+        Self.log.notice("cargar desde \(url.host ?? "archivo", privacy: .public) en \(Int(start), privacy: .public) s")
         if let request {
             // Lo que ya sabes que quieres, desde el primer cuadro: el audio y los subtítulos con que lo dejaste (o tus idiomas).
             let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())

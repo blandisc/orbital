@@ -371,8 +371,6 @@ struct SkipButton: View {
                 .foregroundStyle(DS.text)
                 .shadow(DS.Elevation.high)   // sin fondo propio: ahora va sobre la imagen también en vertical
                 .frame(width: DS.PlayerPanel.sideButton, height: DS.PlayerPanel.sideButton)
-                // Un disco tenue detrás: sobre un cielo blanco la flecha se perdía aun con sombra.
-                .background(Circle().fill(DS.scrim).padding(DS.Space.s2))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

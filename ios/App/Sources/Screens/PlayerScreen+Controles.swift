@@ -100,7 +100,8 @@ extension PlayerScreen {
             } else {
                 let rect = videoRect(in: geo.size)
                 ZStack(alignment: .top) {
-                    topScrim
+                    // El velo de arriba se apaga conforme el video sube (antes oscurecía la parte de arriba del video al subirlo).
+                    topScrim.opacity(fillsPortrait ? 1 : min(1, max(0, rect.minY / DS.PlayerPanel.portraitTopClearance)))
                     // Con el video a pantalla completa, los controles van encima: un velo abajo para que se lean.
                     if fillsPortrait {
                         LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
@@ -141,8 +142,6 @@ extension PlayerScreen {
                     .frame(maxHeight: .infinity, alignment: fillsPortrait ? .bottom : .top)
                 }
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
-                // Al subir el video hasta arriba, la barra de ✕ y el nombre pasa abajo con un desvanecido (antes saltaba de golpe).
-                .animation(DS.Motion.base(reduceMotion), value: raisedPortrait(rect))
             }
         }
     }
