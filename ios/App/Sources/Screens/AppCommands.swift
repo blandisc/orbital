@@ -36,11 +36,15 @@ struct AppCommands: Commands {
 }
 
 /// Lo que el reproductor abierto deja hacer desde el menú y el teclado (lo publica `PlayerScreen`).
-struct PlayerCommands {
+struct PlayerCommands: Equatable {
     var togglePlay: () -> Void
     var skip: (_ forward: Bool) -> Void
     var openDock: () -> Void
     var close: () -> Void
+    /// Siempre «igual»: un valor enfocado que no es Equatable cuenta como cambiado en cada pasada del reproductor, y SwiftUI
+    /// volvía a pintar Inicio, la ruleta y el reproductor sin parar (la ruleta de Los Simpson se quedaba en la imagen, al 100 %
+    /// de CPU, iOS 27). Las funciones leen el estado por `@State`, así que un valor viejo sigue actuando bien.
+    static func == (_: Self, _: Self) -> Bool { true }
 }
 
 extension FocusedValues {
