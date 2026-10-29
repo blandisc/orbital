@@ -62,6 +62,7 @@ export const api = {
   ui: () => request("/api/ui"),
   exitToDesktop: () => post("/api/ui/exit"),
   resume: () => post("/api/ui/resume"),
+  uiPad: (listening) => post("/api/ui/pad", { listening }), // ¿la interfaz lee el mando? (quieta lo suelta, ver pads.js)
   uiState: (body) => post("/api/ui/state", body), // qué hay al frente (el control del iPhone enseña «Escribir» si sirve)
   windows: () => request("/api/windows"),
   power: (action) => post("/api/power", { action }),

@@ -19,8 +19,8 @@ import sys
 import threading
 import time
 
-from . import windows
-from .gamepad import HOLD_ARM, HOLD_TOTAL, GamepadWatcher, KeyRemote, send_key
+from . import input_log, windows
+from .gamepad import GUIDE, HOLD_ARM, HOLD_TOTAL, UI_ACTIONS, GamepadWatcher, KeyRemote, send_key
 from .library.detect import KNOWN
 
 log = logging.getLogger(__name__)
@@ -72,6 +72,10 @@ class ConsoleShell:
         self.hold: dict | None = None  # juego que se está por cerrar (Select+Start)
         self._remotes = [KeyRemote() for _ in range(4)]
         self._pads: dict[int, int] = {}  # botones de cada puerto, para el reproductor (los junta)
+        # ¿La interfaz lee el mando ella misma? Quieta lo suelta (a Edge leerlo le cuesta ~14 % de un núcleo sin parar) y el
+        # primer botón llega por aquí (forward_to_ui).
+        self.ui_pad = True
+        self._ui_buttons: dict[int, int] = {}
         self._fg_cache = (0.0, "")  # (cuándo, exe al frente): no preguntar a Windows 240 veces/s
         self._refocus_at = 0.0  # la última vez que se le devolvió el foco al video (ver _video_lost_focus)
         self._legion_last = 0.0
@@ -393,6 +397,7 @@ class ConsoleShell:
         adelanta/regresa y sube/baja volumen, Y pantalla completa, B vuelve."""
         if self.wake_on_button(slot, buttons, now):
             return
+        self.forward_to_ui(slot, buttons)
         exe = self.foreground_exe(now)
         if exe in BROWSERS and self.player and self.video_holds_screen():
             # El video tapa la pantalla pero el foco quedó en Orbital: el foco vuelve al video y el mando ES suyo, también
@@ -417,6 +422,26 @@ class ConsoleShell:
             return
         for vk in remote.update(buttons, now):
             send(vk)
+
+    def forward_to_ui(self, slot: int, buttons: int) -> None:
+        """Orbital quieta soltó el mando del navegador: los botones nuevos le llegan como acciones (el mismo camino que el
+        control del iPhone), solo con Orbital al frente y nada abierto. Al primero, la interfaz despierta y lo vuelve a tomar."""
+        if not hasattr(self, "_ui_buttons"):  # pruebas que arman el shell sin __init__
+            self.ui_pad, self._ui_buttons = True, {}
+        new = buttons & ~self._ui_buttons.get(slot, 0)
+        self._ui_buttons[slot] = buttons
+        if self.ui_pad or not new or buttons & GUIDE:  # Home y sus combinaciones son del servidor (on_gamepad)
+            return
+        if self.catalog.launcher.status():
+            return
+        fg = self.win.foreground()
+        if not fg or not self.is_orbital(fg):
+            return
+        events = getattr(self.catalog, "events", None)
+        for bits, action in UI_ACTIONS:
+            if new & bits and events is not None:
+                input_log.record([{"from": "xinput→interfaz", "slot": slot, "action": action}])  # entrada.log: quién lo mandó
+                events.publish({"type": "input", "action": action})
 
     # --------------------------------------------------------------- ventanas abiertas
     def open_windows(self) -> list[dict]:

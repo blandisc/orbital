@@ -50,6 +50,7 @@ import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows, m
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 import { sized } from "./core/images.js";
+import { onConnected as onPadConnected, pads as readPads } from "./core/pads.js";
 
 const state = createState();
 // La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
@@ -2059,7 +2060,15 @@ function handleEvent(event) {
 // Con un video a pantalla completa el mando es del video, aunque Windows le deje el foco a Orbital (detrás): el servidor
 // se lo pasa al reproductor y aquí no se hace nada (antes A pausaba Y le daba «Ver» a la ficha: salía la carga con el logo).
 const videoInFront = () => state.running?.id === "media:player" && state.running.front === true;
-createInput({
+// Quieta, Orbital suelta el mando del navegador (pads.js: le costaba a Edge ~14 % de un núcleo sin parar) y el primer botón
+// le llega del servidor, que ya lee XInput para Home. Solo si el servidor ve un mando XInput y todos los que ve el
+// navegador lo son: un mando que solo ve el navegador (DInput, uno de PlayStation) no se suelta nunca.
+const padServer = { xinput: false };
+// Así nombra Edge a un mando XInput (entrada.log: «Xbox 360 Controller for Windows (STANDARD GAMEPAD)»); los controles de la
+// Legion en DInput llegan como «Legion-Controller … (Vendor: 17ef …)» y esos el servidor no los ve.
+const XINPUT_ID = /xinput|xbox/i;
+const tellPad = (listening) => api.uiPad(listening).then((r) => { padServer.xinput = !!r.xinput; }).catch(() => {});
+const input = createInput({
   onAction: (action, options) => { if (!videoInFront()) handleAction(action, options); },
   onModality: setModality,
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).
@@ -2068,7 +2077,10 @@ createInput({
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
   onTrace: (entry) => traceInput(entry),
   resting: () => document.body.dataset.still !== undefined,
+  canSleep: (pads) => padServer.xinput && pads.filter(Boolean).every((pad) => XINPUT_ID.test(pad.id || "")),
+  onReading: (listening) => tellPad(listening),
 });
+tellPad(true);
 // Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla
 // completa, solo con la hora (como el de Game Glance, con tus juegos y películas). Nunca con un juego o un video al frente
 // (Orbital ni se ve) ni con una ficha o un menú abiertos; cualquier botón, toque o voz lo quita y vuelve a donde estabas.
@@ -2111,6 +2123,7 @@ for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventList
 const STILL_MS = 12_000;
 let stillTimer = 0;
 function stir() {
+  input.wake(); // si el mando estaba suelto (quieta), se vuelve a tomar
   delete document.body.dataset.still;
   clearTimeout(stillTimer);
   stillTimer = setTimeout(() => { document.body.dataset.still = ""; }, STILL_MS);
@@ -2149,10 +2162,10 @@ ui.tv.setGlyphs(glyphs());
 // (lo que enseña Legion Space), una vez.
 let legionTip = false;
 const legionStuck = () => {
-  const pads = [...(navigator.getGamepads?.() || [])].filter(Boolean);
+  const pads = readPads().filter(Boolean);
   return !pads.some(usablePad) && pads.some((pad) => /legion/i.test(pad.id || ""));
 };
-window.addEventListener("gamepadconnected", ({ gamepad }) => {
+onPadConnected((gamepad) => {
   if (legionTip || usablePad(gamepad) || !/legion/i.test(gamepad.id || "")) return;
   setTimeout(() => {
     if (legionTip || !legionStuck()) return;

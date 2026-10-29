@@ -255,3 +255,13 @@ def test_the_interface_input_trace_lands_in_entrada_log(library, tmp_path):
         assert c.post("/api/ui/trace", json={"entries": entries}).json() == {"ok": True}
     lines = [_json.loads(x) for x in input_log.default_path().read_text(encoding="utf-8").splitlines()]
     assert [x["src"] for x in lines] == ["pad", "action"] and lines[0]["from"] == "ui" and lines[0]["focus"] is False
+
+
+def test_ui_says_whether_it_reads_the_controller_and_learns_if_the_server_sees_one(make_client):
+    """Quieta, la interfaz suelta el mando del navegador y el primer botón le llega del servidor (shell.forward_to_ui)."""
+    with make_client() as c:
+        shell = c.app.state.shell
+        assert c.post("/api/ui/pad", json={"listening": False}).json() == {"xinput": False}  # sin XInput en la prueba
+        assert shell.ui_pad is False
+        c.post("/api/ui/pad", json={"listening": True})
+        assert shell.ui_pad is True

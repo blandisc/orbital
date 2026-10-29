@@ -2,6 +2,7 @@
  * Entrada unificada: teclado, rueda del ratón y mando (Gamepad API) se traducen a
  * acciones abstractas ("up", "select", "options"...). La app solo conoce acciones.
  */
+import { acquire as acquirePads, pads as readPads, release as releasePads } from "./pads.js";
 
 export const KEYMAP = {
   ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
@@ -171,7 +172,12 @@ export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && 
  * onAction(acción, { repeat }) — `repeat`: viene de mantener el botón (sin rebote ni vibración).
  * Mientras `typing()` es verdadero (el teclado de Buscar), las letras van a onText y no son atajos.
  */
-export function createInput({ onAction, onModality, onText = null, typing = () => false, onTrace = null, resting = () => false }) {
+/**
+ * `canSleep(pads)`: si con Orbital quieta se puede soltar el mando del navegador (pads.js); entonces el primer botón llega del
+ * servidor y `wake()` lo vuelve a tomar. `onReading(sí)`: avisa cuando la interfaz empieza o deja de leer el mando ella misma.
+ */
+export function createInput({ onAction, onModality, onText = null, typing = () => false, onTrace = null, resting = () => false,
+  canSleep = () => false, onReading = () => {} }) {
   // Diagnóstico (entrada.log): lo que llega en bruto y lo que se dispara, con si Orbital tenía el foco.
   const trace = (entry) => onTrace?.({ ms: Date.now(), focus: document.hasFocus(), hidden: document.hidden, ...entry });
   // El cursor solo se ve mientras mueves el ratón: a los POINTER_IDLE quieto se esconde, en cualquier modo (antes solo con
@@ -248,8 +254,18 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   let swallowUntil = 0;
   window.addEventListener("focus", () => { swallowUntil = performance.now() + 250; });
   const seen = new Map(); // mando → lo último anotado (solo se anotan los cambios)
+  let sleeping = false;
+  let exposed = false; // el navegador ya enseña un mando que sirve
+  let forwarded = false; // el servidor pudo haber mandado ya el botón que llega apretado (no se cuenta dos veces)
   const loop = (now) => {
-    const pads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
+    const pads = readPads();
+    const usable = pads.some((pad) => pad && usablePad(pad));
+    if (usable !== exposed) {
+      exposed = usable;
+      if (usable && forwarded) swallowUntil = now + 250;
+      if (usable) forwarded = false;
+      onReading(usable);
+    }
     if (onTrace) {
       pads.forEach((pad, i) => {
         if (!pad) { if (seen.has(i)) { seen.delete(i); trace({ src: "pad", i, gone: true }); } return; }
@@ -269,9 +285,31 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
       onAction(action, { repeat: repeater.isRepeat(action) });
     });
     // Con Orbital quieta (`resting`), el mando se lee 15 veces por segundo en vez de 60: el primer botón tarda a lo mucho
-    // 66 ms y despierta todo. Así, sin tocar nada, la página casi no usa CPU.
-    if (resting() && !active.size) setTimeout(() => requestAnimationFrame(loop), 66);
-    else requestAnimationFrame(loop);
+    // 66 ms y despierta todo. Y sin requestAnimationFrame: pedir un cuadro obliga a Edge a armar uno aunque no haya nada
+    // que dibujar (el proceso del navegador se quedaba en 14 % de un núcleo con todo quieto). Leer el mando no necesita
+    // cuadros; solo mientras lo usas se lee al ritmo de la pantalla.
+    if (resting() && !active.size) {
+      // Y si se puede, ni eso: se suelta el mando del navegador (pads.js) y el primer botón llega del servidor.
+      if (canSleep(pads)) {
+        sleeping = true;
+        forwarded = true;
+        exposed = false;
+        releasePads();
+        onReading(false);
+        return;
+      }
+      setTimeout(() => loop(performance.now()), 66);
+    } else requestAnimationFrame(loop);
   };
+  acquirePads();
   requestAnimationFrame(loop);
+  /** Cualquier botón, tecla, toque o aviso: si el mando estaba suelto, se vuelve a tomar. */
+  function wake() {
+    if (!sleeping) return;
+    sleeping = false;
+    acquirePads();
+    swallowUntil = performance.now() + 250; // lo que ya venía apretado (el botón que despertó) no se repite
+    requestAnimationFrame(loop);
+  }
+  return { wake };
 }

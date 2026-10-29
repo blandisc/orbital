@@ -155,6 +155,14 @@ def router(d: Deps) -> APIRouter:
         d.hub.publish_threadsafe({"type": "reload", "view": view})
         return {"ok": True}
 
+    @r.post("/api/ui/pad")
+    def ui_pad(body: dict) -> dict:
+        """La interfaz dice si lee el mando ella misma (`listening`). Quieta lo suelta y el primer botón le llega del
+        servidor; responde si hay un mando XInput que el servidor vea (si no, la interfaz no lo suelta)."""
+        shell.ui_pad = body.get("listening") is not False if isinstance(body, dict) else True
+        watcher = getattr(shell, "gamepad", None)
+        return {"xinput": bool(getattr(watcher, "connected", False))}
+
     @r.post("/api/ui/show")
     def ui_show() -> dict:
         """El ícono del escritorio con Orbital ya abierto: trae (o reabre) la ventana en vez de otra copia."""
