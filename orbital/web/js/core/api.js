@@ -114,6 +114,7 @@ export const api = {
   voiceCommands: () => request("/api/voice/commands"),
   forYou: () => request("/api/foryou"),
   forYouList: (id, kind = null) => request(`/api/foryou/list?id=${encodeURIComponent(id)}${kind ? `&kind=${kind}` : ""}`),
+  forYouLists: (lists) => post("/api/foryou/lists", { lists }),
   forYouDetails: (key, kind = null) => request(`/api/foryou/details?key=${encodeURIComponent(key)}${kind ? `&kind=${kind}` : ""}`),
   forYouDismiss: (key) => post("/api/foryou/dismiss", { key }),
   forYouRatings: (items) => request(`/api/foryou/ratings?ids=${encodeURIComponent(items.map((i) => `${i.kind}:${i.meta_id}`).join(","))}`),

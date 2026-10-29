@@ -67,6 +67,8 @@ const current = () => (inForYou() || inTv() ? null : inHome() ? ui.home.current?
   : inGames() ? ui.games.current?.item ?? null
     : itemAt(state.rows, state.focus.r, state.focus.c));
 const glyphs = () => GLYPHS[state.modality];
+// ¿Alguien mira Orbital? Con un juego o un video al frente (o la ventana oculta), lo que corre de fondo espera.
+const onScreen = () => !document.hidden && !state.running?.front;
 // El atajo de Buscar se ve siempre, también tras tocar la pantalla: el del control (o teclado) que usaste antes. Antes, al
 // tocar «Películas y series» desaparecía y no volvía hasta picar un botón del mando.
 const searchGlyphs = () => ({ ...glyphs(), search: GLYPHS[state.modality === "touch" ? state.lastPhysical || "gamepad" : state.modality].search });
@@ -79,13 +81,13 @@ const ui = {
   home: createHome({
     outside: () => [ui.status.searchButton, ui.status.alexaButton], // Buscar y Alexa (arriba) también se alcanzan con ↑
     onFocus: (target) => homeFocused(target),
-    onPick: (target, id) => (ui.home.focusId === id ? homeActivate(target) : ui.home.focus(id)),
+    onPick: (target, id) => (ui.home.focusId === id && !justTouched() ? homeActivate(target) : ui.home.focus(id)),
     onAction: (action, target) => homeActivate(target, action),
   }),
   games: createGames({
     onAction: (action, item) => gamesActivate({ kind: "game", item }, action),
     onFocus: (target) => gamesFocused(target),
-    onPick: (target, id) => (ui.games.focusId === id ? gamesActivate(target) : ui.games.focus(id)),
+    onPick: (target, id) => (ui.games.focusId === id && !justTouched() ? gamesActivate(target) : ui.games.focus(id)),
   }),
   shelf: createShelf({ onPick: (r, c) => pick(r, c), onSwipe: (swipe) => onSwipe(swipe) }),
   hints: createHints({ onAction: (action) => handleAction(action) }),
@@ -371,7 +373,6 @@ function renderHints() {
   }
   if (inGames() && !ui.sheet.isOpen) {
     const target = ui.games.current;
-    const item = target?.item;
     return ui.hints.render(gamesHints(g, target && { ...target, focusId: ui.games.focusId }));
   }
   if (inHome() && !ui.sheet.isOpen) {
@@ -459,8 +460,14 @@ function preloadAround(r, c) {
   }
 }
 
+// El toque que cambia del mando (o el teclado) al dedo solo enfoca: lo enfocado lo eligió el mando, no tú, y tocar el
+// destacado abría el juego al instante.
+let touchSince = 0;
+const justTouched = () => performance.now() - touchSince < 800;
+
 function setModality(modality) {
   if (state.modality === modality) return;
+  if (modality === "touch") touchSince = performance.now();
   state.modality = modality;
   if (modality !== "touch") state.lastPhysical = modality;
   document.body.dataset.input = modality;
@@ -768,6 +775,7 @@ function goToSection(id, direction = 0) {
   if (id === state.section) return;
   const list = visibleSections(state.allRows);
   if (!list.some((s) => s.id === id)) return; // una sección vacía no está en la barra: no se entra
+  if (id === "media") wantCuration();
   const from = list.findIndex((s) => s.id === state.section);
   const to = list.findIndex((s) => s.id === id);
   state.sectionFocus[state.section] = { rowId: state.rows[state.focus.r]?.id, itemId: current()?.id };
@@ -847,7 +855,10 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     });
     state.popId = null;
     if (!state.libraryLoaded) {
-      loadCuration(); // los estantes de Películas y series (Top 10, plataformas, tus listas), en segundo plano
+      // Los estantes de Películas y series (Top 10, plataformas, tus listas): al entrar ahí o un rato después de abrir,
+      // no al arrancar (eran ~70 peticiones compitiendo con el Inicio).
+      if (state.section === "media") wantCuration();
+      else setTimeout(() => (onScreen() ? wantCuration() : null), CURATION_DELAY_MS);
       loadDownloads(); // lo que bajaste para ver sin internet (fila «Descargas»)
       ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
       ui.foryou.load(); // en segundo plano: Para ti ya está listo cuando llegas (LB desde el Inicio)
@@ -881,6 +892,14 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
 // lo que se ve arriba, luego las colecciones) y se ponen al día cada media hora; si Para ti no contesta, queda como estaba.
 let curated = [];
 let curating = null;
+let curationAsked = false;
+const CURATION_DELAY_MS = 15_000;
+/** La primera vez que hacen falta los estantes (y de ahí, solo cuando algo cambia o cada 30 min con alguien mirando). */
+function wantCuration() {
+  if (curationAsked) return;
+  curationAsked = true;
+  loadCuration();
+}
 let mediaLists = [];
 const mediaItems = {}; // keyOf(lista, tipo) → títulos
 const mediaYears = {}; // year:AAAA → películas de ese año (se piden al verlas)
@@ -927,11 +946,14 @@ const fetchList = async (id, kind) => {
   if (res?.title) mediaHeads[id] = { title: res.title, meta: res.meta || "" };
   return res?.items || [];
 };
-async function fetchMany(wanted, into = mediaItems) {
-  const queue = [...wanted];
-  await Promise.all(Array.from({ length: 4 }, async () => {
-    for (let w = queue.shift(); w; w = queue.shift()) into[keyOf(w.id, w.kind)] = await fetchList(w.id, w.kind);
-  }));
+/** Varias listas en una sola petición (antes, una por estante: ~70 al arrancar). `key` dice dónde va cada una. */
+async function fetchMany(wanted, into = mediaItems, key = (l) => keyOf(l.id, l.kind)) {
+  if (!wanted.length) return;
+  const res = await api.forYouLists(wanted.map(({ id, kind }) => ({ id, kind: kind ?? null }))).catch(() => ({ lists: [] }));
+  for (const l of res.lists || []) {
+    if (l.title) mediaHeads[l.id] = { title: l.title, meta: l.meta || "" };
+    into[key(l)] = l.items || [];
+  }
 }
 /** Lo de arriba primero (Destacados, lo general, Porque viste, lo nuevo, las plataformas); las colecciones, después. */
 const LATER = (w) => /^(award|studio|list|addon|genre|season):/.test(w.id) || ["watchlist", "trakt-favorites", "mine", "mylist", "estrenos"].includes(w.id);
@@ -939,7 +961,7 @@ const LATER = (w) => /^(award|studio|list|addon|genre|season):/.test(w.id) || ["
 async function loadYears(count = 6) {
   const years = mediaLists.filter((l) => l.collection === "year").slice(yearsLoaded, yearsLoaded + count);
   yearsLoaded += years.length;
-  await Promise.all(years.map(async (l) => { mediaYears[l.id] = await fetchList(l.id, "movie"); }));
+  await fetchMany(years.map((l) => ({ id: l.id, kind: "movie" })), mediaYears, (l) => l.id);
   return years.length;
 }
 
@@ -1368,7 +1390,7 @@ function applyCuration(rows) {
   renderView();
   setFocus(r, c, { silent: true });
 }
-setInterval(() => loadCuration(), 30 * 60_000);
+setInterval(() => (curationAsked && onScreen() ? loadCuration() : null), 30 * 60_000); // con un juego al frente, nada
 
 // Destacados en carrusel: quieto en esa fila, avanza solo al siguiente (y el héroe de arriba con él), como en el iPhone.
 const SPOTLIGHT_MS = 8000;
@@ -1520,7 +1542,7 @@ function onSwipe({ r = state.focus.r, dc = 0, dr = 0 }) {
 function pick(r, c) {
   // Ratón/táctil: el primer toque selecciona, el segundo abre, igual que A: una lista o un género abren su lista (antes
   // se trataban como un juego y, con uno abierto, preguntaba «¿Cerrar Hades? Para abrir Óscar»).
-  if (r === state.focus.r && c === state.focus.c) {
+  if (r === state.focus.r && c === state.focus.c && !justTouched()) {
     const item = current();
     if (item?.source === "genre") return openGenre(item);
     if (item?.source === "collection") return openCollection(item);
@@ -2349,6 +2371,9 @@ document.addEventListener("visibilitychange", () => {
     // Home con un juego o un video abierto: Orbital al frente también aterriza (antes solo al cerrarlo).
     if (state.running && !ui.launch.visible) boot.land();
     pollStatus();
+    pollSystem(); // lo que no se preguntó mientras un juego tapaba a Orbital
+    refreshPhone();
+    wantCuration();
     loadLibrary();
     for (const event of deferred.take()) handleEvent(event);
   }
@@ -2374,11 +2399,11 @@ window.addEventListener("gamepadconnected", ({ gamepad }) => {
   }, 10_000);
 });
 setInterval(pollStatus, 60_000); // red de seguridad: el estado llega por SSE al cambiar
-setInterval(pollSystem, 30_000);
+setInterval(() => (onScreen() ? pollSystem() : null), 30_000); // wifi e internet: solo si alguien mira la barra
 pollStatus();
 pollSystem();
 refreshPhone();
-setInterval(refreshPhone, 60_000); // si enciendes Tailscale o conectas el iPhone, las opciones aparecen solas
+setInterval(() => (onScreen() ? refreshPhone() : null), 60_000); // si enciendes Tailscale o conectas el iPhone, las opciones aparecen solas
 loadLibrary();
 api.settings().then(applySettings).catch(() => {});
 api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => {

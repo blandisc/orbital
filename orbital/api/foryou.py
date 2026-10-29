@@ -25,6 +25,15 @@ class KeysRequest(BaseModel):
     values: list[str]
 
 
+class ListRef(BaseModel):
+    id: str
+    kind: str | None = None
+
+
+class ListsRequest(BaseModel):
+    lists: list[ListRef]
+
+
 class SaveRequest(BaseModel):
     kind: str
     id: str
@@ -41,17 +50,37 @@ def router(d: Deps) -> APIRouter:
         """Lo que se ve al entrar: qué servicios hay, el riel de listas y el mosaico."""
         return foryou.overview()
 
-    @r.get("/list")
-    def items(id: str, kind: str | None = None) -> dict:
+    def one(list_id: str, kind: str | None) -> dict:
         try:
-            return foryou.list_payload(id[:120], kind)
+            return foryou.list_payload(list_id[:120], kind)
         except KeyError:
             raise HTTPException(404, "Esa lista ya no existe.")
         except trakt.TraktAuthError as exc:
             raise HTTPException(409, str(exc))
         except SERVICE_ERRORS as exc:
-            log.warning("Para ti: no pude cargar %s: %s", id, exc)
+            log.warning("Para ti: no pude cargar %s: %s", list_id, exc)
             raise HTTPException(502, "No pude cargar esta lista. Revisa tu conexión e inténtalo de nuevo.")
+
+    @r.get("/list")
+    def items(id: str, kind: str | None = None) -> dict:
+        return one(id, kind)
+
+    @r.post("/lists")
+    def many(body: ListsRequest) -> dict:
+        """Varias listas en una sola petición (los estantes de Películas y series): antes eran ~70 al arrancar. Cada una
+        llega con lo suyo o con su error, y una que falla no tumba a las demás."""
+        from concurrent.futures import ThreadPoolExecutor
+
+        def safe(ref: ListRef) -> dict:
+            try:
+                return one(ref.id, ref.kind)
+            except HTTPException as exc:
+                return {"items": [], "error": exc.detail, "status": exc.status_code}
+
+        wanted = body.lists[:120]
+        with ThreadPoolExecutor(max_workers=4, thread_name_prefix="listas") as pool:  # como las 4 colas que tenía la interfaz
+            payloads = list(pool.map(safe, wanted))
+        return {"lists": [{"id": ref.id, "kind": ref.kind, **payload} for ref, payload in zip(wanted, payloads)]}
 
     @r.get("/ratings")
     def ratings(ids: str = "") -> dict:
