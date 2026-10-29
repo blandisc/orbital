@@ -129,3 +129,25 @@ def test_opening_a_console_is_remembered(tmp_path):
     assert state.opened("steam") == 0
     state.mark_opened("steam", now=300)
     assert State(tmp_path / "s.json").opened("steam") == 300
+
+
+def test_cancelling_a_launch_does_not_count_as_played(tmp_path):
+    """B en la pantalla de carga: el juego no pasa a «Jugaste hace 2 min» ni sube al Inicio."""
+    path = tmp_path / "state.json"
+    s = State(path)
+    s.record_launch("viejo", now=100)
+    before = s.record_launch("viejo", now=500)
+    s.undo_launch("viejo", before)
+    assert State(path).history("viejo") == {"playtime": 0, "launches": 1, "last_played": 100}
+    never = s.record_launch("nuevo", now=600)
+    s.undo_launch("nuevo", never)
+    assert State(path).history("nuevo") == {} and "nuevo" not in State(path).recent()
+
+
+def test_not_today_survives_a_restart_and_expires(tmp_path):
+    """«Hoy no» en ¿Qué vemos? de la TV: antes se perdía al reiniciar Orbital."""
+    path = tmp_path / "state.json"
+    State(path).skip_today("tt0903747", now=1000)
+    assert State(path).skipped(24 * 3600, now=1000 + 3600) == {"tt0903747"}
+    assert State(path).skipped(24 * 3600, now=1000 + 25 * 3600) == set()
+    assert State(path).skipped(24 * 3600, now=1000) == set()  # ya se olvidó y se guardó así

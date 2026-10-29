@@ -87,9 +87,10 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
   /** true = lo atendió (se movió o hizo algo) · "edge" · "exit" (B en el principio) · false = no es suyo. */
   function handle(action) {
     if (!data) return action === "back" ? "exit" : false;
-    // El primer botón solo despierta, salvo los que llevan a otro lado (sección, menú, buscar).
-    if (mosaic.ambient && !["prevsection", "nextsection", "menu", "search"].includes(action)) return mosaic.handle(action);
-    if (mosaic.ambient) { mosaic.wake(); return false; }
+    // Del ambiente: si la pieza que tenías sigue a la vista, se queda enfocada y el botón cuenta (A, Y, X, flechas);
+    // si ya se fue, el primer botón solo despierta. Los que llevan a otro lado (sección, menú, buscar) siempre pasan.
+    if (mosaic.ambient && ["prevsection", "nextsection", "menu", "search"].includes(action)) { mosaic.wake(); return false; }
+    if (mosaic.ambient && mosaic.wake() === true) return true;
     mosaic.wake();
     if (action === "select") return activate(mosaic.current);
     if (action === "options") { if (mosaic.current) onMore?.(mosaic.current); return mosaic.current ? true : "edge"; }

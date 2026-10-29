@@ -88,7 +88,10 @@ def router(d: Deps) -> APIRouter:
         return d.status()
 
     @r.post("/api/stop")
-    def stop() -> dict:
+    def stop(body: dict | None = None) -> dict:
+        # B en la pantalla de carga («cancelled»): lo que cancelaste no cuenta como jugado.
+        if body and body.get("cancelled") is True:
+            catalog.sessions.forget_launch()
         # También cierra un emulador abierto desde ES-DE si se pidió con Select+Start.
         return {"stopped": shell.stop_game()}
 

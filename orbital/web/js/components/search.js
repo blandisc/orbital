@@ -89,6 +89,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   let dictateGlyph = ""; // el botón del mando que dicta (☰, o M con teclado): se ve en la tecla
   let goGlyph = ""; // el que busca ya (RT, o AvPág con teclado): se ve en la tecla «Buscar»
   keyboard.setLayout(layout(false));
+  keyboard.reset(2, 0); // la primera vez, en la «A» (no en el «1»); después recuerda la última tecla
 
   function render() {
     if (text !== shownText) { shownText = text; editedAt = Date.now(); }

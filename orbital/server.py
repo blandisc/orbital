@@ -23,6 +23,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -696,6 +697,9 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
             raise HTTPException(409, str(exc))
         return {"playing": now}
 
+    # El iPhone llega por el túnel (a veces con datos móviles): Para ti y las listas viajan comprimidas (~5 veces menos).
+    # Las conexiones en vivo (SSE) quedan fuera solas; la tele no lo necesita (todo es local).
+    public.add_middleware(GZipMiddleware, minimum_size=1024)
     return public
 
 

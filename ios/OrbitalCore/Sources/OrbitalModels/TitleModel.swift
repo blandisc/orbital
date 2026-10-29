@@ -382,7 +382,7 @@ public final class TitleModel: ObservableModel {
         inWatchlist = want
         do {
             try await trakt.setWatchlist(imdb: metaID, series: kind == "series", add: want)
-            await services.forYou.clearCache()
+            await services.forYou.clearCache(["trakt:watchlist"])   // solo la watchlist: lo demás de Para ti sigue válido
         } catch where TraktOutbox.retryable(error) {
             // Sin conexión o con tu Orbital apagada: se queda guardado aquí y se manda en cuanto se pueda (no se pierde).
             services.traktOutbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: metaID, series: kind == "series", add: want))
@@ -403,7 +403,7 @@ public final class TitleModel: ObservableModel {
         defer { favoriteWrites -= 1 }
         do {
             try await trakt.setFavorite(imdb: metaID, series: kind == "series", add: want)
-            await services.forYou.clearCache()
+            // Sin borrar la caché de Para ti: los favoritos no se guardan ahí (los recuerda `Trakt`, con `last_activities`).
         } catch where TraktOutbox.retryable(error) {
             services.traktOutbox.enqueue(.init(target: TraktOutbox.favorites, imdb: metaID, series: kind == "series", add: want))
             message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
@@ -461,7 +461,7 @@ public final class TitleModel: ObservableModel {
         lists = all
         do {
             try await trakt.setListItem(listID: listID, imdb: metaID, series: kind == "series", add: want)
-            await services.forYou.clearCache()
+            await services.forYou.clearCache(["trakt:list:\(listID)", "trakt:listkeys"])   // solo esa lista (y «Guardado» de las fichas)
         } catch where TraktOutbox.retryable(error) {
             services.traktOutbox.enqueue(.init(target: listID, imdb: metaID, series: kind == "series", add: want))
             message = "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."

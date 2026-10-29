@@ -6,7 +6,13 @@ archivo (Range) y, si se pide, una espera al principio de cada archivo, como cua
 `colgar`: las peticiones con esa consulta (p. ej. `v=1`, la versión latina que abre primero `-demo-versions`) nunca reciben
 respuesta, como el motor del iPhone abriendo un archivo que no llega; las demás versiones sí suenan.
 """
-import http.server, socketserver, time, os, re, sys
+import http.server
+import os
+import re
+import socketserver
+import sys
+import time
+
 ROOT = sys.argv[3] if len(sys.argv) > 3 else "/tmp/orbital-43"; DELAY = float(sys.argv[2]) if len(sys.argv) > 2 else 0
 HANG = sys.argv[4] if len(sys.argv) > 4 else ""
 first = {}

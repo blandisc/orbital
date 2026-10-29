@@ -30,28 +30,28 @@ public final class ParaTiModel: ObservableModel {
     public enum Source: Equatable, Sendable { case console, phone }
 
     /// Abre en Listas (lo que más se usa); el mosaico, con el botón de arriba.
-    public var mode: Mode = .lists { didSet { changed() } }
-    public private(set) var mosaic: [Suggestion] = [] { didSet { changed() } }
-    public private(set) var lists: [ForYouList] = [] { didSet { changed() } }
+    public var mode: Mode = .lists { didSet { if mode != oldValue { changed() } } }
+    public private(set) var mosaic: [Suggestion] = [] { didSet { if mosaic != oldValue { changed() } } }
+    public private(set) var lists: [ForYouList] = [] { didSet { if lists != oldValue { changed() } } }
     /// Los estantes del feed de Listas, en su orden (`ShelfPlanner`). Los vacíos se descartan al terminar de cargar.
-    public private(set) var shelves: [ShelfPlan] = [] { didSet { changed() } }
+    public private(set) var shelves: [ShelfPlan] = [] { didSet { if shelves != oldValue { changed() } } }
     /// «Todo», «Series» o «Películas» (`all`, `series`, `movie`): los estantes con `split` enseñan eso; «Todo» alterna ambos.
-    public private(set) var kind = "all" { didSet { changed() } }
+    public private(set) var kind = "all" { didSet { if kind != oldValue { changed() } } }
     /// Las listas que aún se están pidiendo (su estante enseña esqueletos, no un hueco).
-    public private(set) var loadingKeys = Set<String>() { didSet { changed() } }
+    public private(set) var loadingKeys = Set<String>() { didSet { if loadingKeys != oldValue { changed() } } }
     /// Cuántas veces se pidió «Actualizar»: el destacado pasa al siguiente de su estante.
-    public private(set) var featuredRotation = 0 { didSet { changed() } }
-    public private(set) var railItems: [String: [Suggestion]] = [:] { didSet { changed() } }
-    public private(set) var watchlistKeys = Set<String>() { didSet { changed() } }
-    public private(set) var traktLinked = false { didSet { changed() } }
-    public private(set) var isLoading = false { didSet { changed() } }
+    public private(set) var featuredRotation = 0 { didSet { if featuredRotation != oldValue { changed() } } }
+    public private(set) var railItems: [String: [Suggestion]] = [:] { didSet { if railItems != oldValue { changed() } } }
+    public private(set) var watchlistKeys = Set<String>() { didSet { if watchlistKeys != oldValue { changed() } } }
+    public private(set) var traktLinked = false { didSet { if traktLinked != oldValue { changed() } } }
+    public private(set) var isLoading = false { didSet { if isLoading != oldValue { changed() } } }
     /// Los episodios que salen de las series que sigues (Trakt), hoy y los próximos 14 días.
-    public private(set) var airings: [Airing] = [] { didSet { changed() } }
-    public var calendarLayout: CalendarLayout = .byDay { didSet { changed() } }
+    public private(set) var airings: [Airing] = [] { didSet { if airings != oldValue { changed() } } }
+    public var calendarLayout: CalendarLayout = .byDay { didSet { if calendarLayout != oldValue { changed() } } }
     /// «Porque viste X»: lo último que viste y lo que Trakt relaciona con él (nil sin Trakt o sin relacionados).
     public private(set) var because: (seed: TraktEntry, items: [Suggestion])? { didSet { changed() } }
     /// Lo último que viste: para elegir «Porque vi…».
-    public private(set) var becauseSeeds: [TraktEntry] = [] { didSet { changed() } }
+    public private(set) var becauseSeeds: [TraktEntry] = [] { didSet { if becauseSeeds != oldValue { changed() } } }
 
     /// El título arriba del mazo. Cambia en cuanto lo eliges (antes el mazo esperaba a Trakt, un segundo o más, y se sentía
     /// trabado); sus relacionadas llegan en `because`, al momento si ya se trajeron de antemano.
