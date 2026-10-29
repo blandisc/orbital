@@ -43,10 +43,10 @@ public actor RemoteForYou {
             let title = row["title"]?.string ?? ""
             let brand = row["brand"]?.string
             listInfo[id] = (title, brand)
-            // La consola todavía dice «Stremio» en lo popular de Cinemeta y en los catálogos de complementos: en el iPhone
-            // lo primero va sin sello y lo segundo es «Complemento».
+            // Lo popular de Cinemeta va sin origen en el iPhone; los catálogos de complementos son «Complemento» (una consola
+            // anterior a su corte E todavía dice «Stremio» en los dos).
             var source = row["source"]?.string ?? ""
-            if source == "Stremio" { source = id == "cinemeta" ? "" : ForYouList.addonSource }
+            if id == "cinemeta" || source == "Cinemeta" { source = "" } else if source == "Stremio" { source = ForYouList.addonSource }
             out.append(ForYouList(id: id, title: title, group: Self.group(id: id, brand: brand), brand: brand,
                                    logo: row["logo"]?.string, splitsKinds: row["split"]?.bool ?? false,
                                    source: source, meta: row["meta"]?.string ?? ""))

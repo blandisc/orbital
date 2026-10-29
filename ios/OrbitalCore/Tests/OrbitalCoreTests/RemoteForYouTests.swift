@@ -8,6 +8,16 @@ final class RemoteForYouTests: XCTestCase {
         RemoteForYou(remote: { OrbitalRemote(http: http, address: "tv.example", token: "secreto") })
     }
 
+    /// Desacoplar Stremio: en el iPhone ningún estante dice «Stremio» ni «Cinemeta», venga de una consola nueva o de una anterior.
+    func testListOriginsNeverSayStremio() async throws {
+        let http = FakeHTTP()
+        func row(_ id: String, _ source: String) -> JSON { ["id": .string(id), "title": "x", "source": .string(source), "meta": "", "split": false] }
+        http.json["https://tv.example/api/foryou"] = ["lists": [row("cinemeta", "Stremio"), row("addon:a:b", "Stremio"), row("cinemeta", "Cinemeta"),
+                                                                row("addon:c:d", "Complemento"), row("critics", "Rotten Tomatoes")], "mosaic": []]
+        let lists = try await remote(http).lists()
+        XCTAssertEqual(lists.map(\.source), ["", ForYouList.addonSource, "", ForYouList.addonSource, "Rotten Tomatoes"])
+    }
+
     func testOverviewConvertsListsAndKeepsPlatformLogoAndRankInTheMosaic() async throws {
         let http = FakeHTTP()
         http.json["https://tv.example/api/foryou"] = [
