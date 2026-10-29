@@ -56,10 +56,13 @@ struct OnboardingDebridKey: View {
 
 /// El campo de la clave con «Pegar» y lo que dijo Real-Debrid. Lo comparten la guía y Ajustes › Cuentas › «Cambiar clave».
 struct DebridKeyField: View {
-    let debrid: DebridModel
+    @State private var observer: ModelObserver<DebridModel>
     @Environment(\.openURL) private var openURL
 
+    init(debrid: DebridModel) { _observer = State(wrappedValue: ModelObserver(debrid)) }
+
     var body: some View {
+        let debrid = observer.model
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(spacing: DS.Space.s2) {
                 TextField("Pega tu clave", text: Binding(get: { debrid.token }, set: { debrid.token = $0 }))
@@ -89,10 +92,12 @@ struct DebridKeyField: View {
 }
 
 /// «Te quedan 143 días · vence el 21 de marzo de 2027», «Vence hoy», «Venció hace 2 días» o «Cuenta gratuita».
+@MainActor
 enum DebridWords {
     static func text(_ status: DebridStatus, now: Date = Date()) -> Text {
         let (state, days) = DebridModel.summary(status, now: now)
-        let date = status.expires.map { $0.formatted(date: .long, time: .omitted) }
+        // En el idioma de la app, no en el del sistema.
+        let date = status.expires.map { $0.formatted(Date.FormatStyle(date: .long, time: .omitted).locale(AppEnvironment.shared.uiLocale)) }
         switch state {
         case .active, .expiringSoon:
             if days == 0 { return Text("Vence hoy") }

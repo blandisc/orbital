@@ -18303,6 +18303,17 @@
         }
       }
     },
+    "Tus películas y series en tu bolsillo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your movies and shows in your pocket."
+          }
+        }
+      }
+    },
     "Tus películas y series salen en Descargas › Mi media: se ven al instante y se bajan al iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -18364,17 +18375,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "Tus películas y series, en tu bolsillo y en tu TV.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your movies and shows, in your pocket and on your TV."
           }
         }
       }

@@ -58,7 +58,7 @@ extension DemoHTTPClient {
     /// Real-Debrid de mentira (`-demo-rd`): `GET /rest/1.0/user` con la cuenta que se pidió.
     static func realDebridDemo(_ url: URL) -> HTTPResponse? {
         guard url.host == "api.real-debrid.com", url.path.hasSuffix("/user"), let state = Demo.realDebrid else { return nil }
-        let days: Double = switch state { case "soon": 3; case "expired": -2; case "free": 0; default: 143 }
+        let days: Double = switch state { case "soon": 3; case "expired": -2; case "free": 0; default: Double(state) ?? 143 }
         guard state != "invalid" else { return HTTPResponse(status: 401, data: JSON.object(["error": "bad_token", "error_code": 8]).serialized()) }
         let expires = ISO8601DateFormatter().string(from: Date().addingTimeInterval(days * 86_400))
         let premium = state == "free" || days < 0 ? 0 : Int(days * 86_400)

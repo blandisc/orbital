@@ -764,7 +764,7 @@ TRANSLATIONS = {
     "Trayendo lo tuyo…": "Bringing your stuff…", "Tu Orbital en la TV": "Your Orbital on the TV", "Tu Orbital está conectada": "Your Orbital is connected",
     "Tu avance en la nube, en todos tus aparatos.": "Your progress in the cloud, on all your devices.",
     "Tu clave de Real-Debrid": "Your Real-Debrid key", "Tu cuenta es gratuita: necesitas Premium para ver.": "Your account is free: you need Premium to watch.",
-    "Tus películas y series, en tu bolsillo y en tu TV.": "Your movies and shows, in your pocket and on your TV.",
+    "Tus películas y series en tu bolsillo.": "Your movies and shows in your pocket.",
     "Usa tu Real-Debrid": "Uses your Real-Debrid", "Vence hoy": "Expires today", "Venció hace %@ días": "Expired %@ days ago", "Venció": "Expired",
     "Volver a importar": "Import again", "Vuelve aquí y pégalo": "Come back here and paste it", "Ya dejamos listos estos": "We set these up for you",
     "Ya la conecté": "I connected it", "Ya puedes ver lo que quieras.": "You can watch whatever you want.", "Ya tengo cuenta": "I already have an account",

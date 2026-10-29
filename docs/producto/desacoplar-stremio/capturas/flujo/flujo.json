@@ -1,0 +1,188 @@
+[
+  {
+    "file": "01-bienvenida.png",
+    "group": "Guía",
+    "title": "Bienvenida",
+    "note": "La marca y una frase. «Empezar» lleva a Cómo funciona."
+  },
+  {
+    "file": "02-como-funciona.png",
+    "group": "Guía",
+    "title": "Cómo funciona",
+    "note": "Las tres piezas: Real-Debrid y Trakt obligatorios, la TV opcional (en la Mac no sale). «Continuar» va a Real-Debrid."
+  },
+  {
+    "file": "03-real-debrid.png",
+    "group": "Guía",
+    "title": "Real-Debrid · qué es",
+    "note": "Qué es, que se paga por días y no se renueva solo, y el precio. «Ya tengo cuenta» va a la clave; «Crear cuenta en real-debrid.com» abre su web."
+  },
+  {
+    "file": "04-clave-vacia.png",
+    "group": "Guía",
+    "title": "Tu clave · vacía",
+    "note": "Tres pasos: «Abrir» lleva a real-debrid.com/apitoken; copiar; pegar. «Continuar» apagado hasta que la clave sirva."
+  },
+  {
+    "file": "05-clave-comprobando.png",
+    "group": "Guía",
+    "title": "Tu clave · comprobando",
+    "note": "Al pegar (o Intro) la app le pregunta a Real-Debrid en el momento."
+  },
+  {
+    "file": "06-clave-incompleta.png",
+    "group": "Guía",
+    "title": "Tu clave · incompleta",
+    "note": "Se copió a medias: lo dice sin preguntarle a Real-Debrid. «Continuar» sigue apagado."
+  },
+  {
+    "file": "07-clave-no-reconocida.png",
+    "group": "Guía",
+    "title": "Tu clave · no reconocida",
+    "note": "Real-Debrid no la reconoce: que revise la de real-debrid.com/apitoken. «Continuar» apagado."
+  },
+  {
+    "file": "08-cuenta-gratuita.png",
+    "group": "Guía",
+    "title": "Tu clave · cuenta gratuita",
+    "note": "La clave sirve pero sin Premium no hay videos: «Hacerla Premium» abre su web. No se guarda; «Continuar» apagado."
+  },
+  {
+    "file": "09-clave-buena.png",
+    "group": "Guía",
+    "title": "Tu clave · buena",
+    "note": "Usuario · Premium, días que quedan y vencimiento. Se guarda y arma los complementos recomendados. «Continuar» va a Complementos."
+  },
+  {
+    "file": "10-complementos.png",
+    "group": "Guía",
+    "title": "Complementos",
+    "note": "Los recomendados ya armados con tu clave, con interruptor. Quien no sabe qué es solo toca «Continuar» (va a Trakt)."
+  },
+  {
+    "file": "11-trakt-codigo.png",
+    "group": "Guía",
+    "title": "Trakt · código",
+    "note": "El código grande para trakt.tv/activate y «Abrir Trakt». Se avanza solo al aprobarlo."
+  },
+  {
+    "file": "12-trakt-conectado.png",
+    "group": "Guía",
+    "title": "Trakt · conectado",
+    "note": "La cuenta y lo que se trajo (vistos y Mi lista). «Continuar» va a Tu TV."
+  },
+  {
+    "file": "13-tu-tv.png",
+    "group": "Guía",
+    "title": "Tu TV (opcional)",
+    "note": "Cómo conectar tu Orbital con la cámara del iPhone. «Ya la conecté» o «Ahora no» van a Todo listo."
+  },
+  {
+    "file": "14-todo-listo.png",
+    "group": "Guía",
+    "title": "Todo listo",
+    "note": "Resumen de cuentas y, aparte, «¿Usas Stremio?» con «Conectar Stremio» (opcional). «Empezar a ver» cierra la guía e Inicio."
+  },
+  {
+    "file": "15-ajustes.png",
+    "group": "Ajustes",
+    "title": "Ajustes",
+    "note": "El perfil dice solo lo conectado. Conexiones: «Cuentas» (cuánto le queda a Real-Debrid) y «Complementos»; abajo «Cómo funciona Orbital»."
+  },
+  {
+    "file": "16-cuentas-real-debrid.png",
+    "group": "Ajustes",
+    "title": "Cuentas · Real-Debrid",
+    "note": "Usuario · Premium, días y vencimiento; «Renovar» (web), «Cambiar clave» (el mismo campo de la guía), «Quitar»."
+  },
+  {
+    "file": "17-real-debrid-14-dias.png",
+    "group": "Ajustes",
+    "title": "Real-Debrid por vencer",
+    "note": "Faltan 14 días: lo dice el renglón; ese día, a los 3 días y el día que vence llega un aviso de iOS."
+  },
+  {
+    "file": "18-real-debrid-vencido.png",
+    "group": "Ajustes",
+    "title": "Real-Debrid vencido",
+    "note": "Venció hace N días: «Renovar» a la mano."
+  },
+  {
+    "file": "19-trakt-principal.png",
+    "group": "Ajustes",
+    "title": "Trakt · principal",
+    "note": "La cuenta de Trakt, el último aviso mandado y «Desconectar Trakt»."
+  },
+  {
+    "file": "20-stremio-respaldo.png",
+    "group": "Ajustes",
+    "title": "Stremio · respaldo y Tu Orbital",
+    "note": "El único lugar de Ajustes que dice Stremio: conectar o cerrar sesión; «Lo que ves también se guarda ahí, como copia». Abajo, Tu Orbital."
+  },
+  {
+    "file": "21-complementos.png",
+    "group": "Ajustes",
+    "title": "Complementos",
+    "note": "En el orden en que se preguntan, con interruptor, qué aporta y si usa tu Real-Debrid; deslizar quita."
+  },
+  {
+    "file": "22-complementos-ordenar.png",
+    "group": "Ajustes",
+    "title": "Complementos · Ordenar",
+    "note": "Con «Ordenar» se arrastran; «Listo» termina."
+  },
+  {
+    "file": "23-complementos-agregar.png",
+    "group": "Ajustes",
+    "title": "Complementos · Agregar",
+    "note": "Los recomendados que falten, «Pegar dirección» y (con Stremio) «Volver a importar»."
+  },
+  {
+    "file": "24-pegar-direccion.png",
+    "group": "Ajustes",
+    "title": "Pegar dirección",
+    "note": "Se comprueba el complemento antes de guardarlo; si no responde, lo dice."
+  },
+  {
+    "file": "25-como-funciona-orbital.png",
+    "group": "Ajustes",
+    "title": "Cómo funciona Orbital",
+    "note": "El renglón al final de Ajustes que reabre la guía."
+  },
+  {
+    "file": "26-guia-desde-ajustes.png",
+    "group": "Ajustes",
+    "title": "La guía, desde Ajustes",
+    "note": "La misma guía, desde el principio."
+  },
+  {
+    "file": "27-ver-con-real-debrid-vencido.png",
+    "group": "Fuera de la guía",
+    "title": "«Ver» con Real-Debrid vencido",
+    "note": "En vez de «no hay fuentes»: «Tu Real-Debrid venció hace N días» con «Renovar»."
+  },
+  {
+    "file": "28-inicio-sin-stremio.png",
+    "group": "Fuera de la guía",
+    "title": "Inicio sin cuenta de Stremio",
+    "note": "Se entra directo, sin pantalla de Stremio; lo tuyo vive en el teléfono y viaja por Trakt."
+  },
+  {
+    "file": "29-buscar-tendencia-trakt.png",
+    "group": "Fuera de la guía",
+    "title": "Buscar · Lo más popular hoy",
+    "note": "Sale de Trakt «En tendencia» (antes Cinemeta, «Stremio»)."
+  },
+  {
+    "file": "30-para-ti-aprobadas-por-la-critica.png",
+    "group": "Fuera de la guía",
+    "title": "Para ti · Aprobadas por la crítica",
+    "note": "Rotten Tomatoes vía MDBList y una lista de Trakt. Ojo: el título se parte en dos renglones («Aproba-das por…») junto al sello; pendiente de arreglar (es de otra sesión)."
+  },
+  {
+    "file": "31-episodio-marcar-como-no-visto.png",
+    "group": "Fuera de la guía",
+    "title": "Episodio · Marcar como no visto",
+    "note": "En un episodio visto el menú ofrece desmarcarlo; sale de lo visto aquí y en Trakt."
+  }
+]

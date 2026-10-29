@@ -79,6 +79,25 @@ Antes, con `-demo-signed-out` la app abría la pantalla «Entra con tu cuenta de
   Ajustes en el simulador).
 - Probarlo con tu cuenta real de Real-Debrid y Trakt en el iPhone.
 
+### Corte C · pruebas de la guía y capturas del flujo (29 oct 2026)
+
+- Bienvenida: «Tus películas y series en tu bolsillo.» (pedido de Fernando, por la sesión de la nube).
+- `OnboardingUITests` (completar la guía con clave incompleta, no reconocida, gratuita y buena; Trakt con su código; saltar
+  la TV y Stremio; reabrir desde Ajustes), revisando en cada paso que «Continuar» quede dentro de la pantalla:
+  - iPhone SE (3.ª gen, «Orbital QA SE»): pasa.
+  - iPhone 13 mini («Orbital QA mini»): pasa.
+  - iPhone 17 Pro Max: pasa.
+- Lo que encontraron y se arregló: el campo de la clave no se repintaba con el resultado de Real-Debrid (no observaba su
+  modelo: «comprobando», el aviso y «Premium» nunca aparecían) y la fecha de vencimiento salía en el idioma del sistema, no
+  en el de la app.
+- Demo para recorrer la guía sin red (`DemoHTTPClient+Guide.swift`, solo con `-demo-first-run`): la clave que empieza con
+  «BAD» no la reconoce, con «FREE» es gratuita, cualquier otra completa es Premium (143 días); Trakt da el código
+  «7F3K-9QP2» y lo aprueba solo a los 6 s. `-demo-rd 14` (días que quedan) y `-demo-notice rd-vencido`.
+- Capturas del flujo en el iPhone 17 Pro, modo oscuro, a resolución nativa: `capturas/flujo/` con `flujo.json` (qué pasa
+  en cada pantalla y a dónde lleva cada botón). Se sacan con `FlowCaptureUITests` (`TEST_RUNNER_SHOTS=<carpeta>`).
+- Visto en las capturas, sin tocar (es de otra sesión): en Para ti el título «Aprobadas por la crítica» se parte en dos
+  renglones («Aproba-das por…») junto al sello ROTTEN TOMATOES.
+
 ## Corte D · iPhone (29 oct 2026)
 
 **Quedó** (commits `def0a537` y el siguiente):

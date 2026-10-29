@@ -8,7 +8,7 @@ struct OnboardingWelcome: View {
         GuidePage(title: Text(verbatim: ""), primary: Text("Empezar"), next: next) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 OrbitalWordmark(size: DS.Size.wordmark, animated: true).foregroundStyle(DS.text)
-                Text("Tus películas y series, en tu bolsillo y en tu TV.")
+                Text("Tus películas y series en tu bolsillo.")
                     .font(DS.TextRecipe.title.font).foregroundStyle(DS.text)
             }
             .padding(.top, DS.Space.s10)

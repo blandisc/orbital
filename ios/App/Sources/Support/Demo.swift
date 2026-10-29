@@ -55,6 +55,9 @@ enum Demo {
             env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
         case "perdido": env.notify("No cabe en el iPhone", detail: "Hacen falta 2400 MB y hay 1100 MB libres.", tone: .error, action: .downloads, actionTitle: "Descargas")
         case "neutral": env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+        // El aviso al tocar «Ver» con tu Real-Debrid vencido (`TitleView+Acciones`), sin buscar fuentes de verdad.
+        case "rd-vencido": env.notify(String(format: Strings.tr("Tu Real-Debrid venció hace %lld días", language: env.services.appSettings.uiLanguage), 2),
+                                      tone: .warn, actionTitle: "Renovar") {}
         default: break
         }
     }
@@ -191,7 +194,8 @@ enum Demo {
     static var traktBuiltIn: Bool { ProcessInfo.processInfo.arguments.contains("-demo-trakt-builtin") }
 
     /// Secretos de arranque: sesión iniciada y el complemento de demostración.
-    /// Cómo está tu Real-Debrid de mentira (`-demo-rd`): premium (143 días), soon (3 días), expired (hace 2 días), free o invalid.
+    /// Cómo está tu Real-Debrid de mentira (`-demo-rd`): premium (143 días), soon (3 días), expired (hace 2 días), free, invalid
+    /// o un número de días («14»).
     static var realDebrid: String? { value(after: "-demo-rd") }
     static let realDebridToken = String(repeating: "DEMO", count: 13)
 
