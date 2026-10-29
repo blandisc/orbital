@@ -83,6 +83,22 @@ def router(d: Deps) -> APIRouter:
         except (OSError, ValueError):
             return {"how": [], "groups": []}
 
+    @r.get("/api/voice/status")
+    async def voice_status() -> dict:
+        """Ajustes › Voz › «Qué ha oído la consola»: por dónde llegó la última orden (Alexa, el iPhone y Siri, aquí) y las
+        últimas con lo que se dijo, lo que se entendió y si salió bien. Cuando «la voz no funciona», esto dice si la falla
+        está antes de Orbital (no llega nada) o en la consola (llega y no se entiende o no se puede hacer)."""
+        from .. import voice_log
+        from ..alexa_setup import tailscale_url
+
+        entries = await run_in_threadpool(voice_log.read, None, 60)
+        seen = voice_log.last_seen(entries)
+        seen.update({k: v for k, v in (d.extra.get("voice_seen") or {}).items() if v})
+        recent = [{k: e.get(k) for k in ("at", "source", "text", "intent", "understood", "ok", "speech")} for e in entries[-12:]]
+        tunnel = await run_in_threadpool(tailscale_url) if d.alexa_ready else None
+        return {"sources": {"alexa": seen.get("alexa"), "iphone": seen.get("iphone"), "local": seen.get("local")},
+                "alexa": d.alexa_ready, "tunnel": tunnel, "phone_live": d.extra.get("phone_seen"), "recent": recent[::-1]}
+
     @r.get("/api/settings")
     def get_settings() -> dict:
         prefs = catalog.stream_prefs

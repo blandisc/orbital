@@ -38,6 +38,21 @@ def record(entry: dict, path: Path | None = None) -> None:
         log.debug("No pude anotar la voz: %s", exc)
 
 
+def last_seen(entries: list[dict]) -> dict[str, float]:
+    """Cuándo llegó la última orden de cada lado («alexa», «iphone», «local»), en segundos de época. Lo que se registró
+    antes de este arranque también cuenta: así la tele dice «Alexa: hace 8 días» y no «Nunca» tras reiniciar."""
+    seen: dict[str, float] = {}
+    for entry in entries:
+        source = entry.get("source") or "alexa"
+        try:
+            at = time.mktime(time.strptime(str(entry.get("at") or ""), "%Y-%m-%d %H:%M:%S"))
+        except (ValueError, OverflowError):
+            continue
+        if at > seen.get(source, 0):
+            seen[source] = at
+    return seen
+
+
 def read(path: Path | None = None, limit: int = 200) -> list[dict]:
     """Los últimos pedidos (para revisar qué falla)."""
     path = path or default_path()

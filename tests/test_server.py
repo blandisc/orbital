@@ -95,6 +95,22 @@ def test_system_and_alexa_indicator(make_client):
         assert c.get("/api/system", headers=auth).json()["alexa_last"] > 0
 
 
+def test_voice_status_says_where_the_last_order_came_from(make_client):
+    """Ajustes › Voz › «Qué ha oído la consola»: por dónde llegó la última orden (Alexa, el iPhone y Siri, aquí) y las últimas
+    con lo que se dijo y lo que se entendió. Sin eso, «la voz no funciona» no se podía ni ubicar."""
+    with make_client(REMOTE) as c:
+        auth = {"Authorization": "Bearer secreto"}
+        before = c.get("/api/voice/status", headers=auth).json()
+        assert before["sources"] == {"alexa": None, "iphone": None, "local": None} and before["recent"] == []
+        c.post("/api/voice", json={"text": "abre hades"}, headers=auth)
+        c.post("/api/voice", json={"text": "pon pausa", "source": "iphone"}, headers=auth)
+        after = c.get("/api/voice/status", headers=auth).json()
+        assert after["sources"]["alexa"] > 0 and after["sources"]["iphone"] > 0 and after["sources"]["local"] is None
+        assert [e["source"] for e in after["recent"]] == ["iphone", "alexa"]  # la más reciente primero
+        assert after["recent"][1]["text"] == "abre hades" and after["recent"][1]["understood"] == "LaunchGameIntent"
+        assert "ok" in after["recent"][0] and after["recent"][0]["speech"]
+
+
 def test_closed_event_reaches_ui(make_client, library):
     with make_client() as c:
         app_bus = c.app.state.bus

@@ -1,6 +1,6 @@
 /** Comandos de la consola: energía, ventanas, ajustes, mandos, emuladores, actualizar, capturas y Alexa.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, foldersMenu, loadLibrary, memoryMenu, nested, openMenu, openQuick, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, renderHints, resumeRunning, rumble, runnerMenu, settingsMenu, settingsPage, setupMenu, sound, state, stillThere, stopMenu, tourMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, windowsMenu }) {
+export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, foldersMenu, loadLibrary, memoryMenu, nested, openMenu, openQuick, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, renderHints, resumeRunning, rumble, runnerMenu, settingsMenu, settingsPage, setupMenu, sound, state, stillThere, stopMenu, tourMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, windowsMenu }) {
   return {
     "stop": async (command, context) => {
       await api.stop();
@@ -205,15 +205,21 @@ export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, cl
       return openMenu(capturesMenu(state.captures), nested(context));
     },
     "alexa-menu": async (command, context) => {
-      state.voiceGuide ??= await api.voiceCommands().catch(() => null);
-      return openMenu(alexaMenu(state.voiceGuide), nested(context));
+      // La guía (fija) y el estado (vivo: cuándo llegó la última orden de cada lado), a la vez.
+      const [guide, status] = await Promise.all([state.voiceGuide ?? api.voiceCommands().catch(() => null), api.voiceStatus().catch(() => null)]);
+      state.voiceGuide ??= guide;
+      state.voiceStatus = status;
+      return openMenu(alexaMenu(guide, status), nested(context));
+    },
+    "voice-log": async (command, context) => {
+      return openMenu(voiceLogMenu(await api.voiceStatus().catch(() => state.voiceStatus)), nested(context));
     },
     "voice-group": async (command, context) => {
       const group = state.voiceGuide?.groups?.[command.index];
       return group ? openMenu(voiceGroupMenu(group), nested(context)) : undefined;
     },
     "voice-help": async (command, context) => {
-      return openMenu(voiceHelpMenu(), nested(context));
+      return openMenu(voiceHelpMenu(state.voiceStatus), nested(context));
     },
     "diagnostics": async (command, context) => {
       return openMenu(diagnosticsMenu(await api.diagnostics()), nested(context));

@@ -424,6 +424,47 @@ test("Lo que puedes decir: la guía del iPhone (cómo decirlo, cada tema y si no
   assert.equal(alexaMenu(null).title, "Pídeselo a Alexa"); // sin la guía, los ejemplos de siempre
 });
 
+test("Voz: lo esencial primero, dónde hablarle con cuándo llegó lo último de cada lado, y «Qué ha oído la consola»", async () => {
+  const { alexaMenu, voiceLogMenu, voiceHelpMenu, sinceVoice } = await import("../../orbital/web/js/core/menus.js");
+  const now = 1_700_000_000_000;
+  const guide = { core: [{ say: "pausa", note: "Y «dale play»" }], how: [], groups: [{ title: "Juegos", icon: "gamecontroller", commands: [] }] };
+  const status = { alexa: true, sources: { alexa: now / 1000 - 8 * 86400, iphone: now / 1000 - 300, local: null },
+    recent: [{ at: "2026-10-21 18:51", source: "alexa", text: null, intent: "SearchMediaIntent", slots: { query: "los simpson" }, understood: null, ok: true, speech: "Poniendo The Simpsons." },
+      { at: "2026-10-21 18:38", source: "alexa", intent: "FallbackIntent", ok: false, speech: "No entendí eso." }] };
+  const menu = alexaMenu(guide, status, { now });
+  const labels = menu.options.map((o) => o.label);
+  assert.equal(labels[0], "Lo esencial");
+  assert.equal(labels[1], "«pausa»"); // lo esencial va antes que los temas
+  assert.ok(labels.indexOf("Lo esencial") < labels.indexOf("Dónde hablarle") && labels.indexOf("Dónde hablarle") < labels.indexOf("Por tema"));
+  const phone = menu.options.find((o) => o.label.startsWith("El micrófono del control"));
+  assert.equal(phone.value, "Hace 5 min");
+  assert.equal(menu.options.find((o) => o.label === "Alexa").value, "Hace 8 días");
+  const log = menu.options.find((o) => o.command?.type === "voice-log");
+  assert.equal(log.value, "Hace 5 min"); // lo último que llegó, de cualquier lado
+
+  const heard = voiceLogMenu(status, { now });
+  assert.equal(heard.options.find((o) => o.label === "Alexa").value, "Hace 8 días");
+  const rows = heard.options.filter((o) => o.label.startsWith("«"));
+  assert.equal(rows[0].label, "«SearchMediaIntent los simpson»"); // sin texto: el intent y lo dicho en sus huecos
+  assert.equal(rows[0].icon, "check");
+  assert.equal(rows[1].icon, "warning"); // lo que no salió, marcado
+  assert.ok(rows[0].hint.includes("Poniendo The Simpsons."));
+  assert.equal(rows[0].hint, "21 oct 6:51 p. m. · Poniendo The Simpsons."); // cuándo llegó, como se dice
+  const { whenSaid } = await import("../../orbital/web/js/core/menus.js");
+  assert.equal(whenSaid("2026-10-29 15:43:56", new Date(2026, 9, 29, 20, 0)), "hoy 3:43 p. m.");
+  assert.equal(whenSaid("rara"), "rara");
+  assert.equal(voiceLogMenu(null).options.find((o) => o.label === "Nada todavía").icon, "info");
+
+  // Dos días sin una sola orden: la primera fila dice que la falla está antes de la consola.
+  const quiet = voiceHelpMenu({ sources: { alexa: now / 1000 - 8 * 86400 } }, { now });
+  assert.match(quiet.options[0].label, /ninguna orden/);
+  assert.equal(quiet.options[0].value, "Hace 8 días");
+  assert.notEqual(voiceHelpMenu(status, { now }).options[0].icon, "warning"); // con el iPhone hace 5 min, no
+  assert.equal(sinceVoice(null), "Nunca");
+  assert.equal(sinceVoice(now / 1000 - 90, now), "Hace 2 min");
+  assert.equal(sinceVoice(now / 1000 - 5 * 3600, now), "Hace 5 h");
+});
+
 test("abrir lo que ya está abierto: solo «Volver a…» (no «¿Cerrar X? Para abrir X»)", async () => {
   const { switchMenu } = await import("../../orbital/web/js/core/menus.js");
   const same = switchMenu({ running: { title: "Severance · T2 E2" }, title: "Severance · T2 E2", command: { type: "watch" } });
