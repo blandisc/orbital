@@ -1,4 +1,8 @@
-# Orbital para iPhone
+# Orbital para iPhone, iPad y Mac
+
+Una sola app: el iPhone de siempre, el iPad (barra lateral, cualquier orientación, barra de menús con teclado) y la Mac con
+chip de Apple como app «Diseñada para iPad». Lo que depende del aparato vive solo en `App/Sources/Platform/`
+(`PlatformBoundaryTests` lo vigila); plan y cómo instalar en [`docs/producto/ipad-y-mac-2026-10.md`](../docs/producto/ipad-y-mac-2026-10.md).
 
 App compañera de Orbital para ver **películas y series** en el iPhone con tus complementos de Stremio y Real-Debrid.
 Uso personal: no va a la App Store (la regla 5.2.3 lo impide); se instala con tu cuenta de desarrollador o TestFlight interno.

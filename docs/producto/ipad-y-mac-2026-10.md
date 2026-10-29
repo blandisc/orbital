@@ -74,8 +74,25 @@ umbral de pantalla corta es 700 pt. Un commit por pantalla para revertir solo lo
 | 1.4 Pestañas `.sidebarAdaptable` | Hecho |
 | 1.5 Hojas: `.fittedFormSizing()`; el control abre completo en ventana ancha | Hecho |
 | 1.7 Barra de menús (`AppCommands`): Ir (⌘1–3, ⌘F, ⌘R) y Reproducción (espacio, ←/→, ⌘L, Esc) | Hecho |
-| 1.6 Layouts del iPad | En revisión con capturas |
-| 2.x Mac «Diseñada para iPad» | Pendiente |
+| 1.6 Layouts del iPad | Hecho: cuadrícula de pósters con columnas adaptables (`DS.Poster.gridColumns(for:)`); hojas que se desplazan con su alto ideal (`fittedFormSizing(idealHeight:)`); el reproductor es horizontal en ventana ancha si es más ancha que alta |
+| 1.8 Pruebas de iPad | Hecho: `IPadLayoutUITests` (4/4 en «Orbital QA iPad», iPad Pro 11" iOS 27) |
+| Textos por aparato | Hecho: variaciones de dispositivo del catálogo («iPad», «la Mac»), generadas por `scripts/ios_strings.py` |
+| 2.1 Mac «Diseñada para iPad» | Compila y firma (el perfil de desarrollo incluye la Mac). Las pruebas de interfaz no corren ahí (Xcode no lo permite) y abrirla a mano desde una terminal la deja suspendida: se lanza la primera vez desde Xcode (abajo) |
+| 2.2 Lo que no existe en la Mac | Brillo apagado (`ScreenBrightness`); giro no forzado; Live Activities y botones de volumen no hacen nada ahí (supuesto, sin verificar en la Mac) |
+| 2.3 Descargas de fondo, PiP y voz en la Mac | Pendiente de probar en la Mac real |
+
+### Instalar en el iPad y en la Mac
+
+- **iPad:** en Xcode, `Orbital` → tu iPad → Run (como en el iPhone). Con `CURRENT_PROJECT_VERSION=$(git rev-list --count HEAD)` para que cada instalación tenga su número.
+- **Mac (chip de Apple):** `cd ios/App && xcodegen && open Orbital.xcodeproj`, destino **My Mac (Designed for iPad)** → Run. La primera vez Xcode la instala y la abre; después queda en el Launchpad. Por terminal compila con
+  `xcodebuild build -scheme Orbital -destination 'platform=macOS,arch=arm64,variant=Designed for iPad' -allowProvisioningUpdates`.
+
+### Lo que encontró la revisión con capturas
+
+- La medida de la ventana con `ignoresSafeArea` no traía la barra de estado: el control completo quedaba ~50 pt más bajo en iPhone con notch (corregido antes de subir).
+- «¿Qué vemos?» salía cortada a ~70 pt en el iPad (su raíz se desplaza y se medía en «casi nada»).
+- El reproductor del iPad siempre se creía en vertical (la clase vertical del iPad nunca es compacta) y enseñaba el modo iPod en horizontal.
+- Descargas y Ajustes decían «iPhone» en el iPad.
 
 ## Riesgos abiertos
 
