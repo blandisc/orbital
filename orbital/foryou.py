@@ -400,7 +400,6 @@ class ForYou:
         self._logo_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="logos")  # calentar logos, de uno en uno
         self._studio_logos_busy = False
         self._logo_misses: dict[str, float] = {}
-        self._skipped: dict[str, float] = {}  # «Hoy no» de ¿Qué vemos?: IMDb → cuándo
 
     def _key(self, name: str) -> str:
         return (self.catalog.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)
@@ -460,7 +459,7 @@ class ForYou:
         if not self.tmdb.configured:
             return {}
         try:
-            return self.cache.get("tmdb:platforms", SLOW_TTL, lambda: self.tmdb.platforms(self.region))
+            return self.cache.get("tmdb:platforms", SLOW_TTL, lambda: self.tmdb.platforms(self.region), stale=True)
         except SERVICE_ERRORS as exc:
             log.warning("Para ti: no pude leer las plataformas de TMDB: %s", exc)
             return {}
@@ -473,7 +472,7 @@ class ForYou:
         if not auth:
             return []
         try:
-            addons = self.cache.get("stremio:addons", SLOW_TTL, lambda: self._addons(auth))
+            addons = self.cache.get("stremio:addons", SLOW_TTL, lambda: self._addons(auth), stale=True)
         except SERVICE_ERRORS as exc:
             log.warning("Para ti: no pude leer tus complementos de Stremio: %s", exc)
             return []
@@ -553,7 +552,7 @@ class ForYou:
                  "views": [{"id": "day", "label": "Por día"}, {"id": "week", "label": "Semana"}]},
             ]
             try:
-                own = self.cache.get("trakt:lists", MINE_TTL, self.trakt.lists)
+                own = self.cache.get("trakt:lists", MINE_TTL, self.trakt.lists, stale=True)
             except SERVICE_ERRORS as exc:
                 log.warning("Para ti: no pude leer tus listas de Trakt: %s", exc)
                 own = []
@@ -783,7 +782,7 @@ class ForYou:
     def _recent_seeds(self) -> list[dict]:
         """Tus últimos cinco títulos distintos (Trakt), para «Porque viste X»."""
         try:
-            return self.cache.get("trakt:recent", MINE_TTL, self.trakt.recent_watched)
+            return self.cache.get("trakt:recent", MINE_TTL, self.trakt.recent_watched, stale=True)
         except SERVICE_ERRORS as exc:
             log.info("Para ti: no pude leer lo último que viste: %s", exc)
             return []
@@ -1259,7 +1258,7 @@ class ForYou:
         if self.trakt.linked:
             sources = [("recs", "series"), ("recs", "movie"), ("watchlist", None), ("mine", None)]
             try:
-                sources += [(f"list:{r['id']}", None) for r in self.cache.get("trakt:lists", MINE_TTL, self.trakt.lists)[:3]]
+                sources += [(f"list:{r['id']}", None) for r in self.cache.get("trakt:lists", MINE_TTL, self.trakt.lists, stale=True)[:3]]
             except SERVICE_ERRORS:
                 pass
         else:
@@ -1501,8 +1500,7 @@ class ForYou:
         mood = mood if mood in decide_api.MOODS else None
         kind = kind if kind in ("movie", "series") else None
         stamp = now.timestamp()
-        self._skipped = {k: v for k, v in self._skipped.items() if stamp - v < decide_api.SKIP_HOURS * 3600}
-        exclude = set(self._skipped)
+        exclude = self.catalog.state.skipped(decide_api.SKIP_HOURS * 3600, now=stamp)
         if not include_watched:
             exclude |= set(self.watched_ids())
         pool = self._decide_pool()
@@ -1523,7 +1521,7 @@ class ForYou:
     def skip_today(self, imdb: str) -> None:
         """«Hoy no»: esa no vuelve a proponerse en 24 horas."""
         if re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
-            self._skipped[imdb] = time.time()
+            self.catalog.state.skip_today(imdb)
 
     # --- Tu año (como el iPhone) ------------------------------------------------------------------
     def year_review(self, now: datetime | None = None) -> dict | None:

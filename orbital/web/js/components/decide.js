@@ -40,7 +40,8 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
 
   function paintPicks() {
     mount(picksEl, picks.map((p, i) => {
-      const card = Card({ ...p, subtitle: "" }, { onPress: () => (zone === "picks" && i === index ? onPick?.(p) : (zone = "picks", index = i, paint(), onMove?.())) });
+      // Sin el puesto del Top 10 en la esquina: aquí no se ve de qué lista es (el motivo va abajo, en palabras).
+      const card = Card({ ...p, subtitle: "", movement: null, new: false }, { ranked: true, onPress: () => (zone === "picks" && i === index ? onPick?.(p) : (zone = "picks", index = i, paint(), onMove?.())) });
       card.classList.add("decide__card");
       return card;
     }));
@@ -50,7 +51,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
     const p = picks[index];
     name.textContent = p?.title || "";
     const minutes = p?.minutes ? runtime(p.minutes * 60) : "";
-    why.textContent = p ? [p.kind === "series" ? (minutes ? `${minutes} por episodio` : "Serie") : minutes,
+    why.textContent = p ? [p.why, p.kind === "series" ? (minutes ? `${minutes} por episodio` : "Serie") : minutes,
       p.imdb_rating ? `IMDb ${p.imdb_rating}` : "", genreNames(p.genres || []).slice(0, 2).join(", "),
       p.episode ? `Sigue ${p.episode}` : ""].filter(Boolean).join(" · ") : "";
     overview.textContent = p?.overview || "";

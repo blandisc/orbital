@@ -26,6 +26,9 @@ from .store import ItemStore
 
 log = logging.getLogger(__name__)
 
+# Hasta cuánto después de abrir algo, cancelarlo en la pantalla de carga deshace el «jugado» (s).
+LAUNCH_UNDO_WINDOW = 300
+
 GFN_START_TIMEOUT = 60.0  # s para que la app abra el juego (con la app cerrada: ~6 s; con fila de espera, más)
 GFN_READY_TIMEOUT = 30.0  # s de pantalla de carga como mucho en GeForce NOW (luego se ve su fila de espera)
 
@@ -113,6 +116,8 @@ class Sessions:
         # El último emulador abierto: si truena al arrancar se reintenta UNA vez (Eden a veces se
         # cierra en el primer intento, sobre todo al volver de suspender, y al segundo abre bien).
         self._last_launch: dict | None = None
+        # Lo último que se anotó como abierto y cómo estaba antes: cancelar en la pantalla de carga lo deshace.
+        self._launch_undo: tuple[str, dict | None, float] | None = None
         # Un lanzamiento a la vez: A dos veces seguidas (o mando + Alexa) abría dos emuladores.
         self._launch_lock = threading.RLock()
         # Cuándo pediste ir a Orbital (Home, Legion L): el vigilante del foco deja de regresar el juego.
@@ -167,7 +172,7 @@ class Sessions:
             display.resolution.restore()  # nada que no sea Switch o Xbox 360 se abre con la tele en 1080p
         if item.source in ("stremio", "cinemeta") or item.id == "media:stremio":
             self.open_stremio(item.uri if item.id != "media:stremio" else None, item.title)
-            self.state.record_launch(item.id)
+            self._record_launch(item.id)
             return item
         if item.source == "geforcenow":
             # La app es de instancia única: se vigila por ejecutable. Los juegos también los abre la app (con su ruta); un
@@ -190,7 +195,7 @@ class Sessions:
                     raise
                 self.revealing = self.to_front(item.id, item.title, "GeForce NOW", pinned=pinned,
                                                ready=lambda: _cloud_game_ready(exe), timeout=GFN_READY_TIMEOUT)
-            self.state.record_launch(item.id)
+            self._record_launch(item.id)
             return item
         if runner or item.argv:
             emulator_clock.sync_for(argv or [])  # su hora, la de la computadora (los de Switch traen la suya)
@@ -222,8 +227,20 @@ class Sessions:
             self.launcher.track(item.id, item.title, None, steam_appid=item.steam_appid)
         else:
             raise NotLaunchable(f"{item.title} no tiene forma de lanzarse")
-        self.state.record_launch(item.id)
+        self._record_launch(item.id)
         return item
+
+    def _record_launch(self, item_id: str) -> None:
+        self._launch_undo = (item_id, self.state.record_launch(item_id), time.monotonic())
+
+    def forget_launch(self) -> bool:
+        """B en la pantalla de carga: lo que cancelaste no cuenta como jugado (ni «Jugaste hace 2 min» ni sube al Inicio)."""
+        undo, self._launch_undo = self._launch_undo, None
+        if undo is None or time.monotonic() - undo[2] > LAUNCH_UNDO_WINDOW:
+            return False
+        self.state.undo_launch(undo[0], undo[1])
+        log.info("Cancelado al abrir: %s no cuenta como jugado", undo[0])
+        return True
 
     def watch_program_switch(self, item: LibraryItem, argv: list[str], cwd: str | None, runner: str | None) -> None:
         """Xenia: cuando el juego pide abrir su otro programa (Black Ops II, de la campaña a Zombies), Orbital relanza Xenia

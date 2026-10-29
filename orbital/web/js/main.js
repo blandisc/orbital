@@ -46,6 +46,7 @@ import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from 
 import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows, miMediaItem, stageJump, stageSide } from "./core/media-plan.js";
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
+import { sized } from "./core/images.js";
 
 const state = createState();
 // La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
@@ -417,7 +418,8 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
     const item = current();
     preloadAround(next.r, next.c);
     ui.hero.update(item, glyphs(), { runningId: state.running?.id });
-    ui.backdrop.show(item?.hero || item?.image, { poster: !!item && !item.hero, pixel: !!item?.extra?.hero_lowres });
+    // El fondo a pantalla completa, del ancho de la pantalla (el original de metahub o de Steam pesaba hasta ~8 MB ya abierto).
+    ui.backdrop.show(sized(item?.hero || item?.image, innerWidth), { poster: !!item && !item.hero, pixel: !!item?.extra?.hero_lowres });
     const count = state.rows[next.r]?.items.length ?? 1;
     ui.backdrop.parallax(count > 1 ? next.c / (count - 1) : 0);
   }
@@ -443,7 +445,7 @@ function preloadAround(r, c) {
   const rows = state.rows || [];
   const near = [...(rows[r]?.items.slice(c + 1, c + 5) || []), ...(rows[r + 1]?.items.slice(0, 3) || [])];
   for (const item of near) {
-    for (const url of [item?.extra?.logo && trimmedLogo(item.extra.logo), item?.hero]) {
+    for (const url of [item?.extra?.logo && trimmedLogo(item.extra.logo), sized(item?.hero, innerWidth)]) {
       if (!url || preloaded.has(url)) continue;
       if (preloaded.size > 400) preloaded.clear();
       preloaded.add(url);
@@ -1383,7 +1385,7 @@ function cancelLaunch() {
   state.launchLockedUntil = 0;
   ui.launch.hide();
   sound.play("back");
-  api.stop().catch(() => {});
+  api.stop({ cancelled: true }).catch(() => {});
   ui.toast.show(title ? `Cancelé ${title}` : "Cancelado");
 }
 

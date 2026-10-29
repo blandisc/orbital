@@ -48,7 +48,7 @@ class State:
         # "inbox": lo que la TV le manda al iPhone y él aún no recoge (id → pendiente; ver companion.py).
         # "opened": cuándo entraste por última vez a cada consola (fila → cuándo): lo nuevo deja de anunciarse.
         self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}, "dismissed": {}, "inbox": {},
-                            "opened": {}, "sync": {}}
+                            "opened": {}, "sync": {}, "skipped": {}}
         self._frozen = False  # no se pudo leer el archivo: se vive en memoria y NO se pisa
         if path and path.exists():
             self._load(path)
@@ -99,6 +99,7 @@ class State:
         self._data["prefs"] = {k: v for k, v in self._data["prefs"].items() if isinstance(v, dict)}
         self._data["seen"] = {k: number(v) for k, v in self._data["seen"].items()}
         self._data["dismissed"] = {k: number(v) for k, v in self._data["dismissed"].items()}
+        self._data["skipped"] = {k: number(v) for k, v in self._data["skipped"].items()}
         self._data["settings"] = {k: v for k, v in self._data["settings"].items() if _setting_ok(k, v)}
         self._data["inbox"] = {k: v for k, v in self._data["inbox"].items() if isinstance(v, dict) and v.get("action") in ("open", "download")}
         rev = self._data["sync"].get("rev")
@@ -124,11 +125,24 @@ class State:
                 time.sleep(.15)
 
     # --- historial -----------------------------------------------------------
-    def record_launch(self, item_id: str, now: float | None = None) -> None:
+    def record_launch(self, item_id: str, now: float | None = None) -> dict | None:
+        """Anota que se abrió; devuelve cómo estaba antes (None = nunca), para deshacerlo si se cancela."""
         with self._lock:
+            before = self._data["history"].get(item_id)
+            before = dict(before) if isinstance(before, dict) else None
             entry = self._data["history"].setdefault(item_id, {"playtime": 0, "launches": 0})
             entry["last_played"] = now or time.time()
             entry["launches"] = int(entry.get("launches") or 0) + 1
+            self._save()
+            return before
+
+    def undo_launch(self, item_id: str, before: dict | None) -> None:
+        """Cancelaste en la pantalla de carga: el historial vuelve a como estaba (no cuenta como jugado)."""
+        with self._lock:
+            if before is None:
+                self._data["history"].pop(item_id, None)
+            else:
+                self._data["history"][item_id] = dict(before)
             self._save()
 
     def record_session(self, item_id: str, seconds: float) -> None:
@@ -254,6 +268,24 @@ class State:
                 for old in sorted(dismissed, key=dismissed.get)[:len(dismissed) - MAX_DISMISSED]:
                     del dismissed[old]
             self._save()
+
+    # --- «Hoy no» de ¿Qué vemos?: no vuelve a proponerse en unas horas (ni tras reiniciar Orbital) -------------
+    def skip_today(self, imdb: str, now: float | None = None) -> None:
+        with self._lock:
+            self._data["skipped"][imdb] = now or time.time()
+            self._save()
+
+    def skipped(self, max_age: float, now: float | None = None) -> set[str]:
+        """Lo que dijiste «Hoy no» hace menos de `max_age` segundos (lo viejo se olvida aquí mismo)."""
+        stamp = now or time.time()
+        with self._lock:
+            skipped = self._data["skipped"]
+            old = [k for k, v in skipped.items() if stamp - v >= max_age]
+            for k in old:
+                del skipped[k]
+            if old:
+                self._save()
+            return set(skipped)
 
     # --- elecciones compartidas con el iPhone (audio, variante, subtítulos de cada título) ---------------
     def _bump(self) -> int:

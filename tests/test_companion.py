@@ -567,3 +567,12 @@ def test_the_public_port_serves_the_companion_with_the_token(library, monkeypatc
         assert c.post("/api/companion/console", json={"close_app": "Nada"}, headers=auth).status_code == 404
         assert c.post("/api/companion/game", json={"action": "formatear"}, headers=auth).status_code == 400
         assert c.get("/api/art/steam:1145360?kind=cover").status_code == 401  # el arte también pide el token
+
+
+def test_the_iphone_gets_big_answers_compressed(library):
+    """Por el túnel (datos móviles), lo grande viaja comprimido."""
+    main = create_app(library.config, library)
+    with TestClient(create_public_app(library.config, main), client=("127.0.0.1", 2)) as c:
+        res = c.get("/api/foryou", headers={"Authorization": "Bearer secreto", "Accept-Encoding": "gzip"})
+    assert res.status_code == 200 and len(res.content) > 1024
+    assert res.headers.get("content-encoding") == "gzip"

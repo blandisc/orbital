@@ -30,7 +30,7 @@ def test_web_art_is_downloaded_once_and_shrunk_to_the_card(tmp_path):
 def test_only_known_art_sites_and_failures_fall_back():
     assert remote_art.allowed("https://image.tmdb.org/t/p/w500/x.jpg")
     assert not remote_art.allowed("https://evil.example/x.jpg") and not remote_art.allowed("http://images.metahub.space/x")
-    assert remote_art.snap(100) == 160 and remote_art.snap(700) == 960 and remote_art.snap(5000) == 1280
+    assert remote_art.snap(100) == 160 and remote_art.snap(700) == 960 and remote_art.snap(5000) == 1920
 
 
 def test_api_serves_the_small_copy_or_sends_to_the_original(make_client, monkeypatch):

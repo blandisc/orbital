@@ -173,9 +173,9 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     const main = columns.slice(0, COLS);
     const weights = main.map((_, c) => (mode === "focus" && c === focus.col ? GROW : 1));
     const r = ring();
-    // Protector de pantalla: el mosaico va con el margen de la TV a los lados, y ese margen se llena con una columna de más
-    // en cada orilla (solo se ve un pedazo; el resto queda fuera de la pantalla): así no hay franjas vacías.
-    const inset = document.body.dataset.screensaver === "true" ? tokenPx("--page-gutter") : 0;
+    // El mosaico va con el margen de la TV a los lados (el foco nunca cae donde una tele recorta la orilla), y ese margen
+    // se llena con una columna de más en cada orilla (solo se ve un pedazo y no se enfoca): así no hay franjas vacías.
+    const inset = tokenPx("--page-gutter");
     const start = inset + r;
     const unit = (W - 2 * start - g * (COLS - 1)) / weights.reduce((a, b) => a + b, 0);
     unitW = unit;
@@ -364,7 +364,9 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     setTimeout(() => { if (mode === "ambient") el.classList.add("foryou-mosaic--drifting"); }, 560);
   }
 
-  /** Cualquier botón: reinicia la espera y, si estaba en ambiente, enfoca lo que quedó al centro. */
+  /** Cualquier botón: reinicia la espera y, si estaba en ambiente, vuelve al foco.
+   *  false = ya estaba enfocado · "kept" = la pieza que tenías sigue a la vista: se queda y el botón cuenta ·
+   *  true = se fue de la pantalla: se enfoca lo que quedó al centro y el botón solo despierta. */
   function wake() {
     clearTimeout(idleTimer);
     coveredSeen = false;
@@ -372,11 +374,17 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     if (mode === "focus") return false;
     el.classList.remove("foryou-mosaic--drifting");
     const { H } = size();
-    const c = 2;
-    focus = { col: c, row: nearestTile(columns[c].tiles, columns[c].offset, H / 2) };
+    const col = columns[focus.col];
+    const prev = col?.tiles[focus.row];
+    const middle = prev ? prev.top + prev.h / 2 - col.offset : -1; // al menos media pieza a la vista (el ambiente sube las columnas impares)
+    const seen = middle >= 0 && middle <= H;
+    if (!seen) {
+      const c = 2;
+      focus = { col: c, row: nearestTile(columns[c].tiles, columns[c].offset, H / 2) };
+    }
     mode = "focus";
     paint();
-    return true;
+    return seen ? "kept" : true;
   }
 
   // --- botones ----------------------------------------------------------------------------------
@@ -423,7 +431,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   /** true = se movió · "edge" = nada hacia allá · "exit" = B sin a dónde volver · false = no es suyo. */
   function handle(action) {
     if (!pool.length) return action === "back" ? "exit" : false;
-    if (wake()) return true; // el primer botón solo despierta
+    if (wake() === true) return true; // la pieza se fue de la pantalla: el primer botón solo despierta
     if (action === "left") return move(-1, 0);
     if (action === "right") return move(1, 0);
     if (action === "up") return move(0, -1);

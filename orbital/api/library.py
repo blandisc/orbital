@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -11,6 +13,10 @@ from starlette.concurrency import run_in_threadpool
 
 from .. import thumbs
 from .deps import Deps
+
+# El arte de internet espera en su propia fila: una imagen que aún no está en disco tarda hasta 10 s en bajar, y antes
+# ocupaba uno de los hilos de todas las peticiones (con el mosaico frío, 40 a la vez trababan menús, foco y estado).
+_WEB_ART = ThreadPoolExecutor(max_workers=6, thread_name_prefix="art-web")
 
 
 class PrefsRequest(BaseModel):
@@ -112,13 +118,13 @@ def router(d: Deps) -> APIRouter:
         return art_response(catalog, item_id, kind, w)
 
     @r.get("/api/img")
-    def web_art(u: str, w: int = 480):
+    async def web_art(u: str, w: int = 480):
         """El arte de internet al ancho en que se ve (remote_art.py); si no se pudo, la dirección original."""
         from .. import remote_art
 
         if not remote_art.allowed(u):
             raise HTTPException(404)
-        path = remote_art.sized(u, max(120, min(1280, w)))
+        path = await asyncio.get_running_loop().run_in_executor(_WEB_ART, remote_art.sized, u, max(120, min(1920, w)))
         if path is None:
             return RedirectResponse(u, status_code=307)
         return FileResponse(path, media_type=image_type(path), headers={"Cache-Control": "max-age=604800"})
@@ -135,7 +141,7 @@ def art_response(catalog, item_id: str, kind: str = "cover", w: int | None = Non
     if not path or not Path(path).is_file():
         raise HTTPException(404)
     if w is not None and kind in ("cover", "hero"):  # la tarjeta pide la imagen a su tamaño (thumbs.py)
-        path = thumbs.thumbnail(Path(path), max(120, min(1280, w)), catalog.thumbs_dir())
+        path = thumbs.thumbnail(Path(path), max(120, min(1920, w)), catalog.thumbs_dir())
     # Windows no siempre conoce .webp: sin esto salía como «application/octet-stream».
     media_type = "image/webp" if str(path).lower().endswith(".webp") else None
     return FileResponse(path, media_type=media_type, headers={"Cache-Control": "max-age=86400"})
