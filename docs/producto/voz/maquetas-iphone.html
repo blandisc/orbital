@@ -163,6 +163,7 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
   <h1>La voz en el iPhone: cómo se vería</h1>
   <p class="lede">Maquetas para decidir la fase 2 del replanteo de voz (<code>docs/voz.md</code>, rama <code>claude/voz-replanteo</code>). Cada lámina pone el <b>hoy</b> junto a la <b>propuesta</b>. Están dibujadas fieles al código de la app (colores, radios, letra y piezas del catálogo: <code>RemoteSheet</code>, <code>VoiceCommandBar</code>, <code>VoiceChoices</code>, <code>VoiceGuideView</code>, <code>OrbitalIntents</code>), no son capturas.</p>
   <div class="legend"><span><b>Hoy</b>: lo que ya hace la app.</span><span><b style="color:var(--live)">Propuesta</b>: lo que cambiaría.</span><span>Frases de voz entre «».</span></div>
+  <p class="lede" style="margin-top:14px;font-size:14px"><b style="color:var(--text)">Cotejadas con la propuesta «Orbital por voz» (secciones 04, 05, 06 y 08).</b> Ajustes: se enseña «prende la tele» (no «prende la consola»); «pon la tele» pasa a «pon la tele en vivo»; con varias coincidencias la voz pone la más probable y la lista sale con «Otro»; el error usa «Qué revisar»; y se marca un choque de la propuesta sobre cuántas frases quedan en Siri.</p>
 </header>
 <nav class="toc">
   <a href="#l1">1 · Hoja corta</a><a href="#l2">2 · Escuchando</a><a href="#l3">3 · Respuesta</a><a href="#l4">4 · Varias</a><a href="#l5">5 · Sin conexión</a><a href="#l6">6 · Guía</a><a href="#l7">7 · Siri</a><a href="#l8">8 · iPad y Mac</a><a href="#dec">Decisiones</a>
@@ -231,7 +232,7 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
           <div style="display:flex;gap:8px;align-items:center;margin-bottom:22px"><span style="color:var(--live)">◐</span><b style="font-size:20px">Tu Orbital</b><span class="sub" style="margin-left:auto">En Inicio</span></div>
           <div class="micbig">🎙</div>
           <div class="miclabel">Dile a Orbital</div>
-          <div class="chips"><span class="chip">«sigue viendo»</span><span class="chip">«pon la tele»</span><span class="chip">«qué sale hoy»</span></div>
+          <div class="chips"><span class="chip">«sigue viendo»</span><span class="chip">«pon la tele en vivo»</span><span class="chip">«qué sale hoy»</span></div>
           <div class="btns" style="margin-top:18px"><span class="btn">✋ Moverte por la TV</span><span class="btn">⌨︎ Escribir</span></div>
         </div><div class="home"></div></div></div>
       <p class="cap">Hoy, sin nada sonando, la hoja abre ya estirada con el pad. Aquí abre corta con la voz al frente y el pad a un toque.</p>
@@ -280,7 +281,7 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
 <section class="lamina" id="l3">
   <div class="eyebrow">LÁMINA 3</div>
   <h2>La respuesta: qué hizo, qué entendió y cómo corregir</h2>
-  <div class="nota"><b>Qué cambia:</b> hoy la respuesta reemplaza el texto de la barra («Poniendo The Office») y debajo, chiquito, «Entendí: …». Si se equivocó no hay salida: vuelves a hablar. La propuesta enseña la respuesta con su póster, «Entendí: …» siempre, y dos salidas: <b>«Otro»</b> (no era ese título: abre las opciones parecidas) y <b>«Elegir episodio»</b> (era la serie, pero no ese capítulo).<br><b>Por qué:</b> corregir con un toque es más rápido que volver a dictar.</div>
+  <div class="nota"><b>Qué cambia:</b> hoy la respuesta reemplaza el texto de la barra («Poniendo The Office») y debajo, chiquito, «Entendí: …». Si se equivocó no hay salida: vuelves a hablar. La propuesta enseña la respuesta con su póster, «Entendí: …» siempre, y dos salidas: <b>«Otro»</b> (no era ese título: abre las opciones parecidas) y <b>«Elegir episodio»</b> (era la serie, pero no ese capítulo).<br><b>Por qué:</b> corregir con un toque es más rápido que volver a dictar. Si la tele estaba apagada, la respuesta lo dice: «Prendiendo la tele y poniendo The Office» (propuesta, sección 04).</div>
   <div class="row">
     <div class="col">
       <span class="tag hoy">Hoy</span>
@@ -323,7 +324,7 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
 <section class="lamina" id="l4">
   <div class="eyebrow">LÁMINA 4</div>
   <h2>Cuando hay varias: póster por opción</h2>
-  <div class="nota"><b>Qué cambia:</b> la pieza ya existe (<code>VoiceChoices</code>) pero sale solo con el control estirado, debajo de la barra, entre el pad y las teclas. La propuesta la deja en la hoja corta, con pregunta clara («¿Cuál Dune?»), póster más grande, año y tipo, y «Ninguna» para escribirlo.<br><b>Por qué:</b> es el momento en que la voz no puede adivinar; la elección tiene que verse completa, no apretada.</div>
+  <div class="nota"><b>Qué cambia:</b> la pieza ya existe (<code>VoiceChoices</code>) pero sale solo con el control estirado, debajo de la barra, entre el pad y las teclas. La propuesta la deja en la hoja corta, con pregunta clara («¿Cuál Dune?»), póster más grande, año y tipo, y «Ninguna» para escribirlo.<br><b>Por qué:</b> es el momento en que la voz no puede adivinar; la elección tiene que verse completa, no apretada.<br><b>Ajuste con la propuesta (04):</b> ante la duda la voz pone la más probable (la que viste o jugaste más reciente) y lo dice: «Poniendo Dune: Parte dos. Di otro para cambiar». Esta lista sale solo al tocar o decir «Otro», o cuando no hay ninguna pista.</div>
   <div class="row">
     <div class="col">
       <span class="tag hoy">Hoy</span>
@@ -361,7 +362,7 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
 <section class="lamina" id="l5">
   <div class="eyebrow">LÁMINA 5</div>
   <h2>Sin conexión: decir qué tramo falló</h2>
-  <div class="nota"><b>Qué cambia:</b> hoy dice «Tu Orbital no contesta · revisa que esté prendida y en la misma red», aunque estés fuera de casa y el problema sea el túnel. La propuesta dibuja el camino (iPhone → casa o túnel → consola) y marca en rojo el tramo que no respondió, con el arreglo de ese tramo y «Probar otra vez».<br><b>Por qué:</b> «no funciona» se vuelve «el túnel está trabado», que sí se puede arreglar.</div>
+  <div class="nota"><b>Qué cambia:</b> hoy dice «Tu Orbital no contesta · revisa que esté prendida y en la misma red», aunque estés fuera de casa y el problema sea el túnel. La propuesta dibuja el camino (iPhone → casa o túnel → consola) y marca en rojo el tramo que no respondió, con el arreglo de ese tramo y «Probar otra vez».<br><b>Por qué:</b> «no funciona» se vuelve «el túnel está trabado», que sí se puede arreglar.<br><b>La propuesta (08) lo escribe sin dibujo:</b> «Tu Orbital no contesta · Probé en casa y por el túnel. En casa: ✓ red · ✕ Orbital. ¿Está prendida la consola?», con «Probar otra vez» y «Qué revisar». Es la alternativa de la decisión 6.</div>
   <div class="row">
     <div class="col">
       <span class="tag hoy">Hoy</span>
@@ -392,7 +393,7 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
             <div class="node"><div class="dot">🖥</div>Consola<br><span style="color:var(--faint)">¿?</span></div>
           </div>
           <div class="notice" style="background:rgba(240,87,77,.12);border:1px solid rgba(240,87,77,.35)"><b>El túnel no contesta.</b> A veces se traba aunque diga «on». En casa, ábrelo de nuevo en la consola (Ajustes › Conexión).</div>
-          <div class="btns"><span class="btn pri">Probar otra vez</span><span class="btn">Probar la conexión</span></div>
+          <div class="btns"><span class="btn pri">Probar otra vez</span><span class="btn">Qué revisar</span></div>
         </div><div class="home"></div></div></div>
     </div>
     <div class="col">
@@ -410,8 +411,8 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
             <div class="link grey"><span style="color:var(--faint)">Túnel</span></div>
             <div class="node" style="opacity:.45"><div class="dot">🌐</div>no se<br>usa</div>
           </div>
-          <div class="notice" style="background:rgba(240,87,77,.12);border:1px solid rgba(240,87,77,.35)"><b>La consola no contesta en tu red.</b> Revisa que esté prendida y con Orbital abierta. «Prende la consola» funciona aunque esté dormida.</div>
-          <div class="btns"><span class="btn pri">Probar otra vez</span><span class="btn">«prende la consola»</span></div>
+          <div class="notice" style="background:rgba(240,87,77,.12);border:1px solid rgba(240,87,77,.35)"><b>La consola no contesta en tu red.</b> Revisa que esté prendida y con Orbital abierta. «Prende la tele» la despierta aunque esté dormida.</div>
+          <div class="btns"><span class="btn pri">Probar otra vez</span><span class="btn">«prende la tele»</span></div>
         </div><div class="home"></div></div></div>
     </div>
   </div>
@@ -451,7 +452,7 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
           <div class="sh" style="margin-top:4px">Lo esencial<small>Con estas diez haces casi todo. Igual en el iPhone, Siri y Alexa.</small></div>
           <div class="card">
             <div class="grid2">
-              <span class="phr">«prende la consola»</span><span class="phr">«pon The Office»</span>
+              <span class="phr">«prende la tele»</span><span class="phr">«pon The Office»</span>
               <span class="phr">«sigue viendo»</span><span class="phr">«pausa»</span>
               <span class="phr">«siguiente episodio»</span><span class="phr">«sube el volumen»</span>
               <span class="phr">«pon el canal ADN 40»</span><span class="phr">«pon subtítulos»</span>
@@ -496,7 +497,7 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
       <h3 style="color:var(--live)">Propuesta</h3>
       <div style="display:flex;gap:28px"><div class="cnt">8<small>órdenes en la lista</small></div><div class="cnt">+2<small>prender y poner título</small></div><div class="cnt">×2<small>moldes</small></div></div>
       <div class="cloud" style="margin-top:12px">
-        <span class="keep">«Oye Siri, prende Orbital»</span><span class="keep">«pon The Office en Orbital»</span><span class="keep">«sigue viendo en Orbital»</span><span class="keep">«pausa en Orbital»</span><span class="keep">«siguiente episodio en Orbital»</span><span class="keep">«sube el volumen en Orbital»</span><span class="keep">«pon la tele en Orbital»</span><span class="keep">«pon subtítulos en Orbital»</span><span class="keep">«qué sale hoy en Orbital»</span><span class="keep">«sal del video en Orbital»</span>
+        <span class="keep">«Oye Siri, prende la tele en Orbital»</span><span class="keep">«pon The Office en Orbital»</span><span class="keep">«sigue viendo en Orbital»</span><span class="keep">«pausa en Orbital»</span><span class="keep">«siguiente episodio en Orbital»</span><span class="keep">«sube el volumen en Orbital»</span><span class="keep">«pon la tele en vivo en Orbital»</span><span class="keep">«pon subtítulos en Orbital»</span><span class="keep">«qué sale hoy en Orbital»</span><span class="keep">«sal del video en Orbital»</span>
       </div>
       <div class="siriui">
         <div style="color:var(--muted);font-size:12px">Todo lo demás, en dos pasos:</div>
@@ -505,7 +506,8 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
         <div><b>Tú:</b> «ponlo en latino»</div>
         <div><b>Siri:</b> Listo, en español latino.</div>
       </div>
-      <p class="cap" style="text-align:left;max-width:none;margin-top:10px">«Pon el canal ADN 40» no cabe en la lista (Siri no acepta nombres libres dentro de la frase): va como «pon la tele» o en dos pasos.</p>
+      <p class="cap" style="text-align:left;max-width:none;margin-top:10px">«Pon el canal ADN 40» no cabe en la lista (Siri no acepta nombres libres dentro de la frase): va como «pon la tele en vivo» o en dos pasos.</p>
+      <p class="cap" style="text-align:left;max-width:none;margin-top:6px;color:var(--warning)">Ojo: la propuesta se contradice. Su sección 06 deja en Siri «las diez esenciales y tus títulos», pero su tabla de comandos (05) marca con ✓ en Siri unas 20 frases directas, entre ellas «salta la intro», «regresa», «silencio», «cuánto falta», «en latino», «apaga la tele» y «cierra el juego». Esta lámina sigue a la 06; la decisión 7 pide escoger.</p>
     </div>
   </div>
 </section>
@@ -556,11 +558,11 @@ footer{max-width:1180px;margin:64px auto 80px;padding:0 24px;color:var(--muted);
   <h2>Lo que tienes que elegir</h2>
   <div class="decision"><b>1. Micrófono en la hoja corta (lámina 1).</b> ¿Sube al frente, aunque la hoja corta crezca (~120 pt más alta y tapa más de Inicio)? Alternativa más ligera: un renglón «🎙 Dile a Orbital» sin chips. <i>Recomiendo el grande con chips: es lo que hace que la voz se descubra.</i></div>
   <div class="decision"><b>2. Qué hacen los chips.</b> ¿Tocar un chip manda la frase a la TV de inmediato, o solo la enseña como ejemplo? <i>Recomiendo mandarla: sirve de atajo y de lección a la vez.</i></div>
-  <div class="decision"><b>3. Las tres frases por contexto.</b> Viendo: «pausa», «siguiente episodio», «pon subtítulos». En vivo: «pon el canal Las Estrellas», «sube el volumen», «sigue viendo». Navegando: «sigue viendo», «pon la tele», «qué sale hoy». ¿Fijas, o que aprendan de lo que más usas? <i>Recomiendo fijas en la primera versión.</i></div>
+  <div class="decision"><b>3. Las tres frases por contexto.</b> Viendo: «pausa», «siguiente episodio», «pon subtítulos». En vivo: «pon el canal Las Estrellas», «sube el volumen», «sigue viendo». Navegando: «sigue viendo», «pon la tele en vivo», «qué sale hoy». ¿Fijas, o que aprendan de lo que más usas? <i>Recomiendo fijas en la primera versión.</i></div>
   <div class="decision"><b>4. Navegando sin nada sonando.</b> ¿La hoja abre corta con la voz al frente (y el pad a un toque) o sigue abriendo estirada con el pad como hoy? <i>Recomiendo corta con voz.</i></div>
   <div class="decision"><b>5. «Otro» y «Elegir episodio» (lámina 3).</b> ¿Las dos salidas, o solo «Otro»? «Elegir episodio» abre los episodios en la TV o en el teléfono — hay que escoger dónde.</div>
-  <div class="decision"><b>6. El error con tramos (lámina 5).</b> ¿Dibujo del camino o solo la frase («El túnel no contesta»)? El dibujo ocupa más, pero se entiende sin leer.</div>
-  <div class="decision"><b>7. Siri recortada (lámina 7).</b> ¿Te quedas con las ocho órdenes + prender + títulos? Se pierden de la frase directa «salta la intro», «baja el volumen», «canal siguiente», «en latino» y 15 más (siguen en dos pasos). ¿Alguna de esas la usas a diario y debe quedarse?</div>
+  <div class="decision"><b>6. El error con tramos (lámina 5).</b> ¿Dibujo del camino o solo la frase («El túnel no contesta»)? El dibujo ocupa más, pero se entiende sin leer; la propuesta lo escribe en tres renglones. <i>Recomiendo el dibujo fuera de casa, donde el túnel confunde, y la frase corta en casa.</i></div>
+  <div class="decision"><b>7. Siri recortada (lámina 7).</b> ¿Te quedas con las ocho órdenes + prender + títulos? Se pierden de la frase directa «salta la intro», «baja el volumen», «canal siguiente», «en latino» y 15 más (siguen en dos pasos). ¿Alguna de esas la usas a diario y debe quedarse? Ojo: la tabla 05 de la propuesta deja unas 20 directas; la sección 06, solo diez. <i>Recomiendo las diez + títulos, y sumar solo las que uses a diario (son baratas: «salta la intro» y «en latino»).</i></div>
   <div class="decision"><b>8. iPad y Mac (lámina 8).</b> ¿Mantener la barra espaciadora para hablar en la Mac? Choca si algún día el panel tiene un campo de texto enfocado.</div>
 </section>
 
