@@ -97,8 +97,8 @@ struct HomeView: View {
                 // arriba, su sello de origen y su reflejo (el peso del carrusel de arriba).
                 // Lo tuyo: tus recomendaciones (lo personal ya no va arriba, donde está lo de todos).
                 if !model.forYouPicks.isEmpty {
-                    Rail(title: "Para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas con lo que ves"), source: .trakt) {
-                        ForEach(model.forYouPicks) { s in TitleLink(route: s.route, reflected: true) }
+                    Rail(title: "Para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas con lo que ves"), source: .trakt, reflected: true) {
+                        ForEach(model.forYouPicks) { s in TitleLink(route: s.route) }
                     }
                 }
                 // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
@@ -107,9 +107,9 @@ struct HomeView: View {
                 if !model.upcoming.isEmpty { upcoming(model) }
                 if !model.myList.isEmpty {
                     Rail(title: "Mi lista", count: model.myList.count, route: HomeListRoute(id: "mylist"),
-                         eyebrow: Text("Lo que guardaste"), source: .stremio) {
+                         eyebrow: Text("Lo que guardaste"), source: .stremio, reflected: true) {
                         ForEach(model.myList) { item in
-                            TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster), reflected: true)
+                            TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster))
                                 .contextMenu { listActions(suggestion(item), in: .stremioLibrary) }
                         }
                     }
@@ -117,8 +117,8 @@ struct HomeView: View {
                 // Tus favoritos de Trakt (el corazón de la ficha), después de Mi lista; sin Trakt o sin favoritos, no se pinta.
                 if !model.favorites.isEmpty {
                     Rail(title: "Favoritos", count: model.favorites.count, route: HomeListRoute(id: "favorites"),
-                         eyebrow: Text("Lo que marcaste con el corazón"), source: .trakt) {
-                        ForEach(model.favorites) { s in TitleLink(route: s.route, reflected: true).contextMenu { favoriteActions(s) } }
+                         eyebrow: Text("Lo que marcaste con el corazón"), source: .trakt, reflected: true) {
+                        ForEach(model.favorites) { s in TitleLink(route: s.route).contextMenu { favoriteActions(s) } }
                     }
                 }
             }
@@ -127,6 +127,9 @@ struct HomeView: View {
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
+        #if DEBUG
+        .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazado (capturas de las filas de abajo)
+        #endif
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > DS.Size.titleCollapse } action: { _, down in scrolledDown = down }
         .background(Backdrop(tint: tint.colors))
         // Arriba, el saludo; al bajar (la barra se encoge), algo útil en su lugar: lo que suena en la TV, lo que sale hoy o

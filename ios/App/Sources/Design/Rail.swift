@@ -6,6 +6,8 @@ import OrbitalModels
 extension EnvironmentValues {
     /// El nombre bajo cada póster: sí en cuadrículas, no en las tiras de una sección (el póster ya lo dice).
     @Entry var posterCaptions = true
+    /// Los pósters de esta fila llevan su reflejo debajo (lo pone `Rail(reflected:)`).
+    @Entry var railReflected = false
 }
 
 
@@ -18,9 +20,17 @@ struct Rail<Content: View>: View {
     /// El porqué arriba del título y de dónde viene (su sello).
     var eyebrow: Text?
     var source: ListSource?
+    /// Con el reflejo de cada póster debajo. La fila se encarga de todo: se lo pone a sus pósters y deja que la sección siguiente
+    /// se monte sobre la parte desvanecida (`reflectionTail`), así el aire con lo que sigue es el mismo en toda la app. Antes
+    /// cada pantalla lo ajustaba a mano y en Inicio no: entre «Para ti» y el Top 10 quedaba el reflejo entero más el aire.
+    var reflected = false
     @ViewBuilder var content: () -> Content
 
     var body: some View {
+        if reflected { rail.environment(\.railReflected, true).reflectionTail() } else { rail }
+    }
+
+    private var rail: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Group {
                 if let route {
@@ -54,12 +64,13 @@ struct TitleLink: View {
     var detail: Text?
     /// Cuántos renglones puede ocupar `detail` (2 con letra de accesibilidad en Buscar).
     var detailLines = 1
-    /// Con el reflejo del póster debajo (los renglones de Inicio y Para ti).
+    /// Con el reflejo del póster debajo. En una fila no se pide aquí: lo pone `Rail(reflected:)` para todos sus pósters.
     var reflected = false
     @Environment(\.posterCaptions) private var captions
+    @Environment(\.railReflected) private var railReflected
 
     var body: some View {
-        link.modifier(OptionalPosterReflection(on: reflected && !captions, url: route.poster, title: route.title, width: width))
+        link.modifier(OptionalPosterReflection(on: (reflected || railReflected) && !captions, url: route.poster, title: route.title, width: width))
     }
 
     private var link: some View {
