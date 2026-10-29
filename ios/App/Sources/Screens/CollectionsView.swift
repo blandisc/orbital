@@ -69,7 +69,7 @@ struct CollectionGridView: View {
                     rankedGrid   // un Top: en su orden, con el puesto (como la TV), sin ordenar ni filtrar
                 } else {
                     // Un año ya trae su Películas · Series arriba: el menú no repite ese filtro.
-                    SortableGrid(listID: "\(route.kind):\(route.id)", items: items, watched: { await collections.model.watchedIDs() },
+                    SortableGrid(listID: "\(route.kind):\(route.id)", items: items, collections: collections.model, watched: { await collections.model.watchedIDs() },
                                  imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) },
                                  showsKindFilter: route.kind != .year, loading: isLoading) { s, width in
                         TitleLink(route: s.route, width: width, detail: detail(s))

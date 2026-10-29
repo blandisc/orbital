@@ -286,7 +286,7 @@ struct GenreView: View {
     var body: some View {
         ScrollView {
             // Con el mismo ordenar y filtrar que todo «Ver todo».
-            SortableGrid(listID: "genre:\(genre)", items: items.map(Self.suggestion), loading: !loaded) { s, width in
+            SortableGrid(listID: "genre:\(genre)", items: items.map(Self.suggestion), collections: env.collections, loading: !loaded) { s, width in
                 TitleLink(route: TitleRoute(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster.isEmpty ? nil : s.poster), width: width,
                           detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
             }
@@ -311,10 +311,11 @@ struct GenreView: View {
 /// «Lo más popular hoy» completo (desde su «Ver todo»): con el mismo ordenar y filtrar que toda lista.
 struct PopularGridView: View {
     let model: CatalogModel
+    @Environment(AppEnvironment.self) private var env
 
     var body: some View {
         ScrollView {
-            SortableGrid(listID: "popular", items: model.popular.map(GenreView.suggestion), loading: model.isLoading) { s, width in
+            SortableGrid(listID: "popular", items: model.popular.map(GenreView.suggestion), collections: env.collections, loading: model.isLoading) { s, width in
                 TitleLink(route: s.route, width: width, detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
             }
             .padding(.top, DS.Space.s3)

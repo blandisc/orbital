@@ -134,9 +134,9 @@ struct HomeView: View {
         // Arriba, el ícono y «Orbital» (el carácter de la app); al bajar, en medio, lo más útil que haya (lo que suena en la TV…).
         .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette(tint: tint.colors).navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)) }
-        .onChange(of: AppEnvironment.shared.ui.openSimpsons, initial: true) { _, wants in
+        .onChange(of: env.ui.openSimpsons, initial: true) { _, wants in
             guard wants else { return }
-            AppEnvironment.shared.ui.openSimpsons = false
+            env.ui.openSimpsons = false
             rollingSimpsons = true
         }
         .sheet(isPresented: $showingCalendar) {
@@ -146,12 +146,12 @@ struct HomeView: View {
         .task(priority: .utility) {
             #if DEBUG
             if Demo.isOn, Demo.open?.hasPrefix("simpsons") == true {   // `-demo-open simpsons`: la ruleta sola
-                await env.prefetchSimpsons(); rollingSimpsons = true; return
+                await env.simpsons.prefetch(); rollingSimpsons = true; return
             }
             #endif
             // La ficha de Los Simpson (~650 KB) fuera del arranque: primero Inicio y sus imágenes; si tocas la dona antes, la pide ella.
             try? await Task.sleep(for: .seconds(DS.Simpsons.prefetchDelay))
-            await env.prefetchSimpsons()
+            await env.simpsons.prefetch()
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
@@ -196,7 +196,7 @@ struct HomeView: View {
             : route.id == "foryou" ? home.model.forYouPicks
             : route.id == "favorites" ? home.model.favorites : home.model.myList.map(suggestion)
         return ScrollView {
-            SortableGrid(listID: "home:\(route.id)", items: items) { s, width in
+            SortableGrid(listID: "home:\(route.id)", items: items, collections: env.collections) { s, width in
                 if let list = route.list {
                     TitleLink(route: s.route, width: width).contextMenu { listActions(s, in: list) }
                 } else if route.id == "favorites" {
@@ -262,7 +262,7 @@ struct HomeView: View {
     private func placeHero(_ slot: Int) {
         placingHero = true
         heroSlot = slot
-        DispatchQueue.main.async { placingHero = false }
+        Task { @MainActor in placingHero = false }   // en el siguiente turno, ya pintado el salto
     }
 
     /// Cuántos de «Destacado» van en el carrusel.
@@ -385,7 +385,8 @@ struct HomeView: View {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                     ForEach(model.continueWatching) { item in
                         Button { Task { await env.play(item) } } label: {
-                            StillCard(title: item.title, art: item.background ?? item.poster, data: continueData(item), progress: item.progress)
+                            StillCard(title: item.title, art: item.background ?? item.poster, data: continueData(item), progress: item.progress,
+                                      fallback: item.background == nil ? nil : item.poster)
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
@@ -567,9 +568,8 @@ struct HomeView: View {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s4) {
                 ForEach(shown) { item in
                     NavigationLink(value: route(item)) {
-                        StillCard(title: item.title, art: item.background ?? item.poster,
-                                  data: continueData(item),
-                                  progress: item.progress, width: nil)
+                        StillCard(title: item.title, art: item.background ?? item.poster, data: continueData(item),
+                                  progress: item.progress, width: nil, fallback: item.background == nil ? nil : item.poster)
                     }
                     .buttonStyle(.plain)
                     .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } } }

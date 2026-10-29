@@ -434,7 +434,7 @@ extension PlayerScreen {
         // Buscar arrastrando (gesto de pantalla completa) mueve el pulgar igual que arrastrar el slider a mano.
         // Mientras el video llega a donde soltaste (una descarga tarda en buscar), el pulgar se queda ahí: antes regresaba al
         // punto viejo y parecía que no te hacía caso.
-        let shown = scrubbing ?? (dragAxis == .horizontal ? seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
+        let shown = scrubbing ?? (drag.dragAxis == .horizontal ? drag.seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
         return VStack(spacing: DS.Space.s1) {
             // Los sustos (Where's The Jump), marcados sobre la barra; vibra unos segundos antes si pediste el aviso.
             if let scares = model.scares {
@@ -444,7 +444,7 @@ extension PlayerScreen {
             }
             // La barra a todo lo ancho y, debajo, lo visto y lo que falta (sin la hora a la que terminas: no la querías).
             PlayerScrubBar(value: shown, duration: duration, marks: skipMarks(model), ticks: skipTicks(model), clock: { clock($0) },
-                           previewFrom: dragAxis == .horizontal ? seekPositionAtDragStart : nil,
+                           previewFrom: drag.dragAxis == .horizontal ? drag.seekPositionAtDragStart : nil,
                            change: { scrubbing = $0; model.scrub(to: $0) },
                            editing: { editing in
                                if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde

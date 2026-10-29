@@ -937,7 +937,13 @@ enum DS {
     /// Tamaño de los pósters (relación 2:3, como en la TV).
     /// A qué tamaño (lado más largo, en puntos) se reduce cada imagen remota al bajarla (`RemoteImage`).
     enum Image {
-        static let card: CGFloat = 200, mosaic: CGFloat = 192, logo: CGFloat = 240, platformLogo: CGFloat = 96, bleed: CGFloat = 480
+        /// `bleed`: el arte a sangre (la ficha, «En tendencia»). Un fondo 16:9 que llena un marco alto se dibuja más ancho que la
+        /// pantalla (en la ficha de un iPhone, ~800 pt): con 480 se veía agrandado y suave.
+        static let card: CGFloat = 200, mosaic: CGFloat = 192, logo: CGFloat = 240, platformLogo: CGFloat = 96, bleed: CGFloat = 800
+        /// Una tarjeta ancha de lado a lado (la portada de un estreno, `CoverCard`): con `card` se pedía la versión chica (480 px).
+        static let wide: CGFloat = 420
+        /// El desenfoque de la copia que rellena el marco cuando la imagen va completa (`ArtFit.whole`).
+        static let wholeBlur: CGFloat = 28
         /// Basta una miniatura para sacar el color medio del fondo.
         static let tintPixels: CGFloat = 48
         /// La imagen de un aviso («Ya está para ver»): el lado más largo y la calidad del JPEG.

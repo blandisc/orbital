@@ -313,7 +313,7 @@ enum PlayerEngines {
     /// El motor para una reproducción. AetherEngine si está compilado (bandera AETHER_ENGINE) y no se pidió otro; si no, AVPlayer.
     @MainActor static func make(preferred: String = "aether") -> VideoPlayerEngine {
         #if AETHER_ENGINE
-        if preferred == "aether" { return AetherEnginePlayer() }
+        if preferred == "aether", let aether = AetherEnginePlayer() { return aether }
         #endif
         return AVPlayerEngine()
     }

@@ -50,7 +50,7 @@ y un estante por lista. El orden y la fusión de «Lo tuyo» viven en `OrbitalMo
 |---|---|---|
 | `Shelf` (`Shelf.swift`) | `shelf` | Encabezado tocable (logo de plataforma con `DSPlatformLogo` o ícono de la fuente, título, dato secundario, chevron → `ListGridView`) y tira horizontal con `scrollTargetBehavior(.viewAligned)`; esqueletos (`ShelfSkeleton`) mientras carga |
 | `RankedPosterCard` (`Shelf.swift`) | `card__rank` | Top 10 estilo Netflix (solo `chart:*`): cifra enorme en gris (`DS.ink500`, tamaño `DS.Size.rankNumber`) detrás del póster. En `jw:*` el puesto discreto es `DSRankBadge` |
-| `FeatureTile` = `HeroCard` (`Components.swift`) | `tiles` / destacado | Arte a sangre, logo del título (con caída al nombre), etiqueta de razón, «Ver» y «Más». Es la misma pieza que el destacado de Inicio; `logo` y `detailText` son opcionales |
+| `FeatureTile` = `HeroCard` (`Design/Art.swift`) | `tiles` / destacado | Arte a sangre, logo del título (con caída al nombre), etiqueta de razón, «Ver» y «Más». Es la misma pieza que el destacado de Inicio; `logo` y `detailText` son opcionales |
 
 Orden de estantes: Lo tuyo (watchlist + «Tus series» fusionados) → Recomendadas y listas propias de Trakt → Top 10 en Netflix →
 plataformas `jw:*` (el respaldo de TMDB solo si no hay `jw:` ni Top 10 de esa marca) → En tendencia / Lo más popular → catálogos de
@@ -123,8 +123,12 @@ ios/
                             TMDB, Trakt, reproducción (avance, cola sin conexión), descargas, Infuse, ajustes
     Sources/OrbitalModels   modelos de vista (inicio, ficha, reproductor, Para ti…): sin SwiftUI, también se prueban
   App/                    la app (SwiftUI). Se genera con XcodeGen (project.yml)
-    Sources/Design          sistema de diseño: tokens y piezas (los colores salen de palette.json de Orbital)
-    Sources/Screens         pantallas
+    Sources/App             el entorno de la app (AppEnvironment y sus extensiones por tema), la composición de servicios,
+                            el AppDelegate y el estado que solo pinta la raíz (AppUI)
+    Sources/Design          sistema de diseño: tokens y piezas por tema (Badges, Posters, Art, Buttons, Feedback, Filters,
+                            PlayerIndicators, Backdrop, Storage, Labels, RemoteImage…); los colores salen de palette.json de Orbital.
+                            Una pieza no lee el estado de la app (`DesignBoundaryTests`): recibe sus datos y avisa lo que pasa
+    Sources/Screens         pantallas (lo que sí conoce `AppEnvironment`)
     Sources/Platform        descargas en segundo plano, motores de video, red, disco
     Resources               Localizable.xcstrings (es/en), iconos
 scripts/ios_golden.py     valores de referencia que generan las funciones de Python de Orbital (tests/fixtures/ios)
@@ -323,7 +327,7 @@ Un solo sistema de diseño con dos implementaciones espejo: cada pieza lleva el 
 
 | Pieza (iPhone) | Equivale en la TV | Qué hace |
 |---|---|---|
-| `Backdrop` (`Components.swift`) | `backdrop.js` / `--art-tint` / `.backdrop__space` | El tono del arte enfocado o abierto tiñe toda la pantalla (fundido `DS.Motion.tint`, sin movimiento con Reducir movimiento). Sin arte y con `space`: estrellas muy tenues (Inicio, Para ti). Inicio: el destacado; ficha: el póster; Para ti: la pieza enfocada (`Mosaic.onFocusChange`) |
+| `Backdrop` (`Design/Backdrop.swift`) | `backdrop.js` / `--art-tint` / `.backdrop__space` | El tono del arte enfocado o abierto tiñe toda la pantalla (fundido `DS.Motion.tint`, sin movimiento con Reducir movimiento). Sin arte y con `space`: estrellas muy tenues (Inicio, Para ti). Inicio: el destacado; ficha: el póster; Para ti: la pieza enfocada (`Mosaic.onFocusChange`) |
 | `BleedArt` | arte de `FeatureTile` y `.title__backdrop` | Arte a sangre que se funde con el fondo (máscara de gradiente, sin esquinas) |
 | `TitleLogo` | `.title__logo` / `--logo` | Logo de metahub; si no carga, el nombre en texto. `.tile` (mosaico) y `.hero` (destacado y ficha) |
 | `HeroCard` | `FeatureTile` | Destacado de Inicio: arte a sangre, logo, «T2 · E5 · quedan 20 min», Continuar |
@@ -337,7 +341,7 @@ Vocabulario único en `OrbitalCore/Vocabulary.swift` (`runtimeText`, `timeLeft`,
 
 | Dónde | Motivo |
 |---|---|
-| `Design/Components.swift` (`averageColor`) | el color sale de los píxeles del póster, no es un valor de diseño |
+| `Design/Backdrop.swift` (`averageColor`) | el color sale de los píxeles del póster, no es un valor de diseño |
 | `Support/Demo.swift` | demora de red simulada del modo demostración (solo Debug), no es una espera de la interfaz |
 
 ## Límites conocidos

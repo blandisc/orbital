@@ -287,8 +287,7 @@ struct ListsView: View {
     @State private var featuredSlot: Int?
     /// Premios, tus listas de Trakt y «Por año».
     /// Uno para toda la app: cambiar entre mosaico y listas ya no lo vuelve a pedir todo (Mi lista, años, estudios).
-    @State private var collections = ModelObserver(Self.sharedCollections)
-    @MainActor static let sharedCollections = CollectionsModel(AppEnvironment.shared.services)
+    @State private var collections = ModelObserver(AppEnvironment.shared.collections)
     /// El grupo que estás viendo (el índice de arriba lo marca).
     @State private var activeSection: CollectionSection = .forYou
     /// Saltos elegidos en el índice (el toque háptico es de esos, no de cada sección que pasa al deslizar).
@@ -808,7 +807,7 @@ struct ListGridView: View {
                         // Un ranking se lee en su orden: sin ordenar ni filtrar.
                         DSPosterGrid(items: items) { s, width in poster(s, plan, width: width) }
                     } else {
-                        SortableGrid(listID: plan.id, items: items, watched: { await collections.model.watchedIDs() },
+                        SortableGrid(listID: plan.id, items: items, collections: collections.model, watched: { await collections.model.watchedIDs() },
                              imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) },
                                      loading: model.isLoading(shelf: plan)) { s, width in poster(s, plan, width: width) }
                     }

@@ -69,7 +69,8 @@ struct ConsoleStatePanel: View {
     let state: OrbitalRemote.ConsoleState?
     let setPower: (String) -> Void
     let closeApp: (String) -> Void
-    private var language: String { AppEnvironment.shared.services.appSettings.uiLanguage }
+    @Environment(\.locale) private var locale
+    private var language: String { locale.language.languageCode?.identifier ?? "es" }
 
     var body: some View {
         CompanionPanel(title: "La consola") {

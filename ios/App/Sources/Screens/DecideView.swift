@@ -320,7 +320,7 @@ struct DecideView: View {
 
     /// «Terror + 30 min»: lo puesto, en corto.
     private func activeSummary(_ m: DecideModel) -> String {
-        var parts = m.genres.sorted().map(genreName)
+        var parts = m.genres.sorted().map { genreName($0, language: language) }
         if let mood = m.mood { parts.append(Strings.tr(moodLabel(mood), language: language)) }
         if let k = m.kind { parts.append(kindName(k)) }
         if !m.decades.isEmpty { parts.append(m.decades.sorted(by: >).map { decadeName($0) }.joined(separator: ", ")) }
@@ -332,7 +332,7 @@ struct DecideView: View {
     private func relaxName(_ r: DecideModel.Relax, _ m: DecideModel) -> String {
         let tr = { (k: String) in Strings.tr(k, language: language) }
         switch r {
-        case .genre(let g): return String(format: tr("Quitar %@"), genreName(g))
+        case .genre(let g): return String(format: tr("Quitar %@"), genreName(g, language: language))
         case .mood: return tr("Cualquier ánimo")
         case .kind: return tr("Películas y series")
         case .decades: return tr("Cualquier época")
@@ -389,7 +389,7 @@ struct DecideMoreFilters: View {
                 // Mosaicos con el arte de tus sugerencias de cada género (el `id` con lo elegido: ver `FlowChips`).
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
                     ForEach(DecideModel.genreChoices, id: \.self) { g in
-                        DecideTile(title: Text(verbatim: genreName(g)), image: DecideView.tileImage(genre: g), selected: m.genres.contains(g),
+                        DecideTile(title: Text(verbatim: genreName(g, language: env.language)), image: DecideView.tileImage(genre: g), selected: m.genres.contains(g),
                                    dimmed: !m.genres.isEmpty && !m.genres.contains(g), count: m.count { $0.genres = [g] },
                                    height: DS.Decide.genreTile) {
                             if m.genres.contains(g) { m.genres.remove(g) } else { m.genres.insert(g) }

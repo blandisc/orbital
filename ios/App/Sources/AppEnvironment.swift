@@ -25,6 +25,15 @@ final class AppEnvironment {
     @ObservationIgnored private(set) var inbox: InboxModel!
     /// Conectar OneDrive: uno para toda la app (si sales de Ajustes mientras escribes el código, al volver sigue esperando).
     @ObservationIgnored lazy var oneDriveSetup = OneDriveModel(services)
+    /// Premios, tus listas de Trakt y «Por año»: uno para toda la app (cambiar entre mosaico y listas no lo vuelve a pedir todo).
+    @ObservationIgnored lazy var collections = CollectionsModel(services)
+    /// «Un Simpson al azar»: la lógica vive en `SimpsonsModel` (OrbitalModels, con pruebas); aquí se le enchufan las imágenes y el aviso.
+    @ObservationIgnored lazy var simpsons: SimpsonsModel = {
+        let model = SimpsonsModel(services, reelLength: DS.Simpsons.reelLength)
+        model.warmImages = { await ImagePipeline.shared.warmPosters($0) }
+        model.onError = { [weak self] text, detail in self?.notify(text, detail: detail) }
+        return model
+    }()
     @ObservationIgnored private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
     private let liveActivity = DownloadLiveActivityController()
@@ -54,15 +63,18 @@ final class AppEnvironment {
         }
     }
     /// Cambia cada vez que termina una reproducción (aquí o en Infuse): Inicio y la ficha se ponen al día.
-    private(set) var watchedSomething = 0
+    var watchedSomething = 0
     /// Una ficha que pidió abrir un enlace (el widget): `MainTabs` la empuja en Inicio y la vacía.
     var pendingTitle: TitleRoute? { get { ui.pendingTitle } set { ui.pendingTitle = newValue } }
     /// Lo que se abrió en Infuse y está esperando a que vuelva (no se pinta).
-    @ObservationIgnored private var external: ExternalSession?
+    @ObservationIgnored var external: ExternalSession?
     /// Infuse volvió sin duración y no se sabe si terminaste: se pregunta.
     var askFinished: PlayRequest? { get { ui.askFinished } set { ui.askFinished = newValue } }
-    /// Un aviso: lo que pasó («Descargando…») o lo que salió mal.
-    var banner: Banner? { get { ui.banner } set { ui.banner = newValue } }
+    /// Los avisos de la app («Descargando…», lo que salió mal): la cola vive en `NoticeCenter` (OrbitalModels, con pruebas);
+    /// aquí solo se traducen y se mandan. La raíz pinta `notices.current`.
+    let notices = NoticeCenter(queueLimit: DS.Toast.queueLimit)
+    typealias Banner = Notice
+    typealias BannerAction = NoticeAction
     /// Lo que acabas de pasar a la TV desde el reproductor: el aviso con «Deshacer» (regresa al iPhone en el mismo punto).
     var handoff: TVHandoff? { get { ui.handoff } set { ui.handoff = newValue } }
     struct TVHandoff: Equatable {
@@ -70,65 +82,28 @@ final class AppEnvironment {
         var position: Double
         static func == (a: TVHandoff, b: TVHandoff) -> Bool { a.request.id == b.request.id && a.position == b.position }
     }
-    struct Banner: Equatable {
-        var text: String; var tone: DSNotice.Tone; var action: BannerAction?
-        /// Un segundo renglón («1080p · 2.4 GB») y el nombre del botón (por omisión, «Ver»), con su ícono si lo lleva.
-        var detail: String? = nil
-        var actionTitle: String? = nil
-        var actionSymbol: String? = nil
-        /// Su número: cada aviso es otro aunque diga lo mismo (para animar el cambio y quitar justo ese).
-        var serial = 0
-    }
-    /// Lo que hace el botón de un aviso: ir a Descargas, o lo que pidió quien avisó (`perform`, con su número).
-    enum BannerAction: Equatable { case downloads, perform(Int) }
-    /// Lo que corre el botón de cada aviso con `.perform` (el de la vista y los que esperan).
-    @ObservationIgnored private var performs: [Int: () -> Void] = [:]
-    /// Los que esperan: uno con salida («Deshacer») no se pisa; el siguiente sale cuando ese se va.
-    @ObservationIgnored private var bannerQueue: [Banner] = []
-    @ObservationIgnored private var bannerSerial = 0
 
     /// Un aviso con un botón propio: «Guardada en Mi lista · Cambiar», «Bajando la recomendada · Otra».
-    func notify(_ text: String, detail: String? = nil, tone: DSNotice.Tone = .success, actionTitle: String, actionSymbol: String? = nil,
+    func notify(_ text: String, detail: String? = nil, tone: NoticeTone = .success, actionTitle: String, actionSymbol: String? = nil,
                 perform: @escaping () -> Void) {
         let language = services.appSettings.uiLanguage
-        bannerSerial += 1
-        performs[bannerSerial] = perform
-        show(Banner(text: Strings.message(text, language: language), tone: tone, action: .perform(bannerSerial),
-                    detail: detail.map { Strings.message($0, language: language) }, actionTitle: Strings.tr(actionTitle, language: language),
-                    actionSymbol: actionSymbol))
-    }
-
-    /// Pone el aviso, o lo forma detrás del que está si ese trae salida (así no se pierde un «Deshacer»).
-    func show(_ new: Banner) {
-        var new = new
-        if new.serial == 0 { bannerSerial += 1; new.serial = bannerSerial }
-        if let current = banner, current.action != nil, current.text != new.text {
-            bannerQueue.removeAll { $0.text == new.text }
-            bannerQueue.append(new)
-            while bannerQueue.count > DS.Toast.queueLimit { forget(bannerQueue.removeFirst()) }
-            return
-        }
-        if let current = banner { forget(current) }
-        banner = new
+        let serial = notices.register(perform)
+        notices.show(Notice(text: Strings.message(text, language: language), tone: tone, action: .perform(serial),
+                            detail: detail.map { Strings.message($0, language: language) }, actionTitle: Strings.tr(actionTitle, language: language),
+                            actionSymbol: actionSymbol))
     }
 
     /// Se fue (se acabó su tiempo, lo tocaste o lo deslizaste): sale el siguiente que esperaba.
-    func dismissBanner(_ serial: Int) {
-        guard let current = banner, current.serial == serial else { return }
-        forget(current)
-        banner = bannerQueue.isEmpty ? nil : bannerQueue.removeFirst()
-    }
+    func dismissBanner(_ serial: Int) { notices.dismiss(serial) }
 
     /// Su salida: ir a Descargas o lo que pidió quien avisó.
     func runBannerAction(_ banner: Banner) {
         switch banner.action {
         case .downloads: openTab = Self.downloadsTab
-        case .perform(let n): performs[n]?()
+        case .perform(let n): notices.perform(n)
         case nil: break
         }
     }
-
-    private func forget(_ banner: Banner) { if case .perform(let n)? = banner.action { performs[n] = nil } }
 
     /// Una pestaña que un aviso pide abrir («Ver» en «Descargando…»).
     var openTab: Int? { get { ui.openTab } set { ui.openTab = newValue } }
@@ -141,18 +116,18 @@ final class AppEnvironment {
 
     /// Un aviso: lo que arma la app en español se traduce aquí, una sola vez (el aviso ya se pinta tal cual).
     /// Neutral si nadie dice otra cosa: el ámbar es para lo que te necesita y el rojo, para cuando algo se perdió.
-    func notify(_ text: String, detail: String? = nil, tone: DSNotice.Tone = .info, action: BannerAction? = nil, actionTitle: String? = nil) {
+    func notify(_ text: String, detail: String? = nil, tone: NoticeTone = .info, action: BannerAction? = nil, actionTitle: String? = nil) {
         let language = services.appSettings.uiLanguage
-        show(Banner(text: Strings.message(text, language: language), tone: tone, action: action,
-                    detail: detail.map { Strings.message($0, language: language) }, actionTitle: actionTitle.map { Strings.tr($0, language: language) }))
+        notices.show(Notice(text: Strings.message(text, language: language), tone: tone, action: action,
+                            detail: detail.map { Strings.message($0, language: language) }, actionTitle: actionTitle.map { Strings.tr($0, language: language) }))
     }
     /// Un texto armado en español por un modelo (error o aviso), listo para `Text`/`DSNotice` en el idioma de la app.
     func message(_ text: String) -> String { Strings.message(text, language: services.appSettings.uiLanguage) }
     /// Un aviso con datos: la clave («… %@») se traduce primero y luego se llena (`LocalizedStringKey` no encuentra un texto ya armado).
-    func notify(format key: String, _ args: CVarArg..., detail: String? = nil, tone: DSNotice.Tone = .info, action: BannerAction? = nil) {
+    func notify(format key: String, _ args: CVarArg..., detail: String? = nil, tone: NoticeTone = .info, action: BannerAction? = nil) {
         let language = services.appSettings.uiLanguage
-        show(Banner(text: String(format: Strings.tr(key, language: language), arguments: args), tone: tone, action: action,
-                    detail: detail.map { Strings.message($0, language: language) }))
+        notices.show(Notice(text: String(format: Strings.tr(key, language: language), arguments: args), tone: tone, action: action,
+                            detail: detail.map { Strings.message($0, language: language) }))
     }
 
     /// Lo que bajaste de ese video, sin red (si ya no está, a Descargas).
@@ -189,7 +164,7 @@ final class AppEnvironment {
     private init() {
         let transport = BackgroundDownloadTransport()
         self.transport = transport
-        let services = Self.makeServices(transport)
+        let services = AppComposition.makeServices(transport)
         self.core = services
         let store = services.settings   // el almacén es seguro entre hilos: los cierres no tocan nada aislado al hilo principal
         transport.allowsCellular = { !store.value.wifiOnlyDownloads }
@@ -253,7 +228,7 @@ final class AppEnvironment {
         }
         #endif
         DownloadsModel.clearShared()   // los enlaces de «Compartir» de la vez pasada
-        Task.detached(priority: .background) { AppEnvironment.pruneImported() }
+        Task.detached(priority: .background) { ImportedVideos.prune() }
         let settings = services.settings
         liveActivity.language = { settings.value.uiLanguage }
         Task { await liveActivity.follow(services.downloads) }
@@ -278,38 +253,6 @@ final class AppEnvironment {
         }
     }
 
-    private static func makeServices(_ transport: BackgroundDownloadTransport) -> Services {
-        #if DEBUG
-        // Modo demostración: nada toca tu Keychain, tus ajustes ni tus descargas.
-        if Demo.isOn {
-            // `-demo-persist`: lo guardado sobrevive entre aperturas (como en tu iPhone), para medir abrir la app de nuevo.
-            let kv: KeyValueStore = Demo.persist ? UserDefaultsKeyValueStore(prefix: "orbital-demo.") : InMemoryKeyValueStore()
-            SettingsStore(kv).update {
-                if let language = Demo.language { $0.uiLanguage = language }
-                if !Demo.noTV { $0.orbitalAddress = "tv.demo.invalid" }
-                // `-demo-trakt-builtin`: sin Client ID en Ajustes (el incluido en la app), como un iPhone sin consola.
-                if (Demo.scrobble || Demo.airings || Demo.because || Demo.trakt) && !Demo.traktBuiltIn { $0.traktClientID = "demo" }
-                if let style = Demo.value(after: "-demo-because-style") { $0.becauseStyle = style }
-                if let state = Demo.oneDrive, state != "off" { $0.oneDriveClientID = "demo" }
-                if Demo.oneDrive == "linked" { $0.oneDriveFolder = "Películas" }
-            }
-            Demo.prefillScrobble(kv)
-            let services = Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
-                                    downloadTransport: transport, downloadsRoot: Demo.demoDownloadsRoot,
-                                    savedDownloads: Demo.downloads, freeSpace: { DiskSpace.freeBytes() },
-                                    cacheRoot: Demo.persist ? AppFiles.swrCache.appendingPathComponent("demo") : nil,
-                                    allowsOrbital: ThisDevice.talksToOrbital)
-            services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira
-            return services
-        }
-        #endif
-        return Services(
-            http: Perf.isOn ? PerfHTTPClient(inner: URLSessionHTTPClient()) : URLSessionHTTPClient(), secrets: KeychainSecrets(service: Bundle.main.bundleIdentifier ?? "com.example.orbital.ios"),
-            kv: UserDefaultsKeyValueStore(), pending: FilePendingStore(url: AppFiles.pendingWork), downloadTransport: transport,
-            downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
-            cacheRoot: AppFiles.swrCache, onDownloadsChange: { DownloadIndex.save($0) }, device: ThisDevice.forOrbital,
-            allowsOrbital: ThisDevice.talksToOrbital)
-    }
 
     /// El aviso (con háptica, por el tono del aviso) de lo que pasó con lo que mandó la TV.
     private func announce(_ event: InboxModel.Event) {
@@ -352,6 +295,8 @@ final class AppEnvironment {
     }
 
     var uiLocale: Locale { Locale(identifier: services.appSettings.uiLanguage) }
+    /// El idioma de la interfaz («es» o «en»), para los textos que se arman en código.
+    var language: String { services.appSettings.uiLanguage }
     /// Ajustes › Apariencia: nil sigue al iPhone.
     var colorScheme: ColorScheme? {
         #if DEBUG
@@ -378,37 +323,7 @@ final class AppEnvironment {
     /// Reproduce con el motor propio o, si lo prefieres (o fallara), con Infuse.
     func play(_ request: PlayRequest) { playing = request }
 
-    func playExternal(_ request: PlayRequest, source: Source? = nil) async {
-        let position = request.fromStart ? 0 : await services.watch.resumePosition(metaID: request.metaID, videoID: request.videoID, kind: request.kind)
-        let langs = services.titlePrefs.languages(for: request.metaID, settings: services.appSettings)
-        var chosen = source
-        var unreachable = false
-        if chosen == nil {
-            do { chosen = try await services.finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs) }
-            catch { unreachable = error is StreamFinderError }
-        }
-        guard let url = chosen?.playbackURL else {
-            if unreachable {
-                return notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { [weak self] in
-                    Task { await self?.playExternal(request, source: source) }
-                }
-            }
-            return notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
-        }
-        // Apagados en este título (o en Ajustes): Infuse los recibe apagados (antes mandaba los de Ajustes de todos modos).
-        let subtitle = langs.subtitles.isEmpty ? nil : await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles).first
-        var season: Int?, episode: Int?
-        let parts = request.videoID.split(separator: ":")
-        if request.kind == "series", parts.count >= 3 { season = Int(parts[parts.count - 2]); episode = Int(parts[parts.count - 1]) }
-        let filename = Infuse.filename(title: request.originalTitle, year: request.year, season: season, episode: episode, ext: DownloadFiles.fileExtension(for: url))
-        guard let infuseURL = Infuse.playURL(.init(video: url, position: Int(position), subtitle: subtitle, filename: filename)) else { return }
-        let runtime = request.meta.map { CinemetaParsing.runtimeSeconds(CinemetaParsing.describe($0).runtime) } ?? 0
-        external = ExternalSession(request: request, startedAt: Date(), startPosition: position, duration: runtime)
-        let opened = await UIApplication.shared.open(infuseURL)
-        if !opened { external = nil; notify("No pude abrir Infuse", detail: "¿Está instalado?", tone: .warn) }
-    }
-
-    /// Infuse volvió (`orbital-ios://infuse-done?...`): se guarda dónde te quedaste. Infuse ya avisa a Trakt por su cuenta.
+    /// Un enlace que llega a la app: un archivo de video, el QR de la TV, el widget o la vuelta de Infuse.
     func handle(url: URL) async {
         // Un video que te pasaron (AirDrop, Archivos, «Abrir con…»).
         if url.isFileURL { return await openFile(url) }
@@ -417,25 +332,7 @@ final class AppEnvironment {
         // El widget «Lo siguiente para ti»: reproducir donde ibas o abrir la ficha.
         if let link = WidgetLink.parse(url) { return await open(link) }
         guard let result = Infuse.parseCallback(url) else { return }
-        defer { external = nil; watchedSomething += 1 }
-        guard let session = external else { return }
-        switch result {
-        case .failed:
-            // Sin el texto técnico de Infuse: qué hacer, y la salida de verla aquí.
-            let request = session.request
-            notify("Infuse no pudo con esta versión", detail: "Prueba otra versión o ábrela aquí", tone: .warn, actionTitle: "Ver aquí") { [weak self] in
-                self?.play(request)
-            }
-        case .closed:
-            guard let seconds = Infuse.seconds(from: result, knownDuration: session.duration) else { return }
-            let r = session.request
-            let watched = max(0, seconds - session.startPosition)
-            let event = ProgressEvent(kind: r.kind, metaID: r.metaID, videoID: r.videoID, originalTitle: r.originalTitle, position: seconds, duration: session.duration,
-                                      watched: min(watched, Date().timeIntervalSince(session.startedAt)), at: Date().timeIntervalSince1970)
-            await services.watch.report(event, phase: .stopped(finished: StremioLibrary.finished(position: seconds, duration: session.duration, kind: r.kind)), scrobbleToTrakt: false)
-            // Infuse no dice la duración: si tampoco la sabemos, se pregunta si terminaste.
-            if session.duration == 0, seconds > 60 { askFinished = r }
-        }
+        await infuseReturned(result)
     }
 
     /// Un video de fuera: se copia a la app (los de hace días se borran), se reconoce por el nombre del archivo (Cinemeta: nombre,
@@ -444,21 +341,8 @@ final class AppEnvironment {
     private func openFile(_ url: URL) async {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        Self.pruneImported()
-        let folder = Self.importedFolder
-        let target = folder.appendingPathComponent(url.lastPathComponent)
-        if target.standardizedFileURL != url.standardizedFileURL {
-            try? FileManager.default.removeItem(at: target)
-            do {
-                // Lo que llega por AirDrop o «Abrir con…» queda en Documents/Inbox: se mueve (no se queda una segunda copia de gigas).
-                if url.path.contains("/Inbox/") { try FileManager.default.moveItem(at: url, to: target) }
-                else { try FileManager.default.copyItem(at: url, to: target) }
-            } catch { notify("No pude abrir ese archivo", tone: .warn); return }
-        }
-        // Fuera del respaldo de iCloud (como las descargas) y con la fecha de hoy (de ella se cuentan los días para borrarlo).
-        var values = URLResourceValues(); values.isExcludedFromBackup = true
-        var mutable = target; try? mutable.setResourceValues(values)
-        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: target.path)
+        let target: URL
+        do { target = try ImportedVideos.store(url) } catch { notify("No pude abrir ese archivo", tone: .warn); return }
         let parsed = ReleaseName.parse(url.lastPathComponent)
         let kind = parsed.isSeries ? "series" : "movie"
         let found = ((try? await services.cinemeta.searchAll(parsed.title)) ?? []).filter { $0.kind == kind }
@@ -479,23 +363,6 @@ final class AppEnvironment {
         }
         request.fromStart = match == nil
         play(request)
-    }
-
-    /// Cuántos días se queda un video que te pasaron antes de borrarse solo.
-    nonisolated static let importedDays: Double = 3
-    nonisolated static var importedFolder: URL {
-        let folder = AppFiles.support.appendingPathComponent("Importados", isDirectory: true)
-        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        return folder
-    }
-
-    /// Borra los videos que te pasaron hace más de `importedDays` (los de Documents/Inbox se mueven al abrirlos: no se quedan).
-    nonisolated static func pruneImported() {
-        let fm = FileManager.default
-        let old = (try? fm.contentsOfDirectory(at: importedFolder, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
-        for file in old where ((try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast) < Date().addingTimeInterval(-importedDays * 86_400) {
-            try? fm.removeItem(at: file)
-        }
     }
 
     /// `orbital-ios://play?kind=&id=&video=` abre el reproductor en ese episodio (donde ibas); `orbital-ios://title?kind=&id=` abre la ficha.
@@ -522,381 +389,5 @@ final class AppEnvironment {
             await play(kind: kind, metaID: id, videoID: video, title: name, originalTitle: name, episodeLabel: label, poster: meta["poster"]?.string)
         }
     }
-
-    /// «Sí, lo terminé»: se marca como visto y Stremio apunta al siguiente.
-    func confirmFinished(_ request: PlayRequest) async {
-        let event = ProgressEvent(kind: request.kind, metaID: request.metaID, videoID: request.videoID, originalTitle: request.originalTitle,
-                                  position: 1, duration: 1, watched: 0, at: Date().timeIntervalSince1970)
-        await services.watch.report(event, phase: .stopped(finished: true), scrobbleToTrakt: false)
-        askFinished = nil
-    }
-
-    func pairWithOrbital(address: String, token: String) async {
-        do {
-            let got = try await services.connectOrbital(address: address, token: token)
-            let brought = got.joined(separator: services.appSettings.uiLanguage == "en" ? " and " : " y ")
-            if got.isEmpty { notify("Conectado con tu Orbital", tone: .success) } else { notify(format: "Conectado con tu Orbital: %@ ya están aquí.", brought, tone: .success) }
-        } catch { notifyOrbital(error) }
-    }
-
-    /// Tu Orbital no hizo lo que se le pidió: lo que dijo (no contesta, el token, actualizar), nunca el texto técnico.
-    func notifyOrbital(_ error: Error) {
-        notify((error as? OrbitalRemote.Failure)?.description ?? "Tu Orbital no contestó.", tone: .warn)
-    }
-
-    /// «Ver en la TV»: tu Orbital pone el título (la fuente recomendada, donde ibas; el avance vive en Stremio).
-    /// Un Simpson al azar (de las temporadas elegidas en Ajustes; por omisión T5–T15): los episodios (para la ruleta) y el
-    /// elegido. nil si Cinemeta no contesta.
-    struct SimpsonsDraw: Equatable {
-        var meta: JSON
-        var name: String
-        var reel: [(season: Int, episode: Episode)]
-        var chosen: (season: Int, episode: Episode) { reel[reel.count - 1] }
-        static func == (a: SimpsonsDraw, b: SimpsonsDraw) -> Bool { a.reel.map(\.episode.id) == b.reel.map(\.episode.id) }
-    }
-
-    /// Elige uno y arma la tira de la ruleta (otros al azar y, al final, el elegido).
-    func drawSimpsons(reelLength: Int, quiet: Bool = false) async -> SimpsonsDraw? {
-        let id = Self.simpsons
-        guard let meta = try? await services.cinemeta.meta(kind: "series", id: id, persist: true) else { if !quiet { notify("No pude traer los episodios de Los Simpson", detail: "Revisa tu internet") }; return nil }
-        // Leer ~700 episodios cuesta: fuera del hilo principal (si no, la animación de la tele se trababa).
-        let seasons = Set(services.appSettings.simpsonsSeasons)
-        let pool = await Task.detached(priority: .userInitiated) {
-            let all = CinemetaParsing.seasons(meta).filter { $0.season > 0 }
-            // Si ninguna de las elegidas existe todavía (o no eligió ninguna), de todas.
-            let picked = all.filter { seasons.contains($0.season) }
-            return (picked.isEmpty ? all : picked).flatMap { season in season.episodes.map { (season: season.season, episode: $0) } }
-        }.value
-        guard pool.count > 1, let chosen = pool.randomElement() else { if !quiet { notify("No pude traer los episodios de Los Simpson", detail: "Revisa tu internet") }; return nil }
-        let others = (0..<max(0, reelLength - 1)).compactMap { _ in pool.randomElement() }
-        return SimpsonsDraw(meta: meta, name: meta["name"]?.string ?? "The Simpsons", reel: others + [chosen])
-    }
-
-    /// La lista de episodios de Los Simpson, pedida antes de que toques la dona: así la ruleta dura un segundo y no espera a la red.
-    /// Y el siguiente episodio ya elegido, con sus imágenes en caché: al tocar la dona, la tele tiene todo listo.
-    func prefetchSimpsons() async {
-        guard nextSimpsons == nil, let draw = await drawSimpsons(reelLength: DS.Simpsons.reelLength, quiet: true) else { return }
-        await ImagePipeline.shared.warmPosters(draw.reel.map { Self.simpsonsStill(season: $0.season, episode: $0.episode.episode) })
-        nextSimpsons = draw
-    }
-    @ObservationIgnored private var nextSimpsons: SimpsonsDraw?
-    nonisolated static let simpsonsRefill: Double = 15
-    /// El que ya estaba listo (y se prepara el siguiente), o uno nuevo.
-    func takeSimpsons() async -> SimpsonsDraw? {
-        if let ready = nextSimpsons {
-            nextSimpsons = nil
-            // El siguiente se prepara después (no mientras la tele se anima).
-            Task { try? await Task.sleep(nanoseconds: UInt64(Self.simpsonsRefill * 1_000_000_000)); await prefetchSimpsons() }
-            return ready
-        }
-        return await drawSimpsons(reelLength: DS.Simpsons.reelLength)
-    }
-
-    /// El elegido, en el iPhone y desde el principio.
-    func playSimpsons(_ draw: SimpsonsDraw) { play(simpsonsRequest(draw)) }
-
-    /// Lo que se reproduce de un Simpson elegido (la ruleta lo abre ella misma, encima: entre las dos no se ve Inicio).
-    func simpsonsRequest(_ draw: SimpsonsDraw) -> PlayRequest {
-        let (season, episode) = draw.chosen
-        let label = Strings.episode(season: season, episode: episode.episode, language: services.appSettings.uiLanguage) + (episode.hasTitle ? " · \(episode.title)" : "")
-        var request = PlayRequest(kind: "series", metaID: Self.simpsons, videoID: episode.id, originalTitle: draw.name, displayTitle: draw.name, episodeLabel: label,
-                                  poster: String(format: ForYou.metahubPoster, Self.simpsons), meta: draw.meta, fromStart: true)
-        request.startPortrait = true   // sale de la tele de pie: el video entra en vertical, sin girar
-        return request
-    }
-
-    /// La imagen de un episodio (metahub).
-    static func simpsonsStill(season: Int, episode: Int) -> String { "https://episodes.metahub.space/\(simpsons)/\(season)/\(episode)/w780.jpg" }
-
-    static let simpsons = "tt0096697"
-    /// Las clásicas: el valor por omisión de «Un Simpson al azar».
-    static let simpsonsClassics = Array(5...15)
-    /// Hasta qué temporada se ofrece en Ajustes si Cinemeta no contesta.
-    static let simpsonsKnownSeasons = 37
-
-    /// Las temporadas que existen (para Ajustes), de lo que Cinemeta ya tiene guardado; si no contesta, 1 a 37.
-    func simpsonsSeasonNumbers() async -> [Int] {
-        guard let meta = try? await services.cinemeta.meta(kind: "series", id: Self.simpsons, persist: true) else { return Array(1...Self.simpsonsKnownSeasons) }
-        let found = await Task.detached(priority: .userInitiated) { CinemetaParsing.seasons(meta).map(\.season).filter { $0 > 0 } }.value
-        return found.isEmpty ? Array(1...Self.simpsonsKnownSeasons) : found.sorted()
-    }
-
-    /// Cambiaron las temporadas en Ajustes: el Simpson que ya estaba listo se descarta (podía ser de otra temporada).
-    func simpsonsSeasonsChanged() { nextSimpsons = nil }
-
-    func playOnTV(kind: String, metaID: String, videoID: String?, title: String) async {
-        do {
-            try await services.orbital.play(kind: kind, metaID: metaID, videoID: videoID, title: title)
-            notify("En tu Orbital", detail: title, tone: .success)
-        } catch { notifyOrbital(error) }
-    }
-
-    /// Del reproductor del iPhone a tu Orbital, en el mismo punto: la TV sigue donde ibas y la app enseña el aviso.
-    func handOffToTV(_ request: PlayRequest, position: Double, choice: ResumeChoice? = nil) async {
-        do {
-            // Con el segundo exacto y lo que tenías puesto: la TV no adivina con su recomendada ni con el avance de Stremio.
-            try await services.orbital.play(kind: request.kind, metaID: request.metaID, videoID: request.videoID, title: request.displayTitle,
-                                            position: position, choice: choice)
-            handoff = TVHandoff(request: request, position: position)
-        } catch { notifyOrbital(error) }
-    }
-
-    /// «Deshacer»: la TV se detiene y sigues en el iPhone donde ibas (el avance ya se guardó al cerrar).
-    func undoHandoff() async {
-        guard let h = handoff else { return }
-        handoff = nil
-        _ = try? await services.orbital.control(action: "stop")
-        var request = h.request
-        request.fromStart = false
-        play(request)
-    }
-
-    /// Un título desde Inicio: reproduce directo donde ibas.
-    func play(_ item: HomeItem) async {
-        var label = ""
-        if let episode = item.episode { label = Strings.episode(season: item.season, episode: episode, language: services.appSettings.uiLanguage) }
-        await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.originalTitle, episodeLabel: label, poster: item.poster)
-    }
-
-    /// El video de una sugerencia: el episodio en curso, la película, o el primer episodio de una serie sin avance.
-    func videoID(for s: Suggestion) -> String {
-        if let next = s.next { return "\(s.imdb):\(next.season):\(next.episode)" }
-        return s.kind == "movie" ? s.imdb : "\(s.imdb):1:1"
-    }
-
-    /// Por dónde empieza una serie sugerida: el capítulo en que vas según Stremio (el mismo que «Continuar» de la ficha); si no
-    /// la has empezado, el que trae la sugerencia o el primero de verdad (no «1:1» a ciegas: hay series sin temporada 1).
-    struct SeriesStart {
-        var metaID: String, videoID: String, season: Int?, episode: Int?
-        /// Ibas a medias en ese capítulo: «Continuar T2 E5» en vez de «Ver T2 E5».
-        var isResume: Bool
-        var meta: JSON
-    }
-
-    func seriesStart(_ s: Suggestion) async -> SeriesStart? {
-        let watch = services.watch, id = s.imdb
-        async let raw = watch.rawItem(metaID: id)
-        guard let meta = try? await services.cinemeta.meta(kind: s.kind, id: s.imdb) else { return nil }
-        let seasons = CinemetaParsing.seasons(meta), mine = await raw
-        let state = StremioLibrary.state(of: mine)
-        let current = state["video_id"]?.nonEmptyString
-        let suggested = s.next.map { "\(s.imdb):\($0.season):\($0.episode)" }
-        guard let video = current != nil ? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, raw: mine, seasons: seasons)
-                                         : suggested ?? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, raw: nil, seasons: seasons) else { return nil }
-        let numbers = StremioLibrary.episodeNumbers(videoID: video, metaID: s.imdb)
-        return SeriesStart(metaID: s.imdb, videoID: video, season: numbers.season, episode: numbers.episode,
-                           isResume: current == video && asInt(state["timeOffset"]) > 1, meta: meta)
-    }
-
-    /// «Ver» desde Para ti o «¿Qué vemos?»: reproduce donde ibas (o desde el principio); una serie, por `seriesStart` (si ya se
-    /// calculó, `known`, sin volver a preguntar).
-    func play(_ s: Suggestion, from known: SeriesStart? = nil) async {
-        guard s.kind == "series" else {
-            return await play(kind: s.kind, metaID: s.imdb, videoID: videoID(for: s), title: s.title, originalTitle: s.title, episodeLabel: "", poster: s.poster)
-        }
-        var start = known?.metaID == s.imdb ? known : nil
-        if start == nil { start = await seriesStart(s) }
-        guard let start else { return notify(format: "No pude abrir «%@»", s.title, detail: "Revisa tu internet") }
-        let label = start.episode.map { Strings.episode(season: start.season, episode: $0, language: services.appSettings.uiLanguage) } ?? ""
-        await play(kind: s.kind, metaID: s.imdb, videoID: start.videoID, title: s.title, originalTitle: start.meta["name"]?.string ?? s.title,
-                   episodeLabel: label, poster: s.poster, meta: start.meta)
-    }
-
-    /// «Guardar» desde el menú de un póster: lo mismo que un toque en «Guardar» de la ficha — a la lista por omisión
-    /// (`SaveDestination`: tu watchlist con Trakt, si no Mi lista), con un aviso que se deshace.
-    func save(_ s: Suggestion) async {
-        let destination = SaveDestination.preferred(traktLinked: services.trakt?.linked ?? false, metaID: s.imdb)
-        do {
-            try await setSaved(s, in: destination, add: true)
-            notify(saved: destination, undo: true) { [weak self] in Task { try? await self?.setSaved(s, in: destination, add: false) } }
-        } catch {
-            let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar tu lista de Stremio"
-            notify(failure, detail: "\(error)", tone: .warn)   // la causa, traducida
-        }
-    }
-
-    /// Pone o quita un póster de una de las listas fijas. Trakt sin conexión: queda pendiente en el iPhone (como en la ficha).
-    private func setSaved(_ s: Suggestion, in destination: SaveDestination, add: Bool) async throws {
-        switch destination {
-        case .stremioLibrary:
-            try await services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: add)
-        case .traktWatchlist:
-            guard let trakt = services.trakt else { return }
-            do { try await trakt.setWatchlist(imdb: s.imdb, series: s.kind == "series", add: add) }
-            catch where TraktOutbox.retryable(error) {
-                services.traktOutbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: s.imdb, series: s.kind == "series", add: add))
-            }
-            await services.forYou.clearCache()
-        }
-    }
-
-    /// «Quitar de tu watchlist» o «Quitar de Mi lista» desde el menú de un póster, con «Deshacer». `shown` le dice a la
-    /// pantalla si el título se ve: se quita al instante y regresa si falla o si deshaces.
-    func remove(_ s: Suggestion, from destination: SaveDestination, shown: @escaping (Bool) -> Void) async {
-        shown(false)
-        do {
-            try await setSaved(s, in: destination, add: false)
-            notify(removed: destination) { [weak self] in
-                shown(true)
-                Task { try? await self?.setSaved(s, in: destination, add: true) }
-            }
-        } catch {
-            shown(true)
-            let failure = destination == .traktWatchlist ? "No pude cambiar tu watchlist de Trakt" : "No pude cambiar tu lista de Stremio"
-            notify(failure, detail: "\(error)", tone: .warn)
-        }
-    }
-
-    /// «Quitar de favoritos» desde un póster de Inicio: sale de la fila al momento y se ofrece «Deshacer». Sin conexión se queda
-    /// guardado en el iPhone y llega a Trakt en cuanto se pueda (como en la ficha).
-    func removeFavorite(_ s: Suggestion) async {
-        FavoriteChange.post(s, add: false)
-        do {
-            try await setFavorite(s, add: false)
-            notify("Quitada de tus favoritos", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { [weak self] in
-                FavoriteChange.post(s, add: true)
-                Task { try? await self?.setFavorite(s, add: true) }
-            }
-        } catch {
-            FavoriteChange.post(s, add: true)
-            notify("No pude cambiar tus favoritos de Trakt", detail: "\(error)", tone: .warn)
-        }
-    }
-
-    /// Pone o quita un favorito en Trakt; sin conexión, a la cola del iPhone (no es un error: llega después).
-    private func setFavorite(_ s: Suggestion, add: Bool) async throws {
-        guard let trakt = services.trakt, trakt.linked else { throw TraktError.auth("Conecta Trakt en Ajustes") }
-        do {
-            try await trakt.setFavorite(imdb: s.imdb, series: s.kind == "series", add: add)
-            await services.forYou.clearCache()
-        } catch where TraktOutbox.retryable(error) {
-            services.traktOutbox.enqueue(.init(target: TraktOutbox.favorites, imdb: s.imdb, series: s.kind == "series", add: add))
-        }
-    }
-
-    /// «Marcar como vista» (una película) desde el menú de un póster: en Stremio y en Trakt, como en la ficha.
-    func markWatched(_ s: Suggestion) async -> Bool {
-        do { try await services.watch.markWatched(kind: s.kind, metaID: s.imdb, videoID: s.imdb) } catch {
-            notify(format: "No pude marcar «%@» como vista", s.title, detail: "\(error)", tone: .warn)
-            return false
-        }
-        if let trakt = services.trakt, trakt.linked, let target = TraktTarget(videoID: s.imdb, kind: s.kind) { _ = try? await trakt.addToHistory(target, watchedAt: Date()) }
-        notify(format: "«%@» quedó como vista", s.title, tone: .success)
-        return true
-    }
-
-    /// El aviso de «Guardar» (la ficha y los pósters): dónde quedó y, a la mano, cambiarlo (o deshacerlo).
-    func notify(saved destination: SaveDestination, undo: Bool = false, perform: @escaping () -> Void) {
-        let (text, detail) = destination == .traktWatchlist ? ("Guardada en tu watchlist", "Trakt") : ("Guardada en Mi lista", "Stremio")
-        if undo { notify(text, detail: detail, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", perform: perform) }
-        else { notify(text, detail: detail, actionTitle: "Cambiar", perform: perform) }
-    }
-
-    /// El aviso al quitar con un toque: de dónde salió, con «Deshacer».
-    func notify(removed destination: SaveDestination, undo: @escaping () -> Void) {
-        notify(destination == .traktWatchlist ? "Quitada de tu watchlist" : "Quitada de Mi lista", tone: .info, actionTitle: "Deshacer",
-               actionSymbol: "arrow.uturn.backward", perform: undo)
-    }
-
-    /// «Descargar» desde Para ti (la fuente recomendada).
-    func download(_ s: Suggestion) async {
-        let outcome = await services.queueDownload(kind: s.kind, metaID: s.imdb, videoID: videoID(for: s), title: s.title, originalTitle: s.title, subtitle: "", poster: s.poster)
-        switch outcome {
-        case .queued:
-            // Como el círculo de la ficha: qué se está bajando (calidad y tamaño) y a la mano, Descargas.
-            let item = await services.downloads.item(DownloadItem.makeID(metaID: s.imdb, videoID: videoID(for: s)))
-            let size = item?.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) }
-            let detail = [item?.quality, size].compactMap { $0 }.joined(separator: " · ")
-            notify("Bajando la recomendada", detail: detail.isEmpty ? nil : detail, tone: .success, action: .downloads)
-        default: report(outcome, downloaded: (s.imdb, videoID(for: s)))
-        }
-    }
-
-    /// «Ver» en la tarjeta «Desde la TV»: lo mismo, con lo que mandó la consola.
-    func play(_ item: OrbitalRemote.InboxItem) async {
-        // «Seguir en el iPhone»: la fuente, el audio y los subtítulos de la TV quedan como «Continuar» de ese video, y el
-        // reproductor los usa (la misma huella de fuente en los dos; lo que este archivo no traiga, de su complemento o por idioma).
-        if let choice = item.choice { services.titlePrefs.remember(metaID: item.metaID, choice: choice) }
-        await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.title,
-                   episodeLabel: services.tvEpisodeLabel(item.season, item.episode, item.episodeLabel), poster: item.poster, at: item.position)
-    }
-
-    private func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?, at position: Double? = nil, meta known: JSON? = nil) async {
-        var fetched = known
-        if fetched == nil { fetched = try? await services.cinemeta.meta(kind: kind, id: metaID) }
-        guard let videoID, let meta = fetched else { return notify(format: "No pude abrir «%@»", title, detail: "Revisa tu internet") }
-        var request = PlayRequest(kind: kind, metaID: metaID, videoID: videoID, originalTitle: originalTitle, displayTitle: title,
-                                  episodeLabel: episodeLabel, poster: poster, meta: meta)
-        request.startPosition = position   // «Seguir en el iPhone»: el segundo exacto de la TV
-        if services.appSettings.preferInfuse { await playExternal(request) } else { play(request) }
-    }
 }
 
-final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // Se registra antes de que termine de arrancar la app (lo exige iOS).
-        ImagePipeline.shared.preconnect()   // lo primero: la conexión con las imágenes, mientras arranca lo demás
-        InboxBackgroundTask.register()
-        ReleaseNotifier.register()
-        OrbitalShortcuts.updateAppShortcutParameters()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)
-        OpenRemoteIntent.open = { AppEnvironment.shared.ui.openRemote = true }   // el control del Centro de control abre el control
-        OpenSimpsonsIntent.open = { AppEnvironment.shared.ui.openSimpsons = true }   // «Un Simpson al azar» del Centro de control
-        // Que el Centro de control vuelva a pintar nuestros botones con el ícono de esta versión (su galería guardaba los viejos).
-        ControlCenter.shared.reloadAllControls()
-        ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
-        DownloadFailureNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
-        // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.
-        UNUserNotificationCenter.current().delegate = self
-        return true
-    }
-
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
-                                            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        // La batería baja ya la dice el aviso de la app: con la app abierta no sale también el de iOS (salían los dos).
-        if notification.request.identifier.hasPrefix(CompanionAlerts.batteryPrefix) { return completionHandler([]) }
-        completionHandler([.banner, .sound])
-    }
-
-    /// Tocar un aviso o uno de sus botones («Ya está para ver»: Ver, Ver en la TV, Descargar).
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
-                                            withCompletionHandler completionHandler: @escaping () -> Void) {
-        Task { @MainActor in
-            if await !DownloadFailureNotifier.handle(response) { await ReleaseNotifier.handle(response) }
-            completionHandler()
-        }
-    }
-
-    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask { Orientation.supported }
-
-    func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
-        // Puede llegar antes de que exista ninguna vista: se arma el entorno (que reconecta la sesión de descargas) y se guarda aquí.
-        // Solo la sesión de las descargas (la de «Probar la velocidad» se cancela al terminar: no hay nada que entregar).
-        guard identifier == BackgroundDownloadTransport.identifier else { return completionHandler() }
-        AppEnvironment.shared.transport.backgroundCompletion = completionHandler
-    }
-}
-
-/// Lo que solo pinta la raíz de la app: el reproductor a pantalla completa, los avisos y lo que se pide abrir.
-@MainActor
-/// `@Observable`: cada vista se vuelve a pintar solo con lo que lee (el aviso no redibuja el reproductor).
-@Observable
-final class AppUI {
-    var playing: PlayRequest?
-    var pendingTitle: TitleRoute?
-    var askFinished: PlayRequest?
-    var banner: AppEnvironment.Banner?
-    var handoff: AppEnvironment.TVHandoff?
-    var openTab: Int?
-    /// El Centro de control pidió el control de tu Orbital.
-    var openRemote = false
-    /// El Centro de control pidió «Un Simpson al azar»: Inicio abre la ruleta.
-    var openSimpsons = false
-    /// Abrir Ajustes (desde un aviso, como «Tu sesión de Trakt se cerró · Conectar»).
-    var openSettings = false
-    /// Tocaste «Buscar» estando ya en Buscar: se abre el campo con el teclado listo.
-    var focusSearch = false
-    /// La entrada de la app está a la vista (el logotipo de Inicio espera escondido a que llegue el de la entrada).
-    var splashing = false
-    /// Dónde está el logotipo de Inicio en la pantalla, si se ve: ahí termina la entrada.
-    var homeLogoFrame: CGRect?
-}

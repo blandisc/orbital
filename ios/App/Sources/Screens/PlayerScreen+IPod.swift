@@ -10,7 +10,7 @@ extension PlayerScreen {
     func ipodChrome(_ model: PlayerModel, face: IPodFace) -> some View {
         GeometryReader { geo in
             let layout = IPodLayout(in: geo.size, aspect: portraitAspect)
-            let shown = wheelTarget ?? (dragAxis == .horizontal ? seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
+            let shown = wheelTarget ?? (drag.dragAxis == .horizontal ? drag.seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
             let state = model.snapshot.state
             ZStack(alignment: .topLeading) {
                 HStack(spacing: DS.Space.s3) {

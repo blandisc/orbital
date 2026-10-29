@@ -1,5 +1,6 @@
 import SwiftUI
 import OrbitalCore
+import OrbitalModels
 
 /// Cómo se ordena una lista abierta.
 enum ListSort: String, CaseIterable {
@@ -53,9 +54,9 @@ struct ListFilter: Equatable {
 }
 
 /// El nombre de un género de Trakt («science-fiction») en el idioma de la app.
-@MainActor func genreName(_ slug: String) -> String {
+@MainActor func genreName(_ slug: String, language: String) -> String {
     let english = ["science-fiction", "science fiction", "sci-fi"].contains(slug) ? "Sci-Fi" : slug.split(separator: "-").map { $0.capitalized }.joined(separator: " ")
-    return Vocabulary.genres([english], language: AppEnvironment.shared.services.appSettings.uiLanguage).first ?? english
+    return Vocabulary.genres([english], language: language).first ?? english
 }
 
 /// Una lista abierta en cuadrícula de pósters, con el botón de ordenar y filtrar arriba a la derecha y lo filtrado en
@@ -79,11 +80,16 @@ struct SortableGrid<Cell: View>: View {
     @State private var seen: Set<String> = []
     @State private var imdb: [String: Double] = [:]
     @State private var rating = false
+    /// «Ocultar lo que ya vi» solo con Trakt (lo visto sale de ahí).
+    private let hideWatchedAvailable: Bool
+    @Environment(\.locale) private var locale
+    private var language: String { locale.language.languageCode?.identifier ?? "es" }
 
-    init(listID: String, items: [Suggestion], watched: (() async -> Set<String>)? = nil,
+    init(listID: String, items: [Suggestion], collections: CollectionsModel, watched: (() async -> Set<String>)? = nil,
          imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, showsKindFilter: Bool = true, loading: Bool = false,
          @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
-        let shared = ListsView.sharedCollections
+        let shared = collections
+        self.hideWatchedAvailable = collections.traktLinked
         self.listID = listID; self.items = items; self.cell = cell
         self.showsKindFilter = showsKindFilter; self.loading = loading
         self.watched = watched ?? { await shared.watchedIDs() }
@@ -168,7 +174,7 @@ struct SortableGrid<Cell: View>: View {
             if !genres.isEmpty {
                 Picker(selection: $filter.genre) {
                     Text("Todos").tag(String?.none)
-                    ForEach(genres, id: \.self) { Text(verbatim: genreName($0)).tag(String?.some($0)) }
+                    ForEach(genres, id: \.self) { Text(verbatim: genreName($0, language: language)).tag(String?.some($0)) }
                 } label: { Label("Género", systemImage: "theatermasks") }
                 .pickerStyle(.menu)
             }
@@ -184,7 +190,7 @@ struct SortableGrid<Cell: View>: View {
                 } label: { Label("Década", systemImage: "calendar") }
                 .pickerStyle(.menu)
             }
-            if AppEnvironment.shared.services.trakt?.linked == true { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
+            if hideWatchedAvailable { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
         } label: {
             // Mientras llegan las calificaciones de IMDb, la ruedita va en el botón (la cuadrícula no se mueve).
             if rating { ProgressView() }
@@ -198,7 +204,7 @@ struct SortableGrid<Cell: View>: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Space.s2) {
                 if let kind = filter.kind { chip(Text(Image(systemName: KindGlyph.symbol(kind))) + Text(verbatim: " ") + (kind == "movie" ? Text("Películas") : Text("Series"))) { filter.kind = nil } }
-                if let genre = filter.genre { chip(Text(verbatim: genreName(genre))) { filter.genre = nil } }
+                if let genre = filter.genre { chip(Text(verbatim: genreName(genre, language: language))) { filter.genre = nil } }
                 if let min = filter.minRating { chip(ratingName(min)) { filter.minRating = nil } }
                 if let decade = filter.decade { chip(decadeName(decade)) { filter.decade = nil } }
                 if filter.hideWatched { chip(Text("Sin lo que ya vi")) { filter.hideWatched = false } }

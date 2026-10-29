@@ -16,7 +16,7 @@ struct CoverCard: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: art, title: title, aspect: nil, bleed: true, maxPoints: DS.Image.card)
+            PosterView(url: art, title: title, aspect: nil, bleed: true, maxPoints: DS.Image.wide)
                 .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
             LinearGradient(stops: [.init(color: .clear, location: DS.Editorial.veilStart), .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom)
             VStack(alignment: .leading, spacing: DS.Space.s2) {

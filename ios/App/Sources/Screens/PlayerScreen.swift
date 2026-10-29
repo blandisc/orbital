@@ -169,33 +169,10 @@ struct PlayerScreen: View {
     @State var movingVideo = false
 
     // MARK: gestos como Infuse (brillo, volumen, buscar arrastrando, 2×)
-    @State var dragAxis: GestureAxis = .undecided
     @GestureState var dragging = false
-    @State var verticalKind: VerticalGesture?
-    @State var brightnessAtDragStart: Double = 1
-    @State var volumeAtDragStart: Double = 0
-    @State var originalBrightness: Double = 1
     @State var requestedVolume: Float?
-    @State var indicator: (kind: VerticalGesture, symbol: String, value: Double)?
-    /// Aparte de `indicator` (que se actualiza en cada punto del arrastre, sin animar) para que solo la entrada
-    /// y la salida se animen; moverlo de golpe en cada cuadro se vería tembloroso.
-    @State var indicatorVisible = false
-    @State var indicatorHideTask: Task<Void, Never>?
-    @State var seekPositionAtDragStart: Double?
-    @State var seekPreview: Double?
-    @State var isFastForwarding = false
-    /// ×2 fijo: deslizaste hacia abajo hasta que vibró; sigue al soltar y un toque en la píldora lo quita.
-    @State var fastForwardLocked = false
-    /// El dedo sigue puesto después de la pulsación larga (el ×2 dura lo que dure el dedo, como TikTok).
-    @State var fastForwardHolding = false
-    /// El ×2 se quedó con este toque (aunque ya hayas deslizado hacia arriba para quitarlo): el arrastre del video no lo roba.
-    @State var fastForwardOwnsTouch = false
-    /// Cómo estaba al empezar a mantener: si ya iba fijo, el aviso dice deslizar hacia arriba para quitarlo.
-    @State var fastForwardLockedAtStart = false
-    @State var fastForwardToggledThisHold = false
-    /// Dónde empezó el toque (el ×2 es del lado derecho, como YouTube; hacia abajo se mide desde aquí).
-    @State var touchStartX: CGFloat?
-    @State var touchStartY: CGFloat?
+    /// El estado del arrastre (brillo, volumen, buscar, 2×), aparte de la pantalla: `PlayerDragState`.
+    @State var drag = PlayerDragState()
     /// El ícono que aparece un momento al centro tras un doble toque (pausa, ±10 s).
     @State var flashSymbol: String?
     /// Dobles toques en una orilla: cuántos segundos llevan sumados y de qué lado (la burbuja va de ese lado).
@@ -240,7 +217,7 @@ struct PlayerScreen: View {
                     // arriba), se estiraba debajo del reloj y se cortaba su parte de arriba.
                     holder.engine.surface.ignoresSafeArea(edges: landscape ? .all : [])
                     if let frozenFrame { frozenCover(frozenFrame).transition(.opacity) }
-                    if dragAxis != .horizontal && !fillsPortrait {
+                    if drag.dragAxis != .horizontal && !fillsPortrait {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
                         // quedaba a media imagen).
@@ -259,7 +236,7 @@ struct PlayerScreen: View {
                 // «Recortar» en vertical: los subtítulos con el tamaño de siempre (el de un cuadro a lo ancho), abajo; con los
                 // controles a la vista suben sobre ellos.
                 .overlay(alignment: .bottom) {
-                    if fillsPortrait && dragAxis != .horizontal {
+                    if fillsPortrait && drag.dragAxis != .horizontal {
                         // Con los controles, ya van por encima de ellos; si además está la píldora, un poco más. Sin controles
                         // y con la píldora al pie, suben lo bastante para no taparla.
                         let aboveControls = controlsVisible ? geo.size.height * DS.PlayerPanel.portraitFillControlsShare : DS.Space.s6
@@ -369,7 +346,7 @@ struct PlayerScreen: View {
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
-        .animation(DS.Motion.base(reduceMotion), value: dragAxis)
+        .animation(DS.Motion.base(reduceMotion), value: drag.dragAxis)
         .animation(DS.Motion.base(reduceMotion), value: ipodFace)
         .onAppear { Perf.mark("player.shown") }
         .onChange(of: model.snapshot.state) { if model.snapshot.state == .playing { Perf.mark("player.firstFrame") } }
@@ -388,7 +365,7 @@ struct PlayerScreen: View {
             try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
             try? AVAudioSession.sharedInstance().setActive(true)
             UIApplication.shared.isIdleTimerDisabled = true
-            originalBrightness = ScreenBrightness.value
+            drag.originalBrightness = ScreenBrightness.value
             // `begin` va aparte: el plazo de arranque (45 s) tiene que seguir corriendo mientras carga.
             let engine = holder.engine
             landscapeZoom = VideoZoom(stored: env.services.appSettings.videoZoom)
@@ -507,7 +484,7 @@ struct PlayerScreen: View {
             // brincaba a 16:9 un momento). Otro título: se olvida.
             if aspectTitle != current.metaID { knownAspect = nil; aspectTitle = current.metaID }
             // ×2 fijo no pasa al siguiente episodio: cada episodio empieza a velocidad normal.
-            if isFastForwarding { endFastForward(holder.model, force: true) }
+            if drag.isFastForwarding { endFastForward(holder.model, force: true) }
             await loadLocalizedEpisodes()
         }
         .onChange(of: PlayerPresentation.loadKind(model), initial: true) { _, kind in
@@ -566,9 +543,9 @@ struct PlayerScreen: View {
         .onDisappear {
             Orientation.endDeviceNotifications()
             UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait()
-            ScreenBrightness.value = originalBrightness   // el brillo es del sistema: no se queda en lo que dejó el gesto
+            ScreenBrightness.value = drag.originalBrightness   // el brillo es del sistema: no se queda en lo que dejó el gesto
             // Ningún reloj de la pantalla sigue vivo al cerrar (antes retenían el motor y podían escribir avisos tarde).
-            for task in [hideTask, frozenTask, zoomToastTask, indicatorHideTask, skipChainTask, flashTask] { task?.cancel() }
+            for task in [hideTask, frozenTask, zoomToastTask, drag.indicatorHideTask, skipChainTask, flashTask] { task?.cancel() }
             presentation.cancel()
         }
     }

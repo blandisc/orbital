@@ -88,7 +88,7 @@ struct RootView: View {
             .padding(.bottom, DS.Size.tabBarClearance)
         }
         .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
-        .animation(DS.Motion.base(reduceMotion), value: ui.banner)
+        .animation(DS.Motion.base(reduceMotion), value: env.notices.current)
         .task {
             #if DEBUG
             if Demo.isOn, let at = Demo.handoff { env.handoff = .init(request: Demo.handoffRequest, position: at) }
@@ -100,8 +100,8 @@ struct RootView: View {
         }
         .task { env.tvNow.setActive(scenePhase == .active) }
         // Las colecciones (una para toda la app): lo visto se vuelve a preguntar y otra cuenta no hereda nada.
-        .onChange(of: env.watchedSomething) { ListsView.sharedCollections.forgetWatched() }
-        .onChange(of: env.services.generation) { ListsView.sharedCollections.resetAccount() }
+        .onChange(of: env.watchedSomething) { env.collections.forgetWatched() }
+        .onChange(of: env.services.generation) { env.collections.resetAccount() }
         .task(priority: .userInitiated) {
             // Buscar, adelantado y primero (antes que la fila de imágenes de Inicio): el color de su n.º 1 y los pósters del
             // Top 10 de la copia guardada; luego lo de hoy, y si cambió, otra vez.
@@ -340,7 +340,7 @@ struct BannerView: View {
     private let ui = AppEnvironment.shared.ui
 
     var body: some View {
-        if let banner = ui.banner {
+        if let banner = env.notices.current {
             let hasAction = banner.action != nil
             Toast(tone: banner.tone, title: Text(verbatim: banner.text), detail: banner.detail.map { Text(verbatim: $0) },
                   actionTitle: hasAction ? banner.actionTitle.map { LocalizedStringKey($0) } ?? "Ver" : nil, actionSymbol: banner.actionSymbol,

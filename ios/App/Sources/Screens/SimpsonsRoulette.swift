@@ -12,7 +12,7 @@ struct SimpsonsRoulette: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var draw: AppEnvironment.SimpsonsDraw?
+    @State private var draw: SimpsonsModel.Draw?
     /// Qué canal se ve (un índice de `draw.reel`; el último es el elegido).
     @State private var channel = 0
     @State private var staticOn = true
@@ -27,6 +27,8 @@ struct SimpsonsRoulette: View {
     @State private var run: Task<Void, Never>?
     /// El episodio que se está viendo, encima de la ruleta (al cerrarlo, la ruleta se va con él).
     @State private var playing: PlayRequest?
+    /// El episodio ya se cerró: la ruleta se va; nada vuelve a girar en lo que desaparece.
+    @State private var finished = false
     /// Dónde va el video en el reproductor vertical: la imagen crece hasta ahí (no a toda la pantalla).
     @AppStorage(PlayerScreen.portraitCenterKey) private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
 
@@ -72,10 +74,13 @@ struct SimpsonsRoulette: View {
         .environment(\.colorScheme, .dark)
         .sensoryFeedback(.selection, trigger: clicks)
         .sensoryFeedback(.success, trigger: landed) { _, now in now }
-        .task { await roll() }
+        // Gira una vez. Esta vista vuelve a «aparecer» con el episodio ya encima (al mandar el video a la ventana de PiP o salir
+        // de la app lo vuelve a presentar el sistema), y antes cada vez giraba otra vez y abría otro episodio al azar debajo.
+        .task { guard playing == nil, !finished else { return }; await roll() }
         .onDisappear { run?.cancel() }
         // Al cerrar el reproductor, la ruleta ya cumplió: se va también, sin animación (debajo está Inicio, como siempre).
         .fullScreenCover(item: $playing, onDismiss: {
+            finished = true
             var quiet = Transaction(); quiet.disablesAnimations = true
             withTransaction(quiet) { dismiss() }
         }) { request in PlayerScreen(request: request) }
@@ -86,7 +91,7 @@ struct SimpsonsRoulette: View {
     private var still: String? {
         draw.map { d in
             let item = d.reel[min(channel, d.reel.count - 1)]
-            return AppEnvironment.simpsonsStill(season: item.season, episode: item.episode.episode)
+            return SimpsonsModel.still(season: item.season, episode: item.episode.episode)
         }
     }
 
@@ -132,7 +137,7 @@ struct SimpsonsRoulette: View {
     private var screen: some View {
         let shape = RoundedRectangle(cornerRadius: DS.Simpsons.screenRadius, style: .continuous)
         return ZStack(alignment: .topTrailing) {
-            Color.black
+            Color.black   // ds-exception: la tele de Los Simpson es siempre oscura (es arte, no un papel del modo claro u oscuro)
             if let still { PosterView(url: still, title: "", aspect: DS.Simpsons.screenAspect, bleed: true).opacity(staticOn ? DS.Simpsons.ghost : 1) }
             if staticOn { TVStatic().transition(.opacity) }
             Self.vignette
@@ -142,7 +147,7 @@ struct SimpsonsRoulette: View {
                     .shadow(color: DS.Simpsons.osd, radius: DS.Simpsons.osdGlow)
                     .padding(DS.Space.s2)
             }
-            if glow { Color.white.opacity(DS.Simpsons.flash).blendMode(.plusLighter) }
+            if glow { Color.white.opacity(DS.Simpsons.flash).blendMode(.plusLighter) }   // ds-exception: la tele de Los Simpson es siempre oscura (es arte, no un papel del modo claro u oscuro)
         }
         .frame(width: DS.Simpsons.screen, height: DS.Simpsons.screen / DS.Simpsons.screenAspect)
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { screenRect = $0 }
@@ -176,7 +181,7 @@ struct SimpsonsRoulette: View {
 
     private func roll() async {
         run?.cancel()
-        guard let found = await env.takeSimpsons() else { dismiss(); return }
+        guard let found = await env.simpsons.take() else { dismiss(); return }
         draw = found; channel = 0; landed = false; expanded = false
         if reduceMotion {
             shown = true; staticOn = false; channel = found.reel.count - 1; landed = true
@@ -189,7 +194,7 @@ struct SimpsonsRoulette: View {
             // Desde el Centro de control la app acaba de abrir y las imágenes no estaban listas (desde la dona sí): la tele
             // sintoniza con estática hasta que llegan (o hasta `imageWait`). Antes crecía en negro y la imagen salía al final.
             staticOn = true
-            let stills = found.reel.map { AppEnvironment.simpsonsStill(season: $0.season, episode: $0.episode.episode) }
+            let stills = found.reel.map { SimpsonsModel.still(season: $0.season, episode: $0.episode.episode) }
             await withTaskGroup(of: Void.self) { group in
                 group.addTask { await ImagePipeline.shared.warmPosters(stills) }
                 group.addTask { try? await Task.sleep(nanoseconds: UInt64(DS.Simpsons.imageWait * 1_000_000_000)) }
@@ -227,9 +232,9 @@ struct SimpsonsRoulette: View {
     /// episodio arranca ahí mismo. Antes la ruleta se cerraba primero y entre las dos se veía Inicio un instante.
     private func start() {
         run?.cancel()
-        guard let draw else { return }
+        guard let draw, playing == nil, !finished else { return }   // ya hay un episodio encima: no se cambia por otro
         var quiet = Transaction(); quiet.disablesAnimations = true
-        withTransaction(quiet) { playing = env.simpsonsRequest(draw) }
+        withTransaction(quiet) { playing = env.simpsons.request(draw) }
     }
 }
 

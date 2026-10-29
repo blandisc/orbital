@@ -60,11 +60,13 @@ struct StillCard: View {
     var progress: Double?
     /// `nil`: el ancho de su columna (la cuadrícula de «Todo lo que sigues»).
     var width: CGFloat? = DS.Poster.stillWidth
+    /// Si `art` no carga (`PosterView.fallback`).
+    var fallback: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             ZStack(alignment: .bottom) {
-                PosterView(url: art, title: title, aspect: DS.Poster.stillAspect)
+                PosterView(url: art, title: title, aspect: DS.Poster.stillAspect, fallback: fallback)
                 if let progress { DSProgress(fraction: progress).padding(.horizontal, DS.Space.s2).padding(.bottom, DS.Space.s2) }
             }
             VStack(alignment: .leading, spacing: DS.Space.s1) {

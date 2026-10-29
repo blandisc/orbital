@@ -15,7 +15,7 @@ final class PlatformBoundaryTests: XCTestCase {
 
     /// Pendientes por archivo (ruta desde `ios/App/Sources/`): cuántos usos quedan. Al quitar uno, baja aquí el número.
     static let pending: [String: Int] = [
-        "AppEnvironment.swift": 1,   // el método del AppDelegate que iOS pregunta (responde `Orientation.supported`)
+        "App/AppDelegate.swift": 1,   // el método del AppDelegate que iOS pregunta (responde `Orientation.supported`)
     ]
 
     func testDeviceSpecificCodeLivesInPlatform() throws {

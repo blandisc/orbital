@@ -222,9 +222,9 @@ extension PlayerScreen {
                 guard !now else { return }
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(80))
-                    guard !dragging, dragAxis != .undecided || seekPreview != nil || portraitDrag != nil else { return }
+                    guard !dragging, drag.dragAxis != .undecided || drag.seekPreview != nil || portraitDrag != nil else { return }
                     portraitDrag = nil; movingVideo = false
-                    dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil
+                    drag.dragAxis = .undecided; drag.verticalKind = nil; drag.seekPositionAtDragStart = nil; drag.seekPreview = nil
                     scheduleIndicatorHide()
                     if controlsVisible { scheduleHide() }
                 }
@@ -233,17 +233,17 @@ extension PlayerScreen {
             // Y cuándo lo levantas de verdad: el `onPressingChanged` de la pulsación larga avisa «ya no» en cuanto la reconoce
             // (no al soltar), y el ×2 se prendía y se apagaba casi a la vez.
             .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { value in
-                if touchStartX == nil { touchStartX = value.startLocation.x; touchStartY = value.startLocation.y }
-                if fastForwardHolding { fastForwardDrag(translationY: value.translation.height, screenHeight: geo.size.height, model: model) }
-            }.onEnded { _ in touchStartX = nil; touchStartY = nil; releaseFastForward(model) })
+                if drag.touchStartX == nil { drag.touchStartX = value.startLocation.x; drag.touchStartY = value.startLocation.y }
+                if drag.fastForwardHolding { fastForwardDrag(translationY: value.translation.height, screenHeight: geo.size.height, model: model) }
+            }.onEnded { _ in drag.touchStartX = nil; drag.touchStartY = nil; releaseFastForward(model) })
             // ×2 del lado derecho: casi al instante. Hacia abajo se fija (vibra); hacia arriba se quita al momento.
             // Simultánea: como gesto normal competía con los dobles toques de las orillas y casi nunca ganaba.
             .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.fastForwardStart, maximumDistance: DS.Gesture.axisThreshold)
-                .onEnded { _ in if (touchStartX ?? geo.size.width) >= geo.size.width / 2 { holdFastForward(model) } })
-            .sensoryFeedback(.impact, trigger: isFastForwarding)
+                .onEnded { _ in if (drag.touchStartX ?? geo.size.width) >= geo.size.width / 2 { holdFastForward(model) } })
+            .sensoryFeedback(.impact, trigger: drag.isFastForwarding)
             .sensoryFeedback(.impact(weight: .light), trigger: skipHaptic)
             .sensoryFeedback(.impact(weight: .heavy), trigger: skipEdgeHaptic)
-            .sensoryFeedback(.success, trigger: fastForwardLocked)
+            .sensoryFeedback(.success, trigger: drag.fastForwardLocked)
         }
         .accessibilityHidden(true)
     }
@@ -259,12 +259,12 @@ extension PlayerScreen {
             .onChanged { value in
                 // Con el ×2 puesto, deslizar fija o quita: ni brillo, ni volumen, ni mover el video (aunque el dedo
                 // haya empezado en la agarradera). Si el video ya se había movido, se deshace.
-                if fastForwardOwnsTouch { cancelVideoMove(); return }
+                if drag.fastForwardOwnsTouch { cancelVideoMove(); return }
                 let dx = Double(value.translation.width), dy = Double(value.translation.height)
-                if dragAxis == .undecided {
+                if drag.dragAxis == .undecided {
                     hideTask?.cancel()
-                    dragAxis = PlayerGestures.dominantAxis(dx: dx, dy: dy)
-                    switch dragAxis {
+                    drag.dragAxis = PlayerGestures.dominantAxis(dx: dx, dy: dy)
+                    switch drag.dragAxis {
                     // En vertical: arrastrar sobre el video es brillo (izquierda) o volumen (derecha), como en horizontal y en
                     // Infuse; desde la agarradera de abajo o lo negro de fuera, mueve el video (antes todo arrastre lo movía y
                     // se perdían el brillo y el volumen).
@@ -278,49 +278,49 @@ extension PlayerScreen {
                         controlsVisible = true                 // se mueve a la altura de los controles (sin ellos va al centro)
                     case .vertical:
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
-                        verticalKind = kind
-                        if kind == .brightness { brightnessAtDragStart = ScreenBrightness.value }
-                        else { volumeAtDragStart = Double(AVAudioSession.sharedInstance().outputVolume) }
+                        drag.verticalKind = kind
+                        if kind == .brightness { drag.brightnessAtDragStart = ScreenBrightness.value }
+                        else { drag.volumeAtDragStart = Double(AVAudioSession.sharedInstance().outputVolume) }
                     case .horizontal:
-                        seekPositionAtDragStart = model.snapshot.position
+                        drag.seekPositionAtDragStart = model.snapshot.position
                         controlsVisible = true   // se ve la barra: el pulgar sigue el tiempo destino mientras arrastras
                     case .undecided: break
                     }
                 }
-                switch dragAxis {
+                switch drag.dragAxis {
                 case .vertical where movingVideo:
                     // Libre, entre lo más arriba y lo más abajo que puede ir.
                     let limits = Self.portraitLimits(in: size, aspect: portraitAspect)
                     portraitDrag = min(max(portraitAtDragStart + dy / Double(size.height), limits.lowerBound), limits.upperBound)
                 case .vertical:
-                    guard let kind = verticalKind else { return }
-                    let start = kind == .brightness ? brightnessAtDragStart : volumeAtDragStart
+                    guard let kind = drag.verticalKind else { return }
+                    let start = kind == .brightness ? drag.brightnessAtDragStart : drag.volumeAtDragStart
                     let value2 = PlayerGestures.verticalValue(start: start, dragHeight: dy, screenHeight: Double(size.height))
                     if kind == .brightness { ScreenBrightness.value = value2 } else { requestedVolume = Float(value2) }
-                    indicator = (kind, kind == .brightness ? "sun.max.fill" : "speaker.wave.2.fill", value2)
-                    if !indicatorVisible { indicatorHideTask?.cancel(); withAnimation(DS.Motion.base(reduceMotion)) { indicatorVisible = true } }
+                    drag.indicator = (kind, kind == .brightness ? "sun.max.fill" : "speaker.wave.2.fill", value2)
+                    if !drag.indicatorVisible { drag.indicatorHideTask?.cancel(); withAnimation(DS.Motion.base(reduceMotion)) { drag.indicatorVisible = true } }
                 case .horizontal:
-                    guard let start = seekPositionAtDragStart else { return }
-                    seekPreview = PlayerGestures.seekTarget(startPosition: start, duration: model.snapshot.duration, dragWidth: dx, screenWidth: Double(size.width))
-                    if let target = seekPreview { model.scrub(to: target) }
+                    guard let start = drag.seekPositionAtDragStart else { return }
+                    drag.seekPreview = PlayerGestures.seekTarget(startPosition: start, duration: model.snapshot.duration, dragWidth: dx, screenWidth: Double(size.width))
+                    if let target = drag.seekPreview { model.scrub(to: target) }
                 case .undecided: break
                 }
             }
             .onEnded { _ in
                 // El ×2 se quedó con el toque: no se confirma el movimiento del video.
-                if fastForwardOwnsTouch { cancelVideoMove(); dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil; return }
+                if drag.fastForwardOwnsTouch { cancelVideoMove(); drag.dragAxis = .undecided; drag.verticalKind = nil; drag.seekPositionAtDragStart = nil; drag.seekPreview = nil; return }
                 // Se queda donde lo sueltas (sin imanes).
                 if let moved = portraitDrag { withAnimation(DS.Motion.base(reduceMotion)) { portraitCenter = moved; portraitDrag = nil; movingVideo = false } }
                 movingVideo = false
-                if dragAxis == .horizontal, let target = seekPreview { pendingSeek = target; Task { await model.seek(to: target) } }
-                dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil
+                if drag.dragAxis == .horizontal, let target = drag.seekPreview { pendingSeek = target; Task { await model.seek(to: target) } }
+                drag.dragAxis = .undecided; drag.verticalKind = nil; drag.seekPositionAtDragStart = nil; drag.seekPreview = nil
                 scheduleIndicatorHide()
                 if controlsVisible { scheduleHide() }
             }
     }
 
     @ViewBuilder var gestureOverlays: some View {
-        if indicatorVisible, let indicator {
+        if drag.indicatorVisible, let indicator = drag.indicator {
             // Antes iba centrado en toda la pantalla: en vertical caía debajo del video, encima de la barra de avance, y en
             // horizontal casi la tocaba. Ahora: en vertical, a media altura del video y de su tamaño; en horizontal, entre la
             // barra de arriba y la de avance.
@@ -339,7 +339,7 @@ extension PlayerScreen {
         }
         // Buscar arrastrando sobre el video: la burbuja es la misma de la barra (los controles se ven mientras arrastras). Solo el
         // iPod, que no tiene esa barra, usa la suya.
-        if ipod != nil, dragAxis == .horizontal, let target = seekPreview, let start = seekPositionAtDragStart {
+        if ipod != nil, drag.dragAxis == .horizontal, let target = drag.seekPreview, let start = drag.seekPositionAtDragStart {
             seekBubble(target: target, start: start)
         }
         if let notice, !lockNoticeVisible {
@@ -412,16 +412,16 @@ extension PlayerScreen {
     }
 
     func scheduleIndicatorHide() {
-        indicatorHideTask?.cancel()
-        indicatorHideTask = Task {
+        drag.indicatorHideTask?.cancel()
+        drag.indicatorHideTask = Task {
             try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
             guard !Task.isCancelled else { return }
-            withAnimation(DS.Motion.base(reduceMotion)) { indicatorVisible = false }
+            withAnimation(DS.Motion.base(reduceMotion)) { drag.indicatorVisible = false }
         }
     }
 
     /// La píldora «2×» se ve mientras mantienes el dedo y, si quedó fija, cuando hay controles. Bloqueada la pantalla, no.
-    var speedPillVisible: Bool { isFastForwarding && (fastForwardHolding || controlsVisible) && !locked }
+    var speedPillVisible: Bool { drag.isFastForwarding && (drag.fastForwardHolding || controlsVisible) && !locked }
 
     /// Abajo al centro. Horizontal: justo encima de la barra. Vertical: al pie del área segura, salvo «Recortar» con
     /// controles, que va encima de su barra.
@@ -434,9 +434,9 @@ extension PlayerScreen {
     var speedPill: some View {
         VStack {
             Spacer(minLength: 0)
-            Button { if !fastForwardHolding { endFastForward(holder.model, force: true) } } label: {
-                DSSpeedPill(locked: fastForwardLocked, progress: fastForwardProgress, holding: fastForwardHolding,
-                            unlocks: fastForwardLockedAtStart)
+            Button { if !drag.fastForwardHolding { endFastForward(holder.model, force: true) } } label: {
+                DSSpeedPill(locked: drag.fastForwardLocked, progress: fastForwardProgress, holding: drag.fastForwardHolding,
+                            unlocks: drag.fastForwardLockedAtStart)
             }
             .buttonStyle(.plain)
         }
@@ -447,64 +447,64 @@ extension PlayerScreen {
     func cancelVideoMove() {
         portraitDrag = nil
         movingVideo = false
-        if dragAxis == .vertical { dragAxis = .undecided; verticalKind = nil }
+        if drag.dragAxis == .vertical { drag.dragAxis = .undecided; drag.verticalKind = nil }
     }
 
     /// ×2 como TikTok: mantener el dedo lo pone mientras dure. Hacia abajo se fija; hacia arriba vuelve a la velocidad previa.
     func holdFastForward(_ model: PlayerModel) {
         if movingVideo { cancelVideoMove() }
-        guard dragAxis == .undecided else { return }
-        fastForwardOwnsTouch = true
-        fastForwardHolding = true
-        fastForwardLockedAtStart = fastForwardLocked
-        fastForwardToggledThisHold = false
+        guard drag.dragAxis == .undecided else { return }
+        drag.fastForwardOwnsTouch = true
+        drag.fastForwardHolding = true
+        drag.fastForwardLockedAtStart = drag.fastForwardLocked
+        drag.fastForwardToggledThisHold = false
         fastForwardProgress = 0
         hideTask?.cancel()
         // En vertical (sin «Recortar») la pantalla queda limpia mientras el dedo sigue puesto.
         if !landscape && !fillsPortrait {
             withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false }
         }
-        guard !isFastForwarding else { return }   // ya iba fijo: mantener solo deja deslizar para quitarlo
+        guard !drag.isFastForwarding else { return }   // ya iba fijo: mantener solo deja deslizar para quitarlo
         rateBeforeFastForward = model.rate
-        withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = true }
+        withAnimation(DS.Motion.base(reduceMotion)) { drag.isFastForwarding = true }
         Task { await model.setRate(PlaybackRules.fastForwardRate) }
     }
 
     /// Hacia abajo llena el anillo y, al completar la distancia, fija el ×2 (vibra). Hacia arriba lo quita al momento.
     /// La distancia hacia abajo se acorta si el dedo empezó cerca del borde, pero no baja de `fastForwardLockDragMin`.
     func fastForwardDrag(translationY: CGFloat, screenHeight: CGFloat, model: PlayerModel) {
-        guard fastForwardHolding else { return }
+        guard drag.fastForwardHolding else { return }
         let down = max(0, translationY)
         let up = max(0, -translationY)
         if up >= DS.Gesture.fastForwardLockDrag {
-            fastForwardHolding = false
+            drag.fastForwardHolding = false
             fastForwardProgress = 0
             endFastForward(model, force: true)
             return
         }
-        let room = max(0, screenHeight - (touchStartY ?? 0))
+        let room = max(0, screenHeight - (drag.touchStartY ?? 0))
         let distance = CGFloat(PlayerGestures.fastForwardLockDistance(
             roomBelow: Double(room), preferred: Double(DS.Gesture.fastForwardLockDrag), minimum: Double(DS.Gesture.fastForwardLockDragMin)))
         guard distance > 0 else { return }
         fastForwardProgress = Double(min(1, down / distance))
-        guard down >= distance, !fastForwardToggledThisHold else { return }
-        fastForwardToggledThisHold = true
-        withAnimation(DS.Motion.base(reduceMotion)) { fastForwardLocked = true }
+        guard down >= distance, !drag.fastForwardToggledThisHold else { return }
+        drag.fastForwardToggledThisHold = true
+        withAnimation(DS.Motion.base(reduceMotion)) { drag.fastForwardLocked = true }
     }
 
     /// Al soltar: si quedó fijo sigue en ×2 (y la píldora se va con los controles); si no, vuelve a la velocidad de antes.
     func releaseFastForward(_ model: PlayerModel) {
-        let wasHolding = fastForwardHolding
-        fastForwardHolding = false
-        fastForwardOwnsTouch = false
+        let wasHolding = drag.fastForwardHolding
+        drag.fastForwardHolding = false
+        drag.fastForwardOwnsTouch = false
         fastForwardProgress = 0
-        if wasHolding, !fastForwardLocked { endFastForward(model, force: true) }
+        if wasHolding, !drag.fastForwardLocked { endFastForward(model, force: true) }
         if controlsVisible { scheduleHide() }
     }
 
     func endFastForward(_ model: PlayerModel, force: Bool = false) {
-        guard isFastForwarding, force || !fastForwardLocked else { return }
-        withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = false; fastForwardLocked = false }
+        guard drag.isFastForwarding, force || !drag.fastForwardLocked else { return }
+        withAnimation(DS.Motion.base(reduceMotion)) { drag.isFastForwarding = false; drag.fastForwardLocked = false }
         fastForwardProgress = 0
         Task { await model.setRate(rateBeforeFastForward) }
     }
@@ -514,21 +514,21 @@ extension PlayerScreen {
     /// `fastforward-locked` deja el ×2 fijo, con la píldora y los controles a la vista.
     func simulateGesture(_ kind: String, model: PlayerModel) {
         switch kind {
-        case "brightness": verticalKind = .brightness; indicator = (.brightness, "sun.max.fill", 0.65); indicatorVisible = true
-        case "volume": verticalKind = .volume; indicator = (.volume, "speaker.wave.2.fill", 0.4); indicatorVisible = true
-        case "seek": dragAxis = .horizontal; seekPositionAtDragStart = model.snapshot.position; seekPreview = model.snapshot.position + 80
+        case "brightness": drag.verticalKind = .brightness; drag.indicator = (.brightness, "sun.max.fill", 0.65); drag.indicatorVisible = true
+        case "volume": drag.verticalKind = .volume; drag.indicator = (.volume, "speaker.wave.2.fill", 0.4); drag.indicatorVisible = true
+        case "seek": drag.dragAxis = .horizontal; drag.seekPositionAtDragStart = model.snapshot.position; drag.seekPreview = model.snapshot.position + 80
         case "fastforward": holdFastForward(model)
         case "controls": hideTask?.cancel(); controlsVisible = true
         case "skip": skip(model, forward: true); skip(model, forward: true); skip(model, forward: true); skipChainTask?.cancel()
         case "fastforward-locked":
             hideTask?.cancel()
             rateBeforeFastForward = model.rate
-            fastForwardLocked = true
-            fastForwardHolding = false
-            fastForwardOwnsTouch = false
-            fastForwardLockedAtStart = true
+            drag.fastForwardLocked = true
+            drag.fastForwardHolding = false
+            drag.fastForwardOwnsTouch = false
+            drag.fastForwardLockedAtStart = true
             fastForwardProgress = 0
-            withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = true; controlsVisible = true }
+            withAnimation(DS.Motion.base(reduceMotion)) { drag.isFastForwarding = true; controlsVisible = true }
             Task { await model.setRate(PlaybackRules.fastForwardRate) }
         default: break
         }
