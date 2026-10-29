@@ -2,7 +2,7 @@ import XCTest
 
 /// iPhone, iPad y Mac con una sola app (`docs/producto/ipad-y-mac-2026-10.md`): lo que depende del aparato o de la pantalla
 /// vive solo en `ios/App/Sources/Platform/`. Las pantallas deciden por el espacio de su ventana, nunca por «qué aparato es».
-/// Lo que hoy está fuera es la lista de pendientes: solo puede encogerse (Etapa 0 y Etapa 1 del plan la vacían).
+/// Lo que queda fuera es la lista de pendientes: solo puede encogerse.
 final class PlatformBoundaryTests: XCTestCase {
     var repo: URL {
         var url = URL(fileURLWithPath: #filePath)
@@ -15,17 +15,7 @@ final class PlatformBoundaryTests: XCTestCase {
 
     /// Pendientes por archivo (ruta desde `ios/App/Sources/`): cuántos usos quedan. Al quitar uno, baja aquí el número.
     static let pending: [String: Int] = [
-        "AppEnvironment.swift": 3,                      // candado de orientación (1.2), escenas
-        "Design/Collections.swift": 1,                  // ancho de pantalla (0.3)
-        "Design/Tokens.swift": 4,                       // anchos y altos de pantalla (0.3)
-        "Screens/DecideView.swift": 1,                  // alto de pantalla (0.3)
-        "Screens/ParaTiView.swift": 1,                  // ancho de pantalla (0.3)
-        "Screens/TitleView.swift": 1,                   // alto de pantalla (0.3)
-        "Screens/RemoteSheet.swift": 3,                 // alto de pantalla (0.3)
-        "Screens/SourcesSheet.swift": 1,                // supone una sola ventana
-        "Screens/PlayerScreen.swift": 5,                // brillo y orientación del reproductor (1.3)
-        "Screens/PlayerScreen+CicloDeVida.swift": 11,   // giro forzado y área segura (1.3)
-        "Screens/PlayerScreen+Gestos.swift": 3,         // gesto de brillo y giro (1.3)
+        "AppEnvironment.swift": 1,   // el método del AppDelegate que iOS pregunta (responde `Orientation.supported`)
     ]
 
     func testDeviceSpecificCodeLivesInPlatform() throws {

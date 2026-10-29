@@ -252,6 +252,7 @@ struct PlayerScreen: View {
                     }
                 }
                 .frame(width: rect.width, height: rect.height)
+                .clipped()   // un video en «Recortar» nunca se dibuja fuera de su lugar (bajo el panel de la derecha)
                 // Al arrastrarlo solo se nota con una sombra. Antes además se encogía y redondeaba: al soltar, el motor se quedaba con
                 // el cuadro de la animación y el video brincaba hacia arriba, cortado bajo el reloj.
                 .shadow(color: movingVideo ? DS.scrimStrong : .clear, radius: DS.PlayerPanel.liftShadow)
@@ -381,14 +382,14 @@ struct PlayerScreen: View {
             let startPortrait = request.startPortrait
             #endif
             if startPortrait { rotate(allowed: .allButUpsideDown, to: .portrait) } else { rotate(allowed: .allButUpsideDown, to: Self.openingOrientation) }
-            UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+            Orientation.beginDeviceNotifications()
             // Después, girar el teléfono gira el video como el resto de iOS: UIKit gira solo dentro de `allButUpsideDown`
             // y respeta el candado de rotación del teléfono (con el candado puesto, el video se queda como está).
             // La sesión de video, siempre (la voz del control la deja en otro modo y con el volumen bajado).
             try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
             try? AVAudioSession.sharedInstance().setActive(true)
             UIApplication.shared.isIdleTimerDisabled = true
-            originalBrightness = Double(UIScreen.main.brightness)
+            originalBrightness = ScreenBrightness.value
             // `begin` va aparte: el plazo de arranque (45 s) tiene que seguir corriendo mientras carga.
             let engine = holder.engine
             landscapeZoom = VideoZoom(stored: env.services.appSettings.videoZoom)
@@ -548,13 +549,19 @@ struct PlayerScreen: View {
         .onChange(of: subtitleDock) { _, open in holder.model.panelOpen = open }
         // Girar el teléfono gira el video: el aviso de giro del sistema no llega con el candado de rotación puesto,
         // así que con el candado el video se queda como abrió. Con «Bloquear» se ignora.
-        .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: Orientation.deviceDidRotate)) { _ in
             followDevice()
         }
+        // El teclado y la barra de menús (iPad, Mac): las mismas acciones que los botones; con «Bloquear» no hacen nada.
+        .focusedSceneValue(\.playerCommands, PlayerCommands(
+            togglePlay: { if !locked { userTogglePlay(holder.model) } },
+            skip: { forward in if !locked { skip(holder.model, forward: forward) } },
+            openDock: { if !locked { openDock(nil) } },
+            close: { if !locked { Task { await close() } } }))
         .onDisappear {
-            UIDevice.current.endGeneratingDeviceOrientationNotifications()
+            Orientation.endDeviceNotifications()
             UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait()
-            UIScreen.main.brightness = CGFloat(originalBrightness)   // el brillo es del sistema: no se queda en lo que dejó el gesto
+            ScreenBrightness.value = originalBrightness   // el brillo es del sistema: no se queda en lo que dejó el gesto
             // Ningún reloj de la pantalla sigue vivo al cerrar (antes retenían el motor y podían escribir avisos tarde).
             for task in [hideTask, frozenTask, zoomToastTask, indicatorHideTask, skipChainTask, flashTask] { task?.cancel() }
             presentation.cancel()

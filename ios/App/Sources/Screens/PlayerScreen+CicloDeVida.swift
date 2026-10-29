@@ -91,7 +91,8 @@ extension PlayerScreen {
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
         var band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter, aspect: portraitAspect)
         // Con «Audio y subtítulos» abierto, si no cabe abajo, el video sube lo justo (hasta la orilla) y el panel se ve entero.
-        if subtitleDock && dockPage != .episodes && dockNeed > 0 {
+        // (La vista de sincronizar con una frase no se mide: con la medida de otra página el video subía de más o de menos.)
+        if subtitleDock && dockPage != .episodes && syncLines == nil && dockNeed > 0 {
             let room = size.height - band.maxY - DS.Space.s4 - DS.Space.s2
             band.origin.y -= min(max(0, dockNeed - room), band.minY)
         }
@@ -145,9 +146,7 @@ extension PlayerScreen {
     var ipod: IPodFace? { landscape ? nil : IPodFace(rawValue: ipodFace) }
 
     /// Los márgenes seguros de la ventana (el video en horizontal ignora el área segura, así que no los trae su `GeometryReader`).
-    static var windowSafeArea: UIEdgeInsets {
-        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.safeAreaInsets ?? .zero
-    }
+    static var windowSafeArea: UIEdgeInsets { AppWindows.safeArea }
 
     /// «Episodios»: en vertical bajo el video y en horizontal a la derecha (donde va «Audio y subtítulos»); el video sigue.
     func openEpisodes(_ model: PlayerModel) {
@@ -194,80 +193,16 @@ extension PlayerScreen {
     }
 
 
-    /// La orientación del teléfono al abrir el reproductor (con el candado de rotación, la última que iOS conoce).
-    static var openingOrientation: UIInterfaceOrientationMask {
-        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
-        switch UIDevice.current.orientation {
-        case .portrait: return .portrait
-        case .landscapeLeft: return .landscapeRight      // el teléfono a la izquierda deja la interfaz a la derecha
-        case .landscapeRight: return .landscapeLeft
-        default: return .landscape
-        }
-    }
+    /// El giro vive en `Platform/Orientation.swift` (en iPad y Mac no se fuerza: decide el sistema).
+    static var openingOrientation: UIInterfaceOrientationMask { Orientation.opening }
 
-    /// Sigue al teléfono (solo llega si el candado de rotación del sistema está quitado). Una sola petición, a la
-    /// orientación exacta: la preferencia de `requestGeometryUpdate` se queda pegada, así que no basta el giro solo de UIKit.
+    /// Sigue al teléfono, salvo con el bloqueo puesto.
     func followDevice() {
         guard !locked else { return }
-        let target: UIInterfaceOrientationMask
-        switch UIDevice.current.orientation {
-        case .portrait: target = .portrait
-        case .landscapeLeft: target = .landscapeRight    // el teléfono a la izquierda deja la interfaz a la derecha
-        case .landscapeRight: target = .landscapeLeft
-        default: return                                  // boca arriba, boca abajo o de cabeza: se queda como está
-        }
-        AppDelegate.orientations = .allButUpsideDown
-        guard let scene = refreshSupportedOrientations() else { return }
-        Self.geometryGeneration += 1                      // cancela los reintentos de la apertura
-        scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { _ in }
+        Orientation.followDevice()
     }
 
-    /// Cada petición nueva invalida los reintentos pendientes de la anterior (no vuelven a forzar el horizontal).
-    static var geometryGeneration = 0
     func unlockPortrait() { rotate(allowed: .portrait, to: .portrait) }
-
-    /// Desde iOS 16 hay que avisar a la vista raíz de que cambiaron las orientaciones permitidas antes de pedir el giro;
-    /// si no, la petición se ignora y el video se queda en vertical.
-    func rotate(allowed: UIInterfaceOrientationMask, to target: UIInterfaceOrientationMask) {
-        AppDelegate.orientations = allowed
-        guard let scene = refreshSupportedOrientations() else { return }
-        Self.geometryGeneration += 1
-        Self.requestGeometry(scene, target, attemptsLeft: 10, generation: Self.geometryGeneration)
-    }
-
-    /// Avisa a la raíz y a todo lo que presenta encima (el reproductor es una pantalla completa presentada) de que
-    /// cambiaron las orientaciones permitidas.
-    @discardableResult
-    func refreshSupportedOrientations() -> UIWindowScene? {
-        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return nil }
-        for window in scene.windows {
-            var controller = window.rootViewController
-            while let current = controller { current.setNeedsUpdateOfSupportedInterfaceOrientations(); controller = current.presentedViewController }
-        }
-        return scene
-    }
-
-    /// «Bloquear» también congela el giro: solo se permite la orientación de este momento hasta desbloquear.
-    func freezeOrientation() {
-        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return }
-        let mask: UIInterfaceOrientationMask = switch scene.interfaceOrientation {
-        case .landscapeLeft: .landscapeLeft
-        case .landscapeRight: .landscapeRight
-        default: .portrait
-        }
-        AppDelegate.orientations = mask
-        refreshSupportedOrientations()
-    }
-
-    /// Mientras la pantalla completa se está presentando, iOS rechaza el giro («Supported: portrait»): se reintenta
-    /// en cuanto termina la animación (unas décimas). Cada intento va en otra vuelta, cuando iOS ya leyó las orientaciones nuevas.
-    static func requestGeometry(_ scene: UIWindowScene, _ target: UIInterfaceOrientationMask, attemptsLeft: Int, generation: Int) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            guard generation == geometryGeneration else { return }
-            scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { _ in
-                guard attemptsLeft > 1 else { return }
-                DispatchQueue.main.async { requestGeometry(scene, target, attemptsLeft: attemptsLeft - 1, generation: generation) }
-            }
-        }
-    }
+    func rotate(allowed: UIInterfaceOrientationMask, to target: UIInterfaceOrientationMask) { Orientation.rotate(allowed: allowed, to: target) }
+    func freezeOrientation() { Orientation.freeze() }
 }

@@ -327,7 +327,7 @@ struct YearCard: View {
 /// saludo. Al abrir, el anillo se dibuja y la luna cae en su lugar.
 struct AppMark: View {
     var body: some View {
-        let compact = UIScreen.main.bounds.width < DS.Size.compactWidth
+        let compact = WindowMetrics.size.width < DS.Size.compactWidth
         let ui = AppEnvironment.shared.ui
         OrbitalWordmark(size: compact ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
             .foregroundStyle(DS.text).fixedSize()

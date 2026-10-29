@@ -163,6 +163,8 @@ struct MainTabs: View {
     /// Cuántas descargas siguen bajando o en pausa: el globito de la pestaña Descargas.
     @State private var pendingDownloads = 0
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
+    /// Ventana ancha (iPad, Mac): las hojas son tarjetas sin alturas que estirar, así que el control abre completo.
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     init() {
         // En modo demo la pestaña pedida (`-demo-tab`) manda siempre, aunque iOS restaure la última que viste
@@ -178,7 +180,7 @@ struct MainTabs: View {
     /// Abrir el control (si hay TV configurada); aparte para que el compilador no se ahogue con el cuerpo.
     private var openRemoteAction: (() -> Void)? {
         guard tvNow.model.isConfigured else { return nil }
-        return { remoteLarge = tvNow.model.now == nil; showRemote = true }
+        return { remoteLarge = tvNow.model.now == nil || sizeClass == .regular; showRemote = true }
     }
 
     var body: some View {
@@ -196,6 +198,8 @@ struct MainTabs: View {
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
+        // iPhone: la barra de abajo de siempre. iPad y Mac: la barra de arriba que se abre como barra lateral.
+        .tabViewStyle(.sidebarAdaptable)
         // En Buscar iOS no encoge la barra (lleva el campo): ahí se esconde entera al bajar (BrowseView).
         .tabBarMinimizeBehavior(tab == 2 ? .never : .onScrollDown)
         .onChange(of: tab) { _, t in if t == 2 { Perf.begin("stab"); Perf.mark("stab.tap") } }
@@ -214,7 +218,7 @@ struct MainTabs: View {
             if let game = tvNow.model.game {
                 GameAccessory(game: game) { showGame = true }
             } else if let now = tvNow.model.now {
-                TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = false; showRemote = true })
+                TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = sizeClass == .regular; showRemote = true })
             }
         }
         .environment(\.openRemote, openRemoteAction)
@@ -223,7 +227,7 @@ struct MainTabs: View {
         .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped, !remoteLarge { showRemote = false } }
         #if DEBUG
         .onChange(of: tvNow.model.now == nil) { _, stopped in   // `-demo-open remote` (corta) o `remote-full` (estirada)
-            if !stopped, Demo.isOn, ["remote", "remote-full", "remote-pad", "voice-guide"].contains(Demo.open) { remoteLarge = Demo.open != "remote"; showRemote = true }
+            if !stopped, Demo.isOn, ["remote", "remote-full", "remote-pad", "voice-guide"].contains(Demo.open) { remoteLarge = Demo.open != "remote" || sizeClass == .regular; showRemote = true }
         }
         .task { if Demo.isOn, Demo.open == "remote-idle" { remoteLarge = true; showRemote = true } }   // el control sin nada en la TV
         #endif

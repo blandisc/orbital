@@ -95,7 +95,7 @@ extension PlayerScreen {
         lockNoticeRisen = false
         lockNoticeShowsUnlock = false
         withAnimation(DS.Motion.base(reduceMotion)) { locked = false; controlsVisible = true }
-        AppDelegate.orientations = .allButUpsideDown; refreshSupportedOrientations()
+        Orientation.allowAll()
         scheduleHide()
         flushHeldNotices()
     }
@@ -279,7 +279,7 @@ extension PlayerScreen {
                     case .vertical:
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
                         verticalKind = kind
-                        if kind == .brightness { brightnessAtDragStart = Double(UIScreen.main.brightness) }
+                        if kind == .brightness { brightnessAtDragStart = ScreenBrightness.value }
                         else { volumeAtDragStart = Double(AVAudioSession.sharedInstance().outputVolume) }
                     case .horizontal:
                         seekPositionAtDragStart = model.snapshot.position
@@ -296,7 +296,7 @@ extension PlayerScreen {
                     guard let kind = verticalKind else { return }
                     let start = kind == .brightness ? brightnessAtDragStart : volumeAtDragStart
                     let value2 = PlayerGestures.verticalValue(start: start, dragHeight: dy, screenHeight: Double(size.height))
-                    if kind == .brightness { UIScreen.main.brightness = CGFloat(value2) } else { requestedVolume = Float(value2) }
+                    if kind == .brightness { ScreenBrightness.value = value2 } else { requestedVolume = Float(value2) }
                     indicator = (kind, kind == .brightness ? "sun.max.fill" : "speaker.wave.2.fill", value2)
                     if !indicatorVisible { indicatorHideTask?.cancel(); withAnimation(DS.Motion.base(reduceMotion)) { indicatorVisible = true } }
                 case .horizontal:

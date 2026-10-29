@@ -42,7 +42,7 @@ struct RemoteSheet: View {
                 header(model)
                     // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                        if !large { measuredCompact = min(height + DS.Space.s6 + DS.Space.s10, UIScreen.main.bounds.height * DS.Remote.maxShareFitted); settle() }
+                        if !large { measuredCompact = min(height + DS.Space.s6 + DS.Space.s10, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() }
                     }
                 // Lo completo aparece y se va con un fundido y un leve desplazamiento (antes subía entero desde abajo).
                 if large { full(model).transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: DS.Space.s6)), removal: .opacity)) }
@@ -52,9 +52,9 @@ struct RemoteSheet: View {
                 }
             }
             .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { measuredFull = min($0, UIScreen.main.bounds.height * DS.Remote.maxShareFitted); settle() } }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { measuredFull = min($0, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() } }
         }
-        .scrollDisabled(!large && compactHeight < UIScreen.main.bounds.height * DS.Remote.maxShareFitted)   // corta y sin caber (letra grande): se desliza
+        .scrollDisabled(!large && compactHeight < WindowMetrics.size.height * DS.Remote.maxShareFitted)   // corta y sin caber (letra grande): se desliza
         .scrollBounceBehavior(.basedOnSize)
         // Sin nada en la TV la hoja corta no tiene qué enseñar (quedaba «Tu Orbital» y un hueco, y bajarla se atoraba ahí):
         // solo la altura completa, y bajarla la cierra.
@@ -63,6 +63,7 @@ struct RemoteSheet: View {
             set: { large = $0 == .height(fullHeight) }))
         .onChange(of: model.now == nil) { _, idle in if idle { large = true } }
         .presentationDragIndicator(.visible)
+        .fittedFormSizing()   // iPad y Mac: tarjeta del alto del control (ahí abre siempre completo: `MainTabs`)
         .presentationBackgroundInteraction(.disabled)
         // Vidrio en las dos alturas (la estirada no llega a la altura completa, que iOS volvería opaca).
         .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }

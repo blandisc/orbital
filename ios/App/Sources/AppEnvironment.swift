@@ -48,7 +48,7 @@ final class AppEnvironment {
         get { ui.playing }
         set {
             let old = ui.playing
-            AppDelegate.orientations = newValue == nil ? .portrait : .allButUpsideDown
+            Orientation.mask = newValue == nil ? .portrait : .allButUpsideDown
             ui.playing = newValue
             if newValue == nil, old != nil { watchedSomething += 1 }
         }
@@ -362,8 +362,8 @@ final class AppEnvironment {
     /// iPhone» después de forzar claro u oscuro y a veces no llega a las hojas abiertas: la ventana sí obedece siempre.
     func applyAppearance() {
         let style: UIUserInterfaceStyle = switch colorScheme { case .light: .light; case .dark: .dark; default: .unspecified }
-        for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
-            for window in scene.windows where window.overrideUserInterfaceStyle != style {
+        do {
+            for window in AppWindows.all where window.overrideUserInterfaceStyle != style {
                 // Con un fundido (como Ajustes): de golpe, toda la app se redibujaba en un cuadro y se sentía trabado.
                 UIView.transition(with: window, duration: DesignTokens.Motion.slow, options: [.transitionCrossDissolve, .allowUserInteraction]) {
                     window.overrideUserInterfaceStyle = style
@@ -831,8 +831,6 @@ final class AppEnvironment {
 }
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
-    static var orientations: UIInterfaceOrientationMask = .portrait
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Se registra antes de que termine de arrancar la app (lo exige iOS).
         ImagePipeline.shared.preconnect()   // lo primero: la conexión con las imágenes, mientras arranca lo demás
@@ -866,7 +864,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         }
     }
 
-    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask { Self.orientations }
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask { Orientation.supported }
 
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
         // Puede llegar antes de que exista ninguna vista: se arma el entorno (que reconecta la sesión de descargas) y se guarda aquí.

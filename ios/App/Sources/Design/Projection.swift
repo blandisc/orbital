@@ -341,6 +341,7 @@ private struct FittedSheet: ViewModifier {
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
             .presentationDetents([.height(height)])
             .presentationDragIndicator(.visible)
+            .fittedFormSizing()
     }
 }
 
@@ -355,10 +356,14 @@ private struct FittedScrollSheet: ViewModifier {
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height + $0.contentInsets.top + $0.contentInsets.bottom } action: { _, h in height = h }
             .presentationDetents([.height(height)])
             .presentationDragIndicator(.visible)
+            .fittedFormSizing()
     }
 }
 
 extension View {
+    /// En ventanas anchas (iPad, Mac) iOS no usa las alturas de la hoja (`presentationDetents`): la muestra como tarjeta
+    /// centrada. Con esto la tarjeta mide lo que trae, como la hoja del iPhone. En el iPhone no cambia nada.
+    func fittedFormSizing() -> some View { presentationSizing(.form.fitted(horizontal: false, vertical: true)) }
     /// Receta: hoja a la medida de su lista, que se desplaza si no cabe (ver `FittedScrollSheet`). Va sobre el `ScrollView`.
     func fittedScrollSheet() -> some View { modifier(FittedScrollSheet()) }
     /// Receta: hoja a la medida de su contenido (ver `FittedSheet`).

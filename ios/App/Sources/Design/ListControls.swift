@@ -231,7 +231,7 @@ struct DSPosterGrid<Data: RandomAccessCollection, Cell: View>: View where Data.E
 
     private var columns: Int {
         if typeSize.isAccessibilitySize { return DS.Poster.gridColumnsLarge }
-        return width >= DS.Poster.gridWideWidth ? DS.Poster.gridColumnsWide : DS.Poster.gridColumns
+        return DS.Poster.gridColumns(for: width)
     }
 
     private var cellWidth: CGFloat {

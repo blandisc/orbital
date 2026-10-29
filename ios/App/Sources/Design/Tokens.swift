@@ -692,7 +692,7 @@ enum DS {
         static let tabUnderline: CGFloat = 3
         /// Dos tarjetas y un pedazo de la tercera (como «Próximos estrenos»): en un iPhone de 375 pt las dos de 168 llenaban casi todo
         /// el ancho y dejaban 11 pt a la derecha contra 16 a la izquierda.
-        static var width: CGFloat { min(maxWidth, (UIScreen.main.bounds.width - DS.Space.gutter - DS.Space.s3 - DS.Poster.peek) / 2) }
+        static var width: CGFloat { min(maxWidth, (WindowMetrics.size.width - DS.Space.gutter - DS.Space.s3 - DS.Poster.peek) / 2) }
         static let maxWidth: CGFloat = 168, height: CGFloat = 176, radius: CGFloat = 22
         static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
         static let logo: CGFloat = 34, logoRadius: CGFloat = 10, glow: CGFloat = 18
@@ -757,12 +757,12 @@ enum DS {
         static let padHeightShort: CGFloat = 116, keyHeightShort: CGFloat = 46, shortScreen: CGFloat = 700
         /// El alto fijo del ícono de una tecla: los nombres quedan en el mismo renglón aunque los símbolos midan distinto.
         static let keyIcon: CGFloat = 24
-        static var isShortScreen: Bool { UIScreen.main.bounds.height < shortScreen }
+        static var isShortScreen: Bool { WindowMetrics.size.height < shortScreen }
         /// El alto de una tecla y del pad según el teléfono.
         static var keyHeightFitted: CGFloat { isShortScreen ? keyHeightShort : keyHeight }
         /// En un SE la hoja estirada puede llegar arriba del todo (opaca) para que quepa el control completo.
         static var maxShareFitted: CGFloat { isShortScreen ? 1 : maxShare }
-        static var padHeightFitted: CGFloat { isShortScreen ? padHeightShort : max(padHeight, UIScreen.main.bounds.height * padShare) }
+        static var padHeightFitted: CGFloat { isShortScreen ? padHeightShort : max(padHeight, WindowMetrics.size.height * padShare) }
         /// Qué parte del alto de la pantalla toma el pad (en un iPhone grande crece).
         static let padShare: CGFloat = 0.2
         /// Lo más que crece la hoja estirada (por debajo de la altura completa, que iOS vuelve opaca).
@@ -947,11 +947,20 @@ enum DS {
         /// desde qué ancho de contenido cuenta como ancha (iPhone horizontal, iPad).
         static let gridColumns = 3, gridColumnsWide = 4, gridColumnsLarge = 2
         static let gridWideWidth: CGFloat = 600
+        /// En ventanas anchas (iPad, Mac) caben más columnas: ninguna celda pasa de este ancho (con 4 fijas, en un iPad
+        /// horizontal cada póster medía ~280 pt).
+        static let gridCellMax: CGFloat = 160
+        /// Cuántas columnas en `width` (el ancho del contenido, con sus márgenes).
+        static func gridColumns(for width: CGFloat) -> Int {
+            guard width >= gridWideWidth else { return gridColumns }
+            let inner = width - DS.Space.gutter * 2 + DS.Space.s3
+            return max(gridColumnsWide, Int(inner / (gridCellMax + DS.Space.s3)))
+        }
         static let episodeThumbWidth: CGFloat = 122
         /// Una tarjeta de «Próximos estrenos»: dos y un pedazo (`peek`) de la tercera, en cualquier ancho (con un ancho fijo, en un
         /// iPhone de 375 pt las dos llenaban la pantalla y parecía una cuadrícula que terminaba a 5 pt del borde).
         static let peek: CGFloat = 28
-        static var airingWidth: CGFloat { (UIScreen.main.bounds.width - DS.Space.gutter - DS.Space.s3 - peek) / 2 }
+        static var airingWidth: CGFloat { (WindowMetrics.size.width - DS.Space.gutter - DS.Space.s3 - peek) / 2 }
         /// Una pieza ancha (16:9) de un riel: «Todo lo que sigues», episodios nuevos.
         static let stillWidth: CGFloat = 220
         static let heroHeight: CGFloat = 300

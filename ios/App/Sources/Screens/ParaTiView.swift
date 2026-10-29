@@ -19,7 +19,7 @@ struct ParaTiView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     /// Un iPhone de 375 pt o menos (SE, mini): la barra de arriba no da para todo junto al título.
-    static var narrow: Bool { UIScreen.main.bounds.width < DS.Size.compactWidth }
+    static var narrow: Bool { WindowMetrics.size.width < DS.Size.compactWidth }
 
     init() { _model = State(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
 

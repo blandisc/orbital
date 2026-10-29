@@ -18,7 +18,9 @@ struct OrbitalApp: App {
                 .environment(\.locale, env.uiLocale)
                 .onAppear { env.applyAppearance() }   // Ajustes › Apariencia (por omisión, la del iPhone), en la ventana
                 .tint(DS.primary)
+                .tracksWindowSize()   // el tamaño de la ventana para las pantallas (`WindowMetrics`)
                 .onOpenURL { url in Task { await env.handle(url: url) } }
         }
+        .commands { AppCommands() }   // la barra de menús del iPad con teclado y de la Mac
     }
 }

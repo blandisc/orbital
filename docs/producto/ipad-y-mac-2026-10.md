@@ -62,6 +62,21 @@ umbral de pantalla corta es 700 pt. Un commit por pantalla para revertir solo lo
 | 2.3 | Verificar en la Mac real: descargas en segundo plano, `BGTaskScheduler`, PiP, micrófono y control por voz |
 | 2.4 | Pruebas: una pasada manual en la Mac por cada versión (las UITests usan gestos táctiles y `XCUIScreen.main`; no se portan) |
 
+## Avance
+
+| Paso | Estado |
+|---|---|
+| 0.1 Prueba de frontera (`PlatformBoundaryTests`) | Hecho (`e517f97d`) |
+| 0.2 Tipo de aparato y botones de volumen en `Platform/` | Hecho (`929dafaf`) |
+| 0.3 Medir la ventana (`Platform/WindowMetrics.swift`, `.tracksWindowSize()` en la raíz) | Hecho. La medida suma los márgenes seguros: con `ignoresSafeArea` faltaba la barra de estado y el control completo quedaba ~50 pt más bajo (lo cacharon las capturas) |
+| 1.1 iPad en el proyecto (`TARGETED_DEVICE_FAMILY "1,2"`, cuatro orientaciones) | Hecho |
+| 1.2 / 1.3 Giro: `Platform/Orientation.swift`; en iPad y Mac no se fuerza; brillo en `ScreenBrightness` | Hecho |
+| 1.4 Pestañas `.sidebarAdaptable` | Hecho |
+| 1.5 Hojas: `.fittedFormSizing()`; el control abre completo en ventana ancha | Hecho |
+| 1.7 Barra de menús (`AppCommands`): Ir (⌘1–3, ⌘F, ⌘R) y Reproducción (espacio, ←/→, ⌘L, Esc) | Hecho |
+| 1.6 Layouts del iPad | En revisión con capturas |
+| 2.x Mac «Diseñada para iPad» | Pendiente |
+
 ## Riesgos abiertos
 
 1. Decidir cómo se ve el control remoto en iPad (1.5): hoy está hecho alrededor de la altura del iPhone.

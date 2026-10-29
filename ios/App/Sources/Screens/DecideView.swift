@@ -44,6 +44,7 @@ struct DecideView: View {
                 }
         }
         .presentationDetents(path.isEmpty ? [.height(quickHeight)] : [.large])
+        .fittedFormSizing()
         .presentationDragIndicator(.visible)
         .animation(DS.Motion.base(reduceMotion), value: m.pick?.imdb)
         .task {
@@ -69,7 +70,7 @@ struct DecideView: View {
                 filterRow(m)
             }
             .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s5).padding(.bottom, DS.Space.s4)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in quickHeight = min(h, UIScreen.main.bounds.height * DS.Remote.maxShare) }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in quickHeight = min(h, WindowMetrics.size.height * DS.Remote.maxShare) }
         }
         .scrollBounceBehavior(.basedOnSize)
     }
