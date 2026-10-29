@@ -490,7 +490,11 @@ public final class PlayerModel: ObservableModel {
             if !goBackAfterSwitch() { retryWithAnotherSource() }
             return
         }
-        if s.state == .playing && !hasPlayed { Self.note("suena en \(Int(s.position)) s"); hasPlayed = true; startupDeadline = nil; phase = .playing; switchBack = nil }
+        if !hasPlayed, acceptingSnapshots, "\(s.state)" != lastLoggedState {   // antes de sonar: cada cambio del motor, con su tiempo
+            lastLoggedState = "\(s.state)"
+            Self.note(String(format: "motor: %@ (%.1f s)", lastLoggedState, clock().timeIntervalSince(loadStartedAt)))
+        }
+        if s.state == .playing && !hasPlayed { Self.note(String(format: "suena en %d s (%.1f s desde que empezó a cargar)", Int(s.position), clock().timeIntervalSince(loadStartedAt))); hasPlayed = true; startupDeadline = nil; phase = .playing; switchBack = nil }
         if let request = playRequest, s.state == .playing, s.position > request.position + 0.3 { playRequest = nil }   // ya avanza
         // Rearmando el mismo video en pausa (al volver de segundo plano): en pausa también es «ya está». Antes se esperaba a que
         // sonara, se quedaba en «preparando» sin botones y a los 45 s cambiaba de fuente y arrancaba solo.
@@ -1045,7 +1049,9 @@ public final class PlayerModel: ObservableModel {
 
     /// Abre un video y le pone la velocidad elegida (el motor empieza cada video en 1).
     private func loadVideo(_ url: URL, at start: Double) async throws {
-        Self.note("cargar desde \(url.host ?? "archivo") en \(Int(start)) s")
+        let src = source.map { "\($0.cached ? "en Real-Debrid" : ($0.debrid ? "Real-Debrid aún la baja" : "directa")) · \($0.qualitySummary.joined(separator: " "))" } ?? "archivo"
+        Self.note("cargar desde \(url.host ?? "archivo") en \(Int(start)) s (\(src))")
+        loadStartedAt = clock(); lastLoggedState = ""
         if let request {
             // Lo que ya sabes que quieres, desde el primer cuadro: el audio y los subtítulos con que lo dejaste (o tus idiomas).
             let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
@@ -1055,6 +1061,7 @@ public final class PlayerModel: ObservableModel {
             await engine.prepare(audioLanguages: audio, subtitleLanguages: subs, externalSubtitles: request.localSubtitles)
         }
         try await engine.load(url: url, startAt: start)
+        Self.note(String(format: "el motor abrió el archivo en %.1f s", clock().timeIntervalSince(loadStartedAt)))
         if rate != 1 { await engine.setRate(rate) }
     }
 
@@ -1478,6 +1485,8 @@ public final class PlayerModel: ObservableModel {
     public private(set) var reconnecting = false { didSet { changed() } }
     private var backgrounded = false
     private var foregroundPending = false
+    private var loadStartedAt = Date.distantPast
+    private var lastLoggedState = ""
     private var resumeOnForeground = false
     /// Tras volver: si iba sonando y en este plazo no avanzó, el video se pide otra vez en el mismo punto.
     private var foregroundCheck: (deadline: Date, position: Double)?
