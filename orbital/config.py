@@ -138,6 +138,9 @@ class ParaTiConfig:
     - TMDB (themoviedb.org/settings/api): lo más popular en Netflix, Disney+ y HBO Max, y sinopsis en español.
     - RAWG (rawg.io/apidocs): novedades, lo más popular y lo mejor calificado en juegos.
     - SteamGridDB (steamgriddb.com › Preferences › API): más portadas y fondos para elegir en tus juegos.
+    - MDBList (mdblist.com › Preferences › API): «Aprobadas por la crítica» (Rotten Tomatoes). Sin clave también sale,
+      con las listas públicas; `critics_movies` y `critics_series` dicen cuáles («mdblist:usuario/lista» o
+      «trakt:usuario/lista»; vacío, esa mitad no sale).
     Las claves pueden ir cifradas con tu usuario de Windows («dpapi:…»), como el token de Alexa.
     """
     trakt_client_id: str = ""
@@ -145,6 +148,9 @@ class ParaTiConfig:
     tmdb_key: str = ""
     rawg_key: str = ""
     steamgriddb_key: str = ""
+    mdblist_key: str = ""
+    critics_movies: str = "mdblist:tbotcotw/recent-certified-fresh"  # Certified Fresh de los últimos 90 días
+    critics_series: str = "trakt:truckclancy/rotten-tomatoes-certified-fresh-tv-shows-ranked-by-tomatometer-score"
     region: str = "MX"  # país para «lo más popular en…» (código de dos letras)
 
 
@@ -239,7 +245,8 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
     cfg.tv.input = str(cfg.tv.input or "").strip().lower().removeprefix("tvinput.")
     if not re.fullmatch(r"hdmi\d|av\d|dtv", cfg.tv.input):
         raise ValueError("tv.input debe ser una entrada de la tele: hdmi1, hdmi2, hdmi3, av1 o dtv")
-    for key in ("trakt_client_id", "trakt_client_secret", "tmdb_key", "rawg_key", "steamgriddb_key"):
+    for key in ("trakt_client_id", "trakt_client_secret", "tmdb_key", "rawg_key", "steamgriddb_key", "mdblist_key",
+                "critics_movies", "critics_series"):
         setattr(cfg.para_ti, key, str(getattr(cfg.para_ti, key) or "").strip())
     return cfg
 
@@ -259,7 +266,7 @@ def load_config(path: Path | None = None) -> Config:
         except ValueError as exc:
             logging.getLogger(__name__).warning("%s: Alexa queda desconectada hasta `orbital alexa setup`", exc)
             cfg.server.token = ""
-    for key in ("trakt_client_id", "trakt_client_secret", "tmdb_key", "rawg_key", "steamgriddb_key"):
+    for key in ("trakt_client_id", "trakt_client_secret", "tmdb_key", "rawg_key", "steamgriddb_key", "mdblist_key"):
         value = getattr(cfg.para_ti, key)
         if value.startswith("dpapi:"):
             from .dpapi import reveal

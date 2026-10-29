@@ -841,6 +841,12 @@ export const KEY_FORMS = {
     lead: "En rawg.io/apidocs crea una cuenta y pulsa «Get API key»: copia la clave que aparece.",
     fields: [{ name: "key", label: "Clave de RAWG", secret: true }],
   },
+  mdblist: {
+    service: "mdblist", label: "MDBList", icon: "spark", hint: "Aprobadas por la crítica (Rotten Tomatoes)",
+    title: "Clave de MDBList", submitLabel: "Guardar",
+    lead: "En mdblist.com entra con tu cuenta de Trakt, ve a Preferences › API y copia la clave. Sin ella también sale, con las listas públicas.",
+    fields: [{ name: "key", label: "Clave de MDBList", secret: true }],
+  },
   steamgriddb: {
     service: "steamgriddb", label: "SteamGridDB", icon: "cover", hint: "Más portadas y fondos para tus juegos",
     title: "Clave de SteamGridDB", submitLabel: "Guardar",

@@ -34,6 +34,7 @@ from typing import Any
 
 from . import decide as decide_api
 from .library import charts as charts_api
+from .library import mdblist as mdblist_api
 from .library import rawg as rawg_api
 from .library import stremio_api
 from .library import tmdb as tmdb_api
@@ -50,7 +51,7 @@ LOGO_WARM = 12  # de cada lista, los logos que se bajan antes de que se pidan
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{file}"
 GAME_CATEGORIES = ("steam", "emulators")
 SERVICE_ERRORS = (trakt_api.TraktError, tmdb_api.TmdbError, rawg_api.RawgError, stremio_api.StremioError,
-                  charts_api.ChartsError) + NET_ERRORS
+                  charts_api.ChartsError, mdblist_api.MdbListError) + NET_ERRORS
 # JustWatch, con su propio riel «Lo más visto en…» (Netflix ya tiene el Top 10 oficial: chart:netflix).
 JW_LIST_BRANDS = ("disney", "hbo", "prime", "appletv", "paramount")
 
@@ -105,7 +106,7 @@ def load_awards(path: Path = AWARDS_FILE) -> list[dict]:
 
 
 KEYS = {"trakt": ("trakt_client_id", "trakt_client_secret"), "tmdb": ("tmdb_key",), "rawg": ("rawg_key",),
-        "steamgriddb": ("steamgriddb_key",)}  # esta no es de Para ti: más portadas para tus juegos (scraper.SteamGridDB)
+        "steamgriddb": ("steamgriddb_key",), "mdblist": ("mdblist_key",)}  # esta no es de Para ti: más portadas para tus juegos (scraper.SteamGridDB)
 KEY_PREFIX = "para_ti."
 
 
@@ -412,6 +413,7 @@ class ForYou:
         self.trakt = trakt_api.Trakt(self._key("trakt_client_id"), self._key("trakt_client_secret"), self.catalog.credentials)
         self.tmdb = tmdb_api.Tmdb(self._key("tmdb_key"))
         self.rawg = rawg_api.Rawg(self._key("rawg_key"))
+        self.mdblist = mdblist_api.MdbList(self._key("mdblist_key"))
 
     def set_keys(self, service: str, values: list[str]) -> None:
         """Guarda (o, vacías, quita) las claves de un servicio escritas en Ajustes › Cuentas. TMDB y
@@ -428,6 +430,11 @@ class ForYou:
             tmdb_api.Tmdb(values[0]).platforms(self.region)
         elif service == "rawg" and values[0]:
             rawg_api.Rawg(values[0]).games("best", size=1)
+        elif service == "mdblist" and values[0]:
+            try:
+                mdblist_api.MdbList(values[0]).check()
+            except mdblist_api.MdbListError as exc:
+                raise ValueError(str(exc)) from exc
         elif service == "steamgriddb" and values[0]:
             from .library.scraper import Http, SteamGridDB
 
@@ -450,7 +457,7 @@ class ForYou:
         return {"trakt": {"configured": self.trakt.configured, "linked": self.trakt.linked,
                           # Lo último que el reproductor le contó a Trakt (o por qué no pudo): Ajustes › Cuentas.
                           "scrobble": self.catalog.watch.scrobbler.snapshot()},
-                "tmdb": self.tmdb.configured, "rawg": self.rawg.configured,
+                "tmdb": self.tmdb.configured, "rawg": self.rawg.configured, "mdblist": bool(self.mdblist.key),
                 "steamgriddb": bool(self._key("steamgriddb_key")),
                 # Cuáles escribiste en Ajustes (esas se pueden quitar desde ahí; las de config.yaml, no).
                 "saved": [s for s, names in KEYS.items() if self.catalog.credentials.get(KEY_PREFIX + names[0])]}
@@ -571,6 +578,12 @@ class ForYou:
         for entry in self.addon_catalogs():
             video.append({"id": entry["id"], "title": entry["title"], "icon": "addon", "source": "Complemento",
                           "meta": f"De {entry['addon']}", "split": len(entry["kinds"]) > 1})
+        critics = self._critics_refs()
+        if critics:  # Rotten Tomatoes vía MDBList (y una lista pública de Trakt para series): no pide clave
+            video.append({"id": "critics", "title": "Aprobadas por la crítica", "icon": "spark", "source": "Rotten Tomatoes",
+                          "meta": " · ".join(filter(None, ["Certified Fresh recientes" if "movie" in critics else "",
+                                                           "Series Fresh" if "series" in critics else ""])),
+                          "split": len(critics) > 1})
         # Netflix (Top 10 oficial) y JustWatch (lo más visto por plataforma): ninguna pide clave.
         video.append({"id": "chart:netflix", "title": "Top 10 en Netflix", "icon": "chart", "source": "Netflix",
                       "meta": self._netflix_meta(), "split": True, "brand": "netflix",
@@ -822,6 +835,33 @@ class ForYou:
         """Lo que pide la tele: los títulos y, en género o temporada, el título de la pantalla (el año de verdad)."""
         return {"items": self.list_items(list_id, kind), **self._list_heading(list_id)}
 
+    def _critics_refs(self) -> dict[str, tuple[str, str]]:
+        """Las listas de «Aprobadas por la crítica» por tipo: {"movie": ("mdblist", "usuario/lista"), …}."""
+        refs = {}
+        for kind, ref in (("movie", self.settings.critics_movies), ("series", self.settings.critics_series)):
+            service, _, name = str(ref or "").partition(":")
+            if service in ("mdblist", "trakt") and mdblist_api.parse_ref(name):
+                refs[kind] = (service, name)
+        return refs
+
+    def _critics(self, kind: str) -> list[dict]:
+        """Las películas Certified Fresh recientes o las series Fresh (Rotten Tomatoes), un día en caché."""
+        refs = self._critics_refs()
+        ref = refs.get(kind) or (next(iter(refs.values())) if len(refs) == 1 else None)
+        if ref is None:
+            return []
+        service, name = ref
+
+        def load() -> list[dict]:
+            if service == "trakt":
+                user, slug = mdblist_api.parse_ref(name) or ("", "")
+                return self.trakt.public_list_items(user, slug)
+            return self.mdblist.list_items(name)
+
+        entries = self.cache.get(f"critics:{service}:{name}", SLOW_TTL, load, stale=True)
+        why = "Certified Fresh" if kind == "movie" else "Fresh en Rotten Tomatoes"
+        return [video_item(e, why, in_list=True) for e in entries or []]
+
     def _list_heading(self, list_id: str) -> dict:
         if list_id.startswith("genre:"):
             bundle = self.cache.peek(f"tmdb:genre:{list_id.removeprefix('genre:')}:{self._today().year}")
@@ -884,6 +924,8 @@ class ForYou:
             return self.cache.get(f"{list_id}:{kind}", POPULAR_TTL, lambda: self._addon_list(entry, kind))
         if list_id == "estrenos":
             return self.calendar()
+        if list_id == "critics":
+            return self._critics(kind)
         if list_id == "recs":
             return [video_item(e, "Recomendada") for e in self.cache.get(f"trakt:recs:{kind}", RECS_TTL, lambda: t.recommendations(kind))]
         if list_id == "mine":

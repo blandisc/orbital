@@ -536,6 +536,12 @@ class Trakt:
             raise TraktError("Lista inválida")
         return _typed(self._get(f"/users/me/lists/{list_id}/items", extended="full"))
 
+    def public_list_items(self, user: str, slug: str) -> list[dict]:
+        """Los títulos de la lista pública de otra persona (sin tu sesión): «Aprobadas por la crítica» de series."""
+        if not re.fullmatch(r"[\w.-]+", str(user)) or not re.fullmatch(r"[\w.-]+", str(slug)):
+            raise TraktError("Lista inválida")
+        return _typed(self._get(f"/users/{user}/lists/{slug}/items", auth=False, extended="full"))
+
     def trending(self, kind: str, limit: int = 30) -> list[dict]:
         rows = self._get(f"/{KINDS[kind]}/trending", auth=False, limit=limit, extended="full")
         key = "movie" if kind == "movie" else "show"

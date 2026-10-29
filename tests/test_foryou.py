@@ -182,7 +182,7 @@ def test_your_series_bring_the_next_episode_and_skip_finished_ones(make_foryou, 
 
 
 # ---------------------------------------------------------------- listas y servicios
-CHART_LIST_IDS = ["chart:netflix", "jw:disney", "jw:hbo", "jw:prime", "jw:appletv", "jw:paramount"]
+CHART_LIST_IDS = ["critics", "chart:netflix", "jw:disney", "jw:hbo", "jw:prime", "jw:appletv", "jw:paramount"]  # critics: Rotten Tomatoes
 
 
 def core(rows) -> list[str]:

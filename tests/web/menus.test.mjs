@@ -109,7 +109,7 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   const keys = settingsPage("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
   assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "✓ Conectada"], ["Trakt", "Configurar"], ["iPhone", "Conectar"], ["Claves de Para ti", undefined],
-    ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["SteamGridDB", "Agregar"], ["Clave de Trakt", "Agregar"]]);
+    ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["MDBList", "Agregar"], ["SteamGridDB", "Agregar"], ["Clave de Trakt", "Agregar"]]);
   assert.deepEqual(keys.options[4].command, { type: "keys-menu", service: "tmdb" });
   assert.deepEqual(keys.options[1].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
   assert.deepEqual(keys.options[5].command, { type: "keys", service: "rawg" });
