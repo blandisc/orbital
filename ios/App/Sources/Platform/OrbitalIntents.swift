@@ -14,12 +14,17 @@ import OrbitalModels
 /// Lo que se dice: la consola lo entiende con el mismo intérprete que Alexa; regresa lo que Siri dice en voz alta.
 @MainActor
 private func answer(_ said: String) async -> String {
+    // La Mac no controla tu Orbital (decisión de Fernando, 29 oct 2026): Siri y Atajos no le mandan nada a la TV.
+    guard ThisDevice.talksToOrbital else { return macNoTV }
     let env = AppEnvironment.shared
     let outcome = await VoiceAssistant(services: env.services, tvNow: env.tvNow).handle(said)
     // Seguir aquí necesita la pantalla: Siri no abre el reproductor.
     let text = outcome.continueHere ? "Abre Orbital y toca «Seguir aquí»." : outcome.speech
     return text.isEmpty ? String(localized: "Listo.") : Strings.message(text, language: env.services.appSettings.uiLanguage)
 }
+
+/// Lo que contesta Siri en la Mac, donde Orbital es solo para ver.
+private var macNoTV: String { String(localized: "En la Mac, Orbital no controla la TV. Usa tu iPhone o tu iPad.") }
 
 /// «Dile a Orbital que ponga The Office»: la orden en texto libre.
 struct AskOrbitalIntent: AppIntent {
@@ -210,6 +215,7 @@ struct PauseTVIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard ThisDevice.talksToOrbital else { return .result(dialog: IntentDialog(stringLiteral: macNoTV)) }
         await AppEnvironment.shared.tvNow.control("pause")
         return .result(dialog: "En pausa.")
     }
@@ -221,6 +227,7 @@ struct ResumeTVIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard ThisDevice.talksToOrbital else { return .result(dialog: IntentDialog(stringLiteral: macNoTV)) }
         await AppEnvironment.shared.tvNow.control("play")
         return .result(dialog: "Sigue.")
     }
@@ -241,6 +248,8 @@ struct TurnOnConsoleIntent: AppIntent {
 /// Las frases que Siri reconoce sin configurar nada (aparecen solas en Atajos).
 struct OrbitalShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
+        // En la Mac las frases siguen registradas (el constructor no acepta `if` salvo #available), pero `answer` contesta que
+        // ahí Orbital no controla la TV.
         // «Dile a Orbital que …» sí llega a la app (Siri la reconoce por su nombre), pero solo si la frase está aquí: sin ella
         // contestaba «Orbital no permite hacer eso con Siri». Texto libre no cabe en la frase: «Habla con Orbital» lo pregunta
         // después («¿Qué le digo a Orbital?»); lo de todos los días y los títulos sí van en la frase.

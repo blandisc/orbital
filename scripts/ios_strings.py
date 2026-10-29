@@ -32,6 +32,8 @@ TRANSLATIONS = {
     "Tu Real-Debrid vence hoy": "Your Real-Debrid expires today", "Renovar": "Renew",
     "Tu Real-Debrid vence en %lld días": "Your Real-Debrid expires in %lld days",
     "Renuévalo para no quedarte sin fuentes. No se renueva solo.": "Renew it so you don't run out of sources. It doesn't renew on its own.",
+    # La Mac no controla tu Orbital (29 oct 2026): lo que contesta Siri ahí.
+    "En la Mac, Orbital no controla la TV. Usa tu iPhone o tu iPad.": "On the Mac, Orbital doesn't control the TV. Use your iPhone or iPad.",
     # Los sustos en la barra del reproductor (estaban en el catálogo pero no aquí).
     "En las películas de terror, puntos rojos (fuertes) y ámbar (leves) en la barra de avance, de Where's The Jump.": "In horror movies, red (major) and amber (minor) dots on the progress bar, from Where's The Jump.",
     "Los puntos de la barra son sustos": "The dots on the bar are jump scares",

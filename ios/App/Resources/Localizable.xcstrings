@@ -6713,6 +6713,71 @@
         }
       }
     },
+    "En la Mac, Orbital no controla la TV. Usa tu iPhone o tu iPad.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the Mac, Orbital doesn't control the TV. Use your iPad or iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the Mac, Orbital doesn't control the TV. Use your iPhone or iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the Mac, Orbital doesn't control the TV. Use your Mac or iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the Mac, Orbital doesn't control the TV. Use your iPhone or iPad."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En la Mac, Orbital no controla la TV. Usa tu iPad o tu iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En la Mac, Orbital no controla la TV. Usa tu iPhone o tu iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En la Mac, Orbital no controla la TV. Usa tu Mac o tu iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En la Mac, Orbital no controla la TV. Usa tu iPhone o tu iPad."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "En la TV": {
       "extractionState": "manual",
       "localizations": {

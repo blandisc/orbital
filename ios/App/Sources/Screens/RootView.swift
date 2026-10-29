@@ -325,6 +325,7 @@ struct MainTabs: View {
         .onChange(of: ui.openRemote, initial: true) { _, wants in
             guard wants else { return }
             ui.openRemote = false
+            guard env.services.allowsOrbital else { return }   // la Mac no tiene control de la TV (ni manda a Ajustes a conectarla)
             // Sin tu Orbital conectada (el control del Centro de control abre la app igual): a Ajustes, donde se conecta.
             // Como panel, ⌘R (y el control del Centro de control) lo abre y lo cierra.
             if tvNow.model.isConfigured { if remoteAsPanel && showRemote { showRemote = false } else { panelTitle = nil; remoteLarge = true; showRemote = true } }
