@@ -1,5 +1,7 @@
 import Foundation
 import Network
+import OrbitalCore
+import UIKit
 
 /// Espacio libre para lo que importa (descargas), según iOS.
 enum DiskSpace {
@@ -31,4 +33,15 @@ final class Connectivity: @unchecked Sendable {
     var isCellular: Bool { lock.withLock { path?.usesInterfaceType(.cellular) == true && path?.usesInterfaceType(.wifi) != true } }
     var isOnline: Bool { lock.withLock { path?.status != .unsatisfied } }
     var isExpensive: Bool { lock.withLock { path?.isExpensive == true } }
+}
+
+/// Este aparato para tu Orbital: su nombre (desde iOS 16, sin el permiso del nombre, iOS da solo «iPhone» o «iPad»), si
+/// es iPhone o iPad y su id por instalación. La TV solo acepta `iphone` e `ipad` (`orbital/companion.py`): la Mac
+/// («Diseñada para iPad») se presenta como iPad hasta que la TV conozca `mac` (Etapa 2 de `docs/producto/ipad-y-mac-2026-10.md`).
+enum ThisDevice {
+    static var forOrbital: OrbitalRemote.Device {
+        let device = UIDevice.current
+        return OrbitalRemote.Device(name: device.name, kind: device.userInterfaceIdiom == .pad ? "ipad" : "iphone",
+                                    id: device.identifierForVendor?.uuidString ?? "")
+    }
 }

@@ -15,7 +15,7 @@ final class PlatformBoundaryTests: XCTestCase {
 
     /// Pendientes por archivo (ruta desde `ios/App/Sources/`): cuántos usos quedan. Al quitar uno, baja aquí el número.
     static let pending: [String: Int] = [
-        "AppEnvironment.swift": 5,                      // tipo de aparato (0.2), candado de orientación (1.2), escenas
+        "AppEnvironment.swift": 3,                      // candado de orientación (1.2), escenas
         "Design/Collections.swift": 1,                  // ancho de pantalla (0.3)
         "Design/Tokens.swift": 4,                       // anchos y altos de pantalla (0.3)
         "Screens/DecideView.swift": 1,                  // alto de pantalla (0.3)
@@ -26,7 +26,6 @@ final class PlatformBoundaryTests: XCTestCase {
         "Screens/PlayerScreen.swift": 5,                // brillo y orientación del reproductor (1.3)
         "Screens/PlayerScreen+CicloDeVida.swift": 11,   // giro forzado y área segura (1.3)
         "Screens/PlayerScreen+Gestos.swift": 3,         // gesto de brillo y giro (1.3)
-        "Support/HardwareVolumeButtons.swift": 5,       // botones de volumen (0.2)
     ]
 
     func testDeviceSpecificCodeLivesInPlatform() throws {
