@@ -1,5 +1,6 @@
 import Foundation
 import OrbitalCore
+import OrbitalAddons
 
 /// Todo lo que la app necesita, armado en un solo lugar (la «raíz de composición»). Los modelos de vista
 /// reciben esto y no saben de dónde salen la red, el Keychain ni las descargas.
@@ -21,6 +22,12 @@ public final class Services: ObservableModel {
     public let stremio: StremioAPI
 
     public private(set) var registry: AddonRegistry { didSet { changed() } }
+    /// Tus complementos en el teléfono (en tu orden, con apagado) y tu Real-Debrid. Mientras la lista no esté armada, los
+    /// complementos siguen saliendo de tu cuenta de Stremio, como antes.
+    public let addonList: AddonList
+    public let debrid: DebridAccount
+    /// Los avisos de vencimiento de Real-Debrid que ya se programaron.
+    public let debridReminders: DebridReminderBook
     public private(set) var finder: StreamFinder { didSet { changed() } }
     /// Tu OneDrive (la cuenta) y tu carpeta ya reconocida: sus videos salen como fuentes.
     public let oneDrive: OneDrive
@@ -135,9 +142,14 @@ public final class Services: ObservableModel {
         self.traktOutbox = TraktOutbox(kv)
         let stremio = StremioAPI(http: http)
         self.stremio = stremio
+        let vault = AppAddonVault(secrets: secrets, kv: kv)
+        let addonList = AddonList(vault: vault)
+        self.addonList = addonList
+        self.debrid = DebridAccount(provider: RealDebrid(http: http, clock: clock), vault: vault, clock: clock)
+        self.debridReminders = DebridReminderBook(vault: vault)
         let registry = AddonRegistry(http: http, account: stremio, auth: { secrets.get(SecretKey.stremioAuth) },
                                      own: { (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init) },
-                                     disk: cacheRoot?.appendingPathComponent("addons"), clock: clock)
+                                     local: addonList, disk: cacheRoot?.appendingPathComponent("addons"), clock: clock)
         let cinemeta = Cinemeta(http: http, cached: http is URLSessionHTTPClient ? URLSessionHTTPClient.publicCache("cinemeta") : nil,
                                 registry: registry,
                                 disk: cacheRoot?.appendingPathComponent("cinemeta"),
@@ -318,6 +330,20 @@ public final class Services: ObservableModel {
         pending.save(work)
         scrobbleLog.clear()
         kv.set(WatchService.importedKey, data: nil)   // otra cuenta de Stremio se importa otra vez
+    }
+
+    /// Trae una vez tus complementos de Stremio a la lista del teléfono (no se escribe de vuelta). Devuelve cuántos llegaron;
+    /// sin cuenta de Stremio solo trae los que pegaste en Ajustes. `again`: «Volver a importar».
+    @discardableResult
+    public func importAddonsFromStremio(again: Bool = false) async throws -> Int {
+        let own = (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init)
+        var account: [JSON] = []
+        if let auth = secrets.get(SecretKey.stremioAuth), !auth.isEmpty {
+            account = try await stremio.addonCollection(authKey: auth)["addons"]?.array ?? []
+        }
+        let added = addonList.importOnce(StremioImport.addons(account: account, own: own), again: again)
+        await resetAccountCaches()
+        return added
     }
 
     /// Los complementos o la cuenta cambiaron: se vuelve a preguntar todo.

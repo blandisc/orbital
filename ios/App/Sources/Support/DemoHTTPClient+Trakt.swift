@@ -26,6 +26,46 @@ extension DemoHTTPClient {
         return HTTPResponse(status: 200, data: rows.serialized())
     }
 
+    /// Lo público de Trakt (sin sesión) y MDBList, de mentira: «Lo más popular hoy», «Por género», la búsqueda y «Aprobadas
+    /// por la crítica» salen de aquí sin tocar internet. Una búsqueda sin coincidencias contesta nil (cae a Cinemeta).
+    static func publicDemo(_ url: URL) -> HTTPResponse? {
+        let titles: [(imdb: String, title: String, year: Int, kind: String)] = [
+            ("tt1160419", "Dune", 2021, "movie"), ("tt11280740", "Severance", 2022, "series"), ("tt15239678", "Dune: Part Two", 2024, "movie"),
+            ("tt0903747", "Breaking Bad", 2008, "series"), ("tt0816692", "Interstellar", 2014, "movie"), ("tt14452776", "The Bear", 2022, "series"),
+            ("tt1375666", "Inception", 2010, "movie"), ("tt7366338", "Chernobyl", 2019, "series"), ("tt0133093", "The Matrix", 1999, "movie"),
+            ("tt0386676", "The Office", 2005, "series"), ("tt0068646", "The Godfather", 1972, "movie"), ("tt5753856", "Dark", 2017, "series")]
+        func item(_ t: (imdb: String, title: String, year: Int, kind: String)) -> JSON {
+            ["title": .string(t.title), "year": .int(t.year), "runtime": t.kind == "movie" ? 140 : 50, "ids": ["trakt": 1, "imdb": .string(t.imdb)]]
+        }
+        func json(_ value: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: value.serialized()) }
+        if url.host == "mdblist.com" {
+            return json(.array(titles.filter { $0.kind == "movie" }.map { ["imdb_id": .string($0.imdb), "title": .string($0.title), "mediatype": "movie", "release_year": .int($0.year)] }))
+        }
+        guard url.host == "api.trakt.tv" else { return nil }
+        let path = url.path, kind = path.hasPrefix("/movies/") ? "movie" : "series", key = kind == "movie" ? "movie" : "show"
+        if path.hasSuffix("/trending") { return json(.array(titles.filter { $0.kind == kind }.map { ["watchers": 120, key: item($0)] })) }
+        if path.hasSuffix("/popular") { return json(.array(titles.filter { $0.kind == kind }.reversed().map(item))) }
+        if path.hasPrefix("/users/truckclancy/lists/") { return json(.array(titles.filter { $0.kind == "series" }.map { ["type": "show", "show": item($0)] })) }
+        if path == "/search/movie,show" {
+            let query = (URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "query" }?.value ?? "").lowercased()
+            let found = titles.filter { $0.title.lowercased().contains(query) }
+            guard !found.isEmpty else { return nil }
+            return json(.array(found.map { $0.kind == "movie" ? ["type": "movie", "movie": item($0)] : ["type": "show", "show": item($0)] }))
+        }
+        return nil
+    }
+
+    /// Real-Debrid de mentira (`-demo-rd`): `GET /rest/1.0/user` con la cuenta que se pidió.
+    static func realDebridDemo(_ url: URL) -> HTTPResponse? {
+        guard url.host == "api.real-debrid.com", url.path.hasSuffix("/user"), let state = Demo.realDebrid else { return nil }
+        let days: Double = switch state { case "soon": 3; case "expired": -2; case "free": 0; default: 143 }
+        guard state != "invalid" else { return HTTPResponse(status: 401, data: JSON.object(["error": "bad_token", "error_code": 8]).serialized()) }
+        let expires = ISO8601DateFormatter().string(from: Date().addingTimeInterval(days * 86_400))
+        let premium = state == "free" || days < 0 ? 0 : Int(days * 86_400)
+        let user: JSON = ["id": 1, "username": "demo", "type": premium > 0 ? "premium" : "free", "premium": .int(premium), "expiration": .string(expires)]
+        return HTTPResponse(status: 200, data: user.serialized())
+    }
+
     /// Trakt de mentira para «Guardar en…»: la watchlist, tus listas (tardan ~1,5 s, como la red) y lo que escribes en ellas.
     func traktDemo(_ request: HTTPRequest) async -> HTTPResponse? {
         let path = request.url.path, post = request.method == "POST"

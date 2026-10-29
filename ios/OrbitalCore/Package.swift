@@ -7,11 +7,15 @@ let package = Package(
     products: [
         .library(name: "OrbitalCore", targets: ["OrbitalCore"]),
         .library(name: "OrbitalModels", targets: ["OrbitalModels"]),
+        .library(name: "OrbitalAddons", targets: ["OrbitalAddons"]),
     ],
     targets: [
-        .target(name: "OrbitalCore"),
-        .target(name: "OrbitalModels", dependencies: ["OrbitalCore"]),
-        .testTarget(name: "OrbitalCoreTests", dependencies: ["OrbitalCore"]),
-        .testTarget(name: "OrbitalModelsTests", dependencies: ["OrbitalModels", "OrbitalCore"]),
+        // Tus complementos y tu servicio de descarga (Real-Debrid), sin saber de Stremio ni de Trakt: solo Foundation.
+        .target(name: "OrbitalAddons"),
+        .target(name: "OrbitalCore", dependencies: ["OrbitalAddons"]),
+        .target(name: "OrbitalModels", dependencies: ["OrbitalCore", "OrbitalAddons"]),
+        .testTarget(name: "OrbitalCoreTests", dependencies: ["OrbitalCore", "OrbitalAddons"]),
+        .testTarget(name: "OrbitalModelsTests", dependencies: ["OrbitalModels", "OrbitalCore", "OrbitalAddons"]),
+        .testTarget(name: "OrbitalAddonsTests", dependencies: ["OrbitalAddons"]),
     ]
 )

@@ -85,9 +85,53 @@ Antes, con `-demo-signed-out` la app abría la pantalla «Entra con tu cuenta de
 - Ya venía de `main`: `HomeView.swift` tiene 603 líneas (tope 600, `FileBudgetTests`) y `ios_strings.py --check` pide
   «%@ sustos por delante» (en `PlayerScreen+Panel.swift` el número va con `Text(verbatim:)` o como `%lld`).
 
-## Corte B · iPhone
+## Corte B · iPhone (29 oct 2026)
 
-Pendiente.
+**Quedó** (lógica, pruebas y demo; la interfaz de Ajustes y la guía son del corte C):
+
+- Módulo nuevo `ios/OrbitalCore/Sources/OrbitalAddons` (solo Foundation: no conoce a Stremio ni a Trakt), con sus pruebas
+  `OrbitalAddonsTests`:
+  - `AddonList`: tus complementos en el teléfono, en tu orden (`move(fromOffsets:toOffset:)`, como `.onMove`), con
+    interruptor, agregar recomendado o pegado, quitar, opciones. Lo no secreto en los ajustes; la URL de uno pegado o
+    importado en el llavero (`AddonKeys.addonURL(id)`). `isConfigured` dice si ya manda la lista del teléfono.
+  - `AddonCatalog`: los recomendados como plantilla (Torrentio con `realdebrid={CLAVE}`, calidades y idiomas; OpenSubtitles).
+    La URL se arma al vuelo con la clave: cambiarla cambia todos a la vez. `AddonRedaction` tapa la clave en textos.
+  - `importOnce`: trae una vez tus complementos de Stremio y los que pegaste (sin Cinemeta); no escribe de vuelta.
+  - `RealDebrid` (`DebridProvider`): solo `GET /rest/1.0/user`. `DebridStatus`: usuario, Premium, días que quedan,
+    vencimiento y estado (activo, por vencer a 14 días, vencido, gratuito). Errores claros: clave incompleta, no
+    reconocida, sin red. `DebridAccount`: la clave en el llavero (`realdebrid_token`), comprobar sin guardar, guardar,
+    quitar; el estado se guarda un día y, si no contesta, queda el último.
+  - `DebridReminders` / `DebridReminderBook`: avisos a 14 días, a 3 días y el día que vence, a las 10:00, una sola vez por
+    fecha de vencimiento (si renuevas, tocan los de la nueva).
+- `OrbitalCore`: `AddonRegistry` usa la lista del teléfono cuando está armada (en tu orden, sin los apagados, y la cuenta de
+  Stremio ni se pregunta); sin ella, como antes. `AppAddonVault` (llavero + ajustes), `RealDebrid(http:)` por la red de la
+  app, `StremioImport`. Pruebas `LocalAddonsTests`.
+- `Services`: `addonList`, `debrid`, `debridReminders` e `importAddonsFromStremio(again:)`.
+- App: al abrir se refresca el estado y se programan los avisos que falten (`Platform/DebridReminderNotifier.swift`, sin
+  pedir permiso: eso lo hace Ajustes). Al tocar «Ver» sin fuentes y con Real-Debrid vencido: «Tu Real-Debrid venció hace
+  N días · Renovar» en vez de «Real-Debrid aún no lo tiene». La leyenda «Al instante» de las fuentes se esconde si ya
+  armaste tu lista y no hay clave.
+- Demo: `-demo-rd premium|soon|expired|free|invalid` pone una clave de mentira y finge `api.real-debrid.com`. Además, la
+  demo finge lo público de Trakt (tendencia, popular, búsqueda, la lista de la crítica) y MDBList.
+
+**Para el corte C** (lo que tiene que llamar la interfaz):
+
+- Guía, paso Real-Debrid: `try await services.debrid.verify(clave)` → `DebridStatus` o `DebridError` (su `description`
+  ya está en español e inglés); luego `services.debrid.save(token:status:)`. Enlaces: `services.debrid.provider.tokenURL`
+  y `renewURL`.
+- Guía, paso Complementos: `services.addonList.startWithRecommended()` (o `add(_:)` por cada interruptor) y
+  `await services.resetAccountCaches()`; `AddonCatalog.recommended` trae nombre, `summary`, `usesDebrid` y `onByDefault`.
+- Ajustes › Complementos: `installed`, `setEnabled`, `move`, `remove`, `add(url:name:resources:)` (con
+  `Addons.manifestURL` y `Addons.parseManifest` para leer el nombre) y «Importar de Stremio»
+  (`services.importAddonsFromStremio()`). Después de cada cambio, `resetAccountCaches()`.
+- Ajustes › Real-Debrid: `await services.debrid.status(force: true)`, `state(now:)`, `daysLeft(now:)`, `remove()`.
+- Pedir permiso de avisos al guardar la clave y llamar a `DebridReminderNotifier.refresh(services)`.
+
+**Falta:**
+
+- Comet y otros recomendados (su configuración va cifrada en la URL; mejor probarla con una cuenta real antes).
+- Tocar el aviso de vencimiento abre la app, no la página de renovar.
+- Sin capturas: todo es lógica sin pantalla nueva; se comprueba con `swift test` (`OrbitalAddonsTests`, `LocalAddonsTests`).
 
 ## Corte E · Consola (29 oct 2026, sesión en la nube)
 

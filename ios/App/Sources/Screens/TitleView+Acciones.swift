@@ -1,6 +1,7 @@
 import SwiftUI
 import OrbitalCore
 import OrbitalModels
+import OrbitalAddons
 
 /// Lo que hace la ficha al tocar: ver, guardar, descargar, en la TV y los avisos que dejan.
 extension TitleView {
@@ -8,7 +9,15 @@ extension TitleView {
     /// «Ver»: si ya se sabe que no hay fuentes (o no hay red), lo dice aquí en vez de abrir un reproductor que va a fallar.
     func play(_ model: TitleModel) {
         switch model.sourceCheck {
-        case .none: env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+        case .none:
+            // Si tu Real-Debrid venció, eso es lo que pasa (no «no hay fuentes»), con la salida a la mano.
+            if case .expired(let days)? = env.services.debrid.saved?.state(now: Date()) {
+                let renew = env.services.debrid.provider.renewURL
+                env.notify(String(format: Strings.tr(days == 1 ? "Tu Real-Debrid venció ayer" : "Tu Real-Debrid venció hace %lld días", language: env.services.appSettings.uiLanguage), days),
+                           tone: .warn, actionTitle: "Renovar") { UIApplication.shared.open(renew) }
+            } else {
+                env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+            }
         case .offline: env.notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { play(model) }
         default: start(model, videoID: nil)
         }

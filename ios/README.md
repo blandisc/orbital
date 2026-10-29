@@ -122,6 +122,10 @@ ios/
     Sources/OrbitalCore     la lógica portada de Orbital (Python): Stremio, complementos, fuentes, Cinemeta,
                             TMDB, Trakt, reproducción (avance, cola sin conexión), descargas, Infuse, ajustes
     Sources/OrbitalModels   modelos de vista (inicio, ficha, reproductor, Para ti…): sin SwiftUI, también se prueban
+    Sources/OrbitalAddons   tus complementos en el teléfono (orden, apagado, recomendados armados con tu clave, importar
+                            una vez de Stremio) y Real-Debrid (`/rest/1.0/user`, días que quedan, avisos): solo Foundation,
+                            no conoce a Stremio ni a Trakt. Mientras la lista no esté armada, manda la de tu cuenta de Stremio.
+                            Demo: `-demo-rd premium|soon|expired|free|invalid` finge api.real-debrid.com
   App/                    la app (SwiftUI). Se genera con XcodeGen (project.yml)
     Sources/App             el entorno de la app (AppEnvironment y sus extensiones por tema), la composición de servicios,
                             el AppDelegate y el estado que solo pinta la raíz (AppUI)

@@ -82,6 +82,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             return HTTPResponse(status: 200, data: found.serialized())
         }
         if url.host == "api.trakt.tv", Demo.trakt, let found = await traktDemo(request) { return found }
+        if let found = Self.publicDemo(url) { return found }
+        if let found = Self.realDebridDemo(url) { return found }   // tendencia, popular, búsqueda y la crítica (Trakt y MDBList)
         // La calificación de la comunidad de Trakt (la ficha la enseña con su logo junto a IMDb y TMDB).
         if url.host == "api.trakt.tv", url.path.hasSuffix("/ratings") { return HTTPResponse(status: 200, data: JSON.object(["rating": .double(8.4), "votes": 52_310]).serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet

@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 /// Complementos de Stremio: el protocolo, sin depender de la app ni de la cuenta.
 ///
@@ -80,8 +81,9 @@ public enum Addons {
     }
 }
 
-/// Tus complementos, en orden: primero los de tu cuenta de Stremio, luego los tuyos. La lista se recuerda
-/// unos minutos (y solo unos segundos si algo no respondió) y se rearma si cambia la cuenta o los tuyos.
+/// Tus complementos, en orden. Con la lista del teléfono armada (`AddonList`, corte B), esa manda: en tu orden y sin los
+/// apagados, y la cuenta de Stremio ni se pregunta. Sin ella, como antes: primero los de tu cuenta, luego los tuyos.
+/// La lista se recuerda unos minutos (y solo unos segundos si algo no respondió) y se rearma si cambia algo.
 public actor AddonRegistry {
     public static let cacheSeconds: TimeInterval = 600
     public static let retryFailed: TimeInterval = 15
@@ -90,6 +92,7 @@ public actor AddonRegistry {
     private let account: StremioAPI?
     private let auth: @Sendable () -> String?
     private let own: @Sendable () -> [String]
+    private let local: AddonList?
     private let clock: @Sendable () -> Date
     private var cache: (expires: Date, key: [String], addons: [Addon])?
     /// La que ya se está pidiendo (la ficha y el reproductor la piden a la vez: una sola `addonCollectionGet`).
@@ -98,11 +101,15 @@ public actor AddonRegistry {
     private let disk: URL?
 
     public init(http: HTTPClient, account: StremioAPI?, auth: @escaping @Sendable () -> String? = { nil },
-                own: @escaping @Sendable () -> [String] = { [] }, disk: URL? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.account = account; self.auth = auth; self.own = own; self.disk = disk; self.clock = clock
+                own: @escaping @Sendable () -> [String] = { [] }, local: AddonList? = nil, disk: URL? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.http = http; self.account = account; self.auth = auth; self.own = own; self.local = local; self.disk = disk; self.clock = clock
     }
 
-    private func key() -> [String] { [auth() ?? ""] + Addons.cleanURLs(own()) }
+    /// Lo que identifica la lista: la cuenta (vacía con la lista del teléfono: no se le pregunta) y las URLs en orden.
+    private func key() -> [String] {
+        if let local, local.isConfigured { return [""] + Addons.cleanURLs(local.enabledURLs()) }
+        return [auth() ?? ""] + Addons.cleanURLs(own())
+    }
 
     /// Sin cuenta que responda y sin complementos propios, lanza el error de la cuenta.
     public func addons() async throws -> [Addon] {

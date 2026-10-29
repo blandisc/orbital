@@ -118,7 +118,7 @@ struct RootView: View {
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).
             env.tvNow.setActive(phase == .active)
-            if phase == .active { Task { await env.services.syncLibrary() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }; Task { await env.syncChoices() } }
+            if phase == .active { Task { await env.services.syncLibrary() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }; Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) } }
             #if DEBUG
             if phase == .active { DemoHTTPClient.postReleaseAlert(language: env.services.appSettings.uiLanguage) }
             #endif

@@ -19,6 +19,19 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Desacoplar Stremio, corte B: tu Real-Debrid y los complementos recomendados (los avisos de vencimiento viven en Platform/).
+    "Fuentes de video, servidas por tu Real-Debrid": "Video sources, served by your Real-Debrid",
+    "Subtítulos en tu idioma": "Subtitles in your language",
+    "HTTP %@": "HTTP %@",
+    "La clave está incompleta. Cópiala completa de real-debrid.com/apitoken.": "The key is incomplete. Copy the whole key from real-debrid.com/apitoken.",
+    "No pude hablar con Real-Debrid. Revisa tu conexión.": "I couldn't reach Real-Debrid. Check your connection.",
+    "Real-Debrid contestó algo raro. Intenta otra vez.": "Real-Debrid sent an odd answer. Try again.",
+    "Real-Debrid no reconoce esa clave. Revisa que sea la de real-debrid.com/apitoken.": "Real-Debrid doesn't recognize that key. Make sure it's the one from real-debrid.com/apitoken.",
+    "Tu Real-Debrid venció ayer": "Your Real-Debrid expired yesterday",
+    "Tu Real-Debrid venció hace %lld días": "Your Real-Debrid expired %lld days ago",
+    "Tu Real-Debrid vence hoy": "Your Real-Debrid expires today", "Renovar": "Renew",
+    "Tu Real-Debrid vence en %lld días": "Your Real-Debrid expires in %lld days",
+    "Renuévalo para no quedarte sin fuentes. No se renueva solo.": "Renew it so you don't run out of sources. It doesn't renew on its own.",
     # Los sustos en la barra del reproductor (estaban en el catálogo pero no aquí).
     "En las películas de terror, puntos rojos (fuertes) y ámbar (leves) en la barra de avance, de Where's The Jump.": "In horror movies, red (major) and amber (minor) dots on the progress bar, from Where's The Jump.",
     "Los puntos de la barra son sustos": "The dots on the bar are jump scares",
@@ -750,7 +763,7 @@ def to_format(literal: str) -> str:
 def used_literals() -> dict[str, str]:
     lit = re.compile(r'"((?:[^"\\]|\\.)*)"')
     found: dict[str, str] = {}
-    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / f"ios/OrbitalCore/Sources/OrbitalCore/{n}.swift") for n in ("Downloads", "OrbitalRemote", "Trakt", "Watch", "StremioAPI", "Cinemeta")]  # sus errores llegan a la pantalla
+    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / f"ios/OrbitalCore/Sources/OrbitalCore/{n}.swift") for n in ("Downloads", "OrbitalRemote", "Trakt", "Watch", "StremioAPI", "Cinemeta")] + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalAddons/*.swift"))  # sus errores (y los recomendados) llegan a la pantalla
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
         # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).

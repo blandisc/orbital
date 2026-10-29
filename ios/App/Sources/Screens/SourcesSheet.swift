@@ -1,6 +1,7 @@
 import SwiftUI
 import OrbitalCore
 import OrbitalModels
+import OrbitalAddons
 
 /// «Elegir versión» (como la TV): una fila por idioma de audio —el tuyo, el original y las variantes de español; los demás,
 /// aparte— y en cada una solo las calidades que existen, la mejor de cada una. Tocar una calidad abre su tarjeta: qué es,
@@ -274,10 +275,17 @@ struct SourcesGlossary: View {
         ("exclamationmark.triangle", "CAM", "Grabada en el cine: mala imagen. Va hasta abajo."),
     ]
 
+    /// «Al instante» (ya está en tu Real-Debrid) solo si tienes Real-Debrid: con tu lista de complementos armada y sin clave, sobra.
+    private var shown: [(String, LocalizedStringKey, LocalizedStringKey)] {
+        let services = AppEnvironment.shared.services
+        let withoutDebrid = services.addonList.isConfigured && !services.debrid.hasToken
+        return entries.filter { !(withoutDebrid && $0.0 == "bolt.fill") }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Text("Qué significa cada etiqueta").recipe(.title)
-            ForEach(entries, id: \.0) { symbol, title, detail in
+            ForEach(shown, id: \.0) { symbol, title, detail in
                 HStack(alignment: .top, spacing: DS.Space.s3) {
                     Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.accent).frame(width: DS.Size.touchTarget)
                     VStack(alignment: .leading, spacing: 0) {

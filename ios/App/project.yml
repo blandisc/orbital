@@ -36,6 +36,8 @@ targets:
         product: OrbitalCore
       - package: OrbitalCore
         product: OrbitalModels
+      - package: OrbitalCore
+        product: OrbitalAddons
       - package: AetherEngine
         product: AetherEngine
     settings:

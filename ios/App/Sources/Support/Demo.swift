@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import OrbitalCore
 import OrbitalModels
+import OrbitalAddons
 
 #if DEBUG
 
@@ -188,12 +189,18 @@ enum Demo {
     static var traktBuiltIn: Bool { ProcessInfo.processInfo.arguments.contains("-demo-trakt-builtin") }
 
     /// Secretos de arranque: sesión iniciada y el complemento de demostración.
+    /// Cómo está tu Real-Debrid de mentira (`-demo-rd`): premium (143 días), soon (3 días), expired (hace 2 días), free o invalid.
+    static var realDebrid: String? { value(after: "-demo-rd") }
+    static let realDebridToken = String(repeating: "DEMO", count: 13)
+
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
         if scrobble || airings || because || trakt { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa (propia del iPhone): nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         if tmdb { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
+        // `-demo-rd premium|soon|expired|free|invalid`: una clave de Real-Debrid de mentira (api.real-debrid.com la contesta la demo).
+        if realDebrid != nil { secrets.set(AddonKeys.realDebridToken, Self.realDebridToken) }
         if oneDrive == "linked" { secrets.set(SecretKey.oneDriveTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }
         return secrets
     }

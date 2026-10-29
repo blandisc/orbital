@@ -7276,6 +7276,17 @@
         }
       }
     },
+    "Fuentes de video, servidas por tu Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video sources, served by your Real-Debrid"
+          }
+        }
+      }
+    },
     "Globos de Oro": {
       "extractionState": "manual",
       "localizations": {
@@ -7590,6 +7601,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "HDR · DV"
+          }
+        }
+      }
+    },
+    "HTTP %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP %@"
           }
         }
       }
@@ -8030,6 +8052,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The previous one didn't respond. Same spot."
+          }
+        }
+      }
+    },
+    "La clave está incompleta. Cópiala completa de real-debrid.com/apitoken.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The key is incomplete. Copy the whole key from real-debrid.com/apitoken."
           }
         }
       }
@@ -11263,6 +11296,17 @@
         }
       }
     },
+    "No pude hablar con Real-Debrid. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't reach Real-Debrid. Check your connection."
+          }
+        }
+      }
+    },
     "No pude leer el catálogo: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -13463,6 +13507,17 @@
         }
       }
     },
+    "Real-Debrid contestó algo raro. Intenta otra vez.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid sent an odd answer. Try again."
+          }
+        }
+      }
+    },
     "Real-Debrid limita cada conexión: con varias a la vez baja mucho más rápido, y así baja Orbital con la app abierta.": {
       "extractionState": "manual",
       "localizations": {
@@ -13470,6 +13525,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Real-Debrid limits each connection: with several at once it downloads much faster, and that's how Orbital downloads with the app open."
+          }
+        }
+      }
+    },
+    "Real-Debrid no reconoce esa clave. Revisa que sea la de real-debrid.com/apitoken.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't recognize that key. Make sure it's the one from real-debrid.com/apitoken."
           }
         }
       }
@@ -13756,6 +13822,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Performance"
+          }
+        }
+      }
+    },
+    "Renovar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renew"
+          }
+        }
+      }
+    },
+    "Renuévalo para no quedarte sin fuentes. No se renueva solo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renew it so you don't run out of sources. It doesn't renew on its own."
           }
         }
       }
@@ -15528,6 +15616,17 @@
         }
       }
     },
+    "Subtítulos en tu idioma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles in your language"
+          }
+        }
+      }
+    },
     "Subtítulos guardados con la descarga": {
       "extractionState": "manual",
       "localizations": {
@@ -16864,6 +16963,50 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Tu Real-Debrid vence en %lld días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Real-Debrid expires in %lld days"
+          }
+        }
+      }
+    },
+    "Tu Real-Debrid vence hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Real-Debrid expires today"
+          }
+        }
+      }
+    },
+    "Tu Real-Debrid venció ayer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Real-Debrid expired yesterday"
+          }
+        }
+      }
+    },
+    "Tu Real-Debrid venció hace %lld días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Real-Debrid expired %lld days ago"
           }
         }
       }
