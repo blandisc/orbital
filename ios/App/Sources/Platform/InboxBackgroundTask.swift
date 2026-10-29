@@ -10,6 +10,7 @@ enum InboxBackgroundTask {
 
     static func register() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: identifier, using: nil) { task in
+            nonisolated(unsafe) let task = task   // BGTask no está marcado seguro entre hilos; se usa solo desde el hilo principal
             schedule()   // la siguiente vez, pase lo que pase
             let work = Task { @MainActor in
                 // De paso, los estrenos: iOS da pocas oportunidades en segundo plano y cada una cuenta.

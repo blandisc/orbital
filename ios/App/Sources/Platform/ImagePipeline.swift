@@ -183,10 +183,17 @@ final class ImagePipeline: @unchecked Sendable {
                      status: (stored.response as? HTTPURLResponse)?.statusCode ?? 200)
             return stored.data
         }
-        let job: Shared<Data?> = lock.withLock {
-            if let existing = downloads[url] { existing.waiters += 1; return existing }
+        // Primero se apunta el trabajo bajo el candado; la tarea se arma afuera (Swift 6 no deja mandar un cierre creado
+        // dentro de otro cierre que sigue usando lo mismo).
+        let (job, isNew): (Shared<Data?>, Bool) = lock.withLock {
+            if let existing = downloads[url] { existing.waiters += 1; return (existing, false) }
             let fresh = Shared<Data?>()
-            fresh.task = Task.detached(priority: .userInitiated) { [self] in
+            downloads[url] = fresh
+            return (fresh, true)
+        }
+        if isNew {
+            let fresh = job
+            fresh.task = Task.detached(priority: .userInitiated) { [self, fresh, request, url, urgent] in
                 defer { lock.withLock { if downloads[url] === fresh { downloads[url] = nil } } }
                 if !urgent { guard await network.acquire() else { return nil } }
                 lock.withLock { fresh.started = true }
@@ -203,9 +210,8 @@ final class ImagePipeline: @unchecked Sendable {
                 }
                 if !fresh.isEmpty { recentBytes.setObject(fresh as NSData, forKey: url as NSURL, cost: fresh.count) }
                 return fresh
+            
             }
-            downloads[url] = fresh
-            return fresh
         }
         return await wait(job) { [self] in if downloads[url] === job { downloads[url] = nil } }
     }

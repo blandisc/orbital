@@ -129,7 +129,7 @@ final class DesignTests: XCTestCase {
         var problems: [String] = []
         for case let file as URL in files where file.pathExtension == "swift" {
             let relative = file.path.replacingOccurrences(of: sources.path + "/", with: "")
-            if relative == "Sources/Design/Tokens.swift" { continue }   // aquí se convierten los tokens a SwiftUI; el resto, también del diseño, los usa
+            if relative.hasPrefix("Sources/Design/Tokens") { continue }   // aquí se convierten los tokens a SwiftUI; el resto, también del diseño, los usa
             let text = try String(contentsOf: file, encoding: .utf8)
             for (index, line) in text.components(separatedBy: "\n").enumerated() where !line.contains("ds-exception:") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
                 for (pattern, what) in forbidden where line.range(of: pattern, options: .regularExpression) != nil {

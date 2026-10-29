@@ -32,6 +32,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     /// Tocar un aviso o uno de sus botones («Ya está para ver»: Ver, Ver en la TV, Descargar).
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
+        // iOS no marca estos valores como seguros entre hilos; solo se leen una vez en el hilo principal.
+        nonisolated(unsafe) let response = response
+        nonisolated(unsafe) let completionHandler = completionHandler
         Task { @MainActor in
             if await !DownloadFailureNotifier.handle(response) { await ReleaseNotifier.handle(response) }
             completionHandler()

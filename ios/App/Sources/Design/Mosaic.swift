@@ -466,7 +466,7 @@ private struct MosaicColumnLayer: View, Equatable {
     let onOpen: (Suggestion) -> Void
     let onDismiss: (Suggestion) -> Void
 
-    static func == (a: Self, b: Self) -> Bool {
+    nonisolated static func == (a: Self, b: Self) -> Bool {
         a.column == b.column && a.frame == b.frame && a.first == b.first && a.focusRow == b.focusRow && a.focusMode == b.focusMode
             && a.aliveID == b.aliveID && a.reduceMotion == b.reduceMotion && a.tiles == b.tiles && a.watchlist == b.watchlist
     }
@@ -614,9 +614,9 @@ final class FrameTicker {
     }
 
     /// `CADisplayLink` retiene a su destino: un objeto aparte (con referencia débil) para no retener al reloj.
-    private final class Target: NSObject {
+    @MainActor private final class Target: NSObject {   // `CADisplayLink` llama en el hilo principal
         weak var owner: FrameTicker?
         init(_ owner: FrameTicker) { self.owner = owner }
-        @objc func tick(_ link: CADisplayLink) { MainActor.assumeIsolated { owner?.tick(link) } }
+        @objc func tick(_ link: CADisplayLink) { owner?.tick(link) }
     }
 }

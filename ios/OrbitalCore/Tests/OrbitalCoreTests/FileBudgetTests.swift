@@ -17,8 +17,7 @@ final class FileBudgetTests: XCTestCase {
     /// Pendientes (ruta desde `ios/`): su tamaño el día de la auditoría (29 oct 2026). Solo puede bajar.
     static let pending: [String: Int] = [
         "OrbitalCore/Sources/OrbitalModels/PlayerModel.swift": 1267,
-        "App/Sources/Design/PlayerPanel.swift": 1223,
-        "App/Sources/Design/Tokens.swift": 1014,
+        "App/Sources/Design/SubtitlePanel.swift": 618,
         "App/Sources/Screens/ParaTiView.swift": 936,
         "App/Sources/Support/Demo.swift": 854,
         "App/Sources/Screens/TitleView.swift": 813,

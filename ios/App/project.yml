@@ -44,8 +44,7 @@ targets:
         DEVELOPMENT_TEAM: B7KRCF776Z
         TARGETED_DEVICE_FAMILY: "1,2"         # iPhone y iPad (y la Mac con chip de Apple, «Diseñada para iPad»)
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
-        SWIFT_VERSION: "5.0"                  # la app en modo Swift 5; los paquetes ya van en Swift 6
-        SWIFT_STRICT_CONCURRENCY: complete    # primer paso hacia Swift 6: los avisos de aislamiento se ven (aún no son errores)
+        SWIFT_VERSION: "6.0"                  # la app en modo Swift 6, como los paquetes (29 oct 2026)
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) AETHER_ENGINE"
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
@@ -122,6 +121,8 @@ targets:
       - path: Resources/Localizable.xcstrings
       - path: Resources/Assets.xcassets        # el arte que comparte con la app
       - path: Sources/Design/Tokens.swift     # los mismos tokens que la app (`DS`)
+      - path: Sources/Design/Tokens+Player.swift
+      - path: Sources/Design/Tokens+Screens.swift   # `Brand.swift` usa DS.Splash
       - path: Sources/Design/Brand.swift      # la marca de Orbital (widget sin pendientes)
       - path: Sources/Platform/WindowMetrics.swift   # el tamaño de ventana que leen los tokens
     dependencies:

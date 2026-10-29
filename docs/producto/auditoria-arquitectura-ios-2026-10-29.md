@@ -54,11 +54,20 @@ monolitos, modularidad, sistema de diseño y prácticas de Swift y SwiftUI. Tres
 | 6 | `project.yml` | `bundleIdPrefix` ya no es la plantilla `com.example` (cada target fija su identificador). `NSAllowsArbitraryLoads` se queda: no se conocen de antemano los dominios de los complementos |
 | 7 | Pruebas sin SwiftUI | Lo que bajó al paquete en estas dos pasadas trae 21 pruebas nuevas (avisos, Simpson, acciones sobre un título, dos guardias) |
 
+### Tercera pasada (misma fecha): lo que seguía
+
+| # | Pendiente | Qué se hizo |
+|---|---|---|
+| 1 | Subir la app a Swift 6 | **Hecho.** `SWIFT_VERSION: "6.0"` en el target de la app (los paquetes ya iban en 6). Lo que había que arreglar: `VideoPlayerEngine` y los dos motores quedan en el hilo principal con sus testigos `nonisolated` (`name`, `snapshots`); `Equatable` del mosaico y el destino del `CADisplayLink` sin cruzar aislamientos; las llamadas de iOS que no marcan sus valores como seguros (avisos, `BGTask`, PiP) se reciben con `nonisolated(unsafe)` y se usan solo en el hilo principal; `ActivityKit` con `@preconcurrency` (su `Activity` no está marcado `Sendable`); la descarga de imágenes arma su tarea fuera del candado. La extensión de widgets sigue en modo 5 (es chica; mismo camino cuando toque) |
+| 2 | `PlayerPanel.swift` (1 223) | Partido en `PlayerControls` (425), `SubtitlePanel` (618: `SubtitleDock` es una sola pieza grande; sigue en la lista de `FileBudgetTests`), `PlayerFailureView` (112) y `EpisodesPanel` (95) |
+| 3 | `Tokens.swift` (1 014) | Partido con extensiones de `DS`, sin cambiar un solo nombre: `Tokens.swift` (base: papeles, espacios, radios, letra, movimiento, tamaños, imágenes; 353), `Tokens+Player.swift` (241) y `Tokens+Screens.swift` (435). La extensión de widgets los incluye los tres |
+| 4 | Colaboradores de `PlayerModel` | **No se hizo, a propósito.** Medido: `PlayerModel+Subtitles` toca `request` 20 veces, `snapshot` 8, `engine` 5 y 18 propiedades más del modelo; `+Tracks`, `request` 24, `source` 13, `engine` 9. Un colaborador tendría que recibir todo eso o un contexto, y el modelo es el archivo que más cambian las otras sesiones (dos hoy). La división en extensiones ya da archivos de ~200 líneas; el colaborador se justifica cuando una de esas partes necesite su propio ciclo de vida o pruebas que el modelo no permita |
+
 ### Lo que sigue (si se quiere seguir)
 
-1. Convertir las extensiones de `PlayerModel` en colaboradores (`SubtitleVersions`, `TrackSelection`) con su estado y su prueba.
-2. Atender los 33 avisos de aislamiento y luego poner `SWIFT_VERSION: "6.0"` en la app.
-3. Los archivos que siguen en la lista de `FileBudgetTests` (13): `PlayerPanel.swift` (1 223), `Tokens.swift` (1 014), `ParaTiView.swift` (936), `Demo.swift` (854), `TitleView.swift` (813)…
+1. Los avisos que quedan en modo Swift 6 son APIs que iOS 26 dejó en desuso (`UIScreen.main`, `Text +`, `interfaceOrientation`): limpiarlos es trabajo de `Platform/`.
+2. Los archivos que siguen en la lista de `FileBudgetTests` (12): `PlayerModel.swift` (1 267), `ParaTiView.swift` (936), `Demo.swift` (854), `TitleView.swift` (813), `ForYou.swift` (730)…
+3. La extensión de widgets a Swift 6.
 
 ## Cómo se verificó
 

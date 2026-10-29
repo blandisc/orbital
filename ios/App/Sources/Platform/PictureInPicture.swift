@@ -71,6 +71,7 @@ final class PictureInPicture: NSObject, AVPictureInPictureControllerDelegate {
 
     nonisolated func pictureInPictureController(_ controller: AVPictureInPictureController,
                                                 restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
+        nonisolated(unsafe) let completionHandler = completionHandler
         Task { @MainActor in onRestore(); completionHandler(true) }
     }
 }

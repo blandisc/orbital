@@ -6,6 +6,7 @@ import OrbitalModels
 
 /// Un motor de video con su superficie (la vista donde se pinta). El motor principal es AetherEngine (MKV, HDR,
 /// Dolby Vision, PGS, PiP); el de respaldo, AVPlayer de Apple (MP4/HLS, sin MKV).
+@MainActor
 protocol VideoPlayerEngine: PlayerEngine {
     @MainActor var surface: AnyView { get }
     var name: String { get }
@@ -157,11 +158,12 @@ final class SnapshotHub: @unchecked Sendable {
 // MARK: - AVPlayer (respaldo)
 
 /// AVPlayer de Apple: abre MP4, MOV y HLS (no MKV). Es la vía de respaldo, y la única con AirPlay de video «de verdad».
+@MainActor
 final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
-    let name = "AVPlayer"
+    nonisolated let name = "AVPlayer"
     let player = AVPlayer()
     private let hub = SnapshotHub()
-    private var timeObserver: Any?
+    nonisolated(unsafe) private var timeObserver: Any?   // lo quita `deinit`, que no está aislado
     private var statusObservation: NSKeyValueObservation?
     private var controlObservation: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
@@ -170,7 +172,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     private var chapters: [Chapter] = []
     private var ended = false
 
-    var snapshots: AsyncStream<EngineSnapshot> { hub.makeStream() }
+    nonisolated var snapshots: AsyncStream<EngineSnapshot> { hub.makeStream() }
 
     /// La vista con la capa del video: se arma una vez y la usan la pantalla y PiP.
     @MainActor private lazy var layerView: PlayerLayerView = {

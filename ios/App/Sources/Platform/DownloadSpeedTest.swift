@@ -45,7 +45,7 @@ final class DownloadSpeedTest {
         }
     }
     static let internetURL = URL(string: "https://proof.ovh.net/files/1Gb.dat")!
-    static let backgroundIdentifier = "com.example.orbital.ios.speedtest"
+    nonisolated static let backgroundIdentifier = "mx.iracheta.orbital.speedtest"
 
     func run(services: Services) async {
         guard !running else { return }

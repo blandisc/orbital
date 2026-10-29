@@ -5,7 +5,8 @@ import Vision
 /// (Vision, en el teléfono, sin red). Así un recorte grande (un fondo 16:9 en un marco alto) se acomoda al sujeto en vez de al
 /// centro: el astronauta de Interstellar, a la izquierda, ya no queda fuera. Se recuerda por imagen.
 enum FocalPoint {
-    private static let cache: NSCache<NSString, NSValue> = { let c = NSCache<NSString, NSValue>(); c.countLimit = 400; return c }()
+    // NSCache es seguro entre hilos.
+    nonisolated(unsafe) private static let cache: NSCache<NSString, NSValue> = { let c = NSCache<NSString, NSValue>(); c.countLimit = 400; return c }()
 
     static func cached(_ key: String) -> CGPoint? { cache.object(forKey: key as NSString)?.cgPointValue }
 

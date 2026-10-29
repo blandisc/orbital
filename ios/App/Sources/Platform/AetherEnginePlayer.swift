@@ -368,21 +368,22 @@ struct AetherSubtitleOverlay: View {
 
 /// Los botones de la ventana de PiP en la vía por software (pausa, ±10 s y la barra), contestados por AetherEngine.
 final class AetherSampleBufferPiP: NSObject, AVPictureInPictureSampleBufferPlaybackDelegate {
-    private let source: SoftwarePiPSource
+    /// Solo se toca dentro de `MainActor.assumeIsolated` (AVKit llama en el hilo principal).
+    nonisolated(unsafe) private let source: SoftwarePiPSource
     init(source: SoftwarePiPSource) { self.source = source }
 
     func pictureInPictureController(_ controller: AVPictureInPictureController, setPlaying playing: Bool) {
-        MainActor.assumeIsolated { source.setPlaying(playing) }
+        MainActor.assumeIsolated { [source] in source.setPlaying(playing) }
     }
     func pictureInPictureControllerTimeRangeForPlayback(_ controller: AVPictureInPictureController) -> CMTimeRange {
-        MainActor.assumeIsolated { source.timeRange() }
+        MainActor.assumeIsolated { [source] in source.timeRange() }
     }
     func pictureInPictureControllerIsPlaybackPaused(_ controller: AVPictureInPictureController) -> Bool {
-        MainActor.assumeIsolated { source.isPaused }
+        MainActor.assumeIsolated { [source] in source.isPaused }
     }
     func pictureInPictureController(_ controller: AVPictureInPictureController, didTransitionToRenderSize newRenderSize: CMVideoDimensions) {}
     func pictureInPictureController(_ controller: AVPictureInPictureController, skipByInterval skipInterval: CMTime, completion completionHandler: @escaping () -> Void) {
-        MainActor.assumeIsolated { source.skip(by: skipInterval.seconds) }
+        MainActor.assumeIsolated { [source] in source.skip(by: skipInterval.seconds) }
         completionHandler()
     }
 }

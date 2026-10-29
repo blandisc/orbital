@@ -1,4 +1,4 @@
-import ActivityKit
+@preconcurrency import ActivityKit   // `Activity` no está marcado seguro entre hilos en el SDK; sus métodos sí lo son
 import Foundation
 import UIKit
 import OrbitalCore
