@@ -213,6 +213,7 @@ def test_auto_close_times_can_be_changed_from_orbital(make_client, library):
 
     with make_client() as c:
         assert c.get("/api/settings").json()["game_idle_minutes"] == 60
+        assert c.get("/api/settings").json()["tv"] == {"configured": False, "input": "hdmi1"}  # Ajustes › Tele y voz
         assert c.post("/api/settings", json={"game_idle_minutes": 120, "close_previous": False}).status_code == 200
         assert c.post("/api/settings", json={"game_idle_minutes": 7}).status_code == 422
     sessions = ConsoleShell(library).sessions

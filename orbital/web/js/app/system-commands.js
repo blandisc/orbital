@@ -1,6 +1,6 @@
 /** Comandos de la consola: energía, ventanas, ajustes, mandos, emuladores, actualizar, capturas y Alexa.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, foldersMenu, loadLibrary, memoryMenu, nested, openMenu, openQuick, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, renderHints, resumeRunning, rumble, runnerMenu, settingsMenu, settingsPage, setupMenu, sound, state, stillThere, stopMenu, tourMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, windowsMenu }) {
+export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, foldersMenu, loadLibrary, memoryMenu, nested, openMenu, openQuick, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, renderHints, resumeRunning, rumble, runnerMenu, setupMenu, sound, state, stillThere, stopMenu, tourMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, windowsMenu }) {
   return {
     "stop": async (command, context) => {
       await api.stop();
@@ -42,12 +42,13 @@ export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, cl
       ui.toast.show("Juegos ocultos restaurados", { tone: "success" });
       return loadLibrary();
     },
+    // Ajustes a pantalla completa; con `page`, directo a esa categoría (también si ya estaba abierto)
     "settings": async (command, context) => {
-      if (!command.page) return openMenu(settingsMenu(), nested(context));
-      applySettings(await api.settings());
-      return openMenu(settingsPage(command.page, state.settings), nested(context));
+      sound.play("open");
+      ui.settings.open(command.page || null);
+      return renderHints();
     },
-    // cambia y se queda en la misma página, en la misma opción
+    // cambia y se queda en su lugar (Ajustes se repinta solo: applySettings)
     "setting": async (command, context) => {
       if (command.edge) { // ◀/▶ en el tope: no cambia nada, y se nota
         sound.play("error");
@@ -56,7 +57,14 @@ export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, cl
         applySettings(await api.setSettings({ [command.key]: command.value }));
         sound.play("select");
       }
-      if (stillThere(context)) ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+      return renderHints();
+    },
+    // Ajustes › Tele y voz › «Probar»: lo mismo que decirlo (llega a «Qué ha oído la consola» como de esta consola)
+    "voice-try": async (command, context) => {
+      const res = await api.voice(command.text);
+      sound.play(res.ok === false ? "error" : "select");
+      if (res.speech) ui.toast.show(res.speech, { voice: true, error: res.ok === false });
+      ui.settings.refresh();
       return renderHints();
     },
     "controls": async (command, context) => {

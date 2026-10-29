@@ -40,6 +40,16 @@
 .pill--fill { background: var(--color-fill); }
 .pill--on { color: var(--color-text); background: var(--color-fill-hover); box-shadow: none; }
 .pill--focused, .pill.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
+/* Valores segmentados (Segmented): las opciones de un ajuste juntas en una cápsula; la elegida en papel. Dentro de una fila
+   enfocada (foco invertido, fondo claro) se invierte con ella. Con el dedo, cada una del alto de un dedo. */
+.segmented { flex: none; display: inline-flex; gap: var(--space-1); margin-left: auto; padding: var(--space-1); border-radius: var(--radius-pill); background: var(--color-fill); }
+.segmented__item { min-height: calc(var(--pill-height) - var(--space-2)); padding: 0 var(--space-4); font-size: var(--type-secondary); font-weight: var(--weight-medium); cursor: pointer; }
+.segmented__item:hover { color: var(--color-text); }
+.segmented__item.pill--on { background: var(--color-primary); color: var(--color-on-primary); }
+.sheet__item--focused .segmented { background: var(--on-light-fill-strong); }
+.sheet__item--focused .segmented__item { color: var(--inverse-fg); }
+.sheet__item--focused .segmented__item.pill--on { background: var(--inverse-fg); color: var(--inverse-bg); }
+[data-input="touch"] .segmented__item { min-height: var(--touch-target); }
 
 /* SidePanel: un panel a la derecha sobre un velo (los menús —sheet— y las fuentes —sources—). Comparten el velo que se funde, el
    marco (relieve, borde, sombra) y cómo entra y sale; cada uno pone su ancho, su relleno y su contenido. */

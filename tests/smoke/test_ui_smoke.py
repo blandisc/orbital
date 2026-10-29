@@ -188,13 +188,10 @@ def test_opening_a_game_and_coming_back(page, server):
 def test_diagnostics_screen(page):
     ready(page)
     page.locator(".status-bar__brand").click()  # el logo abre el menú
-    page.get_by_text("Ajustes", exact=True).first.click()
-    page.get_by_text("Mantenimiento", exact=True).first.click()  # lo técnico vive en Ajustes → Mantenimiento
-    # «Diagnóstico» queda justo donde estaba «Mantenimiento»: un toque ahí antes de 400 ms la hoja lo toma como
-    # doble toque y lo ignora a propósito (así un doble toque no confirma «¿Reiniciar?»). Una persona no es tan rápida.
-    page.locator(".sheet__title", has_text="Mantenimiento").wait_for()
-    page.wait_for_timeout(500)
-    page.get_by_text("Diagnóstico", exact=True).first.click()
+    page.locator(".sheet__item", has_text="Ajustes").click()  # Ajustes a pantalla completa
+    page.locator(".settings .rail__item", has_text="Sistema").click()  # lo técnico vive en Ajustes › Sistema
+    page.locator(".settings__page-title", has_text="Sistema").wait_for()
+    page.locator(".settings .sheet__item", has_text="Diagnóstico").click()
     page.get_by_text("Memoria libre").wait_for(timeout=15_000)
 
 

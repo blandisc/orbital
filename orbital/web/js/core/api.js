@@ -113,6 +113,7 @@ export const api = {
   focusWindow: (id) => post("/api/windows/focus", { id }),
   // «Para ti»
   voiceCommands: () => request("/api/voice/commands"),
+  voice: (text) => post("/api/voice", { text }), // una frase, como si se dijera (Ajustes › Tele y voz › Probar)
   voiceStatus: () => request("/api/voice/status"), // por dónde llegó la última orden y las últimas que llegaron
   forYou: () => request("/api/foryou"),
   forYouList: (id, kind = null) => request(`/api/foryou/list?id=${encodeURIComponent(id)}${kind ? `&kind=${kind}` : ""}`),

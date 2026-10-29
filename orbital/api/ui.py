@@ -111,6 +111,8 @@ def router(d: Deps) -> APIRouter:
                 "game_resolution": "lower",
                 **catalog.state.settings(),
                 "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last,
+                # Ajustes › Tele y voz: si la tele (Roku) se prende con Orbital y a qué entrada cambia («Probar» solo si está).
+                "tv": {"configured": bool(d.config.tv.host), "input": d.config.tv.input},
                 # «Para ti»: Ajustes › Cuentas enseña Trakt, TMDB y RAWG (y si su clave ya está).
                 "trakt": catalog.foryou.status()["trakt"], "para_ti": catalog.foryou.status(),
                 "onedrive": catalog.onedrive.status(),  # tus videos de OneDrive (Ajustes › Cuentas)

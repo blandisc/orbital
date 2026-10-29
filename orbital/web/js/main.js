@@ -10,7 +10,7 @@ import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLa
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -32,6 +32,7 @@ import { createArtPicker } from "./components/art-picker.js";
 import { createListScreen, SORTS } from "./components/list-screen.js";
 import { createDecide } from "./components/decide.js";
 import { createYear } from "./components/year.js";
+import { createSettings } from "./components/settings.js";
 import { createCalendar } from "./components/calendar.js";
 import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
@@ -211,6 +212,17 @@ const ui = {
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
+  // Ajustes a pantalla completa (☰ › Ajustes): el riel de categorías y la lámina de la elegida.
+  settings: createSettings({
+    load: async () => {
+      const [settings, voice] = await Promise.all([api.settings(), api.voiceStatus().catch(() => null)]);
+      applySettings(settings);
+      return { settings: state.settings, voice, canExit: !!state.canExit };
+    },
+    onCommand: (command) => runCommand(command),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
   year: createYear({
     load: () => api.forYouYear(),
     onPick: (item) => openTitle(item),
@@ -247,7 +259,7 @@ ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la 
 // Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Versión») van
 // después de la lista abierta, ¿Qué vemos?, Tu año y el calendario: A en un póster las deja a la vista.
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 markFocus(document.body); // «lo enfocado lleva aria-current», en todas las piezas
 
@@ -286,29 +298,17 @@ async function sendToPhone({ action, kind, metaId, videoId }) {
     refreshPhone(); // si ya no hay iPhone, las opciones se van
   }
 }
-/** La hoja de Cuentas en la que estabas (abriste la clave desde ahí, o desde «Cambiar»). */
-function accountsAt(context) {
-  if (!context) return null;
-  if (context.menu?.title === "Cuentas") return { index: context.index, stack: context.stack };
-  const parent = context.stack.at(-1);
-  return parent?.menu?.title === "Cuentas" ? { index: parent.index, stack: context.stack.slice(0, -1) } : null;
-}
-
 /** Una clave de Para ti guardada (o quitada): Cuentas al día y Para ti se vuelve a pedir. */
 async function keysSaved(form, status, { removed = false } = {}) {
   sound.play("select");
   if (form.service === "onedrive") { // su propio estado (no el de Para ti)
     ui.toast.show(removed ? "Quité la clave de OneDrive" : "Clave de OneDrive guardada · Ahora conéctalo", { tone: "success" });
-    const at = accountsAt(loginFrom?.context);
-    applySettings({ ...state.settings, onedrive: status });
-    if (at && !ui.sheet.isOpen && !topOverlay()) ui.sheet.open(settingsPage("accounts", state.settings), at);
+    applySettings({ ...state.settings, onedrive: status }); // Ajustes › Cuentas se repinta en su lugar
     return renderHints();
   }
   ui.toast.show(removed ? `Quité la clave de ${form.label}` : `${form.label} guardada · Para ti se actualiza`, { tone: "success" });
-  const at = accountsAt(loginFrom?.context);
-  applySettings({ ...state.settings, trakt: status.trakt, para_ti: status });
+  applySettings({ ...state.settings, trakt: status.trakt, para_ti: status }); // Ajustes › Cuentas se repinta en su lugar
   ui.foryou.load({ force: true });
-  if (at && !ui.sheet.isOpen && !topOverlay()) ui.sheet.open(settingsPage("accounts", state.settings), at);
   renderHints();
 }
 
@@ -330,7 +330,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.year, ui.calendar, ui.search];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.year, ui.calendar, ui.search, ui.settings];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -500,6 +500,7 @@ function applySettings(settings) {
   ui.hero.tips = settings.voice_tips !== false && !onTheDevice();
   if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   if (inGames()) renderGames(); // los ajustes pueden cambiar glifos y textos
+  ui.settings.update({ settings }); // Ajustes abierto: el valor nuevo se ve en su lugar
 }
 
 /** ¿En la pantalla de la consola (sin tele)? La de la Legion Go es 16:10 y una tele 16:9. Ahí las frases para Alexa junto a
@@ -1576,7 +1577,7 @@ const nested = (context) => (context ? { stack: [...context.stack, { menu: conte
 let commandTable = null;
 function commands() {
   if (commandTable) return commandTable;
-  const deps = { alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, settingsMenu, settingsPage, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  const deps = { alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps) };
   return commandTable;
 }

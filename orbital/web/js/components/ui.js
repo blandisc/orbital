@@ -52,6 +52,15 @@ export const Pill = (label, { on = false, tone = null, icon = null, className = 
   h("button", { class: ["pill", tone && `pill--${tone}`, on && "pill--on", className], type: "button",
     ...(attrs.role === "tab" && !("aria-selected" in attrs) ? { "aria-selected": on ? "true" : "false" } : {}), ...attrs }, icon, label);
 
+/**
+ * Valores segmentados: todas las opciones de un ajuste a la vista (Ajustes), cada una una `Pill`; la elegida en papel. Tocar
+ * o hacer clic en una la elige (`onPick(choice)`); con mando o teclado se cambian con ◀/▶ desde su fila.
+ * choices: [{ label, on }]
+ */
+export const Segmented = (choices, { onPick = null } = {}) =>
+  h("span", { class: "segmented", role: "radiogroup" }, choices.map((c) => Pill(c.label, { on: c.on, className: "segmented__item", role: "radio",
+    "aria-checked": c.on ? "true" : "false", onClick: (event) => { event.stopPropagation(); onPick?.(c); } })));
+
 /** Cuánto llevas (0..1). Sin avance no se dibuja nada. */
 export function Progress(fraction, { className = null, label = "Avance" } = {}) {
   if (!(fraction > 0)) return null;
