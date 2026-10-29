@@ -6,6 +6,14 @@ visto desde 80 %). Aquí se traducen a `POST /scrobble/{acción}` en un hilo apa
 detiene el video. Un fallo se dice una sola vez por video en el registro y queda en `snapshot()` para Ajustes.
 
 Nunca hay scrobble de TV en vivo (el reproductor no lo avisa y aquí tampoco se acepta), ni sin Trakt conectado.
+
+Las mismas reglas que el iPhone (desacoplar Stremio, §5; probadas contra Trakt el 29 oct):
+  - Respaldo cada 5 min mientras ves (`checkpoint`): `start` y, 2 s después, `pause` con el avance real. Así otro
+    aparato tiene dónde seguir aunque se apague la consola. Repetir solo `pause` no sirve: Trakt no mueve `paused_at`.
+    Por lo mismo, después de un respaldo la siguiente pausa o el cierre van precedidos de un `start`.
+  - Visto al 90 % (o en los créditos), no al 80 % de Trakt: hasta entonces se manda como mucho 79.9 %. Al terminar se
+    manda el avance real (al menos 80 %, para que Trakt lo marque visto y lo saque de Seguir viendo).
+  - Nunca una pausa o un cierre por debajo del 1 % (Trakt contesta 422).
 """
 
 from __future__ import annotations
@@ -16,10 +24,16 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
+from .library import stremio_api
 from .library import trakt as trakt_api
 
 log = logging.getLogger(__name__)
 
+CHECKPOINT_SECONDS = 300  # cada cuánto se le deja a Trakt un punto de reanudación mientras ves (player.py)
+CHECKPOINT_GAP = 2.0  # s entre el `start` y la `pause` del respaldo (Trakt los ordena por hora)
+MAX_UNFINISHED = 79.9  # Trakt marca visto desde 80 %: antes del 90 % o de los créditos, como mucho esto
+MIN_SAVED = 1.0  # Trakt no guarda menos del 1 % (422 progress_too_low)
+WATCHED_BY_TRAKT = 80.0
 SEEK_SECONDS = 60  # un salto de este tamaño (o más) cuenta como «saltaste»: se vuelve a avisar con el avance nuevo
 
 
@@ -47,6 +61,25 @@ def not_the_video(meta: dict, duration: float) -> bool:
         return False
 
 
+def plan(action: str, meta: dict, position: float, duration: float) -> tuple[list[str], float] | None:
+    """Qué avisos mandar a Trakt por un aviso del reproductor y con qué avance: (["start", "pause"], 45.2), o None si no
+    se manda nada."""
+    progress = percent(position, duration)
+    if progress is None:
+        return None
+    done = bool(meta.get("finished")) or stremio_api.finished(position, duration, meta.get("kind"))
+    if action == "stop" and done:
+        # Terminaste (créditos o el final de un episodio) antes del 80 %: un cierre al 80 % lo marca visto y borra el punto
+        # de reanudación; un cierre al 75 % lo dejaría «a medias» en Seguir viendo de todos tus aparatos.
+        return ["stop"], max(progress, WATCHED_BY_TRAKT)
+    progress = min(progress, MAX_UNFINISHED)
+    if action == "checkpoint":
+        return (["start", "pause"], progress) if progress >= MIN_SAVED else None
+    if action in ("pause", "stop") and progress < MIN_SAVED:
+        return None
+    return [action], progress
+
+
 def label(meta: dict) -> str:
     """«The Office T2 · E5» o «Dune»: cómo se dice lo último que se mandó."""
     title = str(meta.get("title") or meta.get("meta_id") or "").strip()
@@ -58,9 +91,12 @@ def label(meta: dict) -> str:
 
 class TraktScrobbler:
     def __init__(self, trakt: Callable[[], trakt_api.Trakt | None] | None = None,
-                 clock: Callable[[], float] = time.time) -> None:
+                 clock: Callable[[], float] = time.time, sleep: Callable[[float], None] = time.sleep) -> None:
         self.trakt = trakt or (lambda: None)  # se pide en cada aviso: las claves de Trakt pueden cambiar
         self.clock = clock
+        self.sleep = sleep
+        self.on_saved: Callable[[], None] | None = None  # Trakt guardó un punto o un visto (watch.py relee Seguir viendo)
+        self._checkpointed: str | None = None  # el video cuyo último aviso fue un respaldo (lo siguiente lleva `start`)
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="trakt-scrobble")  # uno a la vez, en orden
         self._lock = threading.Lock()
         self._last: dict | None = None
@@ -73,7 +109,7 @@ class TraktScrobbler:
         """Un aviso del reproductor. No bloquea ni lanza: la reproducción no depende de Trakt."""
         try:
             trakt = self.trakt()
-            if trakt is None or not trakt.linked or action not in trakt_api.SCROBBLE_ACTIONS:
+            if trakt is None or not trakt.linked or action not in (*trakt_api.SCROBBLE_ACTIONS, "checkpoint"):
                 return
             kind, meta_id = meta.get("kind"), meta.get("meta_id")
             if kind not in ("movie", "series") or not isinstance(meta_id, str):
@@ -82,18 +118,29 @@ class TraktScrobbler:
                 log.info("Trakt: no aviso de «%s»: el video dura %d s (no es el título, es un relleno de la fuente)", label(meta), duration)
                 return
             target = trakt_api.scrobble_target(kind, meta_id, meta.get("video_id"))
-            progress = percent(position, duration)
-            if target is None or progress is None:
+            planned = plan(action, meta, position, duration)
+            if target is None or planned is None:
                 return
-            self._pool.submit(self._send, trakt, action, target, progress, str(meta.get("video_id") or ""), label(meta))
+            self._pool.submit(self._send, trakt, action, target, planned, str(meta.get("video_id") or ""), label(meta))
         except Exception:  # noqa: BLE001
             log.exception("Error preparando el scrobble")
 
-    def _send(self, trakt: trakt_api.Trakt, action: str, target: dict, progress: float, session: str, title: str) -> None:
+    def _send(self, trakt: trakt_api.Trakt, action: str, target: dict, planned: tuple[list[str], float], session: str,
+              title: str) -> None:
+        steps, progress = planned
         try:
-            trakt.scrobble(action, target, progress)
-            if action in ("pause", "stop") and hasattr(trakt, "forget_playback"):
-                trakt.forget_playback()  # Trakt ya guardó este punto: al retomar se le vuelve a preguntar
+            if action in ("pause", "stop") and self._checkpointed == session:
+                steps = ["start", *steps]  # tras un respaldo, Trakt cree que está en pausa: sin `start` no movería la hora
+            for n, step in enumerate(steps):
+                if n and steps[n - 1] == "start":
+                    self.sleep(CHECKPOINT_GAP)
+                trakt.scrobble(step, target, progress)
+            self._checkpointed = session if action == "checkpoint" else None
+            if action in ("pause", "stop", "checkpoint"):
+                if hasattr(trakt, "forget_playback"):
+                    trakt.forget_playback()  # Trakt ya guardó este punto: al retomar se le vuelve a preguntar
+                if self.on_saved:
+                    self.on_saved()
         except Exception as exc:  # noqa: BLE001 - TraktError, TraktAuthError o cualquier otra cosa
             with self._lock:
                 if session != self._session:
@@ -108,7 +155,7 @@ class TraktScrobbler:
                 self._session, self._warned = session, False
             self._error = None
             self._last = {"title": title, "action": action, "at": self.clock()}
-        log.info("Trakt: %s %s al %d %%", action, title, round(progress))
+        log.info("Trakt: %s %s al %.1f %%", "+".join(steps), title, progress)
 
     # --- para Ajustes ---------------------------------------------------------------------------
     def snapshot(self) -> dict:

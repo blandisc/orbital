@@ -32,6 +32,7 @@ from .scrobble import TraktScrobbler, not_the_video
 from .sessions import Sessions
 from .state import State
 from .store import ItemStore
+from .trakt_sync import TraktLibrary
 
 log = logging.getLogger(__name__)
 
@@ -375,6 +376,10 @@ class Watch:
         self._stremio_again = False
         self._stremio_generation = 0
         self._stremio_publish = threading.Lock()
+        # Trakt: lo que viste, pausaste o guardaste en el iPhone (o en otra app) también entra a Seguir viendo y Mi lista.
+        self.trakt_library = TraktLibrary()  # catalog.py le da el Trakt de «Para ti» cuando ya existe
+        self.trakt_library.dismissed = lambda imdb: self.state.prefs(f"stremio:{imdb}").get("dismissed")
+        self._trakt_busy = threading.Lock()
         self._saving = threading.Lock()
         # Tus complementos (los de la cuenta y los tuyos): fuentes, subtítulos y fichas.
         self.addons = addons.AddonRegistry(self.stremio_client, auth=lambda: self.credentials.get(STREMIO_KEY),
@@ -396,6 +401,7 @@ class Watch:
                 "detail": f"Llevaba {minutes} min sin que lo vieras" if live
                 else f"Llevaba {minutes} min en pausa · Sigues donde te quedaste"}))
         self.scrobbler = TraktScrobbler()  # catalog.py le da el Trakt de «Para ti» cuando ya existe
+        self.scrobbler.on_saved = self._trakt_saved
         self._wire_player()
 
     # --- Stremio -------------------------------------------------------------
@@ -496,7 +502,7 @@ class Watch:
         with self._stremio_publish:
             if generation != self._stremio_generation or not self.stremio_linked:
                 return False  # cerraste sesión mientras se descargaba: no se vuelve a poner esa lista
-            self.store.replace_source("stremio", items)
+            self.store.replace_source("stremio", self.trakt_library.merged(items))
             changed = [i.id for i in items] != [i.id for i in self.stremio_items] or any(
                 a.progress != b.progress for a, b in zip(items, self.stremio_items, strict=False))
             self.stremio_items = items
@@ -516,7 +522,7 @@ class Watch:
             return  # Cinemeta no respondió: nada que avisar (la próxima descarga lo reintenta)
         if self.stremio_items is not items:
             return  # llegó una descarga más nueva: ella se encarga
-        self.store.replace_source("stremio", items)
+        self.store.replace_source("stremio", self.trakt_library.merged(items))
         self._save_stremio_cache(items)
         self.events.publish({"type": "library-changed"})
 
@@ -571,10 +577,24 @@ class Watch:
                         log.warning("Cinemeta: ficha rara de %s (%s)", item.title, exc)
 
     def dismiss_continue(self, meta_id: str) -> None:
-        """"Quitar de Seguir viendo": en tu cuenta de Stremio (desaparece también en Stremio)."""
+        """"Quitar de Seguir viendo": borra tu avance en Trakt (desaparece también en el iPhone) y en tu cuenta de
+        Stremio (desaparece también en Stremio)."""
+        trakt = self.trakt_library.client()
         auth = self.credentials.get(STREMIO_KEY)
-        if not auth:
+        if not auth and trakt is None:
             raise stremio_api.StremioError(stremio_api.NOT_LINKED)
+        # Una serie al día en Trakt no tiene avance que borrar: la consola recuerda cuándo la quitaste.
+        self.state.set_pref(f"stremio:{meta_id}", "dismissed", time.time())
+        if trakt is not None:
+            playback, _, _, _ = self.trakt_library.snapshot()
+            for row in playback:
+                if row["meta_id"] == meta_id and row.get("id") is not None:
+                    trakt.remove_playback(row["id"])
+            self.trakt_library.forget("paused")
+            self.refresh_trakt()
+        if not auth:
+            self.events.publish({"type": "library-changed"})
+            return
         raw = self.stremio_client.library_item(auth, meta_id)
         if raw:
             back = next((i for i in self.stremio_items if i.extra.get("meta_id") == meta_id and i.extra.get("new_episode")), None)
@@ -604,6 +624,46 @@ class Watch:
     def refresh_stremio_if_stale(self) -> None:
         if time.time() - self._stremio_fetched > STREMIO_STALE_SECONDS:
             self.refresh_stremio(background=True)
+        if self.trakt_library.stale():
+            self.refresh_trakt(background=True)
+
+    def _trakt_saved(self) -> None:
+        """Trakt guardó dónde ibas o que ya lo viste: Seguir viendo se vuelve a armar con eso (por detrás)."""
+        self.trakt_library.forget("paused")
+        self.trakt_library.forget("watched")
+        self.refresh_trakt(background=True)
+
+    def refresh_trakt(self, background: bool = False, force: bool = False) -> bool:
+        """Pregunta a Trakt si cambió algo (lo que viste o guardaste en el iPhone) y, si sí, vuelve a armar Seguir viendo y
+        Mi lista. En segundo plano no bloquea a quien llama."""
+        if not self.config.stremio.enabled:
+            return False
+        if background:
+            threading.Thread(target=self.refresh_trakt, kwargs={"force": force}, daemon=True, name="trakt-sync").start()
+            return True
+        if not self._trakt_busy.acquire(blocking=False):
+            return False
+        try:
+            if not self.trakt_library.refresh(force=force):
+                return False
+            self._publish_videos()
+        finally:
+            self._trakt_busy.release()
+        return True
+
+    def _publish_videos(self) -> None:
+        """Vuelve a poner la biblioteca de videos (Stremio + Trakt) y avisa a la pantalla."""
+        with self._stremio_publish:
+            items = self.stremio_items
+        merged = self.trakt_library.merged(items)
+        # Lo que solo vino de Trakt aún no tiene sinopsis ni nombre del episodio: Cinemeta (con caché) antes de mostrarlo.
+        self._enrich([i for i in merged if i.extra.get("from_trakt") and not i.extra.get("episode_title")
+                      and (i.category == "continue" or not i.extra.get("description"))])
+        with self._stremio_publish:
+            if self.stremio_items is not items:
+                merged = self.trakt_library.merged(self.stremio_items)  # llegó la biblioteca de Stremio mientras tanto
+            self.store.replace_source("stremio", merged)
+        self.events.publish({"type": "library-changed"})
 
     def link_stremio(self, auth_key: str) -> int:
         """Guarda la clave de sesión y comprueba que funciona. Devuelve cuántos títulos hay."""
@@ -616,8 +676,8 @@ class Watch:
         with self._stremio_publish:
             self._stremio_generation += 1  # una descarga que ya iba a medias no vuelve a poner la cuenta
             self.credentials.set(STREMIO_KEY, None)
-            self.store.replace_source("stremio", [])
             self.stremio_items = []
+            self.store.replace_source("stremio", self.trakt_library.merged([]))  # lo de Trakt se queda
             if self._stremio_cache:
                 self._stremio_cache.unlink(missing_ok=True)
 
@@ -1472,6 +1532,7 @@ class Watch:
         if kind == "series":
             details["seasons"] = cinemeta.seasons(info)
         resume = None
+        stremio_when = None
         details["watched"] = []
         details["in_library"] = False
         auth = self.credentials.get(STREMIO_KEY)
@@ -1483,6 +1544,7 @@ class Watch:
                 raw = None
             raw = raw if isinstance(raw, dict) else None
             state = stremio_api.state_of(raw)
+            stremio_when = stremio_api.watched_at(raw)
             details["in_library"] = bool(raw) and not raw.get("removed") and not raw.get("temp")
             if kind == "series":  # los vistos de verdad (no "todo lo anterior al que ibas")
                 ids = [v["id"] for v in info.get("videos") or [] if isinstance(v, dict) and v.get("id")]
@@ -1495,10 +1557,44 @@ class Watch:
                 if position or (kind == "series" and video_id != meta_id):
                     resume = {"video_id": video_id, "position": position, "duration": duration,
                               "label": label, "episode_title": name}
-        details["resume"] = resume
+        details["resume"] = self._trakt_title(details, info, kind, meta_id, stremio_when, resume)
         video = trailer_id(info)
         details["trailer"] = video if video and self.trailer_available(video) else None  # «Tráiler» solo si se puede ver
         return details
+
+    def _trakt_title(self, details: dict, info: dict, kind: str, meta_id: str, stremio_when: float | None,
+                     resume: dict | None) -> dict | None:
+        """La ficha con lo de Trakt (lo que viste o pausaste en el iPhone): Mi lista es tu watchlist, los ✓ se suman y
+        «Continuar» va a lo más reciente entre Stremio y Trakt. Devuelve el «Continuar» que queda."""
+        if not self.trakt_library.active:
+            return resume
+        listed = self.trakt_library.in_watchlist(meta_id)
+        if listed is not None:
+            details["in_library"] = listed
+        best: tuple[float, dict] | None = None
+        playback, _, _, _ = self.trakt_library.snapshot()
+        for row in playback:
+            if row["meta_id"] == meta_id and (best is None or row["paused_at"] > best[0]):
+                length = row.get("runtime") or 0
+                best = (row["paused_at"], {"video_id": row["video_id"], "position": row["percent"] / 100 * length,
+                                           "duration": length})
+        if kind == "series":
+            try:
+                watched, nxt = self.trakt_library.watched_episodes(meta_id)
+            except trakt_api.TraktError as exc:
+                log.info("No pude leer qué episodios viste en Trakt: %s", exc)
+                watched, nxt = set(), None
+            ids = {v["id"] for v in info.get("videos") or [] if isinstance(v, dict) and v.get("id")}
+            details["watched"] = sorted(set(details["watched"]) | (watched & ids))
+            if nxt and nxt[0] in ids and (best is None or nxt[1] > best[0]):
+                best = (nxt[1], {"video_id": nxt[0], "position": 0, "duration": 0})
+        if best is None or (stremio_when is not None and stremio_when >= best[0]):
+            return resume
+        found = best[1]
+        if found["position"] < 1 and (kind != "series" or found["video_id"] == meta_id):
+            return resume  # sin avance que sirva
+        label, name = self._episode_label(info, found["video_id"]) if kind == "series" else ("", "")
+        return {**found, "position": round(found["position"]), "label": label, "episode_title": name}
 
     # --- «Cambiar el arte» de una película o serie ---------------------------------------------------------------------
     ART_KINDS = ("poster", "background")
@@ -1537,22 +1633,35 @@ class Watch:
         return art
 
     def set_in_library(self, kind: str, meta_id: str, add: bool) -> None:
-        """Añadir o quitar de Mi lista (tu biblioteca de Stremio: se ve igual en Stremio)."""
+        """Añadir o quitar de Mi lista: tu watchlist de Trakt (la del iPhone) y, mientras dura la prueba, una copia en tu
+        biblioteca de Stremio. Sin Trakt, solo Stremio, como antes."""
+        trakt = self.trakt_library.client()
         auth = self.credentials.get(STREMIO_KEY)
-        if not auth:
+        if trakt is None and not auth:
             raise stremio_api.StremioError(stremio_api.NOT_LINKED)
-        try:
-            info = self.cinemeta.meta(kind, meta_id, localized=False)  # Stremio guarda el título original
-        except cinemeta.CinemetaError:
-            info = {}
-        raw = self.stremio_client.library_item(auth, meta_id)
-        item = stremio_api.library_toggled(raw, meta_id=meta_id, kind=kind, name=info.get("name") or meta_id,
-                                           poster=info.get("poster"), add=add, now=time.time())
-        self.stremio_client.save_library_item(auth, item)
+        if trakt is not None:
+            trakt.set_watchlist(kind, meta_id, add)  # TraktError: no se guardó en ningún lado (la API lo dice)
+            self.trakt_library.forget("watchlist")
+        if auth:
+            try:
+                try:
+                    info = self.cinemeta.meta(kind, meta_id, localized=False)  # Stremio guarda el título original
+                except cinemeta.CinemetaError:
+                    info = {}
+                raw = self.stremio_client.library_item(auth, meta_id)
+                item = stremio_api.library_toggled(raw, meta_id=meta_id, kind=kind, name=info.get("name") or meta_id,
+                                                   poster=info.get("poster"), add=add, now=time.time())
+                self.stremio_client.save_library_item(auth, item)
+            except stremio_api.StremioError as exc:
+                if trakt is None:
+                    raise
+                log.info("Mi lista: la copia en Stremio no se guardó: %s", exc)  # la de Trakt sí: es la que cuenta
         # La biblioteca entera se vuelve a leer por detrás: la ficha ya cambió su botón (antes esperaba esta recarga,
         # varios segundos, y «Guardar» parecía trabado).
         def refresh() -> None:
             self.refresh_stremio()
+            if trakt is not None:
+                self.refresh_trakt()
             self.events.publish({"type": "library-changed"})
         threading.Thread(target=refresh, daemon=True, name="mi-lista").start()
 

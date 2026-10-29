@@ -99,6 +99,7 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
     wrong_audio,
 )
 from .player_screen import PlayerScreen
+from .scrobble import CHECKPOINT_SECONDS
 
 log = logging.getLogger(__name__)
 
@@ -566,6 +567,9 @@ class OrbitalPlayer(PlayerScreen):
         self._buffering_state(paused)
         if now - segment.last_save >= SAVE_EVERY and not paused:
             self._save_progress(segment)
+        if segment.scrobbling and not paused and now - segment.last_checkpoint >= CHECKPOINT_SECONDS:
+            segment.last_checkpoint = now
+            self._scrobble("checkpoint", segment)  # que otro aparato sepa dónde vas aunque la consola se apague
         self._chapters_tick(segment, now)
         self._upnext_tick(segment, now)
         if segment.meta.get("synthetic"):
@@ -928,11 +932,13 @@ class OrbitalPlayer(PlayerScreen):
             return  # un canal de Orbital tampoco (es la tele de fondo), ni un tráiler
         if action == "start":
             segment.scrobbling = True
+            segment.last_checkpoint = time.monotonic()
         elif not segment.scrobbling:
             return  # pausar o parar algo que Trakt nunca supo que empezó
         elif action == "stop":
             segment.scrobbling = False
-        self._safe(self.on_scrobble, action, segment.meta, segment.position, segment.duration)
+        meta = {**segment.meta, "finished": True} if segment.finished else segment.meta  # créditos o «Ver ahora»: visto
+        self._safe(self.on_scrobble, action, meta, segment.position, segment.duration)
 
     def _save_progress(self, segment: Segment) -> None:
         segment.last_save = time.monotonic()

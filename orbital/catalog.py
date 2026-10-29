@@ -188,6 +188,7 @@ class Catalog:
         self.watch.localizer.on_name = self.names.remember
         self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
         self.watch.scrobbler.trakt = lambda: self.foryou.trakt  # lo que ves, a Trakt (se pide en cada aviso)
+        self.watch.trakt_library.trakt = lambda: self.foryou.trakt  # y lo de Trakt (el iPhone) a Seguir viendo y Mi lista
         # En pausa, el título estilizado: el mismo logo recortado de la ficha (en blanco si es oscuro).
         self.watch.player.logo_provider = lambda meta: self.foryou.trimmed_logo(str(meta.get("meta_id") or ""))
         self.tv = LiveTV(config, self)  # «TV en vivo»: canales y su salud (no sale a internet hasta que arranca)
@@ -424,6 +425,7 @@ class Catalog:
         self.warm_covers()
         self.scrape_art(background=True)
         self.watch.refresh_stremio(background=True)
+        self.watch.refresh_trakt(background=True, force=True)
         if not self.watch.cinemeta_items:
             self.watch.refresh_cinemeta(background=True)
         return len(found)
@@ -651,9 +653,9 @@ class Catalog:
                 # Stremio guarda todo lo que alguna vez empezaste (años): lo reciente, no 134 títulos.
                 members = sorted((i for i in items if i.category == "continue"),
                                  key=lambda i: i.last_watched or 0, reverse=True)[:CONTINUE_LIMIT]
-            elif cat["id"] == "mylist":  # tu biblioteca de Stremio, lo último primero
+            elif cat["id"] == "mylist":  # tu watchlist de Trakt (o, sin Trakt, tu biblioteca de Stremio), lo último primero
                 members = sorted((i for i in items if i.source == "stremio" and i.extra.get("in_library")),
-                                 key=lambda i: i.last_watched or 0, reverse=True)
+                                 key=lambda i: i.extra.get("listed_at") or i.last_watched or 0, reverse=True)
             elif cat["id"] == "favorites":
                 members = [i for i in alpha if self.is_favorite(i)]
             elif cat["id"] == "emulators":

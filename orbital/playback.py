@@ -332,6 +332,7 @@ class Segment:
     saved_watched: float = 0.0
     playing: bool = False  # ya hubo imagen (mpv sabe la duración)
     scrobbling: bool = False  # ya se le avisó a Trakt que empezó (y aún no que paró)
+    last_checkpoint: float = field(default_factory=time.monotonic)  # el último respaldo a Trakt (cada 5 min mientras ves)
     live: bool = False  # un canal de TV: sin duración, sin progreso que guardar, sin episodios
     failed: bool = False
     closed: bool = False

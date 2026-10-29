@@ -534,10 +534,12 @@ class ForYou:
     def lists(self) -> list[dict]:
         """El riel: una entrada por lista (solo las de los servicios que tienes)."""
         video: list[dict] = []
-        # Lo de tu Stremio no necesita ninguna clave: sin Trakt, «Para ti» no se queda solo con juegos.
+        # Seguir viendo y Mi lista ya traen lo de Trakt (trakt_sync.py); sin Trakt, lo de tu Stremio, que no pide clave: así
+        # «Para ti» no se queda solo con juegos. Con Trakt, Mi lista es «Tu watchlist» (abajo): no se repite.
+        mine = "Trakt" if self.trakt.linked else "Stremio"
         if self._stremio("continue"):
-            video.append({"id": "continue", "title": "Seguir viendo", "icon": "watching", "source": "Stremio", "meta": "Lo que dejaste a medias"})
-        if self._stremio("mylist"):
+            video.append({"id": "continue", "title": "Seguir viendo", "icon": "watching", "source": mine, "meta": "Lo que dejaste a medias"})
+        if not self.trakt.linked and self._stremio("mylist"):
             video.append({"id": "mylist", "title": "Mi lista", "icon": "library", "source": "Stremio", "meta": "Tu biblioteca"})
         if self.trakt.linked:
             video += [
@@ -564,10 +566,10 @@ class ForYou:
                 {"id": "popular", "title": "Lo más popular", "icon": "flame", "source": "Trakt", "meta": "De todos los tiempos", "split": True},
             ]
         elif self._stremio("cinemeta"):
-            video.append({"id": "cinemeta", "title": "Lo más popular", "icon": "flame", "source": "Stremio",
-                          "meta": "En el catálogo de Stremio", "split": True})
+            video.append({"id": "cinemeta", "title": "Lo más popular", "icon": "flame", "source": "Cinemeta",
+                          "meta": "Lo más visto hoy", "split": True})
         for entry in self.addon_catalogs():
-            video.append({"id": entry["id"], "title": entry["title"], "icon": "addon", "source": "Stremio",
+            video.append({"id": entry["id"], "title": entry["title"], "icon": "addon", "source": "Complemento",
                           "meta": f"De {entry['addon']}", "split": len(entry["kinds"]) > 1})
         # Netflix (Top 10 oficial) y JustWatch (lo más visto por plataforma): ninguna pide clave.
         video.append({"id": "chart:netflix", "title": "Top 10 en Netflix", "icon": "chart", "source": "Netflix",

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from .. import player_ui, watch
 from ..library import cinemeta, stremio_api
+from ..library import trakt as trakt_api
 from .deps import Deps
 
 log = logging.getLogger(__name__)
@@ -305,6 +306,8 @@ def router(d: Deps) -> APIRouter:
             catalog.watch.set_in_library(kind, meta_id, body["add"])
         except stremio_api.StremioError as exc:
             raise HTTPException(409, stremio_message(exc))
+        except trakt_api.TraktError as exc:
+            raise HTTPException(409, str(exc))
         return {"ok": True, "in_library": body["add"]}
 
     @r.post("/trailer")
@@ -328,6 +331,8 @@ def router(d: Deps) -> APIRouter:
             catalog.watch.dismiss_continue(meta_id)
         except stremio_api.StremioError as exc:
             raise HTTPException(409, stremio_message(exc))
+        except trakt_api.TraktError as exc:
+            raise HTTPException(409, str(exc))
         return {"ok": True}
 
     return r

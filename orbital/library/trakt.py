@@ -12,6 +12,8 @@ secrets.json (credentials.py).
   GET  /sync/favorites/{movies|shows} · POST /sync/favorites(/remove)  -> tus favoritos (el corazón; 420 = ya tienes 100)
   POST /scrobble/{start|pause|stop}   {movie|show+episode, progress}  -> 201 · 409 ya registrado · 401 renovar sesión
   GET  /{movies|shows}/trending · /{movies|shows}/popular · /sync/history/episodes · /shows/{id}/progress/watched
+  GET  /sync/last_activities · /sync/playback · POST /sync/history(/remove) · DELETE /sync/playback/{id}
+                                     -> Trakt es lo que sincroniza la consola y el iPhone (trakt_sync.py)
 
 Solo cuenta lo que trae id de IMDb: así se ve con Cinemeta y Stremio, como todo lo demás.
 """
@@ -24,6 +26,7 @@ import re
 import threading
 import time
 from dataclasses import dataclass
+from datetime import UTC
 from urllib.parse import urlencode
 
 from ..net import NET_ERRORS, http_json
@@ -119,6 +122,70 @@ def latest_resume(stremio_seconds: float, stremio_when: float | None, duration: 
     if trakt["percent"] <= 0 or not length:
         return stremio_seconds  # sin duración no se sabe a qué segundo va el porcentaje
     return trakt["percent"] / 100 * length
+
+
+def history_body(target: dict, watched_at: float | None = None) -> dict:
+    """Lo que POST /sync/history(/remove) pide para una película o un episodio (`target` de scrobble_target)."""
+    when = {} if watched_at is None else {"watched_at": _iso(watched_at)}
+    if "episode" in target:
+        ep = target["episode"]
+        return {"shows": [{**target["show"], "seasons": [{"number": ep["season"],
+                                                         "episodes": [{"number": ep["number"], **when}]}]}]}
+    return {"movies": [{**target["movie"], **when}]}
+
+
+def _iso(when: float) -> str:
+    from datetime import datetime
+
+    return datetime.fromtimestamp(when, tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
+def playback_row(row) -> dict | None:
+    """Una fila de GET /sync/playback con lo que hace falta para ponerla en Seguir viendo: {id (para borrarla), kind,
+    meta_id, video_id, title, year, percent, paused_at, runtime (s)}. None si no se entiende."""
+    parsed = playback_entry(row)
+    if parsed is None:
+        return None
+    key, info = parsed
+    movie = row.get("type") == "movie"
+    raw = _dict(row.get("movie") if movie else row.get("show"))
+    title = raw.get("title")
+    if not isinstance(title, str) or not title.strip():
+        return None
+    return {"id": row.get("id") if isinstance(row.get("id"), int) else None, "kind": "movie" if movie else "series",
+            "meta_id": key.split(":")[0], "video_id": key, "title": title.strip(),
+            "year": raw.get("year") if isinstance(raw.get("year"), int) else None, **info}
+
+
+def show_progress(data) -> dict | None:
+    """GET /shows/{id}/progress/watched → {next ((temporada, episodio) o None), last_watched (s o None), watched (set de
+    (temporada, episodio))}. None si no se entiende."""
+    if not isinstance(data, dict):
+        return None
+    watched: set[tuple[int, int]] = set()
+    for season in data.get("seasons") or []:
+        number = _dict(season).get("number")
+        for ep in _dict(season).get("episodes") or []:
+            ep = _dict(ep)
+            if isinstance(number, int) and isinstance(ep.get("number"), int) and ep.get("completed"):
+                watched.add((number, ep["number"]))
+    nxt = _dict(data.get("next_episode"))
+    ok = isinstance(nxt.get("season"), int) and isinstance(nxt.get("number"), int)
+    return {"next": (nxt["season"], nxt["number"]) if ok else None, "last_watched": _when(data.get("last_watched_at")),
+            "watched": watched}
+
+
+def activity_stamps(data) -> dict[str, str]:
+    """GET /sync/last_activities → la marca de cada cosa que la consola lee: {«paused», «watched», «watchlist»}. Si una
+    cambia (desde cualquier app: el iPhone, la TV…), hay que volver a pedir eso; si no, nada."""
+    data = _dict(data)
+
+    def stamp(*paths: tuple[str, str]) -> str:
+        return "|".join(str(_dict(data.get(a)).get(b) or "") for a, b in paths)
+
+    return {"paused": stamp(("movies", "paused_at"), ("episodes", "paused_at")),
+            "watched": stamp(("movies", "watched_at"), ("episodes", "watched_at")),
+            "watchlist": stamp(("watchlist", "updated_at"), ("movies", "watchlisted_at"), ("shows", "watchlisted_at"))}
 
 
 class TraktError(Exception):
@@ -589,6 +656,75 @@ class Trakt:
 
     def forget_playback(self) -> None:
         """Pausaste o cerraste: lo que se pidió a Trakt ya no es lo último (la siguiente vez se pide otra vez)."""
+        self._playback = None
+
+    # --- lo tuyo, para Seguir viendo, la ficha y Mi lista (trakt_sync.py) ---------------------------------------------
+    def last_activities(self) -> dict[str, str]:
+        """Cuándo cambió por última vez tu avance, lo visto y tu watchlist (una llamada chica)."""
+        return activity_stamps(self._get("/sync/last_activities"))
+
+    def playback_rows(self) -> list[dict]:
+        """Todo lo que tienes a medias en Trakt (entre 1 y 79 %), con su nombre, lo más reciente primero."""
+        rows = self._get("/sync/playback", extended="full", limit=100)
+        found = [r for r in (playback_row(row) for row in rows) if r] if isinstance(rows, list) else []
+        return sorted(found, key=lambda r: r["paused_at"], reverse=True)
+
+    def show_progress(self, imdb: str) -> dict | None:
+        """Qué episodios de una serie viste y cuál sigue (Trakt acepta el id de IMDb). None si no se entiende."""
+        if not isinstance(imdb, str) or not re.fullmatch(r"tt\d+", imdb):
+            return None
+        return show_progress(self._get(f"/shows/{imdb}/progress/watched", hidden="false", specials="false"))
+
+    def recent_shows(self, limit: int = 15) -> list[dict]:
+        """Las últimas series que viste (como entry, lo más reciente primero), para armar «Sigue: T2 E6»."""
+        rows = self._get("/sync/history/episodes", limit=100, extended="full")
+        shows, seen = [], set()
+        for row in rows if isinstance(rows, list) else []:
+            show = entry(row.get("show") if isinstance(row, dict) else None, "series")
+            if show and show["imdb"] not in seen:
+                seen.add(show["imdb"])
+                shows.append(show)
+                if len(shows) >= limit:
+                    break
+        return shows
+
+    def watchlist_rows(self) -> list[dict]:
+        """Tu watchlist (Mi lista) con cuándo guardaste cada título (`listed_at`, en segundos), lo último primero."""
+        rows = self._get("/sync/watchlist", extended="full", sort_by="added", sort_how="desc")
+        found, seen = [], set()
+        for row in rows if isinstance(rows, list) else []:
+            name = str(_dict(row).get("type") or "")
+            kind = {"movie": "movie", "show": "series"}.get(name)
+            item = entry(_dict(row).get(name), kind) if kind else None
+            if item and item["imdb"] not in seen:
+                seen.add(item["imdb"])
+                found.append({**item, "listed_at": _when(row.get("listed_at")) or 0.0})
+        return sorted(found, key=lambda e: e["listed_at"], reverse=True)
+
+    def watched_movies(self) -> dict[str, float]:
+        """Las películas que viste y cuándo fue la última vez: {IMDb: segundos}."""
+        rows = self._get("/sync/watched/movies")
+        found: dict[str, float] = {}
+        for row in rows if isinstance(rows, list) else []:
+            imdb = _dict(_dict(_dict(row).get("movie")).get("ids")).get("imdb")
+            when = _when(_dict(row).get("last_watched_at"))
+            if isinstance(imdb, str) and imdb.startswith("tt") and when is not None:
+                found[imdb] = when
+        return found
+
+    def add_history(self, target: dict, watched_at: float | None = None) -> None:
+        """Marca visto (una película o un episodio)."""
+        self._send("POST", "/sync/history", history_body(target, watched_at))
+
+    def remove_history(self, target: dict) -> None:
+        """Lo desmarca (todas las veces que lo viste)."""
+        self._send("POST", "/sync/history/remove", history_body(target))
+
+    def remove_playback(self, playback_id: int) -> None:
+        """«Quitar de Seguir viendo»: borra ese avance de Trakt."""
+        if not isinstance(playback_id, int):
+            raise TraktError("Avance inválido")
+        self._send("DELETE", f"/sync/playback/{playback_id}")
         self._playback = None
 
     def watching(self, limit: int = 12) -> list[dict]:
