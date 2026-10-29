@@ -55,7 +55,8 @@ Lo dejó la sesión «Propuesta desacoplamiento Streamio» (Mac, lanzada desde l
    menciona una lista llamada «RT: Certified Fresh» como ejemplo de lista de Trakt o de complemento
    (`orbital/foryou.py` L251 y L523, `ListsView.swift` L499): averigua de dónde viene. Di qué es estable, qué es raspado
    (scraping) y qué riesgo tiene.
-4. **Corrección (esta sí se construye ya):** en Para ti, en «Recomendadas», los pósters dicen «N.º 1 en Disney+»,
+4. **Corrección de la píldora: ya va en su propia sesión** («Píldora con ícono del servicio en Recomendadas», lanzada el
+   29 oct). No es tarea de la siguiente sesión; solo revisa que se haya subido. Lo que pidió: en Para ti, en «Recomendadas», los pósters dicen «N.º 1 en Disney+»,
    «N.º 2 en Prime Video», «N.º 8 en …» en texto. Fernando quiere una **píldora mucho más chica y gráfica, con el
    ícono del servicio**, como se hizo en la app de escritorio (commit 48293874, «Para ti: «N.º 1 en Netflix» en la
    píldora de su plataforma, con su logo»; ver `orbital/web/js/components/card.js` y `styles/components/card.css`).
@@ -98,8 +99,7 @@ Lo que quiero de esta sesión, en orden:
    Buscar no: reemplázalo con otra fuente y recomiéndame cuál.
 3. Investiga si se pueden consumir públicamente las listas de Rotten Tomatoes «Certified Fresh» (películas) y las
    series «Fresh», para una sección en Para ti. Dime qué tan estable es y qué riesgo tiene.
-4. Corrige ya, sin esperar lo demás: en Para ti › Recomendadas, el «N.º 1 en Disney+» en texto pasa a una píldora
-   mucho más chica y gráfica con el ícono del servicio, como en la app de escritorio. Tráeme el antes y el después.
+(La píldora con el ícono del servicio en Recomendadas va en otra sesión; no la hagas aquí.)
 
 Muéstrame 1 a 3 de forma visual si se puede (un Canvas o una página HTML). Cuando te dé el OK, empezamos a construir
 en el orden de la propuesta.
