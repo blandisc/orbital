@@ -25,7 +25,8 @@ struct VersionLanguageRow: View {
         return nil
     }
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.highlight) }
+    @ViewBuilder private var bodyContent: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             // El nombre y, debajo, lo que hay que saber de la fila (las mismas palabras que la TV).
             VStack(alignment: .leading, spacing: 0) {
@@ -54,7 +55,8 @@ struct VersionChip: View {
     let language: String
     let action: () -> Void
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.highlight) }
+    @ViewBuilder private var bodyContent: some View {
         let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
         Button(action: action) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {

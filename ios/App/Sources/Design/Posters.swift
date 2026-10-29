@@ -112,7 +112,8 @@ struct PosterCard: View {
     var progress: Double?
     var width: CGFloat = DS.Poster.railWidth
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         ZStack(alignment: .topLeading) {
             PosterView(url: poster, title: title)
             if let rank { DSRankBadge(rank: rank).padding(DS.Space.s2) }

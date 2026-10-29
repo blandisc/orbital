@@ -75,7 +75,8 @@ struct UpNextCard: View {
     let cancel: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         // Arriba la imagen y cuál es; abajo los dos botones lado a lado, del mismo ancho y a todo lo ancho (antes iban uno
         // bajo el otro junto a la imagen y dejaban un hueco debajo de ella).
         VStack(alignment: .leading, spacing: DS.Space.s3) {

@@ -119,7 +119,7 @@ enum AppWindows {
 /// El brillo de la pantalla para el gesto del reproductor. Solo donde la app puede cambiarlo (iPhone y iPad; en la Mac no).
 @MainActor
 enum ScreenBrightness {
-    static let isAdjustable = !ProcessInfo.processInfo.isiOSAppOnMac
+    static let isAdjustable = ThisDevice.hasTouchScreenControls
     /// La pantalla de la ventana de la app (`UIScreen.main` quedó en desuso en iOS 26).
     private static var screen: UIScreen? { AppWindows.scene?.screen }
     static var value: Double {

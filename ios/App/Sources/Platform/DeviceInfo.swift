@@ -41,6 +41,10 @@ final class Connectivity: @unchecked Sendable {
 enum ThisDevice {
     /// La Mac no habla con tu Orbital: es solo para ver (decisión de Fernando, 29 oct 2026). El iPhone y el iPad, sí.
     static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac
+    /// Brillo y volumen con el dedo sobre el video (iPhone, iPad). En la Mac no aplican.
+    static let hasTouchScreenControls = !ProcessInfo.processInfo.isiOSAppOnMac
+    /// Las descargas en la pantalla bloqueada y la Dynamic Island. En la Mac no existen.
+    static let supportsLiveActivities = !ProcessInfo.processInfo.isiOSAppOnMac
 
     @MainActor static var forOrbital: OrbitalRemote.Device {
         let device = UIDevice.current

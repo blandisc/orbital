@@ -48,7 +48,7 @@ final class IPadLayoutUITests: XCTestCase {
     /// La ficha y sus acciones en horizontal (el arte no tapa el botón de ver).
     func testTitleInLandscape() {
         open(["-demo-tmdb", "-demo-title", "series:tt0386676"], .landscapeLeft)
-        let play = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Continuar' OR label BEGINSWITH 'Ver'")).firstMatch
+        let play = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Continuar' OR label BEGINSWITH 'Ver '")).firstMatch
         XCTAssertTrue(play.waitForExistence(timeout: 30), "falta el botón de ver")
         XCTAssertTrue(play.isHittable, "el botón de ver queda fuera de la pantalla")
         shot("ficha-h")
@@ -95,7 +95,8 @@ final class IPadLayoutUITests: XCTestCase {
             ("decidir", ["-demo-tab", "1", "-demo-open", "decide"]), ("fuentes", ["-demo-title", "series:tt0386676", "-demo-open", "sources"]),
             ("reproductor", ["-demo-title", "series:tt0386676", "-demo-open", "play"]), ("ajustes", ["-demo-open", "settings"]),
         ]
-        for (name, args) in screens {
+        let only = ProcessInfo.processInfo.environment["ORBITAL_TOUR_ONLY"]?.split(separator: ",").map(String.init)
+        for (name, args) in screens where only?.contains(name) ?? true {
             open(args, .landscapeLeft)
             sleep(name == "reproductor" || name == "decidir" ? 12 : 8)
             if name == "reproductor" { app.tap(); sleep(1) }

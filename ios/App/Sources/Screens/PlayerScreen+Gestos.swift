@@ -126,6 +126,8 @@ extension PlayerScreen {
                         portraitAtDragStart = Self.resolvedCenter(portraitCenter, in: size, aspect: portraitAspect)   // en vertical, arrastrar arriba o abajo mueve el video
                         controlsVisible = true                 // se mueve a la altura de los controles (sin ellos va al centro)
                     case .vertical:
+                        // En la Mac no hay brillo ni volumen con el dedo: arrastrar con el mouse los activaba sin querer.
+                        guard ThisDevice.hasTouchScreenControls else { break }
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
                         drag.verticalKind = kind
                         if kind == .brightness { drag.brightnessAtDragStart = ScreenBrightness.value }

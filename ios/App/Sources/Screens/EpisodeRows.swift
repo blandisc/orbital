@@ -21,7 +21,8 @@ struct EpisodeRowView: View {
     var downloadFraction: Double?
     var playOnTV: (() -> Void)?
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.highlight) }
+    @ViewBuilder private var bodyContent: some View {
         // El botón de descargar va junto, no dentro, del que reproduce: anidados, tocar la flecha ponía el episodio.
         // Miniatura, texto y estado en una misma línea central: el estado siempre cae en la misma columna.
         HStack(alignment: .center, spacing: DS.Space.s3) {

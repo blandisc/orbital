@@ -9,7 +9,8 @@ struct PlatformFanCard: View {
     let posters: [String?]
     let tint: Color
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         FanCard(name: name, eyebrow: Text("TOP"), posters: posters, tint: tint) {
             PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.logo, radius: DS.PlatformFan.logoRadius, tint: tint, glow: DS.PlatformFan.glow)
         }
@@ -70,7 +71,8 @@ struct PlatformLogoTile: View {
     let tint: Color
     let glow: CGFloat
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         Group {
             if let link = url.flatMap(URL.init(string:)) {
                 RemoteImage(url: link, maxPoints: size) { phase in
@@ -102,7 +104,8 @@ struct PlatformPill: View {
     let selected: Bool
     let action: () -> Void
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.highlight) }
+    @ViewBuilder private var bodyContent: some View {
         let tint = DS.PlatformTint.color(brand)
         Button(action: action) {
             HStack(spacing: DS.Space.s2) {

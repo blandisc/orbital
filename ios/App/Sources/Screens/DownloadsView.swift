@@ -28,6 +28,7 @@ struct DownloadsView: View {
         Group {
             if showsMedia && part == .media { MiMediaView(observer: media) { EmptyView() } } else { phoneList(model) }
         }
+        .readableListWidth()   // iPad y Mac: la lista al centro, no estirada a todo lo ancho
         // El selector, fijo arriba en una barra del sistema (con el desvanecido del contenido debajo): igual en las dos vistas,
         // así al cambiar no brinca ni se mueve nada.
         .safeAreaBar(edge: .top) {

@@ -113,7 +113,8 @@ struct RemoteKey: View {
     @State private var heldAt: Date?
     @Environment(\.dynamicTypeSize) private var typeSize
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.highlight) }
+    @ViewBuilder private var bodyContent: some View {
         Button {
             // Si se mantuvo (su segunda acción ya se mandó), soltar no manda también la de un toque.
             if let held = heldAt, Date().timeIntervalSince(held) < DS.Remote.holdTapWindow { heldAt = nil; return }

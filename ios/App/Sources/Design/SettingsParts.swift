@@ -33,7 +33,8 @@ struct ProfileCard: View {
     let detail: Text
     let edit: () -> Void
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         Button(action: edit) {
             HStack(spacing: DS.Space.s4) {
                 AvatarImage(id: avatar, size: DS.SettingsLook.profileAvatar)

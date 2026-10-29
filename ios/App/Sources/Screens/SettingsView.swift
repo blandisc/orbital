@@ -104,6 +104,7 @@ struct SettingsView: View {
         .contentMargins(.top, DS.Space.s2, for: .scrollContent)
         .contentMargins(.bottom, DS.Space.s10, for: .scrollContent)
         .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
+        .readableListWidth()   // iPad y Mac: los renglones al centro
         .confirmationDialog("¿Cerrar sesión de Stremio?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Cerrar sesión", role: .destructive) { Task { await session.model.signOut() } }
         } message: { Text("Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en el iPhone.") }
@@ -144,6 +145,7 @@ struct SettingsView: View {
             .tint(DS.accent)
             .scrollContentBackground(.hidden).background(Backdrop())
             .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+            .readableListWidth()
     }
 
     /// Trakt conectado con la sesión que copió tu Orbital (no se configura aquí).

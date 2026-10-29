@@ -22,7 +22,8 @@ struct DecideTile: View {
     let toggle: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
         Button(action: toggle) {
             ZStack(alignment: era ? .bottom : .bottomLeading) {
@@ -84,7 +85,8 @@ struct DecideListRow: View {
     let selected: Bool
     let toggle: () -> Void
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.highlight) }
+    @ViewBuilder private var bodyContent: some View {
         Button(action: toggle) {
             HStack(spacing: DS.Space.s3) {
                 ZStack(alignment: .leading) {

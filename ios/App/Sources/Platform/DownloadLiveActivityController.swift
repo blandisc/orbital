@@ -62,7 +62,7 @@ final class DownloadLiveActivityController {
         let pending = items.filter { $0.state == .downloading || $0.state == .queued || $0.state == .paused }
         guard !pending.isEmpty else { return await finish(items) }
         if batchStarted == nil { batchStarted = Date().timeIntervalSince1970 }
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        guard ThisDevice.supportsLiveActivities, ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let current = pending.first { $0.state == .downloading } ?? pending[0]
         let written = pending.reduce(Int64(0)) { $0 + $1.writtenBytes }
         let expected = pending.reduce(Int64(0)) { $0 + max($1.expectedBytes ?? 0, $1.writtenBytes) }

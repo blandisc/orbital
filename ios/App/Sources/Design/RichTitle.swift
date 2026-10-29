@@ -130,7 +130,8 @@ struct VideoClipCard: View {
     var width: CGFloat = DS.Rich.clipWidth
     @Environment(\.openURL) private var openURL
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         Button { if let url = clip.url { openURL(url) } } label: {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterView(url: clip.thumbnail, title: clip.name, aspect: DS.Poster.stillAspect)

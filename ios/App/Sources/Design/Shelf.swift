@@ -86,7 +86,8 @@ struct RankedPosterCard: View {
     /// El color de la plataforma: la cifra toma un tono suyo y su brillo (la página de rankings). Sin él, gris.
     var tint: Color?
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         VStack(alignment: .trailing, spacing: DS.Space.s1) {
             numberAndPoster
             if isNew || movement != nil { MovementBadge(movement: movement, isNew: isNew).frame(width: width, alignment: .leading) }

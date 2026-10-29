@@ -197,7 +197,8 @@ struct RowTile: View {
     let detail: String
     var progress: Double?
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         HStack(alignment: .center, spacing: DS.Space.s3) {
             ZStack(alignment: .bottom) {
                 PosterView(url: thumb, title: title, aspect: DS.Poster.stillAspect)

@@ -14,7 +14,8 @@ struct CoverCard: View {
     /// Su alto (¿Qué vemos? la achica al elegir; Buscar, para el mejor resultado).
     var height: CGFloat = DS.Editorial.coverHeight
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         ZStack(alignment: .bottomLeading) {
             PosterView(url: art, title: title, aspect: nil, bleed: true, maxPoints: DS.Image.wide)
                 .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
@@ -43,7 +44,8 @@ struct WideCard: View {
     /// De una plataforma («En Netflix»): la píldora va en su color y con su logo.
     var platform: String? = nil
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             ZStack(alignment: .bottomLeading) {
                 PosterView(url: art, title: title, aspect: DS.Poster.stillAspect)
@@ -76,7 +78,8 @@ struct WatchlistCard: View {
     var facts: String = ""
     var overview: String = ""
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         HStack(alignment: .top, spacing: DS.Space.s3) {
             PosterView(url: poster, title: title).frame(width: DS.Editorial.watchlistPoster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {

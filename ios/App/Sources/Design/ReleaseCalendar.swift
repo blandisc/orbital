@@ -12,7 +12,8 @@ struct CalendarDayCell: View {
     var isSelected = false
     var isPast = false
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.highlight) }
+    @ViewBuilder private var bodyContent: some View {
         let shape = RoundedRectangle(cornerRadius: DS.ReleaseDays.radius, style: .continuous)
         ZStack(alignment: .topTrailing) {
             HStack(spacing: DS.ReleaseDays.split) {

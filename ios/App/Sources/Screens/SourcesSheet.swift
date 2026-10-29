@@ -170,7 +170,8 @@ struct VersionCard: View {
         AppWindows.safeArea.bottom
     }
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.highlight) }
+    @ViewBuilder private var bodyContent: some View {
         let language = Streams.versionLanguageName(row.code, in: uiLanguage)
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s3) {

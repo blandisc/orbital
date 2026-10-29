@@ -119,7 +119,8 @@ struct AiringRow: View {
     let airing: Airing
     @Environment(\.locale) private var locale
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.highlight) }
+    @ViewBuilder private var bodyContent: some View {
         NavigationLink(value: airing.series.route) {
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 ZStack(alignment: .topLeading) {
@@ -151,7 +152,8 @@ struct AiringCard: View {
     let airing: Airing
     @Environment(\.locale) private var locale
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         NavigationLink(value: airing.series.route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterView(url: airing.series.wide, title: airing.series.title, aspect: DS.Poster.stillAspect)

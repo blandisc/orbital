@@ -19,7 +19,8 @@ struct SubtitleVersionRow: View {
     var detail: String?
     let action: () -> Void
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.highlight) }
+    @ViewBuilder private var bodyContent: some View {
         Button(action: action) {
             HStack(alignment: .top, spacing: DS.Space.s3) {
                 Image(systemName: selected ? "largecircle.fill.circle" : "circle")

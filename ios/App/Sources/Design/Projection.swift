@@ -63,7 +63,8 @@ struct StillCard: View {
     /// Si `art` no carga (`PosterView.fallback`).
     var fallback: String? = nil
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             ZStack(alignment: .bottom) {
                 PosterView(url: art, title: title, aspect: DS.Poster.stillAspect, fallback: fallback)
@@ -156,7 +157,8 @@ struct ArtTile: View {
     var asset: String? = nil
     var art: String? = nil
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         ZStack(alignment: .bottomLeading) {
             // El arte va dentro de un `overlay` de un `Color.clear`: una imagen `scaledToFill` se pide su ancho de alto × proporción
             // y empujaba la columna más allá del margen (en un iPhone de 375 pt las dos columnas se salían y se pegaban entre sí).
@@ -381,4 +383,51 @@ extension View {
     @ViewBuilder func subtitle(_ text: Text?) -> some View {
         if let text { navigationSubtitle(text) } else { self }
     }
+}
+
+/// Cómo responde una pieza tocable al puntero (mouse o trackpad en el iPad y la Mac). En el iPhone no hay puntero: no hace nada.
+enum PointerHover {
+    /// Tarjetas y pósters: se elevan un poco, como en tvOS.
+    case lift
+    /// Teclas, renglones y chips: se iluminan.
+    case highlight
+}
+
+extension View {
+    /// Receta: la respuesta al puntero de las piezas del catálogo (`PosterCard`, `RemoteKey`…), con su esquina redondeada.
+    @ViewBuilder func pointerHover(_ kind: PointerHover) -> some View {
+        switch kind {
+        case .lift: contentShape(.hoverEffect, .rect(cornerRadius: DS.Radius.lg)).hoverEffect(.lift)
+        case .highlight: contentShape(.hoverEffect, .rect(cornerRadius: DS.Radius.md)).hoverEffect(.highlight)
+        }
+    }
+}
+
+/// Listas y formularios a un ancho de lectura en ventanas anchas (iPad, Mac): el contenido al centro, el fondo y la barra
+/// de desplazamiento a todo lo ancho. Solo actúa cuando la pantalla mide más que el ancho de lectura de la ficha
+/// (`DS.TitleAction.readableWidth`): en el iPhone nunca se activa y quedan los márgenes de siempre.
+private struct ReadableListWidth: ViewModifier {
+    /// El ancho visible y lo que tapa la barra lateral del iPad (en horizontal se dibuja encima: cuenta como área segura).
+    @State private var visible: CGFloat = 0
+    @State private var sidebar: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        let margin = (visible - DS.TitleAction.readableWidth) / 2
+        Group {
+            // El margen de la izquierda no se suma al de la barra lateral (queda el mayor): se le agrega a mano para que
+            // la lista quede al centro de lo visible y no cargada a un lado.
+            if margin > 0 {
+                content.contentMargins(.leading, sidebar + margin, for: .scrollContent)
+                    .contentMargins(.trailing, margin, for: .scrollContent)
+            } else { content }
+        }
+        .onGeometryChange(for: CGSize.self) { CGSize(width: $0.size.width, height: $0.safeAreaInsets.leading) } action: {
+            visible = $0.width; sidebar = $0.height
+        }
+    }
+}
+
+extension View {
+    /// Receta: lista o formulario a un ancho de lectura en ventana ancha (ver `ReadableListWidth`).
+    func readableListWidth() -> some View { modifier(ReadableListWidth()) }
 }

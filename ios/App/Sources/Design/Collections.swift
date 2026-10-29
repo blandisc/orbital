@@ -13,7 +13,8 @@ struct CollectionCard<Emblem: View>: View {
     var captioned = true
     @ViewBuilder var emblem: () -> Emblem
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             FanCard(name: name, posters: posters, tint: tint, emblem: emblem).reflected(weight: tint)
             if captioned {
@@ -57,7 +58,8 @@ struct TraktEmblem: View {
 struct AwardCard: View {
     let award: AwardCollection
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         CollectionCard(title: AwardNames.title(award.id), detail: AwardNames.category(award.id), name: award.id,
                        posters: award.suggestions.prefix(3).map { Optional($0.poster) }, tint: DS.Collections.tint(award.id)) {
             AwardEmblem(id: award.id)
@@ -110,7 +112,8 @@ struct ListCard: View {
     let posters: [String]
     var count: Int?
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         HStack(spacing: DS.Space.s3) {
             ZStack(alignment: .topLeading) {
                 ForEach(Array(posters.prefix(2).enumerated().reversed()), id: \.offset) { i, url in
@@ -170,7 +173,8 @@ struct BecauseCard<Related: View>: View {
     private var index: Int { seeds.firstIndex { $0.id == selected } ?? 0 }
     private var current: BecauseSeed? { seeds.indices.contains(index) ? seeds[index] : seeds.first }
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             deckHeader
             // Siempre del mismo alto: mientras llegan, unos pósters vacíos en su lugar (la tarjeta no brinca ni parece trabada).
@@ -302,7 +306,8 @@ struct YearCard: View {
     let year: Int
     let posters: [String]
 
-    var body: some View {
+    var body: some View { bodyContent.pointerHover(.lift) }
+    @ViewBuilder private var bodyContent: some View {
         ZStack(alignment: .bottomLeading) {
             let half = DS.Collections.yearWidth / 2
             LazyVGrid(columns: [GridItem(.fixed(half), spacing: 0), GridItem(.fixed(half), spacing: 0)], spacing: 0) {
