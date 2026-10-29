@@ -109,6 +109,10 @@
   --duration-exit: 160ms;
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease-in: cubic-bezier(.5, 0, .75, 0);
+  /* La deriva de Para ti arranca y se frena con estas: su pendiente en la unión es 2, así medio recorrido en un tramo de rampa
+     llega justo a la velocidad del tramo lineal siguiente (sin costura). */
+  --ease-glide-in: cubic-bezier(.5, 0, 1, 1);
+  --ease-glide-out: cubic-bezier(0, 0, .5, 1);
   --ease-spring: cubic-bezier(.34, 1.4, .64, 1); /* resorte corto, sin rebote visible */
   --ease-pop: cubic-bezier(.22, 1.35, .42, 1); /* el juego enfocado "salta" y se asienta */
   --ease-launch: cubic-bezier(.7, 0, .84, 0); /* la portada sale disparada al abrir un juego */
@@ -121,6 +125,7 @@
   --duration-pulse: 1.1s; /* cursor de escribir, «te escuché» de Alexa */
   --duration-breathe: 1.4s; /* algo que espera: dictando */
   --duration-drift: 1.5s; /* el fondo sigue al foco (parallax) */
+  --duration-glide: 4s; /* un tramo de la deriva de Para ti (la anima el compositor; JS solo trae piezas al empezar cada uno) */
   --duration-alive: 9s; /* «cobra vida»: quieto en una pieza, su arte se acerca despacio */
   --duration-notice: 4s; /* un aviso a la vista (el mismo del iPhone: design/tokens.json) */
   --duration-notice-long: 6.5s; /* un error: se lee de lejos, en el sillón (solo la TV) */

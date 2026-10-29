@@ -8,6 +8,10 @@
 .foryou-mosaic__col { position: absolute; top: 0; bottom: 0; transition: left var(--duration-enter) var(--ease-out), width var(--duration-enter) var(--ease-out); }
 .foryou-mosaic__track { position: absolute; left: 0; right: 0; top: 0; will-change: transform; transition: transform var(--duration-enter) var(--ease-out); }
 .foryou-mosaic--drifting .foryou-mosaic__track { transition: none; }
+/* La deriva: cada tramo es una transición del compositor (sin JavaScript en cada cuadro); arranca y se frena suave. */
+.foryou-mosaic--gliding .foryou-mosaic__track { transition: transform var(--duration-glide) linear; }
+.foryou-mosaic--glide-in .foryou-mosaic__track { transition-timing-function: var(--ease-glide-in); }
+.foryou-mosaic--glide-out .foryou-mosaic__track { transition-timing-function: var(--ease-glide-out); }
 
 /* La entrada: las columnas suben con un fundido, una tras otra. */
 .foryou-mosaic--intro .foryou-mosaic__col { animation: foryou-col-in var(--duration-enter-long) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--stagger) * 1.5); }
