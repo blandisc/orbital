@@ -815,7 +815,9 @@ function voiceRows(settings, voice, now) {
         help: "«Prende la tele» (por voz o aquí abajo) la enciende y la pone en la entrada de Orbital.", command: { type: "stay" } }
       : { icon: "tv", label: "La tele no se prende sola", value: "Cómo", warn: true, command: { type: "voice-help" },
         help: "Con una Roku TV en la misma red, Orbital la prende y cambia a su entrada. Se configura una vez en la consola: orbital tv setup." },
-    tv.configured && { icon: "power", label: "Probar: «prende la tele»", value: "Probar", hint: "Lo mismo que decírselo", command: { type: "voice-try", text: "prende la tele" } },
+    tv.configured && { icon: "power", label: "Probar: «prende la tele»", value: "Probar", hint: "La prende de verdad y la cambia a Orbital",
+      help: "Hace lo mismo que decírselo: prende la tele y cambia a la entrada de Orbital. Queda en «Qué ha oído la consola».",
+      command: { type: "voice-try", text: "prende la tele" } },
     { heading: true, label: "Dónde hablarle" },
     { icon: "phone", label: "iPhone: el micrófono del control", value: when("iphone"), ok: !stale("iphone"), command: { type: "voice-help" },
       help: "Abre la app de Orbital y toca «Dile a Orbital». Es el que mejor te oye: el de la consola queda junto a la tele." },
