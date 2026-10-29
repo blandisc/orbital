@@ -1,55 +1,370 @@
 {
  "v": 3,
- "createdOnFiles": {"v": 1, "at": "2026-10-29T23:05:00Z"},
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-29T23:05:00Z"
+ },
  "title": "Voz en el iPhone · maquetas",
- "launch": {"view": "canvas"},
+ "launch": {
+  "view": "canvas"
+ },
  "pages": [],
  "boards": {
-  "Main.dc.html": {"x": 0, "y": 0, "w": 1200, "h": 700, "title": "Cómo leer este canvas"},
-  "1-hoy-viendo.dc.html": {"x": 0, "y": 1100, "w": 402, "h": 874, "title": "Hoy · viendo una serie (captura real)"},
-  "1-pista-a.dc.html": {"x": 482, "y": 1100, "w": 402, "h": 874, "title": "A · una pista que va cambiando (recomendada)"},
-  "1-pista-b.dc.html": {"x": 964, "y": 1100, "w": 402, "h": 874, "title": "B · las pistas como texto"},
-  "1-pista-c.dc.html": {"x": 1446, "y": 1100, "w": 402, "h": 874, "title": "C · la pista escrita en el botón"},
-  "1-hoy-navegando.dc.html": {"x": 0, "y": 2354, "w": 402, "h": 874, "title": "Hoy · sin nada sonando (captura real)"},
-  "1-prop-navegando.dc.html": {"x": 482, "y": 2354, "w": 402, "h": 874, "title": "Propuesta · el mismo hoy, con el micrófono nuevo"},
-  "2-hoy-voz.dc.html": {"x": 0, "y": 3608, "w": 402, "h": 874, "title": "Hoy · control estirado (captura real)"},
-  "8-estirada-reposo.dc.html": {"x": 482, "y": 3608, "w": 402, "h": 874, "title": "① Estirado, con el micrófono nuevo"},
-  "8-estirada-escuchando.dc.html": {"x": 964, "y": 3608, "w": 402, "h": 874, "title": "② Tocas el micrófono: escucha ahí mismo"},
-  "8-estirada-respuesta.dc.html": {"x": 1446, "y": 3608, "w": 402, "h": 874, "title": "③ La respuesta, con sus salidas"},
-  "8-estirada-vuelve.dc.html": {"x": 1928, "y": 3608, "w": 402, "h": 874, "title": "④ Vuelve a ser botón; el pad nunca se fue"},
-  "2-prop-escuchando.dc.html": {"x": 0, "y": 4862, "w": 402, "h": 874, "title": "Hoja corta · escuchando"},
-  "2-prop-respuesta.dc.html": {"x": 482, "y": 4862, "w": 402, "h": 874, "title": "Hoja corta · la respuesta"},
-  "3-prop-pon.dc.html": {"x": 0, "y": 6116, "w": 402, "h": 874, "title": "«pon Dune» (pone la más popular)"},
-  "3-prop-busca.dc.html": {"x": 482, "y": 6116, "w": 402, "h": 874, "title": "«busca Dune» (pregunta)"},
-  "4-hoy-error.dc.html": {"x": 0, "y": 7370, "w": 402, "h": 874, "title": "Hoy · Tu Orbital no contesta (texto real del código)"},
-  "4-prop-fuera.dc.html": {"x": 482, "y": 7370, "w": 402, "h": 874, "title": "Fuera de casa (con dibujo)"},
-  "4-prop-casa.dc.html": {"x": 964, "y": 7370, "w": 402, "h": 874, "title": "En casa (frase corta)"},
-  "5-hoy-guia.dc.html": {"x": 0, "y": 8624, "w": 402, "h": 874, "title": "Hoy · Lo que puedes decir (captura real)"},
-  "5-como-llegas.dc.html": {"x": 482, "y": 8624, "w": 900, "h": 874, "title": "Cómo llegas a la guía"},
-  "5-prop-guia.dc.html": {"x": 1462, "y": 8624, "w": 402, "h": 874, "title": "Propuesta · Lo esencial arriba"},
-  "6-siri.dc.html": {"x": 0, "y": 9878, "w": 1000, "h": 874, "title": "Siri · hoy contra propuesta"},
-  "7-ipad.dc.html": {"x": 0, "y": 11132, "w": 1194, "h": 834, "title": "iPad horizontal (en la Mac, sin control)"}
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1200,
+   "h": 700,
+   "title": "Cómo leer este canvas"
+  },
+  "1-hoy-viendo.dc.html": {
+   "x": 0,
+   "y": 1100,
+   "w": 402,
+   "h": 874,
+   "title": "Hoy · viendo una serie (captura real)"
+  },
+  "1-pista-a.dc.html": {
+   "x": 482,
+   "y": 1100,
+   "w": 402,
+   "h": 874,
+   "title": "A · una pista que va cambiando (recomendada)"
+  },
+  "1-pista-b.dc.html": {
+   "x": 964,
+   "y": 1100,
+   "w": 402,
+   "h": 874,
+   "title": "B · las pistas como texto"
+  },
+  "1-pista-c.dc.html": {
+   "x": 1446,
+   "y": 1100,
+   "w": 402,
+   "h": 874,
+   "title": "C · la pista escrita en el botón"
+  },
+  "1-hoy-navegando.dc.html": {
+   "x": 0,
+   "y": 2354,
+   "w": 402,
+   "h": 874,
+   "title": "Hoy · sin nada sonando (captura real)"
+  },
+  "1-prop-navegando.dc.html": {
+   "x": 482,
+   "y": 2354,
+   "w": 402,
+   "h": 874,
+   "title": "Propuesta · el mismo hoy, con el micrófono nuevo"
+  },
+  "2-hoy-voz.dc.html": {
+   "x": 0,
+   "y": 3608,
+   "w": 402,
+   "h": 874,
+   "title": "Hoy · control estirado (captura real)"
+  },
+  "8-estirada-reposo.dc.html": {
+   "x": 482,
+   "y": 3608,
+   "w": 402,
+   "h": 874,
+   "title": "① Estirado, con el micrófono nuevo"
+  },
+  "8-estirada-escuchando.dc.html": {
+   "x": 964,
+   "y": 3608,
+   "w": 402,
+   "h": 874,
+   "title": "② Tocas el micrófono: escucha ahí mismo"
+  },
+  "8-estirada-respuesta.dc.html": {
+   "x": 1446,
+   "y": 3608,
+   "w": 402,
+   "h": 874,
+   "title": "③ La respuesta, con sus salidas"
+  },
+  "8-estirada-vuelve.dc.html": {
+   "x": 1928,
+   "y": 3608,
+   "w": 402,
+   "h": 874,
+   "title": "④ Vuelve a ser botón; el pad nunca se fue"
+  },
+  "2-prop-escuchando.dc.html": {
+   "x": 0,
+   "y": 4862,
+   "w": 402,
+   "h": 874,
+   "title": "Hoja corta · escuchando"
+  },
+  "2-prop-respuesta.dc.html": {
+   "x": 482,
+   "y": 4862,
+   "w": 402,
+   "h": 874,
+   "title": "Hoja corta · la respuesta"
+  },
+  "3-prop-pon.dc.html": {
+   "x": 0,
+   "y": 6116,
+   "w": 402,
+   "h": 874,
+   "title": "«pon Dune» (pone la más popular)"
+  },
+  "3-prop-busca.dc.html": {
+   "x": 482,
+   "y": 6116,
+   "w": 402,
+   "h": 874,
+   "title": "«busca Dune» (pregunta)"
+  },
+  "4-hoy-error.dc.html": {
+   "x": 0,
+   "y": 7370,
+   "w": 402,
+   "h": 874,
+   "title": "Hoy · Tu Orbital no contesta (texto real del código)"
+  },
+  "4-prop-fuera.dc.html": {
+   "x": 482,
+   "y": 7370,
+   "w": 402,
+   "h": 874,
+   "title": "Fuera de casa (con dibujo)"
+  },
+  "4-prop-casa.dc.html": {
+   "x": 964,
+   "y": 7370,
+   "w": 402,
+   "h": 874,
+   "title": "En casa (frase corta)"
+  },
+  "5-hoy-guia.dc.html": {
+   "x": 0,
+   "y": 8624,
+   "w": 402,
+   "h": 874,
+   "title": "Hoy · Lo que puedes decir (captura real)"
+  },
+  "5-como-llegas.dc.html": {
+   "x": 482,
+   "y": 8624,
+   "w": 900,
+   "h": 874,
+   "title": "Cómo llegas a la guía"
+  },
+  "5-prop-guia.dc.html": {
+   "x": 1462,
+   "y": 8624,
+   "w": 402,
+   "h": 874,
+   "title": "Propuesta · la guía, más sencilla (se abre con el «?»)"
+  },
+  "6-siri.dc.html": {
+   "x": 0,
+   "y": 9878,
+   "w": 1000,
+   "h": 874,
+   "title": "Siri · hoy contra propuesta"
+  },
+  "7-ipad.dc.html": {
+   "x": 0,
+   "y": 11132,
+   "w": 1194,
+   "h": 834,
+   "title": "iPad horizontal (en la Mac, sin control)"
+  },
+  "8-transiciones.dc.html": {
+   "x": 3010,
+   "y": 3608,
+   "w": 1400,
+   "h": 874,
+   "title": "Transiciones: tiempos y reglas"
+  },
+  "3-estirada-pon.dc.html": {
+   "x": 964,
+   "y": 6116,
+   "w": 402,
+   "h": 874,
+   "title": "Estirado · «pon Dune»"
+  },
+  "3-estirada-busca.dc.html": {
+   "x": 1446,
+   "y": 6116,
+   "w": 402,
+   "h": 874,
+   "title": "Estirado · «busca Dune»"
+  }
  },
- "order": ["Main.dc.html", "1-hoy-viendo.dc.html", "1-pista-a.dc.html", "1-pista-b.dc.html", "1-pista-c.dc.html", "1-hoy-navegando.dc.html", "1-prop-navegando.dc.html", "2-hoy-voz.dc.html", "8-estirada-reposo.dc.html", "8-estirada-escuchando.dc.html", "8-estirada-respuesta.dc.html", "8-estirada-vuelve.dc.html", "2-prop-escuchando.dc.html", "2-prop-respuesta.dc.html", "3-prop-pon.dc.html", "3-prop-busca.dc.html", "4-hoy-error.dc.html", "4-prop-fuera.dc.html", "4-prop-casa.dc.html", "5-hoy-guia.dc.html", "5-como-llegas.dc.html", "5-prop-guia.dc.html", "6-siri.dc.html", "7-ipad.dc.html"],
+ "order": [
+  "Main.dc.html",
+  "1-hoy-viendo.dc.html",
+  "1-pista-a.dc.html",
+  "1-pista-b.dc.html",
+  "1-pista-c.dc.html",
+  "1-hoy-navegando.dc.html",
+  "1-prop-navegando.dc.html",
+  "2-hoy-voz.dc.html",
+  "8-estirada-reposo.dc.html",
+  "8-estirada-escuchando.dc.html",
+  "8-estirada-respuesta.dc.html",
+  "8-estirada-vuelve.dc.html",
+  "8-transiciones.dc.html",
+  "2-prop-escuchando.dc.html",
+  "2-prop-respuesta.dc.html",
+  "3-prop-pon.dc.html",
+  "3-prop-busca.dc.html",
+  "3-estirada-pon.dc.html",
+  "3-estirada-busca.dc.html",
+  "4-hoy-error.dc.html",
+  "4-prop-fuera.dc.html",
+  "4-prop-casa.dc.html",
+  "5-hoy-guia.dc.html",
+  "5-como-llegas.dc.html",
+  "5-prop-guia.dc.html",
+  "6-siri.dc.html",
+  "7-ipad.dc.html"
+ ],
  "notes": {
-  "t1": {"x": 0, "y": 840, "text": "1 · El micrófono a la vista, sin pills", "kind": "title1", "maxW": 2450},
-  "d1": {"x": 1928, "y": 1100, "w": 520, "size": "m", "fill": "orange", "text": "DECIDIDO: el micrófono va a la vista en la hoja corta, con el botón grande y el «?» al lado.\n\nDECIDE: cómo se ven las pistas sin pills.\nA. Una sola pista que va cambiando: «Prueba: «siguiente episodio»». Cada vez que abres la hoja sale otra del momento. Es lo más ligero y no crece la hoja.\nB. Las pistas como texto, un renglón bajo el botón. Se leen todas de un vistazo, pero es más texto.\nC. La pista escrita dentro del botón, como un campo esperando tu voz. Muy limpio, pero se puede confundir con un campo para escribir.\nRecomiendo A: enseña una frase a la vez, la hoja casi no crece y es la misma pieza en el control estirado.\n\nTambién: tocar la pista, ¿la manda a la tele? Recomiendo que sí."},
-  "t2": {"x": 0, "y": 2094, "text": "2 · Sin nada sonando: se queda el hoy", "kind": "title1", "maxW": 1450},
-  "d2": {"x": 964, "y": 2354, "w": 520, "size": "m", "fill": "blue", "text": "DECIDIDO: sin nada sonando, la hoja sigue abriendo estirada con el pad, como hoy. Solo cambia el renglón de la voz: el botón grande del micrófono, la pista y el «?». Todo lo demás queda igual."},
-  "t3": {"x": 0, "y": 3348, "text": "3 · Del control estirado al modo voz, sin perder el pad", "kind": "title1", "maxW": 2930},
-  "d3": {"x": 2410, "y": 3608, "w": 520, "size": "m", "fill": "orange", "text": "Cómo convive todo: el renglón del micrófono es el mismo en la hoja corta y en el control estirado. Al tocarlo crece ahí mismo: enseña lo que dices en grande y luego la respuesta con «Otro» y «Elegir episodio». El resto del control (volumen, pad, botones) se recorre hacia abajo y sigue tocable: puedes picar el pad sin salir de la voz.\nCuando termina, el renglón vuelve a ser botón y deja la última respuesta como pista («✓ Poniendo The Office · T2 E5») hasta que abras otra cosa.\n\nDECIDE\n• ¿La respuesta se pliega sola a los 6 s o hasta que toques? Recomiendo sola a los 6 s, y antes si tocas el pad.\n• Pendiente de antes (decisión 5): ¿«Otro» + «Elegir episodio» o solo «Otro»? Y los episodios, ¿en la tele o en el teléfono? Recomiendo las dos salidas y elegir en el teléfono."},
-  "t4": {"x": 0, "y": 4602, "text": "4 · En la hoja corta, la misma pieza", "kind": "title1", "maxW": 1450},
-  "d4": {"x": 964, "y": 4862, "w": 520, "size": "m", "fill": "blue", "text": "En la hoja corta pasa lo mismo que en el estirado: el renglón crece, escucha y responde. Texto real de la consola: «Poniendo The Office · T2 E5». Si la tele estaba apagada, la consola la prende sola."},
-  "t5": {"x": 0, "y": 5856, "text": "5 · Cuando hay varias", "kind": "title1", "maxW": 1450},
-  "d5": {"x": 964, "y": 6116, "w": 520, "size": "m", "fill": "blue", "text": "TE GUSTÓ, se queda así. Es lo que ya hace la consola: «pon Dune» pone la más popular y dice «Si no es esa, di «otro»»; el iPhone recibe las demás para tocarlas. «busca Dune» sí pregunta."},
-  "t6": {"x": 0, "y": 7110, "text": "6 · Cuando no llega", "kind": "title1", "maxW": 1966},
-  "d6": {"x": 1446, "y": 7370, "w": 520, "size": "m", "fill": "blue", "text": "TE GUSTÓ, se queda así: dibujo del camino fuera de casa (donde el túnel confunde) y frase corta en casa. Botones: «Probar otra vez» (reintenta la orden) y «Probar la conexión» (la pieza que ya existe en Ajustes), como pidió la sesión de voz."},
-  "t7": {"x": 0, "y": 8364, "text": "7 · Lo que puedes decir: cómo llegas", "kind": "title1", "maxW": 2400},
-  "d7": {"x": 1944, "y": 8624, "w": 520, "size": "m", "fill": "orange", "text": "Hoy se llega por dos lados: el «?» del control estirado y Ajustes › Voz y Siri. La propuesta suma dos: el «?» va en el renglón del micrófono en todas partes (hoja corta, estirado, iPad), y decir «qué puedo decir» abre la guía en el iPhone (frase nueva: hay que sumarla en la consola).\nAl abrirla, arriba está Lo esencial: las diez de core, las mismas de la tele y Alexa.\n\nDECIDE: ¿la guía se abre también la primera vez que usas el micrófono? Recomiendo que no: mejor la pista que va cambiando, y la guía cuando la pidas."},
-  "t8": {"x": 0, "y": 9618, "text": "8 · Siri", "kind": "title1", "maxW": 1600},
-  "d8": {"x": 1080, "y": 9878, "w": 520, "size": "m", "fill": "blue", "text": "DECIDIDO (mi recomendación): las diez esenciales y tus títulos, más las de uso diario «salta la intro» y «en latino». Lo demás, con «Oye Siri, habla con Orbital» y luego la orden."},
-  "t9": {"x": 0, "y": 10872, "text": "9 · iPad sí, Mac no", "kind": "title1", "maxW": 1800},
-  "d9": {"x": 1274, "y": 11132, "w": 520, "size": "m", "fill": "blue", "text": "DECIDIDO: en el iPad, lo mismo que en el iPhone: el panel lateral lleva el mismo renglón del micrófono, la pista y el «?».\nEn la Mac se apaga el control remoto: sin control de la TV ni micrófono. Se cae la idea de la barra espaciadora (antes decisión 8). Es un cambio de la app, para otra tarea."}
+  "t1": {
+   "x": 0,
+   "y": 840,
+   "text": "1 · El micrófono a la vista: pista A",
+   "kind": "title1",
+   "maxW": 2450
+  },
+  "d1": {
+   "x": 1928,
+   "y": 1100,
+   "w": 520,
+   "size": "m",
+   "fill": "blue",
+   "text": "DECIDIDO: el micrófono a la vista en la hoja corta, con el botón grande, el «?» y la pista A: una sola frase que va cambiando («Prueba: «siguiente episodio»»). Tocar la pista la manda a la tele.\nB y C se quedan aquí solo como referencia de lo que se descartó."
+  },
+  "t2": {
+   "x": 0,
+   "y": 2094,
+   "text": "2 · Sin nada sonando: se queda el hoy",
+   "kind": "title1",
+   "maxW": 1450
+  },
+  "d2": {
+   "x": 964,
+   "y": 2354,
+   "w": 520,
+   "size": "m",
+   "fill": "blue",
+   "text": "DECIDIDO: sin nada sonando, la hoja sigue abriendo estirada con el pad, como hoy. Solo cambia el renglón de la voz: el botón grande, la pista A y el «?»."
+  },
+  "t3": {
+   "x": 0,
+   "y": 3348,
+   "text": "3 · Del control estirado al modo voz, sin perder el pad",
+   "kind": "title1",
+   "maxW": 4410
+  },
+  "d3": {
+   "x": 2410,
+   "y": 3608,
+   "w": 520,
+   "size": "m",
+   "fill": "blue",
+   "text": "DECIDIDO: el renglón del micrófono crece ahí mismo, escucha y responde, y el resto del control se recorre y sigue tocable. Al terminar vuelve a ser botón con la última respuesta como pista.\nTransiciones: a la derecha, paso a paso, con los tiempos que ya usa la app. Regla principal: un solo cambio de alto al entrar y uno al salir.\n\nPendiente de antes: ¿«Otro» + «Elegir episodio» o solo «Otro»? ¿Episodios en la tele o en el teléfono? Recomiendo las dos salidas y elegir en el teléfono."
+  },
+  "t4": {
+   "x": 0,
+   "y": 4602,
+   "text": "4 · En la hoja corta, la misma pieza",
+   "kind": "title1",
+   "maxW": 1450
+  },
+  "d4": {
+   "x": 964,
+   "y": 4862,
+   "w": 520,
+   "size": "m",
+   "fill": "blue",
+   "text": "En la hoja corta pasa lo mismo que en el estirado: el renglón crece, escucha y responde. Texto real de la consola: «Poniendo The Office · T2 E5». Si la tele estaba apagada, la consola la prende sola."
+  },
+  "t5": {
+   "x": 0,
+   "y": 5856,
+   "text": "5 · Cuando hay varias",
+   "kind": "title1",
+   "maxW": 2450
+  },
+  "d5": {
+   "x": 1928,
+   "y": 6116,
+   "w": 520,
+   "size": "m",
+   "fill": "blue",
+   "text": "TE GUSTÓ en la hoja corta. En el control estirado es la misma pieza:\n• «pon Dune»: el renglón crece al alto de siempre; las otras dos aparecen como tarjetas chicas en lugar de «Otro» (tocarlas cambia en la tele). No crece más.\n• «busca Dune»: ahí sí hay que elegir, así que el renglón crece una sola vez al alto de la lista (hasta 3; si hay más, «Ver las 5»). El pad queda abajo, a un deslizón.\nEn los dos, «Ninguna · escribirlo» abre el teclado de «Escribir en la TV» que ya está en el control."
+  },
+  "t6": {
+   "x": 0,
+   "y": 7110,
+   "text": "6 · Cuando no llega",
+   "kind": "title1",
+   "maxW": 1966
+  },
+  "d6": {
+   "x": 1446,
+   "y": 7370,
+   "w": 520,
+   "size": "m",
+   "fill": "blue",
+   "text": "TE GUSTÓ, se queda así: dibujo del camino fuera de casa (donde el túnel confunde) y frase corta en casa. Botones: «Probar otra vez» (reintenta la orden) y «Probar la conexión» (la pieza que ya existe en Ajustes), como pidió la sesión de voz."
+  },
+  "t7": {
+   "x": 0,
+   "y": 8364,
+   "text": "7 · Lo que puedes decir: cómo llegas",
+   "kind": "title1",
+   "maxW": 2400
+  },
+  "d7": {
+   "x": 1944,
+   "y": 8624,
+   "w": 520,
+   "size": "m",
+   "fill": "orange",
+   "text": "Se llega por el «?» junto al micrófono (hoja corta, estirado e iPad), por Ajustes › Voz y Siri, diciendo «qué puedo decir» (frase nueva en la consola) y desde un «No entendí».\n\nLa guía, más sencilla:\n1. «Ahora» arriba: las tres frases del momento, las mismas de la pista. Si la abres viendo una serie, salen las de serie.\n2. Lo esencial: las otras siete, una por renglón, con una línea de qué hace.\n3. Todo lo demás plegado en «Más frases · 118».\n4. Siri y Alexa al final, en dos renglones.\nTocar cualquier frase la manda a la tele y cierra la guía."
+  },
+  "t8": {
+   "x": 0,
+   "y": 9618,
+   "text": "8 · Siri",
+   "kind": "title1",
+   "maxW": 1600
+  },
+  "d8": {
+   "x": 1080,
+   "y": 9878,
+   "w": 520,
+   "size": "m",
+   "fill": "blue",
+   "text": "DECIDIDO (mi recomendación): las diez esenciales y tus títulos, más las de uso diario «salta la intro» y «en latino». Lo demás, con «Oye Siri, habla con Orbital» y luego la orden."
+  },
+  "t9": {
+   "x": 0,
+   "y": 10872,
+   "text": "9 · iPad sí, Mac no",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "d9": {
+   "x": 1274,
+   "y": 11132,
+   "w": 520,
+   "size": "m",
+   "fill": "blue",
+   "text": "DECIDIDO: en el iPad, lo mismo que en el iPhone: el panel lateral lleva el mismo renglón del micrófono, la pista y el «?».\nEn la Mac se apaga el control remoto: sin control de la TV ni micrófono. Se cae la idea de la barra espaciadora (antes decisión 8). Es un cambio de la app, para otra tarea."
+  }
  },
  "designSystems": []
 }

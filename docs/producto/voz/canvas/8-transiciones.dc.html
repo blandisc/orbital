@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Transiciones del modo voz</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1400px; height: 874px; box-sizing: border-box; padding: 40px; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 26px; font-weight: 700">Cómo se mueve, paso a paso</span>
+<span style="font-size: 15px; color: #a3a3ab">Con los tiempos que ya usa la app: «suave» 320 ms sin rebote (el mismo del control al estirarse), «base» 220 ms y «rápido» 140 ms.</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
+<div style="background: #18181c; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 12px; font-weight: 700; color: #a3a3ab">1 · TOCAS EL MICRÓFONO</span>
+<div style="height: 60px; border-radius: 14px; background: rgba(255,255,255,0.13); display: flex; align-items: center; gap: 8px; padding: 0 8px"><div style="width: 40px; height: 40px; border-radius: 20px; background: #5fd6c6; display: flex; align-items: center; justify-content: center"><div style="width: 12px; height: 12px; border-radius: 3px; background: #0c0c0e"></div></div><span style="font-size: 13px; color: #5fd6c6; font-weight: 700">TE ESCUCHO</span></div>
+<span style="font-size: 14px; line-height: 1.45; color: #cdcdd3">El círculo blanco se vuelve verde agua y el micrófono se vuelve cuadro de «terminar». Así sabes que ya escucha.</span>
+<span style="font-size: 12px; color: #f4c24d; font-weight: 600">base · 220 ms</span>
+</div>
+<div style="background: #18181c; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 12px; font-weight: 700; color: #a3a3ab">2 · CRECE UNA SOLA VEZ</span>
+<div style="height: 60px; border-radius: 14px; background: rgba(255,255,255,0.13); display: flex; flex-direction: column; justify-content: center; padding: 0 10px; gap: 2px"><span style="font-size: 11px; color: #5fd6c6; font-weight: 700">TE ESCUCHO</span><span style="font-size: 15px; font-weight: 600">pon The Office…</span></div>
+<span style="font-size: 14px; line-height: 1.45; color: #cdcdd3">El renglón crece a su alto final de una vez (el de la respuesta), y el volumen, el pad y los botones se recorren con él, en el mismo movimiento.</span>
+<span style="font-size: 12px; color: #f4c24d; font-weight: 600">suave · 320 ms</span>
+</div>
+<div style="background: #18181c; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 12px; font-weight: 700; color: #a3a3ab">3 · LO QUE DICES</span>
+<div style="height: 60px; border-radius: 14px; background: rgba(255,255,255,0.13); display: flex; align-items: center; padding: 0 10px"><span style="font-size: 17px; font-weight: 600">pon The Office tempo<span style="color: #5fd6c6">|</span></span></div>
+<span style="font-size: 14px; line-height: 1.45; color: #cdcdd3">Las palabras aparecen tal cual llegan, sin animación (animarlas se siente lento). La onda se mueve con tu voz.</span>
+<span style="font-size: 12px; color: #f4c24d; font-weight: 600">sin animación · en vivo</span>
+</div>
+<div style="background: #18181c; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 12px; font-weight: 700; color: #a3a3ab">4 · LA RESPUESTA</span>
+<div style="height: 60px; border-radius: 14px; background: rgba(255,255,255,0.13); display: flex; align-items: center; gap: 8px; padding: 0 8px"><img src="/_blob/9603865a28b80a14678a643eb056d58b" alt="" aria-hidden="true" style="width: 30px; height: 45px; border-radius: 4px; object-fit: cover"><span style="font-size: 13px; font-weight: 700">Poniendo The Office · T2 E5</span></div>
+<span style="font-size: 14px; line-height: 1.45; color: #cdcdd3">Lo que dijiste se funde en la respuesta dentro del mismo alto: nada brinca. El póster entra creciendo apenas, de 96 % a 100 %.</span>
+<span style="font-size: 12px; color: #f4c24d; font-weight: 600">base · 220 ms</span>
+</div>
+<div style="background: #18181c; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 12px; font-weight: 700; color: #a3a3ab">5 · VUELVE A SER BOTÓN</span>
+<div style="height: 60px; border-radius: 14px; background: rgba(255,255,255,0.13); display: flex; align-items: center; gap: 8px; padding: 0 8px"><div style="width: 40px; height: 40px; border-radius: 20px; background: #f5f4f0"></div><span style="font-size: 12px; color: #5fd6c6">✓ Poniendo The Office…</span></div>
+<span style="font-size: 14px; line-height: 1.45; color: #cdcdd3">A los 6 s (o al tocar el pad) se pliega y todo sube a su lugar. La respuesta queda como pista y a los 10 s vuelve «Prueba: …».</span>
+<span style="font-size: 12px; color: #f4c24d; font-weight: 600">suave · 320 ms · pista: base</span>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div style="background: #18181c; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 16px; font-weight: 700">Reglas para que se sienta suave</span>
+<span style="font-size: 14px; line-height: 1.5; color: #cdcdd3">• Un solo cambio de alto al entrar y uno al salir. Escuchar y responder usan el mismo alto.<br>• Todo lo de abajo se mueve con el renglón, nunca después.<br>• Si estabas a la mitad del control, el renglón no se sale de la vista: el control se recorre para que lo veas.<br>• Si tocas el pad mientras responde, se pliega en ese momento; tu toque cuenta.<br>• Con varias coincidencias crece una sola vez, ya al alto de la lista.</span>
+</div>
+<div style="background: #18181c; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 16px; font-weight: 700">Con «Reducir movimiento» encendido</span>
+<span style="font-size: 14px; line-height: 1.5; color: #cdcdd3">Nada se desliza ni crece en pantalla: el renglón cambia de alto de golpe y el contenido entra con fundido. Es lo que ya hace la app en el resto del control.</span>
+<span style="font-size: 16px; font-weight: 700; margin-top: 6px">Cómo lo vamos a comprobar</span>
+<span style="font-size: 14px; line-height: 1.5; color: #cdcdd3">Un video del simulador a cámara lenta de los cinco pasos, en iPhone SE, mini y Pro Max, antes de darlo por hecho.</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1400,"height":874}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
