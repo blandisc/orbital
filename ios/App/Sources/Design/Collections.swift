@@ -27,7 +27,7 @@ struct CollectionCard<Emblem: View>: View {
         .frame(width: DS.PlatformFan.width, alignment: .leading)
         // VoiceOver dice el nombre y la categoría («Óscar, Mejor película»), no el id interno del premio («palm»).
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(captioned ? title + Text(verbatim: ", ") + detail : title)
+        .accessibilityLabel(captioned ? Text("\(title)\(Text(verbatim: ", "))\(detail)") : title)
     }
 }
 
@@ -216,7 +216,7 @@ struct BecauseCard<Related: View>: View {
             // nombre largo la estiraba y la tarjeta, con todo lo de abajo, cambiaba de alto al pasar de un título a otro.
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 // «Porque viste · 3 de 8»: en qué carta vas, en el mismo renglón (junto a las flechas no cabía en un iPhone angosto).
-                (Text("Porque viste") + (seeds.count > 1 ? Text(verbatim: " · ") + Text("\(index + 1) de \(seeds.count)") : Text(verbatim: "")))
+                Text("\(Text("Porque viste"))\(seeds.count > 1 ? Text("\(Text(verbatim: " · "))\(Text("\(index + 1) de \(seeds.count)"))") : Text(verbatim: ""))")
                     .recipe(.secondary).monospacedDigit().lineLimit(1)
                 Text(verbatim: current?.title ?? "").recipe(.title)
                     .lineLimit(2, reservesSpace: true).minimumScaleFactor(DS.Collections.becauseTitleScale).allowsTightening(true)

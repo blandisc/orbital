@@ -22,7 +22,7 @@ struct CoverCard: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 TitleLogo(url: logo, title: title, size: .tile)
                     .frame(maxWidth: DS.Editorial.coverLogo.width, maxHeight: DS.Editorial.coverLogo.height, alignment: .bottomLeading)
-                (why + (detail.map { Text(verbatim: " · ") + $0 } ?? Text(verbatim: ""))).recipe(.footnote, color: DS.accent).fontWeight(.semibold).lineLimit(1)
+                Text("\(why)\(detail.map { Text("\(Text(verbatim: " · "))\($0)") } ?? Text(verbatim: ""))").recipe(.footnote, color: DS.accent).fontWeight(.semibold).lineLimit(1)
             }
             .padding(DS.Space.s4)
             .onArt()

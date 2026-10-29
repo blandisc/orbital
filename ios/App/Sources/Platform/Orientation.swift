@@ -77,7 +77,7 @@ enum Orientation {
     /// «Bloquear» también congela el giro: solo se permite la orientación de este momento hasta desbloquear.
     static func freeze() {
         guard isControlled, let scene = AppWindows.scene else { return }
-        mask = switch scene.interfaceOrientation {
+        mask = switch scene.effectiveGeometry.interfaceOrientation {
         case .landscapeLeft: .landscapeLeft
         case .landscapeRight: .landscapeRight
         default: .portrait
@@ -120,8 +120,10 @@ enum AppWindows {
 @MainActor
 enum ScreenBrightness {
     static let isAdjustable = !ProcessInfo.processInfo.isiOSAppOnMac
+    /// La pantalla de la ventana de la app (`UIScreen.main` quedó en desuso en iOS 26).
+    private static var screen: UIScreen? { AppWindows.scene?.screen }
     static var value: Double {
-        get { Double(UIScreen.main.brightness) }
-        set { if isAdjustable { UIScreen.main.brightness = CGFloat(newValue) } }
+        get { Double(screen?.brightness ?? 1) }
+        set { if isAdjustable { screen?.brightness = CGFloat(newValue) } }
     }
 }

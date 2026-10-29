@@ -142,7 +142,7 @@ struct AiringRow: View {
     }
 
     private var when: Text {
-        airing.network.isEmpty ? airingTime(airing, locale: locale) : airingTime(airing, locale: locale) + Text(verbatim: " · \(airing.network)")
+        airing.network.isEmpty ? airingTime(airing, locale: locale) : Text("\(airingTime(airing, locale: locale))\(Text(verbatim: " · \(airing.network)"))")
     }
 }
 
@@ -156,7 +156,7 @@ struct AiringCard: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterView(url: airing.series.wide, title: airing.series.title, aspect: DS.Poster.stillAspect)
                 Text(verbatim: airing.series.title).font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
-                (dayName(airing.day, locale: locale) + Text(verbatim: " · \(airing.episodeLabel(AppEnvironment.shared.services.episodeLabel))"))
+                (Text("\(dayName(airing.day, locale: locale))\(Text(verbatim: " · \(airing.episodeLabel(AppEnvironment.shared.services.episodeLabel))"))"))
                     .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
             }
             .frame(width: DS.Poster.airingWidth)

@@ -10,8 +10,8 @@ struct SaveDestinationName: View {
 
     static func text(_ destination: SaveDestination) -> Text {
         switch destination {
-        case .traktWatchlist: Text("Tu watchlist") + Text(verbatim: " (Trakt)").foregroundStyle(DS.textMuted)
-        case .stremioLibrary: Text("Mi lista") + Text(verbatim: " (Stremio)").foregroundStyle(DS.textMuted)
+        case .traktWatchlist: Text("\(Text("Tu watchlist"))\(Text(verbatim: " (Trakt)").foregroundStyle(DS.textMuted))")
+        case .stremioLibrary: Text("\(Text("Mi lista"))\(Text(verbatim: " (Stremio)").foregroundStyle(DS.textMuted))")
         }
     }
 

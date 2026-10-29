@@ -10,7 +10,17 @@ final class WindowMetrics {
     static let shared = WindowMetrics()
 
     /// Arranca con el tamaño de la pantalla: en el iPhone es el de la ventana desde el primer cuadro (nada brinca al medir).
-    private(set) var size: CGSize = UIScreen.main.bounds.size
+    private(set) var size: CGSize = WindowMetrics.initialSize
+
+    /// El tamaño de la pantalla de la ventana de la app (`UIScreen.main` quedó en desuso en iOS 26). La extensión de widgets no
+    /// tiene ventana ni `UIApplication`: arranca con el mínimo (sus tamaños los da la familia del widget, no estos tokens).
+    private static var initialSize: CGSize {
+        #if WIDGET_EXTENSION
+        return minimum
+        #else
+        return AppWindows.scene?.screen.bounds.size ?? minimum
+        #endif
+    }
 
     /// Para los tokens (`DS`), que no están atados al hilo principal: solo se leen al pintar, que siempre es en él.
     nonisolated static var size: CGSize { MainActor.assumeIsolated { shared.size } }

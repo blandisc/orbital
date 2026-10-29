@@ -11,7 +11,6 @@ struct SystemVolumeControl: UIViewRepresentable {
 
     func makeUIView(context: Context) -> MPVolumeView {
         let view = MPVolumeView(frame: .zero)
-        view.showsRouteButton = false
         view.showsVolumeSlider = true
         // Tiene que estar en pantalla para que iOS no enseñe su HUD, pero no se debe ver: en iOS 26 su barra se pintaba como
         // una cápsula blanca en medio del video. Casi transparente (con 0 iOS lo da por oculto y vuelve a salir el HUD).

@@ -61,7 +61,7 @@ struct StorageBar: View {
     }
 
     @ViewBuilder private var legends: some View {
-        ForEach(parts) { part in legend(part.label + Text(verbatim: " \(format(part.bytes))"), color: part.color) }
+        ForEach(parts) { part in legend(Text("\(part.label)\(Text(verbatim: " \(format(part.bytes))"))"), color: part.color) }
         legend(Text("Otras apps"), color: DS.textFaint)
     }
 

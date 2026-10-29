@@ -556,7 +556,7 @@ struct HomeView: View {
     /// «Hoy · 21:00», «Mañana», «Viernes 24».
     private func airingWhen(_ a: Airing) -> Text {
         let locale = env.uiLocale
-        if Calendar.current.isDateInToday(a.day) { return Text("Hoy") + Text(verbatim: " · ") + airingTime(a, locale: locale) }
+        if Calendar.current.isDateInToday(a.day) { return Text("\(Text("Hoy"))\(Text(verbatim: " · "))\(airingTime(a, locale: locale))") }
         return dayName(a.day, locale: locale)
     }
 

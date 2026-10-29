@@ -65,7 +65,7 @@ extension Text {
     static func flagged(_ string: String) -> Text {
         let rest = LanguageFlags.withoutFlags(string)
         guard rest.count < string.count, string.hasSuffix(rest) else { return Text(verbatim: string) }
-        return Text(verbatim: String(string.dropLast(rest.count))).accessibilityLabel(Text(verbatim: "")) + Text(verbatim: rest)
+        return Text("\(Text(verbatim: String(string.dropLast(rest.count))).accessibilityLabel(Text(verbatim: "")))\(Text(verbatim: rest))")
     }
 }
 

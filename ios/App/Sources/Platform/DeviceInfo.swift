@@ -42,7 +42,7 @@ enum ThisDevice {
     /// La Mac no habla con tu Orbital: es solo para ver (decisión de Fernando, 29 oct 2026). El iPhone y el iPad, sí.
     static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac
 
-    static var forOrbital: OrbitalRemote.Device {
+    @MainActor static var forOrbital: OrbitalRemote.Device {
         let device = UIDevice.current
         return OrbitalRemote.Device(name: device.name, kind: device.userInterfaceIdiom == .pad ? "ipad" : "iphone",
                                     id: device.identifierForVendor?.uuidString ?? "")

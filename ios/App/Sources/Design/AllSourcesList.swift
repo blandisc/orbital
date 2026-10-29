@@ -54,7 +54,7 @@ struct AllSourcesList: View {
             ForEach(groups) { group in section(group) }
             if !filter.showHidden, hidden > 0 {
                 Button { withAnimation(DS.Motion.base(reduceMotion)) { filter.showHidden = true } } label: {
-                    (hiddenText(hidden) + Text(verbatim: " · ") + Text("Mostrar").foregroundStyle(DS.text))
+                    (Text("\(hiddenText(hidden))\(Text(verbatim: " · "))\(Text("Mostrar").foregroundStyle(DS.text))"))
                         .recipe(.caption, color: DS.textFaint).multilineTextAlignment(.center)
                 }
                 .buttonStyle(.plain).frame(maxWidth: .infinity)
@@ -93,7 +93,7 @@ struct AllSourcesList: View {
                 Picker("Idioma", selection: $filter.language) {
                     Text("Todos").tag(String?.none)
                     ForEach(AllSources.languages(in: sources), id: \.self) { code in
-                        (Text.flag(code) + Text(verbatim: Streams.languageName(code, in: uiLanguage))).tag(Optional(code))
+                        (Text("\(Text.flag(code))\(Text(verbatim: Streams.languageName(code, in: uiLanguage)))")).tag(Optional(code))
                     }
                 }
                 .pickerStyle(.menu)
@@ -114,7 +114,7 @@ struct AllSourcesList: View {
         let rows = open ? group.shown : Array(group.shown.prefix(limit))
         let more = group.total - rows.count
         return VStack(alignment: .leading, spacing: DS.Space.s2) {
-            (qualityName(group.quality) + Text(verbatim: " · \(group.total)"))
+            (Text("\(qualityName(group.quality))\(Text(verbatim: " · \(group.total)"))"))
                 .recipe(.eyebrow, color: DS.textMuted)
                 .accessibilityAddTraits(.isHeader)
             VStack(spacing: 0) {
@@ -206,7 +206,7 @@ struct AllSourcesList: View {
             if !extra.isEmpty { Text(verbatim: extra.joined(separator: " · ")).recipe(.data) }
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 ForEach(Array(AllSources.languageEvidence(source).enumerated()), id: \.offset) { _, item in
-                    (Text.flag(item.code) + Text(verbatim: VersionLanguageRow.inline(Streams.versionLanguageName(item.code, in: ui), ui) + ": ") + evidence(item.kind))
+                    (Text("\(Text.flag(item.code))\(Text(verbatim: VersionLanguageRow.inline(Streams.versionLanguageName(item.code, in: ui), ui) + ": "))\(evidence(item.kind))"))
                         .recipe(.footnote)
                 }
             }
@@ -269,20 +269,20 @@ struct AllSourcesList: View {
         let ui = uiLanguage
         let items = prefs.map { AllSources.languageEvidence(source, playingFirst: $0) } ?? AllSources.languageEvidence(source)
         guard let first = items.first else { return Text(verbatim: "") }
-        var text = Text.flag(first.code) + Text(verbatim: Streams.versionLanguageName(first.code, in: ui)).foregroundStyle(DS.text).fontWeight(.semibold)
+        var text = Text("\(Text.flag(first.code))\(Text(verbatim: Streams.versionLanguageName(first.code, in: ui)).foregroundStyle(DS.text).fontWeight(.semibold))")
         let rest = items.dropFirst()
         if !rest.isEmpty {
-            text = text + Text(verbatim: " · ") + Text("también") + Text(verbatim: " ")
+            text = Text("\(text)\(Text(verbatim: " · "))\(Text("también"))\(Text(verbatim: " "))")
             for (i, item) in rest.enumerated() {
-                if i > 0 { text = text + Text(verbatim: ", ") }
-                text = text + Text.flag(item.code) + Text(verbatim: VersionLanguageRow.inline(Streams.versionLanguageName(item.code, in: ui), ui))
+                if i > 0 { text = Text("\(text)\(Text(verbatim: ", "))") }
+                text = Text("\(text)\(Text.flag(item.code))\(Text(verbatim: VersionLanguageRow.inline(Streams.versionLanguageName(item.code, in: ui), ui)))")
             }
         }
         let guessed = items.filter { $0.kind == .assumed }
         if !guessed.isEmpty {
-            text = text + Text(verbatim: " · ") + Text("se supone")
+            text = Text("\(text)\(Text(verbatim: " · "))\(Text("se supone"))")
             if guessed.count < items.count {
-                text = text + Text(verbatim: ": " + guessed.map { VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui) }.joined(separator: ", "))
+                text = Text("\(text)\(Text(verbatim: ": " + guessed.map { VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui) }.joined(separator: ", ")))")
             }
         }
         return text
@@ -319,11 +319,11 @@ struct AllSourcesList: View {
     }
 
     private func accessibilityLabel(_ source: Source) -> Text {
-        var label = Text(verbatim: facts(source) + ", ") + languages(source)
-        if let speed = speedText(source) { label = label + Text(verbatim: ", ") + speed }
-        if let marker = marker(source) { label = label + Text(verbatim: ", ") + marker }
-        if let tag = AllSources.hiddenTag(source) { label = label + Text(verbatim: ", ") + (tag == "CAM" ? Text("Grabada en el cine") : Text("Tráiler")) }
-        if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { label = label + Text(verbatim: ", ") + Text("¿Otro título?") }
+        var label = Text("\(Text(verbatim: facts(source) + ", "))\(languages(source))")
+        if let speed = speedText(source) { label = Text("\(label)\(Text(verbatim: ", "))\(speed)") }
+        if let marker = marker(source) { label = Text("\(label)\(Text(verbatim: ", "))\(marker)") }
+        if let tag = AllSources.hiddenTag(source) { label = Text("\(label)\(Text(verbatim: ", "))\((tag == "CAM" ? Text("Grabada en el cine") : Text("Tráiler")))") }
+        if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { label = Text("\(label)\(Text(verbatim: ", "))\(Text("¿Otro título?"))") }
         return label
     }
 

@@ -369,7 +369,7 @@ struct AetherSubtitleOverlay: View {
 /// Los botones de la ventana de PiP en la vía por software (pausa, ±10 s y la barra), contestados por AetherEngine.
 final class AetherSampleBufferPiP: NSObject, AVPictureInPictureSampleBufferPlaybackDelegate {
     /// Solo se toca dentro de `MainActor.assumeIsolated` (AVKit llama en el hilo principal).
-    nonisolated(unsafe) private let source: SoftwarePiPSource
+    private let source: SoftwarePiPSource
     init(source: SoftwarePiPSource) { self.source = source }
 
     func pictureInPictureController(_ controller: AVPictureInPictureController, setPlaying playing: Bool) {

@@ -107,8 +107,7 @@ struct DSSpeedPill: View {
             }
             Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold))
             if holding {
-                (Text(Image(systemName: unlocks ? "arrow.up" : "arrow.down")) + Text(" ")
-                    + (unlocks ? Text("Desliza para quitar") : Text("Desliza para fijar")))
+                Text("\(Text(Image(systemName: unlocks ? "arrow.up" : "arrow.down")))\(Text(" "))\(unlocks ? Text("Desliza para quitar") : Text("Desliza para fijar"))")
                     .font(DS.TextRecipe.footnote.font)
             } else if locked {
                 Text("Toca para quitar").font(DS.TextRecipe.footnote.font)

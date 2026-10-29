@@ -29,7 +29,7 @@ struct VersionLanguageRow: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             // El nombre y, debajo, lo que hay que saber de la fila (las mismas palabras que la TV).
             VStack(alignment: .leading, spacing: 0) {
-                (Text.flag(row.code) + Text(verbatim: row.code == "es" ? Self.spanish(uiLanguage) : Streams.versionLanguageName(row.code, in: uiLanguage)))
+                (Text("\(Text.flag(row.code))\(Text(verbatim: row.code == "es" ? Self.spanish(uiLanguage) : Streams.versionLanguageName(row.code, in: uiLanguage)))"))
                     .recipe(.cardTitle, color: DS.text)
                 if let note { note.recipe(.footnote, color: row.allMaybe ? DS.warning : DS.textMuted) }
             }
@@ -78,9 +78,7 @@ struct VersionChip: View {
             .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: [language, option.quality, Self.size(option)].compactMap { $0 }.joined(separator: ", "))
-                            + (Self.speedText(option.speed).map { Text(verbatim: ", ") + $0 } ?? Text(verbatim: ""))
-                            + (option.recommended ? Text(verbatim: ", ") + Text("Recomendada") : Text(verbatim: "")))
+        .accessibilityLabel(Text("\(Text(verbatim: [language, option.quality, Self.size(option)].compactMap { $0 }.joined(separator: ", ")))\(Self.speedText(option.speed).map { Text("\(Text(verbatim: ", "))\($0)") } ?? Text(verbatim: ""))\(option.recommended ? Text("\(Text(verbatim: ", "))\(Text("Recomendada"))") : Text(verbatim: ""))"))
         .accessibilityIdentifier("version-\(option.quality)")
     }
 

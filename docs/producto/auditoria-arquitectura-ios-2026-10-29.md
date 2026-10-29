@@ -63,16 +63,25 @@ monolitos, modularidad, sistema de diseño y prácticas de Swift y SwiftUI. Tres
 | 3 | `Tokens.swift` (1 014) | Partido con extensiones de `DS`, sin cambiar un solo nombre: `Tokens.swift` (base: papeles, espacios, radios, letra, movimiento, tamaños, imágenes; 353), `Tokens+Player.swift` (241) y `Tokens+Screens.swift` (435). La extensión de widgets los incluye los tres |
 | 4 | Colaboradores de `PlayerModel` | **No se hizo, a propósito.** Medido: `PlayerModel+Subtitles` toca `request` 20 veces, `snapshot` 8, `engine` 5 y 18 propiedades más del modelo; `+Tracks`, `request` 24, `source` 13, `engine` 9. Un colaborador tendría que recibir todo eso o un contexto, y el modelo es el archivo que más cambian las otras sesiones (dos hoy). La división en extensiones ya da archivos de ~200 líneas; el colaborador se justifica cuando una de esas partes necesite su propio ciclo de vida o pruebas que el modelo no permita |
 
+### Cuarta pasada (misma fecha): los últimos pendientes
+
+| # | Pendiente | Qué se hizo |
+|---|---|---|
+| 1 | APIs en desuso | `UIScreen.main` → la pantalla de la ventana de la app (`AppWindows.scene?.screen`; la extensión de widgets, que no tiene ventana, arranca con el tamaño mínimo bajo la bandera `WIDGET_EXTENSION`); `interfaceOrientation` → `effectiveGeometry`; fuera `showsRouteButton`; y las ~75 concatenaciones `Text + Text` pasaron a interpolación (`Text("\(a)\(b)")`, lo que pide iOS 26), 71 con un guion que usa las posiciones que reporta el compilador y 6 a mano. Queda `usesCPUOnly` (solo simulador, de Vision) y un aviso del macro `@Entry` |
+| 2 | Avisos de concurrencia que quedaban | `UIDevice` se lee en el hilo principal; los observadores de AVPlayer entran por `MainActor.assumeIsolated` (cola principal) o `Task { @MainActor }` (KVO); el ícono alterno y la caché de imágenes, igual; `UserNotifications` con `@preconcurrency`. Una compilación completa en Swift 6 queda con 9 avisos distintos y 0 de aislamiento |
+| 3 | Extensión de widgets a Swift 6 | **Hecha** (`SWIFT_VERSION: "6.0"` también ahí) |
+| 4 | Los 12 archivos sobre 600 líneas | Partidos por responsabilidad, sin cambiar código: `ParaTiView` → `ListsView`, `ListGridView`, `ParaTiPieces`; `Demo` → `DemoHTTPClient`; `TitleView` → `EpisodeRows` y `TitleView+Acciones`; `ForYou` → `ForYouTypes` y `YearInReview`; `Trakt` → `TraktTypes`; `DecideModel` → `+Counts`; `Downloads` → `DownloadTypes`; `PlayerScreen+Gestos` → `+Candado`; `Mosaic` → `MosaicRuntime` y `FrameTicker`; `SubtitlePanel` → `SubtitleSync`; `BackgroundDownloadTransport` → `+Delegate`; `PlayerModel` → `PlayRequest`, `+Controls` y `+UpNext`. Quedan tres sobre el tope, en la lista de `FileBudgetTests`: `PlayerModel.swift` (758, de 1 634), `DemoHTTPClient.swift` (620) y `TitleView.swift` (619) |
+
 ### Lo que sigue (si se quiere seguir)
 
-1. Los avisos que quedan en modo Swift 6 son APIs que iOS 26 dejó en desuso (`UIScreen.main`, `Text +`, `interfaceOrientation`): limpiarlos es trabajo de `Platform/`.
-2. Los archivos que siguen en la lista de `FileBudgetTests` (12): `PlayerModel.swift` (1 267), `ParaTiView.swift` (936), `Demo.swift` (854), `TitleView.swift` (813), `ForYou.swift` (730)…
-3. La extensión de widgets a Swift 6.
+1. `PlayerModel.swift` (758): lo que queda es arranque, motor, guardado, cierre y segundo plano; el siguiente corte natural es «volver de segundo plano».
+2. `TitleView.swift` (619) y `DemoHTTPClient.swift` (620): a un corte de caber.
+3. `usesCPUOnly` en `FocalPoint` (solo simulador) cuando Vision ofrezca un reemplazo.
 
 ## Cómo se verificó
 
 - `xcodebuild build` (simulador, Xcode 26) en verde tras cada ronda.
-- `swift test` del paquete: 351 pruebas tras la segunda pasada, 0 fallas (incluye `DesignTests`, `PlatformBoundaryTests` y las dos guardias nuevas).
+- `swift test` del paquete: 351 pruebas tras la cuarta pasada, 0 fallas (incluye `DesignTests`, `PlatformBoundaryTests` y las dos guardias nuevas).
 - Ojo: mientras corría esta auditoría otra sesión editaba el mismo checkout (`PlayerModel.swift`, `Tokens.swift`, `TitleView.swift`, `ArtFit`, la web de la TV). Esos cambios no son de esta auditoría y no van en su commit.
 - No se instaló en un simulador ni en el iPhone: los dos simuladores encendidos los estaban usando otras sesiones y los
   cambios son de estructura (mismo código, otro lugar), no de comportamiento. Para verlo: `-demo -demo-title series:tt0386676

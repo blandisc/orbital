@@ -123,7 +123,7 @@ struct AppIconPicker: View {
     private func option(_ name: String?, preview: String, label: Text) -> some View {
         Button {
             guard current != name else { return }
-            UIApplication.shared.setAlternateIconName(name) { error in if error == nil { current = name } }
+            UIApplication.shared.setAlternateIconName(name) { error in if error == nil { Task { @MainActor in current = name } } }
         } label: {
             VStack(spacing: DS.Space.s2) {
                 Image(preview).resizable().scaledToFit()

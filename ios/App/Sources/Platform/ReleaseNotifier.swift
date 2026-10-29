@@ -3,7 +3,7 @@ import Foundation
 import OrbitalCore
 import OrbitalModels
 import UIKit
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// El aviso «Ya está para ver» en iOS: la notificación compacta (la serie y el episodio, «ya está para ver» y sus datos, con
 /// el arte del episodio que se ve en grande al mantenerla presionada) y sus tres botones: Ver, Ver en la TV y Descargar.

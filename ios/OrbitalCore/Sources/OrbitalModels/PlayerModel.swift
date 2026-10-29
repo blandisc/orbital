@@ -2,80 +2,6 @@ import Foundation
 import OrbitalCore
 import os
 
-/// Qué se va a reproducir. `originalTitle` es el nombre de Cinemeta (lo que se guarda en Stremio);
-/// `displayTitle` es el de tu idioma (lo que se muestra).
-public struct PlayRequest: Sendable {
-    public var kind: String
-    public var metaID: String
-    public var videoID: String
-    public var originalTitle: String
-    public var displayTitle: String
-    public var episodeLabel: String
-    public var poster: String?
-    public var year: String?
-    public var meta: JSON?                 // la ficha original: de ahí salen el siguiente episodio y las duraciones
-    public var fromStart = false
-    /// El segundo exacto donde empezar («Seguir en el iPhone» desde la TV); sin él, donde te quedaste.
-    public var startPosition: Double?
-    public var localFile: URL?             // una descarga: se reproduce sin red
-    public var localSubtitles: [URL] = []
-    /// Lo que se sabe de los subtítulos guardados con la descarga (fuente, copia, si es para sordos), para nombrarlos.
-    public var savedSubtitles: [SavedSubtitle] = []
-    public var binge: String?              // el grupo de la fuente anterior (misma calidad e idioma)
-    public var sourceIndex: Int?           // una fuente elegida en la lista
-    /// Desde Mi media: primero tu copia de OneDrive (también para el siguiente episodio); si falla, Real-Debrid.
-    public var ownCopy = false
-    /// Empieza en vertical (la ruleta de Los Simpson: la tele ya está de pie); girar el teléfono lo acuesta igual.
-    public var startPortrait = false
-
-    public init(kind: String, metaID: String, videoID: String, originalTitle: String, displayTitle: String, episodeLabel: String = "", poster: String? = nil,
-                year: String? = nil, meta: JSON? = nil, fromStart: Bool = false, localFile: URL? = nil, localSubtitles: [URL] = [], savedSubtitles: [SavedSubtitle] = [], binge: String? = nil, sourceIndex: Int? = nil) {
-        self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.originalTitle = originalTitle; self.displayTitle = displayTitle
-        self.episodeLabel = episodeLabel; self.poster = poster; self.year = year; self.meta = meta; self.fromStart = fromStart
-        self.localFile = localFile; self.localSubtitles = localSubtitles; self.savedSubtitles = savedSubtitles; self.binge = binge; self.sourceIndex = sourceIndex
-    }
-}
-
-public struct UpNext: Sendable, Equatable {
-    public var videoID: String
-    public var label: String           // «T2 · E6»
-    public var title: String
-    public var secondsLeft: Int
-    /// La imagen del episodio (Cinemeta), si la trae.
-    public var thumbnail: String? = nil
-}
-
-public enum PlayerNotice: Sendable, Equatable {
-    case triedAnotherSource(attempt: Int)
-    case audioNotInYourLanguage
-    /// Esta versión no trae el idioma que quieres (o no su variante: latino) y otra sí: se ofrece cambiar sin perder el punto.
-    /// `language` es el código que quieres («es-419»); `have`, lo que trae esta («en», «es-ES»).
-    case otherVersionHasYourLanguage(language: String, have: [String], sourceIndex: Int)
-    /// La versión que elegiste no abrió: se volvió a la que veías, en el mismo segundo.
-    case switchFailedBack
-    /// Real-Debrid aún no tiene esa versión (mandó su video corto de «descargando» en lugar de la película).
-    case notReadyOnRealDebrid
-}
-
-/// Un idioma de audio que solo trae otra versión (otro archivo): a cuál iría y qué tan seguro es que lo trae.
-public struct OtherVersionAudio: Sendable, Equatable, Identifiable {
-    public let code: String          // «es-419»
-    public let sourceIndex: Int
-    public let quality: String       // «1080p» (vacío si no se sabe)
-    public let instant: Bool         // ya está en Real-Debrid
-    /// Comprobado, o lo dice el nombre o el sitio. Si no (se supone por el original, o no se sabe): «tal vez».
-    public let sure: Bool
-    public var id: String { code }
-}
-
-/// El siguiente episodio ya descargado (para seguir viendo sin conexión).
-public struct LocalEpisode: Sendable, Equatable {
-    public var file: URL
-    public var subtitles: [URL]
-    public var saved: [SavedSubtitle]
-    public init(file: URL, subtitles: [URL] = [], saved: [SavedSubtitle] = []) { self.file = file; self.subtitles = subtitles; self.saved = saved }
-}
-
 /// Orquesta una reproducción: elige la fuente, reanuda donde ibas, pone el audio y los subtítulos que quieres,
 /// guarda el avance (cada minuto, al pausar y al cerrar), ofrece «Siguiente episodio» y cambia de fuente si una falla.
 /// No conoce SwiftUI ni el motor concreto: `PlayerEngine` y los relojes se inyectan, así se prueba entero.
@@ -102,7 +28,7 @@ public final class PlayerModel: ObservableModel {
     }
     public private(set) var failure: Failure? { didSet { changed() } }
 
-    public private(set) var phase: Phase = .idle { didSet { changed() } }
+    public internal(set) var phase: Phase = .idle { didSet { changed() } }
     /// La búsqueda de versiones de verdad (para la órbita de «Buscando la mejor versión»): a qué complementos se les
     /// pregunta, cuántas trajo cada uno y cuántas quedaron para elegir. nil si no se buscó (tu descarga, la que elegiste).
     public struct SourceSearch: Sendable, Equatable {
@@ -121,22 +47,22 @@ public final class PlayerModel: ObservableModel {
         }
     }
     public private(set) var search: SourceSearch? { didSet { changed() } }
-    public private(set) var snapshot = EngineSnapshot() { didSet { changed() } }
+    public internal(set) var snapshot = EngineSnapshot() { didSet { changed() } }
     /// Un episodio descargado que viste hasta el final y del que el reproductor pasó solo al siguiente (para «Borrar al
     /// terminar de verlo»: el último lo atiende quien cierra el reproductor).
     public var onFinishedLocal: (@MainActor (PlayRequest) -> Void)?
-    public private(set) var request: PlayRequest? { didSet { changed() } }
-    public private(set) var source: Source? { didSet { changed() } }
-    public private(set) var sourceChoices: [Source] = [] { didSet { changed() } }
-    public private(set) var upNext: UpNext? { didSet { changed() } }
-    public private(set) var skipIntroTo: Double? { didSet { changed() } }
+    public internal(set) var request: PlayRequest? { didSet { changed() } }
+    public internal(set) var source: Source? { didSet { changed() } }
+    public internal(set) var sourceChoices: [Source] = [] { didSet { changed() } }
+    public internal(set) var upNext: UpNext? { didSet { changed() } }
+    public internal(set) var skipIntroTo: Double? { didSet { changed() } }
     /// Qué se salta con el botón: la intro o el resumen («Anteriormente en…»).
     public enum SkipKind: Sendable, Equatable { case intro, recap }
-    public private(set) var skipKind: SkipKind = .intro { didSet { changed() } }
+    public internal(set) var skipKind: SkipKind = .intro { didSet { changed() } }
     /// Las marcas de la comunidad (IntroDB) del video que suena: intro, resumen y créditos.
-    public private(set) var segments: SkipSegments? { didSet { changed() } }
-    private var segmentsFor: String?
-    public private(set) var stillWatchingPrompt = false { didSet { changed() } }
+    public internal(set) var segments: SkipSegments? { didSet { changed() } }
+    var segmentsFor: String?
+    public internal(set) var stillWatchingPrompt = false { didSet { changed() } }
     public internal(set) var notice: PlayerNotice? { didSet { changed() } }
     /// Sincronía de los subtítulos (s): positivo los atrasa, negativo los adelanta (como Infuse). Se recuerda por versión
     /// (`SubtitleOffsets`): al volver a esa versión de ese título, se pone sola.
@@ -184,7 +110,7 @@ public final class PlayerModel: ObservableModel {
         await selectVersion(next)
     }
     /// Velocidad de reproducción elegida (sigue igual en el siguiente episodio y al cambiar de fuente).
-    public private(set) var rate: Float = 1 { didSet { changed() } }
+    public internal(set) var rate: Float = 1 { didSet { changed() } }
     public static let rates: [Float] = [0.75, 1, 1.25, 1.5, 2]
     public private(set) var attempts = 0 { didSet { changed() } }
 
@@ -193,25 +119,25 @@ public final class PlayerModel: ObservableModel {
     private let watch: WatchService
     let titlePrefs: TitlePreferences
     let settings: SettingsStore
-    private let clock: @Sendable () -> Date
+    let clock: @Sendable () -> Date
     let onCellular: @Sendable () -> Bool
-    private let episodeLabel: @Sendable (Int, Int) -> String
-    private let localEpisode: @Sendable (_ metaID: String, _ videoID: String) async -> LocalEpisode?
+    let episodeLabel: @Sendable (Int, Int) -> String
+    let localEpisode: @Sendable (_ metaID: String, _ videoID: String) async -> LocalEpisode?
 
     private var consuming: Task<Void, Never>?
-    private var transition: Task<Void, Never>?
+    var transition: Task<Void, Never>?
     var failedSources = Set<Int>()
     /// Ya sonó este video (el motor llegó a reproducir): hasta entonces la pantalla enseña la carga, no el play.
-    public private(set) var hasPlayed = false { didSet { if oldValue != hasPlayed { changed() } } }
+    public internal(set) var hasPlayed = false { didSet { if oldValue != hasPlayed { changed() } } }
     /// Ya corre de verdad: desde que sonó avanzó `startupSettleSeconds` (o lo pausaste). El motor dice «suena» con casi nada en
     /// el búfer y enseguida se detiene a llenarlo, o recarga todo para cambiar la pista de audio: hasta que corre, la pantalla sigue
     /// enseñando la carga. Antes el botón hacía carga → pausa → carga → pausa en cada video.
-    public private(set) var playbackSettled = false { didSet { if oldValue != playbackSettled { changed() } } }
+    public internal(set) var playbackSettled = false { didSet { if oldValue != playbackSettled { changed() } } }
     static let startupSettleSeconds: Double = 2
-    private var startupPosition: Double = 0
+    var startupPosition: Double = 0
     private var startupDeadline: Date?
     /// El motor ya abrió el archivo de la carga en curso (desde ahí, lo que diga es de este video).
-    private var engineOpened = true
+    var engineOpened = true
     private var lastSnapshotAt: Date?
     private var lastSave: Date
     private var watchedUnsaved = 0.0
@@ -220,7 +146,7 @@ public final class PlayerModel: ObservableModel {
     private var restoringInPlace = false
     /// Cambiaste de versión a mano: a cuál y a qué segundo volver si la nueva no llega a sonar (falla después de abrir, se
     /// acaba el plazo o es el aviso de Real-Debrid). Antes caía a cualquier otra fuente.
-    private var switchBack: (source: Source, position: Double)?
+    var switchBack: (source: Source, position: Double)?
     /// Lo más que dura el video de aviso de Real-Debrid («la estamos bajando»): uno así en un título largo no es el título.
     static let placeholderMaxSeconds: Double = 120, placeholderTitleMinSeconds: Double = 600
     /// Lo más que el reproductor espera a que se pongan el audio y los subtítulos antes de seguir atendiendo al video.
@@ -238,37 +164,37 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// Otro archivo: lo encontrado en internet se vuelve a buscar con su huella.
-    private func forgetSubtitleSearch() {
+    func forgetSubtitleSearch() {
         foundSubtitles = nil; subtitleSearchFailed = false; subtitlesOffline = false; searchTask = nil
     }
     var addedExternalSubtitle = false
-    private var rescrobbleAfterSeek = false
+    var rescrobbleAfterSeek = false
     /// Trakt ya sabe que empezó este video (el `start` sale cuando el motor suena Y se sabe la duración).
     private var scrobbleStarted = false
     /// Lo último que Trakt sabe: ¿está sonando (`start`) o en pausa (`pause`)?
     private var scrobblePlaying = false
     var knownSubtitleIDs = Set<Int>()
-    private var preloadedNext = false
-    private var upNextDeadline: Date?
+    var preloadedNext = false
+    var upNextDeadline: Date?
     private var lastTick: Date?
     /// «Audio y subtítulos» está abierto (la tarjeta de «Siguiente» no se ve y su cuenta se detiene).
     public var panelOpen = false
-    private var upNextDismissed = false
+    var upNextDismissed = false
     /// Modo demostración: el estado puesto a mano no lo recalcula el avance.
-    private var demoPinned = false
-    private var autoAdvances = 0
+    var demoPinned = false
+    var autoAdvances = 0
     private var reachedEnd = false
-    private var finalReported = false
+    var finalReported = false
     /// Dónde seguir según Trakt cuando solo se sabe el porcentaje (sin la duración): se busca en cuanto el motor la dice.
     private var pendingResumeFraction: Double?
     var generation = 0
-    private var acceptingSnapshots = false     // false mientras se elige y se carga una fuente (lo que el motor diga entonces es del video anterior)
-    private var retrying = false
-    private var advancing = false
-    private var closing = false
-    private var choicesAt = Date.distantPast
-    private var nextLocal: LocalEpisode?
-    private let skipSegments: @Sendable (String) async -> SkipSegments?
+    var acceptingSnapshots = false     // false mientras se elige y se carga una fuente (lo que el motor diga entonces es del video anterior)
+    var retrying = false
+    var advancing = false
+    var closing = false
+    var choicesAt = Date.distantPast
+    var nextLocal: LocalEpisode?
+    let skipSegments: @Sendable (String) async -> SkipSegments?
     let scareMap: @Sendable (String, String) async -> [JumpScare]?
     /// Tu copia de un video (Mi media), si la hay: se usa antes que las fuentes cuando `request.ownCopy`.
     public var ownSource: (@Sendable (_ videoID: String, _ preferred: Int?) async -> Source?)?
@@ -357,7 +283,7 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// Justo antes de cargar: de aquí en adelante lo que diga el motor es del video nuevo.
-    private func startLoading() {
+    func startLoading() {
         loadSegmentsIfNeeded()
         acceptingSnapshots = true; retrying = false; hasPlayed = false; playbackSettled = false; tracksApplied = false; restoringInPlace = false; playRequest = nil
         engineOpened = false
@@ -370,7 +296,7 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// Elige fuente y la carga. `startAt` solo se pasa al reintentar con otra fuente (se sigue en el mismo punto).
-    private func prepare(startAt: Double?, generation mine: Int) async {
+    func prepare(startAt: Double?, generation mine: Int) async {
         guard let request else { return }
         // Dónde ibas se pregunta ya, a la vez que las fuentes (antes esperaba a que llegaran).
         let watch = watch
@@ -462,7 +388,7 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// Los mensajes de los motores pueden traer la dirección del video (con tu clave): nunca llegan a la pantalla.
-    private func fail(_ message: String, _ kind: Failure) {
+    func fail(_ message: String, _ kind: Failure) {
         Self.note("falló \(String(describing: kind)): \(stripURLs(message))")
         failure = kind
         phase = .failed(stripURLs(message)); startupDeadline = nil; reconnecting = false; foregroundCheck = nil
@@ -596,7 +522,7 @@ public final class PlayerModel: ObservableModel {
 
     /// Cambia a otra fuente en el mismo punto. Marca el cambio de forma síncrona (lo que el motor diga ahora se ignora) y carga aparte.
     @discardableResult
-    private func retryWithAnotherSource() -> Task<Void, Never>? {
+    func retryWithAnotherSource() -> Task<Void, Never>? {
         guard !retrying, !closing else { return transition }
         guard request?.localFile == nil else { fail("No pude abrir el archivo descargado.", .localFile); return nil }
         retrying = true; acceptingSnapshots = false; startupDeadline = nil
@@ -628,7 +554,7 @@ public final class PlayerModel: ObservableModel {
 
     /// Cada aviso reserva los segundos vistos que le tocan (dos avisos a la vez no cuentan los mismos segundos dos veces) y los
     /// devuelve si no se pudieron guardar ni encolar.
-    private func report(_ phase: PlaybackPhase) async {
+    func report(_ phase: PlaybackPhase) async {
         // Un archivo que te pasaron y no se reconoció («file:…»): no es un título de Stremio, no se guarda nada allá.
         guard var event = event(), !event.metaID.hasPrefix("file:") else { return }
         let reserved: Double
@@ -643,13 +569,6 @@ public final class PlayerModel: ObservableModel {
 
     // MARK: pistas
 
-
-
-
-
-
-
-
     /// «Buscar en internet» (Subtítulos del reproductor): todo lo que hay en OpenSubtitles y tus complementos, por idioma.
     public internal(set) var foundSubtitles: [SubtitleOption]? { didSet { changed() } }
     /// Los sustos de la película que suena (Where's The Jump), marcados en la barra; nil: no hay mapa.
@@ -659,7 +578,6 @@ public final class PlayerModel: ObservableModel {
 
     var searchTask: Task<Void, Never>?
 
-
     /// No se encontró nada en la última búsqueda (o no había red).
     public internal(set) var subtitleSearchFailed = false { didSet { changed() } }
     /// La última búsqueda no llegó a internet (modo avión, sin señal): solo hay los del video y los guardados con la descarga.
@@ -667,8 +585,6 @@ public final class PlayerModel: ObservableModel {
 
     /// Los que ya se sumaron (no se suma dos veces el mismo).
     public internal(set) var addedSubtitleURLs: Set<URL> = [] { didSet { changed() } }
-
-
 
     // MARK: versiones de subtítulos («Subtítulos» del panel)
     /// Las elecciones de «Este va bien» por serie (las pone quien arma el reproductor).
@@ -679,238 +595,18 @@ public final class PlayerModel: ObservableModel {
     /// La tira para probar versiones sobre el video (el idioma que se está probando); nil: no se ve.
     public internal(set) var tryingSubtitles: String? { didSet { changed() } }
 
-
-
-
-
-
-
-
-
-
-
-
-
     /// La versión que tenías antes de apagarlos (para prenderlos otra vez igual).
     var versionBeforeOff: SubtitleVersion?
 
-
-
-
-
-
-
-
-
-
     // MARK: controles
-    func userTouched() { autoAdvances = 0 }
 
-    public func setRate(_ value: Float) async { rate = value; await engine.setRate(value) }
-
-    /// Abre un video y le pone la velocidad elegida (el motor empieza cada video en 1).
-    private func loadVideo(_ url: URL, at start: Double) async throws {
-        let src = source.map { "\($0.cached ? "en Real-Debrid" : ($0.debrid ? "Real-Debrid aún la baja" : "directa")) · \($0.qualitySummary.joined(separator: " "))" } ?? "archivo"
-        Self.note("cargar desde \(url.host ?? "archivo") en \(Int(start)) s (\(src))")
-        loadStartedAt = clock(); lastLoggedState = ""
-        if let request {
-            // Lo que ya sabes que quieres, desde el primer cuadro: el audio y los subtítulos con que lo dejaste (o tus idiomas).
-            let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
-            let choice = request.fromStart ? nil : titlePrefs.lastChoice(metaID: request.metaID)
-            let audio = [choice?.audio?.language, settings.value.latinSpanish && langs.prefs.audio == "es" ? "es-419" : nil, langs.prefs.audio].compactMap { $0 }.filter { !$0.isEmpty }
-            let subs = choice?.subtitle?.off == true ? [] : [choice?.subtitle?.language, langs.subtitles].compactMap { $0 }.filter { !$0.isEmpty }
-            await engine.prepare(audioLanguages: audio, subtitleLanguages: subs, externalSubtitles: request.localSubtitles)
-        }
-        try await engine.load(url: url, startAt: start)
-        engineOpened = true
-        Self.note(String(format: "el motor abrió el archivo en %.1f s", clock().timeIntervalSince(loadStartedAt)))
-        if rate != 1 { await engine.setRate(rate) }
-    }
-
-    /// Pausa si suena o si va a sonar (cargando o pediste play y aún no avanza): antes, en búfer el botón llamaba a «play» y la
-    /// pausa no hacía caso.
-    public var wantsToPlay: Bool { snapshot.state == .playing || snapshot.state == .buffering || playRequest != nil }
-    public func togglePlay() async {
-        userTouched()
-        if wantsToPlay { playRequest = nil; settleStartup(); await engine.pause() } else { requestPlayback(); await engine.play() }
-    }
-    public func play() async { userTouched(); requestPlayback(); await engine.play() }
-    public func pause() async { userTouched(); playRequest = nil; settleStartup(); await engine.pause() }
-    /// Pausaste en los primeros segundos: el arranque ya no es carga (el botón dice play al momento, sin esperar al motor).
-    private func settleStartup() { if hasPlayed { playbackSettled = true } }
-
-    /// Pediste que sonara y todavía no avanza (sobre todo al volver de segundo plano, con el video soltado por el motor): la
-    /// pantalla enseña la carga en vez del play, y si en `foregroundStallSeconds` no avanza, el video se pide otra vez ahí mismo.
-    public var awaitingPlayback: Bool { playRequest != nil }
-    private var playRequest: (at: Date, position: Double)? { didSet { if (oldValue == nil) != (playRequest == nil) { changed() } } }
-    private func requestPlayback() {
-        guard hasPlayed, phase == .playing, !closing else { return }
-        playRequest = (clock(), snapshot.position)
-    }
-    private func checkPlayRequest(now: Date) {
-        guard let request = playRequest else { return }
-        if snapshot.state == .playing, snapshot.position > request.position + 0.3 { playRequest = nil; return }   // ya suena
-        guard now.timeIntervalSince(request.at) >= Self.foregroundStallSeconds, !reconnecting, !retrying else { return }
-        playRequest = nil
-        startReload(at: max(request.position, snapshot.position), resume: true)
-    }
-    public func seek(to seconds: Double) async {
-        userTouched()
-        let target = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))
-        if hasPlayed, abs(target - snapshot.position) >= PlaybackRules.rescrobbleJump { rescrobbleAfterSeek = true }
-        if !playbackSettled { startupPosition = target }   // un salto al arrancar: los 2 s se cuentan desde el punto nuevo
-        // Al soltar la barra con un arrastre en curso: la búsqueda final va en la misma fila (nunca dos a la vez, que
-        // podían terminar en desorden y dejar la escena en un punto viejo) y sin la espera entre búsquedas.
-        if let running = scrubTask {
-            scrubTarget = target; scrubFinishing = true
-            await running.value
-            return
-        }
-        await engine.seek(to: target)
-    }
-    /// Mientras arrastras la barra: la escena sigue al dedo. Se busca el último punto pedido apenas termina la búsqueda
-    /// anterior (nunca dos a la vez); en una descarga es casi inmediato, en internet se espera un momento entre búsquedas
-    /// para no pedir un trozo nuevo por cada punto del arrastre.
-    public func scrub(to seconds: Double) {
-        scrubTarget = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))
-        guard scrubTask == nil else { return }
-        let local = request?.localFile != nil
-        scrubTask = Task { [weak self] in
-            while let self, let target = self.scrubTarget {
-                self.scrubTarget = nil
-                await self.engine.seek(to: target)
-                if !local, !self.scrubFinishing { try? await Task.sleep(nanoseconds: PlaybackRules.streamScrubInterval) }
-            }
-            self?.scrubTask = nil; self?.scrubFinishing = false
-        }
-    }
-    private var scrubFinishing = false
-    private var scrubTarget: Double?
-    private var scrubTask: Task<Void, Never>?
-
-    public func skip(_ delta: Double) async {
-        await seek(to: snapshot.position + delta)
-        if delta < 0 { await showSubtitlesBriefly() }
-    }
+    var playRequest: (at: Date, position: Double)? { didSet { if (oldValue == nil) != (playRequest == nil) { changed() } } }
+    var scrubFinishing = false
+    var scrubTarget: Double?
+    var scrubTask: Task<Void, Never>?
 
     /// Regresaste con los subtítulos apagados: se ven unos segundos («¿qué dijo?», como en Apple TV) y se vuelven a apagar.
-    private var briefSubtitles: Task<Void, Never>?
-    public static let briefSubtitlesSeconds = 8.0
-    private func showSubtitlesBriefly() async {
-        guard settings.value.subtitlesOnSkipBack, let request else { return }
-        if briefSubtitles == nil {
-            guard snapshot.selectedSubtitle == nil else { return }
-            var languages: [String] = []
-            for code in [settings.value.subtitles, settings.value.uiLanguage].compactMap(SubtitleLanguage.code) where !languages.contains(code) { languages.append(code) }
-            guard let best = languages.lazy.compactMap({ self.subtitleVersions(language: $0).first }).first else { return }
-            await apply(best)   // sin recordarlo: es solo un momento
-        }
-        briefSubtitles?.cancel()
-        let videoID = request.videoID, wait = UInt64(Self.briefSubtitlesSeconds * 1_000_000_000)
-        briefSubtitles = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: wait)
-            guard let self, !Task.isCancelled, self.request?.videoID == videoID else { return }
-            self.briefSubtitles = nil
-            await self.engine.selectSubtitle(nil)
-        }
-    }
-    func stopBriefSubtitles() { briefSubtitles?.cancel(); briefSubtitles = nil }
-
-    /// Cambia de fuente en el mismo punto. Si la lista de fuentes es vieja (los enlaces de Real-Debrid caducan) se pide de nuevo.
-    /// Cambiar de versión a mano (en la hoja, o un idioma que solo trae otra versión: `language`). Se pausa y se toma el
-    /// segundo exacto; cuenta como «la elegiste tú» (ya no se ofrece cambiar otra vez); si no abre, se vuelve a la que veías
-    /// en el mismo segundo (antes caía a cualquier otra); el idioma elegido sigue en los siguientes episodios.
-    public func switchSource(to index: Int, language: String? = nil) async {
-        guard let request, !closing else { return }
-        userTouched()
-        if snapshot.state == .playing { await engine.pause() }
-        generation += 1
-        let mine = generation
-        let position = snapshot.position
-        let previous = source
-        notice = nil   // el aviso era de la versión que dejas
-        acceptingSnapshots = false
-        if clock().timeIntervalSince(choicesAt) > Self.choicesLifetime {
-            let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
-            if let fresh = try? await finder.find(kind: request.kind, videoID: request.videoID, prefs: prefs, fresh: true) { sourceChoices = fresh; choicesAt = clock() }
-        }
-        guard mine == generation, !closing, let choice = sourceChoices.first(where: { $0.index == index }) ?? sourceChoices.first(where: { $0.release == source?.release && $0.index == index }),
-              let url = choice.playbackURL else { acceptingSnapshots = true; return }
-        self.request?.sourceIndex = index
-        let subtitlesWereOn = snapshot.selectedSubtitle != nil
-        source = choice; phase = .preparing
-        // Suelta lo que el motor estuviera abriendo: si la versión de antes se quedó cargando, la nueva quedaba formada detrás de
-        // ella y la pantalla solo enseñaba la carga (el iPhone el 29 oct).
-        await engine.stop()
-        guard mine == generation, !closing else { return }
-        startLoading()
-        if let previous { switchBack = (previous, position) }
-        forgetSubtitleSearch()   // otro archivo: «coincide con tu copia» se vuelve a calcular con su huella
-        if subtitlesWereOn { askInSync = true }   // otro archivo, la sincronía empieza en 0: «¿Va a tiempo?»
-        do {
-            try await loadVideo(url, at: position)
-            if let language { titlePrefs.remember(metaID: request.metaID, audioTrack: language) }
-        } catch {
-            guard mine == generation else { return }
-            failedSources.insert(index)
-            if !goBackAfterSwitch() { await retryWithAnotherSource()?.value }
-        }
-    }
-
-    /// Vuelve a la versión que veías antes de cambiar a mano, en el mismo segundo. false si no hay a cuál volver.
-    @discardableResult
-    private func goBackAfterSwitch() -> Bool {
-        guard let back = switchBack, let url = back.source.playbackURL, !closing else { return false }
-        switchBack = nil
-        if let source, source.index != back.source.index { failedSources.insert(source.index) }
-        generation += 1
-        let mine = generation
-        acceptingSnapshots = false
-        request?.sourceIndex = back.source.index
-        source = back.source
-        phase = .preparing
-        if notice != .notReadyOnRealDebrid { notice = .switchFailedBack }
-        transition = Task { [weak self] in
-            guard let self else { return }
-            await engine.stop()
-            guard mine == generation else { return }
-            startLoading()
-            do { try await loadVideo(url, at: back.position) } catch { guard mine == generation else { return }; await retryWithAnotherSource()?.value }
-        }
-        return true
-    }
-
-    /// El aviso corto que Real-Debrid manda en lugar de una versión que aún no tiene.
-    private func isPlaceholder(_ s: EngineSnapshot) -> Bool {
-        guard request?.localFile == nil, s.duration > 0, s.duration < Self.placeholderMaxSeconds else { return false }
-        let expected = request?.meta.map { CinemetaParsing.runtimeSeconds(CinemetaParsing.describe($0).runtime) } ?? 0
-        return expected == 0 || expected >= Self.placeholderTitleMinSeconds
-    }
-
-    /// Los idiomas de audio que solo traen otras versiones, para ofrecerlos junto a los del archivo. Sin grabaciones de cine,
-    /// tráileres ni otras películas (antes se colaban); de cada idioma, la versión más parecida a la que ves (misma calidad,
-    /// al instante); lo comprobado o dicho por el nombre o el sitio es seguro, lo supuesto es «tal vez».
-    public func otherVersionAudio(excluding inFile: Set<String>) -> [OtherVersionAudio] {
-        guard let current = source else { return [] }
-        var best: [String: (Source, Bool)] = [:]
-        for choice in sourceChoices where choice.index != current.index && choice.playbackURL != nil && !failedSources.contains(choice.index)
-            && !choice.tags.contains("CAM") && !choice.tags.contains("Tráiler") && !choice.tags.contains(Streams.otherTitleTag) {
-            let checked = titlePrefs.checkedAudio(choice.key)
-            let languages: [(String, Bool)] = checked.map { $0.map { ($0.code, true) } }
-                ?? choice.audio.map { ($0.code, [.checked, .name, .site].contains($0.evidence)) }
-            for (code, sure) in languages where !inFile.contains(code) && !inFile.contains(String(code.prefix(2))) {
-                func rank(_ s: Source, _ sure: Bool) -> (Int, Int, Int) { (sure ? 1 : 0, s.resolution == current.resolution ? 1 : 0, s.cached ? 1 : 0) }
-                if let have = best[code], rank(have.0, have.1) >= rank(choice, sure) { continue }
-                best[code] = (choice, sure)
-            }
-        }
-        // En el orden en que se recomiendan las fuentes (lo tuyo primero).
-        return sourceChoices.compactMap { choice in best.first { $0.value.0.index == choice.index }.map { ($0.key, $0.value) } }
-            .reduce(into: [OtherVersionAudio]()) { out, item in
-                guard !out.contains(where: { $0.code == item.0 }) else { return }
-                out.append(OtherVersionAudio(code: item.0, sourceIndex: item.1.0.index, quality: item.1.0.resolution, instant: item.1.0.cached, sure: item.1.1))
-            }
-    }
+    var briefSubtitles: Task<Void, Never>?
 
     // MARK: intro y siguiente episodio
     /// Las marcas de IntroDB del video que va a sonar (una vez por video; otra fuente del mismo no las vuelve a pedir).
@@ -918,218 +614,13 @@ public final class PlayerModel: ObservableModel {
     /// Antes eran dos (2 y 5 s) y luego se rendía por toda la reproducción: con la red floja al empezar, el episodio se quedaba
     /// sin botón aunque la intro llegara minutos después (las de Game of Thrones empiezan pasados los 7 min).
     var segmentRetryDelays: [Double] = [2, 5, 15, 30, 60, 120]
-    private func loadSegmentsIfNeeded() {
-        guard let videoID = request?.videoID, segmentsFor != videoID else { return }
-        segmentsFor = videoID
-        segments = nil
-        let fetch = skipSegments
-        Task { [weak self] in
-            // Un tropiezo de red (o el límite de 6 s) no deja el video sin «Saltar intro»: se pide otra vez antes de rendirse.
-            var found = await fetch(videoID)
-            for delay in self?.segmentRetryDelays ?? [] where found == nil {
-                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                guard let self, self.request?.videoID == videoID, self.phase != .closed else { return }
-                found = await fetch(videoID)
-            }
-            guard let self, self.request?.videoID == videoID else { return }
-            // Sin marcas: la próxima carga del mismo video (otra fuente, volver a abrirlo) las vuelve a pedir.
-            if found == nil { self.segmentsFor = nil; return }
-            self.segments = found
-            // El botón sale en cuanto llegan, sin esperar al siguiente aviso del motor (en pausa no llega ninguno).
-            if self.hasPlayed { self.updateSkipIntro(self.snapshot) }
-        }
-    }
-
-    /// «Saltar intro» / «Saltar resumen»: primero los capítulos del archivo; si no los trae, las marcas de la comunidad.
-    private func updateSkipIntro(_ s: EngineSnapshot) {
-        if demoPinned { return }
-        // Cargando o rearmando al volver de segundo plano, la posición pasa un momento por 0 (o por el inicio): ahí no
-        // aplica (salía «Saltar intro» a media película al regresar a la app).
-        if s.state == .loading || reconnecting || backgrounded { skipIntroTo = nil; return }
-        let sorted = s.chapters.sorted { $0.time < $1.time }
-        for (i, chapter) in sorted.enumerated() where PlaybackRules.chapterKind(chapter.title) == .intro {
-            let end = i + 1 < sorted.count ? sorted[i + 1].time : s.duration
-            if s.position >= chapter.time && s.position < end - 1 { skipKind = .intro; skipIntroTo = end; return }
-        }
-        for (kind, range) in [(SkipKind.recap, segments?.recap), (.intro, segments?.intro)] {
-            if let range, s.position >= range.lowerBound, s.position < range.upperBound - 1 { skipKind = kind; skipIntroTo = range.upperBound; return }
-        }
-        skipIntroTo = nil
-    }
-
-    public func skipIntro() async { if let target = skipIntroTo { await seek(to: target) } }
-
-    private func nextEpisodeIDIgnoringLocal() -> String? {
-        guard let request, request.kind == "series", let meta = request.meta else { return nil }
-        return CinemetaParsing.nextEpisode(meta, after: request.videoID)
-    }
-
-    /// El siguiente episodio. Viendo un archivo descargado solo cuenta si el siguiente también está descargado.
-    private func nextEpisodeID() -> String? {
-        guard let next = nextEpisodeIDIgnoringLocal() else { return nil }
-        if request?.localFile != nil && nextLocal == nil { return nil }
-        return next
-    }
-
-    private func evaluateUpNext(_ s: EngineSnapshot, now: Date) async {
-        if demoPinned { return }
-        guard let next = nextEpisodeID(), s.duration > 0, let request else { return }
-        let remaining = s.duration - s.position
-        if remaining <= PlaybackRules.upNextLookahead && !preloadedNext && request.localFile == nil {
-            preloadedNext = true  // que al llegar el momento ya esté buscada la fuente
-            let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
-            Task { _ = try? await finder.find(kind: request.kind, videoID: next, prefs: prefs) }
-        }
-        let current = s.chapters.sorted { $0.time < $1.time }.last { $0.time <= s.position }
-        // «Opening Credits» al principio no son los créditos del final: solo cuentan en la segunda mitad.
-        // Los créditos: por capítulo del archivo o por la marca de la comunidad (IntroDB).
-        let inCredits = ((current.map { PlaybackRules.chapterKind($0.title) == .credits } ?? false) || (segments?.credits.map { s.position >= $0.lowerBound } ?? false))
-            && s.position > s.duration / 2
-        let near = PlaybackRules.shouldShowUpNext(position: s.position, duration: s.duration, inCredits: inCredits)
-        if upNext == nil && !upNextDismissed && near {
-            upNextDeadline = now.addingTimeInterval(PlaybackRules.upNextCountdown)
-            let (label, title) = episodeText(next)
-            upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: Int(PlaybackRules.upNextCountdown), thumbnail: episodeThumbnail(next))
-        } else if upNext != nil && !near && remaining > PlaybackRules.upNextAt + 5 {
-            upNext = nil; upNextDeadline = nil          // retrocediste lejos del final: la tarjeta ya no aplica
-        }
-    }
 
     /// La ficha traducida a tu idioma (la pide la pantalla con el traductor de la app): los nombres de los episodios en
     /// «Siguiente episodio» salen igual que en la ficha de la serie, no en inglés. Sin ella, la original.
-    public private(set) var localizedMeta: JSON?
-    public func useLocalizedMeta(_ meta: JSON, for videoID: String) {
-        guard request?.videoID == videoID else { return }
-        localizedMeta = meta
-    }
-
-    private func episodeText(_ videoID: String) -> (String, String) {
-        guard let meta = localizedMeta ?? request?.meta else { return ("", "") }
-        for season in CinemetaParsing.seasons(meta) {
-            if let ep = season.episodes.first(where: { $0.id == videoID }) { return (episodeLabel(season.season, ep.episode), ep.title) }
-        }
-        return ("", "")
-    }
-
-    private func episodeThumbnail(_ videoID: String) -> String? {
-        guard let meta = request?.meta else { return nil }
-        return CinemetaParsing.seasons(meta).lazy.compactMap { $0.episodes.first { $0.id == videoID } }.first?.thumbnail
-    }
-
-    #if DEBUG
-    /// Solo para el modo demostración: pone el reproductor en un estado difícil de alcanzar en el simulador
-    /// («skip-intro», «error», «upnext»).
-    public func demoState(_ kind: String) {
-        demoPinned = true
-        switch kind {
-        case "skip-intro": skipKind = .intro; skipIntroTo = snapshot.position + 60
-        case "error": fail("No pude abrir este video. La versión dejó de responder.", .sourceDied)
-        case "no-sources": fail("No hay versiones en Real-Debrid para este título.", .noSources)
-        case "upnext":
-            guard let next = nextEpisodeIDIgnoringLocal() else { return }
-            let (label, title) = episodeText(next)
-            upNextDeadline = nil   // que no avance solo mientras se captura
-            upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: Int(PlaybackRules.upNextCountdown) - 3, thumbnail: episodeThumbnail(next))
-        default: break
-        }
-    }
-    #endif
+    public internal(set) var localizedMeta: JSON?
 
     /// El siguiente episodio y su «T5 E3», calculados al abrir (para el botón «Siguiente» de los controles).
     public private(set) var nextUp: (videoID: String, label: String)? { didSet { changed() } }
-
-    /// Pone otro episodio de la serie: desde «Episodios» o «Siguiente». El que dejas queda guardado donde ibas (visto si pasaste
-    /// del 90 %) y el nuevo empieza desde el principio. Viendo un archivo descargado, solo otro descargado.
-    public func playEpisode(_ videoID: String) async {
-        guard !advancing, !closing, phase != .closed, let base = request, base.kind == "series", videoID != base.videoID else { return }
-        userTouched()
-        var local: LocalEpisode?
-        if base.localFile != nil {
-            guard let found = await localEpisode(base.metaID, videoID) else { return }
-            local = found
-        }
-        advancing = true
-        upNext = nil; upNextDeadline = nil
-        let task = Task { [weak self] in
-            guard let self else { return }
-            let watched = StremioLibrary.finished(position: snapshot.position, duration: snapshot.duration, kind: base.kind)
-            if !finalReported { await report(.stopped(finished: watched)) }
-            guard !closing, phase != .closed else { advancing = false; return }
-            var next = base
-            next.videoID = videoID; next.fromStart = true; next.binge = source?.binge
-            let (label, title) = episodeText(videoID)
-            next.episodeLabel = title.isEmpty ? label : "\(label) · \(title)"
-            if let local { next.localFile = local.file; next.localSubtitles = local.subtitles; next.savedSubtitles = local.saved }
-            advancing = false
-            await begin(next)
-        }
-        transition = task
-        await task.value
-    }
-
-    /// De estos episodios, cuáles se pueden poner ahora: todos, salvo viendo un archivo descargado (entonces solo los bajados).
-    public func playableEpisodes(_ ids: [String]) async -> Set<String> {
-        guard let request, request.localFile != nil else { return Set(ids) }
-        var out = Set<String>()
-        for id in ids where await localEpisode(request.metaID, id) != nil { out.insert(id) }
-        return out
-    }
-
-    public func cancelUpNext() { userTouched(); upNext = nil; upNextDeadline = nil; upNextDismissed = true }
-    public func playNextNow() async { userTouched(); await advance(auto: false)?.value }
-
-    public func confirmStillWatching() async {
-        userTouched(); stillWatchingPrompt = false
-        await advance(auto: false)?.value
-    }
-
-    /// Pasa al siguiente episodio. Es una sola transición a la vez (un «Ver ahora» y la cuenta atrás no la duplican) y corre aparte:
-    /// quien la pide (el escucha del motor) no se queda esperando mientras se buscan las fuentes. Se puede esperar con `waitForTransition`.
-    @discardableResult
-    private func advance(auto: Bool) -> Task<Void, Never>? {
-        guard !advancing, !closing, phase != .closed, let card = upNext, let request else { return transition }
-        if auto && autoAdvances >= PlaybackRules.stillWatchingAfter {
-            // Tres episodios seguidos sin tocar la pantalla: se pregunta antes de seguir (y lo visto ya queda guardado).
-            stillWatchingPrompt = true; upNextDeadline = nil
-            let saved = Task { if !finalReported { await report(.stopped(finished: true)) }; await engine.pause() }
-            transition = saved
-            return saved
-        }
-        advancing = true
-        let task = Task { [weak self] in
-            guard let self else { return }
-            if !finalReported { await report(.stopped(finished: true)) }
-            guard !closing, phase != .closed else { advancing = false; return }
-            if request.localFile != nil, StremioLibrary.finished(position: snapshot.position, duration: snapshot.duration, kind: request.kind) { onFinishedLocal?(request) }
-            var next = request
-            next.videoID = card.videoID; next.fromStart = true; next.binge = source?.binge
-            next.episodeLabel = card.title.isEmpty ? card.label : "\(card.label) · \(card.title)"   // si no, se queda el del episodio anterior
-            if request.localFile != nil, let local = nextLocal { next.localFile = local.file; next.localSubtitles = local.subtitles; next.savedSubtitles = local.saved }
-            if auto { autoAdvances += 1 }
-            advancing = false
-            await begin(next)
-        }
-        transition = task
-        return task
-    }
-
-    /// Espera a que termine el cambio de episodio en curso (para las pruebas y para la vista).
-    public func waitForTransition() async { await transition?.value }
-
-    /// Un «final» a más de 90 s del final de verdad es la conexión que se cortó, no el episodio visto (como `CUT_MARGIN` en la consola).
-    static let cutMargin = 90.0
-    private var endIsReal: Bool { snapshot.duration <= 0 || snapshot.position >= snapshot.duration - Self.cutMargin }
-
-    private func finishAndAdvance() async {
-        if nextEpisodeID() != nil && !upNextDismissed && !stillWatchingPrompt {
-            if upNext == nil, let next = nextEpisodeID() { let (l, t) = episodeText(next); upNext = UpNext(videoID: next, label: l, title: t, secondsLeft: 0) }
-            advance(auto: true)
-        } else {
-            if !finalReported { await report(.stopped(finished: endIsReal)) }
-            phase = .closed
-            await engine.stop()
-        }
-    }
 
     // MARK: cierre
     /// Cierra el reproductor y guarda dónde te quedaste. Se puede llamar varias veces: solo la primera hace algo.
@@ -1151,12 +642,12 @@ public final class PlayerModel: ObservableModel {
 
     // MARK: volver de segundo plano
     /// Volviendo de segundo plano: «Reconectando…» en vez de una pantalla negra, hasta que el video vuelve a avanzar.
-    public private(set) var reconnecting = false { didSet { changed() } }
-    private var backgrounded = false
+    public internal(set) var reconnecting = false { didSet { changed() } }
+    var backgrounded = false
     private var foregroundPending = false
     private var backgroundPosition = 0.0
-    private var loadStartedAt = Date.distantPast
-    private var lastLoggedState = ""
+    var loadStartedAt = Date.distantPast
+    var lastLoggedState = ""
     private var resumeOnForeground = false
     /// Tras volver: si iba sonando y en este plazo no avanzó, el video se pide otra vez en el mismo punto.
     private var foregroundCheck: (deadline: Date, position: Double)?
@@ -1220,7 +711,7 @@ public final class PlayerModel: ObservableModel {
     /// Vuelve a abrir la fuente que sonaba en el mismo punto: la descarga, tu copia (enlace nuevo) o la de Real-Debrid
     /// (con la lista renovada si ya caducó). Si tampoco abre, se prueba otra fuente como en cualquier corte.
     /// Pide el video otra vez sin esperar a que cargue (para el reloj: él tiene que seguir revisando el plazo).
-    private func startReload(at position: Double, resume: Bool) {
+    func startReload(at position: Double, resume: Bool) {
         transition = Task { [weak self] in await self?.reloadCurrentSource(at: position, resume: resume) }
     }
 

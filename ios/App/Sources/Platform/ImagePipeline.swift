@@ -33,7 +33,7 @@ final class ImagePipeline: @unchecked Sendable {
         return scene?.screen.scale ?? 3
     }()
 
-    private let memory = NSCache<NSString, UIImage>()
+    nonisolated(unsafe) private let memory = NSCache<NSString, UIImage>()   // NSCache es seguro entre hilos
     /// Los bytes recién bajados, unos cuantos: `URLCache` los escribe a disco después (y en memoria no guarda nada de más de
     /// ~400 KB), así que otro tamaño de la misma imagen pedido justo después la volvía a bajar entera.
     private let recentBytes = NSCache<NSURL, NSData>()

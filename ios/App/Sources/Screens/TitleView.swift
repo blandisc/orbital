@@ -6,7 +6,7 @@ import OrbitalModels
 struct TitleView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let route: TitleRoute
-    @Environment(AppEnvironment.self) private var env
+    @Environment(AppEnvironment.self) var env
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.colorScheme) private var scheme
@@ -17,7 +17,7 @@ struct TitleView: View {
     /// La sinopsis completa (tocar «más»).
     @State private var fullSynopsis = false
     /// Elegiste otra fuente para algo que ya tienes descargado: ¿cambiarla?
-    @State private var replacing: Replacement?
+    @State var replacing: Replacement?
 
     struct Replacement { var source: Source; var videoID: String; var existing: DownloadItem }
     @State private var saving = false
@@ -428,8 +428,8 @@ struct TitleView: View {
                     HStack(spacing: DS.Space.s2) {
                         Image(systemName: "list.bullet.rectangle").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
                         // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
-                        (Text.flag(wanted) + Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
-                             : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage))).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                        Text("\(Text.flag(wanted))\(Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage) : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage)))")
+                            .recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
                         Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
                     }
                 }
@@ -494,13 +494,13 @@ struct TitleView: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 if !lead.isEmpty {
                     let who = model.kind == "series" ? Text("Creada por") : Text("Dirección")
-                    let line = who.foregroundStyle(DS.textFaint) + Text(verbatim: " " + lead.prefix(2).joined(separator: ", ")).foregroundStyle(DS.text)
+                    let line = Text("\(who.foregroundStyle(DS.textFaint))\(Text(verbatim: " " + lead.prefix(2).joined(separator: ", ")).foregroundStyle(DS.text))")
                     if let writer = writers.first, model.kind == "movie" {
-                        line + Text(verbatim: " · ").foregroundStyle(DS.textFaint) + Text("Guion").foregroundStyle(DS.textFaint) + Text(verbatim: " " + writer).foregroundStyle(DS.text)
+                        Text("\(line)\(Text(verbatim: " · ").foregroundStyle(DS.textFaint))\(Text("Guion").foregroundStyle(DS.textFaint))\(Text(verbatim: " " + writer).foregroundStyle(DS.text))")
                     } else { line }
                 }
                 if !leads.isEmpty {
-                    Text("Con").foregroundStyle(DS.textFaint) + Text(verbatim: " " + leads.joined(separator: ", ")).foregroundStyle(DS.text)
+                    Text("\(Text("Con").foregroundStyle(DS.textFaint))\(Text(verbatim: " " + leads.joined(separator: ", ")).foregroundStyle(DS.text))")
                 }
             }
             .font(DS.TextRecipe.footnote.font)
@@ -615,154 +615,5 @@ struct TitleView: View {
     }
 
     // MARK: acciones
-    /// «Ver»: si ya se sabe que no hay fuentes (o no hay red), lo dice aquí en vez de abrir un reproductor que va a fallar.
-    private func play(_ model: TitleModel) {
-        switch model.sourceCheck {
-        case .none: env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
-        case .offline: env.notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { play(model) }
-        default: start(model, videoID: nil)
-        }
-    }
 
-    private func start(_ model: TitleModel, videoID: String?, source: Source? = nil, fromStart: Bool = false) {
-        guard var request = model.playRequest(videoID: videoID) else { return }
-        request.sourceIndex = source?.index
-        request.fromStart = fromStart
-        if env.services.appSettings.preferInfuse { Task { await env.playExternal(request, source: source) } } else { env.play(request) }
-    }
-
-    private func handle(source: Source, videoID: String, purpose: Purpose, model: TitleModel) {
-        switch purpose {
-        case .watch: start(model, videoID: videoID, source: source)
-        case .download:
-            // Ya hay una copia (o se está bajando): una sola por película o episodio, así que se pregunta si cambiarla.
-            Task {
-                if let existing = await model.existingDownload(videoID) { replacing = Replacement(source: source, videoID: videoID, existing: existing); return }
-                await report(model.download([videoID], source: source), model, videoID: videoID)   // la fuente que elegiste
-            }
-        }
-    }
-
-    /// «4K · Dolby Vision» y «12.3 GB · Torrentio» (o «Bajando 40 % · Torrentio») para la hoja «Ya la tienes».
-    private func describe(_ item: DownloadItem) -> (label: String, detail: Text) {
-        let size = item.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? ""
-        let tail = item.addon.isEmpty ? "" : " · \(item.addon)"
-        if item.state != .done, let expected = item.expectedBytes, expected > 0 {
-            let percent = "\(Int(Double(item.writtenBytes) / Double(expected) * 100)) %"
-            return (item.quality ?? item.addon, Text("Bajando \(percent)") + Text(verbatim: tail))
-        }
-        return (item.quality ?? item.addon, Text(verbatim: size + tail))
-    }
-
-    private func describe(_ source: Source) -> (label: String, detail: Text) {
-        let label = ([source.resolution] + source.hdr).filter { !$0.isEmpty }.joined(separator: " · ")
-        let size = source.size > 0 ? ByteCountFormatter.string(fromByteCount: Int64(source.size), countStyle: .file) : nil
-        return (label.isEmpty ? source.addon : label, Text(verbatim: [size, source.addon.isEmpty ? nil : source.addon].compactMap { $0 }.joined(separator: " · ")))
-    }
-
-    private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel, videoID: String? = nil) async {
-        switch outcome {
-        // Una sola: lo dice el botón o el renglón (su avance), sin aviso encima. Varias: un aviso breve.
-        case .queued(let n): if n > 1 { env.notify(format: "Descargando %lld episodios", n, tone: .success, action: .downloads) }
-        // «Ya está descargada · Ver»: la copia del iPhone, sin red.
-        default: env.report(outcome, downloaded: videoID.map { (model.metaID, $0) })
-        }
-        await model.refreshState()
-    }
-}
-
-/// Una temporada en la tira de filtros.
-struct SeasonChip: Hashable, Identifiable {
-    var season: Int
-    var isSpecials: Bool
-    var id: Int { season }
-}
-
-struct EpisodeRowView: View {
-    let row: EpisodeRow
-    let play: () -> Void
-    let download: () -> Void
-    let markWatched: () -> Void
-    let chooseSource: () -> Void
-    var resumeDownload: () -> Void = {}
-    var downloadFraction: Double?
-    var playOnTV: (() -> Void)?
-
-    var body: some View {
-        // El botón de descargar va junto, no dentro, del que reproduce: anidados, tocar la flecha ponía el episodio.
-        // Miniatura, texto y estado en una misma línea central: el estado siempre cae en la misma columna.
-        HStack(alignment: .center, spacing: DS.Space.s3) {
-            Button(action: play) {
-                HStack(alignment: .center, spacing: DS.Space.s3) {
-                    ZStack(alignment: .bottom) {
-                        PosterView(url: row.thumbnail, title: "\(row.number)", aspect: DS.Poster.stillAspect)
-                        if let progress = row.progress { DSProgress(fraction: progress) }
-                        // Visto: la imagen se apaga y lleva un ojito (sin escribir «Visto»; la palomita va a la derecha).
-                        if row.watched {
-                            DS.scrim
-                            Image(systemName: "eye.fill").font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
-                                .frame(maxHeight: .infinity).accessibilityHidden(true)
-                        }
-                    }
-                    .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(2)
-                        if hasStatus { status.font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted) }
-                        if !row.overview.isEmpty { Text(row.overview).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint).lineLimit(2) }
-                    }
-                    Spacer(minLength: 0)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            stateIcon.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget, alignment: .trailing)
-        }
-        .padding(.vertical, DS.Space.s3)
-        .opacity(row.airs == nil ? 1 : DesignTokens.Opacity.faint)
-        .contextMenu { if row.airs == nil { actions(download: true) } }
-    }
-
-    /// Lo que se puede hacer con un episodio: en el «⋯» de su renglón (a la vista) y al mantenerlo presionado.
-    @ViewBuilder private func actions(download withDownload: Bool) -> some View {
-        if withDownload { Button("Descargar", systemImage: "arrow.down.circle", action: download) }
-        Button("Versión de este episodio…", systemImage: "list.bullet.rectangle", action: chooseSource)   // el mismo ícono que «Versión» de la ficha
-        Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
-        if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
-    }
-
-    private var hasStatus: Bool { row.airs != nil || (!row.watched && row.leftMinutes > 0) || row.download == .done }
-
-    @ViewBuilder private var status: some View {
-        if let airs = row.airs { Text("Sale el \(airs, format: .dateTime.day().month(.abbreviated))") }
-        else if !row.watched, row.leftMinutes > 0 { Text(timeLeftText(minutes: row.leftMinutes)) }
-        else if row.download == .done { Text("Descargado") }
-    }
-
-    @ViewBuilder private var stateIcon: some View {
-        if row.airs != nil { Image(systemName: "calendar").foregroundStyle(DS.textFaint).accessibilityLabel(Text("Todavía no sale")) }
-        else if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Visto")) }
-        else if row.download == .done { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Descargado")) }
-        else if row.download == .downloading || row.download == .queued {
-            // El mismo anillo que el círculo de Descargar de la ficha.
-            DownloadRing(fraction: downloadFraction ?? 0, lineWidth: DS.TitleAction.ringSmallLine)
-                .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
-        }
-        else if row.download == .paused || row.download == .failed {
-            // En pausa o falló: seguir donde iba (no empezar de cero con otra fuente).
-            Button(action: resumeDownload) {
-                Image(systemName: row.download == .failed ? "arrow.clockwise" : "play.circle").foregroundStyle(row.download == .failed ? DS.warning : DS.textMuted)
-                    .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-            }
-            .buttonStyle(.plain).accessibilityLabel(row.download == .failed ? Text("Reintentar") : Text("Reanudar"))
-        }
-        else {
-            // «⋯» a la vista: Descargar, Elegir versión, Marcar como visto y Ver en la TV (antes solo la flecha de descargar, y
-            // elegir la versión de un episodio estaba escondido en mantenerlo presionado).
-            Menu { actions(download: true) } label: {
-                Image(systemName: "ellipsis.circle").foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-            }
-            .accessibilityLabel(Text("Más del episodio"))
-            .accessibilityIdentifier("episode-more")
-        }
-    }
 }

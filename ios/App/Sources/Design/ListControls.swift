@@ -203,7 +203,7 @@ struct SortableGrid<Cell: View>: View {
     private var activeChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Space.s2) {
-                if let kind = filter.kind { chip(Text(Image(systemName: KindGlyph.symbol(kind))) + Text(verbatim: " ") + (kind == "movie" ? Text("Películas") : Text("Series"))) { filter.kind = nil } }
+                if let kind = filter.kind { chip(Text("\(Text(Image(systemName: KindGlyph.symbol(kind))))\(Text(verbatim: " "))\((kind == "movie" ? Text("Películas") : Text("Series")))")) { filter.kind = nil } }
                 if let genre = filter.genre { chip(Text(verbatim: genreName(genre, language: language))) { filter.genre = nil } }
                 if let min = filter.minRating { chip(ratingName(min)) { filter.minRating = nil } }
                 if let decade = filter.decade { chip(decadeName(decade)) { filter.decade = nil } }

@@ -194,8 +194,8 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     init() {
         player.automaticallyWaitsToMinimizeStalling = true
         let interval = CMTime(seconds: 0.25, preferredTimescale: 600)
-        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] _ in self?.publish() }
-        controlObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] _, _ in self?.publish() }
+        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] _ in MainActor.assumeIsolated { self?.publish() } }
+        controlObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.publish() } }
     }
 
     deinit { if let timeObserver { player.removeTimeObserver(timeObserver) } }
@@ -207,8 +207,8 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
         let item = AVPlayerItem(asset: asset)
         await MainActor.run {
             if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
-            endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in self?.ended = true; self?.publish() }
-            statusObservation = item.observe(\.status, options: [.new]) { [weak self] _, _ in self?.publish() }
+            endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in MainActor.assumeIsolated { self?.ended = true; self?.publish() } }
+            statusObservation = item.observe(\.status, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.publish() } }
             player.replaceCurrentItem(with: item)
         }
         audioGroup = try? await asset.loadMediaSelectionGroup(for: .audible)

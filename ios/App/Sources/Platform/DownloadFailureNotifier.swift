@@ -1,6 +1,6 @@
 import Foundation
 import UIKit
-import UserNotifications
+@preconcurrency import UserNotifications
 import OrbitalCore
 
 /// Una descarga que se detuvo con la app cerrada: un aviso de iOS («Se detuvo «Dune» · Iba en 62 %») con «Reintentar» y la ficha
@@ -8,7 +8,7 @@ import OrbitalCore
 /// Descargas. Cada falla se avisa una vez (se recuerda aunque iOS cierre y vuelva a abrir la app para terminar las descargas).
 @MainActor
 enum DownloadFailureNotifier {
-    static let category = "orbital.download.failed"
+    nonisolated static let category = "orbital.download.failed"
     enum Action { static let retry = "download.retry", title = "download.title" }
     private static let notifiedKey = "download-failed-notified"
 

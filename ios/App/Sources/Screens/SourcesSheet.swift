@@ -137,7 +137,7 @@ struct SourcesSheet: View {
                 }
                 .padding(.top, DS.Space.s2)
             } label: {
-                Text("Otros idiomas · ") + Text(verbatim: model.moreLanguages.map { LanguageFlags.flagged(VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui), $0.code) }.joined(separator: ", "))
+                Text("\(Text("Otros idiomas · "))\(Text(verbatim: model.moreLanguages.map { LanguageFlags.flagged(VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui), $0.code) }.joined(separator: ", ")))")
             }
             .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
             .padding(DS.Space.s3)
@@ -175,7 +175,7 @@ struct VersionCard: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    (Text.flag(row.code) + Text(verbatim: "\(language) · \(option.quality)")).recipe(.title)
+                    (Text("\(Text.flag(row.code))\(Text(verbatim: "\(language) · \(option.quality)"))")).recipe(.title)
                     let facts = [VersionChip.size(option), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")].compactMap { $0 }.joined(separator: " · ")
                     VersionCard.withSpeed(facts, option.speed).recipe(.secondary)
                 }
@@ -184,7 +184,7 @@ struct VersionCard: View {
                 }
                 VersionEvidence(evidence: option.evidence, language: language, release: option.release, site: option.site)
                 if !option.alsoHas.isEmpty {
-                    (Text("También trae: ") + Text(verbatim: option.alsoHas.map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: uiLanguage), $0) }.joined(separator: ", ")))
+                    (Text("\(Text("También trae: "))\(Text(verbatim: option.alsoHas.map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: uiLanguage), $0) }.joined(separator: ", ")))"))
                         .recipe(.footnote)
                 }
                 HStack(spacing: DS.Space.s2) {
@@ -232,7 +232,7 @@ struct VersionCard: View {
     /// «2.9 GB · DV · Al instante»: los datos y, si se sabe, qué tan rápido arranca.
     static func withSpeed(_ facts: String, _ speed: SourceSpeed) -> Text {
         guard let words = VersionChip.speedText(speed) else { return Text(verbatim: facts) }
-        return facts.isEmpty ? words : Text(verbatim: facts + " · ") + words
+        return facts.isEmpty ? words : Text("\(Text(verbatim: facts + " · "))\(words)")
     }
 
     /// Otra del mismo idioma y calidad: su tamaño, cómo sabemos el idioma y su nombre técnico, con ▶ y ↓.
