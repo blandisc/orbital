@@ -243,7 +243,7 @@
    "w": 520,
    "size": "m",
    "fill": "blue",
-   "text": "DECIDIDO: el micrófono a la vista en la hoja corta, con el botón grande, el «?» y la pista A: una sola frase que va cambiando («Prueba: «siguiente episodio»»). Tocar la pista la manda a la tele.\nB y C se quedan aquí solo como referencia de lo que se descartó."
+   "text": "DECIDIDO: el micrófono a la vista en la hoja corta, con el botón grande, el «?» y la pista A: una sola frase que va cambiando («Prueba: «siguiente episodio»»). Tocar la pista la manda a la tele.\nB y C se quedan aquí solo como referencia de lo que se descartó.\n\nDe dónde salen las frases (ya hecho en la consola, rama claude/voz-pistas, falta tu visto bueno): la consola dice el momento y sus tres frases.\n• Serie: «pausa», «siguiente episodio», «pon subtítulos».\n• Película: «pausa», «pon subtítulos», «sube el volumen».\n• TV en vivo: «pon el canal ADN 40», «sube el volumen», «cierra el video».\n• Nada puesto: «pon The Office», «sigue viendo», «qué sale hoy».\nSon las mismas que enseña la tele. Con una consola vieja, el iPhone usa estas mismas, fijas."
   },
   "t2": {
    "x": 0,
@@ -333,7 +333,7 @@
    "w": 520,
    "size": "m",
    "fill": "orange",
-   "text": "Se llega por el «?» junto al micrófono (hoja corta, estirado e iPad), por Ajustes › Voz y Siri, diciendo «qué puedo decir» (frase nueva en la consola) y desde un «No entendí».\n\nLa guía, más sencilla:\n1. «Ahora» arriba: las tres frases del momento, las mismas de la pista. Si la abres viendo una serie, salen las de serie.\n2. Lo esencial: las otras siete, una por renglón, con una línea de qué hace.\n3. Todo lo demás plegado en «Más frases · 118».\n4. Siri y Alexa al final, en dos renglones.\nTocar cualquier frase la manda a la tele y cierra la guía."
+   "text": "Se llega por el «?» junto al micrófono (hoja corta, estirado e iPad), por Ajustes › Voz y Siri, diciendo «qué puedo decir», «ayuda» o «muéstrame la guía» (ya hecho en la consola, falta tu visto bueno; dicho en el iPhone abre la guía del iPhone, no la de la tele) y desde un «No entendí».\n\nLa guía, más sencilla:\n1. «Ahora» arriba: las tres frases del momento, las mismas de la pista. Si la abres viendo una serie, salen las de serie.\n2. Lo esencial: las otras siete, una por renglón, con una línea de qué hace.\n3. Todo lo demás plegado en «Más frases · 118».\n4. Siri y Alexa al final, en dos renglones.\nTocar cualquier frase la manda a la tele y cierra la guía."
   },
   "t8": {
    "x": 0,
