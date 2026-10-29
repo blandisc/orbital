@@ -37,6 +37,9 @@ KIND_LABEL = {"movie": "Película", "series": "Serie"}
 
 
 CACHE_MAX = 400  # respuestas guardadas a lo más (búsquedas y fichas)
+# Una ficha que no existe en ningún lado (404 en todas las fuentes): se recuerda un rato. Cada vez que se pedía la
+# biblioteca, los títulos de un complemento ajeno a Cinemeta se volvían a buscar varias veces por segundo (orbital.log).
+MISSING_SECONDS = 6 * 3600
 
 
 class CinemetaError(Exception):
@@ -54,6 +57,7 @@ class Cinemeta:
         self.registry = registry  # tus complementos: quién más sabe dar fichas
         self.localize: Callable[[str, dict], dict] | None = None  # la ficha en el idioma de Orbital
         self._cache: dict[str, tuple[float, dict]] = {}
+        self._missing: dict[str, float] = {}  # ficha -> cuándo se vio que no existe en ninguna fuente
         self._lock = threading.Lock()
         # Modo sin internet: las fichas que ya abriste quedan en disco (`saved`); sin conexión se enseña lo guardado.
         self.saved: Path | None = None
@@ -149,15 +153,24 @@ class Cinemeta:
         Stremio va con el título original, no con el traducido)."""
         path = f"/meta/{quote(kind)}/{quote(str(meta_id), safe=':')}.json"
         error = CinemetaError("Título no encontrado")
+        if time.time() - self._missing.get(path, -MISSING_SECONDS) < MISSING_SECONDS:
+            raise error
+        only_missing = True  # todas las fuentes dijeron 404 (no un error de red, que puede ser pasajero)
         for base in self.meta_sources(kind, meta_id):
             try:
                 meta = (self._get(path, base) if base else self._get(path)).get("meta")
             except CinemetaError as exc:
                 log.info("Sin ficha de %s en %s: %s", meta_id, addons_mod.redact(base) if base else "Cinemeta", exc)
                 error = exc
+                only_missing = only_missing and "404" in str(exc)
                 continue
             if isinstance(meta, dict):
                 return self.localize(kind, meta) if self.localize and localized and base is None else meta
+        if only_missing:
+            with self._lock:
+                if len(self._missing) >= CACHE_MAX:
+                    self._missing.clear()
+                self._missing[path] = time.time()
         raise error
 
 
