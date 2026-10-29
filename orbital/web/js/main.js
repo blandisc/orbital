@@ -39,6 +39,9 @@ import { createViewer } from "./components/viewer.js";
 import { createTouchBack } from "./components/touch-back.js";
 import { createBoot } from "./app/boot.js";
 import { createLaunching } from "./app/launching.js";
+import { systemCommands } from "./app/system-commands.js";
+import { accountCommands } from "./app/account-commands.js";
+import { libraryCommands } from "./app/library-commands.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
@@ -1559,8 +1562,20 @@ const findItem = (id) => state.allRows.flatMap((row) => row.items).find((i) => i
 const stillThere = (context) => !context?.busy?.stale && (context?.isCurrent?.() ?? true);
 const nested = (context) => (context ? { stack: [...context.stack, { menu: context.menu, index: context.index }], busy: context.busy } : {});
 
+// Los comandos de la consola, de las cuentas y de tu biblioteca viven en su propia tabla (app/*-commands.js);
+// aquí quedan los de ver y jugar. Se arma al primer uso: para entonces todo lo de abajo ya existe.
+let commandTable = null;
+function commands() {
+  if (commandTable) return commandTable;
+  const deps = { alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, settingsMenu, settingsPage, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, watch, windowsMenu };
+  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps) };
+  return commandTable;
+}
+
 async function runCommand(command, context = null) {
   try {
+    const run = commands()[command.type];
+    if (run) return await run(command, context);
     switch (command.type) {
       case "launch":
         return launch(findItem(command.id), command.runner || null, { confirmed: !!command.confirmed, keep: !!command.keep, roomChecked: !!command.roomChecked });
@@ -1582,32 +1597,6 @@ async function runCommand(command, context = null) {
         return openTitle(command.ref);
       case "search":
         return openSearch(command.query || "");
-      case "prefs":
-        if (command.prefs.hidden) ui.toast.show(`Ocultando ${command.title || ""}…`.replace(" …", "…")); // si tarda, se nota
-        await api.setPrefs(command.id, command.prefs);
-        if (command.prefs.favorite) state.popId = command.id;
-        sound.play("select");
-        if (!command.prefs.hidden) {
-          if (command.message) ui.toast.show(command.message);
-          return loadLibrary({ keepId: command.id });
-        }
-        await loadLibrary({ keepId: command.id });
-        return offerUndoHide(command); // ya con la biblioteca nueva: se anota dónde quedó el foco
-      case "refresh":
-        return loadLibrary({ refresh: true });
-      case "art": {
-        ui.toast.show(`Buscando otra imagen para ${command.title}…`);
-        const res = await api.replaceArt(command.id, command.kind);
-        sound.play("select");
-        ui.toast.show(res.found ? "Imagen nueva" : "No encontré otra · Se queda la que tenías", { tone: res.found ? "success" : "warn",
-          detail: res.found ? "" : "En «Elegir portada o fondo» puedes escoger entre todas" });
-        return loadLibrary({ keepId: command.id });
-      }
-      case "game-art-picker": // «Elegir portada o fondo» de un juego: el mismo selector que el de películas
-        ui.sheet.close();
-        return ui.artPicker.open({ kind: "game", id: command.id, title: command.title });
-      case "phone-send":
-        return sendToPhone(command);
       case "media-goto": { // Ir a…: los grupos de la sección, con una palomita en el que estás
         const here = state.rows?.[state.focus.r]?.group;
         const present = GROUPS.filter((g) => state.rows.some((row) => row.group === g.id));
@@ -1627,110 +1616,6 @@ async function runCommand(command, context = null) {
         storage.set("orbital.media.filter", mediaFilter);
         sound.play("select");
         return buildCuration();
-      case "list-sort":
-        return ui.listScreen.sorter.setSort(command.value);
-      case "list-kind":
-        return ui.listScreen.sorter.setKind(command.value);
-      case "list-watched":
-        return ui.listScreen.sorter.setHideWatched(!ui.listScreen.sorter.settings.hideWatched);
-      case "list-genre-menu": {
-        const s = ui.listScreen.sorter;
-        const current = s.settings.genre;
-        return openMenu({ title: "Género", options: [
-          { icon: "spark", label: "Todos", value: current ? "" : "✓", command: { type: "list-genre", value: null } },
-          ...s.genres().map((g) => ({ icon: "spark", label: genreNames([g])[0], value: g === current ? "✓" : "",
-            command: { type: "list-genre", value: g, label: genreNames([g])[0] } }))] }, nested(context));
-      }
-      case "list-genre":
-        return ui.listScreen.sorter.setGenre(command.value, command.label || null);
-      case "media-art": // elegir otro póster o fondo de una película o serie
-        sound.play("open");
-        ui.artPicker.open({ kind: command.kind === "series" ? "series" : "movie", metaId: command.metaId, title: command.title });
-        return renderHints();
-      case "mylist":
-        await api.setInLibrary(command.kind, command.metaId, command.add);
-        sound.play("select");
-        ui.toast.show(command.add ? `Guardé ${command.title} en Mi lista` : `Quité ${command.title} de Mi lista`, { tone: "success" });
-        return loadLibrary();
-      case "dismiss":
-        await api.dismiss(command.id);
-        sound.play("select");
-        ui.toast.show(`Quité ${command.title} de Seguir viendo`, { tone: "success" });
-        return loadLibrary();
-      case "stop":
-        await api.stop();
-        return pollStatus();
-      case "confirm-stop":
-        return openMenu(stopMenu(command), nested(context));
-      case "power-menu":
-        return openMenu(powerMenu(), nested(context));
-      case "power-confirm":
-        return openMenu(powerConfirmMenu(command.action, state.running), nested(context));
-      case "power":
-        await api.power(command.action);
-        return ui.toast.show({ sleep: "Suspendiendo…", restart: "Reiniciando…", shutdown: "Apagando…" }[command.action]);
-      case "windows":
-        ui.toast.show("Buscando ventanas…");
-        return openMenu(windowsMenu((await api.windows()).windows), nested(context));
-      case "focus-window":
-        sound.play("select");
-        return await api.focusWindow(command.id); // await: si la ventana ya no está, el catch lo dice
-      case "resume":
-        return resumeRunning();
-      case "confirm-exit":
-        return openMenu(exitMenu(), nested(context));
-      case "exit":
-        await api.exitToDesktop();
-        return ui.toast.show("Saliendo al escritorio…");
-      case "unhide-all":
-        await api.unhideAll();
-        ui.toast.show("Juegos ocultos restaurados", { tone: "success" });
-        return loadLibrary();
-      case "settings":
-        if (!command.page) return openMenu(settingsMenu(), nested(context));
-        applySettings(await api.settings());
-        return openMenu(settingsPage(command.page, state.settings), nested(context));
-      case "setting": { // cambia y se queda en la misma página, en la misma opción
-        if (command.edge) { // ◀/▶ en el tope: no cambia nada, y se nota
-          sound.play("error");
-          rumble("edge");
-        } else {
-          applySettings(await api.setSettings({ [command.key]: command.value }));
-          sound.play("select");
-        }
-        if (stillThere(context)) ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
-        return renderHints();
-      }
-      case "own-play":
-        ui.sheet.close();
-        return watch(command.play);
-      case "od-folder":
-        return openMenu(await folderMenu(command.path), nested(context));
-      case "od-play-file":
-        ui.sheet.close();
-        return openListItem({ file: { id: command.id, name: command.name }, title: command.name });
-      case "od-fix-loose":
-        ui.sheet.close();
-        return fixTitle({ kind: command.kind, title: command.title, fileId: command.id });
-      case "od-rescan":
-        ui.sheet.close();
-        await api.onedriveScan().catch(() => {});
-        return ui.toast.show("Revisando tu carpeta de OneDrive · Mi media se actualiza sola");
-      case "download-play":
-        ui.sheet.close();
-        return launch(command.item);
-      case "download-retry":
-        ui.sheet.close();
-        await api.downloadRetry(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
-        return loadDownloads();
-      case "download-title":
-        ui.sheet.close();
-        return openTitle(command.item);
-      case "download-remove":
-        ui.sheet.close();
-        await api.downloadRemove(command.id).catch((err) => ui.toast.show(err.message, { error: true }));
-        ui.toast.show(`Quité la descarga de ${command.title}`, { tone: "success" });
-        return loadDownloads();
       case "decide":
         ui.sheet.close();
         return openDecide();
@@ -1739,155 +1624,21 @@ async function runCommand(command, context = null) {
         sound.play("open");
         ui.year.open();
         return renderHints();
-      case "controls":
-        return openMenu(controlsMenu((await api.controllers().catch(() => ({ controllers: [] }))).controllers), nested(context));
-      case "runner-menu":
-        return openMenu(runnerMenu(command.item), nested(context));
       case "art-menu":
         return openMenu(artMenu(command.item), nested(context));
-      case "setup":
-        return openMenu(setupMenu(await api.setup()), nested(context));
-      case "quick":
-        return await openQuick(context);
-      case "music": { // controlar la música y quedarse en el panel, en la misma opción
-        await api.musicCommand(command.action);
-        sound.play("move");
-        await new Promise((resolve) => setTimeout(resolve, 350)); // que la app cambie de canción
-        const [q, music] = await Promise.all([api.quick(), api.music().catch(() => null)]);
-        if (stillThere(context)) ui.sheet.open(quickMenu(q, { running: state.running, music, legion: state.legion === true }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
-        return renderHints();
-      }
-      case "memory":
-        return openMenu(memoryMenu(await api.memory()), nested(context));
-      case "confirm-close-app":
-        return openMenu(closeAppConfirmMenu(command), nested(context));
-      case "players":
-        return openMenu(playersMenu(await api.players()), nested(context));
-      case "player-menu":
-        return openMenu(playerMenu(command), nested(context));
-      case "player-identify":
-        await api.identifyPlayer(command.slot);
-        return sound.play("select");
-      case "player-first": { // de vuelta a Jugadores, ya con el orden nuevo (sin la hoja del jugador en el «Atrás»)
-        await api.playerFirst(command.slot);
-        sound.play("select");
-        ui.toast.show("Listo: es el Jugador 1", { tone: "success" });
-        const stack = context?.stack ?? [];
-        return openMenu(playersMenu(await api.players()), { stack: stack.slice(0, Math.max(0, stack.length - 1)) });
-      }
-      case "players-restart-confirm":
-        return openMenu(playersRestartMenu(command), nested(context));
-      case "players-restart":
-        ui.sheet.close();
-        await api.restartWithPlayers();
-        return sound.play("open");
-      case "video-release": { // reiniciar DWM: suelta la memoria de video que se quedó (la pantalla parpadea)
-        ui.sheet.close();
-        const res = await api.releaseVideoMemory();
-        sound.play("select");
-        return ui.toast.show(res.before_mb ? `Memoria de video liberada · ${(res.before_mb / 1024).toFixed(1)} GB` : "Memoria de video liberada", { tone: "success" });
-      }
-      case "video-setup": { // la primera vez: Windows pide permiso en la pantalla
-        ui.toast.show("Windows te va a pedir permiso: elige «Sí» con el ratón, el teclado o tocando la pantalla");
-        const res = await api.setupVideoMemory();
-        sound.play(res.ok ? "select" : "error");
-        if (!res.ok) return ui.toast.show("No se activó: hace falta decir «Sí» en el aviso de Windows", { tone: "warn" });
-        ui.toast.show("Listo: Orbital la libera solo cuando no estés usando la consola", { tone: "success" });
-        return openMenu(memoryMenu(await api.memory()), { stack: context?.stack ?? [] });
-      }
-      case "close-app": {
-        const res = await api.closeApp(command.exe);
-        sound.play("select");
-        ui.toast.show(`Cerré ${command.name} · ${(res.freed_mb / 1024).toFixed(1)} GB libres de más`, { tone: "success" });
-        // De vuelta a la lista (sin la pregunta ni la lista vieja en el «Atrás»).
-        return openMenu(memoryMenu(await api.memory()), { stack: (context?.stack ?? []).slice(0, -1) });
-      }
-      case "tour": { // con el atajo del mando conectado
-        if (state.legion === undefined) {
-          const pads = (await api.controllers().catch(() => ({ controllers: [] }))).controllers;
-          state.legion = pads.some((c) => c.kind === "legion");
-          state.gamesir = pads.some((c) => c.kind === "gamesir");
-        }
-        ui.sheet.open(tourMenu(command.step, { legion: state.legion, gamesir: state.gamesir }), { index: 0, stack: [] });
-        return renderHints();
-      }
-      case "update-check":
-        ui.toast.show("Buscando una versión nueva…");
-        return openMenu(updateMenu(await api.checkUpdate(!!command.force)), nested(context));
-      case "update-apply":
-        await api.applyUpdate();
-        return ui.toast.show("Actualizando Orbital… puedes seguir usándolo.");
-      case "folders":
-        return openMenu(foldersMenu(await api.folders()), nested(context));
-      case "emulators":
-        if (command.force) ui.toast.show("Revisando versiones nuevas…");
-        return openMenu(emulatorsMenu(await api.emulatorUpdates(!!command.force)), command.force || command.again ? { index: context?.index ?? 0, stack: context?.stack ?? [] } : nested(context));
-      case "emulators-mode": {
-        applySettings(await api.setSettings({ emulator_updates: command.value }));
-        sound.play("select");
-        if (stillThere(context)) ui.sheet.open(emulatorsMenu(await api.emulatorUpdates()), { index: context?.index ?? 0, stack: context?.stack ?? [] });
-        return renderHints();
-      }
-      case "emulator-install":
-        await api.installEmulator(command.id);
-        return ui.toast.show(`Actualizando ${command.name}… puedes seguir usando Orbital.`);
-      case "emulator-menu":
-        return openMenu(emulatorMenu(command.emulator), nested(context));
-      case "eden-build": // cuál versión de Eden baja el actualizador; luego, instalarla ya o después
-        applySettings(await api.setSettings({ eden_build: command.value }));
-        sound.play("select");
-        return openMenu(edenBuildMenu(command), nested(context));
-      case "emulator-install-forced":
-        ui.sheet.close();
-        await api.installEmulatorForced(command.id);
-        return ui.toast.show(`Instalando ${command.name}… puedes seguir usando Orbital.`);
-      case "emulator-install-new":
-        await api.installNewEmulator(command.id);
-        return ui.toast.show(`Instalando ${command.name}… puedes seguir usando Orbital.`);
-      case "emulator-rollback":
-        await api.rollbackEmulator(command.id);
-        return ui.toast.show(`Regresando ${command.name} a la versión anterior…`);
-      case "quick-set": { // cambia y se queda en el panel, en la misma opción
-        const q = await api.setQuick(command.changes);
-        sound.play("move");
-        const music = await api.music().catch(() => null);
-        if (stillThere(context)) ui.sheet.open(quickMenu(q, { running: state.running, music, legion: state.legion === true }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
-        return renderHints();
-      }
-      case "captures":
-        state.captures = (await api.captures()).items;
-        return openMenu(capturesMenu(state.captures), nested(context));
       case "section":
         sound.play("select");
         return goToSection(command.id);
-      case "alexa-menu":
-        state.voiceGuide ??= await api.voiceCommands().catch(() => null);
-        return openMenu(alexaMenu(state.voiceGuide), nested(context));
-      case "voice-group": {
-        const group = state.voiceGuide?.groups?.[command.index];
-        return group ? openMenu(voiceGroupMenu(group), nested(context)) : undefined;
-      }
-      case "voice-help":
-        return openMenu(voiceHelpMenu(), nested(context));
       case "view-capture":
         sound.play("open");
         captureFrom = context ? { options: { stack: context.stack }, first: context.index - command.index } : null;
         ui.viewer.open(state.captures || [], command.index);
         return renderHints();
-      case "diagnostics":
-        return openMenu(diagnosticsMenu(await api.diagnostics()), nested(context));
       case "stremio-login":
         sound.play("open");
         loginFrom = { context };
         ui.login.open();
         return renderHints();
-      case "stremio-account":
-        return openMenu(stremioAccountMenu(), nested(context));
-      case "stremio-logout":
-        await api.stremioLogout();
-        state.stremioLinked = false;
-        ui.toast.show("Stremio desconectado");
-        return loadLibrary();
       case "trakt-link": // un código para escribir en trakt.tv/activate (el aviso llega por SSE)
         sound.play("open");
         traktFrom = { context };
@@ -1904,61 +1655,19 @@ async function runCommand(command, context = null) {
         loginFrom = { context };
         ui.login.open(keysForm(command.service));
         return renderHints();
-      case "keys-menu":
-        return openMenu(keysMenu(command.service), nested(context));
       case "keys-remove": {
         const status = command.service === "onedrive" ? await api.onedriveClient("")
           : await api.forYouKeys(command.service, KEY_FORMS[command.service].fields.map(() => ""));
         loginFrom = { context };
         return keysSaved(KEY_FORMS[command.service], status, { removed: true });
       }
-      case "trakt-account":
-        return openMenu(traktAccountMenu(), nested(context));
       case "onedrive-link": // un código para microsoft.com/link (el aviso llega por SSE)
         sound.play("open");
         traktFrom = { context };
         ui.traktLink.open("onedrive");
         return renderHints();
-      case "remembered":
-        return openMenu(rememberedMenu((await api.remembered()).titles || []), nested(context));
-      case "remembered-forget": {
-        const res = await api.forgetRemembered(command.id);
-        sound.play("select");
-        ui.toast.show(`${command.title} vuelve a lo de Ajustes`, { tone: "success" });
-        return openMenu(rememberedMenu(res.titles || []), context);
-      }
-      case "onedrive-account":
-        return openMenu(onedriveMenu(await api.onedrive()), nested(context));
-      case "onedrive-folder": { // recorrer tus carpetas para elegir la de tus videos (solo las que tú abres)
-        const res = await api.onedriveFolders(command.path || "");
-        return openMenu(onedriveFolderMenu(res.path || "", res.folders || []), nested(context));
-      }
-      case "onedrive-use": {
-        const status = await api.onedriveFolder(command.path);
-        applySettings({ ...state.settings, onedrive: status });
-        sound.play("select");
-        return ui.toast.show(`Busco tus videos en «${command.path}»`, { tone: "success" });
-      }
-      case "onedrive-scan":
-        await api.onedriveScan();
-        return ui.toast.show("Buscando lo nuevo en tu OneDrive…");
-      case "onedrive-unlink":
-        applySettings({ ...state.settings, onedrive: await api.onedriveUnlink() });
-        ui.toast.show("OneDrive desconectado");
-        return loadCuration();
-      case "trakt-unlink":
-        await api.traktUnlink();
-        ui.toast.show("Trakt desconectado");
-        return ui.foryou.load({ force: true });
-      case "foryou-dismiss":
-        await ui.foryou.dismiss(command.item);
-        sound.play("select");
-        return ui.toast.show("No te lo vuelvo a sugerir", { tone: "success" });
       case "stay":
         if (context && stillThere(context)) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
-        return renderHints();
-      case "save-toggle": // «Guardar en…»: se queda abierta, con la casilla ya cambiada
-        toggleSave(command.where);
         return renderHints();
       case "back": { // «Cancelar» en una pregunta: al menú de antes, donde estabas
         const previous = context?.stack?.at(-1);
