@@ -2986,6 +2986,17 @@
         }
       }
     },
+    "Cerrar sesión de Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out of Stremio"
+          }
+        }
+      }
+    },
     "Certified Fresh": {
       "extractionState": "manual",
       "localizations": {
@@ -3737,6 +3748,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connect your Orbital in Settings (the address and the token)."
+          }
+        }
+      }
+    },
+    "Conecta tu cuenta de Stremio como respaldo: lo que veas también se guarda ahí, como copia.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your Stremio account as a backup: what you watch is also saved there, as a copy."
           }
         }
       }
@@ -9220,6 +9242,17 @@
         }
       }
     },
+    "Lo que ves también se guarda ahí, como copia.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watch is also saved there, as a copy."
+          }
+        }
+      }
+    },
     "Lo que viste": {
       "extractionState": "manual",
       "localizations": {
@@ -9260,6 +9293,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Yours"
+          }
+        }
+      }
+    },
+    "Lo tuyo se queda en el iPhone y en Trakt; Stremio deja de recibir la copia.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your stuff stays on the iPad and on Trakt; Stremio stops getting the copy."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your stuff stays on the iPhone and on Trakt; Stremio stops getting the copy."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your stuff stays on the Mac and on Trakt; Stremio stops getting the copy."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your stuff stays on the iPhone and on Trakt; Stremio stops getting the copy."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo tuyo se queda en el iPad y en Trakt; Stremio deja de recibir la copia."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo tuyo se queda en el iPhone y en Trakt; Stremio deja de recibir la copia."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo tuyo se queda en la Mac y en Trakt; Stremio deja de recibir la copia."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo tuyo se queda en el iPhone y en Trakt; Stremio deja de recibir la copia."
+                }
+              }
+            }
           }
         }
       }
@@ -11137,7 +11235,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I couldn't change My list"
+            "value": "I couldn't change My List"
           }
         }
       }
@@ -15067,6 +15165,17 @@
         }
       }
     },
+    "Sin cuentas conectadas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No accounts connected"
+          }
+        }
+      }
+    },
     "Sin ella no llegan tus recomendaciones": {
       "extractionState": "manual",
       "localizations": {
@@ -15480,6 +15589,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stremio answered HTTP %@"
+          }
+        }
+      }
+    },
+    "Stremio · respaldo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stremio · backup"
           }
         }
       }
