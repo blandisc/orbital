@@ -252,7 +252,6 @@ struct PlayerScreen: View {
                     }
                 }
                 .frame(width: rect.width, height: rect.height)
-                .clipped()   // un video en «Recortar» nunca se dibuja fuera de su lugar (bajo el panel de la derecha)
                 // Al arrastrarlo solo se nota con una sombra. Antes además se encogía y redondeaba: al soltar, el motor se quedaba con
                 // el cuadro de la animación y el video brincaba hacia arriba, cortado bajo el reloj.
                 .shadow(color: movingVideo ? DS.scrimStrong : .clear, radius: DS.PlayerPanel.liftShadow)
