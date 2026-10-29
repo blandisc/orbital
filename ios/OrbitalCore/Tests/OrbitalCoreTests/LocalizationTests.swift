@@ -15,11 +15,26 @@ final class LocalizationTests: XCTestCase {
             let regex = try! NSRegularExpression(pattern: "%(lld|@)")
             return regex.matches(in: s, range: NSRange(s.startIndex..., in: s)).map { String(s[Range($0.range, in: s)!]) }
         }
+        /// El texto plano o, si varía por aparato (iPhone, iPad, Mac), cada una de sus variaciones.
+        func values(_ localization: JSON?) -> [String: String] {
+            if let plain = localization?["stringUnit"]?["value"]?.string { return ["": plain] }
+            let devices = localization?["variations"]?["device"]?.object ?? [:]
+            return devices.compactMapValues { $0["stringUnit"]?["value"]?.string }
+        }
         for (key, entry) in strings {
-            let english = entry["localizations"]?["en"]?["stringUnit"]?["value"]?.string
-            XCTAssertNotNil(english, "falta la traducción de «\(key)»")
-            XCTAssertFalse(english?.isEmpty ?? true, "«\(key)» está vacía en inglés")
-            XCTAssertEqual(placeholders(english ?? "").sorted(), placeholders(key).sorted(), "los marcadores de «\(key)» no coinciden con su traducción")
+            let english = values(entry["localizations"]?["en"])
+            XCTAssertFalse(english.isEmpty, "falta la traducción de «\(key)»")
+            for (device, text) in english {
+                XCTAssertFalse(text.isEmpty, "«\(key)» está vacía en inglés \(device)")
+                XCTAssertEqual(placeholders(text).sorted(), placeholders(key).sorted(), "los marcadores de «\(key)» (\(device)) no coinciden con su traducción")
+            }
+            // Las variaciones por aparato (`scripts/ios_strings.py`): en el iPhone se lee el texto de siempre.
+            let spanish = values(entry["localizations"]?["es"])
+            if !spanish.isEmpty {
+                XCTAssertEqual(spanish["iphone"], key, "«\(key)»: en el iPhone debe leerse igual")
+                XCTAssertEqual(Set(spanish.keys), Set(english.keys), "«\(key)»: los mismos aparatos en español e inglés")
+                for (device, text) in spanish { XCTAssertEqual(placeholders(text).sorted(), placeholders(key).sorted(), "«\(key)» (\(device))") }
+            }
         }
     }
 }

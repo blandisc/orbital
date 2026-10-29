@@ -63,7 +63,7 @@ struct RemoteSheet: View {
             set: { large = $0 == .height(fullHeight) }))
         .onChange(of: model.now == nil) { _, idle in if idle { large = true } }
         .presentationDragIndicator(.visible)
-        .fittedFormSizing()   // iPad y Mac: tarjeta del alto del control (ahí abre siempre completo: `MainTabs`)
+        .fittedFormSizing(idealHeight: large ? fullHeight : compactHeight)   // iPad y Mac: tarjeta del alto del control (ahí abre siempre completo: `MainTabs`)
         .presentationBackgroundInteraction(.disabled)
         // Vidrio en las dos alturas (la estirada no llega a la altura completa, que iOS volvería opaca).
         .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }

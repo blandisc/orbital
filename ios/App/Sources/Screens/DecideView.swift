@@ -44,7 +44,7 @@ struct DecideView: View {
                 }
         }
         .presentationDetents(path.isEmpty ? [.height(quickHeight)] : [.large])
-        .fittedFormSizing()
+        .fittedFormSizing(idealHeight: path.isEmpty ? quickHeight : WindowMetrics.size.height * DS.Remote.maxShare)
         .presentationDragIndicator(.visible)
         .animation(DS.Motion.base(reduceMotion), value: m.pick?.imdb)
         .task {

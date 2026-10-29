@@ -19,6 +19,9 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Ir": "Go",
+    "Control de la TV": "TV remote",
+    "Cerrar el reproductor": "Close player",
     # Favoritos de Trakt: el corazón de la ficha y su fila en Inicio.
     "Quitar de favoritos": "Remove from favorites",
     "Agregar a favoritos": "Add to favorites",
@@ -745,7 +748,7 @@ def used_literals() -> dict[str, str]:
     return found
 
 
-UI_CALL = r'(Text|Button|Label|Section|Toggle|Picker|TextField|SecureField|Tab|navigationTitle|secondary|DSChip|DSBadge|DSNotice|DSSectionHead|DSIconButton|LabeledContent|DisclosureGroup)\(\s*(text:\s*|title:\s*)?"{}"'
+UI_CALL = r'(Text|Button|CommandMenu|Label|Section|Toggle|Picker|TextField|SecureField|Tab|navigationTitle|secondary|DSChip|DSBadge|DSNotice|DSSectionHead|DSIconButton|LabeledContent|DisclosureGroup)\(\s*(text:\s*|title:\s*)?"{}"'
 
 
 def ui_word(word: str) -> bool:
@@ -755,10 +758,41 @@ def ui_word(word: str) -> bool:
     return any(pattern.search(Path(f).read_text(encoding="utf-8")) for f in files)
 
 
+# El aparato en los textos: la misma app corre en iPhone, iPad y Mac («Diseñada para iPad»). Un texto que dice «iPhone»
+# lleva una variación por aparato del catálogo (Apple elige la del aparato) y en el iPhone se lee igual que siempre.
+# No se tocan los que nombran algo literal: el menú «Ajustes › iPhone» de la TV y la frase de voz «… en mi iPhone».
+DEVICE_LITERAL = ("› iPhone", "mi iPhone")
+MAC_ES = [("del iPhone", "de la Mac"), ("al iPhone", "a la Mac"), ("este iPhone", "esta Mac"), ("El iPhone", "La Mac"),
+          ("el iPhone", "la Mac"), ("iPhone", "Mac")]
+
+
+def unit(value: str) -> dict:
+    return {"stringUnit": {"state": "translated", "value": value}}
+
+
+def by_device(text: str, ipad: str, mac: str) -> dict:
+    return {"variations": {"device": {"iphone": unit(text), "ipad": unit(ipad), "mac": unit(mac), "other": unit(text)}}}
+
+
+def mac_es(text: str) -> str:
+    for old, new in MAC_ES:
+        text = text.replace(old, new)
+    return text
+
+
+def varies_by_device(key: str) -> bool:
+    return "iPhone" in key and not any(literal in key for literal in DEVICE_LITERAL)
+
+
 def build() -> dict:
     strings = {}
     for key, english in sorted(TRANSLATIONS.items()):
-        strings[key] = {"extractionState": "manual", "localizations": {"en": {"stringUnit": {"state": "translated", "value": english}}}}
+        if varies_by_device(key):
+            localizations = {"es": by_device(key, key.replace("iPhone", "iPad"), mac_es(key)),
+                             "en": by_device(english, english.replace("iPhone", "iPad"), english.replace("iPhone", "Mac"))}
+        else:
+            localizations = {"en": unit(english)}
+        strings[key] = {"extractionState": "manual", "localizations": localizations}
     return {"sourceLanguage": "es", "strings": strings, "version": "1.0"}
 
 

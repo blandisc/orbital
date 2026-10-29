@@ -64,7 +64,12 @@ extension PlayerScreen {
         await env.handOffToTV(current, position: position, choice: choice)
     }
 
-    var landscape: Bool { verticalSize == .compact }
+    /// En el iPhone acostado la clase vertical es compacta. En el iPad y la Mac (ancho regular) siempre es regular, así que
+    /// ahí cuenta la forma de la ventana: más ancha que alta es horizontal (video a lo ancho y panel a la derecha). Un iPhone
+    /// de pie nunca tiene ancho regular: ahí no cambia nada, ni a medio giro.
+    var landscape: Bool {
+        verticalSize == .compact || (horizontalSize == .regular && WindowMetrics.size.width > WindowMetrics.size.height)
+    }
 
     /// Dónde va el video. Horizontal: toda la pantalla (o a la izquierda de «Audio y subtítulos»). Vertical: arriba, a todo lo
     /// ancho y en su proporción y de orilla a orilla (no apachurrado), a la altura que lo dejes al arrastrarlo.

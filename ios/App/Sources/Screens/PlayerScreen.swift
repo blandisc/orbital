@@ -80,6 +80,7 @@ struct PlayerScreen: View {
     /// «Descargar» desde el reproductor: si este video (película o episodio) ya está en Descargas (o se está bajando).
     @State var inDownloads = false
     @Environment(\.verticalSizeClass) var verticalSize
+    @Environment(\.horizontalSizeClass) var horizontalSize
     @State var scrubbing: Double?
     /// A dónde se pidió ir y el video todavía no llega.
     @State var pendingSeek: Double?

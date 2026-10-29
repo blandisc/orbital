@@ -841,9 +841,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turn on Orbital notifications in iPhone Settings."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn on Orbital notifications in iPad Settings."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn on Orbital notifications in iPhone Settings."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn on Orbital notifications in Mac Settings."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn on Orbital notifications in iPhone Settings."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Activa los avisos de Orbital en Ajustes del iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Activa los avisos de Orbital en Ajustes del iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Activa los avisos de Orbital en Ajustes de la Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Activa los avisos de Orbital en Ajustes del iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -907,9 +961,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turn them on in iPhone Settings"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn them on in iPad Settings"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn them on in iPhone Settings"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn them on in Mac Settings"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Turn them on in iPhone Settings"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Actívalos en Ajustes del iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Actívalos en Ajustes del iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Actívalos en Ajustes de la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Actívalos en Ajustes del iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -1215,9 +1323,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A code appears to enter on the Trakt page shown. The session belongs to this iPhone only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to enter on the Trakt page shown. The session belongs to this iPad only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to enter on the Trakt page shown. The session belongs to this iPhone only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to enter on the Trakt page shown. The session belongs to this Mac only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to enter on the Trakt page shown. The session belongs to this iPhone only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPad (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de esta Mac (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas."
+                }
+              }
+            }
           }
         }
       }
@@ -1237,9 +1399,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A code appears. Point the iPhone camera at it and tap “Open in Orbital”: it connects, no typing."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears. Point the iPad camera at it and tap “Open in Orbital”: it connects, no typing."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears. Point the iPhone camera at it and tap “Open in Orbital”: it connects, no typing."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears. Point the Mac camera at it and tap “Open in Orbital”: it connects, no typing."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears. Point the iPhone camera at it and tap “Open in Orbital”: it connects, no typing."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código. Apúntale con la cámara del iPad y toca «Abrir en Orbital»: queda conectada, sin escribir nada."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código. Apúntale con la cámara del iPhone y toca «Abrir en Orbital»: queda conectada, sin escribir nada."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código. Apúntale con la cámara de la Mac y toca «Abrir en Orbital»: queda conectada, sin escribir nada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código. Apúntale con la cámara del iPhone y toca «Abrir en Orbital»: queda conectada, sin escribir nada."
+                }
+              }
+            }
           }
         }
       }
@@ -1259,9 +1475,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What you're watching shows up here, on iPhone and on Orbital."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you're watching shows up here, on iPad and on Orbital."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you're watching shows up here, on iPhone and on Orbital."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you're watching shows up here, on Mac and on Orbital."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you're watching shows up here, on iPhone and on Orbital."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aquí aparece lo que vas viendo, en el iPad y en Orbital."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aquí aparece lo que vas viendo, en el iPhone y en Orbital."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aquí aparece lo que vas viendo, en la Mac y en Orbital."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aquí aparece lo que vas viendo, en el iPhone y en Orbital."
+                }
+              }
+            }
           }
         }
       }
@@ -1600,9 +1870,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloading on the iPhone"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading on the iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading on the iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading on the Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading on the iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bajando en el iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bajando en el iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bajando en la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bajando en el iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -2183,9 +2507,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calculated on the iPhone"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Calculated on the iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Calculated on the iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Calculated on the Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Calculated on the iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Calculado en el iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Calculado en el iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Calculado en la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Calculado en el iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -2564,6 +2942,17 @@
         }
       }
     },
+    "Cerrar el reproductor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close player"
+          }
+        }
+      }
+    },
     "Cerrar sesión": {
       "extractionState": "manual",
       "localizations": {
@@ -2744,9 +3133,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Match iPhone"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Match iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Match iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Match Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Match iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Como el iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Como el iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Como la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Como el iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -3019,9 +3462,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connect Trakt on this iPhone (Settings › Trakt)."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Connect Trakt on this iPad (Settings › Trakt)."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Connect Trakt on this iPhone (Settings › Trakt)."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Connect Trakt on this Mac (Settings › Trakt)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Connect Trakt on this iPhone (Settings › Trakt)."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conecta Trakt en este iPad (Ajustes › Trakt)."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conecta Trakt en este iPhone (Ajustes › Trakt)."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conecta Trakt en esta Mac (Ajustes › Trakt)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Conecta Trakt en este iPhone (Ajustes › Trakt)."
+                }
+              }
+            }
           }
         }
       }
@@ -3341,6 +3838,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Orbital remote"
+          }
+        }
+      }
+    },
+    "Control de la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV remote"
           }
         }
       }
@@ -4042,9 +4550,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Download on iPhone"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Download on iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Download on iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Download on Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Download on iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descarga en el iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descarga en el iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descarga en la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descarga en el iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -4053,9 +4615,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloads what's on the TV to the iPhone."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloads what's on the TV to the iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloads what's on the TV to the iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloads what's on the TV to the Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloads what's on the TV to the iPhone."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descarga en el iPad lo que se ve en la TV."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descarga en el iPhone lo que se ve en la TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descarga en la Mac lo que se ve en la TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descarga en el iPhone lo que se ve en la TV."
+                }
+              }
+            }
           }
         }
       }
@@ -4130,9 +4746,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloading %@ on the iPhone."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading %@ on the iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading %@ on the iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading %@ on the Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading %@ on the iPhone."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descargando %@ en el iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descargando %@ en el iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descargando %@ en la Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descargando %@ en el iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -4845,9 +5515,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The iPhone has to be on the same network as the console (or on Tailscale), with Orbital open on the TV."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The iPad has to be on the same network as the console (or on Tailscale), with Orbital open on the TV."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The iPhone has to be on the same network as the console (or on Tailscale), with Orbital open on the TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The Mac has to be on the same network as the console (or on Tailscale), with Orbital open on the TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The iPhone has to be on the same network as the console (or on Tailscale), with Orbital open on the TV."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El iPad tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El iPhone tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La Mac tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El iPhone tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV."
+                }
+              }
+            }
           }
         }
       }
@@ -4856,9 +5580,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Language, version and timing are remembered for each show or movie. The iPhone style is set in Settings › Accessibility › Subtitles."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Language, version and timing are remembered for each show or movie. The iPad style is set in Settings › Accessibility › Subtitles."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Language, version and timing are remembered for each show or movie. The iPhone style is set in Settings › Accessibility › Subtitles."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Language, version and timing are remembered for each show or movie. The Mac style is set in Settings › Accessibility › Subtitles."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Language, version and timing are remembered for each show or movie. The iPhone style is set in Settings › Accessibility › Subtitles."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPad se cambia en Ajustes › Accesibilidad › Subtítulos."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo de la Mac se cambia en Ajustes › Accesibilidad › Subtítulos."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos."
+                }
+              }
+            }
           }
         }
       }
@@ -5013,6 +5791,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose the source…"
+          }
+        }
+      }
+    },
+    "Elegir otra versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose another version"
           }
         }
       }
@@ -5252,9 +6041,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "On iPhone"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -5263,9 +6106,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "On the iPhone, to watch offline"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the iPad, to watch offline"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the iPhone, to watch offline"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the Mac, to watch offline"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the iPhone, to watch offline"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPad, para ver sin conexión"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPhone, para ver sin conexión"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En la Mac, para ver sin conexión"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPhone, para ver sin conexión"
+                }
+              }
+            }
           }
         }
       }
@@ -6330,9 +7227,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Saved on your iPhone: it reaches Trakt as soon as there's a connection."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on your iPad: it reaches Trakt as soon as there's a connection."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on your iPhone: it reaches Trakt as soon as there's a connection."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on your Mac: it reaches Trakt as soon as there's a connection."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on your iPhone: it reaches Trakt as soon as there's a connection."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Guardado en el iPad: llega a Trakt en cuanto haya conexión."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Guardado en la Mac: llega a Trakt en cuanto haya conexión."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Guardado en el iPhone: llega a Trakt en cuanto haya conexión."
+                }
+              }
+            }
           }
         }
       }
@@ -6832,6 +7783,17 @@
         }
       }
     },
+    "Ir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go"
+          }
+        }
+      }
+    },
     "Ir a una sección": {
       "extractionState": "manual",
       "localizations": {
@@ -7023,9 +7985,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Best for iPhone: balanced quality and size"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Best for iPad: balanced quality and size"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Best for iPhone: balanced quality and size"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Best for Mac: balanced quality and size"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Best for iPhone: balanced quality and size"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La mejor para el iPad: calidad y tamaño en equilibrio"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La mejor para el iPhone: calidad y tamaño en equilibrio"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La mejor para la Mac: calidad y tamaño en equilibrio"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La mejor para el iPhone: calidad y tamaño en equilibrio"
+                }
+              }
+            }
           }
         }
       }
@@ -7111,9 +8127,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The resolution. 4K shines on the TV; on iPhone, 1080p already looks sharp."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The resolution. 4K shines on the TV; on iPad, 1080p already looks sharp."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The resolution. 4K shines on the TV; on iPhone, 1080p already looks sharp."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The resolution. 4K shines on the TV; on Mac, 1080p already looks sharp."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The resolution. 4K shines on the TV; on iPhone, 1080p already looks sharp."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La resolución. 4K se luce en la TV; en el iPad, 1080p ya se ve nítido."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La resolución. 4K se luce en la TV; en el iPhone, 1080p ya se ve nítido."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La resolución. 4K se luce en la TV; en la Mac, 1080p ya se ve nítido."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La resolución. 4K se luce en la TV; en el iPhone, 1080p ya se ve nítido."
+                }
+              }
+            }
           }
         }
       }
@@ -8464,9 +9534,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "My media is cleared. What you already downloaded to the iPhone stays."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "My media is cleared. What you already downloaded to the iPad stays."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "My media is cleared. What you already downloaded to the iPhone stays."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "My media is cleared. What you already downloaded to the Mac stays."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "My media is cleared. What you already downloaded to the iPhone stays."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mi media se vacía. Lo que ya bajaste al iPad se queda."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mi media se vacía. Lo que ya bajaste al iPhone se queda."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mi media se vacía. Lo que ya bajaste a la Mac se queda."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mi media se vacía. Lo que ya bajaste al iPhone se queda."
+                }
+              }
+            }
           }
         }
       }
@@ -8706,9 +9830,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "More contrast and color. DV is Dolby Vision: iPhone plays it."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "More contrast and color. DV is Dolby Vision: iPad plays it."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "More contrast and color. DV is Dolby Vision: iPhone plays it."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "More contrast and color. DV is Dolby Vision: Mac plays it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "More contrast and color. DV is Dolby Vision: iPhone plays it."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Más contraste y color. DV es Dolby Vision: el iPad lo reproduce."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Más contraste y color. DV es Dolby Vision: el iPhone lo reproduce."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Más contraste y color. DV es Dolby Vision: la Mac lo reproduce."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Más contraste y color. DV es Dolby Vision: el iPhone lo reproduce."
+                }
+              }
+            }
           }
         }
       }
@@ -9113,9 +10291,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "It doesn't fit on the iPhone"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It doesn't fit on the iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It doesn't fit on the iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It doesn't fit on the Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It doesn't fit on the iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No cabe en el iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No cabe en el iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No cabe en la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No cabe en el iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -12457,9 +13689,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Make sure the console is on and on the same network as your iPhone."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Make sure the console is on and on the same network as your iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Make sure the console is on and on the same network as your iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Make sure the console is on and on the same network as your Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Make sure the console is on and on the same network as your iPhone."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Revisa que la consola esté prendida y en la misma red que tu iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Revisa que la consola esté prendida y en la misma red que tu iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Revisa que la consola esté prendida y en la misma red que tu Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Revisa que la consola esté prendida y en la misma red que tu iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -12721,9 +14007,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pending uploads and your recent searches are deleted. Your downloads stay on the iPhone."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Pending uploads and your recent searches are deleted. Your downloads stay on the iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Pending uploads and your recent searches are deleted. Your downloads stay on the iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Pending uploads and your recent searches are deleted. Your downloads stay on the Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Pending uploads and your recent searches are deleted. Your downloads stay on the iPhone."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en el iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en el iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en la Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en el iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -13645,9 +14985,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Only on the iPhone"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only on the iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only on the iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only on the Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only on the iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo en el iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo en el iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo en la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo en el iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -14613,9 +16007,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nothing yet: it shows up once you watch something on the iPhone."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nothing yet: it shows up once you watch something on the iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nothing yet: it shows up once you watch something on the iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nothing yet: it shows up once you watch something on the Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nothing yet: it shows up once you watch something on the iPhone."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Todavía nada: aparece cuando veas algo en el iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Todavía nada: aparece cuando veas algo en el iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Todavía nada: aparece cuando veas algo en la Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Todavía nada: aparece cuando veas algo en el iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -15130,9 +16578,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your Orbital no longer recognizes this iPhone"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Orbital no longer recognizes this iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Orbital no longer recognizes this iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Orbital no longer recognizes this Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Orbital no longer recognizes this iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Orbital ya no reconoce este iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Orbital ya no reconoce este iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Orbital ya no reconoce esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Orbital ya no reconoce este iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -15174,9 +16676,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your password isn't stored: only the session key, in your iPhone's Keychain."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your password isn't stored: only the session key, in your iPad's Keychain."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your password isn't stored: only the session key, in your iPhone's Keychain."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your password isn't stored: only the session key, in your Mac's Keychain."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your password isn't stored: only the session key, in your iPhone's Keychain."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -15350,9 +16906,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your OneDrive movies and shows, here: they play instantly and download to the iPhone."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your OneDrive movies and shows, here: they play instantly and download to the iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your OneDrive movies and shows, here: they play instantly and download to the iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your OneDrive movies and shows, here: they play instantly and download to the Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your OneDrive movies and shows, here: they play instantly and download to the iPhone."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tus películas y series de OneDrive, aquí: se ven al instante y se bajan al iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tus películas y series de OneDrive, aquí: se ven al instante y se bajan al iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tus películas y series de OneDrive, aquí: se ven al instante y se bajan a la Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tus películas y series de OneDrive, aquí: se ven al instante y se bajan al iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -15361,9 +16971,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your movies and shows appear in Downloads › My media: they play instantly and download to the iPhone."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your movies and shows appear in Downloads › My media: they play instantly and download to the iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your movies and shows appear in Downloads › My media: they play instantly and download to the iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your movies and shows appear in Downloads › My media: they play instantly and download to the Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your movies and shows appear in Downloads › My media: they play instantly and download to the iPhone."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tus películas y series salen en Descargas › Mi media: se ven al instante y se bajan al iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tus películas y series salen en Descargas › Mi media: se ven al instante y se bajan al iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tus películas y series salen en Descargas › Mi media: se ven al instante y se bajan a la Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tus películas y series salen en Descargas › Mi media: se ven al instante y se bajan al iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -15570,9 +17234,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Use the iPhone style"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use the iPad style"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use the iPhone style"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use the Mac style"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use the iPhone style"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usar el estilo del iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usar el estilo del iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usar el estilo de la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usar el estilo del iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -16758,9 +18476,63 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "“%@” doesn't fit on the iPhone"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“%@” doesn't fit on the iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“%@” doesn't fit on the iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“%@” doesn't fit on the Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“%@” doesn't fit on the iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«%@» no cabe en el iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«%@» no cabe en el iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«%@» no cabe en la Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«%@» no cabe en el iPhone"
+                }
+              }
+            }
           }
         }
       }

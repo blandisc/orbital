@@ -225,7 +225,7 @@ struct VersionCard: View {
         // margen dejaba espacio muerto al pie de la tarjeta. El margen de abajo ya la separa de la barra.
         .ignoresSafeArea(.container, edges: .bottom)
         .presentationDetents([.height(max(DS.Size.touchTarget * 4, contentHeight - windowBottomInset))])
-        .fittedFormSizing()
+        .fittedFormSizing(idealHeight: contentHeight)
         .presentationDragIndicator(.visible)
     }
 
