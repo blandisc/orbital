@@ -2,6 +2,7 @@
    Ocupa el espacio libre de la retícula y apila su contenido ABAJO: así los botones
    quedan siempre a la misma altura aunque el título tenga una o dos líneas. */
 .hero {
+  grid-row: 2; grid-column: 1; /* carril fijo: estacionado (base.css · .is-parked) se encima, no empuja */
   display: flex; flex-direction: column; justify-content: flex-end;
   min-height: 0; padding: var(--space-4) var(--page-gutter) var(--space-5);
   overflow: hidden; /* si no cabe, se recorta aquí: nunca sube por encima de la barra superior */

@@ -523,6 +523,11 @@ function altLabel(item) {
 /** Para ti, Inicio y Juegos tienen su propia vista; las demás secciones, héroe + filas. */
 function renderView() {
   document.body.dataset.view = inForYou() ? "foryou" : inTv() ? "tv" : inHome() ? "home" : inGames() ? "games" : "rows";
+  // El héroe y las filas (Películas y series) se estacionan fuera de su sección: conservan su layout y volver a ellas ya no
+  // lo arma desde cero dentro del botón (24 ms con 1.253 objetos). base.css · .is-parked
+  const rows = document.body.dataset.view === "rows";
+  ui.hero.el.classList.toggle("is-parked", !rows);
+  ui.shelf.el.classList.toggle("is-parked", !rows);
   if (inForYou()) ui.foryou.show();
   else ui.foryou.hide();
   if (inTv()) ui.tv.show();
@@ -793,7 +798,8 @@ function goToSection(id, direction = 0) {
       : state.downloaded?.size ? "Sin internet: tus descargas se ven igual; lo demás vuelve con la conexión"
         : "Sin internet: ves lo último que se guardó; para ver algo necesitas conexión (o descárgalo antes)");
   }
-  ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Nada por aquí todavía", emptyText: "" }));
+  // Las filas solo se arman donde se ven (Películas y series); en Inicio, Juegos, Para ti y TV quedan estacionadas.
+  if (document.body.dataset.view === "rows") ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Nada por aquí todavía", emptyText: "" }));
   const saved = state.sectionFocus[id] || {};
   const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
   state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo
@@ -826,6 +832,7 @@ function stepSection(delta) {
 let libraryRetry = 0;
 
 // ---------------------------------------------------------------- arranque y regreso
+sound.warm(); // abrir el audio cuesta ~200 ms: mientras se ve la entrada, no en el primer botón
 const boot = createBoot({ state, applySettings: (settings) => applySettings(settings), openMenu: (menu) => openMenu(menu),
   busy: () => ui.launch.visible || ui.sheet.isOpen || !!topOverlay() });
 
@@ -852,11 +859,9 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     state.rows = sectionRows(state.allRows, state.section);
     renderSections();
     state.hidden = data.hidden || 0;
-    ui.shelf.setRows(state.rows, {
-      emptyTitle: state.section === "media" ? emptyFor("media").emptyTitle : "Aún no encontré juegos",
-      emptyText: state.section === "media" ? emptyFor("media").emptyText : "Instala Steam o pon tus emuladores en Descargas, el Escritorio o C:\\Emuladores, y abre ☰ → Actualizar biblioteca.",
-      popId: state.popId,
-    });
+    // Las filas solo se ven en Películas y series; desde otra sección se arman de antemano, estacionadas (shelf.prepare).
+    if (state.section === "media") ui.shelf.setRows(state.rows, { ...emptyFor("media"), popId: state.popId });
+    else ui.shelf.prepare(sectionRows(state.allRows, "media"));
     state.popId = null;
     if (!state.libraryLoaded) {
       // Los estantes de Películas y series (Top 10, plataformas, tus listas): al entrar ahí o un rato después de abrir,
@@ -1384,7 +1389,7 @@ function applyCuration(rows) {
   curated = rows;
   if (!state.allRows) return;
   state.allRows = [...state.allRows.filter((row) => !row.id.startsWith("curated:")), ...rows];
-  if (state.section !== "media") return;
+  if (state.section !== "media") return ui.shelf.prepare(sectionRows(state.allRows, "media")); // listas para cuando entres
   const rowId = state.rows[state.focus.r]?.id;
   const itemId = current()?.id;
   state.rows = sectionRows(state.allRows, state.section);

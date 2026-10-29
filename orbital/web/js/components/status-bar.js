@@ -120,10 +120,11 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     chasing = requestAnimationFrame(chase);
   }
   function placePill(travel) {
-    const t = target();
-    if (!t) { pill.hidden = true; return; }
+    if (!tabs.querySelector(".status-bar__tab--active")) { pill.hidden = true; return; }
     pill.hidden = false;
     const still = reducedMotion();
+    // Con viaje no se mide aquí: la sección nueva acaba de cambiar todo y medir ya obligaba a calcular la página entera
+    // dentro del botón (118 ms al entrar a Para ti). La persecución mide en el siguiente cuadro, cuando se calcula de todos modos.
     if (travel && edges && !still) {
       if (!chasing) { last = performance.now(); chasing = requestAnimationFrame(chase); }
       // Seguro: si la ventana deja de pintar a medio viaje (tapada, minimizada), la píldora no se queda a medias.
@@ -132,6 +133,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
       return;
     }
     if (chasing) return; // va viajando: la persecución ya sigue a la pestaña (también si cambia de tamaño)
+    const t = target();
     edges = { l: t.l, r: t.r };
     pill.style.top = `${t.top}px`;
     pill.style.height = `${t.h}px`;

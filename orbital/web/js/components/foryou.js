@@ -23,14 +23,14 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
     if (item?.key) detailTimer = setTimeout(() => fetchDetails(item), 250);
   };
   const mosaic = createForYouMosaic({ onFocus: (item) => focused(item), onPick: (item) => activate(item), covered });
-  const el = h("section", { class: "foryou", hidden: true, "aria-label": "Para ti" }, h("div", { class: "foryou__stage" }, mosaic.el), notice);
+  const el = h("section", { class: "foryou is-parked", "aria-label": "Para ti" }, h("div", { class: "foryou__stage" }, mosaic.el), notice);
 
   let data = null;
   let loading = null;
   let loads = 0;
 
   function paint() {
-    if (el.hidden) return;
+    if (el.classList.contains("is-parked")) return; // estacionada (oculta): el mosaico no arranca
     mosaic.start();
     focused(mosaic.current);
   }
@@ -117,8 +117,8 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
 
   return {
     el, load, handle, hints, dismiss,
-    show: () => { el.hidden = false; if (!data) load(); paint(); },
-    hide: () => { mosaic.stop(); el.hidden = true; },
+    show: () => { el.classList.remove("is-parked"); if (!data) load(); paint(); },
+    hide: () => { mosaic.stop(); el.classList.add("is-parked"); }, // estacionada, no hidden: conserva su layout (base.css)
     setGlyphs: () => paint(),
     wake: () => mosaic.wake(),
     /** Protector de pantalla: el mosaico (ya es lo único que hay). */
