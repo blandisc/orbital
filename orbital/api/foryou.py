@@ -80,7 +80,7 @@ def router(d: Deps) -> APIRouter:
         wanted = body.lists[:120]
         with ThreadPoolExecutor(max_workers=4, thread_name_prefix="listas") as pool:  # como las 4 colas que tenía la interfaz
             payloads = list(pool.map(safe, wanted))
-        return {"lists": [{"id": ref.id, "kind": ref.kind, **payload} for ref, payload in zip(wanted, payloads)]}
+        return {"lists": [{"id": ref.id, "kind": ref.kind, **payload} for ref, payload in zip(wanted, payloads, strict=True)]}
 
     @r.get("/ratings")
     def ratings(ids: str = "") -> dict:

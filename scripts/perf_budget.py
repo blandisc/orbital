@@ -21,7 +21,9 @@ import statistics
 import subprocess
 import sys
 import time
+import urllib.parse
 import urllib.request
+from typing import Any
 
 REAL = "http://127.0.0.1:8710"
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -96,14 +98,14 @@ def first_lists(base, n=3):
             lists = json.load(res).get("lists", [])
     except (OSError, ValueError):
         return []
-    return [urllib.request.quote(l["id"]) for l in lists if l.get("group") != "games"][:n]
+    return [urllib.parse.quote(l["id"]) for l in lists if l.get("group") != "games"][:n]
 
 
 # ---------------------------------------------------------------- demo
 def demo(url):
     from playwright.sync_api import sync_playwright
 
-    r = {}
+    r: dict[str, Any] = {}
     with sync_playwright() as p:
         browser = p.chromium.launch(channel="msedge", headless=True)
         page = browser.new_page(viewport={"width": 1920, "height": 1080})
@@ -200,7 +202,7 @@ def real(seconds):
     with urllib.request.urlopen(REAL + "/api/status", timeout=5) as res:
         if json.load(res).get("running"):
             sys.exit("Hay algo abierto en la tele: no mido (vuelve a correrlo cuando esté libre).")
-    r = {"api": api_latencies(REAL, first_lists(REAL))}
+    r: dict[str, Any] = {"api": api_latencies(REAL, first_lists(REAL))}
     before = {p["pid"]: p for p in processes()}
     gpu = next((p["pid"] for p in before.values() if p["gpu"]), None)
     samples = []
@@ -253,7 +255,7 @@ def main():
     ap.add_argument("--seconds", type=int, default=60)
     ap.add_argument("--out")
     a = ap.parse_args()
-    r = demo(a.url) if a.mode == "demo" else real(a.seconds)
+    r: dict[str, Any] = demo(a.url) if a.mode == "demo" else real(a.seconds)
     r["presupuesto"] = verdicts(r)
     text = json.dumps(r, indent=1, ensure_ascii=False)
     if a.out:
