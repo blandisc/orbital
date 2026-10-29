@@ -75,7 +75,7 @@ struct TitleLink: View {
     }
 
     private var link: some View {
-        NavigationLink(value: route) {
+        TitleNavigationLink(route: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterCard(title: route.title, poster: route.poster, badge: badge, platformRank: platformRank, bookmarked: bookmarked, rank: rank, progress: progress, width: width)
                     .titleZoomSource(route)

@@ -152,7 +152,7 @@ struct YearView: View {
                     Text("Ese día no viste nada.").recipe(.footnote)
                 } else {
                     ForEach(groups(plays), id: \.imdb) { g in
-                        NavigationLink(value: TitleRoute(kind: g.kind, metaID: g.imdb, title: g.title, poster: String(format: ForYou.metahubPoster, g.imdb))) {
+                        TitleNavigationLink(route: TitleRoute(kind: g.kind, metaID: g.imdb, title: g.title, poster: String(format: ForYou.metahubPoster, g.imdb))) {
                             HStack(spacing: DS.Space.s3) {
                                 PosterView(url: String(format: ForYou.metahubPoster, g.imdb), title: g.title).frame(width: DS.YearMap.dayPoster)
                                 VStack(alignment: .leading, spacing: DS.Space.s1) {

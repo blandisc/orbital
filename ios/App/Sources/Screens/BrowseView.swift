@@ -173,7 +173,7 @@ struct BrowseView: View {
         // El que mejor coincide, en grande (con su arte), como el primer resultado de Apple TV.
         if let top = shown.first, top.metaID.hasPrefix("tt") {
             let route = TitleRoute(kind: top.kind, metaID: top.metaID, title: top.title, poster: top.poster)
-            NavigationLink(value: route) {
+            TitleNavigationLink(route: route) {
                 CoverCard(art: String(format: ForYou.metahubBackground, top.metaID), logo: Artwork.logoURL(metaID: top.metaID), title: top.title,
                           why: Text("Mejor resultado"), detail: yearAndKind(year: top.year, kind: top.kind), height: DS.Size.searchTopHeight)
             }
@@ -241,7 +241,7 @@ struct BrowseView: View {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                     ForEach(Array(model.popular.prefix(Self.popularCount).enumerated()), id: \.element.id) { index, item in
                         let route = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)
-                        NavigationLink(value: route) {
+                        TitleNavigationLink(route: route) {
                             RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster, tint: tint.colors?.accent).titleZoomSource(route)
                         }
                         .buttonStyle(.plain)

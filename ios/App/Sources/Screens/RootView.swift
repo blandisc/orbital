@@ -165,6 +165,11 @@ struct MainTabs: View {
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
     /// Ventana ancha (iPad, Mac): las hojas son tarjetas sin alturas que estirar, así que el control abre completo.
     @Environment(\.horizontalSizeClass) private var sizeClass
+    /// La ficha abierta en el panel de la derecha (iPad, Mac): tocar una serie o película la abre ahí, sobre lo que veías.
+    @State private var panelTitle: TitleRoute?
+    /// El póster que vuela hacia el panel al abrir una ficha (`PosterFlight`).
+    @State private var flight: PosterFlight?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init() {
         // En modo demo la pestaña pedida (`-demo-tab`) manda siempre, aunque iOS restaure la última que viste
@@ -183,6 +188,7 @@ struct MainTabs: View {
         guard tvNow.model.isConfigured else { return nil }
         return {
             if remoteAsPanel && showRemote { showRemote = false; return }
+            if remoteAsPanel { panelTitle = nil }   // un solo panel a la derecha: el control reemplaza a la ficha
             remoteLarge = tvNow.model.now == nil || sizeClass == .regular; showRemote = true
         }
     }
@@ -190,6 +196,37 @@ struct MainTabs: View {
     /// Ventana ancha (iPad horizontal, Mac): el control va en un panel fijo a la derecha y se navega a la vez. Angosta (iPad
     /// de pie, dos apps en pantalla): la tarjeta. En el iPhone el ancho nunca es regular: la hoja de siempre.
     private var remoteAsPanel: Bool { sizeClass == .regular && WindowMetrics.size.width >= DS.Remote.panelWindowWidth }
+
+    /// La ficha como panel a la derecha: con ancho regular (iPad de pie o acostado, Mac). En el iPhone, a pantalla completa.
+    private var titleAsPanel: Bool { sizeClass == .regular }
+
+    /// ¿Hay algo en el panel de la derecha? (El control en ventana ancha o una ficha.)
+    private var sidePanelShown: Binding<Bool> {
+        Binding(get: { (showRemote && remoteAsPanel) || (panelTitle != nil && titleAsPanel) },
+                set: { if !$0 { showRemote = false; panelTitle = nil } })
+    }
+
+    /// El panel de la derecha: la ficha (con el diseño del iPhone) o el control de la TV. Uno a la vez.
+    @ViewBuilder private var sidePanel: some View {
+        Group {
+            if let route = panelTitle, titleAsPanel {
+                TitlePanel(route: route, close: { panelTitle = nil })
+            } else {
+                RemoteSheet(tvNow: tvNow, large: .constant(true), onContinueHere: { now in showRemote = false; openNowPlaying(now) },
+                            close: { showRemote = false })
+            }
+        }
+        .inspectorColumnWidth(min: DS.Remote.panelMin, ideal: DS.Remote.panelIdeal, max: DS.Remote.panelMax)
+    }
+
+    /// Abrir fichas en el panel (iPad, Mac); en el iPhone no existe y navegan a pantalla completa.
+    private var titleOpener: TitlePanelOpener? {
+        titleAsPanel ? TitlePanelOpener { route, frame in
+            showRemote = false
+            launchPosterFlight($flight, route: route, from: frame, reduceMotion: reduceMotion)
+            panelTitle = route
+        } : nil
+    }
 
     var body: some View {
         // Tocar «Buscar» estando ya en Buscar abre el campo con el teclado (TabView avisa aunque la pestaña no cambie).
@@ -210,11 +247,11 @@ struct MainTabs: View {
         .tabViewStyle(.sidebarAdaptable)
         // El control como panel fijo a la derecha en ventana ancha (el inspector de SwiftUI); si la ventana se angosta con
         // el panel abierto, pasa solo a la tarjeta (`remoteAsPanel`).
-        .inspector(isPresented: Binding(get: { showRemote && remoteAsPanel }, set: { if !$0 { showRemote = false } })) {
-            RemoteSheet(tvNow: tvNow, large: .constant(true), onContinueHere: { now in showRemote = false; openNowPlaying(now) },
-                        close: { showRemote = false })
-                .inspectorColumnWidth(min: DS.Remote.panelMin, ideal: DS.Remote.panelIdeal, max: DS.Remote.panelMax)
-        }
+        // y la ficha (iPad, Mac): tocar una serie o película la abre ahí, con el diseño del iPhone. Un solo panel: abrir uno
+        // cierra el otro.
+        .inspector(isPresented: sidePanelShown) { sidePanel }
+        .environment(\.titlePanel, titleOpener)
+        .posterFlight($flight, panelWidth: DS.Remote.panelIdeal)
         // En Buscar iOS no encoge la barra (lleva el campo): ahí se esconde entera al bajar (BrowseView).
         .tabBarMinimizeBehavior(tab == 2 ? .never : .onScrollDown)
         .onChange(of: tab) { _, t in if t == 2 { Perf.begin("stab"); Perf.mark("stab.tap") } }
@@ -289,7 +326,7 @@ struct MainTabs: View {
             ui.openRemote = false
             // Sin tu Orbital conectada (el control del Centro de control abre la app igual): a Ajustes, donde se conecta.
             // Como panel, ⌘R (y el control del Centro de control) lo abre y lo cierra.
-            if tvNow.model.isConfigured { if remoteAsPanel && showRemote { showRemote = false } else { remoteLarge = true; showRemote = true } }
+            if tvNow.model.isConfigured { if remoteAsPanel && showRemote { showRemote = false } else { panelTitle = nil; remoteLarge = true; showRemote = true } }
             else { paths[tab].append(SettingsRoute()) }
         }
         .task {

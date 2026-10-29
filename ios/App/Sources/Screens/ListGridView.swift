@@ -135,7 +135,7 @@ struct PlatformRankingsView: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s5) {
             if items.isEmpty && model.isLoading(ranking: ranking) { ShelfSkeleton() }
             ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
-                NavigationLink(value: s.route) {
+                TitleNavigationLink(route: s.route) {
                     RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: tint)
                         .titleZoomSource(s.route)
                 }

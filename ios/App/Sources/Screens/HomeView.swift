@@ -181,7 +181,7 @@ struct HomeView: View {
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: HomeListRoute.self) { route in homeList(route) }
-        .navigationDestination(item: $openTitle) { TitleView(route: $0) }
+        .openingTitles(item: $openTitle)   // en el iPad y la Mac, en el panel de la derecha
         .task { await reload(ifStale: true) }   // volver de otra pestaña o de una ficha no lo vuelve a pedir todo
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
@@ -422,7 +422,7 @@ struct HomeView: View {
                 LazyHGrid(rows: Array(repeating: GridItem(.fixed(watchRow), spacing: DS.Space.s3), count: model.traktPending.count < 3 ? 1 : 2), spacing: DS.Space.s3) {
                     ForEach(model.traktPending.prefix(DS.Editorial.watchlistInRow)) { s in
                         let facts = [s.year.map(String.init), Vocabulary.genres(s.genres, language: language).first].compactMap { $0 }.joined(separator: " · ")
-                        NavigationLink(value: s.route) {
+                        TitleNavigationLink(route: s.route) {
                             WatchlistCard(title: s.title, poster: s.poster, facts: facts, overview: s.overview).titleZoomSource(s.route)
                         }
                         .buttonStyle(.plain)
@@ -491,7 +491,7 @@ struct HomeView: View {
                         else { Text("Hoy no hay ranking de este servicio.").recipe(.footnote).frame(width: DS.Size.cardMax, alignment: .leading) }
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
-                        NavigationLink(value: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color(service.brand)).titleZoomSource(s.route) }
+                        TitleNavigationLink(route: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color(service.brand)).titleZoomSource(s.route) }
                             .buttonStyle(.plain)
                     }
                 }
@@ -531,7 +531,7 @@ struct HomeView: View {
             }
             .padding(.horizontal, DS.Space.gutter)
             if let today {
-                NavigationLink(value: today.series.route) {
+                TitleNavigationLink(route: today.series.route) {
                     CoverCard(art: today.series.wide, logo: Artwork.logoURL(metaID: today.series.imdb), title: today.series.title,
                               why: airingWhen(today), detail: Text(verbatim: today.episodeLabel(env.services.episodeLabel)))
                 }
@@ -541,7 +541,7 @@ struct HomeView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                         ForEach(rest) { a in
-                            NavigationLink(value: a.series.route) {
+                            TitleNavigationLink(route: a.series.route) {
                                 WideCard(art: a.series.wide, logo: Artwork.logoURL(metaID: a.series.imdb), title: a.series.title, badge: airingWhen(a),
                                          caption: Text(verbatim: "\(a.series.title) · \(a.episodeLabel(env.services.episodeLabel))"))
                             }
@@ -570,7 +570,7 @@ struct HomeView: View {
         return ScrollView {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s4) {
                 ForEach(shown) { item in
-                    NavigationLink(value: route(item)) {
+                    TitleNavigationLink(route: route(item)) {
                         StillCard(title: item.title, art: item.background ?? item.poster, data: continueData(item),
                                   progress: item.progress, width: nil, fallback: item.background == nil ? nil : item.poster)
                     }

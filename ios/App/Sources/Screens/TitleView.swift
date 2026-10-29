@@ -4,7 +4,6 @@ import OrbitalModels
 
 /// La ficha de una película o serie: continuar, guardar (en Mi lista, tu watchlist o tus listas), descargar, temporadas y episodios.
 struct TitleView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let route: TitleRoute
     @Environment(AppEnvironment.self) var env
@@ -39,9 +38,7 @@ struct TitleView: View {
 
     var body: some View {
         let model = observer.model
-        Group {
-            if twoColumns { twoColumnLayout(model) } else { oneColumnLayout(model) }
-        }
+        oneColumnLayout(model)
         #if DEBUG
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazada (capturas del arte a medio recoger)
         #endif
@@ -66,7 +63,7 @@ struct TitleView: View {
         // Recogido el arte, el nombre al centro de la barra, entre ‹ y los botones (como Apple TV): sigues sabiendo qué es. Se
         // dibuja aquí y no como elemento de la barra (en la barra transparente de la ficha el sistema no lo enseñaba).
         .overlay(alignment: .top) {
-            let shown = twoColumns ? 0 : Double(min(1, max(0, (scrolled - heroHeight * DS.TitleAction.titleFrom) / max(heroHeight * DS.TitleAction.titleSpan, 1))))
+            let shown = Double(min(1, max(0, (scrolled - heroHeight * DS.TitleAction.titleFrom) / max(heroHeight * DS.TitleAction.titleSpan, 1))))
             Text(verbatim: model.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
                 .padding(.horizontal, DS.TitleAction.barTitleInset)
                 .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
@@ -123,7 +120,8 @@ struct TitleView: View {
         }
     }
 
-    /// Una columna (iPhone, iPad de pie): el arte arriba y todo debajo, a un ancho de lectura en ventana ancha.
+    /// El arte arriba y todo debajo; en ventana ancha (iPad, Mac), a un ancho de lectura y al centro. Desde Inicio, en el
+    /// iPad y la Mac la ficha se abre en el panel de la derecha (`TitlePanel`), a la medida del iPhone.
     private func oneColumnLayout(_ model: TitleModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -150,32 +148,6 @@ struct TitleView: View {
         }
     }
 
-    /// Dos columnas (iPad acostado, Mac ancha): a la izquierda el arte, los datos y las acciones, siempre a la vista; a la
-    /// derecha lo que se lee (sinopsis, episodios, reparto…), que se recorre solo.
-    private func twoColumnLayout(_ model: TitleModel) -> some View {
-        HStack(alignment: .top, spacing: DS.Space.s6) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: DS.Space.s6) {
-                    hero(model)
-                        .perfTag("title.hero").onAppear { Perf.mark("title.shown") }
-                    VStack(alignment: .leading, spacing: DS.Space.s6) {
-                        facts(model)
-                        actions(model)
-                    }
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
-                    .padding(.horizontal, DS.Space.gutter)
-                }
-                .padding(.bottom, DS.Space.s6)
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            .frame(width: contentWidth)
-            ScrollView {
-                VStack(alignment: .leading, spacing: DS.Space.s6) { readingSections(model) }
-                    .padding(.trailing, DS.Space.gutter).padding(.vertical, DS.Space.s6)
-            }
-        }
-    }
-
     /// Lo que se lee bajo las acciones: avisos, sinopsis, créditos, episodios, la ficha rica y los detalles.
     @ViewBuilder private func readingSections(_ model: TitleModel) -> some View {
         if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
@@ -196,12 +168,6 @@ struct TitleView: View {
         details(model)
     }
 
-    /// ¿Dos columnas? Ancho regular, ventana más ancha que alta y espacio de sobra: el iPad acostado y la Mac. El iPad de
-    /// pie y el iPhone, una.
-    private var twoColumns: Bool {
-        horizontalSize == .regular && viewport.width > viewport.height && viewport.width >= DS.TitleAction.twoColumnWidth
-    }
-
     // MARK: partes
     /// Ancho / alto del arte: el de siempre si cabe; si no, más ancho (más bajito) hasta que las acciones queden sobre la
     /// barra de pestañas. Antes de medir, la proporción fija de los teléfonos bajitos.
@@ -220,15 +186,10 @@ struct TitleView: View {
     }
 
     /// Qué tan desvanecido va lo de arriba (0 con el arte a la vista, 1 ya recogido).
-    private var fade: Double {
-        if twoColumns { return 0 }   // en dos columnas el arte no se recoge: se queda a la izquierda
-        return Double(min(1, max(0, scrolled / max(heroHeight * DS.TitleAction.fadeAt, 1))))
-    }
+    private var fade: Double { Double(min(1, max(0, scrolled / max(heroHeight * DS.TitleAction.fadeAt, 1)))) }
     private var heroHeight: CGFloat { contentWidth > 0 ? contentWidth / heroAspect : 0 }
     /// El ancho de la ficha: el de la ventana, hasta el ancho de lectura (`DS.TitleAction.readableWidth`).
-    private var contentWidth: CGFloat {
-        twoColumns ? min(DS.TitleAction.twoColumnArt, viewport.width * DS.TitleAction.twoColumnShare) : min(viewport.width, DS.TitleAction.readableWidth)
-    }
+    private var contentWidth: CGFloat { min(viewport.width, DS.TitleAction.readableWidth) }
 
     /// Mi lista y En la TV: botones de ícono en la barra de arriba (con su nombre para VoiceOver).
     @ToolbarContentBuilder private func topBar(_ model: TitleModel) -> some ToolbarContent {

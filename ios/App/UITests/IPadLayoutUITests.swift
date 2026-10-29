@@ -68,6 +68,25 @@ final class IPadLayoutUITests: XCTestCase {
         shot("control-h")
     }
 
+    /// Tocar una serie o película abre su ficha en el panel de la derecha (de pie y acostado): lo de atrás sigue a la vista
+    /// y se puede usar, y la ✕ la cierra.
+    func testTitleOpensInTheSidePanel() {
+        for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+            open(["-demo-tab", "2"], orientation)
+            let poster = app.buttons["title-link"].firstMatch
+            XCTAssertTrue(poster.waitForExistence(timeout: 30), "\(orientation.rawValue): no hay pósters en Buscar")
+            poster.tap()
+            let close = app.buttons["title-panel-close"]
+            XCTAssertTrue(close.waitForExistence(timeout: 20), "\(orientation.rawValue): la ficha no abrió en el panel")
+            XCTAssertTrue(app.buttons["title-play"].waitForExistence(timeout: 20), "\(orientation.rawValue): el panel no enseña la ficha")
+            XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Inicio")).firstMatch.isHittable,
+                          "\(orientation.rawValue): con la ficha abierta se sigue navegando")
+            shot("ficha-panel-\(orientation == .portrait ? "v" : "h")")
+            close.tap()
+            XCTAssertFalse(close.waitForExistence(timeout: 3), "\(orientation.rawValue): la ✕ no cierra el panel")
+        }
+    }
+
     /// El control en horizontal es un panel fijo a la derecha (se navega a la vez); de pie, la tarjeta de siempre.
     func testRemoteIsAPanelWhenWideAndACardWhenNarrow() {
         open(["-demo-tv-now", "-demo-open", "remote"], .landscapeLeft)
@@ -90,7 +109,8 @@ final class IPadLayoutUITests: XCTestCase {
         let dir = try XCTUnwrap(ProcessInfo.processInfo.environment["ORBITAL_HANDSHAKE"], "sin ORBITAL_HANDSHAKE")
         let screens: [(String, [String])] = [
             ("inicio", ["-demo-tab", "0"]), ("parati", ["-demo-tab", "1"]), ("mosaico", ["-demo-tab", "1", "-demo-mode", "mosaic"]),
-            ("reproductor-pie", ["-demo-title", "series:tt0386676", "-demo-open", "play"]), ("listas", ["-demo-tab", "1", "-demo-mode", "lists", "-demo-airings"]),
+            ("reproductor-pie", ["-demo-title", "series:tt0386676", "-demo-open", "play"]),
+            ("subtitulos-pie", ["-demo-title", "series:tt0386676", "-demo-open", "play", "-demo-player", "dock"]), ("listas", ["-demo-tab", "1", "-demo-mode", "lists", "-demo-airings"]),
             ("ficha", ["-demo-tmdb", "-demo-title", "series:tt0386676"]), ("buscar", ["-demo-tab", "2"]),
             ("descargas", ["-demo-tab", "3", "-demo-downloads"]), ("control", ["-demo-tv-now", "-demo-open", "remote"]),
             ("decidir", ["-demo-tab", "1", "-demo-open", "decide"]), ("fuentes", ["-demo-title", "series:tt0386676", "-demo-open", "sources"]),
@@ -101,6 +121,7 @@ final class IPadLayoutUITests: XCTestCase {
             open(args, name.hasSuffix("-pie") ? .portrait : .landscapeLeft)
             sleep(name.hasPrefix("reproductor") || name == "decidir" ? 12 : 8)
             if name.hasPrefix("reproductor") { app.tap(); sleep(1) }
+            if name == "subtitulos-pie" { sleep(4) }
             FileManager.default.createFile(atPath: "\(dir)/ready_\(name)", contents: nil)
             for _ in 0..<60 where !FileManager.default.fileExists(atPath: "\(dir)/done_\(name)") { sleep(1) }
         }

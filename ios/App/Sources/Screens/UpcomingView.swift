@@ -121,7 +121,7 @@ struct AiringRow: View {
 
     var body: some View { bodyContent.pointerHover(.highlight) }
     @ViewBuilder private var bodyContent: some View {
-        NavigationLink(value: airing.series.route) {
+        TitleNavigationLink(route: airing.series.route) {
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 ZStack(alignment: .topLeading) {
                     PosterView(url: airing.series.wide, title: airing.series.title, aspect: DS.Poster.stillAspect)
@@ -154,7 +154,7 @@ struct AiringCard: View {
 
     var body: some View { bodyContent.pointerHover(.lift) }
     @ViewBuilder private var bodyContent: some View {
-        NavigationLink(value: airing.series.route) {
+        TitleNavigationLink(route: airing.series.route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterView(url: airing.series.wide, title: airing.series.title, aspect: DS.Poster.stillAspect)
                 Text(verbatim: airing.series.title).font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)

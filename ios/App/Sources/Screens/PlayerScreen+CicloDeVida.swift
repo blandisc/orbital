@@ -67,9 +67,9 @@ extension PlayerScreen {
     /// En el iPhone acostado la clase vertical es compacta. En el iPad y la Mac (ancho regular) siempre es regular, así que
     /// ahí cuenta la forma de la ventana: más ancha que alta es horizontal (video a lo ancho y panel a la derecha). Un iPhone
     /// de pie nunca tiene ancho regular: ahí no cambia nada, ni a medio giro.
-    /// El iPad de pie (ancho regular, ventana más alta que ancha): sobra pantalla bajo el video, así que «Audio y subtítulos»
-    /// (y «Episodios») quedan fijos y a todo lo ancho debajo de los controles, que siguen funcionando. En el iPhone de pie el
-    /// ancho nunca es regular: ahí el panel sigue en el lugar de los controles y se cierra al tocar el video.
+    /// El iPad de pie (ancho regular, ventana más alta que ancha): «Audio y subtítulos» (y «Episodios») se comportan como en
+    /// el iPhone (se abren con su botón, «Listo» o tocar el video los cierra) pero van a todo lo ancho justo bajo el video, que
+    /// no se mueve: sobra pantalla. En el iPhone de pie el ancho nunca es regular: no cambia nada.
     var dockPinned: Bool { horizontalSize == .regular && !landscape && !fillsPortrait && ipod == nil }
 
     var landscape: Bool {

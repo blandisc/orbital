@@ -222,7 +222,7 @@ struct PlayerScreen: View {
             gestureOverlays
             // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
             // Abriendo, la barra de arriba (✕ para salir) siempre se ve: antes un toque la escondía y no había cómo cancelar.
-            let controlsShown = (controlsVisible || model.phase == .preparing) && !padlock.locked && !failed(model) && (!dockState.subtitleDock || dockPinned) && ipod == nil
+            let controlsShown = (controlsVisible || model.phase == .preparing) && !padlock.locked && !failed(model) && !dockState.subtitleDock && ipod == nil
             // Los controles y ±10/botón grande en UN solo bloque con una sola transición: antes eran dos y, si el giro o el
             // ocultamiento caían a la vez, podía quedar el ±10 flotando sin las barras.
             if controlsShown {
@@ -241,7 +241,7 @@ struct PlayerScreen: View {
                 .transition(.opacity)
             }
             // ±10 en las orillas del video, con o sin controles (sin ellos, solo mientras dura el salto del doble toque).
-            if model.phase != .preparing, !padlock.locked, !failed(model), !dockState.subtitleDock || dockPinned, ipod == nil { skipLayer(model, shown: controlsShown) }
+            if model.phase != .preparing, !padlock.locked, !failed(model), !dockState.subtitleDock, ipod == nil { skipLayer(model, shown: controlsShown) }
             // Encima de los controles: en horizontal sobre la barra; en vertical, al pie (o sobre la barra si «Recortar»).
             if speedPillVisible { speedPill.transition(.opacity) }
             // El iPod no se esconde (es el aparato): con la pantalla bloqueada se ve pero no se toca.
@@ -488,13 +488,6 @@ struct PlayerScreen: View {
             followDevice()
         }
         // El teclado y la barra de menús (iPad, Mac): las mismas acciones que los botones; con «Bloquear» no hacen nada.
-        // El iPad de pie: «Audio y subtítulos» abre solo y queda fijo; al acostarlo se cierra (ahí va a la derecha, a pedido).
-        .onChange(of: dockPinned, initial: true) { _, pinned in
-            withAnimation(DS.Motion.base(reduceMotion)) {
-                if pinned, !dockState.subtitleDock { dockState.dockPage = .media; dockState.subtitleDock = true }
-                else if !pinned, dockState.subtitleDock { dockState.subtitleDock = false; dockState.dockPage = .media }
-            }
-        }
         .focusedSceneValue(\.playerCommands, PlayerCommands(
             togglePlay: { if !padlock.locked { userTogglePlay(holder.model) } },
             skip: { forward in if !padlock.locked { skip(holder.model, forward: forward) } },

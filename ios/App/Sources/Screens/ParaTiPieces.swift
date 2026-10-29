@@ -55,7 +55,7 @@ struct ShelfPoster: View {
     var body: some View {
         Group {
             if style == .top10, let rank = suggestion.rank {
-                NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
+                TitleNavigationLink(route: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
             } else {
                 TitleLink(route: suggestion.route, badge: badge.flatMap(badgeText), platformRank: platformRank, bookmarked: inList, rank: style == .platform ? suggestion.rank : nil, width: width,
                           detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))

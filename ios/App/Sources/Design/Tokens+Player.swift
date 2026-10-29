@@ -95,9 +95,6 @@ extension DS {
         static let voiceOverStep: Double = 0.1
         /// Subtítulos rápidos: ancho máximo del panel.
         static let dockWidth: CGFloat = 560
-        /// iPad de pie, panel fijo: lo que se aparta bajo el video para la barra de avance y sus botones antes de medirlos (al
-        /// abrir aún no se han medido).
-        static let pinnedControlsMin: CGFloat = 120
         /// Vertical con «Recortar»: cuánto del alto ocupan los controles abajo (los subtítulos suben por encima).
         static let portraitFillControlsShare: CGFloat = 0.3
         /// El globo del «⋯» entra un poco más chico.

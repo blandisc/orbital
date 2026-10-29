@@ -50,6 +50,16 @@ final class IPhoneUnchangedUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 15), "tocar un género ya no abre su lista")
     }
 
+    /// Tocar un póster abre la ficha a pantalla completa, como siempre (el panel de la derecha es solo del iPad y la Mac).
+    func testAPosterOpensTheTitleFullScreen() {
+        open(["-demo-tab", "2"])
+        let poster = app.buttons["title-link"].firstMatch
+        XCTAssertTrue(poster.waitForExistence(timeout: 30), "no hay pósters en Buscar")
+        poster.tap()
+        XCTAssertTrue(app.buttons["title-play"].waitForExistence(timeout: 20), "la ficha no abrió")
+        XCTAssertFalse(app.buttons["title-panel-close"].exists, "en el iPhone la ficha no va en un panel")
+    }
+
     func testTitleAndSettingsUseTheFullWidth() {
         open(["-demo-tmdb", "-demo-title", "series:tt0386676"])
         let play = app.buttons["title-play"]

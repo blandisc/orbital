@@ -48,8 +48,8 @@ extension PlayerScreen {
                 .padding(DS.Space.s3)
                 .frame(maxHeight: .infinity, alignment: .top)
             } else if dockPinned {
-                // iPad de pie: fijo bajo los controles (que siguen ahí), a todo lo ancho, y el video no se mueve.
-                let top = rect.maxY + DS.PlayerPanel.handleClearance + max(controlsNeed, DS.PlayerPanel.pinnedControlsMin) + DS.Space.s4
+                // iPad de pie: a todo lo ancho, justo bajo el video (que no se mueve). Como en el iPhone, en el lugar de los controles.
+                let top = rect.maxY + DS.Space.s4
                 dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
                     .frame(maxHeight: max(0, geo.size.height - top - DS.Space.s2), alignment: .top)
                     .padding(.horizontal, DS.Space.gutter)

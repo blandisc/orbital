@@ -127,7 +127,7 @@ struct ListsView: View {
                         // En panorámicas (otro formato: se reconoce sin leerla), con la plataforma en la esquina.
                         Shelf(title: Text("Nuevo en tus plataformas"), eyebrow: Text("Episodios de estas semanas y películas recién llegadas")) {
                             ForEach(model.newOnPlatforms) { s in
-                                NavigationLink(value: s.route) {
+                                TitleNavigationLink(route: s.route) {
                                     WideCard(art: s.wide, logo: s.logo, title: s.title, badge: Text(badgeKey(s.reason)),
                                              caption: Text(verbatim: s.title), platform: s.platformName)
                                 }
@@ -196,7 +196,7 @@ struct ListsView: View {
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
 
-        .navigationDestination(item: $openTitle) { TitleView(route: $0) }
+        .openingTitles(item: $openTitle)   // en el iPad y la Mac, en el panel de la derecha
         .navigationDestination(for: PlatformRoute.self) { route in
             if let hub = model.platformHubs.first(where: { $0.brand == route.brand }) { PlatformRankingsView(observer: observer, hub: hub) }
         }
