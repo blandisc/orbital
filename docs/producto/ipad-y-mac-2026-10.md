@@ -81,6 +81,10 @@ umbral de pantalla corta es 700 pt. Un commit por pantalla para revertir solo lo
 | 2.2 Lo que no existe en la Mac | Brillo apagado (`ScreenBrightness`); giro no forzado; Live Activities y botones de volumen no hacen nada ahí (supuesto, sin verificar en la Mac) |
 | 2.3 Descargas de fondo, PiP y voz en la Mac | Pendiente de probar en la Mac real |
 
+| Control de la TV en el iPad | Opción B (29 oct): panel fijo a la derecha en ventana ancha (≥ 1000 pt, ancho regular) con el inspector de SwiftUI; tarjeta en ventana angosta. Página de la decisión: claude.ai/artifact/386cRFMTfgRCvJvEU4tnFw |
+| La Mac sin la consola | `Services(allowsOrbital: false)` en la Mac (`ThisDevice.talksToOrbital`): sin control, «En la TV» ni emparejar; Ajustes sin «Tu Orbital» ni «Voz y Siri» (`OrbitalOffTests`) |
+| Pulido en horizontal | Ficha a 720 pt (`DS.TitleAction.readableWidth`); géneros adaptables (`DS.Poster.genreTileMin`); tamaño mínimo de ventana = iPhone SE (`WindowMetrics.minimum`) |
+
 ### Instalar en el iPad y en la Mac
 
 - **iPad:** en Xcode, `Orbital` → tu iPad → Run (como en el iPhone). Con `CURRENT_PROJECT_VERSION=$(git rev-list --count HEAD)` para que cada instalación tenga su número.
