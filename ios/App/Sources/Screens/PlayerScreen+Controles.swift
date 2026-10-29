@@ -90,11 +90,15 @@ extension PlayerScreen {
                         Spacer()
                         // El nombre sobre la barra y, a su derecha, «Saltar intro» y «Siguiente» (encima de la barra, no a su lado:
                         // antes la barra se encogía al aparecer, con el punto brincando bajo el dedo).
-                        HStack(alignment: .bottom, spacing: DS.Space.s3) {
-                            playerTitle
-                            if offersSkipOrNext(model) { nextEpisode(model); skipIntro(model) }
+                        // Sin separación entre el nombre y la barra: el área de toque de la barra (`scrubHit`) ya deja el aire
+                        // justo arriba de la línea; con el espaciado normal encima quedaba un hueco grande.
+                        VStack(spacing: 0) {
+                            HStack(alignment: .bottom, spacing: DS.Space.s3) {
+                                playerTitle
+                                if offersSkipOrNext(model) { nextEpisode(model); skipIntro(model) }
+                            }
+                            if model.snapshot.duration > 0 { scrubber(model) }
                         }
-                        if model.snapshot.duration > 0 { scrubber(model) }
                     }
                     .padding(DS.Space.s6)
                 }
@@ -123,8 +127,11 @@ extension PlayerScreen {
                     }
                     VStack(spacing: 0) {
                     VStack(spacing: DS.Space.s3) {
-                        playerTitle
-                        if model.snapshot.duration > 0 { scrubber(model) }
+                        // El nombre pegado a la barra (su área de toque ya deja el aire), como en horizontal.
+                        VStack(spacing: 0) {
+                            playerTitle
+                            if model.snapshot.duration > 0 { scrubber(model) }
+                        }
                         // «Siguiente episodio» debajo de la barra: antes iba encima y la empujaba hacia abajo justo al final, quizá
                         // mientras la arrastrabas.
                         if let up = model.upNext, !padlock.locked { upNextCard(model, up) }

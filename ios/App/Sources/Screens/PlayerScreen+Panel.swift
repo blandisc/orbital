@@ -479,6 +479,9 @@ extension PlayerScreen {
                 Text(verbatim: "−\(clock(max(0, duration - shown)))").recipe(.data).monospacedDigit()
             }
             .frame(height: DS.PlayerPanel.scrubTimes)
+            // Los tiempos suben dentro del área de toque de la barra: quedan a la misma distancia de la línea que el nombre de
+            // arriba (antes, con todo el alto del área de toque en medio, se veían despegados).
+            .padding(.top, -DS.Space.s2)
         }
     }
 
