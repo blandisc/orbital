@@ -151,11 +151,12 @@ private struct FocusedFill: View {
             }
         }
         .frame(width: box.width, height: box.height)
-        .task(id: key) {
+        // Con `needed` en el id: el primer cuadro mide el marco en cero y la búsqueda no arrancaba nunca.
+        .task(id: needed ? key : nil) {
             guard needed, point == nil, let source else { return }
             focus = await FocalPoint.find(source, key: key)
         }
-        .task(id: key) {
+        .task(id: needed ? key : nil) {
             guard needed, point == nil else { return }
             try? await Task.sleep(for: DS.Image.focusWait)
             gaveUp = true   // si tarda, al centro (y si lo encuentra después, se corre)
