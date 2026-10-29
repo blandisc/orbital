@@ -1482,6 +1482,17 @@
         }
       }
     },
+    "Aprobadas por la crítica": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Critically acclaimed"
+          }
+        }
+      }
+    },
     "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.": {
       "extractionState": "manual",
       "localizations": {
@@ -2971,6 +2982,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sign out"
+          }
+        }
+      }
+    },
+    "Certified Fresh": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Certified Fresh"
+          }
+        }
+      }
+    },
+    "Certified Fresh recientes · Series Fresh": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent Certified Fresh · Fresh shows"
           }
         }
       }
@@ -7195,6 +7228,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Background"
+          }
+        }
+      }
+    },
+    "Fresh en Rotten Tomatoes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fresh on Rotten Tomatoes"
           }
         }
       }
@@ -14008,6 +14052,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Romance"
+          }
+        }
+      }
+    },
+    "Rotten Tomatoes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotten Tomatoes"
           }
         }
       }

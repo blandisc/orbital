@@ -276,6 +276,13 @@ public actor Trakt {
         return TraktParsing.typed(try await get("/users/me/lists/\(id)/items", [("extended", "full")])?.array)
     }
 
+    /// Los títulos de una lista pública de otra persona (sin tu sesión): las series de «Aprobadas por la crítica».
+    public func publicListItems(user: String, slug: String) async throws -> [TraktEntry] {
+        let safe = { (part: String) in !part.isEmpty && part.range(of: #"^[\w.-]+$"#, options: .regularExpression) != nil }
+        guard safe(user), safe(slug) else { throw TraktError.invalid("Lista inválida") }
+        return TraktParsing.typed(try await get("/users/\(user)/lists/\(slug)/items", auth: false, [("extended", "full")])?.array)
+    }
+
     /// Lo que más se está viendo ahora; con `genres` («science-fiction»), solo de ese género («Por género» en Buscar).
     public func trending(kind: String, limit: Int = 30, genres: String? = nil) async throws -> [TraktEntry] {
         var params = [("limit", String(limit)), ("extended", "full")]

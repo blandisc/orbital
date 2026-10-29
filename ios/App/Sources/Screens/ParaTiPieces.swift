@@ -107,6 +107,7 @@ struct ShelfPoster: View {
     case "recs": return Text("Recomendadas")
     case "trend": return Text("En tendencia")
     case "popular": return Text("Lo más popular")
+    case "critics": return Text("Aprobadas por la crítica")
     default: return nil
     }
 }
@@ -122,6 +123,7 @@ struct ShelfPoster: View {
     case "recs": return Text("Por lo que has visto")
     case "trend": return Text("Lo más visto esta semana")
     case "popular": return Text("De todos los tiempos")
+    case "critics": return Text("Certified Fresh recientes · Series Fresh")
     default: return plan.style == .platform ? Text("Lo más popular") : nil
     }
 }

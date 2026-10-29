@@ -270,8 +270,8 @@ extension DS {
         /// El ícono de la tarjeta «Tu año» al final de Para ti.
         static let yearIcon: CGFloat = 60
         static let emblem: CGFloat = 70, glow: CGFloat = 16
-        /// El sello de dónde viene una lista (Trakt, tus complementos, tu Orbital).
-        static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)
+        /// El sello de dónde viene una lista (Trakt, tus complementos, Rotten Tomatoes, tu Orbital).
+        static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), critics = Color(red: 0.78, green: 0.16, blue: 0.07), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)
         static let badgeRadius: CGFloat = 5
         /// La tarjeta de una lista: su pila de pósters.
         static let stackPoster: CGFloat = 40, stackWidth: CGFloat = 54, stackAngle: Double = 8

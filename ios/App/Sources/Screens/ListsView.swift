@@ -409,6 +409,7 @@ struct ListsView: View {
         default:
             if plan.id.hasPrefix("list:") { return .trakt }
             if plan.id.hasPrefix("addon:") || plan.list.source == ForYouList.addonSource { return .addon }
+            if plan.list.source == ListSource.criticsOrigin { return .critics }   // «Aprobadas por la crítica», de la consola
             return model.source == .console ? .orbital : nil
         }
     }

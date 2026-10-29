@@ -101,6 +101,10 @@ public actor ForYou {
             out += [ForYouList(id: "trend", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true),
                     ForYouList(id: "popular", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true)]
         }
+        // «Aprobadas por la crítica» (Rotten Tomatoes), como en la TV: películas de MDBList y series de Trakt, sin clave.
+        if http != nil {
+            out.append(ForYouList(id: Critics.listID, title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true, source: Critics.source))
+        }
         // Los catálogos de tus complementos (como `addon_catalogs` en la TV): su sello dice «Complemento».
         for entry in await catalogs {
             out.append(ForYouList(id: entry.id, title: entry.title, group: .discover, brand: nil, logo: nil, splitsKinds: entry.kinds.count > 1,
@@ -183,6 +187,11 @@ public actor ForYou {
     }
 
     private func raw(listID: String, kind: String) async throws -> [Suggestion] {
+        if listID == Critics.listID, let http {
+            let critics = Critics(http: http, trakt: trakt, kv: kv)
+            return try await remember("critics:\(kind)", ttl: Self.slowTTL) { try await critics.items(kind: kind) }
+                .map { suggestion($0, .console(Critics.reason(kind: kind))) }
+        }
         if let trakt, ["recs", "mine", "watchlist", Self.favoritesList, "trend", "popular"].contains(listID) || listID.hasPrefix("list:") {
             switch listID {
             case "recs": return try await remember("trakt:recs:\(kind)", ttl: Self.recsTTL) { try await trakt.recommendations(kind: kind) }.map { suggestion($0, .recommended) }

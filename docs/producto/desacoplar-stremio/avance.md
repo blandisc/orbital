@@ -26,15 +26,19 @@ Notas cortas de cada corte al terminar: qué quedó y qué falta. El plan está 
 - Pruebas: `TraktPublicListsTests` (popular, copia guardada, género con relleno, búsqueda Trakt primero y respaldo) y
   `RemoteForYouTests.testListOriginsNeverSayStremio`.
 
+- «Aprobadas por la crítica» (Rotten Tomatoes) en Para ti del iPhone, siempre, armada en el teléfono igual que en la
+  consola: películas de la lista pública de MDBList `tbotcotw/recent-certified-fresh` y series de la lista pública de Trakt
+  `truckclancy/rotten-tomatoes-certified-fresh-tv-shows-ranked-by-tomatometer-score`, sin clave ni sesión, un día en caché y
+  la última copia si no contestan (`OrbitalCore/Critics.swift`, `CriticsTests`). Filtro Películas · Series, sello «Rotten
+  Tomatoes» (token `DS.Collections.critics`) y porqué «Certified Fresh» / «Fresh en Rotten Tomatoes». Si la consola la
+  manda (id `critics`), se pinta igual. Las listas por configuración de la consola (`para_ti.critics_*`) no se leen todavía.
+
 **Falta o queda para otros cortes:**
 
 - Cuenta (corte A): «Mi lista» de Inicio (va sin sello mientras siga saliendo de Stremio), el error del botón Guardar de la
   ficha («…tu lista de Stremio», `TitleModel.swift`), el aviso de sesión de Inicio, entrar. «Mi lista» ya no está como
   tarjeta en Para ti › Listas: «Tu watchlist» de Trakt ocupa ese lugar.
 - Ajustes (corte C): «Stremio conectado», el perfil «Stremio · Trakt · Orbital».
-- «Aprobadas por la crítica»: el iPhone calcula Para ti él mismo (la consola solo se usa con `-demo-console`), así que la
-  sección solo sale si la consola la manda y el iPhone está en modo consola. Para tenerla siempre, el iPhone tendría que
-  pedirle esa lista a la consola o a MDBList. Cuando la consola la publique, confirmar el id (la demo usa `critics`).
 - Sin capturas de antes y después: el simulador está ocupado por otras sesiones. Se comprueba en Buscar (el carrusel dice
   «Lo que más se está viendo ahora» con sello TRAKT) y en Para ti › Listas («De tus complementos»).
 - Ya venía de `main`: `HomeView.swift` tiene 603 líneas (tope 600, `FileBudgetTests`) y `ios_strings.py --check` pide

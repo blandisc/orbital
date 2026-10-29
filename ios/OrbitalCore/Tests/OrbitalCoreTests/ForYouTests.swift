@@ -230,7 +230,7 @@ final class ForYouAddonCatalogsTests: XCTestCase {
                                                                                     ["id": "kitsu:1", "name": "Sin IMDb"]]]
         let registry = AddonRegistry(http: http, account: StremioAPI(http: http), auth: { "KEY" })
         let forYou = ForYou(trakt: nil, tmdb: nil, addons: registry, http: http, region: { "MX" }, kv: InMemoryKeyValueStore())
-        let lists = await forYou.lists()
+        let lists = await forYou.lists().filter { $0.id != Critics.listID }   // «Aprobadas por la crítica» siempre está
         XCTAssertEqual(lists.map(\.id), ["addon:mislistas:horror"], "uno por nombre; ni genéricos, ni los que piden algo, ni Cinemeta")
         XCTAssertEqual(lists.first?.splitsKinds, true, "trae películas y series")
         XCTAssertEqual(lists.first?.meta, "De Mis Listas")

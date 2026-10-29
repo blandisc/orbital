@@ -290,7 +290,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                     ("tt0110912", "Tiempos violentos", 1994, "movie"), ("tt0068646", "El padrino", 1972, "movie")].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "En tendencia") }
         case "critics":
             return [("tt15239678", "Dune: Part Two", 2024, "movie", 92), ("tt7366338", "Chernobyl", 2019, "series", 96), ("tt11280740", "Severance", 2022, "series", 97),
-                    ("tt0816692", "Interstellar", 2014, "movie", 73)].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "\($0.4) % en Rotten Tomatoes") }
+                    ("tt0816692", "Interstellar", 2014, "movie", 73)].map { demoRow($0.0, $0.1, $0.2, $0.3, why: $0.4 >= 90 ? "Certified Fresh" : "Fresh en Rotten Tomatoes") }
         case "addon:cat":
             return [("tt0099685", "Buenos muchachos", 1990, "movie"), ("tt0114369", "Seven", 1995, "movie"), ("tt0109830", "Forrest Gump", 1994, "movie"),
                     ("tt0120737", "El señor de los anillos", 2001, "movie")].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "Popular") }

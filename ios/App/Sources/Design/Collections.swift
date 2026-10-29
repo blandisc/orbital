@@ -87,12 +87,22 @@ enum AwardNames {
     }
 }
 
-/// De dónde viene una lista: su sello junto al título (Trakt, uno de tus complementos o tu Orbital).
+/// De dónde viene una lista: su sello junto al título (Trakt, uno de tus complementos, Rotten Tomatoes o tu Orbital).
 enum ListSource: Hashable {
-    case trakt, addon, orbital
+    case trakt, addon, critics, orbital
+    /// Cómo dice la consola que una lista viene de Rotten Tomatoes (vía MDBList).
+    static let criticsOrigin = "Rotten Tomatoes"
     /// El nombre del servicio tal cual; «Complemento», en el idioma de la app.
-    var name: Text { switch self { case .trakt: Text(verbatim: "Trakt"); case .addon: Text("Complemento"); case .orbital: Text(verbatim: "Orbital") } }
-    var color: Color { switch self { case .trakt: DS.RatingBrand.trakt; case .addon: DS.Collections.addon; case .orbital: DS.Collections.orbital } }
+    var name: Text {
+        switch self {
+        case .trakt: Text(verbatim: "Trakt"); case .addon: Text("Complemento"); case .critics: Text(verbatim: "Rotten Tomatoes"); case .orbital: Text(verbatim: "Orbital")
+        }
+    }
+    var color: Color {
+        switch self {
+        case .trakt: DS.RatingBrand.trakt; case .addon: DS.Collections.addon; case .critics: DS.Collections.critics; case .orbital: DS.Collections.orbital
+        }
+    }
 }
 
 /// El sello de origen: el nombre del servicio en mayúsculas sobre su color.

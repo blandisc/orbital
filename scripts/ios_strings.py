@@ -27,6 +27,10 @@ TRANSLATIONS = {
     "Susto fuerte": "Major scare",
     "Susto leve": "Minor scare",
     # Desacoplar Stremio, corte D: las listas públicas salen de Trakt y los catálogos de complementos dicen «Complemento».
+    "Aprobadas por la crítica": "Critically acclaimed", "Rotten Tomatoes": "Rotten Tomatoes",
+    "Certified Fresh recientes · Series Fresh": "Recent Certified Fresh · Fresh shows",
+    "Certified Fresh": "Certified Fresh",
+    "Fresh en Rotten Tomatoes": "Fresh on Rotten Tomatoes",
     "De tus complementos": "From your add-ons",
     "Lo que más se está viendo ahora": "What people are watching right now",
     "Lo que más se está viendo ahora, películas y series": "What people are watching right now, movies and shows",
