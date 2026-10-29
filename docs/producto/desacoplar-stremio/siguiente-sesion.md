@@ -1,106 +1,106 @@
-# Desacoplar Stremio · traspaso a la siguiente sesión (29 oct 2026)
+# Desacoplar Stremio · traspaso para los detalles (29 oct 2026, noche)
 
-Lo dejó la sesión «Propuesta desacoplamiento Streamio» (Mac, lanzada desde la app de iPhone) antes de archivarse.
+El trabajo pesado ya está en `main`: cortes A, B, C y D en el iPhone, corte E en la consola y Rotten Tomatoes en Para ti.
+Lo dejó la sesión de la nube «revisión del plan» antes de archivarse; las dos sesiones de la Mac ya se archivaron.
+El traspaso anterior (el de antes de construir) sigue en la historia de git de este archivo.
 
 ## Dónde está todo
 
 | Qué | Dónde |
 |---|---|
-| La propuesta completa (resumen ejecutivo arriba; cortes A–D, transición, estudio de precisión con la prueba real) | `docs/producto/desacoplar-stremio-iphone-2026-10-29.md` |
-| Resumen ejecutivo + 13 maquetas (HTML de un solo archivo) | `docs/producto/desacoplar-stremio/resumen.html` |
-| El mismo resumen publicado como Canvas (versión 2) | https://claude.ai/artifact/E6kErCUU4huy3SjwgfabsS (lo publicó la sesión web «Arquitectura macOS/iPad»; esta no tiene Artifact) |
-| Solo las maquetas | `docs/producto/desacoplar-stremio/maquetas.html` y `maquetas.png` |
+| Qué se hizo en cada corte y qué falta | `docs/producto/desacoplar-stremio/avance.md` |
+| El flujo completo con 31 capturas reales (Canvas) | https://claude.ai/artifact/H5Vobbrwuw76ugoexVvYmr · `docs/producto/desacoplar-stremio/flujo/index.html` |
+| Las capturas originales y su `flujo.json` (qué hace cada botón) | `docs/producto/desacoplar-stremio/capturas/flujo/` (se sacan con `FlowCaptureUITests`, `TEST_RUNNER_SHOTS=<carpeta>`) |
+| La revisión del plan (inventario de 43 lugares con «Stremio», Trakt como sincronizador, Rotten Tomatoes) | `revision-plan.md` y https://claude.ai/artifact/3N63HHhVNExc4tcDvJhpLb |
+| La propuesta original | `docs/producto/desacoplar-stremio-iphone-2026-10-29.md` |
 
-## Lo que ya decidió Fernando
+Commits clave: consola `dc8b330` (corte E: `orbital/trakt_sync.py`, reglas de escritura en `orbital/scrobble.py` `plan`),
+`f1c1da8` (Rotten Tomatoes en la consola, `orbital/library/mdblist.py`); iPhone `7ad9052` (A), `9737482` (B), `750c2f4` (C),
+`def0a53` (D), `4d2b625` (Rotten Tomatoes en el iPhone), `b6da508` (pruebas de la guía en SE, mini y Pro Max, capturas).
 
-1. **Trakt es el sincronizador** del avance, lo visto y Mi lista entre el celular y la computadora (y la nube).
-   **Stremio queda solo de respaldo**: sigue recibiendo una copia mientras se compara (fases 1 y 2) y se suelta en la 3.
-2. El flujo inicial del iPhone **no pide Stremio**. Real-Debrid y Trakt son obligatorios; Stremio se ofrece al final.
-3. Solo Real-Debrid (con el protocolo listo para otros servicios).
-4. Respaldo a Trakt cada 5 min mientras se reproduce: `start` y, 2 s después, `pause`.
-5. Visto al **90 %**: hasta el 90 % o los créditos, a Trakt se le manda como mucho 79.9 %.
-6. Los complementos se importan de Stremio una vez; no se escriben de vuelta.
+## Lo que pidió Fernando para esta sesión (29 oct, viendo el Canvas)
 
-## Lo que se probó el 29 oct (cuenta real, desde la Lenovo)
+### 1. La app es standalone; Orbital se prende en Ajustes
 
-- La pausa de Trakt funciona. Guarda 2 o 3 decimales y pide al menos ~1 % (por debajo contesta 422 `progress_too_low`).
-- `start` borra la pausa guardada. Una pausa repetida actualiza el avance pero **no** mueve `paused_at`.
-- El 80 % de Trakt marca visto y borra el avance.
-- **Ida y vuelta confirmada:** la consola dejó una película al 37.5 %, el iPhone arrancó ahí al darle «Ver», y al
-  pausar escribió 45.098 %, que la Lenovo vio al momento.
-- **Hueco encontrado:** en el iPhone, «Seguir viendo» y la ficha solo leen la biblioteca de Stremio
-  (`HomeModel.loadLibrary`); Trakt solo se lee al reproducir (`WatchService.resumePoint`). La película no apareció en
-  el Inicio. Lo resuelve el corte A.
-- La cuenta quedó limpia (se pidió borrar el último avance de prueba a una sesión de la Lenovo).
+La app se va a compartir: para casi todos va a ser una app sola, sin consola. Fernando:
 
-## Lo que Fernando pidió para la siguiente sesión
+- **Quitar de la guía todo lo de la TV**: el paso «Tu TV» (pantalla 13 del Canvas; `Onboarding/OnboardingFinish.swift`
+  `OnboardingTV`), la pieza «Tu Orbital en la TV · Opcional» de «Cómo funciona» (`OnboardingIntro.swift` L23–36) y «TV · No
+  conectada» de «Todo listo» (`OnboardingFinish.swift` L46–49). El texto de Trakt «…para que la TV, el iPad y la Mac sepan
+  lo mismo» (`OnboardingTrakt.swift` L20) pasa a hablar de tus aparatos sin nombrar la TV. Bienvenida ya dice «Tus
+  películas y series en tu bolsillo.»: no poner «en tu TV» en ningún copy de la guía.
+- **Un interruptor en Ajustes que prende toda la funcionalidad de Orbital** (hoy `Services.allowsOrbital` =
+  `ThisDevice.talksToOrbital` = «no es Mac», `DeviceInfo.swift` L43; el usuario no lo decide). Apagado por defecto. Al
+  prenderlo: **primero sincronizar** (emparejar con la consola: escanear el QR **dentro de la app** y «Conectar a mano»),
+  **luego un mini tutorial** («mira, lo puedes hacer con el control…»: control remoto, voz, ver en la TV, la bandeja «Desde la
+  TV», el acompañante de juegos). Debe poder apagarse y quedar desacoplado otra vez.
+- Con el interruptor apagado no se ve nada de Orbital. Hoy se ven aunque no haya consola (todo depende solo de
+  `allowsOrbital`): los atajos de Siri (`OrbitalIntents.swift` L242, contestan «Conecta tu Orbital…»), el control en el
+  Centro de control (`OrbitalWidgets.swift` L12), Ajustes › «Voz y Siri» (`SettingsView.swift` L78), el botón «Ver en la TV»
+  de la notificación de estrenos (`ReleaseNotifier.swift` L63, y si no hay consola sale un error), Ajustes › Cuentas › «Tu
+  Orbital». La excepción: «descarga X» por Siri funciona sin consola; puede quedarse.
+- Pieza nueva al catálogo para el tutorial (nada suelto, `docs/ios-proyeccion.md`); maquetas antes de construir si cambia
+  mucho, con antes y después.
 
-1. **Revisar el plan otra vez**, con ojos frescos, y confirmarle en un resumen corto:
-   - que Trakt va a ser el mecanismo de sincronización entre el celular y la computadora, y Stremio solo respaldo;
-   - qué hace falta **del lado de la computadora** (la consola en la Lenovo) para que eso sea cierto. El alcance
-     original era solo iOS, pero la sincronización celular ↔ computadora toca las dos. Hoy la consola ya retoma desde
-     lo más reciente entre Stremio y Trakt al reproducir (commit 6dfea233; `orbital/watch.py` `resume_position`); falta
-     ver de dónde arma su «Seguir viendo».
-2. **Que «Stremio» ya no aparezca en el celular, sin perder contenido.** El inventario de lugares ya está en la
-   propuesta (§4, corte D); hay que revisarlo y completarlo. Lo que dijo Fernando:
-   - Se vale perder «Mi lista» de Stremio en el Inicio: pasa a la watchlist de Trakt.
-   - **No** se vale perder «Lo más popular hoy» de Buscar (hoy es el top de Cinemeta): hay que reemplazarlo con otra
-     fuente. Candidatas: Trakt `trending` o `watched/weekly`, TMDB `trending` (si hay clave), los Top 10 y JustWatch
-     que ya trae la consola. Recomienda una con el porqué.
-   - «Listas de Stremio» (los catálogos de complementos y de Cinemeta) también tienen que dejar de decir Stremio.
-   - Si encuentras otro lugar con contenido de Stremio que se perdería, dilo.
-3. **Rotten Tomatoes en Para ti:** ver si se pueden consumir públicamente las listas «Certified Fresh» (películas) y
-   las series «Fresh», y agregarlas como sección en Para ti. Rotten Tomatoes no tiene API pública oficial. Revisa
-   opciones como sus páginas de exploración, listas de Trakt que las copian, MDBList o un complemento. El código ya
-   menciona una lista llamada «RT: Certified Fresh» como ejemplo de lista de Trakt o de complemento
-   (`orbital/foryou.py` L251 y L523, `ListsView.swift` L499): averigua de dónde viene. Di qué es estable, qué es raspado
-   (scraping) y qué riesgo tiene.
-4. **Corrección de la píldora: ya va en su propia sesión** («Píldora con ícono del servicio en Recomendadas», lanzada el
-   29 oct). No es tarea de la siguiente sesión; solo revisa que se haya subido. Lo que pidió: en Para ti, en «Recomendadas», los pósters dicen «N.º 1 en Disney+»,
-   «N.º 2 en Prime Video», «N.º 8 en …» en texto. Fernando quiere una **píldora mucho más chica y gráfica, con el
-   ícono del servicio**, como se hizo en la app de escritorio (commit 48293874, «Para ti: «N.º 1 en Netflix» en la
-   píldora de su plataforma, con su logo»; ver `orbital/web/js/components/card.js` y `styles/components/card.css`).
-   En el iPhone el texto sale de `badgeText` (`App/Sources/Screens/ParaTiPieces.swift` L70–73) y pasa a `TitleLink`.
-   Ya existe `DSPlatformLogo`. Pieza nueva al catálogo, nada suelto (`docs/ios-proyeccion.md`).
+### 2. Análisis: de qué depende hoy el iPhone de la consola
 
-Después de la revisión y con el OK de Fernando: construir en el orden de la propuesta (A, y en paralelo B y D; luego
-C), con la skill `orquesta` si conviene.
+Hecho en esta sesión (inventario completo con archivo y línea en el informe de abajo). Lo que importa para standalone:
 
-## Reglas que esta sesión aprendió y que siguen
+| Qué | Hoy sin consola | Qué hacer |
+|---|---|---|
+| **Clave de TMDB** | No hay clave incluida: llega de la consola (`/api/companion`, `Services.swift` L257–283) o a mano en Ajustes › Avanzado. Sin ella se pierden fichas y títulos en español, la sinopsis en español, Estudios, Temporadas y Géneros, «Nuevo en tus plataformas», arte alto, sagas y la calificación TMDB | **Bloqueante.** Proponer a Fernando incluir una clave de la app (como el Client ID de Trakt: `project.yml` L60 → Info.plist) y dejar el campo de Ajustes como opción |
+| **OneDrive (Mi media)** | No usa la consola, pero pide registrar una app propia en Microsoft Entra (`OneDriveSettings.swift` L21, «Usa la misma de la TV») | Bloqueante para un usuario normal: incluir un Id. de aplicación de la app, o esconder Mi media hasta configurarlo |
+| Trakt | Funciona: Client ID incluido (PKCE), sesión propia | Quitar el texto viejo «Conecta tu Orbital y Trakt queda listo» (`SettingsView.swift` L364). **Defecto:** con consola y Trakt conectados la fila dice «Desde tu Orbital» y no se puede tocar (`SettingsView+Cuentas.swift` L16–17): no se puede desconectar Trakt |
+| Para ti desde la consola | Ya apagado en producción (`forYouFromConsole = false`, `Services.swift` L66–69) | Nada |
+| Al conectar la consola | `connectOrbital` **sobrescribe el país** (`Services.swift` L274–275); la clave de TMDB y el Client ID solo si faltan | Que el país también sea «solo si falta» |
+| Ver en la TV, «Viendo en la TV», control, voz, bandeja, acompañante de juegos, audio y subtítulos por título | Se esconden con `orbital.isConfigured` o funcionan local | Pasan detrás del interruptor y entran al tutorial |
 
-- **Varias sesiones en el mismo checkout** (`~/code/orbital` en la Mac): hay cambios ajenos sin guardar. Haz commit solo
-  de tus rutas; nunca stash, reset ni `pull` con lo ajeno encima. Si el push choca: `git worktree add /tmp/wt origin/main`,
-  `cherry-pick` de tu commit, push desde ahí, borra el worktree.
-- **Sin Canvas** si la sesión se lanza desde la app de iPhone: pide a una sesión hermana web (`list_sessions`, origin
-  `web_claude_ai`) que publique el HTML con Artifact.
-- **Pruebas contra Trakt:** desde la Lenovo, con la sesión de Trakt de la consola (`orbital/library/trakt.py`), sin
-  imprimir tokens, 2 s entre escrituras, con una película de prueba, y limpiando al final. Esas sesiones piden el OK
-  directo de Fernando antes de escribir en su cuenta.
-- Nunca teclas ni POST a la Orbital real (127.0.0.1:8710).
-- Decisiones para Fernando como PM no técnico, con algo visual si se puede; antes y después en cada corrección
-  (salvo que tome más de ~2 min).
+### 3. «Aprobadas por la crítica» (pantalla 30 del Canvas)
+
+- El título se parte en dos renglones («Aproba-das por…») junto al sello: corregirlo (que el título no se parta; el sello
+  cede espacio).
+- El sello lleva **el ícono de Rotten Tomatoes** (el jitomate), no texto: «ROTTEN TOMATOES» y nunca «TRAKT» aunque las series
+  vengan de una lista de Trakt. Traer el ícono como asset (es marca de Fandango; para la app de Fernando está bien) y
+  agregarlo al catálogo como los logos de plataformas (`DSPlatformLogo`). Revisar lo mismo en la consola
+  (`orbital/web/js/components/collection-card.js` `SourceBadge`) si se muestra ahí.
+
+### 4. Lo que sigue pendiente de antes
+
+- Complementos recomendados: solo Torrentio y OpenSubtitles; falta Comet (y probarlo con la cuenta de Fernando).
+- Pruebas con cuentas reales: las hace Fernando (pausar en la TV y ver «Seguir viendo» en el iPhone, y al revés; MDBList).
+- La fase 2 (comparar Trakt contra Stremio dos semanas) la hace Fernando a mano. No construirla.
+
+## Reglas que siguen
+
+- Ambiente: si la sesión corre en la nube, no hay Xcode. El iPhone se construye en la Mac (`~/code/orbital`, ambiente
+  «Fers-MBP:orbital») con `create_session`; ya hay permiso de dispositivo de confianza para eso. La consola (Python) se
+  prueba en la nube: `pip install` de `requirements-dev.lock` sin los paquetes `winrt` y `pywebview`; 10 pruebas fallan en
+  Linux por ser de Windows (ya fallaban).
+- Varias sesiones en el mismo checkout de la Mac: commit solo de tus rutas; nunca stash, reset ni `pull` con lo ajeno
+  encima. Si el push choca: `git worktree add /tmp/wt origin/main`, `cherry-pick`, push, borra el worktree.
+- No escribir en cuentas reales (Trakt, Stremio, Real-Debrid, MDBList) sin el OK directo de Fernando. Nunca teclas ni POST a
+  la Orbital real (127.0.0.1:8710).
+- Decisiones para Fernando como PM no técnico, con algo visual (Canvas) y antes y después en cada corrección.
+- Las pruebas de la guía: `OnboardingUITests` en iPhone SE, 13 mini y 17 Pro Max; la demo recorre la guía sin red
+  (`-demo -demo-first-run`; clave «BAD…» no reconocida, «FREE…» gratuita).
 
 ## Prompt para iniciar la siguiente sesión
 
 ```
-Hola. Continúas el trabajo de «Desacoplar Stremio en el iPhone» de Orbital. Repo: ~/code/orbital (Mac).
+Hola. Continúas «Desacoplar Stremio» de Orbital, ahora con los detalles: el trabajo grande ya está en main.
 
-Antes de nada, lee en este orden:
-1. docs/producto/desacoplar-stremio/siguiente-sesion.md (el traspaso: qué se decidió, qué se probó y qué te toca).
-2. docs/producto/desacoplar-stremio-iphone-2026-10-29.md (la propuesta completa; el resumen ejecutivo está arriba).
-3. El CLAUDE.md del repo y docs/ios-proyeccion.md.
+Antes de nada, lee:
+1. docs/producto/desacoplar-stremio/siguiente-sesion.md (este traspaso: lo que pedí y el análisis de dependencias).
+2. docs/producto/desacoplar-stremio/avance.md y el Canvas del flujo (https://claude.ai/artifact/H5Vobbrwuw76ugoexVvYmr).
+3. CLAUDE.md y docs/ios-proyeccion.md.
 
-Lo que quiero de esta sesión, en orden:
-1. Revisa el plan otra vez y confírmame en un resumen corto, como a un PM no técnico, que Trakt va a ser el
-   mecanismo de sincronización entre mi celular y la computadora, y que Stremio solo va a ser respaldo. Dime qué hace
-   falta del lado de la computadora para que eso sea cierto.
-2. Dame el inventario de todo lo que en mi celular viene de Stremio o dice Stremio, con qué lo reemplazas para que ya
-   no aparezca y no perdamos contenido. «Mi lista» de Stremio del Inicio se puede perder. «Lo más popular hoy» de
-   Buscar no: reemplázalo con otra fuente y recomiéndame cuál.
-3. Investiga si se pueden consumir públicamente las listas de Rotten Tomatoes «Certified Fresh» (películas) y las
-   series «Fresh», para una sección en Para ti. Dime qué tan estable es y qué riesgo tiene.
-(La píldora con el ícono del servicio en Recomendadas va en otra sesión; no la hagas aquí.)
-
-Muéstrame 1 a 3 de forma visual si se puede (un Canvas o una página HTML). Cuando te dé el OK, empezamos a construir
-en el orden de la propuesta.
+Lo que quiero, en orden:
+1. La app es standalone: quita todo lo de la TV de la guía, y en Ajustes pon un interruptor que prenda toda la
+   funcionalidad de Orbital: primero sincronizar (con escanear el QR dentro de la app) y luego un mini tutorial. Apagado,
+   no se ve nada de Orbital. Antes de construir, enséñame maquetas del interruptor, la sincronización y el tutorial.
+2. Propónme qué hacer con la clave de TMDB y con OneDrive para que la app funcione sin la consola, y arregla los detalles
+   del análisis (Trakt «Desde tu Orbital», el país que se sobrescribe, textos viejos).
+3. «Aprobadas por la crítica»: que el título no se parta y que el sello sea el ícono de Rotten Tomatoes.
+4. Agrega Comet a los complementos recomendados.
+Al final, capturas de antes y después en un Canvas.
 ```
