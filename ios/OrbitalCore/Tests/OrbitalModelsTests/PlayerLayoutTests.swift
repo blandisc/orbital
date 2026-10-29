@@ -43,6 +43,16 @@ final class PlayerLayoutTests: XCTestCase {
         }
     }
 
+    func testAWeirdAspectFromTheEngineNeverFillsTheScreen() {
+        for phone in phones {
+            for aspect in [Double.nan, .infinity, 0, -1] {
+                let rect = layout.portraitRect(in: phone.portrait, center: -1, aspect: aspect)
+                XCTAssertEqual(rect.height, phone.portrait.width * 9 / 16, accuracy: 0.5, "\(phone.name) \(aspect): como 16:9")
+                XCTAssertLessThanOrEqual(rect.maxY, phone.portrait.height - layout.controlsReserve + 0.5)
+            }
+        }
+    }
+
     func testTheSidePanelLeavesVideoOnSmallPhones() {
         XCTAssertEqual(layout.sidePanelWidth(in: 956), 420, "en el Pro Max, su ancho de siempre")
         for phone in phones {

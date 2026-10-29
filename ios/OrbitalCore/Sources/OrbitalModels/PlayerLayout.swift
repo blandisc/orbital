@@ -26,7 +26,10 @@ public struct PlayerLayout: Sendable {
     /// en 4:3) crece a lo alto en vez de quedar con franjas a los lados; uno más ancho se queda en la banda 16:9. Nunca invade el
     /// lugar de los controles.
     public func portraitHeight(in size: CGSize, aspect: Double) -> CGFloat {
-        let ratio = CGFloat(min(max(aspect, minAspect), Double(wideAspect)))
+        // Una proporción rara del motor (no es número, infinita, cero) cuenta como 16:9: con un NaN el video ocupaba toda la
+        // pantalla y empujaba los controles fuera de ella.
+        let safe = aspect.isFinite && aspect > 0 ? aspect : Double(wideAspect)
+        let ratio = CGFloat(min(max(safe, minAspect), Double(wideAspect)))
         let room = max(size.width / wideAspect, size.height - topClearance - controlsReserve)
         return min(size.width / ratio, room, size.height)
     }

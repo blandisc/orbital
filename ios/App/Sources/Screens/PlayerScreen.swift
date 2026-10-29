@@ -219,6 +219,9 @@ struct PlayerScreen: View {
     /// Lo que enseña el botón grande (la carga o el play/pausa): una sola regla, probada en `PlayerPresentationTests`.
     @State var presentation = PlayerPresentation()
     @State var controlsHiddenAt = Date.distantPast
+    /// Desde cuándo se ve la carga y cuándo se anotó por última vez en la bitácora (para saber qué pasa en una carga larga).
+    @State var loadingSince: Date?
+    @State var loadingLoggedAt = Date.distantPast
 
     var body: some View {
         let model = holder.model
@@ -427,6 +430,7 @@ struct PlayerScreen: View {
                 try? await Task.sleep(nanoseconds: DS.Timing.tick)
                 await model.tick()
                 if let aspect = engine.videoAspect, aspect != knownAspect { knownAspect = aspect }   // para cuando el motor la olvide
+                logLongLoading(model)
                 pip.update(engine.pictureInPicture)
                 nowPlaying.update(title: current.displayTitle, subtitle: current.episodeLabel, poster: current.poster, snapshot: model.snapshot)
             }
@@ -576,4 +580,23 @@ extension PlayerLayout {
                                   minAspect: DS.PlayerPanel.portraitMinAspect, wideAspect: DS.Poster.stillAspect,
                                   defaultCenter: Double(DS.PlayerPanel.portraitCenter), panelWidth: DS.PlayerPanel.width,
                                   panelShare: DS.PlayerPanel.widthShare)
+}
+
+extension PlayerScreen {
+    /// Si la carga dura más de 10 s, anota cada 15 s en la bitácora cómo está todo (fase, motor, punto, sentido, zoom, el rect del
+    /// video y si se ven los controles): para entender desde la Mac una carga que no termina en el iPhone.
+    func logLongLoading(_ model: PlayerModel) {
+        guard presentation.showsLoading else { loadingSince = nil; return }
+        let now = Date()
+        let since = loadingSince ?? now
+        if loadingSince == nil { loadingSince = now }
+        guard now.timeIntervalSince(since) > 10, now.timeIntervalSince(loadingLoggedAt) > 15 else { return }
+        loadingLoggedAt = now
+        let size = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow?.bounds.size }.first ?? .zero
+        let rect = videoRect(in: size)
+        PlayerModel.note(String(format: "carga larga %.0f s: fase=%@ motor=%@ pos=%.0f horizontal=%@ zoom=%@ rect=%.0f,%.0f %.0fx%.0f aspecto=%.2f controles=%@ reconectando=%@ esperaPlay=%@",
+                                now.timeIntervalSince(since), "\(model.phase)", "\(model.snapshot.state)", model.snapshot.position,
+                                landscape ? "sí" : "no", zoom.rawValue, rect.minX, rect.minY, rect.width, rect.height, portraitAspect,
+                                controlsVisible ? "sí" : "no", model.reconnecting ? "sí" : "no", model.awaitingPlayback ? "sí" : "no"))
+    }
 }

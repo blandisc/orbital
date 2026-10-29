@@ -306,6 +306,7 @@ public final class PlayerModel: ObservableModel {
         Self.note("abrir \(request.kind) \(request.videoID) local=\(request.localFile != nil)")
         subtitleDelay = 0
         ownAttempts = 0
+        backgroundPosition = 0
         guard !closing, phase != .closed else { return }
         generation += 1
         let mine = generation
@@ -1485,6 +1486,7 @@ public final class PlayerModel: ObservableModel {
     public private(set) var reconnecting = false { didSet { changed() } }
     private var backgrounded = false
     private var foregroundPending = false
+    private var backgroundPosition = 0.0
     private var loadStartedAt = Date.distantPast
     private var lastLoggedState = ""
     private var resumeOnForeground = false
@@ -1497,6 +1499,8 @@ public final class PlayerModel: ObservableModel {
         guard hasPlayed, phase == .playing, !closing else { return }
         backgrounded = true
         resumeOnForeground = snapshot.state == .playing || snapshot.state == .buffering
+        backgroundPosition = snapshot.position   // al volver, el motor ya soltó el video y dice 0: este es el punto de verdad
+        Self.note("a segundo plano en \(Int(backgroundPosition)) s")
     }
 
     /// De vuelta al frente: el motor rearma su video (lo soltó en segundo plano); si no puede, o si el video no vuelve a
@@ -1510,7 +1514,7 @@ public final class PlayerModel: ObservableModel {
         backgrounded = false
         guard hasPlayed, phase == .playing, !closing else { return }
         let resume = resumeOnForeground
-        let position = snapshot.position
+        let position = max(snapshot.position, backgroundPosition)   // antes: el 0 del motor y se volvía a cargar desde el principio
         let mine = generation
         // Sin aviso al volver: casi siempre el video sigue donde estaba. Solo si de verdad hay que pedirlo otra vez
         // (el motor no pudo rearmarlo, o no avanzó en el plazo) se dice que está cargando.
@@ -1527,7 +1531,7 @@ public final class PlayerModel: ObservableModel {
         if snapshot.state == .playing, snapshot.position > check.position + 0.5 { foregroundCheck = nil; reconnecting = false; return }
         guard now >= check.deadline else { return }
         foregroundCheck = nil
-        await reloadCurrentSource(at: max(check.position, snapshot.position), resume: true)
+        await reloadCurrentSource(at: max(check.position, snapshot.position, backgroundPosition), resume: true)
     }
 
     /// Vuelve a abrir la fuente que sonaba en el mismo punto: la descarga, tu copia (enlace nuevo) o la de Real-Debrid
