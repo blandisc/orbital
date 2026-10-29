@@ -87,3 +87,13 @@ el servidor con una segunda conexión al mismo archivo: Real-Debrid la hace espe
 | Con el video en la ventana de PiP (o al salir de la app) empezaban episodios de Los Simpson al azar debajo | La ruleta vuelve a «aparecer» con el reproductor encima (el sistema la vuelve a presentar) y su `.task` giraba otra vez: a los ~5 s (la animación completa) abría otro episodio al azar en lugar del que sonaba. En la bitácora: «a segundo plano» y 5 s después «abrir series tt0096697:10:20» | La ruleta gira una sola vez: no gira si ya hay un episodio encima ni cuando se está cerrando |
 
 Pruebas: `PlayerPresentationTests` (`testTheLoadStaysUntilTheVideoReallyRuns`, pausar al arrancar, saltar al arrancar, video nuevo).
+
+## 29 oct, tercera pasada: dos episodios a la vez, agarradera y ±10 s
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| Con el video en PiP (o al salir de la app) sonaban dos episodios de Los Simpson a la vez | La ruleta giraba otra vez y cambiaba el reproductor por otro; el reemplazado nunca se cerraba y seguía sonando | La ruleta gira una sola vez; y un reproductor que se quita de la pantalla sin cerrarse se cierra solo (`onDisappear`) |
+| Mover el video en vertical | Sin nada a la vista: había que adivinar que se arrastra desde el borde | Agarradera de vidrio con rayita montada en el borde de abajo del video (`DSVideoHandle`); se ilumina al arrastrar |
+| ±10 s | Dos cosas para lo mismo: botones junto al botón grande y una onda aparte en la orilla al doble toque | Una sola pieza por lado en la orilla del video (`DSSkipControl`): es el botón y es donde cae el doble toque; al saltar la onda sale detrás de ella y el glifo dice lo sumado («+20 s») |
+| Brillo y volumen: «le doy todo para arriba y sube un pedacito» | El recorrido de 0 a 1 era toda la altura del teléfono (~850 puntos); en vertical el dedo solo tiene el video (~220) | El recorrido es el alto del video, con tope de media pantalla en horizontal y mínimo de 120 puntos (`PlayerGestures.verticalTravel`, con prueba) |
+| Buscar arrastrando sobre el video (en vertical y en horizontal) | Cualquier arrastre horizontal sobre la imagen movía el video adelante o atrás, muchas veces sin querer | Adelante y atrás solo desde la barra de avance o con ±10; el arrastre horizontal sobre el video ya no hace nada (solo el iPod, que no tiene barra, lo conserva) |
