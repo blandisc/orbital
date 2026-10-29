@@ -521,7 +521,7 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.model.upNext?.videoID, "tt0386676:1:2")
         XCTAssertEqual(rig.model.upNext?.label, "T1 · E2")
         rig.clock.advance(PlaybackRules.upNextCountdown + 1)
-        await rig.model.handle(rig.playing(1304)); await rig.model.tick()
+        await rig.model.handle(rig.playing(1304)); await rig.model.tick(); await rig.model.waitForTransition()
         XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/e2.mkv", "la misma calidad (bingeGroup) en el siguiente")
         XCTAssertEqual(rig.engine.loads.last?.start, 0, "el siguiente empieza desde el principio")
         let state = try XCTUnwrap(rig.saved().last?["state"])
@@ -551,7 +551,7 @@ final class PlayerModelTests: XCTestCase {
         rig.clock.advance(1); await rig.model.handle(rig.playing(1295))
         XCTAssertNotNil(rig.model.upNext)
         rig.model.cancelUpNext()
-        rig.clock.advance(20); await rig.model.handle(rig.playing(1310)); await rig.model.tick()
+        rig.clock.advance(20); await rig.model.handle(rig.playing(1310)); await rig.model.tick(); await rig.model.waitForTransition()
         XCTAssertEqual(rig.engine.loads.count, 1)
         XCTAssertNil(rig.model.upNext)
     }
@@ -563,7 +563,7 @@ final class PlayerModelTests: XCTestCase {
             await rig.model.handle(rig.playing(10))
             rig.clock.advance(1); await rig.model.handle(rig.playing(1295))
             rig.clock.advance(PlaybackRules.upNextCountdown + 1)
-            await rig.model.handle(rig.playing(1304)); await rig.model.tick()
+            await rig.model.handle(rig.playing(1304)); await rig.model.tick(); await rig.model.waitForTransition()
             if episode < 4 { XCTAssertFalse(rig.model.stillWatchingPrompt, "episodio \(episode)") }
         }
         XCTAssertTrue(rig.model.stillWatchingPrompt)
@@ -648,6 +648,88 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/second.mkv")
         await rig.model.handle(rig.playing(301))
         XCTAssertEqual(rig.model.phase, .playing, "suena la versión que elegiste")
+    }
+
+    /// Ya sonaba y se quedó esperando datos (la red o Real-Debrid se atoraron): a los 20 s se pide otra vez en el mismo punto
+    /// (antes, cargando para siempre). Un búfer corto no hace nada.
+    func testPlaybackStuckBufferingIsRequestedAgainInPlace() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(600))
+        let loads = rig.engine.loads.count
+        await rig.model.handle(rig.playing(605, state: .buffering))
+        await rig.model.tick()
+        rig.clock.advance(10)
+        await rig.model.tick()
+        XCTAssertEqual(rig.engine.loads.count, loads, "un búfer corto: se espera")
+        rig.clock.advance(PlayerModel.bufferingStallSeconds)
+        await rig.model.tick()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(rig.engine.loads.count, loads + 1, "se pidió otra vez")
+        XCTAssertEqual(rig.engine.loads.last?.start ?? 0, 605, accuracy: 1, "donde ibas")
+        XCTAssertEqual(rig.engine.loads.last?.url, rig.engine.loads[loads - 1].url, "la misma versión")
+    }
+
+    /// El siguiente episodio (automático) se cuelga al abrir: el reloj vuelve igual y su plazo lo saca de la carga.
+    func testAutoNextEpisodeThatHangsDoesNotFreezeTheClock() async throws {
+        let rig = try nextEpisodeRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(10))
+        rig.clock.advance(1); await rig.model.handle(rig.playing(1295))
+        XCTAssertNotNil(rig.model.upNext)
+        rig.engine.hangLoads = true
+        rig.clock.advance(PlaybackRules.upNextCountdown + 1)
+        await rig.model.handle(rig.playing(1304))
+        await rig.model.tick()                                   // antes se quedaba aquí para siempre
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(rig.engine.hungLoads, 1, "el siguiente quedó abriendo")
+        rig.clock.advance(PlaybackRules.startupTimeout + 1)
+        await rig.model.tick()
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(rig.engine.hungLoads, 0, "se soltó la carga trabada (otra versión o el aviso de que no abrió)")
+        await rig.engine.stop()
+    }
+
+    /// Un «suena» viejo (del video anterior, que se quedó formado) no da por arrancada la versión nueva: sigue su plazo y, si
+    /// no abre, se vuelve a la que veías.
+    func testALeftoverPlayingFromTheOldVersionDoesNotCountForTheNewOne() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(300))
+        rig.engine.hangLoads = true
+        let second = try XCTUnwrap(rig.model.sourceChoices.first { $0.playbackURL?.absoluteString == "https://rd.example/second.mkv" })
+        let switching = Task { await rig.model.switchSource(to: second.index) }
+        try await Task.sleep(nanoseconds: 100_000_000)
+        await rig.model.handle(rig.playing(301))                 // aviso viejo de la versión anterior
+        XCTAssertFalse(rig.model.hasPlayed, "no cuenta como que ya suena")
+        XCTAssertEqual(rig.model.phase, .preparing)
+        rig.engine.hangLoads = false
+        rig.clock.advance(PlaybackRules.startupTimeout + 1)
+        await rig.model.tick()
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, rig.engine.loads.first?.url.absoluteString, "volvió a la que veías")
+        XCTAssertEqual(rig.engine.loads.last?.start ?? 0, 300, accuracy: 1)
+        await rig.engine.stop()   // suelta lo que siga colgado para terminar la prueba
+        _ = await switching.value
+    }
+
+    /// Al volver a la app el motor se cuelga rearmando el video: a los 8 s se pide otra vez en el mismo punto.
+    func testARestoreThatHangsAfterComingBackIsRequestedAgain() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(300))
+        rig.model.appDidEnterBackgroundFully()
+        rig.engine.hangRestore = true
+        let coming = Task { await rig.model.appDidBecomeActive() }
+        try await Task.sleep(nanoseconds: 100_000_000)
+        let loads = rig.engine.loads.count
+        rig.clock.advance(PlayerModel.foregroundStallSeconds + 1)
+        await rig.model.tick()
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(rig.engine.loads.count, loads + 1, "se pidió otra vez")
+        XCTAssertEqual(rig.engine.loads.last?.start ?? 0, 300, accuracy: 1, "donde ibas")
+        await rig.engine.stop()   // suelta lo que siga colgado para terminar la prueba
+        _ = await coming.value
     }
 
     func testAVersionThatNeverOpensGoesBackToTheOneYouWereWatching() async throws {

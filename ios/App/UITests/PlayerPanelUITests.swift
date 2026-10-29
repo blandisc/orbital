@@ -17,8 +17,10 @@ final class PlayerPanelUITests: XCTestCase {
         let versionTab = app.buttons["Versión"]
         XCTAssertTrue(versionTab.waitForExistence(timeout: 5), "abre «Audio y subtítulos» con su pestaña «Versión»")
         XCTAssertTrue(app.buttons["Audio y subtítulos"].exists)
+        sleep(1)   // que el panel termine de entrar: un toque a media animación cae donde la pestaña aún no está
         versionTab.tap()
-        XCTAssertTrue(app.buttons["Por idioma"].waitForExistence(timeout: 5), "la pestaña «Versión», por idioma o todas las fuentes")
+        _ = app.buttons["Por idioma"].waitForExistence(timeout: 5)
+        XCTAssertTrue(app.buttons["Por idioma"].exists, "la pestaña «Versión», por idioma o todas las fuentes")
         app.buttons["Audio y subtítulos"].tap()
         XCTAssertTrue(app.buttons["Listo"].waitForExistence(timeout: 5))
         app.buttons["Listo"].tap()

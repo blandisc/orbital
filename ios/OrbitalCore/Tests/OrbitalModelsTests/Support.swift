@@ -65,7 +65,12 @@ final class FakeEngine: PlayerEngine, @unchecked Sendable {
     func pause() async { note("pause") }
     /// Lo que contesta al volver de segundo plano (false: no pudo rearmar el video).
     var restores = true
-    func restoreAfterBackground(resume: Bool) async -> Bool { note("restore \(resume)"); return restores }
+    var hangRestore = false
+    func restoreAfterBackground(resume: Bool) async -> Bool {
+        note("restore \(resume)")
+        if hangRestore { _ = try? await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in lock.withLock { hung.append(c) } } }
+        return restores
+    }
     func seek(to seconds: Double) async { note("seek \(Int(seconds))") }
     func stop() async {
         note("stop")

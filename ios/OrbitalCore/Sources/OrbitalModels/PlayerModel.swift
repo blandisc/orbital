@@ -202,6 +202,8 @@ public final class PlayerModel: ObservableModel {
     /// Ya sonó este video (el motor llegó a reproducir): hasta entonces la pantalla enseña la carga, no el play.
     public private(set) var hasPlayed = false { didSet { if oldValue != hasPlayed { changed() } } }
     private var startupDeadline: Date?
+    /// El motor ya abrió el archivo de la carga en curso (desde ahí, lo que diga es de este video).
+    private var engineOpened = true
     private var lastSnapshotAt: Date?
     private var lastSave: Date
     private var watchedUnsaved = 0.0
@@ -350,6 +352,7 @@ public final class PlayerModel: ObservableModel {
     private func startLoading() {
         loadSegmentsIfNeeded()
         acceptingSnapshots = true; retrying = false; hasPlayed = false; tracksApplied = false; restoringInPlace = false; playRequest = nil
+        engineOpened = false
         // Toda carga tiene su plazo (abrir, volver a pedirla al regresar a la app, cambiar de versión): antes solo la primera; si el
         // motor se quedaba abriendo el archivo al volver a la app, la pantalla cargaba para siempre (3 min en el iPhone el 29 oct).
         startupDeadline = clock().addingTimeInterval(PlaybackRules.startupTimeout)
@@ -467,6 +470,9 @@ public final class PlayerModel: ObservableModel {
     // MARK: lo que dice el motor
     func handle(_ raw: EngineSnapshot) async {
         guard phase != .closed, acceptingSnapshots, !retrying else { return }
+        // Hasta que el motor abre el archivo nuevo, lo que diga es del video anterior (avisos que se quedaron formados): antes un
+        // «suena» viejo daba por arrancada una versión que no había abierto, se quitaba su plazo y cargaba para siempre.
+        if !engineOpened, raw.state != .loading, raw.state != .idle { return }
         var s = raw
         s.position = StremioLibrary.finite(s.position); s.duration = StremioLibrary.finite(s.duration)   // NaN o infinito (en vivo) no valen
         let now = clock()
@@ -548,6 +554,7 @@ public final class PlayerModel: ObservableModel {
         // el plazo y la pantalla cargaba para siempre (44 min en el iPhone el 29 oct). Lo largo corre aparte (`transition`).
         if foregroundCheck != nil { checkForegroundStall(now: now) }
         if playRequest != nil { checkPlayRequest(now: now) }
+        checkBufferingStall(now: now)
         if foregroundPending, acceptingSnapshots, !retrying {
             foregroundPending = false
             transition = Task { [weak self] in await self?.appDidBecomeActive() }
@@ -569,7 +576,8 @@ public final class PlayerModel: ObservableModel {
                 if panelOpen { upNextDeadline = deadline.addingTimeInterval(now.timeIntervalSince(lastTick ?? now)); lastTick = now; return }
                 card.secondsLeft = max(0, Int(deadline.timeIntervalSince(now).rounded(.up)))
                 upNext = card
-                if now >= deadline { await advance(auto: true)?.value }
+                // Sin esperar: si el siguiente episodio se colgaba al abrir, el reloj se quedaba ahí y nadie revisaba su plazo.
+                if now >= deadline { _ = advance(auto: true) }
             }
         }
     }
@@ -1071,6 +1079,7 @@ public final class PlayerModel: ObservableModel {
             await engine.prepare(audioLanguages: audio, subtitleLanguages: subs, externalSubtitles: request.localSubtitles)
         }
         try await engine.load(url: url, startAt: start)
+        engineOpened = true
         Self.note(String(format: "el motor abrió el archivo en %.1f s", clock().timeIntervalSince(loadStartedAt)))
         if rate != 1 { await engine.setRate(rate) }
     }
@@ -1506,6 +1515,19 @@ public final class PlayerModel: ObservableModel {
     /// Tras volver: si iba sonando y en este plazo no avanzó, el video se pide otra vez en el mismo punto.
     private var foregroundCheck: (deadline: Date, position: Double)?
     static let foregroundStallSeconds: TimeInterval = 8
+    /// Ya sonaba y se detuvo a esperar datos (Real-Debrid o la red se atoraron): pasado este tiempo se pide otra vez en el mismo
+    /// punto. Antes se quedaba cargando para siempre; si la nueva petición tampoco arranca, su plazo prueba otra versión.
+    static let bufferingStallSeconds: TimeInterval = 20
+    private var bufferingSince: Date?
+    private func checkBufferingStall(now: Date) {
+        guard hasPlayed, phase == .playing, snapshot.state == .buffering || snapshot.state == .loading, acceptingSnapshots, !retrying, !reconnecting,
+              foregroundCheck == nil, playRequest == nil, !closing else { bufferingSince = nil; return }
+        guard let since = bufferingSince else { bufferingSince = now; return }
+        guard now.timeIntervalSince(since) >= Self.bufferingStallSeconds else { return }
+        bufferingSince = nil
+        Self.note("en búfer \(Int(now.timeIntervalSince(since))) s en \(Int(snapshot.position)) s: se pide otra vez")
+        startReload(at: snapshot.position, resume: true)
+    }
 
     /// La app pasó a segundo plano de verdad (no solo el Centro de control): se recuerda si iba sonando.
     public func appDidEnterBackgroundFully() {
@@ -1531,15 +1553,17 @@ public final class PlayerModel: ObservableModel {
         let mine = generation
         // Sin aviso al volver: casi siempre el video sigue donde estaba. Solo si de verdad hay que pedirlo otra vez
         // (el motor no pudo rearmarlo, o no avanzó en el plazo) se dice que está cargando.
+        // El plazo corre desde antes de rearmar: si el motor se colgaba rearmando (un enlace caducado tras mucho rato fuera), nada
+        // lo revisaba y cargaba para siempre.
+        if resume { foregroundCheck = (clock().addingTimeInterval(Self.foregroundStallSeconds), position) }
         let restored = await engine.restoreAfterBackground(resume: resume)
         guard mine == generation, !closing else { return }
-        if !restored { return await reloadCurrentSource(at: position, resume: resume) }
-        if resume { foregroundCheck = (clock().addingTimeInterval(Self.foregroundStallSeconds), position) }
+        if !restored { foregroundCheck = nil; return await reloadCurrentSource(at: position, resume: resume) }
     }
 
     /// El plazo tras volver: el video tenía que avanzar y no lo hizo (negro o congelado) → se pide de nuevo.
     private func checkForegroundStall(now: Date) {
-        guard let check = foregroundCheck else { return }
+        guard let check = foregroundCheck, !retrying, !reconnecting else { return }
         if snapshot.state == .paused { foregroundCheck = nil; reconnecting = false; return }   // lo pausaste tú
         if snapshot.state == .playing, snapshot.position > check.position + 0.5 { foregroundCheck = nil; reconnecting = false; return }
         guard now >= check.deadline else { return }
