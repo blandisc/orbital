@@ -32,13 +32,10 @@ struct MatchDeckScreen: View {
                         MoodTile(symbol: Self.symbol(mood), title: Self.name(mood), selected: model.mood == mood) { model.mood = model.mood == mood ? nil : mood }
                     }
                 }
-                if model.cards.isEmpty, model.loaded {
-                    ContentUnavailableView {
-                        Label("Ya viste todo el mazo", systemImage: "rectangle.stack")
-                    } description: {
-                        model.saved.isEmpty ? Text("Cambia de ánimo o vuelve mañana.") : Text("Guardaste \(model.saved.count). Están en tu lista.")
-                    }
-                    .frame(maxHeight: .infinity)
+                if !model.loaded {
+                    skeleton   // mientras llega lo visto: la forma de la carta, no una pantalla en blanco
+                } else if model.cards.isEmpty {
+                    emptyState(model).frame(maxHeight: .infinity)
                 } else {
                     MatchDeck(cards: model.cards,
                               onSave: { s in Task { await model.save(s) } },
@@ -48,7 +45,7 @@ struct MatchDeckScreen: View {
                     actions(model)
                 }
             } else {
-                Spacer()
+                skeleton
             }
         }
         .padding(DS.Space.gutter)
@@ -62,6 +59,25 @@ struct MatchDeckScreen: View {
         }
         .accessibilityElement(children: .contain)   // cada botón conserva su identificador
         .accessibilityIdentifier("match-deck")
+    }
+
+    /// La carta en gris mientras carga.
+    private var skeleton: some View {
+        RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous).fill(DS.fill)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityLabel(Text("Cargando"))
+    }
+
+    /// Sin cartas: si nunca hubo propuestas lo dice así; si las recorriste o el ánimo no tiene, lo dice distinto.
+    @ViewBuilder private func emptyState(_ model: MatchDeckModel) -> some View {
+        if pool.isEmpty {
+            DSEmptyState(symbol: "rectangle.stack", title: Text("Aún no hay propuestas"), message: Text("Cuando Para ti cargue sus listas, aquí salen."))
+        } else if model.mood != nil, model.saved.isEmpty {
+            DSEmptyState(symbol: "face.smiling", title: Text("Nada de este ánimo"), message: Text("Prueba con otro o con todos."))
+        } else {
+            DSEmptyState(symbol: "rectangle.stack", title: Text("Ya viste todo el mazo"),
+                         message: model.saved.isEmpty ? Text("Vuelve mañana: el mazo cambia cada día.") : Text("Guardaste \(model.saved.count). Están en Mi lista."))
+        }
     }
 
     private func actions(_ model: MatchDeckModel) -> some View {

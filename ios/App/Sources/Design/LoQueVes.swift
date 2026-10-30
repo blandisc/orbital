@@ -19,9 +19,9 @@ struct WatchingCard: View {
                 ArtVeil(at: 0, until: DS.Watching.veilFrom)
                 ArtVeil(kind: .leading)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text("Lo que ves").recipe(.eyebrow, color: DS.onArtSecondary)
+                    Text("Esta semana").recipe(.eyebrow, color: DS.onArtSecondary)   // el título de la sección ya dice «Lo que ves»
                     if let stats {
-                        Text("\(stats.hours) h esta semana").font(DS.TextRecipe.display.font).foregroundStyle(DS.paper)
+                        Text("\(stats.hours) h").font(DS.TextRecipe.display.font).foregroundStyle(DS.paper)
                             .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
                         HStack(spacing: DS.Space.s3) {
                             Label { Text("\(stats.titles) títulos") } icon: { Image(systemName: "film.stack") }

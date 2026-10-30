@@ -2609,6 +2609,17 @@
         }
       }
     },
+    "Aún no hay propuestas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No suggestions yet"
+          }
+        }
+      }
+    },
     "Aún no tienes listas en Trakt.": {
       "extractionState": "manual",
       "localizations": {
@@ -5479,6 +5490,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Any"
+          }
+        }
+      }
+    },
+    "Cuando Para ti cargue sus listas, aquí salen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once For You loads its lists, they show up here."
           }
         }
       }
@@ -9250,6 +9272,17 @@
         }
       }
     },
+    "Esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week"
+          }
+        }
+      }
+    },
     "Esta semana en México": {
       "extractionState": "manual",
       "localizations": {
@@ -10036,6 +10069,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save token"
+          }
+        }
+      }
+    },
+    "Guardaste %lld. Están en Mi lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You saved %lld. They're in My List."
           }
         }
       }
@@ -13987,6 +14031,17 @@
         }
       }
     },
+    "Nada de este ánimo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing in this mood"
+          }
+        }
+      }
+    },
     "Nada descargado": {
       "extractionState": "manual",
       "localizations": {
@@ -17246,6 +17301,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Try another filter or more time."
+          }
+        }
+      }
+    },
+    "Prueba con otro o con todos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another one or all of them."
           }
         }
       }
@@ -25588,6 +25654,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Come back here and paste it"
+          }
+        }
+      }
+    },
+    "Vuelve mañana: el mazo cambia cada día.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Come back tomorrow: the deck changes every day."
           }
         }
       }

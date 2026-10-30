@@ -11,7 +11,7 @@ struct WatchingCardLoader: View {
     var body: some View {
         let model = env.watching
         let _ = model.track()
-        if model.linked {
+        if model.linked, !model.failed {   // sin historial (falló), la tarjeta no ocupa lugar en Para ti
             NavigationLink(value: WatchingRoute()) { WatchingCard(stats: model.loaded ? model.stats(.week) : nil) {}.allowsHitTesting(false) }
                 .buttonStyle(.plain)
                 .task { await model.load() }
@@ -62,6 +62,8 @@ struct WatchingView: View {
                 }
 
                 if !model.loaded { DSLoadingState() }
+                // No llegó el historial y no hay nada guardado: es un error, no «nada en este periodo».
+                else if model.failed { DSErrorState(offline: !env.isOnline) { Task { await model.load(full: true, force: true) } } }
                 else if s.isEmpty { DSEmptyState(symbol: "popcorn", title: Text("Nada en este periodo"), message: Text("Lo que veas aquí o en Trakt aparece solo.")) }
                 else { content(s, model, language) }
             }

@@ -10,6 +10,7 @@ struct WrappedView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var index = 0
     @State private var paused = false
+    @Environment(\.scenePhase) private var scenePhase
     @State private var answer: String?
     @State private var progress: Double = 0
     @State private var width: CGFloat = 0
@@ -55,7 +56,7 @@ struct WrappedView: View {
         })
         .onLongPressGesture(minimumDuration: DS.Watching.holdToPause, perform: {}, onPressingChanged: { paused = $0 })
         .animation(DS.Motion.base(reduceMotion), value: index)
-        .task(id: "\(index)|\(paused)|\(answer ?? "")") { await tick(story) }
+        .task(id: "\(index)|\(paused)|\(answer ?? "")|\(scenePhase == .active)") { await tick(story) }
         .accessibilityAction(named: Text("Siguiente")) { step(1) }
         .accessibilityAction(named: Text("Anterior")) { step(-1) }
         // Contenedor: sin esto el id «wrapped» tapaba el de cada botón de adentro (la ✕ dejaba de ser «wrapped-close»).
@@ -66,7 +67,7 @@ struct WrappedView: View {
     /// Avanza sola salvo en el quiz (espera tu respuesta) y en la pausa.
     private func tick(_ story: Story) async {
         if story == .quiz && answer == nil { progress = 0; return }
-        guard !paused else { return }
+        guard !paused, scenePhase == .active else { return }   // mantenido presionado, o la app en segundo plano: espera
         let steps = 65
         for i in 0..<steps {
             try? await Task.sleep(for: DS.Watching.story / steps)

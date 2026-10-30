@@ -71,7 +71,7 @@ struct RepisaView: View {
                                 VStack(spacing: DS.Space.s2) {
                                     ShelfEmblem(id: c.id, height: c.family == .list ? DS.Repisa.listEmblem : DS.Repisa.emblem)
                                     CanonNames.title(c.id).recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
-                                    Text(verbatim: "\(c.seen(model.watched)) / \(c.total.formatted(.number.grouping(.never)))").recipe(.caption, color: DS.textMuted).monospacedDigit()
+                                    Text(verbatim: "\(c.seen(model.watched)) / \(Strings.count(c.total, language: env.services.appSettings.uiLanguage))").recipe(.caption, color: DS.textMuted).monospacedDigit()
                                 }
                                 .frame(maxWidth: .infinity)
                             }
@@ -106,7 +106,11 @@ struct RepisaCollectionView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.s5) {
                     header(c, model)
-                    if c.items.isEmpty { DSLoadingState() }
+                    if c.items.isEmpty {
+                        // La lista no llegó (sin red o MDBList caído) y no había copia: «Reintentar», no cargar para siempre.
+                        if model.failedLists.contains(c.id) { DSErrorState(offline: !env.isOnline) { Task { await model.load() } } }
+                        else { DSLoadingState() }
+                    }
                     ForEach(c.groups(newestFirst: newestFirst || c.grouping == .rank), id: \.title) { group in
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
                             HStack(alignment: .firstTextBaseline) {
@@ -129,6 +133,7 @@ struct RepisaCollectionView: View {
             .safeAreaInset(edge: .bottom) { if let next = c.next(model.watched) { nextBar(next, c) } }
             .sheet(item: $picked) { item in quick(item, c, model).presentationDetents([.height(DS.Repisa.quickHeight)]) }
             .overlay { if let placed { moment(placed, c, model) } }
+            .task { if !model.loaded { await model.load() } }   // entrando directo a una colección (sin pasar por la repisa)
             .animation(DS.Motion.enter(reduceMotion), value: placed?.id)
         }
     }
@@ -138,7 +143,7 @@ struct RepisaCollectionView: View {
             ShelfEmblem(id: c.id, height: DS.Repisa.header)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 CanonNames.category(c.id).recipe(.footnote, color: DS.textMuted)
-                Text("\(c.seen(model.watched)) de \(c.total.formatted(.number.grouping(.never)))").recipe(.title).monospacedDigit()
+                Text("\(c.seen(model.watched)) de \(Strings.count(c.total, language: env.services.appSettings.uiLanguage))").recipe(.title).monospacedDigit()
             }
             Spacer()
             if c.grouping != .rank {
@@ -242,7 +247,7 @@ struct RepisaCollectionView: View {
             ShelfLedge { PosterView(url: item.poster, title: item.title).frame(width: DS.Repisa.momentPoster).transition(.move(edge: .top).combined(with: .opacity)) }
             Text(verbatim: item.title).recipe(.title).multilineTextAlignment(.center)
             ShelfEmblem(id: c.id, height: DS.Repisa.header)
-            Text("\(c.seen(model.watched)) de \(c.total.formatted(.number.grouping(.never)))").recipe(.cardTitle).monospacedDigit().contentTransition(.numericText())
+            Text("\(c.seen(model.watched)) de \(Strings.count(c.total, language: env.services.appSettings.uiLanguage))").recipe(.cardTitle).monospacedDigit().contentTransition(.numericText())
         }
         .padding(DS.Space.s8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

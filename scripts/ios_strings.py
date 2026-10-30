@@ -20,6 +20,10 @@ OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
     # «¿Qué vemos hoy?» (`MatchDeckScreen`, `MatchDeck`).
+    "Aún no hay propuestas": "No suggestions yet", "Cuando Para ti cargue sus listas, aquí salen.": "Once For You loads its lists, they show up here.",
+    "Esta semana": "This week", "Guardaste %lld. Están en Mi lista.": "You saved %lld. They're in My List.",
+    "Nada de este ánimo": "Nothing in this mood", "Prueba con otro o con todos.": "Try another one or all of them.",
+    "Vuelve mañana: el mazo cambia cada día.": "Come back tomorrow: the deck changes every day.",
     "Encuentra tu match perfecto": "Find your perfect match", "¿Qué vemos hoy?": "What should we watch today?",
     "Ya viste todo el mazo": "You've gone through the whole deck", "Cambia de ánimo o vuelve mañana.": "Change the mood or come back tomorrow.",
     "Guardaste %lld. Están en tu lista.": "You saved %lld. They're in your list.", "Descartar": "Dismiss",
