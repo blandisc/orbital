@@ -56,3 +56,18 @@ New York Times (2025).
   con su ramillete de tres pósters. Premios sin álbum ni estampas: las seis listas de hoy, cada estatuilla sobre sus
   tres ganadores. Nuevo lugar reservado «Colecciones» junto a Lo que ves (ahí irán los álbumes). El calendario de
   estrenos sigue en el Inicio, desde «Lo nuevo de lo tuyo».
+
+## Reparto con la sesión «Muvy Advanced Search y premios» (30 oct)
+
+Pedido por Fernando. Nada se construye todavía: se arranca cuando él cierre el diseño de los componentes.
+- **Esa sesión construye los componentes** (rama `claude/muvy-advanced-search-awards-359021`, docs en
+  `docs/producto/muvy-busqueda-premios/`): filtro avanzado, Lo que ves + Wrapped, calificar (estrellas y recordatorio),
+  repisa de Colecciones (`prototipo-repisa.html`, Canvas https://claude.ai/artifact/NA7czFYvp7aWT5p2J2aVjV), el mazo de
+  «¿Qué vemos hoy?» (uno solo, con `para-ti/B-interactivo.dc.html` como especificación, sin decir «Tinder») y Letterboxd.
+- **Esta línea construye las pantallas**: Inicio, Para ti y el cielo de fondo, y monta ahí cada componente: botón del
+  filtro arriba a la derecha (Para ti y el mismo en Inicio), tarjeta de Lo que ves, tarjeta de Colecciones debajo y la
+  tarjeta «¿Qué vemos hoy?». Esa sesión avisa antes de tocar código y pasa la lista de componentes con su interfaz.
+- Letterboxd (propuesta, falta que Fernando la confirme): dentro de Lo que ves, sección «Tus reseñas»; se conecta en
+  Ajustes › Cuentas con el usuario (RSS, últimas ~50) y, opcional, con el archivo de exportación una vez. No va como
+  fila en Para ti.
+- Bibliotecas y Orbital / Orbital Plus: en pausa.
