@@ -176,10 +176,14 @@ def router(d: Deps) -> APIRouter:
     @r.post("/api/ui/pad")
     def ui_pad(body: dict) -> dict:
         """La interfaz dice si lee el mando ella misma (`listening`). Quieta lo suelta y el primer botón le llega del
-        servidor; responde si hay un mando XInput que el servidor vea (si no, la interfaz no lo suelta)."""
+        servidor; responde si hay un mando XInput que el servidor vea (si no, la interfaz no lo suelta) y si hay otro que
+        el servidor no lee (`others`: PlayStation, Switch Pro; con uno así tampoco lo suelta)."""
         shell.ui_pad = body.get("listening") is not False if isinstance(body, dict) else True
         watcher = getattr(shell, "gamepad", None)
-        return {"xinput": bool(getattr(watcher, "connected", False))}
+        if watcher is None:
+            return {"xinput": False, "others": False}
+        watcher.watch_others = not shell.ui_pad
+        return {"xinput": bool(getattr(watcher, "connected", False)), "others": bool(watcher.others())}
 
     @r.post("/api/ui/show")
     def ui_show() -> dict:

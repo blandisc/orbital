@@ -298,7 +298,24 @@ def test_ui_says_whether_it_reads_the_controller_and_learns_if_the_server_sees_o
     """Quieta, la interfaz suelta el mando del navegador y el primer botón le llega del servidor (shell.forward_to_ui)."""
     with make_client() as c:
         shell = c.app.state.shell
-        assert c.post("/api/ui/pad", json={"listening": False}).json() == {"xinput": False}  # sin XInput en la prueba
+        assert c.post("/api/ui/pad", json={"listening": False}).json() == {"xinput": False, "others": False}  # sin mandos
         assert shell.ui_pad is False
         c.post("/api/ui/pad", json={"listening": True})
         assert shell.ui_pad is True
+
+
+def test_a_controller_the_server_cannot_read_keeps_the_ui_reading_and_wakes_it(make_client):
+    """Un mando de PlayStation no pasa por XInput: la interfaz quieta no debe soltar el suyo y, si ya lo soltó, el servidor
+    la despierta (antes ese mando no hacía nada hasta tocar otra cosa)."""
+    from orbital.gamepad import GamepadWatcher
+
+    with make_client() as c:
+        shell = c.app.state.shell
+        watcher = GamepadWatcher(lambda event: None)
+        watcher._joysticks = lambda: [(0x17EF, 0x61EB), (0x054C, 0x05C4)]  # Legion (XInput) + DualShock 4
+        watcher.devices = {0: (0x17EF, 0x61EB)}
+        shell.gamepad = watcher
+        assert c.post("/api/ui/pad", json={"listening": False}).json()["others"] is True
+        assert watcher.watch_others is True
+        c.post("/api/ui/pad", json={"listening": True})
+        assert watcher.watch_others is False

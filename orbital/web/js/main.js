@@ -51,7 +51,7 @@ import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows, m
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 import { sized } from "./core/images.js";
-import { onConnected as onPadConnected, pads as readPads } from "./core/pads.js";
+import { onConnected as onPadConnected, onDisconnected as onPadDisconnected, pads as readPads } from "./core/pads.js";
 
 const state = createState();
 // La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
@@ -1976,6 +1976,8 @@ const EVENTS = {
     return ui.launch.keep(30_000);
   },
   input: (event) => handleAction(event.action),  // el control remoto del iPhone, como el mando
+  // un mando que el servidor no lee (PlayStation): la interfaz vuelve a leer el suyo, sin tragarse su primer botón
+  "pad-wake": () => { input.wake({ fresh: true }); stir(); },
   text: (event) => remoteText(String(event.text || ""), !!event.submit, !!event.replace),
   settings: (event) => event.settings && applySettings(event.settings),
   // memoria casi llena
@@ -2129,21 +2131,24 @@ const videoInFront = () => state.running?.id === "media:player" && state.running
 // Quieta, Orbital suelta el mando del navegador (pads.js: le costaba a Edge ~14 % de un núcleo sin parar) y el primer botón
 // le llega del servidor, que ya lee XInput para Home. Solo si el servidor ve un mando XInput y todos los que ve el
 // navegador lo son: un mando que solo ve el navegador (DInput, uno de PlayStation) no se suelta nunca.
-const padServer = { xinput: false };
+const padServer = { xinput: false, others: false };
 // Así nombra Edge a un mando XInput (entrada.log: «Xbox 360 Controller for Windows (STANDARD GAMEPAD)»); los controles de la
 // Legion en DInput llegan como «Legion-Controller … (Vendor: 17ef …)» y esos el servidor no los ve.
 const XINPUT_ID = /xinput|xbox/i;
-const tellPad = (listening) => api.uiPad(listening).then((r) => { padServer.xinput = !!r.xinput; }).catch(() => {});
+const tellPad = (listening) => api.uiPad(listening).then((r) => { padServer.xinput = !!r.xinput; padServer.others = !!r.others; }).catch(() => {});
 const input = createInput({
   onAction: (action, options) => { if (!videoInFront()) handleAction(action, options); },
   onModality: setModality,
+  onTouch: () => { if (state.modality !== "touch") touchSince = performance.now(); }, // el aspecto cambia tras su clic
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).
   // Conectar Stremio no borra por palabras (es un correo o una contraseña): ahí Retroceso mantenido sigue de letra en letra.
   onText: (char) => { if (videoInFront()) return; (ui.login.isOpen ? ui.login.type(char === ERASE_WORD ? "" : char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
   onTrace: (entry) => traceInput(entry),
   resting: () => document.body.dataset.still !== undefined,
-  canSleep: (pads) => padServer.xinput && pads.filter(Boolean).every((pad) => XINPUT_ID.test(pad.id || "")),
+  // `others`: un mando conectado que el servidor no lee. Edge solo lo enseña tras un botón apretado MIENTRAS lo lee: suelto, nunca
+  // aparecía y ese mando no hacía nada (el servidor lo busca cada 3 s y, si lo encuentra, manda «pad-wake»).
+  canSleep: (pads) => padServer.xinput && !padServer.others && pads.filter(Boolean).every((pad) => XINPUT_ID.test(pad.id || "")),
   onReading: (listening) => tellPad(listening),
 });
 tellPad(true);
@@ -2232,7 +2237,11 @@ const legionStuck = () => {
   const pads = readPads().filter(Boolean);
   return !pads.some(usablePad) && pads.some((pad) => /legion/i.test(pad.id || ""));
 };
+// Un mando que llega o se va cambia si se puede soltar el del navegador: se le vuelve a preguntar al servidor (si no, tras
+// desconectar uno de PlayStation, `others` se quedaba en sí y Edge seguía leyendo el mando sin parar: ~11 % de un núcleo).
+onPadDisconnected(() => tellPad(true));
 onPadConnected((gamepad) => {
+  tellPad(true);
   if (legionTip || usablePad(gamepad) || !/legion/i.test(gamepad.id || "")) return;
   setTimeout(() => {
     if (legionTip || !legionStuck()) return;

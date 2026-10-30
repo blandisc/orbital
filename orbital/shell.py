@@ -423,6 +423,14 @@ class ConsoleShell:
         for vk in remote.update(buttons, now):
             send(vk)
 
+    def wake_ui_pad(self) -> None:
+        """Hay un mando que solo ve el navegador (PlayStation, Switch Pro) y la interfaz quieta soltó el suyo: que lo vuelva a
+        leer. Sin esto ese mando no hacía nada hasta tocar otra cosa (sus botones no pasan por XInput)."""
+        events = getattr(self.catalog, "events", None)
+        if events is not None:
+            input_log.record([{"from": "winmm→interfaz", "action": "pad-wake"}])
+            events.publish({"type": "pad-wake"})
+
     def forward_to_ui(self, slot: int, buttons: int) -> None:
         """Orbital quieta soltó el mando del navegador: los botones nuevos le llegan como acciones (el mismo camino que el
         control del iPhone), solo con Orbital al frente y nada abierto. Al primero, la interfaz despierta y lo vuelve a tomar."""
@@ -513,6 +521,7 @@ class ConsoleShell:
             self.overlay = overlay if overlay.start() else None
         self.gamepad = GamepadWatcher(self.on_gamepad, self.on_buttons)
         self.gamepad.on_pad = self.on_pad  # un control que llega o se va: su número de jugador, en pantalla
+        self.gamepad.on_others = self.wake_ui_pad  # un mando que el servidor no lee (PlayStation): la interfaz lo vuelve a leer
         self.gamepad.start()  # sin XInput, Legion L sigue funcionando
         # El Home del teclado (Ctrl + Inicio): como Home en el mando o un toque de Legion L, aunque el juego tenga el foco.
         from .hotkey import KeyboardHome
