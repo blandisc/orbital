@@ -105,7 +105,8 @@ struct ListsView: View {
                         jumps += 1
                         withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) }
                     }
-                    DecideCard(posters: Array(walls.dropFirst(3).prefix(3)), onOpen: onDecide)
+                    // Sin pósters (sin TMDB ni Trakt) la tarjeta queda vacía: el dado de la barra sigue abriendo «Decide por mí».
+                    if !walls.isEmpty { DecideCard(posters: Array(walls.dropFirst(3).prefix(3)), onOpen: onDecide) }
                     if model.hasKindSplit {
                         DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
                                                    set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), icons: true)

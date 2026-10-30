@@ -93,7 +93,7 @@ TRANSLATIONS = {
     "Encuentra tu match perfecto": "Find your perfect match",
     "Lo que se está viendo": "What's being watched",
     "Lo que ves": "What you watch",
-    "Más de 50 formas de encontrar qué ver": "More than 50 ways to find something to watch",
+    "Todas las formas de encontrar qué ver": "Every way to find something to watch",
     "Pasear por el mosaico": "Wander the mosaic",
     "¿Qué vemos hoy?": "What should we watch today?",
     "Quitar %@ de tus canales": "Remove %@ from your channels",

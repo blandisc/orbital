@@ -75,7 +75,7 @@ struct MosaicCover: View {
             .clipped()
             .overlay(alignment: .bottomLeading) {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Eyebrow(text: Text("Más de 50 formas de encontrar qué ver"), reason: true)
+                    Eyebrow(text: Text("Todas las formas de encontrar qué ver"), reason: true)
                     Button(action: onWalk) { Label("Pasear por el mosaico", systemImage: "square.grid.3x3.fill") }
                         .dsPrimaryButton()
                         .accessibilityIdentifier("paraTi-walk-mosaic")

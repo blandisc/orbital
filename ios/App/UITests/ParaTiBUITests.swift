@@ -24,6 +24,9 @@ final class ParaTiBUITests: XCTestCase {
         shot("para-ti-arriba")
         card.tap()
         XCTAssertTrue(app.otherElements["match-deck"].waitForExistence(timeout: 10), "se abre el mazo")
+        for id in ["match-save", "match-discard", "match-play"] {
+            XCTAssertTrue(app.buttons[id].waitForExistence(timeout: 5), "está \(id)")
+        }
         sleep(2)
         shot("mazo")
     }

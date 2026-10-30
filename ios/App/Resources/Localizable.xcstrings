@@ -13482,17 +13482,6 @@
         }
       }
     },
-    "Más de 50 formas de encontrar qué ver": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "More than 50 ways to find something to watch"
-          }
-        }
-      }
-    },
     "Más del episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -22302,6 +22291,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "All (%lld)"
+          }
+        }
+      }
+    },
+    "Todas las formas de encontrar qué ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every way to find something to watch"
           }
         }
       }
