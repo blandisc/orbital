@@ -15,14 +15,24 @@ public final class ReleaseAlerts {
         public let episodeTitle: String
         public let poster: String
         public let art: String
+        /// La imagen del propio episodio (Cinemeta), si ya la hay: el aviso la prefiere al fondo de la serie.
+        public let still: String?
         public let quality: String?
         public let instant: Bool
         public let minutes: Int?
 
         public init(id: String, metaID: String, show: String, season: Int, episode: Int, episodeTitle: String, poster: String, art: String,
-                    quality: String?, instant: Bool, minutes: Int?) {
+                    still: String? = nil, quality: String?, instant: Bool, minutes: Int?) {
             self.id = id; self.metaID = metaID; self.show = show; self.season = season; self.episode = episode; self.episodeTitle = episodeTitle
-            self.poster = poster; self.art = art; self.quality = quality; self.instant = instant; self.minutes = minutes
+            self.poster = poster; self.art = art; self.still = still; self.quality = quality; self.instant = instant; self.minutes = minutes
+        }
+
+        /// Lo mismo con el nombre y la imagen del episodio que dice Cinemeta (lo que no traiga se queda como estaba).
+        func with(_ episode: Episode?) -> Alert {
+            guard let episode else { return self }
+            return Alert(id: id, metaID: metaID, show: show, season: season, episode: self.episode,
+                         episodeTitle: episode.hasTitle ? episode.title : episodeTitle, poster: poster, art: art,
+                         still: episode.thumbnail ?? still, quality: quality, instant: instant, minutes: minutes)
         }
     }
 
@@ -37,6 +47,8 @@ public final class ReleaseAlerts {
     /// episodio sin fuentes todavía esperaba a cada complemento hasta 15-30 s; con dos así se acababan los ~30 s que da iOS en
     /// segundo plano, iOS cortaba la revisión y el que sí tenía fuente nunca se avisaba.
     public nonisolated static let findBudget: TimeInterval = 10
+    /// Lo más que se espera la ficha de cada serie (el nombre y la imagen de cada episodio). Sin ella el aviso sale igual.
+    public nonisolated static let metaBudget: TimeInterval = 4
 
     /// Lo que pasó en la última revisión (para la bitácora): qué faltaba avisar, qué ya tenía fuente, qué no contestó a
     /// tiempo y cuándo sale lo siguiente de tu calendario.
@@ -103,8 +115,42 @@ public final class ReleaseAlerts {
                              episodeTitle: episode == airing.first ? airing.episodeTitle : "", poster: airing.series.poster, art: airing.series.wide,
                              quality: best.resolution.isEmpty ? nil : best.resolution, instant: best.cached, minutes: airing.series.runtime))
         }
+        out = await withEpisodeDetails(out)
         report.seconds = Date().timeIntervalSince(started)
         return out
+    }
+
+    /// El nombre y la imagen de cada episodio: el calendario de Trakt trae un solo nombre por estreno (el del primero, si salen
+    /// varios el mismo día) y ninguna imagen del episodio. Una ficha por serie, todas a la vez y cada una con su tope.
+    func withEpisodeDetails(_ alerts: [Alert]) async -> [Alert] {
+        let cinemeta = services.cinemeta
+        let shows = Array(Set(alerts.map(\.metaID)))
+        let budget = Self.metaBudget
+        let episodes = await withTaskGroup(of: [String: Episode].self) { group in
+            for show in shows {
+                group.addTask {
+                    let meta = await Self.within(budget) { try? await cinemeta.meta(kind: "series", id: show) }
+                    guard let meta else { return [:] }
+                    return Dictionary(CinemetaParsing.seasons(meta).flatMap(\.episodes).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+                }
+            }
+            var all: [String: Episode] = [:]
+            for await found in group { all.merge(found) { a, _ in a } }
+            return all
+        }
+        return alerts.map { $0.with(episodes[$0.id]) }
+    }
+
+    /// Lo que conteste `work` en `seconds`, o nada (sin esperar a que termine).
+    nonisolated static func within<T: Sendable>(_ seconds: TimeInterval, _ work: @escaping @Sendable () async -> T?) async -> T? {
+        await withCheckedContinuation { (done: CheckedContinuation<T?, Never>) in
+            let once = Once()
+            let job = Task { let value = await work(); if once.claim() { done.resume(returning: value) } }
+            Task {
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                if once.claim() { job.cancel(); done.resume(returning: nil) }
+            }
+        }
     }
 
     /// La mejor fuente de un episodio, o nada si en `budget` segundos no llegó ninguna (`late`: se acabó el tiempo). Lo que

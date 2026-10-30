@@ -287,17 +287,6 @@
         }
       }
     },
-    "%lld estrenos ya para ver": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld new episodes ready to watch"
-          }
-        }
-      }
-    },
     "%lld frases · cómo pedirlo · si no funciona": {
       "extractionState": "manual",
       "localizations": {
@@ -2396,17 +2385,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download season"
-          }
-        }
-      }
-    },
-    "Bajar todos": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Download all"
           }
         }
       }
@@ -5199,24 +5177,24 @@
         }
       }
     },
-    "De las series que sigues en Trakt. Te avisa cuando ya hay fuente en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.": {
+    "De las series que sigues en Trakt. Te avisa cuando ya hay fuente en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "For the shows you follow on Trakt. It tells you once there's a Real-Debrid source, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; several on the same day arrive together."
+            "value": "For the shows you follow on Trakt. It tells you once there's a Real-Debrid source, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; each episode gets its own notification."
           }
         }
       }
     },
-    "De las series que sigues en Trakt. Te avisa cuando ya se puede ver en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.": {
+    "De las series que sigues en Trakt. Te avisa cuando ya se puede ver en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "For the shows you follow on Trakt. It tells you once it can be watched on Real-Debrid, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; several on the same day arrive together."
+            "value": "For the shows you follow on Trakt. It tells you once it can be watched on Real-Debrid, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; each episode gets its own notification."
           }
         }
       }
@@ -23088,17 +23066,6 @@
         }
       }
     },
-    "Ver el primero": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Watch the first"
-          }
-        }
-      }
-    },
     "Ver en Descargas": {
       "extractionState": "manual",
       "localizations": {
@@ -23744,17 +23711,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ready to watch"
-          }
-        }
-      }
-    },
-    "Ya está para ver · «%@»": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ready to watch · “%@”"
           }
         }
       }

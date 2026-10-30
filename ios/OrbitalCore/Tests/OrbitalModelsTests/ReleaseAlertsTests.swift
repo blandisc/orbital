@@ -66,4 +66,34 @@ final class ReleaseAlertsCheckTests: XCTestCase {
         XCTAssertEqual(alerts.report.pending.sorted(), ["tt0000001:2:1", "tt0000002:2:1"])
         XCTAssertEqual(alerts.report.timedOut, ["tt0000001:2:1"], "la bitácora dice cuál no contestó a tiempo")
     }
+
+    /// Dos episodios el mismo día: cada uno con su aviso, su nombre y su imagen (Trakt trae un solo nombre por estreno y
+    /// ninguna imagen; salía «4 estrenos ya para ver» en una lista y el segundo sin nombre, 30 oct).
+    func testEachEpisodeBringsItsOwnNameAndStill() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.services.settings.update { $0.releaseAlerts = true }
+        let now = rig.clock.now
+        let cal = Calendar.current
+        let start = ForYou.dayString(cal.date(byAdding: .day, value: -2, to: cal.startOfDay(for: now))!, calendar: cal)
+        let aired = ISO8601DateFormatter().string(from: now.addingTimeInterval(-3 * 3600))
+        func row(_ number: Int, _ title: String) -> JSON {
+            ["first_aired": .string(aired), "episode": ["season": 1, "number": .int(number), "title": .string(title)],
+             "show": ["title": "Avatar", "ids": ["imdb": "tt0000003", "trakt": 3]]]
+        }
+        rig.http.json["https://api.trakt.tv/calendars/my/shows/\(start)/4?extended=full"] = [row(10, "Ghosts and Spirits"), row(11, "Battle of the Ruins")]
+        for n in [10, 11] {
+            rig.http.json["https://a.example/stream/series/tt0000003%3A1%3A\(n).json"] = ["streams": [
+                ["name": "T\n1080p [RD+]", "title": .string("Avatar.S01E\(n).1080p.WEB-DL\n💾 1 GB"), "url": .string("https://rd.example/\(n).mkv")]]]
+        }
+        rig.http.json["https://v3-cinemeta.strem.io/meta/series/tt0000003.json"] = ["meta": ["id": "tt0000003", "name": "Avatar", "type": "series", "videos": [
+            ["id": "tt0000003:1:10", "season": 1, "episode": 10, "name": "Ghosts and Spirits", "thumbnail": "https://episodes.example/10.jpg"],
+            ["id": "tt0000003:1:11", "season": 1, "episode": 11, "name": "Battle of the Ruins", "thumbnail": "https://episodes.example/11.jpg"],
+        ]]]
+        let alerts = ReleaseAlerts(rig.services)
+        alerts.budget = 1
+        let due = await alerts.due().sorted { $0.episode < $1.episode }
+        XCTAssertEqual(due.map(\.id), ["tt0000003:1:10", "tt0000003:1:11"], "uno por episodio")
+        XCTAssertEqual(due.map(\.episodeTitle), ["Ghosts and Spirits", "Battle of the Ruins"])
+        XCTAssertEqual(due.map(\.still), ["https://episodes.example/10.jpg", "https://episodes.example/11.jpg"])
+    }
 }

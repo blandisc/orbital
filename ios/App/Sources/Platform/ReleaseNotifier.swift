@@ -5,19 +5,19 @@ import OrbitalModels
 import UIKit
 @preconcurrency import UserNotifications
 
-/// El aviso «Ya está para ver» en iOS: la notificación compacta (la serie y el episodio, «ya está para ver» y sus datos, con
-/// el arte del episodio que se ve en grande al mantenerla presionada) y sus tres botones: Ver, Ver en la TV y Descargar.
-/// Varios el mismo día se juntan en uno. Se revisa al abrir la app y en segundo plano (mejor esfuerzo de iOS).
+/// El aviso «Ya está para ver» en iOS: uno por episodio, siempre (antes tres o más se juntaban en una lista sin botones de cada
+/// uno, 30 oct). La serie arriba, el episodio y su nombre debajo, y la imagen del episodio (o el fondo de la serie, o su póster)
+/// que se ve en grande al mantenerlo presionado; sus tres botones: Ver, Ver en la TV y Descargar. Los de una misma serie se
+/// apilan juntos. Se revisa al abrir la app y en segundo plano (mejor esfuerzo de iOS).
 enum ReleaseNotifier {
     /// Debe coincidir con `BGTaskSchedulerPermittedIdentifiers` de `project.yml`.
     static let identifier = "mx.iracheta.orbital.releases"
     static let category = "orbital.release"
-    /// Varios juntos: «Ver el primero» y «Bajar todos».
-    static let groupCategory = "orbital.release.group"
-    static let thread = "estrenos"
-    enum Action { static let watch = "release.watch", tv = "release.tv", download = "release.download", downloadAll = "release.download-all" }
-    /// Tres o más a la vez: uno solo con la lista.
-    static let groupFrom = 3
+    /// La de antes para varios juntos: ya no se manda, pero se quita al registrar (los avisos viejos no se quedan con sus botones).
+    static let oldGroupCategory = "orbital.release.group"
+    /// La pila de cada serie: «estrenos.tt…».
+    static func thread(_ metaID: String) -> String { "estrenos.\(metaID)" }
+    enum Action { static let watch = "release.watch", tv = "release.tv", download = "release.download" }
 
     static func register() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: identifier, using: nil) { task in
@@ -66,12 +66,8 @@ enum ReleaseNotifier {
         ].filter { tv || $0.identifier != Action.tv }
         let release = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
                                              hiddenPreviewsBodyPlaceholder: Strings.tr("Un estreno ya está para ver", language: language), options: [])
-        let group = UNNotificationCategory(identifier: groupCategory, actions: [
-            UNNotificationAction(identifier: Action.watch, title: Strings.tr("Ver el primero", language: language), options: [.foreground], icon: UNNotificationActionIcon(systemImageName: "play.fill")),
-            UNNotificationAction(identifier: Action.downloadAll, title: Strings.tr("Bajar todos", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "arrow.down.circle")),
-        ], intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: Strings.tr("Un estreno ya está para ver", language: language), options: [])
         UNUserNotificationCenter.current().getNotificationCategories { existing in
-            UNUserNotificationCenter.current().setNotificationCategories(existing.filter { $0.identifier != category && $0.identifier != groupCategory }.union([release, group]))
+            UNUserNotificationCenter.current().setNotificationCategories(existing.filter { $0.identifier != category && $0.identifier != oldGroupCategory }.union([release]))
         }
     }
 
@@ -107,34 +103,39 @@ enum ReleaseNotifier {
     @MainActor static func post(_ due: [ReleaseAlerts.Alert], language: String, images: Bool = true) async {
         let when = ReleaseAlerts.deliverAt(now: Date())
         let trigger = when.map { UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: $0), repeats: false) }
-        if due.count >= groupFrom {
-            let content = UNMutableNotificationContent()
-            content.title = String(format: Strings.tr("%lld estrenos ya para ver", language: language), due.count)
-            content.body = due.map { "\($0.show) · " + Strings.episode(season: $0.season, episode: $0.episode, language: language) }.joined(separator: "\n")
-            content.threadIdentifier = thread
-            content.sound = .default
-            content.categoryIdentifier = groupCategory
-            content.userInfo = ["kind": "series", "id": due[0].metaID, "video": due[0].id, "title": due[0].show,
-                                "all": due.map { ["id": $0.metaID, "video": $0.id, "title": $0.show, "episode": Strings.episode(season: $0.season, episode: $0.episode, language: language)] }]
-            if images, let image = await attachment(due[0].art, id: "group") { content.attachments = [image] }
-            try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "release.group.\(due.map(\.id).joined(separator: ","))", content: content, trigger: trigger))
-            return
+        // Las imágenes a la vez: de una en una, con varios episodios se comían el tiempo que da iOS en segundo plano.
+        var art: [String: UNNotificationAttachment] = [:]
+        if images {
+            await withTaskGroup(of: (String, UNNotificationAttachment?).self) { group in
+                for alert in due { group.addTask { (alert.id, await attachment(alert)) } }
+                for await (id, image) in group { if let image { art[id] = image } }
+            }
         }
         for alert in due {
             let content = UNMutableNotificationContent()
-            content.title = "\(alert.show) · " + Strings.episode(season: alert.season, episode: alert.episode, language: language)
-            let what = alert.episodeTitle.isEmpty ? Strings.tr("Ya está para ver", language: language)
-                : String(format: Strings.tr("Ya está para ver · «%@»", language: language), alert.episodeTitle)
-            let facts = [alert.instant ? Strings.tr("Al instante", language: language) : nil, alert.quality, alert.minutes.map { "\($0) min" }].compactMap { $0 }
-            content.body = ([what] + (facts.isEmpty ? [] : [facts.joined(separator: " · ")])).joined(separator: "\n")
-            content.threadIdentifier = thread
+            content.title = alert.show
+            let episode = Strings.episode(season: alert.season, episode: alert.episode, language: language)
+            content.subtitle = alert.episodeTitle.isEmpty ? episode : "\(episode) · \(alert.episodeTitle)"
+            // «Al instante» ya no: todo lo que se avisa se ve al instante (sin eso no se avisa), y era jerga.
+            let facts = [alert.quality, alert.minutes.map { "\($0) min" }].compactMap { $0 }
+            content.body = ([Strings.tr("Ya está para ver", language: language)] + facts).joined(separator: " · ")
+            content.threadIdentifier = thread(alert.metaID)
+            content.summaryArgument = alert.show
             content.categoryIdentifier = category
             content.sound = .default
             content.userInfo = ["kind": "series", "id": alert.metaID, "video": alert.id, "title": alert.show]
-            // El arte del episodio: chico en el aviso, grande al mantenerlo presionado.
-            if images, let image = await attachment(alert.art, id: alert.id) { content.attachments = [image] }
+            if let image = art[alert.id] { content.attachments = [image] }
             try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "release.\(alert.id)", content: content, trigger: trigger))
         }
+    }
+
+    /// La imagen del aviso, la primera que se pueda bajar: la del episodio, el fondo de la serie o su póster (a dos avisos de
+    /// Avatar les faltó la imagen el 30 oct, que no llegó a tiempo en segundo plano).
+    private static func attachment(_ alert: ReleaseAlerts.Alert) async -> UNNotificationAttachment? {
+        for url in [alert.still, alert.art, alert.poster].compactMap({ $0 }).filter({ !$0.isEmpty }) {
+            if let image = await attachment(url, id: alert.id) { return image }
+        }
+        return nil
     }
 
     /// La imagen del aviso: se baja a un archivo temporal (iOS la copia a su lado).
@@ -144,7 +145,7 @@ enum ReleaseNotifier {
               (response as? HTTPURLResponse)?.statusCode ?? 0 < 400, !data.isEmpty else { return nil }
         // Siempre como JPEG y reducida: metahub manda algunas en WebP (que el aviso no enseña) y en 1920 px (de más).
         guard let jpeg = ImagePipeline.downsample(data, maxPixel: DS.Image.notification)?.jpegData(compressionQuality: DS.Image.notificationQuality) else { return nil }
-        let file = FileManager.default.temporaryDirectory.appendingPathComponent("release-\(id.replacingOccurrences(of: ":", with: "-")).jpg")
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("release-\(id.replacingOccurrences(of: ":", with: "-"))-\(UUID().uuidString).jpg")
         guard (try? jpeg.write(to: file)) != nil else { return nil }
         return try? UNNotificationAttachment(identifier: id, url: file, options: [UNNotificationAttachmentOptionsTypeHintKey: "public.jpeg"])
     }
@@ -159,13 +160,6 @@ enum ReleaseNotifier {
         switch response.actionIdentifier {
         case Action.tv:
             await env.playOnTV(kind: kind, metaID: id, videoID: video, title: title)
-        case Action.downloadAll:
-            for entry in info["all"] as? [[String: String]] ?? [] {
-                guard let metaID = entry["id"], let video = entry["video"] else { continue }
-                let show = entry["title"] ?? ""
-                _ = await env.services.queueDownload(kind: "series", metaID: metaID, videoID: video, title: show, originalTitle: show,
-                                                     subtitle: entry["episode"] ?? "", poster: String(format: ForYou.metahubPoster, metaID))
-            }
         case Action.download:
             _ = await env.services.queueDownload(kind: kind, metaID: id, videoID: video ?? id, title: title, originalTitle: title, subtitle: "",
                                                  poster: String(format: ForYou.metahubPoster, id))
