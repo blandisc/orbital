@@ -53,6 +53,36 @@ Una sección agrupa varias cosas; una subsección es una fila o un estante (las 
 filas de la ficha). Lo que explica una sección va en el cuerpo, debajo, nunca como subtítulo. `DesignTests`
 (`testSectionsHaveNoReasonAndSubsectionsAlwaysDo`) revisa las dos reglas.
 
+### Lenguaje de diseño del iPhone (una pieza por papel)
+
+Si hay dos maneras de hacer lo mismo, una sobra. Antes de armar algo en una pantalla se busca su pieza aquí; si no existe, se
+agrega al catálogo (`ios/App/Sources/Design/`) y a esta tabla. `DesignTests` revisa las que dicen «prueba».
+
+| Papel | La pieza | Regla | Prueba |
+|---|---|---|---|
+| Encabezado | `DSSectionHead(level:)` | Sección sola; subsección con su porqué (ver arriba). | sí |
+| Porqué | `Eyebrow(reason: true)` · `DS.eyebrow` | Siempre turquesa, arriba de su título. Las excepciones dicen por qué (`ds-exception:`): los rótulos de historia del Wrapped (ámbar), la ruleta de Los Simpson (su amarillo), «En la tele» sobre el arte. | sí |
+| Botón principal | `dsPrimaryButton()` (vidrio) · `dsSolidPrimaryButton()` (sólido) | Sólido a todo lo ancho con esquinas de tarjeta (Ver, Continuar, Ver resultados, Ver tu Wrapped); en línea dentro de un renglón, `shape: .capsule`; en una fila de íconos, `shape: .circle`. El de vidrio, junto a otros botones de vidrio. | sí |
+| Botón secundario | `dsSecondaryButton()` | Con borde, en cápsula y del color del texto; el tamaño, con `controlSize`. | sí |
+| Botón de ícono | `.dsIconButtonLook()` · `DSIconButton` | Vidrio en círculo; sólido donde el vidrio no se lleva bien. | — |
+| Selector | `DSSegmented` · `DSKindFilter` | `DSKindFilter` para Todo · Series · Películas (con íconos en las franjas); `DSSegmented` para todo lo demás (periodos, Quiero/Quitar, Por idioma/Todas). | sí |
+| Vacío | `DSEmptyState` | Ícono, título y una línea; sus botones, de vidrio. | sí |
+| Tarjeta | `DS.surface` · `DS.Radius.lg` | Las tarjetas y renglones van en `surface` con `Radius.lg`; las destacadas (una por pantalla: «¿Qué vemos hoy?», «La temporada», «Por lo que viste») en `Radius.xl`. Los rellenos dentro de una tarjeta, `DS.fill`. | — |
+| Etiqueta | íconos antes que texto | Nada de cápsulas de texto para estados; un ícono o el dato tal cual (`DSBadge` solo sobre el arte o «HOY»/«Nuevo»). | — |
+
+**Espacios.** Entre secciones de una pantalla, `DS.Editorial.sectionGap` (36) en todas: Inicio, Para ti, Buscar, Lo que ves,
+Colecciones, Mi media, una persona, la hoja de Canales. Del encabezado a su contenido, `DS.Space.s3`. Entre renglones o
+tarjetas de una lista, `DS.Space.s2`. A los lados, `DS.Space.gutter`. Los grupos dentro de una misma lista (las décadas de una
+colección) van más juntos (`s5`): no son secciones. En Para ti, las colecciones en carrusel se separan con `groupGap` porque su
+reflejo ya pone el resto del aire.
+
+**Títulos de navegación.** Las pestañas (Para ti, Descargas, Buscar) llevan el título grande en el renglón de los botones
+(`.inlineLarge`); Inicio, el logotipo. Lo que se abre encima va en `.inline`, salvo las pantallas con su propio encabezado en
+grande (Lo que ves, Colecciones).
+
+**Acentos.** Turquesa: el porqué y lo que está en vivo. Ámbar: las estrellas de calificar y los avisos. El verde de `success`:
+lo que ya se puede ver («HOY», «Nuevo»). El color del arte: el botón principal de un título y su fondo.
+
 **Texto tenue vs. adorno:** `--color-text-faint` (blanco al 50 %, ≥ 4,5:1) es texto que se lee; `--color-decorative`
 (ink-500) solo adornos que no se leen, como la cifra grande del Top 10.
 

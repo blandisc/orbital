@@ -408,7 +408,7 @@ struct TitleView: View {
                         Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
                     }
                 }
-                .buttonStyle(.bordered).buttonBorderShape(.capsule).tint(DS.text)
+                .dsSecondaryButton()
                 .accessibilityLabel(Text("Versión de la serie"))
                 .accessibilityIdentifier("series-version")
             }

@@ -85,18 +85,23 @@ struct DSDegradedNotice: View {
 
 /// Selector segmentado: el control nativo de iOS (`Picker` con `.segmented`), que en iOS 26 ya es de vidrio.
 struct DSSegmented<Value: Hashable>: View {
-    let options: [(Value, LocalizedStringKey)]
+    let options: [(Value, Text)]
     @Binding var selection: Value
     /// El valor actual como dato de la vista: con un `Binding(get:set:)` SwiftUI no ve el cambio y no la vuelve a pintar.
     private let current: Value
 
     init(options: [(Value, LocalizedStringKey)], selection: Binding<Value>) {
+        self.options = options.map { ($0.0, Text($0.1)) }; _selection = selection; current = selection.wrappedValue
+    }
+
+    /// Con los nombres ya armados (los periodos de Lo que ves, «Semana», «Mes»…).
+    init(labeled options: [(Value, Text)], selection: Binding<Value>) {
         self.options = options; _selection = selection; current = selection.wrappedValue
     }
 
     var body: some View {
         Picker(selection: $selection) {
-            ForEach(options.indices, id: \.self) { Text(options[$0].1).tag(options[$0].0) }
+            ForEach(options.indices, id: \.self) { options[$0].1.tag(options[$0].0) }
         } label: { EmptyView() }
         .pickerStyle(.segmented)
         .frame(maxWidth: DS.Size.segmentedMax)   // en ventana ancha no se estira de orilla a orilla

@@ -19,7 +19,7 @@ struct MiMediaView<Top: View>: View {
     var body: some View {
         let model = observer.model
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: DS.Space.s6) {
+            LazyVStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 top()
                 if model.needsFolder {
                     DSEmptyState(symbol: "folder", title: Text("Elige la carpeta de tus películas"),
@@ -150,10 +150,10 @@ struct MiMediaView<Top: View>: View {
                     Image(systemName: "questionmark.square.dashed").foregroundStyle(DS.textMuted)
                     Text(verbatim: file.name).recipe(.footnote, color: DS.text).lineLimit(2)
                     Spacer(minLength: DS.Space.s2)
-                    Button("Corregir") { fixing = file }.buttonStyle(.bordered)
+                    Button("Corregir") { fixing = file }.dsSecondaryButton()
                 }
                 .padding(DS.Space.s3)
-                .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
         }
         .padding(.horizontal, DS.Space.gutter)
@@ -231,7 +231,7 @@ struct MiMediaTitleView: View {
         HStack(alignment: .bottom, spacing: DS.Space.s4) {
             PosterView(url: t.poster, title: name).frame(width: DS.Poster.railWidth)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("En tu OneDrive").recipe(.eyebrow, color: DS.warning)
+                Eyebrow(text: Text("En tu OneDrive"), reason: true)
                 Text(verbatim: name).recipe(.title).lineLimit(3)
                 DataLine(parts: [Strings.kind(t.kind, language: env.services.appSettings.uiLanguage), t.year ?? "", ByteSize.text(Int64(t.bytes), locale: env.uiLocale)])
             }
@@ -294,7 +294,7 @@ struct MiMediaTitleView: View {
                             Button("Bajar esta", systemImage: "arrow.down.circle") { Task { await report(model.download(t, videoID: e.videoID, entry: e)) } }
                                 .disabled(model.onPhone[e.videoID] != nil)
                         }
-                        .buttonStyle(.bordered).controlSize(.small)
+                        .dsSecondaryButton().controlSize(.small)
                     }
                 }
                 .padding(DS.Space.s3)
@@ -350,7 +350,7 @@ struct MiMediaTitleView: View {
                     if titleModel == nil { titleModel = TitleModel(env.services, kind: "series", metaID: t.imdb, hint: (t.name, t.poster)) }
                     findingSource = MissingEpisode(id: row.id)
                 }
-                .buttonStyle(.bordered)
+                .dsSecondaryButton()
             } else if let state = model.onPhone[row.id] {
                 if state >= 1 { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("En el iPhone")) }
                 else { DownloadRing(fraction: state, lineWidth: DS.TitleAction.ringSmallLine).frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall) }

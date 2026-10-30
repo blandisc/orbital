@@ -171,7 +171,7 @@ struct SimpsonsRoulette: View {
             Text("Un Simpson al azar").recipe(.footnote)
             if landed, let chosen = draw?.chosen {
                 Text(verbatim: Strings.episode(season: chosen.season, episode: chosen.episode.episode, language: env.services.appSettings.uiLanguage))
-                    .recipe(.eyebrow, color: DS.Simpsons.amarillo)
+                    .recipe(.eyebrow, color: DS.Simpsons.amarillo)   // ds-exception: la ruleta va con los colores de Los Simpson
                 if chosen.episode.hasTitle { Text(verbatim: chosen.episode.title).recipe(.section).multilineTextAlignment(.center).foregroundStyle(DS.text) }
             }
         }

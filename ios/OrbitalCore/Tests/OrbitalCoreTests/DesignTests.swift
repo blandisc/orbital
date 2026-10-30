@@ -177,6 +177,19 @@ final class DesignTests: XCTestCase {
                    line.range(of: #"Task\.sleep\(for:\s*\.(seconds|milliseconds)\(\s*[0-9]"#, options: .regularExpression) != nil {
                     problems.append("\(relative):\(index + 1): espera a mano: \(line.trimmingCharacters(in: .whitespaces))")
                 }
+                // Una sola pieza por papel en las pantallas (lenguaje de diseño, 30 oct 2026): los botones, los selectores, los
+                // vacíos y el porqué salen del catálogo, no se arman en cada pantalla.
+                if relative.hasPrefix("Sources/Screens/") {
+                    let pieces: [(String, String)] = [
+                        (#"\.buttonStyle\(\.(borderedProminent|bordered|glassProminent)\)"#, "botón armado a mano: dsPrimaryButton, dsSolidPrimaryButton o dsSecondaryButton"),
+                        (#"\.pickerStyle\(\.segmented\)"#, "selector armado a mano: DSSegmented (o DSKindFilter para el tipo)"),
+                        (#"ContentUnavailableView\("#, "vacío armado a mano: DSEmptyState"),
+                        (#"\.recipe\(\.eyebrow, color: (?!DS\.eyebrow\))"#, "porqué de otro color: el porqué va en turquesa (Eyebrow(reason: true) o DS.eyebrow)"),
+                    ]
+                    for (pattern, what) in pieces where line.range(of: pattern, options: .regularExpression) != nil {
+                        problems.append("\(relative):\(index + 1): \(what): \(line.trimmingCharacters(in: .whitespaces))")
+                    }
+                }
                 // Los colores fijos no cambian con el modo claro u oscuro: van los papeles (`DS.text`, `DS.bg`…).
                 if relative.hasPrefix("Sources/Screens/"), line.range(of: #"Color\.(white|black)|\.foregroundStyle\(\.(white|black)\)"#, options: .regularExpression) != nil {
                     problems.append("\(relative):\(index + 1): color fijo (no cambia con el modo): \(line.trimmingCharacters(in: .whitespaces))")

@@ -61,7 +61,7 @@ struct VoiceGuideView: View {
 
     private var now: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            nowHeader.recipe(.eyebrow, color: DS.ListTint.calendar).lineLimit(2)
+            nowHeader.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2)
             .accessibilityAddTraits(.isHeader)
             cardRow(nowPhrases) { PhraseCard(phrase: $0, style: .now, onSay: onSay) }
         }
@@ -210,7 +210,7 @@ private struct VoiceTopicsView: View {
         Button { withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(id, anchor: .top) } } label: {
             (verbatim ? Text(verbatim: title) : Text(LocalizedStringKey(title))).lineLimit(1)
         }
-        .buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.small)
+        .dsSecondaryButton().controlSize(.small)
     }
 }
 

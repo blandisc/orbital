@@ -47,24 +47,22 @@ struct WatchingView: View {
         let s = model.stats()
         let language = env.services.appSettings.uiLanguage
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s5) {
-                Picker(selection: Binding(get: { model.period }, set: { model.period = $0 })) {
-                    ForEach(WatchingStats.Period.allCases, id: \.self) { WatchingText.period($0).tag($0) }
-                } label: { EmptyView() }
-                .pickerStyle(.segmented)
+            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+                DSSegmented(labeled: WatchingStats.Period.allCases.map { ($0, WatchingText.period($0)) },
+                            selection: Binding(get: { model.period }, set: { model.period = $0 }))
                 .accessibilityIdentifier("watching-period")
 
                 if model.period != .all {
                     Button { wrapped = model.period } label: {
                         Label { Text("Ver tu Wrapped") } icon: { Image(systemName: "sparkles.rectangle.stack") }.frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).controlSize(.large).tint(DS.solidPrimary).foregroundStyle(DS.onSolidPrimary)
+                    .dsSolidPrimaryButton().controlSize(.large)
                     .disabled(s.isEmpty)
                     .accessibilityIdentifier("watching-wrapped")
                 }
 
                 if !model.loaded { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s8) }
-                else if s.isEmpty { ContentUnavailableView("Nada en este periodo", systemImage: "popcorn", description: Text("Lo que veas aquí o en Trakt aparece solo.")) }
+                else if s.isEmpty { DSEmptyState(symbol: "popcorn", title: Text("Nada en este periodo"), message: Text("Lo que veas aquí o en Trakt aparece solo.")) }
                 else { content(s, model, language) }
             }
             .padding(.horizontal, DS.Space.gutter)

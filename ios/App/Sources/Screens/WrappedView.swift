@@ -119,7 +119,7 @@ struct WrappedView: View {
         switch story {
         case .intro:
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                Text("Orbital").recipe(.eyebrow, color: DS.warning)
+                Text("Orbital").recipe(.eyebrow, color: DS.warning)   // ds-exception: rótulo de historia del Wrapped (ámbar), no un porqué
                 periodName.font(DS.TextRecipe.display.font)
                 Text("en películas y series").recipe(.title, color: DS.onArtSecondary)
             }
@@ -128,7 +128,7 @@ struct WrappedView: View {
         case .top:
             if let t = stats.top.first {
                 VStack(alignment: .leading, spacing: DS.Space.s3) {
-                    Text("Lo que más viste").recipe(.eyebrow, color: DS.warning)
+                    Text("Lo que más viste").recipe(.eyebrow, color: DS.warning)   // ds-exception: rótulo de historia del Wrapped (ámbar), no un porqué
                     PosterView(url: t.poster, title: t.title).frame(width: DS.Watching.storyPoster)
                     Text(verbatim: t.title).font(DS.TextRecipe.title.font.weight(.bold))
                     Text(t.kind == "movie" ? "\(t.minutes / 60) h" : "\(t.plays) capítulos, \(t.minutes / 60) h").recipe(.body, color: DS.onArtSecondary)
@@ -159,7 +159,7 @@ struct WrappedView: View {
         let options = Array(stats.top.prefix(3)).sorted { $0.imdb < $1.imdb }
         let right = stats.top.first?.imdb
         return VStack(alignment: .leading, spacing: DS.Space.s4) {
-            Text("Adivina").recipe(.eyebrow, color: DS.warning)
+            Text("Adivina").recipe(.eyebrow, color: DS.warning)   // ds-exception: rótulo de historia del Wrapped (ámbar), no un porqué
             Text("¿Qué viste más?").font(DS.TextRecipe.title.font.weight(.bold))
             HStack(spacing: DS.Space.s3) {
                 ForEach(options, id: \.imdb) { t in

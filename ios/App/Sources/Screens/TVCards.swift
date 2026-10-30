@@ -150,7 +150,7 @@ struct FromTVCard: View {
                                                     .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom))
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     HStack(alignment: .firstTextBaseline) {
-                        Label { eyebrow } icon: { Image(systemName: "tv") }.recipe(.eyebrow, color: DS.onArtSecondary).lineLimit(1)
+                        Label { eyebrow } icon: { Image(systemName: "tv") }.recipe(.eyebrow, color: DS.onArtSecondary).lineLimit(1)   // ds-exception: rótulo de estado sobre el arte («En la tele»), no un porqué
                         Spacer(minLength: DS.Space.s2)
                         Button(action: onDismiss) { Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
                             .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.small)

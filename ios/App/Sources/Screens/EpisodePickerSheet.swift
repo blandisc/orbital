@@ -26,7 +26,7 @@ struct EpisodePickerSheet: View {
                     }
                     .listStyle(.plain)
                 } else if seasons != nil {
-                    ContentUnavailableView("No encontré los episodios", systemImage: "list.bullet", description: Text("Pídelo por voz: «pon The Office temporada 2 episodio 5»."))
+                    DSEmptyState(symbol: "list.bullet", title: Text("No encontré los episodios"), message: Text("Pídelo por voz: «pon The Office temporada 2 episodio 5»."))
                 } else {
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
