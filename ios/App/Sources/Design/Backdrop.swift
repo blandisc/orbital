@@ -40,7 +40,7 @@ struct Backdrop: View {
         ZStack {
             DS.bg
             if immersive, let tint {
-                LinearGradient(colors: [tint.tint, tint.tint.mix(with: DS.backdropDeep, by: DS.Backdrop.immersiveDeep)], startPoint: .top, endPoint: .bottom)
+                LinearGradient(colors: [tint.tint, tint.tint.mix(with: DS.backdropDeep, by: DS.Backdrop.immersiveDeep)], startPoint: .top, endPoint: .bottom)   // ds-exception: el fondo del color del arte, no un velo
                 RadialGradient(colors: [tint.accent.opacity(DS.Backdrop.immersiveGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.immersiveGlowRadius)
             } else if let tone = Self.tone(tint, scheme: scheme) {
                 LinearGradient(stops: [.init(color: tone, location: 0), .init(color: DS.bg, location: DS.Backdrop.fadeTo)], startPoint: .top, endPoint: .bottom)

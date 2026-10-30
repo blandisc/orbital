@@ -212,6 +212,8 @@ extension DS {
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
     enum Timing {
+        /// Lo que cuenta minutos a la vista («Llevas 12 min»): se vuelve a pintar cada minuto, no antes.
+        static let minute: TimeInterval = 60
         /// De vuelta de segundo plano: cada cuánto se mira si el video ya está para quitar el cuadro guardado.
         static let frozenFramePoll: UInt64 = 100_000_000
         /// Cuánto espera una lista abierta (un premio) antes de dar por hecho que no llegará y mostrar el vacío.

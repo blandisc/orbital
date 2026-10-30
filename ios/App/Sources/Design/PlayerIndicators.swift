@@ -41,7 +41,7 @@ struct DSLoader: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation) { context in
+        TimelineView(.animation(paused: reduceMotion)) { context in   // quieto con «Reducir movimiento»: no repinta en balde
             let t = context.date.timeIntervalSinceReferenceDate
             let turn = reduceMotion ? DS.Loader.restTurn : t.truncatingRemainder(dividingBy: DS.Loader.seconds) / DS.Loader.seconds
             let angle = turn * 2 * .pi

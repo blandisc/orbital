@@ -81,7 +81,7 @@ struct ReleaseTimeline: View {
                             Text("en \(days) días").recipe(.caption, color: DS.onArtSecondary).fontWeight(.semibold)
                                 .padding(DS.Space.s2).onArt()
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .top, endPoint: .bottom))
+                                .background(ArtVeil(at: 0))
                         }
                     }
                     .opacity(soon ? DS.HomeTimeline.soonOpacity : 1)

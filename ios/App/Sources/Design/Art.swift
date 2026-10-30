@@ -66,8 +66,7 @@ struct BleedArt<Content: View>: View {
             PosterView(url: art, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed, fallback: wide ?? fallback)
         }
             // El velo sube hasta donde empieza el texto: rótulo, logo y datos se leen aunque el arte sea claro.
-            .overlay(LinearGradient(stops: [.init(color: .clear, location: DS.Backdrop.scrimStart), .init(color: DS.scrim, location: DS.Backdrop.scrimMid),
-                                            .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom))
+            .overlay(ArtVeil(at: DS.Backdrop.scrimStart))
             .overlay { if let collapse { veil(collapse) } }
     }
 

@@ -142,7 +142,7 @@ struct OneDriveFolderPicker: View {
                             Label(folder.name, systemImage: "folder")
                         }
                     }
-                } else { ProgressView().frame(maxWidth: .infinity) }
+                } else { DSLoadingState() }
             }
             .listRowBackground(DS.surface)
         }

@@ -16,9 +16,8 @@ struct WatchingCard: View {
             ZStack(alignment: .bottomLeading) {
                 collage
                 // El velo desde abajo a la izquierda, donde va el texto: los pósters del fondo no se leen a través de las letras.
-                LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: DS.scrimStrong, location: DS.Watching.veilFrom), .init(color: DS.scrimStrong, location: 1)],
-                               startPoint: .top, endPoint: .bottom)
-                LinearGradient(colors: [DS.scrimStrong, .clear], startPoint: .leading, endPoint: .trailing)
+                ArtVeil(at: 0, until: DS.Watching.veilFrom)
+                ArtVeil(kind: .leading)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Lo que ves").recipe(.eyebrow, color: DS.onArtSecondary)
                     if let stats {

@@ -223,7 +223,7 @@ struct BrowseView: View {
             DegradedNotice(state: degraded) { Task { await model.load() } }.padding(.horizontal, DS.Space.gutter)
         }
         if !model.popular.isEmpty { popular(model) }
-        else if model.isLoading { ProgressView().frame(maxWidth: .infinity) }
+        else if model.isLoading { DSLoadingState() }
         explore
     }
 

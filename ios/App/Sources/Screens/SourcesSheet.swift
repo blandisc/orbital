@@ -82,7 +82,7 @@ struct SourcesSheet: View {
             }
             ScrollView {
                 VStack(spacing: DS.Space.s2) {
-                    if model.isLoading { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s6) }
+                    if model.isLoading { DSLoadingState() }
                     if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
                     if showsAll {
                         if !model.ranked.isEmpty {

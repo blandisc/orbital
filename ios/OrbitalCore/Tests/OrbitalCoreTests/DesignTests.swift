@@ -135,6 +135,62 @@ final class DesignTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, "Encabezados fuera de la regla:\n" + problems.joined(separator: "\n"))
     }
 
+    /// El porqué de una subsección cabe en un renglón en un iPhone SE (≤ 38 letras) y no promete cifras que pueden cambiar
+    /// (lenguaje de diseño, regla 3: «Más de 50 formas» mentía si había menos).
+    func testReasonsFitOneLineAndPromiseNoNumbers() throws {
+        let roots = ["ios/App/Sources/Screens", "ios/App/Sources/Design"].map { repo.appendingPathComponent($0) }
+        let files = roots.compactMap { FileManager.default.enumerator(at: $0, includingPropertiesForKeys: nil) }.flatMap { $0.allObjects }
+        let pattern = try NSRegularExpression(pattern: #"(?:eyebrow:|Eyebrow\(text:)\s*Text\("([^"\\]*)"\)"#)
+        var problems: [String] = []
+        for case let file as URL in files where file.pathExtension == "swift" {
+            let text = try String(contentsOf: file, encoding: .utf8)
+            for match in pattern.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+                guard let range = Range(match.range(at: 1), in: text) else { continue }
+                let reason = String(text[range])
+                if reason.count > 38 { problems.append("\(file.lastPathComponent): «\(reason)» (\(reason.count) letras, máximo 38)") }
+                if reason.range(of: #"\d"#, options: .regularExpression) != nil { problems.append("\(file.lastPathComponent): «\(reason)» promete una cifra") }
+            }
+        }
+        XCTAssertTrue(problems.isEmpty, "Porqués fuera de la regla:\n" + problems.joined(separator: "\n"))
+    }
+
+    /// Un contenedor con identificador no tapa los de adentro (lenguaje de diseño, regla 8): SwiftUI le pone el id del
+    /// contenedor a cada hijo si no se declara `.accessibilityElement(children: .contain)`, y VoiceOver y las pruebas de
+    /// interfaz ya no encuentran sus botones (pasó en el mazo, el Wrapped, el filtro, la repisa, la ficha y Ajustes).
+    func testContainersWithAnIdentifierKeepTheirChildren() throws {
+        let roots = ["ios/App/Sources/Screens", "ios/App/Sources/Design"].map { repo.appendingPathComponent($0) }
+        let files = roots.compactMap { FileManager.default.enumerator(at: $0, includingPropertiesForKeys: nil) }.flatMap { $0.allObjects }
+        // `Group` no cuenta: no es un contenedor, le pasa el id a su único hijo.
+        let containers = #"^(VStack|HStack|ZStack|LazyVStack|LazyHStack|LazyVGrid|LazyHGrid|ScrollView|GeometryReader|List|Form)\b"#
+        var problems: [String] = []
+        for case let file as URL in files where file.pathExtension == "swift" {
+            let lines = try String(contentsOf: file, encoding: .utf8).components(separatedBy: "\n")
+            for (index, line) in lines.enumerated() where line.contains(".accessibilityIdentifier(") && !line.contains("ds-exception:") {
+                // Sube por la cadena de modificadores hasta lo que los recibe.
+                var head = index
+                var chain = [line]
+                while head > 0, lines[head].trimmingCharacters(in: .whitespaces).hasPrefix(".") || head == index {
+                    head -= 1; chain.append(lines[head])
+                }
+                if chain.contains(where: { $0.contains(".accessibilityElement(") }) { continue }
+                guard lines[head].trimmingCharacters(in: .whitespaces).hasSuffix("}") else { continue }
+                // La apertura de ese bloque: si es un contenedor, sus hijos perderían su id.
+                var depth = 0, opener = head
+                while opener >= 0 {
+                    depth += lines[opener].filter { $0 == "}" }.count - lines[opener].filter { $0 == "{" }.count
+                    if depth <= 0 { break }
+                    opener -= 1
+                }
+                guard opener >= 0 else { continue }
+                let start = lines[opener].trimmingCharacters(in: .whitespaces)
+                if start.range(of: containers, options: .regularExpression) != nil {
+                    problems.append("\(file.lastPathComponent):\(index + 1): \(start.prefix(40))… lleva id sin .accessibilityElement(children: .contain)")
+                }
+            }
+        }
+        XCTAssertTrue(problems.isEmpty, "Contenedores que tapan los ids de adentro:\n" + problems.joined(separator: "\n"))
+    }
+
     /// Los archivos de pantalla (todo lo que no es el sistema de diseño) no pintan nada «suelto».
     func testScreensUseOnlyDesignSystemTokens() throws {
         // Las pantallas y la extensión de widgets (que usa los mismos tokens: `Sources/Design/Tokens.swift`).
@@ -158,6 +214,9 @@ final class DesignTests: XCTestCase {
             (#"\.font\(\.system\("#, "letra a mano: usa una receta"),
             (#"\.listRowBackground\(DS\.fill\)"#, "renglón con relleno translúcido: los renglones van en DS.surface (blancos en claro)"),
             (#"\.aspectRatio\(\s*[0-9]"#, "relación de aspecto a mano"), (#"\.minimumScaleFactor\(\s*[0-9]"#, "escala a mano"),
+            // Lenguaje de diseño (30 oct 2026): el velo bajo el texto sobre arte es una pieza; lo que se mueve solo se pausa.
+            (#"LinearGradient\(.*(scrim|backdropDeep)"#, "velo armado a mano: ArtVeil"),
+            (#"TimelineView\(\.animation\)"#, "animación continua sin pausa: TimelineView(.animation(paused: reduceMotion…))"),
         ]
         var problems: [String] = []
         for case let file as URL in files where file.pathExtension == "swift" {
@@ -185,6 +244,13 @@ final class DesignTests: XCTestCase {
                         (#"\.pickerStyle\(\.segmented\)"#, "selector armado a mano: DSSegmented (o DSKindFilter para el tipo)"),
                         (#"ContentUnavailableView\("#, "vacío armado a mano: DSEmptyState"),
                         (#"\.recipe\(\.eyebrow, color: (?!DS\.eyebrow\))"#, "porqué de otro color: el porqué va en turquesa (Eyebrow(reason: true) o DS.eyebrow)"),
+                        (#"ProgressView\(\)\.frame\(maxWidth: \.infinity"#, "área cargando armada a mano: DSLoadingState (o el esqueleto de su forma)"),
+                        (#"format: \.dateTime|\.formatted\(\)|DateFormatter\(\)|NumberFormatter\(\)"#, "número o fecha con el formato del teléfono: Strings.count / Strings.date (en el idioma de la app)"),
+                        // Un nombre por cosa (glosario en docs/sistema-de-diseno.md).
+                        (#"(?i)"[^"]*\btu watchlist\b[^"]*""#, "«tu watchlist»: en el iPhone se llama «Mi lista»"),
+                        (#""¿Qué vemos\?""#, "«¿Qué vemos?»: el sorteo es «Decide por mí» (y el mazo, «¿Qué vemos hoy?»)"),
+                        (#""Intentar de nuevo""#, "«Intentar de nuevo»: el botón es «Reintentar»"),
+                        (#"(?i)"[^"]*\btu repisa\b[^"]*""#, "«tu repisa»: la pantalla se llama «Colecciones»"),
                     ]
                     for (pattern, what) in pieces where line.range(of: pattern, options: .regularExpression) != nil {
                         problems.append("\(relative):\(index + 1): \(what): \(line.trimmingCharacters(in: .whitespaces))")

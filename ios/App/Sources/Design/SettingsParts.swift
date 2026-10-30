@@ -115,6 +115,7 @@ struct SimpsonsSeasonsPicker: View {
             }
         }
         .sensoryFeedback(.selection, trigger: selected)
+        .accessibilityElement(children: .contain)   // cada temporada conserva su nombre
         .accessibilityIdentifier("simpsons-seasons")
     }
 }

@@ -84,7 +84,7 @@ struct EpisodeRowView: View {
     private var hasStatus: Bool { row.airs != nil || (!row.watched && row.leftMinutes > 0) || row.download == .done }
 
     @ViewBuilder private var status: some View {
-        if let airs = row.airs { Text("Sale el \(airs, format: .dateTime.day().month(.abbreviated))") }
+        if let airs = row.airs { Text("Sale el \(Strings.date(airs, .dayMonthShort, language: AppEnvironment.shared.services.appSettings.uiLanguage))") }
         else if !row.watched, row.leftMinutes > 0 { Text(timeLeftText(minutes: row.leftMinutes)) }
         else if row.download == .done { Text("Descargado") }
     }

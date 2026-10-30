@@ -157,7 +157,7 @@ struct FilterResults: View {
                 }
             }
             .padding(.horizontal, DS.Space.gutter)
-            if model.isLoading { ProgressView().padding(DS.Space.s6) }
+            if model.isLoading { DSLoadingState() }
         }
         .overlay {
             if !model.available {

@@ -62,7 +62,7 @@ struct DSDegradedNotice: View {
                 Button(text(state.actionTitle), systemImage: actionSymbol, action: act).accessibilityIdentifier("degraded-action")
                 // Sin internet la salida es Descargas; reintentar va al lado (la red pudo volver).
                 if state.action != .retry, let retry {
-                    Button(text("Intentar de nuevo"), systemImage: "arrow.clockwise", action: retry).accessibilityIdentifier("degraded-retry")
+                    Button(text("Reintentar"), systemImage: "arrow.clockwise", action: retry).accessibilityIdentifier("degraded-retry")
                 }
             }
             .buttonStyle(.glass).controlSize(.small).padding(.top, DS.Space.s1)
@@ -109,9 +109,12 @@ struct DSSegmented<Value: Hashable>: View {
     }
 }
 
-/// Cuando un área entera no tiene nada (Descargas vacía, sin resultados, nada con estos filtros): siempre esto, el vacío nativo
-/// de iOS con un ícono, qué pasa y, si lo hay, qué hacer. Regla de la app: un área vacía → `DSEmptyState`; un renglón vacío
-/// dentro de una sección → texto chico; un error o sin conexión → `DSNotice`.
+/// Los cuatro estados de un área (lenguaje de diseño): vacía → `DSEmptyState`; cargando → el esqueleto de su forma
+/// (`FeedSkeleton`, `ShelfSkeleton`, `CheckRowSkeleton`) o, si no es una lista, `DSLoadingState`; sin conexión o con error →
+/// `DSErrorState` con «Reintentar». Dentro de una sección, un aviso → `DSNotice` y lo que espera junto a un botón, el
+/// `ProgressView` chico con su texto («Conectando…»).
+/// Un área vacía (Descargas vacía, sin resultados, nada con estos filtros): el vacío nativo de iOS con un ícono, qué pasa y,
+/// si lo hay, qué hacer.
 struct DSEmptyState<Actions: View>: View {
     let symbol: String
     let title: Text
@@ -134,3 +137,30 @@ extension DSEmptyState where Actions == EmptyView {
         self.init(symbol: symbol, title: title, message: message) { EmptyView() }
     }
 }
+
+/// Un área que está cargando y no es una lista (una persona, una colección, el calendario): el indicador de iOS al centro, con
+/// el mismo aire en toda la app. Las listas y filas cargan con el esqueleto de su forma.
+struct DSLoadingState: View {
+    var body: some View {
+        ProgressView()
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DS.Space.s10)
+            .accessibilityLabel(Text("Cargando"))
+    }
+}
+
+/// Un área que no pudo cargar: sin conexión («Sin conexión») o porque el servicio no contestó («No se pudo cargar»), con
+/// «Reintentar». Nunca un vacío que diga «nada» cuando lo que pasó es que no llegó.
+struct DSErrorState: View {
+    var offline = false
+    let retry: () -> Void
+
+    var body: some View {
+        DSEmptyState(symbol: offline ? "wifi.slash" : "exclamationmark.triangle",
+                     title: offline ? Text("Sin conexión") : Text("No se pudo cargar"),
+                     message: offline ? Text("Revisa tu internet e intenta de nuevo.") : Text("Intenta de nuevo en un momento.")) {
+            Button("Reintentar", systemImage: "arrow.clockwise", action: retry)
+        }
+    }
+}
+

@@ -111,7 +111,7 @@ struct SettingsView: View {
         } message: { Text("Lo tuyo se queda en el iPhone y en Trakt; Stremio deja de recibir la copia.") }
         .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {
             Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
-        } message: { Text("Dejan de salir tu watchlist, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }
+        } message: { Text("Dejan de salir Mi lista, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }
         .sheet(isPresented: $editingAvatar) {
             NavigationStack {
                 Form {
@@ -398,7 +398,7 @@ struct SettingsView: View {
             case .unlinked:
                 // Un solo botón: el código y la página que manda Trakt (hoy auth.trakt.tv/activate). La sesión es de este iPhone; tu Orbital tiene la suya.
                 Button("Conectar Trakt") { Task { await model.linkTrakt() } }
-                Text("Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
+                Text("Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             case .linking(let code, let url):
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     Text("Escribe este código en \(url):").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)

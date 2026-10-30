@@ -40,7 +40,7 @@ struct MiMediaView<Top: View>: View {
                             if error.localizedCaseInsensitiveContains("caduc") || error.localizedCaseInsensitiveContains("sesión") {
                                 NavigationLink { OneDriveSettings() } label: { Label("Volver a conectar", systemImage: "cloud") }.buttonStyle(.glass)
                             } else {
-                                Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.rescan() } }.buttonStyle(.glass)
+                                Button("Reintentar", systemImage: "arrow.clockwise") { Task { await model.rescan() } }.buttonStyle(.glass)
                             }
                         }
                         .padding(.horizontal, DS.Space.gutter)
@@ -318,7 +318,7 @@ struct MiMediaTitleView: View {
                     DSOptionMenu(items: chips, label: label, selection: selection)
                 }
             }
-            if seasons.isEmpty { ProgressView().frame(maxWidth: .infinity) }
+            if seasons.isEmpty { DSLoadingState() }
             ForEach(seasons.first(where: { $0.season == season })?.rows ?? []) { row in episodeRow(t, row, model) }
         }
     }
@@ -431,7 +431,7 @@ struct FixMatchSheet: View {
                 } footer: { Text(verbatim: fileName) }
                 .listRowBackground(DS.surface)
                 Section {
-                    if searching { ProgressView().frame(maxWidth: .infinity) }
+                    if searching { DSLoadingState() }
                     else if results.isEmpty { Text("Sin resultados: prueba con el título en inglés.").recipe(.footnote) }
                     ForEach(results) { r in
                         Button { Task { if let choose { await choose(r) } else { await model.fix(info, to: r) }; dismiss() } } label: {
@@ -492,7 +492,7 @@ struct MiMediaFolderView: View {
                     }
                 }
                 .listRowBackground(DS.surface)
-            } else { ProgressView().frame(maxWidth: .infinity).listRowBackground(DS.surface) }
+            } else { DSLoadingState().listRowBackground(DS.surface) }
         }
         .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .scrollContentBackground(.hidden).background(Backdrop())

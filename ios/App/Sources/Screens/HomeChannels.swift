@@ -69,8 +69,7 @@ struct HomeChannels: View {
                         .phaseAnimator(reduceMotion ? [false] : [false, true]) { view, near in
                             view.scaleEffect(near ? DS.HomeChannels.driftScale : 1)
                         } animation: { _ in DS.HomeChannels.driftAnimation }
-                    LinearGradient(stops: [.init(color: .clear, location: DS.HomeChannels.veilStart), .init(color: DS.scrimStrong, location: 1)],
-                                   startPoint: .top, endPoint: .bottom)
+                    ArtVeil(at: DS.HomeChannels.veilStart)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(verbatim: label(air.episode)).recipe(.caption, color: DS.onArtSecondary).fontWeight(.bold)
                         Text(verbatim: air.episode.name.isEmpty ? name(channel.pick) : air.episode.name).recipe(.cardTitle).lineLimit(1)
@@ -178,7 +177,7 @@ struct ChannelsSheet: View {
 
     @ViewBuilder private var results: some View {
         if searching && model.results.isEmpty {
-            ProgressView().frame(maxWidth: .infinity)
+            DSLoadingState()
         } else if model.results.isEmpty {
             Text("No encontré «\(query)». Prueba con otro nombre.").recipe(.footnote, color: DS.textMuted)
         } else {

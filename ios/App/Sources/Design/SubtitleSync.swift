@@ -95,7 +95,7 @@ struct SubtitlePreview: View {
                 .padding(.bottom, geo.size.height * (look.raised ? DS.Subtitle.raisedMargin : DS.Subtitle.edgeMargin) * 2)
         }
         .aspectRatio(DS.Poster.stillAspect, contentMode: .fit)
-        .background(LinearGradient(colors: [DS.backdropDeep, DS.warning.opacity(DesignTokens.Opacity.disabled), DS.backdropDeep],
+        .background(LinearGradient(colors: [DS.backdropDeep, DS.warning.opacity(DesignTokens.Opacity.disabled), DS.backdropDeep],   // ds-exception: la barra de sincronía (ámbar), no un velo
                                    startPoint: .topLeading, endPoint: .bottomTrailing))
         .clipShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
         .accessibilityHidden(true)

@@ -61,7 +61,7 @@ struct WatchingView: View {
                     .accessibilityIdentifier("watching-wrapped")
                 }
 
-                if !model.loaded { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s8) }
+                if !model.loaded { DSLoadingState() }
                 else if s.isEmpty { DSEmptyState(symbol: "popcorn", title: Text("Nada en este periodo"), message: Text("Lo que veas aquí o en Trakt aparece solo.")) }
                 else { content(s, model, language) }
             }
@@ -149,14 +149,8 @@ struct WatchingView: View {
     }
 
     private func label(_ d: Date, _ p: WatchingStats.Period) -> String {
-        let f = DateFormatter(); f.locale = Locale(identifier: env.services.appSettings.uiLanguage)
-        switch p {
-        case .week: f.setLocalizedDateFormatFromTemplate("EEEEE")
-        case .month: f.setLocalizedDateFormatFromTemplate("d")
-        case .year: f.setLocalizedDateFormatFromTemplate("MMMMM")
-        case .all: f.setLocalizedDateFormatFromTemplate("yy")
-        }
-        return f.string(from: d)
+        let style: Strings.DateStyle = switch p { case .week: .weekdayInitial; case .month: .dayNumber; case .year: .monthInitial; case .all: .yearShort }
+        return Strings.date(d, style, language: env.services.appSettings.uiLanguage)
     }
 }
 

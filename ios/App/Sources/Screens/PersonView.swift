@@ -13,7 +13,7 @@ struct TmdbTitleView: View {
         Group {
             if let route { TitleView(route: route) }
             else if missing { DSEmptyState(symbol: "film", title: Text("No encontré este título")) }
-            else { ProgressView() }
+            else { DSLoadingState() }
         }
         .task {
             guard route == nil else { return }
@@ -59,7 +59,7 @@ struct PersonView: View {
                 } else if person != nil {
                     DSEmptyState(symbol: "film", title: Text("Sin filmografía"), message: Text("TMDB no tiene títulos de esta persona."))
                 }
-                if person == nil && !failed { ProgressView().frame(maxWidth: .infinity).padding(.vertical, DS.Space.s10) }
+                if person == nil && !failed { DSLoadingState() }
                 if failed { DSNotice(text: "No pude traer a esta persona de TMDB.").padding(.horizontal, DS.Space.gutter) }
             }
             .padding(.bottom, DS.Space.s14)
