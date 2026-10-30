@@ -70,7 +70,7 @@ extension PlayerScreen {
                 // un arrastre normal termine primero con `onEnded` (que sí busca) y aquí ya no haya nada que limpiar.
                 guard !now else { return }
                 Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(80))
+                    try? await Task.sleep(for: DS.Gesture.cancelSettle)
                     guard !dragging, drag.dragAxis != .undecided || drag.seekPreview != nil || portraitDrag != nil else { return }
                     portraitDrag = nil; movingVideo = false
                     drag.dragAxis = .undecided; drag.verticalKind = nil; drag.seekPositionAtDragStart = nil; drag.seekPreview = nil
@@ -123,7 +123,7 @@ extension PlayerScreen {
                                           && !videoRect(in: size).insetBy(dx: 0, dy: -DS.PlayerPanel.handleReach).contains(value.startLocation)
                                           || startsOnHandle(value.startLocation, size: size)):
                         movingVideo = true
-                        portraitAtDragStart = Self.resolvedCenter(portraitCenter, in: size, aspect: portraitAspect)   // en vertical, arrastrar arriba o abajo mueve el video
+                        portraitAtDragStart = Self.resolvedCenter(openingCenter, in: size, aspect: portraitAspect)   // en vertical, arrastrar arriba o abajo mueve el video
                         controlsVisible = true                 // se mueve a la altura de los controles (sin ellos va al centro)
                     case .vertical:
                         // En la Mac no hay brillo ni volumen con el dedo: arrastrar con el mouse los activaba sin querer.

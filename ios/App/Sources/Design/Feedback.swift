@@ -56,6 +56,7 @@ struct DSSegmented<Value: Hashable>: View {
             ForEach(options.indices, id: \.self) { Text(options[$0].1).tag(options[$0].0) }
         } label: { EmptyView() }
         .pickerStyle(.segmented)
+        .frame(maxWidth: DS.Size.segmentedMax)   // en ventana ancha no se estira de orilla a orilla
         .sensoryFeedback(.selection, trigger: current)
     }
 }

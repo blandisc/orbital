@@ -43,7 +43,7 @@ struct DSLoader: View {
     var body: some View {
         TimelineView(.animation) { context in
             let t = context.date.timeIntervalSinceReferenceDate
-            let turn = reduceMotion ? 0.75 : t.truncatingRemainder(dividingBy: DS.Loader.seconds) / DS.Loader.seconds
+            let turn = reduceMotion ? DS.Loader.restTurn : t.truncatingRemainder(dividingBy: DS.Loader.seconds) / DS.Loader.seconds
             let angle = turn * 2 * .pi
             let radius = size / 2
             let trail = DS.Loader.trail
@@ -57,7 +57,7 @@ struct DSLoader: View {
                 Circle().fill(DS.brandMoon)
                     .frame(width: DS.Loader.moon, height: DS.Loader.moon)
                     .shadow(color: DS.brandMoon, radius: DS.Loader.moonGlow)
-                    .opacity(reduceMotion ? 0.55 + 0.45 * abs(sin(t * .pi / DS.Loader.seconds)) : 1)
+                    .opacity(reduceMotion ? DS.Loader.pulseMin + (1 - DS.Loader.pulseMin) * abs(sin(t * .pi / DS.Loader.seconds)) : 1)
                     .offset(x: radius * cos(angle), y: radius * sin(angle))
             }
             .frame(width: size, height: size)

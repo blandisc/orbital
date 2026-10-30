@@ -76,7 +76,8 @@ struct RemoteSheet: View {
         .fittedFormSizing(idealHeight: large ? fullHeight : compactHeight)   // iPad y Mac: tarjeta del alto del control (ahí abre siempre completo: `MainTabs`)
         .presentationBackgroundInteraction(.disabled)
         // Vidrio en las dos alturas (la estirada no llega a la altura completa, que iOS volvería opaca).
-        .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }
+        // El vidrio nativo se vuelve opaco al estirar la hoja; el control lo pide en las dos alturas.
+        .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }   // ds-exception: vidrio en las dos alturas del control
         .animation(DS.Motion.smooth(reduceMotion), value: large)
         .animation(DS.Motion.smooth(reduceMotion), value: showsScares)
         .onDisappear { speech.cancel(); model.setRemoteOpen(false) }

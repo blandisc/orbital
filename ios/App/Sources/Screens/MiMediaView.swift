@@ -447,6 +447,7 @@ struct FixMatchSheet: View {
                 }
                 .listRowBackground(DS.surface)
             }
+            .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
             .scrollContentBackground(.hidden).background(Backdrop())
             .navigationTitle("Corregir ficha").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } } }
@@ -492,6 +493,7 @@ struct MiMediaFolderView: View {
                 .listRowBackground(DS.surface)
             } else { ProgressView().frame(maxWidth: .infinity).listRowBackground(DS.surface) }
         }
+        .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(OneDriveModel.folderName(path).map { Text(verbatim: $0) } ?? Text("OneDrive")).navigationBarTitleDisplayMode(.inline)
         .task {

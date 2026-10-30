@@ -9,6 +9,7 @@ import UIKit
 struct VoiceGuideView: View {
     @State private var query = ""
     @Environment(\.openURL) private var openURL
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let guide = AlexaGuide.load()
 
     var body: some View {
@@ -90,7 +91,7 @@ struct VoiceGuideView: View {
     }
 
     private func topicChip(_ title: String, id: String, proxy: ScrollViewProxy, verbatim: Bool = false) -> some View {
-        Button { withAnimation { proxy.scrollTo(id, anchor: .top) } } label: {
+        Button { withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(id, anchor: .top) } } label: {
             (verbatim ? Text(verbatim: title) : Text(LocalizedStringKey(title))).lineLimit(1)
         }
         .buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.small)

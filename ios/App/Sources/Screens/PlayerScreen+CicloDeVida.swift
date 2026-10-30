@@ -99,7 +99,7 @@ extension PlayerScreen {
         // «Recortar» en vertical: el video llena toda la pantalla (recorta los lados) y los controles van encima, abajo.
         if fillsPortrait { return CGRect(origin: .zero, size: size) }
         // Donde lo dejaste, con o sin controles (antes, al esconderse los controles, regresaba al centro).
-        var band = Self.portraitVideoRect(in: size, center: portraitDrag ?? portraitCenter, aspect: portraitAspect)
+        var band = Self.portraitVideoRect(in: size, center: portraitDrag ?? openingCenter, aspect: portraitAspect)
         // Con «Audio y subtítulos» abierto, si no cabe abajo, el video sube lo justo (hasta la orilla) y el panel se ve entero.
         // (La vista de sincronizar con una frase no se mide: con la medida de otra página el video subía de más o de menos.)
         if dockState.subtitleDock && !dockPinned && dockState.dockPage != .episodes && dockState.syncLines == nil && dockState.dockNeed > 0 {
@@ -136,10 +136,17 @@ extension PlayerScreen {
     /// este video: antes, al volver, un 4:3 se veía como 16:9 y la imagen se hacía más chica.
     var portraitAspect: Double { holder.engine.videoAspect ?? knownAspect ?? Double(DS.Poster.stillAspect) }
 
+    /// Dónde va el video en vertical si no lo has movido: en el iPhone, arriba (`portraitCenter` < 0); en el iPad de pie, a
+    /// media pantalla (`DS.PlayerPanel.regularCenter`). Con «Audio y subtítulos» o «Episodios» abiertos sube a donde abre en el
+    /// iPhone, para que el panel quepa entero debajo.
+    var openingCenter: Double {
+        portraitCenter < 0 && horizontalSize == .regular && !dockState.subtitleDock ? DS.PlayerPanel.regularCenter : portraitCenter
+    }
+
     /// VoiceOver: subir o bajar el video un tramo.
     func stepVideo(_ step: Int, size: CGSize) {
         let limits = Self.portraitLimits(in: size, aspect: portraitAspect)
-        let next = min(max(Self.resolvedCenter(portraitCenter, in: size, aspect: portraitAspect) + Double(step) * DS.PlayerPanel.voiceOverStep, limits.lowerBound), limits.upperBound)
+        let next = min(max(Self.resolvedCenter(openingCenter, in: size, aspect: portraitAspect) + Double(step) * DS.PlayerPanel.voiceOverStep, limits.lowerBound), limits.upperBound)
         withAnimation(DS.Motion.base(reduceMotion)) { portraitCenter = next }
     }
 

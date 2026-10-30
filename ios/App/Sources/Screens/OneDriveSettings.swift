@@ -93,6 +93,7 @@ struct OneDriveSettings: View {
                 }
             }
         }
+        .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("OneDrive").navigationBarTitleDisplayMode(.inline)
@@ -145,6 +146,7 @@ struct OneDriveFolderPicker: View {
             }
             .listRowBackground(DS.surface)
         }
+        .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(path.isEmpty ? Text("OneDrive") : Text(verbatim: (path as NSString).lastPathComponent))
         .navigationBarTitleDisplayMode(.inline)

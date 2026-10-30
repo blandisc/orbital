@@ -916,8 +916,22 @@ MAC_ONLY = {
 }
 
 
+# En la Mac no se toca: se hace clic (29 oct 2026). Lo mismo para «Mantén presionado». En el iPad se toca igual que en el iPhone.
+MAC_TOUCH_ES = [(r"Mantén presionada", "Mantén el clic en"), (r"Mantén presionado", "Mantén el clic"),
+                (r"\bToca (para|y|otra vez)\b", r"Haz clic \1"), (r"\btoca (para|y|otra vez)\b", r"haz clic \1"),
+                (r"\bToca ", "Haz clic en "), (r"\btoca ", "haz clic en ")]
+MAC_TOUCH_EN = [(r"Touch and hold", "Click and hold"), (r"Press and hold", "Click and hold"), (r"\bTap\b", "Click"), (r"\btap\b", "click")]
+
+
+def mac_touch(text: str, rules: list) -> str:
+    for old, new in rules:
+        text = re.sub(old, new, text)
+    return text
+
+
 def varies_by_device(key: str) -> bool:
-    return "iPhone" in key and not any(literal in key for literal in DEVICE_LITERAL)
+    iphone = "iPhone" in key and not any(literal in key for literal in DEVICE_LITERAL)
+    return iphone or mac_touch(key, MAC_TOUCH_ES) != key
 
 
 def build() -> dict:
@@ -927,8 +941,8 @@ def build() -> dict:
             mac, mac_en = MAC_ONLY[key]
             localizations = {"es": by_device(key, key, mac), "en": by_device(english, english, mac_en)}
         elif varies_by_device(key):
-            localizations = {"es": by_device(key, key.replace("iPhone", "iPad"), mac_es(key)),
-                             "en": by_device(english, english.replace("iPhone", "iPad"), english.replace("iPhone", "Mac"))}
+            localizations = {"es": by_device(key, key.replace("iPhone", "iPad"), mac_touch(mac_es(key), MAC_TOUCH_ES)),
+                             "en": by_device(english, english.replace("iPhone", "iPad"), mac_touch(english.replace("iPhone", "Mac"), MAC_TOUCH_EN))}
         else:
             localizations = {"en": unit(english)}
         strings[key] = {"extractionState": "manual", "localizations": localizations}

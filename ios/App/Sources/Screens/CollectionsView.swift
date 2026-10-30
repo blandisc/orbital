@@ -158,7 +158,7 @@ struct CollectionGridView: View {
             if isLoading { ProgressView().frame(maxWidth: .infinity).padding(.vertical, DS.Space.s14) }
             else { DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"), message: Text("Esta lista todavía no tiene títulos.")) }
         } else {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s5) {
+            LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3), spacing: DS.Space.s5) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
                     TitleNavigationLink(route: s.route) {
                         RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster).titleZoomSource(s.route)

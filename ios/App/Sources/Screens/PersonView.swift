@@ -32,6 +32,7 @@ struct PersonView: View {
     @State private var person: PersonDetails?
     @State private var failed = false
     @State private var expanded = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var scrolledDown = false
     /// La biografía no cabe en sus renglones (entonces sí va «Más»).
     @State private var bioCut = false
@@ -83,9 +84,9 @@ struct PersonView: View {
                         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { full in bioFull = full; if !expanded { bioCut = full > bioShown + 1 } }
                 }
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { shown in if !expanded { bioShown = shown; bioCut = bioFull > shown + 1 } }
-            if bioCut || expanded { Button { withAnimation { expanded.toggle() } } label: {
-                Label(expanded ? "Menos" : "Más", systemImage: expanded ? "chevron.up" : "chevron.down")
-                    .labelStyle(TrailingIconLabelStyle())
+            if bioCut || expanded { Button { withAnimation(DS.Motion.base(reduceMotion)) { expanded.toggle() } } label: {
+                // «Más ⌄»: el nombre primero y el ícono después.
+                HStack(spacing: DS.Space.s1) { Text(expanded ? "Menos" : "Más"); Image(systemName: expanded ? "chevron.up" : "chevron.down") }
                     .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.accent)
             }
             .buttonStyle(.plain)
@@ -93,13 +94,6 @@ struct PersonView: View {
             .accessibilityIdentifier("person-bio-more") }
         }
         .contentShape(Rectangle())
-        .onTapGesture { withAnimation { expanded.toggle() } }
-    }
-}
-
-/// «Más ⌄»: el nombre primero y el ícono después.
-private struct TrailingIconLabelStyle: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: DS.Space.s1) { configuration.title; configuration.icon }
+        .onTapGesture { withAnimation(DS.Motion.base(reduceMotion)) { expanded.toggle() } }
     }
 }

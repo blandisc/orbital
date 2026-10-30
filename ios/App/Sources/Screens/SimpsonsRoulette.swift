@@ -130,7 +130,8 @@ struct SimpsonsRoulette: View {
 
     /// El viñeteado del cristal de una tele vieja.
     private static var vignette: some View {
-        RadialGradient(colors: [.clear, .black.opacity(DesignTokens.Opacity.faint)], center: .center, startRadius: DS.Simpsons.screen / 4, endRadius: DS.Simpsons.screen * 0.75)
+        RadialGradient(colors: [.clear, .black.opacity(DesignTokens.Opacity.faint)]   // ds-exception: el cristal de la tele es siempre oscuro (arte)
+                      , center: .center, startRadius: DS.Simpsons.screen / 4, endRadius: DS.Simpsons.screen * 0.75)
     }
 
     /// La pantalla: cristal curvo con su marco, la imagen del canal, la estática, el número de canal y el brillo.
@@ -143,7 +144,7 @@ struct SimpsonsRoulette: View {
             Self.vignette
             if !landed, clicks > 0 {
                 Text(verbatim: "CH \(DS.Simpsons.channels[(clicks - 1) % DS.Simpsons.channels.count])")
-                    .font(.system(.title3, design: .monospaced).weight(.heavy)).foregroundStyle(DS.Simpsons.osd)
+                    .font(.system(.title3, design: .monospaced).weight(.heavy)).foregroundStyle(DS.Simpsons.osd)   // ds-exception: el número de canal de una tele vieja (arte, no texto de la app)
                     .shadow(color: DS.Simpsons.osd, radius: DS.Simpsons.osdGlow)
                     .padding(DS.Space.s2)
             }

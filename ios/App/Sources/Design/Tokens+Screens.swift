@@ -146,6 +146,8 @@ extension DS {
         /// Cuánto tarda una vuelta, qué parte de la órbita ocupa la estela y qué tan visible es su punta.
         static let seconds = 1.4
         static let trail: CGFloat = 0.35, trailOpacity = 0.9
+        /// Con «Reducir movimiento» la luna no gira: se queda a esta parte de la vuelta y late entre `pulseMin` y 1.
+        static let restTurn = 0.75, pulseMin = 0.55
         /// Dentro del botón grande: qué tan adentro de su orilla corre la luna.
         static let buttonInset: CGFloat = 5
     }

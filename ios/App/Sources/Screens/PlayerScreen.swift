@@ -400,7 +400,7 @@ struct PlayerScreen: View {
             try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 3)
             guard !landscape, ipod == nil, !fillsPortrait, controlsVisible else { return }
             moveHintSeen += 1
-            withAnimation(DS.Motion.spring(reduceMotion)) { portraitDrag = portraitCenter + DS.PlayerPanel.moveNudge }
+            withAnimation(DS.Motion.spring(reduceMotion)) { portraitDrag = openingCenter + DS.PlayerPanel.moveNudge }
             try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 8)
             withAnimation(DS.Motion.spring(reduceMotion)) { portraitDrag = nil }
         }

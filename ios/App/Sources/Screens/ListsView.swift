@@ -77,15 +77,15 @@ struct ListsView: View {
         #if DEBUG
         guard Demo.isOn else { return }
         if let id = Demo.shelf {
-            try? await Task.sleep(for: .seconds(3))
+            try? await Task.sleep(for: .seconds(3))   // Demo: espera a que carguen las capturas
             proxy.scrollTo(id, anchor: .top)
         }
         if let name = Demo.section, let section = CollectionSection.allCases.first(where: { "\($0)" == name }) {
-            try? await Task.sleep(for: .seconds(3))
+            try? await Task.sleep(for: .seconds(3))   // Demo: espera a que carguen las capturas
             proxy.scrollTo(section, anchor: .top)
         }
         if let open = Demo.collection?.split(separator: ":"), open.count == 2 {
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(2))   // Demo: espera a que carguen las capturas
             demoCollection = CollectionRoute(kind: open[0] == "genre" ? .genre : .season, id: String(open[1]))
         }
         #endif
@@ -296,7 +296,7 @@ struct ListsView: View {
     private func listGroup(title: LocalizedStringKey, source: ListSource, cards: [ListCardItem]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: title).padding(.horizontal, DS.Space.gutter)
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s3) {
+            LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3, wideMin: DS.Poster.stillWideMin), spacing: DS.Space.s3) {
                 ForEach(cards) { c in
                     Group {
                         if let shelf = c.shelf { NavigationLink(value: shelf) { ListCard(name: c.name, source: source, posters: c.posters, count: c.count) } }

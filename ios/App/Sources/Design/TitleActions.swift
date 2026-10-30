@@ -7,6 +7,7 @@ struct DownloadRing: View {
     let fraction: Double
     var tint: Color = DS.accent
     var lineWidth: CGFloat = DS.TitleAction.ring
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -14,7 +15,7 @@ struct DownloadRing: View {
             Circle().trim(from: 0, to: max(0.02, min(1, fraction)))
                 .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(.linear, value: fraction)
+                .animation(reduceMotion ? nil : .linear, value: fraction)
         }
         .accessibilityElement()
         .accessibilityLabel(Text("Descargando"))

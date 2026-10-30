@@ -23,6 +23,8 @@ extension DS {
         static let edgeShare: CGFloat = 1.0 / 3.0
         /// Tras un doble toque, cada toque más del mismo lado suma 10 s (+10, +20, +30) mientras no pase este rato.
         static let skipChain: TimeInterval = 0.7
+        /// Un arrastre cancelado se limpia este rato después (para que uno normal termine antes con `onEnded`).
+        static let cancelSettle: Duration = .milliseconds(80)
         /// ×2: deslizar hacia abajo esta distancia, desde donde apoyaste el dedo, lo fija. Si hasta el borde
         /// de abajo queda menos, se usa ese hueco, pero nunca menos de `fastForwardLockDragMin`. Hacia arriba,
         /// esta misma distancia lo quita al momento (sin esperar a soltar).
@@ -116,6 +118,8 @@ extension DS {
         /// Tamaños de letra de muestra («Aa») para chico, mediano y grande.
         static let sampleSizes: [String: CGFloat] = ["small": 12, "medium": 15, "large": 19]
         /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando) y entre qué límites.
+        /// En el iPad de pie (ancho regular) el video abre a media pantalla: arriba dejaba ~600 pt de negro abajo.
+        static let regularCenter = 0.5
         static let portraitCenter: CGFloat = -1, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
         /// Mientras no lo mueves (`portraitCenter` < 0), el video queda a esta distancia bajo el área segura: la misma en todos los
         /// iPhone (antes era una fracción del alto y en un Pro Max quedaba cientos de puntos más abajo que en un SE).

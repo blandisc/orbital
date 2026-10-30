@@ -545,7 +545,7 @@ struct HomeView: View {
         let kept = model.continueWatching.filter { continueKind.isEmpty || $0.kind == continueKind }
         let shown = continueSort == .title ? kept.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending } : kept
         return ScrollView {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s4) {
+            LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3, wideMin: DS.Poster.stillWideMin), spacing: DS.Space.s4) {
                 ForEach(shown) { item in
                     TitleNavigationLink(route: route(item)) {
                         StillCard(title: item.title, art: item.background ?? item.poster, data: continueData(item),

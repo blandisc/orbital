@@ -83,6 +83,7 @@ umbral de pantalla corta es 700 pt. Un commit por pantalla para revertir solo lo
 | Control de la TV en el iPad | Opción B (29 oct): panel fijo a la derecha en ventana ancha (≥ 1000 pt, ancho regular) con el inspector de SwiftUI; tarjeta en ventana angosta. Página de la decisión: claude.ai/artifact/386cRFMTfgRCvJvEU4tnFw |
 | La Mac sin la consola | `Services(allowsOrbital: false)` en la Mac (`ThisDevice.talksToOrbital`): sin control, «En la TV» ni emparejar; Ajustes sin «Tu Orbital» ni «Voz y Siri» (`OrbitalOffTests`) |
 | Pulido en horizontal | Ficha a 720 pt (`DS.TitleAction.readableWidth`); géneros adaptables (`DS.Poster.genreTileMin`); tamaño mínimo de ventana = iPhone SE (`WindowMetrics.minimum`) |
+| Revisión general (29 oct, tarde) | Selectores segmentados a lo más `DS.Size.segmentedMax` (480 pt; antes de orilla a orilla en Buscar y Descargas); las cuadrículas «de dos en dos» (Top 10 completo, tus listas, Seguir viendo › Ver todo) pasan a columnas adaptables en ventana ancha (`DS.Poster.pairColumns`); «Próximos estrenos» con tope (`DS.Poster.airingMax`); ancho de lectura en las listas que faltaban (Descargas › temporadas, Ajustes › Cuentas, OneDrive, Mi media, Probar la velocidad); el video del iPad de pie abre a media pantalla (`DS.PlayerPanel.regularCenter`) y no pegado arriba con ~600 pt de negro; en la Mac los textos dicen «Haz clic» y «Mantén el clic» en vez de «Toca» y «Mantén presionado» (variación `mac` del catálogo, `scripts/ios_strings.py` › `MAC_TOUCH_ES`/`MAC_TOUCH_EN`) |
 
 ### Instalar en el iPad y en la Mac
 

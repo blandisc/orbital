@@ -121,8 +121,11 @@ final class DesignTests: XCTestCase {
             (#"\.padding\(\s*[0-9]"#, "espacio a mano"), (#"\.zIndex\(\s*[0-9]"#, "capa a mano"),
             (#"\.frame\([^)]*\b(width|height|minHeight|maxWidth|minWidth|maxHeight):\s*[0-9]"#, "medida a mano"),
             (#"\.opacity\(\s*[0-9]"#, "opacidad a mano"), (#"sleep\(nanoseconds:\s*[0-9]"#, "espera a mano"),
-            (#"(struct|class)\s+\w+\s*:\s*[^{]*\b(ButtonStyle|PrimitiveButtonStyle|ToggleStyle|PickerStyle|TabViewStyle)\b"#, "estilo de control propio: usa el nativo de Apple (HIG)"),
-            (#"\.presentationBackground\("#, "fondo de hoja propio: deja el vidrio nativo (Liquid Glass)"),
+            (#"(struct|class)\s+\w+\s*:\s*[^{]*\b(ButtonStyle|PrimitiveButtonStyle|ToggleStyle|PickerStyle|TabViewStyle|LabelStyle|MenuStyle)\b"#, "estilo de control propio: usa el nativo de Apple (HIG)"),
+            (#"\.presentationBackground\s*[({]"#, "fondo de hoja propio: deja el vidrio nativo (Liquid Glass)"),
+            // Lo que se colaba (revisión del 29 oct 2026): animar sin token (sin «Reducir movimiento»), resortes y letras a mano.
+            (#"withAnimation\s*\{"#, "animación sin token: usa DS.Motion.…(reduceMotion)"), (#"\.spring\(response:\s*[0-9]"#, "resorte a mano"),
+            (#"\.font\(\.system\("#, "letra a mano: usa una receta"),
             (#"\.listRowBackground\(DS\.fill\)"#, "renglón con relleno translúcido: los renglones van en DS.surface (blancos en claro)"),
             (#"\.aspectRatio\(\s*[0-9]"#, "relación de aspecto a mano"), (#"\.minimumScaleFactor\(\s*[0-9]"#, "escala a mano"),
         ]
@@ -138,6 +141,11 @@ final class DesignTests: XCTestCase {
                 // La app (no el widget, que tiene sus propios tamaños) solo escribe texto con las recetas de Proyección.
                 if relative.hasPrefix("Sources/"), line.contains("DS.font(") {
                     problems.append("\(relative):\(index + 1): tamaño de letra suelto (usa una receta: DS.TextRecipe / .recipe(…)): \(line.trimmingCharacters(in: .whitespaces))")
+                }
+                // Las esperas de las pantallas son tokens (las de las capturas del modo demo, no).
+                if relative.hasPrefix("Sources/Screens/") || relative.hasPrefix("Sources/Design/"), !line.contains("Demo"),
+                   line.range(of: #"Task\.sleep\(for:\s*\.(seconds|milliseconds)\(\s*[0-9]"#, options: .regularExpression) != nil {
+                    problems.append("\(relative):\(index + 1): espera a mano: \(line.trimmingCharacters(in: .whitespaces))")
                 }
                 // Los colores fijos no cambian con el modo claro u oscuro: van los papeles (`DS.text`, `DS.bg`…).
                 if relative.hasPrefix("Sources/Screens/"), line.range(of: #"Color\.(white|black)|\.foregroundStyle\(\.(white|black)\)"#, options: .regularExpression) != nil {

@@ -318,6 +318,7 @@ struct DownloadSeriesView: View {
                     }
                     .downloadCard()
                 }
+                .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
             } else if let season = group?.seasons.first {
                 DownloadSeasonView(observer: observer, metaID: metaID, season: season.number)
             }
@@ -366,6 +367,7 @@ struct DownloadSeasonView: View {
             } header: { if season > 0 { Text("Temporada \(season)") } }
             .downloadCard()
         }
+        .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: group?.title ?? "")).navigationBarTitleDisplayMode(.inline)

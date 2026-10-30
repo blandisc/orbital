@@ -125,6 +125,7 @@ struct SettingsView: View {
                     }
                     .listRowBackground(DS.surface)
                 }
+                .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
                     .scrollContentBackground(.hidden).background(Backdrop())
                     .navigationTitle("Tu perfil").navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { editingAvatar = false } } }
@@ -490,6 +491,7 @@ struct RememberedTitlesView: View {
             }
             .listRowBackground(DS.surface)
         }
+        .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text("Lo que recuerda cada título"))
         .task { reload(); await loadNames() }

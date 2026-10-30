@@ -302,7 +302,7 @@ struct BecauseDeck: View {
                 // Se avienta si pasó el umbral o si el dedo iba rápido (como en una pila de cartas real).
                 let thrown = abs(value.translation.width) > DS.Collections.deckThrow || abs(value.predictedEndTranslation.width) > DS.Collections.deckThrow * 3
                 if thrown { fly(value.translation.width < 0 ? -1 : 1) }
-                else { withAnimation(.snappy(duration: DS.Collections.deckSettle)) { drag = 0 } }
+                else { withAnimation(reduceMotion ? nil : .snappy(duration: DS.Collections.deckSettle)) { drag = 0 } }
             })
         .onTapGesture { fly(-1) }
         .accessibilityElement()
