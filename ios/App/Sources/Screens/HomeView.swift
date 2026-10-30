@@ -438,7 +438,7 @@ struct HomeView: View {
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(alignment: .sectionTitle) {
                 DSSectionHead(title: Text("Top 10 en \(service.name)"),
-                              eyebrow: service.weekly ? Text("Lo más visto en tu país esta semana") : Text("Lo más visto hoy · JustWatch"))
+                              eyebrow: service.weekly ? Text("Esta semana en tu país") : Text("Lo más visto hoy · JustWatch"))
                     .lineLimit(1).minimumScaleFactor(DS.Size.titleShrink)
                 Spacer(minLength: DS.Space.s2)
                 // Siempre ocupa su lugar (oculto si el servicio solo tiene uno de los dos): al cambiar de servicio nada brinca.

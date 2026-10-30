@@ -54,8 +54,10 @@ struct MosaicCover: View {
                 .accessibilityHidden(true)
             }
             .overlay {
+                // Arriba se funde con la barra; abajo un velo firme bajo el porqué y el botón, para que se lean sobre cualquier póster.
                 LinearGradient(stops: [.init(color: DS.bg.opacity(DS.ParaTiB.coverTopVeil), location: 0), .init(color: .clear, location: DS.ParaTiB.coverClearAt),
-                                       .init(color: DS.bg, location: 1)], startPoint: .top, endPoint: .bottom)
+                                       .init(color: DS.bg.opacity(DS.ParaTiB.coverBaseVeil), location: DS.ParaTiB.coverBaseAt), .init(color: DS.bg, location: 1)],
+                               startPoint: .top, endPoint: .bottom)
             }
             .clipped()
             .overlay(alignment: .bottomLeading) {

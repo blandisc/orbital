@@ -250,7 +250,7 @@ struct BrowseView: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             NavigationLink(value: PopularRoute()) {
                 DSSectionHead(title: "Lo más popular hoy", chevron: true,
-                              meta: Text("Lo que más se está viendo ahora, películas y series"), source: .trakt)
+                              meta: Text("Películas y series, ahora mismo"), source: .trakt)
             }
             .buttonStyle(.plain)
             .padding(.horizontal, DS.Space.gutter)

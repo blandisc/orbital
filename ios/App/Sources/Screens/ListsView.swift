@@ -111,13 +111,18 @@ struct ListsView: View {
                     // Sin pósters (sin TMDB ni Trakt) la tarjeta quedaría vacía: el dado de la barra sigue abriendo «Decide por mí».
                     let fan = Array(walls.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.matchFan))
                     if !fan.isEmpty { MatchTeaser(posters: fan, onOpen: onMatch) }
-                    if model.hasKindSplit {
-                        DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
-                                                   set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), icons: true)
-                            .frame(maxWidth: .infinity)
-                    }
                     if !generalShelves.isEmpty || model.isLoading {
-                        DSSectionHead(title: Text("Ahora"), trailing: Text("Lo que se está viendo"), size: .group).padding(.horizontal, DS.Space.gutter)
+                        // El tipo (Todo · Series · Películas) junto al título del grupo que filtra, no suelto entre la tarjeta y «Ahora».
+                        HStack(alignment: .center, spacing: DS.Space.s3) {
+                            DSSectionHead(title: Text("Ahora"), trailing: model.hasKindSplit ? nil : Text("Lo que se está viendo"), size: .group)
+                            if model.hasKindSplit {
+                                DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
+                                                           set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), icons: true)
+                                    .fixedSize()
+                            }
+                        }
+                        .padding(.horizontal, DS.Space.gutter)
+                        .id("ahora")   // `-demo-shelf ahora` baja hasta aquí
                     }
                     if walls.isEmpty, model.shelves.isEmpty, model.isLoading { FeedSkeleton() }   // la primera vez, mientras llega
                     ForEach(generalShelves) { plan in shelf(plan).id(plan.id).perfTag("paraTi.shelf") }
@@ -156,7 +161,7 @@ struct ListsView: View {
                     listRows(title: Text("Tuyo"), trailing: Text("De Trakt"), cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection))
                 }
                 if !addonCards.isEmpty {
-                    listRows(title: Text("De tus complementos"), trailing: Text("Complementos"), cards: addonCards)
+                    listRows(title: Text("De tus complementos"), trailing: nil, cards: addonCards)
                         .modifier(SectionSpy(section: .addons, active: $activeSection))
                 }
                 // Lo que ves (reemplaza «Tu año», que vive adentro) y, debajo, Colecciones (la repisa del canon).
@@ -320,7 +325,7 @@ struct ListsView: View {
 
     /// Un grupo de listas en renglones que abren la lista completa: «Tuyo» (Mi lista, Favoritos, Tus series y tus listas de
     /// Trakt) y «De tus complementos».
-    private func listRows(title: Text, trailing: Text, cards: [ListCardItem]) -> some View {
+    private func listRows(title: Text, trailing: Text?, cards: [ListCardItem]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: title, trailing: trailing, size: .group).padding(.horizontal, DS.Space.gutter)
             VStack(spacing: DS.Space.s2) {

@@ -38,7 +38,7 @@ extension DS {
     enum ParaTiB {
         static let circle: CGFloat = 56, circleLabel: CGFloat = 84
         static let coverHeight: CGFloat = 300, coverWall: CGFloat = 620, coverColumns = 6, coverPosters = 36, coverTilt: Double = -10
-        static let coverTopVeil: Double = 0.55, coverClearAt: Double = 0.25
+        static let coverTopVeil: Double = 0.55, coverClearAt: Double = 0.25, coverBaseVeil: Double = 0.85, coverBaseAt: Double = 0.68
         static let deckPoster: CGFloat = 84, deckShift: CGFloat = 10, deckTurn: Double = 5, deckBehind: Double = 0.6
         /// Cuántos pósters lleva el abanico de «¿Qué vemos hoy?» (y cuántos de la portada se saltan para no repetirlos).
         static let matchFan = 3

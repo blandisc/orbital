@@ -9108,6 +9108,17 @@
         }
       }
     },
+    "Esta semana en tu país": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week in your country"
+          }
+        }
+      }
+    },
     "Esta versión no tiene un enlace para descargar.": {
       "extractionState": "manual",
       "localizations": {
@@ -16247,6 +16258,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Movies and series"
+          }
+        }
+      }
+    },
+    "Películas y series, ahora mismo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies and shows, right now"
           }
         }
       }

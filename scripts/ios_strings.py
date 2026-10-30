@@ -120,6 +120,7 @@ TRANSLATIONS = {
     "HOY": "TODAY",
     "Ayer": "Yesterday",
     "en %lld días": "in %lld days",
+    "Esta semana en tu país": "This week in your country", "Películas y series, ahora mismo": "Movies and shows, right now",
     "De la más cercana a la más lejana": "From the closest to the farthest",
     "La temporada · ahora": "The season · now", "La temporada · mañana": "The season · tomorrow",
     "La temporada · en %lld días": "The season · in %lld days", "La temporada · en %@ días": "The season · in %@ days", "Próximas temporadas": "Coming seasons", "Ver la colección": "See the collection",
