@@ -87,6 +87,15 @@ TRANSLATIONS = {
     "Lo nuevo de lo tuyo": "New from your shows",
     "Por lo que viste": "Because you watched",
     "Canales": "Channels",
+    # Para ti B.
+    "A la derecha la guardas, a la izquierda no.": "Swipe right to save, left to skip.",
+    "Años": "Years",
+    "Encuentra tu match perfecto": "Find your perfect match",
+    "Lo que se está viendo": "What's being watched",
+    "Lo que ves": "What you watch",
+    "Más de 50 formas de encontrar qué ver": "More than 50 ways to find something to watch",
+    "Pasear por el mosaico": "Wander the mosaic",
+    "¿Qué vemos hoy?": "What should we watch today?",
     "Quitar %@ de tus canales": "Remove %@ from your channels",
     "Añadir %@ a tus canales": "Add %@ to your channels",
     # Nombres de las series de arranque de Canales (`ChannelsModel.starters` y `suggested`).

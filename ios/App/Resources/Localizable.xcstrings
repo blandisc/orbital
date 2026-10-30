@@ -782,6 +782,17 @@
         }
       }
     },
+    "A la derecha la guardas, a la izquierda no.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe right to save, left to skip."
+          }
+        }
+      }
+    },
     "A tiempo": {
       "extractionState": "manual",
       "localizations": {
@@ -2474,6 +2485,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Year: oldest"
+          }
+        }
+      }
+    },
+    "Años": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Years"
           }
         }
       }
@@ -11972,6 +11994,17 @@
         }
       }
     },
+    "Lo que se está viendo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's being watched"
+          }
+        }
+      }
+    },
     "Lo que sea": {
       "extractionState": "manual",
       "localizations": {
@@ -13445,6 +13478,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Shortest first"
+          }
+        }
+      }
+    },
+    "Más de 50 formas de encontrar qué ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More than 50 ways to find something to watch"
           }
         }
       }
@@ -15939,6 +15983,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To watch offline, one after another"
+          }
+        }
+      }
+    },
+    "Pasear por el mosaico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wander the mosaic"
           }
         }
       }

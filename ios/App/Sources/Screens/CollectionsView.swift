@@ -7,10 +7,10 @@ enum CollectionSection: CaseIterable, Hashable {
     case forYou, platforms, studios, seasons, genres, awards, years, airings, trakt, addons, yourYear
     var title: Text {
         switch self {
-        case .forYou: Text("Para ti"); case .trakt: Text("Listas de Trakt"); case .addons: Text("De tus complementos")
-        case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .studios: Text("Estudios"); case .years: Text("Por año")
-        case .seasons: Text("Temporadas"); case .genres: Text("Lo mejor del género")
-        case .airings: Text("Próximos estrenos"); case .yourYear: Text("Tu año")
+        case .forYou: Text("Ahora"); case .trakt: Text("Listas de Trakt"); case .addons: Text("De tus complementos")
+        case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .studios: Text("Estudios"); case .years: Text("Años")
+        case .seasons: Text("Temporadas"); case .genres: Text("Géneros")
+        case .airings: Text("Próximos estrenos"); case .yourYear: Text("Lo que ves")
         }
     }
 

@@ -12,10 +12,6 @@ struct ListsView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var openTitle: TitleRoute?
-    /// Los colores del arte del destacado: su «Ver» toma el color claro, como en la TV.
-    @State private var featuredTint = ArtTint()
-    /// La posición del carrusel del destacado (vuelta infinita: la tarjeta es la posición módulo cuántas hay).
-    @State private var featuredSlot: Int?
     /// Premios, tus listas de Trakt y «Por año».
     /// Uno para toda la app: cambiar entre mosaico y listas ya no lo vuelve a pedir todo (Mi lista, años, estudios).
     @State private var collections = ModelObserver(AppEnvironment.shared.collections)
@@ -29,7 +25,10 @@ struct ListsView: View {
     private var model: ParaTiModel { observer.model }
 
     /// Lo general: todo lo que no es una lista tuya ni una plataforma.
-    private var generalShelves: [ShelfPlan] { model.visibleShelves.filter { $0.list.group != .platforms && listSource($0) == nil } }
+    private var generalShelves: [ShelfPlan] {
+        // Tus recomendaciones de Trakt viven en Inicio («Sugerencias para ti»): aquí no se repiten.
+        model.visibleShelves.filter { $0.list.group != .platforms && listSource($0) == nil && $0.id != "recs" }
+    }
 
     /// Si un estante es una lista tuya, de dónde: tu watchlist, tus series y tus listas son de Trakt; los catálogos de tus
     /// complementos, de cada complemento.
@@ -96,26 +95,24 @@ struct ListsView: View {
             // Un `VStack` (no perezoso): son pocos grupos y así el índice puede saltar a cualquiera; lo pesado de adentro
             // (las tiras) sí es perezoso.
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                // Para ti: lo general (el destacado, «Porque viste», las sugerencias), cada fila con su sello.
+                // Para ti B (docs/producto/inicio-benchmark/para-ti/): el mosaico como portada, un círculo por cada parte y
+                // «¿Qué vemos hoy?». El destacado, «Porque viste» y los estrenos viven en Inicio.
                 VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                    let slides = model.featuredSlides
-                    // Como Inicio: el título de lo destacado y, discreto a su derecha, Todo · Películas · Series.
-                    if model.hasKindSplit || !slides.isEmpty {
-                      VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        HStack(alignment: .sectionTitle) {
-                            if !slides.isEmpty { DSSectionHead(title: Text("Destacado"), eyebrow: Text("El N.º 1 de cada plataforma")) }
-                            Spacer(minLength: DS.Space.s2)
-                            if model.hasKindSplit {
-                                DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
-                                                           set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), menu: true)
-                            }
-                        }
-                        .padding(.horizontal, DS.Space.gutter)
-                        if !slides.isEmpty { featuredCarousel(slides).perfTag("paraTi.hero") }
-                      }
+                    let walls = (model.mosaic.isEmpty ? generalShelves.flatMap { model.items(for: $0) } : model.mosaic).map(\.poster)
+                    if !walls.isEmpty { MosaicCover(posters: walls) { model.mode = .mosaic }.perfTag("paraTi.hero") }
+                    SectionCircles(items: CollectionSection.allCases.filter(isShown).map { .init(id: $0, title: $0.title, symbol: $0.symbol) }) { section in
+                        activeSection = section
+                        jumps += 1
+                        withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) }
                     }
-                    if slides.isEmpty, model.shelves.isEmpty, model.isLoading { FeedSkeleton() }   // la primera vez, mientras llega
-                    if let because = model.because { becauseCard(because) }
+                    DecideCard(posters: Array(walls.dropFirst(3).prefix(3)), onOpen: onDecide)
+                    if model.hasKindSplit {
+                        DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
+                                                   set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), icons: true)
+                            .frame(maxWidth: .infinity)
+                    }
+                    DSGroupTitle(title: Text("Ahora"), meta: Text("Lo que se está viendo"))
+                    if walls.isEmpty, model.shelves.isEmpty, model.isLoading { FeedSkeleton() }   // la primera vez, mientras llega
                     ForEach(generalShelves) { plan in shelf(plan).id(plan.id).perfTag("paraTi.shelf") }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.
                     if !model.newOnPlatforms.isEmpty {
@@ -146,12 +143,6 @@ struct ListsView: View {
                     }
                     awards.modifier(SectionSpy(section: .awards, active: $activeSection))
                     if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
-                }
-                if !model.airings.isEmpty {   // vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
-                    Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos"), source: .trakt) {
-                        ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
-                    }
-                    .modifier(SectionSpy(section: .airings, active: $activeSection))
                 }
                 // Al final, las listas: las de Trakt y las de tus complementos, aparte.
                 if !traktLists.isEmpty { listGroup(title: "Listas de Trakt", source: .trakt, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection)) }
@@ -192,7 +183,7 @@ struct ListsView: View {
     /// Cada plataforma, una tarjeta con su top 3 en abanico; tocarla abre sus rankings.
     private var platforms: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Tus plataformas", meta: Text("Sus rankings de hoy")).padding(.horizontal, DS.Space.gutter)
+            DSGroupTitle(title: Text("Plataformas"), meta: Text("Sus rankings de hoy"))
             CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { hub in
                 NavigationLink(value: PlatformRoute(brand: hub.brand)) {
                     PlatformFanCard(name: hub.name, logo: hub.logo, posters: model.cover(of: hub).map { Optional($0.poster) },
@@ -242,39 +233,9 @@ struct ListsView: View {
         case .awards: !collections.model.awards.isEmpty
         case .studios, .seasons, .genres: collections.model.tmdbReady
         case .years: collections.model.traktLinked
-        case .airings: !model.airings.isEmpty
+        case .airings: false   // los estrenos viven en Inicio («Lo nuevo de lo tuyo»)
         case .yourYear: collections.model.traktLinked
         }
-    }
-
-    /// «Porque viste X»: una tarjeta propia (no una fila más) con lo que viste y lo relacionado.
-    private func becauseCard(_ because: (seed: TraktEntry, items: [Suggestion])) -> some View {
-        let fromHistory = model.becauseSeeds.map(becauseSeed)
-        let seeds = fromHistory.contains { $0.id == because.seed.imdb } ? fromHistory : [becauseSeed(because.seed)] + fromHistory
-        // El mazo sigue a lo que elegiste al momento; las relacionadas son las del título de arriba o, si aún no llegan, su lugar.
-        let selected = model.becauseSelected ?? because.seed.imdb
-        let state: BecauseRelated = because.seed.imdb != selected ? .loading : because.items.isEmpty ? .none : .ready
-        return BecauseCard(seeds: seeds, selected: selected, state: state,
-                           choose: { id in if let seed = model.becauseSeeds.first(where: { $0.imdb == id }) { Task { await model.chooseBecause(seed) } } }) {
-            ForEach(because.items) { s in
-                ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], width: DS.Collections.relatedPoster) { dismissed in Task { await model.dismiss(dismissed) } }
-            }
-        }
-        .padding(.horizontal, DS.Space.gutter)
-        // Los pósters de los vecinos (lo siguiente que vas a tocar), de antemano: al cambiar ya están y no salen de a poco.
-        .task(id: "\(selected)-\(model.becausePreloaded.count)") {
-            guard let at = seeds.firstIndex(where: { $0.id == selected }), seeds.count > 1 else { return }
-            let neighbors = [seeds[(at + 1) % seeds.count].id, seeds[(at - 1 + seeds.count) % seeds.count].id]
-            ImagePipeline.shared.prefetchPosters(neighbors.flatMap { (model.becausePreloaded[$0] ?? []).prefix(DS.Collections.relatedPlaceholders + 1).map(\.poster) })
-        }
-    }
-
-    /// Un título de lo que viste, para el mazo: qué es y de qué año («Serie · 2005»). Sin «la viste hace…»: no gustó.
-    private func becauseSeed(_ e: TraktEntry) -> BecauseSeed {
-        let language = env.services.appSettings.uiLanguage
-        var parts = [Strings.tr(e.kind == "movie" ? "Película" : "Serie", language: language)]
-        if let year = e.year { parts.append(String(year)) }
-        return BecauseSeed(id: e.imdb, title: e.title, poster: String(format: ForYou.metahubPoster, e.imdb), detail: parts.joined(separator: " · "))
     }
 
     /// Un grupo de listas (de Trakt o de tus complementos): tarjetas de dos en dos que abren la lista completa.
@@ -300,7 +261,7 @@ struct ListsView: View {
         let all = collections.model.awards
         if !all.isEmpty {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSSectionHead(title: "Premios", meta: Text("Los ganadores, del más reciente")).padding(.horizontal, DS.Space.gutter)
+                DSGroupTitle(title: Text("Premios"), meta: Text("Los ganadores, del más reciente"))
                 CenteredCarousel(items: all, id: \.id, cardWidth: DS.PlatformFan.width) { award in
                     NavigationLink(value: CollectionRoute(kind: .award, id: award.id)) { AwardCard(award: award) }
                         .buttonStyle(.plain)
@@ -313,7 +274,7 @@ struct ListsView: View {
     /// Estudios: A24, Pixar, Ghibli… cada uno con sus tres películas más vistas y su nombre al frente.
     private var studiosSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Estudios", meta: Text("Lo más visto de cada uno")).padding(.horizontal, DS.Space.gutter)
+            DSGroupTitle(title: Text("Estudios"), meta: Text("Lo más visto de cada uno"))
             CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { studio in
                 NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
                     CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
@@ -332,7 +293,7 @@ struct ListsView: View {
     private var seasonsSection: some View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Temporadas", meta: Text("La de ahora, primero")).padding(.horizontal, DS.Space.gutter)
+            DSGroupTitle(title: Text("Temporadas"), meta: Text("La de ahora, primero"))
             CenteredCarousel(items: collections.model.seasons, id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { season in
                 let name = Strings.tr(season.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .season, id: season.slug)) {
@@ -353,7 +314,7 @@ struct ListsView: View {
     private var genresSection: some View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Lo mejor del género", meta: Text("Las mejor calificadas del año")).padding(.horizontal, DS.Space.gutter)
+            DSGroupTitle(title: Text("Géneros"), meta: Text("Las mejor calificadas del año"))
             CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { genre in
                 let name = Strings.tr(genre.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .genre, id: genre.slug)) {
@@ -373,7 +334,7 @@ struct ListsView: View {
     /// Por año: cada año con cuatro de sus películas (las premiadas, y si faltan, lo más popular).
     private var yearsSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Por año", meta: Text("Lo más popular de cada año")).padding(.horizontal, DS.Space.gutter)
+            DSGroupTitle(title: Text("Años"), meta: Text("Lo más popular de cada año"))
             CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth, reflected: true) { year in
                 NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {
                     YearCard(year: year, posters: collections.model.yearPosters[year] ?? []).rowReflection()
@@ -425,68 +386,6 @@ struct ListsView: View {
         DSEmptyState(symbol: "link", title: Text("Conecta Trakt o tu Orbital"),
                      message: Text("Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.")) {
             NavigationLink(value: SettingsRoute()) { Label("Abrir Ajustes", systemImage: "gearshape") }
-        }
-    }
-
-    // MARK: destacado
-    /// Varias de la misma lista del destacado, para pasar con el dedo (como «Seguir viendo» en Inicio), con sus puntos.
-    private func featuredCarousel(_ slides: [ParaTiModel.Featured]) -> some View {
-        // Una vuelta infinita, como el carrusel de Inicio: las mismas tarjetas repetidas y se empieza a la mitad.
-        let copies = slides.count > 1 ? DS.Deck.loopCopies : 1
-        let middle = (copies / 2) * slides.count
-        let index = (featuredSlot ?? middle) % slides.count
-        let current = slides[index]
-        return VStack(spacing: DS.Space.s3) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 0) {
-                    ForEach(0..<(copies * slides.count), id: \.self) { slot in featuredTile(slides[slot % slides.count]).containerRelativeFrame(.horizontal) }
-                }
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $featuredSlot)
-            .onAppear { if featuredSlot == nil || (featuredSlot ?? 0) >= copies * slides.count { featuredSlot = middle } }
-            if slides.count > 1 { PageDots(count: slides.count, index: index) }
-        }
-        .task(id: current.item.wide) { await featuredTint.load(current.item.wide) }   // «Ver» toma el color del que está al frente
-        .sensoryFeedback(.selection, trigger: featuredSlot)
-        .onChange(of: slides.map(\.item.id)) { featuredSlot = middle }   // «Actualizar» o Series ↔ Películas: de vuelta al primero
-    }
-
-    private func featuredTile(_ featured: ParaTiModel.Featured) -> some View {
-        let s = featured.item
-        let route = s.route
-        return HeroCard(title: s.title, background: s.wide, logo: s.logo, eyebrow: reasonKey(featured.reason).map { Text($0) }, accentEyebrow: true,
-                        data: (factStrings(s, language: env.language).first ?? "").components(separatedBy: " · "), open: { openTitle = route }) {
-            HeroActions { watchButton(s); moreMenu(s) }   // con letra grande, uno debajo del otro
-        }
-        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl))
-        .onTapGesture { openTitle = route }
-    }
-
-    /// «Ver» (película) o «Ver la serie» (abre su ficha: sugerir un episodio suelto casi siempre es el equivocado), como la TV.
-    private func watchButton(_ s: Suggestion) -> some View {
-        Button {
-            if s.kind == "series" { openTitle = s.route } else { Task { await env.play(s) } }
-        } label: {
-            Label(s.kind == "series" ? "Ver la serie" : "Ver", systemImage: "play.fill").lineLimit(1)
-        }
-        .dsArtButton(featuredTint.colors)
-    }
-
-    private func moreMenu(_ s: Suggestion) -> some View {
-        DSMoreMenu { SuggestionActions(suggestion: s, includeWatch: false) { dismissed in Task { await model.dismiss(dismissed) } } }
-    }
-
-    /// La etiqueta sobre el arte del destacado. El nombre de una lista (de Trakt o de un complemento: «RT: Certified Fresh»)
-    /// no va: en el destacado se leía como un sello raro; mejor sin etiqueta.
-    private func reasonKey(_ reason: ParaTiModel.FeaturedReason) -> LocalizedStringKey? {
-        switch reason {
-        case .recommendedByTrakt: "Recomendada por Trakt"
-        case .rank(let n, let platform): "N.º \(n) en \(platform)"
-        case .trending: "En tendencia"
-        case .other(.inList): nil
-        case .other(let r): badgeKey(r)
         }
     }
 }
