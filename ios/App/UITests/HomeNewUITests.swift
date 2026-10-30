@@ -60,4 +60,12 @@ final class HomeNewUITests: XCTestCase {
         XCTAssertTrue(app.buttons["channel-added"].firstMatch.waitForExistence(timeout: 5), "ya es canal")
         shot("anadido")
     }
+
+    func testElFiltroSeAbreDesdeInicio() {
+        let door = app.buttons["home-filters"]
+        XCTAssertTrue(door.waitForExistence(timeout: 20), "la puerta del filtro está en la franja")
+        door.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["advanced-filter"].waitForExistence(timeout: 10), "se abre el cajón del filtro")
+        shot("filtro")
+    }
 }
