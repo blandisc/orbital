@@ -52,7 +52,8 @@ public final class MatchDeckModel: ObservableModel {
 
     private func rebuild() {
         let day = Int(clock().timeIntervalSince1970 / 86400)
-        cards = Self.deck(pool, watched: watched, discarded: discarded, mood: mood, day: day)
+        // Lo que ya guardaste en esta vuelta tampoco vuelve al cambiar de ánimo.
+        cards = Self.deck(pool, watched: watched, discarded: discarded.union(saved.map(\.imdb)), mood: mood, day: day)
     }
 
     /// Guardar la de arriba (derecha o ＋).

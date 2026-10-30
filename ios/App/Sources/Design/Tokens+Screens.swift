@@ -179,6 +179,8 @@ extension DS {
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
         static let holdToPause = 0.2, barTrack = 0.3, backdropOpacity = 0.45, wrongOpacity = 0.35
+        /// La parte izquierda de la pantalla que regresa a la historia anterior (el resto avanza), como en Instagram.
+        static let backZone: CGFloat = 0.3
     }
 
     /// Colecciones, la repisa (`ShelfEmblem`, `ShelfLedge`, `ShelfPoster`, `CollectionsCard`): el alto de una estatuilla (en
@@ -231,8 +233,6 @@ extension DS {
     enum Deck {
         /// Qué parte del ancho toma la tarjeta del frente (asoman las de los lados) y su alto.
         static let sideMargin: CGFloat = 66, height: CGFloat = 430
-        /// Cuántas veces se repiten las tarjetas para la vuelta infinita (se empieza a la mitad: nunca se llega al final).
-        static let loopCopies = 40
         static let radius: CGFloat = 28, spacing: CGFloat = -18   // negativa: las de los lados se meten tras la del frente y asoman
         /// Lo que pierde una tarjeta a un lugar de distancia: tamaño, nitidez y luz.
         static let sideShrink: CGFloat = 0.12, sideBlur: CGFloat = 3, sideDim: Double = 0.16
@@ -351,8 +351,6 @@ extension DS {
     }
 
     enum Collections {
-        /// El ícono de la tarjeta «Tu año» al final de Para ti.
-        static let yearIcon: CGFloat = 60
         static let emblem: CGFloat = 70, glow: CGFloat = 16
         /// El sello de dónde viene una lista (Trakt, tus complementos, Rotten Tomatoes, tu Orbital).
         static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), critics = Color(red: 0.78, green: 0.16, blue: 0.07), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)

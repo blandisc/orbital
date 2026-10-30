@@ -12,6 +12,7 @@ struct WrappedView: View {
     @State private var paused = false
     @State private var answer: String?
     @State private var progress: Double = 0
+    @State private var width: CGFloat = 0
 
     enum Story: Equatable { case intro, hours, top, genre, streak, busiest, quiz, outro }
 
@@ -46,10 +47,11 @@ struct WrappedView: View {
         // El fondo va detrás sin medir nada: el póster desenfocado no ensancha las historias.
         .background { background }
         .foregroundStyle(DS.paper)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .contentShape(Rectangle())
         .gesture(SpatialTapGesture().onEnded { g in
             guard story != .quiz || answer != nil else { return }
-            step(g.location.x < DS.Watching.storyPoster ? -1 : 1)
+            step(g.location.x < width * DS.Watching.backZone ? -1 : 1)   // un tercio a la izquierda regresa (también en el iPad)
         })
         .onLongPressGesture(minimumDuration: DS.Watching.holdToPause, perform: {}, onPressingChanged: { paused = $0 })
         .animation(DS.Motion.base(reduceMotion), value: index)

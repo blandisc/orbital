@@ -25,6 +25,17 @@ final class MatchDeckModelTests: XCTestCase {
         XCTAssertNotEqual(a, MatchDeckModel.deck(pool, watched: [], discarded: [], mood: nil, day: 101).map(\.imdb))
     }
 
+    func testLoGuardadoNoVuelveAlCambiarDeAnimo() async throws {
+        let rig = try ServicesRig()
+        let pool = [s("tt1", ["comedy"]), s("tt2", ["comedy"])]
+        let model = MatchDeckModel(rig.services, pool: pool, watched: { [] })
+        await model.load()
+        await model.save(pool[0])
+        model.mood = .light
+        model.mood = nil
+        XCTAssertEqual(model.cards.map(\.imdb), ["tt2"])
+    }
+
     func testDescartarNoVuelveEnUnMes() async throws {
         let rig = try ServicesRig()
         let clock = rig.clock
