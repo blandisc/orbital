@@ -37,6 +37,12 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
         get { lock.withLock { _raw } }
         set { lock.withLock { _raw = newValue } }
     }
+    private var _prefix: [String: JSON] = [:]
+    /// Respuestas por el comienzo de la URL (cuando la consulta cambia con cada filtro).
+    var prefix: [String: JSON] {
+        get { lock.withLock { _prefix } }
+        set { lock.withLock { _prefix = newValue } }
+    }
     var calls: [String] { lock.withLock { _calls } }
     private var _headers: [[String: String]] = []
     /// Los encabezados de cada petición, en orden.
@@ -54,7 +60,7 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
         if fail || lock.withLock({ _failing.contains(key) }) { throw NetworkError("sin conexión") }
         let forced = lock.withLock { _statuses[key] }
         if let data = lock.withLock({ _raw[key] }) { return HTTPResponse(status: forced ?? status, data: data) }
-        guard let body = lock.withLock({ _json[key] }) else { return HTTPResponse(status: forced ?? 404, data: Data()) }
+        guard let body = lock.withLock({ _json[key] ?? _prefix.first { key.hasPrefix($0.key) }?.value }) else { return HTTPResponse(status: forced ?? 404, data: Data()) }
         return HTTPResponse(status: forced ?? status, data: body.serialized())
     }
 }

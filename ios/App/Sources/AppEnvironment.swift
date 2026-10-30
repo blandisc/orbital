@@ -27,6 +27,8 @@ final class AppEnvironment {
     @ObservationIgnored lazy var oneDriveSetup = OneDriveModel(services)
     /// Premios, tus listas de Trakt y «Por año»: uno para toda la app (cambiar entre mosaico y listas no lo vuelve a pedir todo).
     @ObservationIgnored lazy var collections = CollectionsModel(services)
+    /// El filtro avanzado: uno para toda la app (lo que elegiste se queda al volver a abrir el cajón).
+    @ObservationIgnored lazy var advancedFilter = AdvancedFilterModel(services)
     /// Tus calificaciones y el recordatorio de calificar (como en Trakt): uno para toda la app (la ficha y la pastilla ven lo mismo).
     @ObservationIgnored lazy var ratings = RatingsModel(services)
     /// Ver, guardar, quitar, favoritos y marcar como vista desde un póster: la lógica en `TitleActions` (OrbitalModels, con pruebas).

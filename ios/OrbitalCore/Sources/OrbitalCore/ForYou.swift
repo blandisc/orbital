@@ -385,7 +385,7 @@ public actor ForYou {
     static let seasonCount = 20
 
     /// Filas de TMDB de películas y series juntas → sugerencias, en su orden (cada una con su IMDb; un título repetido, una vez).
-    static func suggestions(_ rows: [TmdbRow], reason: SuggestionReason, tmdb: Tmdb) async -> [Suggestion] {
+    public static func suggestions(_ rows: [TmdbRow], reason: SuggestionReason, tmdb: Tmdb) async -> [Suggestion] {
         let details = await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
             for (i, row) in rows.enumerated() { group.addTask { (i, try? await tmdb.details(kind: row.kind, tmdbID: row.id)) } }
             var out = [TmdbDetails?](repeating: nil, count: rows.count)

@@ -28,6 +28,9 @@ struct BrowseView: View {
     @State private var catalog: ModelObserver<CatalogModel>
     @State private var search: ModelObserver<SearchModel>
     @State private var query = ""
+    /// El filtro avanzado (el cajón) y el título que abrió desde sus resultados.
+    @State private var showFilter = false
+    @State private var openTitle: TitleRoute?
     /// El campo abierto (con el teclado). Un segundo toque en la lupa cae en el campo y lo abre (iOS); si iOS avisa que
     /// tocaste «Buscar» otra vez (RootView), también se abre desde aquí.
     @State private var searching = false
@@ -131,7 +134,19 @@ struct BrowseView: View {
         // Al tocar el campo, iOS sube el campo bajo la hora y esconde el título (como en las apps de Apple). Antes se pedía
         // `.searchPresentationToolbarBehavior(.avoidHidingContent)` para dejar el título, y en iOS 27 la lupa y el texto
         // brincaban de lugar al abrir el campo.
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                let filter = env.advancedFilter
+                let _ = filter.track()
+                Button { showFilter = true } label: { Image(systemName: "slider.horizontal.3") }
+                    .badge(filter.filter.activeCount)
+                    .accessibilityLabel(Text("Filtros de búsqueda"))
+                    .accessibilityIdentifier("browse-filters")
+            }
+            ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
+        }
+        .advancedFilter(isPresented: $showFilter) { openTitle = $0 }
+        .openingTitles(item: $openTitle)
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }

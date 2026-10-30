@@ -89,6 +89,17 @@
         }
       }
     },
+    "%@ o más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ or more"
+          }
+        }
+      }
+    },
     "%@ para el siguiente susto": {
       "extractionState": "manual",
       "localizations": {
@@ -1328,6 +1339,17 @@
         }
       }
     },
+    "Agrégala en Ajustes › Avanzado para buscar con filtros.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add it in Settings › Advanced to search with filters."
+          }
+        }
+      }
+    },
     "Ahora": {
       "extractionState": "manual",
       "localizations": {
@@ -1489,6 +1511,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Earlier"
+          }
+        }
+      }
+    },
+    "Antes de 1980": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before 1980"
           }
         }
       }
@@ -2001,6 +2034,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Up"
+          }
+        }
+      }
+    },
+    "Arriba lo mejor calificado; a la derecha, lo más famoso.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top is best rated; right is most famous."
           }
         }
       }
@@ -3532,6 +3576,17 @@
         }
       }
     },
+    "Clásicas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classics"
+          }
+        }
+      }
+    },
     "Clásico": {
       "extractionState": "manual",
       "localizations": {
@@ -4704,6 +4759,17 @@
         }
       }
     },
+    "Corea del Sur": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "South Korea"
+          }
+        }
+      }
+    },
     "Corregir": {
       "extractionState": "manual",
       "localizations": {
@@ -4744,6 +4810,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stremio email"
+          }
+        }
+      }
+    },
+    "Corta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Short"
           }
         }
       }
@@ -7527,6 +7604,17 @@
         }
       }
     },
+    "En emisión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Airing"
+          }
+        }
+      }
+    },
     "En espera": {
       "extractionState": "manual",
       "localizations": {
@@ -8284,6 +8372,17 @@
         }
       }
     },
+    "España": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spain"
+          }
+        }
+      }
+    },
     "Español (cualquiera)": {
       "extractionState": "manual",
       "localizations": {
@@ -8478,6 +8577,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "This version has no text lines to sync. Use Earlier and Later."
+          }
+        }
+      }
+    },
+    "Estados Unidos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "United States"
           }
         }
       }
@@ -8800,6 +8910,17 @@
         }
       }
     },
+    "Filtros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filters"
+          }
+        }
+      }
+    },
     "Filtros de búsqueda": {
       "extractionState": "manual",
       "localizations": {
@@ -8818,6 +8939,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Background"
+          }
+        }
+      }
+    },
+    "Formato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format"
           }
         }
       }
@@ -9777,6 +9909,28 @@
         }
       }
     },
+    "Japón": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Japan"
+          }
+        }
+      }
+    },
+    "Joyas ocultas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hidden gems"
+          }
+        }
+      }
+    },
     "Jugando en la consola": {
       "extractionState": "manual",
       "localizations": {
@@ -9817,6 +9971,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The previous one didn't respond. Same spot."
+          }
+        }
+      }
+    },
+    "La calificación de la comunidad de TMDB, de 0 a 10.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TMDB's community rating, from 0 to 10."
           }
         }
       }
@@ -10193,6 +10358,17 @@
         }
       }
     },
+    "Larga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Long"
+          }
+        }
+      }
+    },
     "Las clásicas": {
       "extractionState": "manual",
       "localizations": {
@@ -10211,6 +10387,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The classics (%lld–%lld)"
+          }
+        }
+      }
+    },
+    "Las de siempre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The classics"
           }
         }
       }
@@ -10277,6 +10464,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Shows you're watching"
+          }
+        }
+      }
+    },
+    "Las que llenaron salas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The ones that packed theaters"
           }
         }
       }
@@ -11334,6 +11532,17 @@
         }
       }
     },
+    "Los %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The %@s"
+          }
+        }
+      }
+    },
     "Los avisos están apagados": {
       "extractionState": "manual",
       "localizations": {
@@ -12033,6 +12242,17 @@
         }
       }
     },
+    "Menos conocida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Less known"
+          }
+        }
+      }
+    },
     "Menos opciones": {
       "extractionState": "manual",
       "localizations": {
@@ -12351,6 +12571,28 @@
         }
       }
     },
+    "Muy buenas y famosas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Great and famous"
+          }
+        }
+      }
+    },
+    "Muy buenas, poco vistas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Great, rarely seen"
+          }
+        }
+      }
+    },
     "Más": {
       "extractionState": "manual",
       "localizations": {
@@ -12504,6 +12746,17 @@
         }
       }
     },
+    "Más famosa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More famous"
+          }
+        }
+      }
+    },
     "Más filtros": {
       "extractionState": "manual",
       "localizations": {
@@ -12603,6 +12856,17 @@
         }
       }
     },
+    "México": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mexico"
+          }
+        }
+      }
+    },
     "N.º %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -12632,6 +12896,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing with %@"
+          }
+        }
+      }
+    },
+    "Nada con esos filtros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing matches those filters"
           }
         }
       }
@@ -14493,6 +14768,17 @@
         }
       }
     },
+    "Origen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Origin"
+          }
+        }
+      }
+    },
     "Original": {
       "extractionState": "manual",
       "localizations": {
@@ -14753,6 +15039,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thought-provoking"
+          }
+        }
+      }
+    },
+    "Para pocos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the few"
           }
         }
       }
@@ -16064,6 +16361,17 @@
         }
       }
     },
+    "Quiero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Include"
+          }
+        }
+      }
+    },
     "Quiero algo": {
       "extractionState": "manual",
       "localizations": {
@@ -16071,6 +16379,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I want something"
+          }
+        }
+      }
+    },
+    "Quita alguno para ver más opciones.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove one to see more options."
           }
         }
       }
@@ -16372,6 +16691,17 @@
         }
       }
     },
+    "Qué tan conocida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How well known"
+          }
+        }
+      }
+    },
     "Rankings de %@": {
       "extractionState": "manual",
       "localizations": {
@@ -16379,6 +16709,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ rankings"
+          }
+        }
+      }
+    },
+    "Rarezas y culto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oddities and cult"
           }
         }
       }
@@ -16801,6 +17142,17 @@
         }
       }
     },
+    "Reino Unido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "United Kingdom"
+          }
+        }
+      }
+    },
     "Reintentar": {
       "extractionState": "manual",
       "localizations": {
@@ -16962,6 +17314,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unexpected response from Cinemeta"
+          }
+        }
+      }
+    },
+    "Resultados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Results"
           }
         }
       }
@@ -17918,6 +18281,17 @@
         }
       }
     },
+    "Series en emisión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Airing shows"
+          }
+        }
+      }
+    },
     "Series o películas": {
       "extractionState": "manual",
       "localizations": {
@@ -17936,6 +18310,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Popular series"
+          }
+        }
+      }
+    },
+    "Series terminadas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended shows"
           }
         }
       }
@@ -18341,6 +18726,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mute"
+          }
+        }
+      }
+    },
+    "Sin %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No %@"
           }
         }
       }
@@ -19466,6 +19862,17 @@
         }
       }
     },
+    "Taquilleras": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blockbusters"
+          }
+        }
+      }
+    },
     "Tarda en empezar": {
       "extractionState": "manual",
       "localizations": {
@@ -19649,6 +20056,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Done around %@"
+          }
+        }
+      }
+    },
+    "Terminadas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended"
           }
         }
       }
@@ -20405,6 +20823,71 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Toca para ver los detalles"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca una década; toca otra para hacer un rango.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap a decade; tap another to make a range."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap a decade; tap another to make a range."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click a decade; click another to make a range."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap a decade; tap another to make a range."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca una década; toca otra para hacer un rango."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca una década; toca otra para hacer un rango."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en una década; haz clic en otra para hacer un rango."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca una década; toca otra para hacer un rango."
                 }
               }
             }
@@ -23187,6 +23670,28 @@
         }
       }
     },
+    "Ver menos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show less"
+          }
+        }
+      }
+    },
+    "Ver más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        }
+      }
+    },
     "Ver qué puedes hacer": {
       "extractionState": "manual",
       "localizations": {
@@ -23194,6 +23699,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "See what you can do"
+          }
+        }
+      }
+    },
+    "Ver resultados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See results"
+          }
+        }
+      }
+    },
+    "Ver resultados · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See results · %lld"
           }
         }
       }
@@ -24381,6 +24908,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Which one?"
+          }
+        }
+      }
+    },
+    "¿Cuáles series?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which shows?"
           }
         }
       }

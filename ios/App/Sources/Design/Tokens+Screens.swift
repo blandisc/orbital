@@ -159,6 +159,14 @@ extension DS {
         static let symbol = "heart", symbolFilled = "heart.fill"
     }
 
+    /// El filtro avanzado (`FilterTile`, `FilterChoice`, `FameQuadrant`): el alto de un filtro en el cajón y de una opción
+    /// grande, el velo turquesa de lo elegido (la selección, como los ánimos de «¿Qué vemos hoy?») y el póster de resultados.
+    enum Filter {
+        static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64, eraTile: CGFloat = 72
+        static let selectedFill = DS.brandMoon.opacity(0.18)   // ds-exception: el velo de la selección (turquesa al 18 %)
+        static let resultWidth: CGFloat = 104
+    }
+
     /// Calificar como en Trakt (`RatingStars`, `RatingReminder`): las estrellas en ámbar (el color del porqué de las portadas,
     /// como las de Trakt), su tamaño en la ficha y en línea dentro del recordatorio, y el póster chico de la pastilla.
     enum Rating {

@@ -19,6 +19,24 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Filtro avanzado (`AdvancedFilterSheet`, `FilterEditor`, `FilterTile`, `FameQuadrant`).
+    "Filtros": "Filters", "Formato": "Format", "Origen": "Origin", "Qué tan conocida": "How well known", "Resultados": "Results",
+    "Ver más": "Show more", "Ver menos": "Show less", "Ver resultados": "See results", "Ver resultados · %lld": "See results · %lld",
+    "Series en emisión": "Airing shows", "Series terminadas": "Ended shows", "En emisión": "Airing", "Terminadas": "Ended",
+    "¿Cuáles series?": "Which shows?", "Sin %@": "No %@", "Los %@": "The %@s", "%@ o más": "%@ or more",
+    "Corta": "Short", "Larga": "Long", "Quiero": "Include", "Clásicas": "Classics", "Antes de 1980": "Before 1980",
+    "Toca una década; toca otra para hacer un rango.": "Tap a decade; tap another to make a range.",
+    "Arriba lo mejor calificado; a la derecha, lo más famoso.": "Top is best rated; right is most famous.",
+    "Joyas ocultas": "Hidden gems", "Muy buenas, poco vistas": "Great, rarely seen", "Las de siempre": "The classics",
+    "Muy buenas y famosas": "Great and famous", "Para pocos": "For the few", "Rarezas y culto": "Oddities and cult",
+    "Taquilleras": "Blockbusters", "Las que llenaron salas": "The ones that packed theaters",
+    "Menos conocida": "Less known", "Más famosa": "More famous",
+    "La calificación de la comunidad de TMDB, de 0 a 10.": "TMDB's community rating, from 0 to 10.",
+    "Calificación mínima": "Minimum rating",
+    "Agrégala en Ajustes › Avanzado para buscar con filtros.": "Add it in Settings › Advanced to search with filters.",
+    "Nada con esos filtros": "Nothing matches those filters", "Quita alguno para ver más opciones.": "Remove one to see more options.",
+    "México": "Mexico", "Estados Unidos": "United States", "España": "Spain", "Reino Unido": "United Kingdom",
+    "Corea del Sur": "South Korea", "Japón": "Japan",
     # Calificar como en Trakt (`RatingStars`, `RatingReminder`, `RatingQueue`).
     "Tu calificación": "Your rating",
     "Sin calificar": "Not rated",
