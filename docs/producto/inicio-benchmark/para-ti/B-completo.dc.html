@@ -24,7 +24,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
 .shadow{box-shadow:0 12px 24px -12px rgba(0,0,0,.9)}
 </style>
 </helmet>
-<div style="width: 402px; height: 6400px; box-sizing: border-box; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 30px; padding-bottom: 40px; overflow: hidden">
+<div style="width: 402px; height: 6800px; box-sizing: border-box; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 30px; padding-bottom: 40px; overflow: hidden">
 
   <!-- PORTADA: el mosaico -->
   <div style="position: relative; height: 400px; overflow: hidden; background: #070708; flex: none">
@@ -69,7 +69,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
       <img src="/_blob/17067ee154a950fc7044473f9094ff94" alt="" style="position: absolute; left: 0; top: 0; width: 90px; height: 135px; object-fit: cover; border-radius: 11px; box-shadow: 0 12px 22px -8px #000">
     </span>
     <span style="position: relative; flex: 1; display: flex; flex-direction: column; gap: 4px">
-      <span class="ey">Como un Tinder de películas</span>
+      <span class="ey">Encuentra tu match perfecto</span>
       <span class="h">¿Qué vemos hoy?</span>
       <span class="sub">A la derecha la guardas, a la izquierda no.</span>
       <span style="display: flex; gap: 6px; margin-top: 8px">
@@ -132,8 +132,13 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
     <div style="padding: 0 20px"><span class="ey">Lo que viene, de la más cercana a la más lejana</span><h3 class="h">Próximas temporadas</h3></div>
     <div style="display: flex; gap: 10px; padding: 0 20px; overflow: hidden">
       <sc-for list="{{nextSeasons}}" as="s" hint-placeholder-count="4">
-        <button class="tap" onClick="{{s.open}}" style="flex: none; width: 140px; height: 150px; border-radius: 20px; background: {{s.bg}}; position: relative; overflow: hidden; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px">
-          <img src="{{s.icon}}" alt="" style="position: absolute; right: -8px; top: -6px; width: 84px; height: 84px; object-fit: contain">
+        <button class="tap" onClick="{{s.open}}" style="flex: none; width: 168px; height: 196px; border-radius: 20px; background: {{s.bg}}; position: relative; overflow: hidden; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px">
+          <span style="position: absolute; left: 12px; top: 14px; width: 120px; height: 84px">
+            <img src="{{s.a}}" alt="" style="position: absolute; left: 0; top: 4px; width: 50px; height: 75px; object-fit: cover; border-radius: 7px; transform: rotate(-6deg); box-shadow: 0 6px 12px -4px #000">
+            <img src="{{s.b}}" alt="" style="position: absolute; left: 34px; top: 0; width: 50px; height: 75px; object-fit: cover; border-radius: 7px; box-shadow: -6px 0 12px -4px #000">
+            <img src="{{s.c}}" alt="" style="position: absolute; left: 68px; top: 4px; width: 50px; height: 75px; object-fit: cover; border-radius: 7px; transform: rotate(6deg); box-shadow: -6px 0 12px -4px #000">
+          </span>
+          <img src="{{s.icon}}" alt="" style="position: absolute; right: -6px; top: 70px; width: 58px; height: 58px; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5))">
           <span style="position: relative; font-size: 15px; font-weight: 700">{{s.name}}</span>
           <span style="position: relative; font-size: 11.5px; color: rgba(255,245,235,.78)">{{s.when}}</span>
         </button>
@@ -178,20 +183,21 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
     </sc-for>
   </div>
 
-  <!-- PREMIOS -->
+  <!-- PREMIOS: las listas de hoy, cada estatuilla sobre sus tres ganadores más recientes -->
   <div class="grp"><h2>Premios</h2><span>Ganadores, del más reciente</span></div>
-  <div class="shadow" style="margin: -16px 16px 0; border-radius: 24px; background: linear-gradient(150deg, #4a3d14, #17130a 72%); padding: 18px; display: flex; flex-direction: column; gap: 16px; flex: none">
-    <button class="tap" onClick="{{openAlbum}}" style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
-      <span style="display: flex; flex-direction: column; gap: 4px; flex: 1"><span style="font-size: 11.5px; font-weight: 700; color: #f4d27a">Tu álbum de premios</span><span style="font-size: 22px; font-weight: 800; letter-spacing: -.01em">34 de 96 estampas</span>
-        <span style="display: block; height: 6px; border-radius: 3px; background: rgba(255,255,255,.14); margin-top: 6px"><span style="display: block; width: 35%; height: 100%; border-radius: 3px; background: #f4d27a"></span></span></span>
-      <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#f4d27a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-    </button>
-    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
-      <sc-for list="{{awards}}" as="a" hint-placeholder-count="6">
-        <button class="tap" onClick="{{a.open}}" style="height: 118px; border-radius: 16px; background: rgba(0,0,0,.25); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 11.5px; font-weight: 700; text-align: center">
-          <img src="{{a.icon}}" alt="" style="width: 54px; height: 70px; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0,0,0,.6))">{{a.name}}</button>
-      </sc-for>
-    </div>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px; margin-top: -16px; flex: none">
+    <sc-for list="{{awards}}" as="a" hint-placeholder-count="6">
+      <button class="tap shadow" onClick="{{a.open}}" style="position: relative; height: 170px; border-radius: 20px; overflow: hidden; background: linear-gradient(160deg, #3d3212, #141108 75%); padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; box-shadow: inset 0 0 0 1px rgba(244,210,122,.12)">
+        <span style="position: absolute; left: 50%; top: 12px; width: 132px; height: 92px; margin-left: -66px">
+          <img src="{{a.a}}" alt="" style="position: absolute; left: 0; top: 6px; width: 52px; height: 78px; object-fit: cover; border-radius: 7px; transform: rotate(-8deg); opacity: .8">
+          <img src="{{a.c}}" alt="" style="position: absolute; right: 0; top: 6px; width: 52px; height: 78px; object-fit: cover; border-radius: 7px; transform: rotate(8deg); opacity: .8">
+          <img src="{{a.b}}" alt="" style="position: absolute; left: 40px; top: 0; width: 52px; height: 78px; object-fit: cover; border-radius: 7px; box-shadow: 0 8px 16px -6px #000">
+        </span>
+        <img src="{{a.icon}}" alt="" style="position: absolute; left: 50%; top: 52px; width: 50px; height: 66px; margin-left: -25px; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0,0,0,.7))">
+        <span style="position: relative; font-size: 15px; font-weight: 700; text-align: center">{{a.name}}</span>
+        <span style="position: relative; font-size: 11px; color: rgba(245,236,210,.72); text-align: center">{{a.sub}}</span>
+      </button>
+    </sc-for>
   </div>
 
   <!-- GÉNEROS -->
@@ -266,9 +272,19 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
       <span style="margin-top: auto; align-self: flex-start; height: 36px; padding: 0 14px; border-radius: 999px; background: rgba(255,255,255,.12); display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 600">Tu semana, tu mes, tu año</span>
     </span>
   </button>
+
+  <!-- COLECCIONES: lugar reservado (aquí van a vivir los álbumes) -->
+  <div style="margin: -14px 16px 0; border-radius: 24px; border: 1.5px dashed #2f2f36; padding: 18px; display: flex; gap: 14px; align-items: center; flex: none">
+    <span style="width: 64px; height: 64px; border-radius: 18px; background: #18181c; display: flex; align-items: center; justify-content: center; flex: none"><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#a3a3ab" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5" width="13" height="16" rx="2"></rect><path d="M7 3h12a2 2 0 0 1 2 2v14"></path></svg></span>
+    <span style="flex: 1; display: flex; flex-direction: column; gap: 3px">
+      <span style="font-size: 11.5px; font-weight: 700; color: #a3a3ab">Próximamente</span>
+      <span class="h">Colecciones</span>
+      <span class="sub">[Aquí van los álbumes: lo que vas juntando]</span>
+    </span>
+  </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"onMosaic":{"editor":null},"onDecide":{"editor":null},"onOpen":{"editor":null},"$preview":{"width":402,"height":6400}}'>
+<script type="text/x-dc" data-dc-script data-props='{"onMosaic":{"editor":null},"onDecide":{"editor":null},"onOpen":{"editor":null},"$preview":{"width":402,"height":6800}}'>
 class Component extends DCLogic {
   constructor(props) { super(props); this.state = { decade: 0 }; }
   renderVals() {
@@ -333,7 +349,7 @@ class Component extends DCLogic {
       count: cur.n + ' títulos · del ' + fmt(cur.s) + ' al ' + fmt(cur.e),
       open: seasonColl(cur)
     };
-    const nextSeasons = rest.map((x) => ({ name: x.name, icon: x.icon, bg: x.bg, when: 'Empieza ' + rel(x.until) + ' · ' + fmt(x.s), open: seasonColl(x) }));
+    const nextSeasons = rest.map((x) => ({ name: x.name, icon: x.icon, bg: x.bg, a: x.posters[0], b: x.posters[1], c: x.posters[2], when: 'Empieza ' + rel(x.until) + ' · ' + fmt(x.s), open: seasonColl(x) }));
 
     const G = (name, icon, tint, items) => ({ name, icon, bg: 'linear-gradient(160deg, ' + tint + ', #141418 78%)', open: coll(name, 'Lo mejor calificado del año', items, { icon, bg: 'linear-gradient(160deg, ' + tint + ', #0c0c0e 70%)' }) });
     const decadesN = ['2020s', '2010s', '2000s', '90s', '80s'];
@@ -345,7 +361,7 @@ class Component extends DCLogic {
       [{ n: '1989', p: P.br }, { n: '1986', p: P.alien }, { n: '1984', p: P.st }, { n: '1982', p: P.frank }, { n: '1980', p: P.dune }]
     ];
     const S = (name, bg, fg, size, ls, font, p, n) => ({ name, bg, fg, size, ls, font, p, n, open: coll(name, 'Lo más visto del estudio', ['coh', 'weap', 'obaa', 'arr', 'bear', 'dark'], { bg }) });
-    const A = (name, icon) => ({ name, icon, open: coll(name, 'Los ganadores, del más reciente', ['obaa', 'andor', 'cher', 'bear', 'sev', 'arr'], { tint: '#f4d27a', icon, bg: 'linear-gradient(150deg, #4a3d14, #0c0c0e 70%)' }) });
+    const A = (name, icon, a, b, c, sub) => ({ name, icon, sub, a: P[a], b: P[b], c: P[c], open: coll(name, 'Los ganadores, del más reciente', ['obaa', 'andor', 'cher', 'bear', 'sev', 'arr'], { tint: '#f4d27a', icon, bg: 'linear-gradient(150deg, #4a3d14, #0c0c0e 70%)' }) });
     const PL = (name, logo, tint, a, b, c, when, items) => ({ name, logo, a: P[a], b: P[b], c: P[c], when, bg: 'linear-gradient(160deg, ' + tint + ', #141418 72%)', open: coll(name, when, items, { logo, bg: 'linear-gradient(160deg, ' + tint + ', #0c0c0e 70%)', ranked: true }) });
 
     return {
@@ -396,8 +412,7 @@ class Component extends DCLogic {
         S('DreamWorks', '#163a6e', '#f5f4f0', '20px', '0', 'Georgia, serif', P.lasso, '45 títulos'),
         S('NEON', '#070708', '#f5f4f0', '27px', '.18em', '-apple-system, system-ui, sans-serif', P.obaa, '31 títulos')
       ],
-      openAlbum: coll('Tu álbum de premios', '34 de 96 estampas', ['obaa', 'arr', 'inter', 'cher', 'andor', 'bear'], { tint: '#f4d27a', icon: I.oscar, bg: 'linear-gradient(150deg, #4a3d14, #0c0c0e 70%)' }),
-      awards: [A('Óscar', I.oscar), A('Emmy', I.emmy), A('Globo de Oro', I.globe), A('Palma de Oro', I.palm), A('BAFTA', I.bafta), A('Ariel', I.ariel)],
+      awards: [A('Óscar', I.oscar, 'obaa', 'arr', 'inter', 'Mejor película'), A('Emmy', I.emmy, 'sev', 'bear', 'andor', 'Mejor serie'), A('Globo de Oro', I.globe, 'dune', 'bear', 'lasso', 'Película y serie'), A('Palma de Oro', I.palm, 'coh', 'arr', 'obaa', 'Cannes'), A('BAFTA', I.bafta, 'cher', 'dune', 'br', 'Cine británico'), A('Ariel', I.ariel, 'dark', 'frank', 'n1899', 'Cine mexicano')],
       genres: [
         G('Acción', I.accion, 'rgba(240,87,77,.30)', ['dune', 'andor', 'obaa']), G('Aventura', I.aventura, 'rgba(244,194,77,.26)', ['dune', 'inter', 'sg1']),
         G('Animación', I.animacion, 'rgba(95,214,198,.26)', ['st', 'wed']), G('Comedia', I.comedia, 'rgba(244,160,60,.28)', ['lasso', 'bear', 'slow']),

@@ -52,3 +52,7 @@ hay ninguna), con cuántos días le quedan, y las demás por cercanía. Todo se 
 «Ver todo», tarjeta o círculo abre su colección (encabezado con su arte, orden, cuadrícula; los rankings con número),
 cada póster abre su ficha rápida y «Lo que ves» abre su resumen. Listas famosas suma «Las 100 del siglo XXI» del
 New York Times (2025).
+- 30 oct (cont.): «¿Qué vemos hoy?» se presenta como «Encuentra tu match perfecto» (no «Tinder»). Próximas temporadas
+  con su ramillete de tres pósters. Premios sin álbum ni estampas: las seis listas de hoy, cada estatuilla sobre sus
+  tres ganadores. Nuevo lugar reservado «Colecciones» junto a Lo que ves (ahí irán los álbumes). El calendario de
+  estrenos sigue en el Inicio, desde «Lo nuevo de lo tuyo».

@@ -28,7 +28,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
     <span style="padding: 10px 0">Hoy en Para ti</span><span style="padding: 10px 0">Qué trae</span><span style="padding: 10px 0">De dónde</span><span style="padding: 10px 0">En la propuesta</span>
   </div>
   <div style="display: flex; flex-direction: column; margin-top: -20px">
-    <sc-for list="{{rows}}" as="r" hint-placeholder-count="26">
+    <sc-for list="{{rows}}" as="r" hint-placeholder-count="27">
       <div style="display: grid; grid-template-columns: 230px 290px 120px minmax(0, 1fr); border-top: 1px solid #1e1e23; font-size: 13.5px; line-height: 1.35; align-items: start">
         <span style="padding: 9px 12px 9px 0; font-weight: 600; display: flex; gap: 8px; align-items: baseline"><span style="width: 8px; height: 8px; border-radius: 2px; flex: none; background: {{r.c}}"></span>{{r.what}}</span>
         <span style="padding: 9px 12px 9px 0; color: #cdcdd3">{{r.detail}}</span>
@@ -60,7 +60,7 @@ class Component extends DCLogic {
         { c: K, what: 'Catálogo por plataforma', detail: 'Todo Netflix, Disney+, HBO Max', src: 'TMDB', goes: 'Plataformas · Todo lo de cada una' },
         { c: K, what: 'Temporadas', detail: 'Halloween, Día de Muertos, Navidad, San Valentín, Verano', src: 'TMDB', goes: 'Temporadas (la de hoy, en grande)' },
         { c: K, what: 'Estudios', detail: 'A24, Pixar, Ghibli, Marvel, Lucasfilm, Blumhouse, DreamWorks, NEON', src: 'TMDB', goes: 'Estudios' },
-        { c: K, what: 'Premios', detail: 'Óscar, Emmy, Globo de Oro, Palma de Oro, BAFTA, Ariel', src: 'Orbital', goes: 'Premios, con tu álbum' },
+        { c: K, what: 'Premios', detail: 'Óscar, Emmy, Globo de Oro, Palma de Oro, BAFTA, Ariel', src: 'Orbital', goes: 'Premios (las mismas seis listas, cada una con sus ganadores)' },
         { c: K, what: 'Lo mejor del género', detail: '14 géneros, lo mejor calificado del año', src: 'TMDB', goes: 'Géneros' },
         { c: K, what: 'Por año', detail: 'De 1980 a hoy', src: 'Trakt', goes: 'Años, con saltos por década' },
         { c: H, what: 'Próximos estrenos', detail: 'Lo que sale de tus series', src: 'Trakt', goes: 'Inicio · Lo nuevo de lo tuyo' },
@@ -70,7 +70,8 @@ class Component extends DCLogic {
         { c: K, what: 'Favoritos', detail: 'Lo que marcaste con el corazón', src: 'Trakt', goes: 'Tuyo (hoy vive en el Inicio)' },
         { c: X, what: 'Catálogos de complementos', detail: 'Lo que traen tus complementos de Stremio', src: 'Stremio', goes: 'Sale con «desacoplar Stremio»' },
         { c: K, what: 'Tu año', detail: 'Lo que viste, día por día', src: 'Trakt', goes: 'Lo que ves (semana, mes y año)' },
-        { c: N, what: 'Listas famosas', detail: 'Criterion (1 000) y el Top 250 de IMDb', src: 'MDBList', goes: 'Listas famosas' }
+        { c: N, what: 'Listas famosas', detail: 'Criterion, Las 100 del siglo XXI (NYT) y el Top 250 de IMDb', src: 'MDBList', goes: 'Listas famosas' },
+        { c: N, what: 'Colecciones', detail: 'Los álbumes que vas llenando', src: 'Orbital', goes: 'Lugar reservado, junto a Lo que ves' }
       ]
     };
   }
