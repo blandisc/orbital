@@ -22,8 +22,6 @@ struct HomeView: View {
     @Namespace private var simpsonsZoom
     @State private var continueSort: ListSort = .added
     @State private var continueKind = ""
-    /// El nombre del tipo recién elegido en la barra («Series»), un momento.
-    @State private var kindTip: String?
     /// El alto de cada renglón de «Tu watchlist», que crece con el tamaño de letra.
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -146,39 +144,10 @@ struct HomeView: View {
             try? await Task.sleep(for: .seconds(DS.Simpsons.prefetchDelay))
             await env.simpsons.prefetch()
         }
-        // Todo · Películas · Series para toda la página (tres íconos) y la puerta del filtro avanzado, en una franja angosta bajo la
-        // barra: en la barra no caben junto al logotipo y sus botones (iOS los mandaba a un menú «…»).
+        // Todo · Películas · Series para toda la página y la puerta del filtro avanzado (por ahora a Buscar), bajo la barra.
         .safeAreaBar(edge: .top) {
-            DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { new in
-                model.spotlightKind = new.isEmpty ? nil : new
-                kindTip = switch new { case "movie": "Películas"; case "series": "Series"; default: "Todo" }   // solo si lo cambiaste tú
-            }), icons: true)
-                .accessibilityIdentifier("home-kind-filter")
-                .frame(maxWidth: .infinity)
-                .overlay(alignment: .trailing) {
-                    // Por ahora lleva a Buscar; el cajón del filtro lo construye la sesión de componentes.
-                    Button { env.ui.openTab = 2 } label: { Image(systemName: "slider.horizontal.3") }
-                        .buttonStyle(.glass).buttonBorderShape(.circle)
-                        .accessibilityLabel(Text("Filtros de búsqueda"))
-                        .accessibilityIdentifier("home-filters")
-                }
-                .padding(.horizontal, DS.Space.gutter)
-                .padding(.bottom, DS.Space.s2)
-        }
-        // El nombre del tipo recién elegido, un momento, bajo la barra (los íconos solos se entienden menos que una palabra).
-        .overlay(alignment: .top) {
-            if let kindTip {
-                DSCapsuleLabel(title: Text(LocalizedStringKey(kindTip)), symbol: KindGlyph.symbol(model.spotlightKind), selected: true)
-                    .padding(.top, DS.Space.s2)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                    .accessibilityHidden(true)
-            }
-        }
-        .animation(DS.Motion.enter(reduceMotion), value: kindTip)
-        .task(id: kindTip) {
-            guard kindTip != nil else { return }
-            try? await Task.sleep(for: DS.HomeKind.tipHold)
-            kindTip = nil
+            HomeKindBar(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }),
+                        onFilters: { env.ui.openTab = 2 })
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
