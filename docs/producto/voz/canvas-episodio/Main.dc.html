@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Elegir episodio · la pregunta</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1200px; height: 600px; box-sizing: border-box; padding: 56px 64px; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; display: flex; gap: 48px; align-items: center">
+<div style="flex: 1; display: flex; flex-direction: column; gap: 18px">
+<span style="font-size: 15px; font-weight: 600; color: #f4c24d">Una sola pregunta</span>
+<h1 style="margin: 0; font-size: 44px; line-height: 1.1; font-weight: 700">Cuando tocas «Elegir episodio», ¿dónde aparece la lista?</h1>
+<p style="margin: 0; font-size: 18px; line-height: 1.5; color: #cdcdd3">Le dices a Orbital «pon The Office». Pone el episodio que sigue, pero tú querías otro. La respuesta trae el botón «Elegir episodio». Al tocarlo, la lista de episodios puede salir en tu iPhone o en la tele.</p>
+<div style="display: flex; gap: 12px">
+<span style="font-size: 15px; font-weight: 600; padding: 8px 14px; border-radius: 999px; background: rgba(95,214,198,0.16); color: #5fd6c6">A · En el teléfono</span>
+<span style="font-size: 15px; font-weight: 600; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,0.10); color: #cdcdd3">B · En la tele</span>
+</div>
+</div>
+<div style="width: 360px; flex: none; background: #212021; border-radius: 28px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<img src="/_blob/99aec70edad4c062de5235060e5d2e3c" alt="Póster de The Office" style="width: 56px; height: 84px; border-radius: 6px; object-fit: cover">
+<div style="display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: #5fd6c6">✓ EN LA TV</span>
+<span style="font-size: 18px; font-weight: 700">Poniendo The Office · T2 E5</span>
+<span style="font-size: 13px; color: #8e8e93">Entendí: «pon The Office»</span>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" style="height: 44px; border: 0; border-radius: 999px; background: rgba(255,255,255,0.13); color: #f5f4f0; font-size: 15px; font-weight: 600">Otro</button>
+<button type="button" style="height: 44px; border: 0; border-radius: 999px; background: rgba(255,255,255,0.13); color: #f5f4f0; font-size: 15px; font-weight: 600; outline: 3px solid #f4c24d; outline-offset: 2px">Elegir episodio</button>
+</div>
+<span style="font-size: 13px; color: #f4c24d; text-align: center">Este botón ↑</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":600}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

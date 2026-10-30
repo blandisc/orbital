@@ -108,20 +108,6 @@
    "h": 874,
    "title": "Hoja corta · la respuesta"
   },
-  "3-prop-pon.dc.html": {
-   "x": 0,
-   "y": 6116,
-   "w": 402,
-   "h": 874,
-   "title": "«pon Dune» (pone la más popular)"
-  },
-  "3-prop-busca.dc.html": {
-   "x": 482,
-   "y": 6116,
-   "w": 402,
-   "h": 874,
-   "title": "«busca Dune» (pregunta)"
-  },
   "4-hoy-error.dc.html": {
    "x": 0,
    "y": 7370,
@@ -185,19 +171,26 @@
    "h": 874,
    "title": "Transiciones: tiempos y reglas"
   },
-  "3-estirada-pon.dc.html": {
+  "3-varias-estirado-pon.dc.html": {
+   "x": 0,
+   "y": 6116,
+   "w": 402,
+   "h": 874,
+   "title": "Estirado · «pon Dune»: la que se puso, las otras a los lados"
+  },
+  "3-varias-estirado-busca.dc.html": {
+   "x": 482,
+   "y": 6116,
+   "w": 402,
+   "h": 874,
+   "title": "Estirado · «busca Dune»: la misma pieza, para elegir"
+  },
+  "3-varias-corta-pon.dc.html": {
    "x": 964,
    "y": 6116,
    "w": 402,
    "h": 874,
-   "title": "Estirado · «pon Dune»"
-  },
-  "3-estirada-busca.dc.html": {
-   "x": 1446,
-   "y": 6116,
-   "w": 402,
-   "h": 874,
-   "title": "Estirado · «busca Dune»"
+   "title": "Hoja corta · la misma pieza"
   }
  },
  "order": [
@@ -216,10 +209,9 @@
   "8-transiciones.dc.html",
   "2-prop-escuchando.dc.html",
   "2-prop-respuesta.dc.html",
-  "3-prop-pon.dc.html",
-  "3-prop-busca.dc.html",
-  "3-estirada-pon.dc.html",
-  "3-estirada-busca.dc.html",
+  "3-varias-estirado-pon.dc.html",
+  "3-varias-estirado-busca.dc.html",
+  "3-varias-corta-pon.dc.html",
   "4-hoy-error.dc.html",
   "4-prop-fuera.dc.html",
   "4-prop-casa.dc.html",
@@ -273,7 +265,7 @@
    "w": 520,
    "size": "m",
    "fill": "blue",
-   "text": "DECIDIDO: el renglón del micrófono crece ahí mismo, escucha y responde, y el resto del control se recorre y sigue tocable. Al terminar vuelve a ser botón con la última respuesta como pista.\nTransiciones: a la derecha, paso a paso, con los tiempos que ya usa la app. Regla principal: un solo cambio de alto al entrar y uno al salir.\n\nPendiente de antes: ¿«Otro» + «Elegir episodio» o solo «Otro»? ¿Episodios en la tele o en el teléfono? Recomiendo las dos salidas y elegir en el teléfono."
+   "text": "DECIDIDO: el renglón del micrófono crece ahí mismo, escucha y responde, y el resto del control se recorre y sigue tocable. Al terminar vuelve a ser botón con la última respuesta como pista.\nTransiciones: a la derecha, paso a paso, con los tiempos que ya usa la app. Regla principal: un solo cambio de alto al entrar y uno al salir.\n\nDECIDIDO: las dos salidas, «Otro» y «Elegir episodio»; los episodios se eligen en el teléfono y la tele sigue mientras tanto."
   },
   "t4": {
    "x": 0,
@@ -293,17 +285,17 @@
   "t5": {
    "x": 0,
    "y": 5856,
-   "text": "5 · Cuando hay varias",
+   "text": "5 · Cuando hay varias: una sola pieza",
    "kind": "title1",
-   "maxW": 2450
+   "maxW": 1966
   },
   "d5": {
-   "x": 1928,
+   "x": 1446,
    "y": 6116,
    "w": 520,
    "size": "m",
    "fill": "blue",
-   "text": "TE GUSTÓ en la hoja corta. En el control estirado es la misma pieza:\n• «pon Dune»: el renglón crece al alto de siempre; las otras dos aparecen como tarjetas chicas en lugar de «Otro» (tocarlas cambia en la tele). No crece más.\n• «busca Dune»: ahí sí hay que elegir, así que el renglón crece una sola vez al alto de la lista (hasta 3; si hay más, «Ver las 5»). El pad queda abajo, a un deslizón.\nEn los dos, «Ninguna · escribirlo» abre el teclado de «Escribir en la TV» que ya está en el control."
+   "text": "DECIDIDO: una sola pieza para «pon» y «busca», en la hoja corta y en el estirado, como quedó en el estirado.\n• Se abre como acordeón, de un solo movimiento.\n• Al centro, la principal en grande; las demás asoman a los lados y deslizas para verlas. Los puntitos dicen cuántas hay.\n• Con «pon Dune», la principal ya está en la tele («Poniéndose»); al deslizar a otra, su botón dice «Poner esta». Con «busca Dune», cada una trae «Poner».\n\nTRANSICIONES (cuidado de que no brinque):\n• El acordeón abre a su alto final en un solo movimiento suave (320 ms) y el resto del control baja con él.\n• El carrusel sigue tu dedo y se acomoda en la tarjeta más cercana; las de los lados crecen al llegar al centro, sin saltos.\n• Al poner otra: el letrero cambia con un fundido (220 ms) y el acordeón no cambia de alto.\n• Al cerrar (✕, o 6 s después de elegir), se pliega en un solo movimiento."
   },
   "t6": {
    "x": 0,

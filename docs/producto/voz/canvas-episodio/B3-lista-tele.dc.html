@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>La lista en la tele</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 960px; height: 540px; box-sizing: border-box; border: 10px solid #050506; border-radius: 16px; position: relative; overflow: hidden; background: linear-gradient(120deg, #4a3a2a, #1b2430 70%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; color: #f5f4f0">
+<div style="position: absolute; inset: 0; background: rgba(12,12,14,0.86)"></div>
+<div style="position: absolute; inset: 0; padding: 32px 40px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: baseline; gap: 16px"><span style="font-size: 30px; font-weight: 700">The Office</span><span style="font-size: 16px; color: #a3a3ab">Elige un episodio</span></div>
+<div style="display: flex; gap: 8px">
+<span style="font-size: 15px; padding: 6px 14px; border-radius: 999px; background: rgba(255,255,255,0.10); color: #cdcdd3">Temporada 1</span>
+<span style="font-size: 15px; padding: 6px 14px; border-radius: 999px; background: rgba(255,255,255,0.22); color: #f5f4f0; font-weight: 600">Temporada 2</span>
+<span style="font-size: 15px; padding: 6px 14px; border-radius: 999px; background: rgba(255,255,255,0.10); color: #cdcdd3">Temporada 3</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px; opacity: 0.6"><div style="aspect-ratio: 16 / 9; border-radius: 10px; background: linear-gradient(135deg, #3a3330, #1b2430)"></div><span style="font-size: 15px">4 · The Fire</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 16 / 9; border-radius: 10px; background: linear-gradient(135deg, #4a3a2a, #1b2430); outline: 2px solid #5fd6c6"></div><span style="font-size: 15px">5 · Halloween <span style="color: #5fd6c6">· ahora</span></span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 16 / 9; border-radius: 10px; background: linear-gradient(135deg, #2f3a3a, #141a2a)"></div><span style="font-size: 15px">6 · The Fight</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px; transform: scale(1.06)"><div style="aspect-ratio: 16 / 9; border-radius: 10px; background: linear-gradient(135deg, #3a2f3a, #1b2430); outline: 4px solid #f5f4f0; outline-offset: 2px"></div><span style="font-size: 15px; font-weight: 700">7 · The Client</span></div>
+</div>
+<span style="font-size: 14px; color: #a3a3ab; margin-top: auto">Lo que veían queda detrás, en pausa, mientras eliges · Dibujo de la tele</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":960,"height":540}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

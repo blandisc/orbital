@@ -1,0 +1,105 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-29T23:45:00Z"
+ },
+ "title": "Elegir episodio: ¿teléfono o tele?",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1200,
+   "h": 600,
+   "title": "La pregunta"
+  },
+  "A1-tocas.dc.html": {
+   "x": 0,
+   "y": 1000,
+   "w": 402,
+   "h": 874,
+   "title": "A ① Tocas «Elegir episodio»"
+  },
+  "A2-lista-telefono.dc.html": {
+   "x": 482,
+   "y": 1000,
+   "w": 402,
+   "h": 874,
+   "title": "A ② La lista sale en tu iPhone"
+  },
+  "A3-tele-sigue.dc.html": {
+   "x": 964,
+   "y": 1167,
+   "w": 960,
+   "h": 540,
+   "title": "A ③ Mientras, la tele sigue con lo que veían"
+  },
+  "B1-tocas.dc.html": {
+   "x": 0,
+   "y": 2254,
+   "w": 402,
+   "h": 874,
+   "title": "B ① Tocas «Elegir episodio»"
+  },
+  "B2-telefono-pad.dc.html": {
+   "x": 482,
+   "y": 2254,
+   "w": 402,
+   "h": 874,
+   "title": "B ② Tu iPhone se vuelve el control"
+  },
+  "B3-lista-tele.dc.html": {
+   "x": 964,
+   "y": 2421,
+   "w": 960,
+   "h": 540,
+   "title": "B ③ La lista sale en la tele, encima de lo que veían"
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "A1-tocas.dc.html",
+  "A2-lista-telefono.dc.html",
+  "A3-tele-sigue.dc.html",
+  "B1-tocas.dc.html",
+  "B2-telefono-pad.dc.html",
+  "B3-lista-tele.dc.html"
+ ],
+ "notes": {
+  "ta": {
+   "x": 0,
+   "y": 740,
+   "text": "A · En el teléfono (DECIDIDO)",
+   "kind": "title1",
+   "maxW": 2540
+  },
+  "na": {
+   "x": 2004,
+   "y": 1000,
+   "w": 520,
+   "size": "m",
+   "fill": "green",
+   "text": "DECIDIDO: los episodios se eligen en el teléfono.\n\nQUÉ GANAS\n• Eliges con el dedo, en la pantalla que ya tienes en la mano.\n• Nadie en la sala pierde lo que está viendo mientras buscas.\n• Ves títulos y resúmenes de cerca.\n\nQUÉ PIERDES\n• Los demás no ven qué estás eligiendo hasta que empieza."
+  },
+  "tb": {
+   "x": 0,
+   "y": 1994,
+   "text": "B · En la tele",
+   "kind": "title1",
+   "maxW": 2540
+  },
+  "nb": {
+   "x": 2004,
+   "y": 2254,
+   "w": 520,
+   "size": "m",
+   "fill": "orange",
+   "text": "QUÉ GANAS\n• Todos en la sala ven la lista y pueden opinar.\n• Es la misma pantalla de episodios que ya existe en la tele.\n\nQUÉ PIERDES\n• Tapa lo que estaban viendo mientras eliges.\n• Te mueves con flechas del pad: es más lento.\n• Lees de lejos, en letra chica."
+  }
+ },
+ "designSystems": []
+}
