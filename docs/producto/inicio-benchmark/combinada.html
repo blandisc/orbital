@@ -263,7 +263,7 @@ td:first-child { font-weight: 700; }
   <header style="display:flex;flex-direction:column;gap:12px">
     <div class="eyebrow">Orbital · iPhone · Inicio · propuesta combinada</div>
     <h1>La portada arriba, tu tablero debajo</h1>
-    <div class="eyebrow" style="color:var(--ink-300)">Versión 2 · 30 oct · Top 10 con su plataforma, «Porque viste» con el mazo de Para ti y el porqué en turquesa</div>
+    <div class="eyebrow" style="color:var(--ink-300)">Versión 3 · 30 oct · Orden: Seguir viendo, Lo nuevo de lo tuyo, Sugerencias de Trakt, Por lo que viste, Top 10 y Mi lista</div>
     <p class="muted">La portada grande de la opción 2 con lo útil de la opción 1. «Seguir viendo» va encimado en el borde de la portada, «Ya salió» y «Sale pronto» se juntan en una sola línea de tiempo, y el selector de Todo, Series y Películas son tres íconos en la barra de arriba, sin quitarle espacio a nada.</p>
     <p class="try">La maqueta funciona: toca los íconos del selector, desliza la portada y las filas, y baja dentro del teléfono.</p>
   </header>
@@ -276,9 +276,10 @@ td:first-child { font-weight: 700; }
         <div class="note"><span class="n">2</span><div><b>La portada, como hoy pero de borde a borde</b><p>El arte llega hasta arriba, detrás del reloj y la barra, con el logo del título en lugar del texto. Arriba del logo, el porqué en turquesa, el color de la luna de Orbital («En tendencia en México»). Botones: Ver y Guardar. Se desliza entre 4 títulos.</p></div></div>
         <div class="note"><span class="n">3</span><div><b>Seguir viendo, encimado</b><p>La tira entra 40 puntos sobre el borde de la portada, así que se ve sin bajar, también en el iPhone SE. Cada tarjeta dice dónde vas («T2 E7 · quedan 31 min») y se reproduce con un toque.</p></div></div>
         <div class="note"><span class="n">4</span><div><b>Lo nuevo de lo tuyo</b><p>«Ya salió» y «Sale pronto» en una sola línea de tiempo. A la izquierda de la marca HOY, lo que ya puedes ver (punto verde y ▶). A la derecha, lo que viene, más apagado, con cuenta regresiva y una campana para que te avise. Junta tus series (calendario de Trakt) y las películas de Mi lista que ya llegaron a casa.</p></div></div>
-        <div class="note"><span class="n">5</span><div><b>Porque viste, con el mazo de Para ti</b><p>La misma tarjeta que hoy vive en Para ti, más vistosa: el arte del título que viste se desenfoca de fondo. Toca el mazo o las flechas y cambia lo que viste (Dark, Severance, Dune…), y con él las sugerencias.</p></div></div>
-        <div class="note"><span class="n">6</span><div><b>Top 10 con su plataforma</b><p>Como hoy: eliges la plataforma por su logo y cada número se pinta con su color (rojo Netflix, azul Disney+, morado HBO Max…). Cada póster lleva el logo de dónde está.</p></div></div>
-        <div class="note"><span class="n">7</span><div><b>Mi lista</b><p>Se queda al final, igual que hoy.</p></div></div>
+        <div class="note"><span class="n">5</span><div><b>Sugerencias para ti</b><p>Tus recomendaciones de Trakt, en una fila, justo después de lo tuyo.</p></div></div>
+        <div class="note"><span class="n">6</span><div><b>Por lo que viste, con el mazo de Para ti</b><p>La misma tarjeta que hoy vive en Para ti, más vistosa: el arte del título que viste se desenfoca de fondo. Toca el mazo o las flechas y cambia lo que viste (Dark, Severance, Dune…), y con él las sugerencias.</p></div></div>
+        <div class="note"><span class="n">7</span><div><b>Top 10 con su plataforma</b><p>Como hoy: eliges la plataforma por su logo y cada número se pinta con su color (rojo Netflix, azul Disney+, morado HBO Max…). Cada póster lleva el logo de dónde está.</p></div></div>
+        <div class="note"><span class="n">8</span><div><b>Mi lista</b><p>Se queda al final, igual que hoy.</p></div></div>
       </div>
     </div>
   </section>
@@ -400,7 +401,8 @@ td:first-child { font-weight: 700; }
           '<div class="rows">' +
             '<div class="row"><div class="head"><h4>Seguir viendo ' + use("i-chev") + '</h4><small class="cw-count"></small></div><div class="strip cw-strip fade"></div></div>' +
             '<div class="row"><div class="head"><div><span class="ey">Ya salió y lo que viene</span><h4>Lo nuevo de lo tuyo ' + use("i-chev") + '</h4></div></div><div class="strip tl nl-strip fade"></div></div>' +
-            '<div class="row"><div class="head"><div><span class="ey">Cambia lo que viste y cambian las sugerencias</span><h4>Para ti ' + use("i-chev") + '</h4></div></div>' +
+            '<div class="row"><div class="head"><div><span class="ey">Recomendadas por Trakt con lo que ves</span><h4>Sugerencias para ti ' + use("i-chev") + '</h4></div></div><div class="strip tr-strip fade"></div></div>' +
+            '<div class="row"><div class="head"><div><span class="ey">Cambia lo que viste y cambian las sugerencias</span><h4>Por lo que viste</h4></div></div>' +
               '<div class="bc"><div class="bc-bg"></div><div class="bc-top"><button type="button" class="deck" aria-label="Siguiente título"></button>' +
               '<div class="bc-info"><span class="bc-ey"></span><span class="bc-t"></span><span class="bc-d"></span>' +
               '<div class="bc-nav"><button type="button" class="gbtn bc-prev" aria-label="Anterior"><svg aria-hidden="true" style="transform:scaleX(-1)"><use href="#i-chev"/></svg></button><button type="button" class="gbtn bc-next" aria-label="Siguiente">' + use("i-chev") + '</button></div></div></div>' +
@@ -448,6 +450,7 @@ td:first-child { font-weight: 700; }
         return '<div class="tl-card ' + n.st + '"><span class="tl-when">' + n.when + '</span><div class="tl-poster">' + inner + '</div><div><div class="tl-t">' + n.t + '</div><div class="tl-s">' + n.s + "</div></div></div>";
       }).join("");
 
+      $(".tr-strip").innerHTML = FORYOU.filter(function (x) { return fits(k, x); }).map(function (p) { return poster(p); }).join("");
       curKind = k; paintSeed(false); paintTop();
       var ml = MINE.filter(function (x) { return fits(k, x); });
       $(".ml-count").textContent = ml.length;
