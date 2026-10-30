@@ -1,5 +1,4 @@
 import SwiftUI
-import OrbitalCore
 
 /// Tokens del Inicio nuevo (docs/producto/inicio-benchmark/): el selector de la barra y sus tiempos.
 extension DS {
@@ -50,38 +49,4 @@ extension DS {
 extension DS.Collections {
     /// «Por lo que viste» en Inicio: cuánto se desenfoca el póster de fondo y cuánto se ve.
     static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
-}
-
-extension DS {
-    /// El cielo de fondo (`SkyField`): cuántas estrellas hay por capa y de qué tamaño, cuánto se mueve cada capa, cómo
-    /// respiran las brillantes, la franja de polvo y la estrella fugaz.
-    enum Sky {
-        private static func tint(_ name: String) -> Color {
-            guard let hex = DesignTokens.Sky.hex[name] else { return .clear }
-            return adaptive(dark: hex.dark, light: hex.light)
-        }
-        static let dusk = tint("dusk"), star = tint("star"), cold = tint("cold"), warm = tint("warm"), band = tint("band")
-
-        /// Lejos, en medio y cerca: muchas diminutas y pocas grandes, como en el cielo real.
-        static let counts = [170, 60, 16]
-        static let radius: [ClosedRange<CGFloat>] = [0.35...0.8, 0.6...1.2, 1.1...2.1]
-        static let opacity: [Double] = [0.45, 0.65, 0.9]
-        /// Puntos por segundo que se desliza cada capa y cuánto se inclina al mover el teléfono.
-        static let drift: [CGFloat] = [0.6, 1.2, 2.1], tilt: [CGFloat] = [4, 9, 16]
-        /// De cada cien: cuántas tiran a frío y cuántas a cálido (las demás, blancas).
-        static let coldShare = 0.22, warmShare = 0.14
-        /// Las brillantes (la capa de cerca): las primeras llevan halo y una cruz de luz casi invisible.
-        static let halos = 5, haloScale: CGFloat = 5, haloOpacity = 0.18, crossLength: CGFloat = 9, crossOpacity = 0.22, crossWidth: CGFloat = 0.5
-        static let breath: ClosedRange<Double> = 5...9, breathDepth = 0.3
-        /// La franja de polvo: en diagonal, ancha y muy tenue, y los granitos que se juntan sobre ella.
-        static let bandOpacity = 0.11, bandOpacityLight = 0.55, bandWidth: CGFloat = 0.32, bandBlur: CGFloat = 48
-        static let dust = 140, dustSpread: CGFloat = 0.09, dustOpacity = 0.3
-        /// Hasta dónde llega el tono del cielo antes de fundirse con el fondo, y cuánto se ven las estrellas de día.
-        static let duskFade = 0.75, lightStars = 0.55
-        /// La estrella fugaz: cada cuánto, cuánto dura, qué tan larga y qué tan brillante.
-        static let shootEvery: TimeInterval = 60, shootFor: TimeInterval = 0.9, shootLength: CGFloat = 110, shootOpacity = 0.7, shootWidth: CGFloat = 1.2
-        static let seed: UInt64 = 0x0B17A1
-        /// Cuadros por segundo: el cielo es lento; no hace falta más.
-        static let frame: TimeInterval = 1.0 / 24
-    }
 }

@@ -287,8 +287,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let tintFloor = DesignTokens.Backdrop.tintFloor
         /// Dónde empieza el velo sobre el arte, dónde llega a medio y (al pie) a fondo.
         static let scrimStart = DesignTokens.Backdrop.scrimStart, scrimMid = DesignTokens.Backdrop.scrimMid
-        static let starCount = DesignTokens.Backdrop.starCount, starSeed = DesignTokens.Backdrop.starSeed
-        static let starRadius = CGFloat(DesignTokens.Backdrop.starRadius), starOpacity = DesignTokens.Backdrop.starOpacity
         static let artFadeStart = DesignTokens.Backdrop.artFadeStart
         /// Un segundo brillo del mismo tono, abajo a un lado: lo de debajo del destacado no queda en negro liso.
         static let lowGlow: Double = 0.22

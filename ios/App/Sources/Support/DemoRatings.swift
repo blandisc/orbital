@@ -1,6 +1,8 @@
 import Foundation
 import OrbitalCore
 
+#if DEBUG   // solo la demo: DemoHTTPClient no existe en la versión del iPhone
+
 /// Calificar en modo demostración (`-demo-rate`): un historial con dos películas recientes y una serie con varios episodios,
 /// y nada calificado todavía, para ver la pastilla «¿Qué tal …?» y su fila.
 extension DemoHTTPClient {
@@ -21,3 +23,4 @@ extension DemoHTTPClient {
         }
     }
 }
+#endif

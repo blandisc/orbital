@@ -159,10 +159,11 @@ public enum DesignTokens {
     /// funde el arte a sangre con el fondo (fracción de su alto).
     public enum Backdrop {
         public static let scrimStart = 0.0, scrimMid = 0.42
-        public static let tintFloor = 0.5, starCount = 56, starRadius = 1.1, starOpacity = 0.35, starSeed = 7.0, artFadeStart = 0.6
+        public static let tintFloor = 0.5, artFadeStart = 0.6
     }
     /// El cielo de fondo (`DS.Sky`, docs/producto/muvy-busqueda-premios/propuesta.html § Cielo): Crepúsculo de noche y Bruma
-    /// lunar de día. El tono de arriba, las estrellas (blancas, frías y cálidas) y la franja de polvo, en oscuro y en claro.
+    /// lunar de día. El tono de arriba, las estrellas (blancas, frías y cálidas) y la franja de luz, en oscuro y en claro. Solo del
+    /// iPhone (la TV no tiene cielo): por eso vive aquí y no en el `palette.json` compartido.
     public enum Sky {
         public static let hex: [String: (dark: String, light: String)] = [
             "dusk": ("#1c1730", "#e9e7f1"), "star": ("#f6f3ec", "#3a3c48"), "cold": ("#aac4ff", "#3e4d73"),
