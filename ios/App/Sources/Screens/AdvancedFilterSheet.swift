@@ -68,6 +68,7 @@ struct AdvancedFilterSheet: View {
         }
         .presentationDetents([Self.short, .large], selection: $detent)
         .onChange(of: path) { _, new in if new.isEmpty { detent = Self.short } }
+        .accessibilityElement(children: .contain)   // cada pieza de adentro conserva su identificador
         .accessibilityIdentifier("advanced-filter")
     }
 
