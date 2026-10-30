@@ -11,14 +11,14 @@
 <style>
 body{margin:0;background:#0c0c0e}
 a{color:#f5f4f0}a:hover{color:#cdcdd3}
-.grp{display:flex;align-items:center;gap:10px;padding:0 20px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#a3a3ab}
-.grp::after{content:"";flex:1;height:1px;background:#2a2a30}
+.grp{display:block;padding:18px 20px 0;border-top:1px solid #1e1e23;font-size:28px;font-weight:800;letter-spacing:-.02em;color:#f5f4f0;font-family:-apple-system,"SF Pro Display",system-ui,sans-serif}
+.ey{display:block;font-size:11.5px;font-weight:700;color:#5fd6c6;margin-bottom:2px}
 .h{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em;color:#f5f4f0;font-family:-apple-system,"SF Pro Display",system-ui,sans-serif}
 .sub{font-size:12.5px;color:#a3a3ab}
 .glass{background:rgba(40,40,46,.6);border:1px solid rgba(255,255,255,.14);border-radius:999px}
 </style>
 </helmet>
-<div style="width: 402px; height: 5600px; box-sizing: border-box; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 34px; padding-bottom: 40px; overflow: hidden">
+<div style="width: 402px; height: 6000px; box-sizing: border-box; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 34px; padding-bottom: 40px; overflow: hidden">
 
   <!-- portada: el mosaico -->
   <div style="position: relative; height: 380px; overflow: hidden; background: #070708; flex: none">
@@ -38,10 +38,10 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
       <button class="glass" aria-label="Filtros de búsqueda" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: #f5f4f0; padding: 0"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2.2"></circle><circle cx="8" cy="17" r="2.2"></circle></svg></button>
     </div>
     <div style="position: absolute; left: 20px; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start">
-      <span style="font-size: 12px; font-weight: 600; color: #cdcdd3">Más de 50 formas de encontrar qué ver</span>
+      <span class="ey">Más de 50 formas de encontrar qué ver</span>
       <h1 style="margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1; font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif">Para ti</h1>
-      <a href="#" style="margin-top: 4px; height: 42px; padding: 0 16px 0 12px; border-radius: 999px; background: #f5f4f0; color: #070708; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700">
-        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="8" height="11" rx="1.6"></rect><rect x="13" y="3" width="8" height="7" rx="1.6"></rect><rect x="3" y="16" width="8" height="5" rx="1.6"></rect><rect x="13" y="12" width="8" height="9" rx="1.6"></rect></svg>Pasear por el mosaico</a>
+      <button onClick="{{openMosaic}}" style="margin-top: 4px; height: 42px; padding: 0 16px 0 12px; border: 0; border-radius: 999px; background: #f5f4f0; color: #070708; display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; cursor: pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="8" height="11" rx="1.6"></rect><rect x="13" y="3" width="8" height="7" rx="1.6"></rect><rect x="3" y="16" width="8" height="5" rx="1.6"></rect><rect x="13" y="12" width="8" height="9" rx="1.6"></rect></svg>Pasear por el mosaico</button>
     </div>
   </div>
 
@@ -56,27 +56,28 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
   </div>
 
   <!-- ¿Qué vemos? compacto -->
-  <div style="margin: 0 16px; border-radius: 24px; background: #18181c; padding: 16px; display: flex; gap: 16px; align-items: center; flex: none">
+  <button onClick="{{openDecide}}" aria-label="¿Qué vemos hoy?" style="margin: 0 16px; border: 0; border-radius: 24px; background: #18181c; color: #f5f4f0; padding: 16px; display: flex; gap: 16px; align-items: center; flex: none; text-align: left; font: inherit; cursor: pointer">
     <div style="position: relative; width: 104px; height: 140px; flex: none">
       <img src="/_blob/ee20996a9ce7ce95f0983f9a61e1b9e2" alt="" style="position: absolute; left: 14px; top: 6px; width: 84px; height: 126px; object-fit: cover; border-radius: 10px; transform: rotate(8deg); opacity: .5">
       <img src="/_blob/17067ee154a950fc7044473f9094ff94" alt="" style="position: absolute; left: 0; top: 0; width: 90px; height: 135px; object-fit: cover; border-radius: 11px; box-shadow: 0 12px 22px -8px #000">
     </div>
     <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+      <span class="ey" style="margin-bottom:0">Como un Tinder de películas</span>
       <span class="h">¿Qué vemos hoy?</span>
-      <span class="sub">Desliza: a la derecha la guardo, a la izquierda no. Toca para verla.</span>
+      <span class="sub">Desliza: a la derecha la guardo, a la izquierda no.</span>
       <div style="display: flex; gap: 8px; margin-top: 6px">
         <sc-for list="{{moods}}" as="m" hint-placeholder-count="4">
-          <button aria-label="{{m.label}}" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: rgba(255,255,255,.07); display: flex; align-items: center; justify-content: center; padding: 0"><img src="{{m.icon}}" alt="" style="width: 26px; height: 26px; object-fit: contain"></button>
+          <span title="{{m.label}}" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,.07); display: flex; align-items: center; justify-content: center"><img src="{{m.icon}}" alt="" style="width: 26px; height: 26px; object-fit: contain"></span>
         </sc-for>
       </div>
     </div>
-  </div>
+  </button>
 
   <!-- AHORA -->
   <span class="grp">Ahora</span>
   <sc-for list="{{nowRows}}" as="r" hint-placeholder-count="2">
     <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -14px">
-      <div style="padding: 0 20px; display: flex; justify-content: space-between; align-items: baseline"><div><h2 class="h">{{r.title}}</h2><span class="sub">{{r.sub}}</span></div><span class="sub">Ver todo</span></div>
+      <div style="padding: 0 20px; display: flex; justify-content: space-between; align-items: baseline"><div><span class="ey">{{r.sub}}</span><h2 class="h">{{r.title}}</h2></div><span class="sub">Ver todo</span></div>
       <div style="display: flex; gap: 10px; padding: 0 20px; overflow: hidden">
         <sc-for list="{{r.items}}" as="p" hint-placeholder-count="4">
           <img src="{{p}}" alt="" style="flex: none; width: 104px; height: 156px; object-fit: cover; border-radius: 11px">
@@ -85,7 +86,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
     </div>
   </sc-for>
   <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -14px">
-    <div style="padding: 0 20px"><h2 class="h">Nuevo en tus plataformas</h2><span class="sub">Episodios de estas semanas y estrenos</span></div>
+    <div style="padding: 0 20px"><span class="ey">Episodios de estas semanas y estrenos</span><h2 class="h">Nuevo en tus plataformas</h2></div>
     <div style="display: flex; gap: 12px; padding: 0 20px; overflow: hidden">
       <sc-for list="{{fresh}}" as="f" hint-placeholder-count="2">
         <div style="flex: none; width: 240px; display: flex; flex-direction: column; gap: 6px">
@@ -96,7 +97,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
     </div>
   </div>
   <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -14px">
-    <div style="padding: 0 20px"><h2 class="h">Aprobadas por la crítica</h2><span class="sub">Rotten Tomatoes · 90 % o más</span></div>
+    <div style="padding: 0 20px"><span class="ey">Rotten Tomatoes · 90 % o más</span><h2 class="h">Aprobadas por la crítica</h2></div>
     <div style="display: flex; gap: 10px; padding: 0 20px; overflow: hidden">
       <sc-for list="{{critics}}" as="c" hint-placeholder-count="4">
         <div style="flex: none; position: relative; width: 104px; height: 156px; border-radius: 11px; overflow: hidden">
@@ -129,7 +130,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
 
   <!-- PLATAFORMAS -->
   <span class="grp">Plataformas</span>
-  <div style="margin-top: -14px; padding: 0 20px"><h2 class="h">Rankings de hoy</h2><span class="sub">El Top 10 de Netflix y lo que es tendencia en las demás</span></div>
+  <div style="margin-top: -14px; padding: 0 20px"><span class="ey">El Top 10 de Netflix y lo que es tendencia en las demás</span><h2 class="h">Rankings de hoy</h2></div>
   <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px; margin-top: -20px; flex: none">
     <sc-for list="{{plats}}" as="p" hint-placeholder-count="6">
       <a href="#" style="position: relative; height: 128px; border-radius: 18px; overflow: hidden; background: {{p.bg}}; text-decoration: none; color: #f5f4f0; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
@@ -144,7 +145,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
     </sc-for>
   </div>
   <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -14px">
-    <div style="padding: 0 20px"><h2 class="h">Todo lo de cada una</h2><span class="sub">Su catálogo completo, de lo más visto a lo menos</span></div>
+    <div style="padding: 0 20px"><span class="ey">Su catálogo completo, de lo más visto a lo menos</span><h2 class="h">Todo lo de cada una</h2></div>
     <div style="display: flex; gap: 10px; padding: 0 20px">
       <sc-for list="{{catalogs}}" as="c" hint-placeholder-count="3">
         <a href="#" style="flex: 1; height: 56px; border-radius: 14px; background: #18181c; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; color: #f5f4f0; font-size: 13px; font-weight: 600"><img src="{{c.logo}}" alt="" style="width: 26px; height: 26px; border-radius: 7px">{{c.name}}</a>
@@ -180,7 +181,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
 
   <!-- GÉNEROS -->
   <span class="grp">Géneros</span>
-  <div style="margin-top: -14px; padding: 0 20px"><h2 class="h">Lo mejor de cada género</h2><span class="sub">Las mejor calificadas del año</span></div>
+  <div style="margin-top: -14px; padding: 0 20px"><span class="ey">Las mejor calificadas del año</span><h2 class="h">Lo mejor de cada género</h2></div>
   <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 16px; margin-top: -20px; flex: none">
     <sc-for list="{{genres}}" as="g" hint-placeholder-count="14">
       <a href="#" style="height: 92px; border-radius: 16px; background: {{g.bg}}; text-decoration: none; color: #f5f4f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 700">
@@ -191,7 +192,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
   <!-- AÑOS -->
   <span class="grp">Años</span>
   <div style="display: flex; flex-direction: column; gap: 12px; margin-top: -14px">
-    <div style="padding: 0 20px"><h2 class="h">Por año</h2><span class="sub">Lo más popular de cada año, de 1980 a hoy</span></div>
+    <div style="padding: 0 20px"><span class="ey">Lo más popular de cada año, de 1980 a hoy</span><h2 class="h">Por año</h2></div>
     <div style="display: flex; gap: 8px; padding: 0 20px">
       <sc-for list="{{decades}}" as="d" hint-placeholder-count="5">
         <span style="height: 32px; padding: 0 12px; border-radius: 10px; background: {{d.bg}}; color: {{d.fg}}; display: inline-flex; align-items: center; font-size: 13px; font-weight: 700">{{d.n}}</span>
@@ -243,7 +244,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
     </div>
     <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(12,12,14,.95) 35%, rgba(12,12,14,.4))"></div>
     <div style="position: absolute; left: 18px; top: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 4px">
-      <span style="font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #a3a3ab">Lo que ves</span>
+      <span class="ey">Lo que ves</span>
       <span style="font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1">12 h 40</span>
       <span style="font-size: 13px; color: #cdcdd3">esta semana · 5 días seguidos</span>
       <a href="#" style="margin-top: auto; align-self: flex-start; height: 36px; padding: 0 14px; border-radius: 999px; background: rgba(255,255,255,.12); color: #f5f4f0; text-decoration: none; display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 600">Tu semana, tu mes, tu año</a>
@@ -251,7 +252,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":402,"height":5600}}'>
+<script type="text/x-dc" data-dc-script data-props='{"onMosaic":{"editor":null},"onDecide":{"editor":null},"$preview":{"width":402,"height":6000}}'>
 class Component extends DCLogic {
   renderVals() {
     const P = {
@@ -279,6 +280,8 @@ class Component extends DCLogic {
       prime: '/_blob/3fa0cd8a3bccb5fc488d980df135cb61', appletv: '/_blob/40cac579725549ef5c6d4ae70f3ad681', paramount: '/_blob/ae98e9707daef8bb009e3ea104c5d053' };
     const dim = 'rgba(255,255,255,.07)';
     return {
+      openMosaic: () => { if (this.props.onMosaic) this.props.onMosaic(); },
+      openDecide: () => { if (this.props.onDecide) this.props.onDecide(); },
       wall: [P.sg1, P.inter, P.bb, P.lasso, P.sev, P.frank, P.wed, P.alien, P.bear, P.dune, P.br, P.bm, P.plur, P.arr, P.weap, P.coh, P.obaa, P.tlou, P.st, P.dark, P.slow, P.cher, P.andor, P.n1899],
       index: [
         { label: 'Ahora', icon: I.cf, bg: '#18181c' }, { label: 'Temporada', icon: I.halloween, bg: '#3a1c08' },

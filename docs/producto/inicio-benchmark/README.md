@@ -37,3 +37,10 @@ va cada cosa). Grupos: Ahora (tendencia, popular, nuevo en tus plataformas, crí
 Próximos estrenos. Salen: el Destacado (lo reemplaza el mosaico) y los catálogos de complementos (desacoplar Stremio).
 
 **Inicio cerrado (30 oct, v6):** Fernando dio por cerrada la propuesta del Inicio.
+
+### 30 oct: Para ti interactivo
+
+`para-ti/B-interactivo.dc.html` (el Canvas abre directo en él): Para ti completo que se desplaza, «Pasear por el
+mosaico» (muro de pósters; tocas uno y sale su ficha rápida con Ver y Guardar) y «¿Qué vemos hoy?» como Tinder
+(arrastras a la derecha para guardar y a la izquierda para descartar, o usas ✕ ▶ ＋; los cuatro ánimos cambian el mazo).
+Cada fila lleva el porqué arriba en turquesa y el título abajo, como el Inicio; los grupos son títulos grandes.

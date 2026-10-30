@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Para ti · interactivo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0c0c0e}
+a{color:#f5f4f0}a:hover{color:#cdcdd3}
+.scr{scrollbar-width:none}.scr::-webkit-scrollbar{display:none}
+.ey{display:block;font-size:11.5px;font-weight:700;color:#5fd6c6}
+</style>
+</helmet>
+<div style="position: relative; width: 402px; height: 874px; overflow: hidden; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif">
+
+  <!-- Para ti, completo, que se desplaza -->
+  <div class="scr" style="position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden">
+    <dc-import name="Completo" on-mosaic="{{openMosaic}}" on-decide="{{openDecide}}" hint-size="402px,6000px"></dc-import>
+    <div style="height: 90px"></div>
+  </div>
+
+  <!-- barra de pestañas -->
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 18px; height: 60px; border-radius: 30px; background: rgba(30,30,35,.72); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(24px); display: flex; justify-content: space-around; align-items: center; z-index: 5">
+    <span style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10.5px; font-weight: 600; color: #a3a3ab; padding: 6px 12px"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7v9a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z" fill="currentColor"></path></svg>Inicio</span>
+    <span style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10.5px; font-weight: 600; color: #f5f4f0; padding: 6px 12px; border-radius: 22px; background: rgba(255,255,255,.1)"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z" fill="currentColor"></path></svg>Para ti</span>
+    <span style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10.5px; font-weight: 600; color: #a3a3ab; padding: 6px 12px"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v8M8.5 12.5L12 16l3.5-3.5"></path></svg>Descargas</span>
+    <span style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10.5px; font-weight: 600; color: #a3a3ab; padding: 6px 12px"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5L20 20"></path></svg>Buscar</span>
+  </div>
+
+  <!-- MOSAICO -->
+  <sc-if value="{{inMosaic}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; z-index: 10; background: #070708">
+      <div class="scr" style="position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden">
+        <div style="padding: 110px 10px 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+          <sc-for list="{{tiles}}" as="t" hint-placeholder-count="30">
+            <button onClick="{{t.open}}" aria-label="{{t.title}}" style="border: 0; padding: 0; background: #18181c; border-radius: 10px; overflow: hidden; aspect-ratio: 2 / 3; cursor: pointer; transform: translateY({{t.shift}}px)">
+              <img src="{{t.p}}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block">
+            </button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="position: absolute; left: 0; right: 0; top: 0; height: 110px; background: linear-gradient(180deg, #070708 30%, rgba(7,7,8,0)); pointer-events: none"></div>
+      <div style="position: absolute; left: 16px; right: 16px; top: 16px; display: flex; justify-content: space-between; align-items: center">
+        <button onClick="{{closeAll}}" aria-label="Cerrar el mosaico" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); background: rgba(40,40,46,.7); color: #f5f4f0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path></svg></button>
+        <div style="text-align: center"><span class="ey">Pasea sin buscar nada</span><span style="font-size: 17px; font-weight: 700">Mosaico</span></div>
+        <div style="width: 40px"></div>
+      </div>
+
+      <!-- la ficha rápida de lo que tocaste -->
+      <sc-if value="{{hasPick}}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{closePick}}" style="position: absolute; inset: 0; background: rgba(0,0,0,.55); z-index: 11"></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; z-index: 12; background: #131316; border-radius: 28px 28px 0 0; padding: 12px 18px 30px; display: flex; flex-direction: column; gap: 14px">
+          <span style="width: 38px; height: 5px; border-radius: 3px; background: #2a2a30; align-self: center"></span>
+          <div style="display: flex; gap: 14px">
+            <img src="{{pick.p}}" alt="" style="width: 104px; height: 156px; object-fit: cover; border-radius: 12px; flex: none">
+            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+              <span class="ey">{{pick.why}}</span>
+              <span style="font-size: 22px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1">{{pick.title}}</span>
+              <span style="font-size: 13px; color: #a3a3ab">{{pick.meta}}</span>
+              <span style="font-size: 13px; color: #cdcdd3; margin-top: 4px">{{pick.blurb}}</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px">
+            <button onClick="{{watchPick}}" style="flex: 1; height: 46px; border: 0; border-radius: 999px; background: #f5f4f0; color: #070708; font-size: 16px; font-weight: 700; cursor: pointer">Ver</button>
+            <button onClick="{{savePick}}" style="flex: 1; height: 46px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; background: rgba(255,255,255,.08); color: #f5f4f0; font-size: 16px; font-weight: 600; cursor: pointer">Guardar</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ¿QUÉ VEMOS HOY? como Tinder -->
+  <sc-if value="{{inDecide}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; z-index: 10; background: radial-gradient(120% 70% at 50% 0%, #1b2a2a, #0c0c0e 60%); display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 0">
+        <button onClick="{{closeAll}}" aria-label="Cerrar" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); background: rgba(40,40,46,.7); color: #f5f4f0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path></svg></button>
+        <div style="text-align: center"><span class="ey">Como un Tinder de películas</span><span style="font-size: 17px; font-weight: 700">¿Qué vemos hoy?</span></div>
+        <span style="min-width: 40px; height: 32px; padding: 0 10px; border-radius: 999px; background: rgba(255,255,255,.08); display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; font-weight: 700">
+          <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="#5fd6c6" stroke-width="3" stroke-linecap="round"></path></svg>{{saved}}</span>
+      </div>
+      <div style="display: flex; justify-content: center; gap: 8px; padding: 16px 0 6px">
+        <sc-for list="{{moods}}" as="m" hint-placeholder-count="4">
+          <button onClick="{{m.pick}}" aria-label="{{m.label}}" aria-pressed="{{m.on}}" style="width: 76px; height: 64px; border: 1px solid {{m.line}}; border-radius: 16px; background: {{m.bg}}; color: #f5f4f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10.5px; font-weight: 600; padding: 0; cursor: pointer">
+            <img src="{{m.icon}}" alt="" style="width: 26px; height: 26px; object-fit: contain"><span>{{m.label}}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="position: relative; flex: 1; margin: 10px 0 0">
+        <sc-if value="{{hasCard}}" hint-placeholder-val="{{ true }}">
+          <img src="{{under.p}}" alt="" style="position: absolute; left: 50%; top: 14px; width: 290px; height: 435px; margin-left: -145px; object-fit: cover; border-radius: 22px; transform: scale(.94); opacity: .5">
+          <div onPointerDown="{{down}}" onPointerMove="{{move}}" onPointerUp="{{up}}" onPointerCancel="{{up}}" style="position: absolute; left: 50%; top: 0; width: 300px; height: 450px; margin-left: -150px; border-radius: 24px; overflow: hidden; box-shadow: 0 30px 50px -18px #000; touch-action: none; cursor: grab; user-select: none; transform: translateX({{dx}}px) rotate({{rot}}deg); transition: {{tr}}">
+            <img src="{{card.p}}" alt="" draggable="false" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none">
+            <div style="position: absolute; inset: auto 0 0 0; padding: 60px 18px 18px; background: linear-gradient(180deg, transparent, rgba(0,0,0,.92)); display: flex; flex-direction: column; gap: 4px; pointer-events: none">
+              <span class="ey">{{card.why}}</span>
+              <span style="font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1.05">{{card.title}}</span>
+              <span style="font-size: 13px; color: #cdcdd3">{{card.meta}}</span>
+              <span style="font-size: 13px; color: #a3a3ab">{{card.blurb}}</span>
+            </div>
+            <span style="position: absolute; left: 18px; top: 22px; padding: 6px 12px; border: 3px solid #f5f4f0; border-radius: 10px; font-size: 20px; font-weight: 900; letter-spacing: .06em; transform: rotate(-14deg); opacity: {{yes}}; pointer-events: none">GUARDAR</span>
+            <span style="position: absolute; right: 18px; top: 22px; padding: 6px 12px; border: 3px solid #f0574d; color: #f0574d; border-radius: 10px; font-size: 20px; font-weight: 900; letter-spacing: .06em; transform: rotate(14deg); opacity: {{no}}; pointer-events: none">NO</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{noCard}}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; left: 40px; right: 40px; top: 120px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center">
+            <span style="font-size: 22px; font-weight: 800">Se acabaron por hoy</span>
+            <span style="font-size: 14px; color: #a3a3ab">Guardaste {{saved}} en Mi lista. Cambia el ánimo para ver otras.</span>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="display: flex; justify-content: center; align-items: center; gap: 22px; padding: 8px 0 40px">
+        <button onClick="{{nope}}" aria-label="No me interesa" style="width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); background: #18181c; color: #f0574d; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"></path></svg></button>
+        <button onClick="{{watch}}" aria-label="Ver ahora" style="width: 72px; height: 72px; border-radius: 50%; border: 0; background: #f5f4f0; color: #070708; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z" fill="currentColor"></path></svg></button>
+        <button onClick="{{keep}}" aria-label="Guardar en Mi lista" style="width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); background: #18181c; color: #5fd6c6; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"></path></svg></button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- aviso -->
+  <sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position: absolute; left: 50%; bottom: 100px; transform: translateX(-50%); z-index: 20; background: rgba(245,244,240,.96); color: #070708; font-size: 13.5px; font-weight: 600; padding: 10px 16px; border-radius: 14px; white-space: nowrap">{{toast}}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":402,"height":874}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { view: 'home', pick: -1, mood: 0, at: 0, dx: 0, anim: false, saved: 0, toast: '' };
+    this.startX = null;
+  }
+  say(text) {
+    this.setState({ toast: text });
+    clearTimeout(this.tt);
+    this.tt = setTimeout(() => this.setState({ toast: '' }), 1800);
+  }
+  titles() {
+    const B = '/_blob/';
+    return [
+      { p: B + '17067ee154a950fc7044473f9094ff94', title: 'Coherence', meta: 'Película · 2013 · 1 h 29 · ★ 7.2', why: 'Porque viste Dark', blurb: 'Una cena entre amigos se rompe cuando pasa un cometa.', mood: [2, 1] },
+      { p: B + '88a5c3c91cc4fe3b44468f4e93cfd672', title: 'La llegada', meta: 'Película · 2016 · 1 h 56 · ★ 7.9', why: 'Para pensar', blurb: 'Una lingüista intenta hablar con los que llegaron del cielo.', mood: [2, 3] },
+      { p: B + 'eeea75e14201d58d05f13a8a970d655f', title: 'Chernobyl', meta: 'Serie · 2019 · 5 episodios · ★ 9.3', why: 'Aprobada por la crítica', blurb: 'La noche que explotó el reactor, y lo que vino después.', mood: [1, 3] },
+      { p: B + 'ee20996a9ce7ce95f0983f9a61e1b9e2', title: '1899', meta: 'Serie · 2022 · 1 temporada · ★ 7.3', why: 'De los creadores de Dark', blurb: 'Un barco de migrantes encuentra otro que llevaba meses perdido.', mood: [1, 2] },
+      { p: B + 'b78f0f1e101b431583268ca5215a61fa', title: 'Interestelar', meta: 'Película · 2014 · 2 h 49 · ★ 8.7', why: 'Lo más popular', blurb: 'Un viaje más allá de la galaxia para salvar a la Tierra.', mood: [2, 3] },
+      { p: B + '7ebc6c17320217ff5d9ec3c1dee5d77f', title: 'Black Mirror', meta: 'Serie · 2011 · 7 temporadas · ★ 8.7', why: 'Porque viste Severance', blurb: 'Historias sueltas sobre lo que la tecnología nos hace.', mood: [1, 2] },
+      { p: B + '406990a0cd3ba5eff4f52ed568d53ece', title: 'Blade Runner 2049', meta: 'Película · 2017 · 2 h 44 · ★ 8.0', why: 'Porque viste Dune', blurb: 'Un replicante encuentra un secreto enterrado hace 30 años.', mood: [2] },
+      { p: B + 'cd74550fdf21986a91f0a107e1738a44', title: 'Ted Lasso', meta: 'Serie · 2020 · 3 temporadas · ★ 8.8', why: 'Para reír', blurb: 'Un entrenador de futbol americano dirige un equipo inglés.', mood: [0, 3] },
+      { p: B + '98b35403660c8e7695dd6bc8ac1a856f', title: 'Slow Horses', meta: 'Serie · 2022 · 5 temporadas · ★ 8.1', why: 'Para reír y para tensión', blurb: 'Los espías que el MI5 manda a la banca.', mood: [0, 1] },
+      { p: B + '854b9cc64e02c10eccfabc039d6a0ccf', title: 'The Bear', meta: 'Serie · 2022 · 4 temporadas · ★ 8.5', why: 'Para llorar un poquito', blurb: 'Un chef de alta cocina vuelve al changarro de su familia.', mood: [0, 3] },
+      { p: B + '9253269423305bc1bf85de3196395d7d', title: 'Andor', meta: 'Serie · 2022 · 2 temporadas · ★ 8.4', why: 'Aprobada por la crítica', blurb: 'Cómo empezó la rebelión, contada desde abajo.', mood: [1] },
+      { p: B + 'f1c41a9f815b5fc93e45764c07017085', title: 'Una batalla tras otra', meta: 'Película · 2025 · 2 h 42 · ★ 7.9', why: 'En tendencia', blurb: 'Un exrevolucionario sale a buscar a su hija.', mood: [0, 1] },
+      { p: B + '5fea0e04bc0782476c4430ee494ede1e', title: 'Severance', meta: 'Serie · 2022 · 2 temporadas · ★ 8.7', why: 'La estás viendo', blurb: 'Separan la memoria del trabajo de la de la casa.', mood: [] },
+      { p: B + '82988ffc71915b761fe470bc08126468', title: 'Dark', meta: 'Serie · 2017 · 3 temporadas · ★ 8.7', why: 'La terminaste en septiembre', blurb: 'Un niño desaparece y el pueblo descubre que el tiempo es un círculo.', mood: [] },
+      { p: B + '4c438e8f7a72541df4f1f1cec23f7d35', title: 'Pluribus', meta: 'Serie · 2025 · 1 temporada', why: 'En tendencia', blurb: 'La persona más infeliz del mundo debe salvarlo de la felicidad.', mood: [] },
+      { p: B + '5f30c6fa4f106fd30c79f76adaebefae', title: 'Frankenstein', meta: 'Película · 2025 · 2 h 29', why: 'Temporada de Halloween', blurb: 'Guillermo del Toro cuenta al monstruo y a su creador.', mood: [] },
+      { p: B + '16a3fa461e0fe98fde3a4daa9ca5fa41', title: 'Weapons', meta: 'Película · 2025 · 2 h 8', why: 'Temporada de Halloween', blurb: 'Todos los niños de una clase desaparecen la misma noche.', mood: [1] },
+      { p: B + '62c8f95df6ee76d5685c98832afa320f', title: 'Alien: Earth', meta: 'Serie · 2025 · 2 temporadas', why: 'Nuevo en Disney+', blurb: 'Una nave cae en la Tierra con algo adentro.', mood: [] },
+      { p: B + '8ad3e0af5f7ad1bd9b382fb1b133c97a', title: 'Dune: Parte dos', meta: 'Película · 2024 · 2 h 46', why: 'La estás viendo', blurb: 'Paul se une a los Fremen para vengar a su familia.', mood: [] },
+      { p: B + 'c1d3b5d30bfcdc9491e8f9fd72514ebf', title: 'The Last of Us', meta: 'Serie · 2023 · 2 temporadas', why: 'En tu lista', blurb: 'Un contrabandista cruza un país en ruinas con una niña.', mood: [] },
+      { p: B + '67319c6bb81af70211f1a939ec8cadea', title: 'Breaking Bad', meta: 'Serie · 2008 · 5 temporadas · ★ 9.5', why: 'Lo más popular', blurb: 'Un maestro de química descubre su otro talento.', mood: [] },
+      { p: B + '4948ab7178e9297671c1ff32249e57d5', title: 'Stranger Things', meta: 'Serie · 2016 · 5 temporadas', why: 'Top 10 en Netflix', blurb: 'Un pueblo, un laboratorio y otra dimensión.', mood: [] },
+      { p: B + 'ba326df6b445b666f4bca7d6f2bed29a', title: 'Merlina', meta: 'Serie · 2022 · 2 temporadas', why: 'Top 10 en Netflix', blurb: 'La hija de los Addams en un internado muy raro.', mood: [] },
+      { p: B + '150298b89f8930ad190f31a52d1b1674', title: 'Stargate SG-1', meta: 'Serie · 1997 · 10 temporadas', why: 'Porque viste Stargate', blurb: 'Un equipo cruza portales a otros planetas.', mood: [] }
+    ];
+  }
+  deck() {
+    const all = this.titles();
+    return all.filter((t) => t.mood.indexOf(this.state.mood) >= 0);
+  }
+  next(saved) {
+    const card = this.deck()[this.state.at];
+    this.setState({ anim: true, dx: saved ? 520 : -520 });
+    setTimeout(() => this.setState({ anim: false, dx: 0, at: this.state.at + 1, saved: this.state.saved + (saved ? 1 : 0) }), 260);
+    if (card && saved) this.say('«' + card.title + '» quedó en Mi lista');
+  }
+  renderVals() {
+    const all = this.titles();
+    const deck = this.deck();
+    const card = deck[this.state.at];
+    const under = deck[this.state.at + 1] || card || all[0];
+    const dx = this.state.dx;
+    const moods = [
+      { label: 'Para reír', icon: '/_blob/809143fa431b10fbd336c1db0e87d3a2' },
+      { label: 'Tensión', icon: '/_blob/05401a83bd8d213f028482903419b1fe' },
+      { label: 'Para pensar', icon: '/_blob/8cebf95b19f2ee395e3b6124b651a989' },
+      { label: 'Para llorar', icon: '/_blob/28346e9c6785acdbb0b4a571d6398eca' }
+    ].map((m, i) => ({
+      ...m, on: i === this.state.mood,
+      bg: i === this.state.mood ? 'rgba(95,214,198,.18)' : 'rgba(255,255,255,.06)',
+      line: i === this.state.mood ? 'rgba(95,214,198,.7)' : 'transparent',
+      pick: () => this.setState({ mood: i, at: 0, dx: 0 })
+    }));
+    const tiles = [];
+    for (let r = 0; r < 3; r++) all.forEach((t, i) => tiles.push({ ...t, shift: (i % 3) === 1 ? -26 : 0, open: () => this.setState({ pick: i }) }));
+    return {
+      openMosaic: () => this.setState({ view: 'mosaic', pick: -1 }),
+      openDecide: () => this.setState({ view: 'decide', at: 0, dx: 0 }),
+      closeAll: () => this.setState({ view: 'home', pick: -1 }),
+      inMosaic: this.state.view === 'mosaic',
+      inDecide: this.state.view === 'decide',
+      tiles,
+      hasPick: this.state.pick >= 0,
+      pick: all[Math.max(0, this.state.pick)],
+      closePick: () => this.setState({ pick: -1 }),
+      watchPick: () => { this.say('Abriendo «' + all[this.state.pick].title + '»'); this.setState({ pick: -1 }); },
+      savePick: () => { this.say('«' + all[this.state.pick].title + '» quedó en Mi lista'); this.setState({ pick: -1 }); },
+      moods,
+      hasCard: !!card, noCard: !card,
+      card: card || all[0], under,
+      dx, rot: dx / 18, tr: this.state.anim ? 'transform .26s ease-in' : (this.startX === null ? 'transform .2s ease-out' : 'none'),
+      yes: Math.max(0, Math.min(1, dx / 110)), no: Math.max(0, Math.min(1, -dx / 110)),
+      saved: this.state.saved,
+      down: (e) => { this.startX = e.clientX; if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId); },
+      move: (e) => { if (this.startX !== null) this.setState({ dx: e.clientX - this.startX }); },
+      up: () => {
+        if (this.startX === null) return;
+        this.startX = null;
+        if (this.state.dx > 110) this.next(true);
+        else if (this.state.dx < -110) this.next(false);
+        else this.setState({ dx: 0 });
+      },
+      nope: () => { if (card) this.next(false); },
+      keep: () => { if (card) this.next(true); },
+      watch: () => { if (card) this.say('Abriendo «' + card.title + '»'); },
+      hasToast: !!this.state.toast, toast: this.state.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
