@@ -61,6 +61,11 @@ TRANSLATIONS = {
     "Recomendadas por Trakt con lo que ves": "Recommended by Trakt from what you watch",
     "Filtros de búsqueda": "Search filters",
     "En tendencia esta semana": "Trending this week",
+    "Lo nuevo de lo tuyo": "New from your shows",
+    "Ya salió y lo que viene": "Out now and coming up",
+    "HOY": "TODAY",
+    "Ayer": "Yesterday",
+    "en %lld días": "in %lld days",
     # Modo degradado (docs/producto/modo-degradado.md): la causa de verdad y la salida (`Degraded`, `UserMessages`).
     "Trakt no contesta": "Trakt isn't responding",
     "Real-Debrid no contesta": "Real-Debrid isn't responding",

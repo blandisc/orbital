@@ -1,72 +1,7 @@
 import SwiftUI
 import OrbitalModels
 
-// El carrusel de «En tendencia» en Inicio: la tarjeta del frente nítida y las que siguen a los lados, más chicas, oscuras,
-// desenfocadas y giradas en 3D (coverflow).
-
-extension View {
-    /// El efecto del carrusel: según qué tan lejos del centro está la tarjeta (`phase.value`, −1 a 1), se achica, se
-    /// oscurece, se desenfoca y gira en 3D. Con «Reducir movimiento», quietas.
-    func deckTransition(reduceMotion: Bool) -> some View {
-        scrollTransition(.interactive, axis: .horizontal) { content, phase in
-            content.deckEffect(value: reduceMotion ? 0 : phase.value)
-        }
-    }
-}
-
-extension VisualEffect {
-    /// Lo que le pasa a una tarjeta a `value` lugares del centro (−1 a 1), dentro de `scrollTransition`.
-    func deckEffect(value: Double) -> some VisualEffect {
-        let distance = abs(value)
-        // El desenfoque se queda: además de alejar lo de los lados, dibuja cada tarjeta aparte antes de girarla; sin él, en
-        // coverflow el vidrio de sus botones girado en 3D dejaba una capa con posición inválida y la app se cerraba.
-        return scaleEffect(1 - distance * DS.Deck.sideShrink)
-            .blur(radius: distance * DS.Deck.sideBlur)
-            .brightness(-distance * DS.Deck.sideDim)
-            .rotation3DEffect(.degrees(-value * DS.Deck.coverflowAngle), axis: (x: 0, y: 1, z: 0), perspective: DS.Deck.perspective)
-    }
-}
-
-/// Una tarjeta del carrusel: el arte con su velo, el rótulo, el logo, los datos y las acciones.
-struct DeckCard<Actions: View>: View {
-    let title: String
-    let background: String?
-    var logo: String?
-    var eyebrow: Text?
-    var data: [String] = []
-    /// Abrir la ficha: VoiceOver con la acción «Ver ficha» sobre el nombre (la tarjeta, con su toque).
-    var open: (() -> Void)?
-    /// El título: en una tarjeta alta (el teléfono) va su póster sin texto si lo tiene (`TallArtPicker`).
-    var tall: TallArtKey? = nil
-    @ViewBuilder var actions: () -> Actions
-    @State private var tallBox: Bool?
-
-    var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            TallArtPicker(key: tall, wide: background, tallBox: tallBox) { art, wide in
-                PosterView(url: art, title: title, aspect: nil, bleed: true, maxPoints: DS.Image.bleed, fallback: wide)
-            }
-            LinearGradient(stops: [.init(color: .clear, location: DS.Deck.veilStart), .init(color: DS.scrimStrong, location: 1)],
-                           startPoint: .top, endPoint: .bottom)
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
-                VStack(alignment: .leading, spacing: DS.Space.s3) {
-                    if let eyebrow { Eyebrow(text: eyebrow, accent: true, onArt: true) }
-                    TitleLogo(url: logo, title: title, size: .hero)
-                    if !data.isEmpty { DataLine(parts: data, color: DS.onArtSecondary) }
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityAction(named: Text("Ver ficha")) { open?() }
-                actions()
-            }
-            .onArt()
-            .padding(DS.Space.s4)
-        }
-        .frame(height: DS.Deck.height)
-        .onGeometryChange(for: Bool.self) { Double($0.size.width / max($0.size.height, 1)) < ArtFit.tallBelow } action: { tallBox = $0 }
-        .clipShape(RoundedRectangle(cornerRadius: DS.Deck.radius, style: .continuous))
-        .shadow(color: DS.scrimStrong, radius: DS.Deck.shadow, y: DS.Deck.shadowY)
-    }
-}
+// Tu avatar y el ícono de la app (Ajustes). El carrusel 3D de Inicio (`DeckCard`) se quitó con la portada nueva (30 oct 2026).
 
 /// Tu avatar (Assets › Avatars): un círculo con la ilustración.
 struct AvatarImage: View {

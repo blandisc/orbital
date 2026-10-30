@@ -11,6 +11,15 @@ extension DS {
         static let overlap: CGFloat = 44
     }
 
+    /// «Lo nuevo de lo tuyo»: el ancho de cada pieza, el renglón del día, la marca de hoy y lo apagado de lo que viene.
+    enum HomeTimeline {
+        static let width: CGFloat = 112, labelRow: CGFloat = 18, dot: CGFloat = 7
+        static let markLine: CGFloat = 2, markPad: CGFloat = 3
+        static let soonOpacity: Double = 0.62
+        /// Dónde queda HOY al abrir (de 0 a 1 en el ancho): lo de antes a la izquierda y un poco de lo que viene.
+        static let todayAnchor: CGFloat = 0.62
+    }
+
     enum HomeKind {
         /// Cuánto se queda a la vista el nombre del tipo elegido («Series») después de tocar su ícono en la barra.
         static let tipHold: Duration = .milliseconds(1100)

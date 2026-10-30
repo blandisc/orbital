@@ -2236,6 +2236,17 @@
         }
       }
     },
+    "Ayer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yesterday"
+          }
+        }
+      }
+    },
     "Añadir a Mi lista": {
       "extractionState": "manual",
       "localizations": {
@@ -9459,6 +9470,17 @@
         }
       }
     },
+    "HOY": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TODAY"
+          }
+        }
+      }
+    },
     "HTTP %@": {
       "extractionState": "manual",
       "localizations": {
@@ -11201,6 +11223,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Most watched today · JustWatch"
+          }
+        }
+      }
+    },
+    "Lo nuevo de lo tuyo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New from your shows"
           }
         }
       }
@@ -24605,6 +24638,17 @@
         }
       }
     },
+    "Ya salió y lo que viene": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out now and coming up"
+          }
+        }
+      }
+    },
     "Ya se conocen": {
       "extractionState": "manual",
       "localizations": {
@@ -24711,6 +24755,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "from the start"
+          }
+        }
+      }
+    },
+    "en %lld días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in %lld days"
           }
         }
       }

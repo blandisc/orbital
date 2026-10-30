@@ -95,7 +95,9 @@ struct HomeView: View {
                     DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
                 }
                 // Lo que sale de tus series (solo series: con «Películas» en la barra, no se pinta).
-                if kind != "movie", !model.upcoming.isEmpty { upcoming(model) }
+                if kind != "movie", !model.timeline.isEmpty {
+                    ReleaseTimeline(airings: model.timeline, onOpen: { openTitle = $0 }, onCalendar: { showingCalendar = true })
+                }
                 // Tus recomendaciones de Trakt.
                 if !picks.isEmpty {
                     Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt con lo que ves"), source: .trakt, reflected: true) {
@@ -288,11 +290,15 @@ struct HomeView: View {
         .overlay(alignment: .bottom) {
             PageDots(count: items.count, index: min(heroSlot ?? 0, max(0, items.count - 1)))
                 .padding(.bottom, (scheme == .dark ? DS.HomeHero.overlap : 0) + DS.Space.s3)
+                .allowsHitTesting(false)   // tocar los puntos no abre la ficha
         }
         // En oscuro el arte se funde con el fondo y sube detrás de la barra; en claro es una tarjeta (no pasa detrás).
         .ignoresSafeArea(edges: scheme == .dark ? .top : [])
-        // Cambió la lista (al volver de ver algo, al cambiar el tipo): de vuelta al primero.
-        .onChange(of: items.map(\.id)) { heroSlot = 0 }
+        // Cambió la lista (al volver de ver algo, al cambiar el tipo): te quedas en el que estabas si sigue; si no, el primero.
+        .onChange(of: items.map(\.id)) { old, new in
+            let current = heroSlot.flatMap { old.indices.contains($0) ? old[$0] : nil }
+            heroSlot = current.flatMap { new.firstIndex(of: $0) } ?? 0
+        }
         .task(id: heroSlot) { await tint.load(currentHero?.wide) }   // se cancela si pasas a otro
         .sensoryFeedback(.selection, trigger: heroSlot) { old, _ in old != nil }
     }
@@ -487,56 +493,6 @@ struct HomeView: View {
         let facts = progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes, language: env.language).components(separatedBy: " · ")
         guard item.isNew == true else { return facts }
         return [Strings.tr("Nuevo", language: AppEnvironment.shared.services.appSettings.uiLanguage)] + facts
-    }
-
-    /// «Sale hoy» (A + una portada): lo de hoy en grande con su hora; lo demás, en panorámicas. Sin nada hoy, «Sale pronto».
-    @ViewBuilder private func upcoming(_ model: HomeModel) -> some View {
-        let today = model.airingToday
-        let rest = model.upcoming.filter { $0.id != today?.id }
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .sectionTitle) {
-                DSSectionHead(title: today == nil ? Text("Sale pronto") : Text("Sale hoy"), source: .trakt, eyebrow: Text("De las series que sigues"))
-                Spacer(minLength: DS.Space.s2)
-                // El mes completo: cada día con el color de lo que sale.
-                Button { showingCalendar = true } label: {
-                    DSCapsuleLabel(title: Text(verbatim: Date().formatted(Date.FormatStyle(locale: env.uiLocale).month(.wide)).capitalized(with: env.uiLocale)), symbol: "calendar")
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Calendario del mes"))
-                .accessibilityIdentifier("release-calendar")
-            }
-            .padding(.horizontal, DS.Space.gutter)
-            if let today {
-                TitleNavigationLink(route: today.series.route) {
-                    CoverCard(art: today.series.wide, logo: Artwork.logoURL(metaID: today.series.imdb), title: today.series.title,
-                              why: airingWhen(today), detail: Text(verbatim: today.episodeLabel(env.services.episodeLabel)))
-                }
-                .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
-            }
-            if !rest.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
-                        ForEach(rest) { a in
-                            TitleNavigationLink(route: a.series.route) {
-                                WideCard(art: a.series.wide, logo: Artwork.logoURL(metaID: a.series.imdb), title: a.series.title, badge: airingWhen(a),
-                                         caption: Text(verbatim: "\(a.series.title) · \(a.episodeLabel(env.services.episodeLabel))"))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .scrollTargetLayout()
-                }
-                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-                .scrollTargetBehavior(.viewAligned)
-            }
-        }
-    }
-
-    /// «Hoy · 21:00», «Mañana», «Viernes 24».
-    private func airingWhen(_ a: Airing) -> Text {
-        let locale = env.uiLocale
-        if Calendar.current.isDateInToday(a.day) { return Text("\(Text("Hoy"))\(Text(verbatim: " · "))\(airingTime(a, locale: locale))") }
-        return dayName(a.day, locale: locale)
     }
 
     /// «Seguir viendo» completo: todo (el carrusel solo trae los últimos), en piezas anchas con su avance.
