@@ -255,7 +255,12 @@ struct MainTabs: View {
         })
         TabView(selection: selection) {
             Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
-            Tab("Para ti", image: OrbitalIcon.spark.asset, value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() }.tint(DS.primary) }
+            Tab("Para ti", image: OrbitalIcon.spark.asset, value: 1) {
+                NavigationStack(path: $paths[1]) {
+                    // Colecciones (la repisa): la tarjeta de Para ti empuja `RepisaRoute`; un título abre su ficha en la misma pila.
+                    ParaTiView().navigationDestination(for: RepisaRoute.self) { _ in RepisaView { paths[1].append($0) } }
+                }.tint(DS.primary)
+            }
             // «arrow.down.to.line» no tiene versión rellena: queda de contorno como las demás (el círculo salía siempre relleno).
             Tab("Descargas", systemImage: "arrow.down.to.line", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
                 .badge(pendingDownloads)
@@ -393,6 +398,8 @@ struct MainTabs: View {
         guard Demo.isOn else { return }
         tab = Demo.tab
         if Demo.open == "settings" || Demo.open == "year" { paths[tab].append(SettingsRoute()) }
+        if Demo.open == "repisa" { tab = 1; paths[1].append(RepisaRoute()) }   // `-demo-open repisa`: Colecciones
+        if let id = Demo.repisa { tab = 1; paths[1].append(RepisaRoute()); paths[1].append(id) }   // `-demo-repisa oscar`: una colección
         if let title = Demo.title { paths[tab].append(TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)) }
         if let id = Demo.mediaTitle { paths[tab].append(MiMediaTitleRoute(id: id)) }
         if let id = Demo.playDownload { Task { await env.playDownloaded(metaID: String(id.split(separator: ":").first ?? ""), videoID: id) } }

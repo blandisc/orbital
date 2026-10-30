@@ -19,7 +19,16 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Colecciones, la repisa (`RepisaView`, `CollectionsCard`, `CanonPoster`). Con un entero SwiftUI arma la clave con %lld.
+    "%@ del canon en tu repisa": "%@ from the canon on your shelf", "%lld del canon en tu repisa": "%lld from the canon on your shelf",
+    "A tu repisa": "On your shelf", "Colecciones": "Collections", "Colección Criterion": "The Criterion Collection",
+    "La más clásica que te falta": "The oldest one you're missing", "La más reciente que te falta": "The newest one you're missing",
+    "La n.º %@ de la lista": "No. %@ on the list", "La n.º %lld de la lista": "No. %lld on the list",
+    "Listas famosas": "Famous lists", "Más antiguas": "Oldest", "Más recientes": "Newest", "También en %@": "Also in %@",
+    "Te falta": "Not seen yet", "Top 250": "Top 250", "Top 250 de IMDb": "IMDb Top 250", "Ya la vi": "I've seen it",
+    "%lld de %@": "%lld of %@", "Palma de Oro": "Palme d'Or",
     # Filtro avanzado (`AdvancedFilterSheet`, `FilterEditor`, `FilterTile`, `FameQuadrant`).
+    "%@ solo filtra películas": "%@ only filters movies",
     "Filtros": "Filters", "Formato": "Format", "Origen": "Origin", "Qué tan conocida": "How well known", "Resultados": "Results",
     "Ver más": "Show more", "Ver menos": "Show less", "Ver resultados": "See results", "Ver resultados · %lld": "See results · %lld",
     "Series en emisión": "Airing shows", "Series terminadas": "Ended shows", "En emisión": "Airing", "Terminadas": "Ended",

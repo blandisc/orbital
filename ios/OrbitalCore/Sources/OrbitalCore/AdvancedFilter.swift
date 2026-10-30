@@ -26,8 +26,13 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable {
     /// Países de origen (ISO 3166, «MX») y estudios (ids de TMDB).
     public var countries: Set<String> = []
     public var studios: Set<Int> = []
+    /// El año de hoy: con «desde este año» el piso de votos baja (lo recién estrenado aún tiene pocos).
+    public var currentYear = Calendar.current.component(.year, from: Date())
 
     public init() {}
+
+    /// Los géneros elegidos que TMDB no tiene para series (Terror, Romance, Suspenso, Aventura): solo filtran películas.
+    public var moviesOnlyGenres: [TmdbGenre] { Tmdb.genres.filter { genres.contains($0.slug) && $0.tv == nil } }
 
     /// Cuántos filtros están puestos (el «Ver resultados · 3» y el punto en la puerta).
     public var activeCount: Int {
@@ -41,7 +46,10 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable {
         switch format {
         case .movie: return ["movie"]
         case .series: return ["series"]
-        case .all: return fame == .blockbusters ? ["movie"] : ["movie", "series"]
+        case .all:
+            // Taquilleras son películas; y si todos los géneros que elegiste no existen en series, también.
+            let onlyMovieGenres = !genres.isEmpty && moviesOnlyGenres.count == genres.count
+            return fame == .blockbusters || onlyMovieGenres ? ["movie"] : ["movie", "series"]
         }
     }
 
@@ -85,7 +93,7 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable {
         if !series, !studios.isEmpty { p.append(("with_companies", studios.sorted().map(String.init).joined(separator: "|"))) }
         // Qué tan conocida y la calificación: el piso de votos evita lo que nadie ha visto (salvo «Para pocos»).
         var rating = minRating
-        var votes: (min: Int?, max: Int?) = (100, nil)
+        var votes: (min: Int?, max: Int?) = ((years?.lowerBound ?? 0) >= currentYear ? 30 : 100, nil)
         var sort = "popularity.desc"
         switch fame {
         case .any: break
@@ -107,12 +115,19 @@ extension Tmdb {
     /// Resultados del filtro avanzado: una página de /discover por tipo, en el orden del filtro (películas y series
     /// intercaladas cuando van los dos). Cada fila trae su IMDb después (`ForYou.suggestions`).
     public func discover(_ filter: AdvancedFilter, page: Int = 1) async throws -> [TmdbRow] {
-        var lists: [[TmdbRow]] = []
-        for kind in filter.kinds {
-            let data = try await get("/discover/\(Tmdb.kinds[kind] ?? "movie")", filter.params(kind: kind) + [("page", String(page))])
-            lists.append((data["results"]?.array ?? []).compactMap { r in
-                r["id"]?.intValue.map { TmdbRow(kind: kind, id: $0, voteAverage: r["vote_average"]?.doubleValue ?? 0, popularity: r["popularity"]?.doubleValue ?? 0) }
-            })
+        // Películas y series a la par (con «Todo» tarda lo de una sola búsqueda).
+        let lists = try await withThrowingTaskGroup(of: (Int, [TmdbRow]).self) { group in
+            for (i, kind) in filter.kinds.enumerated() {
+                group.addTask {
+                    let data = try await get("/discover/\(Tmdb.kinds[kind] ?? "movie")", filter.params(kind: kind) + [("page", String(page))])
+                    return (i, (data["results"]?.array ?? []).compactMap { r in
+                        r["id"]?.intValue.map { TmdbRow(kind: kind, id: $0, voteAverage: r["vote_average"]?.doubleValue ?? 0, popularity: r["popularity"]?.doubleValue ?? 0) }
+                    })
+                }
+            }
+            var out = [[TmdbRow]](repeating: [], count: filter.kinds.count)
+            for try await (i, rows) in group { out[i] = rows }
+            return out
         }
         // Intercaladas: una y una, para que «Todo» no sean veinte películas y luego veinte series.
         var out: [TmdbRow] = []

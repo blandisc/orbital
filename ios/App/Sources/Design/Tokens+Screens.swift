@@ -159,6 +159,22 @@ extension DS {
         static let symbol = "heart", symbolFilled = "heart.fill"
     }
 
+    /// Colecciones, la repisa (`ShelfEmblem`, `ShelfLedge`, `ShelfPoster`, `CollectionsCard`): el alto de una estatuilla (en
+    /// la repisa, en la tarjeta de Para ti y en el encabezado), las proporciones del disco y la placa de las listas, la luz de
+    /// la vitrina, la línea de la repisa, lo apagado de un póster que te falta y la línea de las de 5 estrellas.
+    enum Repisa {
+        static let emblem: CGFloat = 84, cardEmblem: CGFloat = 48, header: CGFloat = 64, columns = 5
+        static let discRatio: CGFloat = 0.62, plaqueWidth: CGFloat = 0.52, plaqueHeight: CGFloat = 0.74
+        static let lamp = DS.paper.opacity(0.07)   // ds-exception: la luz de la vitrina, apenas visible
+        static let lampWidth: CGFloat = 1.6, lampHeight: CGFloat = 1.0
+        static let line = DS.overlay(0.22)   // ds-exception: la repisa, una línea fina que se lee en los dos modos
+        static let lineFade = 0.12
+        static let unseenDim: Double = -0.35, favoriteLine: CGFloat = 3
+        static let momentPoster: CGFloat = 150, nextPoster: CGFloat = 40, quickHeight: CGFloat = 290
+        /// El momento de ponerla en la repisa: el velo del fondo y cuánto se queda antes de irse solo.
+        static let momentVeil = 0.94, momentHold: Duration = .seconds(3)
+    }
+
     /// El filtro avanzado (`FilterTile`, `FilterChoice`, `FameQuadrant`): el alto de un filtro en el cajón y de una opción
     /// grande, el velo turquesa de lo elegido (la selección, como los ánimos de «¿Qué vemos hoy?») y el póster de resultados.
     enum Filter {

@@ -186,6 +186,8 @@ enum Demo {
     static var search: String? { value(after: "-demo-search") }
     /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.
     static var open: String? { value(after: "-demo-open") }
+    /// `-demo-repisa oscar`: abre Colecciones en esa colección (oscar, palm, criterion, top250…).
+    static var repisa: String? { value(after: "-demo-repisa") }
     /// `-demo-gesture brightness|volume|seek|fastforward|fastforward-locked`: simula el gesto a medio camino
     /// (sin tocar la pantalla), para capturar su indicador en el simulador. `fastforward-locked` deja el ×2 fijo.
     static var gesture: String? { value(after: "-demo-gesture") }

@@ -92,6 +92,11 @@ struct FilterEditor: View {
                     }
                 }
             }
+            // TMDB no tiene Terror, Romance, Suspenso ni Aventura para series: lo dice en vez de traer series de otro género.
+            let onlyMovies = filter.moviesOnlyGenres
+            if filter.format != .movie, !onlyMovies.isEmpty {
+                Text("\(onlyMovies.map(\.title).joined(separator: ", ")) solo filtra películas").recipe(.footnote, color: DS.textMuted)
+            }
         }
     }
 

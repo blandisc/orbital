@@ -77,4 +77,15 @@ final class AdvancedFilterTests: XCTestCase {
         let rows = try await tmdb.discover(AdvancedFilter())
         XCTAssertEqual(rows.map(\.id), [1, 10, 2, 20, 3])
     }
+
+    func testGenerosSoloDePeliculasYLoRecienEstrenado() {
+        var f = AdvancedFilter()
+        f.genres = ["terror"]
+        XCTAssertEqual(f.kinds, ["movie"], "Terror no existe en series: con «Todo» no salen series de otro género")
+        f.genres = ["terror", "comedia"]
+        XCTAssertEqual(f.kinds, ["movie", "series"])
+        XCTAssertEqual(f.moviesOnlyGenres.map(\.slug), ["terror"])
+        f.currentYear = 2026; f.years = 2026...2026
+        XCTAssertEqual(dict(f.params(kind: "movie"))["vote_count.gte"], "30", "lo de este año aún tiene pocos votos")
+    }
 }

@@ -67,6 +67,17 @@
         }
       }
     },
+    "%@ del canon en tu repisa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ from the canon on your shelf"
+          }
+        }
+      }
+    },
     "%@ descargas": {
       "extractionState": "manual",
       "localizations": {
@@ -118,6 +129,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ without a match: check that the file name says the title (and the year)."
+          }
+        }
+      }
+    },
+    "%@ solo filtra películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ only filters movies"
           }
         }
       }
@@ -210,6 +232,17 @@
         }
       }
     },
+    "%lld de %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %@"
+          }
+        }
+      }
+    },
     "%lld de %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -239,6 +272,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld of %lld watched"
+          }
+        }
+      }
+    },
+    "%lld del canon en tu repisa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld from the canon on your shelf"
           }
         }
       }
@@ -624,6 +668,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "In sync"
+          }
+        }
+      }
+    },
+    "A tu repisa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On your shelf"
           }
         }
       }
@@ -3605,6 +3660,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Matches your copy"
+          }
+        }
+      }
+    },
+    "Colecciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collections"
+          }
+        }
+      }
+    },
+    "Colección Criterion": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Criterion Collection"
           }
         }
       }
@@ -10205,6 +10282,50 @@
         }
       }
     },
+    "La más clásica que te falta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The oldest one you're missing"
+          }
+        }
+      }
+    },
+    "La más reciente que te falta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The newest one you're missing"
+          }
+        }
+      }
+    },
+    "La n.º %@ de la lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No. %@ on the list"
+          }
+        }
+      }
+    },
+    "La n.º %lld de la lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No. %lld on the list"
+          }
+        }
+      }
+    },
     "La que elegimos por calidad, idioma y tamaño. Es la que arranca sola.": {
       "extractionState": "manual",
       "localizations": {
@@ -10618,6 +10739,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trakt lists"
+          }
+        }
+      }
+    },
+    "Listas famosas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Famous lists"
           }
         }
       }
@@ -12604,6 +12736,17 @@
         }
       }
     },
+    "Más antiguas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oldest"
+          }
+        }
+      }
+    },
     "Más arriba": {
       "extractionState": "manual",
       "localizations": {
@@ -12841,6 +12984,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "More options"
+          }
+        }
+      }
+    },
+    "Más recientes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Newest"
           }
         }
       }
@@ -19840,6 +19994,17 @@
         }
       }
     },
+    "También en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also in %@"
+          }
+        }
+      }
+    },
     "También tenías": {
       "extractionState": "manual",
       "localizations": {
@@ -19913,6 +20078,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Listening…"
+          }
+        }
+      }
+    },
+    "Te falta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not seen yet"
           }
         }
       }
@@ -21686,6 +21862,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Top 10 · Series"
+          }
+        }
+      }
+    },
+    "Top 250": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top 250"
+          }
+        }
+      }
+    },
+    "Top 250 de IMDb": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IMDb Top 250"
           }
         }
       }
@@ -24315,6 +24513,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You already downloaded it"
+          }
+        }
+      }
+    },
+    "Ya la vi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I've seen it"
           }
         }
       }
