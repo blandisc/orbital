@@ -15,7 +15,7 @@ extension DemoHTTPClient {
         }
         switch path {
         case "/sync/history": return [movie("tt4975722", "Moonlight", 0.5), movie("tt6751668", "Parásitos", 3), episode(1, 4), episode(2, 4), episode(3, 5)]
-        case "/sync/ratings/movies", "/sync/ratings/shows": return []
+        case "/sync/ratings/movies", "/sync/ratings/shows", "/sync/ratings/episodes": return []
         case "/sync/ratings", "/sync/ratings/remove": return ["added": ["movies": 1]]
         default: return nil
         }

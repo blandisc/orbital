@@ -21,6 +21,9 @@ struct EpisodeRowView: View {
     var resumeDownload: () -> Void = {}
     var downloadFraction: Double?
     var playOnTV: (() -> Void)?
+    /// Tus estrellas de este capítulo (en Trakt) y calificarlo: solo se ofrecen en los que ya viste.
+    var rating: Double?
+    var rate: ((Double?) -> Void)?
 
     var body: some View { bodyContent.pointerHover(.highlight) }
     @ViewBuilder private var bodyContent: some View {
@@ -53,6 +56,17 @@ struct EpisodeRowView: View {
             stateIcon.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget, alignment: .trailing)
         }
         .padding(.vertical, DS.Space.s3)
+        // Calificar el capítulo: las estrellas en su propio renglón bajo el texto, fuera del botón que reproduce (tocarlas no
+        // lo pone).
+        .padding(.bottom, row.watched && rate != nil ? DS.Rating.episodeRow : 0)
+        .overlay(alignment: .bottomLeading) {
+            if row.watched, let rate {
+                RatingStars(value: rating, size: DS.Rating.starEpisode, onChange: rate)
+                    .padding(.leading, DS.Poster.episodeThumbWidth + DS.Space.s3)
+                    .padding(.bottom, DS.Space.s3)
+                    .accessibilityIdentifier("episode-rating")
+            }
+        }
         .opacity(row.airs == nil ? 1 : DesignTokens.Opacity.faint)
         .contextMenu { if row.airs == nil { actions(download: true) } }
     }

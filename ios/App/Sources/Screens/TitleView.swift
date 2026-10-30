@@ -428,13 +428,15 @@ struct TitleView: View {
                 ProgressView(value: Double(progress.watched), total: Double(progress.total)).tint(DS.brandMoon)
             }
         }
+        let _ = env.ratings.track()   // tus estrellas de cada capítulo: calificar uno vuelve a pintar la lista
         LazyVStack(spacing: 0) {   // perezosa: una serie larga no arma (ni pide imágenes de) todos sus episodios a la vez
             ForEach(model.rows) { row in
                 EpisodeRowView(row: row, play: { if row.airs == nil { start(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
                                markWatched: { Task { if row.watched { await model.unmarkWatched(row.id) } else { await model.markWatched(row.id) } } }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
                                resumeDownload: { Task { await model.resumeDownload(row.id) } },
                                downloadFraction: model.downloadFraction(row.id),
-                               playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil)
+                               playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil,
+                               rating: env.ratings.stars(row.id), rate: rateEpisode(model, row.id))
                 Divider().overlay(DS.hairline)
             }
         }

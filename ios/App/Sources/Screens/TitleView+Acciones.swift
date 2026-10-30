@@ -95,4 +95,11 @@ extension TitleView {
             .accessibilityIdentifier("title-your-rating")
         }
     }
+
+    /// Calificar un capítulo (con Trakt): su video id es la clave en Trakt.
+    func rateEpisode(_ model: TitleModel, _ videoID: String) -> ((Double?) -> Void)? {
+        guard model.canFavorite else { return nil }
+        let ratings = env.ratings
+        return { (stars: Double?) -> Void in Task { await ratings.rate(imdb: videoID, kind: "series", stars: stars) } }
+    }
 }

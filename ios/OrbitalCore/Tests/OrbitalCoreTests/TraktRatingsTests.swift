@@ -68,4 +68,24 @@ final class TraktRatingsTests: XCTestCase {
         XCTAssertTrue(again.pendingRatings.isEmpty)
         XCTAssertEqual(http.bodies(for: "\(api)/sync/ratings").first.flatMap(JSON.parse)?["movies"]?.array?.first?["rating"]?.intValue, 9)
     }
+
+    func testLosCapitulosSeCalificanPorLaSerieYSeLeenConSuVideoID() async throws {
+        let http = FakeHTTP()
+        http.json["\(api)/sync/ratings/movies"] = []
+        http.json["\(api)/sync/ratings/shows"] = []
+        http.json["\(api)/sync/ratings/episodes"] = [["rating": 10, "type": "episode", "episode": ["season": 2, "number": 5, "ids": ["trakt": 9]],
+                                                     "show": ["title": "The Office", "ids": ["imdb": "tt0386676"]]]]
+        http.json["\(api)/sync/ratings"] = ["added": ["episodes": 1]]
+        let trakt = makeTrakt(http)
+        let found = try await trakt.myRatings()
+        XCTAssertEqual(found, ["tt0386676:2:5": 10])
+        try await trakt.setRating(imdb: "tt0386676:3:1", series: true, rating: 8)
+        let body = try XCTUnwrap(http.bodies(for: "\(api)/sync/ratings").first.flatMap(JSON.parse))
+        let show = body["shows"]?.array?.first
+        XCTAssertEqual(show?["ids"]?["imdb"]?.string, "tt0386676")
+        XCTAssertEqual(show?["seasons"]?.array?.first?["number"]?.intValue, 3)
+        XCTAssertEqual(show?["seasons"]?.array?.first?["episodes"]?.array?.first?["number"]?.intValue, 1)
+        XCTAssertEqual(show?["seasons"]?.array?.first?["episodes"]?.array?.first?["rating"]?.intValue, 8)
+        XCTAssertNil(body["movies"])
+    }
 }
