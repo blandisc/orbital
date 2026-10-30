@@ -24,6 +24,8 @@ public final class CollectionsModel: ObservableModel {
     public var tmdbReady: Bool { services.tmdb.configured }
     /// «Temporadas»: la de hoy primero (o la siguiente en llegar) y las demás en el orden en que llegan; lo de cada una se pide al verla.
     public var seasons: [TmdbSeason] { Tmdb.orderedSeasons(today: services.now()) }
+    /// Las temporadas con los días que faltan (0: ya va), de la más cercana a la más lejana.
+    public var seasonCountdown: [(season: TmdbSeason, days: Int)] { Tmdb.seasonCountdown(today: services.now()) }
     public private(set) var seasonItems: [String: [Suggestion]] = [:] { didSet { changed() } }
     /// «Lo mejor del género»: los 14 géneros y el Top de cada uno (con el año de verdad), que se pide al verlo.
     public let genres: [TmdbGenre] = Tmdb.genres

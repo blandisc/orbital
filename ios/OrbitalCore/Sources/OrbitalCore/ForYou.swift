@@ -91,6 +91,8 @@ public actor ForYou {
         var out: [ForYouList] = []
         if linked {
             out += [ForYouList(id: "watchlist", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false),
+                    // Tus favoritos (la lista con el corazón): van en «Tuyo» de Para ti junto a tu watchlist y tus series.
+                    ForYouList(id: Self.favoritesList, title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false),
                     ForYouList(id: "mine", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false),
                     ForYouList(id: "estrenos", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false)]
             let own = await ownLists

@@ -87,8 +87,8 @@ final class ForYouTests: XCTestCase {
         http.json["https://api.themoviedb.org/3/watch/providers/movie?watch_region=MX&api_key=K&language=es-MX"] = ["results": [["provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.jpg"]]]
         http.json["https://api.themoviedb.org/3/watch/providers/tv?watch_region=MX&api_key=K&language=es-MX"] = ["results": []]
         let lists = await makeForYou(http, tmdbKey: "K").lists()
-        XCTAssertEqual(lists.map(\.id), ["watchlist", "mine", "estrenos", "list:77", "recs", "trend", "popular", "netflix"])
-        XCTAssertEqual(lists.map(\.group), [.mine, .mine, .mine, .mine, .discover, .discover, .discover, .platforms])
+        XCTAssertEqual(lists.map(\.id), ["watchlist", "favorites", "mine", "estrenos", "list:77", "recs", "trend", "popular", "netflix"])
+        XCTAssertEqual(lists.map(\.group), [.mine, .mine, .mine, .mine, .mine, .discover, .discover, .discover, .platforms])
         XCTAssertEqual(lists.first { $0.id == "list:77" }?.title, "Terror")
         XCTAssertEqual(lists.last?.brand, "netflix")
     }
