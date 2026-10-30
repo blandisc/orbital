@@ -48,7 +48,6 @@ struct HomeView: View {
         let continuing = model.continueWatching.filter { fits($0.kind) }
         let picks = model.forYouPicks.filter { fits($0.kind) }
         let pending = model.traktPending.filter { fits($0.kind) }
-        let favorites = model.favorites.filter { fits($0.kind) }
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 if model.offline {
@@ -114,13 +113,7 @@ struct HomeView: View {
                 // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
                 if model.hasAnyTop { topTen(model) }
                 if !pending.isEmpty { watchlist(model, items: pending) }
-                // Tus favoritos de Trakt (el corazón de la ficha): aquí hasta que Para ti tenga su grupo «Tuyo».
-                if !favorites.isEmpty {
-                    Rail(title: "Favoritos", count: favorites.count, route: HomeListRoute(id: "favorites"),
-                         eyebrow: Text("Lo que marcaste con el corazón"), source: .trakt, reflected: true) {
-                        ForEach(favorites) { s in TitleLink(route: s.route).contextMenu { favoriteActions(s) } }
-                    }
-                }
+                // Tus favoritos viven en Para ti › Tuyo (Fernando, 30 oct 2026): Inicio termina en Mi lista.
             }
             .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
             .padding(.bottom, DS.Space.s2)      // la barra de pestañas ya deja su espacio: más aquí era aire muerto al final
@@ -198,15 +191,11 @@ struct HomeView: View {
 
     /// Con orden y filtros (películas o series, género, ocultar lo visto), como toda lista abierta desde «Ver todo».
     private func titleGrid(_ route: HomeListRoute) -> some View {
-        let items: [Suggestion] = route.id == "watchlist" ? home.model.traktPending
-            : route.id == "foryou" ? home.model.forYouPicks
-            : home.model.favorites
+        let items: [Suggestion] = route.id == "watchlist" ? home.model.traktPending : home.model.forYouPicks
         return ScrollView {
             SortableGrid(listID: "home:\(route.id)", items: items, collections: env.collections) { s, width in
                 if let list = route.list {
                     TitleLink(route: s.route, width: width).contextMenu { listActions(s, in: list) }
-                } else if route.id == "favorites" {
-                    TitleLink(route: s.route, width: width).contextMenu { favoriteActions(s) }
                 } else {
                     TitleLink(route: s.route, width: width)
                 }
@@ -214,7 +203,7 @@ struct HomeView: View {
                 .padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop(tint: tint.colors))
-        .navigationTitle(route.id == "watchlist" ? Text("Mi lista") : route.id == "foryou" ? Text("Sugerencias para ti") : Text("Favoritos"))
+        .navigationTitle(route.id == "watchlist" ? Text("Mi lista") : Text("Sugerencias para ti"))
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -237,11 +226,6 @@ struct HomeView: View {
         SuggestionActions(suggestion: s, list: list, onWatched: { model.setShown($0.imdb, in: list, shown: false) }) { s in
             Task { await env.remove(s, from: list) { shown in model.setShown(s.imdb, in: list, shown: shown) } }
         }
-    }
-
-    /// Al dejar picado uno de tus favoritos: ver, guardar, descargar, en la TV y «Quitar de favoritos» (con «Deshacer»).
-    @ViewBuilder private func favoriteActions(_ s: Suggestion) -> some View {
-        SuggestionActions(suggestion: s, favorite: true) { s in Task { await env.removeFavorite(s) } }
     }
 
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
