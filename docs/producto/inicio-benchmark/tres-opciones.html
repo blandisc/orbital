@@ -1,0 +1,239 @@
+<title>Inicio del iPhone: benchmark</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Página de lectura en una columna; las tres opciones son teléfonos lado a lado que se apilan en el celular */
+:root {
+  --bg: #f2f3f7; --surface: #ffffff; --fg: #171a24; --muted: #596075; --line: #dcdfe9;
+  --accent: #4b4fd8; --good: #1f8a5b; --warn: #b5651d;
+  --scr: #0c0e15; --scr-2: #1b1f2c; --scr-3: #2a2f40; --scr-fg: #eef0f7; --scr-mute: #9ea4b8; --scr-acc: #8d90ff; --scr-good: #4fd194; --scr-warn: #f0a85e;
+  --display: "Fraunces", Georgia, serif; --body: "Atkinson Hyperlegible", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b0d13; --surface: #151824; --fg: #eaecf4; --muted: #9aa0b4; --line: #262a39;
+  --accent: #8d90ff; --good: #4fd194; --warn: #f0a85e; --scr: #05060a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0b0d13; --surface: #151824; --fg: #eaecf4; --muted: #9aa0b4; --line: #262a39;
+  --accent: #8d90ff; --good: #4fd194; --warn: #f0a85e; --scr: #05060a; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.55 var(--body); }
+main { max-width: 1120px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 44px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); } h2 { font-size: 1.45rem; } h3 { font-size: 1.15rem; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); font-size: 1.05rem; }
+.eyebrow { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+section { display: flex; flex-direction: column; gap: 16px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: .9rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+td:first-child { font-weight: 700; white-space: nowrap; }
+.kind { font-size: .72rem; color: var(--muted); font-weight: 400; display: block; }
+.lessons { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.lesson { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lesson b { font-size: 1rem; }
+.lesson span { color: var(--muted); font-size: .9rem; }
+.options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 900px) { .options { grid-template-columns: 1fr; } }
+.opt { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.opt.pick .tag { background: var(--accent); color: var(--surface); }
+.tag { align-self: flex-start; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.opt .what { color: var(--muted); font-size: .95rem; }
+.gp { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: .88rem; }
+.gp div { display: flex; flex-direction: column; gap: 4px; }
+.gp b { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; }
+.gp .g b { color: var(--good); } .gp .l b { color: var(--warn); }
+.meta { font-size: .85rem; color: var(--muted); }
+/* Teléfono */
+.phone { width: 100%; max-width: 300px; margin: 0 auto; aspect-ratio: 9 / 19.5; background: var(--scr); color: var(--scr-fg); border-radius: 34px; border: 6px solid var(--scr-3);
+  overflow: hidden; display: flex; flex-direction: column; font-size: 11px; line-height: 1.3; position: relative; }
+.ph-top { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px 6px; font-weight: 700; }
+.ph-top .icons { display: flex; gap: 6px; } .ph-top .icons i { width: 18px; height: 18px; border-radius: 50%; background: var(--scr-2); display: block; }
+.ph-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 10px; padding: 0 12px; }
+.ph-tabs { display: flex; justify-content: space-around; padding: 8px 6px 12px; margin: 0 10px 8px; background: var(--scr-2); border-radius: 22px; font-size: 9.5px; color: var(--scr-mute); }
+.ph-tabs .on { color: var(--scr-fg); font-weight: 700; }
+.sh { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 12px; }
+.sh small { color: var(--scr-mute); font-weight: 400; font-size: 9.5px; }
+.strip { display: flex; gap: 6px; overflow: hidden; }
+.post { flex: 0 0 52px; aspect-ratio: 2/3; border-radius: 6px; background: linear-gradient(160deg, var(--c1, #3b4a7a), var(--c2, #141826)); position: relative; }
+.post .b { position: absolute; left: 3px; top: 3px; font-size: 7.5px; font-weight: 700; background: var(--scr-acc); color: var(--scr); padding: 1px 4px; border-radius: 4px; }
+.post .b.n { background: var(--scr-good); }
+.wide { flex: 0 0 150px; aspect-ratio: 16/9; border-radius: 8px; background: linear-gradient(160deg, var(--c1, #5a3b6e), var(--c2, #161420)); position: relative; padding: 6px; display: flex; flex-direction: column; justify-content: flex-end; }
+.wide .t { font-weight: 700; font-size: 10.5px; } .wide .s { color: var(--scr-mute); font-size: 9px; }
+.prog { height: 3px; border-radius: 2px; background: #ffffff30; margin-top: 4px; } .prog i { display: block; height: 100%; border-radius: 2px; background: var(--scr-fg); }
+.play { position: absolute; right: 6px; top: 6px; width: 20px; height: 20px; border-radius: 50%; background: #ffffffd9; color: var(--scr); display: flex; align-items: center; justify-content: center; font-size: 9px; }
+.lrow { display: flex; gap: 8px; align-items: center; background: var(--scr-2); border-radius: 10px; padding: 6px; }
+.lrow .post { flex-basis: 30px; }
+.lrow .tx { flex: 1; min-width: 0; } .lrow .tx b { display: block; font-size: 10.5px; } .lrow .tx span { color: var(--scr-mute); font-size: 9px; }
+.lrow .when { font-size: 9px; font-weight: 700; color: var(--scr-good); text-align: right; }
+.seg { display: flex; background: var(--scr-2); border-radius: 99px; padding: 2px; font-size: 9.5px; }
+.seg span { flex: 1; text-align: center; padding: 4px 0; border-radius: 99px; color: var(--scr-mute); } .seg .on { background: var(--scr-3); color: var(--scr-fg); font-weight: 700; }
+.hero { border-radius: 14px; aspect-ratio: 4/4.4; background: linear-gradient(170deg, var(--c1, #2f5d6e), var(--c2, #0d1a20) 75%); padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; position: relative; }
+.hero.short { aspect-ratio: 16/12; }
+.hero .why { color: var(--scr-acc); font-weight: 700; font-size: 9.5px; }
+.hero .t { font-family: var(--display); font-size: 17px; }
+.hero .s { color: var(--scr-mute); font-size: 9.5px; }
+.btns { display: flex; gap: 5px; } .btns span { background: var(--scr-fg); color: var(--scr); font-weight: 700; padding: 4px 9px; border-radius: 99px; font-size: 9.5px; } .btns span.g { background: #ffffff26; color: var(--scr-fg); }
+.over { margin-top: -38px; position: relative; display: flex; gap: 6px; padding: 0 6px; }
+.over .wide { flex-basis: 118px; border: 1px solid #ffffff22; }
+.chips { display: flex; gap: 5px; flex-wrap: nowrap; overflow: hidden; } .chips span { flex: none; border: 1px solid var(--scr-3); padding: 3px 8px; border-radius: 99px; font-size: 9.5px; color: var(--scr-mute); } .chips .on { background: var(--scr-fg); color: var(--scr); border-color: var(--scr-fg); font-weight: 700; }
+.mini { display: flex; gap: 6px; align-items: center; background: var(--scr-2); border-radius: 99px; padding: 4px 10px 4px 4px; font-size: 9.5px; }
+.mini i { width: 22px; height: 22px; border-radius: 50%; background: var(--scr-fg); color: var(--scr); display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 8px; flex: none; }
+.verdict { background: var(--surface); border: 2px solid var(--accent); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.sources { font-size: .85rem; color: var(--muted); }
+.sources ul { margin: 6px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+.sources a { color: var(--accent); word-break: break-word; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<main>
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <div class="eyebrow">Orbital · iPhone · Inicio · 29 oct 2026</div>
+    <h1>Qué hacen las apps de streaming y de seguimiento con su Inicio, y tres opciones para el nuestro</h1>
+    <p class="lead">Revisé cómo arman su pantalla de inicio cuatro apps de streaming (Netflix, Apple TV, Plex, Roku) y cuatro de seguimiento tipo Trakt (Trakt, Sequel, TV Time, Letterboxd). Abajo están las lecciones y tres formas de cambiar el Inicio de Orbital, cada una inspirada en un grupo distinto.</p>
+  </header>
+
+  <section>
+    <h2>El benchmark</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>App</th><th>Qué pone arriba</th><th>Qué hace bien</th><th>Qué le salió mal</th></tr></thead>
+        <tbody>
+          <tr><td>Netflix<span class="kind">streaming · 2025–26</span></td><td>Una tarjeta grande por categoría con descripción. En 2026 suma «Clips», un feed vertical de escenas para decidir</td><td>Ayuda a decidir: escenas, búsqueda por ánimo («algo divertido»), recomendaciones que cambian con lo que acabas de ver. Lo tuyo (Seguir viendo, Mi lista, Recordatorios) vive junto en «My Netflix»</td><td>Para seguir viendo hay que ir a otra sección en la TV</td></tr>
+          <tr><td>Apple TV<span class="kind">streaming · tvOS 26</span></td><td>Seguir viendo con el avance encima del arte; pósters verticales para ver más títulos a la vez</td><td>La tarjeta de Seguir viendo dice dónde vas sin abrirla</td><td>En 2022 puso un carrusel promocional arriba de «Up Next» y hubo muchas quejas por tener que bajar</td></tr>
+          <tr><td>Plex<span class="kind">streaming · 2025</span></td><td>Inicio personal; Biblioteca y Descubrir en pestañas aparte</td><td>Separa «lo mío» de «lo nuevo»</td><td>Quejas de que retomar una película se volvió difícil</td></tr>
+          <tr><td>Roku<span class="kind">TV · mayo 2026</span></td><td>«Top Picks for You» y atajos a Seguir viendo y Guardado</td><td>Una sola sección de sugerencias para ti</td><td>Le criticaron no tener una fila de Seguir viendo en el inicio</td></tr>
+          <tr><td>Trakt<span class="kind">seguimiento · 2025</span></td><td>«Continue Watching» y «Start Watching»: lo de tu lista que ya salió, ordenado por fecha de estreno. Un selector Todo · Series · Películas filtra todo</td><td>Convierte la lista de pendientes en algo vivo: te avisa cuando ya puedes verlo</td><td>El rediseño fue polémico; quitaron el «Up Next» vertical y luego lo regresaron como opción</td></tr>
+          <tr><td>Sequel<span class="kind">seguimiento · iOS 26</span></td><td>Tu progreso por categoría, una búsqueda al centro y un solo botón de agregar</td><td>Limpio; widgets de «Up Next» y cuentas regresivas a estrenos</td><td>Poca ayuda para descubrir</td></tr>
+          <tr><td>TV Time<span class="kind">seguimiento</span></td><td>Episodios por ver y lo que sale pronto</td><td>Lo que te falta y lo que se te pasó, a la vista</td><td>Solo series; recomendaciones flojas</td></tr>
+          <tr><td>Letterboxd<span class="kind">seguimiento social</span></td><td>Lo popular de la semana y lo que ven tus amigos</td><td>Sugerir con una razón humana («tu amigo le dio 5»)</td><td>Depende de tener amigos activos ahí</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cinco lecciones</h2>
+    <div class="lessons">
+      <div class="lesson"><b>1. Lo tuyo primero, siempre</b><span>Apple TV, Plex y Roku recibieron quejas por la misma razón: esconder «Seguir viendo». En Orbital pasa hoy con el carrusel de tendencias.</span></div>
+      <div class="lesson"><b>2. La lista de pendientes debe avisar</b><span>«Start Watching» de Trakt y las cuentas regresivas de Sequel convierten «Mi lista» en «ya salió, ya puedes verla».</span></div>
+      <div class="lesson"><b>3. Un filtro arriba para toda la página</b><span>Trakt y Netflix separan Series y Películas con un selector que cambia todo, no solo una fila.</span></div>
+      <div class="lesson"><b>4. Ayudar a decidir con una sola pieza</b><span>Netflix (Clips, búsqueda por ánimo) y Roku (Top Picks) apuestan a una respuesta, no a más filas.</span></div>
+      <div class="lesson"><b>5. Cada sugerencia con su porqué</b><span>Letterboxd y Netflix dicen por qué te enseñan algo. Una razón vende más que el nombre del servicio.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tres opciones para el Inicio</h2>
+    <p>Las tres dejan «Seguir viendo» arriba. Lo que cambia es qué va después: más seguimiento, más portada o más ayuda para decidir.</p>
+    <div class="options">
+
+      <article class="opt pick">
+        <span class="tag">Opción 1 · recomendada</span>
+        <h3>«Tu tablero», al estilo Trakt</h3>
+        <div class="phone" role="img" aria-label="Maqueta de la opción 1">
+          <div class="ph-top"><span>Orbital</span><span class="icons"><i></i><i></i><i></i></span></div>
+          <div class="ph-body">
+            <div class="seg"><span class="on">Todo</span><span>Series</span><span>Películas</span></div>
+            <div class="sh">Seguir viendo <small>3</small></div>
+            <div class="strip">
+              <div class="wide" style="--c1:#6e4a2f"><span class="play">▶</span><span class="t">Severance</span><span class="s">Sigue: T2 E7 · 48 min</span><div class="prog"><i style="width:35%"></i></div></div>
+              <div class="wide" style="--c1:#2f5d6e"><span class="play">▶</span><span class="t">Dune</span><span class="s">Quedan 54 min</span><div class="prog"><i style="width:65%"></i></div></div>
+            </div>
+            <div class="sh">Ya salió <small>de tu lista y tus series</small></div>
+            <div class="lrow"><div class="post" style="--c1:#7a3b4a"></div><div class="tx"><b>The Bear · T4 E1</b><span>Salió hoy</span></div><div class="when">Nuevo</div></div>
+            <div class="lrow"><div class="post" style="--c1:#3b7a5c"></div><div class="tx"><b>Weapons</b><span>De tu lista · ya en casa</span></div><div class="when">Lista</div></div>
+            <div class="sh">Sale pronto</div>
+            <div class="lrow"><div class="post" style="--c1:#4a3b7a"></div><div class="tx"><b>Stranger Things 5</b><span>Viernes 21:00</span></div><div class="when" style="color:var(--scr-acc)">en 2 días</div></div>
+            <div class="sh">Para ti <small>porque viste Dark</small></div>
+            <div class="strip"><div class="post"></div><div class="post" style="--c1:#6e2f4a"></div><div class="post" style="--c1:#2f6e5a"></div><div class="post"></div><div class="post"></div></div>
+          </div>
+          <div class="ph-tabs"><span class="on">Inicio</span><span>Para ti</span><span>Descargas</span><span>Buscar</span></div>
+        </div>
+        <p class="what">El Inicio se vuelve tu tablero: dónde te quedaste, qué ya salió de lo que esperas y qué viene. Las tendencias y el Top 10 se mudan a «Para ti», que queda para pasear.</p>
+        <div class="gp"><div class="g"><b>Ganas</b>Abres y en 2 segundos sabes qué ver de lo tuyo. Mi lista deja de ser un cajón: te avisa. Nada repetido entre pestañas.</div><div class="l"><b>Pierdes</b>El carrusel grande ya no abre la app. Lo de todos queda a un toque, en Para ti.</div></div>
+        <p class="meta">Esfuerzo: bajo a medio. Casi todo ya existe (Seguir viendo, calendario de Trakt, Mi lista); lo nuevo es juntar «Ya salió».</p>
+      </article>
+
+      <article class="opt">
+        <span class="tag">Opción 2</span>
+        <h3>«Portada con tu lugar», al estilo Apple TV</h3>
+        <div class="phone" role="img" aria-label="Maqueta de la opción 2">
+          <div class="ph-top"><span>Orbital</span><span class="icons"><i></i><i></i><i></i></span></div>
+          <div class="ph-body">
+            <div class="seg"><span class="on">Todo</span><span>Series</span><span>Películas</span></div>
+            <div class="hero short" style="--c1:#5a2f6e"><span class="why">En tendencia en México</span><span class="t">Frankenstein</span><span class="s">Película · 2 h 29 · ★ 7.8</span><div style="height:30px"></div></div>
+            <div class="over">
+              <div class="wide" style="--c1:#6e4a2f"><span class="play">▶</span><span class="t">Severance</span><span class="s">T2 E7</span><div class="prog"><i style="width:35%"></i></div></div>
+              <div class="wide" style="--c1:#2f5d6e"><span class="play">▶</span><span class="t">Dune</span><span class="s">54 min</span><div class="prog"><i style="width:65%"></i></div></div>
+            </div>
+            <div class="sh">Para ti <small>porque viste Dark</small></div>
+            <div class="strip"><div class="post"><span class="b">Para ti</span></div><div class="post" style="--c1:#6e2f4a"></div><div class="post" style="--c1:#2f6e5a"></div><div class="post"></div><div class="post"></div></div>
+            <div class="sh">Top 10 en tus plataformas</div>
+            <div class="strip"><div class="post" style="--c1:#7a3b4a"><span class="b">1</span></div><div class="post"><span class="b">2</span></div><div class="post" style="--c1:#3b7a5c"><span class="b">3</span></div><div class="post"><span class="b">4</span></div><div class="post"><span class="b">5</span></div></div>
+            <div class="sh">Mi lista</div>
+            <div class="strip"><div class="post"><span class="b n">Nuevo</span></div><div class="post" style="--c1:#4a3b7a"></div><div class="post"></div><div class="post"></div><div class="post"></div></div>
+          </div>
+          <div class="ph-tabs"><span class="on">Inicio</span><span>Para ti</span><span>Descargas</span><span>Buscar</span></div>
+        </div>
+        <p class="what">Se queda la portada de tendencias, más baja, con Seguir viendo encimado en su borde: lo ves sin bajar. Un selector arriba filtra toda la página. Insignias en los pósters («Nuevo», «1»).</p>
+        <div class="gp"><div class="g"><b>Ganas</b>El cambio más chico y seguro. Se conserva el look de portada. Seguir viendo visible también en el SE.</div><div class="l"><b>Pierdes</b>No ayuda a decidir más que hoy. Sigue siendo un catálogo largo de filas.</div></div>
+        <p class="meta">Esfuerzo: bajo. Es reacomodar y achicar lo que ya hay.</p>
+      </article>
+
+      <article class="opt">
+        <span class="tag">Opción 3</span>
+        <h3>«Elige por mí», al estilo Netflix</h3>
+        <div class="phone" role="img" aria-label="Maqueta de la opción 3">
+          <div class="ph-top"><span>Orbital</span><span class="icons"><i></i><i></i><i></i></span></div>
+          <div class="ph-body">
+            <div class="mini"><i>▶</i><span><b>Severance</b> · sigue T2 E7 · 48 min</span></div>
+            <div class="chips"><span class="on">Para ti</span><span>Para reír</span><span>&lt; 1 h</span><span>Tensión</span><span>Película</span></div>
+            <div class="hero" style="--c1:#2f4a6e"><span class="why">Porque te terminaste Dark en dos semanas</span><span class="t">Coherence</span><span class="s">Película · 1 h 29 · ★ 7.2 · lista para ver</span><div class="btns"><span>▶ Ver</span><span class="g">Tráiler</span><span class="g">Otra</span></div></div>
+            <div class="sh">Ya salió <small>de lo tuyo</small></div>
+            <div class="lrow"><div class="post" style="--c1:#7a3b4a"></div><div class="tx"><b>The Bear · T4 E1</b><span>Salió hoy</span></div><div class="when">Nuevo</div></div>
+            <div class="sh">Lo que todos ven</div>
+            <div class="strip"><div class="post"><span class="b">1</span></div><div class="post" style="--c1:#6e2f4a"><span class="b">2</span></div><div class="post"><span class="b">3</span></div><div class="post"><span class="b">4</span></div><div class="post"><span class="b">5</span></div></div>
+          </div>
+          <div class="ph-tabs"><span class="on">Inicio</span><span>Explorar</span><span>Descargas</span><span>Buscar</span></div>
+        </div>
+        <p class="what">Seguir viendo en un renglón compacto, botones de ánimo y una sola sugerencia grande con su porqué y «Otra». Debajo, poco: lo que ya salió y un Top 10. Es la idea «Esta noche» del 28 oct, ajustada a lo que hacen Netflix y Roku.</p>
+        <div class="gp"><div class="g"><b>Ganas</b>Contesta «¿qué veo hoy?» con una respuesta. Lo más diferente de las tres.</div><div class="l"><b>Pierdes</b>La más cara. Si la sugerencia falla seguido, cansa. Se ve menos catálogo de golpe.</div></div>
+        <p class="meta">Esfuerzo: alto. Necesita elegir y explicar la sugerencia (reusar «¿Qué vemos?» y luego un servicio con puntaje).</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="verdict">
+    <div class="eyebrow">Mi recomendación</div>
+    <h3>Opción 1, «Tu tablero», con el selector Todo · Series · Películas</h3>
+    <p>Es lo que hacen bien las apps de seguimiento como Trakt y lo que les costó caro a Apple TV, Plex y Roku no hacer: lo tuyo arriba y una lista de pendientes que te avisa. Orbital ya tiene casi todos los datos (tu avance, el calendario de Trakt, Mi lista), así que el riesgo es bajo. Además deja «Para ti» con un papel claro, que era el problema de los repetidos.</p>
+    <p>La opción 3 se puede montar encima después: la sugerencia grande cabe como una pieza más del tablero cuando el motor de recomendaciones esté listo. La 2 conviene solo si quieres conservar la portada a toda costa.</p>
+  </section>
+
+  <section class="sources">
+    <div class="eyebrow">Fuentes</div>
+    <ul>
+      <li><a href="https://9to5mac.com/2026/04/30/netflix-launches-iphone-app-redesign-heres-whats-new/">9to5Mac: Netflix rediseña su app de iPhone (abril 2026)</a></li>
+      <li><a href="https://www.macrumors.com/2025/05/07/netflix-redesigned-tv-experience/">MacRumors: Netflix rediseña su experiencia en TV (mayo 2025)</a></li>
+      <li><a href="https://www.tomsguide.com/entertainment/netflix/netflix-finally-embraces-vertical-video-with-redesigned-iphone-app-heres-what-it-looks-like-now">Tom's Guide: el feed vertical de Netflix</a></li>
+      <li><a href="https://appleinsider.com/articles/22/11/03/apple-tv-drops-up-next-in-new-design-rolling-out-to-users">AppleInsider: Apple TV esconde «Up Next» (2022)</a></li>
+      <li><a href="https://www.macrumors.com/2023/01/09/tvos-16-2-watch-now-design-complaints/">MacRumors: quejas por el rediseño de Watch Now</a></li>
+      <li><a href="https://www.apple.com/newsroom/2025/06/apple-tv-brings-a-beautiful-redesign-and-enhanced-home-entertainment-experience">Apple Newsroom: tvOS 26 y los pósters nuevos</a></li>
+      <li><a href="https://www.macrumors.com/2025/04/02/new-plex-mobile-app-now-rolling-out/">MacRumors: la nueva app de Plex (abril 2025)</a></li>
+      <li><a href="https://forums.plex.tv/t/what-is-going-on-with-plex-this-interface-is-terrible/931605">Foro de Plex: quejas sobre la interfaz nueva</a></li>
+      <li><a href="https://www.newscaststudio.com/2026/05/27/roku-updates-home-screen-with-personalized-recommendations-and-new-navigation-features/">NewscastStudio: el inicio nuevo de Roku (mayo 2026)</a></li>
+      <li><a href="https://alternativeto.net/news/2025/12/trakt-rolls-out-continue-watching-and-start-watching-smart-lists-in-new-lite-design/">AlternativeTo: Continue Watching y Start Watching en Trakt</a></li>
+      <li><a href="https://forums.trakt.tv/t/trakt-ios-2-7-876/79530">Foro de Trakt: notas de iOS 2.7 (Up Next fuera del Inicio)</a></li>
+      <li><a href="https://www.macstories.net/reviews/sequel-2-0-an-iphone-and-ipad-media-tracker-that-strikes-an-elegant-balance-between-form-and-function/">MacStories: reseña de Sequel 2.0</a></li>
+      <li><a href="https://thesweetsetup.com/?p=6400">The Sweet Setup: TV Time</a></li>
+      <li><a href="https://www.popsci.com/diy/how-to-use-letterboxd/">PopSci: cómo usar Letterboxd</a></li>
+    </ul>
+    <p style="margin-top:8px">Las maquetas son dibujos de referencia, no capturas de la app. Los títulos son ejemplos.</p>
+  </section>
+</main>
