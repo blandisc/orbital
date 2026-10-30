@@ -44,6 +44,9 @@ TRANSLATIONS = {
     "Las dos": "Both", "Lo que más viste": "What you watched most", "Semana": "Week", "Siempre": "All time",
     # Colecciones, la repisa (`RepisaView`, `CollectionsCard`, `CanonPoster`). Con un entero SwiftUI arma la clave con %lld.
     "%@ del canon en tu repisa": "%@ from the canon on your shelf", "%lld del canon en tu repisa": "%lld from the canon on your shelf",
+    "Empieza tu repisa: lo que veas del canon se pinta aquí": "Start your shelf: what you watch from the canon lights up here",
+    "Los premios y listas que hay que ver": "The awards and lists worth watching", "tu mejor racha": "your best streak",
+    "racha de hoy": "today's streak", "%lld días": "%lld days",
     "A tu repisa": "On your shelf", "Colecciones": "Collections", "Colección Criterion": "The Criterion Collection",
     "La más clásica que te falta": "The oldest one you're missing", "La más reciente que te falta": "The newest one you're missing",
     "La n.º %@ de la lista": "No. %@ on the list", "La n.º %lld de la lista": "No. %lld on the list",

@@ -43,7 +43,8 @@ struct RepisaView: View {
         let _ = model.track()
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s6) {
-                Text("\(model.seenTotal) del canon en tu repisa").recipe(.secondary, color: DS.textMuted)
+                (model.seenTotal == 0 ? Text("Empieza tu repisa: lo que veas del canon se pinta aquí") : Text("\(model.seenTotal) del canon en tu repisa"))
+                    .recipe(.secondary, color: DS.textMuted)
                 shelf(Text("Premios"), model.collections.filter { $0.family == .award }, model)
                 shelf(Text("Listas famosas"), model.collections.filter { $0.family == .list }, model)
             }
@@ -60,13 +61,15 @@ struct RepisaView: View {
     private func shelf(_ title: Text, _ items: [CanonCollection], _ model: RepisaModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             title.recipe(.section)
-            ForEach(Array(stride(from: 0, to: items.count, by: 3)), id: \.self) { i in
+            // Tres por repisa; si son dos (las listas), dos centrados.
+            let perRow = min(3, max(1, items.count))
+            ForEach(Array(stride(from: 0, to: items.count, by: perRow)), id: \.self) { i in
                 ShelfLedge {
                     HStack(alignment: .bottom, spacing: DS.Space.s3) {
-                        ForEach(items[i..<min(i + 3, items.count)]) { c in
+                        ForEach(items[i..<min(i + perRow, items.count)]) { c in
                             NavigationLink(value: c.id) {
                                 VStack(spacing: DS.Space.s2) {
-                                    ShelfEmblem(id: c.id)
+                                    ShelfEmblem(id: c.id, height: c.family == .list ? DS.Repisa.listEmblem : DS.Repisa.emblem)
                                     CanonNames.title(c.id).recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
                                     Text(verbatim: "\(c.seen(model.watched)) / \(c.total.formatted())").recipe(.caption, color: DS.textMuted).monospacedDigit()
                                 }
@@ -75,7 +78,7 @@ struct RepisaView: View {
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("repisa-\(c.id)")
                         }
-                        if items.count - i < 3 { ForEach(0..<(3 - (items.count - i)), id: \.self) { _ in Color.clear.frame(maxWidth: .infinity) } }
+                        if items.count - i < perRow { ForEach(0..<(perRow - (items.count - i)), id: \.self) { _ in Color.clear.frame(maxWidth: .infinity) } }
                     }
                     .padding(.top, DS.Space.s4)
                 }
