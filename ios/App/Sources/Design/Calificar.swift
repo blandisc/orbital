@@ -10,6 +10,8 @@ struct RatingStars: View {
     var size: CGFloat = DS.Rating.star
     let onChange: (Double?) -> Void
     @State private var dragging: Double?
+    /// La dirección del arrastre se decide una vez, al empezar: de lado mueve las estrellas; vertical es el scroll hasta soltar.
+    @State private var sideways: Bool?
 
     var body: some View {
         let shown = dragging ?? value ?? 0
@@ -55,12 +57,13 @@ struct RatingStars: View {
     private func drag(width: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: DS.Rating.dragStart)
             .onChanged { g in
-                guard dragging != nil || abs(g.translation.width) > abs(g.translation.height) else { return }   // de lado, o no es para las estrellas
+                if sideways == nil { sideways = abs(g.translation.width) > abs(g.translation.height) }
+                guard sideways == true else { return }   // vertical: es el scroll de la ficha
                 dragging = at(g.location.x, width)
             }
             .onEnded { g in
-                guard dragging != nil else { return }
-                dragging = nil
+                defer { sideways = nil; dragging = nil }
+                guard sideways == true else { return }
                 onChange(at(g.location.x, width))
             }
     }

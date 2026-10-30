@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pastilla de calificar</title>
+<style>
+:root{--bg:#f3f2ee;--ink:#1d1d22;--muted:#6b6b72;--line:rgba(0,0,0,.1);--accent:#8a6a14;
+  --sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
+  --a-bg:#0c0c0e;--a-surf:#18181c;--a-ink:#f5f4f0;--a-mut:#a3a3ab;--amber:#f4c24d}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121214;--ink:#ecebe6;--muted:#9a9aa2;--line:rgba(255,255,255,.1);--accent:#f4c24d}}
+:root[data-theme="dark"]{--bg:#121214;--ink:#ecebe6;--muted:#9a9aa2;--line:rgba(255,255,255,.1);--accent:#f4c24d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sys)}
+.wrap{max-width:1180px;margin:0 auto;padding:36px 16px 70px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:6px 0 10px;line-height:1.1}
+p{color:var(--muted);max-width:720px}
+.opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:28px}
+@media (max-width:980px){.opts{grid-template-columns:1fr;max-width:380px;margin-inline:auto}}
+.opt h2{font-size:19px;margin:14px 0 2px}.opt .tag{font-size:12px;font-weight:800;color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.opt ul{padding-left:18px;margin:6px 0;color:var(--muted);font-size:14.5px}.opt li b{color:var(--ink)}
+.ph{width:100%;max-width:330px;aspect-ratio:9/19.5;border-radius:44px;padding:9px;background:#1b1b1f;box-shadow:0 24px 60px rgba(0,0,0,.3);margin:0 auto}
+.scr{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:var(--a-bg);color:var(--a-ink);font-family:var(--sys)}
+.feed{position:absolute;left:0;right:0;top:0;padding:46px 14px 0;overflow:hidden}
+.feed h3{font-size:17px;margin:12px 0 8px}
+.row{display:flex;gap:8px;margin-bottom:6px}
+.row i{flex:0 0 31%;aspect-ratio:2/3;border-radius:8px;background:linear-gradient(160deg,#3a3a44,#202026)}
+.row i:nth-child(2){background:linear-gradient(160deg,#4a3a2e,#22201e)}.row i:nth-child(3){background:linear-gradient(160deg,#2e3e4a,#1e2226)}
+.cut{position:absolute;left:14px;right:14px;height:2px;background:repeating-linear-gradient(90deg,#f4c24d 0 8px,transparent 8px 14px)}
+.cutlbl{position:absolute;right:16px;font-size:10px;font-weight:700;color:#f4c24d}
+.tabs{position:absolute;left:10px;right:10px;bottom:12px;height:54px;border-radius:30px;background:rgba(40,40,46,.85);border:1px solid rgba(255,255,255,.12);display:flex;justify-content:space-around;align-items:center;font-size:10px;color:var(--a-mut)}
+.tabs b{color:var(--a-ink);font-weight:600}
+.pill{position:absolute;left:12px;right:12px;bottom:76px;height:58px;border-radius:30px;background:rgba(48,48,54,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;gap:10px;padding:0 14px 0 10px;font-size:12px}
+.pill .pp{width:26px;height:38px;border-radius:5px;background:linear-gradient(160deg,#5a4aa8,#d14a8a)}
+.pill div{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.pill b{font-size:12.5px}.pill s{text-decoration:none;color:var(--a-mut);letter-spacing:2px;font-size:13px}
+.pill em{font-style:normal;color:var(--a-mut);font-size:11px}
+.auto .pill{animation:hide 7s ease-in-out infinite}
+@keyframes hide{0%,8%{opacity:0;transform:translateY(20px)}15%,62%{opacity:1;transform:none}72%,100%{opacity:0;transform:translateY(20px)}}
+.timer{position:absolute;left:0;right:0;bottom:140px;text-align:center;font-size:10.5px;color:var(--a-mut)}
+.auto .timer::after{content:"aparece al abrir · se va sola";}
+.mini{display:flex;gap:10px;justify-content:center;margin-top:10px}
+.mini .ph{max-width:150px;border-radius:26px;padding:5px}.mini .scr{border-radius:22px}
+.mini .feed{padding-top:22px}.mini .feed h3{font-size:10px;margin:6px 0 4px}
+.mini .tabs{height:30px;bottom:6px;left:6px;right:6px;font-size:7px}
+.mini .pill{height:30px;bottom:42px;left:6px;right:6px;font-size:7px;padding:0 6px;gap:5px}
+.mini .pill .pp{width:14px;height:20px}.mini .pill b{font-size:7px}.mini .pill s{font-size:7px;letter-spacing:1px}
+.mini small{display:block;text-align:center;font-size:12px;color:var(--muted);margin-top:4px}
+.push .feed{bottom:146px}
+.push .feed::after{content:"";position:absolute;left:0;right:0;bottom:0;height:30px;background:linear-gradient(transparent,var(--a-bg))}
+.rec{outline:2px solid var(--accent);outline-offset:10px;border-radius:12px}
+</style></head><body>
+<div class="wrap">
+  <span class="eyebrow">Orbital · iPhone · calificar · 30 oct 2026</span>
+  <h1>¿Cómo se comporta la pastilla?</h1>
+  <p>Hoy la pastilla «¿Qué tal Moonlight?» se queda fija sobre la barra de pestañas, en todas las pestañas, hasta que calificas o la cierras, y tapa lo último de la pantalla (la línea amarilla marca dónde empieza a tapar). Estas son las tres formas de arreglarlo.</p>
+  <div class="opts">
+    <div class="opt rec">
+      <div class="ph auto"><div class="scr">
+        <div class="feed"><h3>Seguir viendo</h3><div class="row"><i></i><i></i><i></i></div><h3>Sugerencias para ti</h3><div class="row"><i></i><i></i><i></i></div><h3>Top 10</h3><div class="row"><i></i><i></i><i></i></div></div>
+        <span class="timer"></span>
+        <div class="pill"><span class="pp"></span><div><b>¿Qué tal Moonlight?</b><s>☆☆☆☆☆</s></div><em>y 2 más ✕</em></div>
+        <div class="tabs"><b>Inicio</b><span>Para ti</span><span>Descargas</span><span>Buscar</span></div>
+      </div></div>
+      <span class="tag">Recomendada</span>
+      <h2>A · Se esconde sola</h2>
+      <ul><li><b>Qué pasa:</b> al abrir la app aparece unos segundos y se va. Vuelve la próxima vez que abras la app.</li>
+      <li><b>Ganas:</b> nunca estorba y no tienes que cerrarla.</li>
+      <li><b>Pierdes:</b> si no la ves a tiempo, te la vuelve a ofrecer hasta la siguiente vez (lo que te falta calificar también está en «y 2 más» y en la ficha).</li></ul>
+    </div>
+    <div class="opt">
+      <div class="mini">
+        <div><div class="ph"><div class="scr"><div class="feed"><h3>Inicio</h3><div class="row"><i></i><i></i><i></i></div><div class="row"><i></i><i></i><i></i></div><div class="row"><i></i><i></i><i></i></div></div>
+          <div class="pill"><span class="pp"></span><div><b>¿Qué tal Moonlight?</b><s>☆☆☆☆☆</s></div></div>
+          <div class="tabs"><b>Inicio</b><span>Para ti</span><span>Buscar</span></div></div></div><small>Inicio: sí</small></div>
+        <div><div class="ph"><div class="scr"><div class="feed"><h3>Buscar</h3><div class="row"><i></i><i></i><i></i></div><div class="row"><i></i><i></i><i></i></div><div class="row"><i></i><i></i><i></i></div></div>
+          <div class="tabs"><span>Inicio</span><span>Para ti</span><b>Buscar</b></div></div></div><small>Las demás: no</small></div>
+      </div>
+      <h2>B · Solo en Inicio</h2>
+      <ul><li><b>Qué pasa:</b> se queda fija como hoy, pero solo en la pestaña Inicio.</li>
+      <li><b>Ganas:</b> no aparece cuando buscas, en Para ti ni en Descargas.</li>
+      <li><b>Pierdes:</b> en Inicio sigue tapando lo último hasta que calificas o la cierras.</li></ul>
+    </div>
+    <div class="opt">
+      <div class="ph push"><div class="scr">
+        <div class="feed"><h3>Seguir viendo</h3><div class="row"><i></i><i></i><i></i></div><h3>Sugerencias para ti</h3><div class="row"><i></i><i></i><i></i></div><h3>Top 10</h3><div class="row"><i></i><i></i><i></i></div></div>
+        <div class="pill"><span class="pp"></span><div><b>¿Qué tal Moonlight?</b><s>☆☆☆☆☆</s></div><em>y 2 más ✕</em></div>
+        <div class="tabs"><b>Inicio</b><span>Para ti</span><span>Descargas</span><span>Buscar</span></div>
+      </div></div>
+      <h2>C · Empuja el contenido</h2>
+      <ul><li><b>Qué pasa:</b> se queda fija en todas las pestañas, pero la pantalla le deja su lugar: el contenido termina arriba de ella.</li>
+      <li><b>Ganas:</b> siempre a la mano y no tapa nada.</li>
+      <li><b>Pierdes:</b> mientras esté, ves un renglón menos en cada pantalla.</li></ul>
+    </div>
+  </div>
+  <p style="margin-top:34px">Mi recomendación es la <b>A</b>: el recordatorio debe sentirse como una invitación, no como algo que tienes que quitar. Lo que te falta calificar no se pierde: sigue en la ficha de cada título y vuelve a aparecer la siguiente vez que abras la app.</p>
+</div>
+</body></html>
