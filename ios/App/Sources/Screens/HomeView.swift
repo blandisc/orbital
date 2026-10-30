@@ -7,24 +7,30 @@ struct HomeView: View {
     @State private var home: ModelObserver<HomeModel>
     @State private var tvNow: ModelObserver<TVNowModel>
     @State private var inbox: ModelObserver<InboxModel>
+    /// «Por lo que viste»: el mazo de lo último que viste y sus relacionadas.
+    @State private var because = ModelObserver(BecauseModel(AppEnvironment.shared.services))
+    /// Canales: tus series siempre al aire.
+    @State private var channels = ModelObserver(ChannelsModel(AppEnvironment.shared.services))
     @State private var tint = ArtTint()
     @State private var openTitle: TitleRoute?
     /// La tarjeta al frente del carrusel: su lugar en la vuelta infinita (`slot % cuántas`).
     @State private var heroSlot: Int?
     @State private var scrolledDown = false
-    @State private var placingHero = false
     /// El Top 10 de Netflix: series (por omisión) o películas.
     @State private var topMovies = false
     /// La ruleta de «Un Simpson al azar».
     @State private var rollingSimpsons = false
     /// Sale hoy › el mes completo.
     @State private var showingCalendar = false
+    /// El filtro avanzado (el cajón de la sesión de componentes), desde la franja de arriba.
+    @State private var showingFilter = false
     @Namespace private var simpsonsZoom
     @State private var continueSort: ListSort = .added
     @State private var continueKind = ""
     /// El alto de cada renglón de «Tu watchlist», que crece con el tamaño de letra.
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var scheme
     @Environment(\.openRemote) private var openRemote
     @Environment(\.scenePhase) private var scenePhase
 
@@ -88,17 +94,24 @@ struct HomeView: View {
                 // tus sugerencias, el Top 10 y Mi lista.
                 if !continuing.isEmpty {
                     continueRail(model, items: continuing).perfTag("home.rail")
+                        // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
+                        // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
+                        .padding(.top, model.spotlight.isEmpty || scheme != .dark ? 0 : -(DS.Editorial.sectionGap + DS.HomeHero.overlap))
                 } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                     DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
                 }
                 // Lo que sale de tus series (solo series: con «Películas» en la barra, no se pinta).
-                if kind != "movie", !model.upcoming.isEmpty { upcoming(model) }
+                if kind != "movie", !model.timeline.isEmpty {
+                    ReleaseTimeline(airings: model.timeline, onOpen: { openTitle = $0 }, onCalendar: { showingCalendar = true })
+                }
                 // Tus recomendaciones de Trakt.
                 if !picks.isEmpty {
                     Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt con lo que ves"), source: .trakt, reflected: true) {
                         ForEach(picks) { s in TitleLink(route: s.route) }
                     }
                 }
+                HomeBecause(model: because.model, kind: kind)
+                if kind != "movie" { HomeChannels(model: channels.model) }   // solo series
                 // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
                 if model.hasAnyTop { topTen(model) }
                 if !pending.isEmpty { watchlist(model, items: pending) }
@@ -144,10 +157,10 @@ struct HomeView: View {
             try? await Task.sleep(for: .seconds(DS.Simpsons.prefetchDelay))
             await env.simpsons.prefetch()
         }
-        // Todo · Películas · Series para toda la página y la puerta del filtro avanzado (por ahora a Buscar), bajo la barra.
+        // Todo · Películas · Series para toda la página y la puerta del filtro avanzado, bajo la barra.
         .safeAreaBar(edge: .top) {
             HomeKindBar(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }),
-                        onFilters: { env.ui.openTab = 2 })
+                        onFilters: { showingFilter = true })
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
@@ -175,6 +188,7 @@ struct HomeView: View {
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: HomeListRoute.self) { route in homeList(route) }
         .openingTitles(item: $openTitle)   // en el iPad y la Mac, en el panel de la derecha
+        .advancedFilter(isPresented: $showingFilter) { openTitle = $0 }   // un resultado abre su ficha
         .task { await reload(ifStale: true) }   // volver de otra pestaña o de una ficha no lo vuelve a pedir todo
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
@@ -211,9 +225,11 @@ struct HomeView: View {
     /// Lo tuyo y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo). Lo pendiente por subir
     /// se sube solo y ya no se anuncia bajo el título («N cambios por subir»: no se quería ahí).
     private func reload(ifStale: Bool = false) async {
+        async let related: Void = because.model.load()   // a la par (Trakt lo guarda: volver a pedirlo es barato)
         if ifStale { await home.model.refreshIfStale() } else { await home.model.refresh() }
         Perf.mark("home.done")
         await tint.load(currentHero?.wide)
+        await related
     }
 
     /// El título con la barra encogida: nada, solo el logotipo (antes decía «Sale hoy: …» y no se quería ahí).
@@ -248,74 +264,71 @@ struct HomeView: View {
 
     private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
-    /// Pone el carrusel en una tarjeta sin el toque háptico (no fue tu dedo).
-    private func placeHero(_ slot: Int) {
-        placingHero = true
-        heroSlot = slot
-        Task { @MainActor in placingHero = false }   // en el siguiente turno, ya pintado el salto
-    }
-
-    /// Cuántos de «Destacado» van en el carrusel.
+    /// Cuántos de «Destacado» van en la portada.
     private static let heroCount = 10
 
     private func spotlightItems(_ model: HomeModel) -> [Suggestion] { Array(model.spotlightShown.prefix(Self.heroCount)) }
 
-    /// El que está al frente del carrusel (el fondo toma su color).
+    /// El que está al frente de la portada (el fondo toma su color).
     private var currentHero: Suggestion? {
         let items = spotlightItems(home.model)
         guard !items.isEmpty else { return nil }
-        return items[(heroSlot ?? 0) % items.count]
+        return items[min(heroSlot ?? 0, items.count - 1)]
     }
 
-    /// «Destacado»: tarjetas en carrusel infinito (`DeckCard`) con las de los lados más chicas y desenfocadas, en coverflow o
-    /// abanico (Ajustes › Inicio); arriba, el filtro de películas o series. El fondo toma el color del que está al frente.
+    /// Ancho entre alto de la portada: casi un póster en el iPhone, más baja en pantallas cortas y apaisada en ventana ancha.
+    private var heroAspect: CGFloat {
+        let size = WindowMetrics.size
+        if size.width >= DS.Size.compactWidth * 2 { return DS.HomeHero.aspectWide }
+        return size.height < DS.HomeHero.shortScreen ? DS.HomeHero.aspectShort : DS.HomeHero.aspect
+    }
+
+    /// La portada (docs/producto/inicio-benchmark/): el arte de borde a borde, detrás de la barra, que se desliza entre lo
+    /// que todos están viendo. Cada título con su porqué en turquesa, su logo, sus datos y «Ver». Abajo, los puntos; encima de
+    /// su borde entra «Seguir viendo». El fondo toma el color del que está al frente.
     private func spotlightCarousel(_ model: HomeModel) -> some View {
         let items = spotlightItems(model)
-        // Una vuelta infinita: las mismas tarjetas repetidas muchas veces y se empieza a la mitad; al llegar a la última
-        // sigue la primera (y hacia atrás igual). Con una sola, no hay vuelta.
-        let copies = items.count > 1 ? DS.Deck.loopCopies : 1
-        let middle = (copies / 2) * items.count
-        return VStack(spacing: DS.Space.s3) {
-            // El filtro, discreto a la derecha del título (un menú: Todo · Películas · Series), como en Para ti y el Top 10.
-            DSSectionHead(title: Text("En tendencia"), eyebrow: Text("Lo que todos están viendo"))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, DS.Space.gutter)
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: DS.Deck.spacing) {
-                    ForEach(0..<(copies * items.count), id: \.self) { slot in
-                        hero(items[slot % items.count])
-                            .environment(\.solidButtons, true)   // la tarjeta se gira en 3D: sus botones sin vidrio (se deformaba)
-                            .containerRelativeFrame(.horizontal)   // el ancho visible ya descuenta los márgenes: centrada, con las de los lados asomando
-                            .deckTransition(reduceMotion: reduceMotion)
-                    }
+        return ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: 0) {
+                ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
+                    hero(s).containerRelativeFrame(.horizontal).id(i)
                 }
-                .scrollTargetLayout()
             }
-            .contentMargins(.horizontal, DS.Deck.sideMargin, for: .scrollContent)
-            .scrollTargetBehavior(.viewAligned)
-            .scrollClipDisabled()
-            .scrollPosition(id: $heroSlot, anchor: .center)   // centrada: las de los lados asoman igual
-            .onAppear { if heroSlot == nil || (heroSlot ?? 0) >= copies * items.count { placeHero(middle) } }
-            // Cambió la lista (al volver de ver algo, al refrescar): se queda en la que estabas si sigue; si no (o cambiaste el
-            // filtro), la primera. Sin brincar al inicio cada vez.
-            .onChange(of: items.map(\.id)) { old, new in
-                let current = (heroSlot.map { old.isEmpty ? nil : old[$0 % old.count] }) ?? nil
-                placeHero(middle + (current.flatMap { new.firstIndex(of: $0) } ?? 0))
-            }
-            PageDots(count: items.count, index: items.isEmpty ? 0 : (heroSlot ?? middle) % items.count)
-                .frame(maxWidth: .infinity)
+            .scrollTargetLayout()
+        }
+        .scrollTargetBehavior(.paging)
+        .scrollPosition(id: $heroSlot)
+        .overlay(alignment: .bottom) {
+            PageDots(count: items.count, index: min(heroSlot ?? 0, max(0, items.count - 1)))
+                .padding(.bottom, (scheme == .dark ? DS.HomeHero.overlap : 0) + DS.Space.s3)
+                .allowsHitTesting(false)   // tocar los puntos no abre la ficha
+        }
+        // En oscuro el arte se funde con el fondo y sube detrás de la barra; en claro es una tarjeta (no pasa detrás).
+        .ignoresSafeArea(edges: scheme == .dark ? .top : [])
+        // Cambió la lista (al volver de ver algo, al cambiar el tipo): te quedas en el que estabas si sigue; si no, el primero.
+        .onChange(of: items.map(\.id)) { old, new in
+            let current = heroSlot.flatMap { old.indices.contains($0) ? old[$0] : nil }
+            heroSlot = current.flatMap { new.firstIndex(of: $0) } ?? 0
         }
         .task(id: heroSlot) { await tint.load(currentHero?.wide) }   // se cancela si pasas a otro
-        // El toque solo al deslizar tú (no al acomodarla la app).
-        .sensoryFeedback(.selection, trigger: heroSlot) { old, _ in old != nil && !placingHero }
+        .sensoryFeedback(.selection, trigger: heroSlot) { old, _ in old != nil }
     }
 
     private func hero(_ s: Suggestion) -> some View {
-        // La tarjeta abre la ficha con su propio toque; «Ver» va aparte (un botón dentro de un NavigationLink puede abrir la
+        // La portada abre la ficha con su propio toque; «Ver» va aparte (un botón dentro de un NavigationLink puede abrir la
         // ficha en vez de reproducir).
-        DeckCard(title: s.title, background: s.wide, logo: s.logo ?? Artwork.logoURL(metaID: s.imdb),
-                 eyebrow: reasonText(s.reason), data: heroData(s), open: { openTitle = s.route }, tall: TallArtKey(imdb: s.imdb, kind: s.kind)) {
-            HeroActions { heroButtons(s) }   // con letra grande, uno debajo del otro
+        BleedArt(url: s.wide, title: s.title, aspect: heroAspect, tall: TallArtKey(imdb: s.imdb, kind: s.kind)) {
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    if let reason = reasonText(s.reason) { Eyebrow(text: reason, onArt: true, reason: true) }
+                    TitleLogo(url: s.logo ?? Artwork.logoURL(metaID: s.imdb), title: s.title, size: .hero)
+                    DataLine(parts: heroData(s), color: DS.onArtSecondary)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityAction(named: Text("Ver ficha")) { openTitle = s.route }
+                HeroActions { heroButtons(s) }
+            }
+            .padding(.bottom, (scheme == .dark ? DS.HomeHero.overlap : 0) + DS.Space.s6)   // los puntos y, en oscuro, lo que se encima
         }
         .contentShape(Rectangle())
         .onTapGesture { openTitle = s.route }
@@ -341,7 +354,8 @@ struct HomeView: View {
     /// Por qué está en el carrusel. Lo de tendencia y lo popular no lleva nada: ya lo dice el título de la sección («En tendencia»).
     private func reasonText(_ reason: SuggestionReason) -> Text? {
         switch reason {
-        case .trending, .popular: nil
+        case .trending: Text("En tendencia esta semana")
+        case .popular: Text("Lo más popular")
         case .recommended: Text("Para ti")
         default: Text("Destacado")
         }
@@ -490,56 +504,6 @@ struct HomeView: View {
         let facts = progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes, language: env.language).components(separatedBy: " · ")
         guard item.isNew == true else { return facts }
         return [Strings.tr("Nuevo", language: AppEnvironment.shared.services.appSettings.uiLanguage)] + facts
-    }
-
-    /// «Sale hoy» (A + una portada): lo de hoy en grande con su hora; lo demás, en panorámicas. Sin nada hoy, «Sale pronto».
-    @ViewBuilder private func upcoming(_ model: HomeModel) -> some View {
-        let today = model.airingToday
-        let rest = model.upcoming.filter { $0.id != today?.id }
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .sectionTitle) {
-                DSSectionHead(title: today == nil ? Text("Sale pronto") : Text("Sale hoy"), source: .trakt, eyebrow: Text("De las series que sigues"))
-                Spacer(minLength: DS.Space.s2)
-                // El mes completo: cada día con el color de lo que sale.
-                Button { showingCalendar = true } label: {
-                    DSCapsuleLabel(title: Text(verbatim: Date().formatted(Date.FormatStyle(locale: env.uiLocale).month(.wide)).capitalized(with: env.uiLocale)), symbol: "calendar")
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Calendario del mes"))
-                .accessibilityIdentifier("release-calendar")
-            }
-            .padding(.horizontal, DS.Space.gutter)
-            if let today {
-                TitleNavigationLink(route: today.series.route) {
-                    CoverCard(art: today.series.wide, logo: Artwork.logoURL(metaID: today.series.imdb), title: today.series.title,
-                              why: airingWhen(today), detail: Text(verbatim: today.episodeLabel(env.services.episodeLabel)))
-                }
-                .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
-            }
-            if !rest.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
-                        ForEach(rest) { a in
-                            TitleNavigationLink(route: a.series.route) {
-                                WideCard(art: a.series.wide, logo: Artwork.logoURL(metaID: a.series.imdb), title: a.series.title, badge: airingWhen(a),
-                                         caption: Text(verbatim: "\(a.series.title) · \(a.episodeLabel(env.services.episodeLabel))"))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .scrollTargetLayout()
-                }
-                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-                .scrollTargetBehavior(.viewAligned)
-            }
-        }
-    }
-
-    /// «Hoy · 21:00», «Mañana», «Viernes 24».
-    private func airingWhen(_ a: Airing) -> Text {
-        let locale = env.uiLocale
-        if Calendar.current.isDateInToday(a.day) { return Text("\(Text("Hoy"))\(Text(verbatim: " · "))\(airingTime(a, locale: locale))") }
-        return dayName(a.day, locale: locale)
     }
 
     /// «Seguir viendo» completo: todo (el carrusel solo trae los últimos), en piezas anchas con su avance.

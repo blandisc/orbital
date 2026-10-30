@@ -418,8 +418,9 @@ public final class PlayerModel: ObservableModel {
     /// Cada aviso reserva los segundos vistos que le tocan (dos avisos a la vez no cuentan los mismos segundos dos veces) y los
     /// devuelve si no se pudieron guardar ni encolar.
     func report(_ phase: PlaybackPhase) async {
-        // Un archivo que te pasaron y no se reconoció («file:…»): no es un título de Stremio, no se guarda nada allá.
-        guard var event = event(), !event.metaID.hasPrefix("file:") else { return }
+        // Un archivo que te pasaron y no se reconoció («file:…»): no es un título de Stremio, no se guarda nada allá. Un canal
+        // de Inicio tampoco: se ve como la tele.
+        guard request?.offTheRecord != true, var event = event(), !event.metaID.hasPrefix("file:") else { return }
         let reserved: Double
         if case .started = phase { reserved = 0 } else { reserved = watchedUnsaved; watchedUnsaved -= reserved }
         event.watched = reserved

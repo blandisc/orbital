@@ -7,7 +7,10 @@ import OrbitalModels
 extension AppEnvironment {
     /// Reproduce en Infuse (si lo prefieres en Ajustes, o si el motor propio no pudo) y se queda esperando a que vuelva.
     func playExternal(_ request: PlayRequest, source: Source? = nil) async {
-        let position = request.fromStart ? 0 : await services.watch.resumePosition(metaID: request.metaID, videoID: request.videoID, kind: request.kind)
+        // Un punto pedido (un canal al aire, «Seguir en el iPhone» desde la TV) gana sobre lo que tenías guardado.
+        let position: Double
+        if let start = request.startPosition { position = start }
+        else { position = request.fromStart ? 0 : await services.watch.resumePosition(metaID: request.metaID, videoID: request.videoID, kind: request.kind) }
         let langs = services.titlePrefs.languages(for: request.metaID, settings: services.appSettings)
         var chosen = source
         var unreachable = false
@@ -50,6 +53,7 @@ extension AppEnvironment {
         case .closed:
             guard let seconds = Infuse.seconds(from: result, knownDuration: session.duration) else { return }
             let r = session.request
+            guard !r.offTheRecord else { return }   // un canal de Inicio no deja avance
             let watched = max(0, seconds - session.startPosition)
             let event = ProgressEvent(kind: r.kind, metaID: r.metaID, videoID: r.videoID, originalTitle: r.originalTitle, position: seconds, duration: session.duration,
                                       watched: min(watched, Date().timeIntervalSince(session.startedAt)), at: Date().timeIntervalSince1970)

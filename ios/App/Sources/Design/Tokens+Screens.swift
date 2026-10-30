@@ -224,8 +224,8 @@ extension DS {
         static let poster: CGFloat = 30, posterAspect: CGFloat = 1.5
     }
 
-    /// El carrusel de «En tendencia» en Inicio (`DeckCard`, `deckTransition`): tarjetas con lo que sigue a los lados, más
-    /// chicas, oscuras y desenfocadas, giradas en 3D (coverflow).
+    /// Las tarjetas grandes en carrusel (el destacado de Para ti, el acompañante del juego y su esqueleto): su alto, margen,
+    /// velo y radio. (El carrusel 3D de Inicio se quitó con la portada nueva, 30 oct 2026.)
     enum Deck {
         /// Qué parte del ancho toma la tarjeta del frente (asoman las de los lados) y su alto.
         static let sideMargin: CGFloat = 66, height: CGFloat = 430

@@ -76,6 +76,17 @@ public final class HomeModel: ObservableModel {
     public private(set) var upcoming: [Airing] = [] { didSet { changed() } }
     /// Lo primero que sale hoy: la portada de Inicio y el título al bajar («Sale hoy: Severance»).
     public var airingToday: Airing? { upcoming.first { Calendar.current.isDateInToday($0.day) } }
+    /// Lo que salió de tus series en los últimos días (Trakt): la parte de «ya salió» de «Lo nuevo de lo tuyo».
+    public private(set) var recentAirings: [Airing] = [] { didSet { changed() } }
+    /// Cuántos días hacia atrás entra en «Lo nuevo de lo tuyo».
+    static let recentDays = 7
+    /// «Lo nuevo de lo tuyo»: lo que ya salió y lo que viene, en una sola línea de tiempo (de lo más viejo a lo que sigue).
+    public var timeline: [Airing] { Self.timeline(recent: recentAirings, upcoming: upcoming) }
+    /// Junta lo que salió y lo que viene sin repetir (Trakt puede dar el mismo día en las dos consultas) y lo ordena por hora.
+    public nonisolated static func timeline(recent: [Airing], upcoming: [Airing]) -> [Airing] {
+        var seen = Set<String>()
+        return (recent + upcoming).filter { seen.insert($0.id).inserted }.sorted { ($0.aired, $0.series.title) < ($1.aired, $1.series.title) }
+    }
     public private(set) var offline = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
     private let services: Services
@@ -177,7 +188,8 @@ public final class HomeModel: ObservableModel {
     private func loadTrakt(_ forYou: ForYou) async {
         async let airings = try? forYou.calendar(), pending = try? forYou.items(listID: "watchlist")
         async let favs = try? forYou.items(listID: ForYou.favoritesList)
-        let (fetchedPending, newAirings, fetchedFavorites) = await (pending, airings, favs)
+        async let past = try? forYou.calendar(skip: -Self.recentDays, days: Self.recentDays)
+        let (fetchedPending, newAirings, fetchedFavorites, pastAirings) = await (pending, airings, favs, past)
         // Cancelado o sin respuesta de Trakt: no se vacía «Tu watchlist» ni el «Próximo estreno» del widget.
         guard !Task.isCancelled else { return }
         let linked = await forYou.traktLinked
@@ -187,6 +199,7 @@ public final class HomeModel: ObservableModel {
         if let fetchedFavorites { favorites = fetchedFavorites }
         else if !linked { favorites = [] }      // ni favoritos
         if let newAirings { upcoming = Array(newAirings.prefix(10)); fetchedAirings = newAirings }
+        if let pastAirings { recentAirings = pastAirings } else if !linked { recentAirings = [] }
     }
 
     /// «Para ti»: tus recomendaciones, películas y series entreveradas, sin lo que ya está arriba.

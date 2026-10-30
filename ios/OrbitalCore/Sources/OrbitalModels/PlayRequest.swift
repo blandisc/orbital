@@ -29,6 +29,9 @@ public struct PlayRequest: Sendable {
     public var ownCopy = false
     /// Empieza en vertical (la ruleta de Los Simpson: la tele ya está de pie); girar el teléfono lo acuesta igual.
     public var startPortrait = false
+    /// Un canal de Inicio: se ve como la tele, sin guardar el avance ni avisar a Trakt (no mete capítulos sueltos en «Seguir
+    /// viendo» ni mueve el siguiente de la serie). Lo que sigue al terminar hereda lo mismo.
+    public var offTheRecord = false
 
     public init(kind: String, metaID: String, videoID: String, originalTitle: String, displayTitle: String, episodeLabel: String = "", poster: String? = nil,
                 year: String? = nil, meta: JSON? = nil, fromStart: Bool = false, localFile: URL? = nil, localSubtitles: [URL] = [], savedSubtitles: [SavedSubtitle] = [], binge: String? = nil, sourceIndex: Int? = nil) {

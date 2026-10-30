@@ -192,6 +192,9 @@ struct BecauseCard<Related: View>: View {
     let selected: String
     var state: BecauseRelated = .ready
     var choose: (String) -> Void = { _ in }
+    /// La versión de Inicio: de fondo, el póster del título de arriba desenfocado (la tarjeta toma su color) y todo encima
+    /// como en la sala oscura. Sin ella, la superficie de siempre (Para ti).
+    var artBackdrop = false
     @ViewBuilder var related: () -> Related
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -229,7 +232,7 @@ struct BecauseCard<Related: View>: View {
             .transition(.opacity)
         }
         .padding(DS.Space.s3)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .modifier(BecauseBackdrop(poster: artBackdrop ? current?.poster : nil))
         .animation(reduceMotion ? nil : .snappy(duration: DS.Collections.deckSettle), value: selected)
         .sensoryFeedback(.selection, trigger: selected)
     }
@@ -266,6 +269,36 @@ struct BecauseCard<Related: View>: View {
             }
             .frame(minHeight: DS.Collections.deckHeight, alignment: .topLeading)
             Spacer(minLength: 0)
+        }
+    }
+}
+
+/// El fondo de `BecauseCard`: la superficie de siempre o, en Inicio, el póster del título de arriba desenfocado con un velo
+/// (y lo de encima como en la sala oscura, que se lee sobre cualquier arte).
+private struct BecauseBackdrop: ViewModifier {
+    let poster: String?
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+        if let poster {
+            content.onArt()
+                .background {
+                    ZStack {
+                        DS.scrimStrong
+                        PosterView(url: poster, title: "", aspect: nil, bleed: true)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .scaleEffect(DS.Collections.becauseArtScale)   // sin orillas claras por el desenfoque
+                            .blur(radius: DS.Collections.becauseBlur)
+                            .opacity(DS.Collections.becauseArtOpacity)
+                            .id(poster)
+                            .transition(.opacity)
+                        LinearGradient(colors: [.clear, DS.scrim], startPoint: .top, endPoint: .bottom)
+                    }
+                    .clipShape(shape)
+                    .accessibilityHidden(true)
+                }
+        } else {
+            content.background(DS.surface, in: shape)
         }
     }
 }

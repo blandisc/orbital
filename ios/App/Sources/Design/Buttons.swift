@@ -26,7 +26,7 @@ extension View {
     }
 }
 
-/// Botones sólidos (sin vidrio) en lo que se gira en 3D: el carrusel de Inicio en coverflow deformaba el vidrio.
+/// Botones sólidos (sin vidrio) donde el vidrio no se lleva bien (lo que se gira o se deforma en 3D).
 private struct SolidButtonsKey: EnvironmentKey { static let defaultValue = false }
 extension EnvironmentValues {
     var solidButtons: Bool {

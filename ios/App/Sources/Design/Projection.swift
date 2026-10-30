@@ -42,9 +42,11 @@ struct Eyebrow: View {
     var accent = false
     /// Sobre el arte: más claro que el secundario de siempre.
     var onArt = false
+    /// Es el porqué del título (la portada de Inicio): en el turquesa de los porqués, como el de cada sección.
+    var reason = false
 
     var body: some View {
-        text.recipe(.eyebrow, color: accent ? DS.accent : onArt ? DS.onArtSecondary : nil).lineLimit(1)
+        text.recipe(.eyebrow, color: reason ? DS.eyebrow : accent ? DS.accent : onArt ? DS.onArtSecondary : nil).lineLimit(1)
             .shadow(DS.Elevation.low.color(onArt ? DS.scrim : .clear))   // sobre la parte clara del arte, como el logo
     }
 }
