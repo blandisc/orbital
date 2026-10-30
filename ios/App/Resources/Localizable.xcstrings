@@ -210,6 +210,17 @@
         }
       }
     },
+    "%@ · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lld"
+          }
+        }
+      }
+    },
     "%@ · %lld versiones": {
       "extractionState": "manual",
       "localizations": {
@@ -5704,6 +5715,17 @@
         }
       }
     },
+    "De la más cercana a la más lejana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the closest to the farthest"
+          }
+        }
+      }
+    },
     "De las series que sigues": {
       "extractionState": "manual",
       "localizations": {
@@ -10969,6 +10991,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "The saga"
+          }
+        }
+      }
+    },
+    "La temporada · ahora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The season · now"
+          }
+        }
+      }
+    },
+    "La temporada · en %@ días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The season · in %@ days"
+          }
+        }
+      }
+    },
+    "La temporada · en %lld días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The season · in %lld days"
+          }
+        }
+      }
+    },
+    "La temporada · mañana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The season · tomorrow"
           }
         }
       }
@@ -17038,6 +17104,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Try: "
+          }
+        }
+      }
+    },
+    "Próximas temporadas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coming seasons"
           }
         }
       }
@@ -24731,6 +24808,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "View details"
+          }
+        }
+      }
+    },
+    "Ver la colección": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the collection"
           }
         }
       }

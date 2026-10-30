@@ -130,49 +130,6 @@ struct SourceBadge: View {
     }
 }
 
-/// Una lista en «Listas de Trakt» o «De tus complementos»: dos pósters en pila, su nombre, su sello y cuántos tiene.
-struct ListCard: View {
-    let name: String
-    let source: ListSource
-    let posters: [String]
-    var count: Int?
-
-    var body: some View { bodyContent.pointerHover(.lift) }
-    @ViewBuilder private var bodyContent: some View {
-        HStack(spacing: DS.Space.s3) {
-            ZStack(alignment: .topLeading) {
-                ForEach(Array(posters.prefix(2).enumerated().reversed()), id: \.offset) { i, url in
-                    PosterView(url: url, title: name).frame(width: DS.Collections.stackPoster)
-                        .rotationEffect(.degrees(i == 1 ? -DS.Collections.stackAngle : 0))
-                        .offset(x: i == 1 ? 0 : DS.Space.s3, y: i == 1 ? DS.Space.s1 : 0)
-                        .shadow(DS.Elevation.low.drop(DS.Space.s1))
-                }
-            }
-            .frame(width: DS.Collections.stackWidth, alignment: .leading)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(verbatim: name).recipe(.cardTitle).lineLimit(2).minimumScaleFactor(DS.Size.titleShrink)
-                // El sello («STREMIO») no se parte, así que si con su conteo no cabe en la tarjeta, el conteo pasa abajo: antes la
-                // tarjeta pedía más que su columna y, en un iPhone de 375 pt, las dos se salían del margen.
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: DS.Space.s1) {
-                        SourceBadge(source: source)
-                        if let count { Text(verbatim: "\(count)").recipe(.caption) }
-                    }
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        SourceBadge(source: source)
-                        if let count { Text(verbatim: "\(count)").recipe(.caption) }
-                    }
-                }
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(DS.Space.s3)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-        .accessibilityElement(children: .combine)
-    }
-}
-
 /// Un título de lo que viste, para elegir «Porque vi…».
 struct BecauseSeed: Identifiable, Equatable {
     let id: String

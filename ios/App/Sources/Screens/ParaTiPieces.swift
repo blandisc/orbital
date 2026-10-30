@@ -89,7 +89,8 @@ struct ShelfPoster: View {
 @MainActor func shelfTitle(_ plan: ShelfPlan) -> Text {
     // En español se usa el texto de la TV tal cual; en inglés, las listas conocidas con su nombre traducido (la TV manda español).
     let english = AppEnvironment.shared.services.appSettings.uiLanguage == "en"
-    if english, let known = knownShelfTitle(plan) { return known }
+    // Mi lista y Favoritos se llaman igual en toda la app, aunque la TV las mande con otro nombre («Tu watchlist»).
+    if english || ["watchlist", ForYou.favoritesList].contains(plan.id), let known = knownShelfTitle(plan) { return known }
     if !plan.title.isEmpty { return Text(verbatim: plan.title) }
     if let known = knownShelfTitle(plan) { return known }
     return Text(verbatim: plan.list.brand.flatMap { brand in Tmdb.platforms.first { $0.brand == brand }?.name } ?? plan.id)
@@ -103,7 +104,8 @@ struct ShelfPoster: View {
     if plan.id.hasPrefix("jw:") { return brand.map { Text("Tendencias en \($0)") } }
     switch plan.id {
     case "mine": return Text("Tus series")
-    case "watchlist": return Text("Tu watchlist")
+    case "watchlist": return Text("Mi lista")   // el mismo nombre que su renglón en «Tuyo» y que Inicio
+    case ForYou.favoritesList: return Text("Favoritos")
     case "recs": return Text("Recomendadas")
     case "trend": return Text("En tendencia")
     case "popular": return Text("Lo más popular")

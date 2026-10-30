@@ -128,7 +128,7 @@ struct ParaTiView: View {
         if !m.newOnPlatforms.isEmpty { out.append(.init(id: "new", name: Strings.tr("Nuevo en tus plataformas", language: language), origin: suggested, items: m.newOnPlatforms)) }
         for plan in m.visibleShelves {
             let name: String = switch plan.id {
-            case "watchlist": Strings.tr("Tu watchlist", language: language)
+            case "watchlist": Strings.tr("Mi lista", language: language)
             case "mine": Strings.tr("Tus series", language: language)
             case "recs": Strings.tr("Recomendadas", language: language)
             case "trend": Strings.tr("En tendencia", language: language)

@@ -39,6 +39,34 @@ final class ParaTiBUITests: XCTestCase {
         shot("mosaico")
     }
 
+    /// «La temporada» en grande abre su colección.
+    func testLaTemporadaAbreSuColeccion() {
+        relaunch(section: "seasons")
+        let now = app.buttons["season-now"]
+        XCTAssertTrue(now.waitForExistence(timeout: 20), "está «La temporada»")
+        shot("temporadas")
+        now.tap()
+        XCTAssertFalse(now.waitForExistence(timeout: 3) && now.isHittable, "se abrió la colección")
+        shot("temporada-coleccion")
+    }
+
+    /// «Tuyo»: Mi lista abre la lista completa.
+    func testTuyoAbreMiLista() {
+        relaunch(section: "trakt")
+        let mine = app.buttons["list-watchlist"]
+        XCTAssertTrue(mine.waitForExistence(timeout: 20), "está Mi lista en «Tuyo»")
+        shot("tuyo")
+        mine.tap()
+        XCTAssertTrue(app.navigationBars["Mi lista"].waitForExistence(timeout: 10), "se abre Mi lista")
+        shot("mi-lista")
+    }
+
+    private func relaunch(section: String) {
+        app.terminate()
+        app.launchArguments += ["-demo-section", section]
+        app.launch()
+    }
+
     func testAbajoEstanLoQueVesYColecciones() {
         let seen = app.descendants(matching: .any)["paraTi-your-year"]
         for _ in 0..<25 where !seen.exists || !seen.isHittable { app.swipeUp(velocity: .fast) }

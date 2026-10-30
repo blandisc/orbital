@@ -88,13 +88,18 @@ extension Tmdb {
 
     /// La que va hoy primero (o, entre temporadas, la siguiente en llegar) y el resto en el orden en que llegan.
     public static func orderedSeasons(today: Date, calendar: Calendar = .current, seasons: [TmdbSeason] = Tmdb.seasons) -> [TmdbSeason] {
+        seasonCountdown(today: today, calendar: calendar, seasons: seasons).map(\.season)
+    }
+
+    /// Cada temporada con cuántos días faltan para que empiece (0: ya va), de la más cercana a la más lejana: la de arriba es
+    /// «La temporada» de Para ti y las demás, «Próximas temporadas».
+    public static func seasonCountdown(today: Date, calendar: Calendar = .current, seasons: [TmdbSeason] = Tmdb.seasons) -> [(season: TmdbSeason, days: Int)] {
         let parts = calendar.dateComponents([.month, .day], from: today)
         let day = MonthDay(parts.month ?? 1, parts.day ?? 1)
-        func key(_ s: TmdbSeason) -> Int { inSeason(start: s.start, end: s.end, day: day) ? 0 : daysUntil(s.start, from: day) }
-        return seasons.enumerated().sorted { a, b in
-            let ka = key(a.element), kb = key(b.element)
-            return ka != kb ? ka < kb : a.offset < b.offset
-        }.map(\.element)
+        func days(_ s: TmdbSeason) -> Int { inSeason(start: s.start, end: s.end, day: day) ? 0 : daysUntil(s.start, from: day) }
+        return seasons.enumerated().map { (season: $0.element, days: days($0.element), offset: $0.offset) }
+            .sorted { ($0.days, $0.offset) < ($1.days, $1.offset) }
+            .map { (season: $0.season, days: $0.days) }
     }
 
     func discoverRows(_ kind: String, _ params: [(String, String)]) async throws -> [TmdbRow] {

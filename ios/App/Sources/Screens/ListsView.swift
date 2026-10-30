@@ -32,7 +32,7 @@ struct ListsView: View {
     /// Si un estante es una lista tuya, de dónde: tu watchlist, tus series y tus listas son de Trakt; los catálogos de tus
     /// complementos, de cada complemento.
     private func listSource(_ plan: ShelfPlan) -> ListSource? {
-        if plan.id == "watchlist" || plan.id == "mine" || plan.id.hasPrefix("list:") { return .trakt }
+        if ["watchlist", ForYou.favoritesList, "mine"].contains(plan.id) || plan.id.hasPrefix("list:") { return .trakt }
         if plan.id.hasPrefix("addon:") { return .addon }
         return nil
     }
@@ -40,13 +40,16 @@ struct ListsView: View {
     /// Una tarjeta del grupo de listas: el nombre, su pila de pósters y adónde lleva.
     struct ListCardItem: Identifiable {
         let id: String, name: String, posters: [String], count: Int?
-        /// Un estante abre su lista completa; una colección, la suya.
+        /// Abre su lista completa.
         var shelf: ShelfRoute?
-        var collection: CollectionRoute?
     }
 
+    /// «Tuyo»: Mi lista, Favoritos, Tus series y luego tus listas de Trakt, en ese orden.
     private var traktLists: [ListCardItem] {
-        model.visibleShelves.filter { listSource($0) == .trakt }.map(card)
+        let first = ["watchlist", ForYou.favoritesList, "mine"]
+        return model.visibleShelves.filter { listSource($0) == .trakt }
+            .sorted { (first.firstIndex(of: $0.id) ?? first.count) < (first.firstIndex(of: $1.id) ?? first.count) }
+            .map(card)
     }
 
     /// Los catálogos de tus complementos. «Mi lista» ya no va aquí: vive en Inicio y en tu watchlist de Trakt.
@@ -58,11 +61,12 @@ struct ListsView: View {
         let items = model.items(for: plan)
         let language = env.services.appSettings.uiLanguage
         let name: String = switch plan.id {
-        case "watchlist": Strings.tr("Tu watchlist", language: language)
+        case "watchlist": Strings.tr("Mi lista", language: language)
+        case ForYou.favoritesList: Strings.tr("Favoritos", language: language)
         case "mine": Strings.tr("Tus series", language: language)
         default: plan.title.isEmpty ? plan.id : plan.title
         }
-        return ListCardItem(id: plan.id, name: name, posters: items.prefix(2).map(\.poster), count: items.isEmpty ? nil : items.count, shelf: ShelfRoute(id: plan.id))
+        return ListCardItem(id: plan.id, name: name, posters: items.prefix(DS.ParaTiB.matchFan).map(\.poster), count: items.isEmpty ? nil : items.count, shelf: ShelfRoute(id: plan.id))
     }
 
     var body: some View {
@@ -148,8 +152,13 @@ struct ListsView: View {
                     if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
                 }
                 // Al final, las listas: las de Trakt y las de tus complementos, aparte.
-                if !traktLists.isEmpty { listGroup(title: "Listas de Trakt", source: .trakt, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection)) }
-                if !addonCards.isEmpty { listGroup(title: "De tus complementos", source: .addon, cards: addonCards).modifier(SectionSpy(section: .addons, active: $activeSection)) }
+                if !traktLists.isEmpty {
+                    listRows(title: Text("Tuyo"), trailing: Text("De Trakt"), cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection))
+                }
+                if !addonCards.isEmpty {
+                    listRows(title: Text("De tus complementos"), trailing: Text("Complementos"), cards: addonCards)
+                        .modifier(SectionSpy(section: .addons, active: $activeSection))
+                }
                 // Lo que ves (reemplaza «Tu año», que vive adentro) y, debajo, Colecciones (la repisa del canon).
                 if collections.model.traktLinked {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
@@ -239,24 +248,6 @@ struct ListsView: View {
         }
     }
 
-    /// Un grupo de listas (de Trakt o de tus complementos): tarjetas de dos en dos que abren la lista completa.
-    private func listGroup(title: LocalizedStringKey, source: ListSource, cards: [ListCardItem]) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title).padding(.horizontal, DS.Space.gutter)
-            LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3, wideMin: DS.Poster.stillWideMin), spacing: DS.Space.s3) {
-                ForEach(cards) { c in
-                    Group {
-                        if let shelf = c.shelf { NavigationLink(value: shelf) { ListCard(name: c.name, source: source, posters: c.posters, count: c.count) } }
-                        else if let collection = c.collection { NavigationLink(value: collection) { ListCard(name: c.name, source: source, posters: c.posters, count: c.count) } }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("list-\(c.id)")
-                }
-            }
-            .padding(.horizontal, DS.Space.gutter)
-        }
-    }
-
     /// Premios: cada uno con su estatuilla al frente, sobre sus tres ganadores más recientes.
     @ViewBuilder private var awards: some View {
         // El mismo orden que la repisa de Colecciones (Óscar, Palma, Ariel…), para que las dos no se contradigan.
@@ -291,13 +282,27 @@ struct ListsView: View {
         }
     }
 
-    /// Temporadas: Halloween, Día de Muertos, Navidad, San Valentín y Verano (la de hoy primero), cada una con sus tres títulos
-    /// más vistos, su ícono y su nombre al pie y el halo de su color.
+    /// Temporadas: la de ahora (o la siguiente en llegar) en grande y, debajo, las próximas de la más cercana a la más lejana,
+    /// cada una con sus tres títulos más vistos, su ícono y su nombre al pie y el halo de su color.
     private var seasonsSection: some View {
         let language = env.services.appSettings.uiLanguage
+        let countdown = collections.model.seasonCountdown
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: Text("Temporadas"), trailing: Text("La de ahora, primero"), size: .group).padding(.horizontal, DS.Space.gutter)
-            CenteredCarousel(items: collections.model.seasons, id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { season in
+            DSSectionHead(title: Text("Temporadas"), size: .group).padding(.horizontal, DS.Space.gutter)
+            if let now = countdown.first {
+                NavigationLink(value: CollectionRoute(kind: .season, id: now.season.slug)) {
+                    SeasonFeature(name: Strings.tr(now.season.title, language: language), blurb: Strings.tr(now.season.blurb, language: language),
+                                  days: now.days, posters: (collections.model.seasonItems[now.season.slug] ?? []).map(\.poster),
+                                  tint: DS.Collections.season(now.season.slug))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, DS.Space.gutter)
+                .accessibilityIdentifier("season-now")
+                .task { await collections.model.loadSeason(now.season.slug) }
+            }
+            DSSectionHead(title: Text("Próximas temporadas"), eyebrow: Text("De la más cercana a la más lejana")).padding(.horizontal, DS.Space.gutter)
+                .padding(.top, DS.Space.s3)
+            CenteredCarousel(items: countdown.dropFirst().map(\.season), id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { season in
                 let name = Strings.tr(season.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .season, id: season.slug)) {
                     CollectionCard(title: Text(verbatim: name), detail: Text(verbatim: Strings.tr(season.blurb, language: language)), name: name,
@@ -311,6 +316,37 @@ struct ListsView: View {
                 .task { await collections.model.loadSeason(season.slug) }
             }
         }
+    }
+
+    /// Un grupo de listas en renglones que abren la lista completa: «Tuyo» (Mi lista, Favoritos, Tus series y tus listas de
+    /// Trakt) y «De tus complementos».
+    private func listRows(title: Text, trailing: Text, cards: [ListCardItem]) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: title, trailing: trailing, size: .group).padding(.horizontal, DS.Space.gutter)
+            VStack(spacing: DS.Space.s2) {
+                ForEach(cards) { c in
+                    if let shelf = c.shelf {
+                        NavigationLink(value: shelf) { ListRow(name: c.name, detail: listDetail(c), posters: c.posters) }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("list-\(c.id)")
+                    }
+                }
+            }
+            .padding(.horizontal, DS.Space.gutter)
+        }
+    }
+
+    /// «Lo que dejaste pendiente · 34», «Lo que marcaste con el corazón · 21», «Las que estás viendo · 18» o «42 títulos».
+    private func listDetail(_ c: ListCardItem) -> Text {
+        let what: Text? = switch c.id {
+        case "watchlist": Text("Lo que dejaste pendiente")
+        case ForYou.favoritesList: Text("Lo que marcaste con el corazón")
+        case "mine": Text("Las que estás viendo")
+        default: nil
+        }
+        guard let count = c.count else { return what ?? Text(verbatim: "") }
+        guard let what else { return Text("\(count) títulos") }
+        return Text("\(what) · \(count)")
     }
 
     /// Lo mejor del género: el Top 10 del año de cada género (TMDB, por nota), con su ícono y su nombre al pie.

@@ -51,6 +51,21 @@ final class TmdbCollectionsTests: XCTestCase {
         XCTAssertEqual(order(2026, 7, 15), ["verano", "halloween", "muertos", "navidad", "sanvalentin"])
     }
 
+    /// «La temporada» dice cuánto falta: 0 si ya va, mañana es 1 y las próximas en el orden en que llegan.
+    func testSeasonCountdownSaysHowManyDaysAreLeft() {
+        let cal = Calendar(identifier: .gregorian)
+        let now = Tmdb.seasonCountdown(today: date(2026, 10, 30), calendar: cal)
+        XCTAssertEqual(now.first?.season.slug, "halloween")
+        XCTAssertEqual(now.first?.days, 0, "Halloween ya va")
+        XCTAssertEqual(now.dropFirst().first.map { "\($0.season.slug) \($0.days)" }, "muertos 2", "Día de Muertos en 2 días")
+        let eve = Tmdb.seasonCountdown(today: date(2026, 10, 31), calendar: cal)
+        XCTAssertEqual(eve[1].days, 1, "un día antes: mañana")
+        let between = Tmdb.seasonCountdown(today: date(2026, 11, 15), calendar: cal)
+        XCTAssertEqual(between.first?.season.slug, "navidad")
+        XCTAssertEqual(between.first?.days, 10, "entre temporadas, la siguiente con sus días")
+        XCTAssertEqual(between.map(\.days), between.map(\.days).sorted(), "de la más cercana a la más lejana")
+    }
+
     func testChristmasCrossesTheYear() {
         XCTAssertEqual(order(2026, 12, 24).first, "navidad")
         XCTAssertEqual(order(2027, 1, 3), ["navidad", "sanvalentin", "verano", "halloween", "muertos"])

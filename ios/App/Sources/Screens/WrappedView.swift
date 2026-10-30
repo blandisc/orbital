@@ -58,6 +58,8 @@ struct WrappedView: View {
         .task(id: "\(index)|\(paused)|\(answer ?? "")") { await tick(story) }
         .accessibilityAction(named: Text("Siguiente")) { step(1) }
         .accessibilityAction(named: Text("Anterior")) { step(-1) }
+        // Contenedor: sin esto el id «wrapped» tapaba el de cada botón de adentro (la ✕ dejaba de ser «wrapped-close»).
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("wrapped")
     }
 

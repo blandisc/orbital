@@ -120,6 +120,10 @@ TRANSLATIONS = {
     "HOY": "TODAY",
     "Ayer": "Yesterday",
     "en %lld días": "in %lld days",
+    "De la más cercana a la más lejana": "From the closest to the farthest",
+    "La temporada · ahora": "The season · now", "La temporada · mañana": "The season · tomorrow",
+    "La temporada · en %lld días": "The season · in %lld days", "La temporada · en %@ días": "The season · in %@ days", "Próximas temporadas": "Coming seasons", "Ver la colección": "See the collection",
+    "Las que estás viendo": "The ones you're watching", "%@ · %lld": "%@ · %lld",
     # Modo degradado (docs/producto/modo-degradado.md): la causa de verdad y la salida (`Degraded`, `UserMessages`).
     "Trakt no contesta": "Trakt isn't responding",
     "Real-Debrid no contesta": "Real-Debrid isn't responding",

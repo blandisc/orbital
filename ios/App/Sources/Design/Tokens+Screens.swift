@@ -357,8 +357,8 @@ extension DS {
         /// El sello de dónde viene una lista (Trakt, tus complementos, Rotten Tomatoes, tu Orbital).
         static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), critics = Color(red: 0.78, green: 0.16, blue: 0.07), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)
         static let badgeRadius: CGFloat = 5
-        /// La tarjeta de una lista: su pila de pósters.
-        static let stackPoster: CGFloat = 40, stackWidth: CGFloat = 54, stackAngle: Double = 8
+        /// Un renglón de lista (`ListRow`, «Tuyo»): el ancho de sus pósters.
+        static let stackPoster: CGFloat = 40
         /// «Porque viste»: el póster de lo que viste y los relacionados.
         static let seedPoster: CGFloat = 104, relatedPoster: CGFloat = 92
         /// «Porque viste»: cuántos pósters vacíos ocupan el lugar de las relacionadas mientras llegan.
