@@ -2247,6 +2247,28 @@
         }
       }
     },
+    "Añadido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added"
+          }
+        }
+      }
+    },
+    "Añadir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        }
+      }
+    },
     "Añadir a Mi lista": {
       "extractionState": "manual",
       "localizations": {
@@ -2254,6 +2276,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add to My List"
+          }
+        }
+      }
+    },
+    "Añadir canal": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add channel"
           }
         }
       }
@@ -2631,6 +2664,17 @@
         }
       }
     },
+    "Breaking Bad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Breaking Bad"
+          }
+        }
+      }
+    },
     "Brinca la intro": {
       "extractionState": "manual",
       "localizations": {
@@ -2638,6 +2682,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skip the intro"
+          }
+        }
+      }
+    },
+    "Brooklyn Nine-Nine": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brooklyn Nine-Nine"
           }
         }
       }
@@ -2693,6 +2748,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Finds the movie and downloads it. For a series, use its page."
+          }
+        }
+      }
+    },
+    "Busca una serie para añadirla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search a show to add it"
           }
         }
       }
@@ -2957,6 +3023,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "CH %@"
+          }
+        }
+      }
+    },
+    "Cada canal pasa episodios al azar de esa serie, todo el día. Toca uno y entras justo donde va.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each channel plays random episodes of that show all day. Tap one to tune in right where it is."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each channel plays random episodes of that show all day. Tap one to tune in right where it is."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each channel plays random episodes of that show all day. Click one to tune in right where it is."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each channel plays random episodes of that show all day. Tap one to tune in right where it is."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada canal pasa episodios al azar de esa serie, todo el día. Toca uno y entras justo donde va."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada canal pasa episodios al azar de esa serie, todo el día. Toca uno y entras justo donde va."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada canal pasa episodios al azar de esa serie, todo el día. Haz clic en uno y entras justo donde va."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada canal pasa episodios al azar de esa serie, todo el día. Toca uno y entras justo donde va."
+                }
+              }
+            }
           }
         }
       }
@@ -3286,6 +3417,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next channel"
+          }
+        }
+      }
+    },
+    "Canales": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Channels"
           }
         }
       }
@@ -7146,6 +7288,17 @@
         }
       }
     },
+    "Elegir canales": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose channels"
+          }
+        }
+      }
+    },
     "Elegir carpeta": {
       "extractionState": "manual",
       "localizations": {
@@ -8218,6 +8371,17 @@
         }
       }
     },
+    "Entra justo donde va": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tune in right where it is"
+          }
+        }
+      }
+    },
     "Entrar": {
       "extractionState": "manual",
       "localizations": {
@@ -8302,6 +8466,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stremio error"
+          }
+        }
+      }
+    },
+    "Es canal": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Is a channel"
           }
         }
       }
@@ -9075,6 +9250,17 @@
         }
       }
     },
+    "Friends": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friends"
+          }
+        }
+      }
+    },
     "Fuente": {
       "extractionState": "manual",
       "localizations": {
@@ -9126,6 +9312,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sources and lists"
+          }
+        }
+      }
+    },
+    "Futurama": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Futurama"
           }
         }
       }
@@ -11730,6 +11927,17 @@
         }
       }
     },
+    "Los Simpson": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Simpsons"
+          }
+        }
+      }
+    },
     "Los avisos están apagados": {
       "extractionState": "manual",
       "localizations": {
@@ -11825,6 +12033,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Timeline"
+          }
+        }
+      }
+    },
+    "Malcolm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Malcolm in the Middle"
           }
         }
       }
@@ -13764,6 +13983,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't find a version to download %@."
+          }
+        }
+      }
+    },
+    "No encontré «%@». Prueba con otro nombre.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find “%@”. Try another name."
+          }
+        }
+      }
+    },
+    "No es canal": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not a channel"
           }
         }
       }
@@ -18446,6 +18687,17 @@
         }
       }
     },
+    "Seinfeld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seinfeld"
+          }
+        }
+      }
+    },
     "Semana": {
       "extractionState": "manual",
       "localizations": {
@@ -18748,6 +19000,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Always"
+          }
+        }
+      }
+    },
+    "Siempre hay un episodio al aire": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There's always an episode on"
           }
         }
       }
@@ -19521,6 +19784,17 @@
         }
       }
     },
+    "Stargate SG-1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stargate SG-1"
+          }
+        }
+      }
+    },
     "Stick derecho": {
       "extractionState": "manual",
       "localizations": {
@@ -20181,6 +20455,28 @@
         }
       }
     },
+    "Te sugerimos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggested"
+          }
+        }
+      }
+    },
+    "Ted Lasso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ted Lasso"
+          }
+        }
+      }
+    },
     "Temporada %@": {
       "extractionState": "manual",
       "localizations": {
@@ -20331,6 +20627,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Horror"
+          }
+        }
+      }
+    },
+    "The Bear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Bear"
+          }
+        }
+      }
+    },
+    "The Office": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Office"
           }
         }
       }
@@ -23108,6 +23426,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your watchlist, your recommendations and your platforms' Top 10 show up here."
+          }
+        }
+      }
+    },
+    "Tus canales": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your channels"
           }
         }
       }

@@ -20,6 +20,18 @@ extension DS {
         static let todayAnchor: CGFloat = 0.62
     }
 
+    /// Canales: el ancho de cada canal, su logo, el velo, cada cuánto se recalcula, el acercamiento lento de la imagen del
+    /// capítulo (el «cachito») y la hoja para elegir.
+    enum HomeChannels {
+        static let width: CGFloat = 268, addWidth: CGFloat = 150
+        static let logoWidth: CGFloat = 96, logoHeight: CGFloat = 30
+        static let veilStart: Double = 0.4
+        static let tick: TimeInterval = 30
+        static let drift: Double = 14, driftScale: CGFloat = 1.1
+        static let searchDelay: Duration = .milliseconds(350)
+        static let gridColumns = 4, resultPoster: CGFloat = 44
+    }
+
     enum HomeKind {
         /// Cuánto se queda a la vista el nombre del tipo elegido («Series») después de tocar su ícono en la barra.
         static let tipHold: Duration = .milliseconds(1100)

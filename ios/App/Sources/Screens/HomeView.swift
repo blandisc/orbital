@@ -9,6 +9,8 @@ struct HomeView: View {
     @State private var inbox: ModelObserver<InboxModel>
     /// «Por lo que viste»: el mazo de lo último que viste y sus relacionadas.
     @State private var because = ModelObserver(BecauseModel(AppEnvironment.shared.services))
+    /// Canales: tus series siempre al aire.
+    @State private var channels = ModelObserver(ChannelsModel(AppEnvironment.shared.services))
     @State private var tint = ArtTint()
     @State private var openTitle: TitleRoute?
     /// La tarjeta al frente del carrusel: su lugar en la vuelta infinita (`slot % cuántas`).
@@ -107,6 +109,7 @@ struct HomeView: View {
                     }
                 }
                 HomeBecause(model: because.model, kind: kind)
+                if kind != "movie" { HomeChannels(model: channels.model) }   // solo series
                 // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
                 if model.hasAnyTop { topTen(model) }
                 if !pending.isEmpty { watchlist(model, items: pending) }
