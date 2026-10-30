@@ -259,7 +259,8 @@ su API. Las listas se cambian en `config.yaml` (`para_ti.critics_movies`, `criti
   `swift test` (706) y las pruebas web están en verde.
 - La clave de TMDB incluida (decisión de Fernando, 29 oct): ya está el mecanismo (`ios/App/Secrets.xcconfig`, que no va a
   git porque el repo es público; plantilla `Secrets.example.xcconfig`; Info.plist › `OrbitalTMDBKey`; `Services.tmdbKey`: la
-  tuya o la de tu Orbital gana, si no, la incluida). Falta poner la clave en `Secrets.xcconfig` de la Mac que compila (la
-  misma de la consola, `config.yaml` › `para_ti.tmdb_key`). Sin ella la app compila igual y la pide en Avanzado.
+  tuya o la de tu Orbital gana, si no, la incluida). En la Mac ya está en `~/code/orbital/ios/App/Secrets.xcconfig`
+  (comprobada con TMDB el 29 oct; también en `.git/info/exclude` para que nadie la suba). En otra máquina hay que crearlo;
+  sin él la app compila igual y la pide en Avanzado.
 - OneDrive se queda como está (Fernando aún no sabe si lo mantiene): sin Id. incluido.
 - Probar Comet con la cuenta real de Real-Debrid (que salgan fuentes al tocar «Ver»).
