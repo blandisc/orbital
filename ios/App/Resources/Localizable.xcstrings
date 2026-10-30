@@ -7933,6 +7933,17 @@
         }
       }
     },
+    "En tendencia esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trending this week"
+          }
+        }
+      }
+    },
     "En tendencia y para ti": {
       "extractionState": "manual",
       "localizations": {
