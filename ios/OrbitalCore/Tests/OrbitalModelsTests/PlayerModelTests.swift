@@ -251,6 +251,20 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertLessThan(state["timeWatched"]?.intValue ?? 0, 20_000)
     }
 
+    /// Un canal de Inicio se ve como la tele: ni avance guardado ni Trakt, aunque lo veas un buen rato.
+    func testChannelPlaybackLeavesNoTrace() async throws {
+        let rig = try twoSources()
+        var request = rig.request()
+        request.offTheRecord = true
+        await rig.model.begin(request)
+        await rig.model.handle(rig.playing(10))
+        rig.clock.advance(120); await rig.model.handle(rig.playing(130)); await rig.model.tick()
+        rig.clock.advance(2); await rig.model.handle(rig.playing(132, state: .paused))
+        await rig.model.close()
+        XCTAssertTrue(try rig.saved().isEmpty)
+        XCTAssertNil(rig.library.entry("tt0386676"))
+    }
+
     func testOpeningAndClosingWithoutWatchingDoesNotTouchTheLibrary() async throws {
         let rig = try twoSources()
         await rig.model.begin(rig.request())

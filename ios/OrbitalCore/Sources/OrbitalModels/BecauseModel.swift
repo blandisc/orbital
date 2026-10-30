@@ -14,7 +14,7 @@ public final class BecauseModel: ObservableModel {
     /// El título arriba del mazo: cambia en cuanto lo eliges (sus relacionadas llegan en `because`).
     public private(set) var selected: String? { didSet { if selected != oldValue { changed() } } }
     /// Las relacionadas de cada título, traídas de antemano.
-    public private(set) var preloaded: [String: [Suggestion]] = [:]
+    public private(set) var preloaded: [String: [Suggestion]] = [:] { didSet { if preloaded.count != oldValue.count { changed() } } }
     private var preloading: Task<Void, Never>?
     /// El que elegiste (nil: cambia solo cada día).
     private var chosen: String?
@@ -28,12 +28,15 @@ public final class BecauseModel: ObservableModel {
     /// Trae lo último que viste y las relacionadas del de arriba (el que elegiste, o el del día).
     public func load() async {
         let forYou = services.forYou
-        async let found = forYou.becauseYouWatched(seed: chosen)
+        let asked = chosen
+        async let found = forYou.becauseYouWatched(seed: asked)
         async let recent = forYou.recentSeeds()
         let (top, history) = await (found, recent)
         guard !Task.isCancelled else { return }
-        because = top
         seeds = history
+        // Elegiste otro mientras llegaba: se queda tu elección (no la pisa lo que se pidió antes).
+        guard chosen == asked else { preload(); return }
+        because = top
         if selected == nil || !history.contains(where: { $0.imdb == selected }) { selected = top?.seed.imdb }
         else if selected != top?.seed.imdb, let pick = history.first(where: { $0.imdb == selected }), let ready = preloaded[pick.imdb] {
             because = (pick, ready)   // al recargar seguías en otro título: se queda ese

@@ -64,6 +64,8 @@ TRANSLATIONS = {
     "Lo nuevo de lo tuyo": "New from your shows",
     "Por lo que viste": "Because you watched",
     "Canales": "Channels",
+    "Quitar %@ de tus canales": "Remove %@ from your channels",
+    "Añadir %@ a tus canales": "Add %@ to your channels",
     # Nombres de las series de arranque de Canales (`ChannelsModel.starters` y `suggested`).
     "Los Simpson": "The Simpsons", "The Office": "The Office", "Friends": "Friends", "Seinfeld": "Seinfeld", "Futurama": "Futurama",
     "Breaking Bad": "Breaking Bad", "Malcolm": "Malcolm in the Middle", "Brooklyn Nine-Nine": "Brooklyn Nine-Nine", "Ted Lasso": "Ted Lasso",

@@ -2269,6 +2269,17 @@
         }
       }
     },
+    "Añadir %@ a tus canales": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add %@ to your channels"
+          }
+        }
+      }
+    },
     "Añadir a Mi lista": {
       "extractionState": "manual",
       "localizations": {
@@ -16961,6 +16972,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remove %@"
+          }
+        }
+      }
+    },
+    "Quitar %@ de tus canales": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %@ from your channels"
           }
         }
       }

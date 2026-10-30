@@ -54,6 +54,7 @@ public final class ChannelsModel: ObservableModel {
     /// Lo que encontró la búsqueda.
     public private(set) var results: [Pick] = [] { didSet { if results != oldValue { changed() } } }
     private var loaded: [String: Channel] = [:]
+    private var loading = false
     private let services: Services
 
     public init(_ services: Services) {
@@ -68,13 +69,17 @@ public final class ChannelsModel: ObservableModel {
 
     /// Trae los episodios de cada canal que falte (a la par); los que ya están no se vuelven a pedir.
     public func load() async {
+        guard !loading else { return }   // una a la vez (la del inicio y la de cerrar la hoja)
+        loading = true
+        defer { loading = false }
         let missing = picks.filter { loaded[$0.id] == nil }
         let cinemeta = services.cinemeta
         let now = Date()
         await withTaskGroup(of: Channel?.self) { group in
             for pick in missing {
                 group.addTask {
-                    guard let meta = try? await cinemeta.meta(kind: "series", id: pick.id) else { return nil }
+                    // En disco: la ficha de una serie larga pesa y no se vuelve a bajar en cada arranque.
+                    guard let meta = try? await cinemeta.meta(kind: "series", id: pick.id, persist: true) else { return nil }
                     return Self.channel(pick, meta: meta, now: now)
                 }
             }
@@ -89,7 +94,7 @@ public final class ChannelsModel: ObservableModel {
         day.formatOptions = [.withFullDate]
         let episodes = CinemetaParsing.seasons(meta).filter { !$0.isSpecials }.flatMap { season in
             season.episodes.filter { e in
-                guard let released = e.released, let at = ISO8601DateFormatter().date(from: released) ?? day.date(from: String(released.prefix(10))) else { return true }
+                guard let released = e.released, let at = day.date(from: String(released.prefix(10))) else { return true }
                 return at <= now
             }.map { ChannelSchedule.Episode(season: season.season, episode: $0.episode, name: $0.hasTitle ? $0.title : "", still: $0.thumbnail ?? "", videoID: $0.id) }
         }

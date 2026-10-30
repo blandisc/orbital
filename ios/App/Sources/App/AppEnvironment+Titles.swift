@@ -116,13 +116,14 @@ extension AppEnvironment {
                    episodeLabel: services.tvEpisodeLabel(item.season, item.episode, item.episodeLabel), poster: item.poster, at: item.position)
     }
 
-    func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?, at position: Double? = nil, meta known: JSON? = nil) async {
+    func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?, at position: Double? = nil, meta known: JSON? = nil, offTheRecord: Bool = false) async {
         var fetched = known
         if fetched == nil { fetched = try? await services.cinemeta.meta(kind: kind, id: metaID) }
         guard let videoID, let meta = fetched else { return notify(format: "No pude abrir «%@»", title, detail: "Revisa tu internet") }
         var request = PlayRequest(kind: kind, metaID: metaID, videoID: videoID, originalTitle: originalTitle, displayTitle: title,
                                   episodeLabel: episodeLabel, poster: poster, meta: meta)
         request.startPosition = position   // «Seguir en el iPhone»: el segundo exacto de la TV
+        request.offTheRecord = offTheRecord   // un canal de Inicio: sin avance ni Trakt
         if services.appSettings.preferInfuse { await playExternal(request) } else { play(request) }
     }
 }
