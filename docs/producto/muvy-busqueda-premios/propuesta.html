@@ -1,0 +1,262 @@
+<title>Búsqueda, premios y lo que ves</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: una columna de lectura (~68ch); cada idea trae su maqueta de iPhone al lado (se apila en el celular). */
+:root{
+  --bg:#f6f4f1; --surface:#ffffff; --ink:#1d1a22; --muted:#6a6472; --line:#e2dde4;
+  --accent:#c2410c; --accent-soft:#fde7dc; --gold:#a16207; --ok:#15803d;
+  --phone:#14121a; --phone-ink:#f3f0f6; --phone-muted:#9c94a6; --phone-chip:#2a2632; --phone-on:#f97316;
+  --display:"Fraunces",Georgia,serif; --body:"Figtree",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121016; --surface:#1b1820; --ink:#efebf3; --muted:#a39cad; --line:#2d2934;
+  --accent:#fb923c; --accent-soft:#3a2216; --gold:#eab308; --ok:#4ade80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121016; --surface:#1b1820; --ink:#efebf3; --muted:#a39cad; --line:#2d2934;
+  --accent:#fb923c; --accent-soft:#3a2216; --gold:#eab308; --ok:#4ade80; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,5vw,44px)}
+h2{font-size:clamp(24px,3.6vw,32px)}
+h3{font-size:19px;font-family:var(--body);font-weight:700}
+p{margin:0;max-width:68ch}
+.eyebrow{font:600 12px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lede{font-size:18px;color:var(--muted)}
+header{display:flex;flex-direction:column;gap:14px}
+section{display:flex;flex-direction:column;gap:20px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:32px;align-items:start}
+@media (max-width:820px){.split{grid-template-columns:1fr}.split .phone{justify-self:center}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:68ch}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.rec{border-color:var(--accent);background:var(--accent-soft)}
+.rec .eyebrow{color:var(--accent)}
+code,.mono{font-family:var(--mono);font-size:.86em}
+table{border-collapse:collapse;width:100%;font-size:15px}
+.tbl{overflow-x:auto}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.yes{color:var(--ok);font-weight:600}.no{color:var(--muted)}
+.order{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:720px){.order{grid-template-columns:1fr}}
+.order .box strong{font-family:var(--display);font-size:20px}
+.tag{display:inline-block;font:600 12px/1 var(--body);padding:5px 9px;border-radius:99px;background:var(--line);color:var(--ink)}
+
+/* Maquetas de iPhone */
+.phone{width:300px;max-width:100%;background:var(--phone);color:var(--phone-ink);border-radius:38px;padding:18px 14px 22px;
+  box-shadow:0 0 0 6px #2b2733, 0 18px 40px rgba(0,0,0,.25);font-size:13px;line-height:1.35;display:flex;flex-direction:column;gap:12px}
+.phone .bar{display:flex;justify-content:space-between;font:600 12px var(--body);color:var(--phone-ink);padding:0 10px}
+.phone .ttl{font:700 22px var(--display);padding:0 4px}
+.phone .sub{color:var(--phone-muted);font-size:12px;padding:0 4px}
+.phone .lbl{font:600 10px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--phone-muted);padding:0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--phone-chip);border-radius:99px;padding:6px 10px;font-weight:600;font-size:12px}
+.chip.on{background:var(--phone-on);color:#1a0d04}
+.posters{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.poster{aspect-ratio:2/3;border-radius:8px;position:relative;overflow:hidden}
+.poster span{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.65);border-radius:5px;padding:2px 5px;font:600 10px var(--mono);color:#fff}
+.p1{background:linear-gradient(160deg,#3b2f5c,#0f0c1a)}.p2{background:linear-gradient(160deg,#7c2d12,#1c0a04)}
+.p3{background:linear-gradient(160deg,#134e4a,#04110f)}.p4{background:linear-gradient(160deg,#1e3a8a,#070b1a)}
+.p5{background:linear-gradient(160deg,#713f12,#140b03)}.p6{background:linear-gradient(160deg,#4a044e,#12011a)}
+.row{display:flex;align-items:center;justify-content:space-between;background:var(--phone-chip);border-radius:12px;padding:9px 11px;gap:8px}
+.row .n{font-weight:700}
+.row .w{font:700 10px var(--body);letter-spacing:.08em;color:#facc15}
+.slider{height:6px;border-radius:9px;background:var(--phone-chip);position:relative}
+.slider i{position:absolute;left:62%;right:0;top:0;bottom:0;border-radius:9px;background:var(--phone-on)}
+.btn{background:var(--phone-on);color:#1a0d04;text-align:center;border-radius:14px;padding:11px;font-weight:700}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--phone-chip);border-radius:12px;padding:10px}
+.stat b{display:block;font:700 20px var(--display)}
+.stat small{color:var(--phone-muted)}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bars div{display:grid;grid-template-columns:70px 1fr 26px;gap:8px;align-items:center;font-size:12px}
+.bars i{display:block;height:8px;border-radius:9px;background:var(--phone-on)}
+.bars em{font-style:normal;color:var(--phone-muted);font-family:var(--mono);font-size:11px;text-align:right}
+footer{color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:6px}
+a{color:var(--accent)}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Orbital · investigación de Muvy · 29 oct 2026</span>
+  <h1>Búsqueda avanzada, premios y «lo que ves»</h1>
+  <p class="lede">Revisé cómo lo hace Muvy por dentro y qué ya tiene Orbital. Las tres cosas se pueden copiar con fuentes gratuitas. Abajo, cada una con su maqueta, lo que cuesta y mi recomendación. Al final, el orden que te propongo.</p>
+</header>
+
+<section>
+  <span class="eyebrow">Lo que encontré en Muvy</span>
+  <h2>Cómo lo hacen por dentro</h2>
+  <div class="tbl"><table>
+    <tr><th>Parte</th><th>Qué ve la gente</th><th>De dónde sale</th></tr>
+    <tr><td><b>Búsqueda avanzada</b></td><td>Filtros que se apilan: películas o series, año o década, género, dónde verlo (país + 297 plataformas), país de origen, idioma, duración, reparto, palabras clave, «familiar», temporadas. Y calificación mínima por fuente: TMDB, IMDb, Tomatómetro, Popcornmeter, Letterboxd, Trakt y Metacritic, cada una con mínimo de votos. Arriba, atajos listos: «IMDb 8+ en Netflix», «Lo mejor de 2026», «Thrillers coreanos».</td><td>Los filtros normales van directo al «discover» de TMDB (gratis). Las 7 calificaciones las guardan en su propia base de datos; son exactamente las que junta <b>MDBList</b>, y su código también usa listas de MDBList y de Trakt.</td></tr>
+    <tr><td><b>Premios</b></td><td>Óscar, Globos de Oro, BAFTA, Emmy, Cannes, Venecia, Berlín… 30 años. Ceremonia → año → categorías con ganador y nominados.</td><td>Base propia: ceremonias, ediciones y nominaciones. Ordenan las categorías con reglas (Mejor película primero, luego dirección, actuación, guion…). El historial completo es de paga.</td></tr>
+    <tr><td><b>«Your watching, counted»</b></td><td>Películas, horas de películas, episodios, horas de series, racha, resumen de cada mes, logros y ranking contra amigos.</td><td>Su propio registro de lo visto (importan Trakt, Letterboxd, IMDb y TV Time).</td></tr>
+  </table></div>
+  <p class="lede" style="font-size:15px">Una nota: la página de cada película en Muvy tiene la verificación anti‑robots de Cloudflare. No la brinqué; lo de premios lo saqué de su código público, que basta.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Lo que ya tenemos</span>
+  <h2>Orbital no empieza de cero</h2>
+  <ul>
+    <li><b>«Tu año»</b> (Ajustes, bajo tu perfil) ya cuenta horas, racha más larga, tu género, el mapa día por día y lo que más viste, con tu historial de Trakt. Es la base de la tercera idea.</li>
+    <li><b>«¿Qué vemos?»</b> ya filtra por géneros, época, listas y «bien calificada en IMDb, Trakt o TMDB». La búsqueda avanzada es su hermana mayor.</li>
+    <li>El iPhone ya habla con <b>TMDB discover</b> (por plataforma y por estudio) y ya usa <b>MDBList</b> para «Aprobadas por la crítica».</li>
+    <li>Esto no toca el Inicio, que sigue en pausa: las tres viven en Buscar o en tu perfil.</li>
+  </ul>
+</section>
+
+<section>
+  <span class="eyebrow">Idea 1</span>
+  <div class="split">
+    <div class="col">
+      <h2>Búsqueda avanzada</h2>
+      <p>Una pantalla nueva desde Buscar («Filtrar»). Pides como se lo dirías a un amigo: «coreana, thriller, en Netflix, de los 2010, IMDb 7.5 o más». Los resultados se ven mientras mueves los filtros, con cuántos quedan.</p>
+      <h3>Qué cambia para ti</h3>
+      <ul>
+        <li>Encuentras justo lo que tienes ganas de ver, no solo lo popular.</li>
+        <li>Atajos guardados arriba: «Lo mejor de este año», «Joyas cortas (menos de 90 min)», «Clásicos en tu plataforma».</li>
+      </ul>
+      <h3>Cómo se hace</h3>
+      <ul>
+        <li><b>Año, género, plataforma en México, país, idioma, duración, reparto y votos:</b> TMDB discover. Gratis, ya conectado, rápido.</li>
+        <li><b>Calificación por fuente:</b> tres caminos.
+          <ul>
+            <li><b>Trakt</b> filtra por IMDb, TMDB, Rotten Tomatoes y Metacritic al buscar. Falta comprobar si algunos de esos filtros piden Trakt VIP.</li>
+            <li><b>MDBList</b> da las 7 calificaciones por título (gratis, unas 1 000 consultas al día con clave). Sirve para mostrarlas y para filtrar los resultados que ya trajo TMDB.</li>
+            <li><b>Base propia</b> como Muvy: lo más completo, pero hay que mantener un servidor.</li>
+          </ul>
+        </li>
+      </ul>
+      <div class="box rec"><span class="eyebrow">Recomendación</span>
+        <p>Primero TMDB para los filtros y MDBList para las calificaciones (IMDb, Rotten Tomatoes, Letterboxd, Metacritic) sobre lo que TMDB devuelve. Cubre el 90 % sin servidor nuevo. La base propia solo si después se queda corto.</p></div>
+    </div>
+    <div class="phone" aria-label="Maqueta de búsqueda avanzada">
+      <div class="bar"><span>9:41</span><span>●●●</span></div>
+      <div class="ttl">Filtrar</div>
+      <div class="chips"><span class="chip on">Películas</span><span class="chip">Series</span></div>
+      <div class="lbl">Atajos</div>
+      <div class="chips"><span class="chip">IMDb 8+ en Netflix</span><span class="chip">Lo mejor de 2026</span><span class="chip">Menos de 90 min</span></div>
+      <div class="lbl">Época</div>
+      <div class="chips"><span class="chip">2020s</span><span class="chip on">2010s</span><span class="chip">2000s</span><span class="chip">90s</span></div>
+      <div class="lbl">Dónde verlo · México</div>
+      <div class="chips"><span class="chip on">Netflix</span><span class="chip">Max</span><span class="chip">Prime</span><span class="chip">Disney+</span></div>
+      <div class="lbl">IMDb mínimo · 7.5</div>
+      <div class="slider"><i></i></div>
+      <div class="lbl">Género · País</div>
+      <div class="chips"><span class="chip on">Thriller</span><span class="chip on">Corea del Sur</span></div>
+      <div class="posters">
+        <div class="poster p1"><span>IMDb 8.5</span></div><div class="poster p2"><span>IMDb 7.8</span></div><div class="poster p3"><span>IMDb 7.6</span></div>
+      </div>
+      <div class="btn">Ver 24 películas</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Idea 2</span>
+  <div class="split">
+    <div class="col">
+      <h2>Premios</h2>
+      <p>Una sección «Premios»: eliges la ceremonia y el año, y ves cada categoría con el ganador marcado y los nominados. Tocas cualquiera y abre su ficha. En la ficha de cada película aparece «Ganó 7 Óscar · 13 nominaciones».</p>
+      <h3>Qué cambia para ti</h3>
+      <ul>
+        <li>Preguntas como «¿quién estuvo nominada a Mejor película en 2024?» se contestan en dos toques.</li>
+        <li>Listas gratis para descubrir: «Todas las ganadoras de Cannes», «Mejor película internacional desde 1995».</li>
+        <li>Más adelante, por voz: «¿qué ganó el Óscar en 2010?».</li>
+      </ul>
+      <h3>Cómo se hace</h3>
+      <ul>
+        <li>Lo saco una vez de <b>Wikidata</b> (abierta y gratis). Ya lo probé: devuelve los nominados y la ganadora de Mejor película 2024 con su nombre en español.</li>
+        <li>Se guarda como un archivo dentro de la app (30 años × 8 ceremonias; pesa poco), y se refresca una vez al año, después de cada ceremonia.</li>
+        <li>Lo laborioso es limpiar: Wikidata mezcla personas con películas y los festivales tienen menos datos que el Óscar. Lo reviso categoría por categoría con pruebas.</li>
+      </ul>
+      <div class="box rec"><span class="eyebrow">Recomendación</span>
+        <p>Empezar con Óscar, Globos de Oro, BAFTA y Emmy, que vienen completos. Cannes, Venecia y Berlín en una segunda tanda, solo con el premio mayor y el de dirección.</p></div>
+    </div>
+    <div class="phone" aria-label="Maqueta de premios">
+      <div class="bar"><span>9:41</span><span>●●●</span></div>
+      <div class="ttl">Óscar 2024</div>
+      <div class="chips"><span class="chip on">Óscar</span><span class="chip">Globos</span><span class="chip">BAFTA</span><span class="chip">Emmy</span><span class="chip">Cannes</span></div>
+      <div class="chips"><span class="chip">2026</span><span class="chip">2025</span><span class="chip on">2024</span><span class="chip">2023</span></div>
+      <div class="lbl">Mejor película</div>
+      <div class="row"><span class="n">Oppenheimer</span><span class="w">GANÓ</span></div>
+      <div class="row"><span>Pobres criaturas</span><span class="sub">nominada</span></div>
+      <div class="row"><span>Anatomía de una caída</span><span class="sub">nominada</span></div>
+      <div class="row"><span>La zona de interés</span><span class="sub">nominada</span></div>
+      <div class="sub">+ 6 más</div>
+      <div class="lbl">Mejor dirección</div>
+      <div class="row"><span class="n">Christopher Nolan</span><span class="w">GANÓ</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Idea 3</span>
+  <div class="split">
+    <div class="col">
+      <h2>Lo que ves</h2>
+      <p>«Tu año» crece y se vuelve «Lo que ves»: todo tu historial, no solo este año. Horas, resumen de cada mes, tus géneros, décadas, países, directores y actores; tu calificación contra la de la crítica («eres más duro que IMDb»), y logros.</p>
+      <h3>De dónde salen los datos</h3>
+      <ul>
+        <li><b>Trakt</b> (ya conectado): tu historial completo, tus calificaciones y sus totales. Con eso salen casi todas las gráficas.</li>
+        <li><b>Letterboxd</b> no tiene API pública. Dos caminos:
+          <ul>
+            <li><b>Tu RSS público:</b> solo pones tu usuario y trae tus ~50 últimas con calificación. Ya lo probé con un usuario real y funciona sin iniciar sesión.</li>
+            <li><b>Importar tu exportación (ZIP):</b> todo tu historial y tus reseñas, una vez.</li>
+          </ul>
+        </li>
+      </ul>
+      <div class="box rec"><span class="eyebrow">Recomendación</span>
+        <p>Trakt primero, ampliando lo que ya hace «Tu año». Letterboxd por RSS para «lo reciente» y tus estrellas, con la importación del ZIP como opción. Sin ranking de amigos: Orbital no tiene red social y no hace falta.</p></div>
+    </div>
+    <div class="phone" aria-label="Maqueta de lo que ves">
+      <div class="bar"><span>9:41</span><span>●●●</span></div>
+      <div class="ttl">Lo que ves</div>
+      <div class="chips"><span class="chip">Este año</span><span class="chip on">Siempre</span></div>
+      <div class="stats">
+        <div class="stat"><b>412</b><small>películas</small></div>
+        <div class="stat"><b>38 d</b><small>de películas</small></div>
+        <div class="stat"><b>2 140</b><small>episodios</small></div>
+        <div class="stat"><b>21 días</b><small>racha más larga</small></div>
+      </div>
+      <div class="lbl">Tus géneros</div>
+      <div class="bars">
+        <div>Drama<i style="width:100%"></i><em>31%</em></div>
+        <div>Thriller<i style="width:70%"></i><em>22%</em></div>
+        <div>Comedia<i style="width:45%"></i><em>14%</em></div>
+        <div>Ciencia ficción<i style="width:32%"></i><em>10%</em></div>
+      </div>
+      <div class="row"><span>Calificas <b>0.4</b> más bajo que IMDb</span></div>
+      <div class="row"><span>Tu década: <b>los 90</b></span></div>
+      <div class="sub">Datos de ejemplo</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Qué conviene</span>
+  <h2>Orden que te propongo</h2>
+  <div class="order">
+    <div class="box"><span class="tag">1 · Lo más usado</span><strong>Búsqueda avanzada</strong><p>La usarías cada semana. Se apoya en TMDB y MDBList, que ya tenemos.</p></div>
+    <div class="box"><span class="tag">2 · Lo más distinto</span><strong>Premios</strong><p>Casi nadie lo tiene gratis. El trabajo es armar y limpiar los datos una vez.</p></div>
+    <div class="box"><span class="tag">3 · Lo más barato</span><strong>Lo que ves</strong><p>Ya está la mitad en «Tu año». Letterboxd entra por RSS.</p></div>
+  </div>
+  <div class="box"><h3>Lo que falta que decidas</h3>
+    <ul>
+      <li>¿Empiezo por la búsqueda avanzada, o prefieres otro orden?</li>
+      <li>¿Solo iPhone (y iPad y Mac) primero, o también la TV? Mi recomendación: iPhone primero, porque la clave de TMDB ya viene en la app; la TV después con la misma lógica.</li>
+      <li>Para MDBList con las 7 calificaciones hace falta una clave gratuita a tu nombre (se saca en mdblist.com, Preferencias › API). La tuya iría al llavero, nunca a git.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <span>Fuentes: muvyapp.com (página principal, búsqueda avanzada y su código público), Wikidata (consulta probada), RSS público de Letterboxd (probado), documentación de Trakt y MDBList (vía <a href="https://apis.guru/apis/trakt.tv">apis.guru</a> y <a href="https://koschsguide.pages.dev/api-keys/mdblist/">esta guía</a>).</span>
+  <span>Código de Orbital revisado: <span class="mono">YearView.swift</span>, <span class="mono">DecideView.swift</span>, <span class="mono">Tmdb.swift</span>, <span class="mono">Critics.swift</span>, <span class="mono">orbital/library/mdblist.py</span>.</span>
+</footer>
+</div>
