@@ -79,13 +79,20 @@ struct RootView: View {
                           actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", action: { Task { await env.undoHandoff() } },
                           symbol: "tv", color: DS.brandMoon, seconds: DS.Timing.toastAction, dismiss: { env.handoff = nil })
                         .transition(.move(edge: .bottom).combined(with: .opacity))
-                } else if env.notices.current != nil {
-                    BannerView()
                 } else {
-                    RatingReminderHost()   // calificar lo que terminaste: solo cuando no hay otro aviso
+                    BannerView()
                 }
             }
             .padding(.bottom, DS.Size.tabBarClearance)
+        }
+        // Calificar lo que terminaste: pegada a la barra de pestañas (y encima de «Viendo en la TV» cuando está), solo cuando no
+        // hay otro aviso.
+        .overlay(alignment: .bottom) {
+            let tv = env.tvNow!
+            let _ = tv.track()
+            if ui.handoff == nil, env.notices.current == nil {
+                RatingReminderHost().padding(.bottom, DS.Rating.clearance + (tv.now != nil || tv.game != nil ? DS.Rating.accessoryLift : 0))
+            }
         }
         .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
         .animation(DS.Motion.base(reduceMotion), value: env.notices.current)

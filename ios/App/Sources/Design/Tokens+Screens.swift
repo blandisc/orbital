@@ -170,6 +170,9 @@ extension DS {
         static let starEpisode: CGFloat = 15, episodeRow: CGFloat = 22
         /// Cuánto se queda el recordatorio a la vista antes de irse solo (vuelve la próxima vez que abras la app).
         static let reminderHold: Duration = .seconds(8)
+        /// Dónde va la pastilla: pegada a la barra de pestañas (sobre la orilla segura de abajo) y cuánto sube cuando la barra
+        /// lleva encima «Viendo en la TV» (el segundo dock).
+        static let clearance: CGFloat = 58, accessoryLift: CGFloat = 56
         static let poster: CGFloat = 30, posterAspect: CGFloat = 1.5
     }
 
