@@ -83,7 +83,7 @@ struct WatchlistCard: View {
         HStack(alignment: .top, spacing: DS.Space.s3) {
             PosterView(url: poster, title: title).frame(width: DS.Editorial.watchlistPoster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                if !facts.isEmpty { Text(verbatim: facts).recipe(.caption, color: DS.eyebrow).fontWeight(.semibold).lineLimit(1) }
+                if !facts.isEmpty { Text(verbatim: facts).recipe(.caption, color: DS.warning).fontWeight(.semibold).lineLimit(1) }
                 Text(verbatim: title).recipe(.cardTitle).lineLimit(2)
                 if !overview.isEmpty { Text(verbatim: overview).recipe(.caption, color: DS.textMuted).lineLimit(3) }
             }

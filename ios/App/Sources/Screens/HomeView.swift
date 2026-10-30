@@ -149,12 +149,15 @@ struct HomeView: View {
         // Todo · Películas · Series para toda la página (tres íconos) y la puerta del filtro avanzado, en una franja angosta bajo la
         // barra: en la barra no caben junto al logotipo y sus botones (iOS los mandaba a un menú «…»).
         .safeAreaBar(edge: .top) {
-            DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }), icons: true)
+            DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { new in
+                model.spotlightKind = new.isEmpty ? nil : new
+                kindTip = switch new { case "movie": "Películas"; case "series": "Series"; default: "Todo" }   // solo si lo cambiaste tú
+            }), icons: true)
                 .accessibilityIdentifier("home-kind-filter")
                 .frame(maxWidth: .infinity)
                 .overlay(alignment: .trailing) {
                     // Por ahora lleva a Buscar; el cajón del filtro lo construye la sesión de componentes.
-                    Button { env.ui.openTab = 2 } label: { Image(systemName: "line.3.horizontal.decrease") }
+                    Button { env.ui.openTab = 2 } label: { Image(systemName: "slider.horizontal.3") }
                         .buttonStyle(.glass).buttonBorderShape(.circle)
                         .accessibilityLabel(Text("Filtros de búsqueda"))
                         .accessibilityIdentifier("home-filters")
@@ -176,9 +179,6 @@ struct HomeView: View {
             guard kindTip != nil else { return }
             try? await Task.sleep(for: DS.HomeKind.tipHold)
             kindTip = nil
-        }
-        .onChange(of: model.spotlightKind) { _, new in
-            kindTip = switch new { case "movie": "Películas"; case "series": "Series"; default: "Todo" }
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }

@@ -59,7 +59,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     static let live = role(.live)
     /// La línea del porqué arriba de un encabezado (ámbar, como el «porqué» de las portadas).
     /// Desde el 30 oct 2026 (decisión de Fernando, docs/producto/inicio-benchmark/): el porqué va en el turquesa de Orbital,
-    /// el mismo papel que «En vivo» (con su versión oscura en modo claro, que sí se lee sobre el papel).
+    /// el mismo papel que «En vivo» (con su versión oscura en modo claro, que sí se lee sobre el papel). Solo para el porqué
+    /// de una sección (`DSSectionHead`): las etiquetas que no son porqué (datos, «Siguiente») siguen en `DS.warning`.
     static let eyebrow = role(.live)
     /// La luna de la marca (turquesa, igual en los dos modos).
     static let brandMoon = role(.brandMoon)

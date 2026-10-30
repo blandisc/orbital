@@ -75,7 +75,7 @@ struct EpisodesPanel: View {
                     Text(verbatim: "E" + String(ep.episode)).recipe(.caption)
                     Text(verbatim: ep.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
                     if now { Text("Viendo").recipe(.caption, color: DS.brandMoon).fontWeight(.semibold) }
-                    else if upcoming { Text("Siguiente").recipe(.caption, color: DS.eyebrow).fontWeight(.semibold) }
+                    else if upcoming { Text("Siguiente").recipe(.caption, color: DS.warning).fontWeight(.semibold) }
                     else if !available { Text("No descargado").recipe(.caption) }
                 }
                 Spacer(minLength: 0)

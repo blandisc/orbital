@@ -230,7 +230,7 @@ struct MiMediaTitleView: View {
         HStack(alignment: .bottom, spacing: DS.Space.s4) {
             PosterView(url: t.poster, title: name).frame(width: DS.Poster.railWidth)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("En tu OneDrive").recipe(.eyebrow, color: DS.eyebrow)
+                Text("En tu OneDrive").recipe(.eyebrow, color: DS.warning)
                 Text(verbatim: name).recipe(.title).lineLimit(3)
                 DataLine(parts: [Strings.kind(t.kind, language: env.services.appSettings.uiLanguage), t.year ?? "", ByteSize.text(Int64(t.bytes), locale: env.uiLocale)])
             }
@@ -364,7 +364,7 @@ struct MiMediaTitleView: View {
     private func fixRow(_ t: OneDriveLibrary.Title) -> some View {
         Button { fixing = true } label: {
             HStack(spacing: DS.Space.s3) {
-                Image(systemName: "pencil").foregroundStyle(DS.eyebrow)
+                Image(systemName: "pencil").foregroundStyle(DS.warning)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(t.kind == "series" ? "¿No es esta serie?" : "¿No es esta película?").recipe(.cardTitle)
                     Text("Corregir ficha: búscala por nombre").recipe(.caption)
