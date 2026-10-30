@@ -33,6 +33,18 @@ struct RemoteSheet: View {
     @State private var reply: OrbitalRemote.VoiceReply?
     @State private var asking = false
     @State private var showsGuide = false
+    /// La respuesta abierta en el renglón de la voz (se pliega sola: `DS.Remote.replyStays`).
+    @State private var replyOpen = false
+    /// Lo último que hizo, como pista un rato después de plegarse («✓ Poniendo The Office · T2 E5»).
+    @State private var lastAnswer: String?
+    /// Lo último que dijiste, para «Probar otra vez».
+    @State private var lastSaid: String?
+    /// Qué tramo de la conexión falló cuando la orden no llegó.
+    @State private var issue: ConnectionIssue?
+    @State private var collapsing: Task<Void, Never>?
+    @State private var pickingEpisode = false
+    /// Cuál de las tres frases del momento sale de pista: otra cada vez que abres el control.
+    @State private var hintIndex = Int.random(in: 0..<3)
     @State private var showsScares = false
     /// En el reproductor o la TV en vivo, el pad va plegado (lo de arriba es lo que se usa); se abre a mano.
     @State private var showsPad = false
@@ -80,8 +92,11 @@ struct RemoteSheet: View {
         .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }   // ds-exception: vidrio en las dos alturas del control
         .animation(DS.Motion.smooth(reduceMotion), value: large)
         .animation(DS.Motion.smooth(reduceMotion), value: showsScares)
+        // El renglón de la voz crece y se pliega con lo de abajo en el mismo movimiento (nada brinca después).
+        .animation(DS.Motion.smooth(reduceMotion), value: voicePhase)
         .onDisappear { speech.cancel(); model.setRemoteOpen(false) }
         .onAppear { model.setRemoteOpen(true) }   // con el control abierto, la TV se consulta más seguido
+        .task(id: "\(model.context)·\(model.now?.metaID ?? "")·\(model.now?.live == true)") { await model.loadHints() }   // las frases del momento
         .task(id: model.now?.metaID) { await model.loadScares() }   // el mapa de sustos de la película que suena
         .background { if let scares = model.scares, let now = model.now { ScareWatcher(now: now, fetchedAt: model.fetchedAt, scares: scares) } }
         // Los botones de volumen del iPhone suben y bajan la TV mientras el control está abierto (como el del Apple TV).
@@ -91,7 +106,20 @@ struct RemoteSheet: View {
         #endif
         .sheet(isPresented: $showsGuide) {
             NavigationStack {
-                VoiceGuideView().toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { showsGuide = false } } }
+                VoiceGuideView(hints: model.hints, nowTitle: model.now?.title) { phrase in
+                    showsGuide = false
+                    say(model, phrase)
+                }
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { showsGuide = false } } }
+            }
+        }
+        .sheet(isPresented: $pickingEpisode) {
+            if let now = model.now, let seriesID = now.metaID {
+                EpisodePickerSheet(title: now.title, currentVideoID: now.videoID,
+                                   load: { await VoiceAssistant(services: env.services, tvNow: model).episodes(seriesID: seriesID) },
+                                   play: { season, episode in
+                                       answer(model) { await $0.playEpisode(seriesID: seriesID, episode: episode, season: season.season, title: now.title) }
+                                   })
             }
         }
     }
@@ -124,7 +152,7 @@ struct RemoteSheet: View {
         // El nombre de lo que se ve en la TV, para que el dictado lo escriba bien («descarga Shōgun»).
         let hints = ["Orbital"] + [model.now?.title, model.now?.channel].compactMap { $0 }
         Task {
-            await speech.start(language: language, hints: hints) { said in answer(model) { await $0.handle(said) } }
+            await speech.start(language: language, hints: hints) { said in lastSaid = said; answer(model) { await $0.handle(said) } }
         }
     }
 
@@ -133,15 +161,60 @@ struct RemoteSheet: View {
         guard !asking else { return }
         let language = env.services.appSettings.uiLanguage
         Task {
+            collapsing?.cancel(); issue = nil; lastAnswer = nil
             asking = true; reply = nil
             let outcome = await ask(VoiceAssistant(services: env.services, tvNow: model))
             asking = false
             var shown = outcome.reply
             shown.speech = Strings.message(outcome.speech, language: language)
-            withAnimation(DS.Motion.base(reduceMotion)) { reply = shown }
+            // Una tecla («pausa» la atiende el iPhone) no tiene nada que enseñar: el renglón no se abre.
+            if shown.speech.isEmpty && shown.choices.isEmpty && shown.ok { reply = nil; return }
+            reply = shown; replyOpen = true
             speech.speak(shown.speech, language: language)
             if outcome.continueHere, let now = model.now { onContinueHere(now) }
+            if outcome.guide { showsGuide = true }
+            // No llegó: qué tramo falló (iPhone → túnel → tu Orbital).
+            if !shown.ok { issue = await model.diagnoseConnection() }
+            // Con varias, se queda abierto hasta que elijas o lo cierres; lo demás se pliega solo.
+            if shown.choices.isEmpty && shown.ok { collapseLater() }
         }
+    }
+
+    /// Mandar una frase tal cual (la pista, la guía, «otro»), como si la hubieras dicho.
+    private func say(_ model: TVNowModel, _ phrase: String) {
+        lastSaid = phrase
+        answer(model) { await $0.handle(phrase) }
+    }
+
+    /// El renglón se pliega a los pocos segundos y deja la respuesta como pista otro rato.
+    private func collapseLater() {
+        collapsing?.cancel()
+        collapsing = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(DS.Remote.replyStays * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            collapse()
+        }
+    }
+
+    private func collapse() {
+        collapsing?.cancel()
+        guard replyOpen else { return }
+        let answered = reply?.ok == true && reply?.choices.isEmpty == true ? reply?.speech : nil
+        replyOpen = false; issue = nil
+        lastAnswer = answered.flatMap { $0.isEmpty ? nil : $0.trimmingCharacters(in: CharacterSet(charactersIn: ".")) }
+        guard lastAnswer != nil else { return }
+        collapsing = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(DS.Remote.answerHintStays * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            withAnimation(DS.Motion.base(reduceMotion)) { lastAnswer = nil }
+        }
+    }
+
+    /// En qué está el renglón de la voz.
+    private var voicePhase: VoiceRow.Phase {
+        if speech.listening { return .listening }
+        if asking { return .asking }
+        return replyOpen && reply != nil ? .open : .idle
     }
 
     /// Una tecla del mando: su nombre es el de la leyenda de la TV para esa tecla si la consola la manda (lo que dice el pie de
@@ -152,6 +225,7 @@ struct RemoteSheet: View {
         let named = legendKey.flatMap { model.legend[$0] }
         return RemoteKey(symbol: symbol, title: named.map { Text(verbatim: $0) } ?? fallback, glyph: glyph,
                          longPress: hold.map { held in { Task { await model.press(held) } } }) {
+            collapse()
             Task { await model.press(action) }
         }
         .accessibilityIdentifier("remote-\(action.rawValue)")   // fijo aunque el nombre cambie con la leyenda
@@ -186,6 +260,8 @@ struct RemoteSheet: View {
                 NowPlayingCard(now: now, fetchedAt: model.fetchedAt, busy: model.busy,
                                onAction: { action, delta in Task { await model.control(action, delta: delta) } },
                                onContinueHere: { onContinueHere(now) }, framed: false, scares: model.scares ?? [])
+                // La voz, a la vista en la hoja corta (antes solo al estirarla).
+                voice(model)
                 // Una película con mapa de sustos: un toque lo abre aquí mismo (la línea de tiempo, el siguiente y el aviso).
                 if let scares = model.scares {
                     if showsScares { ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares).transition(Self.reveal) }
@@ -251,10 +327,6 @@ struct RemoteSheet: View {
         VStack(spacing: DS.Space.s4) {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
             voice(model)
-            if let choices = reply?.choices, !choices.isEmpty {
-                VoiceChoices(choices: choices) { choice in answer(model) { await $0.choose(choice) } }
-                    .transition(.opacity)
-            }
             switch model.context {
             // Reproduciendo o en vivo, el pad no se suma abajo (no cabía y repetía pausa, ±10, volumen, pistas y salir):
             // reemplaza lo de arriba cuando hace falta moverse por un panel de la TV (episodios, fuentes, la guía).
@@ -304,22 +376,30 @@ struct RemoteSheet: View {
                                                  removal: .opacity)
 
     private func voice(_ model: TVNowModel) -> some View {
-        // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…».
-        HStack(spacing: DS.Space.s2) {
-            VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
-                            heardNothing: speech.heardNothing, asking: asking) { listen(model) }
-            // Lo que puedes decir: donde surge la duda (como el resto de las teclas).
-            // Del mismo alto que «Dile a Orbital» (que crece con su texto): antes quedaba más bajito a su lado.
-            Button { showsGuide = true } label: {
-                Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text)
-                    .frame(width: DS.Remote.keyHeightFitted).frame(maxHeight: .infinity)
-                    .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Lo que puedes decir"))
-            .accessibilityIdentifier("remote-voice-guide")
-        }
-        .fixedSize(horizontal: false, vertical: true)
+        // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…». La misma pieza en la hoja corta y estirada.
+        var hint = model.hints.isEmpty ? nil : model.hints[hintIndex % model.hints.count]
+        #if DEBUG
+        if Demo.isOn, let said = Demo.voice { hint = said }   // -demo-voice "pon dune": esa pista, para tocarla en las pruebas
+        #endif
+        return VoiceRow(phase: voicePhase, transcript: speech.transcript, reply: reply,
+                        hint: hint, lastAnswer: lastAnswer,
+                        denied: speech.denied, heardNothing: speech.heardNothing, now: model.now, issue: issue,
+                        actions: .init(
+                            mic: { if voicePhase == .open { collapse() }; listen(model) },
+                            guide: { showsGuide = true },
+                            say: { say(model, $0) },
+                            close: { if speech.listening { speech.cancel() }; collapse(); if voicePhase != .idle { replyOpen = false } },
+                            other: { say(model, "otro") },
+                            episodes: { pickingEpisode = true },
+                            // Otra de las varias: se pone en la TV y solo cambia su letrero (el carrusel se queda).
+                            choose: { choice in
+                                Task {
+                                    _ = await VoiceAssistant(services: env.services, tvNow: model).choose(choice)
+                                    collapseLater()
+                                }
+                            },
+                            retry: { if let lastSaid { say(model, lastSaid) } },
+                            checkConnection: { Task { issue = nil; issue = await model.diagnoseConnection() } }))
     }
 
     @ViewBuilder private func volume(_ model: TVNowModel) -> some View {
@@ -451,7 +531,7 @@ struct RemoteSheet: View {
     /// (episodios, fuentes, la guía). Cabe en una pantalla: el pad y Atrás · Inicio · Menú · Buscar.
     @ViewBuilder private func padMode(_ model: TVNowModel) -> some View {
         // Se vuelve con el botón de arriba a la derecha (el mismo que abre el pad).
-        TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
+        TouchPad(selectLabel: model.legend["select"]) { action in collapse(); Task { await model.press(action) } }
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
             .frame(height: DS.Remote.padHeightFitted)
         HStack(spacing: DS.Space.s2) {
@@ -474,7 +554,7 @@ struct RemoteSheet: View {
             }
             key(model, "chevron.right.2", "RB", nil, Text("Siguiente"), .nextsection)
         }
-        TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
+        TouchPad(selectLabel: model.legend["select"]) { action in collapse(); Task { await model.press(action) } }
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
             // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
             .frame(height: DS.Remote.padHeightFitted)   // en un SE, más bajito: las teclas de abajo y «Escribir» caben

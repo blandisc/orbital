@@ -122,3 +122,24 @@ public enum VoiceRouter {
         return value.isEmpty ? nil : value
     }
 }
+
+/// Qué se ve en la TV, para sugerir qué decir. Las frases de cada momento las manda la consola (`/api/voice/hints`); estas
+/// fijas son la reserva cuando no contesta o es una versión vieja.
+public enum VoiceMoment: String, Sendable, CaseIterable {
+    case series, movie, live, home
+
+    public var fallbackHints: [String] {
+        switch self {
+        case .series: ["pausa", "siguiente episodio", "pon subtítulos"]
+        case .movie: ["pausa", "pon subtítulos", "sube el volumen"]
+        case .live: ["pon el canal ADN 40", "sube el volumen", "cierra el video"]
+        case .home: ["pon The Office", "sigue viendo", "qué sale hoy"]
+        }
+    }
+
+    /// Lo que suena en la TV (nil: nada).
+    public init(_ now: OrbitalRemote.NowPlaying?) {
+        guard let now else { self = .home; return }
+        self = now.live ? .live : now.kind == "series" ? .series : .movie
+    }
+}

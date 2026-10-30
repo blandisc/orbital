@@ -247,9 +247,37 @@ public final class TVNowModel: ObservableModel {
     private var settleTask: Task<Void, Never>?
     static let settleNanoseconds: UInt64 = 400_000_000
 
-    /// Una orden de voz a tu Orbital (el micrófono del control, Siri): lo que contestó, o por qué no se pudo.
+    /// Las tres frases que se sugieren bajo el micrófono y de qué momento son (serie, película, en vivo o nada en la TV).
+    public private(set) var hints: [String] = VoiceMoment.home.fallbackHints { didSet { if oldValue != hints { changed() } } }
+    public private(set) var momentHints: VoiceMoment = .home { didSet { if oldValue != momentHints { changed() } } }
+
+    /// Las frases del momento: las de la consola, o las fijas según lo que se sabe que suena (sin consola o una vieja).
+    public func loadHints() async {
+        let local: VoiceMoment = context == .live ? .live : VoiceMoment(now)
+        if let reply = try? await services.orbital.voiceHints() {
+            let moment = VoiceMoment(rawValue: reply.moment) ?? local
+            momentHints = moment
+            hints = reply.hints.isEmpty ? moment.fallbackHints : Array(reply.hints.prefix(3))
+        } else {
+            momentHints = local
+            hints = local.fallbackHints
+        }
+    }
+
+    /// Por qué no se llega a tu Orbital (sin internet, el túnel, la consola, el token); nil: sí se llega.
+    public func diagnoseConnection() async -> ConnectionIssue? {
+        guard services.orbital.isConfigured else { return nil }
+        return await services.orbital.diagnose()
+    }
+
+    /// Una orden de voz a tu Orbital (el micrófono del control, Siri): lo que contestó, o por qué no se pudo. Las frases que
+    /// trae la respuesta (las del momento, tras la orden) reemplazan las sugerencias.
     public func say(_ text: String) async -> OrbitalRemote.VoiceReply {
-        do { return try await services.orbital.voice(text) }
+        do {
+            let reply = try await services.orbital.voice(text)
+            if !reply.hints.isEmpty { hints = Array(reply.hints.prefix(3)) }
+            return reply
+        }
         catch let failure as OrbitalRemote.Failure { return .init(ok: false, speech: failure.description) }
         catch { return .init(ok: false, speech: OrbitalRemote.Failure.unreachable.description) }
     }

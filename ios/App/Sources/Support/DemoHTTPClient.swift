@@ -96,6 +96,9 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil || Demo.game, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }
+        if url.host == "tv.demo.invalid", url.path == "/api/voice" || url.path == "/api/voice/hints" || url.path == "/api/ping" {
+            return Self.voiceDemo(path: url.path, body: request.body.flatMap(JSON.parse))
+        }
         if url.host == "tv.demo.invalid" {
             // «Para ti» por el puerto público: sin `-demo-console`, tu Orbital de mentira no la contesta (404, como una
             // consola de una versión anterior) y el modelo cae solo a su lógica local — sin aviso, como siempre.
@@ -302,6 +305,32 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     }
 
     private static let nowPlayingDuration = 1_320.0
+
+    /// La voz de mentira: «pon dune» pone la más popular y manda las otras (`picked`); «busca dune» solo las enseña;
+    /// «qué puedo decir» pide la guía; lo demás contesta como la consola. `-demo-voice-fail` hace que no llegue.
+    static func voiceDemo(path: String, body: JSON?) -> HTTPResponse {
+        let codes = ["orbital": 502, "token": 401, "tunnel": 530]
+        if let fail = Demo.voiceFail, let code = codes[fail], path != "/api/voice/hints" { return HTTPResponse(status: code, data: Data()) }
+        if path == "/api/ping" { return HTTPResponse(status: 200, data: JSON.object(["ok": true, "service": "orbital"]).serialized()) }
+        let hints: JSON = .array(["pausa", "siguiente episodio", "pon subtítulos"])
+        if path == "/api/voice/hints" { return HTTPResponse(status: 200, data: JSON.object(["moment": "series", "hints": hints]).serialized()) }
+        let said = (body?["text"]?.string ?? "").lowercased()
+        var reply: [String: JSON] = ["ok": true, "heard": .string(said), "hints": hints]
+        if said.contains("dune") {
+            let choices: [JSON] = [("tt15239678", "Dune: Parte dos", "Película · 2024"), ("tt1160419", "Dune", "Película · 2021"), ("tt0087182", "Dune", "Película · 1984")]
+                .map { .object(["id": .string($0.0), "meta_id": .string($0.0), "title": .string($0.1), "subtitle": .string($0.2), "kind": "movie"]) }
+            reply["choices"] = .array(choices)
+            if said.hasPrefix("busca") { reply["speech"] = "Encontré varias: elige una." }
+            else { reply["speech"] = "Poniendo Dune: Parte dos. Si no es esa, di «otro»."; reply["picked"] = "tt15239678" }
+        } else if said.contains("qué puedo decir") || said.contains("que puedo decir") {
+            reply["speech"] = "Te enseño lo que puedes decir."; reply["guide"] = true
+        } else if said.contains("office") || said == "otro" {
+            reply["speech"] = "Poniendo The Office, temporada 2, episodio 5."
+        } else {
+            reply["speech"] = "Listo."
+        }
+        return HTTPResponse(status: 200, data: JSON.object(reply).serialized())
+    }
 
     /// `/api/companion/now` y `/api/companion/player`: una serie de mentira, viendo su episodio 5 de la temporada 2.
     private var demoGamePaused = false, demoGameOpen = true, demoPowerMode = "balanced"

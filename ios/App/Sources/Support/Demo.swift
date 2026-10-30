@@ -171,6 +171,12 @@ enum Demo {
     /// `-demo-player-pick es`: ya en el reproductor, elige ese idioma de subtítulos como si lo tocaras.
     static var playerPick: String? { value(after: "-demo-player-pick") }
 
+    /// `-demo-voice "pon dune"`: esa frase como pista del renglón de la voz; al tocarla se manda como si la hubieras dicho
+    /// (para ver la respuesta, las varias o la guía en las pruebas de interfaz). Con `-demo-voice-fail tunnel|orbital|token|offline`, la orden no llega y
+    /// el diagnóstico dice ese tramo.
+    static var voice: String? { value(after: "-demo-voice") }
+    static var voiceFail: String? { value(after: "-demo-voice-fail") }
+
     /// `-demo-search dune`: escribe eso en Buscar (pestaña Ver).
     static var search: String? { value(after: "-demo-search") }
     /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.

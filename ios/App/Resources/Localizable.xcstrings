@@ -265,6 +265,17 @@
         }
       }
     },
+    "%lld frases · cómo pedirlo · si no funciona": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld phrases · how to ask · if it doesn't work"
+          }
+        }
+      }
+    },
     "%lld lista": {
       "extractionState": "manual",
       "localizations": {
@@ -1295,6 +1306,17 @@
         }
       }
     },
+    "Ahora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now"
+          }
+        }
+      }
+    },
     "Ahora no": {
       "extractionState": "manual",
       "localizations": {
@@ -1302,6 +1324,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not now"
+          }
+        }
+      }
+    },
+    "Ahora, viendo %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now watching %@"
           }
         }
       }
@@ -1793,6 +1826,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Here"
           }
         }
       }
@@ -3374,6 +3418,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Close the game"
+          }
+        }
+      }
+    },
+    "Cierra el video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close the video"
+          }
+        }
+      }
+    },
+    "Cierre el video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close the video"
           }
         }
       }
@@ -6794,6 +6860,28 @@
         }
       }
     },
+    "El túnel contesta, Orbital no: puede estar cerrada o reiniciándose. Espera un momento.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The tunnel answers but Orbital doesn't: it may be closed or restarting. Wait a moment."
+          }
+        }
+      }
+    },
+    "El túnel no contesta: la consola puede estar dormida o el túnel trabado. «Prende la tele» la despierta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The tunnel isn't answering: the console may be asleep or the tunnel stuck. “Turn on the TV” wakes it."
+          }
+        }
+      }
+    },
     "Elegidas": {
       "extractionState": "manual",
       "localizations": {
@@ -6834,6 +6922,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose folder"
+          }
+        }
+      }
+    },
+    "Elegir episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick episode"
           }
         }
       }
@@ -7482,6 +7581,17 @@
         }
       }
     },
+    "En la TV ahora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On TV now"
+          }
+        }
+      }
+    },
     "En la TV · En vivo": {
       "extractionState": "manual",
       "localizations": {
@@ -7807,6 +7917,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "I heard: “%@”"
+          }
+        }
+      }
+    },
+    "Entendí: «%@» · desliza para ver más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I heard: “%@” · swipe to see more"
+          }
+        }
+      }
+    },
+    "Entendí: «%@» · no se mandó": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I heard: “%@” · not sent"
           }
         }
       }
@@ -9602,6 +9734,17 @@
         }
       }
     },
+    "La manda a la tele": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sends it to the TV"
+          }
+        }
+      }
+    },
     "La mejor para el iPhone: calidad y tamaño en equilibrio": {
       "extractionState": "manual",
       "localizations": {
@@ -9926,6 +10069,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The controller buttons, said on their own."
+          }
+        }
+      }
+    },
+    "Le dé play": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hit play"
           }
         }
       }
@@ -10293,6 +10447,17 @@
         }
       }
     },
+    "Lo esencial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The essentials"
+          }
+        }
+      }
+    },
     "Lo mandó la TV: intenta desde su ficha": {
       "extractionState": "manual",
       "localizations": {
@@ -10476,6 +10641,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The number 1 on your platforms"
+          }
+        }
+      }
+    },
+    "Lo ponga en latino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put it in Latin American Spanish"
           }
         }
       }
@@ -11038,6 +11214,28 @@
         }
       }
     },
+    "Mandar a la tele": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send to the TV"
+          }
+        }
+      }
+    },
+    "Mandar «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send “%@”"
+          }
+        }
+      }
+    },
     "Mandó su aviso de «descargando». Puede tardar; prueba más tarde u otra versión.": {
       "extractionState": "manual",
       "localizations": {
@@ -11316,6 +11514,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Mantén una para ver qué hace": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press and hold one to see what it does"
           }
         }
       }
@@ -12022,6 +12231,17 @@
         }
       }
     },
+    "Más frases, por tema": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More phrases, by topic"
+          }
+        }
+      }
+    },
     "Más fuentes de video, también de tu Real-Debrid": {
       "extractionState": "manual",
       "localizations": {
@@ -12582,6 +12802,17 @@
         }
       }
     },
+    "No encontré los episodios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find the episodes"
+          }
+        }
+      }
+    },
     "No encontré nada con ese nombre.": {
       "extractionState": "manual",
       "localizations": {
@@ -12842,6 +13073,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "There are no Real-Debrid versions for this title."
+          }
+        }
+      }
+    },
+    "No llegó a tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It didn't reach your Orbital"
           }
         }
       }
@@ -13835,6 +14077,17 @@
         }
       }
     },
+    "Orden por voz": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice command"
+          }
+        }
+      }
+    },
     "Orden rápida": {
       "extractionState": "manual",
       "localizations": {
@@ -14018,6 +14271,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hey Siri, talk to Orbital"
+          }
+        }
+      }
+    },
+    "PREGUNTÁNDOLE A TU ORBITAL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ASKING YOUR ORBITAL"
           }
         }
       }
@@ -14292,6 +14556,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pause, volume, next episode and the everyday things, in a single phrase."
+          }
+        }
+      }
+    },
+    "Pausa, volumen, siguiente episodio y lo esencial, en una sola frase.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause, volume, next episode and the essentials, in a single phrase."
           }
         }
       }
@@ -14659,6 +14934,17 @@
         }
       }
     },
+    "Poner esta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play this one"
+          }
+        }
+      }
+    },
     "Ponerla en la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -14666,6 +14952,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Play it on the TV"
+          }
+        }
+      }
+    },
+    "Ponerlo en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play it on the TV"
+          }
+        }
+      }
+    },
+    "Ponga el siguiente episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play the next episode"
+          }
+        }
+      }
+    },
+    "Ponga la tele en vivo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put on live TV"
+          }
+        }
+      }
+    },
+    "Ponga subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on subtitles"
           }
         }
       }
@@ -14699,6 +15029,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Playing it on the TV."
+          }
+        }
+      }
+    },
+    "Poniéndose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playing"
           }
         }
       }
@@ -15065,6 +15406,17 @@
         }
       }
     },
+    "Probar la conexión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test the connection"
+          }
+        }
+      }
+    },
     "Probar la velocidad": {
       "extractionState": "manual",
       "localizations": {
@@ -15175,6 +15527,17 @@
         }
       }
     },
+    "Prueba: ": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try: "
+          }
+        }
+      }
+    },
     "Próximo estreno": {
       "extractionState": "manual",
       "localizations": {
@@ -15248,6 +15611,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Send it to the TV"
+          }
+        }
+      }
+    },
+    "Pídelo por voz: «pon The Office temporada 2 episodio 5».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask by voice: “pon The Office temporada 2 episodio 5”."
           }
         }
       }
@@ -16669,6 +17043,17 @@
         }
       }
     },
+    "Se detiene sola al callarte": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It stops when you stop talking"
+          }
+        }
+      }
+    },
     "Se detuvo «%@»": {
       "extractionState": "manual",
       "localizations": {
@@ -16774,6 +17159,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Se salte la intro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip the intro"
           }
         }
       }
@@ -17190,6 +17586,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Always"
+          }
+        }
+      }
+    },
+    "Siga viendo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue watching"
           }
         }
       }
@@ -17733,6 +18140,17 @@
         }
       }
     },
+    "Siri": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siri"
+          }
+        }
+      }
+    },
     "Sol, playa y vacaciones": {
       "extractionState": "manual",
       "localizations": {
@@ -17959,6 +18377,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stremio · backup"
+          }
+        }
+      }
+    },
+    "Suba el volumen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn up the volume"
           }
         }
       }
@@ -18311,6 +18740,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "S%lld E%lld"
+          }
+        }
+      }
+    },
+    "TE ESCUCHO": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LISTENING"
           }
         }
       }
@@ -18779,6 +19219,71 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Toca el del centro para volver a como venían."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca el micrófono del control": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the remote's microphone"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the remote's microphone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click the remote's microphone"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the remote's microphone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca el micrófono del control"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca el micrófono del control"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en el micrófono del control"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca el micrófono del control"
                 }
               }
             }
@@ -19306,6 +19811,71 @@
         }
       }
     },
+    "Toca una para mandarla a la tele · mantén para ver qué hace": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap one to send it to the TV · press and hold to see what it does"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap one to send it to the TV · press and hold to see what it does"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click one to send it to the TV · press and hold to see what it does"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap one to send it to the TV · press and hold to see what it does"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca una para mandarla a la tele · mantén para ver qué hace"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca una para mandarla a la tele · mantén para ver qué hace"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en una para mandarla a la tele · mantén para ver qué hace"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca una para mandarla a la tele · mantén para ver qué hace"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Toca una para verla · ↓ para guardarla": {
       "extractionState": "manual",
       "localizations": {
@@ -19364,6 +19934,71 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Toca una para verla · ↓ para guardarla"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca y habla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap and speak"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap and speak"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click and speak"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap and speak"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca y habla"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca y habla"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic y habla"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca y habla"
                 }
               }
             }
@@ -20399,6 +21034,71 @@
         }
       }
     },
+    "Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Usar con tu Orbital.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Orbital no longer recognizes this iPad. Reconnect it in Settings › Use with your Orbital."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Orbital no longer recognizes this iPhone. Reconnect it in Settings › Use with your Orbital."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Orbital no longer recognizes this Mac. Reconnect it in Settings › Use with your Orbital."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Orbital no longer recognizes this iPhone. Reconnect it in Settings › Use with your Orbital."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Orbital ya no reconoce este iPad. Vuelve a conectarlo en Ajustes › Usar con tu Orbital."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Usar con tu Orbital."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Orbital ya no reconoce esta Mac. Vuelve a conectarlo en Ajustes › Usar con tu Orbital."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Usar con tu Orbital."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Tu Real-Debrid vence en %lld días": {
       "extractionState": "manual",
       "localizations": {
@@ -20596,6 +21296,71 @@
         }
       }
     },
+    "Tu iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPad"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Tu iPhone es el control": {
       "extractionState": "manual",
       "localizations": {
@@ -20654,6 +21419,71 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Tu iPhone es el control"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Tu iPhone no tiene internet. Conéctate a una red y prueba otra vez.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPad has no internet. Connect to a network and try again."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone has no internet. Connect to a network and try again."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Mac has no internet. Connect to a network and try again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone has no internet. Connect to a network and try again."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPad no tiene internet. Conéctate a una red y prueba otra vez."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone no tiene internet. Conéctate a una red y prueba otra vez."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Mac no tiene internet. Conéctate a una red y prueba otra vez."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone no tiene internet. Conéctate a una red y prueba otra vez."
                 }
               }
             }
@@ -21120,6 +21950,17 @@
         }
       }
     },
+    "Túnel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tunnel"
+          }
+        }
+      }
+    },
     "Un Simpson al azar": {
       "extractionState": "manual",
       "localizations": {
@@ -21149,6 +21990,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "A new episode is ready to watch"
+          }
+        }
+      }
+    },
+    "Un momento": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One moment"
           }
         }
       }
@@ -22439,6 +23291,17 @@
         }
       }
     },
+    "igual en la tele y con Alexa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "same on the TV and with Alexa"
+          }
+        }
+      }
+    },
     "lo dice el nombre": {
       "extractionState": "manual",
       "localizations": {
@@ -22775,6 +23638,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sign out of Stremio?"
+          }
+        }
+      }
+    },
+    "¿Cuál?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which one?"
           }
         }
       }

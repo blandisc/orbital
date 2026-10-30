@@ -8,8 +8,12 @@ import OrbitalModels
 // Siri dice en voz alta lo que contestó. No abre la app.
 //
 // Siri no acepta texto libre dentro de la frase: «Oye Siri, pausa en Orbital» o «pon The Office en Orbital» no coincidían
-// con nada y Siri contestaba «Orbital no puede hacer eso». Por eso lo de todos los días va como lista (`OrbitalCommand`) y
+// con nada y Siri contestaba «Orbital no puede hacer eso». Por eso lo de todos los días va como lista (`SiriCommand`) y
 // los títulos de «Seguir viendo» como entidades (`OrbitalTitle`): las dos se dicen en la misma frase, sin que Siri pregunte.
+//
+// Menos frases para que Siri atine más (decisión de Fernando, 29 oct 2026): en una sola frase solo van las esenciales de la
+// guía (`AlexaCommands.json` › `core`) más «salta la intro» y «en latino», con dos moldes cada una («… en Orbital» y «Dile a
+// Orbital que …»). Lo demás se dice en dos pasos: «Oye Siri, habla con Orbital» y luego la orden.
 
 /// Lo que se dice: la consola lo entiende con el mismo intérprete que Alexa; regresa lo que Siri dice en voz alta.
 @MainActor
@@ -41,7 +45,8 @@ struct AskOrbitalIntent: AppIntent {
     }
 }
 
-/// Las órdenes de todos los días, en una sola frase: «Oye Siri, pausa en Orbital», «sube el volumen en Orbital».
+/// Todas las órdenes rápidas. Ya no van en las frases de Siri (esas son `SiriCommand`): se quedan para los atajos guardados
+/// que las usan y para armar uno nuevo en Atajos.
 enum OrbitalCommand: String, AppEnum {
     case pause, resume, nextEpisode, previousEpisode, skipIntro, restart, forward, back, volumeUp, volumeDown, mute, unmute,
          subtitlesOn, subtitlesOff, englishSubtitles, latinSpanish, castilianSpanish, timeLeft, stopVideo, continueWatching,
@@ -132,6 +137,60 @@ struct OrbitalCommandIntent: AppIntent {
     }
 }
 
+/// Las esenciales, en una sola frase: «Oye Siri, pausa en Orbital», «Dile a Orbital que suba el volumen». Cada una con
+/// pocos sinónimos, sobre todo como se dice después de «que» (Siri arma cada frase con cada nombre: menos nombres, menos confusiones).
+/// «Pon el canal ADN 40» no cabe (Siri no acepta un nombre libre): «pon la tele en vivo» abre los canales.
+enum SiriCommand: String, AppEnum {
+    case pause, resume, nextEpisode, skipIntro, volumeUp, subtitlesOn, latinSpanish, continueWatching, liveTV, upcoming, stopVideo
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Orden"
+    static let caseDisplayRepresentations: [SiriCommand: DisplayRepresentation] = [
+        .pause: DisplayRepresentation(title: "Pausa", synonyms: ["Pause"]),
+        .resume: DisplayRepresentation(title: "Dale play", synonyms: ["Le dé play"]),
+        .nextEpisode: DisplayRepresentation(title: "Siguiente episodio", synonyms: ["Ponga el siguiente episodio"]),
+        .skipIntro: DisplayRepresentation(title: "Salta la intro", synonyms: ["Se salte la intro"]),
+        .volumeUp: DisplayRepresentation(title: "Sube el volumen", synonyms: ["Suba el volumen"]),
+        .subtitlesOn: DisplayRepresentation(title: "Pon subtítulos", synonyms: ["Ponga subtítulos"]),
+        // El doblaje de lo que se ve, solo esta vez («ponlo siempre en latino» lo guarda: eso va con «Habla con Orbital»).
+        .latinSpanish: DisplayRepresentation(title: "Ponlo en latino", synonyms: ["Lo ponga en latino", "En latino"]),
+        .continueWatching: DisplayRepresentation(title: "Sigue viendo", synonyms: ["Siga viendo"]),
+        .liveTV: DisplayRepresentation(title: "Pon la tele en vivo", synonyms: ["Ponga la tele en vivo"]),
+        .upcoming: DisplayRepresentation(title: "Qué sale hoy"),
+        .stopVideo: DisplayRepresentation(title: "Cierra el video", synonyms: ["Cierre el video"]),
+    ]
+
+    /// La misma orden de la lista completa: lo que se le dice a la consola sale de ahí (`OrbitalCommand.said`).
+    var command: OrbitalCommand {
+        switch self {
+        case .pause: .pause
+        case .resume: .resume
+        case .nextEpisode: .nextEpisode
+        case .skipIntro: .skipIntro
+        case .volumeUp: .volumeUp
+        case .subtitlesOn: .subtitlesOn
+        case .latinSpanish: .latinSpanish
+        case .continueWatching: .continueWatching
+        case .liveTV: .liveTV
+        case .upcoming: .upcoming
+        case .stopVideo: .stopVideo
+        }
+    }
+}
+
+struct SiriCommandIntent: AppIntent {
+    static let title: LocalizedStringResource = "Orden por voz"
+    static let description = IntentDescription("Pausa, volumen, siguiente episodio y lo esencial, en una sola frase.")
+    static let openAppWhenRun = false
+
+    @Parameter(title: "Orden")
+    var command: SiriCommand
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        .result(dialog: IntentDialog(stringLiteral: await answer(command.command.said)))
+    }
+}
+
 /// Un título para decirlo en la misma frase: «Oye Siri, pon Los Simpson en Orbital». Cada nombre que se puede decir es su
 /// propio título (`id` = el nombre dicho): Siri arma la frase con el nombre principal y no usa los sinónimos (con «The
 /// Simpsons» y «Los Simpson» como sinónimo, «pon Los Simpson» no coincidía). A la consola se le pide el nombre original.
@@ -207,8 +266,8 @@ struct PlayTitleIntent: AppIntent {
     }
 }
 
-/// «Pausa la TV con Orbital» / «Sigue la TV con Orbital»: lo de todos los días, sin decir la orden. (Las frases ya las cubre
-/// `OrbitalCommandIntent`; estas se quedan para los atajos que ya los usan.)
+/// Pausar y seguir en la TV, sin decir la orden. Sin frase de Siri («pausa en Orbital» la cubre `SiriCommandIntent`):
+/// se quedan para los atajos que ya los usan.
 struct PauseTVIntent: AppIntent {
     static let title: LocalizedStringResource = "Pausar la TV"
     static let openAppWhenRun = false
@@ -252,25 +311,21 @@ struct OrbitalShortcuts: AppShortcutsProvider {
         // ahí Orbital no controla la TV.
         // «Dile a Orbital que …» sí llega a la app (Siri la reconoce por su nombre), pero solo si la frase está aquí: sin ella
         // contestaba «Orbital no permite hacer eso con Siri». Texto libre no cabe en la frase: «Habla con Orbital» lo pregunta
-        // después («¿Qué le digo a Orbital?»); lo de todos los días y los títulos sí van en la frase.
-        AppShortcut(intent: OrbitalCommandIntent(), phrases: [
-            "\(\.$command) en \(.applicationName)", "\(\.$command) con \(.applicationName)", "\(\.$command) \(.applicationName)",
-            "\(.applicationName) \(\.$command)",
-            "Dile a \(.applicationName) que \(\.$command)", "Pídele a \(.applicationName) que \(\.$command)",
-        ], shortTitle: "Orden rápida", systemImageName: "playpause.fill")
+        // después («¿Qué le digo a Orbital?»); las esenciales y los títulos sí van en la frase.
+        // Dos moldes por frase: «… en Orbital» y «Dile a Orbital que …». Las demás órdenes rápidas (`OrbitalCommandIntent`)
+        // y «Pausar/Seguir en la TV» ya no tienen frase, pero siguen en Atajos para los atajos guardados.
+        AppShortcut(intent: SiriCommandIntent(), phrases: [
+            "\(\.$command) en \(.applicationName)", "Dile a \(.applicationName) que \(\.$command)",
+        ], shortTitle: "Orden por voz", systemImageName: "playpause.fill")
         AppShortcut(intent: PlayTitleIntent(), phrases: [
-            "Pon \(\.$show) en \(.applicationName)", "Pon \(\.$show) con \(.applicationName)",
-            "Quiero ver \(\.$show) en \(.applicationName)", "Reproduce \(\.$show) en \(.applicationName)",
-            "Sigue viendo \(\.$show) en \(.applicationName)", "Poner en la TV con \(.applicationName)",
-            // Como lo dice la gente: «Dile a Orbital que ponga Los Simpson» (no estaba y Siri contestaba «no permite hacer eso»).
-            "Dile a \(.applicationName) que ponga \(\.$show)", "Pídele a \(.applicationName) que ponga \(\.$show)",
-            "Dile a \(.applicationName) que pon \(\.$show)",
+            "Pon \(\.$show) en \(.applicationName)", "Dile a \(.applicationName) que ponga \(\.$show)",
         ], shortTitle: "Poner en la TV", systemImageName: "tv")
         AppShortcut(intent: AskOrbitalIntent(), phrases: [
-            "Habla con \(.applicationName)", "Orden para \(.applicationName)", "Usa \(.applicationName)", "\(.applicationName)",
+            "Habla con \(.applicationName)", "Orden para \(.applicationName)",
         ], shortTitle: "Habla con Orbital", systemImageName: "waveform")
+        // «Prende Orbital» se queda además de los dos moldes: la guía de voz lo enseña así.
         AppShortcut(intent: TurnOnConsoleIntent(), phrases: [
-            "Prende \(.applicationName)", "Enciende \(.applicationName)", "Prende la consola con \(.applicationName)",
+            "Prende la tele en \(.applicationName)", "Dile a \(.applicationName) que prenda la tele", "Prende \(.applicationName)",
         ], shortTitle: "Prender la consola", systemImageName: "power")
     }
 }

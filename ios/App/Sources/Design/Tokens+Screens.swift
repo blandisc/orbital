@@ -402,6 +402,14 @@ extension DS {
         /// Cuánto espera la hoja del control a que su contenido deje de cambiar antes de tomar su nuevo alto (en una sola
         /// animación, en lugar de seguir cada paso).
         static let heightSettle: Double = 0.12
+        /// El renglón de la voz (`VoiceRow`): el círculo del micrófono y el alto del renglón abierto. Escuchando y
+        /// respondiendo miden lo mismo, así el renglón cambia de alto una vez al abrir y otra al plegarse (no brinca).
+        static let voiceMic: CGFloat = 54
+        static let voiceOpenHeight: CGFloat = 196
+        /// Cuánto se queda abierta la respuesta antes de plegarse sola, y cuánto se queda después como pista («✓ …»).
+        static let replyStays: Double = 6, answerHintStays: Double = 10
+        /// Varias coincidencias: el ancho de cada tarjeta del carrusel (lo que sobra deja asomar las de los lados) y su póster.
+        static let choiceCardShare: CGFloat = 0.84, choicePoster: CGFloat = 84
         /// La línea de tiempo con sustos: alto de la barra, de la marca leve y de la fuerte; el punto donde vas.
         static let timelineBar: CGFloat = 6, scareMark: CGFloat = 12, scareMarkMajor: CGFloat = 20, scareMarkWidth: CGFloat = 3
         static let playhead: CGFloat = 14

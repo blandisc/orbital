@@ -32,7 +32,9 @@ public protocol HTTPClient: Sendable {
 /// Fallo de red (sin conexión, tiempo agotado, servidor caído): no es que tus datos estén mal.
 public struct NetworkError: Error, Sendable, CustomStringConvertible {
     public let description: String
-    public init(_ description: String) { self.description = description }
+    /// El código del sistema (sin internet, sin conexión con el servidor…), para decir qué falló (`OrbitalRemote.diagnose`).
+    public let code: URLError.Code?
+    public init(_ description: String, code: URLError.Code? = nil) { self.description = description; self.code = code }
 }
 
 public struct URLSessionHTTPClient: HTTPClient {
@@ -73,12 +75,14 @@ public struct URLSessionHTTPClient: HTTPClient {
                     for (key, value) in http?.allHeaderFields ?? [:] { if let k = key as? String, let v = value as? String { headers[k.lowercased()] = v } }
                     return HTTPResponse(status: http?.statusCode ?? 0, data: data, headers: headers)
                 }
-                group.addTask { try await Task.sleep(nanoseconds: UInt64(deadline * 1e9)); throw NetworkError("Tiempo agotado") }
+                group.addTask { try await Task.sleep(nanoseconds: UInt64(deadline * 1e9)); throw NetworkError("Tiempo agotado", code: .timedOut) }
                 defer { group.cancelAll() }
                 return try await group.next()!
             }
         } catch let error as NetworkError {
             throw error
+        } catch let error as URLError {
+            throw NetworkError(error.localizedDescription, code: error.code)
         } catch {
             throw NetworkError("\(error.localizedDescription)")
         }
