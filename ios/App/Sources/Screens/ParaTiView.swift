@@ -15,6 +15,8 @@ struct ParaTiView: View {
     @State private var openTitle: TitleRoute?
     /// «Decide por mí» abierto.
     @State private var deciding = false
+    /// «¿Qué vemos hoy?» · Encuentra tu match perfecto: el mazo a pantalla completa (la tarjeta de Listas).
+    @State private var matching = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -52,7 +54,7 @@ struct ParaTiView: View {
                         .id(item.imdb)
                     }
                 }
-            case .lists: ListsView(observer: model, onDecide: { deciding = true })
+            case .lists: ListsView(observer: model, onDecide: { matching = true })
             }
         }
         .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio
@@ -102,6 +104,15 @@ struct ParaTiView: View {
             await m.load()
         }
         .refreshable { await m.refresh() }
+        .fullScreenCover(isPresented: $matching) {
+            let pool = m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) }
+            MatchDeckScreen(pool: pool, onOpenTitle: { openTitle = $0 },
+                            onPlay: { route in
+                                // Una película suena ya; una serie abre su ficha (un episodio suelto casi nunca es el bueno).
+                                if let s = pool.first(where: { $0.imdb == route.metaID }), s.kind == "movie" { Task { await env.play(s) } }
+                                else { openTitle = route }
+                            })
+        }
         .sheet(isPresented: $deciding) {
             DecideView(pool: (m.because?.items ?? []) + m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) }, sources: decideSources(m)) { openTitle = $0 }
         }

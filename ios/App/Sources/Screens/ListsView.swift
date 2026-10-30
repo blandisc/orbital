@@ -258,7 +258,9 @@ struct ListsView: View {
 
     /// Premios: cada uno con su estatuilla al frente, sobre sus tres ganadores más recientes.
     @ViewBuilder private var awards: some View {
-        let all = collections.model.awards
+        // El mismo orden que la repisa de Colecciones (Óscar, Palma, Ariel…), para que las dos no se contradigan.
+        let order = Canon.awardOrder
+        let all = collections.model.awards.sorted { (order.firstIndex(of: $0.id) ?? order.count) < (order.firstIndex(of: $1.id) ?? order.count) }
         if !all.isEmpty {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 DSGroupTitle(title: Text("Premios"), meta: Text("Los ganadores, del más reciente"))
