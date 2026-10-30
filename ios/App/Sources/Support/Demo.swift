@@ -71,6 +71,8 @@ enum Demo {
     static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
     /// `-demo-because`: Trakt de mentira con historial y relacionados, para ver «Porque viste» en Para ti.
     static var because: Bool { ProcessInfo.processInfo.arguments.contains("-demo-because") }
+    /// `-demo-rate`: lo que terminaste hace poco y aún no calificas (Moonlight, Parásitos y una serie): la pastilla de calificar.
+    static var rate: Bool { ProcessInfo.processInfo.arguments.contains("-demo-rate") }
     /// `-demo-trakt`: Trakt «conectado» con una watchlist y listas propias de mentira (unas recientes, otras viejas) que tardan
     /// ~1,5 s en llegar, como la red de verdad: para ver «Guardar en…» cargando y ya cargada. `-demo-open save` lo prende solo.
     static var trakt: Bool { ProcessInfo.processInfo.arguments.contains("-demo-trakt") || open == "save" }
@@ -211,7 +213,7 @@ enum Demo {
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
-        if scrobble || airings || because || trakt { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa (propia del iPhone): nada sale a Trakt
+        if scrobble || airings || because || trakt || rate { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa (propia del iPhone): nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         if tmdb { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
         // `-demo-rd premium|soon|expired|free|invalid`: una clave de Real-Debrid de mentira (api.real-debrid.com la contesta la demo).

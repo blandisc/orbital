@@ -19,6 +19,16 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Calificar como en Trakt (`RatingStars`, `RatingReminder`, `RatingQueue`).
+    "Tu calificación": "Your rating",
+    "Sin calificar": "Not rated",
+    "%@ de 5 estrellas": "%@ of 5 stars",
+    "¿Qué tal %@?": "How was %@?",
+    "y %lld más": "and %lld more",
+    "No calificar esta": "Don't rate this one",
+    "No calificar": "Don't rate",
+    "Nada por calificar": "Nothing to rate",
+    "Por calificar": "To rate",
     # Modo degradado (docs/producto/modo-degradado.md): la causa de verdad y la salida (`Degraded`, `UserMessages`).
     "Trakt no contesta": "Trakt isn't responding",
     "Real-Debrid no contesta": "Real-Debrid isn't responding",

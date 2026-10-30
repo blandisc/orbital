@@ -159,6 +159,14 @@ extension DS {
         static let symbol = "heart", symbolFilled = "heart.fill"
     }
 
+    /// Calificar como en Trakt (`RatingStars`, `RatingReminder`): las estrellas en ámbar (el color del porqué de las portadas,
+    /// como las de Trakt), su tamaño en la ficha y en línea dentro del recordatorio, y el póster chico de la pastilla.
+    enum Rating {
+        static let filled = DS.warning, empty = DS.textFaint
+        static let star: CGFloat = 26, starInline: CGFloat = 17, gap: CGFloat = 4
+        static let poster: CGFloat = 30, posterAspect: CGFloat = 1.5
+    }
+
     /// El carrusel de «En tendencia» en Inicio (`DeckCard`, `deckTransition`): tarjetas con lo que sigue a los lados, más
     /// chicas, oscuras y desenfocadas, giradas en 3D (coverflow).
     enum Deck {

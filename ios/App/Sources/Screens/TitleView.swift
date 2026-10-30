@@ -161,6 +161,7 @@ struct TitleView: View {
         }
         synopsis(model)
         creditLine(model)
+        yourRating(model)
         if model.kind == "series" { episodes(model) }
         // Sin TMDB, los créditos ya van en el renglón de arriba (antes salían dos veces: «Dirección · Con» y otra vez
         // «Reparto · Dirección · Guion»).

@@ -91,6 +91,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         // OpenSubtitles de mentira: varias versiones por idioma (con copia, descargas, y unas SDH/forzadas que se esconden).
         if url.host == "opensubtitles-v3.strem.io" { return HTTPResponse(status: 200, data: Self.subtitlesDemo.serialized()) }
         if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
+        if url.host == "api.trakt.tv", Demo.rate, let found = Self.ratingsDemo(url.path) { return HTTPResponse(status: 200, data: found.serialized()) }
         if url.host == "api.trakt.tv", Demo.because, let found = Self.becauseDemo(url.path) {
             // Los relacionados tardan lo que tarda Trakt de verdad (para medir qué tan fluido se siente cambiar de título).
             if url.path.hasSuffix("/related") { try? await Task.sleep(nanoseconds: 1_200_000_000) }   // ds-exception: demora de red simulada (solo modo demo)

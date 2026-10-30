@@ -79,8 +79,10 @@ struct RootView: View {
                           actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", action: { Task { await env.undoHandoff() } },
                           symbol: "tv", color: DS.brandMoon, seconds: DS.Timing.toastAction, dismiss: { env.handoff = nil })
                         .transition(.move(edge: .bottom).combined(with: .opacity))
-                } else {
+                } else if env.notices.current != nil {
                     BannerView()
+                } else {
+                    RatingReminderHost()   // calificar lo que terminaste: solo cuando no hay otro aviso
                 }
             }
             .padding(.bottom, DS.Size.tabBarClearance)
@@ -101,7 +103,7 @@ struct RootView: View {
         }
         .task { env.tvNow.setActive(scenePhase == .active) }
         // Las colecciones (una para toda la app): lo visto se vuelve a preguntar y otra cuenta no hereda nada.
-        .onChange(of: env.watchedSomething) { env.collections.forgetWatched() }
+        .onChange(of: env.watchedSomething) { env.collections.forgetWatched(); Task { await env.ratings.refresh() } }
         .onChange(of: env.services.generation) { env.collections.resetAccount() }
         .task(priority: .userInitiated) {
             // Buscar, adelantado y primero (antes que la fila de imágenes de Inicio): el color de su n.º 1 y los pósters del
@@ -123,7 +125,7 @@ struct RootView: View {
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).
             env.tvNow.setActive(phase == .active)
-            if phase == .active { Task { await env.services.syncLibrary() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }; Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) } }
+            if phase == .active { Task { await env.ratings.refresh() }; Task { await env.services.syncLibrary() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }; Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) } }
             #if DEBUG
             if phase == .active { DemoHTTPClient.postReleaseAlert(language: env.services.appSettings.uiLanguage) }
             #endif

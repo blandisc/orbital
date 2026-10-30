@@ -78,4 +78,21 @@ extension TitleView {
         }
         await model.refreshState()
     }
+
+    // MARK: tu calificación
+    /// «Tu calificación»: tus estrellas de Trakt en la ficha (con Trakt y un título con IMDb). Tocar la misma la quita.
+    @ViewBuilder func yourRating(_ model: TitleModel) -> some View {
+        if model.canFavorite {
+            let ratings = env.ratings
+            let _ = ratings.track()
+            HStack(spacing: DS.Space.s3) {
+                Text("Tu calificación").recipe(.secondary, color: DS.textMuted)
+                Spacer(minLength: 0)
+                RatingStars(value: ratings.stars(model.metaID)) { stars in
+                    Task { await ratings.rate(imdb: model.metaID, kind: model.kind, stars: stars) }
+                }
+            }
+            .accessibilityIdentifier("title-your-rating")
+        }
+    }
 }

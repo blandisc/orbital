@@ -45,6 +45,17 @@
         }
       }
     },
+    "%@ de 5 estrellas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of 5 stars"
+          }
+        }
+      }
+    },
     "%@ de batería": {
       "extractionState": "manual",
       "localizations": {
@@ -12790,6 +12801,17 @@
         }
       }
     },
+    "Nada por calificar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to rate"
+          }
+        }
+      }
+    },
     "Nada reconocido todavía": {
       "extractionState": "manual",
       "localizations": {
@@ -12972,6 +12994,28 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "No calificar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't rate"
+          }
+        }
+      }
+    },
+    "No calificar esta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't rate this one"
           }
         }
       }
@@ -15445,6 +15489,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "By year"
+          }
+        }
+      }
+    },
+    "Por calificar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To rate"
           }
         }
       }
@@ -18297,6 +18352,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No offset"
+          }
+        }
+      }
+    },
+    "Sin calificar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not rated"
           }
         }
       }
@@ -21733,6 +21799,17 @@
         }
       }
     },
+    "Tu calificación": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your rating"
+          }
+        }
+      }
+    },
     "Tu clave de Real-Debrid": {
       "extractionState": "manual",
       "localizations": {
@@ -24155,6 +24232,17 @@
         }
       }
     },
+    "y %lld más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "and %lld more"
+          }
+        }
+      }
+    },
     "«%@» no cabe en el iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -24490,6 +24578,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What should I play on the TV?"
+          }
+        }
+      }
+    },
+    "¿Qué tal %@?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How was %@?"
           }
         }
       }

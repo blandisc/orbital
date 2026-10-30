@@ -35,6 +35,8 @@ private struct CatalogSample: View {
                     FavoriteButton(isFavorite: false) {}
                     FavoriteButton(isFavorite: true) {}
                 }
+                RatingStars(value: 3.5) { _ in }
+                RatingReminder(title: "Moonlight", poster: nil, more: 2, onRate: { _ in }, onDismiss: {}, onOpenQueue: {})
                 HStack(spacing: DS.Space.s3) {
                     DSIconButton(symbol: "plus", label: "Agregar") {}
                     DSIconButton(symbol: "play.fill", label: "Ver", prominent: true) {}
