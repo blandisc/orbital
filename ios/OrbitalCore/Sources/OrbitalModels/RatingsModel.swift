@@ -23,6 +23,9 @@ public final class RatingsModel: ObservableModel {
     static let dismissedKey = "ratings-dismissed"
     /// Lo que se recuerda de lo que dijiste «no calificar» (lo más reciente).
     static let memory = 300
+    /// Al volver a la app no se pregunta a Trakt otra vez antes de esto (son 3–4 llamadas; Trakt limita).
+    public nonisolated static let minInterval: TimeInterval = 10 * 60
+    private var lastRefresh: Date?
 
     public private(set) var ratings: [String: Int] = [:] { didSet { changed() } }
     public private(set) var queue: [Candidate] = [] { didSet { changed() } }
@@ -44,10 +47,13 @@ public final class RatingsModel: ObservableModel {
         return ratings[imdb].map(RatingScale.stars(trakt:))
     }
 
-    /// Trae tus calificaciones y lo que viste en la ventana, y arma la fila del recordatorio.
-    public func refresh() async {
-        guard let trakt = services.trakt, trakt.linked else { ratings = [:]; queue = []; return }
+    /// Trae tus calificaciones y lo que viste en la ventana, y arma la fila del recordatorio. Sin `force` no repite antes de
+    /// `minInterval` (al volver a la app); con `force` sí (acabas de terminar algo).
+    public func refresh(force: Bool = false) async {
+        guard let trakt = services.trakt, trakt.linked else { ratings = [:]; queue = []; lastRefresh = nil; return }
         let now = clock()
+        if !force, let last = lastRefresh, now.timeIntervalSince(last) < Self.minInterval { return }
+        lastRefresh = now
         async let rated = try? trakt.myRatings()
         async let plays = try? trakt.plays(since: now.addingTimeInterval(-Self.window), until: now, maxPages: 2)
         if let rated = await rated { ratings = rated }

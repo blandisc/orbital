@@ -103,7 +103,7 @@ struct RootView: View {
         }
         .task { env.tvNow.setActive(scenePhase == .active) }
         // Las colecciones (una para toda la app): lo visto se vuelve a preguntar y otra cuenta no hereda nada.
-        .onChange(of: env.watchedSomething) { env.collections.forgetWatched(); Task { await env.ratings.refresh() } }
+        .onChange(of: env.watchedSomething) { env.collections.forgetWatched(); Task { await env.ratings.refresh(force: true) } }
         .onChange(of: env.services.generation) { env.collections.resetAccount() }
         .task(priority: .userInitiated) {
             // Buscar, adelantado y primero (antes que la fila de imágenes de Inicio): el color de su n.º 1 y los pósters del

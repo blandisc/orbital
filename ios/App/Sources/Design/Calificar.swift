@@ -1,8 +1,10 @@
 import SwiftUI
 import OrbitalCore
 
-/// Tus estrellas, como en Trakt: 5 con medias (en Trakt, 1…10). Se toca o se arrastra: la mitad izquierda de una estrella es
-/// media. Volver a tocar tu misma calificación la quita. Con VoiceOver se ajusta de media en media.
+/// Tus estrellas, como en Trakt: 5 con medias (en Trakt, 1…10). Se toca o se arrastra de lado: la mitad izquierda de una
+/// estrella es media. Volver a TOCAR tu misma calificación la quita (arrastrar y volver al mismo punto no). El arrastre va a
+/// la par del desplazamiento y solo cuenta si es de lado: empezar sobre las estrellas para bajar la ficha sí la baja.
+/// Con VoiceOver se ajusta de media en media.
 struct RatingStars: View {
     let value: Double?
     var size: CGFloat = DS.Rating.star
@@ -19,7 +21,13 @@ struct RatingStars: View {
             }
         }
         .contentShape(Rectangle())
-        .overlay { GeometryReader { geo in Color.clear.contentShape(Rectangle()).gesture(drag(width: geo.size.width)) } }
+        .overlay {
+            GeometryReader { geo in
+                Color.clear.contentShape(Rectangle())
+                    .gesture(tap(width: geo.size.width))
+                    .simultaneousGesture(drag(width: geo.size.width))
+            }
+        }
         .sensoryFeedback(.selection, trigger: dragging) { old, new in old != nil && new != nil && old != new }
         .accessibilityElement()
         .accessibilityLabel(Text("Tu calificación"))
@@ -35,13 +43,25 @@ struct RatingStars: View {
         .accessibilityIdentifier("rating-stars")
     }
 
+    private func at(_ x: CGFloat, _ width: CGFloat) -> Double { RatingScale.snap(Double(x / max(1, width)) * 5) }
+
+    private func tap(width: CGFloat) -> some Gesture {
+        SpatialTapGesture().onEnded { g in
+            let picked = at(g.location.x, width)
+            onChange(picked == value ? nil : picked)
+        }
+    }
+
     private func drag(width: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { dragging = RatingScale.snap(Double($0.location.x / max(1, width)) * 5) }
+        DragGesture(minimumDistance: DS.Rating.dragStart)
+            .onChanged { g in
+                guard dragging != nil || abs(g.translation.width) > abs(g.translation.height) else { return }   // de lado, o no es para las estrellas
+                dragging = at(g.location.x, width)
+            }
             .onEnded { g in
-                let picked = RatingScale.snap(Double(g.location.x / max(1, width)) * 5)
+                guard dragging != nil else { return }
                 dragging = nil
-                onChange(picked == value ? nil : picked)
+                onChange(at(g.location.x, width))
             }
     }
 

@@ -44,4 +44,19 @@ final class RatingsModelTests: XCTestCase {
         let saved = rig.kv.data(RatingsModel.dismissedKey).flatMap { try? JSONDecoder().decode([String].self, from: $0) }
         XCTAssertEqual(saved, ["tt1", "tt2"])
     }
+
+    func testAlVolverALaAppNoPreguntaOtraVezAntesDeDiezMinutos() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        let clock = rig.clock
+        let model = RatingsModel(rig.services, clock: { clock.now })
+        func calls() -> Int { rig.http.calls.filter { $0.contains("/sync/ratings/movies") }.count }
+        await model.refresh()
+        await model.refresh()
+        XCTAssertEqual(calls(), 1, "dentro de los 10 minutos no repite")
+        await model.refresh(force: true)
+        XCTAssertEqual(calls(), 2, "terminaste algo: sí pregunta")
+        clock.now = clock.now.addingTimeInterval(RatingsModel.minInterval + 1)
+        await model.refresh()
+        XCTAssertEqual(calls(), 3)
+    }
 }

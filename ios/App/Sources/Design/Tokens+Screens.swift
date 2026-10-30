@@ -164,6 +164,8 @@ extension DS {
     enum Rating {
         static let filled = DS.warning, empty = DS.textFaint
         static let star: CGFloat = 26, starInline: CGFloat = 17, gap: CGFloat = 4
+        /// Lo que se mueve el dedo antes de que cuente como arrastre (menos que eso es un toque).
+        static let dragStart: CGFloat = 8
         static let poster: CGFloat = 30, posterAspect: CGFloat = 1.5
     }
 
