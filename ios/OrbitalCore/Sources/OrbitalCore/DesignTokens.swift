@@ -161,6 +161,14 @@ public enum DesignTokens {
         public static let scrimStart = 0.0, scrimMid = 0.42
         public static let tintFloor = 0.5, starCount = 56, starRadius = 1.1, starOpacity = 0.35, starSeed = 7.0, artFadeStart = 0.6
     }
+    /// El cielo de fondo (`DS.Sky`, docs/producto/muvy-busqueda-premios/propuesta.html § Cielo): Crepúsculo de noche y Bruma
+    /// lunar de día. El tono de arriba, las estrellas (blancas, frías y cálidas) y la franja de polvo, en oscuro y en claro.
+    public enum Sky {
+        public static let hex: [String: (dark: String, light: String)] = [
+            "dusk": ("#1c1730", "#e9e7f1"), "star": ("#f6f3ec", "#3a3c48"), "cold": ("#aac4ff", "#3e4d73"),
+            "warm": ("#ffd8a6", "#6e5a44"), "band": ("#9d8fd6", "#ffffff"),
+        ]
+    }
     /// Relaciones de aspecto de las imágenes.
     public enum Aspect { public static let poster = 2.0 / 3.0, hero = 16.0 / 11.0, still = 16.0 / 9.0 }
     /// Esperas de la interfaz (segundos).
