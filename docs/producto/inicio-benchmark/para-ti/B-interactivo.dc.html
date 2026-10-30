@@ -13,13 +13,14 @@ body{margin:0;background:#0c0c0e}
 a{color:#f5f4f0}a:hover{color:#cdcdd3}
 .scr{scrollbar-width:none}.scr::-webkit-scrollbar{display:none}
 .ey{display:block;font-size:11.5px;font-weight:700;color:#5fd6c6}
+.round{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(40,40,46,.7);color:#f5f4f0;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;backdrop-filter:blur(16px)}
 </style>
 </helmet>
 <div style="position: relative; width: 402px; height: 874px; overflow: hidden; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif">
 
   <!-- Para ti, completo, que se desplaza -->
   <div class="scr" style="position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden">
-    <dc-import name="Completo" on-mosaic="{{openMosaic}}" on-decide="{{openDecide}}" hint-size="402px,6000px"></dc-import>
+    <dc-import name="Completo" on-mosaic="{{openMosaic}}" on-decide="{{openDecide}}" on-open="{{openThing}}" hint-size="402px,6400px"></dc-import>
     <div style="height: 90px"></div>
   </div>
 
@@ -30,6 +31,65 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
     <span style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10.5px; font-weight: 600; color: #a3a3ab; padding: 6px 12px"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v8M8.5 12.5L12 16l3.5-3.5"></path></svg>Descargas</span>
     <span style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10.5px; font-weight: 600; color: #a3a3ab; padding: 6px 12px"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5L20 20"></path></svg>Buscar</span>
   </div>
+
+  <!-- UNA COLECCIÓN (lo que abre cada tarjeta, fila o «Ver todo») -->
+  <sc-if value="{{inColl}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; z-index: 8; background: #0c0c0e">
+      <div class="scr" style="position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden">
+        <div style="position: relative; height: 250px; background: {{coll.bg}}; overflow: hidden">
+          <sc-if value="{{coll.hasIcon}}" hint-placeholder-val="{{ false }}"><img src="{{coll.icon}}" alt="" style="position: absolute; right: -10px; top: 40px; width: 170px; height: 170px; object-fit: contain; filter: drop-shadow(0 16px 26px rgba(0,0,0,.55))"></sc-if>
+          <sc-if value="{{coll.hasLogo}}" hint-placeholder-val="{{ false }}"><img src="{{coll.logo}}" alt="" style="position: absolute; right: 24px; top: 80px; width: 92px; height: 92px; border-radius: 22px; box-shadow: 0 16px 30px -10px #000"></sc-if>
+          <sc-if value="{{coll.hasCollage}}" hint-placeholder-val="{{ true }}">
+            <div style="position: absolute; right: -20px; top: 50px; display: flex; gap: 8px; transform: rotate(-8deg); opacity: .8">
+              <sc-for list="{{coll.collage}}" as="c" hint-placeholder-count="3"><img src="{{c}}" alt="" style="width: 92px; height: 138px; object-fit: cover; border-radius: 10px; box-shadow: 0 12px 24px -10px #000"></sc-for>
+            </div>
+          </sc-if>
+          <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12,12,14,.1), rgba(12,12,14,.2) 50%, #0c0c0e)"></div>
+          <div style="position: absolute; left: 20px; right: 20px; bottom: 16px; display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 11.5px; font-weight: 700; color: {{coll.tint}}">{{coll.why}}</span>
+            <span style="font-size: 32px; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif">{{coll.title}}</span>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 20px 14px">
+          <span style="font-size: 13px; color: #a3a3ab">{{coll.count}}</span>
+          <button onClick="{{cycleSort}}" style="height: 34px; padding: 0 12px; border-radius: 10px; border: 0; background: #18181c; color: #f5f4f0; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"></path></svg>{{sortName}}</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 16px 120px">
+          <sc-for list="{{coll.items}}" as="t" hint-placeholder-count="9">
+            <button onClick="{{t.open}}" aria-label="{{t.title}}" style="position: relative; border: 0; padding: 0; background: #18181c; border-radius: 11px; overflow: hidden; aspect-ratio: 2 / 3; cursor: pointer">
+              <img src="{{t.p}}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block">
+              <sc-if value="{{t.ranked}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; left: 6px; bottom: 2px; font-size: 40px; font-weight: 900; letter-spacing: -.05em; color: #f5f4f0; text-shadow: 0 2px 12px #000">{{t.rank}}</span></sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="position: absolute; left: 16px; top: 16px"><button class="round" onClick="{{closeColl}}" aria-label="Regresar"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div>
+    </div>
+  </sc-if>
+
+  <!-- LO QUE VES -->
+  <sc-if value="{{inSeen}}" hint-placeholder-val="{{ false }}">
+    <div class="scr" style="position: absolute; inset: 0; z-index: 8; background: radial-gradient(120% 60% at 50% 0%, #15302d, #0c0c0e 60%); overflow-y: auto; padding: 70px 20px 120px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px">
+      <div><span class="ey">Lo que ves · esta semana</span><span style="display: block; font-size: 64px; font-weight: 800; letter-spacing: -.04em; line-height: 1">12 h 40</span><span style="font-size: 14px; color: #cdcdd3">2 h más que la semana pasada · 5 días seguidos</span></div>
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; align-items: end; height: 120px">
+        <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 100%; height: {{d.h}}; border-radius: 8px; background: {{d.c}}"></div><span style="font-size: 11px; color: #a3a3ab">{{d.n}}</span></div>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span class="ey">Lo que más viste</span>
+        <sc-for list="{{topSeen}}" as="s" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 12px"><img src="{{s.p}}" alt="" style="width: 44px; height: 66px; object-fit: cover; border-radius: 7px"><div style="flex: 1"><div style="font-size: 15px; font-weight: 600">{{s.title}}</div><div style="font-size: 12.5px; color: #a3a3ab">{{s.what}}</div></div></div>
+        </sc-for>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <button onClick="{{wrapSay}}" style="height: 60px; border: 0; border-radius: 16px; background: #f5f4f0; color: #070708; font-size: 14px; font-weight: 700; cursor: pointer">Tu semana</button>
+        <button onClick="{{wrapSay}}" style="height: 60px; border: 0; border-radius: 16px; background: #18181c; color: #f5f4f0; font-size: 14px; font-weight: 600; cursor: pointer">Tu mes</button>
+        <button onClick="{{wrapSay}}" style="height: 60px; border: 0; border-radius: 16px; background: #18181c; color: #f5f4f0; font-size: 14px; font-weight: 600; cursor: pointer">Tu año</button>
+      </div>
+    </div>
+    <div style="position: absolute; left: 16px; top: 16px; z-index: 9"><button class="round" onClick="{{closeAll}}" aria-label="Regresar"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div>
+  </sc-if>
 
   <!-- MOSAICO -->
   <sc-if value="{{inMosaic}}" hint-placeholder-val="{{ false }}">
@@ -45,31 +105,10 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
       </div>
       <div style="position: absolute; left: 0; right: 0; top: 0; height: 110px; background: linear-gradient(180deg, #070708 30%, rgba(7,7,8,0)); pointer-events: none"></div>
       <div style="position: absolute; left: 16px; right: 16px; top: 16px; display: flex; justify-content: space-between; align-items: center">
-        <button onClick="{{closeAll}}" aria-label="Cerrar el mosaico" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); background: rgba(40,40,46,.7); color: #f5f4f0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path></svg></button>
+        <button class="round" onClick="{{closeAll}}" aria-label="Cerrar el mosaico"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path></svg></button>
         <div style="text-align: center"><span class="ey">Pasea sin buscar nada</span><span style="font-size: 17px; font-weight: 700">Mosaico</span></div>
         <div style="width: 40px"></div>
       </div>
-
-      <!-- la ficha rápida de lo que tocaste -->
-      <sc-if value="{{hasPick}}" hint-placeholder-val="{{ false }}">
-        <div onClick="{{closePick}}" style="position: absolute; inset: 0; background: rgba(0,0,0,.55); z-index: 11"></div>
-        <div style="position: absolute; left: 0; right: 0; bottom: 0; z-index: 12; background: #131316; border-radius: 28px 28px 0 0; padding: 12px 18px 30px; display: flex; flex-direction: column; gap: 14px">
-          <span style="width: 38px; height: 5px; border-radius: 3px; background: #2a2a30; align-self: center"></span>
-          <div style="display: flex; gap: 14px">
-            <img src="{{pick.p}}" alt="" style="width: 104px; height: 156px; object-fit: cover; border-radius: 12px; flex: none">
-            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
-              <span class="ey">{{pick.why}}</span>
-              <span style="font-size: 22px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1">{{pick.title}}</span>
-              <span style="font-size: 13px; color: #a3a3ab">{{pick.meta}}</span>
-              <span style="font-size: 13px; color: #cdcdd3; margin-top: 4px">{{pick.blurb}}</span>
-            </div>
-          </div>
-          <div style="display: flex; gap: 10px">
-            <button onClick="{{watchPick}}" style="flex: 1; height: 46px; border: 0; border-radius: 999px; background: #f5f4f0; color: #070708; font-size: 16px; font-weight: 700; cursor: pointer">Ver</button>
-            <button onClick="{{savePick}}" style="flex: 1; height: 46px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; background: rgba(255,255,255,.08); color: #f5f4f0; font-size: 16px; font-weight: 600; cursor: pointer">Guardar</button>
-          </div>
-        </div>
-      </sc-if>
     </div>
   </sc-if>
 
@@ -77,7 +116,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
   <sc-if value="{{inDecide}}" hint-placeholder-val="{{ false }}">
     <div style="position: absolute; inset: 0; z-index: 10; background: radial-gradient(120% 70% at 50% 0%, #1b2a2a, #0c0c0e 60%); display: flex; flex-direction: column">
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 0">
-        <button onClick="{{closeAll}}" aria-label="Cerrar" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); background: rgba(40,40,46,.7); color: #f5f4f0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path></svg></button>
+        <button class="round" onClick="{{closeAll}}" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path></svg></button>
         <div style="text-align: center"><span class="ey">Como un Tinder de películas</span><span style="font-size: 17px; font-weight: 700">¿Qué vemos hoy?</span></div>
         <span style="min-width: 40px; height: 32px; padding: 0 10px; border-radius: 999px; background: rgba(255,255,255,.08); display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; font-weight: 700">
           <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="#5fd6c6" stroke-width="3" stroke-linecap="round"></path></svg>{{saved}}</span>
@@ -89,7 +128,6 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
           </button>
         </sc-for>
       </div>
-
       <div style="position: relative; flex: 1; margin: 10px 0 0">
         <sc-if value="{{hasCard}}" hint-placeholder-val="{{ true }}">
           <img src="{{under.p}}" alt="" style="position: absolute; left: 50%; top: 14px; width: 290px; height: 435px; margin-left: -145px; object-fit: cover; border-radius: 22px; transform: scale(.94); opacity: .5">
@@ -101,7 +139,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
               <span style="font-size: 13px; color: #cdcdd3">{{card.meta}}</span>
               <span style="font-size: 13px; color: #a3a3ab">{{card.blurb}}</span>
             </div>
-            <span style="position: absolute; left: 18px; top: 22px; padding: 6px 12px; border: 3px solid #f5f4f0; border-radius: 10px; font-size: 20px; font-weight: 900; letter-spacing: .06em; transform: rotate(-14deg); opacity: {{yes}}; pointer-events: none">GUARDAR</span>
+            <span style="position: absolute; left: 18px; top: 22px; padding: 6px 12px; border: 3px solid #5fd6c6; color: #5fd6c6; border-radius: 10px; font-size: 20px; font-weight: 900; letter-spacing: .06em; transform: rotate(-14deg); opacity: {{yes}}; pointer-events: none">GUARDAR</span>
             <span style="position: absolute; right: 18px; top: 22px; padding: 6px 12px; border: 3px solid #f0574d; color: #f0574d; border-radius: 10px; font-size: 20px; font-weight: 900; letter-spacing: .06em; transform: rotate(14deg); opacity: {{no}}; pointer-events: none">NO</span>
           </div>
         </sc-if>
@@ -112,11 +150,31 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
           </div>
         </sc-if>
       </div>
-
       <div style="display: flex; justify-content: center; align-items: center; gap: 22px; padding: 8px 0 40px">
         <button onClick="{{nope}}" aria-label="No me interesa" style="width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); background: #18181c; color: #f0574d; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"></path></svg></button>
         <button onClick="{{watch}}" aria-label="Ver ahora" style="width: 72px; height: 72px; border-radius: 50%; border: 0; background: #f5f4f0; color: #070708; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z" fill="currentColor"></path></svg></button>
         <button onClick="{{keep}}" aria-label="Guardar en Mi lista" style="width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); background: #18181c; color: #5fd6c6; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"></path></svg></button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- la ficha rápida de un título (desde cualquier lado) -->
+  <sc-if value="{{hasPick}}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{closePick}}" style="position: absolute; inset: 0; background: rgba(0,0,0,.55); z-index: 15"></div>
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; z-index: 16; background: #131316; border-radius: 28px 28px 0 0; padding: 12px 18px 30px; display: flex; flex-direction: column; gap: 14px">
+      <span style="width: 38px; height: 5px; border-radius: 3px; background: #2a2a30; align-self: center"></span>
+      <div style="display: flex; gap: 14px">
+        <img src="{{pick.p}}" alt="" style="width: 104px; height: 156px; object-fit: cover; border-radius: 12px; flex: none">
+        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+          <span class="ey">{{pick.why}}</span>
+          <span style="font-size: 22px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1">{{pick.title}}</span>
+          <span style="font-size: 13px; color: #a3a3ab">{{pick.meta}}</span>
+          <span style="font-size: 13px; color: #cdcdd3; margin-top: 4px">{{pick.blurb}}</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px">
+        <button onClick="{{watchPick}}" style="flex: 1; height: 46px; border: 0; border-radius: 999px; background: #f5f4f0; color: #070708; font-size: 16px; font-weight: 700; cursor: pointer">Ver</button>
+        <button onClick="{{savePick}}" style="flex: 1; height: 46px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; background: rgba(255,255,255,.08); color: #f5f4f0; font-size: 16px; font-weight: 600; cursor: pointer">Guardar</button>
       </div>
     </div>
   </sc-if>
@@ -131,7 +189,7 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { view: 'home', pick: -1, mood: 0, at: 0, dx: 0, anim: false, saved: 0, toast: '' };
+    this.state = { view: 'home', coll: null, sort: 0, pick: '', mood: 0, at: 0, dx: 0, anim: false, saved: 0, toast: '' };
     this.startX = null;
   }
   say(text) {
@@ -142,36 +200,34 @@ class Component extends DCLogic {
   titles() {
     const B = '/_blob/';
     return [
-      { p: B + '17067ee154a950fc7044473f9094ff94', title: 'Coherence', meta: 'Película · 2013 · 1 h 29 · ★ 7.2', why: 'Porque viste Dark', blurb: 'Una cena entre amigos se rompe cuando pasa un cometa.', mood: [2, 1] },
-      { p: B + '88a5c3c91cc4fe3b44468f4e93cfd672', title: 'La llegada', meta: 'Película · 2016 · 1 h 56 · ★ 7.9', why: 'Para pensar', blurb: 'Una lingüista intenta hablar con los que llegaron del cielo.', mood: [2, 3] },
-      { p: B + 'eeea75e14201d58d05f13a8a970d655f', title: 'Chernobyl', meta: 'Serie · 2019 · 5 episodios · ★ 9.3', why: 'Aprobada por la crítica', blurb: 'La noche que explotó el reactor, y lo que vino después.', mood: [1, 3] },
-      { p: B + 'ee20996a9ce7ce95f0983f9a61e1b9e2', title: '1899', meta: 'Serie · 2022 · 1 temporada · ★ 7.3', why: 'De los creadores de Dark', blurb: 'Un barco de migrantes encuentra otro que llevaba meses perdido.', mood: [1, 2] },
-      { p: B + 'b78f0f1e101b431583268ca5215a61fa', title: 'Interestelar', meta: 'Película · 2014 · 2 h 49 · ★ 8.7', why: 'Lo más popular', blurb: 'Un viaje más allá de la galaxia para salvar a la Tierra.', mood: [2, 3] },
-      { p: B + '7ebc6c17320217ff5d9ec3c1dee5d77f', title: 'Black Mirror', meta: 'Serie · 2011 · 7 temporadas · ★ 8.7', why: 'Porque viste Severance', blurb: 'Historias sueltas sobre lo que la tecnología nos hace.', mood: [1, 2] },
-      { p: B + '406990a0cd3ba5eff4f52ed568d53ece', title: 'Blade Runner 2049', meta: 'Película · 2017 · 2 h 44 · ★ 8.0', why: 'Porque viste Dune', blurb: 'Un replicante encuentra un secreto enterrado hace 30 años.', mood: [2] },
-      { p: B + 'cd74550fdf21986a91f0a107e1738a44', title: 'Ted Lasso', meta: 'Serie · 2020 · 3 temporadas · ★ 8.8', why: 'Para reír', blurb: 'Un entrenador de futbol americano dirige un equipo inglés.', mood: [0, 3] },
-      { p: B + '98b35403660c8e7695dd6bc8ac1a856f', title: 'Slow Horses', meta: 'Serie · 2022 · 5 temporadas · ★ 8.1', why: 'Para reír y para tensión', blurb: 'Los espías que el MI5 manda a la banca.', mood: [0, 1] },
-      { p: B + '854b9cc64e02c10eccfabc039d6a0ccf', title: 'The Bear', meta: 'Serie · 2022 · 4 temporadas · ★ 8.5', why: 'Para llorar un poquito', blurb: 'Un chef de alta cocina vuelve al changarro de su familia.', mood: [0, 3] },
-      { p: B + '9253269423305bc1bf85de3196395d7d', title: 'Andor', meta: 'Serie · 2022 · 2 temporadas · ★ 8.4', why: 'Aprobada por la crítica', blurb: 'Cómo empezó la rebelión, contada desde abajo.', mood: [1] },
-      { p: B + 'f1c41a9f815b5fc93e45764c07017085', title: 'Una batalla tras otra', meta: 'Película · 2025 · 2 h 42 · ★ 7.9', why: 'En tendencia', blurb: 'Un exrevolucionario sale a buscar a su hija.', mood: [0, 1] },
-      { p: B + '5fea0e04bc0782476c4430ee494ede1e', title: 'Severance', meta: 'Serie · 2022 · 2 temporadas · ★ 8.7', why: 'La estás viendo', blurb: 'Separan la memoria del trabajo de la de la casa.', mood: [] },
-      { p: B + '82988ffc71915b761fe470bc08126468', title: 'Dark', meta: 'Serie · 2017 · 3 temporadas · ★ 8.7', why: 'La terminaste en septiembre', blurb: 'Un niño desaparece y el pueblo descubre que el tiempo es un círculo.', mood: [] },
-      { p: B + '4c438e8f7a72541df4f1f1cec23f7d35', title: 'Pluribus', meta: 'Serie · 2025 · 1 temporada', why: 'En tendencia', blurb: 'La persona más infeliz del mundo debe salvarlo de la felicidad.', mood: [] },
-      { p: B + '5f30c6fa4f106fd30c79f76adaebefae', title: 'Frankenstein', meta: 'Película · 2025 · 2 h 29', why: 'Temporada de Halloween', blurb: 'Guillermo del Toro cuenta al monstruo y a su creador.', mood: [] },
-      { p: B + '16a3fa461e0fe98fde3a4daa9ca5fa41', title: 'Weapons', meta: 'Película · 2025 · 2 h 8', why: 'Temporada de Halloween', blurb: 'Todos los niños de una clase desaparecen la misma noche.', mood: [1] },
-      { p: B + '62c8f95df6ee76d5685c98832afa320f', title: 'Alien: Earth', meta: 'Serie · 2025 · 2 temporadas', why: 'Nuevo en Disney+', blurb: 'Una nave cae en la Tierra con algo adentro.', mood: [] },
-      { p: B + '8ad3e0af5f7ad1bd9b382fb1b133c97a', title: 'Dune: Parte dos', meta: 'Película · 2024 · 2 h 46', why: 'La estás viendo', blurb: 'Paul se une a los Fremen para vengar a su familia.', mood: [] },
-      { p: B + 'c1d3b5d30bfcdc9491e8f9fd72514ebf', title: 'The Last of Us', meta: 'Serie · 2023 · 2 temporadas', why: 'En tu lista', blurb: 'Un contrabandista cruza un país en ruinas con una niña.', mood: [] },
-      { p: B + '67319c6bb81af70211f1a939ec8cadea', title: 'Breaking Bad', meta: 'Serie · 2008 · 5 temporadas · ★ 9.5', why: 'Lo más popular', blurb: 'Un maestro de química descubre su otro talento.', mood: [] },
-      { p: B + '4948ab7178e9297671c1ff32249e57d5', title: 'Stranger Things', meta: 'Serie · 2016 · 5 temporadas', why: 'Top 10 en Netflix', blurb: 'Un pueblo, un laboratorio y otra dimensión.', mood: [] },
-      { p: B + 'ba326df6b445b666f4bca7d6f2bed29a', title: 'Merlina', meta: 'Serie · 2022 · 2 temporadas', why: 'Top 10 en Netflix', blurb: 'La hija de los Addams en un internado muy raro.', mood: [] },
-      { p: B + '150298b89f8930ad190f31a52d1b1674', title: 'Stargate SG-1', meta: 'Serie · 1997 · 10 temporadas', why: 'Porque viste Stargate', blurb: 'Un equipo cruza portales a otros planetas.', mood: [] }
+      { key: 'coh', p: B + '17067ee154a950fc7044473f9094ff94', title: 'Coherence', meta: 'Película · 2013 · 1 h 29 · ★ 7.2', why: 'Porque viste Dark', blurb: 'Una cena entre amigos se rompe cuando pasa un cometa.', mood: [2, 1] },
+      { key: 'arr', p: B + '88a5c3c91cc4fe3b44468f4e93cfd672', title: 'La llegada', meta: 'Película · 2016 · 1 h 56 · ★ 7.9', why: 'Para pensar', blurb: 'Una lingüista intenta hablar con los que llegaron del cielo.', mood: [2, 3] },
+      { key: 'cher', p: B + 'eeea75e14201d58d05f13a8a970d655f', title: 'Chernobyl', meta: 'Serie · 2019 · 5 episodios · ★ 9.3', why: 'Aprobada por la crítica', blurb: 'La noche que explotó el reactor, y lo que vino después.', mood: [1, 3] },
+      { key: 'n1899', p: B + 'ee20996a9ce7ce95f0983f9a61e1b9e2', title: '1899', meta: 'Serie · 2022 · 1 temporada · ★ 7.3', why: 'De los creadores de Dark', blurb: 'Un barco de migrantes encuentra otro que llevaba meses perdido.', mood: [1, 2] },
+      { key: 'inter', p: B + 'b78f0f1e101b431583268ca5215a61fa', title: 'Interestelar', meta: 'Película · 2014 · 2 h 49 · ★ 8.7', why: 'Lo más popular', blurb: 'Un viaje más allá de la galaxia para salvar a la Tierra.', mood: [2, 3] },
+      { key: 'bm', p: B + '7ebc6c17320217ff5d9ec3c1dee5d77f', title: 'Black Mirror', meta: 'Serie · 2011 · 7 temporadas · ★ 8.7', why: 'Porque viste Severance', blurb: 'Historias sueltas sobre lo que la tecnología nos hace.', mood: [1, 2] },
+      { key: 'br', p: B + '406990a0cd3ba5eff4f52ed568d53ece', title: 'Blade Runner 2049', meta: 'Película · 2017 · 2 h 44 · ★ 8.0', why: 'Porque viste Dune', blurb: 'Un replicante encuentra un secreto enterrado hace 30 años.', mood: [2] },
+      { key: 'lasso', p: B + 'cd74550fdf21986a91f0a107e1738a44', title: 'Ted Lasso', meta: 'Serie · 2020 · 3 temporadas · ★ 8.8', why: 'Para reír', blurb: 'Un entrenador de futbol americano dirige un equipo inglés.', mood: [0, 3] },
+      { key: 'slow', p: B + '98b35403660c8e7695dd6bc8ac1a856f', title: 'Slow Horses', meta: 'Serie · 2022 · 5 temporadas · ★ 8.1', why: 'Para reír y para tensión', blurb: 'Los espías que el MI5 manda a la banca.', mood: [0, 1] },
+      { key: 'bear', p: B + '854b9cc64e02c10eccfabc039d6a0ccf', title: 'The Bear', meta: 'Serie · 2022 · 4 temporadas · ★ 8.5', why: 'Para llorar un poquito', blurb: 'Un chef de alta cocina vuelve al changarro de su familia.', mood: [0, 3] },
+      { key: 'andor', p: B + '9253269423305bc1bf85de3196395d7d', title: 'Andor', meta: 'Serie · 2022 · 2 temporadas · ★ 8.4', why: 'Aprobada por la crítica', blurb: 'Cómo empezó la rebelión, contada desde abajo.', mood: [1] },
+      { key: 'obaa', p: B + 'f1c41a9f815b5fc93e45764c07017085', title: 'Una batalla tras otra', meta: 'Película · 2025 · 2 h 42 · ★ 7.9', why: 'En tendencia', blurb: 'Un exrevolucionario sale a buscar a su hija.', mood: [0, 1] },
+      { key: 'sev', p: B + '5fea0e04bc0782476c4430ee494ede1e', title: 'Severance', meta: 'Serie · 2022 · 2 temporadas · ★ 8.7', why: 'La estás viendo', blurb: 'Separan la memoria del trabajo de la de la casa.', mood: [] },
+      { key: 'dark', p: B + '82988ffc71915b761fe470bc08126468', title: 'Dark', meta: 'Serie · 2017 · 3 temporadas · ★ 8.7', why: 'La terminaste en septiembre', blurb: 'Un niño desaparece y el pueblo descubre que el tiempo es un círculo.', mood: [] },
+      { key: 'plur', p: B + '4c438e8f7a72541df4f1f1cec23f7d35', title: 'Pluribus', meta: 'Serie · 2025 · 1 temporada', why: 'En tendencia', blurb: 'La persona más infeliz del mundo debe salvarlo de la felicidad.', mood: [] },
+      { key: 'frank', p: B + '5f30c6fa4f106fd30c79f76adaebefae', title: 'Frankenstein', meta: 'Película · 2025 · 2 h 29', why: 'Temporada de Halloween', blurb: 'Guillermo del Toro cuenta al monstruo y a su creador.', mood: [] },
+      { key: 'weap', p: B + '16a3fa461e0fe98fde3a4daa9ca5fa41', title: 'Weapons', meta: 'Película · 2025 · 2 h 8', why: 'Temporada de Halloween', blurb: 'Todos los niños de una clase desaparecen la misma noche.', mood: [1] },
+      { key: 'alien', p: B + '62c8f95df6ee76d5685c98832afa320f', title: 'Alien: Earth', meta: 'Serie · 2025 · 2 temporadas', why: 'Nuevo en Disney+', blurb: 'Una nave cae en la Tierra con algo adentro.', mood: [] },
+      { key: 'dune', p: B + '8ad3e0af5f7ad1bd9b382fb1b133c97a', title: 'Dune: Parte dos', meta: 'Película · 2024 · 2 h 46', why: 'La estás viendo', blurb: 'Paul se une a los Fremen para vengar a su familia.', mood: [] },
+      { key: 'tlou', p: B + 'c1d3b5d30bfcdc9491e8f9fd72514ebf', title: 'The Last of Us', meta: 'Serie · 2023 · 2 temporadas', why: 'En tu lista', blurb: 'Un contrabandista cruza un país en ruinas con una niña.', mood: [] },
+      { key: 'bb', p: B + '67319c6bb81af70211f1a939ec8cadea', title: 'Breaking Bad', meta: 'Serie · 2008 · 5 temporadas · ★ 9.5', why: 'Lo más popular', blurb: 'Un maestro de química descubre su otro talento.', mood: [] },
+      { key: 'st', p: B + '4948ab7178e9297671c1ff32249e57d5', title: 'Stranger Things', meta: 'Serie · 2016 · 5 temporadas', why: 'Top 10 en Netflix', blurb: 'Un pueblo, un laboratorio y otra dimensión.', mood: [] },
+      { key: 'wed', p: B + 'ba326df6b445b666f4bca7d6f2bed29a', title: 'Merlina', meta: 'Serie · 2022 · 2 temporadas', why: 'Top 10 en Netflix', blurb: 'La hija de los Addams en un internado muy raro.', mood: [] },
+      { key: 'sg1', p: B + '150298b89f8930ad190f31a52d1b1674', title: 'Stargate SG-1', meta: 'Serie · 1997 · 10 temporadas', why: 'Porque viste Stargate', blurb: 'Un equipo cruza portales a otros planetas.', mood: [] }
     ];
   }
-  deck() {
-    const all = this.titles();
-    return all.filter((t) => t.mood.indexOf(this.state.mood) >= 0);
-  }
+  byKey(k) { return this.titles().filter((t) => t.key === k)[0] || this.titles()[0]; }
+  deck() { return this.titles().filter((t) => t.mood.indexOf(this.state.mood) >= 0); }
   next(saved) {
     const card = this.deck()[this.state.at];
     this.setState({ anim: true, dx: saved ? 520 : -520 });
@@ -184,6 +240,21 @@ class Component extends DCLogic {
     const card = deck[this.state.at];
     const under = deck[this.state.at + 1] || card || all[0];
     const dx = this.state.dx;
+    const SORTS = ['Más vistas', 'Mejor calificadas', 'Más nuevas'];
+    const c = this.state.coll;
+    let coll = { title: '', why: '', tint: '#5fd6c6', bg: '#0c0c0e', items: [], count: '', hasIcon: false, hasLogo: false, hasCollage: false, collage: [], icon: '', logo: '' };
+    if (c) {
+      let keys = c.items || [];
+      if (this.state.sort === 1) keys = keys.slice().reverse();
+      if (this.state.sort === 2) keys = keys.slice(1).concat(keys.slice(0, 1));
+      const items = keys.map((k, i) => { const t = this.byKey(k); return { p: t.p, title: t.title, ranked: !!c.ranked, rank: i + 1, open: () => this.setState({ pick: k }) }; });
+      coll = {
+        title: c.title, why: c.why, tint: c.tint || '#5fd6c6', bg: c.bg || '#0c0c0e', items,
+        count: items.length + ' de ejemplo · ' + (c.ranked ? 'en su orden' : 'con el filtro de arriba'),
+        icon: c.icon || '', logo: c.logo || '', hasIcon: !!c.icon, hasLogo: !c.icon && !!c.logo, hasCollage: !c.icon && !c.logo,
+        collage: keys.slice(0, 3).map((k) => this.byKey(k).p)
+      };
+    }
     const moods = [
       { label: 'Para reír', icon: '/_blob/809143fa431b10fbd336c1db0e87d3a2' },
       { label: 'Tensión', icon: '/_blob/05401a83bd8d213f028482903419b1fe' },
@@ -196,19 +267,36 @@ class Component extends DCLogic {
       pick: () => this.setState({ mood: i, at: 0, dx: 0 })
     }));
     const tiles = [];
-    for (let r = 0; r < 3; r++) all.forEach((t, i) => tiles.push({ ...t, shift: (i % 3) === 1 ? -26 : 0, open: () => this.setState({ pick: i }) }));
+    for (let r = 0; r < 3; r++) all.forEach((t, i) => tiles.push({ p: t.p, title: t.title, shift: (i % 3) === 1 ? -26 : 0, open: () => this.setState({ pick: t.key }) }));
+    const pick = this.state.pick ? this.byKey(this.state.pick) : all[0];
     return {
-      openMosaic: () => this.setState({ view: 'mosaic', pick: -1 }),
+      openMosaic: () => this.setState({ view: 'mosaic' }),
       openDecide: () => this.setState({ view: 'decide', at: 0, dx: 0 }),
-      closeAll: () => this.setState({ view: 'home', pick: -1 }),
-      inMosaic: this.state.view === 'mosaic',
-      inDecide: this.state.view === 'decide',
+      openThing: (spec) => {
+        if (spec.single) this.setState({ pick: spec.single });
+        else if (spec.seen) this.setState({ view: 'seen' });
+        else this.setState({ view: 'coll', coll: spec, sort: 0 });
+      },
+      closeAll: () => this.setState({ view: 'home' }),
+      closeColl: () => this.setState({ view: 'home', coll: null }),
+      inMosaic: this.state.view === 'mosaic', inDecide: this.state.view === 'decide',
+      inColl: this.state.view === 'coll', inSeen: this.state.view === 'seen',
+      coll, sortName: SORTS[this.state.sort], cycleSort: () => this.setState({ sort: (this.state.sort + 1) % 3 }),
       tiles,
-      hasPick: this.state.pick >= 0,
-      pick: all[Math.max(0, this.state.pick)],
-      closePick: () => this.setState({ pick: -1 }),
-      watchPick: () => { this.say('Abriendo «' + all[this.state.pick].title + '»'); this.setState({ pick: -1 }); },
-      savePick: () => { this.say('«' + all[this.state.pick].title + '» quedó en Mi lista'); this.setState({ pick: -1 }); },
+      hasPick: !!this.state.pick, pick,
+      closePick: () => this.setState({ pick: '' }),
+      watchPick: () => { this.say('Abriendo «' + pick.title + '»'); this.setState({ pick: '' }); },
+      savePick: () => { this.say('«' + pick.title + '» quedó en Mi lista'); this.setState({ pick: '' }); },
+      week: [
+        { n: 'L', h: '40px', c: 'rgba(95,214,198,.35)' }, { n: 'M', h: '72px', c: 'rgba(95,214,198,.35)' }, { n: 'M', h: '26px', c: 'rgba(95,214,198,.35)' },
+        { n: 'J', h: '92px', c: 'rgba(95,214,198,.35)' }, { n: 'V', h: '110px', c: '#5fd6c6' }, { n: 'S', h: '8px', c: 'rgba(255,255,255,.12)' }, { n: 'D', h: '8px', c: 'rgba(255,255,255,.12)' }
+      ],
+      topSeen: [
+        { p: this.byKey('sev').p, title: 'Severance', what: '6 episodios · 5 h 10' },
+        { p: this.byKey('dune').p, title: 'Dune: Parte dos', what: 'Película · 2 h 46' },
+        { p: this.byKey('slow').p, title: 'Slow Horses', what: '4 episodios · 3 h 05' }
+      ],
+      wrapSay: () => this.say('Aquí abre tu resumen, como Wrapped'),
       moods,
       hasCard: !!card, noCard: !card,
       card: card || all[0], under,

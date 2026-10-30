@@ -11,25 +11,31 @@
 <style>
 body{margin:0;background:#0c0c0e}
 a{color:#f5f4f0}a:hover{color:#cdcdd3}
-.grp{display:block;padding:18px 20px 0;border-top:1px solid #1e1e23;font-size:28px;font-weight:800;letter-spacing:-.02em;color:#f5f4f0;font-family:-apple-system,"SF Pro Display",system-ui,sans-serif}
+.grp{display:flex;align-items:baseline;justify-content:space-between;padding:22px 20px 0;border-top:1px solid #1a1a1f}
+.grp h2{margin:0;font-size:28px;font-weight:800;letter-spacing:-.02em;color:#f5f4f0;font-family:-apple-system,"SF Pro Display",system-ui,sans-serif}
+.grp span{font-size:12px;color:#a3a3ab}
 .ey{display:block;font-size:11.5px;font-weight:700;color:#5fd6c6;margin-bottom:2px}
 .h{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em;color:#f5f4f0;font-family:-apple-system,"SF Pro Display",system-ui,sans-serif}
 .sub{font-size:12.5px;color:#a3a3ab}
+.tap{border:0;padding:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.tap:focus-visible{outline:2px solid #f5f4f0;outline-offset:2px}
 .glass{background:rgba(40,40,46,.6);border:1px solid rgba(255,255,255,.14);border-radius:999px}
+.more{display:inline-flex;align-items:center;gap:3px;font-size:13px;font-weight:600;color:#cdcdd3}
+.shadow{box-shadow:0 12px 24px -12px rgba(0,0,0,.9)}
 </style>
 </helmet>
-<div style="width: 402px; height: 6000px; box-sizing: border-box; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 34px; padding-bottom: 40px; overflow: hidden">
+<div style="width: 402px; height: 6400px; box-sizing: border-box; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 30px; padding-bottom: 40px; overflow: hidden">
 
-  <!-- portada: el mosaico -->
-  <div style="position: relative; height: 380px; overflow: hidden; background: #070708; flex: none">
-    <div style="position: absolute; left: -90px; top: -60px; width: 600px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; transform: rotate(-10deg)">
+  <!-- PORTADA: el mosaico -->
+  <div style="position: relative; height: 400px; overflow: hidden; background: #070708; flex: none">
+    <div style="position: absolute; left: -100px; top: -70px; width: 620px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; transform: rotate(-10deg)">
       <sc-for list="{{wall}}" as="w" hint-placeholder-count="24">
-        <img src="{{w}}" alt="" style="width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 8px; opacity: .9">
+        <img src="{{w}}" alt="" style="width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 8px">
       </sc-for>
     </div>
-    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12,12,14,.55) 0%, rgba(12,12,14,0) 25%, rgba(12,12,14,.35) 55%, #0c0c0e 94%)"></div>
+    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12,12,14,.6) 0%, rgba(12,12,14,.05) 26%, rgba(12,12,14,.45) 58%, #0c0c0e 95%)"></div>
     <div style="position: absolute; top: 14px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; height: 44px">
-      <div style="width: 38px"></div>
+      <span style="width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #9df0e4, #5fd6c6 55%, #2a8f84); box-shadow: inset -5px -3px 0 rgba(0,0,0,.25)"></span>
       <div class="glass" role="group" aria-label="Qué enseñar" style="display: flex; gap: 2px; padding: 3px">
         <button aria-label="Todo" style="width: 34px; height: 32px; border: 0; border-radius: 999px; background: #f5f4f0; color: #070708; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="2"></rect></svg></button>
         <button aria-label="Series" style="width: 34px; height: 32px; border: 0; border-radius: 999px; background: transparent; color: #cdcdd3; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2.5" y="5" width="19" height="13" rx="2.5"></rect><path d="M8 21h8"></path></svg></button>
@@ -37,313 +43,385 @@ a{color:#f5f4f0}a:hover{color:#cdcdd3}
       </div>
       <button class="glass" aria-label="Filtros de búsqueda" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: #f5f4f0; padding: 0"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2.2"></circle><circle cx="8" cy="17" r="2.2"></circle></svg></button>
     </div>
-    <div style="position: absolute; left: 20px; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start">
+    <div style="position: absolute; left: 20px; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start">
       <span class="ey">Más de 50 formas de encontrar qué ver</span>
-      <h1 style="margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1; font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif">Para ti</h1>
-      <button onClick="{{openMosaic}}" style="margin-top: 4px; height: 42px; padding: 0 16px 0 12px; border: 0; border-radius: 999px; background: #f5f4f0; color: #070708; display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; cursor: pointer">
+      <h1 style="margin: 0; font-size: 42px; font-weight: 800; letter-spacing: -.03em; line-height: 1; font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif">Para ti</h1>
+      <button onClick="{{openMosaic}}" style="margin-top: 8px; height: 44px; padding: 0 18px 0 14px; border: 0; border-radius: 999px; background: #f5f4f0; color: #070708; display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; cursor: pointer">
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="8" height="11" rx="1.6"></rect><rect x="13" y="3" width="8" height="7" rx="1.6"></rect><rect x="3" y="16" width="8" height="5" rx="1.6"></rect><rect x="13" y="12" width="8" height="9" rx="1.6"></rect></svg>Pasear por el mosaico</button>
     </div>
   </div>
 
-  <!-- índice: un círculo por cada parte -->
-  <div style="display: flex; gap: 12px; padding: 0 20px; margin-top: -14px; overflow: hidden; flex: none">
-    <sc-for list="{{index}}" as="i" hint-placeholder-count="9">
-      <a href="#" style="flex: none; width: 60px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: #cdcdd3; font-size: 10.5px; font-weight: 600">
-        <span style="width: 56px; height: 56px; border-radius: 50%; background: {{i.bg}}; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12)">
-          <img src="{{i.icon}}" alt="" style="width: 34px; height: 34px; object-fit: contain">
-        </span>{{i.label}}</a>
+  <!-- ÍNDICE: saltar a cada parte -->
+  <div style="display: flex; gap: 14px; padding: 0 20px; margin-top: -10px; overflow: hidden; flex: none">
+    <sc-for list="{{index}}" as="i" hint-placeholder-count="6">
+      <button class="tap" onClick="{{i.open}}" style="flex: none; width: 58px; display: flex; flex-direction: column; align-items: center; gap: 7px; color: #cdcdd3; font-size: 10.5px; font-weight: 600">
+        <span style="width: 56px; height: 56px; border-radius: 50%; background: {{i.bg}}; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1)">
+          <img src="{{i.icon}}" alt="" style="width: 34px; height: 34px; object-fit: contain"></span>{{i.label}}</button>
     </sc-for>
   </div>
 
-  <!-- ¿Qué vemos? compacto -->
-  <button onClick="{{openDecide}}" aria-label="¿Qué vemos hoy?" style="margin: 0 16px; border: 0; border-radius: 24px; background: #18181c; color: #f5f4f0; padding: 16px; display: flex; gap: 16px; align-items: center; flex: none; text-align: left; font: inherit; cursor: pointer">
-    <div style="position: relative; width: 104px; height: 140px; flex: none">
-      <img src="/_blob/ee20996a9ce7ce95f0983f9a61e1b9e2" alt="" style="position: absolute; left: 14px; top: 6px; width: 84px; height: 126px; object-fit: cover; border-radius: 10px; transform: rotate(8deg); opacity: .5">
+  <!-- ¿QUÉ VEMOS HOY? -->
+  <button class="tap shadow" onClick="{{openDecide}}" aria-label="¿Qué vemos hoy?" style="position: relative; margin: 0 16px; border-radius: 26px; overflow: hidden; background: #131316; padding: 18px; display: flex; gap: 16px; align-items: center; flex: none">
+    <span style="position: absolute; inset: 0; background: radial-gradient(110% 120% at 0% 0%, rgba(95,214,198,.22), rgba(95,214,198,0) 55%)"></span>
+    <span style="position: relative; width: 104px; height: 140px; flex: none">
+      <img src="/_blob/88a5c3c91cc4fe3b44468f4e93cfd672" alt="" style="position: absolute; left: 18px; top: 8px; width: 84px; height: 126px; object-fit: cover; border-radius: 10px; transform: rotate(10deg); opacity: .45">
+      <img src="/_blob/ee20996a9ce7ce95f0983f9a61e1b9e2" alt="" style="position: absolute; left: 9px; top: 4px; width: 86px; height: 129px; object-fit: cover; border-radius: 10px; transform: rotate(5deg); opacity: .7">
       <img src="/_blob/17067ee154a950fc7044473f9094ff94" alt="" style="position: absolute; left: 0; top: 0; width: 90px; height: 135px; object-fit: cover; border-radius: 11px; box-shadow: 0 12px 22px -8px #000">
-    </div>
-    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
-      <span class="ey" style="margin-bottom:0">Como un Tinder de películas</span>
+    </span>
+    <span style="position: relative; flex: 1; display: flex; flex-direction: column; gap: 4px">
+      <span class="ey">Como un Tinder de películas</span>
       <span class="h">¿Qué vemos hoy?</span>
-      <span class="sub">Desliza: a la derecha la guardo, a la izquierda no.</span>
-      <div style="display: flex; gap: 8px; margin-top: 6px">
+      <span class="sub">A la derecha la guardas, a la izquierda no.</span>
+      <span style="display: flex; gap: 6px; margin-top: 8px">
         <sc-for list="{{moods}}" as="m" hint-placeholder-count="4">
-          <span title="{{m.label}}" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,.07); display: flex; align-items: center; justify-content: center"><img src="{{m.icon}}" alt="" style="width: 26px; height: 26px; object-fit: contain"></span>
+          <span title="{{m.label}}" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,.07); display: flex; align-items: center; justify-content: center"><img src="{{m.icon}}" alt="" style="width: 24px; height: 24px; object-fit: contain"></span>
         </sc-for>
-      </div>
-    </div>
+      </span>
+    </span>
   </button>
 
   <!-- AHORA -->
-  <span class="grp">Ahora</span>
-  <sc-for list="{{nowRows}}" as="r" hint-placeholder-count="2">
-    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -14px">
-      <div style="padding: 0 20px; display: flex; justify-content: space-between; align-items: baseline"><div><span class="ey">{{r.sub}}</span><h2 class="h">{{r.title}}</h2></div><span class="sub">Ver todo</span></div>
+  <div class="grp"><h2>Ahora</h2><span>Lo que se está viendo</span></div>
+  <sc-for list="{{nowRows}}" as="r" hint-placeholder-count="3">
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -16px">
+      <div style="padding: 0 20px; display: flex; justify-content: space-between; align-items: flex-end">
+        <div><span class="ey">{{r.why}}</span><h3 class="h">{{r.title}}</h3></div>
+        <button class="tap more" onClick="{{r.open}}">Ver todo<svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      </div>
       <div style="display: flex; gap: 10px; padding: 0 20px; overflow: hidden">
         <sc-for list="{{r.items}}" as="p" hint-placeholder-count="4">
-          <img src="{{p}}" alt="" style="flex: none; width: 104px; height: 156px; object-fit: cover; border-radius: 11px">
+          <button class="tap" onClick="{{p.open}}" aria-label="{{p.key}}" style="flex: none; position: relative; width: 108px; height: 162px; border-radius: 12px; overflow: hidden">
+            <img src="{{p.src}}" alt="" style="width: 100%; height: 100%; object-fit: cover">
+            <sc-if value="{{p.hasBadge}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; left: 6px; bottom: 6px; padding: 3px 7px; border-radius: 999px; background: rgba(7,7,8,.82); font-size: 11px; font-weight: 800; display: inline-flex; gap: 4px; align-items: center"><span style="width: 8px; height: 8px; border-radius: 50%; background: #f0574d"></span>{{p.badge}}</span></sc-if>
+          </button>
         </sc-for>
       </div>
     </div>
   </sc-for>
-  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -14px">
-    <div style="padding: 0 20px"><span class="ey">Episodios de estas semanas y estrenos</span><h2 class="h">Nuevo en tus plataformas</h2></div>
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -16px">
+    <div style="padding: 0 20px; display: flex; justify-content: space-between; align-items: flex-end">
+      <div><span class="ey">Episodios de estas semanas y estrenos</span><h3 class="h">Nuevo en tus plataformas</h3></div>
+      <button class="tap more" onClick="{{openFresh}}">Ver todo<svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+    </div>
     <div style="display: flex; gap: 12px; padding: 0 20px; overflow: hidden">
       <sc-for list="{{fresh}}" as="f" hint-placeholder-count="2">
-        <div style="flex: none; width: 240px; display: flex; flex-direction: column; gap: 6px">
-          <div style="position: relative; height: 135px; border-radius: 13px; overflow: hidden"><img src="{{f.art}}" alt="" style="width: 100%; height: 100%; object-fit: cover"><img src="{{f.logo}}" alt="" style="position: absolute; left: 8px; top: 8px; width: 24px; height: 24px; border-radius: 6px"></div>
-          <span style="font-size: 13.5px; font-weight: 600">{{f.title}}</span>
-        </div>
-      </sc-for>
-    </div>
-  </div>
-  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -14px">
-    <div style="padding: 0 20px"><span class="ey">Rotten Tomatoes · 90 % o más</span><h2 class="h">Aprobadas por la crítica</h2></div>
-    <div style="display: flex; gap: 10px; padding: 0 20px; overflow: hidden">
-      <sc-for list="{{critics}}" as="c" hint-placeholder-count="4">
-        <div style="flex: none; position: relative; width: 104px; height: 156px; border-radius: 11px; overflow: hidden">
-          <img src="{{c.p}}" alt="" style="width: 100%; height: 100%; object-fit: cover">
-          <span style="position: absolute; left: 6px; bottom: 6px; padding: 3px 7px; border-radius: 999px; background: rgba(7,7,8,.82); font-size: 11.5px; font-weight: 800">{{c.s}}</span>
-        </div>
+        <button class="tap" onClick="{{f.open}}" style="flex: none; width: 250px; display: flex; flex-direction: column; gap: 7px">
+          <span class="shadow" style="position: relative; display: block; height: 141px; border-radius: 14px; overflow: hidden"><img src="{{f.art}}" alt="" style="width: 100%; height: 100%; object-fit: cover"><img src="{{f.logo}}" alt="" style="position: absolute; left: 9px; top: 9px; width: 26px; height: 26px; border-radius: 7px"></span>
+          <span style="font-size: 14px; font-weight: 600">{{f.title}}</span>
+          <span class="sub" style="margin-top: -5px">{{f.sub}}</span>
+        </button>
       </sc-for>
     </div>
   </div>
 
-  <!-- TEMPORADAS -->
-  <span class="grp">Temporadas</span>
-  <div style="margin: -14px 16px 0; border-radius: 24px; overflow: hidden; position: relative; background: linear-gradient(160deg, #a2520f 0%, #4a1f06 55%, #1a0b03 100%); padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: none">
-    <img src="/_blob/635e927b28733d93ecd2fb9d5dc3786d" alt="" style="position: absolute; right: -12px; top: -8px; width: 120px; height: 120px; object-fit: contain">
-    <div style="position: relative; display: flex; flex-direction: column; gap: 3px; max-width: 230px">
-      <span style="font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #ffd9a8">Ahora · termina mañana</span>
-      <span style="font-size: 26px; font-weight: 800; letter-spacing: -.02em">Halloween</span>
-      <span style="font-size: 12.5px; color: rgba(255,240,225,.82)">Sustos, brujas y calabazas</span>
+  <!-- TEMPORADAS: cambia sola con la fecha -->
+  <div class="grp"><h2>Temporadas</h2><span>Cambia sola con la fecha</span></div>
+  <button class="tap shadow" onClick="{{season.open}}" style="position: relative; margin: -16px 16px 0; border-radius: 26px; overflow: hidden; background: {{season.bg}}; padding: 18px; display: flex; flex-direction: column; gap: 14px; flex: none">
+    <img src="{{season.icon}}" alt="" style="position: absolute; right: -16px; top: -12px; width: 150px; height: 150px; object-fit: contain; filter: drop-shadow(0 14px 22px rgba(0,0,0,.5))">
+    <span style="position: relative; display: flex; flex-direction: column; gap: 4px; max-width: 220px">
+      <span style="font-size: 11.5px; font-weight: 700; color: {{season.accent}}">{{season.when}}</span>
+      <span style="font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif">{{season.name}}</span>
+      <span style="font-size: 13px; color: rgba(255,245,235,.85)">{{season.blurb}}</span>
+    </span>
+    <span style="position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+      <sc-for list="{{season.posters}}" as="s" hint-placeholder-count="4"><img src="{{s}}" alt="" style="width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; box-shadow: 0 10px 18px -8px #000"></sc-for>
+    </span>
+    <span style="position: relative; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: rgba(255,245,235,.8)"><span>{{season.count}}</span><span class="more" style="color: #f5f4f0">Ver la colección<svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></span>
+  </button>
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -14px">
+    <div style="padding: 0 20px"><span class="ey">Lo que viene, de la más cercana a la más lejana</span><h3 class="h">Próximas temporadas</h3></div>
+    <div style="display: flex; gap: 10px; padding: 0 20px; overflow: hidden">
+      <sc-for list="{{nextSeasons}}" as="s" hint-placeholder-count="4">
+        <button class="tap" onClick="{{s.open}}" style="flex: none; width: 140px; height: 150px; border-radius: 20px; background: {{s.bg}}; position: relative; overflow: hidden; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px">
+          <img src="{{s.icon}}" alt="" style="position: absolute; right: -8px; top: -6px; width: 84px; height: 84px; object-fit: contain">
+          <span style="position: relative; font-size: 15px; font-weight: 700">{{s.name}}</span>
+          <span style="position: relative; font-size: 11.5px; color: rgba(255,245,235,.78)">{{s.when}}</span>
+        </button>
+      </sc-for>
     </div>
-    <div style="position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
-      <sc-for list="{{season}}" as="s" hint-placeholder-count="4"><img src="{{s}}" alt="" style="width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 9px"></sc-for>
-    </div>
-  </div>
-  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0 16px; margin-top: -20px; flex: none">
-    <sc-for list="{{seasons}}" as="s" hint-placeholder-count="4">
-      <a href="#" style="height: 104px; border-radius: 16px; background: {{s.bg}}; text-decoration: none; color: #f5f4f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11.5px; font-weight: 700; text-align: center; padding: 6px">
-        <img src="{{s.icon}}" alt="" style="width: 44px; height: 44px; object-fit: contain">{{s.name}}<span style="font-size: 10px; font-weight: 500; color: rgba(245,244,240,.7)">{{s.when}}</span></a>
-    </sc-for>
   </div>
 
   <!-- PLATAFORMAS -->
-  <span class="grp">Plataformas</span>
-  <div style="margin-top: -14px; padding: 0 20px"><span class="ey">El Top 10 de Netflix y lo que es tendencia en las demás</span><h2 class="h">Rankings de hoy</h2></div>
+  <div class="grp"><h2>Plataformas</h2><span>Seis rankings y tres catálogos</span></div>
+  <div style="margin-top: -16px; padding: 0 20px"><span class="ey">El Top 10 de Netflix y la tendencia de las demás</span><h3 class="h">Rankings de hoy</h3></div>
   <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px; margin-top: -20px; flex: none">
     <sc-for list="{{plats}}" as="p" hint-placeholder-count="6">
-      <a href="#" style="position: relative; height: 128px; border-radius: 18px; overflow: hidden; background: {{p.bg}}; text-decoration: none; color: #f5f4f0; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
-        <div style="display: flex; align-items: center; gap: 8px"><img src="{{p.logo}}" alt="" style="width: 28px; height: 28px; border-radius: 7px"><span style="font-size: 13px; font-weight: 700">{{p.name}}</span></div>
-        <div style="position: relative; height: 66px">
-          <img src="{{p.a}}" alt="" style="position: absolute; left: 0; bottom: 0; width: 44px; height: 66px; object-fit: cover; border-radius: 6px; box-shadow: 0 6px 12px -4px #000">
-          <img src="{{p.b}}" alt="" style="position: absolute; left: 36px; bottom: 0; width: 44px; height: 66px; object-fit: cover; border-radius: 6px; box-shadow: -4px 0 10px -2px #000">
-          <img src="{{p.c}}" alt="" style="position: absolute; left: 72px; bottom: 0; width: 44px; height: 66px; object-fit: cover; border-radius: 6px; box-shadow: -4px 0 10px -2px #000">
-          <span style="position: absolute; right: 2px; bottom: 0; font-size: 10.5px; color: rgba(245,244,240,.75)">{{p.when}}</span>
-        </div>
-      </a>
+      <button class="tap" onClick="{{p.open}}" style="position: relative; height: 136px; border-radius: 20px; overflow: hidden; background: {{p.bg}}; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06)">
+        <span style="display: flex; align-items: center; gap: 8px"><img src="{{p.logo}}" alt="" style="width: 28px; height: 28px; border-radius: 7px"><span style="display: flex; flex-direction: column"><span style="font-size: 13.5px; font-weight: 700">{{p.name}}</span><span style="font-size: 10.5px; color: rgba(245,244,240,.7)">{{p.when}}</span></span></span>
+        <span style="position: relative; display: block; height: 72px">
+          <img src="{{p.a}}" alt="" style="position: absolute; left: 0; bottom: 0; width: 48px; height: 72px; object-fit: cover; border-radius: 7px; box-shadow: 0 6px 12px -4px #000">
+          <img src="{{p.b}}" alt="" style="position: absolute; left: 40px; bottom: 0; width: 48px; height: 72px; object-fit: cover; border-radius: 7px; box-shadow: -6px 0 12px -4px #000">
+          <img src="{{p.c}}" alt="" style="position: absolute; left: 80px; bottom: 0; width: 48px; height: 72px; object-fit: cover; border-radius: 7px; box-shadow: -6px 0 12px -4px #000">
+          <span style="position: absolute; right: 0; bottom: -6px; font-size: 44px; font-weight: 900; color: rgba(245,244,240,.14); letter-spacing: -.04em">10</span>
+        </span>
+      </button>
     </sc-for>
   </div>
-  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -14px">
-    <div style="padding: 0 20px"><span class="ey">Su catálogo completo, de lo más visto a lo menos</span><h2 class="h">Todo lo de cada una</h2></div>
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: -12px">
+    <div style="padding: 0 20px"><span class="ey">Su catálogo completo, de lo más visto a lo menos</span><h3 class="h">Todo lo de cada una</h3></div>
     <div style="display: flex; gap: 10px; padding: 0 20px">
       <sc-for list="{{catalogs}}" as="c" hint-placeholder-count="3">
-        <a href="#" style="flex: 1; height: 56px; border-radius: 14px; background: #18181c; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; color: #f5f4f0; font-size: 13px; font-weight: 600"><img src="{{c.logo}}" alt="" style="width: 26px; height: 26px; border-radius: 7px">{{c.name}}</a>
+        <button class="tap" onClick="{{c.open}}" style="flex: 1; height: 58px; border-radius: 16px; background: #18181c; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 600"><img src="{{c.logo}}" alt="" style="width: 26px; height: 26px; border-radius: 7px">{{c.name}}</button>
       </sc-for>
     </div>
   </div>
 
   <!-- ESTUDIOS -->
-  <span class="grp">Estudios</span>
-  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px; margin-top: -14px; flex: none">
+  <div class="grp"><h2>Estudios</h2><span>Lo más visto de cada uno</span></div>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px; margin-top: -16px; flex: none">
     <sc-for list="{{studios}}" as="s" hint-placeholder-count="8">
-      <a href="#" style="height: 78px; border-radius: 16px; background: {{s.bg}}; text-decoration: none; color: {{s.fg}}; display: flex; flex-direction: column; justify-content: center; padding: 0 14px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08)">
-        <span style="font-size: {{s.size}}; font-weight: 900; letter-spacing: {{s.ls}}; font-family: {{s.font}}; line-height: 1">{{s.name}}</span>
-        <span style="font-size: 11px; opacity: .75; margin-top: 4px">Lo más visto</span>
-      </a>
+      <button class="tap" onClick="{{s.open}}" style="position: relative; height: 92px; border-radius: 18px; overflow: hidden; background: {{s.bg}}; color: {{s.fg}}; padding: 0 14px; display: flex; flex-direction: column; justify-content: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08)">
+        <img src="{{s.p}}" alt="" style="position: absolute; right: -10px; top: 8px; width: 54px; height: 81px; object-fit: cover; border-radius: 6px; transform: rotate(8deg); opacity: .55">
+        <span style="position: relative; font-size: {{s.size}}; font-weight: 900; letter-spacing: {{s.ls}}; font-family: {{s.font}}; line-height: 1">{{s.name}}</span>
+        <span style="position: relative; font-size: 11px; opacity: .72; margin-top: 5px">{{s.n}}</span>
+      </button>
     </sc-for>
   </div>
 
   <!-- PREMIOS -->
-  <span class="grp">Premios</span>
-  <div style="margin: -14px 16px 0; border-radius: 22px; background: linear-gradient(150deg, #4a3d14, #18140a 70%); padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: none">
-    <div style="display: flex; justify-content: space-between; align-items: flex-end">
-      <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #f4d27a">Tu álbum</span><span style="font-size: 22px; font-weight: 800">34 de 96 estampas</span></div>
-      <span class="sub" style="color: rgba(245,244,240,.7)">Ganadores, del más reciente</span>
-    </div>
-    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px">
+  <div class="grp"><h2>Premios</h2><span>Ganadores, del más reciente</span></div>
+  <div class="shadow" style="margin: -16px 16px 0; border-radius: 24px; background: linear-gradient(150deg, #4a3d14, #17130a 72%); padding: 18px; display: flex; flex-direction: column; gap: 16px; flex: none">
+    <button class="tap" onClick="{{openAlbum}}" style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+      <span style="display: flex; flex-direction: column; gap: 4px; flex: 1"><span style="font-size: 11.5px; font-weight: 700; color: #f4d27a">Tu álbum de premios</span><span style="font-size: 22px; font-weight: 800; letter-spacing: -.01em">34 de 96 estampas</span>
+        <span style="display: block; height: 6px; border-radius: 3px; background: rgba(255,255,255,.14); margin-top: 6px"><span style="display: block; width: 35%; height: 100%; border-radius: 3px; background: #f4d27a"></span></span></span>
+      <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#f4d27a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </button>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
       <sc-for list="{{awards}}" as="a" hint-placeholder-count="6">
-        <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #f5f4f0; font-size: 10px; font-weight: 600; text-align: center">
-          <img src="{{a.icon}}" alt="" style="width: 50px; height: 64px; object-fit: contain">{{a.name}}</a>
+        <button class="tap" onClick="{{a.open}}" style="height: 118px; border-radius: 16px; background: rgba(0,0,0,.25); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 11.5px; font-weight: 700; text-align: center">
+          <img src="{{a.icon}}" alt="" style="width: 54px; height: 70px; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0,0,0,.6))">{{a.name}}</button>
       </sc-for>
     </div>
   </div>
 
   <!-- GÉNEROS -->
-  <span class="grp">Géneros</span>
-  <div style="margin-top: -14px; padding: 0 20px"><span class="ey">Las mejor calificadas del año</span><h2 class="h">Lo mejor de cada género</h2></div>
-  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 16px; margin-top: -20px; flex: none">
+  <div class="grp"><h2>Géneros</h2><span>Lo mejor calificado del año</span></div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 16px; margin-top: -16px; flex: none">
     <sc-for list="{{genres}}" as="g" hint-placeholder-count="14">
-      <a href="#" style="height: 92px; border-radius: 16px; background: {{g.bg}}; text-decoration: none; color: #f5f4f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 700">
-        <img src="{{g.icon}}" alt="" style="width: 44px; height: 44px; object-fit: contain">{{g.name}}</a>
+      <button class="tap" onClick="{{g.open}}" style="height: 100px; border-radius: 18px; background: {{g.bg}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px; font-weight: 700; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06)">
+        <img src="{{g.icon}}" alt="" style="width: 48px; height: 48px; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.45))">{{g.name}}</button>
     </sc-for>
   </div>
 
   <!-- AÑOS -->
-  <span class="grp">Años</span>
-  <div style="display: flex; flex-direction: column; gap: 12px; margin-top: -14px">
-    <div style="padding: 0 20px"><span class="ey">Lo más popular de cada año, de 1980 a hoy</span><h2 class="h">Por año</h2></div>
+  <div class="grp"><h2>Años</h2><span>De 1980 a hoy</span></div>
+  <div style="display: flex; flex-direction: column; gap: 12px; margin-top: -16px">
     <div style="display: flex; gap: 8px; padding: 0 20px">
       <sc-for list="{{decades}}" as="d" hint-placeholder-count="5">
-        <span style="height: 32px; padding: 0 12px; border-radius: 10px; background: {{d.bg}}; color: {{d.fg}}; display: inline-flex; align-items: center; font-size: 13px; font-weight: 700">{{d.n}}</span>
+        <button class="tap" onClick="{{d.pick}}" style="height: 34px; padding: 0 13px; border-radius: 10px; background: {{d.bg}}; color: {{d.fg}}; display: inline-flex; align-items: center; font-size: 13px; font-weight: 700">{{d.n}}</button>
       </sc-for>
     </div>
     <div style="display: flex; gap: 10px; padding: 0 20px; overflow: hidden">
       <sc-for list="{{years}}" as="y" hint-placeholder-count="5">
-        <a href="#" style="flex: none; width: 108px; height: 132px; border-radius: 16px; position: relative; overflow: hidden; text-decoration: none; color: #f5f4f0; background: #18181c">
-          <img src="{{y.p}}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45">
-          <span style="position: absolute; left: 10px; bottom: 8px; font-size: 30px; font-weight: 900; letter-spacing: -.03em; font-variant-numeric: tabular-nums">{{y.n}}</span>
-        </a>
+        <button class="tap shadow" onClick="{{y.open}}" style="flex: none; width: 112px; height: 150px; border-radius: 18px; position: relative; overflow: hidden; background: #18181c">
+          <img src="{{y.p}}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .5">
+          <span style="position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,.8))"></span>
+          <span style="position: absolute; left: 10px; bottom: 8px; font-size: 32px; font-weight: 900; letter-spacing: -.03em">{{y.n}}</span>
+        </button>
       </sc-for>
     </div>
   </div>
 
   <!-- LISTAS FAMOSAS -->
-  <span class="grp">Listas famosas</span>
-  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px; margin-top: -14px; flex: none">
-    <a href="#" style="height: 110px; border-radius: 18px; background: #f5f4f0; color: #070708; text-decoration: none; padding: 14px; display: flex; flex-direction: column; justify-content: space-between">
-      <span style="font-size: 22px; font-weight: 900; letter-spacing: .02em; font-family: Georgia, 'Times New Roman', serif">Criterion</span>
-      <span style="font-size: 11.5px; font-weight: 600">The Criterion Collection · 1 000 películas</span>
-    </a>
-    <a href="#" style="height: 110px; border-radius: 18px; background: #f5c518; color: #070708; text-decoration: none; padding: 14px; display: flex; flex-direction: column; justify-content: space-between">
-      <span style="font-size: 22px; font-weight: 900; letter-spacing: -.02em">Top 250</span>
-      <span style="font-size: 11.5px; font-weight: 600">Las mejor calificadas de IMDb</span>
-    </a>
+  <div class="grp"><h2>Listas famosas</h2><span>Las que la cultura ya decidió</span></div>
+  <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 16px; margin-top: -16px; flex: none">
+    <sc-for list="{{famous}}" as="f" hint-placeholder-count="3">
+      <button class="tap shadow" onClick="{{f.open}}" style="position: relative; height: 104px; border-radius: 20px; overflow: hidden; background: {{f.bg}}; color: {{f.fg}}; padding: 14px 16px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
+        <span style="position: absolute; right: 12px; top: 12px; display: flex">
+          <img src="{{f.a}}" alt="" style="width: 44px; height: 66px; object-fit: cover; border-radius: 6px; transform: rotate(-6deg); box-shadow: 0 6px 12px -4px rgba(0,0,0,.6)">
+          <img src="{{f.b}}" alt="" style="width: 44px; height: 66px; object-fit: cover; border-radius: 6px; margin-left: -14px; transform: rotate(5deg); box-shadow: 0 6px 12px -4px rgba(0,0,0,.6)">
+        </span>
+        <span style="font-size: {{f.size}}; font-weight: {{f.weight}}; font-family: {{f.font}}; letter-spacing: {{f.ls}}; line-height: 1">{{f.name}}</span>
+        <span style="font-size: 12px; font-weight: 600; opacity: .8">{{f.sub}}</span>
+      </button>
+    </sc-for>
   </div>
 
   <!-- TUYO -->
-  <span class="grp">Tuyo</span>
-  <div style="display: flex; flex-direction: column; gap: 8px; padding: 0 16px; margin-top: -14px; flex: none">
-    <sc-for list="{{mine}}" as="l" hint-placeholder-count="6">
-      <a href="#" style="display: flex; align-items: center; gap: 14px; padding: 8px 14px 8px 8px; border-radius: 16px; background: #18181c; color: #f5f4f0; text-decoration: none">
-        <div style="position: relative; width: 70px; height: 54px; flex: none">
+  <div class="grp"><h2>Tuyo</h2><span>De Trakt</span></div>
+  <div style="display: flex; flex-direction: column; gap: 8px; padding: 0 16px; margin-top: -16px; flex: none">
+    <sc-for list="{{mine}}" as="l" hint-placeholder-count="5">
+      <button class="tap" onClick="{{l.open}}" style="display: flex; align-items: center; gap: 14px; padding: 8px 14px 8px 8px; border-radius: 16px; background: #18181c">
+        <span style="position: relative; width: 70px; height: 54px; flex: none">
           <img src="{{l.a}}" alt="" style="position: absolute; left: 0; top: 3px; width: 34px; height: 51px; object-fit: cover; border-radius: 6px">
           <img src="{{l.b}}" alt="" style="position: absolute; left: 18px; top: 1px; width: 34px; height: 51px; object-fit: cover; border-radius: 6px; box-shadow: -4px 0 8px rgba(0,0,0,.6)">
           <img src="{{l.c}}" alt="" style="position: absolute; left: 36px; top: 0; width: 34px; height: 51px; object-fit: cover; border-radius: 6px; box-shadow: -4px 0 8px rgba(0,0,0,.6)">
-        </div>
-        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{l.name}}</span><span class="sub">{{l.sub}}</span></div>
+        </span>
+        <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{l.name}}</span><span class="sub">{{l.sub}}</span></span>
         <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#a3a3ab" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-      </a>
+      </button>
     </sc-for>
   </div>
 
   <!-- LO QUE VES -->
-  <div style="margin: 0 16px; border-radius: 24px; overflow: hidden; position: relative; height: 180px; background: #18181c; flex: none">
-    <div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; opacity: .35">
-      <sc-for list="{{seen}}" as="s" hint-placeholder-count="5"><img src="{{s}}" alt="" style="width: 100%; height: 180px; object-fit: cover"></sc-for>
-    </div>
-    <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(12,12,14,.95) 35%, rgba(12,12,14,.4))"></div>
-    <div style="position: absolute; left: 18px; top: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 4px">
+  <button class="tap shadow" onClick="{{openSeen}}" style="margin: 0 16px; border-radius: 24px; overflow: hidden; position: relative; height: 186px; background: #18181c; flex: none">
+    <span style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; opacity: .35">
+      <sc-for list="{{seen}}" as="s" hint-placeholder-count="5"><img src="{{s}}" alt="" style="width: 100%; height: 186px; object-fit: cover"></sc-for>
+    </span>
+    <span style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(12,12,14,.96) 38%, rgba(12,12,14,.35))"></span>
+    <span style="position: absolute; left: 18px; top: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 4px">
       <span class="ey">Lo que ves</span>
-      <span style="font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1">12 h 40</span>
+      <span style="font-size: 42px; font-weight: 800; letter-spacing: -.03em; line-height: 1">12 h 40</span>
       <span style="font-size: 13px; color: #cdcdd3">esta semana · 5 días seguidos</span>
-      <a href="#" style="margin-top: auto; align-self: flex-start; height: 36px; padding: 0 14px; border-radius: 999px; background: rgba(255,255,255,.12); color: #f5f4f0; text-decoration: none; display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 600">Tu semana, tu mes, tu año</a>
-    </div>
-  </div>
+      <span style="margin-top: auto; align-self: flex-start; height: 36px; padding: 0 14px; border-radius: 999px; background: rgba(255,255,255,.12); display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 600">Tu semana, tu mes, tu año</span>
+    </span>
+  </button>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"onMosaic":{"editor":null},"onDecide":{"editor":null},"$preview":{"width":402,"height":6000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"onMosaic":{"editor":null},"onDecide":{"editor":null},"onOpen":{"editor":null},"$preview":{"width":402,"height":6400}}'>
 class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { decade: 0 }; }
   renderVals() {
+    const B = '/_blob/';
     const P = {
-      sg1: '/_blob/150298b89f8930ad190f31a52d1b1674', inter: '/_blob/b78f0f1e101b431583268ca5215a61fa', bb: '/_blob/67319c6bb81af70211f1a939ec8cadea',
-      lasso: '/_blob/cd74550fdf21986a91f0a107e1738a44', sev: '/_blob/5fea0e04bc0782476c4430ee494ede1e', frank: '/_blob/5f30c6fa4f106fd30c79f76adaebefae',
-      wed: '/_blob/ba326df6b445b666f4bca7d6f2bed29a', alien: '/_blob/62c8f95df6ee76d5685c98832afa320f', bear: '/_blob/854b9cc64e02c10eccfabc039d6a0ccf',
-      dune: '/_blob/8ad3e0af5f7ad1bd9b382fb1b133c97a', br: '/_blob/406990a0cd3ba5eff4f52ed568d53ece', bm: '/_blob/7ebc6c17320217ff5d9ec3c1dee5d77f',
-      plur: '/_blob/4c438e8f7a72541df4f1f1cec23f7d35', arr: '/_blob/88a5c3c91cc4fe3b44468f4e93cfd672', weap: '/_blob/16a3fa461e0fe98fde3a4daa9ca5fa41',
-      coh: '/_blob/17067ee154a950fc7044473f9094ff94', obaa: '/_blob/f1c41a9f815b5fc93e45764c07017085', tlou: '/_blob/c1d3b5d30bfcdc9491e8f9fd72514ebf',
-      st: '/_blob/4948ab7178e9297671c1ff32249e57d5', dark: '/_blob/82988ffc71915b761fe470bc08126468', slow: '/_blob/98b35403660c8e7695dd6bc8ac1a856f',
-      cher: '/_blob/eeea75e14201d58d05f13a8a970d655f', andor: '/_blob/9253269423305bc1bf85de3196395d7d', n1899: '/_blob/ee20996a9ce7ce95f0983f9a61e1b9e2'
+      sg1: B + '150298b89f8930ad190f31a52d1b1674', inter: B + 'b78f0f1e101b431583268ca5215a61fa', bb: B + '67319c6bb81af70211f1a939ec8cadea',
+      lasso: B + 'cd74550fdf21986a91f0a107e1738a44', sev: B + '5fea0e04bc0782476c4430ee494ede1e', frank: B + '5f30c6fa4f106fd30c79f76adaebefae',
+      wed: B + 'ba326df6b445b666f4bca7d6f2bed29a', alien: B + '62c8f95df6ee76d5685c98832afa320f', bear: B + '854b9cc64e02c10eccfabc039d6a0ccf',
+      dune: B + '8ad3e0af5f7ad1bd9b382fb1b133c97a', br: B + '406990a0cd3ba5eff4f52ed568d53ece', bm: B + '7ebc6c17320217ff5d9ec3c1dee5d77f',
+      plur: B + '4c438e8f7a72541df4f1f1cec23f7d35', arr: B + '88a5c3c91cc4fe3b44468f4e93cfd672', weap: B + '16a3fa461e0fe98fde3a4daa9ca5fa41',
+      coh: B + '17067ee154a950fc7044473f9094ff94', obaa: B + 'f1c41a9f815b5fc93e45764c07017085', tlou: B + 'c1d3b5d30bfcdc9491e8f9fd72514ebf',
+      st: B + '4948ab7178e9297671c1ff32249e57d5', dark: B + '82988ffc71915b761fe470bc08126468', slow: B + '98b35403660c8e7695dd6bc8ac1a856f',
+      cher: B + 'eeea75e14201d58d05f13a8a970d655f', andor: B + '9253269423305bc1bf85de3196395d7d', n1899: B + 'ee20996a9ce7ce95f0983f9a61e1b9e2'
     };
     const I = {
-      cf: '/_blob/8cebf95b19f2ee395e3b6124b651a989', comedia: '/_blob/809143fa431b10fbd336c1db0e87d3a2', drama: '/_blob/28346e9c6785acdbb0b4a571d6398eca',
-      halloween: '/_blob/635e927b28733d93ecd2fb9d5dc3786d', muertos: '/_blob/f66624a8d970c577188f83c702dc08bf', oscar: '/_blob/725ed7521d1d847ea0109674914e7d45',
-      palm: '/_blob/b002b3e68f0af68c672595d4f441edae', terror: '/_blob/05401a83bd8d213f028482903419b1fe', accion: '/_blob/b7c1dff6f86d8ebca817e563abe7c97c',
-      animacion: '/_blob/ac34662634ed8c477429233686bf0490', ariel: '/_blob/de348cd4e97e234587c5e2921546e068', aventura: '/_blob/e694e7dc56ecbe18a2b02c3ad6227cf8',
-      bafta: '/_blob/b7d75d2bc0cfb8c3a199262367f23eaa', crimen: '/_blob/c1aef6838a4b25496a4ba4d5ec792431', documental: '/_blob/670df53d5eda630ab705089bed9b5ec7',
-      emmy: '/_blob/49a41bcc1ac71f88c7d62005d8c3c0da', familia: '/_blob/c8a2a8ea0ce9a737fe9652137c35ac3b', fantasia: '/_blob/3a6a87aba3aa5aa74841b740d955a49f',
-      globe: '/_blob/e75cabdff174b0e9708fb8385b161e79', misterio: '/_blob/1d8fc15db5e31db7f6e02ce4345f0ab6', navidad: '/_blob/2ec0509d7b16556256230c3663dbaffc',
-      romance: '/_blob/9bc62e785826486effc51d63c91478de', sanvalentin: '/_blob/bda93761b158fa3373dcbf1933295d53', suspenso: '/_blob/dd0a28396dbee3c5bcdfdd80c9f6f38f',
-      verano: '/_blob/9e472f0f78d768299ed82240112804d3'
+      cf: B + '8cebf95b19f2ee395e3b6124b651a989', comedia: B + '809143fa431b10fbd336c1db0e87d3a2', drama: B + '28346e9c6785acdbb0b4a571d6398eca',
+      halloween: B + '635e927b28733d93ecd2fb9d5dc3786d', muertos: B + 'f66624a8d970c577188f83c702dc08bf', oscar: B + '725ed7521d1d847ea0109674914e7d45',
+      palm: B + 'b002b3e68f0af68c672595d4f441edae', terror: B + '05401a83bd8d213f028482903419b1fe', accion: B + 'b7c1dff6f86d8ebca817e563abe7c97c',
+      animacion: B + 'ac34662634ed8c477429233686bf0490', ariel: B + 'de348cd4e97e234587c5e2921546e068', aventura: B + 'e694e7dc56ecbe18a2b02c3ad6227cf8',
+      bafta: B + 'b7d75d2bc0cfb8c3a199262367f23eaa', crimen: B + 'c1aef6838a4b25496a4ba4d5ec792431', documental: B + '670df53d5eda630ab705089bed9b5ec7',
+      emmy: B + '49a41bcc1ac71f88c7d62005d8c3c0da', familia: B + 'c8a2a8ea0ce9a737fe9652137c35ac3b', fantasia: B + '3a6a87aba3aa5aa74841b740d955a49f',
+      globe: B + 'e75cabdff174b0e9708fb8385b161e79', misterio: B + '1d8fc15db5e31db7f6e02ce4345f0ab6', navidad: B + '2ec0509d7b16556256230c3663dbaffc',
+      romance: B + '9bc62e785826486effc51d63c91478de', sanvalentin: B + 'bda93761b158fa3373dcbf1933295d53', suspenso: B + 'dd0a28396dbee3c5bcdfdd80c9f6f38f',
+      verano: B + '9e472f0f78d768299ed82240112804d3'
     };
-    const L = { netflix: '/_blob/97389a65ea2b5c0b8e29fd8c2d06a654', disney: '/_blob/5497d37bcb761474a20f3ffb3572952d', hbo: '/_blob/4244eda0368e63681d635ae90378a7a2',
-      prime: '/_blob/3fa0cd8a3bccb5fc488d980df135cb61', appletv: '/_blob/40cac579725549ef5c6d4ae70f3ad681', paramount: '/_blob/ae98e9707daef8bb009e3ea104c5d053' };
-    const dim = 'rgba(255,255,255,.07)';
+    const L = { netflix: B + '97389a65ea2b5c0b8e29fd8c2d06a654', disney: B + '5497d37bcb761474a20f3ffb3572952d', hbo: B + '4244eda0368e63681d635ae90378a7a2',
+      prime: B + '3fa0cd8a3bccb5fc488d980df135cb61', appletv: B + '40cac579725549ef5c6d4ae70f3ad681', paramount: B + 'ae98e9707daef8bb009e3ea104c5d053' };
+    // abrir: le dice a la pantalla de arriba qué colección enseñar (en la maqueta, con pósters de ejemplo)
+    const open = (spec) => () => { if (this.props.onOpen) this.props.onOpen(spec); };
+    const coll = (title, why, items, extra) => open(Object.assign({ title, why, items, tint: '#5fd6c6', icon: '', logo: '', bg: 'linear-gradient(160deg, #1b2a2a, #0c0c0e 70%)', ranked: false }, extra || {}));
+    const poster = (k, extra) => Object.assign({ src: P[k], key: k, open: open({ single: k }), hasBadge: false, badge: '' }, extra || {});
+
+    // TEMPORADAS: la de hoy en grande y las demás por cercanía (con la fecha de verdad)
+    const SEASONS = [
+      { name: 'Halloween', s: [9, 25], e: [10, 31], blurb: 'Sustos, brujas y calabazas', icon: I.halloween, bg: 'linear-gradient(160deg, #a2520f 0%, #4a1f06 55%, #1a0b03 100%)', accent: '#ffd9a8', posters: [P.frank, P.weap, P.alien, P.st], items: ['frank', 'weap', 'alien', 'st', 'wed', 'bm'], n: 40 },
+      { name: 'Día de Muertos', s: [11, 1], e: [11, 10], blurb: 'Para recordar a los que se fueron', icon: I.muertos, bg: 'linear-gradient(160deg, #8a2f63 0%, #3a1030 55%, #14060f 100%)', accent: '#ffc4e1', posters: [P.dark, P.frank, P.bear, P.cher], items: ['dark', 'frank', 'bear', 'cher'], n: 24 },
+      { name: 'Navidad', s: [11, 25], e: [1, 6], blurb: 'Para ver en familia', icon: I.navidad, bg: 'linear-gradient(160deg, #1f6a42 0%, #0d2c1b 55%, #050f09 100%)', accent: '#c7f0d2', posters: [P.lasso, P.bear, P.st, P.sg1], items: ['lasso', 'bear', 'st', 'sg1'], n: 36 },
+      { name: 'San Valentín', s: [1, 25], e: [2, 14], blurb: 'Para ver en pareja', icon: I.sanvalentin, bg: 'linear-gradient(160deg, #8a2a42 0%, #3a0f1b 55%, #140508 100%)', accent: '#ffc9d4', posters: [P.arr, P.lasso, P.bear, P.dune], items: ['arr', 'lasso', 'bear', 'dune'], n: 30 },
+      { name: 'Verano', s: [6, 1], e: [8, 31], blurb: 'Sol, playa y vacaciones', icon: I.verano, bg: 'linear-gradient(160deg, #1d6a8a 0%, #0b2a3a 55%, #040f15 100%)', accent: '#c7ecff', posters: [P.dune, P.inter, P.lasso, P.obaa], items: ['dune', 'inter', 'lasso', 'obaa'], n: 32 }
+    ];
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const y0 = today.getFullYear(), day = 86400000;
+    const at = (md, y) => new Date(y, md[0] - 1, md[1]);
+    // el rango que te toca: el que está corriendo hoy o el próximo (si cruza el año, como Navidad, lo arma bien)
+    const span = (x) => {
+      for (let y = y0 - 1; y <= y0 + 1; y++) {
+        const s = at(x.s, y), e0 = at(x.e, y), e = e0 < s ? at(x.e, y + 1) : e0;
+        if (e >= today) return { s, e };
+      }
+      return { s: at(x.s, y0 + 1), e: at(x.e, y0 + 1) };
+    };
+    const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const fmt = (d) => d.getDate() + ' ' + MES[d.getMonth()];
+    const rel = (n) => n <= 0 ? 'hoy' : n === 1 ? 'mañana' : n < 45 ? 'en ' + n + ' días' : 'en ' + Math.round(n / 30) + ' meses';
+    const dated = SEASONS.map((x) => { const r = span(x); return Object.assign({}, x, r, { active: today >= r.s, until: Math.round((r.s - today) / day), left: Math.round((r.e - today) / day) }); });
+    const cur = dated.filter((x) => x.active)[0] || dated.slice().sort((a, b) => a.until - b.until)[0];
+    const rest = dated.filter((x) => x !== cur).sort((a, b) => a.until - b.until);
+    const seasonColl = (x) => coll(x.name, x.blurb, x.items, { tint: x.accent, icon: x.icon, bg: x.bg });
+    const season = {
+      name: cur.name, blurb: cur.blurb, icon: cur.icon, bg: cur.bg, accent: cur.accent, posters: cur.posters,
+      when: cur.active ? 'Ahora · ' + (cur.left === 0 ? 'termina hoy' : cur.left === 1 ? 'termina mañana' : 'quedan ' + cur.left + ' días') : 'Empieza ' + rel(cur.until) + ' · ' + fmt(cur.s),
+      count: cur.n + ' títulos · del ' + fmt(cur.s) + ' al ' + fmt(cur.e),
+      open: seasonColl(cur)
+    };
+    const nextSeasons = rest.map((x) => ({ name: x.name, icon: x.icon, bg: x.bg, when: 'Empieza ' + rel(x.until) + ' · ' + fmt(x.s), open: seasonColl(x) }));
+
+    const G = (name, icon, tint, items) => ({ name, icon, bg: 'linear-gradient(160deg, ' + tint + ', #141418 78%)', open: coll(name, 'Lo mejor calificado del año', items, { icon, bg: 'linear-gradient(160deg, ' + tint + ', #0c0c0e 70%)' }) });
+    const decadesN = ['2020s', '2010s', '2000s', '90s', '80s'];
+    const yearsBy = [
+      [{ n: '2026', p: P.plur }, { n: '2025', p: P.frank }, { n: '2024', p: P.dune }, { n: '2023', p: P.bear }, { n: '2022', p: P.andor }],
+      [{ n: '2019', p: P.cher }, { n: '2017', p: P.br }, { n: '2016', p: P.arr }, { n: '2014', p: P.inter }, { n: '2013', p: P.coh }],
+      [{ n: '2008', p: P.bb }, { n: '2007', p: P.sg1 }, { n: '2005', p: P.dark }, { n: '2003', p: P.st }, { n: '2001', p: P.bm }],
+      [{ n: '1999', p: P.sg1 }, { n: '1997', p: P.inter }, { n: '1995', p: P.arr }, { n: '1993', p: P.dune }, { n: '1990', p: P.br }],
+      [{ n: '1989', p: P.br }, { n: '1986', p: P.alien }, { n: '1984', p: P.st }, { n: '1982', p: P.frank }, { n: '1980', p: P.dune }]
+    ];
+    const S = (name, bg, fg, size, ls, font, p, n) => ({ name, bg, fg, size, ls, font, p, n, open: coll(name, 'Lo más visto del estudio', ['coh', 'weap', 'obaa', 'arr', 'bear', 'dark'], { bg }) });
+    const A = (name, icon) => ({ name, icon, open: coll(name, 'Los ganadores, del más reciente', ['obaa', 'andor', 'cher', 'bear', 'sev', 'arr'], { tint: '#f4d27a', icon, bg: 'linear-gradient(150deg, #4a3d14, #0c0c0e 70%)' }) });
+    const PL = (name, logo, tint, a, b, c, when, items) => ({ name, logo, a: P[a], b: P[b], c: P[c], when, bg: 'linear-gradient(160deg, ' + tint + ', #141418 72%)', open: coll(name, when, items, { logo, bg: 'linear-gradient(160deg, ' + tint + ', #0c0c0e 70%)', ranked: true }) });
+
     return {
       openMosaic: () => { if (this.props.onMosaic) this.props.onMosaic(); },
       openDecide: () => { if (this.props.onDecide) this.props.onDecide(); },
       wall: [P.sg1, P.inter, P.bb, P.lasso, P.sev, P.frank, P.wed, P.alien, P.bear, P.dune, P.br, P.bm, P.plur, P.arr, P.weap, P.coh, P.obaa, P.tlou, P.st, P.dark, P.slow, P.cher, P.andor, P.n1899],
       index: [
-        { label: 'Ahora', icon: I.cf, bg: '#18181c' }, { label: 'Temporada', icon: I.halloween, bg: '#3a1c08' },
-        { label: 'Plataformas', icon: L.netflix, bg: '#18181c' }, { label: 'Estudios', icon: I.animacion, bg: '#1d1d24' },
-        { label: 'Premios', icon: I.oscar, bg: '#2c250e' }, { label: 'Géneros', icon: I.aventura, bg: '#0f1d33' }
+        { label: 'Ahora', icon: I.cf, bg: '#18181c', open: coll('En tendencia', 'Lo que más se está viendo esta semana', ['plur', 'frank', 'weap', 'alien', 'obaa', 'st']) },
+        { label: cur.name.split(' ')[0], icon: cur.icon, bg: '#2a1608', open: season.open },
+        { label: 'Rankings', icon: L.netflix, bg: '#18181c', open: coll('Top 10 en Netflix', 'Lo más visto en México esta semana', ['frank', 'wed', 'st', 'bm', 'dark'], { logo: L.netflix, ranked: true }) },
+        { label: 'Premios', icon: I.oscar, bg: '#2c250e', open: coll('Óscar', 'Los ganadores, del más reciente', ['obaa', 'arr', 'inter'], { tint: '#f4d27a', icon: I.oscar }) },
+        { label: 'Géneros', icon: I.aventura, bg: '#0f1d33', open: coll('Aventura', 'Lo mejor calificado del año', ['dune', 'inter', 'andor'], { icon: I.aventura }) },
+        { label: 'Listas', icon: I.drama, bg: '#1d1d24', open: coll('Criterion', 'The Criterion Collection', ['coh', 'arr', 'br', 'cher']) }
       ],
       moods: [{ label: 'Para reír', icon: I.comedia }, { label: 'Tensión', icon: I.terror }, { label: 'Para pensar', icon: I.cf }, { label: 'Para llorar', icon: I.drama }],
       nowRows: [
-        { title: 'En tendencia', sub: 'Lo que más se está viendo esta semana', items: [P.plur, P.frank, P.weap, P.alien, P.obaa] },
-        { title: 'Lo más popular', sub: 'Lo más visto de siempre en Trakt', items: [P.bb, P.inter, P.st, P.tlou, P.dark] }
+        { why: 'Lo que más se está viendo esta semana', title: 'En tendencia', open: coll('En tendencia', 'Lo que más se está viendo esta semana', ['plur', 'frank', 'weap', 'alien', 'obaa', 'st', 'wed', 'bear', 'tlou']), items: ['plur', 'frank', 'weap', 'alien', 'obaa'].map((k) => poster(k)) },
+        { why: 'Lo más visto de siempre en Trakt', title: 'Lo más popular', open: coll('Lo más popular', 'Lo más visto de siempre en Trakt', ['bb', 'inter', 'st', 'tlou', 'dark', 'bm', 'sev', 'dune', 'andor']), items: ['bb', 'inter', 'st', 'tlou', 'dark'].map((k) => poster(k)) },
+        { why: 'Rotten Tomatoes · 90 % o más', title: 'Aprobadas por la crítica', open: coll('Aprobadas por la crítica', 'Rotten Tomatoes · 90 % o más', ['andor', 'obaa', 'cher', 'arr', 'bear', 'sev']), items: [poster('andor', { hasBadge: true, badge: '98%' }), poster('obaa', { hasBadge: true, badge: '96%' }), poster('cher', { hasBadge: true, badge: '96%' }), poster('arr', { hasBadge: true, badge: '94%' })] }
       ],
+      openFresh: coll('Nuevo en tus plataformas', 'Episodios de estas semanas y estrenos', ['plur', 'weap', 'alien', 'frank', 'bear', 'tlou']),
       fresh: [
-        { art: '/_blob/74249f9f76881734307cb10fdbf1cb5e', logo: L.appletv, title: 'Pluribus · T1 E8' },
-        { art: '/_blob/0bb5ef2bbd1f1ae9fa45e9b9c07e2078', logo: L.hbo, title: 'Weapons · película' }
+        { art: B + '74249f9f76881734307cb10fdbf1cb5e', logo: L.appletv, title: 'Pluribus', sub: 'T1 E8 · salió el viernes', open: open({ single: 'plur' }) },
+        { art: B + '0bb5ef2bbd1f1ae9fa45e9b9c07e2078', logo: L.hbo, title: 'Weapons', sub: 'Película · llegó el martes', open: open({ single: 'weap' }) },
+        { art: B + '4813608c0d587a6146255ec03a708b8f', logo: L.disney, title: 'Alien: Earth', sub: 'T2 E1 · ayer', open: open({ single: 'alien' }) }
       ],
-      critics: [{ p: P.andor, s: '98%' }, { p: P.obaa, s: '96%' }, { p: P.cher, s: '96%' }, { p: P.arr, s: '94%' }],
-      season: [P.frank, P.weap, P.alien, P.st],
-      seasons: [
-        { name: 'Día de Muertos', when: 'del 1 al 10 nov', icon: I.muertos, bg: 'linear-gradient(160deg, #7a2f5a, #2a1022)' },
-        { name: 'Navidad', when: 'desde el 25 nov', icon: I.navidad, bg: 'linear-gradient(160deg, #1f5a3a, #0b2015)' },
-        { name: 'San Valentín', when: 'febrero', icon: I.sanvalentin, bg: 'linear-gradient(160deg, #7a2a3a, #2a0e14)' },
-        { name: 'Verano', when: 'jun a ago', icon: I.verano, bg: 'linear-gradient(160deg, #1d5a7a, #0a2030)' }
-      ],
+      season, nextSeasons,
       plats: [
-        { name: 'Top 10 Netflix', logo: L.netflix, a: P.frank, b: P.wed, c: P.st, when: 'semana', bg: 'linear-gradient(160deg, rgba(230,10,20,.35), #18181c 70%)' },
-        { name: 'Disney+', logo: L.disney, a: P.andor, b: P.bear, c: P.alien, when: 'hoy', bg: 'linear-gradient(160deg, rgba(69,110,255,.35), #18181c 70%)' },
-        { name: 'HBO Max', logo: L.hbo, a: P.tlou, b: P.weap, c: P.obaa, when: 'hoy', bg: 'linear-gradient(160deg, rgba(122,61,255,.35), #18181c 70%)' },
-        { name: 'Prime Video', logo: L.prime, a: P.inter, b: P.br, c: P.sg1, when: 'hoy', bg: 'linear-gradient(160deg, rgba(26,153,255,.32), #18181c 70%)' },
-        { name: 'Apple TV+', logo: L.appletv, a: P.plur, b: P.sev, c: P.lasso, when: 'hoy', bg: 'linear-gradient(160deg, rgba(199,199,209,.25), #18181c 70%)' },
-        { name: 'Paramount+', logo: L.paramount, a: P.sg1, b: P.n1899, c: P.arr, when: 'hoy', bg: 'linear-gradient(160deg, rgba(0,99,255,.32), #18181c 70%)' }
+        PL('Top 10 Netflix', L.netflix, 'rgba(230,10,20,.42)', 'frank', 'wed', 'st', 'Lo más visto esta semana', ['frank', 'wed', 'st', 'bm', 'dark', 'coh']),
+        PL('Disney+', L.disney, 'rgba(69,110,255,.42)', 'andor', 'bear', 'alien', 'Tendencia de hoy', ['andor', 'bear', 'alien', 'arr']),
+        PL('HBO Max', L.hbo, 'rgba(122,61,255,.42)', 'tlou', 'weap', 'obaa', 'Tendencia de hoy', ['tlou', 'weap', 'obaa', 'cher', 'dune']),
+        PL('Prime Video', L.prime, 'rgba(26,153,255,.38)', 'inter', 'br', 'sg1', 'Tendencia de hoy', ['inter', 'br', 'sg1', 'bb']),
+        PL('Apple TV+', L.appletv, 'rgba(199,199,209,.28)', 'plur', 'sev', 'lasso', 'Tendencia de hoy', ['plur', 'sev', 'lasso', 'slow']),
+        PL('Paramount+', L.paramount, 'rgba(0,99,255,.38)', 'sg1', 'n1899', 'arr', 'Tendencia de hoy', ['sg1', 'n1899', 'arr'])
       ],
-      catalogs: [{ name: 'Netflix', logo: L.netflix }, { name: 'Disney+', logo: L.disney }, { name: 'HBO Max', logo: L.hbo }],
+      catalogs: [
+        { name: 'Netflix', logo: L.netflix, open: coll('Todo Netflix', 'De lo más visto a lo menos', ['frank', 'wed', 'st', 'bm', 'dark', 'coh', 'n1899'], { logo: L.netflix }) },
+        { name: 'Disney+', logo: L.disney, open: coll('Todo Disney+', 'De lo más visto a lo menos', ['andor', 'bear', 'alien', 'arr'], { logo: L.disney }) },
+        { name: 'HBO Max', logo: L.hbo, open: coll('Todo HBO Max', 'De lo más visto a lo menos', ['tlou', 'weap', 'obaa', 'cher', 'dune'], { logo: L.hbo }) }
+      ],
       studios: [
-        { name: 'A24', bg: '#f5f4f0', fg: '#070708', size: '28px', ls: '-.02em', font: '-apple-system, system-ui, sans-serif' },
-        { name: 'Pixar', bg: '#0b2a4a', fg: '#f5f4f0', size: '26px', ls: '-.01em', font: '-apple-system, system-ui, sans-serif' },
-        { name: 'Studio Ghibli', bg: '#2a4a6e', fg: '#f5f4f0', size: '19px', ls: '0', font: 'Georgia, serif' },
-        { name: 'Marvel Studios', bg: '#b3121b', fg: '#f5f4f0', size: '18px', ls: '.04em', font: '-apple-system, system-ui, sans-serif' },
-        { name: 'Lucasfilm', bg: '#141414', fg: '#e8e8e8', size: '20px', ls: '.06em', font: '-apple-system, system-ui, sans-serif' },
-        { name: 'Blumhouse', bg: '#1a1a1a', fg: '#d9d9d9', size: '20px', ls: '.02em', font: 'Georgia, serif' },
-        { name: 'DreamWorks', bg: '#163a6e', fg: '#f5f4f0', size: '20px', ls: '0', font: 'Georgia, serif' },
-        { name: 'NEON', bg: '#070708', fg: '#f5f4f0', size: '26px', ls: '.18em', font: '-apple-system, system-ui, sans-serif' }
+        S('A24', '#f5f4f0', '#070708', '30px', '-.02em', '-apple-system, system-ui, sans-serif', P.coh, '42 títulos'),
+        S('Pixar', '#0b2a4a', '#f5f4f0', '27px', '-.01em', '-apple-system, system-ui, sans-serif', P.arr, '28 títulos'),
+        S('Studio Ghibli', '#2a4a6e', '#f5f4f0', '19px', '0', 'Georgia, serif', P.dune, '23 títulos'),
+        S('Marvel Studios', '#b3121b', '#f5f4f0', '17px', '.04em', '-apple-system, system-ui, sans-serif', P.andor, '36 títulos'),
+        S('Lucasfilm', '#141414', '#e8e8e8', '20px', '.06em', '-apple-system, system-ui, sans-serif', P.andor, '19 títulos'),
+        S('Blumhouse', '#1a1a1a', '#d9d9d9', '20px', '.02em', 'Georgia, serif', P.weap, '54 títulos'),
+        S('DreamWorks', '#163a6e', '#f5f4f0', '20px', '0', 'Georgia, serif', P.lasso, '45 títulos'),
+        S('NEON', '#070708', '#f5f4f0', '27px', '.18em', '-apple-system, system-ui, sans-serif', P.obaa, '31 títulos')
       ],
-      awards: [{ name: 'Óscar', icon: I.oscar }, { name: 'Emmy', icon: I.emmy }, { name: 'Globo de Oro', icon: I.globe }, { name: 'Palma de Oro', icon: I.palm }, { name: 'BAFTA', icon: I.bafta }, { name: 'Ariel', icon: I.ariel }],
+      openAlbum: coll('Tu álbum de premios', '34 de 96 estampas', ['obaa', 'arr', 'inter', 'cher', 'andor', 'bear'], { tint: '#f4d27a', icon: I.oscar, bg: 'linear-gradient(150deg, #4a3d14, #0c0c0e 70%)' }),
+      awards: [A('Óscar', I.oscar), A('Emmy', I.emmy), A('Globo de Oro', I.globe), A('Palma de Oro', I.palm), A('BAFTA', I.bafta), A('Ariel', I.ariel)],
       genres: [
-        { name: 'Acción', icon: I.accion, bg: dim }, { name: 'Aventura', icon: I.aventura, bg: dim }, { name: 'Animación', icon: I.animacion, bg: dim },
-        { name: 'Comedia', icon: I.comedia, bg: dim }, { name: 'Crimen', icon: I.crimen, bg: dim }, { name: 'Documental', icon: I.documental, bg: dim },
-        { name: 'Drama', icon: I.drama, bg: dim }, { name: 'Familia', icon: I.familia, bg: dim }, { name: 'Fantasía', icon: I.fantasia, bg: dim },
-        { name: 'Terror', icon: I.terror, bg: dim }, { name: 'Misterio', icon: I.misterio, bg: dim }, { name: 'Romance', icon: I.romance, bg: dim },
-        { name: 'Ciencia ficción', icon: I.cf, bg: dim }, { name: 'Suspenso', icon: I.suspenso, bg: dim }
+        G('Acción', I.accion, 'rgba(240,87,77,.30)', ['dune', 'andor', 'obaa']), G('Aventura', I.aventura, 'rgba(244,194,77,.26)', ['dune', 'inter', 'sg1']),
+        G('Animación', I.animacion, 'rgba(95,214,198,.26)', ['st', 'wed']), G('Comedia', I.comedia, 'rgba(244,160,60,.28)', ['lasso', 'bear', 'slow']),
+        G('Crimen', I.crimen, 'rgba(160,160,170,.22)', ['bb', 'slow', 'obaa']), G('Documental', I.documental, 'rgba(120,170,120,.24)', ['cher']),
+        G('Drama', I.drama, 'rgba(122,61,255,.26)', ['bear', 'tlou', 'cher']), G('Familia', I.familia, 'rgba(240,140,170,.24)', ['st', 'lasso']),
+        G('Fantasía', I.fantasia, 'rgba(160,110,255,.26)', ['wed', 'frank']), G('Terror', I.terror, 'rgba(120,220,180,.20)', ['weap', 'frank', 'alien']),
+        G('Misterio', I.misterio, 'rgba(70,110,200,.26)', ['dark', 'n1899', 'coh']), G('Romance', I.romance, 'rgba(240,87,120,.26)', ['arr']),
+        G('Ciencia ficción', I.cf, 'rgba(26,153,255,.26)', ['inter', 'br', 'arr', 'dune']), G('Suspenso', I.suspenso, 'rgba(110,90,200,.26)', ['sev', 'bm', 'coh'])
       ],
-      decades: [
-        { n: '2020s', bg: '#f5f4f0', fg: '#070708' }, { n: '2010s', bg: '#18181c', fg: '#cdcdd3' }, { n: '2000s', bg: '#18181c', fg: '#cdcdd3' },
-        { n: '90s', bg: '#18181c', fg: '#cdcdd3' }, { n: '80s', bg: '#18181c', fg: '#cdcdd3' }
+      decades: decadesN.map((n, i) => ({ n, bg: i === this.state.decade ? '#f5f4f0' : '#18181c', fg: i === this.state.decade ? '#070708' : '#cdcdd3', pick: () => this.setState({ decade: i }) })),
+      years: yearsBy[this.state.decade].map((y) => Object.assign({}, y, { open: coll('Lo más popular de ' + y.n, 'Por año', ['dune', 'bear', 'andor', 'plur', 'frank', 'obaa']) })),
+      famous: [
+        { name: 'Criterion', sub: 'The Criterion Collection · 1 000 películas', bg: '#f5f4f0', fg: '#070708', size: '26px', weight: '800', font: 'Georgia, serif', ls: '.02em', a: P.coh, b: P.arr, open: coll('Criterion', 'The Criterion Collection · 1 000 películas', ['coh', 'arr', 'br', 'cher', 'dark', 'obaa']) },
+        { name: 'Las 100 del siglo XXI', sub: 'The New York Times · elegidas en 2025', bg: '#121212', fg: '#f5f4f0', size: '23px', weight: '700', font: 'Georgia, serif', ls: '0', a: P.obaa, b: P.br, open: coll('Las 100 del siglo XXI', 'The New York Times · elegidas en 2025', ['obaa', 'br', 'arr', 'inter', 'dune', 'coh'], { ranked: true }) },
+        { name: 'Top 250', sub: 'Las mejor calificadas de IMDb', bg: '#f5c518', fg: '#070708', size: '26px', weight: '900', font: '-apple-system, system-ui, sans-serif', ls: '-.02em', a: P.inter, b: P.dune, open: coll('Top 250', 'Las mejor calificadas de IMDb', ['inter', 'bb', 'cher', 'dune', 'br', 'arr'], { ranked: true }) }
       ],
-      years: [{ n: '2026', p: P.plur }, { n: '2025', p: P.frank }, { n: '2024', p: P.dune }, { n: '2023', p: P.bear }, { n: '2022', p: P.andor }],
       mine: [
-        { name: 'Mi lista', sub: 'Lo que dejaste pendiente · 34', a: P.tlou, b: P.obaa, c: P.andor },
-        { name: 'Favoritos', sub: 'Lo que marcaste con el corazón · 21', a: P.dark, b: P.sev, c: P.bb },
-        { name: 'Tus series', sub: 'Las que sigues en Trakt · 18', a: P.slow, b: P.bear, c: P.sev },
-        { name: '[Una de tus listas de Trakt]', sub: '42 títulos', a: P.br, b: P.inter, c: P.arr },
-        { name: '[Otra de tus listas de Trakt]', sub: '18 títulos', a: P.coh, b: P.n1899, c: P.bm }
+        { name: 'Mi lista', sub: 'Lo que dejaste pendiente · 34', a: P.tlou, b: P.obaa, c: P.andor, open: coll('Mi lista', 'Lo que dejaste pendiente', ['tlou', 'obaa', 'andor', 'weap', 'frank', 'cher']) },
+        { name: 'Favoritos', sub: 'Lo que marcaste con el corazón · 21', a: P.dark, b: P.sev, c: P.bb, open: coll('Favoritos', 'Lo que marcaste con el corazón', ['dark', 'sev', 'bb', 'inter', 'bear']) },
+        { name: 'Tus series', sub: 'Las que sigues · 18', a: P.slow, b: P.bear, c: P.sev, open: coll('Tus series', 'Las que sigues en Trakt', ['slow', 'bear', 'sev', 'plur', 'tlou']) },
+        { name: '[Una de tus listas de Trakt]', sub: '42 títulos', a: P.br, b: P.inter, c: P.arr, open: coll('[Una de tus listas]', 'De Trakt', ['br', 'inter', 'arr', 'dune']) },
+        { name: '[Otra de tus listas de Trakt]', sub: '18 títulos', a: P.coh, b: P.n1899, c: P.bm, open: coll('[Otra de tus listas]', 'De Trakt', ['coh', 'n1899', 'bm', 'dark']) }
       ],
+      openSeen: open({ seen: true }),
       seen: [P.sev, P.dune, P.tlou, P.slow, P.bear]
     };
   }

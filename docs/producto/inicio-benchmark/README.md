@@ -44,3 +44,11 @@ Próximos estrenos. Salen: el Destacado (lo reemplaza el mosaico) y los catálog
 mosaico» (muro de pósters; tocas uno y sale su ficha rápida con Ver y Guardar) y «¿Qué vemos hoy?» como Tinder
 (arrastras a la derecha para guardar y a la izquierda para descartar, o usas ✕ ▶ ＋; los cuatro ánimos cambian el mazo).
 Cada fila lleva el porqué arriba en turquesa y el título abajo, como el Inicio; los grupos son títulos grandes.
+
+### 30 oct: Para ti B, alta fidelidad
+
+Fernando eligió «B completo». Temporadas se elige sola con la fecha: la que corre hoy en grande (o la próxima si no
+hay ninguna), con cuántos días le quedan, y las demás por cercanía. Todo se puede tocar en `B-interactivo`: cada fila,
+«Ver todo», tarjeta o círculo abre su colección (encabezado con su arte, orden, cuadrícula; los rankings con número),
+cada póster abre su ficha rápida y «Lo que ves» abre su resumen. Listas famosas suma «Las 100 del siglo XXI» del
+New York Times (2025).
