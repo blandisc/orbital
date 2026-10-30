@@ -68,13 +68,16 @@ public enum Canon {
         ("top250", "georgenilas", "imdb-top-250", 250, .rank),
     ]
 
+    /// El orden de los premios en la repisa (y en Para ti, para que no se contradigan).
+    public static let awardOrder = ["oscar", "palm", "ariel", "globe", "bafta", "emmy"]
+
     /// «Los 2020», «Los 90», «Los 2000».
     public static func decadeName(_ d: Int) -> String { d >= 2000 ? "Los \(d)" : "Los \(String(format: "%02d", d % 100))" }
 
     /// Los premios que ya trae la app como colecciones (una serie que ganó varios años va una vez, con sus años).
     public static func awards(_ all: [AwardCollection] = Awards.all) -> [CanonCollection] {
         // El orden de la repisa: Óscar, Palma y Ariel al frente (como en la maqueta); luego los demás.
-        let order = ["oscar", "palm", "ariel", "globe", "bafta", "emmy"]
+        let order = awardOrder
         let sorted = all.sorted { (order.firstIndex(of: $0.id) ?? order.count) < (order.firstIndex(of: $1.id) ?? order.count) }
         return sorted.map { award in
             var order: [String] = []

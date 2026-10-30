@@ -19,7 +19,12 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # «¿Qué vemos hoy?» (`MatchDeckScreen`, `MatchDeck`).
+    "Encuentra tu match perfecto": "Find your perfect match", "¿Qué vemos hoy?": "What should we watch today?",
+    "Ya viste todo el mazo": "You've gone through the whole deck", "Cambia de ánimo o vuelve mañana.": "Change the mood or come back tomorrow.",
+    "Guardaste %lld. Están en tu lista.": "You saved %lld. They're in your list.", "Descartar": "Dismiss",
     # Lo que ves y el Wrapped (`WatchingView`, `WatchingCard`, `WrappedView`). Con enteros SwiftUI arma la clave con %lld.
+    "Tu año, día por día": "Your year, day by day", "El mapa de todo el año y lo que viste cada día": "The whole year's map and what you watched each day",
     "Lo que ves": "What you watch", "Lo que viste, contado": "What you watched, counted", "Mes": "Month", "Año": "Year",
     "%@ h esta semana": "%@ h this week", "%lld h esta semana": "%lld h this week", "%@ días seguidos": "%@ days in a row",
     "%lld días seguidos": "%lld days in a row", "%lld títulos": "%lld titles", "%lld h": "%lld h",

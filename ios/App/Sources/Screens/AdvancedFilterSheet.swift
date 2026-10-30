@@ -24,7 +24,7 @@ struct AdvancedFilterSheet: View {
     let onOpenTitle: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
     @State private var path: [FilterPage] = []
-    @State private var detent: PresentationDetent = .medium
+    @State private var detent: PresentationDetent = AdvancedFilterSheet.short
     @State private var more = false
 
     var body: some View {
@@ -66,10 +66,13 @@ struct AdvancedFilterSheet: View {
                 .onAppear { detent = .large }
             }
         }
-        .presentationDetents([.medium, .large], selection: $detent)
-        .onChange(of: path) { _, new in if new.isEmpty { detent = .medium } }
+        .presentationDetents([Self.short, .large], selection: $detent)
+        .onChange(of: path) { _, new in if new.isEmpty { detent = Self.short } }
         .accessibilityIdentifier("advanced-filter")
     }
+
+    /// La altura corta: lo justo para los seis filtros y «Ver resultados» sin taparse (en una pantalla baja, la grande).
+    static var short: PresentationDetent { WindowMetrics.size.height < DS.Filter.shortScreen ? .large : .fraction(DS.Filter.shortFraction) }
 
     private func tile(_ page: FilterPage, _ symbol: String, _ title: Text, _ value: Text?) -> some View {
         FilterTile(symbol: symbol, title: title, value: value) { path.append(page) }
@@ -79,12 +82,13 @@ struct AdvancedFilterSheet: View {
     private func actions(_ model: AdvancedFilterModel) -> some View {
         HStack(spacing: DS.Space.s3) {
             if !model.filter.isEmpty {
-                Button("Limpiar") { model.clear() }.buttonStyle(.glass).controlSize(.large)
+                Button("Limpiar") { model.clear() }.buttonStyle(.glass).buttonBorderShape(.capsule).controlSize(.large)
             }
             Button { path.append(.results) } label: {
                 Text(model.filter.isEmpty ? "Ver resultados" : "Ver resultados · \(model.filter.activeCount)").frame(maxWidth: .infinity)
             }
-            .buttonStyle(.glassProminent).controlSize(.large)
+            .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).controlSize(.large)
+            .tint(DS.solidPrimary).foregroundStyle(DS.onSolidPrimary)   // el principal sólido de la app: se lee siempre
             .accessibilityIdentifier("filter-results")
         }
         .padding(.horizontal, DS.Space.gutter)

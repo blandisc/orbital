@@ -72,8 +72,8 @@ struct WatchingView: View {
         }
         .background(Backdrop())
         .navigationTitle(Text("Lo que ves"))
-        .task { await model.load() }
-        .refreshable { await model.load(force: true) }
+        .task { await model.load(full: true) }   // aquí sí, los diez años (la tarjeta solo pidió la semana)
+        .refreshable { await model.load(full: true, force: true) }
         .fullScreenCover(item: $wrapped) { p in WrappedView(stats: model.stats(p), language: language) { wrapped = nil } }
     }
 
@@ -92,6 +92,22 @@ struct WatchingView: View {
                 legend(DS.YearMap.movies, Text("Películas")); legend(DS.YearMap.series, Text("Series")); legend(DS.YearMap.both, Text("Las dos"))
             }
         }
+        // «Tu año» vive aquí adentro: el mapa del año completo con lo que viste cada día.
+        NavigationLink { YearView() } label: {
+            HStack(spacing: DS.Space.s3) {
+                Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.title.font).foregroundStyle(DS.YearMap.both)
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text("Tu año, día por día").recipe(.cardTitle)
+                    Text("El mapa de todo el año y lo que viste cada día").recipe(.footnote, color: DS.textMuted)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").foregroundStyle(DS.textMuted)
+            }
+            .padding(DS.Space.s3)
+            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("watching-year")
         section(Text("Cuándo ves")) { WatchingBars(values: s.buckets.map(\.minutes), labels: s.buckets.map { label($0.start, s.period) }) }
         if !s.genres.isEmpty { section(Text("Tus géneros")) { WatchingGenres(genres: s.genres) { WatchingText.genre($0, language: language) } } }
         ratings

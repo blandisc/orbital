@@ -3279,6 +3279,17 @@
         }
       }
     },
+    "Cambia de ánimo o vuelve mañana.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change the mood or come back tomorrow."
+          }
+        }
+      }
+    },
     "Cambia el orden o lo que ocultas.": {
       "extractionState": "manual",
       "localizations": {
@@ -7179,6 +7190,17 @@
         }
       }
     },
+    "El mapa de todo el año y lo que viste cada día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The whole year's map and what you watched each day"
+          }
+        }
+      }
+    },
     "El nombre de este título no sirve para guardarlo.": {
       "extractionState": "manual",
       "localizations": {
@@ -8291,6 +8313,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "In “%@”"
+          }
+        }
+      }
+    },
+    "Encuentra tu match perfecto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find your perfect match"
           }
         }
       }
@@ -9554,6 +9587,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save token"
+          }
+        }
+      }
+    },
+    "Guardaste %lld. Están en tu lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You saved %lld. They're in your list."
           }
         }
       }
@@ -22820,6 +22864,17 @@
         }
       }
     },
+    "Tu año, día por día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your year, day by day"
+          }
+        }
+      }
+    },
     "Tu calificación": {
       "extractionState": "manual",
       "localizations": {
@@ -25022,6 +25077,17 @@
         }
       }
     },
+    "Ya viste todo el mazo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've gone through the whole deck"
+          }
+        }
+      }
+    },
     "capturas": {
       "extractionState": "manual",
       "localizations": {
@@ -25830,6 +25896,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "How was %@?"
+          }
+        }
+      }
+    },
+    "¿Qué vemos hoy?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What should we watch today?"
           }
         }
       }

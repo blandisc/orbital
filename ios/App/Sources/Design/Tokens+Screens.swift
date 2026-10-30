@@ -159,6 +159,15 @@ extension DS {
         static let symbol = "heart", symbolFilled = "heart.fill"
     }
 
+    /// El mazo de «¿Qué vemos hoy?» (`MatchCard`, `MatchDeck`, `MoodTile`): el ícono que asoma al arrastrar (desde qué parte
+    /// del arrastre y qué tan rápido aparece), cómo se ven las de atrás, el giro, cuánto hay que arrastrar para que vuele y el
+    /// alto de un ánimo.
+    enum Match {
+        static let hint: CGFloat = 56, hintFrom = 0.15, hintRamp = 3.0
+        static let behindShrink: CGFloat = 0.05, behindDrop: CGFloat = 14, tiltDivisor = 22.0
+        static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220), mood: CGFloat = 64
+    }
+
     /// Lo que ves y el Wrapped (`WatchingCard`, `WatchingBars`, `WatchingDayGrid`, `WatchingGenres`, `WrappedView`): el alto de
     /// la tarjeta de Para ti, sus esqueletos, lo apagado del collage, las barras, el cuadrito del mapa, los géneros y las
     /// historias (cuánto dura cada una, el alto de sus barritas de avance y el póster grande).
@@ -192,6 +201,8 @@ extension DS {
         static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64, eraTile: CGFloat = 72
         static let selectedFill = DS.brandMoon.opacity(0.18)   // ds-exception: el velo de la selección (turquesa al 18 %)
         static let resultWidth: CGFloat = 104
+        /// La altura corta del cajón (parte de la pantalla) y desde qué alto de pantalla abre de una vez en grande.
+        static let shortFraction: CGFloat = 0.74, shortScreen: CGFloat = 700
     }
 
     /// Calificar como en Trakt (`RatingStars`, `RatingReminder`): las estrellas en ámbar (el color del porqué de las portadas,

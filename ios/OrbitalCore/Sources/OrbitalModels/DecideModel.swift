@@ -153,7 +153,7 @@ public final class DecideModel: ObservableModel {
     }
 
     /// ¿Alguno de estos géneros es del ánimo?
-    nonisolated static func matches(_ list: [String], _ mood: Mood) -> Bool {
+    public nonisolated static func matches(_ list: [String], _ mood: Mood) -> Bool {
         !genres(for: mood).isDisjoint(with: list.map { $0.lowercased() })
     }
 

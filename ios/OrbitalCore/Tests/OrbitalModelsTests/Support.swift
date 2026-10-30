@@ -16,6 +16,9 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
     private let lock = NSLock()
     private var _json: [String: JSON] = [:], _calls: [String] = [], _bodies: [String: [Data]] = [:], _statuses: [String: Int] = [:]
     var json: [String: JSON] { get { lock.withLock { _json } } set { lock.withLock { _json = newValue } } }
+    private var _prefix: [String: JSON] = [:]
+    /// Respuestas por el comienzo de la URL (cuando la consulta cambia, como las fechas del historial).
+    var prefix: [String: JSON] { get { lock.withLock { _prefix } } set { lock.withLock { _prefix = newValue } } }
     var statuses: [String: Int] { get { lock.withLock { _statuses } } set { lock.withLock { _statuses = newValue } } }
     private var _delays: [String: Int] = [:]
     /// Milisegundos de demora por URL (para que dos peticiones se crucen).
@@ -31,7 +34,7 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
         lock.withLock { _calls.append(key); if let b = request.body { _bodies[key, default: []].append(b) } }
         if let ms = lock.withLock({ _delays[key] }) { try? await Task.sleep(nanoseconds: UInt64(ms) * 1_000_000) }
         let forced = lock.withLock { _statuses[key] }
-        guard let body = lock.withLock({ _json[key] }) else { return HTTPResponse(status: forced ?? 404, data: Data()) }
+        guard let body = lock.withLock({ _json[key] ?? _prefix.first { key.hasPrefix($0.key) }?.value }) else { return HTTPResponse(status: forced ?? 404, data: Data()) }
         return HTTPResponse(status: forced ?? 200, data: body.serialized())
     }
 }
