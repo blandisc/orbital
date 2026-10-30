@@ -347,6 +347,7 @@ final class PlayerModelTests: XCTestCase {
         model.segmentRetryDelays = [0.01]
         await model.begin(rig.request())
         await model.handle(rig.playing(5))
+        await model.handle(rig.playing(5.6))
         XCTAssertNil(model.skipIntroTo)
         try await Task.sleep(nanoseconds: 200_000_000)
         XCTAssertEqual(calls.n, 2, "la primera falla y se pide otra vez")
@@ -492,7 +493,11 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         let chapters = [Chapter(title: "Intro", time: 0), Chapter(title: "Capítulo 2", time: 90), Chapter(title: "Credits", time: 1250)]
         await rig.model.handle(rig.playing(10, chapters: chapters))
-        XCTAssertEqual(rig.model.skipIntroTo, 90)
+        XCTAssertNil(rig.model.skipIntroTo, "el motor dice «suena», pero el video aún carga: sin botón")
+        await rig.model.handle(rig.playing(10, chapters: chapters, state: .buffering))
+        XCTAssertNil(rig.model.skipIntroTo, "se detuvo a llenar el búfer: sigue cargando")
+        await rig.model.handle(rig.playing(10.6, chapters: chapters))
+        XCTAssertEqual(rig.model.skipIntroTo, 90, "ya corre: sale el botón")
         await rig.model.skipIntro()
         XCTAssertTrue(rig.engine.calls.contains("seek 90"))
         await rig.model.handle(rig.playing(300, chapters: chapters))

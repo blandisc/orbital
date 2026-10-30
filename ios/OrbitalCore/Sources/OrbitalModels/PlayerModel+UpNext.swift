@@ -22,7 +22,7 @@ extension PlayerModel {
             if found == nil { self.segmentsFor = nil; return }
             self.segments = found
             // El botón sale en cuanto llegan, sin esperar al siguiente aviso del motor (en pausa no llega ninguno).
-            if self.hasPlayed { self.updateSkipIntro(self.snapshot) }
+            if self.playbackSettled { self.updateSkipIntro(self.snapshot) }
         }
     }
 
@@ -31,7 +31,9 @@ extension PlayerModel {
         if demoPinned { return }
         // Cargando o rearmando al volver de segundo plano, la posición pasa un momento por 0 (o por el inicio): ahí no
         // aplica (salía «Saltar intro» a media película al regresar a la app).
-        if s.state == .loading || reconnecting || backgrounded { skipIntroTo = nil; return }
+        // Y hasta que el video corre de verdad (`playbackSettled`, lo mismo que quita la carga del botón grande): el motor dice
+        // «suena» con casi nada en el búfer y el botón salía con el video aún cargando (30 oct).
+        if s.state == .loading || !playbackSettled || reconnecting || backgrounded { skipIntroTo = nil; return }
         let sorted = s.chapters.sorted { $0.time < $1.time }
         for (i, chapter) in sorted.enumerated() where PlaybackRules.chapterKind(chapter.title) == .intro {
             let end = i + 1 < sorted.count ? sorted[i + 1].time : s.duration
