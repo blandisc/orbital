@@ -35,3 +35,5 @@ va cada cosa). Grupos: Ahora (tendencia, popular, nuevo en tus plataformas, crí
 (6 + álbum) · Géneros (14) · Años (1980–hoy, por década) · Listas famosas (nuevo: Criterion, Top 250 de IMDb) · Tuyo
 (Mi lista, Favoritos, tus series, listas de Trakt) · Lo que ves. Al Inicio se mudan: Porque viste, Recomendadas y
 Próximos estrenos. Salen: el Destacado (lo reemplaza el mosaico) y los catálogos de complementos (desacoplar Stremio).
+
+**Inicio cerrado (30 oct, v6):** Fernando dio por cerrada la propuesta del Inicio.

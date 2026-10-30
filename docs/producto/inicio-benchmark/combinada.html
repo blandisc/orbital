@@ -192,7 +192,7 @@ button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
 .ch .live { position: absolute; left: 10px; top: 10px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--paper); text-shadow: 0 1px 4px rgba(0,0,0,.6); }
 .ch .live i { width: 7px; height: 7px; border-radius: 50%; background: #f0574d; box-shadow: 0 0 0 3px rgba(240,87,77,.25); animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .35; } }
-.ch .logo { position: absolute; right: 10px; top: 9px; max-width: 74px; max-height: 22px; object-fit: contain; object-position: right top; z-index: 2; filter: drop-shadow(0 1px 4px rgba(0,0,0,.8)); opacity: .92; }
+.ch .logo { position: absolute; left: 12px; top: 11px; max-width: 84px; max-height: 24px; object-fit: contain; object-position: left top; z-index: 2; filter: drop-shadow(0 1px 4px rgba(0,0,0,.8)); opacity: .92; }
 .ch .now { position: absolute; left: 12px; right: 12px; bottom: 16px; z-index: 2; display: flex; flex-direction: column; gap: 1px; }
 .ch .now small { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: rgba(245,244,240,.7); font-variant-numeric: tabular-nums; }
 .ch .now b { font: 700 16px/1.2 var(--sys-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -322,7 +322,7 @@ td:first-child { font-weight: 700; }
   <header style="display:flex;flex-direction:column;gap:12px">
     <div class="eyebrow">Orbital · iPhone · Inicio · propuesta combinada</div>
     <h1>La portada arriba, tu tablero debajo</h1>
-    <div class="eyebrow" style="color:var(--ink-300)">Versión 5 · 30 oct · Orden: Seguir viendo, Lo nuevo de lo tuyo, Sugerencias de Trakt, Por lo que viste, Canales, Top 10 y Mi lista</div>
+    <div class="eyebrow" style="color:var(--ink-300)">Versión 6 · 30 oct · Orden: Seguir viendo, Lo nuevo de lo tuyo, Sugerencias de Trakt, Por lo que viste, Canales, Top 10 y Mi lista</div>
     <p class="muted">La portada grande de la opción 2 con lo útil de la opción 1. «Seguir viendo» va encimado en el borde de la portada, «Ya salió» y «Sale pronto» se juntan en una sola línea de tiempo, y el selector de Todo, Series y Películas son tres íconos en la barra de arriba, sin quitarle espacio a nada.</p>
     <p class="try">La maqueta funciona: toca los íconos del selector, desliza la portada y las filas, y baja dentro del teléfono.</p>
   </header>
@@ -337,7 +337,7 @@ td:first-child { font-weight: 700; }
         <div class="note"><span class="n">4</span><div><b>Lo nuevo de lo tuyo</b><p>«Ya salió» y «Sale pronto» en una sola línea de tiempo. A la izquierda de la marca HOY, lo que ya puedes ver (punto verde y ▶). A la derecha, lo que viene, más apagado, con cuenta regresiva y una campana para que te avise. Junta tus series (calendario de Trakt) y las películas de Mi lista que ya llegaron a casa.</p></div></div>
         <div class="note"><span class="n">5</span><div><b>Sugerencias para ti</b><p>Tus recomendaciones de Trakt, en una fila, justo después de lo tuyo.</p></div></div>
         <div class="note"><span class="n">6</span><div><b>Por lo que viste, con el mazo de Para ti</b><p>La misma tarjeta que hoy vive en Para ti, más vistosa: el arte del título que viste se desenfoca de fondo. Toca el mazo o las flechas y cambia lo que viste (Dark, Severance, Dune…), y con él las sugerencias.</p></div></div>
-        <div class="note"><span class="n">7</span><div><b>Canales, como la tele</b><p>Tus series siempre al aire: cada canal pasa un episodio al azar todo el día, con la imagen y el nombre de ese capítulo (no el arte de la serie) y la barra que avanza sola. Cuando termina, entra otro. Tocas uno y entras justo donde va. El «+» abre la hoja: tus canales, unas sugeridas y un buscador para añadir cualquier serie. Sin turquesa: el color lo pone el capítulo. Con el selector en Películas, la fila se esconde.</p></div></div>
+        <div class="note"><span class="n">7</span><div><b>Canales, como la tele</b><p>Tus series siempre al aire: cada canal pasa un episodio al azar todo el día, con la imagen y el nombre de ese capítulo (no el arte de la serie) y la barra que avanza sola. Cuando termina, entra otro. Tocas uno y entras justo donde va. El «+» abre la hoja: tus canales, unas sugeridas y un buscador para añadir cualquier serie. El porqué va arriba en turquesa, como en las demás filas, y el logo de la serie en la esquina. Con el selector en Películas, la fila se esconde.</p></div></div>
         <div class="note"><span class="n">8</span><div><b>Top 10 con su plataforma</b><p>Como hoy: eliges la plataforma por su logo y cada número se pinta con su color (rojo Netflix, azul Disney+, morado HBO Max…). Cada póster lleva el logo de dónde está.</p></div></div>
         <div class="note"><span class="n">9</span><div><b>Mi lista</b><p>Se queda al final, igual que hoy.</p></div></div>
       </div>
@@ -468,7 +468,7 @@ td:first-child { font-weight: 700; }
               '<div class="bc-info"><span class="bc-ey"></span><span class="bc-t"></span><span class="bc-d"></span>' +
               '<div class="bc-nav"><button type="button" class="gbtn bc-prev" aria-label="Anterior"><svg aria-hidden="true" style="transform:scaleX(-1)"><use href="#i-chev"/></svg></button><button type="button" class="gbtn bc-next" aria-label="Siguiente">' + use("i-chev") + '</button></div></div></div>' +
               '<div class="strip fy-strip fade"></div></div></div>' +
-            '<div class="row ch-row"><div class="head" style="align-items:center"><div><h4>Canales</h4><span class="ch-sub">Siempre hay un episodio al aire</span></div><button type="button" class="ch-head-btn edit" aria-label="Elegir canales">' + use("i-plus") + '</button></div><div class="strip ch-strip"></div></div>' +
+            '<div class="row ch-row"><div class="head" style="align-items:center"><div><span class="ey">Siempre hay un episodio al aire</span><h4>Canales</h4></div><button type="button" class="ch-head-btn edit" aria-label="Elegir canales">' + use("i-plus") + '</button></div><div class="strip ch-strip"></div></div>' +
             '<div class="row"><div class="head"><div><span class="ey top-ey"></span><h4 class="top-t"></h4></div></div><div class="plats"></div><div class="strip top-strip fade" style="padding-top:14px"></div></div>' +
             '<div class="row"><div class="head"><h4>Mi lista ' + use("i-chev") + '</h4><small class="ml-count"></small></div><div class="strip ml-strip fade"></div></div>' +
           '</div>' +
@@ -572,7 +572,7 @@ td:first-child { font-weight: 700; }
     function chCard(c, i) {
       var a = air[c.id];
       return '<button type="button" class="ch" data-id="' + c.id + '" style="--d:' + (14 + i * 3) + 's">' +
-        '<div class="art"><img class="f" src="' + still(c) + '" alt=""><span class="live"><i></i>AL AIRE · ' + String(i + 1).padStart(2, "0") + '</span>' +
+        '<div class="art"><img class="f" src="' + still(c) + '" alt="">' +
         '<img class="logo" src="' + IMG(c.id, "logo") + '" alt="">' +
         '<span class="now"><small>T' + a.ep.s + " E" + a.ep.e + "</small><b>" + (a.ep.n ? "«" + a.ep.n + "»" : c.t) + "</b></span>" +
         '<span class="bar"><i style="width:' + (a.at / a.len * 100) + '%"></i></span></div>' +
