@@ -7,6 +7,7 @@
   color-scheme: dark;
   --ink-1000: #070708; --ink-950: #0c0c0e; --ink-900: #131316; --ink-850: #18181c; --ink-800: #1e1e23; --ink-700: #2a2a30;
   --ink-500: #55555d; --ink-300: #a3a3ab; --ink-200: #cdcdd3; --paper: #f5f4f0; --amber: #f4c24d; --teal: #5fd6c6; --good: #5cbf6d;
+  --brand: #5fd6c6; /* la luna de Orbital (teal-300): el único color fijo de la marca, ahora también el del porqué */
   --glass: rgba(40, 40, 46, .55); --glass-line: rgba(255, 255, 255, .14); --fill: rgba(255, 255, 255, .08);
   --sys: -apple-system, "SF Pro Text", "SF Pro", system-ui, "Helvetica Neue", Arial, sans-serif;
   --sys-display: -apple-system, "SF Pro Display", system-ui, "Helvetica Neue", Arial, sans-serif;
@@ -20,7 +21,7 @@ h1, h2, h3 { font-family: var(--sys-display); margin: 0; line-height: 1.15; text
 h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); } h2 { font-size: 1.4rem; } h3 { font-size: 1.05rem; }
 p { margin: 0; max-width: 64ch; }
 .muted { color: var(--ink-300); }
-.eyebrow { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--amber); font-weight: 700; }
+.eyebrow { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); font-weight: 700; }
 section { display: flex; flex-direction: column; gap: 18px; }
 button { font: inherit; color: inherit; }
 button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
@@ -57,6 +58,7 @@ button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
 .nav { position: absolute; top: 54px; left: 0; right: 0; height: 52px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 16px; z-index: 5; transition: background .25s; }
 .phone.se .nav { top: 22px; }
 .nav.solid { background: rgba(12, 12, 14, .82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.nav.solid::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 60px; background: rgba(12, 12, 14, .82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
 .nav .lead { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; }
 .moon { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #9df0e4, var(--teal) 55%, #2a8f84); box-shadow: inset -5px -3px 0 rgba(0,0,0,.25); }
 .nav .trail { display: flex; gap: 6px; justify-content: flex-end; }
@@ -86,7 +88,7 @@ button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
 .slide::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12,12,14,.55) 0%, rgba(12,12,14,0) 22%, rgba(12,12,14,0) 42%, rgba(12,12,14,.75) 70%, var(--ink-950) 92%); }
 .slide .cap { position: absolute; left: 20px; right: 20px; bottom: 74px; z-index: 2; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .phone.se .slide .cap { bottom: 64px; gap: 6px; }
-.slide .why { font-size: 12px; font-weight: 700; color: var(--amber); letter-spacing: .02em; }
+.slide .why { font-size: 12px; font-weight: 700; color: var(--brand); letter-spacing: .02em; }
 .slide .logo { max-width: 230px; max-height: 84px; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 10px rgba(0,0,0,.6)); }
 .phone.se .slide .logo { max-height: 64px; max-width: 200px; }
 .slide .data { font-size: 13px; color: var(--ink-200); }
@@ -106,7 +108,7 @@ button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
 .head h4 { margin: 0; font: 700 20px/1.2 var(--sys-display); letter-spacing: -.01em; display: flex; align-items: center; gap: 4px; }
 .head h4 svg { width: 14px; height: 14px; color: var(--ink-300); }
 .head small { color: var(--ink-300); font-size: 13px; }
-.head .ey { display: block; font-size: 11.5px; font-weight: 700; color: var(--amber); margin-bottom: 2px; }
+.head .ey { display: block; font-size: 11.5px; font-weight: 700; color: var(--brand); margin-bottom: 2px; }
 .strip { display: flex; gap: 12px; overflow-x: auto; padding: 8px 20px 4px; scroll-padding: 20px; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .strip::-webkit-scrollbar { display: none; }
 .strip > * { scroll-snap-align: start; flex: none; }
@@ -131,7 +133,7 @@ button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
 .tl-when { font-size: 12px; font-weight: 700; color: var(--ink-300); height: 18px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .tl-when::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ink-500); flex: none; }
 .tl-card.out .tl-when { color: var(--paper); } .tl-card.out .tl-when::before { background: var(--good); }
-.tl-card.today .tl-when { color: var(--good); }
+.tl-card.today .tl-when { color: var(--good); } .tl-card.today .tl-when::before { background: var(--good); }
 .tl-poster { position: relative; width: 112px; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; background: var(--ink-850); }
 .tl-poster img { width: 100%; height: 100%; object-fit: cover; }
 .tl-card.soon .tl-poster img { filter: saturate(.55) brightness(.62); }
@@ -155,6 +157,42 @@ button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
 .pp img { width: 100%; height: 100%; object-fit: cover; }
 .pp .t { font-size: 12.5px; color: var(--ink-200); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .empty { padding: 4px 20px; font-size: 13px; color: var(--ink-300); }
+
+/* Porque viste: el mazo de Para ti, sobre el arte desenfocado del título elegido */
+.bc { position: relative; margin: 0 16px; border-radius: 26px; overflow: hidden; background: var(--ink-850); isolation: isolate; }
+.bc-bg { position: absolute; inset: -30px; z-index: -2; background-size: cover; background-position: center; filter: blur(28px) saturate(1.4); opacity: .75; transition: background-image .4s; }
+.bc::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(12,12,14,.35), rgba(12,12,14,.82) 62%); }
+.bc-top { display: flex; gap: 16px; padding: 16px 16px 6px; align-items: stretch; }
+.deck { position: relative; width: 104px; height: 140px; flex: none; cursor: pointer; border: 0; background: none; padding: 0; }
+.deck img { position: absolute; left: 0; top: 0; width: 92px; aspect-ratio: 2/3; border-radius: 10px; object-fit: cover; box-shadow: 0 10px 22px -6px rgba(0,0,0,.8); transition: transform .35s cubic-bezier(.3,1.3,.5,1), opacity .25s; }
+.deck img:nth-child(1) { transform: translate(12px, 8px) rotate(7deg) scale(.9); opacity: .55; }
+.deck img:nth-child(2) { transform: translate(6px, 4px) rotate(3.5deg) scale(.95); opacity: .8; }
+.deck img:nth-child(3) { transform: none; }
+.deck.toss img:nth-child(3) { transform: translate(-40px, -6px) rotate(-14deg); opacity: 0; }
+.bc-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.bc-ey { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); font-variant-numeric: tabular-nums; }
+.bc-t { font: 700 26px/1.05 var(--sys-display); letter-spacing: -.02em; }
+.bc-d { font-size: 12.5px; color: var(--ink-200); }
+.bc-nav { margin-top: auto; display: flex; gap: 8px; }
+.bc-nav .gbtn { width: 34px; height: 34px; }
+.bc-nav .gbtn svg { width: 13px; height: 13px; }
+.bc .strip { padding: 10px 16px 16px; gap: 10px; }
+.bc .pp, .bc .pp .img { width: 92px; }
+.bc .pp .t { display: none; }
+
+/* Top 10: de qué plataforma viene */
+.plats { display: flex; gap: 12px; overflow-x: auto; padding: 9px 20px; scrollbar-width: none; }
+.plats::-webkit-scrollbar { display: none; }
+.plat { flex: none; width: 44px; height: 44px; border-radius: 12px; padding: 0; border: 0; overflow: hidden; cursor: pointer; opacity: .45; filter: grayscale(.6); transition: opacity .2s, transform .2s, box-shadow .2s, filter .2s; background: var(--ink-850); }
+.plat img { width: 100%; height: 100%; object-fit: cover; }
+.plat[aria-pressed="true"] { opacity: 1; filter: none; transform: scale(1.06); box-shadow: 0 0 0 2px var(--ink-950), 0 0 0 4px var(--tint), 0 6px 18px -4px var(--tint); }
+.rk { position: relative; width: 128px; display: flex; align-items: flex-end; }
+.rk .num { font: 900 92px/.78 var(--sys-display); letter-spacing: -.06em; color: var(--ink-950); -webkit-text-stroke: 2px var(--tint); width: 44px; margin-right: -14px; z-index: 0; text-align: right; }
+.rk .img { position: relative; z-index: 1; width: 96px; aspect-ratio: 2/3; border-radius: 10px; overflow: hidden; background: var(--ink-850); box-shadow: -6px 0 16px -6px rgba(0,0,0,.9); }
+.rk .img img { width: 100%; height: 100%; object-fit: cover; }
+.rk .logo-b { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.6); }
+.rk .logo-b img { width: 100%; height: 100%; }
+.rk .mv { position: absolute; left: 6px; top: 6px; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 99px; background: var(--good); color: var(--ink-1000); }
 
 /* barra de pestañas flotante */
 .tabs { position: absolute; left: 16px; right: 16px; bottom: 22px; height: 62px; border-radius: 31px; background: rgba(30,30,35,.6); border: 1px solid var(--glass-line); backdrop-filter: blur(24px) saturate(1.7); -webkit-backdrop-filter: blur(24px) saturate(1.7); display: flex; justify-content: space-around; align-items: center; padding: 0 6px; z-index: 6; }
@@ -225,6 +263,7 @@ td:first-child { font-weight: 700; }
   <header style="display:flex;flex-direction:column;gap:12px">
     <div class="eyebrow">Orbital · iPhone · Inicio · propuesta combinada</div>
     <h1>La portada arriba, tu tablero debajo</h1>
+    <div class="eyebrow" style="color:var(--ink-300)">Versión 2 · 30 oct · Top 10 con su plataforma, «Porque viste» con el mazo de Para ti y el porqué en turquesa</div>
     <p class="muted">La portada grande de la opción 2 con lo útil de la opción 1. «Seguir viendo» va encimado en el borde de la portada, «Ya salió» y «Sale pronto» se juntan en una sola línea de tiempo, y el selector de Todo, Series y Películas son tres íconos en la barra de arriba, sin quitarle espacio a nada.</p>
     <p class="try">La maqueta funciona: toca los íconos del selector, desliza la portada y las filas, y baja dentro del teléfono.</p>
   </header>
@@ -234,10 +273,12 @@ td:first-child { font-weight: 700; }
       <div class="phone-wrap" data-fit="402"><div class="phone-box"><div class="phone" id="p1"></div></div></div>
       <div class="notes">
         <div class="note"><span class="n">1</span><div><b>Selector en la barra</b><p>Tres íconos en vidrio, al centro de la barra: cuadrícula para Todo, tele para Series y claqueta para Películas. Cambia toda la página, no solo la portada. Al tocar, aparece un momento el nombre («Series») para que no haya que adivinar. No usa ni un punto de alto extra.</p></div></div>
-        <div class="note"><span class="n">2</span><div><b>La portada, como hoy pero de borde a borde</b><p>El arte llega hasta arriba, detrás del reloj y la barra, con el logo del título en lugar del texto. Arriba del logo, el porqué en ámbar («En tendencia en México»). Botones: Ver y Guardar. Se desliza entre 4 títulos.</p></div></div>
+        <div class="note"><span class="n">2</span><div><b>La portada, como hoy pero de borde a borde</b><p>El arte llega hasta arriba, detrás del reloj y la barra, con el logo del título en lugar del texto. Arriba del logo, el porqué en turquesa, el color de la luna de Orbital («En tendencia en México»). Botones: Ver y Guardar. Se desliza entre 4 títulos.</p></div></div>
         <div class="note"><span class="n">3</span><div><b>Seguir viendo, encimado</b><p>La tira entra 40 puntos sobre el borde de la portada, así que se ve sin bajar, también en el iPhone SE. Cada tarjeta dice dónde vas («T2 E7 · quedan 31 min») y se reproduce con un toque.</p></div></div>
         <div class="note"><span class="n">4</span><div><b>Lo nuevo de lo tuyo</b><p>«Ya salió» y «Sale pronto» en una sola línea de tiempo. A la izquierda de la marca HOY, lo que ya puedes ver (punto verde y ▶). A la derecha, lo que viene, más apagado, con cuenta regresiva y una campana para que te avise. Junta tus series (calendario de Trakt) y las películas de Mi lista que ya llegaron a casa.</p></div></div>
-        <div class="note"><span class="n">5</span><div><b>Lo demás, igual y más abajo</b><p>Para ti (con su porqué), Top 10 en tus plataformas y Mi lista se quedan, después del tablero.</p></div></div>
+        <div class="note"><span class="n">5</span><div><b>Porque viste, con el mazo de Para ti</b><p>La misma tarjeta que hoy vive en Para ti, más vistosa: el arte del título que viste se desenfoca de fondo. Toca el mazo o las flechas y cambia lo que viste (Dark, Severance, Dune…), y con él las sugerencias.</p></div></div>
+        <div class="note"><span class="n">6</span><div><b>Top 10 con su plataforma</b><p>Como hoy: eliges la plataforma por su logo y cada número se pinta con su color (rojo Netflix, azul Disney+, morado HBO Max…). Cada póster lleva el logo de dónde está.</p></div></div>
+        <div class="note"><span class="n">7</span><div><b>Mi lista</b><p>Se queda al final, igual que hoy.</p></div></div>
       </div>
     </div>
   </section>
@@ -246,28 +287,6 @@ td:first-child { font-weight: 700; }
     <h2>En el iPhone SE</h2>
     <p class="muted">La pantalla más chica que usas para probar. La portada se acorta y «Seguir viendo» se asoma en la primera pantalla, encima de la barra de pestañas.</p>
     <div class="phone-wrap" data-fit="375"><div class="phone-box"><div class="phone se" id="p2"></div></div></div>
-  </section>
-
-  <section>
-    <h2>Tres formas del selector</h2>
-    <p class="muted">Ninguna usa cápsulas de texto. Toca cada una para probarla.</p>
-    <div class="variants">
-      <div class="var pick">
-        <span class="tag">A · En la barra (la de la maqueta)</span>
-        <div class="demo"><img src="img/tt22202452_background.jpg" alt=""><div class="mbar"><span class="moon"></span><div class="kind" data-kind-demo></div><span class="avatar" style="width:32px;height:32px;font-size:13px">F</span></div></div>
-        <p>Siempre a la vista y en el mismo lugar. Cero espacio extra. Al bajar, se queda en la barra.</p>
-      </div>
-      <div class="var">
-        <span class="tag">B · De lado, sobre la portada</span>
-        <div class="demo"><img src="img/tt22202452_background.jpg" alt=""><div class="side" data-side-demo></div></div>
-        <p>Se siente parte del arte. Pero tapa un poco la imagen y al bajar se pierde.</p>
-      </div>
-      <div class="var">
-        <span class="tag">C · Un solo botón que cambia</span>
-        <div class="demo"><img src="img/tt22202452_background.jpg" alt=""><div class="mbar"><span class="moon"></span><button class="cycle" data-cycle-demo></button><span class="avatar" style="width:32px;height:32px;font-size:13px">F</span></div></div>
-        <p>El más pequeño: un toque pasa de Todo a Series a Películas. Más lento si quieres ir directo a una.</p>
-      </div>
-    </div>
   </section>
 
   <section>
@@ -322,6 +341,21 @@ td:first-child { font-weight: 700; }
     { id: "tt10986410", kind: "series", st: "soon", when: "Miércoles", t: "Ted Lasso", s: "T4 E1", n: "5", u: "días", bell: true },
     { id: "tt1312221", kind: "movie", st: "soon", when: "7 nov", t: "Frankenstein", s: "De Mi lista · en Netflix", n: "8", u: "días" }
   ];
+  var SEEDS = [
+    { id: "tt5753856", t: "Dark", d: "Serie · 2017 · la terminaste en septiembre", rel: [{ id: "tt9319668", kind: "series", t: "1899" }, { id: "tt2866360", kind: "movie", t: "Coherence" }, { id: "tt2085059", kind: "series", t: "Black Mirror" }, { id: "tt2543164", kind: "movie", t: "La llegada" }, { id: "tt0816692", kind: "movie", t: "Interestelar" }] },
+    { id: "tt11280740", t: "Severance", d: "Serie · 2022 · la estás viendo", rel: [{ id: "tt2085059", kind: "series", t: "Black Mirror" }, { id: "tt22202452", kind: "series", t: "Pluribus" }, { id: "tt2866360", kind: "movie", t: "Coherence" }, { id: "tt7366338", kind: "series", t: "Chernobyl" }] },
+    { id: "tt15239678", t: "Dune: Parte dos", d: "Película · 2024", rel: [{ id: "tt1856101", kind: "movie", t: "Blade Runner 2049" }, { id: "tt2543164", kind: "movie", t: "La llegada" }, { id: "tt0816692", kind: "movie", t: "Interestelar" }, { id: "tt9253284", kind: "series", t: "Andor" }] },
+    { id: "tt0903747", t: "Breaking Bad", d: "Serie · 2008", rel: [{ id: "tt5875444", kind: "series", t: "Slow Horses" }, { id: "tt30144839", kind: "movie", t: "Una batalla tras otra" }, { id: "tt7366338", kind: "series", t: "Chernobyl" }, { id: "tt14452776", kind: "series", t: "The Bear" }] },
+    { id: "tt14452776", t: "The Bear", d: "Serie · 2022", rel: [{ id: "tt10986410", kind: "series", t: "Ted Lasso" }, { id: "tt0903747", kind: "series", t: "Breaking Bad" }, { id: "tt5875444", kind: "series", t: "Slow Horses" }] }
+  ];
+  var PLATS = [
+    { b: "netflix", n: "Netflix", tint: "#e60a14", weekly: true, items: [{ id: "tt1312221", kind: "movie", t: "Frankenstein", mv: "NUEVO" }, { id: "tt13443470", kind: "series", t: "Merlina" }, { id: "tt4574334", kind: "series", t: "Stranger Things" }, { id: "tt2085059", kind: "series", t: "Black Mirror" }, { id: "tt5753856", kind: "series", t: "Dark" }, { id: "tt2866360", kind: "movie", t: "Coherence" }] },
+    { b: "disney", n: "Disney+", tint: "#456eff", items: [{ id: "tt9253284", kind: "series", t: "Andor" }, { id: "tt14452776", kind: "series", t: "The Bear", mv: "NUEVO" }, { id: "tt13623632", kind: "series", t: "Alien: Earth" }, { id: "tt2543164", kind: "movie", t: "La llegada" }] },
+    { b: "hbo", n: "HBO Max", tint: "#7a3dff", items: [{ id: "tt3581920", kind: "series", t: "The Last of Us" }, { id: "tt26581740", kind: "movie", t: "Weapons" }, { id: "tt30144839", kind: "movie", t: "Una batalla tras otra" }, { id: "tt7366338", kind: "series", t: "Chernobyl" }, { id: "tt15239678", kind: "movie", t: "Dune: Parte dos" }] },
+    { b: "prime", n: "Prime Video", tint: "#1a99ff", items: [{ id: "tt0816692", kind: "movie", t: "Interestelar" }, { id: "tt1856101", kind: "movie", t: "Blade Runner 2049" }, { id: "tt0118480", kind: "series", t: "Stargate SG-1" }, { id: "tt0903747", kind: "series", t: "Breaking Bad" }] },
+    { b: "appletv", n: "Apple TV+", tint: "#c7c7d1", items: [{ id: "tt22202452", kind: "series", t: "Pluribus", mv: "NUEVO" }, { id: "tt11280740", kind: "series", t: "Severance" }, { id: "tt10986410", kind: "series", t: "Ted Lasso" }, { id: "tt5875444", kind: "series", t: "Slow Horses" }] },
+    { b: "paramount", n: "Paramount+", tint: "#0063ff", items: [{ id: "tt0118480", kind: "series", t: "Stargate SG-1" }, { id: "tt9319668", kind: "series", t: "1899" }, { id: "tt2543164", kind: "movie", t: "La llegada" }] }
+  ];
   var FORYOU = [
     { id: "tt9253284", kind: "series", t: "Andor" }, { id: "tt30144839", kind: "movie", t: "Una batalla tras otra" },
     { id: "tt13443470", kind: "series", t: "Merlina" }, { id: "tt15239678", kind: "movie", t: "Dune: Parte dos" },
@@ -366,8 +400,12 @@ td:first-child { font-weight: 700; }
           '<div class="rows">' +
             '<div class="row"><div class="head"><h4>Seguir viendo ' + use("i-chev") + '</h4><small class="cw-count"></small></div><div class="strip cw-strip fade"></div></div>' +
             '<div class="row"><div class="head"><div><span class="ey">Ya salió y lo que viene</span><h4>Lo nuevo de lo tuyo ' + use("i-chev") + '</h4></div></div><div class="strip tl nl-strip fade"></div></div>' +
-            '<div class="row"><div class="head"><div><span class="ey">Porque viste Dark</span><h4>Para ti ' + use("i-chev") + '</h4></div></div><div class="strip fy-strip fade"></div></div>' +
-            '<div class="row"><div class="head"><div><span class="ey">Lo más visto en México esta semana</span><h4>Top 10 en tus plataformas</h4></div></div><div class="strip top-strip fade"></div></div>' +
+            '<div class="row"><div class="head"><div><span class="ey">Cambia lo que viste y cambian las sugerencias</span><h4>Para ti ' + use("i-chev") + '</h4></div></div>' +
+              '<div class="bc"><div class="bc-bg"></div><div class="bc-top"><button type="button" class="deck" aria-label="Siguiente título"></button>' +
+              '<div class="bc-info"><span class="bc-ey"></span><span class="bc-t"></span><span class="bc-d"></span>' +
+              '<div class="bc-nav"><button type="button" class="gbtn bc-prev" aria-label="Anterior"><svg aria-hidden="true" style="transform:scaleX(-1)"><use href="#i-chev"/></svg></button><button type="button" class="gbtn bc-next" aria-label="Siguiente">' + use("i-chev") + '</button></div></div></div>' +
+              '<div class="strip fy-strip fade"></div></div></div>' +
+            '<div class="row"><div class="head"><div><span class="ey top-ey"></span><h4 class="top-t"></h4></div></div><div class="plats"></div><div class="strip top-strip fade" style="padding-top:14px"></div></div>' +
             '<div class="row"><div class="head"><h4>Mi lista ' + use("i-chev") + '</h4><small class="ml-count"></small></div><div class="strip ml-strip fade"></div></div>' +
           '</div>' +
         '</div>' +
@@ -410,10 +448,7 @@ td:first-child { font-weight: 700; }
         return '<div class="tl-card ' + n.st + '"><span class="tl-when">' + n.when + '</span><div class="tl-poster">' + inner + '</div><div><div class="tl-t">' + n.t + '</div><div class="tl-s">' + n.s + "</div></div></div>";
       }).join("");
 
-      $(".fy-strip").innerHTML = FORYOU.filter(function (x) { return fits(k, x); }).map(function (p) { return poster(p); }).join("");
-      $(".top-strip").innerHTML = TOP.filter(function (x) { return fits(k, x); }).slice(0, 5).map(function (p, i) {
-        return poster(p).replace('<div class="img">', '<div class="img" style="position:relative"><span style="position:absolute;left:6px;bottom:2px;font:800 44px/1 var(--sys-display);color:#fff;text-shadow:0 2px 12px #000;z-index:1">' + (i + 1) + "</span>");
-      }).join("");
+      curKind = k; paintSeed(false); paintTop();
       var ml = MINE.filter(function (x) { return fits(k, x); });
       $(".ml-count").textContent = ml.length;
       $(".ml-strip").innerHTML = ml.map(function (p) { return poster(p); }).join("");
@@ -422,6 +457,44 @@ td:first-child { font-weight: 700; }
       var nowEl = $(".tl-now"), strip = $(".nl-strip");
       if (nowEl) strip.scrollLeft = Math.max(0, nowEl.offsetLeft - strip.clientWidth * 0.62);
     }
+
+    var curKind = "all", seedAt = 0, platAt = 0;
+    function paintSeed(animate) {
+      var n = SEEDS.length, sd = SEEDS[seedAt];
+      var deck = $(".deck");
+      var go = function () {
+        deck.innerHTML = [2, 1, 0].map(function (o) { return '<img src="' + IMG(SEEDS[(seedAt + o) % n].id, "poster") + '" alt="">'; }).join("");
+        deck.classList.remove("toss");
+        $(".bc-bg").style.backgroundImage = "url(" + IMG(sd.id, "background") + ")";
+        $(".bc-ey").textContent = "Porque viste · " + (seedAt + 1) + " de " + n;
+        $(".bc-t").textContent = sd.t; $(".bc-d").textContent = sd.d;
+        var rel = sd.rel.filter(function (x) { return fits(curKind, x); });
+        $(".fy-strip").innerHTML = rel.length ? rel.map(function (p) { return poster(p); }).join("") : '<div class="empty" style="padding:0">Nada de este tipo para este título.</div>';
+        $(".fy-strip").scrollLeft = 0;
+      };
+      if (animate) { deck.classList.add("toss"); setTimeout(go, 220); } else go();
+    }
+    function paintTop() {
+      var pl = PLATS[platAt];
+      var row = $(".top-strip").parentNode; row.style.setProperty("--tint", pl.tint);
+      $(".top-ey").textContent = pl.weekly ? "Lo más visto en México esta semana" : "Lo más visto hoy en México";
+      $(".top-t").textContent = "Top 10 en " + pl.n;
+      $(".plats").innerHTML = PLATS.map(function (x, i) {
+        return '<button type="button" class="plat" style="--tint:' + x.tint + '" aria-label="' + x.n + '" aria-pressed="' + (i === platAt) + '"><img src="img/p_' + x.b + '.png" alt=""></button>';
+      }).join("");
+      var items = pl.items.filter(function (x) { return fits(curKind, x); });
+      $(".top-strip").innerHTML = items.length ? items.map(function (x, i) {
+        return '<div class="rk"><span class="num">' + (i + 1) + '</span><div class="img"><img loading="lazy" src="' + IMG(x.id, "poster") + '" alt="' + x.t + '">' +
+          '<span class="logo-b"><img src="img/p_' + pl.b + '.png" alt=""></span>' + (x.mv ? '<span class="mv">' + x.mv + "</span>" : "") + "</div></div>";
+      }).join("") : '<div class="empty" style="padding:0">Hoy no hay de este tipo en ' + pl.n + ".</div>";
+      $(".top-strip").scrollLeft = 0;
+    }
+    root.addEventListener("click", function (e) {
+      if (e.target.closest(".deck") || e.target.closest(".bc-next")) { seedAt = (seedAt + 1) % SEEDS.length; paintSeed(true); }
+      else if (e.target.closest(".bc-prev")) { seedAt = (seedAt - 1 + SEEDS.length) % SEEDS.length; paintSeed(true); }
+      var pb = e.target.closest(".plat");
+      if (pb) { platAt = Array.prototype.indexOf.call(pb.parentNode.children, pb); var st = $(".top-strip"); st.classList.add("out"); setTimeout(function () { paintTop(); st.classList.remove("out"); }, 160); }
+    });
 
     kindControl($(".kind"), function (k) {
       var fades = root.querySelectorAll(".fade, .hero-track");
