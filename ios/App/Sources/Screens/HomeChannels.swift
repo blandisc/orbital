@@ -156,7 +156,7 @@ struct ChannelsSheet: View {
 
     private func section(_ title: Text, _ picks: [ChannelsModel.Pick]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            title.recipe(.section)
+            DSSectionHead(title: title, level: .section)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3), count: DS.HomeChannels.gridColumns), spacing: DS.Space.s3) {
                 ForEach(picks) { pick in
                     Button { model.toggle(pick) } label: {

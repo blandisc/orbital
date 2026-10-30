@@ -490,7 +490,7 @@ struct TitleView: View {
         let rows = detailRows(model)
         if !rows.isEmpty {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSSectionHead(title: "Detalles")
+                DSSectionHead(title: "Detalles", eyebrow: Text("Los datos de la ficha"))
                 Grid(alignment: .leading, horizontalSpacing: DS.Space.s4, verticalSpacing: DS.Space.s2) {
                     ForEach(rows, id: \.0) { label, value in
                         GridRow {
@@ -528,14 +528,14 @@ struct TitleView: View {
     @ViewBuilder private func rich(_ x: TitleExtras) -> some View {
         VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
             if let trailer = x.trailer {
-                section(title: "Tráiler y extras") {
+                section(title: "Tráiler y extras", meta: Text("Para verla antes de verla")) {
                     VideoClipCard(clip: trailer)
                     ForEach(x.extras) { VideoClipCard(clip: $0) }
                 }
             }
             let people = x.crew + x.cast
             if !people.isEmpty {
-                section(title: "Reparto y equipo") {
+                section(title: "Reparto y equipo", meta: Text("Quién sale y quién la hizo")) {
                     ForEach(people) { p in
                         NavigationLink(value: PersonRoute(id: p.personID, name: p.name)) { PersonFace(name: p.name, role: crewRole(p.role), photo: p.photo) }
                             .buttonStyle(.plain)
@@ -546,12 +546,12 @@ struct TitleView: View {
                 section(title: "La saga", meta: Text(verbatim: saga.name)) { ForEach(saga.parts) { TmdbPoster(title: $0) } }
             }
             if !x.recommendations.isEmpty {
-                section(title: "Más como esto") { ForEach(x.recommendations) { TmdbPoster(title: $0) } }
+                section(title: "Más como esto", meta: Text("Si te gusta esta")) { ForEach(x.recommendations) { TmdbPoster(title: $0) } }
             }
         }
     }
 
-    private func section<Content: View>(title: LocalizedStringKey, meta: Text? = nil, count: Int? = nil, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(title: LocalizedStringKey, meta: Text, count: Int? = nil, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: title, count: count, meta: meta).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {

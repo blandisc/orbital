@@ -113,10 +113,14 @@ struct DSProgress: View {
     }
 }
 
-/// El encabezado de toda sección de la app (dirección «Editorial»): el título grande, a la derecha «Ver todo» si abre la
-/// lista completa (o un dato corto), y debajo una línea gris solo cuando ayuda a decidir. Sin íconos: el color lo pone el
-/// arte de abajo. Una sola pieza: todas las secciones se ven igual.
+/// El encabezado de toda sección de la app (dirección «Editorial»), en dos niveles y nada más:
+/// - `.section`: agrupa varias cosas («Plataformas», «Premios», «Tuyo», «Día por día»). Título grande y solo: sin porqué.
+/// - `.subsection`: una fila o un estante («En tendencia», «Seguir viendo», «Próximas temporadas»). Título mediano con su
+///   porqué arriba en turquesa (`eyebrow`, o `meta` si no hay).
+/// A la derecha, «Ver todo» si abre la lista completa o un dato (cuántos, cuánto pesa), nunca una frase; lo que explica va
+/// en el cuerpo, no bajo el título. Sin íconos: el color lo pone el arte de abajo. `DesignTests` revisa las dos reglas.
 struct DSSectionHead: View {
+    enum Level { case section, subsection }
     let title: Text
     var trailing: Text?
     var action: (() -> Void)?
@@ -128,21 +132,20 @@ struct DSSectionHead: View {
     var meta: Text?
     /// De dónde viene (Trakt, tus complementos, tu Orbital): su sello junto al título.
     var source: ListSource?
-    /// El porqué, en una línea ámbar arriba del título («Lo que dejaste pendiente»), como en una revista.
+    /// El porqué, en una línea turquesa arriba del título («Lo que dejaste pendiente»), como en una revista (solo subsecciones).
     var eyebrow: Text?
-    /// `.group`: el título de un grupo de secciones (Para ti: «Ahora», «Plataformas», «Premios»…), más grande y con su frase
-    /// gris a la derecha (`trailing`).
-    var size: Size = .section
-    enum Size { case section, group }
+    var level: Level = .subsection
 
     init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil,
-         size: Size = .section) {
+         level: Level = .subsection) {
         self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta; self.source = source
-        self.eyebrow = eyebrow; self.size = size
+        self.eyebrow = eyebrow; self.level = level
     }
 
-    init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil) {
-        self.init(title: Text(title), trailing: trailing.map { Text($0) }, action: action, count: count, chevron: chevron, meta: meta, source: source, eyebrow: eyebrow)
+    init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil,
+         level: Level = .subsection) {
+        self.init(title: Text(title), trailing: trailing.map { Text($0) }, action: action, count: count, chevron: chevron, meta: meta, source: source, eyebrow: eyebrow,
+                  level: level)
     }
 
     var body: some View {
@@ -152,10 +155,10 @@ struct DSSectionHead: View {
     }
 
     private var sectionTitle: some View {
-        title.recipe(size == .group ? .title : .section).multilineTextAlignment(.leading)
+        title.recipe(level == .section ? .title : .section).multilineTextAlignment(.leading)
             // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
             // así lo de la derecha no queda alto.
-            .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: size == .group ? .title1 : .title2).capHeight / 2 }
+            .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: level == .section ? .title1 : .title2).capHeight / 2 }
     }
 
     private var head: some View {
@@ -164,7 +167,7 @@ struct DSSectionHead: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 // Un solo lugar para el porqué de una sección en toda la app: arriba del título, en ámbar (como una revista).
                 // Antes unas lo ponían arriba en ámbar y otras abajo en gris.
-                if let line = eyebrow ?? meta { line.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2).multilineTextAlignment(.leading) }
+                if level == .subsection, let line = eyebrow ?? meta { line.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2).multilineTextAlignment(.leading) }
                 // El título nunca se parte a media palabra por el sello («Aproba-das por…»). Un ícono (el jitomate) cabe
                 // siempre al lado; un sello con nombre, si no caben en un renglón, cede y baja bajo el título.
                 if let source, source.isIcon {
@@ -182,7 +185,7 @@ struct DSSectionHead: View {
                         if let source { SourceBadge(source: source) }
                     }
                 } }
-                if eyebrow != nil, let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
+                if level == .subsection, eyebrow != nil, let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
             }
             Spacer(minLength: DS.Space.s2)
             if let trailing {

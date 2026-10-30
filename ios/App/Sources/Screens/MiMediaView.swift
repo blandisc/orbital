@@ -107,7 +107,7 @@ struct MiMediaView<Top: View>: View {
         let shown = model.shown
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             if !shown.isEmpty {
-                DSSectionHead(title: model.filter == .series ? Text("Series") : model.filter == .movies ? Text("Películas") : Text("Todo"), count: shown.count)
+                DSSectionHead(title: model.filter == .series ? Text("Series") : model.filter == .movies ? Text("Películas") : Text("Todo"), count: shown.count, level: .section)
                     .padding(.horizontal, DS.Space.gutter)
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], alignment: .leading, spacing: DS.Space.s4) {
@@ -143,7 +143,8 @@ struct MiMediaView<Top: View>: View {
     /// Lo que no se reconoció por su nombre: corrígelo a mano y se recuerda.
     private func unmatched(_ model: MiMediaModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            DSSectionHead(title: Text("Sin ficha"), count: model.unmatched.count, meta: Text("No los reconocí por su nombre: elige cuál es."))
+            DSSectionHead(title: Text("Sin ficha"), count: model.unmatched.count, level: .section)
+            Text("No los reconocí por su nombre: elige cuál es.").recipe(.footnote, color: DS.textMuted)
             ForEach(model.unmatched, id: \.id) { file in
                 HStack(spacing: DS.Space.s3) {
                     Image(systemName: "questionmark.square.dashed").foregroundStyle(DS.textMuted)
@@ -273,7 +274,7 @@ struct MiMediaTitleView: View {
     /// Una película: sus versiones (la de la TV y la de bajar) y lo que dice cada archivo.
     private func versions(_ t: OneDriveLibrary.Title, _ model: MiMediaModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: t.entries.count > 1 ? Text("Versiones en tu carpeta") : Text("El archivo"))
+            DSSectionHead(title: t.entries.count > 1 ? Text("Versiones en tu carpeta") : Text("El archivo"), level: .section)
             ForEach(t.entries, id: \.file.id) { e in
                 let d = e.details
                 // Solo los idiomas que dice el nombre (sin ninguno, el lector supone inglés: eso no se enseña).

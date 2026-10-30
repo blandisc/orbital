@@ -26,7 +26,7 @@ struct YearView: View {
                         stat(Text(verbatim: genreName(r.topGenre)), Text("tu género"))
                     }
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        DSSectionHead(title: "Día por día", meta: Text("\(r.movies) películas · \(r.episodes) episodios"))
+                        DSSectionHead(title: Text("Día por día"), trailing: Text("\(r.movies) películas · \(r.episodes) episodios"), level: .section)
                         ScrollView(.horizontal, showsIndicators: false) { heatMap(r) }
                             .defaultScrollAnchor(.trailing)   // lo reciente a la vista
                         HStack(spacing: DS.Space.s4) {
@@ -38,7 +38,7 @@ struct YearView: View {
                     .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
                     if !r.top.isEmpty {
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
-                            DSSectionHead(title: "Lo que más viste")
+                            DSSectionHead(title: "Lo que más viste", level: .section)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                                     ForEach(r.top) { t in

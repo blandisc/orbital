@@ -39,6 +39,20 @@ e ink-850 en el iPhone) van en el JSON con su `porque`.
 (lg, negrita), `card-title` (md, medium), `body` (md), `secondary` (sm), `footnote` (xs), `caption` (2xs), `eyebrow` (sm,
 medium) y `data` (xs, números tabulares); solo en la TV, `heading` (xl: un encabezado de zona) y `hero` (el título del héroe). **Un componente usa la receta, nunca el tamaño de la escala** (`--text-*` es del CSS de tokens; la prueba lo vigila).
 
+**Jerarquía de encabezados (iPhone, 30 oct 2026):** dos niveles y nada más, una sola pieza (`DSSectionHead`).
+
+| Nivel | Receta | Lleva | Ejemplos |
+|---|---|---|---|
+| Pantalla | barra nativa / `display` | — | «Para ti», «Buscar» |
+| Sección (`level: .section`) | `title` | solo el título (y a la derecha un dato: cuántos, cuánto pesa) | Plataformas, Premios, Tuyo, Temporadas, Día por día, Descargando |
+| Subsección (por omisión) | `section` | su porqué arriba en `eyebrow` turquesa (`--color-eyebrow`), siempre | En tendencia, Seguir viendo, Próximas temporadas, Reparto y equipo |
+| Pieza | `card-title` | — | el nombre en una tarjeta o renglón |
+| Cuerpo · secundario · pie · etiqueta · dato | `body` · `secondary` · `footnote` · `caption` · `data` | — | lo que explica, datos, notas, placas, números |
+
+Una sección agrupa varias cosas; una subsección es una fila o un estante (las filas del Inicio, los estantes de «Ahora», las
+filas de la ficha). Lo que explica una sección va en el cuerpo, debajo, nunca como subtítulo. `DesignTests`
+(`testSectionsHaveNoReasonAndSubsectionsAlwaysDo`) revisa las dos reglas.
+
 **Texto tenue vs. adorno:** `--color-text-faint` (blanco al 50 %, ≥ 4,5:1) es texto que se lee; `--color-decorative`
 (ink-500) solo adornos que no se leen, como la cifra grande del Top 10.
 

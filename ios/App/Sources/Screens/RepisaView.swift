@@ -60,7 +60,7 @@ struct RepisaView: View {
 
     private func shelf(_ title: Text, _ items: [CanonCollection], _ model: RepisaModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            title.recipe(.section)
+            DSSectionHead(title: title, level: .section)
             // Tres por repisa; si son dos (las listas), dos centrados.
             let perRow = min(3, max(1, items.count))
             ForEach(Array(stride(from: 0, to: items.count, by: perRow)), id: \.self) { i in

@@ -51,7 +51,7 @@ struct PersonView: View {
                         }
                     }
                     if let bio = person?.biography, !bio.isEmpty { biography(bio) }
-                    if let credits = person?.credits, !credits.isEmpty { DSSectionHead(title: "Filmografía") }
+                    if let credits = person?.credits, !credits.isEmpty { DSSectionHead(title: "Filmografía", eyebrow: Text("Dónde la has visto")) }
                 }
                 .padding(.horizontal, DS.Space.gutter)
                 if let credits = person?.credits, !credits.isEmpty {

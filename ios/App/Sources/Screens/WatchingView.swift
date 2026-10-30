@@ -143,7 +143,7 @@ struct WatchingView: View {
     }
 
     private func section(_ title: Text, @ViewBuilder _ content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) { title.recipe(.section); content() }
+        VStack(alignment: .leading, spacing: DS.Space.s3) { DSSectionHead(title: title, level: .section); content() }
     }
 
     private func legend(_ color: Color, _ text: Text) -> some View {
