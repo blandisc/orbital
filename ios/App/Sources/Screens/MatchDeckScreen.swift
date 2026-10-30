@@ -17,7 +17,7 @@ struct MatchDeckScreen: View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text("Encuentra tu match perfecto").recipe(.eyebrow, color: DS.eyebrow)
+                    Eyebrow(text: Text("Encuentra tu match perfecto"), reason: true)
                     Text("¿Qué vemos hoy?").recipe(.title)
                 }
                 Spacer()
@@ -70,7 +70,7 @@ struct MatchDeckScreen: View {
                 .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
                 .accessibilityLabel(Text("Descartar")).accessibilityIdentifier("match-discard")
             Button { if let s = model.cards.first { dismiss(); onPlay(s.route) } } label: { Image(systemName: "play.fill").font(DS.TextRecipe.title.font) }
-                .buttonStyle(.borderedProminent).buttonBorderShape(.circle).controlSize(.large).tint(DS.solidPrimary).foregroundStyle(DS.onSolidPrimary)
+                .dsSolidPrimaryButton(shape: .circle).controlSize(.large)
                 .accessibilityLabel(Text("Ver")).accessibilityIdentifier("match-play")
             Button { if let s = model.cards.first { Task { await model.save(s) } } } label: { Image(systemName: "plus").font(DS.TextRecipe.title.font) }
                 .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)

@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import pytest
 
@@ -33,7 +34,11 @@ def test_stop_closes_whole_tree_of_cmd_wrapper(tmp_path):
     child = tmp_path / "child.py"
     child.write_text(f"import os, time\nopen(r'{pid_file}', 'w').write(str(os.getpid()))\ntime.sleep(60)\n")
     wrapper = tmp_path / "launch-fake.cmd"
-    wrapper.write_text(f'@echo off\nstart /wait "" "{sys.executable}" "{child}" %*\n')
+    # pythonw: `start` le abría a python.exe su propia consola, y en la consola-tele salía una Terminal encima de lo que
+    # estuvieras viendo (visto el 2026-10-30 mientras corría la suite).
+    pythonw = Path(sys.executable).with_name("pythonw.exe")
+    exe = pythonw if pythonw.exists() else Path(sys.executable)
+    wrapper.write_text(f'@echo off\nstart /wait "" "{exe}" "{child}" %*\n')
 
     exited = []
     launcher = Launcher(on_exit=lambda item_id, title, secs: exited.append(item_id))

@@ -41,7 +41,7 @@ struct PersonView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s5) {
+            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 VStack(alignment: .leading, spacing: DS.Space.s5) {
                     HStack(alignment: .top, spacing: DS.Space.s4) {
                         PersonPhoto(name: route.name, photo: person?.photo, size: DS.Rich.personPhoto)
@@ -51,7 +51,7 @@ struct PersonView: View {
                         }
                     }
                     if let bio = person?.biography, !bio.isEmpty { biography(bio) }
-                    if let credits = person?.credits, !credits.isEmpty { DSSectionHead(title: "Filmografía") }
+                    if let credits = person?.credits, !credits.isEmpty { DSSectionHead(title: "Filmografía", eyebrow: Text("Dónde la has visto")) }
                 }
                 .padding(.horizontal, DS.Space.gutter)
                 if let credits = person?.credits, !credits.isEmpty {

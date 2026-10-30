@@ -71,4 +71,29 @@ final class WatchingModelTests: XCTestCase {
         XCTAssertEqual(again.plays.count, 1, "lo traído se guardó en el iPhone")
         XCTAssertTrue(again.loaded)
     }
+
+    func testSinRedYSinNadaGuardadoEsUnError() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.http.offline = true
+        let model = WatchingModel(rig.services)
+        await model.load()
+        XCTAssertTrue(model.loaded)
+        XCTAssertTrue(model.failed, "sin red no es «nada en este periodo»")
+        rig.http.offline = false
+        rig.http.prefix["https://api.trakt.tv/sync/history"] = []
+        await model.load(force: true)
+        XCTAssertFalse(model.failed)
+    }
+
+    func testUnaListaFamosaQueNoLlegaSeMarca() async throws {
+        let rig = try ServicesRig()
+        rig.http.offline = true
+        let model = RepisaModel(rig.services, watched: { [] })
+        await model.load()
+        XCTAssertEqual(model.failedLists, ["criterion", "top250"])
+        rig.http.offline = false
+        rig.http.prefix["https://mdblist.com/lists/"] = [["title": "Uno", "imdb_id": "tt1", "mediatype": "movie", "release_year": 2000]]
+        await model.load()
+        XCTAssertTrue(model.failedLists.isEmpty)
+    }
 }

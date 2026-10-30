@@ -39,6 +39,50 @@ e ink-850 en el iPhone) van en el JSON con su `porque`.
 (lg, negrita), `card-title` (md, medium), `body` (md), `secondary` (sm), `footnote` (xs), `caption` (2xs), `eyebrow` (sm,
 medium) y `data` (xs, números tabulares); solo en la TV, `heading` (xl: un encabezado de zona) y `hero` (el título del héroe). **Un componente usa la receta, nunca el tamaño de la escala** (`--text-*` es del CSS de tokens; la prueba lo vigila).
 
+**Jerarquía de encabezados (iPhone, 30 oct 2026):** dos niveles y nada más, una sola pieza (`DSSectionHead`).
+
+| Nivel | Receta | Lleva | Ejemplos |
+|---|---|---|---|
+| Pantalla | barra nativa / `display` | — | «Para ti», «Buscar» |
+| Sección (`level: .section`) | `title` | solo el título (y a la derecha un dato: cuántos, cuánto pesa) | Plataformas, Premios, Tuyo, Temporadas, Día por día, Descargando |
+| Subsección (por omisión) | `section` | su porqué arriba en `eyebrow` turquesa (`--color-eyebrow`), siempre | En tendencia, Seguir viendo, Próximas temporadas, Reparto y equipo |
+| Pieza | `card-title` | — | el nombre en una tarjeta o renglón |
+| Cuerpo · secundario · pie · etiqueta · dato | `body` · `secondary` · `footnote` · `caption` · `data` | — | lo que explica, datos, notas, placas, números |
+
+Una sección agrupa varias cosas; una subsección es una fila o un estante (las filas del Inicio, los estantes de «Ahora», las
+filas de la ficha). Lo que explica una sección va en el cuerpo, debajo, nunca como subtítulo. `DesignTests`
+(`testSectionsHaveNoReasonAndSubsectionsAlwaysDo`) revisa las dos reglas.
+
+### Lenguaje de diseño del iPhone (una pieza por papel)
+
+Si hay dos maneras de hacer lo mismo, una sobra. Antes de armar algo en una pantalla se busca su pieza aquí; si no existe, se
+agrega al catálogo (`ios/App/Sources/Design/`) y a esta tabla. `DesignTests` revisa las que dicen «prueba».
+
+| Papel | La pieza | Regla | Prueba |
+|---|---|---|---|
+| Encabezado | `DSSectionHead(level:)` | Sección sola; subsección con su porqué (ver arriba). | sí |
+| Porqué | `Eyebrow(reason: true)` · `DS.eyebrow` | Siempre turquesa, arriba de su título. Las excepciones dicen por qué (`ds-exception:`): los rótulos de historia del Wrapped (ámbar), la ruleta de Los Simpson (su amarillo), «En la tele» sobre el arte. | sí |
+| Botón principal | `dsPrimaryButton()` (vidrio) · `dsSolidPrimaryButton()` (sólido) | Sólido a todo lo ancho con esquinas de tarjeta (Ver, Continuar, Ver resultados, Ver tu Wrapped); en línea dentro de un renglón, `shape: .capsule`; en una fila de íconos, `shape: .circle`. El de vidrio, junto a otros botones de vidrio. | sí |
+| Botón secundario | `dsSecondaryButton()` | Con borde, en cápsula y del color del texto; el tamaño, con `controlSize`. | sí |
+| Botón de ícono | `.dsIconButtonLook()` · `DSIconButton` | Vidrio en círculo; sólido donde el vidrio no se lleva bien. | — |
+| Selector | `DSSegmented` · `DSKindFilter` | `DSKindFilter` para Todo · Series · Películas (con íconos en las franjas); `DSSegmented` para todo lo demás (periodos, Quiero/Quitar, Por idioma/Todas). | sí |
+| Vacío | `DSEmptyState` | Ícono, título y una línea; sus botones, de vidrio. | sí |
+| Tarjeta | `DS.surface` · `DS.Radius.lg` | Las tarjetas y renglones van en `surface` con `Radius.lg`; las destacadas (una por pantalla: «¿Qué vemos hoy?», «La temporada», «Por lo que viste») en `Radius.xl`. Los rellenos dentro de una tarjeta, `DS.fill`. | — |
+| Etiqueta | íconos antes que texto | Nada de cápsulas de texto para estados; un ícono o el dato tal cual (`DSBadge` solo sobre el arte o «HOY»/«Nuevo»). | — |
+
+**Espacios.** Entre secciones de una pantalla, `DS.Editorial.sectionGap` (36) en todas: Inicio, Para ti, Buscar, Lo que ves,
+Colecciones, Mi media, una persona, la hoja de Canales. Del encabezado a su contenido, `DS.Space.s3`. Entre renglones o
+tarjetas de una lista, `DS.Space.s2`. A los lados, `DS.Space.gutter`. Los grupos dentro de una misma lista (las décadas de una
+colección) van más juntos (`s5`): no son secciones. En Para ti, las colecciones en carrusel se separan con `groupGap` porque su
+reflejo ya pone el resto del aire.
+
+**Títulos de navegación.** Las pestañas (Para ti, Descargas, Buscar) llevan el título grande en el renglón de los botones
+(`.inlineLarge`); Inicio, el logotipo. Lo que se abre encima va en `.inline`, salvo las pantallas con su propio encabezado en
+grande (Lo que ves, Colecciones).
+
+**Acentos.** Turquesa: el porqué y lo que está en vivo. Ámbar: las estrellas de calificar y los avisos. El verde de `success`:
+lo que ya se puede ver («HOY», «Nuevo»). El color del arte: el botón principal de un título y su fondo.
+
 **Texto tenue vs. adorno:** `--color-text-faint` (blanco al 50 %, ≥ 4,5:1) es texto que se lee; `--color-decorative`
 (ink-500) solo adornos que no se leen, como la cifra grande del Top 10.
 
@@ -200,7 +244,9 @@ letras que bajan: g, p, j, y).
 - **El mando, solo por `core/pads.js`.** Nadie llama `navigator.getGamepads()` ni escucha `gamepadconnected` en la ventana:
   con solo pedirlos una vez, Edge deja un hilo leyendo el hardware para siempre (~14 % de un núcleo). Se piden desde un
   iframe que, con Orbital quieta, se suelta; el primer botón llega entonces del servidor (`shell.forward_to_ui`, que ya lee
-  XInput) y la interfaz vuelve a tomar el mando. Solo si el servidor ve un mando XInput y todos los que ve Edge lo son.
+  XInput) y la interfaz vuelve a tomar el mando. Solo si el servidor ve un mando XInput y todos los que ve Edge lo son. Un
+  mando que XInput no ve (PlayStation, Switch Pro) no podía despertarla: el servidor lo busca con winmm cada 3 s
+  (`GamepadWatcher.others`), manda `pad-wake` y la interfaz deja de soltar el suyo mientras siga conectado.
 - **Con el dedo, primero se enfoca y luego se abre.** El toque que cambia del mando (o el teclado) al dedo solo enfoca, aunque
   caiga en lo que ya estaba enfocado: eso lo eligió el mando, no tú (`justTouched` en `main.js`).
 - **Pistas del pie**: dicen lo que hace cada botón *aquí*; nada de pistas que no apliquen (p. ej. «Cambiar

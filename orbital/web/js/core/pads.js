@@ -8,6 +8,7 @@
  */
 let frame = null;
 const connected = new Set();
+const disconnected = new Set();
 
 /** Arma el marco (si no estaba): desde aquí, Edge lee los mandos. */
 export function acquire() {
@@ -18,6 +19,7 @@ export function acquire() {
   frame.setAttribute("aria-hidden", "true");
   document.body.append(frame);
   frame.contentWindow.addEventListener("gamepadconnected", ({ gamepad }) => connected.forEach((fn) => fn(gamepad)));
+  frame.contentWindow.addEventListener("gamepaddisconnected", ({ gamepad }) => disconnected.forEach((fn) => fn(gamepad)));
 }
 
 /** Suelta el marco: Edge deja de leer los mandos (y de gastar) hasta el siguiente acquire(). */
@@ -36,4 +38,9 @@ export const reading = () => !!frame;
 /** Un mando que llega (mientras se están leyendo). */
 export function onConnected(fn) {
   connected.add(fn);
+}
+
+/** Un mando que se va (mientras se están leyendo). */
+export function onDisconnected(fn) {
+  disconnected.add(fn);
 }

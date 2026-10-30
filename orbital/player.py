@@ -594,6 +594,10 @@ class OrbitalPlayer(PlayerScreen):
         self._held = False
         self.mpv.command("set_property", "pause", False)
         self._ask("pause", False)
+        if getattr(self, "_hud_visible", False):
+            # La barra que se dibujó durante la espera decía «En pausa · 0:00» y se quedaba encima del tráiler ya corriendo
+            # (visto en la TV el 2026-10-30): se redibuja como reproduciendo y se va sola.
+            self.show_hud(paused=False)
 
     def _drops_tick(self, segment: Segment, paused: bool) -> None:
         """Cada segundo, los cuadros que mpv tiró. Un tirón (varios de golpe) va al registro con su hora y su minuto, si fue

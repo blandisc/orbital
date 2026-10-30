@@ -297,6 +297,53 @@ def _load_vendor():
     return vendor
 
 
+class _JoyInfoEx(ctypes.Structure):
+    _fields_ = [(n, ctypes.c_ulong) for n in ("dwSize", "dwFlags", "dwXpos", "dwYpos", "dwZpos", "dwRpos", "dwUpos",
+                                              "dwVpos", "dwButtons", "dwButtonNumber", "dwPOV", "dwReserved1", "dwReserved2")]
+
+
+class _JoyCaps(ctypes.Structure):
+    _fields_ = [("wMid", ctypes.c_ushort), ("wPid", ctypes.c_ushort), ("szPname", ctypes.c_wchar * 32)] + \
+        [(n, ctypes.c_uint) for n in ("wXmin", "wXmax", "wYmin", "wYmax", "wZmin", "wZmax", "wNumButtons", "wPeriodMin",
+                                      "wPeriodMax", "wRmin", "wRmax", "wUmin", "wUmax", "wVmin", "wVmax", "wCaps",
+                                      "wMaxAxes", "wNumAxes", "wMaxButtons")] + \
+        [("szRegKey", ctypes.c_wchar * 32), ("szOEMVxD", ctypes.c_wchar * 260)]
+
+
+def _load_joysticks():
+    """winmm: la marca y el modelo de cada mando que Windows ve como joystick (también los que XInput no ve: PlayStation,
+    Switch Pro, DInput). Repasar los 16 lugares cuesta ~65 ms, por eso solo se hace de vez en cuando. None sin winmm."""
+    try:
+        winmm = ctypes.WinDLL("winmm")
+    except OSError:
+        return None
+
+    def joysticks() -> list[tuple[int, int]]:
+        winmm.joyConfigChanged(0)  # sin esto winmm no ve los mandos que se conectaron después de la primera lectura
+        found = []
+        for i in range(16):
+            info = _JoyInfoEx(dwSize=ctypes.sizeof(_JoyInfoEx), dwFlags=0xFF)
+            if winmm.joyGetPosEx(i, ctypes.byref(info)) != 0:
+                continue
+            caps = _JoyCaps()
+            if winmm.joyGetDevCapsW(i, ctypes.byref(caps), ctypes.sizeof(caps)) == 0:
+                found.append((caps.wMid, caps.wPid))
+        return found
+    return joysticks
+
+
+def others(joysticks: list[tuple[int, int]], xinput: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Los mandos que ve winmm y XInput no (cada XInput también sale en winmm, con la misma marca y modelo)."""
+    left = list(xinput)
+    out = []
+    for device in joysticks:
+        if device in left:
+            left.remove(device)
+        else:
+            out.append(device)
+    return out
+
+
 _watcher: GamepadWatcher | None = None  # el que sondea los mandos (uno por Orbital)
 
 
@@ -404,6 +451,35 @@ class GamepadWatcher:
         # ni al despertar (ver QUIET).
         self.on_pad: Callable[[int, bool, tuple[int, int] | None], None] | None = None
         self.connected = False  # hay al menos un mando XInput encendido (la interfaz quieta suelta el suyo solo si sí)
+        # Con la interfaz quieta (soltó el mando del navegador), un mando que XInput no ve (PlayStation, Switch Pro) no
+        # tenía quién la despertara: sus botones no llegaban a ningún lado. Mientras `watch_others`, cada OTHERS_EVERY se
+        # buscan y, si hay uno, `on_others()` despierta a la interfaz (y ésta, al ver `others`, ya no lo suelta).
+        self.watch_others = False
+        self.on_others: Callable[[], None] | None = None
+        self._joysticks = _load_joysticks() if sys.platform == "win32" else None
+        self._others_at = 0.0
+
+    OTHERS_EVERY = 3.0
+
+    def others(self) -> list[tuple[int, int]]:
+        """Los mandos conectados que el servidor no lee (solo los ve el navegador). Cuesta ~65 ms: no en cada vuelta."""
+        if self._joysticks is None:
+            return []
+        try:
+            return others(self._joysticks(), list(self.devices.values()))
+        except OSError:
+            return []
+
+    def _check_others(self, now: float) -> None:
+        if not self.watch_others or self.on_others is None or now - self._others_at < self.OTHERS_EVERY:
+            return
+        self._others_at = now
+        if self.others():
+            self.watch_others = False  # una vez: la interfaz despierta y dice otra vez si suelta o no
+            try:
+                self.on_others()
+            except Exception:  # noqa: BLE001
+                log.exception("Error despertando a la interfaz por un mando")
 
     def start(self) -> bool:
         if sys.platform != "win32":
@@ -533,4 +609,5 @@ class GamepadWatcher:
                     except Exception:  # noqa: BLE001
                         log.exception("Error en el control remoto")
             self.connected = any(was_connected)
+            self._check_others(now)
             self._stop.wait(self.POLL if self.connected else self.POLL_IDLE)

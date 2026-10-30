@@ -42,7 +42,7 @@ struct RepisaView: View {
         let model = env.repisa
         let _ = model.track()
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s6) {
+            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 (model.seenTotal == 0 ? Text("Empieza tu repisa: lo que veas del canon se pinta aquí") : Text("\(model.seenTotal) del canon en tu repisa"))
                     .recipe(.secondary, color: DS.textMuted)
                 shelf(Text("Premios"), model.collections.filter { $0.family == .award }, model)
@@ -60,7 +60,7 @@ struct RepisaView: View {
 
     private func shelf(_ title: Text, _ items: [CanonCollection], _ model: RepisaModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            title.recipe(.section)
+            DSSectionHead(title: title, level: .section)
             // Tres por repisa; si son dos (las listas), dos centrados.
             let perRow = min(3, max(1, items.count))
             ForEach(Array(stride(from: 0, to: items.count, by: perRow)), id: \.self) { i in
@@ -146,7 +146,7 @@ struct RepisaCollectionView: View {
                     Label(newestFirst ? "Más recientes" : "Más antiguas", systemImage: "arrow.up.arrow.down").recipe(.footnote).fontWeight(.semibold)
                         .lineLimit(1).fixedSize()
                 }
-                .buttonStyle(.bordered).buttonBorderShape(.roundedRectangle).tint(DS.text)
+                .dsSecondaryButton()
                 .accessibilityIdentifier("repisa-order")
             }
         }
@@ -188,7 +188,7 @@ struct RepisaCollectionView: View {
             }
             Spacer(minLength: 0)
             Button { onOpenTitle(route(item)) } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold) }
-                .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).tint(DS.solidPrimary).foregroundStyle(DS.onSolidPrimary)
+                .dsSolidPrimaryButton(shape: .capsule)   // en línea, dentro de un renglón: cápsula
         }
         .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular.tint(DS.Rating.glassTint).interactive(), in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
@@ -214,7 +214,7 @@ struct RepisaCollectionView: View {
             }
             HStack(spacing: DS.Space.s3) {
                 Button { picked = nil; onOpenTitle(route(item)) } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold).frame(maxWidth: .infinity) }
-                    .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).controlSize(.large).tint(DS.solidPrimary).foregroundStyle(DS.onSolidPrimary)
+                    .dsSolidPrimaryButton().controlSize(.large)
                 if !seen {
                     Button { place(item, model) } label: { Text("Ya la vi").frame(maxWidth: .infinity) }
                         .buttonStyle(.glass).buttonBorderShape(.capsule).controlSize(.large)

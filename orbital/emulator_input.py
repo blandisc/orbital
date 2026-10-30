@@ -314,6 +314,29 @@ def _ini_get(text: str, section: str, key: str) -> str | None:
     return None
 
 
+def dolphin_borderless(config_dir: Path) -> bool:
+    """Pantalla completa SIN bordes en Dolphin (GFX.ini › [Settings] BorderlessFullscreen). La exclusiva de Direct3D 11 es
+    dueña de la pantalla: con Home, el juego congelado no la soltaba y en la tele seguía su cuadro quieto aunque Orbital
+    tuviera el foco (y los botones iban a un Orbital invisible; visto en la tele el 2026-10-30, al segundo Home). Sin
+    bordes, Windows sigue componiendo y Orbital sale encima al instante. Solo cambia el archivo si hace falta."""
+    path = config_dir / "GFX.ini"
+    try:
+        text = path.read_text(encoding="utf-8") if path.exists() else ""
+    except OSError:
+        return False
+    if _ini_get(text, "Settings", "BorderlessFullscreen") == "True":
+        return False
+    if "[Settings]" not in text.splitlines():
+        text = (text.rstrip("\r\n") + "\n\n" if text.strip() else "") + "[Settings]\n"
+    try:
+        if path.exists():
+            _backup(path)
+        path.write_text(_ini_set(text, "Settings", "BorderlessFullscreen", "True"), encoding="utf-8")
+    except OSError:
+        return False
+    return True
+
+
 def dolphin_ports(slots: list[int]) -> list[int]:
     """El lugar de XInput de cada puerto: primero los jugadores en orden, luego los lugares libres (para quien llegue)."""
     return (list(slots) + [s for s in range(DOLPHIN_PORTS) if s not in slots])[:DOLPHIN_PORTS]
@@ -363,17 +386,21 @@ def arrange_for(argv: list[str], order: list[Device], slots: list[int] | None = 
     """Antes de abrir un emulador: los jugadores en `order` (marca y modelo) y `slots` (sus lugares de XInput, para
     Dolphin). Cuántos archivos tocó. Nunca falla."""
     try:
-        if not argv or not order:
+        if not argv:
             return 0
         from .emulator_clock import _configs, emulator_exe
 
         exe = emulator_exe(argv)
         if exe is not None and exe.name.lower() == "dolphin.exe":
             folder = dolphin_config_dir(exe)
-            changed = arrange_dolphin(folder, slots or []) if folder else 0
+            if folder and dolphin_borderless(folder):
+                log.info("Dolphin: pantalla completa sin bordes (la exclusiva tapaba a Orbital al volver con Home)")
+            changed = arrange_dolphin(folder, slots or []) if folder and order else 0
             if changed:
                 log.info("Controles de Dolphin: puerto 1 = mando %d (%d archivo(s))", (slots or [0])[0] + 1, changed)
             return changed
+        if not order:
+            return 0
         ryujinx, yuzu = _configs(exe)
         changed = sum(arrange_eden(p, order, versions) for p in yuzu)
         if ryujinx:

@@ -207,10 +207,8 @@ struct SettingsView: View {
     // MARK: páginas
     @ViewBuilder private func appearance(_ model: SettingsModel) -> some View {
         Section("Modo") {
-            Picker("Modo", selection: Binding(get: { model.settings.appearance }, set: { v in model.update { $0.appearance = v } })) {
-                Text("Como el iPhone").tag("system"); Text("Claro").tag("light"); Text("Oscuro").tag("dark")
-            }
-            .pickerStyle(.segmented)
+            DSSegmented(options: [("system", "Como el iPhone"), ("light", "Claro"), ("dark", "Oscuro")],
+                        selection: Binding(get: { model.settings.appearance }, set: { v in model.update { $0.appearance = v } }))
         }
         .listRowBackground(DS.surface)
         Section("Ícono de la app") { AppIconPicker() }.listRowBackground(DS.surface)

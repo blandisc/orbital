@@ -6963,6 +6963,17 @@
         }
       }
     },
+    "Dónde la has visto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where you've seen them"
+          }
+        }
+      }
+    },
     "Dónde te quedaste, qué te falta…": {
       "extractionState": "manual",
       "localizations": {
@@ -9115,6 +9126,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "This week in Mexico"
+          }
+        }
+      }
+    },
+    "Esta semana en tu país": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week in your country"
           }
         }
       }
@@ -12341,6 +12363,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add-ons are search engines: they find versions of each movie and Real-Debrid delivers them."
+          }
+        }
+      }
+    },
+    "Los datos de la ficha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The details"
           }
         }
       }
@@ -16053,6 +16086,17 @@
         }
       }
     },
+    "Para verla antes de verla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A look before you watch"
+          }
+        }
+      }
+    },
     "Para verlos sin conexión, uno tras otro": {
       "extractionState": "manual",
       "localizations": {
@@ -16269,6 +16313,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Movies and series"
+          }
+        }
+      }
+    },
+    "Películas y series, ahora mismo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies and shows, right now"
           }
         }
       }
@@ -17489,6 +17544,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unmute"
+          }
+        }
+      }
+    },
+    "Quién sale y quién la hizo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Who's in it and who made it"
           }
         }
       }
@@ -19451,6 +19517,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "If it doesn't hear you"
+          }
+        }
+      }
+    },
+    "Si te gusta esta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you like this one"
           }
         }
       }
@@ -24424,6 +24501,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "One moment"
+          }
+        }
+      }
+    },
+    "Una lista para ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A list for you"
           }
         }
       }

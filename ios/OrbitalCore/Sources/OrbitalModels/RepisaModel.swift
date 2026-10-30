@@ -8,6 +8,8 @@ public final class RepisaModel: ObservableModel {
     public private(set) var collections: [CanonCollection] { didSet { changed() } }
     public private(set) var watched: Set<String> = [] { didSet { changed() } }
     public private(set) var loaded = false { didSet { changed() } }
+    /// Las listas famosas que no llegaron (sin red, MDBList caído) y no hay copia guardada: la pantalla ofrece «Reintentar».
+    public private(set) var failedLists: Set<String> = [] { didSet { changed() } }
 
     /// Cuánto se guarda una lista famosa antes de volver a pedirla (cambian poco).
     public nonisolated static let listTTL: TimeInterval = 7 * 86400
@@ -38,7 +40,12 @@ public final class RepisaModel: ObservableModel {
                 group.addTask { [http = services.http] in (list.id, try? await Canon.list(http: http, user: list.user, slug: list.slug)) }
             }
             for await (id, items) in group {
-                guard let items, !items.isEmpty else { continue }
+                guard let items, !items.isEmpty else {
+                    // Sin copia guardada, falló de verdad; con copia (aunque vieja), se sigue mostrando esa.
+                    if collection(id)?.items.isEmpty ?? true { failedLists.insert(id) }
+                    continue
+                }
+                failedLists.remove(id)
                 replace(id, items)
                 save(id, items)
             }

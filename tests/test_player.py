@@ -1173,6 +1173,17 @@ def test_a_clip_opens_paused_and_starts_when_released_without_the_pause_bar():
     assert len(mpv.sent) == sent
 
 
+def test_a_pause_bar_drawn_while_the_clip_waited_does_not_stay_over_it():
+    """Si la barra salió durante la espera («En pausa · 0:00»), al soltar el tráiler se redibuja como reproduciendo: antes
+    se quedaba encima del tráiler ya corriendo (TV, 2026-10-30)."""
+    p, mpv = make_player(pause=True)
+    p._held = True
+    p.show_hud()
+    assert "En pausa" in (mpv.overlays[1] or "")
+    p.release_start()
+    assert "En pausa" not in (mpv.overlays[1] or "")
+
+
 def test_video_memory_is_checked_before_opening_mpv():
     """Antes de abrir mpv (con la pantalla de carga a la vista) se libera la memoria de video si hace falta: con DWM
     lleno, el video se trababa cada pocos minutos."""

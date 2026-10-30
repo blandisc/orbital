@@ -104,3 +104,42 @@ def test_home_plus_lb_opens_the_quick_panel_and_home_plus_rb_captures():
     assert d.update(GUIDE, .3) == []
     assert d.update(GUIDE | RB_BUTTON, .4) == ["capture"]
     assert d.update(0, .5) == []  # soltar Home tras el acorde: no es "ir a Orbital"
+
+
+def test_others_are_the_joysticks_xinput_does_not_read():
+    from orbital.gamepad import others
+    legion, ds4, xbox = (0x17EF, 0x61EB), (0x054C, 0x05C4), (0x045E, 0x028E)
+    assert others([legion], [legion]) == []
+    assert others([legion, ds4], [legion]) == [ds4]
+    assert others([xbox, xbox], [xbox]) == [xbox]  # dos iguales, uno sin XInput (p. ej. en modo DInput)
+    assert others([], [legion]) == []
+
+
+def test_watcher_wakes_the_ui_once_when_a_controller_it_cannot_read_shows_up():
+    from orbital.gamepad import GamepadWatcher
+    woke = []
+    w = GamepadWatcher(lambda event: None)
+    w._joysticks = lambda: [(0x054C, 0x05C4)]
+    w.on_others = lambda: woke.append(1)
+    w._check_others(100.0)
+    assert woke == []  # la interfaz lee el mando ella misma: no se busca nada
+    w.watch_others = True
+    w._check_others(100.0)
+    assert woke == [1] and w.watch_others is False  # una vez; la interfaz vuelve a decir si suelta
+    w.watch_others = True
+    w._check_others(101.0)
+    assert woke == [1]  # cada OTHERS_EVERY, no en cada vuelta
+    w._check_others(100.0 + w.OTHERS_EVERY)
+    assert woke == [1, 1]
+
+
+def test_watcher_without_other_controllers_never_wakes_the_ui():
+    from orbital.gamepad import GamepadWatcher
+    woke = []
+    w = GamepadWatcher(lambda event: None)
+    w._joysticks = lambda: [(0x17EF, 0x61EB)]
+    w.devices = {0: (0x17EF, 0x61EB)}
+    w.on_others = lambda: woke.append(1)
+    w.watch_others = True
+    w._check_others(50.0)
+    assert woke == [] and w.watch_others is True

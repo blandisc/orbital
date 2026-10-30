@@ -360,3 +360,11 @@ def test_la_barra_en_vivo_dice_numero_nombre_categoria_y_calidad():
     assert "Sin sonido" not in player_ui.live_hud_ass(player_ui.LiveHud("X", 1, muted=True))  # lo dice la píldora fija
     ass = player_ui.live_hud_ass(player_ui.LiveHud("Canal {raro}"))  # las llaves abren etiquetas ASS: se cambian
     assert "Canal (raro)" in ass and "{raro}" not in ass
+
+
+def test_salir_de_un_canal_no_promete_guardar_avance():
+    """La tarjeta «¿Salir de …?» decía «Tu avance se guarda» también en la TV en vivo, que no guarda nada."""
+    p, mpv = live_player()
+    p._on_mpv_message(["orbital-key", "esc"])
+    card = mpv.overlays[4] or ""
+    assert "¿Salir de" in card and "Tu avance se guarda" not in card and "TV en vivo" in card

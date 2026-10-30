@@ -141,9 +141,20 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     /// Recetas de texto de Proyección: cada pantalla usa estas, no tamaños sueltos. SF Pro con Dynamic Type; los datos
     /// (tiempos, temporadas, tamaños) en SF Mono, la única marca tipográfica de la app.
+    /// La escala de la app, una por papel (no se escriben tamaños sueltos):
+    /// | Papel        | Receta       | Tamaño (Dynamic Type)  | Dónde                                              |
+    /// |--------------|--------------|------------------------|----------------------------------------------------|
+    /// | Pantalla     | (barra nativa) / `display` | largeTitle, negrita | «Para ti», «Buscar»; las cifras héroe         |
+    /// | Sección      | `title`      | title, negrita         | `DSSectionHead(level: .section)`: agrupa varias cosas |
+    /// | Subsección   | `section`    | title2, negrita        | `DSSectionHead` de una fila o estante, con su porqué |
+    /// | Porqué       | `eyebrow`    | footnote, seminegrita, turquesa | solo arriba de una subsección o de una portada |
+    /// | Pieza        | `cardTitle`  | headline               | el nombre en una tarjeta o renglón                 |
+    /// | Cuerpo       | `body`       | body                   | lo que explica                                     |
+    /// | Secundario   | `secondary`  | subheadline            | datos bajo un título                               |
+    /// | Pie          | `footnote`   | footnote               | notas, ayuda                                       |
+    /// | Etiqueta     | `caption`    | caption                | placas, «T2 E5», leyendas                          |
+    /// | Dato         | `data`       | footnote tabular       | números que se comparan                            |
     enum TextRecipe {
-        /// Título grande de pantalla (lo pinta la barra de navegación nativa), título de sección, título de pieza, cuerpo,
-        /// secundario, pie y dato.
         case display, title, section, cardTitle, body, secondary, footnote, caption, eyebrow, data
         var font: Font {
             switch self {

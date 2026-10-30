@@ -61,7 +61,7 @@ struct VoiceGuideView: View {
 
     private var now: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            nowHeader.recipe(.eyebrow, color: DS.ListTint.calendar).lineLimit(2)
+            nowHeader.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2)
             .accessibilityAddTraits(.isHeader)
             cardRow(nowPhrases) { PhraseCard(phrase: $0, style: .now, onSay: onSay) }
         }
@@ -76,7 +76,7 @@ struct VoiceGuideView: View {
 
     private var essentials: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: Text("Lo esencial"), trailing: Text("igual en la tele y con Alexa"))
+            DSSectionHead(title: Text("Lo esencial"), level: .section)
             // De dos en dos; si quedan impares, la última va a lo ancho. Con letra muy grande, una por renglón.
             let items = essentialPhrases
             let perRow = typeSize.isAccessibilitySize ? 1 : 2
@@ -94,7 +94,7 @@ struct VoiceGuideView: View {
 
     private var whereToSpeak: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: Text("Dónde hablarle"))
+            DSSectionHead(title: Text("Dónde hablarle"), level: .section)
             let tiles = [
                 WhereTile(symbol: "mic.fill", tint: DS.ListTint.spark, title: Text("Aquí"), detail: Text("Toca el micrófono del control")),
                 WhereTile(symbol: "waveform", tint: DS.ListTint.bookmark, title: Text("Siri"), detail: Text("«Oye Siri, pausa en Orbital»")),
@@ -210,7 +210,7 @@ private struct VoiceTopicsView: View {
         Button { withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(id, anchor: .top) } } label: {
             (verbatim ? Text(verbatim: title) : Text(LocalizedStringKey(title))).lineLimit(1)
         }
-        .buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.small)
+        .dsSecondaryButton().controlSize(.small)
     }
 }
 
@@ -287,12 +287,14 @@ private enum VoiceGuideText {
 /// Un tema: su encabezado (el de toda la app) y sus frases en una tarjeta.
 private struct VoiceTopic<Content: View>: View {
     let title: Text
+    /// Lo que explica el tema («No hace falta decirlo exacto.»): va en el cuerpo, bajo el título.
     var meta: Text? = nil
     @ViewBuilder let content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title, meta: meta)
+            DSSectionHead(title: title, level: .section)
+            if let meta { meta.recipe(.footnote, color: DS.textMuted) }
             VStack(alignment: .leading, spacing: DS.Space.s3) { content }
                 .padding(DS.Space.s4).frame(maxWidth: .infinity, alignment: .leading)
                 .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))

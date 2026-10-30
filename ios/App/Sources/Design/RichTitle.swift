@@ -76,8 +76,9 @@ struct RatingMark: View {
     @ScaledMetric(relativeTo: .subheadline) private var height = DS.RatingBrand.markHeight
 
     var body: some View {
+        // El de TMDB es una palabra larga en letras de molde: a la misma altura pesaba el doble que los otros dos.
         Image("rating-" + service.rawValue).resizable().scaledToFit()
-            .frame(height: height).opacity(DS.RatingBrand.markOpacity)
+            .frame(height: service == .tmdb ? height * DS.RatingBrand.wordmarkScale : height).opacity(DS.RatingBrand.markOpacity)
             .accessibilityLabel(Text(verbatim: service == .imdb ? "IMDb" : service == .tmdb ? "TMDB" : "Trakt"))
     }
 }

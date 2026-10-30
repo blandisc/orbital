@@ -75,11 +75,7 @@ struct FilterEditor: View {
 
     private var genre: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Picker(selection: $excluding) {
-                Text("Quiero").tag(false)
-                Text("Quitar").tag(true)
-            } label: { EmptyView() }
-            .pickerStyle(.segmented)
+            DSSegmented(options: [(false, "Quiero"), (true, "Quitar")], selection: $excluding)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s2), GridItem(.flexible(), spacing: DS.Space.s2)], spacing: DS.Space.s2) {
                 ForEach(Tmdb.genres, id: \.slug) { g in
                     let on = excluding ? filter.excluded.contains(g.slug) : filter.genres.contains(g.slug)

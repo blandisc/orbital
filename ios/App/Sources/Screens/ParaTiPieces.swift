@@ -126,7 +126,7 @@ struct ShelfPoster: View {
     case "trend": return Text("Lo más visto esta semana")
     case "popular": return Text("De todos los tiempos")
     case "critics": return Text("Certified Fresh recientes · Series Fresh")
-    default: return plan.style == .platform ? Text("Lo más popular") : nil
+    default: return plan.style == .platform ? Text("Lo más popular") : plan.id.hasPrefix("addon:") ? Text("De tus complementos") : Text("Una lista para ti")
     }
 }
 

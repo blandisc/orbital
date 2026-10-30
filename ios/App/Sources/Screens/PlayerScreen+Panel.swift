@@ -33,13 +33,10 @@ extension PlayerScreen {
                     Spacer()
                     VStack(spacing: DS.Space.s2) {
                         if dockState.dockPage != .episodes { HStack(spacing: DS.Space.s2) {
-                            Picker(selection: Binding(get: { dockState.dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = v ? .version : .media } })) {
-                                Text("Audio y subtítulos").tag(false)
-                                Text("Versión").tag(true)
-                            } label: { Text("Ver") }
-                            .pickerStyle(.segmented)
+                            DSSegmented(options: [(false, "Audio y subtítulos"), (true, "Versión")],
+                                        selection: Binding(get: { dockState.dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = v ? .version : .media } }))
                             Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
-                                .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
+                                .dsPrimaryButton().controlSize(.small)
                         } }
                         dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
                     }
@@ -307,11 +304,7 @@ extension PlayerScreen {
                     Spacer()
                 }
             }
-            Picker(selection: $dockState.versionShowsAll) {
-                Text("Por idioma").tag(false)
-                Text("Todas las fuentes").tag(true)
-            } label: { Text("Ver") }
-            .pickerStyle(.segmented)
+            DSSegmented(options: [(false, "Por idioma"), (true, "Todas las fuentes")], selection: $dockState.versionShowsAll)
             ScrollView {
                 if dockState.versionShowsAll {
                     AllSourcesList(sources: model.sourceChoices, current: model.source?.index, currentIsPlaying: true,
@@ -397,7 +390,7 @@ extension PlayerScreen {
             // Sólida (papel): lo único que se ofrece en ese momento, se distingue del vidrio de los demás.
             Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }
                 .fontWeight(.semibold)
-                .buttonStyle(.glassProminent).tint(DS.primary).foregroundStyle(DS.onPrimary).controlSize(.regular)
+                .dsPrimaryButton().controlSize(.regular)
                 .fixedSize()
                 .transition(.opacity.combined(with: .move(edge: .trailing)))
                 .accessibilityIdentifier("player-skip-intro")

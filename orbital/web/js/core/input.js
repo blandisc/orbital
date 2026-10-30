@@ -176,7 +176,7 @@ export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && 
  * `canSleep(pads)`: si con Orbital quieta se puede soltar el mando del navegador (pads.js); entonces el primer botón llega del
  * servidor y `wake()` lo vuelve a tomar. `onReading(sí)`: avisa cuando la interfaz empieza o deja de leer el mando ella misma.
  */
-export function createInput({ onAction, onModality, onText = null, typing = () => false, onTrace = null, resting = () => false,
+export function createInput({ onAction, onModality, onTouch = () => {}, onText = null, typing = () => false, onTrace = null, resting = () => false,
   canSleep = () => false, onReading = () => {} }) {
   // Diagnóstico (entrada.log): lo que llega en bruto y lo que se dispara, con si Orbital tenía el foco.
   const trace = (entry) => onTrace?.({ ms: Date.now(), focus: document.hasFocus(), hidden: document.hidden, ...entry });
@@ -209,10 +209,17 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   });
   // Un toque también genera eventos de ratón después: no deben devolver al modo teclado.
   let lastTouch = 0;
+  // El modo táctil reacomoda la pantalla (el teclado de Buscar crece): puesto al bajar el dedo, el clic de ESE toque caía en
+  // otra tecla o en nada (venías del mando, tocabas «Borrar todo» y no pasaba nada). Se marca el toque al momento (`onTouch`:
+  // el primer toque solo enfoca) y el aspecto cambia cuando el toque ya hizo su clic.
   document.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "touch") {
       lastTouch = performance.now();
-      onModality("touch");
+      onTouch();
+      let done = false;
+      const apply = () => { if (!done) { done = true; onModality("touch"); } };
+      window.addEventListener("click", () => setTimeout(apply, 0), { once: true });
+      setTimeout(apply, 600); // deslizar no da clic
     }
   }, { capture: true, passive: true });
   // El ratón solo cambia la leyenda a teclado si se mueve DE VERDAD (40 px) y no estás usando el mando:
@@ -303,11 +310,17 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   const next = (ms) => setTimeout(() => loop(performance.now()), ms);
   acquirePads();
   next(16);
-  /** Cualquier botón, tecla, toque o aviso: si el mando estaba suelto, se vuelve a tomar. */
-  function wake() {
+  /** Cualquier botón, tecla, toque o aviso: si el mando estaba suelto, se vuelve a tomar. `fresh`: lo despertó un mando que
+   * el servidor no lee (pad-wake): nada llegó por el servidor, así que el primer botón que se vea sí cuenta. */
+  function wake({ fresh = false } = {}) {
     if (!sleeping) return;
     sleeping = false;
     acquirePads();
+    if (fresh) {
+      forwarded = false;
+      next(16);
+      return;
+    }
     swallowUntil = performance.now() + 250; // lo que ya venía apretado (el botón que despertó) no se repite
     next(16);
   }

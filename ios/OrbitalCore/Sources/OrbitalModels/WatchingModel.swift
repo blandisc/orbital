@@ -7,6 +7,8 @@ import OrbitalCore
 public final class WatchingModel: ObservableModel {
     public private(set) var plays: [TraktPlay] = [] { didSet { changed() } }
     public private(set) var loaded = false { didSet { changed() } }
+    /// La última vez no llegó el historial y no hay nada guardado: «No se pudo cargar», no «Nada en este periodo».
+    public private(set) var failed = false { didSet { changed() } }
     public var period: WatchingStats.Period = .month { didSet { if period != oldValue { changed() } } }
     private var fetchedAt: Date?
 
@@ -56,13 +58,17 @@ public final class WatchingModel: ObservableModel {
                           : WatchingStats.start(of: .week, now: now, calendar: calendar)
         let covered = since.map { $0 <= needed } ?? false
         if covered, !force, let fetchedAt, now.timeIntervalSince(fetchedAt) < Self.ttl { return }
+        var ok = true
         if covered {
             // Ya está guardado: solo lo nuevo desde la última vista.
             let from = plays.map(\.at).max() ?? needed
-            if let new = try? await trakt.plays(since: from.addingTimeInterval(1), until: now, maxPages: 5) { merge(new) }
+            if let new = try? await trakt.plays(since: from.addingTimeInterval(1), until: now, maxPages: 5) { merge(new) } else { ok = false }
         } else if let found = try? await trakt.plays(since: needed, until: now, maxPages: full ? 20 : 2) {
             plays = found; since = needed
-        }
+        } else { ok = false }
+        // Con algo guardado se muestra eso (aunque no llegara lo nuevo); sin nada, es un error de verdad.
+        failed = !ok && plays.isEmpty
+        guard ok else { loaded = true; return }
         fetchedAt = now
         loaded = true
         save()

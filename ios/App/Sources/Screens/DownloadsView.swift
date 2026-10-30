@@ -84,7 +84,7 @@ struct DownloadsView: View {
             }
             if !model.active.isEmpty {
                 Section {
-                    headerRow(DSSectionHead(title: "Descargando", count: model.active.count))
+                    headerRow(DSSectionHead(title: "Descargando", count: model.active.count, level: .section))
                     ForEach(model.active) { row($0, model) }
                 }
                 .downloadCard()
@@ -92,7 +92,7 @@ struct DownloadsView: View {
             // Listo para ver: series (una fila cada una; dentro, sus temporadas y episodios) y películas, aparte.
             if !model.readySeries.isEmpty {
                 Section {
-                    headerRow(DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes }))))
+                    headerRow(DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })), level: .section))
                     ForEach(model.readySeries) { g in
                         NavigationLink(value: DownloadSeriesRoute(metaID: g.metaID)) { seriesRow(g) }
                             .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete(g.items.map(\.id)) }.tint(DS.danger) }
@@ -102,7 +102,7 @@ struct DownloadsView: View {
             }
             if !model.readyMovies.isEmpty {
                 Section {
-                    headerRow(DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes }))))
+                    headerRow(DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })), level: .section))
                     // Un renglón por cada película, siempre (un `if` que a veces no pinta nada descuadra la lista al borrar).
                     ForEach(model.readyMovies.compactMap { g in g.items.first.map { (g, $0) } }, id: \.0.id) { g, item in
                         readyRow(title: g.title, poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
@@ -112,7 +112,7 @@ struct DownloadsView: View {
             }
             if !model.items.isEmpty {
                 Section {
-                    headerRow(DSSectionHead(title: "Descarga inteligente"))
+                    headerRow(DSSectionHead(title: "Descarga inteligente", level: .section))
                     Toggle("Bajar el siguiente episodio al terminar uno", isOn: setting(\.autoNextDownload))
                     Toggle("Borrar al terminar de verlo", isOn: setting(\.deleteWhenWatched))
                 } footer: {

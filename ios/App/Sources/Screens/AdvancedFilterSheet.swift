@@ -88,8 +88,7 @@ struct AdvancedFilterSheet: View {
             Button { path.append(.results) } label: {
                 Text(model.filter.isEmpty ? "Ver resultados" : "Ver resultados · \(model.filter.activeCount)").frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).controlSize(.large)
-            .tint(DS.solidPrimary).foregroundStyle(DS.onSolidPrimary)   // el principal sólido de la app: se lee siempre
+            .dsSolidPrimaryButton().controlSize(.large)   // el principal sólido de la app: se lee siempre
             .accessibilityIdentifier("filter-results")
         }
         .padding(.horizontal, DS.Space.gutter)
@@ -162,11 +161,11 @@ struct FilterResults: View {
         }
         .overlay {
             if !model.available {
-                ContentUnavailableView("Falta la clave de TMDB", systemImage: "key", description: Text("Agrégala en Ajustes › Avanzado para buscar con filtros."))
+                DSEmptyState(symbol: "key", title: Text("Falta la clave de TMDB"), message: Text("Agrégala en Ajustes › Avanzado para buscar con filtros."))
             } else if model.failed {
-                ContentUnavailableView("No se pudo cargar", systemImage: "wifi.slash", description: Text("Revisa tu conexión e intenta de nuevo."))
+                DSEmptyState(symbol: "wifi.slash", title: Text("No se pudo cargar"), message: Text("Revisa tu conexión e intenta de nuevo."))
             } else if model.results.isEmpty, !model.isLoading {
-                ContentUnavailableView("Nada con esos filtros", systemImage: "line.3.horizontal.decrease", description: Text("Quita alguno para ver más opciones."))
+                DSEmptyState(symbol: "line.3.horizontal.decrease", title: Text("Nada con esos filtros"), message: Text("Quita alguno para ver más opciones."))
             }
         }
         .navigationTitle(Text("Resultados"))

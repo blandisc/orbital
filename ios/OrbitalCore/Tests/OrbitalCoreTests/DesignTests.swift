@@ -105,6 +105,36 @@ final class DesignTests: XCTestCase {
         for (_, hex) in DesignTokens.palette { XCTAssertNotNil(rgb(hex: hex)) }
     }
 
+    /// Los encabezados en dos niveles (30 oct 2026): una sección (`level: .section`) va sola, sin porqué; una subsección (toda
+    /// fila o estante: `DSSectionHead`, `Shelf`, `Rail`) lleva siempre su porqué en turquesa (`eyebrow:` o `meta:`).
+    func testSectionsHaveNoReasonAndSubsectionsAlwaysDo() throws {
+        let screens = repo.appendingPathComponent("ios/App/Sources/Screens")
+        let files = try FileManager.default.contentsOfDirectory(at: screens, includingPropertiesForKeys: nil).filter { $0.pathExtension == "swift" }
+        XCTAssertFalse(files.isEmpty)
+        var problems: [String] = []
+        for file in files {
+            let text = try String(contentsOf: file, encoding: .utf8)
+            let chars = Array(text)
+            for name in ["DSSectionHead(", "Shelf(", "Rail("] {
+                var search = text.startIndex
+                while let found = text.range(of: name, range: search..<text.endIndex) {
+                    search = found.upperBound
+                    let start = text.distance(from: text.startIndex, to: found.lowerBound)
+                    // Solo la pieza misma (no `HomeShelf(` ni `struct Rail(`).
+                    if start > 0, chars[start - 1].isLetter || chars[start - 1].isNumber { continue }
+                    var depth = 1, end = start + name.count
+                    while depth > 0, end < chars.count { if chars[end] == "(" { depth += 1 } else if chars[end] == ")" { depth -= 1 }; end += 1 }
+                    let call = String(chars[start..<end])
+                    let line = chars[..<start].filter { $0 == "\n" }.count + 1
+                    let section = call.contains("level: .section"), reason = call.contains("eyebrow:") || call.contains("meta:")
+                    if section && reason { problems.append("\(file.lastPathComponent):\(line): una sección no lleva porqué (lo que explica va en el cuerpo)") }
+                    if !section && !reason { problems.append("\(file.lastPathComponent):\(line): una subsección lleva su porqué en turquesa (eyebrow:)") }
+                }
+            }
+        }
+        XCTAssertTrue(problems.isEmpty, "Encabezados fuera de la regla:\n" + problems.joined(separator: "\n"))
+    }
+
     /// Los archivos de pantalla (todo lo que no es el sistema de diseño) no pintan nada «suelto».
     func testScreensUseOnlyDesignSystemTokens() throws {
         // Las pantallas y la extensión de widgets (que usa los mismos tokens: `Sources/Design/Tokens.swift`).
@@ -146,6 +176,19 @@ final class DesignTests: XCTestCase {
                 if relative.hasPrefix("Sources/Screens/") || relative.hasPrefix("Sources/Design/"), !line.contains("Demo"),
                    line.range(of: #"Task\.sleep\(for:\s*\.(seconds|milliseconds)\(\s*[0-9]"#, options: .regularExpression) != nil {
                     problems.append("\(relative):\(index + 1): espera a mano: \(line.trimmingCharacters(in: .whitespaces))")
+                }
+                // Una sola pieza por papel en las pantallas (lenguaje de diseño, 30 oct 2026): los botones, los selectores, los
+                // vacíos y el porqué salen del catálogo, no se arman en cada pantalla.
+                if relative.hasPrefix("Sources/Screens/") {
+                    let pieces: [(String, String)] = [
+                        (#"\.buttonStyle\(\.(borderedProminent|bordered|glassProminent)\)"#, "botón armado a mano: dsPrimaryButton, dsSolidPrimaryButton o dsSecondaryButton"),
+                        (#"\.pickerStyle\(\.segmented\)"#, "selector armado a mano: DSSegmented (o DSKindFilter para el tipo)"),
+                        (#"ContentUnavailableView\("#, "vacío armado a mano: DSEmptyState"),
+                        (#"\.recipe\(\.eyebrow, color: (?!DS\.eyebrow\))"#, "porqué de otro color: el porqué va en turquesa (Eyebrow(reason: true) o DS.eyebrow)"),
+                    ]
+                    for (pattern, what) in pieces where line.range(of: pattern, options: .regularExpression) != nil {
+                        problems.append("\(relative):\(index + 1): \(what): \(line.trimmingCharacters(in: .whitespaces))")
+                    }
                 }
                 // Los colores fijos no cambian con el modo claro u oscuro: van los papeles (`DS.text`, `DS.bg`…).
                 if relative.hasPrefix("Sources/Screens/"), line.range(of: #"Color\.(white|black)|\.foregroundStyle\(\.(white|black)\)"#, options: .regularExpression) != nil {

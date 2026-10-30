@@ -120,6 +120,32 @@ def test_dolphin_port_one_is_player_one_and_the_rest_wait_for_whoever_comes(tmp_
     assert emulator_input.arrange_dolphin(tmp_path, [2, 0]) == 0  # ya estaba así
 
 
+def test_dolphin_fullscreen_is_borderless_so_orbital_shows_over_it(tmp_path):
+    """La pantalla completa exclusiva de Direct3D 11 tapaba a Orbital con el juego congelado (Home por segunda vez)."""
+    assert emulator_input.dolphin_borderless(tmp_path) is True  # sin GFX.ini: se crea
+    assert emulator_input._ini_get((tmp_path / "GFX.ini").read_text(encoding="utf-8"), "Settings", "BorderlessFullscreen") == "True"
+    assert emulator_input.dolphin_borderless(tmp_path) is False  # ya estaba
+    (tmp_path / "GFX.ini").write_text("[Settings]\nAspectRatio = 1\nBorderlessFullscreen = False\n[Hacks]\nEFBToTextureEnable = True\n",
+                                      encoding="utf-8")
+    assert emulator_input.dolphin_borderless(tmp_path) is True
+    text = (tmp_path / "GFX.ini").read_text(encoding="utf-8")
+    assert "BorderlessFullscreen = True" in text and "AspectRatio = 1" in text and "EFBToTextureEnable = True" in text
+    assert (tmp_path / "GFX.ini.antes-de-orbital").exists()  # lo de antes, respaldado
+    (tmp_path / "GFX.ini").write_text("[Hacks]\nEFBToTextureEnable = True\n", encoding="utf-8")
+    assert emulator_input.dolphin_borderless(tmp_path) is True  # sin sección [Settings]: se agrega
+    assert "[Hacks]\nEFBToTextureEnable = True" in (tmp_path / "GFX.ini").read_text(encoding="utf-8")
+
+
+def test_dolphin_goes_borderless_even_without_controllers(tmp_path, monkeypatch):
+    config = tmp_path / "User" / "Config"
+    config.mkdir(parents=True)
+    (config / "Dolphin.ini").write_text("[Core]\n", encoding="utf-8")
+    exe = tmp_path / "Dolphin.exe"
+    monkeypatch.setattr("orbital.emulator_clock.emulator_exe", lambda argv: exe)
+    emulator_input.arrange_for([str(exe), "-e", "juego.rvz"], [])
+    assert "BorderlessFullscreen = True" in (config / "GFX.ini").read_text(encoding="utf-8")
+
+
 def test_dolphin_is_found_next_to_its_exe(tmp_path):
     (tmp_path / "User" / "Config").mkdir(parents=True)
     (tmp_path / "User" / "Config" / "Dolphin.ini").write_text("[Core]\n", encoding="utf-8")

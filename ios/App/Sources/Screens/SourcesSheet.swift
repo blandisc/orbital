@@ -72,19 +72,11 @@ struct SourcesSheet: View {
                     .accessibilityIdentifier("sources-info")
             }
             .padding(.horizontal, DS.Space.s4)
-            Picker("Mostrar", selection: $showsAll) {
-                Text("Por idioma").tag(false)
-                Text("Todas las fuentes").tag(true)
-            }
-            .pickerStyle(.segmented)
+            DSSegmented(options: [(false, "Por idioma"), (true, "Todas las fuentes")], selection: $showsAll)
             .padding(.horizontal, DS.Space.s4)
             .accessibilityIdentifier("sources-mode")
             if episode {
-                Picker("Para", selection: $fromHere) {
-                    Text("Solo este episodio").tag(false)
-                    Text("Desde aquí").tag(true)
-                }
-                .pickerStyle(.segmented)
+                DSSegmented(options: [(false, "Solo este episodio"), (true, "Desde aquí")], selection: $fromHere)
                 .padding(.horizontal, DS.Space.s4)
                 .accessibilityIdentifier("sources-scope")
             }

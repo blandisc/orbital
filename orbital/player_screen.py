@@ -52,7 +52,8 @@ class PlayerScreen(SubtitleTrial):
         if card["kind"] == "skip":
             ass = player_ui.skip_ass(card["label"])
         elif card["kind"] == "quit":
-            ass = player_ui.upnext_ass(f"¿Salir de {card['title']}?", "Tu avance se guarda",
+            # Un canal en vivo no guarda avance (no entra en «Seguir viendo»): ahí sería mentira.
+            ass = player_ui.upnext_ass(f"¿Salir de {card['title']}?", "TV en vivo" if self._is_live() else "Tu avance se guarda",
                                        actions=[("A", "Seguir viendo"), ("B", "Salir")])
         else:
             segment = card["segment"]

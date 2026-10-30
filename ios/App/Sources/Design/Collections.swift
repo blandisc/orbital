@@ -249,7 +249,8 @@ private struct BecauseBackdrop: ViewModifier {
                             .opacity(DS.Collections.becauseArtOpacity)
                             .id(poster)
                             .transition(.opacity)
-                        LinearGradient(colors: [.clear, DS.scrim], startPoint: .top, endPoint: .bottom)
+                        // Un velo parejo (arriba van «Porque viste · 3 de 8» y el nombre) y más firme abajo, donde van los pósters.
+                        LinearGradient(colors: [DS.scrim, DS.scrimStrong], startPoint: .top, endPoint: .bottom)
                     }
                     .clipShape(shape)
                     .accessibilityHidden(true)

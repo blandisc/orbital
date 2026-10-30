@@ -18,11 +18,18 @@ extension View {
     /// `--color-primary-art` en la TV. Sin colores, el neutro casi papel de la TV.
     func dsArtButton(_ colors: ArtColors?) -> some View { modifier(ArtButton(colors: colors)) }
 
-    /// El botón principal de la ficha: sólido, a todo lo ancho, negro en claro y blanco en oscuro (`DS.solidPrimary`), con
-    /// esquinas de tarjeta. El nativo `.borderedProminent` con otro tinte: sin estilo propio.
-    func dsSolidPrimaryButton() -> some View {
-        buttonStyle(.borderedProminent).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg))
+    /// El botón principal sólido: negro en claro y blanco en oscuro (`DS.solidPrimary`). A todo lo ancho (Ver, Continuar, Ver
+    /// resultados, Ver tu Wrapped) con esquinas de tarjeta; `shape: .circle` para el principal de una fila de íconos (el ▶
+    /// del mazo). El nativo `.borderedProminent` con otro tinte: sin estilo propio.
+    func dsSolidPrimaryButton(shape: ButtonBorderShape = .roundedRectangle(radius: DS.Radius.lg)) -> some View {
+        buttonStyle(.borderedProminent).buttonBorderShape(shape)
             .tint(DS.solidPrimary).foregroundStyle(DS.onSolidPrimary)
+    }
+
+    /// El botón secundario: con borde, en cápsula y del color del texto (Corregir, Más recientes, Desde el principio). Uno solo
+    /// en toda la app; el tamaño lo pone `controlSize`.
+    func dsSecondaryButton() -> some View {
+        buttonStyle(.bordered).buttonBorderShape(.capsule).tint(DS.text)
     }
 }
 
