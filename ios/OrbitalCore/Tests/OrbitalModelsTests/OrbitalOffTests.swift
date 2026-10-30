@@ -108,3 +108,21 @@ final class OrbitalSetupModelTests: XCTestCase {
         XCTAssertEqual(OrbitalSetupModel(rig.services, tutorialOnly: true).stage, .tutorial(1), "«Qué puedes hacer con la TV»")
     }
 }
+
+/// La clave de TMDB incluida en la app (de `Secrets.xcconfig`): la app sola tiene fichas en español; la tuya gana.
+@MainActor
+final class BuiltInTMDBKeyTests: XCTestCase {
+    func testTheBuiltInKeyIsUsedUntilYouPasteYours() throws {
+        let rig = try ServicesRig()
+        let services = Services(http: rig.http, secrets: rig.secrets, kv: InMemoryKeyValueStore(), pending: InMemoryPendingStore(),
+                                downloadTransport: FakeDownloadTransport(), downloadsRoot: rig.root, freeSpace: { 50_000_000_000 },
+                                builtInTMDBKey: "INCLUIDA")
+        XCTAssertTrue(services.hasTMDBKey)
+        XCTAssertTrue(services.usesBuiltInTMDBKey)
+        XCTAssertTrue(services.tmdb.configured, "sin consola ni Ajustes, las fichas ya salen")
+        XCTAssertEqual(Services.tmdbKey(secrets: rig.secrets, builtIn: "INCLUIDA"), "INCLUIDA")
+        rig.secrets.set(SecretKey.tmdbKey, "MIA")
+        XCTAssertEqual(Services.tmdbKey(secrets: rig.secrets, builtIn: "INCLUIDA"), "MIA", "la tuya gana")
+        XCTAssertFalse(services.usesBuiltInTMDBKey)
+    }
+}

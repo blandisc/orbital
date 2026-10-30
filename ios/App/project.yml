@@ -58,6 +58,11 @@ targets:
         # El Client ID de la app de Trakt incluida (las nuevas, con PKCE, no tienen secreto): con él el iPhone conecta su propia
         # sesión con un código, sin consola. Vacío: se usa el de tu Orbital o el de Ajustes › Trakt › Avanzado.
         ORBITAL_TRAKT_CLIENT_ID: "azwc8vQEPFj8BHrEgryPl_8WKoLtfxGyhtq-alnd9U0"   # la app de Trakt de Orbital (público, no es secreto)
+    # La clave de TMDB incluida (`ORBITAL_TMDB_KEY`) vive en `Secrets.xcconfig`, que no va a git (el repo es público):
+    # copia `Secrets.example.xcconfig`. Sin ella la app compila igual y pide la clave en Ajustes › Avanzado.
+    configFiles:
+      Debug: Orbital.xcconfig
+      Release: Orbital.xcconfig
     entitlements:
       path: Build/Orbital.entitlements
       properties:
@@ -73,6 +78,7 @@ targets:
         CFBundleDevelopmentRegion: es
         CFBundleLocalizations: [es, en]
         OrbitalTraktClientID: $(ORBITAL_TRAKT_CLIENT_ID)   # lo lee Services.bundledTraktClientID
+        OrbitalTMDBKey: $(ORBITAL_TMDB_KEY)   # lo lee Services.bundledTMDBKey (de Secrets.xcconfig)
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         # El iPad gira libre y comparte pantalla (Split View, Stage Manager): las cuatro, y la app se acomoda a su ventana.

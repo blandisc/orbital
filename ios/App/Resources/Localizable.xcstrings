@@ -20471,6 +20471,17 @@
         }
       }
     },
+    "Ya viene incluida: fichas y sinopsis en español, temporadas y lo popular en Netflix, Disney+ y HBO Max. Pon la tuya solo si quieres.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's already included: details and synopses in Spanish, seasons and what's popular on Netflix, Disney+ and HBO Max. Add your own only if you want."
+          }
+        }
+      }
+    },
     "capturas": {
       "extractionState": "manual",
       "localizations": {

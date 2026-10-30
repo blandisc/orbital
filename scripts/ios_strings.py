@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Ya viene incluida: fichas y sinopsis en español, temporadas y lo popular en Netflix, Disney+ y HBO Max. Pon la tuya solo si quieres.": "It's already included: details and synopses in Spanish, seasons and what's popular on Netflix, Disney+ and HBO Max. Add your own only if you want.",
     # Ajustes › «Usar con tu Orbital»: el interruptor, la conexión con el código y el tutorial.
     "Apagar": "Turn off",
     "Apunta al código de la TV": "Point at the code on the TV",

@@ -257,6 +257,9 @@ su API. Las listas se cambian en `config.yaml` (`para_ti.critics_movies`, `criti
 - Leer el código con la cámara solo se puede probar en un iPhone (el simulador no tiene cámara: ofrece «Conectar a mano»).
 - `OnboardingUITests` y las capturas del flujo no se volvieron a correr (Fernando pidió saltarlas); la app compila y
   `swift test` (706) y las pruebas web están en verde.
-- La clave de TMDB y el Id. de OneDrive incluidos en la app (propuesta en las maquetas 11 y 12; falta que Fernando decida y
-  pase el Id. de aplicación de OneDrive de la TV).
+- La clave de TMDB incluida (decisión de Fernando, 29 oct): ya está el mecanismo (`ios/App/Secrets.xcconfig`, que no va a
+  git porque el repo es público; plantilla `Secrets.example.xcconfig`; Info.plist › `OrbitalTMDBKey`; `Services.tmdbKey`: la
+  tuya o la de tu Orbital gana, si no, la incluida). Falta poner la clave en `Secrets.xcconfig` de la Mac que compila (la
+  misma de la consola, `config.yaml` › `para_ti.tmdb_key`). Sin ella la app compila igual y la pide en Avanzado.
+- OneDrive se queda como está (Fernando aún no sabe si lo mantiene): sin Id. incluido.
 - Probar Comet con la cuenta real de Real-Debrid (que salgan fuentes al tocar «Ver»).

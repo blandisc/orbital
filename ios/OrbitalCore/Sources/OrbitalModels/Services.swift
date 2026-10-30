@@ -107,6 +107,23 @@ public final class Services: ObservableModel {
     public nonisolated static var bundledTraktClientID: String {
         ((Bundle.main.object(forInfoDictionaryKey: "OrbitalTraktClientID") as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
+    /// La clave de TMDB incluida en la app (Info.plist › `OrbitalTMDBKey`, del ajuste `ORBITAL_TMDB_KEY` de `Secrets.xcconfig`,
+    /// que no va a git): con ella la app sola tiene fichas en español, temporadas y «Nuevo en tus plataformas». La de Ajustes ›
+    /// Avanzado (o la que trae tu Orbital) gana. Vacía: solo esas.
+    let builtInTMDBKey: String
+    public nonisolated static var bundledTMDBKey: String {
+        let key = ((Bundle.main.object(forInfoDictionaryKey: "OrbitalTMDBKey") as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return key.hasPrefix("$(") ? "" : key   // sin `Secrets.xcconfig`, el ajuste queda sin sustituir
+    }
+    /// La clave de TMDB que se usa: la tuya (Ajustes o tu Orbital) y, si no hay, la incluida.
+    nonisolated static func tmdbKey(secrets: SecretsStore, builtIn: String) -> String {
+        let own = (secrets.get(SecretKey.tmdbKey) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return own.isEmpty ? builtIn : own
+    }
+    /// ¿Hay clave de TMDB, la tuya o la incluida?
+    public var hasTMDBKey: Bool { !Self.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey).isEmpty }
+    /// ¿Se está usando la incluida en la app (no pusiste la tuya)?
+    public var usesBuiltInTMDBKey: Bool { !builtInTMDBKey.isEmpty && (secrets.get(SecretKey.tmdbKey) ?? "").isEmpty }
     private let downloadTransport: DownloadTransport
     private let downloadsRoot: URL
     let freeSpace: @Sendable () -> Int64
@@ -118,12 +135,14 @@ public final class Services: ObservableModel {
     public init(http: HTTPClient, secrets: SecretsStore, kv: KeyValueStore, pending: PendingStore, library: LocalLibrary = LocalLibrary(), downloadTransport: DownloadTransport,
                 downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64, cacheRoot: URL? = nil,
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in },
-                builtInTraktClientID: String = Services.bundledTraktClientID, device: OrbitalRemote.Device? = nil,
+                builtInTraktClientID: String = Services.bundledTraktClientID, builtInTMDBKey: String = Services.bundledTMDBKey,
+                device: OrbitalRemote.Device? = nil,
                 allowsOrbital: Bool = true) {
         self.cacheRoot = cacheRoot
         self.allowsOrbital = allowsOrbital
         self.device = device
         self.builtInTraktClientID = builtInTraktClientID
+        self.builtInTMDBKey = builtInTMDBKey
         self.http = http; self.secrets = secrets; self.kv = kv; self.pending = pending; self.library = library; self.downloadTransport = downloadTransport
         self.downloadsRoot = downloadsRoot; self.freeSpace = freeSpace; self.clock = clock; self.onDownloadsChange = onDownloadsChange
         let scrobbleLog = ScrobbleLog(kv: kv)
@@ -158,9 +177,9 @@ public final class Services: ObservableModel {
         let oneDriveLibrary = OneDriveLibrary(drive: oneDrive, cinemeta: cinemeta, kv: kv, folder: { settings.value.oneDriveFolder }, clock: clock)
         let finder = StreamFinder(http: http, registry: registry, clock: clock)
         self.oneDrive = oneDrive; self.oneDriveLibrary = oneDriveLibrary
-        let tmdb = Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX")
+        let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX")
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
-        self.tallArt = TallArt(tmdb: { Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX") }, clock: clock, store: kv)
+        self.tallArt = TallArt(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX") }, clock: clock, store: kv)
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, builtIn: builtInTraktClientID, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),
@@ -173,7 +192,7 @@ public final class Services: ObservableModel {
                                   pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         self.sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: traktOutbox, pending: pending, clock: clock)
         // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
-        let origins = OriginBook(tmdb: { Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "") }, cinemeta: cinemeta)
+        let origins = OriginBook(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey)) }, cinemeta: cinemeta)
         let prefs = titlePrefs
         Task { await finder.configure(origin: { kind, metaID in await origins.origin(kind: kind, metaID: metaID) },
                                       checked: { key in prefs.checkedAudio(key) }) }
@@ -326,7 +345,7 @@ public final class Services: ObservableModel {
     /// Tras cambiar una clave (TMDB, Trakt): se rearman las piezas que dependen de ellas.
     public func reconfigure() {
         let s = settings.value
-        let tmdb = Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX")
+        let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX")
         let settings = settings, secrets = secrets
         localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
         self.tmdb = tmdb

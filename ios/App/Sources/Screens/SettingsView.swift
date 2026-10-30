@@ -332,7 +332,11 @@ struct SettingsView: View {
             }
             SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
             if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
-        } footer: { Text("TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.") }
+        } footer: {
+            env.services.usesBuiltInTMDBKey
+                ? Text("Ya viene incluida: fichas y sinopsis en español, temporadas y lo popular en Netflix, Disney+ y HBO Max. Pon la tuya solo si quieres.")
+                : Text("TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.")
+        }
         .listRowBackground(DS.surface)
     }
 

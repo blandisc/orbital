@@ -12,3 +12,6 @@ ios/**/.build/
 ios/**/.swiftpm/
 ios/**/*.xcodeproj
 ios/App/Build/
+
+# La clave de TMDB incluida en la app del iPhone (el repo es público)
+ios/App/Secrets.xcconfig

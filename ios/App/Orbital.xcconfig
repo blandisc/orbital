@@ -1,0 +1,3 @@
+// Ajustes de compilación de la app. Lo secreto (la clave de TMDB incluida) vive en Secrets.xcconfig, que no va a git;
+// si no existe, la app compila igual y pide la clave en Ajustes › Avanzado.
+#include? "Secrets.xcconfig"
