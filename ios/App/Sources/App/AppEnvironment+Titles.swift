@@ -58,7 +58,7 @@ extension AppEnvironment {
         }
     }
 
-    /// «Quitar de favoritos» desde un póster de Inicio: sale de la fila al momento y se ofrece «Deshacer». Sin conexión se queda
+    /// «Quitar de favoritos» desde un póster de Para ti › Tuyo › Favoritos: sale de la lista al momento y se ofrece «Deshacer». Sin conexión se queda
     /// guardado en el iPhone y llega a Trakt en cuanto se pueda (como en la ficha).
     func removeFavorite(_ s: Suggestion) async {
         FavoriteChange.post(s, add: false)

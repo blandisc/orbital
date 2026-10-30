@@ -14,7 +14,7 @@ struct SuggestionActions: View {
     var list: SaveDestination? = nil
     /// Una película marcada como vista: Trakt la saca sola de tu watchlist (la pantalla la quita ya).
     var onWatched: ((Suggestion) -> Void)? = nil
-    /// En tus favoritos (Inicio y su «Ver todo»): «Quitar de favoritos» (eso hace `onDismiss`) en vez de «No me interesa».
+    /// En tus favoritos (Para ti › Tuyo › Favoritos): «Quitar de favoritos» (eso hace `onDismiss`) en vez de «No me interesa».
     var favorite = false
     let onDismiss: (Suggestion) -> Void
 
@@ -49,6 +49,8 @@ struct ShelfPoster: View {
     var badge: PosterBadge? = nil
     /// El ancho del póster (más chico dentro de «Porque viste»).
     var width: CGFloat = DS.Poster.railWidth
+    /// En tu lista de Favoritos: su menú ofrece «Quitar de favoritos» (no «No me interesa»).
+    var favorite = false
     let onDismiss: (Suggestion) -> Void
     @State private var taps = 0
 
@@ -63,7 +65,7 @@ struct ShelfPoster: View {
         }
         .simultaneousGesture(TapGesture().onEnded { taps += 1 })
         .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
-        .contextMenu { SuggestionActions(suggestion: suggestion, onDismiss: onDismiss) }
+        .contextMenu { SuggestionActions(suggestion: suggestion, favorite: favorite, onDismiss: onDismiss) }
     }
 
     /// «N.º 3 en Netflix» no va en texto: es la píldora de la plataforma, con su logo.

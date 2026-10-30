@@ -52,7 +52,31 @@ public final class ParaTiModel: ObservableModel {
         self.services = services
         super.init()
         restoreSnapshot()
+        // El corazón de una ficha (o «Quitar de favoritos» en «Tuyo»): la lista de Favoritos cambia al momento, sin recargar.
+        favoriteObserver = NotificationCenter.default.addObserver(forName: FavoriteChange.name, object: nil, queue: .main) { [weak self] note in
+            guard let change = FavoriteChange.read(note) else { return }
+            MainActor.assumeIsolated { self?.setFavorite(change.suggestion, shown: change.add) }
+        }
     }
+    private var favoriteObserver: NSObjectProtocol?
+    private var hiddenFavorites: [String: (Int, Suggestion)] = [:]
+
+    /// Un título que entra o sale de tus favoritos («Tuyo › Favoritos»): sale al instante y, con «Deshacer», vuelve a su lugar.
+    public func setFavorite(_ s: Suggestion, shown: Bool) {
+        let k = key(listID: ForYou.favoritesList, splits: false)
+        var items = railItems[k] ?? []
+        if shown {
+            guard !items.contains(where: { $0.imdb == s.imdb }) else { return }
+            let (i, saved) = hiddenFavorites.removeValue(forKey: s.imdb) ?? (0, s)
+            items.insert(saved, at: min(i, items.count))
+        } else if let i = items.firstIndex(where: { $0.imdb == s.imdb }) {
+            hiddenFavorites[s.imdb] = (i, items.remove(at: i))
+        } else { return }
+        railItems[k] = items
+    }
+
+    /// Pruebas: lo que trae un estante sin pasar por la red.
+    func seedRailForTesting(listID: String, splits: Bool, _ items: [Suggestion]) { railItems[key(listID: listID, splits: splits)] = items }
 
     // MARK: lo de la última vez
     /// Los estantes de la última vez (sus listas y lo que traían), guardados en el teléfono: Para ti abre con ellos al instante
