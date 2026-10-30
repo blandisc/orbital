@@ -191,6 +191,13 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// El candado sube y se desvanece. Con «Reducir movimiento» se desvanece en su sitio.
         static let lockRiseDuration = 0.4
         static func lockRise(_ reduce: Bool) -> Animation? { .easeOut(duration: reduce ? DesignTokens.Motion.base : lockRiseDuration) }
+        /// Los avisos sobre la barra de pestañas (`Toast`, `BannerView`, la pastilla de calificar): el que llega baja un poco
+        /// desde arriba con un fundido, y el que se va solo se desvanece (no brincan desde la orilla de abajo). Con «Reducir
+        /// movimiento», solo el fundido.
+        static let noticeDrop: CGFloat = -DS.Space.s4
+        static func notice(_ reduce: Bool) -> AnyTransition {
+            reduce ? .opacity : .asymmetric(insertion: .opacity.combined(with: .offset(y: noticeDrop)), removal: .opacity)
+        }
     }
 
     /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32

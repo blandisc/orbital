@@ -23,10 +23,10 @@ struct RatingReminderHost: View {
                                onOpenQueue: { showQueue = true })
                     .id(item.imdb)
                     .padding(.horizontal, DS.Space.gutter)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .transition(DS.Motion.notice(reduceMotion))
             }
         }
-        .animation(DS.Motion.base(reduceMotion), value: model.current?.imdb)
+        .animation(DS.Motion.enter(reduceMotion), value: model.current?.imdb)
         .animation(DS.Motion.base(reduceMotion), value: tucked)
         // Cada título nuevo en la pastilla (o volver a la app) le da otra vez su tiempo; con la fila abierta no se va.
         .task(id: "\(model.current?.imdb ?? "")|\(tucked)|\(showQueue)") {

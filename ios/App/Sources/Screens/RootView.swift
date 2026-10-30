@@ -86,7 +86,7 @@ struct RootView: View {
                     Toast(tone: .success, title: Text("Sigue en tu Orbital"), detail: Text("\(Text(verbatim: "\(h.request.displayTitle) · "))\(Self.handoffFrom(h.position))"),
                           actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", action: { Task { await env.undoHandoff() } },
                           symbol: "tv", color: DS.brandMoon, seconds: DS.Timing.toastAction, dismiss: { env.handoff = nil })
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .transition(DS.Motion.notice(reduceMotion))
                 } else {
                     BannerView()
                 }
@@ -103,8 +103,8 @@ struct RootView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).ignoresSafeArea(.container, edges: .bottom)
             }
         }
-        .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
-        .animation(DS.Motion.base(reduceMotion), value: env.notices.current)
+        .animation(DS.Motion.enter(reduceMotion), value: ui.handoff)
+        .animation(DS.Motion.enter(reduceMotion), value: env.notices.current)
         .task {
             #if DEBUG
             if Demo.isOn, let at = Demo.handoff { env.handoff = .init(request: Demo.handoffRequest, position: at) }
@@ -410,9 +410,10 @@ struct MainTabs: View {
     }
 }
 
-/// Un aviso de la app (sin Infuse, sin fuentes, descargando…), arriba como todos: se va solo; tocarlo lo cierra.
+/// Un aviso de la app (sin Infuse, sin fuentes, descargando…), abajo como todos: se va solo; tocarlo lo cierra.
 struct BannerView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let ui = AppEnvironment.shared.ui
 
     var body: some View {
@@ -423,7 +424,7 @@ struct BannerView: View {
                   action: hasAction ? { env.runBannerAction(banner) } : nil,
                   seconds: Toast.duration(banner.tone, hasAction: hasAction), dismiss: { env.dismissBanner(banner.serial) })
                 .id(banner.serial)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .transition(DS.Motion.notice(reduceMotion))
                 .sensoryFeedback(banner.tone == .error || banner.tone == .warn ? .warning : .success, trigger: banner.serial)
         }
     }
