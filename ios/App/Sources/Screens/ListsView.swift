@@ -411,7 +411,7 @@ struct ListsView: View {
                      route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan), eyebrow: shelfMeta(plan),
                      reflected: plan.style != .top10) {   // el Top 10 no lleva reflejo: abajo van su ▲ ▼ y la cifra
             ForEach(items) { s in
-                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }   // en Mi lista todo está ahí: el marcador sobra
+                PlanPoster(suggestion: s, plan: plan, model: model, style: plan.style, badge: model.badges[s.imdb])
             }
         }
         // Los Top 10 (y los rankings de plataformas), con sus pósters pedidos en cuanto llega la lista.

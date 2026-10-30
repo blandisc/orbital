@@ -6,19 +6,13 @@ import OrbitalModels
 
 /// La lista completa de un estante, en cuadrícula (el mismo título y logo del encabezado que se tocó).
 struct ListGridView: View {
-    @Environment(AppEnvironment.self) private var env
     var observer: ModelObserver<ParaTiModel>
     var collections: ModelObserver<CollectionsModel>
     let shelfID: String
     private var model: ParaTiModel { observer.model }
 
     private func poster(_ s: Suggestion, _ plan: ShelfPlan, width: CGFloat) -> some View {
-        // En tus Favoritos, mantener el dedo ofrece «Quitar de favoritos» (en Trakt, con «Deshacer»), no «No me interesa».
-        let favorites = plan.id == ForYou.favoritesList
-        return ShelfPoster(suggestion: s, style: plan.style == .top10 ? .platform : plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb),
-                           width: width, favorite: favorites) { dismissed in
-            Task { if favorites { await env.removeFavorite(dismissed) } else { await model.dismiss(dismissed) } }
-        }
+        PlanPoster(suggestion: s, plan: plan, model: model, style: plan.style == .top10 ? .platform : plan.style, width: width)
     }
 
     var body: some View {

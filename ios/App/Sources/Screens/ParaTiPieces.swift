@@ -134,3 +134,24 @@ struct ShelfPoster: View {
 
 /// Cómo guarda «Para ti › Listas» su filtro (el control es `DSKindFilter`, el de toda la app).
 enum KindFilter: String { case all, series, movie }
+
+/// Un póster de un estante de Para ti con su menú, el mismo en la fila y en su «Ver todo»: en tus Favoritos, «Quitar de
+/// favoritos» (en Trakt, con «Deshacer»); en los demás, «No me interesa». Una sola pieza para que las dos no se separen.
+struct PlanPoster: View {
+    @Environment(AppEnvironment.self) private var env
+    let suggestion: Suggestion
+    let plan: ShelfPlan
+    let model: ParaTiModel
+    var style: ShelfPlan.Style
+    var badge: PosterBadge? = nil
+    var width: CGFloat = DS.Poster.railWidth
+
+    var body: some View {
+        let favorites = plan.id == ForYou.favoritesList
+        // En Mi lista todo está ahí: el marcador sobra.
+        ShelfPoster(suggestion: suggestion, style: style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(suggestion.imdb),
+                    badge: badge, width: width, favorite: favorites) { dismissed in
+            Task { if favorites { await env.removeFavorite(dismissed) } else { await model.dismiss(dismissed) } }
+        }
+    }
+}
