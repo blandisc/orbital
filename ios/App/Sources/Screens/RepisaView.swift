@@ -249,6 +249,7 @@ struct RepisaCollectionView: View {
         .sensoryFeedback(.success, trigger: placed?.id)
         .task(id: item.id) { try? await Task.sleep(for: DS.Repisa.momentHold); if placed?.id == item.id { placed = nil } }
         .accessibilityAddTraits(.isModal)
+        .accessibilityElement(children: .contain)   // cada pieza de adentro conserva su identificador
         .accessibilityIdentifier("repisa-moment")
     }
 
