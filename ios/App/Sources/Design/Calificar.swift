@@ -90,7 +90,7 @@ struct RatingReminder: View {
         HStack(spacing: DS.Space.s3) {
             posterThumb
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("¿Qué tal \(title)?").recipe(.footnote).fontWeight(.semibold).lineLimit(1)
+                Text("¿Qué tal \(title)?").recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
                 RatingStars(value: nil, size: DS.Rating.starInline) { if let v = $0 { onRate(v) } }
             }
             .layoutPriority(1)   // el título gana el espacio: «y 2 más» y la ✕ son chicos
@@ -104,7 +104,9 @@ struct RatingReminder: View {
                 .accessibilityIdentifier("rating-reminder-dismiss")
         }
         .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-        .glassEffect(.regular, in: Capsule())
+        // El vidrio de la barra de pestañas: el mismo material, interactivo como ella y con su mismo velo claro (sin él, sobre el
+        // fondo oscuro se veía más gris que la barra y que «Viendo en la TV»).
+        .glassEffect(.regular.tint(DS.Rating.glassTint).interactive(), in: Capsule())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("rating-reminder")
     }
