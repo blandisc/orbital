@@ -22,6 +22,8 @@ struct HomeView: View {
     @Namespace private var simpsonsZoom
     @State private var continueSort: ListSort = .added
     @State private var continueKind = ""
+    /// El nombre del tipo recién elegido en la barra («Series»), un momento.
+    @State private var kindTip: String?
     /// El alto de cada renglón de «Tu watchlist», que crece con el tamaño de letra.
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -37,6 +39,13 @@ struct HomeView: View {
 
     var body: some View {
         let model = home.model
+        // El tipo de la barra (Todo · Películas · Series) filtra toda la página, no solo la portada.
+        let kind = model.spotlightKind
+        let fits: (String) -> Bool = { kind == nil || $0 == kind }
+        let continuing = model.continueWatching.filter { fits($0.kind) }
+        let picks = model.forYouPicks.filter { fits($0.kind) }
+        let pending = model.traktPending.filter { fits($0.kind) }
+        let favorites = model.favorites.filter { fits($0.kind) }
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 if model.offline {
@@ -77,28 +86,29 @@ struct HomeView: View {
                 if model.spotlight.isEmpty, model.continueWatching.isEmpty, model.isLoading {
                     FeedSkeleton()   // la primera vez: el lugar ya reservado mientras llega
                 }
-                if !model.continueWatching.isEmpty {
-                    continueRail(model).perfTag("home.rail")
-                } else if !model.isLoading, model.spotlight.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
+                // El orden del Inicio nuevo (docs/producto/inicio-benchmark/): lo tuyo primero, luego lo que sale de tus series,
+                // tus sugerencias, el Top 10 y Mi lista.
+                if !continuing.isEmpty {
+                    continueRail(model, items: continuing).perfTag("home.rail")
+                } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                     DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
                 }
-                // Primero lo pendiente (tu watchlist), luego lo que sale y al final lo que guardaste; cada renglón con su porqué
-                // arriba, su sello de origen y su reflejo (el peso del carrusel de arriba).
-                // Lo tuyo: tus recomendaciones (lo personal ya no va arriba, donde está lo de todos).
-                if !model.forYouPicks.isEmpty {
-                    Rail(title: "Para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas con lo que ves"), source: .trakt, reflected: true) {
-                        ForEach(model.forYouPicks) { s in TitleLink(route: s.route) }
+                // Lo que sale de tus series (solo series: con «Películas» en la barra, no se pinta).
+                if kind != "movie", !model.upcoming.isEmpty { upcoming(model) }
+                // Tus recomendaciones de Trakt.
+                if !picks.isEmpty {
+                    Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt con lo que ves"), source: .trakt, reflected: true) {
+                        ForEach(picks) { s in TitleLink(route: s.route) }
                     }
                 }
                 // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
                 if model.hasAnyTop { topTen(model) }
-                if !model.traktPending.isEmpty { watchlist(model) }
-                if !model.upcoming.isEmpty { upcoming(model) }
-                // Tus favoritos de Trakt (el corazón de la ficha), después de Mi lista; sin Trakt o sin favoritos, no se pinta.
-                if !model.favorites.isEmpty {
-                    Rail(title: "Favoritos", count: model.favorites.count, route: HomeListRoute(id: "favorites"),
+                if !pending.isEmpty { watchlist(model, items: pending) }
+                // Tus favoritos de Trakt (el corazón de la ficha): aquí hasta que Para ti tenga su grupo «Tuyo».
+                if !favorites.isEmpty {
+                    Rail(title: "Favoritos", count: favorites.count, route: HomeListRoute(id: "favorites"),
                          eyebrow: Text("Lo que marcaste con el corazón"), source: .trakt, reflected: true) {
-                        ForEach(model.favorites) { s in TitleLink(route: s.route).contextMenu { favoriteActions(s) } }
+                        ForEach(favorites) { s in TitleLink(route: s.route).contextMenu { favoriteActions(s) } }
                     }
                 }
             }
@@ -135,6 +145,40 @@ struct HomeView: View {
             // La ficha de Los Simpson (~650 KB) fuera del arranque: primero Inicio y sus imágenes; si tocas la dona antes, la pide ella.
             try? await Task.sleep(for: .seconds(DS.Simpsons.prefetchDelay))
             await env.simpsons.prefetch()
+        }
+        // Todo · Películas · Series para toda la página (tres íconos) y la puerta del filtro avanzado, en una franja angosta bajo la
+        // barra: en la barra no caben junto al logotipo y sus botones (iOS los mandaba a un menú «…»).
+        .safeAreaBar(edge: .top) {
+            DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }), icons: true)
+                .accessibilityIdentifier("home-kind-filter")
+                .frame(maxWidth: .infinity)
+                .overlay(alignment: .trailing) {
+                    // Por ahora lleva a Buscar; el cajón del filtro lo construye la sesión de componentes.
+                    Button { env.ui.openTab = 2 } label: { Image(systemName: "line.3.horizontal.decrease") }
+                        .buttonStyle(.glass).buttonBorderShape(.circle)
+                        .accessibilityLabel(Text("Filtros de búsqueda"))
+                        .accessibilityIdentifier("home-filters")
+                }
+                .padding(.horizontal, DS.Space.gutter)
+                .padding(.bottom, DS.Space.s2)
+        }
+        // El nombre del tipo recién elegido, un momento, bajo la barra (los íconos solos se entienden menos que una palabra).
+        .overlay(alignment: .top) {
+            if let kindTip {
+                DSCapsuleLabel(title: Text(LocalizedStringKey(kindTip)), symbol: KindGlyph.symbol(model.spotlightKind), selected: true)
+                    .padding(.top, DS.Space.s2)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .accessibilityHidden(true)
+            }
+        }
+        .animation(DS.Motion.enter(reduceMotion), value: kindTip)
+        .task(id: kindTip) {
+            guard kindTip != nil else { return }
+            try? await Task.sleep(for: DS.HomeKind.tipHold)
+            kindTip = nil
+        }
+        .onChange(of: model.spotlightKind) { _, new in
+            kindTip = switch new { case "movie": "Películas"; case "series": "Series"; default: "Todo" }
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
@@ -191,7 +235,7 @@ struct HomeView: View {
                 .padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop(tint: tint.colors))
-        .navigationTitle(route.id == "watchlist" ? Text("Mi lista") : route.id == "foryou" ? Text("Para ti") : Text("Favoritos"))
+        .navigationTitle(route.id == "watchlist" ? Text("Mi lista") : route.id == "foryou" ? Text("Sugerencias para ti") : Text("Favoritos"))
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -264,12 +308,9 @@ struct HomeView: View {
         let middle = (copies / 2) * items.count
         return VStack(spacing: DS.Space.s3) {
             // El filtro, discreto a la derecha del título (un menú: Todo · Películas · Series), como en Para ti y el Top 10.
-            HStack(alignment: .sectionTitle) {
-                DSSectionHead(title: Text("En tendencia"), eyebrow: Text("Lo que todos están viendo"))
-                Spacer(minLength: DS.Space.s2)
-                kindFilter(model)
-            }
-            .padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: Text("En tendencia"), eyebrow: Text("Lo que todos están viendo"))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: DS.Deck.spacing) {
                     ForEach(0..<(copies * items.count), id: \.self) { slot in
@@ -298,12 +339,6 @@ struct HomeView: View {
         .task(id: heroSlot) { await tint.load(currentHero?.wide) }   // se cancela si pasas a otro
         // El toque solo al deslizar tú (no al acomodarla la app).
         .sensoryFeedback(.selection, trigger: heroSlot) { old, _ in old != nil && !placingHero }
-    }
-
-    /// Todo · Películas · Series: un botón chico (como el de Para ti), sin otro renglón.
-    private func kindFilter(_ model: HomeModel) -> some View {
-        DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }), menu: true)
-            .accessibilityIdentifier("home-kind-filter")
     }
 
     private func hero(_ s: Suggestion) -> some View {
@@ -351,16 +386,16 @@ struct HomeView: View {
 
     /// «Seguir viendo»: lo que dejaste a medias (o el siguiente episodio), en piezas anchas con su avance. Tocar una sigue
     /// donde ibas; mantenerla: la ficha, la TV o quitarla.
-    private func continueRail(_ model: HomeModel) -> some View {
+    private func continueRail(_ model: HomeModel, items: [HomeItem]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             NavigationLink(value: HomeListRoute(id: "continue")) {
-                DSSectionHead(title: Text("Seguir viendo"), count: model.continueWatching.count, chevron: true, eyebrow: Text("Lo que tienes a medias"))
+                DSSectionHead(title: Text("Seguir viendo"), count: items.count, chevron: true, eyebrow: Text("Lo que tienes a medias"))
             }
             .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
             .accessibilityIdentifier("home-all-continue")
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) {
-                    ForEach(model.continueWatching) { item in
+                    ForEach(items) { item in
                         Button { Task { await env.play(item) } } label: {
                             StillCard(title: item.title, art: item.background ?? item.poster, data: continueData(item), progress: item.progress,
                                       fallback: item.background == nil ? nil : item.poster)
@@ -384,17 +419,17 @@ struct HomeView: View {
 
     /// «Mi lista» (tu watchlist de Trakt, también sin Trakt en el teléfono): tarjetas con póster, datos y sinopsis en dos renglones que se deslizan juntos (cada renglón de Inicio
     /// con su forma: el destacado en carrusel, lo que sigues en panorámicas, lo pendiente en fichas y Mi lista en pósters).
-    private func watchlist(_ model: HomeModel) -> some View {
+    private func watchlist(_ model: HomeModel, items: [Suggestion]) -> some View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             NavigationLink(value: HomeListRoute(id: "watchlist")) {
-                DSSectionHead(title: Text("Mi lista"), count: model.traktPending.count, chevron: true, eyebrow: Text("Lo que dejaste pendiente"))
+                DSSectionHead(title: Text("Mi lista"), count: items.count, chevron: true, eyebrow: Text("Lo que dejaste pendiente"))
             }
             .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 // Dos renglones (uno si son pocas), del alto que pida la letra; en el renglón, las primeras.
-                LazyHGrid(rows: Array(repeating: GridItem(.fixed(watchRow), spacing: DS.Space.s3), count: model.traktPending.count < 3 ? 1 : 2), spacing: DS.Space.s3) {
-                    ForEach(model.traktPending.prefix(DS.Editorial.watchlistInRow)) { s in
+                LazyHGrid(rows: Array(repeating: GridItem(.fixed(watchRow), spacing: DS.Space.s3), count: items.count < 3 ? 1 : 2), spacing: DS.Space.s3) {
+                    ForEach(items.prefix(DS.Editorial.watchlistInRow)) { s in
                         let facts = [s.year.map(String.init), Vocabulary.genres(s.genres, language: language).first].compactMap { $0 }.joined(separator: " · ")
                         TitleNavigationLink(route: s.route) {
                             WatchlistCard(title: s.title, poster: s.poster, facts: facts, overview: s.overview).titleZoomSource(s.route)
@@ -420,7 +455,8 @@ struct HomeView: View {
     private func topTen(_ model: HomeModel) -> some View {
         let service = model.topService
         let series = model.top(kind: "series"), films = model.top(kind: "movie")
-        let movies = topMovies && !films.isEmpty || series.isEmpty
+        let pageKind = model.spotlightKind
+        let movies = pageKind == "movie" ? true : pageKind == "series" ? false : (topMovies && !films.isEmpty || series.isEmpty)
         let items = movies ? films : series
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(alignment: .sectionTitle) {
@@ -430,7 +466,7 @@ struct HomeView: View {
                 Spacer(minLength: DS.Space.s2)
                 // Siempre ocupa su lugar (oculto si el servicio solo tiene uno de los dos): al cambiar de servicio nada brinca.
                 DSKindFilter(kind: Binding(get: { movies ? "movie" : "series" }, set: { topMovies = $0 == "movie" }), includeAll: false, compact: true)
-                    .opacity(!series.isEmpty && !films.isEmpty ? 1 : 0).disabled(series.isEmpty || films.isEmpty)
+                    .opacity(pageKind == nil && !series.isEmpty && !films.isEmpty ? 1 : 0).disabled(pageKind != nil || series.isEmpty || films.isEmpty)
             }
             .padding(.horizontal, DS.Space.gutter)
             // De qué servicio: una pastilla por cada uno, con su logo (la elegida, con su color). Ancladas: al deslizar se

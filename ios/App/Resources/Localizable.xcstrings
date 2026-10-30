@@ -8800,6 +8800,17 @@
         }
       }
     },
+    "Filtros de búsqueda": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search filters"
+          }
+        }
+      }
+    },
     "Fondo": {
       "extractionState": "manual",
       "localizations": {
@@ -16680,6 +16691,17 @@
         }
       }
     },
+    "Recomendadas por Trakt con lo que ves": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended by Trakt from what you watch"
+          }
+        }
+      }
+    },
     "Recomendados": {
       "extractionState": "manual",
       "localizations": {
@@ -19132,6 +19154,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Suggestions"
+          }
+        }
+      }
+    },
+    "Sugerencias para ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggestions for you"
           }
         }
       }

@@ -29,6 +29,10 @@ TRANSLATIONS = {
     "No calificar": "Don't rate",
     "Nada por calificar": "Nothing to rate",
     "Por calificar": "To rate",
+    # Inicio nuevo (docs/producto/inicio-benchmark/).
+    "Sugerencias para ti": "Suggestions for you",
+    "Recomendadas por Trakt con lo que ves": "Recommended by Trakt from what you watch",
+    "Filtros de búsqueda": "Search filters",
     # Modo degradado (docs/producto/modo-degradado.md): la causa de verdad y la salida (`Degraded`, `UserMessages`).
     "Trakt no contesta": "Trakt isn't responding",
     "Real-Debrid no contesta": "Real-Debrid isn't responding",

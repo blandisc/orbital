@@ -30,10 +30,19 @@ struct DSKindFilter: View {
     var compact = false
     /// Una lista que se despliega (tres opciones no caben junto al título): la cápsula con lo elegido y ⌄, como «Ver todo».
     var menu = false
+    /// En la barra de arriba (Inicio): solo los tres íconos, sin texto; cada uno dice su nombre a VoiceOver.
+    var icons = false
 
     var body: some View {
         Group {
-            if menu {
+            if icons {
+                Picker(selection: $kind) {
+                    ForEach(options, id: \.0) { Image(systemName: KindGlyph.symbol($0.0)).accessibilityLabel(Text($0.1)).tag($0.0) }
+                } label: { EmptyView() }
+                .pickerStyle(.segmented)
+                .fixedSize()
+                .sensoryFeedback(.selection, trigger: kind)
+            } else if menu {
                 Menu {
                     Picker(selection: $kind) { ForEach(options, id: \.0) { Label($0.1, systemImage: KindGlyph.symbol($0.0)).tag($0.0) } } label: { EmptyView() }
                 } label: {

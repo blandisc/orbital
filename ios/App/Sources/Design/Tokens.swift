@@ -58,7 +58,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// «En vivo» (el único teal, como en la TV).
     static let live = role(.live)
     /// La línea del porqué arriba de un encabezado (ámbar, como el «porqué» de las portadas).
-    static let eyebrow = role(.warning)
+    /// Desde el 30 oct 2026 (decisión de Fernando, docs/producto/inicio-benchmark/): el porqué va en el turquesa de Orbital,
+    /// el mismo papel que «En vivo» (con su versión oscura en modo claro, que sí se lee sobre el papel).
+    static let eyebrow = role(.live)
     /// La luna de la marca (turquesa, igual en los dos modos).
     static let brandMoon = role(.brandMoon)
     /// Lo que salió bien o ya está (visto, descargado, conectado): el papel, como la TV.
