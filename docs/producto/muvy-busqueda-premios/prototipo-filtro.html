@@ -1092,6 +1092,11 @@ kbd{font-family:var(--mono);font-size:12px;padding:1px 6px;border-radius:5px;bac
 .qgrid .qd.on{box-shadow:inset 0 0 0 2px var(--a-text)}
 .qgrid .qd.gem.on{box-shadow:inset 0 0 0 2px #e8c46e;background:linear-gradient(135deg,rgba(246,215,122,.3),rgba(184,134,42,.16))}
 .gemb{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#f6d77a,#b8862a);color:#2a1d05;box-shadow:0 6px 18px rgba(232,196,110,.35)}
+
+.subser{display:flex;flex-direction:column;gap:8px;padding-top:4px;border-top:.5px solid rgba(255,255,255,.08);animation:pin .25s ease-out}
+.miniq{position:absolute;left:14px;top:12px;display:grid;grid-template-columns:repeat(2,26px);gap:4px}
+.miniq i{display:block;height:20px;border-radius:5px;background:rgba(255,255,255,.12)}
+.miniq i.g{background:linear-gradient(135deg,#f6d77a,#b8862a);opacity:.55}
 </style>
 
 <div class="wrap">
@@ -1116,7 +1121,8 @@ kbd{font-family:var(--mono);font-size:12px;padding:1px 6px;border-radius:5px;bac
         <li><b>Más pulido:</b> el cajón es de vidrio, el filtro abierto se marca en dorado con una flechita hacia su panel, el número de filtros activos va en el título y los deslizadores son los de iOS.</li>
         <li><b>Sin conteos en vivo:</b> los resultados se piden una sola vez, al tocar «Ver resultados».</li>
         <li><b>Sin «Tema».</b></li>
-        <li><b>Joyas ocultas, explicadas:</b> dentro de «Qué tan conocida», un cuadro cruza calificación (arriba = mejor) con qué tan vista (derecha = más). Joyas ocultas es la esquina de muy buena y poco vista; también están Las de siempre, Para pocos y Taquilleras.</li>
+        <li><b>Series, dentro de Formato:</b> al elegir «Series» aparece ahí mismo «Todas / En emisión / Terminadas».</li>
+        <li><b>Joyas ocultas, explicadas:</b> «Qué tan conocida» es solo un cuadro que cruza calificación (arriba = mejor) con qué tan vista (derecha = más). Joyas ocultas es la esquina de muy buena y poco vista; también están Las de siempre, Para pocos y Taquilleras.</li>
         <li><b>Personas sin fotos:</b> iniciales de color, con su nombre y su papel.</li>
         <li><b>Estudios con su logo</b> (los de TMDB que ya usa Colecciones) y <b>Ocasión</b> con el arte de la app.</li>
       </ul>
@@ -1290,7 +1296,6 @@ function pass(x){
   if (S.rmin.imdb && x.imdb < S.rmin.imdb) return false;
   if (S.rmin.rt && x.rtm < S.rmin.rt) return false;
   if (S.rmin.lb && x.lb < S.rmin.lb) return false;
-  if (x.fame < S.fame[0] || x.fame > S.fame[1]) return false;
   if (S.quad){ const good = x.imdb >= 7.5, known = x.fame >= 2; if (S.quad==='gem' && !(good && !known)) return false; if (S.quad==='classic' && !(good && known)) return false; if (S.quad==='niche' && !(!good && !known)) return false; if (S.quad==='pop' && !(!good && known)) return false; }
   if (S.themes.size && !x.th.some(t => S.themes.has(t))) return false;
   if (S.ctry.size && !S.ctry.has(x.c)) return false;
@@ -1298,7 +1303,6 @@ function pass(x){
   if (S.people.size && !x.pp.some(p => S.people.has(p))) return false;
   if (S.studios.size && !S.studios.has(x.st)) return false;
   if (S.ser && x.k==='series' && x.ser !== S.ser) return false;
-  if (S.ser && x.k!=='series') return false;
   if (S.occ.size && ![...S.occ].some(o => OCC[o].includes(x.id))) return false;
   if (S.me.has('unseen') && SEEN.has(x.id)) return false;
   if (S.me.has('list') && !LIST.has(x.id)) return false;
@@ -1332,7 +1336,7 @@ function eraPatch(){ const w = document.getElementById('era-win'); if (w){ w.sty
 const fmtH = h => { const hh = Math.floor(h)%24, mm = Math.round((h%1)*60); const ap = hh>=12 && hh<24 ? 'pm' : 'am'; const h12 = ((hh+11)%12)+1; return `${h12}:${String(mm).padStart(2,'0')} ${ap}`; };
 const active = {
   fmt: () => S.fmt.size>0, gen: () => S.gIn.size+S.gOut.size>0, era: () => S.y0>1950 || S.y1<2026 || S.spread, time: () => !!S.time,
-  rate: () => !!(S.rmin.imdb||S.rmin.rt||S.rmin.lb), fame: () => S.fame[0]>0 || S.fame[1]<3 || !!S.quad, theme: () => S.themes.size>0, orig: () => S.ctry.size>0,
+  rate: () => !!(S.rmin.imdb||S.rmin.rt||S.rmin.lb), fame: () => !!S.quad, theme: () => S.themes.size>0, orig: () => S.ctry.size>0,
   awards: () => S.awards.size>0, people: () => S.people.size>0, studio: () => S.studios.size>0, ser: () => !!S.ser,
   occ: () => S.occ.size>0, me: () => S.me.size>0, who: () => !!S.who
 };
@@ -1341,7 +1345,7 @@ const gart = k => (GEN.find(g => g[0]===k)||[])[2];
 function card(key){
   let vis = '', t = '', sub = '';
   switch(key){
-    case 'fmt': vis = `<div class="ic3">${FMT.map(f => `<span class="${S.fmt.has(f[0])?'on':''}">${ic(f[2])}</span>`).join('')}</div>`; t = 'Formato'; sub = S.fmt.size ? FMT.filter(f => S.fmt.has(f[0])).map(f => f[1]).join(', ') : 'Todo'; break;
+    case 'fmt': vis = `<div class="ic3">${FMT.map(f => `<span class="${S.fmt.has(f[0])?'on':''}">${ic(f[2])}</span>`).join('')}</div>`; t = 'Formato'; sub = S.fmt.size ? FMT.filter(f => S.fmt.has(f[0])).map(f => f[1]).join(', ') + (S.ser ? (S.ser==='airing' ? ' · en emisión' : ' · terminadas') : '') : 'Todo'; break;
     case 'gen': { const first = [...S.gIn][0]; vis = first && gart(first) ? `<div class="vis2">${img(gart(first),'width:100%;height:100%;object-fit:cover')}</div>` : `<div class="vis2 quad" style="opacity:${S.gIn.size?1:.4}">${img('genre-drama')}${img('genre-thriller')}${img('genre-comedy')}${img('genre-scifi')}</div>`;
       t = S.gIn.size ? [...S.gIn].map(gname).join(', ') : 'Género'; sub = S.gOut.size ? 'sin ' + [...S.gOut].map(gname).join(', ').toLowerCase() : (S.gIn.size ? 'Género' : 'Cualquiera'); break; }
     case 'era': { const L = (S.y0-1950)/(2026-1950)*100, W2 = (S.y1-S.y0)/(2026-1950)*100; vis = `<div class="vis2"><div class="mini-ruler" style="top:16px">${active.era()?`<i style="left:${L}%;width:${Math.max(W2,3)}%"></i>`:''}</div></div>`; t = active.era() ? `${S.y0} – ${S.y1}` : 'Época'; sub = S.spread ? 'repartido por décadas' : (active.era() ? 'Época' : 'Cualquier año'); break; }
@@ -1349,7 +1353,7 @@ function card(key){
       const len = 122.5; vis = `<div class="vis2"><svg viewBox="0 0 90 50" style="position:absolute;left:24px;top:12px;width:calc(100% - 48px)"><path d="M6 46 A39 39 0 0 1 84 46" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="7" stroke-linecap="round"/><path d="M6 46 A39 39 0 0 1 84 46" fill="none" stroke="#f4c24d" stroke-width="7" stroke-linecap="round" stroke-dasharray="${len}" stroke-dashoffset="${len*(1-frac)}"/></svg></div>`;
       t = S.time==='before' ? `Antes de las ${fmtH(S.before)}` : S.time==='short' ? 'Cortita' : S.time==='normal' ? 'Normal' : S.time==='long' ? 'Para echarse' : 'Tiempo'; sub = S.time==='before' ? `caben ${Math.floor(minutesUntil(S.before)/60)} h ${minutesUntil(S.before)%60} min` : S.time ? 'Duración' : 'Sin límite'; break; }
     case 'rate': vis = `<div class="vis2" style="display:flex;gap:6px;padding:11px 10px">${RATE.map(r=>`<span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:${S.rmin[r.k]?1:.4}"><span class="logo" style="background:${r.bg};color:${r.fg};width:100%;height:18px;font-size:9.5px">${r.l}</span><b style="font-size:12.5px;font-variant-numeric:tabular-nums">${S.rmin[r.k]?fmtR(r.k,S.rmin[r.k]).replace('+',''):'—'}</b></span>`).join('')}</div>`; t = 'Calificación'; sub = active.rate() ? 'mínima' : 'Todas'; break;
-    case 'fame': { if (S.quad){ vis = `<div class="vis2" style="display:grid;place-items:center;padding-bottom:30px"><span class="gemb">${ic(QUADS[S.quad][1],'width:26px;height:26px')}</span></div>`; t = QUADS[S.quad][0]; sub = 'Fama × calificación'; break; } const a = S.fame[0], b = S.fame[1]; vis = `<div class="vis2"><div style="position:absolute;left:14px;right:14px;top:22px;height:5px;border-radius:9px;background:linear-gradient(90deg,#5fd6c6,#f4c24d,#f0574d);opacity:${active.fame()?1:.4}"></div>${active.fame()?`<div style="position:absolute;top:16px;height:17px;border-radius:9px;box-shadow:0 0 0 2px #fff;left:calc(14px + ${a/3*100}% * .8);width:calc(${(b-a)/3*100}% * .8 + 4px)"></div>`:''}</div>`; t = active.fame() ? (a===b ? FAME[a][0] : `${FAME[a][0]} → ${FAME[b][0]}`) : 'Qué tan conocida'; sub = active.fame() ? 'Fama' : 'Cualquiera'; break; }
+    case 'fame': { if (S.quad){ vis = `<div class="vis2" style="display:grid;place-items:center;padding-bottom:30px"><span class="gemb">${ic(QUADS[S.quad][1],'width:26px;height:26px')}</span></div>`; t = QUADS[S.quad][0]; sub = 'Fama × calificación'; break; } vis = `<div class="vis2"><div class="miniq"><i class="g"></i><i></i><i></i><i></i></div></div>`; t = 'Qué tan conocida'; sub = 'Joyas ocultas y más'; break; }
     case 'theme': vis = `<div class="vis2" style="padding:10px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start">${(S.themes.size?THEMES.filter(x=>S.themes.has(x[0])):THEMES.slice(0,3)).map(x=>`<span style="padding:3px 7px;border-radius:99px;background:rgba(255,255,255,${S.themes.has(x[0])?.9:.12});color:${S.themes.has(x[0])?'#0c0c0e':'inherit'};font-size:10px;font-weight:700">${x[1]}</span>`).join('')}</div>`; t = 'Tema'; sub = S.themes.size ? `${S.themes.size} elegido${S.themes.size>1?'s':''}` : 'De qué trata'; break;
     case 'orig': vis = `<div class="vis2" style="font-size:26px;text-align:center;padding-top:12px;opacity:${S.ctry.size?1:.45}">${S.ctry.size?CTRY.filter(c=>S.ctry.has(c[0])).map(c=>c[1]).join(''):'🇲🇽🇰🇷🇫🇷'}</div>`; t = S.ctry.size ? CTRY.filter(c=>S.ctry.has(c[0])).map(c=>c[2]).join(', ') : 'Origen e idioma'; sub = S.ctry.size ? 'Origen' : 'Cualquiera'; break;
     case 'awards': vis = `<div class="vis2" style="display:flex;gap:6px;justify-content:center;padding-top:10px;opacity:${S.awards.size?1:.5}">${(S.awards.size?MEDALS.filter(m=>S.awards.has(m[0])):MEDALS.slice(0,2)).slice(0,3).map(m=>m[2].startsWith('award')?img(m[2],'height:38px'):`<span style="font-family:Georgia,serif;font-size:24px;color:#e8c46e;line-height:38px">${m[2]}</span>`).join('')}</div>`; t = 'Premios y listas'; sub = S.awards.size ? MEDALS.filter(m=>S.awards.has(m[0])).map(m=>m[1]).join(', ') : 'Óscar, Criterion…'; break;
@@ -1368,7 +1372,7 @@ function card(key){
 function panel(key){
   const H = (title, clearKey) => `<div class="ph2"><span>${title}</span>${active[key]()?`<button data-act="clear:${key}">Quitar</button>`:''}</div>`;
   switch(key){
-    case 'fmt': return H('Elige uno o varios') + `<div class="fmt2">${FMT.map(f=>`<button class="${S.fmt.has(f[0])?'on':''}" data-act="fmt:${f[0]}">${ic(f[2])}${f[1]}</button>`).join('')}</div>`;
+    case 'fmt': return H('Elige uno o varios') + `<div class="fmt2">${FMT.map(f=>`<button class="${S.fmt.has(f[0])?'on':''}" data-act="fmt:${f[0]}">${ic(f[2])}${f[1]}</button>`).join('')}</div>` + (S.fmt.has('series') ? `<div class="subser"><span class="ph2" style="margin:0"><span>Series</span></span><div class="seg2"><button class="${!S.ser?'on':''}" data-act="ser:all">Todas</button><button class="${S.ser==='airing'?'on':''}" data-act="ser:airing">En emisión</button><button class="${S.ser==='ended'?'on':''}" data-act="ser:ended">Terminadas</button></div></div>` : '');
     case 'gen': return H('Toca para elegir') + `<div class="seg2"><button class="${S.gMode==='in'?'on':''}" data-act="gmode:in">Quiero</button><button class="${S.gMode==='out'?'on':''}" data-act="gmode:out">No quiero</button></div><div class="gt2">${GEN.map(g=>{const st = S.gIn.has(g[0])?'in':S.gOut.has(g[0])?'out':''; return `<button class="${st}" data-act="gen:${g[0]}">${g[2]?img(g[2]):''}<span>${g[1]}</span>${st?`<b class="mk">${st==='in'?'✓':'⊘'}</b>`:''}</button>`;}).join('')}</div>`;
     case 'era': return H('Época') + `<div class="era-big"><b id="era-lbl">${eraLabel()}</b><small id="era-sub">${eraSub()}</small></div>
       <div class="ruler2" id="ruler2">${rulerTicks()}<div class="win" id="era-win" style="left:${pctY(S.y0)}%;width:${Math.max(pctY(S.y1)-pctY(S.y0),1.3)}%"><span class="hd l" data-h="l"></span><span class="hd r" data-h="r"></span></div></div>
@@ -1377,7 +1381,7 @@ function panel(key){
       <button class="tgl" data-act="spread:1"><span class="ic2">${ic('dice')}</span><span class="t2"><b>Repartido por décadas</b><small>Una de cada época, no solo lo reciente</small></span><span class="tg ${S.spread?'on':''}"></span></button>`;
     case 'time': return H('¿Cuánto tiempo tienes?') + `<div class="presets"><button class="${S.time==='short'?'on':''}" data-act="time:short">${ic('bolt')}Cortita<small>&lt; 1 h 30</small></button><button class="${S.time==='normal'?'on':''}" data-act="time:normal">${ic('film')}Normal<small>1 h 30 – 2 h 30</small></button><button class="${S.time==='long'?'on':''}" data-act="time:long">${ic('moon')}Para echarse<small>&gt; 2 h 30</small></button></div><button class="tgl" data-act="time:before" style="${S.time==='before'?'box-shadow:inset 0 0 0 2px var(--a-text)':''}"><span class="ic2">${ic('clock')}</span><span class="t2"><b>Que acabe antes de las <span id="bef-lbl">${fmtH(S.before)}</span></b><small id="bef-sub">Son las ${fmtH(nowH())} · caben ${Math.floor(minutesUntil(S.before)/60)} h ${minutesUntil(S.before)%60} min</small></span></button><input class="rng" type="range" min="20" max="26" step="0.25" value="${S.before<12?S.before+24:S.before}" style="--p:${((S.before<12?S.before+24:S.before)-20)/6*100}%" data-range="before" aria-label="Hora a la que quieres terminar"><div class="ticks2"><span>8 pm</span><span>10 pm</span><span>12 am</span><span>2 am</span></div>`;
     case 'rate': return H('Mínimo en cada fuente') + RATE.map(r=>`<div class="rrow"><span class="logo" style="background:${r.bg};color:${r.fg}">${r.l}</span><input class="rng" type="range" min="0" max="${r.max}" step="${r.step}" value="${S.rmin[r.k]}" data-range="r-${r.k}" style="--p:${S.rmin[r.k]/r.max*100}%" aria-label="${r.name}, calificación mínima"><b id="rl-${r.k}">${fmtR(r.k,S.rmin[r.k])}</b></div>`).join('') + `<span class="small mut" style="font-weight:600">Usa una, dos o las tres: tienen que cumplirse todas.</span>`;
-    case 'fame': return H('Qué tan vista · toca el primero y el último') + `<div class="fame2">${FAME.map((f,i)=>`<button class="${i>=S.fame[0]&&i<=S.fame[1]&&(S.fame[0]>0||S.fame[1]<3)?'on':''}" data-act="fame:${i}">${img(f[1])}${f[0]}</button>`).join('')}</div><div class="qwrap"><span class="qy">Calificación ↑</span><div class="qgrid">${[['gem','classic'],['niche','pop']].flat().map(q=>`<button class="qd ${q} ${S.quad===q?'on':''}" data-act="quad:${q}">${ic(QUADS[q][1])}<b>${QUADS[q][0]}</b><small>${QUADS[q][2]}</small></button>`).join('')}</div><span class="qx">Poco vista ← → Muy vista</span></div>`;
+    case 'fame': return H('Cruza calificación y qué tan vista') + `<div class="qwrap"><span class="qy">Calificación ↑</span><div class="qgrid">${[['gem','classic'],['niche','pop']].flat().map(q=>`<button class="qd ${q} ${S.quad===q?'on':''}" data-act="quad:${q}">${ic(QUADS[q][1])}<b>${QUADS[q][0]}</b><small>${QUADS[q][2]}</small></button>`).join('')}</div><span class="qx">Poco vista ← → Muy vista</span></div>`;
     case 'theme': return H('Toca los que te antojen') + `<div class="bub2">${THEMES.map(x=>`<button class="${S.themes.has(x[0])?'on':''}" data-act="theme:${x[0]}" style="width:${x[2]}px;height:${x[2]}px;font-size:${x[2]>85?13:11.5}px">${x[1]}</button>`).join('')}</div>`;
     case 'orig': return H('Primero la región, luego el país') + `<div class="reg2">${REG.map(r=>`<button class="${r[3].every(c=>S.ctry.has(c))?'on':''}" data-act="reg:${r[0]}"><span class="fl">${r[2]}</span><b>${r[1]}</b></button>`).join('')}</div><div class="flg">${CTRY.map(c=>`<button class="${S.ctry.has(c[0])?'on':''}" data-act="ctry:${c[0]}"><i>${c[1]}</i>${c[2]}</button>`).join('')}</div>`;
     case 'awards': return H('Premios y listas') + `<div class="med2">${MEDALS.map(m=>`<button class="${S.awards.has(m[0])?'on':''}" data-act="aw:${m[0]}"><span class="m">${m[2].startsWith('award')?img(m[2]):`<b>${m[2]}</b>`}</span>${m[1]}</button>`).join('')}</div>${S.awards.has('oscar')?`<div class="seg2"><button class="${S.oscar==='nom'?'on':''}" data-act="oscar:nom">Óscar: nominada</button><button class="${S.oscar==='win'?'on':''}" data-act="oscar:win">Óscar: ganó</button></div>`:''}`;
@@ -1392,7 +1396,7 @@ function panel(key){
 
 // ---------- Pintar ----------
 const MAIN = ['fmt','gen','era','time','rate','fame'];
-const MORE = ['orig','awards','people','studio','ser','occ','me','who'];
+const MORE = ['orig','awards','people','studio','occ','me','who'];
 function grid(keys){
   let h = '';
   keys.forEach((k, i) => {
@@ -1429,7 +1433,7 @@ function renderBody(){
   if (active.era()) minis.push(['era', `<span><b style="font-size:11px">${String(S.y0).slice(2)}–${String(S.y1).slice(2)}</b></span>`, 'Época']);
   if (S.time) minis.push(['time', `<span>${ic('clock')}</span>`, S.time==='before'?fmtH(S.before):'Tiempo']);
   RATE.forEach(r => { if (S.rmin[r.k]) minis.push(['rate', `<span style="background:${r.bg};color:${r.fg}"><b style="font-size:11px">${fmtR(r.k,S.rmin[r.k]).replace('+','')}</b></span>`, r.l]); });
-  if (active.fame()) minis.push(['fame', S.quad ? `<span style="background:linear-gradient(135deg,#f6d77a,#b8862a);color:#2a1d05">${ic(QUADS[S.quad][1])}</span>` : `<span>${img(FAME[S.fame[0]][1])}</span>`, S.quad ? QUADS[S.quad][0] : FAME[S.fame[0]][0]]);
+  if (S.quad) minis.push(['fame', `<span style="background:linear-gradient(135deg,#f6d77a,#b8862a);color:#2a1d05">${ic(QUADS[S.quad][1])}</span>`, QUADS[S.quad][0]]);
   if (S.themes.size) minis.push(['theme', `<span>${ic('grid')}</span>`, THEMES.filter(x=>S.themes.has(x[0])).map(x=>x[1]).join(', ')]);
   if (S.ctry.size) minis.push(['orig', `<span style="font-size:20px">${CTRY.find(c=>S.ctry.has(c[0]))[1]}</span>`, 'Origen']);
   if (S.awards.size) minis.push(['awards', `<span>${img('award-oscar')}</span>`, 'Premios']);
@@ -1461,7 +1465,7 @@ document.addEventListener('click', e => {
     case 'edit': sheet = 'half'; open = v; if (MORE.includes(v)) { more = true; sheet = 'full'; } break;
     case 'clearall': S = S0(); open = null; break;
     case 'clear': ({fmt:()=>S.fmt.clear(), gen:()=>{S.gIn.clear();S.gOut.clear();}, era:()=>{S.y0=1950;S.y1=2026;S.spread=false;}, time:()=>S.time=null, rate:()=>S.rmin={imdb:0,rt:0,lb:0}, fame:()=>{S.fame=[0,3];S.quad=null;}, theme:()=>S.themes.clear(), orig:()=>S.ctry.clear(), awards:()=>S.awards.clear(), people:()=>S.people.clear(), studio:()=>S.studios.clear(), ser:()=>S.ser=null, occ:()=>S.occ.clear(), me:()=>S.me.clear(), who:()=>S.who=null})[v](); break;
-    case 'fmt': tog(S.fmt, v); break;
+    case 'fmt': tog(S.fmt, v); if (!S.fmt.has('series')) S.ser = null; break;
     case 'gmode': S.gMode = v; break;
     case 'gen': if (S.gMode==='in'){ S.gOut.delete(v); tog(S.gIn, v); } else { S.gIn.delete(v); tog(S.gOut, v); } break;
     case 'spread': S.spread = !S.spread; break;
@@ -1479,7 +1483,7 @@ document.addEventListener('click', e => {
     case 'oscar': S.oscar = v; break;
     case 'pp': tog(S.people, v); break;
     case 'st': tog(S.studios, v); break;
-    case 'ser': S.ser = S.ser===v ? null : v; break;
+    case 'ser': S.ser = v==='all' ? null : v; break;
     case 'occ': tog(S.occ, v); break;
     case 'me': tog(S.me, v); break;
     case 'who': S.who = S.who===v ? null : v; break;
