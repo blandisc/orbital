@@ -48,3 +48,11 @@ struct RatingReminderHost: View {
         }
     }
 }
+
+/// Dentro del accesorio de la barra («Viendo en la TV»): avisa si va encima de la barra o a su lado (barra minimizada).
+struct AccessoryPlacementReport: ViewModifier {
+    @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+    func body(content: Content) -> some View {
+        content.onChange(of: placement, initial: true) { _, now in AppEnvironment.shared.ui.tvAccessoryInline = now == .inline }
+    }
+}

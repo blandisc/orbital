@@ -47,6 +47,14 @@ struct RootView: View {
     }
 
     /// Desde dónde sigue en la TV: «desde 12:34», o «desde el principio» si apenas empezaba.
+    /// Lo que sube la pastilla de calificar: encima de «Viendo en la TV» cuando ese accesorio va sobre la barra (iOS 26.1+, y
+    /// no cuando la barra se minimiza y el accesorio se va a su lado).
+    private func reminderLift() -> CGFloat {
+        guard #available(iOS 26.1, *), let tv = env.tvNow else { return 0 }
+        tv.track()
+        return (tv.now != nil || tv.game != nil) && !ui.tvAccessoryInline ? DS.Rating.accessoryLift : 0
+    }
+
     /// (Un `Text`, no un `String`: así sale en el idioma de la app y no en el del sistema.)
     static func handoffFrom(_ position: Double) -> Text {
         guard position >= DS.Toast.fromStartUnder else { return Text("desde el principio") }
@@ -88,10 +96,11 @@ struct RootView: View {
         // Calificar lo que terminaste: pegada a la barra de pestañas (y encima de «Viendo en la TV» cuando está), solo cuando no
         // hay otro aviso.
         .overlay(alignment: .bottom) {
-            let tv = env.tvNow!
-            let _ = tv.track()
             if ui.handoff == nil, env.notices.current == nil {
-                RatingReminderHost().padding(.bottom, DS.Rating.clearance + (tv.now != nil || tv.game != nil ? DS.Rating.accessoryLift : 0))
+                // Medida desde la orilla de la pantalla (no desde la zona segura): la barra queda a la misma altura en un iPhone con
+                // indicador de inicio y en el SE, que no lo tiene.
+                RatingReminderHost().padding(.bottom, DS.Rating.clearance + reminderLift())
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).ignoresSafeArea(.container, edges: .bottom)
             }
         }
         .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
@@ -277,11 +286,14 @@ struct MainTabs: View {
         // ficha y parecía que a veces no salía). Sin nada en la TV, el control se abre con el botón junto al avatar.
         .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.game != nil) {
             // Un juego en la consola: su acompañante (como el control lo es de lo que suena).
-            if let game = tvNow.model.game {
-                GameAccessory(game: game) { showGame = true }
-            } else if let now = tvNow.model.now {
-                TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = sizeClass == .regular; showRemote = true })
+            Group {
+                if let game = tvNow.model.game {
+                    GameAccessory(game: game) { showGame = true }
+                } else if let now = tvNow.model.now {
+                    TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = sizeClass == .regular; showRemote = true })
+                }
             }
+            .modifier(AccessoryPlacementReport())   // si va encima de la barra o a su lado (la pastilla de calificar se acomoda)
         }
         .environment(\.openRemote, openRemoteAction)
         .environment(\.tallArt, TallArtLookup(env.services.tallArt))   // el póster sin texto en los marcos altos (ficha, «En tendencia»)

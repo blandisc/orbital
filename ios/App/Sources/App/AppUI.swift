@@ -6,6 +6,8 @@ import OrbitalModels
 /// `@Observable`: cada vista se vuelve a pintar solo con lo que lee (el aviso no redibuja el reproductor).
 @Observable
 final class AppUI {
+    /// «Viendo en la TV» va junto a la barra minimizada (al desplazar) y no encima de ella: la pastilla de calificar baja.
+    var tvAccessoryInline = false
     var playing: PlayRequest?
     var pendingTitle: TitleRoute?
     var askFinished: PlayRequest?

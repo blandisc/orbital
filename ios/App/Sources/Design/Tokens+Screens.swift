@@ -170,9 +170,9 @@ extension DS {
         static let starEpisode: CGFloat = 15, episodeRow: CGFloat = 22
         /// Cuánto se queda el recordatorio a la vista antes de irse solo (vuelve la próxima vez que abras la app).
         static let reminderHold: Duration = .seconds(8)
-        /// Dónde va la pastilla: pegada a la barra de pestañas (sobre la orilla segura de abajo) y cuánto sube cuando la barra
-        /// lleva encima «Viendo en la TV» (el segundo dock).
-        static let clearance: CGFloat = 58, accessoryLift: CGFloat = 56
+        /// Dónde va la pastilla: pegada a la barra de pestañas (medido desde la orilla de abajo de la pantalla: la barra queda a
+        /// ~83 pt en el iPhone con indicador y en el SE) y cuánto sube cuando la barra lleva encima «Viendo en la TV».
+        static let clearance: CGFloat = 92, accessoryLift: CGFloat = 54
         /// El velo claro del vidrio de la pastilla, para que se lea igual que la barra de pestañas (vidrio nativo de iOS).
         static let glassTint = DS.paper.opacity(0.12)   // ds-exception: velo del vidrio, medido contra la barra de pestañas
         static let poster: CGFloat = 30, posterAspect: CGFloat = 1.5
