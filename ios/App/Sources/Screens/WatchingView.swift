@@ -70,7 +70,7 @@ struct WatchingView: View {
             .padding(.horizontal, DS.Space.gutter)
             .padding(.bottom, DS.Space.s8)
         }
-        .background(Backdrop())
+        .background(Backdrop(sky: true))
         .navigationTitle(Text("Lo que ves"))
         .task { await model.load(full: true) }   // aquí sí, los diez años (la tarjeta solo pidió la semana)
         .refreshable { await model.load(full: true, force: true) }

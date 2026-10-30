@@ -113,7 +113,7 @@ struct BrowseView: View {
         .toolbarVisibility(barHidden && searching ? .hidden : .visible, for: .navigationBar)
         // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
         .environment(\.dynamicTypeSize, typeSize)
-        .background(Backdrop(tint: tint.colors))
+        .background(Backdrop(tint: tint.colors, sky: true))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         // Automático: a la vista al abrir y se guarda al bajar. En iOS 27, al esconderse la barra de abajo el campo sube

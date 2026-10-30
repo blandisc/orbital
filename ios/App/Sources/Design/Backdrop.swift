@@ -31,6 +31,8 @@ struct Backdrop: View {
     var tint: ArtColors?
     /// La ficha: toda la pantalla del color del arte (no solo un velo arriba), en los dos modos.
     var immersive = false
+    /// El cielo de estrellas detrás (`SkyField`): en las pantallas con poco contenido, como «Lo que ves» y Buscar.
+    var sky = false
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -44,6 +46,7 @@ struct Backdrop: View {
                 LinearGradient(stops: [.init(color: tone, location: 0), .init(color: DS.bg, location: DS.Backdrop.fadeTo)], startPoint: .top, endPoint: .bottom)
                 RadialGradient(colors: [tone.opacity(DS.Backdrop.lowGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.lowGlowRadius)
             }
+            if sky { SkyField(dusk: Self.tone(tint, scheme: scheme) == nil) }
         }
         .ignoresSafeArea()
         .animation(DS.Motion.tint(reduceMotion), value: tint)

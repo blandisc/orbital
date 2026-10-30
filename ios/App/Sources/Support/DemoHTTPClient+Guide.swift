@@ -1,6 +1,8 @@
 import Foundation
 import OrbitalCore
 
+#if DEBUG   // solo la demo: DemoHTTPClient no existe en la versión del iPhone
+
 /// La guía de la primera vez en la demo (`-demo-first-run`), sin salir a internet:
 /// - Real-Debrid contesta según la clave que escribas: una que empieza con «BAD» no la reconoce, con «FREE» es una cuenta
 ///   gratuita y cualquier otra completa es Premium con 143 días. Tarda ~1,5 s, para ver «comprobando».
@@ -46,3 +48,4 @@ extension DemoHTTPClient {
         }
     }
 }
+#endif
