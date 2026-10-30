@@ -7,6 +7,8 @@ struct HomeView: View {
     @State private var home: ModelObserver<HomeModel>
     @State private var tvNow: ModelObserver<TVNowModel>
     @State private var inbox: ModelObserver<InboxModel>
+    /// «Por lo que viste»: el mazo de lo último que viste y sus relacionadas.
+    @State private var because = ModelObserver(BecauseModel(AppEnvironment.shared.services))
     @State private var tint = ArtTint()
     @State private var openTitle: TitleRoute?
     /// La tarjeta al frente del carrusel: su lugar en la vuelta infinita (`slot % cuántas`).
@@ -104,6 +106,7 @@ struct HomeView: View {
                         ForEach(picks) { s in TitleLink(route: s.route) }
                     }
                 }
+                HomeBecause(model: because.model, kind: kind)
                 // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
                 if model.hasAnyTop { topTen(model) }
                 if !pending.isEmpty { watchlist(model, items: pending) }
@@ -216,9 +219,11 @@ struct HomeView: View {
     /// Lo tuyo y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo). Lo pendiente por subir
     /// se sube solo y ya no se anuncia bajo el título («N cambios por subir»: no se quería ahí).
     private func reload(ifStale: Bool = false) async {
+        async let related: Void = because.model.load()   // a la par (Trakt lo guarda: volver a pedirlo es barato)
         if ifStale { await home.model.refreshIfStale() } else { await home.model.refresh() }
         Perf.mark("home.done")
         await tint.load(currentHero?.wide)
+        await related
     }
 
     /// El título con la barra encogida: nada, solo el logotipo (antes decía «Sale hoy: …» y no se quería ahí).

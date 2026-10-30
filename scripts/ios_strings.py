@@ -62,6 +62,8 @@ TRANSLATIONS = {
     "Filtros de búsqueda": "Search filters",
     "En tendencia esta semana": "Trending this week",
     "Lo nuevo de lo tuyo": "New from your shows",
+    "Por lo que viste": "Because you watched",
+    "Cambia lo que viste y cambian las sugerencias": "Change what you watched and the suggestions change",
     "Ya salió y lo que viene": "Out now and coming up",
     "HOY": "TODAY",
     "Ayer": "Yesterday",

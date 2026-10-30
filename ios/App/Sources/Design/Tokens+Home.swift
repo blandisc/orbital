@@ -25,3 +25,8 @@ extension DS {
         static let tipHold: Duration = .milliseconds(1100)
     }
 }
+
+extension DS.Collections {
+    /// «Por lo que viste» en Inicio: cuánto se desenfoca el póster de fondo y cuánto se ve.
+    static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
+}

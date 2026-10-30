@@ -3169,6 +3169,17 @@
         }
       }
     },
+    "Cambia lo que viste y cambian las sugerencias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change what you watched and the suggestions change"
+          }
+        }
+      }
+    },
     "Cambiar": {
       "extractionState": "manual",
       "localizations": {
@@ -16093,6 +16104,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Based on what you've watched"
+          }
+        }
+      }
+    },
+    "Por lo que viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Because you watched"
           }
         }
       }
