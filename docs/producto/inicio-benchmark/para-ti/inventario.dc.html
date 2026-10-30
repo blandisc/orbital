@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Para ti · Inventario</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0c0c0e}
+a{color:#f5f4f0}a:hover{color:#cdcdd3}
+</style>
+</helmet>
+<div style="width: 900px; height: 1500px; box-sizing: border-box; background: #0c0c0e; color: #f5f4f0; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif; padding: 40px; display: flex; flex-direction: column; gap: 20px; overflow: hidden">
+  <div style="display: flex; flex-direction: column; gap: 6px">
+    <span style="font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #a3a3ab">Inventario · Para ti hoy</span>
+    <h1 style="margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -.02em; font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif">Todo lo que hay hoy y adónde va</h1>
+  </div>
+  <div style="display: flex; gap: 16px; font-size: 12.5px; color: #cdcdd3">
+    <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #f5f4f0"></span>Se queda en Para ti</span>
+    <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #5cbf6d"></span>Nuevo</span>
+    <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #4a8ae8"></span>Se muda al Inicio</span>
+    <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #f0574d"></span>Sale</span>
+  </div>
+  <div style="display: grid; grid-template-columns: 230px 290px 120px minmax(0, 1fr); border-top: 1px solid #2a2a30; font-size: 12px; color: #a3a3ab; font-weight: 700; letter-spacing: .06em; text-transform: uppercase">
+    <span style="padding: 10px 0">Hoy en Para ti</span><span style="padding: 10px 0">Qué trae</span><span style="padding: 10px 0">De dónde</span><span style="padding: 10px 0">En la propuesta</span>
+  </div>
+  <div style="display: flex; flex-direction: column; margin-top: -20px">
+    <sc-for list="{{rows}}" as="r" hint-placeholder-count="26">
+      <div style="display: grid; grid-template-columns: 230px 290px 120px minmax(0, 1fr); border-top: 1px solid #1e1e23; font-size: 13.5px; line-height: 1.35; align-items: start">
+        <span style="padding: 9px 12px 9px 0; font-weight: 600; display: flex; gap: 8px; align-items: baseline"><span style="width: 8px; height: 8px; border-radius: 2px; flex: none; background: {{r.c}}"></span>{{r.what}}</span>
+        <span style="padding: 9px 12px 9px 0; color: #cdcdd3">{{r.detail}}</span>
+        <span style="padding: 9px 12px 9px 0; color: #a3a3ab">{{r.src}}</span>
+        <span style="padding: 9px 0">{{r.goes}}</span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":900,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const K = '#f5f4f0', N = '#5cbf6d', H = '#4a8ae8', X = '#f0574d';
+    return {
+      rows: [
+        { c: K, what: 'Mosaico', detail: 'El modo que llena la pantalla de pósters', src: 'Varias', goes: 'Ahora es la portada de Para ti' },
+        { c: K, what: '¿Qué vemos? (el dado)', detail: 'Te propone tres según el ánimo', src: 'Orbital', goes: 'Arriba, a la vista, como mazo que se desliza' },
+        { c: X, what: 'Destacado', detail: '«El N.º 1 de cada plataforma»', src: 'Trakt, Netflix', goes: 'Sale: lo reemplaza el mosaico' },
+        { c: H, what: 'Porque viste…', detail: 'El mazo de lo que viste y sus parecidas', src: 'Trakt', goes: 'Inicio · Por lo que viste' },
+        { c: H, what: 'Recomendadas', detail: 'Tus sugerencias, películas y series', src: 'Trakt', goes: 'Inicio · Sugerencias para ti' },
+        { c: K, what: 'En tendencia', detail: 'Lo más visto de la semana', src: 'Trakt', goes: 'Ahora' },
+        { c: K, what: 'Lo más popular', detail: 'Lo más visto de siempre', src: 'Trakt', goes: 'Ahora' },
+        { c: K, what: 'Nuevo en tus plataformas', detail: 'Episodios recientes y estrenos', src: 'TMDB', goes: 'Ahora' },
+        { c: K, what: 'Aprobadas por la crítica', detail: '90 % o más en Rotten Tomatoes', src: 'MDBList, Trakt', goes: 'Ahora' },
+        { c: K, what: 'Top 10 en Netflix', detail: 'El oficial, semanal, en México', src: 'Netflix', goes: 'Plataformas · Rankings (y en el Inicio, uno a la vez)' },
+        { c: K, what: 'Tendencias por plataforma', detail: 'Disney+, HBO Max, Prime Video, Apple TV+, Paramount+', src: 'JustWatch', goes: 'Plataformas · Rankings' },
+        { c: K, what: 'Tus plataformas (abanicos)', detail: 'Cada una con su top 3', src: 'Netflix, JustWatch', goes: 'Plataformas · Rankings (las mismas tarjetas)' },
+        { c: K, what: 'Catálogo por plataforma', detail: 'Todo Netflix, Disney+, HBO Max', src: 'TMDB', goes: 'Plataformas · Todo lo de cada una' },
+        { c: K, what: 'Temporadas', detail: 'Halloween, Día de Muertos, Navidad, San Valentín, Verano', src: 'TMDB', goes: 'Temporadas (la de hoy, en grande)' },
+        { c: K, what: 'Estudios', detail: 'A24, Pixar, Ghibli, Marvel, Lucasfilm, Blumhouse, DreamWorks, NEON', src: 'TMDB', goes: 'Estudios' },
+        { c: K, what: 'Premios', detail: 'Óscar, Emmy, Globo de Oro, Palma de Oro, BAFTA, Ariel', src: 'Orbital', goes: 'Premios, con tu álbum' },
+        { c: K, what: 'Lo mejor del género', detail: '14 géneros, lo mejor calificado del año', src: 'TMDB', goes: 'Géneros' },
+        { c: K, what: 'Por año', detail: 'De 1980 a hoy', src: 'Trakt', goes: 'Años, con saltos por década' },
+        { c: H, what: 'Próximos estrenos', detail: 'Lo que sale de tus series', src: 'Trakt', goes: 'Inicio · Lo nuevo de lo tuyo' },
+        { c: K, what: 'Tu watchlist / Mi lista', detail: 'Lo que dejaste pendiente', src: 'Trakt', goes: 'Tuyo (y en el Inicio)' },
+        { c: K, what: 'Tus series', detail: 'Las que sigues', src: 'Trakt', goes: 'Tuyo' },
+        { c: K, what: 'Tus listas de Trakt', detail: 'Hasta 8', src: 'Trakt', goes: 'Tuyo' },
+        { c: K, what: 'Favoritos', detail: 'Lo que marcaste con el corazón', src: 'Trakt', goes: 'Tuyo (hoy vive en el Inicio)' },
+        { c: X, what: 'Catálogos de complementos', detail: 'Lo que traen tus complementos de Stremio', src: 'Stremio', goes: 'Sale con «desacoplar Stremio»' },
+        { c: K, what: 'Tu año', detail: 'Lo que viste, día por día', src: 'Trakt', goes: 'Lo que ves (semana, mes y año)' },
+        { c: N, what: 'Listas famosas', detail: 'Criterion (1 000) y el Top 250 de IMDb', src: 'MDBList', goes: 'Listas famosas' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

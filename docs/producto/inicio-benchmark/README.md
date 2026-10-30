@@ -26,3 +26,12 @@ Para ti deja de repetir el Inicio: sin portada, Porque viste, Top 10 ni próximo
   Lo que ves y tus listas. El mosaico es un botón de la barra.
 - B «Escaparate»: el mosaico como portada, índice de círculos, la temporada del día, ¿Qué vemos? como mazo que se
   desliza, Nuevo en renglones, crítica con su número, álbum de premios y Lo que ves.
+
+### 30 oct: Fernando eligió B y pidió meter todos los cortes
+
+`para-ti/B-completo.dc.html` (artboard «B completo») y `para-ti/inventario.dc.html` (qué hay hoy en Para ti y adónde
+va cada cosa). Grupos: Ahora (tendencia, popular, nuevo en tus plataformas, crítica) · Temporadas (la de hoy en grande
++ las otras cuatro) · Plataformas (rankings de las 6 + catálogo de Netflix/Disney+/HBO Max) · Estudios (8) · Premios
+(6 + álbum) · Géneros (14) · Años (1980–hoy, por década) · Listas famosas (nuevo: Criterion, Top 250 de IMDb) · Tuyo
+(Mi lista, Favoritos, tus series, listas de Trakt) · Lo que ves. Al Inicio se mudan: Porque viste, Recomendadas y
+Próximos estrenos. Salen: el Destacado (lo reemplaza el mosaico) y los catálogos de complementos (desacoplar Stremio).
