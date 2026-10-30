@@ -55,11 +55,12 @@ struct MatchDeckScreen: View {
         .background(Backdrop())
         .task {
             if model == nil {
-                let m = MatchDeckModel(env.services, pool: pool, watched: { [env] in await env.collections.watchedIDs() })
+                let m = MatchDeckModel(env.services, pool: pool, titles: env.titles, watched: { [env] in await env.collections.watchedIDs() })
                 model = m
                 await m.load()
             }
         }
+        .accessibilityElement(children: .contain)   // cada botón conserva su identificador
         .accessibilityIdentifier("match-deck")
     }
 

@@ -166,6 +166,8 @@ extension DS {
         static let hint: CGFloat = 56, hintFrom = 0.15, hintRamp = 3.0
         static let behindShrink: CGFloat = 0.05, behindDrop: CGFloat = 14, tiltDivisor = 22.0
         static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220), mood: CGFloat = 64
+        /// La carta es un póster: alto entre ancho.
+        static let cardAspect: CGFloat = 1.5
     }
 
     /// Lo que ves y el Wrapped (`WatchingCard`, `WatchingBars`, `WatchingDayGrid`, `WatchingGenres`, `WrappedView`): el alto de

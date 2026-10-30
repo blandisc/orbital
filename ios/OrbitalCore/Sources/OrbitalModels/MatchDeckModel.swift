@@ -20,10 +20,12 @@ public final class MatchDeckModel: ObservableModel {
     private let pool: [Suggestion]
     private let watchedSource: @MainActor () async -> Set<String>
     private let clock: @Sendable () -> Date
+    private let titles: TitleActions
     private var watched: Set<String> = []
 
-    public init(_ services: Services, pool: [Suggestion], watched: @escaping @MainActor () async -> Set<String>, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.services = services; self.pool = pool; self.watchedSource = watched; self.clock = clock
+    /// `titles`: el mismo `TitleActions` de toda la app (guardar avisa igual que desde una ficha).
+    public init(_ services: Services, pool: [Suggestion], titles: TitleActions? = nil, watched: @escaping @MainActor () async -> Set<String>, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.services = services; self.pool = pool; self.titles = titles ?? TitleActions(services); self.watchedSource = watched; self.clock = clock
         super.init()
     }
 
@@ -57,7 +59,7 @@ public final class MatchDeckModel: ObservableModel {
     public func save(_ s: Suggestion) async {
         cards.removeAll { $0.imdb == s.imdb }
         saved.append(s)
-        try? await TitleActions(services).setSaved(s, in: TitleActions(services).preferredDestination(for: s), add: true)
+        try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: true)
     }
 
     /// Descartar la de arriba (izquierda o ✕): no vuelve en un mes.

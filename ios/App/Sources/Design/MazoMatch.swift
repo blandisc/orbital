@@ -12,7 +12,8 @@ struct MatchCard: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            Color.clear.overlay { PosterView(url: suggestion.poster, title: suggestion.title, aspect: nil, bleed: true).scaledToFill() }.clipped()
+            Color.clear.overlay { PosterView(url: suggestion.poster, title: suggestion.title, aspect: nil, bleed: true).scaledToFill() }
+                .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
             LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: suggestion.title).font(DS.TextRecipe.title.font.weight(.bold)).foregroundStyle(DS.paper).lineLimit(2)
@@ -53,6 +54,9 @@ struct MatchDeck: View {
                 ForEach(Array(cards.prefix(3).enumerated().reversed()), id: \.element.imdb) { i, s in
                     let top = i == 0
                     MatchCard(suggestion: s, lean: top ? Double(drag.width / (geo.size.width / 2)) : 0)
+                        // Un tamaño fijo dentro del mazo: el póster a sangre no la estira más allá de la pantalla.
+                        .frame(width: geo.size.width, height: min(geo.size.height, geo.size.width * DS.Match.cardAspect))
+                        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
                         .scaleEffect(top ? 1 : 1 - CGFloat(i) * DS.Match.behindShrink)
                         .offset(y: top ? 0 : CGFloat(i) * DS.Match.behindDrop)
                         .offset(top ? drag : .zero)
