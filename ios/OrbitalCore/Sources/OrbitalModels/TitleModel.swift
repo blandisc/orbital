@@ -168,7 +168,10 @@ public final class TitleModel: ObservableModel {
             credits = CinemetaParsing.credits(local)
             seasons = CinemetaParsing.seasons(local)
             error = nil
-        } catch where !Task.isCancelled { self.error = "No pude cargar la ficha. Revisa tu conexión." } catch {}   // cancelado al salir: sin error falso
+        } catch where !Task.isCancelled {
+            // Con internet no se culpa a la conexión: es Cinemeta (de donde sale la ficha) el que no contestó.
+            self.error = services.isOnline() ? "No pude cargar la ficha: el servicio de las fichas no contesta. Intenta en un rato." : "No pude cargar la ficha. Revisa tu conexión."
+        } catch {}   // cancelado al salir: sin error falso
         await refreshState(prefetched: await state.value)
         // Los episodios que viste en otro aparato (Trakt), aunque la serie no esté entre las recientes: llegan y se repinta.
         if kind == "series", metaID.hasPrefix("tt"), services.trakt?.linked == true {
@@ -211,9 +214,11 @@ public final class TitleModel: ObservableModel {
                 ?? family.flatMap { f in found.first { $0.binge == f && $0.score > (first?.score ?? 0) - 700 } }
                 ?? first
             recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
-            sourceCheck = found.isEmpty ? .none : .available
+            sourceCheck = !found.isEmpty ? .available : services.isOnline() ? .none : .offline   // sin red, «no hay» no es cierto
         } catch {
-            if !Task.isCancelled { sourceCheck = error is StreamFinderError ? .offline : .unknown }
+            // Sin red puede fallar antes de preguntarle a los complementos (al leer cuáles tienes): también es «sin conexión»
+            // (antes se quedaba «Buscando versión…» para siempre).
+            if !Task.isCancelled { sourceCheck = error is StreamFinderError || Degraded.isOffline(error) || !services.isOnline() ? .offline : .unknown }
         }
     }
 

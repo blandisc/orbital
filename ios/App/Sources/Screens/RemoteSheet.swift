@@ -286,8 +286,14 @@ struct RemoteSheet: View {
             // Apagada u otra red: lo dice y deja reintentar (antes «Conectando…» se quedaba girando para siempre).
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Label("Tu Orbital no contesta", systemImage: "tv.slash").recipe(.cardTitle)
-                    Text("Revisa que la consola esté prendida y en la misma red que tu iPhone.").recipe(.footnote)
+                    // Sin internet en el iPhone no es la consola (antes la culpaba a ella).
+                    if env.isOnline {
+                        Label("Tu Orbital no contesta", systemImage: "tv.slash").recipe(.cardTitle)
+                        Text("Revisa que la consola esté prendida y en la misma red que tu iPhone.").recipe(.footnote)
+                    } else {
+                        Label("Tu iPhone no tiene internet", systemImage: "wifi.slash").recipe(.cardTitle)
+                        Text("Conéctalo al Wi-Fi de tu casa para controlar la TV.").recipe(.footnote)
+                    }
                 }
                 Button { Task { await model.retryNow() } } label: {
                     Text("Intentar de nuevo").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)

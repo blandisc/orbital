@@ -71,7 +71,10 @@ public final class SourcesModel: ObservableModel {
         do { found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch) }
         catch where !Task.isCancelled {
             sources = []; rows = []; languageRows = []; moreLanguages = []; hiddenCount = 0
-            self.error = (error as? StreamFinderError)?.description ?? "No pude buscar versiones. Intenta de nuevo."
+            // Ningún complemento contestó: con internet son ellos, no tu conexión (`Degraded`).
+            self.error = error is StreamFinderError
+                ? (services.isOnline() ? "Tus complementos no contestan: hay internet, pero ninguno respondió. Intenta en un rato." : StreamFinderError.unreachable.description)
+                : "No pude buscar versiones. Intenta de nuevo."
             return
         }
         catch { return }

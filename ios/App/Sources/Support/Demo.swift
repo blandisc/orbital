@@ -165,6 +165,9 @@ enum Demo {
     static var demoDownloadsRoot: URL { FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads") }
     /// `-demo-offline`: como en modo avión: toda petición falla con «sin conexión» (las de mentira también).
     static var offline: Bool { ProcessInfo.processInfo.arguments.contains("-demo-offline") }
+    /// `-demo-down trakt,addons,rd,tmdb,cinemeta,orbital`: con internet, pero esos servicios contestan 503 (caídos). Para probar
+    /// el modo degradado (`docs/producto/modo-degradado.md`): cada pantalla debe decir quién falló, no «revisa tu conexión».
+    static var down: Set<String> { Set((value(after: "-demo-down") ?? "").split(separator: ",").map(String.init)) }
     /// `-demo-play-download tt1160419`: al abrir, reproduce esa descarga (con `-demo-downloads`; el video se copia antes a
     /// `tmp/demo-downloads/<metaID>/<videoID>.mkv` del simulador, y sus subtítulos a `subs/` junto a él).
     static var playDownload: String? { value(after: "-demo-play-download") }

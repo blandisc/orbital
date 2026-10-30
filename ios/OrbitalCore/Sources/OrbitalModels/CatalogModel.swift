@@ -13,7 +13,9 @@ public final class CatalogModel: ObservableModel {
     public private(set) var movies: [CatalogItem] = [] { didSet { changed() } }
     public private(set) var series: [CatalogItem] = [] { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
-    public private(set) var error: String? { didSet { changed() } }
+    /// Por qué no hay «Lo más popular hoy» (ni géneros): Trakt sin conectar, sin internet o Trakt que no contesta. nil: todo bien
+    /// (o se enseña la última copia, sin aviso).
+    public private(set) var degraded: Degraded? { didSet { if degraded != oldValue { changed() } } }
     private let services: Services
 
     /// La última copia de lo popular: Buscar la enseña al instante y la cambia cuando llega la de hoy.
@@ -43,8 +45,10 @@ public final class CatalogModel: ObservableModel {
         let (movieMetas, seriesMetas) = await (m, s)
         guard !Task.isCancelled else { return }   // se fue de la pantalla a medias: se queda lo que ya había, sin error falso
         let failed = movieMetas == nil && seriesMetas == nil
-        // Sin respuesta pero con copia: se enseña la copia, sin aviso (la de hoy llega al volver a abrir Buscar).
-        error = failed && movies.isEmpty && series.isEmpty ? Self.failure : nil
+        // Sin respuesta pero con copia: se enseña la copia, sin aviso (la de hoy llega al volver a abrir Buscar). Sin Trakt no
+        // es la conexión: lo popular y los géneros salen de ahí (antes decía «Revisa tu conexión» con internet).
+        if services.trakt?.configured != true { degraded = .notConnected(.trakt) }
+        else { degraded = failed && movies.isEmpty && series.isEmpty ? Degraded.classify(nil, service: .trakt, online: services.isOnline()) : nil }
         guard !failed else { return }
         // Sin copia anterior, lo de Trakt tal cual mientras se traduce; con copia, se queda la traducida (no parpadea).
         if movies.isEmpty { movies = Self.items("movie", movieMetas ?? []) }
@@ -58,7 +62,6 @@ public final class CatalogModel: ObservableModel {
         services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(movies: Array(movies.prefix(Self.translatedForSearch)), series: Array(series.prefix(Self.translatedForSearch)))))
     }
 
-    static let failure = "No pude cargar lo popular. Revisa tu conexión."
 
     /// Los géneros de «Explora» (nombres en inglés: la pantalla los traduce con `Vocabulary.genres`).
     public static let exploreGenres = ["Action", "Comedy", "Drama", "Sci-Fi", "Horror", "Thriller", "Animation", "Romance", "Crime", "Documentary"]

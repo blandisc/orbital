@@ -18,3 +18,15 @@ struct HomeListRoute: Hashable {
     /// La lista tuya que enseña (para «Quitar de …» al dejar picado un título); «Para ti» y «Seguir viendo» no son una lista.
     var list: SaveDestination? { id == "watchlist" ? .myList : nil }
 }
+
+/// El aviso del modo degradado en una pantalla: `DSDegradedNotice` con los textos en el idioma de la app y su salida
+/// (Descargas, Ajustes o reintentar lo de esa pantalla).
+struct DegradedNotice: View {
+    @Environment(AppEnvironment.self) private var env
+    let state: Degraded
+    var retry: (() -> Void)?
+
+    var body: some View {
+        DSDegradedNotice(state: state, text: { env.message($0) }, act: { env.perform(state.action, retry: retry) }, retry: retry)
+    }
+}

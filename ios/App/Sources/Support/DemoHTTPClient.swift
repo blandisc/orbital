@@ -44,6 +44,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         let start = Perf.now()
         if Demo.offline { throw URLError(.notConnectedToInternet) }
+        if Self.isDown(request.url) { return HTTPResponse(status: 503, data: Data()) }
         do {
             let response: HTTPResponse
             if let fake = try await fake(request) {
@@ -58,6 +59,20 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             Perf.net(kind: "api", url: request.url, method: request.method, start: start, end: Perf.now(), bytes: 0, status: -1)
             throw error
         }
+    }
+
+    /// `-demo-down`: ¿este servicio está «caído»? (contesta 503 aunque haya internet).
+    private static func isDown(_ url: URL) -> Bool {
+        let down = Demo.down
+        guard !down.isEmpty else { return false }
+        let host = url.host ?? ""
+        if down.contains("trakt"), host.hasSuffix("trakt.tv") { return true }
+        if down.contains("rd"), host.hasSuffix("real-debrid.com") { return true }
+        if down.contains("tmdb"), host.hasSuffix("themoviedb.org") { return true }
+        if down.contains("cinemeta"), host.contains("cinemeta") { return true }
+        if down.contains("orbital"), host == "tv.demo.invalid" { return true }
+        if down.contains("addons"), url.path.contains("/stream/") { return true }
+        return false
     }
 
     /// La respuesta de mentira, o nada si la petición va a la red de verdad.

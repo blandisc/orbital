@@ -40,6 +40,49 @@ struct DSNotice: View {
     }
 }
 
+/// Cuando algo no llegó: la causa de verdad (sin internet, un servicio que no contesta, algo sin conectar), qué sigue
+/// funcionando y la salida («Tus descargas», «Intentar de nuevo», «Abrir Ajustes»). Es el aviso del modo degradado
+/// (`docs/producto/modo-degradado.md`); `DSNotice` queda para avisos de una línea sin salida.
+struct DSDegradedNotice: View {
+    let state: Degraded
+    /// El texto en el idioma de la app (`env.message`): la pieza no lee el estado de la app.
+    let text: (String) -> String
+    /// La salida principal («Tus descargas», «Intentar de nuevo», «Abrir Ajustes»).
+    let act: () -> Void
+    /// «Intentar de nuevo» al lado, cuando la salida principal es otra; nil: no se ofrece.
+    var retry: (() -> Void)?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Label { Text(verbatim: text(state.title)).font(DS.TextRecipe.footnote.font.weight(.semibold)) } icon: { Image(systemName: state.symbol) }
+                .foregroundStyle(color)
+            Text(verbatim: text(state.detail)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: DS.Space.s2) {
+                Button(text(state.actionTitle), systemImage: actionSymbol, action: act).accessibilityIdentifier("degraded-action")
+                // Sin internet la salida es Descargas; reintentar va al lado (la red pudo volver).
+                if state.action != .retry, let retry {
+                    Button(text("Intentar de nuevo"), systemImage: "arrow.clockwise", action: retry).accessibilityIdentifier("degraded-retry")
+                }
+            }
+            .buttonStyle(.glass).controlSize(.small).padding(.top, DS.Space.s1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Space.s3)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("degraded-notice")
+    }
+
+    private var actionSymbol: String {
+        switch state.action { case .retry: "arrow.clockwise"; case .settings: "gearshape"; case .downloads: "arrow.down.circle" }
+    }
+
+    private var color: Color {
+        switch state { case .notConnected: DS.accent; case .offline, .down: DS.warning }
+    }
+}
+
 /// Selector segmentado: el control nativo de iOS (`Picker` con `.segmented`), que en iOS 26 ya es de vidrio.
 struct DSSegmented<Value: Hashable>: View {
     let options: [(Value, LocalizedStringKey)]

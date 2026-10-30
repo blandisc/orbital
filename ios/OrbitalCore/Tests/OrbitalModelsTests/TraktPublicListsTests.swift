@@ -23,7 +23,7 @@ final class TraktPublicListsTests: XCTestCase {
         Self.trending(rig, series: [("tt0386676", "The Office", 2005)], movies: [("tt1160419", "Dune", 2021), ("tt0816692", "Interstellar", 2014)], limit: 50)
         let model = CatalogModel(rig.services)
         await model.load()
-        XCTAssertNil(model.error)
+        XCTAssertNil(model.degraded)
         XCTAssertEqual(model.popular.map(\.metaID), ["tt1160419", "tt0386676", "tt0816692"], "películas y series alternadas")
         XCTAssertEqual(model.popular.first?.poster, String(format: ForYou.metahubPoster, "tt1160419"))
         XCTAssertEqual(model.popular.first?.year, "2021")
@@ -38,10 +38,22 @@ final class TraktPublicListsTests: XCTestCase {
         let again = CatalogModel(rig.services)
         await again.load()
         XCTAssertEqual(again.popular.map(\.metaID), ["tt1160419", "tt0386676"], "la última copia")
-        XCTAssertNil(again.error, "con copia no hay aviso")
+        XCTAssertNil(again.degraded, "con copia no hay aviso")
         let empty = CatalogModel(try ServicesRig(traktClientID: "cid").services)
         await empty.load()
-        XCTAssertEqual(empty.error, CatalogModel.failure)
+        XCTAssertEqual(empty.degraded, .down(.trakt), "con internet, es Trakt el que no contesta (no «revisa tu conexión»)")
+    }
+
+    /// Modo degradado: la causa de verdad de que no haya lo popular.
+    func testPopularSaysWhyItIsMissing() async throws {
+        let unlinked = CatalogModel(try ServicesRig().services)
+        await unlinked.load()
+        XCTAssertEqual(unlinked.degraded, .notConnected(.trakt), "sin Trakt: conectarlo, no revisar la conexión")
+        let rig = try ServicesRig(traktClientID: "cid")
+        rig.services.isOnline = { false }
+        let offline = CatalogModel(rig.services)
+        await offline.load()
+        XCTAssertEqual(offline.degraded, .offline)
     }
 
     func testGenreUsesTrendingAndTopsUpWithRecentPopular() async throws {

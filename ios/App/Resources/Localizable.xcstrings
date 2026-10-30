@@ -144,6 +144,17 @@
         }
       }
     },
+    "%@. El servicio no contesta ahora; intenta en un rato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@. The service isn't responding right now; try again in a bit."
+          }
+        }
+      }
+    },
     "%@. Revisa tu conexión e intenta de nuevo.": {
       "extractionState": "manual",
       "localizations": {
@@ -151,6 +162,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "%@. Tu sesión se cerró: vuelve a conectar la cuenta en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@. Your session ended: reconnect the account in Settings."
           }
         }
       }
@@ -3740,6 +3762,17 @@
         }
       }
     },
+    "Con Real-Debrid se ven y se descargan las películas y series. Agrega tu cuenta en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid is what plays and downloads movies and shows. Add your account in Settings."
+          }
+        }
+      }
+    },
     "Con Siri": {
       "extractionState": "manual",
       "localizations": {
@@ -4166,6 +4199,17 @@
         }
       }
     },
+    "Conecta tu Real-Debrid en Ajustes: sin él casi no hay versiones que se vean aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your Real-Debrid in Settings: without it there are almost no versions that play here"
+          }
+        }
+      }
+    },
     "Conecta tu cuenta de Stremio como respaldo: lo que veas también se guarda ahí, como copia.": {
       "extractionState": "manual",
       "localizations": {
@@ -4579,6 +4623,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Conéctalo al Wi-Fi de tu casa para controlar la TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect it to your home Wi-Fi to control the TV."
           }
         }
       }
@@ -6827,6 +6882,17 @@
         }
       }
     },
+    "El servicio no contesta ahora. Intenta en un rato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The service isn't responding right now. Try again in a bit."
+          }
+        }
+      }
+    },
     "El servidor de la fuente falló. Se vuelve a intentar.": {
       "extractionState": "manual",
       "localizations": {
@@ -8591,6 +8657,17 @@
         }
       }
     },
+    "Falta conectar Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid isn't connected"
+          }
+        }
+      }
+    },
     "Falta el archivo parcial": {
       "extractionState": "manual",
       "localizations": {
@@ -8609,6 +8686,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "The Trakt app is missing. If you use your own, paste its Client ID in Advanced."
+          }
+        }
+      }
+    },
+    "Falta la clave de TMDB": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The TMDB key is missing"
+          }
+        }
+      }
+    },
+    "Faltan algunas imágenes y colecciones; lo demás funciona.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some images and collections are missing; everything else works."
+          }
+        }
+      }
+    },
+    "Faltan tus complementos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your add-ons are missing"
           }
         }
       }
@@ -9180,6 +9290,115 @@
           "stringUnit": {
             "state": "translated",
             "value": "Halloween"
+          }
+        }
+      }
+    },
+    "Hay internet, pero Real-Debrid no responde. Suele ser momentáneo; lo descargado sí se puede ver.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're online, but Real-Debrid isn't answering. It's usually brief; your downloads still play."
+          }
+        }
+      }
+    },
+    "Hay internet, pero Trakt no responde. Lo tuyo está guardado en el iPhone y se sincroniza solo cuando vuelva.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You're online, but Trakt isn't answering. Your stuff is saved on the iPad and syncs on its own when it's back."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You're online, but Trakt isn't answering. Your stuff is saved on the iPhone and syncs on its own when it's back."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You're online, but Trakt isn't answering. Your stuff is saved on the Mac and syncs on its own when it's back."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You're online, but Trakt isn't answering. Your stuff is saved on the iPhone and syncs on its own when it's back."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hay internet, pero Trakt no responde. Lo tuyo está guardado en el iPad y se sincroniza solo cuando vuelva."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hay internet, pero Trakt no responde. Lo tuyo está guardado en el iPhone y se sincroniza solo cuando vuelva."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hay internet, pero Trakt no responde. Lo tuyo está guardado en la Mac y se sincroniza solo cuando vuelva."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hay internet, pero Trakt no responde. Lo tuyo está guardado en el iPhone y se sincroniza solo cuando vuelva."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Hay internet, pero ninguno respondió": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're online, but none of them answered"
+          }
+        }
+      }
+    },
+    "Hay internet, pero ninguno respondió. Suele ser momentáneo; intenta de nuevo en un rato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're online, but none of them answered. It's usually brief; try again in a bit."
+          }
+        }
+      }
+    },
+    "Hay internet, pero ninguno respondió. Suele ser momentáneo; si sigue, revisa tus complementos en Stremio.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're online, but none of them answered. It's usually brief; if it keeps happening, check your add-ons in Stremio."
           }
         }
       }
@@ -10579,6 +10798,17 @@
         }
       }
     },
+    "Lo más popular, los géneros y tus recomendaciones vienen de Trakt. Conéctalo en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most popular, genres and your recommendations come from Trakt. Connect it in Settings."
+          }
+        }
+      }
+    },
     "Lo más visto": {
       "extractionState": "manual",
       "localizations": {
@@ -10696,6 +10926,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "What I found"
+          }
+        }
+      }
+    },
+    "Lo que está en el iPhone sigue aquí: tus descargas, Seguir viendo y Mi lista. Lo que marques se sincroniza al volver la red.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What's on your iPad is still here: your downloads, Continue Watching and My List. What you mark syncs when you're back online."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What's on your iPhone is still here: your downloads, Continue Watching and My List. What you mark syncs when you're back online."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What's on your Mac is still here: your downloads, Continue Watching and My List. What you mark syncs when you're back online."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What's on your iPhone is still here: your downloads, Continue Watching and My List. What you mark syncs when you're back online."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que está en el iPad sigue aquí: tus descargas, Seguir viendo y Mi lista. Lo que marques se sincroniza al volver la red."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que está en el iPhone sigue aquí: tus descargas, Seguir viendo y Mi lista. Lo que marques se sincroniza al volver la red."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que está en la Mac sigue aquí: tus descargas, Seguir viendo y Mi lista. Lo que marques se sincroniza al volver la red."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que está en el iPhone sigue aquí: tus descargas, Seguir viendo y Mi lista. Lo que marques se sincroniza al volver la red."
+                }
+              }
+            }
           }
         }
       }
@@ -12758,6 +13053,17 @@
         }
       }
     },
+    "No encontré dónde verlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find where to watch it"
+          }
+        }
+      }
+    },
     "No encontré ese archivo en tu OneDrive": {
       "extractionState": "manual",
       "localizations": {
@@ -12963,6 +13269,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You don't need to say it exactly."
+          }
+        }
+      }
+    },
+    "No hay complementos que den dónde verlo. Agrégalos en Stremio y vuelve a entrar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No add-ons can find where to watch. Add them in Stremio and sign in again."
           }
         }
       }
@@ -13385,6 +13702,17 @@
         }
       }
     },
+    "No pude cargar la ficha: el servicio de las fichas no contesta. Intenta en un rato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't load this title: the title service isn't answering. Try again in a bit."
+          }
+        }
+      }
+    },
     "No pude cargar lo popular. Revisa tu conexión.": {
       "extractionState": "manual",
       "localizations": {
@@ -13678,6 +14006,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing comes out in the next 14 days from the shows you follow."
+          }
+        }
+      }
+    },
+    "No se pudo cargar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load"
           }
         }
       }
@@ -15307,6 +15646,17 @@
         }
       }
     },
+    "Prende «Usar con tu Orbital» en Ajustes para ver lo de la consola.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on “Use with your Orbital” in Settings to see the console's lists."
+          }
+        }
+      }
+    },
     "Prender la consola": {
       "extractionState": "manual",
       "localizations": {
@@ -16110,6 +16460,17 @@
         }
       }
     },
+    "Real-Debrid no contesta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid isn't responding"
+          }
+        }
+      }
+    },
     "Real-Debrid no reconoce esa clave. Revisa que sea la de real-debrid.com/apitoken.": {
       "extractionState": "manual",
       "localizations": {
@@ -16572,6 +16933,71 @@
         }
       }
     },
+    "Revisa que la consola esté prendida y en la misma red que el iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Make sure the console is on and on the same network as the iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Make sure the console is on and on the same network as the iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Make sure the console is on and on the same network as the Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Make sure the console is on and on the same network as the iPhone."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Revisa que la consola esté prendida y en la misma red que el iPad."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Revisa que la consola esté prendida y en la misma red que el iPhone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Revisa que la consola esté prendida y en la misma red que la Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Revisa que la consola esté prendida y en la misma red que el iPhone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Revisa que la consola esté prendida y en la misma red que tu iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -16644,6 +17070,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Check your internet connection and try again."
+          }
+        }
+      }
+    },
+    "Revisa tu conexión a internet e intenta de nuevo. Lo que descargaste sí se puede ver.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your internet connection and try again. Your downloads still play."
           }
         }
       }
@@ -17083,6 +17520,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "They are saved with the download: you can watch them offline too."
+          }
+        }
+      }
+    },
+    "Se llenó el iPhone. Libera espacio y toca Reintentar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPad is full. Free up space and tap Retry."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone is full. Free up space and tap Retry."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Mac is full. Free up space and click Retry."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone is full. Free up space and tap Retry."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se llenó el iPad. Libera espacio y toca Reintentar."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se llenó el iPhone. Libera espacio y toca Reintentar."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se llenó la Mac. Libera espacio y haz clic en Reintentar."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se llenó el iPhone. Libera espacio y toca Reintentar."
+                }
+              }
+            }
           }
         }
       }
@@ -17942,6 +18444,17 @@
         }
       }
     },
+    "Sin ella faltan colecciones y pósters sin texto. Agrégala en Ajustes › Avanzado.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without it, collections and text-free posters are missing. Add it in Settings › Advanced."
+          }
+        }
+      }
+    },
     "Sin ella no llegan tus recomendaciones": {
       "extractionState": "manual",
       "localizations": {
@@ -18773,6 +19286,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "TMDB needs its key in Settings."
+          }
+        }
+      }
+    },
+    "TMDB no contesta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TMDB isn't responding"
           }
         }
       }
@@ -20694,6 +21218,17 @@
         }
       }
     },
+    "Trakt no contesta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt isn't responding"
+          }
+        }
+      }
+    },
     "Trakt no devolvió una sesión": {
       "extractionState": "manual",
       "localizations": {
@@ -21426,6 +21961,71 @@
         }
       }
     },
+    "Tu iPhone no tiene internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPad has no internet"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone has no internet"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Mac has no internet"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone has no internet"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPad no tiene internet"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone no tiene internet"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Mac no tiene internet"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone no tiene internet"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Tu iPhone no tiene internet. Conéctate a una red y prueba otra vez.": {
       "extractionState": "manual",
       "localizations": {
@@ -21644,6 +22244,17 @@
         }
       }
     },
+    "Tu sesión se cerró. Vuelve a conectar la cuenta en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your session ended. Reconnect the account in Settings."
+          }
+        }
+      }
+    },
     "Tu watchlist": {
       "extractionState": "manual",
       "localizations": {
@@ -21662,6 +22273,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your watchlist, your recommendations and your platforms' Top 10 show up here."
+          }
+        }
+      }
+    },
+    "Tus complementos no contestan": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your add-ons aren't responding"
+          }
+        }
+      }
+    },
+    "Tus complementos no contestan: hay internet, pero ninguno respondió. Intenta en un rato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your add-ons aren't responding: you're online, but none of them answered. Try again in a bit."
+          }
+        }
+      }
+    },
+    "Tus descargas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your downloads"
           }
         }
       }
@@ -22506,6 +23150,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "See all"
+          }
+        }
+      }
+    },
+    "Ver tus descargas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See your downloads"
           }
         }
       }

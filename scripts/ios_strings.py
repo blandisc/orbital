@@ -19,6 +19,55 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Modo degradado (docs/producto/modo-degradado.md): la causa de verdad y la salida (`Degraded`, `UserMessages`).
+    "Trakt no contesta": "Trakt isn't responding",
+    "Real-Debrid no contesta": "Real-Debrid isn't responding",
+    "Tus complementos no contestan": "Your add-ons aren't responding",
+    "TMDB no contesta": "TMDB isn't responding",
+    "Falta conectar Real-Debrid": "Real-Debrid isn't connected",
+    "Faltan tus complementos": "Your add-ons are missing",
+    "Falta la clave de TMDB": "The TMDB key is missing",
+    "Lo que está en el iPhone sigue aquí: tus descargas, Seguir viendo y Mi lista. Lo que marques se sincroniza al volver la red.":
+        "What's on your iPhone is still here: your downloads, Continue Watching and My List. What you mark syncs when you're back online.",
+    "Hay internet, pero Trakt no responde. Lo tuyo está guardado en el iPhone y se sincroniza solo cuando vuelva.":
+        "You're online, but Trakt isn't answering. Your stuff is saved on the iPhone and syncs on its own when it's back.",
+    "Hay internet, pero Real-Debrid no responde. Suele ser momentáneo; lo descargado sí se puede ver.":
+        "You're online, but Real-Debrid isn't answering. It's usually brief; your downloads still play.",
+    "Hay internet, pero ninguno respondió. Suele ser momentáneo; si sigue, revisa tus complementos en Stremio.":
+        "You're online, but none of them answered. It's usually brief; if it keeps happening, check your add-ons in Stremio.",
+    "Revisa que la consola esté prendida y en la misma red que el iPhone.": "Make sure the console is on and on the same network as the iPhone.",
+    "Faltan algunas imágenes y colecciones; lo demás funciona.": "Some images and collections are missing; everything else works.",
+    "Lo más popular, los géneros y tus recomendaciones vienen de Trakt. Conéctalo en Ajustes.":
+        "Most popular, genres and your recommendations come from Trakt. Connect it in Settings.",
+    "Con Real-Debrid se ven y se descargan las películas y series. Agrega tu cuenta en Ajustes.":
+        "Real-Debrid is what plays and downloads movies and shows. Add your account in Settings.",
+    "No hay complementos que den dónde verlo. Agrégalos en Stremio y vuelve a entrar.":
+        "No add-ons can find where to watch. Add them in Stremio and sign in again.",
+    "Prende «Usar con tu Orbital» en Ajustes para ver lo de la consola.": "Turn on “Use with your Orbital” in Settings to see the console's lists.",
+    "Sin ella faltan colecciones y pósters sin texto. Agrégala en Ajustes › Avanzado.":
+        "Without it, collections and text-free posters are missing. Add it in Settings › Advanced.",
+    "Tus descargas": "Your downloads",
+    "No encontré dónde verlo": "I couldn't find where to watch it",
+    "Conecta tu Real-Debrid en Ajustes: sin él casi no hay versiones que se vean aquí":
+        "Connect your Real-Debrid in Settings: without it there are almost no versions that play here",
+    "Hay internet, pero ninguno respondió": "You're online, but none of them answered",
+    "No se pudo cargar": "Couldn't load",
+    "No pude cargar la ficha: el servicio de las fichas no contesta. Intenta en un rato.":
+        "We couldn't load this title: the title service isn't answering. Try again in a bit.",
+    "Tu iPhone no tiene internet": "Your iPhone has no internet",
+    "Conéctalo al Wi-Fi de tu casa para controlar la TV.": "Connect it to your home Wi-Fi to control the TV.",
+    "Ver tus descargas": "See your downloads",
+    "Hay internet, pero ninguno respondió. Suele ser momentáneo; intenta de nuevo en un rato.":
+        "You're online, but none of them answered. It's usually brief; try again in a bit.",
+    "Revisa tu conexión a internet e intenta de nuevo. Lo que descargaste sí se puede ver.":
+        "Check your internet connection and try again. Your downloads still play.",
+    "Tus complementos no contestan: hay internet, pero ninguno respondió. Intenta en un rato.":
+        "Your add-ons aren't responding: you're online, but none of them answered. Try again in a bit.",
+    "El servicio no contesta ahora. Intenta en un rato.": "The service isn't responding right now. Try again in a bit.",
+    "%@. El servicio no contesta ahora; intenta en un rato.": "%@. The service isn't responding right now; try again in a bit.",
+    "Tu sesión se cerró. Vuelve a conectar la cuenta en Ajustes.": "Your session ended. Reconnect the account in Settings.",
+    "%@. Tu sesión se cerró: vuelve a conectar la cuenta en Ajustes.": "%@. Your session ended: reconnect the account in Settings.",
+    "Se llenó el iPhone. Libera espacio y toca Reintentar.": "Your iPhone is full. Free up space and tap Retry.",
     # La voz del iPhone (fase 2) y Siri recortada.
     "Ahora": "Now",
     "Ahora, viendo %@": "Now watching %@",

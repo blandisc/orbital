@@ -252,7 +252,9 @@ struct TitleView: View {
         let go = { play(model) }
         if model.continueVideoID == nil && !model.isLoading {
             // Ya cargó y no hay qué ver: sin red, o una serie que aún no tiene episodios.
-            return ContinueAction(title: model.error != nil ? Text("Sin conexión") : Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
+            // Con internet no es «Sin conexión»: es que no se pudo cargar (Cinemeta caído, un id raro).
+            let failed = model.error == nil ? nil : env.isOnline ? Text("No se pudo cargar") : Text("Sin conexión")
+            return ContinueAction(title: failed ?? Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
         }
         if model.continueVideoID == nil {
             return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, version: Text("Buscando versión…"), play: go)
@@ -264,7 +266,7 @@ struct TitleView: View {
         let language = model.recommendedLanguage.map { LanguageFlags.flagged($0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
                                                                   : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage), $0) }
         let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
-        let version: Text = model.sourceCheck == .none ? Text("Sin versiones por ahora") : model.sourceCheck == .offline ? Text("Sin conexión")
+        let version: Text = model.sourceCheck == .none ? Text("Sin versiones por ahora") : model.sourceCheck == .offline ? (env.isOnline ? Text("Tus complementos no contestan") : Text("Sin conexión"))
             : quality.isEmpty ? Text("Buscando versión…") : Text(verbatim: quality.joined(separator: " · "))
         let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
         return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, version: version,

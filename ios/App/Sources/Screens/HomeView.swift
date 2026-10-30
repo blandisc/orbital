@@ -40,12 +40,9 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 if model.offline {
-                    VStack(alignment: .leading, spacing: DS.Space.s2) {
-                        DSNotice(text: "Sin conexión: se ve lo último que guardé.", tone: .warn)
-                        Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.refresh() } }
-                            .buttonStyle(.glass).accessibilityIdentifier("home-retry")
-                    }
-                    .padding(.horizontal, DS.Space.gutter)
+                    // Sin internet: lo del teléfono sigue a la vista, y la salida es Descargas (más reintentar).
+                    DegradedNotice(state: .offline) { Task { await model.refresh() } }
+                        .padding(.horizontal, DS.Space.gutter)
                 }
                 // Con iOS 26.1 lo que suena en la TV vive en el accesorio de la barra de pestañas (y su control remoto en una hoja);
                 // antes, en esta tarjeta.
@@ -82,7 +79,7 @@ struct HomeView: View {
                 }
                 if !model.continueWatching.isEmpty {
                     continueRail(model).perfTag("home.rail")
-                } else if !model.isLoading, model.spotlight.isEmpty {
+                } else if !model.isLoading, model.spotlight.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                     DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
                 }
                 // Primero lo pendiente (tu watchlist), luego lo que sale y al final lo que guardaste; cada renglón con su porqué

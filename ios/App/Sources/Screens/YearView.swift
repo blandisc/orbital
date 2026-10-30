@@ -5,6 +5,11 @@ import OrbitalModels
 /// «Tu año» (Ajustes, bajo tu perfil): lo que viste este año según tu historial de Trakt — horas, racha más larga, tu
 /// género, el mapa de calor día por día (películas, series o las dos) y lo que más viste.
 struct YearView: View {
+    /// «Miércoles, 28 de octubre» / «Wednesday, October 28»: solo la primera letra en mayúscula (`capitalized` ponía «De Octubre»).
+    static func dayTitle(_ day: Date, _ locale: Locale) -> String {
+        let text = day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(locale))
+        return text.prefix(1).uppercased(with: locale) + text.dropFirst()
+    }
     @Environment(AppEnvironment.self) private var env
     @State private var review: YearInReview?
     @State private var loading = true
@@ -140,7 +145,7 @@ struct YearView: View {
             let plays = r.plays[Calendar.current.startOfDay(for: day)] ?? []
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack {
-                    Text(day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(env.uiLocale)).capitalized(with: env.uiLocale)).recipe(.cardTitle)   // en el idioma de la app
+                    Text(verbatim: Self.dayTitle(day, env.uiLocale)).recipe(.cardTitle)   // en el idioma de la app
                     Spacer()
                     Button { step(r, forward: false) } label: { Image(systemName: "chevron.left") }
                         .accessibilityLabel(Text("Día anterior con algo visto"))

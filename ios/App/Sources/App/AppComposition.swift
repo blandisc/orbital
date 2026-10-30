@@ -28,15 +28,18 @@ enum AppComposition {
                                     cacheRoot: Demo.persist ? AppFiles.swrCache.appendingPathComponent("demo") : nil,
                                     allowsOrbital: ThisDevice.talksToOrbital)
             services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira
+            services.isOnline = { !Demo.offline }
             return services
         }
         #endif
-        return Services(
+        let services = Services(
             http: Perf.isOn ? PerfHTTPClient(inner: URLSessionHTTPClient()) : URLSessionHTTPClient(), secrets: KeychainSecrets(service: Bundle.main.bundleIdentifier ?? "com.example.orbital.ios"),
             kv: UserDefaultsKeyValueStore(), pending: FilePendingStore(url: AppFiles.pendingWork), library: LocalLibrary(url: AppFiles.library),
             downloadTransport: transport,
             downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
             cacheRoot: AppFiles.swrCache, onDownloadsChange: { DownloadIndex.save($0) }, device: ThisDevice.forOrbital,
             allowsOrbital: ThisDevice.talksToOrbital)
+        services.isOnline = { Connectivity.shared.isOnline }
+        return services
     }
 }

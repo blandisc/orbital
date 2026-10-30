@@ -15,10 +15,20 @@ extension TitleView {
                 let renew = env.services.debrid.provider.renewURL
                 env.notify(String(format: Strings.tr(days == 1 ? "Tu Real-Debrid venció ayer" : "Tu Real-Debrid venció hace %lld días", language: env.services.appSettings.uiLanguage), days),
                            tone: .warn, actionTitle: "Renovar") { UIApplication.shared.open(renew) }
+            } else if !env.services.debrid.hasToken {
+                // Sin tu cuenta de Real-Debrid en la app casi no hay versiones que se vean en el iPhone: esa es la salida.
+                env.notify("No encontré dónde verlo", detail: "Conecta tu Real-Debrid en Ajustes: sin él casi no hay versiones que se vean aquí",
+                           tone: .warn, actionTitle: "Ajustes") { env.ui.openSettings = true }
             } else {
                 env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
             }
-        case .offline: env.notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { play(model) }
+        case .offline:
+            // Ningún complemento contestó: sin red es el iPhone; con red, son ellos (antes siempre decía «Sin internet»).
+            if env.isOnline {
+                env.notify("Tus complementos no contestan", detail: "Hay internet, pero ninguno respondió", tone: .warn, actionTitle: "Reintentar") { start(model, videoID: nil) }   // el reproductor vuelve a preguntar
+            } else {
+                env.notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { start(model, videoID: nil) }
+            }
         default: start(model, videoID: nil)
         }
     }

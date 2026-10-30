@@ -167,6 +167,7 @@ public final class HomeModel: ObservableModel {
             group.addTask { await self.loadTop(self.topBrand) }
         }
         if !Task.isCancelled { saveLists() }
+        offline = !services.isOnline()
         publishWidget(airings: Task.isCancelled ? nil : fetchedAirings)   // los estrenos también van al widget mediano
     }
 
@@ -235,7 +236,7 @@ public final class HomeModel: ObservableModel {
         guard !Task.isCancelled else { return }
         continueWatching = c.filter { !dismissed.contains($0.metaID) }
         myList = m
-        offline = false; error = nil
+        offline = !services.isOnline(); error = nil   // sin red se enseña lo del teléfono y se dice (el corte A lo había apagado)
         dressList()
         // Lo que ya estás viendo no se repite arriba.
         let watching = Set(continueWatching.map(\.metaID))

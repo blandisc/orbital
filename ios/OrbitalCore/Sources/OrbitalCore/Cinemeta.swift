@@ -313,6 +313,13 @@ public enum CinemetaParsing {
         return (next, when)
     }
 
+    /// «the office» → «office»: el artículo no le quita lo exacto (como `_without_article` de la consola). Con «office», una
+    /// serie nueva llamada «Office» subía sola y The Office quedaba atrás.
+    static func withoutArticle(_ name: String) -> String {
+        for article in ["the ", "el ", "la ", "los ", "las "] where name.hasPrefix(article) { return String(name.dropFirst(article.count)) }
+        return name
+    }
+
     /// Une películas y series alternando tipos y respetando el orden de Cinemeta; solo sube una coincidencia exacta.
     public static func searchResults(query: String, movies: [JSON], series: [JSON], limit: Int = 18) -> [SearchResult] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
@@ -321,8 +328,9 @@ public enum CinemetaParsing {
         let longer = series.count > movies.count ? series : movies
         let kindLeft = series.count > movies.count ? "series" : "movie"
         merged += longer.dropFirst(min(series.count, movies.count)).map { (kindLeft, $0) }
-        let exact = merged.filter { $0.1["name"]?.string?.trimmingCharacters(in: .whitespaces).lowercased() == q }
-        let rest = merged.filter { $0.1["name"]?.string?.trimmingCharacters(in: .whitespaces).lowercased() != q }  // estable
+        let isExact: ((String, JSON)) -> Bool = { withoutArticle($0.1["name"]?.string?.trimmingCharacters(in: .whitespaces).lowercased() ?? "") == withoutArticle(q) }
+        let exact = merged.filter(isExact)
+        let rest = merged.filter { !isExact($0) }  // estable
         var seen = Set<String>(), results: [SearchResult] = []
         for (kind, meta) in exact + rest {
             guard let id = meta["id"]?.string, seen.insert(id).inserted else { continue }

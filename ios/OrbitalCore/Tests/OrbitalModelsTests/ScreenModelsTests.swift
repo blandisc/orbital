@@ -179,6 +179,17 @@ final class ScreenModelsTests: XCTestCase {
         return rig
     }
 
+    /// Modo degradado: sin red, la ficha dice «Sin conexión» en el renglón de versión (antes «Buscando versión…» para siempre).
+    func testTitleSourceCheckSaysOfflineWithoutNetwork() async throws {
+        let rig = try titleRig()
+        let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await title.load()
+        rig.http.offline = true
+        rig.services.isOnline = { false }
+        await title.loadBestSource()
+        XCTAssertEqual(title.sourceCheck, .offline)
+    }
+
     func testTitleShowsEpisodeStatesAndTheContinueButton() async throws {
         let rig = try titleRig()
         let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
@@ -686,11 +697,11 @@ final class CatalogAndSourcesTests: XCTestCase {
         await model.load()
         XCTAssertFalse(model.movies.isEmpty)
         XCTAssertTrue(model.series.isEmpty)
-        XCTAssertNil(model.error, "una mitad que falla no tumba la otra")
+        XCTAssertNil(model.degraded, "una mitad que falla no tumba la otra")
         XCTAssertTrue(model.movies.allSatisfy { $0.kind == "movie" && !$0.title.isEmpty })
         let none = CatalogModel(try ServicesRig().services)
         await none.load()
-        XCTAssertNotNil(none.error)
+        XCTAssertEqual(none.degraded, .notConnected(.trakt))
     }
 
     /// Una sola lista (ordenada para ver) y en ella se marca la que más conviene guardar.

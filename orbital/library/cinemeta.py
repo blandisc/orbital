@@ -319,6 +319,18 @@ def new_episode(meta: dict, video_id: str, since: float, now: float | None = Non
     return (following, when) if when is not None and when > since else None
 
 
+_ARTICLES = ("the ", "el ", "la ", "los ", "las ")
+
+
+def _without_article(name: str) -> str:
+    """«the office» → «office»: el artículo no le quita lo exacto (con «office», The Office empataba en orden de
+    Cinemeta con una serie nueva llamada «Office», y la nueva ganaba por ser exacta)."""
+    for article in _ARTICLES:
+        if name.startswith(article):
+            return name[len(article):]
+    return name
+
+
 def search_results(query: str, movies: list[dict], series: list[dict], limit: int = 18) -> list[dict]:
     """Une películas y series alternando tipos (para que uno no tape al otro) y respetando el orden de
     Cinemeta, que ya ordena por relevancia y popularidad y tolera errores de dedo. Solo se sube una
@@ -330,7 +342,8 @@ def search_results(query: str, movies: list[dict], series: list[dict], limit: in
     longer = series if len(series) > len(movies) else movies
     kind_left = "series" if longer is series else "movie"
     merged += [(kind_left, m) for m in longer[min(len(series), len(movies)):]]
-    merged.sort(key=lambda km: km[1]["name"].strip().lower() != q)  # estable: respeta el resto
+    q = _without_article(q)
+    merged.sort(key=lambda km: _without_article(km[1]["name"].strip().lower()) != q)  # estable: respeta el resto
     seen, results = set(), []
     for kind, meta in merged:
         if meta["id"] in seen:

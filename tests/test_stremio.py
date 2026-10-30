@@ -192,6 +192,15 @@ def test_cinemeta_search_keeps_relevance_and_promotes_exact():
     assert office["kind"] == "series" and office["meta_id"] == "tt3" and office["subtitle"] == "Serie · 2005"
 
 
+
+def test_leading_article_still_counts_as_exact():
+    from orbital.library import cinemeta
+
+    series = [{"id": "tt0386676", "name": "The Office"}, {"id": "tt9", "name": "Office"}]
+    movies = [{"id": "tt2", "name": "Office Space"}]
+    for query in ("office", "the office"):
+        assert cinemeta.search_results(query, movies, series)[0]["meta_id"] == "tt0386676"  # el orden de Cinemeta manda
+
 def test_seasons_put_specials_last_and_play_links():
     from orbital.library import cinemeta
 

@@ -16,6 +16,11 @@ struct PlayerFailureView: View {
     let infuse: (() -> Void)?
     /// Hay otras versiones: elegir una ahí mismo (antes había que cerrar y volver a abrir).
     var chooseVersion: (() -> Void)? = nil
+    /// ¿El iPhone tiene internet? Con red, «no pude pedir las fuentes» es que tus complementos no contestaron (antes decía
+    /// «Sin conexión» igual).
+    var online = true
+    /// Sin internet, lo que sí se puede ver: tus descargas.
+    var openDownloads: (() -> Void)? = nil
     let close: () -> Void
 
     var body: some View {
@@ -58,6 +63,7 @@ struct PlayerFailureView: View {
                 option(Text("Cerrar"), primary: true, action: close)
             case .network:
                 option(Text("Intentar de nuevo"), primary: true, action: retry)
+                if !online, let openDownloads { option(Text("Ver tus descargas"), primary: false, action: openDownloads) }
                 option(Text("Cerrar"), primary: false, action: close)
             case .noneWorked, .sourceDied:
                 option(Text("Intentar de nuevo"), primary: true, action: retry)
@@ -73,7 +79,7 @@ struct PlayerFailureView: View {
         switch failure {
         case .noSources: "film.stack"
         case .noneWorked, .sourceDied: "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90"
-        case .network: "wifi.slash"
+        case .network: online ? "exclamationmark.icloud" : "wifi.slash"
         case .localFile: "externaldrive.badge.exclamationmark"
         }
     }
@@ -83,7 +89,7 @@ struct PlayerFailureView: View {
         case .noSources: Text("Todavía no hay dónde verlo")
         case .noneWorked: Text("No pude reproducirlo")
         case .sourceDied: Text("Se cortó el video")
-        case .network: Text("Sin conexión")
+        case .network: online ? Text("Tus complementos no contestan") : Text("Sin conexión")
         case .localFile: Text("No se puede abrir la descarga")
         }
     }
@@ -94,7 +100,8 @@ struct PlayerFailureView: View {
             : Text("Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
         case .noneWorked: Text("Probamos las versiones que hay y ninguna respondió. A veces es momentáneo.")
         case .sourceDied: Text("La versión dejó de responder. Al intentar de nuevo seguimos donde ibas, con otra si hace falta.")
-        case .network: Text("Revisa tu conexión a internet e intenta de nuevo.")
+        case .network: online ? Text("Hay internet, pero ninguno respondió. Suele ser momentáneo; intenta de nuevo en un rato.")
+            : Text("Revisa tu conexión a internet e intenta de nuevo. Lo que descargaste sí se puede ver.")
         case .localFile: Text("El archivo descargado no se puede leer. Bórralo en Descargas y bájalo otra vez.")
         }
     }

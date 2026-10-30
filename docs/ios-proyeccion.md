@@ -97,11 +97,12 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `subtitleLook(_:size:)` | El estilo de una línea de subtítulo: contorno oscuro o caja (oscura, translúcida o la del iPhone); lo comparten el reproductor y la muestra de Ajustes | `AetherSubtitleOverlay`, `SubtitlePreview` |
 | `CalendarDayCell` | Un día del calendario de estrenos, pintado con el color del arte de lo que sale; dos el mismo día, la casilla partida; más, «+N» | Sale hoy › el mes |
 | `DSEmptyState` | Un área entera vacía: el vacío nativo con ícono, qué pasa y qué hacer. Regla: área vacía → esto; renglón vacío → texto chico; error → `DSNotice` | Descargas, Buscar, listas con filtros, Próximos estrenos, Inicio, «¿Qué vemos?», Tu año, Para ti |
+| `DSDegradedNotice` (envoltorio `DegradedNotice` en `Screens/Shared.swift`) | Modo degradado: cuando algo no llegó, la causa de verdad (`Degraded`: sin internet, un servicio que no contesta, algo sin conectar), qué sigue funcionando y la salida (Tus descargas, Intentar de nuevo, Abrir Ajustes). Tabla de escenarios en `docs/producto/modo-degradado.md` | Inicio sin internet, Buscar sin Trakt |
 | `DSMoreMenu` | «Más»: el mismo menú en toda la app, círculo con «…» (vidrio, sólido donde no se lleva) | Destacado de Para ti, «¿Qué vemos?», pie del mosaico, «Viendo en la TV» |
 | `DownloadRing` | El anillo de avance de una descarga | Ficha (Descargar) y la fila de cada episodio |
 | `StillCard` | Pieza 16:9 con avance, nombre y datos | Inicio › Todo lo que sigues |
 | `PageDots` | Puntos de un carrusel | Inicio |
-| `MovementBadge` | ▲ ▼ / Nuevo bajo un puesto | Rankings de plataformas (Buscar › Lo más popular usa `RankedPosterCard`) |
+| `MovementBadge` | ▲ ▼ / Nuevo bajo un puesto (sin cambio, nada: un «=» suelto parecía un error) | Rankings de plataformas (Buscar › Lo más popular usa `RankedPosterCard`) |
 | `ArtTile` | Mosaico con arte y nombre | Buscar › Explora (géneros) |
 | `DSOptionMenu` | Menú nativo para elegir entre muchas opciones; `compact`, del alto de un control para ir en un renglón junto a otra cápsula | Ficha › temporada (compacto, a la izquierda; la versión de la serie, la cápsula gemela a la derecha) |
 | `TouchPad`, `RemoteKey`, `RemoteTextField` | El control completo de tu Orbital: pad (deslizar = flechas, tocar = A), teclas de la consola y escribir en la TV | `RemoteSheet` (la hoja del accesorio, estirada) |

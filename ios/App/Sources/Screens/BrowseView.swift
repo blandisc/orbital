@@ -204,7 +204,9 @@ struct BrowseView: View {
     @ViewBuilder private var suggestions: some View {
         let model = catalog.model
         if !search.model.recent.isEmpty { recent }
-        if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
+        if let degraded = model.degraded {
+            DegradedNotice(state: degraded) { Task { await model.load() } }.padding(.horizontal, DS.Space.gutter)
+        }
         if !model.popular.isEmpty { popular(model) }
         else if model.isLoading { ProgressView().frame(maxWidth: .infinity) }
         explore

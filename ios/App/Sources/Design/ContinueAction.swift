@@ -24,6 +24,9 @@ struct ContinueAction: View {
     var restart: (() -> Void)?
     /// El color de «Desde el principio»: el del arte, como los mosaicos de abajo.
     var tint: Color = DS.accent
+    @Environment(\.colorScheme) private var scheme
+    /// En claro, el color del arte se oscurece como en las acciones de abajo (`TitleActions`): el tono claro sobre papel no se leía.
+    private var ink: Color { scheme == .light ? tint.mix(with: DS.backdropDeep, by: DS.TitleAction.lightDeepen) : tint }
 
     var body: some View {
         VStack(spacing: DS.Space.s2) {
@@ -85,7 +88,7 @@ struct ContinueAction: View {
     @ViewBuilder private var restartButton: some View {
         if let restart {
             Button("Desde el principio", systemImage: "arrow.counterclockwise", action: restart)
-                .font(DS.TextRecipe.footnote.font.weight(.medium)).buttonStyle(.borderless).tint(tint).lineLimit(1)
+                .font(DS.TextRecipe.footnote.font.weight(.medium)).buttonStyle(.borderless).tint(ink).lineLimit(1)
                 .accessibilityIdentifier("title-restart")
         }
     }

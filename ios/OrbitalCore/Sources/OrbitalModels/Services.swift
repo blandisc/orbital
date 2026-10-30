@@ -67,6 +67,9 @@ public final class Services: ObservableModel {
     /// Netflix, las tendencias de JustWatch, TMDB) y no depende de que la consola conteste; la consola solo se entera de lo
     /// que marcas «No me interesa». Encendido solo en la demostración (`-demo-console`) y en las pruebas de esa ruta.
     public var forYouFromConsole = false
+    /// ¿El iPhone tiene internet? (el `NWPathMonitor` de la app; en la demostración, `-demo-offline` lo apaga). Para decir la
+    /// causa de verdad cuando algo no llega (`Degraded`): sin red no es que Trakt o un complemento estén caídos.
+    public var isOnline: @Sendable () -> Bool = { true }
     /// Cómo se escribe «T2 · E5» en el idioma de la app (la interfaz lo cambia; por omisión, en español).
     public var episodeLabel: @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" }
     /// El episodio de lo que manda la TV en el idioma de la app: con los números (temporada, episodio; 0 = especiales) si la

@@ -18,6 +18,8 @@ extension PlayerScreen {
                               retry: { Task { await model.retry() } },
                               infuse: model.source == nil ? nil : { Task { await openInInfuse() } },
                               chooseVersion: model.sourceChoices.count > 1 ? { openDock(nil, version: true) } : nil,
+                              online: env.isOnline,
+                              openDownloads: { Task { await close(); env.openTab = AppEnvironment.downloadsTab } },
                               close: { Task { await close() } })
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:

@@ -128,7 +128,7 @@ struct DSOptionMenu<Item: Hashable & Identifiable>: View {
     }
 }
 
-/// ▲ 2 · ▼ 1 · = · Nuevo: cuánto se movió un título en su lista desde la foto anterior (el Top 10 real de la TV).
+/// ▲ 2 · ▼ 1 · Nuevo (sin cambio, nada): cuánto se movió un título en su lista desde la foto anterior (el Top 10 real de la TV).
 struct MovementBadge: View {
     let movement: Int?
     var isNew = false
@@ -136,7 +136,8 @@ struct MovementBadge: View {
     var body: some View {
         Group {
             if isNew { Text("Nuevo").recipe(.eyebrow, color: DS.accent) }
-            else if let movement, movement == 0 { Text(verbatim: "=").recipe(.data) }
+            // Sin cambio: nada a la vista (un «=» suelto bajo el póster parecía un error); el renglón guarda su alto.
+            else if let movement, movement == 0 { Text("Nuevo").recipe(.eyebrow).hidden().accessibilityHidden(true) }
             else if let movement, movement > 0 { Label { Text(verbatim: "\(movement)") } icon: { Image(systemName: "arrowtriangle.up.fill") }.recipe(.data, color: DS.accent) }
             else if let movement { Label { Text(verbatim: "\(-movement)") } icon: { Image(systemName: "arrowtriangle.down.fill") }.recipe(.data) }
         }

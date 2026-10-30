@@ -57,6 +57,14 @@ final class CinemetaTests: XCTestCase {
         }
     }
 
+    /// «office»: The Office (primera en Cinemeta) no pierde contra una serie nueva llamada exactamente «Office».
+    func testLeadingArticleStillCountsAsExact() {
+        let series: [JSON] = [["id": "tt0386676", "name": "The Office"], ["id": "tt9", "name": "Office"]]
+        let movies: [JSON] = [["id": "tt2", "name": "Office Space"]]
+        XCTAssertEqual(CinemetaParsing.searchResults(query: "office", movies: movies, series: series).map(\.metaID).first, "tt0386676")
+        XCTAssertEqual(CinemetaParsing.searchResults(query: "the office", movies: movies, series: series).map(\.metaID).first, "tt0386676")
+    }
+
     func testUnusableMetasAreDropped() {
         XCTAssertFalse(CinemetaParsing.isUsable(["id": "tt1", "name": 1917]))
         XCTAssertFalse(CinemetaParsing.isUsable(["id": "", "name": "x"]))
