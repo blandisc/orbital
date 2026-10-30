@@ -180,46 +180,63 @@ button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
 .bc .pp, .bc .pp .img { width: 92px; }
 .bc .pp .t { display: none; }
 
-/* Canales: series siempre al aire, como la tele */
-.ch { width: 232px; display: flex; flex-direction: column; gap: 7px; cursor: pointer; border: 0; background: none; padding: 0; text-align: left; color: inherit; font: inherit; }
-.ch .art { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; background: #000; box-shadow: 0 10px 24px -10px rgba(0,0,0,.8); }
-.ch .art img.f { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; max-width: none; animation: kb var(--d, 14s) ease-in-out infinite alternate; }
-.ch .art img.f2 { object-position: var(--p2, 80% 30%); animation: kb2 var(--d, 14s) ease-in-out infinite alternate, cut var(--c, 7s) steps(1) infinite; }
-@keyframes kb { from { transform: scale(1.06) translate(0, 0); } to { transform: scale(1.22) translate(-5%, -3%); } }
-@keyframes kb2 { from { transform: scale(1.3) translate(4%, 2%); } to { transform: scale(1.12) translate(0, 0); } }
-@keyframes cut { 0% { opacity: 0; } 50% { opacity: 1; } }
-.ch .art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.35), transparent 30%, transparent 55%, rgba(0,0,0,.78)); }
-.ch .live { position: absolute; left: 8px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; letter-spacing: .06em; padding: 3px 8px 3px 6px; border-radius: 99px; background: rgba(7,7,8,.72); color: var(--teal); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-.ch .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); animation: pulse 1.6s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: .25; } }
-.ch .num { position: absolute; right: 8px; top: 8px; z-index: 2; font-size: 10.5px; font-weight: 800; color: var(--paper); background: rgba(7,7,8,.6); padding: 3px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
-.ch .logo { position: absolute; left: 10px; bottom: 14px; max-width: 118px; max-height: 32px; object-fit: contain; object-position: left bottom; z-index: 2; filter: drop-shadow(0 2px 6px rgba(0,0,0,.7)); }
-.ch .bar { position: absolute; left: 10px; right: 10px; bottom: 7px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.25); z-index: 2; }
-.ch .bar i { display: block; height: 100%; border-radius: 2px; background: var(--teal); transition: width 1s linear; }
-.ch .t { font-size: 14px; font-weight: 600; line-height: 1.2; }
-.ch .s { font-size: 12.5px; color: var(--ink-300); font-variant-numeric: tabular-nums; }
-.ch-add { width: 120px; flex: none; aspect-ratio: auto; height: 130px; border-radius: 14px; border: 1.5px dashed var(--ink-700); background: none; color: var(--ink-200); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font: 600 12.5px var(--sys); cursor: pointer; padding: 0; }
-.ch-add span.p { width: 36px; height: 36px; border-radius: 50%; background: var(--fill); display: flex; align-items: center; justify-content: center; }
-.ch-add svg { width: 16px; height: 16px; }
-.head .edit { border: 0; background: none; color: var(--teal); font: 600 14px var(--sys); padding: 0; cursor: pointer; }
+/* Canales: series siempre al aire, como la tele. Sin turquesa: el color lo pone la imagen del capítulo */
+.ch-head-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--glass-line); background: var(--fill); color: var(--paper); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.ch-head-btn svg { width: 15px; height: 15px; }
+.ch-sub { display: block; font-size: 13px; color: var(--ink-300); margin-top: 2px; }
+.ch { width: 268px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; border: 0; background: none; padding: 0; text-align: left; color: inherit; font: inherit; }
+.ch .art { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 16px; overflow: hidden; background: #000; box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 14px 28px -12px rgba(0,0,0,.9); }
+.ch .art img.f { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; max-width: none; animation: kb var(--d, 16s) ease-in-out infinite alternate; transition: opacity .5s; }
+@keyframes kb { from { transform: scale(1.03) translate(0, 0); } to { transform: scale(1.13) translate(-3%, -2%); } }
+.ch .art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.42), transparent 28%, transparent 48%, rgba(0,0,0,.86)); }
+.ch .live { position: absolute; left: 10px; top: 10px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--paper); text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+.ch .live i { width: 7px; height: 7px; border-radius: 50%; background: #f0574d; box-shadow: 0 0 0 3px rgba(240,87,77,.25); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+.ch .logo { position: absolute; right: 10px; top: 9px; max-width: 74px; max-height: 22px; object-fit: contain; object-position: right top; z-index: 2; filter: drop-shadow(0 1px 4px rgba(0,0,0,.8)); opacity: .92; }
+.ch .now { position: absolute; left: 12px; right: 12px; bottom: 16px; z-index: 2; display: flex; flex-direction: column; gap: 1px; }
+.ch .now small { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: rgba(245,244,240,.7); font-variant-numeric: tabular-nums; }
+.ch .now b { font: 700 16px/1.2 var(--sys-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch .bar { position: absolute; left: 12px; right: 12px; bottom: 8px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.22); z-index: 2; }
+.ch .bar i { display: block; height: 100%; border-radius: 2px; background: var(--paper); transition: width 1s linear; }
+.ch .meta { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.ch .t { font-size: 14px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch .s { font-size: 12px; color: var(--ink-300); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ch-add { flex: none; width: 150px; height: 151px; border-radius: 16px; border: 1px solid var(--glass-line); background: var(--fill); color: var(--ink-200); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font: 600 13px var(--sys); cursor: pointer; padding: 0; }
+.ch-add span.p { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; color: var(--paper); }
+.ch-add svg { width: 17px; height: 17px; }
 .sheet-bg { position: absolute; inset: 0; z-index: 8; background: rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .25s; }
-.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; max-height: 78%; background: var(--ink-900); border-radius: 30px 30px 0 0; padding: 10px 18px 28px; display: flex; flex-direction: column; gap: 12px; transform: translateY(105%); transition: transform .35s cubic-bezier(.2,.9,.3,1); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; height: 82%; background: var(--ink-900); border-radius: 30px 30px 0 0; padding: 10px 18px 24px; display: flex; flex-direction: column; gap: 14px; transform: translateY(105%); transition: transform .35s cubic-bezier(.2,.9,.3,1); }
 .screen.sheet-on .sheet { transform: none; } .screen.sheet-on .sheet-bg { opacity: 1; pointer-events: auto; }
 .sheet .grab { width: 38px; height: 5px; border-radius: 3px; background: var(--ink-700); align-self: center; }
 .sheet .top { display: flex; justify-content: space-between; align-items: center; }
 .sheet h5 { margin: 0; font: 700 20px var(--sys-display); }
 .sheet .done { border: 0; background: var(--paper); color: var(--ink-1000); font: 700 14px var(--sys); padding: 8px 16px; border-radius: 99px; cursor: pointer; }
-.sheet p { font-size: 13px; color: var(--ink-300); }
-.pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; overflow-y: auto; scrollbar-width: none; padding-bottom: 6px; }
-.pick button { position: relative; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 12px; overflow: hidden; aspect-ratio: 2/3; transition: transform .15s, opacity .15s; }
+.sheet .find { display: flex; align-items: center; gap: 8px; height: 42px; border-radius: 12px; background: var(--ink-800); padding: 0 12px; }
+.sheet .find svg { width: 16px; height: 16px; color: var(--ink-300); flex: none; }
+.sheet .find input { flex: 1; min-width: 0; border: 0; background: none; color: var(--paper); font: 16px var(--sys); outline: none; }
+.sheet .find input::placeholder { color: var(--ink-300); }
+.sheet .body { flex: 1; overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; gap: 18px; padding-bottom: 8px; }
+.sheet .body::-webkit-scrollbar { display: none; }
+.sheet h6 { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-300); }
+.pick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.pick button { position: relative; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 10px; overflow: hidden; aspect-ratio: 2/3; transition: transform .15s, opacity .15s; }
 .pick button img { width: 100%; height: 100%; object-fit: cover; }
-.pick button[aria-pressed="false"] { opacity: .45; transform: scale(.94); }
-.pick .ck { position: absolute; right: 6px; top: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(7,7,8,.6); border: 1.5px solid rgba(255,255,255,.7); display: flex; align-items: center; justify-content: center; }
-.pick button[aria-pressed="true"] .ck { background: var(--teal); border-color: var(--teal); color: var(--ink-1000); }
-.pick .ck svg { width: 13px; height: 13px; }
+.pick .ck { position: absolute; right: 5px; top: 5px; width: 22px; height: 22px; border-radius: 50%; background: rgba(7,7,8,.6); border: 1.5px solid rgba(255,255,255,.75); display: flex; align-items: center; justify-content: center; color: var(--paper); }
+.pick button[aria-pressed="true"] .ck { background: var(--paper); border-color: var(--paper); color: var(--ink-1000); }
+.pick .ck svg { width: 12px; height: 12px; }
+.res { display: flex; flex-direction: column; gap: 4px; }
+.res .r { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+.res .r img { width: 40px; height: 60px; border-radius: 6px; object-fit: cover; flex: none; }
+.res .r div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.res .r b { font-size: 15px; font-weight: 600; }
+.res .r span { font-size: 12.5px; color: var(--ink-300); }
+.res .r button { border: 1px solid var(--glass-line); background: var(--fill); color: var(--paper); font: 600 13px var(--sys); padding: 7px 12px; border-radius: 99px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.res .r button[aria-pressed="true"] { background: var(--paper); color: var(--ink-1000); border-color: var(--paper); }
+.res .r button svg { width: 12px; height: 12px; }
+.res .none { font-size: 13px; color: var(--ink-300); padding: 6px 0; }
 .toast { position: absolute; left: 50%; bottom: 100px; z-index: 10; transform: translate(-50%, 10px); opacity: 0; transition: opacity .2s, transform .2s; background: rgba(245,244,240,.96); color: var(--ink-1000); font-size: 13px; font-weight: 600; padding: 10px 14px; border-radius: 14px; width: max-content; max-width: 86%; pointer-events: none; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
-@media (prefers-reduced-motion: reduce) { .ch .art img.f, .ch .live i { animation: none !important; } .ch .art img.f2 { display: none; } }
+@media (prefers-reduced-motion: reduce) { .ch .art img.f, .ch .live i { animation: none !important; } }
 
 /* Top 10: de qué plataforma viene */
 .plats { display: flex; gap: 12px; overflow-x: auto; padding: 9px 20px; scrollbar-width: none; }
@@ -305,7 +322,7 @@ td:first-child { font-weight: 700; }
   <header style="display:flex;flex-direction:column;gap:12px">
     <div class="eyebrow">Orbital · iPhone · Inicio · propuesta combinada</div>
     <h1>La portada arriba, tu tablero debajo</h1>
-    <div class="eyebrow" style="color:var(--ink-300)">Versión 4 · 30 oct · Orden: Seguir viendo, Lo nuevo de lo tuyo, Sugerencias de Trakt, Por lo que viste, Canales, Top 10 y Mi lista</div>
+    <div class="eyebrow" style="color:var(--ink-300)">Versión 5 · 30 oct · Orden: Seguir viendo, Lo nuevo de lo tuyo, Sugerencias de Trakt, Por lo que viste, Canales, Top 10 y Mi lista</div>
     <p class="muted">La portada grande de la opción 2 con lo útil de la opción 1. «Seguir viendo» va encimado en el borde de la portada, «Ya salió» y «Sale pronto» se juntan en una sola línea de tiempo, y el selector de Todo, Series y Películas son tres íconos en la barra de arriba, sin quitarle espacio a nada.</p>
     <p class="try">La maqueta funciona: toca los íconos del selector, desliza la portada y las filas, y baja dentro del teléfono.</p>
   </header>
@@ -320,7 +337,7 @@ td:first-child { font-weight: 700; }
         <div class="note"><span class="n">4</span><div><b>Lo nuevo de lo tuyo</b><p>«Ya salió» y «Sale pronto» en una sola línea de tiempo. A la izquierda de la marca HOY, lo que ya puedes ver (punto verde y ▶). A la derecha, lo que viene, más apagado, con cuenta regresiva y una campana para que te avise. Junta tus series (calendario de Trakt) y las películas de Mi lista que ya llegaron a casa.</p></div></div>
         <div class="note"><span class="n">5</span><div><b>Sugerencias para ti</b><p>Tus recomendaciones de Trakt, en una fila, justo después de lo tuyo.</p></div></div>
         <div class="note"><span class="n">6</span><div><b>Por lo que viste, con el mazo de Para ti</b><p>La misma tarjeta que hoy vive en Para ti, más vistosa: el arte del título que viste se desenfoca de fondo. Toca el mazo o las flechas y cambia lo que viste (Dark, Severance, Dune…), y con él las sugerencias.</p></div></div>
-        <div class="note"><span class="n">7</span><div><b>Canales, como la tele</b><p>Tus series favoritas siempre al aire: cada canal pasa un episodio al azar todo el día, con un cachito en movimiento y la barra que avanza sola. Tocas uno y entras justo donde va. «Elegir» abre la hoja para escoger qué series son tus canales. Con el selector en Películas, la fila se esconde.</p></div></div>
+        <div class="note"><span class="n">7</span><div><b>Canales, como la tele</b><p>Tus series siempre al aire: cada canal pasa un episodio al azar todo el día, con la imagen y el nombre de ese capítulo (no el arte de la serie) y la barra que avanza sola. Cuando termina, entra otro. Tocas uno y entras justo donde va. El «+» abre la hoja: tus canales, unas sugeridas y un buscador para añadir cualquier serie. Sin turquesa: el color lo pone el capítulo. Con el selector en Películas, la fila se esconde.</p></div></div>
         <div class="note"><span class="n">8</span><div><b>Top 10 con su plataforma</b><p>Como hoy: eliges la plataforma por su logo y cada número se pinta con su color (rojo Netflix, azul Disney+, morado HBO Max…). Cada póster lleva el logo de dónde está.</p></div></div>
         <div class="note"><span class="n">9</span><div><b>Mi lista</b><p>Se queda al final, igual que hoy.</p></div></div>
       </div>
@@ -392,17 +409,7 @@ td:first-child { font-weight: 700; }
     { id: "tt0903747", t: "Breaking Bad", d: "Serie · 2008", rel: [{ id: "tt5875444", kind: "series", t: "Slow Horses" }, { id: "tt30144839", kind: "movie", t: "Una batalla tras otra" }, { id: "tt7366338", kind: "series", t: "Chernobyl" }, { id: "tt14452776", kind: "series", t: "The Bear" }] },
     { id: "tt14452776", t: "The Bear", d: "Serie · 2022", rel: [{ id: "tt10986410", kind: "series", t: "Ted Lasso" }, { id: "tt0903747", kind: "series", t: "Breaking Bad" }, { id: "tt5875444", kind: "series", t: "Slow Horses" }] }
   ];
-  var CH_POOL = [
-    { id: "tt0096697", t: "Los Simpson", seasons: 35, len: 22, on: true, p2: "85% 40%" },
-    { id: "tt0386676", t: "The Office", seasons: 9, len: 22, on: true, p2: "20% 30%" },
-    { id: "tt0108778", t: "Friends", seasons: 10, len: 22, on: true, p2: "75% 35%" },
-    { id: "tt0098904", t: "Seinfeld", seasons: 9, len: 23, on: true, p2: "80% 25%" },
-    { id: "tt0149460", t: "Futurama", seasons: 10, len: 22, on: true, p2: "30% 20%" },
-    { id: "tt0903747", t: "Breaking Bad", seasons: 5, len: 47, on: false, p2: "60% 30%" },
-    { id: "tt0118480", t: "Stargate SG-1", seasons: 10, len: 44, on: false, p2: "70% 30%" },
-    { id: "tt10986410", t: "Ted Lasso", seasons: 3, len: 40, on: false, p2: "30% 30%" },
-    { id: "tt14452776", t: "The Bear", seasons: 4, len: 32, on: false, p2: "40% 30%" }
-  ];
+  var CH_POOL = [{"id": "tt0096697", "t": "Los Simpson", "seasons": 38, "len": 24, "on": true, "sug": false, "eps": [{"s": 15, "e": 19, "n": "Simple Simpson", "img": "ep_tt0096697_15_19.jpg"}, {"s": 8, "e": 2, "n": "You Only Move Twice", "img": "ep_tt0096697_8_2.jpg"}, {"s": 19, "e": 5, "n": "Treehouse of Horror XVIII", "img": "ep_tt0096697_19_5.jpg"}, {"s": 31, "e": 5, "n": "Gorillas on the Mast", "img": "ep_tt0096697_31_5.jpg"}]}, {"id": "tt0386676", "t": "The Office", "seasons": 9, "len": 22, "on": true, "sug": false, "eps": [{"s": 2, "e": 7, "n": "The Client", "img": "ep_tt0386676_2_7.jpg"}, {"s": 2, "e": 13, "n": "The Secret", "img": "ep_tt0386676_2_13.jpg"}, {"s": 7, "e": 16, "n": "PDA", "img": "ep_tt0386676_7_16.jpg"}, {"s": 2, "e": 19, "n": "Michael's Birthday", "img": "ep_tt0386676_2_19.jpg"}]}, {"id": "tt0108778", "t": "Friends", "seasons": 10, "len": 22, "on": true, "sug": false, "eps": [{"s": 4, "e": 21, "n": "The One With The Invitation", "img": "ep_tt0108778_4_21.jpg"}, {"s": 7, "e": 4, "n": "The One With Rachel's Assistant", "img": "ep_tt0108778_7_4.jpg"}, {"s": 1, "e": 15, "n": "The One With The Stoned Guy", "img": "ep_tt0108778_1_15.jpg"}, {"s": 10, "e": 15, "n": "The One Where Estelle Dies", "img": "ep_tt0108778_10_15.jpg"}]}, {"id": "tt0098904", "t": "Seinfeld", "seasons": 9, "len": 22, "on": true, "sug": false, "eps": [{"s": 7, "e": 20, "n": "The Calzone", "img": "ep_tt0098904_7_20.jpg"}, {"s": 4, "e": 15, "n": "The Visa", "img": "ep_tt0098904_4_15.jpg"}, {"s": 2, "e": 5, "n": "The Apartment", "img": "ep_tt0098904_2_5.jpg"}, {"s": 3, "e": 6, "n": "The Parking Garage", "img": "ep_tt0098904_3_6.jpg"}]}, {"id": "tt0149460", "t": "Futurama", "seasons": 1, "len": 22, "on": true, "sug": false, "eps": []}, {"id": "tt0903747", "t": "Breaking Bad", "seasons": 5, "len": 49, "on": false, "sug": true, "eps": [{"s": 3, "e": 8, "n": "I See You", "img": "ep_tt0903747_3_8.jpg"}, {"s": 3, "e": 7, "n": "One Minute", "img": "ep_tt0903747_3_7.jpg"}, {"s": 1, "e": 5, "n": "Gray Matter", "img": "ep_tt0903747_1_5.jpg"}, {"s": 2, "e": 9, "n": "4 Days Out", "img": "ep_tt0903747_2_9.jpg"}]}, {"id": "tt0118480", "t": "Stargate SG-1", "seasons": 10, "len": 44, "on": false, "sug": true, "eps": [{"s": 2, "e": 2, "n": "In the Line of Duty", "img": "ep_tt0118480_2_2.jpg"}, {"s": 7, "e": 10, "n": "Birthright", "img": "ep_tt0118480_7_10.jpg"}, {"s": 5, "e": 21, "n": "Meridian", "img": "ep_tt0118480_5_21.jpg"}, {"s": 1, "e": 16, "n": "Cor-Ai", "img": "ep_tt0118480_1_16.jpg"}]}, {"id": "tt10986410", "t": "Ted Lasso", "seasons": 4, "len": 43, "on": false, "sug": true, "eps": [{"s": 1, "e": 8, "n": "The Diamond Dogs", "img": "ep_tt10986410_1_8.jpg"}, {"s": 2, "e": 5, "n": "Rainbow", "img": "ep_tt10986410_2_5.jpg"}, {"s": 4, "e": 7, "n": "Yes & Baby", "img": "ep_tt10986410_4_7.jpg"}]}, {"id": "tt14452776", "t": "The Bear", "seasons": 5, "len": 35, "on": false, "sug": true, "eps": [{"s": 5, "e": 3, "n": "Mint", "img": "ep_tt14452776_5_3.jpg"}, {"s": 4, "e": 10, "n": "Goodbye", "img": "ep_tt14452776_4_10.jpg"}, {"s": 1, "e": 4, "n": "Dogs", "img": "ep_tt14452776_1_4.jpg"}, {"s": 4, "e": 9, "n": "Tonnato", "img": "ep_tt14452776_4_9.jpg"}]}, {"id": "tt0212671", "t": "Malcolm", "seasons": 7, "len": 22, "on": false, "sug": true, "eps": [{"s": 7, "e": 21, "n": "Morp", "img": "ep_tt0212671_7_21.jpg"}, {"s": 5, "e": 17, "n": "Polly in the Middle", "img": "ep_tt0212671_5_17.jpg"}, {"s": 1, "e": 13, "n": "Rollerskates", "img": "ep_tt0212671_1_13.jpg"}, {"s": 3, "e": 16, "n": "Hal Coaches", "img": "ep_tt0212671_3_16.jpg"}]}, {"id": "tt0460649", "t": "How I Met Your Mother", "seasons": 9, "len": 25, "on": false, "sug": false, "eps": [{"s": 1, "e": 12, "n": "The Wedding", "img": "ep_tt0460649_1_12.jpg"}, {"s": 7, "e": 7, "n": "Noretta", "img": "ep_tt0460649_7_7.jpg"}, {"s": 2, "e": 13, "n": "Columns", "img": "ep_tt0460649_2_13.jpg"}, {"s": 4, "e": 11, "n": "Little Minnesota", "img": "ep_tt0460649_4_11.jpg"}]}, {"id": "tt1442437", "t": "Modern Family", "seasons": 11, "len": 21, "on": false, "sug": false, "eps": [{"s": 5, "e": 12, "n": "Under Pressure", "img": "ep_tt1442437_5_12.jpg"}, {"s": 2, "e": 13, "n": "Caught in the Act", "img": "ep_tt1442437_2_13.jpg"}, {"s": 6, "e": 19, "n": "Grill, Interrupted", "img": "ep_tt1442437_6_19.jpg"}, {"s": 2, "e": 7, "n": "Chirp", "img": "ep_tt1442437_2_7.jpg"}]}, {"id": "tt2467372", "t": "Brooklyn Nine-Nine", "seasons": 8, "len": 22, "on": false, "sug": true, "eps": [{"s": 8, "e": 4, "n": "Balancing", "img": "ep_tt2467372_8_4.jpg"}, {"s": 4, "e": 11, "n": "The Fugitive (1)", "img": "ep_tt2467372_4_11.jpg"}, {"s": 8, "e": 1, "n": "The Good Ones", "img": "ep_tt2467372_8_1.jpg"}, {"s": 3, "e": 2, "n": "The Funeral", "img": "ep_tt2467372_3_2.jpg"}]}, {"id": "tt1266020", "t": "Parks and Recreation", "seasons": 7, "len": 25, "on": false, "sug": false, "eps": [{"s": 2, "e": 8, "n": "Ron and Tammy", "img": "ep_tt1266020_2_8.jpg"}, {"s": 5, "e": 7, "n": "Leslie vs. April", "img": "ep_tt1266020_5_7.jpg"}, {"s": 5, "e": 6, "n": "Ben's Parents", "img": "ep_tt1266020_5_6.jpg"}, {"s": 5, "e": 14, "n": "Leslie and Ben", "img": "ep_tt1266020_5_14.jpg"}]}, {"id": "tt1439629", "t": "Community", "seasons": 6, "len": 25, "on": false, "sug": false, "eps": [{"s": 1, "e": 25, "n": "Pascal's Triangle Revisited", "img": "ep_tt1439629_1_25.jpg"}, {"s": 2, "e": 23, "n": "A Fistful of Paintballs (1)", "img": "ep_tt1439629_2_23.jpg"}, {"s": 1, "e": 13, "n": "Investigative Journalism", "img": "ep_tt1439629_1_13.jpg"}, {"s": 3, "e": 22, "n": "Introduction to Finality", "img": "ep_tt1439629_3_22.jpg"}]}, {"id": "tt2861424", "t": "Rick and Morty", "seasons": 9, "len": 22, "on": false, "sug": false, "eps": [{"s": 1, "e": 9, "n": "Something Ricked This Way Comes", "img": "ep_tt2861424_1_9.jpg"}, {"s": 8, "e": 2, "n": "Valkyrick", "img": "ep_tt2861424_8_2.jpg"}, {"s": 1, "e": 8, "n": "Rixty Minutes", "img": "ep_tt2861424_1_8.jpg"}, {"s": 8, "e": 9, "n": "Morty Daddy", "img": "ep_tt2861424_8_9.jpg"}]}, {"id": "tt0182576", "t": "Padre de familia", "seasons": 24, "len": 22, "on": false, "sug": false, "eps": [{"s": 6, "e": 8, "n": "McStroke", "img": "ep_tt0182576_6_8.jpg"}, {"s": 14, "e": 6, "n": "Peter's Sister", "img": "ep_tt0182576_14_6.jpg"}, {"s": 18, "e": 20, "n": "Movin' In (Principal Shepherd's Song)", "img": "ep_tt0182576_18_20.jpg"}, {"s": 15, "e": 4, "n": "Inside Family Guy", "img": "ep_tt0182576_15_4.jpg"}]}, {"id": "tt0417299", "t": "Avatar: La leyenda de Aang", "seasons": 3, "len": 23, "on": false, "sug": false, "eps": [{"s": 2, "e": 8, "n": "The Chase", "img": "ep_tt0417299_2_8.jpg"}, {"s": 3, "e": 10, "n": "The Day of Black Sun: The Invasion (1)", "img": "ep_tt0417299_3_10.jpg"}, {"s": 2, "e": 1, "n": "The Avatar State", "img": "ep_tt0417299_2_1.jpg"}, {"s": 2, "e": 10, "n": "The Library", "img": "ep_tt0417299_2_10.jpg"}]}, {"id": "tt0285403", "t": "Scrubs", "seasons": 9, "len": 22, "on": false, "sug": false, "eps": [{"s": 7, "e": 11, "n": "My Princess", "img": "ep_tt0285403_7_11.jpg"}, {"s": 5, "e": 24, "n": "My Transition", "img": "ep_tt0285403_5_24.jpg"}, {"s": 4, "e": 25, "n": "My Changing Ways", "img": "ep_tt0285403_4_25.jpg"}, {"s": 4, "e": 9, "n": "My Malpractical Decision", "img": "ep_tt0285403_4_9.jpg"}]}];
   var PLATS = [
     { b: "netflix", n: "Netflix", tint: "#e60a14", weekly: true, items: [{ id: "tt1312221", kind: "movie", t: "Frankenstein", mv: "NUEVO" }, { id: "tt13443470", kind: "series", t: "Merlina" }, { id: "tt4574334", kind: "series", t: "Stranger Things" }, { id: "tt2085059", kind: "series", t: "Black Mirror" }, { id: "tt5753856", kind: "series", t: "Dark" }, { id: "tt2866360", kind: "movie", t: "Coherence" }] },
     { b: "disney", n: "Disney+", tint: "#456eff", items: [{ id: "tt9253284", kind: "series", t: "Andor" }, { id: "tt14452776", kind: "series", t: "The Bear", mv: "NUEVO" }, { id: "tt13623632", kind: "series", t: "Alien: Earth" }, { id: "tt2543164", kind: "movie", t: "La llegada" }] },
@@ -461,7 +468,7 @@ td:first-child { font-weight: 700; }
               '<div class="bc-info"><span class="bc-ey"></span><span class="bc-t"></span><span class="bc-d"></span>' +
               '<div class="bc-nav"><button type="button" class="gbtn bc-prev" aria-label="Anterior"><svg aria-hidden="true" style="transform:scaleX(-1)"><use href="#i-chev"/></svg></button><button type="button" class="gbtn bc-next" aria-label="Siguiente">' + use("i-chev") + '</button></div></div></div>' +
               '<div class="strip fy-strip fade"></div></div></div>' +
-            '<div class="row ch-row"><div class="head"><div><span class="ey">Siempre hay un episodio al aire</span><h4>Canales</h4></div><button type="button" class="edit">Elegir</button></div><div class="strip ch-strip"></div></div>' +
+            '<div class="row ch-row"><div class="head" style="align-items:center"><div><h4>Canales</h4><span class="ch-sub">Siempre hay un episodio al aire</span></div><button type="button" class="ch-head-btn edit" aria-label="Elegir canales">' + use("i-plus") + '</button></div><div class="strip ch-strip"></div></div>' +
             '<div class="row"><div class="head"><div><span class="ey top-ey"></span><h4 class="top-t"></h4></div></div><div class="plats"></div><div class="strip top-strip fade" style="padding-top:14px"></div></div>' +
             '<div class="row"><div class="head"><h4>Mi lista ' + use("i-chev") + '</h4><small class="ml-count"></small></div><div class="strip ml-strip fade"></div></div>' +
           '</div>' +
@@ -469,7 +476,8 @@ td:first-child { font-weight: 700; }
         '<div class="tabs"><div class="on">' + use("i-home") + 'Inicio</div><div>' + use("i-spark") + 'Para ti</div><div>' + use("i-dl") + 'Descargas</div><div>' + use("i-search") + 'Buscar</div></div>' +
         '<div class="sheet-bg"></div><div class="sheet" role="dialog" aria-label="Tus canales"><span class="grab"></span>' +
           '<div class="top"><h5>Tus canales</h5><button type="button" class="done">Listo</button></div>' +
-          '<p>Cada canal pasa episodios al azar de esa serie, todo el día. Toca uno y entras justo donde va.</p><div class="pick"></div></div>' +
+          '<label class="find"><svg aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="' + root.id + '-q" placeholder="Busca una serie para añadirla" autocomplete="off"></label>' +
+          '<div class="body"></div></div>' +
         '<div class="toast" role="status"></div>' +
         '<div class="home-ind"></div>' +
       '</div>';
@@ -551,47 +559,68 @@ td:first-child { font-weight: 700; }
       }).join("") : '<div class="empty" style="padding:0">Hoy no hay de este tipo en ' + pl.n + ".</div>";
       $(".top-strip").scrollLeft = 0;
     }
-    // cada canal tiene su episodio al aire y avanza solo, como la tele
-    var air = {}, screenEl = $(".screen"), toastT;
-    function tuneNew(c) { var len = c.len; air[c.id] = { s: 1 + Math.floor(Math.random() * c.seasons), e: 1 + Math.floor(Math.random() * 22), at: Math.random() * len * 0.8, len: len }; }
-    CH_POOL.forEach(tuneNew);
-    function chText(c) { var a = air[c.id]; return "T" + a.s + " E" + a.e + " · quedan " + Math.max(1, Math.ceil(a.len - a.at)) + " min"; }
-    function paintChannels() {
-      var row = $(".ch-row"); row.hidden = curKind === "movie";
-      var on = CH_POOL.filter(function (c) { return c.on; });
-      $(".ch-strip").innerHTML = on.map(function (c, i) {
-        var a = air[c.id], bg = IMG(c.id, "background");
-        return '<button type="button" class="ch" data-id="' + c.id + '" style="--d:' + (12 + i * 3) + 's;--c:' + (6 + (i % 3) * 2) + 's;--p2:' + c.p2 + '">' +
-          '<div class="art"><img class="f" src="' + bg + '" alt=""><img class="f f2" src="' + bg + '" alt="">' +
-          '<span class="live"><i></i>AL AIRE</span><span class="num">' + (i + 1) + '</span>' +
-          '<img class="logo" src="' + IMG(c.id, "logo") + '" alt=""><span class="bar"><i style="width:' + (a.at / a.len * 100) + '%"></i></span></div>' +
-          '<div><div class="t">' + c.t + '</div><div class="s">' + chText(c) + "</div></div></button>";
-      }).join("") + '<button type="button" class="ch-add"><span class="p">' + use("i-plus") + "</span>Elegir canales</button>";
+    // cada canal tiene su episodio al aire (de los que trae Cinemeta, con su imagen) y avanza solo, como la tele
+    var air = {}, screenEl = $(".screen"), toastT, q = "";
+    function tuneNew(c, start) {
+      var ep = c.eps.length ? c.eps[Math.floor(Math.random() * c.eps.length)] : { s: 1 + Math.floor(Math.random() * c.seasons), e: 1 + Math.floor(Math.random() * 20), n: "", img: "" };
+      var nx = c.eps.length ? c.eps[Math.floor(Math.random() * c.eps.length)] : ep;
+      air[c.id] = { ep: ep, next: nx, at: start ? Math.random() * c.len * 0.8 : 0, len: c.len };
     }
-    function paintPick() {
-      $(".pick").innerHTML = CH_POOL.map(function (c) {
-        return '<button type="button" data-id="' + c.id + '" aria-label="' + c.t + '" aria-pressed="' + c.on + '"><img src="' + IMG(c.id, "poster") + '" alt=""><span class="ck">' + use("i-check") + "</span></button>";
-      }).join("");
+    CH_POOL.forEach(function (c) { tuneNew(c, true); });
+    var still = function (c) { var a = air[c.id]; return a.ep.img ? "img/" + a.ep.img : IMG(c.id, "background"); };
+    function chLeft(c) { var a = air[c.id]; return "quedan " + Math.max(1, Math.ceil(a.len - a.at)) + " min"; }
+    function chCard(c, i) {
+      var a = air[c.id];
+      return '<button type="button" class="ch" data-id="' + c.id + '" style="--d:' + (14 + i * 3) + 's">' +
+        '<div class="art"><img class="f" src="' + still(c) + '" alt=""><span class="live"><i></i>AL AIRE · ' + String(i + 1).padStart(2, "0") + '</span>' +
+        '<img class="logo" src="' + IMG(c.id, "logo") + '" alt="">' +
+        '<span class="now"><small>T' + a.ep.s + " E" + a.ep.e + "</small><b>" + (a.ep.n ? "«" + a.ep.n + "»" : c.t) + "</b></span>" +
+        '<span class="bar"><i style="width:' + (a.at / a.len * 100) + '%"></i></span></div>' +
+        '<div class="meta"><span class="t">' + c.t + '</span><span class="s">' + chLeft(c) + "</span></div></button>";
+    }
+    function paintChannels() {
+      $(".ch-row").hidden = curKind === "movie";
+      var on = CH_POOL.filter(function (c) { return c.on; });
+      $(".ch-strip").innerHTML = on.map(chCard).join("") + '<button type="button" class="ch-add"><span class="p">' + use("i-plus") + "</span>Añadir canal</button>";
+    }
+    function tile(c) { return '<button type="button" data-id="' + c.id + '" aria-label="' + c.t + '" aria-pressed="' + c.on + '"><img src="' + IMG(c.id, "poster") + '" alt=""><span class="ck">' + use(c.on ? "i-check" : "i-plus") + "</span></button>"; }
+    function row(c) { return '<div class="r"><img src="' + IMG(c.id, "poster") + '" alt=""><div><b>' + c.t + "</b><span>" + c.seasons + " temporadas · " + c.len + ' min</span></div><button type="button" data-id="' + c.id + '" aria-pressed="' + c.on + '">' + use(c.on ? "i-check" : "i-plus") + (c.on ? "Añadido" : "Añadir") + "</button></div>"; }
+    function paintSheet() {
+      var fold = function (x) { return x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); };
+      if (q) {
+        var hits = CH_POOL.filter(function (c) { return fold(c.t).indexOf(fold(q)) >= 0; });
+        $(".sheet .body").innerHTML = '<div><h6>Resultados</h6><div class="res">' + (hits.length ? hits.map(row).join("") : '<div class="none">No encontré «' + q + '». Prueba con otro nombre.</div>') + "</div></div>";
+        return;
+      }
+      var mine = CH_POOL.filter(function (c) { return c.on; }), sug = CH_POOL.filter(function (c) { return c.sug && !c.on; });
+      $(".sheet .body").innerHTML = '<div><h6>Tus canales · ' + mine.length + '</h6><div class="pick">' + mine.map(tile).join("") + "</div></div>" +
+        (sug.length ? '<div><h6>Te sugerimos</h6><div class="pick">' + sug.map(tile).join("") + "</div></div>" : "") +
+        '<p style="font-size:13px;color:var(--ink-300)">Cada canal pasa episodios al azar de esa serie, todo el día. Toca uno y entras justo donde va.</p>';
     }
     setInterval(function () {
       CH_POOL.forEach(function (c) {
         var a = air[c.id]; a.at += 0.25;   // la maqueta va 15 veces más rápido que la tele, para que se note
-        if (a.at >= a.len) tuneNew(c), air[c.id].at = 0;
         var card = root.querySelector('.ch[data-id="' + c.id + '"]');
-        if (card) { card.querySelector(".bar i").style.width = (air[c.id].at / air[c.id].len * 100) + "%"; card.querySelector(".s").textContent = chText(c); }
+        if (a.at >= a.len) {   // terminó: entra otro episodio, con su imagen
+          tuneNew(c, false);
+          if (card) { var i = Array.prototype.indexOf.call(card.parentNode.children, card); card.outerHTML = chCard(c, i); }
+          return;
+        }
+        if (card) { card.querySelector(".bar i").style.width = (a.at / a.len * 100) + "%"; card.querySelector(".s").textContent = chLeft(c); }
       });
     }, 1000);
+    root.addEventListener("input", function (e) { if (e.target.matches(".sheet input")) { q = e.target.value.trim(); paintSheet(); } });
     root.addEventListener("click", function (e) {
       var ch = e.target.closest(".ch");
       if (ch) {
         var c = CH_POOL.filter(function (x) { return x.id === ch.dataset.id; })[0], a = air[c.id], t = $(".toast");
-        t.textContent = "Entrando a " + c.t + " · T" + a.s + " E" + a.e + ", minuto " + Math.floor(a.at);
+        t.textContent = "Entrando a " + c.t + (a.ep.n ? " · «" + a.ep.n + "»" : "") + ", minuto " + Math.floor(a.at);
         t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("on"); }, 1800);
       }
-      if (e.target.closest(".ch-add") || e.target.closest(".ch-row .edit")) { paintPick(); screenEl.classList.add("sheet-on"); }
+      if (e.target.closest(".ch-add") || e.target.closest(".ch-row .edit")) { q = ""; $(".sheet input").value = ""; paintSheet(); screenEl.classList.add("sheet-on"); }
       if (e.target.closest(".sheet .done") || e.target.closest(".sheet-bg")) { screenEl.classList.remove("sheet-on"); paintChannels(); }
-      var pk = e.target.closest(".pick button");
-      if (pk) { var c2 = CH_POOL.filter(function (x) { return x.id === pk.dataset.id; })[0]; c2.on = !c2.on; pk.setAttribute("aria-pressed", c2.on); }
+      var pk = e.target.closest(".pick button, .res button");
+      if (pk) { var c2 = CH_POOL.filter(function (x) { return x.id === pk.dataset.id; })[0]; c2.on = !c2.on; paintSheet(); }
     });
     root.addEventListener("click", function (e) {
       if (e.target.closest(".deck") || e.target.closest(".bc-next")) { seedAt = (seedAt + 1) % SEEDS.length; paintSeed(true); }
