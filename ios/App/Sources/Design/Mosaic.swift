@@ -106,7 +106,7 @@ struct Mosaic: View {
                 if loading { ProgressView() }
                 else {
                     DSEmptyState(symbol: "square.grid.3x3", title: Text("No pude armar tu mosaico"), message: Text("Revisa tu conexión e intenta de nuevo.")) {
-                        if let retry { Button("Intentar de nuevo", action: retry) }
+                        if let retry { Button("Reintentar", action: retry) }
                     }
                 }
             }
@@ -315,13 +315,13 @@ private struct MosaicTileCell: View {
         ZStack(alignment: .bottomLeading) {
             // Elegir no cambia de imagen: bajarla y decodificarla en ese momento trababa el mosaico.
             PosterView(url: tile.shape == .wide ? tile.item.wide : tile.item.poster, title: tile.item.title, aspect: nil, maxPoints: DS.Image.mosaic)
-            if focused { LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom) }
+            if focused { ArtVeil() }
             // Como en la TV: el ícono de serie / película solo en la pieza enfocada (en todas tapaba los logos de las portadas)
             // y sin puesto (el puesto es de su lista, en Listas).
             if focused { VStack { HStack { kindIcon; Spacer() }; Spacer() }.padding(DS.Space.s3) }
             if focused {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    if !inWatchlist, let platform = tile.item.platformName { PlatformBadge(name: platform) } else { DSBadge(text: inWatchlist ? "En tu watchlist" : badgeKey(tile.item.reason)) }
+                    if !inWatchlist, let platform = tile.item.platformName { PlatformBadge(name: platform) } else { DSBadge(text: inWatchlist ? "En Mi lista" : badgeKey(tile.item.reason)) }
                     TitleLogo(url: tile.item.logo, title: tile.item.title)
                     ViewThatFits(in: .horizontal) {   // si no cabe, se quitan partes del medio antes de cortar
                         ForEach(Array(factVariants(tile.item, language: language).enumerated()), id: \.offset) { _, text in text.lineLimit(1).fixedSize(horizontal: true, vertical: false) }

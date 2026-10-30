@@ -250,7 +250,7 @@ private struct BecauseBackdrop: ViewModifier {
                             .id(poster)
                             .transition(.opacity)
                         // Un velo parejo (arriba van «Porque viste · 3 de 8» y el nombre) y más firme abajo, donde van los pósters.
-                        LinearGradient(colors: [DS.scrim, DS.scrimStrong], startPoint: .top, endPoint: .bottom)
+                        ArtVeil(kind: .full)
                     }
                     .clipShape(shape)
                     .accessibilityHidden(true)
@@ -332,7 +332,7 @@ struct YearCard: View {
                         .frame(width: half, height: DS.Collections.yearHeight / 2)
                 }
             }
-            LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
+            ArtVeil()
             Text(verbatim: String(year))
                 .font(DS.TextRecipe.display.font).fontWeight(.heavy).fontDesign(.rounded).monospacedDigit()
                 .foregroundStyle(DS.paper)

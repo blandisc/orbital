@@ -85,7 +85,7 @@ extension PlayerScreen {
         GeometryReader { geo in
             if landscape {
                 ZStack {
-                    LinearGradient(colors: [DS.scrim, .clear, DS.scrim], startPoint: .top, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
+                    ArtVeil(kind: .both, strength: .soft).ignoresSafeArea().allowsHitTesting(false)
                     topScrim
                     VStack(spacing: DS.Space.s3) {
                         topBar(model)
@@ -111,7 +111,7 @@ extension PlayerScreen {
                     topScrim.opacity(fillsPortrait ? 1 : min(1, max(0, rect.minY / DS.PlayerPanel.portraitTopClearance)))
                     // Con el video a pantalla completa, los controles van encima: un velo abajo para que se lean.
                     if fillsPortrait {
-                        LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
+                        ArtVeil().ignoresSafeArea().allowsHitTesting(false)
                     }
                     if !raisedPortrait(rect) { topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2).transition(.opacity) }
                     // La agarradera, montada en el borde de abajo del video: se ve dónde va el dedo para subirlo o bajarlo (se pidió
@@ -177,7 +177,7 @@ extension PlayerScreen {
     /// El degradado oscuro de arriba: el nombre y el episodio se leen aunque el video sea claro.
     var topScrim: some View {
         VStack(spacing: 0) {
-            LinearGradient(colors: [DS.scrimStrong, DS.scrim, .clear], startPoint: .top, endPoint: .bottom)
+            ArtVeil(kind: .top, at: 1)
                 .frame(height: DS.PlayerPanel.topScrimHeight)
             Spacer(minLength: 0)
         }

@@ -34,7 +34,7 @@ struct DecideTile: View {
                         .scaleEffect(selected ? DS.Decide.artZoom : 1)   // la imagen se acerca un poco al elegir
                 }
                 .clipped()
-                LinearGradient(colors: [.clear, selected ? DS.scrim : DS.scrimStrong], startPoint: .center, endPoint: .bottom)
+                ArtVeil(strength: selected ? .soft : .strong)
                 Group {
                     if era { title.font(DS.TextRecipe.title.font.weight(.black)).tracking(DS.Decide.eraTracking) }
                     else { title.font(DS.TextRecipe.footnote.font.weight(.heavy)) }

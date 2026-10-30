@@ -129,7 +129,7 @@ struct ListsView: View {
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.
                     if !model.newOnPlatforms.isEmpty {
                         // En panorámicas (otro formato: se reconoce sin leerla), con la plataforma en la esquina.
-                        Shelf(title: Text("Nuevo en tus plataformas"), eyebrow: Text("Episodios de estas semanas y películas recién llegadas")) {
+                        Shelf(title: Text("Nuevo en tus plataformas"), eyebrow: Text("Episodios y películas recién llegados")) {
                             ForEach(model.newOnPlatforms) { s in
                                 TitleNavigationLink(route: s.route) {
                                     WideCard(art: s.wide, logo: s.logo, title: s.title, badge: Text(badgeKey(s.reason)),
@@ -411,7 +411,7 @@ struct ListsView: View {
                      route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan), eyebrow: shelfMeta(plan),
                      reflected: plan.style != .top10) {   // el Top 10 no lleva reflejo: abajo van su ▲ ▼ y la cifra
             ForEach(items) { s in
-                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
+                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }   // en Mi lista todo está ahí: el marcador sobra
             }
         }
         // Los Top 10 (y los rankings de plataformas), con sus pósters pedidos en cuanto llega la lista.
@@ -428,7 +428,7 @@ struct ListsView: View {
             }
         }
         DSEmptyState(symbol: "link", title: Text("Conecta Trakt o tu Orbital"),
-                     message: Text("Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.")) {
+                     message: Text("Mi lista, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.")) {
             NavigationLink(value: SettingsRoute()) { Label("Abrir Ajustes", systemImage: "gearshape") }
         }
     }

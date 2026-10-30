@@ -105,7 +105,7 @@ struct WrappedView: View {
                 }
                 .clipped()
             }
-            LinearGradient(colors: [.clear, DS.backdropDeep], startPoint: .top, endPoint: .bottom)
+            ArtVeil(at: 0, strength: .deep)
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
@@ -142,7 +142,7 @@ struct WrappedView: View {
             big(Text(verbatim: "\(stats.longestStreak)"), Text("días seguidos viendo algo"), Text("tu mejor racha"))
         case .busiest:
             if let b = stats.busiestDay {
-                big(Text(b.day, format: .dateTime.weekday(.wide).day().month(.wide)), Text("tu día más intenso"), Text("\(b.minutes / 60) h \(b.minutes % 60) min"))
+                big(Text(verbatim: Strings.date(b.day, .weekdayDayMonth, language: language)), Text("tu día más intenso"), Text("\(b.minutes / 60) h \(b.minutes % 60) min"))
             }
         case .quiz: quiz
         case .outro:

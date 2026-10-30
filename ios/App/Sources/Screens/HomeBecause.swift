@@ -15,7 +15,7 @@ struct HomeBecause: View {
         let _ = model.track()
         if let because = model.because, !model.seeds.isEmpty {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSSectionHead(title: Text("Por lo que viste"), source: .trakt, eyebrow: Text("Cambia lo que viste y cambian las sugerencias"))
+                DSSectionHead(title: Text("Por lo que viste"), source: .trakt, eyebrow: Text("Según el título que elijas"))
                     .padding(.horizontal, DS.Space.gutter)
                 card(because)
             }

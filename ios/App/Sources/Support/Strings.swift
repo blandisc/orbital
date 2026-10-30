@@ -140,4 +140,37 @@ enum Strings {
         if h == 0 { return "\(m) min" }
         return m == 0 ? "\(h) h" : "\(h) h \(m) min"
     }
+
+    // MARK: números y fechas (lenguaje de diseño: siempre en el idioma de la app, nunca con el formato del teléfono a mano)
+
+    /// Un conteo para leer: «26», «1000», «12 500». Sin separador hasta 9999 (como pide la RAE para cuatro cifras) y con
+    /// espacio fino de ahí en adelante; en inglés, con coma («12,500»). `DesignTests` no deja usar `.formatted()` en las pantallas.
+    static func count(_ n: Int, language: String) -> String {
+        guard abs(n) > 9999 else { return String(n) }
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.groupingSeparator = language.hasPrefix("en") ? "," : "\u{202F}"
+        return f.string(from: NSNumber(value: n)) ?? String(n)
+    }
+
+    /// Cómo se escribe una fecha: «12 de agosto», «jueves 12 de agosto», «jueves», «agosto de 2026».
+    /// Y para los ejes de una gráfica: la inicial del día («L»), el número del día, la inicial del mes, el año en dos cifras.
+    enum DateStyle { case dayMonth, dayMonthShort, weekdayDayMonth, weekday, monthYear, weekdayInitial, dayNumber, monthInitial, yearShort }
+
+    /// Una fecha en el idioma de la app (no en el del teléfono): la misma en Lo que ves, el Wrapped, la ficha y los estrenos.
+    static func date(_ date: Date, _ style: DateStyle, language: String) -> String {
+        let locale = Locale(identifier: language.hasPrefix("en") ? "en_US" : "es_MX")
+        let format: Date.FormatStyle = switch style {
+        case .dayMonth: .dateTime.day().month(.wide)
+        case .dayMonthShort: .dateTime.day().month(.abbreviated)
+        case .weekdayDayMonth: .dateTime.weekday(.wide).day().month(.wide)
+        case .weekday: .dateTime.weekday(.wide)
+        case .monthYear: .dateTime.month(.wide).year()
+        case .weekdayInitial: .dateTime.weekday(.narrow)
+        case .dayNumber: .dateTime.day()
+        case .monthInitial: .dateTime.month(.narrow)
+        case .yearShort: .dateTime.year(.twoDigits)
+        }
+        return date.formatted(format.locale(locale))
+    }
 }

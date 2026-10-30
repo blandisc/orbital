@@ -80,7 +80,7 @@ struct DecideView: View {
         let count = m.count()
         return HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("¿Qué vemos?").recipe(.title)
+                Text("Decide por mí").recipe(.title)
                 Text(verbatim: optionsLine(m, count))
                     .recipe(.footnote).monospacedDigit().contentTransition(.numericText())
                     .accessibilityIdentifier("decide-count")

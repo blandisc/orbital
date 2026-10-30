@@ -296,7 +296,7 @@ struct RemoteSheet: View {
                     }
                 }
                 Button { Task { await model.retryNow() } } label: {
-                    Text("Intentar de nuevo").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                    Text("Reintentar").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
                         .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
                         .background(DS.fill, in: Capsule())
                 }

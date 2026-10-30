@@ -155,7 +155,7 @@ struct CollectionGridView: View {
     /// El Top de un género: de dos en dos, con la cifra grande detrás del póster (como los rankings de una plataforma).
     @ViewBuilder private var rankedGrid: some View {
         if items.isEmpty {
-            if isLoading { ProgressView().frame(maxWidth: .infinity).padding(.vertical, DS.Space.s14) }
+            if isLoading { DSLoadingState() }
             else { DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"), message: Text("Esta lista todavía no tiene títulos.")) }
         } else {
             LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3), spacing: DS.Space.s5) {

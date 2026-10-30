@@ -146,8 +146,7 @@ struct FromTVCard: View {
         WithArtColors(url: background) { colors in
             ZStack(alignment: .bottomLeading) {
                 PosterView(url: background, title: item.title, aspect: nil, bleed: true, maxPoints: DS.Image.bleed)
-                    .overlay(LinearGradient(stops: [.init(color: DS.scrim, location: 0), .init(color: .clear, location: DS.Backdrop.scrimMid),
-                                                    .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom))
+                    .overlay(ArtVeil(kind: .both, at: DS.Backdrop.scrimMid))
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     HStack(alignment: .firstTextBaseline) {
                         Label { eyebrow } icon: { Image(systemName: "tv") }.recipe(.eyebrow, color: DS.onArtSecondary).lineLimit(1)   // ds-exception: rótulo de estado sobre el arte («En la tele»), no un porqué

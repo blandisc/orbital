@@ -62,11 +62,11 @@ struct PlayerFailureView: View {
             case .noSources, .localFile:
                 option(Text("Cerrar"), primary: true, action: close)
             case .network:
-                option(Text("Intentar de nuevo"), primary: true, action: retry)
+                option(Text("Reintentar"), primary: true, action: retry)
                 if !online, let openDownloads { option(Text("Ver tus descargas"), primary: false, action: openDownloads) }
                 option(Text("Cerrar"), primary: false, action: close)
             case .noneWorked, .sourceDied:
-                option(Text("Intentar de nuevo"), primary: true, action: retry)
+                option(Text("Reintentar"), primary: true, action: retry)
                 if let chooseVersion { option(Text("Elegir otra versión"), primary: false, action: chooseVersion) }
                 if let infuse { option(Text("Abrir en Infuse"), primary: false, action: infuse) }
                 option(Text("Cerrar"), primary: false, action: close)

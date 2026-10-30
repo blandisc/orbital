@@ -155,7 +155,7 @@ struct TitleView: View {
             // No cargó (sin red, Cinemeta caído): lo dice y deja reintentar (antes «Cargando» se quedaba para siempre).
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 DSNotice(verbatim: env.message(error), tone: .warn)
-                Button("Intentar de nuevo", systemImage: "arrow.clockwise") { Task { await model.load() } }
+                Button("Reintentar", systemImage: "arrow.clockwise") { Task { await model.load() } }
                     .buttonStyle(.glass).accessibilityIdentifier("title-retry")
             }
         }
@@ -262,7 +262,7 @@ struct TitleView: View {
         }
         if let airs = model.continueAirs {
             // Todavía no sale: la fecha en lugar de «Ver» (antes abría un reproductor que fallaba).
-            return ContinueAction(title: Text("Sale el \(airs, format: .dateTime.day().month(.wide))"), symbol: "calendar", enabled: false, play: go)
+            return ContinueAction(title: Text("Sale el \(Strings.date(airs, .dayMonth, language: env.services.appSettings.uiLanguage))"), symbol: "calendar", enabled: false, play: go)
         }
         let language = model.recommendedLanguage.map { LanguageFlags.flagged($0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
                                                                   : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage), $0) }
@@ -503,7 +503,7 @@ struct TitleView: View {
         }
     }
 
-    private static let day: DateFormatter = { let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"; return f }()
+    private static let day: DateFormatter = { let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"; return f }()   // ds-exception: lee fechas de TMDB, no escribe texto
 
     private func detailRows(_ model: TitleModel) -> [(String, String)] {
         let locale = env.uiLocale

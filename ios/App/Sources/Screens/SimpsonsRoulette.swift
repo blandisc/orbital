@@ -267,8 +267,11 @@ private struct RabbitEarTips: Shape {
 
 /// La estática de una tele vieja: rayas grises al azar que cambian en cada cuadro.
 private struct TVStatic: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     var body: some View {
-        TimelineView(.animation) { context in
+        // Quieta con «Reducir movimiento» y con la app en segundo plano (no gasta mientras nadie la ve).
+        TimelineView(.animation(paused: reduceMotion || scenePhase != .active)) { context in
             Canvas { ctx, size in
                 var rng = SeededNoise(seed: UInt64(context.date.timeIntervalSinceReferenceDate * 60))
                 let rows = Int(size.height / DS.Simpsons.staticLine)

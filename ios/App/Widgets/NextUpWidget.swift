@@ -114,7 +114,7 @@ private func load(_ file: String) -> UIImage? { WidgetStore.imageURL(file).flatM
 
 /// El velo inferior: del arte limpio a casi opaco, para que el título y el dato se lean (en el ancho empieza más arriba).
 private func bottomScrim(wide: Bool = false) -> some View {
-    LinearGradient(stops: [.init(color: .clear, location: wide ? DS.Widget.scrimStartWide : DS.Widget.scrimStart), .init(color: DS.scrimStrong, location: 1)],
+    LinearGradient(stops: [.init(color: .clear, location: wide ? DS.Widget.scrimStartWide : DS.Widget.scrimStart), .init(color: DS.scrimStrong, location: 1)],   // ds-exception: el widget es otro programa y no trae ArtVeil
                    startPoint: .top, endPoint: .bottom)
 }
 

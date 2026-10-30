@@ -170,7 +170,7 @@ struct ArtTile: View {
                 else { PosterView(url: art, title: "", aspect: nil, bleed: true, maxPoints: DS.Image.card) }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
-            .overlay(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .top, endPoint: .bottom))
+            .overlay(ArtVeil(at: 0))
             title.recipe(.cardTitle).padding(DS.Space.s3).onArt()
         }
         .frame(height: DS.Size.artTileHeight)

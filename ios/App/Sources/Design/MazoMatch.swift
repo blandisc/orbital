@@ -14,7 +14,7 @@ struct MatchCard: View {
         ZStack(alignment: .bottomLeading) {
             Color.clear.overlay { PosterView(url: suggestion.poster, title: suggestion.title, aspect: nil, bleed: true).scaledToFill() }
                 .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
-            LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
+            ArtVeil()
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: suggestion.title).font(DS.TextRecipe.title.font.weight(.bold)).foregroundStyle(DS.paper).lineLimit(2)
                 Text(verbatim: [suggestion.year.map(String.init), suggestion.genres.prefix(2).joined(separator: " · ")].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))

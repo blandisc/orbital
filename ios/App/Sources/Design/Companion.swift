@@ -13,8 +13,7 @@ struct GameNowCard: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             PosterView(url: game.hero ?? game.cover, title: game.title, aspect: nil, bleed: true, maxPoints: DS.Image.bleed)
-            LinearGradient(stops: [.init(color: .clear, location: DS.Deck.veilStart), .init(color: DS.scrimStrong, location: 1)],
-                           startPoint: .top, endPoint: .bottom)
+            ArtVeil(at: DS.Deck.veilStart)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s1) {
                     Circle().fill(game.paused ? DS.warning : DS.live).frame(width: DS.Companion.dot, height: DS.Companion.dot)
@@ -22,7 +21,7 @@ struct GameNowCard: View {
                 }
                 TitleLogo(url: game.logo, title: game.title).frame(maxHeight: DS.Size.captionLogo, alignment: .leading)
                 if let started = game.started {
-                    TimelineView(.periodic(from: .now, by: 60)) { context in
+                    TimelineView(.periodic(from: .now, by: DS.Timing.minute)) { context in
                         Text("Llevas \(Strings.duration(Int(context.date.timeIntervalSince(started) / 60)))").recipe(.footnote, color: DS.onArtSecondary)
                     }
                 }

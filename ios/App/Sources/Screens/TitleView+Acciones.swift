@@ -92,6 +92,7 @@ extension TitleView {
                     Task { await ratings.rate(imdb: model.metaID, kind: model.kind, stars: stars) }
                 }
             }
+            .accessibilityElement(children: .contain)   // las estrellas conservan su identificador («rating-stars»)
             .accessibilityIdentifier("title-your-rating")
         }
     }

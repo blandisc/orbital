@@ -121,7 +121,7 @@ struct PosterCard: View {
             if let rank { DSRankBadge(rank: rank).padding(DS.Space.s2) }
             else if let platformRank { PlatformBadge(name: platformRank.platform, rank: platformRank.rank).padding(DS.Space.s2) }
             else if let badge { DSBadge(text: badge).padding(DS.Space.s2) }
-            else if bookmarked { DSIconBadge(symbol: "bookmark.fill", label: "En tu watchlist").padding(DS.Space.s2) }
+            else if bookmarked { DSIconBadge(symbol: "bookmark.fill", label: "En Mi lista").padding(DS.Space.s2) }
             if let progress { VStack { Spacer(); DSProgress(fraction: progress) } }
         }
         .frame(width: width)

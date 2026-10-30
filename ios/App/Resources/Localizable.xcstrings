@@ -78,6 +78,17 @@
         }
       }
     },
+    "%@ del canon en tus colecciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of the canon in your collections"
+          }
+        }
+      }
+    },
     "%@ descargas": {
       "extractionState": "manual",
       "localizations": {
@@ -360,6 +371,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld from the canon on your shelf"
+          }
+        }
+      }
+    },
+    "%lld del canon en tus colecciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of the canon in your collections"
           }
         }
       }
@@ -822,6 +844,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "On your shelf"
+          }
+        }
+      }
+    },
+    "A tus colecciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To your collections"
           }
         }
       }
@@ -1848,6 +1881,71 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to enter on the Trakt page shown. The session is only for this iPad: what you watch is reported, you pick up where you left off on your other devices, and My list and your lists show up."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to enter on the Trakt page shown. The session is only for this iPhone: what you watch is reported, you pick up where you left off on your other devices, and My list and your lists show up."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to enter on the Trakt page shown. The session is only for this Mac: what you watch is reported, you pick up where you left off on your other devices, and My list and your lists show up."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A code appears to enter on the Trakt page shown. The session is only for this iPhone: what you watch is reported, you pick up where you left off on your other devices, and My list and your lists show up."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPad: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de esta Mac: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas."
                 }
               }
             }
@@ -5847,6 +5945,17 @@
         }
       }
     },
+    "Dejan de salir Mi lista, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My list, your lists and what you follow stop showing; what you watch is no longer marked on Trakt."
+          }
+        }
+      }
+    },
     "Dejan de salir tu watchlist, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.": {
       "extractionState": "manual",
       "localizations": {
@@ -7870,6 +7979,17 @@
         }
       }
     },
+    "Empieza tus colecciones: lo que veas del canon se pinta aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start your collections: what you watch from the canon fills in here"
+          }
+        }
+      }
+    },
     "En %@": {
       "extractionState": "manual",
       "localizations": {
@@ -8730,6 +8850,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "This week's episodes and newly arrived movies"
+          }
+        }
+      }
+    },
+    "Episodios y películas recién llegados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Episodes and movies just in"
           }
         }
       }
@@ -13161,6 +13292,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "My List"
+          }
+        }
+      }
+    },
+    "Mi lista, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My list, your recommendations and your platforms' Top 10 show up here."
           }
         }
       }
@@ -18514,6 +18656,17 @@
         }
       }
     },
+    "Revisa tu internet e intenta de nuevo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your internet and try again."
+          }
+        }
+      }
+    },
     "Revisada %@": {
       "extractionState": "manual",
       "localizations": {
@@ -19211,6 +19364,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "According to (any one):"
+          }
+        }
+      }
+    },
+    "Según el título que elijas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Based on the title you pick"
           }
         }
       }

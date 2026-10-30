@@ -19,7 +19,7 @@ struct CoverCard: View {
         ZStack(alignment: .bottomLeading) {
             PosterView(url: art, title: title, aspect: nil, bleed: true, maxPoints: DS.Image.wide)
                 .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
-            LinearGradient(stops: [.init(color: .clear, location: DS.Editorial.veilStart), .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom)
+            ArtVeil(at: DS.Editorial.veilStart)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 TitleLogo(url: logo, title: title, size: .tile)
                     .frame(maxWidth: DS.Editorial.coverLogo.width, maxHeight: DS.Editorial.coverLogo.height, alignment: .bottomLeading)
@@ -49,7 +49,7 @@ struct WideCard: View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             ZStack(alignment: .bottomLeading) {
                 PosterView(url: art, title: title, aspect: DS.Poster.stillAspect)
-                LinearGradient(stops: [.init(color: .clear, location: DS.Editorial.veilStart), .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom)
+                ArtVeil(at: DS.Editorial.veilStart)
                 TitleLogo(url: logo, title: title, size: .tile)
                     .frame(maxWidth: DS.Editorial.wideLogo.width, maxHeight: DS.Editorial.wideLogo.height, alignment: .bottomLeading)
                     .padding(DS.Space.s3).onArt()

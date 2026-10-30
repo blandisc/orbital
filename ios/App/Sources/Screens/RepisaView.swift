@@ -43,7 +43,7 @@ struct RepisaView: View {
         let _ = model.track()
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                (model.seenTotal == 0 ? Text("Empieza tu repisa: lo que veas del canon se pinta aquí") : Text("\(model.seenTotal) del canon en tu repisa"))
+                (model.seenTotal == 0 ? Text("Empieza tus colecciones: lo que veas del canon se pinta aquí") : Text("\(model.seenTotal) del canon en tus colecciones"))
                     .recipe(.secondary, color: DS.textMuted)
                 shelf(Text("Premios"), model.collections.filter { $0.family == .award }, model)
                 shelf(Text("Listas famosas"), model.collections.filter { $0.family == .list }, model)
@@ -106,7 +106,7 @@ struct RepisaCollectionView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.s5) {
                     header(c, model)
-                    if c.items.isEmpty { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s8) }
+                    if c.items.isEmpty { DSLoadingState() }
                     ForEach(c.groups(newestFirst: newestFirst || c.grouping == .rank), id: \.title) { group in
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
                             HStack(alignment: .firstTextBaseline) {
@@ -238,7 +238,7 @@ struct RepisaCollectionView: View {
     /// El momento: la película baja a su lugar en la repisa y el número sube. Sin chispas ni confeti. Tocar cierra.
     private func moment(_ item: CanonCollection.Item, _ c: CanonCollection, _ model: RepisaModel) -> some View {
         VStack(spacing: DS.Space.s3) {
-            Text("A tu repisa").recipe(.footnote, color: DS.textMuted)
+            Text("A tus colecciones").recipe(.footnote, color: DS.textMuted)
             ShelfLedge { PosterView(url: item.poster, title: item.title).frame(width: DS.Repisa.momentPoster).transition(.move(edge: .top).combined(with: .opacity)) }
             Text(verbatim: item.title).recipe(.title).multilineTextAlignment(.center)
             ShelfEmblem(id: c.id, height: DS.Repisa.header)

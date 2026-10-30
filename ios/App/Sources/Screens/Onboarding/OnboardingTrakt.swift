@@ -30,7 +30,7 @@ struct OnboardingTrakt: View {
                     GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text("Conectado como \(name)"))
                 case .failed(let message):
                     DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .error)
-                    Button("Intentar de nuevo") { Task { await settings.model.linkTrakt() } }.buttonStyle(.glass)
+                    Button("Reintentar") { Task { await settings.model.linkTrakt() } }.buttonStyle(.glass)
                 case .unlinked:
                     ProgressView()
                 case .off:
