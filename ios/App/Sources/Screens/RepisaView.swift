@@ -71,7 +71,7 @@ struct RepisaView: View {
                                 VStack(spacing: DS.Space.s2) {
                                     ShelfEmblem(id: c.id, height: c.family == .list ? DS.Repisa.listEmblem : DS.Repisa.emblem)
                                     CanonNames.title(c.id).recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
-                                    Text(verbatim: "\(c.seen(model.watched)) / \(c.total.formatted())").recipe(.caption, color: DS.textMuted).monospacedDigit()
+                                    Text(verbatim: "\(c.seen(model.watched)) / \(c.total.formatted(.number.grouping(.never)))").recipe(.caption, color: DS.textMuted).monospacedDigit()
                                 }
                                 .frame(maxWidth: .infinity)
                             }
@@ -138,7 +138,7 @@ struct RepisaCollectionView: View {
             ShelfEmblem(id: c.id, height: DS.Repisa.header)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 CanonNames.category(c.id).recipe(.footnote, color: DS.textMuted)
-                Text("\(c.seen(model.watched)) de \(c.total.formatted())").recipe(.title).monospacedDigit()
+                Text("\(c.seen(model.watched)) de \(c.total.formatted(.number.grouping(.never)))").recipe(.title).monospacedDigit()
             }
             Spacer()
             if c.grouping != .rank {
@@ -242,7 +242,7 @@ struct RepisaCollectionView: View {
             ShelfLedge { PosterView(url: item.poster, title: item.title).frame(width: DS.Repisa.momentPoster).transition(.move(edge: .top).combined(with: .opacity)) }
             Text(verbatim: item.title).recipe(.title).multilineTextAlignment(.center)
             ShelfEmblem(id: c.id, height: DS.Repisa.header)
-            Text("\(c.seen(model.watched)) de \(c.total.formatted())").recipe(.cardTitle).monospacedDigit().contentTransition(.numericText())
+            Text("\(c.seen(model.watched)) de \(c.total.formatted(.number.grouping(.never)))").recipe(.cardTitle).monospacedDigit().contentTransition(.numericText())
         }
         .padding(DS.Space.s8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
