@@ -156,27 +156,12 @@ struct ListsView: View {
                 // Al final, las listas: las de Trakt y las de tus complementos, aparte.
                 if !traktLists.isEmpty { listGroup(title: "Listas de Trakt", source: .trakt, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection)) }
                 if !addonCards.isEmpty { listGroup(title: "De tus complementos", source: .addon, cards: addonCards).modifier(SectionSpy(section: .addons, active: $activeSection)) }
-                // Tu año (lo que viste, día por día): aquí a la vista, no escondido en tu perfil.
+                // Lo que ves (reemplaza «Tu año», que vive adentro) y, debajo, Colecciones (la repisa del canon).
                 if collections.model.traktLinked {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        DSSectionHead(title: Text("Tu año"), source: .trakt, eyebrow: Text("Lo que viste, día por día"))
-                        NavigationLink { YearView() } label: {
-                            HStack(spacing: DS.Space.s3) {
-                                Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.title.font).foregroundStyle(DS.accent)
-                                    .frame(width: DS.Collections.yearIcon, height: DS.Collections.yearIcon)
-                                    .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                                    Text("Tu año en Orbital").recipe(.cardTitle)
-                                    Text("Horas, tus días más intensos, lo que más viste y tu mapa de calor").recipe(.footnote).lineLimit(2)
-                                }
-                                Spacer(minLength: 0)
-                                Image(systemName: "chevron.right").foregroundStyle(DS.textMuted)
-                            }
-                            .padding(DS.Space.s3)
-                            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("paraTi-your-year")
+                        DSSectionHead(title: Text("Lo que ves"), source: .trakt, eyebrow: Text("Lo que viste, contado"))
+                        WatchingCardLoader().accessibilityIdentifier("paraTi-your-year")
+                        CollectionsCardLoader()
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     .modifier(SectionSpy(section: .yourYear, active: $activeSection))

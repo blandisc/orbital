@@ -6,7 +6,7 @@ import XCTest
 final class CanonTests: XCTestCase {
     func testLosPremiosSalenDeLoQueTraeLaApp() {
         let all = Canon.awards()
-        XCTAssertEqual(all.map(\.id), Awards.all.map(\.id))
+        XCTAssertEqual(all.map(\.id), ["oscar", "palm", "ariel", "globe", "bafta", "emmy"])
         let emmy = try! XCTUnwrap(all.first { $0.id == "emmy" })
         let madMen = try! XCTUnwrap(emmy.items.first { $0.title == "Mad Men" })
         XCTAssertEqual(madMen.year, 2008)

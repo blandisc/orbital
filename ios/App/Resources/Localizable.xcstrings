@@ -89,6 +89,28 @@
         }
       }
     },
+    "%@ días seguidos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ days in a row"
+          }
+        }
+      }
+    },
+    "%@ h esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ h this week"
+          }
+        }
+      }
+    },
     "%@ libres de %@": {
       "extractionState": "manual",
       "localizations": {
@@ -118,6 +140,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ until the next scare"
+          }
+        }
+      }
+    },
+    "%@ películas y %@ capítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ movies and %@ episodes"
           }
         }
       }
@@ -232,6 +265,28 @@
         }
       }
     },
+    "%lld capítulos · %lld h": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld episodes · %lld h"
+          }
+        }
+      }
+    },
+    "%lld capítulos, %lld h": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld episodes, %lld h"
+          }
+        }
+      }
+    },
     "%lld de %@": {
       "extractionState": "manual",
       "localizations": {
@@ -272,6 +327,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld of %lld watched"
+          }
+        }
+      }
+    },
+    "%lld de lo que viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of what you watched"
           }
         }
       }
@@ -320,6 +386,17 @@
         }
       }
     },
+    "%lld días seguidos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days in a row"
+          }
+        }
+      }
+    },
     "%lld episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -349,6 +426,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld phrases · how to ask · if it doesn't work"
+          }
+        }
+      }
+    },
+    "%lld h": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld h"
+          }
+        }
+      }
+    },
+    "%lld h %lld min": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld h %lld min"
+          }
+        }
+      }
+    },
+    "%lld h esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld h this week"
           }
         }
       }
@@ -415,6 +525,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld option"
+          }
+        }
+      }
+    },
+    "%lld películas y %lld capítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld movies and %lld episodes"
           }
         }
       }
@@ -1313,6 +1434,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skip ahead"
+          }
+        }
+      }
+    },
+    "Adivina": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guess"
           }
         }
       }
@@ -2243,6 +2375,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add to My List"
+          }
+        }
+      }
+    },
+    "Año": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Year"
           }
         }
       }
@@ -3374,6 +3517,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Signs in your language when the audio is another"
+          }
+        }
+      }
+    },
+    "Casi: fue %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close: it was %@"
           }
         }
       }
@@ -5067,6 +5221,17 @@
         }
       }
     },
+    "Cuándo ves": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you watch"
+          }
+        }
+      }
+    },
     "Cuánto cuesta": {
       "extractionState": "manual",
       "localizations": {
@@ -5096,6 +5261,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "How long is left"
+          }
+        }
+      }
+    },
+    "Cómo calificas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How you rate"
           }
         }
       }
@@ -8438,6 +8614,17 @@
         }
       }
     },
+    "Eso fue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That was"
+          }
+        }
+      }
+    },
     "Espacio": {
       "extractionState": "manual",
       "localizations": {
@@ -11522,6 +11709,28 @@
         }
       }
     },
+    "Lo que veas aquí o en Trakt aparece solo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watch here or on Trakt shows up on its own."
+          }
+        }
+      }
+    },
+    "Lo que ves": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watch"
+          }
+        }
+      }
+    },
     "Lo que ves también se guarda ahí, como copia.": {
       "extractionState": "manual",
       "localizations": {
@@ -11540,6 +11749,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you watched"
+          }
+        }
+      }
+    },
+    "Lo que viste, contado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watched, counted"
           }
         }
       }
@@ -12418,6 +12638,17 @@
         }
       }
     },
+    "Mes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Month"
+          }
+        }
+      }
+    },
     "Mes anterior": {
       "extractionState": "manual",
       "localizations": {
@@ -12567,6 +12798,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mini posters"
+          }
+        }
+      }
+    },
+    "Minutos por periodo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutes per period"
           }
         }
       }
@@ -13138,6 +13380,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing in the name says it: it's the title's original language."
+          }
+        }
+      }
+    },
+    "Nada en este periodo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing in this period"
           }
         }
       }
@@ -20681,6 +20934,71 @@
         }
       }
     },
+    "Toca para cerrar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to close"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to close"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click to close"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to close"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para cerrar"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para cerrar"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic para cerrar"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para cerrar"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Toca para cerrar los detalles": {
       "extractionState": "manual",
       "localizations": {
@@ -21719,6 +22037,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Everything you're watching · %@"
+          }
+        }
+      }
+    },
+    "Todo lo que has visto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything you've watched"
           }
         }
       }
@@ -22947,6 +23276,17 @@
         }
       }
     },
+    "Tu mes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your month"
+          }
+        }
+      }
+    },
     "Tu nombre": {
       "extractionState": "manual",
       "localizations": {
@@ -22965,6 +23305,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your profile"
+          }
+        }
+      }
+    },
+    "Tu promedio: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your average: %@"
+          }
+        }
+      }
+    },
+    "Tu promedio: %@ estrellas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your average: %@ stars"
+          }
+        }
+      }
+    },
+    "Tu semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your week"
           }
         }
       }
@@ -23075,6 +23448,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your downloads"
+          }
+        }
+      }
+    },
+    "Tus géneros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your genres"
           }
         }
       }
@@ -23956,6 +24340,17 @@
         }
       }
     },
+    "Ver tu Wrapped": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See your Wrapped"
+          }
+        }
+      }
+    },
     "Ver tus descargas": {
       "extractionState": "manual",
       "localizations": {
@@ -24704,6 +25099,39 @@
         }
       }
     },
+    "días seguidos hasta hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "days in a row until today"
+          }
+        }
+      }
+    },
+    "días seguidos viendo algo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "days in a row watching something"
+          }
+        }
+      }
+    },
+    "días seguidos, tu mejor racha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "days in a row, your best streak"
+          }
+        }
+      }
+    },
     "en Real-Debrid": {
       "extractionState": "manual",
       "localizations": {
@@ -24711,6 +25139,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "on Real-Debrid"
+          }
+        }
+      }
+    },
+    "en películas y series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in movies and shows"
           }
         }
       }
@@ -24744,6 +25183,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ left"
+          }
+        }
+      }
+    },
+    "frente a la pantalla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in front of the screen"
+          }
+        }
+      }
+    },
+    "fue tu género": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "was your genre"
+          }
+        }
+      }
+    },
+    "horas frente a la pantalla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hours in front of the screen"
           }
         }
       }
@@ -24935,6 +25407,17 @@
         }
       }
     },
+    "tu día más intenso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "your busiest day"
+          }
+        }
+      }
+    },
     "tu género": {
       "extractionState": "manual",
       "localizations": {
@@ -24942,6 +25425,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "your genre"
+          }
+        }
+      }
+    },
+    "tu mejor racha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "your best streak"
+          }
+        }
+      }
+    },
+    "títulos distintos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "different titles"
           }
         }
       }
@@ -25336,6 +25841,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What should we watch?"
+          }
+        }
+      }
+    },
+    "¿Qué viste más?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which did you watch most?"
           }
         }
       }

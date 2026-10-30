@@ -258,7 +258,9 @@ struct MainTabs: View {
             Tab("Para ti", image: OrbitalIcon.spark.asset, value: 1) {
                 NavigationStack(path: $paths[1]) {
                     // Colecciones (la repisa): la tarjeta de Para ti empuja `RepisaRoute`; un título abre su ficha en la misma pila.
-                    ParaTiView().navigationDestination(for: RepisaRoute.self) { _ in RepisaView { paths[1].append($0) } }
+                    ParaTiView()
+                        .navigationDestination(for: RepisaRoute.self) { _ in RepisaView { paths[1].append($0) } }
+                        .navigationDestination(for: WatchingRoute.self) { _ in WatchingView { paths[1].append($0) } }   // Lo que ves
                 }.tint(DS.primary)
             }
             // «arrow.down.to.line» no tiene versión rellena: queda de contorno como las demás (el círculo salía siempre relleno).
@@ -399,6 +401,7 @@ struct MainTabs: View {
         tab = Demo.tab
         if Demo.open == "settings" || Demo.open == "year" { paths[tab].append(SettingsRoute()) }
         if Demo.open == "repisa" { tab = 1; paths[1].append(RepisaRoute()) }   // `-demo-open repisa`: Colecciones
+        if Demo.open == "watching" { tab = 1; paths[1].append(WatchingRoute()) }   // `-demo-open watching`: Lo que ves
         if let id = Demo.repisa { tab = 1; paths[1].append(RepisaRoute()); paths[1].append(id) }   // `-demo-repisa oscar`: una colección
         if let title = Demo.title { paths[tab].append(TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)) }
         if let id = Demo.mediaTitle { paths[tab].append(MiMediaTitleRoute(id: id)) }

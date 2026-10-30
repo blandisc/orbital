@@ -19,6 +19,24 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Lo que ves y el Wrapped (`WatchingView`, `WatchingCard`, `WrappedView`). Con enteros SwiftUI arma la clave con %lld.
+    "Lo que ves": "What you watch", "Lo que viste, contado": "What you watched, counted", "Mes": "Month", "Año": "Year",
+    "%@ h esta semana": "%@ h this week", "%lld h esta semana": "%lld h this week", "%@ días seguidos": "%@ days in a row",
+    "%lld días seguidos": "%lld days in a row", "%lld títulos": "%lld titles", "%lld h": "%lld h",
+    "%@ películas y %@ capítulos": "%@ movies and %@ episodes", "%lld películas y %lld capítulos": "%lld movies and %lld episodes",
+    "%lld de lo que viste": "%lld of what you watched", "%lld capítulos · %lld h": "%lld episodes · %lld h",
+    "%lld capítulos, %lld h": "%lld episodes, %lld h", "%lld h %lld min": "%lld h %lld min",
+    "Adivina": "Guess", "Casi: fue %@": "Close: it was %@", "Cuándo ves": "When you watch", "Cómo calificas": "How you rate",
+    "Eso fue": "That was", "Lo que veas aquí o en Trakt aparece solo.": "What you watch here or on Trakt shows up on its own.",
+    "Minutos por periodo": "Minutes per period", "Nada en este periodo": "Nothing in this period", "Toca para cerrar": "Tap to close",
+    "Todo lo que has visto": "Everything you've watched", "Tu mes": "Your month", "Tu semana": "Your week",
+    "Tu promedio: %@ estrellas": "Your average: %@ stars", "Tu promedio: %@": "Your average: %@", "Tus géneros": "Your genres",
+    "Ver tu Wrapped": "See your Wrapped", "días seguidos hasta hoy": "days in a row until today",
+    "días seguidos viendo algo": "days in a row watching something", "días seguidos, tu mejor racha": "days in a row, your best streak",
+    "en películas y series": "in movies and shows", "frente a la pantalla": "in front of the screen", "fue tu género": "was your genre",
+    "horas frente a la pantalla": "hours in front of the screen", "tu día más intenso": "your busiest day", "tu mejor racha": "your best streak",
+    "títulos distintos": "different titles", "¿Qué viste más?": "Which did you watch most?", "Día por día": "Day by day",
+    "Las dos": "Both", "Lo que más viste": "What you watched most", "Semana": "Week", "Siempre": "All time",
     # Colecciones, la repisa (`RepisaView`, `CollectionsCard`, `CanonPoster`). Con un entero SwiftUI arma la clave con %lld.
     "%@ del canon en tu repisa": "%@ from the canon on your shelf", "%lld del canon en tu repisa": "%lld from the canon on your shelf",
     "A tu repisa": "On your shelf", "Colecciones": "Collections", "Colección Criterion": "The Criterion Collection",

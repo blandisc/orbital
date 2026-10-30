@@ -159,6 +159,17 @@ extension DS {
         static let symbol = "heart", symbolFilled = "heart.fill"
     }
 
+    /// Lo que ves y el Wrapped (`WatchingCard`, `WatchingBars`, `WatchingDayGrid`, `WatchingGenres`, `WrappedView`): el alto de
+    /// la tarjeta de Para ti, sus esqueletos, lo apagado del collage, las barras, el cuadrito del mapa, los géneros y las
+    /// historias (cuánto dura cada una, el alto de sus barritas de avance y el póster grande).
+    enum Watching {
+        static let cardHeight: CGFloat = 190, skeleton: CGFloat = 160, skeletonHeight: CGFloat = 34, collageSaturation = 0.85
+        static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
+        static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
+        static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
+        static let holdToPause = 0.2, barTrack = 0.3, backdropOpacity = 0.45, wrongOpacity = 0.35
+    }
+
     /// Colecciones, la repisa (`ShelfEmblem`, `ShelfLedge`, `ShelfPoster`, `CollectionsCard`): el alto de una estatuilla (en
     /// la repisa, en la tarjeta de Para ti y en el encabezado), las proporciones del disco y la placa de las listas, la luz de
     /// la vitrina, la línea de la repisa, lo apagado de un póster que te falta y la línea de las de 5 estrellas.

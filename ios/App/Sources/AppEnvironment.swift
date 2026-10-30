@@ -27,6 +27,14 @@ final class AppEnvironment {
     @ObservationIgnored lazy var oneDriveSetup = OneDriveModel(services)
     /// Premios, tus listas de Trakt y «Por año»: uno para toda la app (cambiar entre mosaico y listas no lo vuelve a pedir todo).
     @ObservationIgnored lazy var collections = CollectionsModel(services)
+    /// Lo que ves y el Wrapped: uno para toda la app (el historial se trae una vez y se cuenta por periodo).
+    @ObservationIgnored lazy var watching: WatchingModel = {
+        let model = WatchingModel(services)
+        #if DEBUG
+        if Demo.isOn { model.preload(Demo.yearInReview.plays.values.flatMap { $0 }) }   // el mismo historial inventado de «Tu año»
+        #endif
+        return model
+    }()
     /// Colecciones (la repisa): una para toda la app, con lo visto de `collections` (el mismo caché).
     @ObservationIgnored lazy var repisa = RepisaModel(services, watched: { [unowned self] in await self.collections.watchedIDs() })
     /// El filtro avanzado: uno para toda la app (lo que elegiste se queda al volver a abrir el cajón).

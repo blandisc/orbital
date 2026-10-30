@@ -73,7 +73,10 @@ public enum Canon {
 
     /// Los premios que ya trae la app como colecciones (una serie que ganó varios años va una vez, con sus años).
     public static func awards(_ all: [AwardCollection] = Awards.all) -> [CanonCollection] {
-        all.map { award in
+        // El orden de la repisa: Óscar, Palma y Ariel al frente (como en la maqueta); luego los demás.
+        let order = ["oscar", "palm", "ariel", "globe", "bafta", "emmy"]
+        let sorted = all.sorted { (order.firstIndex(of: $0.id) ?? order.count) < (order.firstIndex(of: $1.id) ?? order.count) }
+        return sorted.map { award in
             var order: [String] = []
             var byID: [String: CanonCollection.Item] = [:]
             for w in award.winners {
