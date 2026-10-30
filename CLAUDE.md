@@ -38,7 +38,16 @@ npx --yes pyright@1.1.390
 
 Pruebas de humo (navegador real): `ORBITAL_SMOKE_BROWSER=msedge .venv/Scripts/python -m pytest -q tests/smoke`.
 
-## Ver la interfaz sin tocar la TV
+## Ver la interfaz y probar en la TV
 
-`scripts/demo_server.py --port <puerto>` levanta una biblioteca de demostración. **Nunca** mandes teclas
-ni POST a la Orbital real (`127.0.0.1:8710`): una tecla Enter ahí abre juegos de verdad.
+`scripts/demo_server.py --port <puerto>` levanta una biblioteca de demostración: es lo primero para ver la interfaz
+sin tocar la TV.
+
+Probar en la Orbital real (`127.0.0.1:8710`) con teclas, clics, toques o mando **sí se vale** (Fernando, 2026-10-30),
+con cuidado, porque una tecla Enter ahí abre juegos de verdad:
+
+- Antes, el candado de la tele (`%LOCALAPPDATA%\orbital\tele.lock`) y `GET /api/status` con `running` en null; si hay
+  algo abierto, no se prueba.
+- Respalda `%APPDATA%\orbital\state.json` y `config.yaml`; al terminar, regresa el historial, los ajustes y la
+  resolución, y cierra todo lo que abriste.
+- Ninguna ventana visible: usa `pythonw` y `CREATE_NO_WINDOW`.
