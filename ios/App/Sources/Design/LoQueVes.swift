@@ -15,7 +15,10 @@ struct WatchingCard: View {
         Button(action: action) {
             ZStack(alignment: .bottomLeading) {
                 collage
-                LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .top, endPoint: .bottom)
+                // El velo desde abajo a la izquierda, donde va el texto: los pósters del fondo no se leen a través de las letras.
+                LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: DS.scrimStrong, location: DS.Watching.veilFrom), .init(color: DS.scrimStrong, location: 1)],
+                               startPoint: .top, endPoint: .bottom)
+                LinearGradient(colors: [DS.scrimStrong, .clear], startPoint: .leading, endPoint: .trailing)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Lo que ves").recipe(.eyebrow, color: DS.onArtSecondary)
                     if let stats {
@@ -62,7 +65,7 @@ struct WatchingStat: View {
             value.font(DS.TextRecipe.title.font.weight(.bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             label.recipe(.caption, color: DS.textMuted).lineLimit(2)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)   // todas las del renglón, del mismo alto
         .padding(DS.Space.s3)
         .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .accessibilityElement(children: .combine)

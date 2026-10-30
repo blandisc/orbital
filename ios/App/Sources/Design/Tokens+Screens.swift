@@ -174,7 +174,7 @@ extension DS {
     /// la tarjeta de Para ti, sus esqueletos, lo apagado del collage, las barras, el cuadrito del mapa, los géneros y las
     /// historias (cuánto dura cada una, el alto de sus barritas de avance y el póster grande).
     enum Watching {
-        static let cardHeight: CGFloat = 190, skeleton: CGFloat = 160, skeletonHeight: CGFloat = 34, collageSaturation = 0.85
+        static let cardHeight: CGFloat = 190, skeleton: CGFloat = 160, skeletonHeight: CGFloat = 34, collageSaturation = 0.85, veilFrom = 0.35
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
@@ -187,7 +187,7 @@ extension DS {
     /// la repisa, en la tarjeta de Para ti y en el encabezado), las proporciones del disco y la placa de las listas, la luz de
     /// la vitrina, la línea de la repisa, lo apagado de un póster que te falta y la línea de las de 5 estrellas.
     enum Repisa {
-        static let emblem: CGFloat = 84, cardEmblem: CGFloat = 48, header: CGFloat = 64, columns = 5
+        static let emblem: CGFloat = 84, cardEmblem: CGFloat = 48, header: CGFloat = 64, columns = 5, listEmblem: CGFloat = 64
         static let discRatio: CGFloat = 0.62, plaqueWidth: CGFloat = 0.52, plaqueHeight: CGFloat = 0.74
         static let lamp = DS.paper.opacity(0.07)   // ds-exception: la luz de la vitrina, apenas visible
         static let lampWidth: CGFloat = 1.6, lampHeight: CGFloat = 1.0
@@ -212,7 +212,7 @@ extension DS {
     /// Calificar como en Trakt (`RatingStars`, `RatingReminder`): las estrellas en ámbar (el color del porqué de las portadas,
     /// como las de Trakt), su tamaño en la ficha y en línea dentro del recordatorio, y el póster chico de la pastilla.
     enum Rating {
-        static let filled = DS.warning, empty = DS.textFaint
+        static let filled = DS.warning, empty = DS.textMuted   // las vacías se leen también sobre el vidrio y el arte
         static let star: CGFloat = 26, starInline: CGFloat = 17, gap: CGFloat = 4
         /// Lo que se mueve el dedo antes de que cuente como arrastre (menos que eso es un toque).
         static let dragStart: CGFloat = 8

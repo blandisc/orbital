@@ -7848,6 +7848,17 @@
         }
       }
     },
+    "Empieza tu repisa: lo que veas del canon se pinta aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start your shelf: what you watch from the canon lights up here"
+          }
+        }
+      }
+    },
     "En %@": {
       "extractionState": "manual",
       "localizations": {
@@ -12352,6 +12363,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The winners, newest first"
+          }
+        }
+      }
+    },
+    "Los premios y listas que hay que ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The awards and lists worth watching"
           }
         }
       }
@@ -25985,6 +26007,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld min left"
+          }
+        }
+      }
+    },
+    "racha de hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "today's streak"
           }
         }
       }

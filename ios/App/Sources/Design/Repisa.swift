@@ -109,7 +109,7 @@ struct CollectionsCard: View {
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Colecciones").recipe(.cardTitle, color: DS.text)
-                    Text("\(seen) del canon en tu repisa").recipe(.footnote, color: DS.textMuted)
+                    (seen == 0 ? Text("Los premios y listas que hay que ver") : Text("\(seen) del canon en tu repisa")).recipe(.footnote, color: DS.textMuted)
                 }
             }
             .padding(DS.Space.s4)

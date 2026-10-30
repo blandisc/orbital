@@ -83,8 +83,8 @@ struct WatchingView: View {
             WatchingStat(value: Text(verbatim: "\(s.titles)"), label: Text("títulos distintos"))
             WatchingStat(value: Text(verbatim: "\(s.movies)"), label: Text("películas"))
             WatchingStat(value: Text(verbatim: "\(s.episodes)"), label: Text("capítulos"))
-            WatchingStat(value: Text(verbatim: "\(s.longestStreak)"), label: Text("días seguidos, tu mejor racha"))
-            WatchingStat(value: Text(verbatim: "\(s.currentStreak)"), label: Text("días seguidos hasta hoy"))
+            WatchingStat(value: Text("\(s.longestStreak) días"), label: Text("tu mejor racha"))
+            WatchingStat(value: Text("\(s.currentStreak) días"), label: Text("racha de hoy"))
         }
         section(Text("Día por día")) {
             WatchingDayGrid(start: s.start, end: s.end, days: s.days)
@@ -163,3 +163,9 @@ struct WatchingView: View {
 }
 
 extension WatchingStats.Period: @retroactive Identifiable { public var id: String { rawValue } }
+
+/// «Lo que ves» desde Ajustes: lo que más viste abre su ficha en esa misma pila.
+struct WatchingFromSettings: View {
+    @State private var route: TitleRoute?
+    var body: some View { WatchingView { route = $0 }.openingTitles(item: $route) }
+}

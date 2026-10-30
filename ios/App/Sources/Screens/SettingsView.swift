@@ -35,9 +35,9 @@ struct SettingsView: View {
         Form {
             Section {
                 ProfileCard(avatar: s.avatar, title: s.displayName.isEmpty ? Text("Tu perfil") : Text(verbatim: s.displayName), detail: connections(model)) { editingAvatar = true }
-                // Tu año: lo que viste, del historial de Trakt.
-                NavigationLink { YearView() } label: {
-                    SettingsRow(title: "Tu año", symbol: "calendar", tint: DS.ListTint.calendar, value: Text("Lo que viste"))
+                // Lo que ves (con «Tu año» adentro): lo que viste, del historial de Trakt.
+                NavigationLink { WatchingFromSettings() } label: {
+                    SettingsRow(title: "Lo que ves", symbol: "chart.bar.xaxis", tint: DS.ListTint.calendar, value: Text("Lo que viste, contado"))
                 }
             }
             .listRowBackground(DS.surface)
