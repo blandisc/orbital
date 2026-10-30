@@ -74,6 +74,13 @@ public struct AiringDay: Sendable, Equatable, Identifiable {
 
 /// Un estreno de «Próximos estrenos»: la serie (pulsar abre su ficha), el día y la hora de aquí, el episodio y dónde sale.
 /// Varios episodios de la misma serie el mismo día (las plataformas sueltan tres juntos) son uno solo: «T2 E4–E6».
+/// Cómo va un estreno respecto a ahora (la línea de «Lo nuevo de lo tuyo»): ya salió, salió hoy (ya se puede ver: «Nuevo») o
+/// sale en tantos días (0: hoy más tarde).
+public enum ReleaseMoment: Sendable, Equatable {
+    case out, new, soon(days: Int)
+    public var isSoon: Bool { if case .soon = self { true } else { false } }
+}
+
 public struct Airing: Sendable, Equatable, Identifiable {
     public var series: Suggestion
     public var season: Int
@@ -112,5 +119,15 @@ public struct ForYouList: Sendable, Equatable, Identifiable, Codable {
     public init(id: String, title: String, group: ForYouGroup, brand: String? = nil, logo: String? = nil, splitsKinds: Bool, source: String = "", meta: String = "") {
         self.id = id; self.title = title; self.group = group; self.brand = brand; self.logo = logo; self.splitsKinds = splitsKinds
         self.source = source; self.meta = meta
+    }
+}
+
+
+extension Airing {
+    /// Ya salió, salió hoy o sale en N días, por la hora en que sale (no solo el día: lo de hoy a las 21:00 todavía no se ve).
+    public func moment(now: Date, calendar: Calendar = .current) -> ReleaseMoment {
+        let today = calendar.startOfDay(for: now)
+        if aired <= now { return day == today ? .new : .out }
+        return .soon(days: max(0, calendar.dateComponents([.day], from: today, to: day).day ?? 0))
     }
 }

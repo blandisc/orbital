@@ -36,13 +36,23 @@ struct DSChipText: View {
     var body: some View { DSChip(verbatim: text, tone: tone) }
 }
 
-/// Etiqueta que llama la atención sobre el arte: «Recomendada», «En tu lista» (sin mayúsculas).
+/// Etiqueta que llama la atención sobre el arte: «Recomendada», «En tu lista» (sin mayúsculas). `.fresh`: lo que ya se
+/// puede ver hoy («Nuevo», la marca «HOY» de «Lo nuevo de lo tuyo»), una cápsula verde.
 struct DSBadge: View {
+    enum Tone { case onArt, fresh }
     let text: LocalizedStringKey
+    var tone: Tone = .onArt
     var body: some View {
-        Text(text).font(DS.TextRecipe.caption.font.weight(.semibold)).lineLimit(1).foregroundStyle(DS.paper)   // sobre la placa oscura del arte, en los dos modos
-            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
-            .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+        switch tone {
+        case .onArt:
+            Text(text).font(DS.TextRecipe.caption.font.weight(.semibold)).lineLimit(1).foregroundStyle(DS.paper)   // sobre la placa oscura del arte, en los dos modos
+                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
+                .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+        case .fresh:
+            Text(text).font(DS.TextRecipe.caption.font.weight(.heavy)).lineLimit(1).foregroundStyle(DS.onPrimary)
+                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
+                .background(DS.success, in: Capsule())
+        }
     }
 }
 
@@ -120,10 +130,15 @@ struct DSSectionHead: View {
     var source: ListSource?
     /// El porqué, en una línea ámbar arriba del título («Lo que dejaste pendiente»), como en una revista.
     var eyebrow: Text?
+    /// `.group`: el título de un grupo de secciones (Para ti: «Ahora», «Plataformas», «Premios»…), más grande y con su frase
+    /// gris a la derecha (`trailing`).
+    var size: Size = .section
+    enum Size { case section, group }
 
-    init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil) {
+    init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil,
+         size: Size = .section) {
         self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta; self.source = source
-        self.eyebrow = eyebrow
+        self.eyebrow = eyebrow; self.size = size
     }
 
     init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil) {
@@ -137,10 +152,10 @@ struct DSSectionHead: View {
     }
 
     private var sectionTitle: some View {
-        title.recipe(.section).multilineTextAlignment(.leading)
+        title.recipe(size == .group ? .title : .section).multilineTextAlignment(.leading)
             // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
             // así lo de la derecha no queda alto.
-            .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: .title2).capHeight / 2 }
+            .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: size == .group ? .title1 : .title2).capHeight / 2 }
     }
 
     private var head: some View {

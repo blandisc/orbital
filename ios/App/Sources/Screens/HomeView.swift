@@ -13,9 +13,8 @@ struct HomeView: View {
     @State private var channels = ModelObserver(ChannelsModel(AppEnvironment.shared.services))
     @State private var tint = ArtTint()
     @State private var openTitle: TitleRoute?
-    /// La tarjeta al frente del carrusel: su lugar en la vuelta infinita (`slot % cuántas`).
+    /// La tarjeta al frente de la portada (su lugar en la fila).
     @State private var heroSlot: Int?
-    @State private var scrolledDown = false
     /// El Top 10 de Netflix: series (por omisión) o películas.
     @State private var topMovies = false
     /// La ruleta de «Un Simpson al azar».
@@ -96,7 +95,7 @@ struct HomeView: View {
                     continueRail(model, items: continuing).perfTag("home.rail")
                         // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
                         // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
-                        .padding(.top, model.spotlight.isEmpty || scheme != .dark ? 0 : -(DS.Editorial.sectionGap + DS.HomeHero.overlap))
+                        .padding(.top, model.spotlight.isEmpty ? 0 : -(DS.Editorial.sectionGap + heroOverlap))
                 } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                     DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
                 }
@@ -131,12 +130,9 @@ struct HomeView: View {
         #if DEBUG
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazado (capturas de las filas de abajo)
         #endif
-        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > DS.Size.titleCollapse } action: { _, down in scrolledDown = down }
         .background(Backdrop(tint: tint.colors))
-        // Arriba, el saludo; al bajar (la barra se encoge), algo útil en su lugar: lo que suena en la TV, lo que sale hoy o
-        // cuántas tienes por terminar (y si no hay nada que decir, «Inicio»).
-        // Arriba, el ícono y «Orbital» (el carácter de la app); al bajar, en medio, lo más útil que haya (lo que suena en la TV…).
-        .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
+        // Sin título: arriba van el ícono y «Orbital» (el carácter de la app), también al bajar.
+        .navigationTitle(Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette(tint: tint.colors).navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)) }
         .onChange(of: env.ui.openSimpsons, initial: true) { _, wants in
             guard wants else { return }
@@ -232,9 +228,8 @@ struct HomeView: View {
         await related
     }
 
-    /// El título con la barra encogida: nada, solo el logotipo (antes decía «Sale hoy: …» y no se quería ahí).
-    private var scrolledTitle: Text { Text(verbatim: "") }
-
+    /// Cuánto se encima «Seguir viendo» sobre la portada: solo en oscuro (en claro la portada es una tarjeta y no se leería).
+    private var heroOverlap: CGFloat { scheme == .dark ? DS.HomeHero.overlap : 0 }
 
     /// Al dejar picado un título de una de tus listas: ver, descargar, en la TV, marcar como vista y quitarlo de la lista.
     @ViewBuilder private func listActions(_ s: Suggestion, in list: SaveDestination) -> some View {
@@ -265,9 +260,8 @@ struct HomeView: View {
     private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
     /// Cuántos de «Destacado» van en la portada.
-    private static let heroCount = 10
 
-    private func spotlightItems(_ model: HomeModel) -> [Suggestion] { Array(model.spotlightShown.prefix(Self.heroCount)) }
+    private func spotlightItems(_ model: HomeModel) -> [Suggestion] { Array(model.spotlightShown.prefix(HomeModel.heroCount)) }
 
     /// El que está al frente de la portada (el fondo toma su color).
     private var currentHero: Suggestion? {
@@ -300,7 +294,7 @@ struct HomeView: View {
         .scrollPosition(id: $heroSlot)
         .overlay(alignment: .bottom) {
             PageDots(count: items.count, index: min(heroSlot ?? 0, max(0, items.count - 1)))
-                .padding(.bottom, (scheme == .dark ? DS.HomeHero.overlap : 0) + DS.Space.s3)
+                .padding(.bottom, heroOverlap + DS.Space.s3)
                 .allowsHitTesting(false)   // tocar los puntos no abre la ficha
         }
         // En oscuro el arte se funde con el fondo y sube detrás de la barra; en claro es una tarjeta (no pasa detrás).
@@ -328,7 +322,7 @@ struct HomeView: View {
                 .accessibilityAction(named: Text("Ver ficha")) { openTitle = s.route }
                 HeroActions { heroButtons(s) }
             }
-            .padding(.bottom, (scheme == .dark ? DS.HomeHero.overlap : 0) + DS.Space.s6)   // los puntos y, en oscuro, lo que se encima
+            .padding(.bottom, heroOverlap + DS.Space.s6)   // los puntos y, en oscuro, lo que se encima
         }
         .contentShape(Rectangle())
         .onTapGesture { openTitle = s.route }
@@ -351,7 +345,7 @@ struct HomeView: View {
         }
     }
 
-    /// Por qué está en el carrusel. Lo de tendencia y lo popular no lleva nada: ya lo dice el título de la sección («En tendencia»).
+    /// Por qué está en la portada, en turquesa arriba del título («En tendencia esta semana», «Para ti»…).
     private func reasonText(_ reason: SuggestionReason) -> Text? {
         switch reason {
         case .trending: Text("En tendencia esta semana")
@@ -503,7 +497,7 @@ struct HomeView: View {
     private func continueData(_ item: HomeItem) -> [String] {
         let facts = progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes, language: env.language).components(separatedBy: " · ")
         guard item.isNew == true else { return facts }
-        return [Strings.tr("Nuevo", language: AppEnvironment.shared.services.appSettings.uiLanguage)] + facts
+        return [Strings.tr("Nuevo", language: env.services.appSettings.uiLanguage)] + facts
     }
 
     /// «Seguir viendo» completo: todo (el carrusel solo trae los últimos), en piezas anchas con su avance.

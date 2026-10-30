@@ -29,7 +29,7 @@ struct HomeChannels: View {
             TimelineView(.periodic(from: .now, by: DS.HomeChannels.tick)) { context in
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: DS.Space.s3) {
-                                ForEach(model.channels) { channel in
+                        ForEach(model.channels) { channel in
                             if let air = channel.onAir(at: context.date) { card(channel, air) }
                         }
                         addCard
@@ -45,9 +45,7 @@ struct HomeChannels: View {
     }
 
     /// El nombre de la serie en el idioma de la app («The Simpsons» en inglés); los que vienen de la búsqueda, tal cual.
-    private func name(_ pick: ChannelsModel.Pick, language: String? = nil) -> String {
-        Strings.tr(pick.title, language: language ?? env.services.appSettings.uiLanguage)
-    }
+    private func name(_ pick: ChannelsModel.Pick) -> String { Strings.tr(pick.title, language: env.services.appSettings.uiLanguage) }
 
     private func label(_ episode: ChannelSchedule.Episode) -> String {
         Strings.episode(season: episode.season, episode: episode.episode, language: env.services.appSettings.uiLanguage)
@@ -60,7 +58,7 @@ struct HomeChannels: View {
             guard let now = channel.onAir(at: Date()) else { return }
             Task {
                 await env.play(kind: "series", metaID: channel.id, videoID: now.episode.videoID, title: name(channel.pick),
-                               originalTitle: name(channel.pick, language: "en"), episodeLabel: label(now.episode), poster: channel.pick.poster, at: now.elapsed,
+                               originalTitle: channel.originalTitle, episodeLabel: label(now.episode), poster: channel.pick.poster, at: now.elapsed,
                                offTheRecord: true)   // como la tele: no cuenta como visto
             }
         } label: {
@@ -70,7 +68,7 @@ struct HomeChannels: View {
                         // El «cachito»: la imagen del capítulo se acerca despacio, como si estuviera pasando.
                         .phaseAnimator(reduceMotion ? [false] : [false, true]) { view, near in
                             view.scaleEffect(near ? DS.HomeChannels.driftScale : 1)
-                        } animation: { _ in .easeInOut(duration: DS.HomeChannels.drift) }
+                        } animation: { _ in DS.HomeChannels.driftAnimation }
                     LinearGradient(stops: [.init(color: .clear, location: DS.HomeChannels.veilStart), .init(color: DS.scrimStrong, location: 1)],
                                    startPoint: .top, endPoint: .bottom)
                     VStack(alignment: .leading, spacing: 0) {
@@ -131,7 +129,7 @@ struct ChannelsSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.s5) {
-                    if query.trimmingCharacters(in: .whitespaces).count >= 2 {
+                    if query.trimmingCharacters(in: .whitespaces).count >= ChannelsModel.minQuery {
                         results
                     } else {
                         section(Text("Tus canales"), model.picks)
@@ -201,7 +199,8 @@ struct ChannelsSheet: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(on ? Text("Quitar \(name(pick)) de tus canales") : Text("Añadir \(name(pick)) a tus canales"))
-                    .accessibilityIdentifier(on ? "channel-added" : "channel-add")
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                    .accessibilityIdentifier("channel-\(pick.id)")
                 }
             }
         }

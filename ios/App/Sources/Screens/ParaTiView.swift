@@ -18,7 +18,6 @@ struct ParaTiView: View {
     /// «¿Qué vemos hoy?» · Encuentra tu match perfecto: el mazo a pantalla completa (la tarjeta de Listas).
     @State private var matching = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.dynamicTypeSize) private var typeSize
 
     /// Un iPhone de 375 pt o menos (SE, mini): la barra de arriba no da para todo junto al título.
     static var narrow: Bool { WindowMetrics.size.width < DS.Size.compactWidth }
@@ -54,7 +53,7 @@ struct ParaTiView: View {
                         .id(item.imdb)
                     }
                 }
-            case .lists: ListsView(observer: model, onDecide: { matching = true })
+            case .lists: ListsView(observer: model, onDecide: { deciding = true }, onMatch: { matching = true })
             }
         }
         .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio

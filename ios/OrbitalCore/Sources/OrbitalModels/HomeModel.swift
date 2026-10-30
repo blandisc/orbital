@@ -38,6 +38,8 @@ public final class HomeModel: ObservableModel {
     /// Solo películas («movie»), solo series («series») o todo (nil).
     public var spotlightKind: String? { didSet { if oldValue != spotlightKind { changed() } } }
     public var spotlightShown: [Suggestion] { spotlightKind.map { k in spotlight.filter { $0.kind == k } } ?? spotlight }
+    /// Cuántos títulos pasan por la portada de Inicio.
+    public static let heroCount = 10
     /// «Para ti»: tus recomendaciones de Trakt (películas y series entreveradas), lo personal que antes iba arriba.
     public private(set) var forYouPicks: [Suggestion] = [] { didSet { changed() } }
     /// El Top 10 de un servicio: el de Netflix (oficial, semanal, en tu país) o la tendencia del día en JustWatch de los
@@ -86,6 +88,11 @@ public final class HomeModel: ObservableModel {
     public nonisolated static func timeline(recent: [Airing], upcoming: [Airing]) -> [Airing] {
         var seen = Set<String>()
         return (recent + upcoming).filter { seen.insert($0.id).inserted }.sorted { ($0.aired, $0.series.title) < ($1.aired, $1.series.title) }
+    }
+
+    /// Dónde va la marca HOY en la línea de tiempo: antes de lo primero que todavía no sale (al final si ya salió todo).
+    public nonisolated static func nowIndex(in timeline: [Airing], now: Date) -> Int {
+        timeline.firstIndex { $0.aired > now } ?? timeline.count
     }
     public private(set) var offline = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }

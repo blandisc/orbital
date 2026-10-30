@@ -3,6 +3,8 @@ import Foundation
 /// Canales de Inicio (docs/producto/inicio-benchmark/): cada serie que eliges es un canal que siempre está pasando un
 /// episodio al azar, como la tele. Qué episodio va y en qué minuto sale de la hora y del id de la serie, con una cuenta
 /// fija (sin servidor): el iPhone, el iPad y la Mac ven lo mismo al mismo tiempo, y al tocar el canal entras donde va.
+/// Límite conocido: el orden depende de cuántos episodios hay. El día que sale uno nuevo el horario de esa serie se rehace,
+/// y dos aparatos con la ficha de Cinemeta de días distintos (guardada en disco) pueden pasar capítulos distintos ese día.
 public enum ChannelSchedule {
     /// Un episodio que puede salir al aire.
     public struct Episode: Codable, Sendable, Equatable {

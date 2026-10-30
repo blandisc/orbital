@@ -55,6 +55,9 @@ public final class BecauseModel: ObservableModel {
         if let items = found?.items { preloaded[seed.imdb] = items }
     }
 
+    /// Pruebas: como si nada se hubiera traído de antemano.
+    func forgetPreloadedForTesting() { preloading?.cancel(); preloaded = [:] }
+
     /// Las relacionadas de los demás títulos, empezando por los vecinos del que se ve: pasar de uno a otro es inmediato.
     private func preload() {
         guard let current = because?.seed.imdb ?? selected else { return }

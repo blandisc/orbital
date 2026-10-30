@@ -47,17 +47,6 @@ struct ListGridView: View {
     }
 }
 
-/// El calendario completo («Por día» · «Semana»): la vista de Próximos estrenos de siempre, abierta desde el encabezado del estante.
-struct UpcomingScreen: View {
-    var observer: ModelObserver<ParaTiModel>
-
-    var body: some View {
-        ScrollView { UpcomingView(observer: observer).padding(.bottom, DS.Space.s14) }
-            .background(Backdrop())
-            .navigationTitle("Próximos estrenos").navigationBarTitleDisplayMode(.inline)
-    }
-}
-
 /// A dónde lleva una tarjeta de «Tus plataformas».
 struct PlatformRoute: Hashable { var brand: String }
 

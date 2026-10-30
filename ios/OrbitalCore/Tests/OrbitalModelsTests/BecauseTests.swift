@@ -2,7 +2,7 @@ import XCTest
 @testable import OrbitalCore
 @testable import OrbitalModels
 
-/// «Porque viste»: cambiar de título se siente al momento (el mazo no espera a Trakt), las relacionadas de los demás se
+/// «Por lo que viste» (Inicio, `BecauseModel`): cambiar de título se siente al momento (el mazo no espera a Trakt), las relacionadas de los demás se
 /// traen de antemano y una respuesta que llega tarde no pisa el título en el que ya estás.
 @MainActor
 final class BecauseTests: XCTestCase {
@@ -23,29 +23,29 @@ final class BecauseTests: XCTestCase {
 
     func relatedCalls(_ rig: ServicesRig, _ imdb: String) -> Int { rig.http.calls.filter { $0.contains("/shows/\(imdb)/related") }.count }
 
-    func waitForPreload(_ model: ParaTiModel, count: Int) async {
-        for _ in 0..<200 where model.becausePreloaded.count < count { try? await Task.sleep(nanoseconds: 10_000_000) }
+    func waitForPreload(_ model: BecauseModel, count: Int) async {
+        for _ in 0..<200 where model.preloaded.count < count { try? await Task.sleep(nanoseconds: 10_000_000) }
     }
 
     func testTheHistoryKnowsWhenYouWatchedIt() async throws {
         let rig = try rig()
-        let model = ParaTiModel(rig.services)
+        let model = BecauseModel(rig.services)
         await model.load()
-        XCTAssertEqual(model.becauseSeeds.map(\.imdb), shows.map(\.0))
-        XCTAssertNotNil(model.becauseSeeds.first?.watchedAt, "para «la viste hace 3 días»")
-        XCTAssertEqual(model.becauseSelected, model.because?.seed.imdb)
+        XCTAssertEqual(model.seeds.map(\.imdb), shows.map(\.0))
+        XCTAssertNotNil(model.seeds.first?.watchedAt, "para «la viste hace 3 días»")
+        XCTAssertEqual(model.selected, model.because?.seed.imdb)
     }
 
     func testTheOtherTitlesArePreloadedSoSwitchingIsInstant() async throws {
         let rig = try rig()
-        let model = ParaTiModel(rig.services)
+        let model = BecauseModel(rig.services)
         await model.load()
         await waitForPreload(model, count: shows.count)
-        XCTAssertEqual(Set(model.becausePreloaded.keys), Set(shows.map(\.0)), "todas traídas de antemano")
-        let other = try XCTUnwrap(model.becauseSeeds.first { $0.imdb != model.because?.seed.imdb })
+        XCTAssertEqual(Set(model.preloaded.keys), Set(shows.map(\.0)), "todas traídas de antemano")
+        let other = try XCTUnwrap(model.seeds.first { $0.imdb != model.because?.seed.imdb })
         let before = relatedCalls(rig, other.imdb)
-        await model.chooseBecause(other)
-        XCTAssertEqual(model.becauseSelected, other.imdb)
+        await model.choose(other)
+        XCTAssertEqual(model.selected, other.imdb)
         XCTAssertEqual(model.because?.seed.imdb, other.imdb)
         XCTAssertEqual(model.because?.items.map(\.imdb), [shows.first { $0.0 == other.imdb }!.2])
         XCTAssertEqual(relatedCalls(rig, other.imdb), before, "ya estaba: no se vuelve a pedir")
@@ -53,9 +53,9 @@ final class BecauseTests: XCTestCase {
 
     func testTheDeckMovesBeforeTraktAnswersAndALateAnswerDoesNotWin() async throws {
         let rig = try rig()
-        let model = ParaTiModel(rig.services)
+        let model = BecauseModel(rig.services)
         await model.load()
-        let seeds = model.becauseSeeds
+        let seeds = model.seeds
         let current = try XCTUnwrap(model.because?.seed.imdb)
         let others = seeds.filter { $0.imdb != current }
         let (slow, fast) = (others[0], others[1])
@@ -64,27 +64,27 @@ final class BecauseTests: XCTestCase {
         model.forgetPreloadedForTesting()
         await rig.services.forYou.clearCache()
         rig.http.delays["\(api)/shows/\(slow.imdb)/related?limit=15&extended=full"] = 300
-        let first = Task { await model.chooseBecause(slow) }
+        let first = Task { await model.choose(slow) }
         await Task.yield()
-        XCTAssertEqual(model.becauseSelected, slow.imdb, "el mazo cambia al tocar, sin esperar a Trakt")
+        XCTAssertEqual(model.selected, slow.imdb, "el mazo cambia al tocar, sin esperar a Trakt")
         XCTAssertEqual(model.because?.seed.imdb, current, "sus relacionadas aún no llegan (la tarjeta pone su lugar)")
-        await model.chooseBecause(fast)   // pasaste a otro mientras tanto
+        await model.choose(fast)   // pasaste a otro mientras tanto
         await first.value                  // la lenta llega después
-        XCTAssertEqual(model.becauseSelected, fast.imdb)
+        XCTAssertEqual(model.selected, fast.imdb)
         XCTAssertEqual(model.because?.seed.imdb, fast.imdb, "la respuesta que llegó tarde no pisa la que se ve")
     }
 
     func testATitleWithoutRelatedSaysSoInsteadOfKeepingThePreviousOnes() async throws {
         let rig = try rig()
-        let model = ParaTiModel(rig.services)
+        let model = BecauseModel(rig.services)
         await model.load()
         await waitForPreload(model, count: shows.count)
         let current = try XCTUnwrap(model.because?.seed.imdb)
-        let other = try XCTUnwrap(model.becauseSeeds.first { $0.imdb != current })
+        let other = try XCTUnwrap(model.seeds.first { $0.imdb != current })
         model.forgetPreloadedForTesting()
         await rig.services.forYou.clearCache()
         rig.http.json["\(api)/shows/\(other.imdb)/related?limit=15&extended=full"] = []
-        await model.chooseBecause(other)
+        await model.choose(other)
         XCTAssertEqual(model.because?.seed.imdb, other.imdb)
         XCTAssertEqual(model.because?.items, [], "vacía: la tarjeta dice que Trakt no relaciona nada (antes se quedaban las del anterior)")
     }

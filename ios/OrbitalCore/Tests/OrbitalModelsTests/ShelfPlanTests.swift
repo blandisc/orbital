@@ -53,35 +53,6 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertEqual(styles["trend"], .plain)
     }
 
-    private func suggestion(_ id: String, wide: String = "https://w/1.jpg", reason: SuggestionReason = .popular, rank: Int? = nil) -> Suggestion {
-        Suggestion(kind: "movie", imdb: id, title: id, poster: "https://p.jpg", wide: wide, reason: reason, rank: rank)
-    }
-
-    func testFeaturedIsTheFirstWideSuggestionOfTheFirstShelfAndRotates() throws {
-        let plans = ShelfPlanner.plan(overview)
-        let by = Dictionary(uniqueKeysWithValues: plans.map { ($0.id, $0) })
-        let shelves: [(plan: ShelfPlan, items: [Suggestion])] = [
-            (try XCTUnwrap(by["mine"]), []),                                                    // vacío: se salta
-            (try XCTUnwrap(by["recs"]), [suggestion("tt1", wide: ""), suggestion("tt2", reason: .recommended), suggestion("tt3")]),
-            (try XCTUnwrap(by["chart:netflix"]), [suggestion("tt9", rank: 1)]),
-        ]
-        XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 0)?.item.imdb, "tt2", "la primera con arte ancho (tt1 no tiene)")
-        XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 1)?.item.imdb, "tt3", "«Actualizar» pasa a la siguiente")
-        XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 2)?.item.imdb, "tt2", "y vuelve a empezar")
-        XCTAssertEqual(ShelfPlanner.featuredSlides(shelves, rotation: 1)?.items.map(\.imdb), ["tt3", "tt2"],
-                       "el carrusel: las de arte ancho de esa misma lista, empezando por la que toca")
-        XCTAssertNil(ShelfPlanner.featured([(try XCTUnwrap(by["mine"]), [suggestion("x", wide: "")])], rotation: 0))
-    }
-
-    func testFeaturedReasonNamesTheSource() throws {
-        let plans = ShelfPlanner.plan(overview)
-        let chart = try XCTUnwrap(plans.first { $0.id == "chart:netflix" }), recs = try XCTUnwrap(plans.first { $0.id == "recs" })
-        XCTAssertEqual(ParaTiModel.reason(of: suggestion("a", rank: 1), in: chart), .rank(1, platform: "Netflix"))
-        XCTAssertEqual(ParaTiModel.reason(of: suggestion("a", reason: .recommended), in: recs), .recommendedByTrakt)
-        XCTAssertEqual(ParaTiModel.reason(of: suggestion("a", reason: .trending), in: recs), .trending)
-        XCTAssertEqual(ParaTiModel.reason(of: suggestion("a", reason: .inWatchlist), in: recs), .other(.inWatchlist))
-    }
-
     // MARK: contra una consola de mentira
     private func consoleRig() throws -> ServicesRig {
         let rig = try ServicesRig()
@@ -173,7 +144,7 @@ final class ShelfPlanTests: XCTestCase {
                        "un fallo no se guarda como estante vacío: la siguiente carga lo vuelve a pedir")
     }
 
-    /// Trakt conectado pero sin nada tuyo: el mosaico y el destacado salen de lo que está en tendencia, y se invita a sumar fuentes.
+    /// Trakt conectado pero sin nada tuyo: el mosaico sale de lo que está en tendencia, y se invita a sumar fuentes.
     func testNothingOfYoursFallsBackToTrendingAndInvitesToConnectSources() async throws {
         let rig = try ServicesRig(traktLinked: true, traktClientID: "cid")
         TraktPublicListsTests.trending(rig, series: [("tt0386676", "The Office", 2005)], movies: [])
@@ -182,7 +153,6 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertTrue(model.isGeneric)
         XCTAssertTrue(model.needsSources)
         XCTAssertEqual(model.mosaic.map(\.imdb), ["tt0386676"])
-        XCTAssertEqual(model.featured?.item.imdb, "tt0386676", "el destacado sale de lo que está en tendencia")
     }
 }
 

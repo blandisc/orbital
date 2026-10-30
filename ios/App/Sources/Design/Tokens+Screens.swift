@@ -351,6 +351,8 @@ extension DS {
     }
 
     enum Collections {
+        /// «Por lo que viste» en Inicio (`BecauseCard(artBackdrop:)`): cuánto se desenfoca el póster de fondo y cuánto se ve.
+        static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
         static let emblem: CGFloat = 70, glow: CGFloat = 16
         /// El sello de dónde viene una lista (Trakt, tus complementos, Rotten Tomatoes, tu Orbital).
         static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), critics = Color(red: 0.78, green: 0.16, blue: 0.07), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)

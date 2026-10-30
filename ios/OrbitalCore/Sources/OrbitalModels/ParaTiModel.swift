@@ -15,17 +15,6 @@ public enum PosterBadge: Sendable, Equatable {
 @MainActor
 public final class ParaTiModel: ObservableModel {
     public enum Mode: Equatable { case mosaic, lists }
-    /// Por qué el destacado «Para ti hoy» es lo que es (la etiqueta sobre el arte).
-    public enum FeaturedReason: Equatable {
-        case recommendedByTrakt, rank(Int, platform: String), trending, other(SuggestionReason)
-    }
-    public struct Featured: Equatable {
-        public var item: Suggestion
-        public var shelfID: String?
-        public var reason: FeaturedReason
-    }
-    /// «Próximos estrenos»: por día (lista) o la semana (una tira de días).
-    public enum CalendarLayout: Equatable { case byDay, week }
     /// De dónde salió lo que ves: la consola (misma curaduría que la TV) o este iPhone (lógica local).
     public enum Source: Equatable, Sendable { case console, phone }
 
@@ -39,86 +28,19 @@ public final class ParaTiModel: ObservableModel {
     public private(set) var kind = "all" { didSet { if kind != oldValue { changed() } } }
     /// Las listas que aún se están pidiendo (su estante enseña esqueletos, no un hueco).
     public private(set) var loadingKeys = Set<String>() { didSet { if loadingKeys != oldValue { changed() } } }
-    /// Cuántas veces se pidió «Actualizar»: el destacado pasa al siguiente de su estante.
-    public private(set) var featuredRotation = 0 { didSet { if featuredRotation != oldValue { changed() } } }
     public private(set) var railItems: [String: [Suggestion]] = [:] { didSet { if railItems != oldValue { changed() } } }
     public private(set) var watchlistKeys = Set<String>() { didSet { if watchlistKeys != oldValue { changed() } } }
     public private(set) var traktLinked = false { didSet { if traktLinked != oldValue { changed() } } }
     public private(set) var isLoading = false { didSet { if isLoading != oldValue { changed() } } }
     /// Los episodios que salen de las series que sigues (Trakt), hoy y los próximos 14 días.
     public private(set) var airings: [Airing] = [] { didSet { if airings != oldValue { changed() } } }
-    public var calendarLayout: CalendarLayout = .byDay { didSet { if calendarLayout != oldValue { changed() } } }
-    /// «Porque viste X»: lo último que viste y lo que Trakt relaciona con él (nil sin Trakt o sin relacionados).
+    /// «Porque viste X» para «Decide por mí»: lo último que viste y lo que Trakt relaciona con él (nil sin Trakt o sin
+    /// relacionados). «Por lo que viste», con su mazo para elegir, vive en Inicio (`BecauseModel`).
     public private(set) var because: (seed: TraktEntry, items: [Suggestion])? { didSet { changed() } }
-    /// Lo último que viste: para elegir «Porque vi…».
-    public private(set) var becauseSeeds: [TraktEntry] = [] { didSet { if becauseSeeds != oldValue { changed() } } }
-
-    /// El título arriba del mazo. Cambia en cuanto lo eliges (antes el mazo esperaba a Trakt, un segundo o más, y se sentía
-    /// trabado); sus relacionadas llegan en `because`, al momento si ya se trajeron de antemano.
-    public private(set) var becauseSelected: String? { didSet { changed() } }
-    /// Las relacionadas de cada título de lo último que viste, traídas de antemano (empezando por los vecinos del que se ve).
-    public private(set) var becausePreloaded: [String: [Suggestion]] = [:]
-    private var preloadingBecause: Task<Void, Never>?
-
-    /// El que elegiste (nil: cambia solo cada día).
-    private var chosenSeed: String?
-
-    /// «Porque vi esto»: las relacionadas con el que elijas. El mazo se mueve ya; si ya estaban traídas, también ellas.
-    public func chooseBecause(_ seed: TraktEntry) async {
-        chosenSeed = seed.imdb
-        becauseSelected = seed.imdb
-        if let ready = becausePreloaded[seed.imdb] { because = (seed, ready); return }
-        let found = await services.forYou.related(to: seed)
-        // Pasaste a otro mientras llegaba: esta respuesta ya no es la que se ve.
-        guard becauseSelected == seed.imdb else { return }
-        because = (seed, found?.items ?? [])   // sin relacionadas: la tarjeta lo dice (antes se quedaban las del anterior)
-        if let items = found?.items { becausePreloaded[seed.imdb] = items }
-    }
-
-    /// Con la tarjeta ya a la vista: las relacionadas de los demás títulos, de una en una y empezando por los vecinos del que
-    /// se ve (lo siguiente que vas a tocar), para que pasar de uno a otro sea inmediato.
-    private func preloadBecause() {
-        guard let current = because?.seed.imdb ?? becauseSelected else { return }
-        if let items = because?.items, !items.isEmpty { becausePreloaded[current] = items }
-        let seeds = becauseSeeds
-        guard let at = seeds.firstIndex(where: { $0.imdb == current }) else { return }
-        let order = (1..<max(1, seeds.count)).flatMap { d in [seeds[(at + d) % seeds.count], seeds[(at - d + seeds.count) % seeds.count]] }
-        var seen = Set([current])
-        let queue = order.filter { seen.insert($0.imdb).inserted }
-        let forYou = services.forYou
-        preloadingBecause?.cancel()
-        preloadingBecause = Task { [weak self] in
-            for seed in queue {
-                if Task.isCancelled { return }
-                if self?.becausePreloaded[seed.imdb] != nil { continue }
-                if let found = await forYou.related(to: seed) { self?.becausePreloaded[seed.imdb] = found.items }
-            }
-        }
-    }
-
-    /// Pruebas: como si nada se hubiera traído de antemano.
-    func forgetPreloadedForTesting() { preloadingBecause?.cancel(); becausePreloaded = [:] }
-
-    /// Lo que llegó al cargar Para ti: el título de arriba y, por detrás, las relacionadas de los demás.
-    private func settleBecause(_ found: (seed: TraktEntry, items: [Suggestion])?, seeds: [TraktEntry]) {
-        because = found
-        becauseSeeds = seeds
-        if becauseSelected == nil || !seeds.contains(where: { $0.imdb == becauseSelected }) { becauseSelected = found?.seed.imdb }
-        else if becauseSelected != found?.seed.imdb, let pick = seeds.first(where: { $0.imdb == becauseSelected }),
-                let ready = becausePreloaded[pick.imdb] {
-            because = (pick, ready)   // al recargar seguías en otro título: se queda ese
-        }
-        preloadBecause()
-    }
     /// «Nuevo en tus plataformas» (TMDB): series con episodios recientes y películas recién llegadas, de tus plataformas.
     public private(set) var newOnPlatforms: [Suggestion] = [] { didSet { changed() } }
     /// El porqué de cada título en un póster (lo más fuerte: que sale pronto, o su puesto en una plataforma), por IMDb.
     public private(set) var badges: [String: PosterBadge] = [:] { didSet { if oldValue != badges { changed() } } }
-    /// Cuántos días cubre `airings` desde hoy: crece de dos en dos semanas al deslizar la tira hasta el final.
-    public private(set) var airingDays = ForYou.calendarDays { didSet { changed() } }
-    /// Hasta dónde se puede deslizar la tira (Trakt contesta hasta 31 días por pedido; más allá casi no hay fechas).
-    public static let maxAiringDays = 84
-    private var loadingMoreAirings = false
     public private(set) var error: String? { didSet { changed() } }
     /// El mosaico es lo que está en tendencia en Trakt (nada tuyo todavía): la pantalla invita a conectar tus fuentes.
     public private(set) var isGeneric = false { didSet { changed() } }
@@ -185,48 +107,6 @@ public final class ParaTiModel: ObservableModel {
         return shelf.listIDs.flatMap { railItems[key(listID: $0, splits: shelf.splitsKinds)] ?? [] }.filter { seen.insert($0.imdb).inserted }
     }
 
-    /// «Para ti hoy»: la primera sugerencia con arte ancho del primer estante que la tenga (rota con «Actualizar»);
-    /// sin estantes, la primera de lo popular del mosaico.
-    public var featured: Featured? { featuredSlides.first }
-
-    /// El carrusel del destacado: varias de la misma lista de donde sale el primero (el Top 10 de Netflix, tus
-    /// recomendaciones…), cada una con su motivo («N.º 2 en Netflix»).
-    public var featuredSlides: [Featured] {
-        // Abre con lo tuyo (tus recomendaciones, lo que es tendencia para ti), lo que antes iba arriba en Inicio; el Top 10 de
-        // Netflix, que abría aquí, ahora va en Inicio.
-        let loaded = visibleShelves.enumerated()
-            .sorted { (Self.featuredPriority($0.element), $0.offset) < (Self.featuredPriority($1.element), $1.offset) }   // estable: no cambia entre vistas
-            .map { (plan: $0.element, items: items(for: $0.element)) }
-        if let pick = ShelfPlanner.featuredSlides(loaded, rotation: featuredRotation) {
-            return pick.items.map { Featured(item: $0, shelfID: pick.plan.id, reason: Self.reason(of: $0, in: pick.plan)) }
-        }
-        let stand = ShelfPlan(id: "mosaic", list: ForYouList(id: "mosaic", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: false),
-                              listIDs: [], style: .plain)
-        if let pick = ShelfPlanner.featuredSlides([(stand, mosaic)], rotation: featuredRotation) {
-            return pick.items.map { Featured(item: $0, shelfID: nil, reason: Self.reason(of: $0, in: pick.plan)) }
-        }
-        return []
-    }
-
-    /// Qué estante da el destacado: tus recomendaciones primero, luego lo que sigues y la tendencia; los Top 10 al final.
-    static func featuredPriority(_ plan: ShelfPlan) -> Int {
-        let ids = plan.listIDs.isEmpty ? [plan.list.id] : plan.listIDs
-        if ids.contains(where: { $0.hasPrefix("recs") || $0.hasPrefix("because") }) { return 0 }
-        if ids.contains(where: { $0 == "mine" || $0 == "watchlist" }) { return 1 }
-        if ids.contains(where: { $0.hasPrefix("trend") }) { return 2 }
-        if plan.style == .top10 { return 9 }
-        return 5
-    }
-
-    static func reason(of item: Suggestion, in plan: ShelfPlan) -> FeaturedReason {
-        if plan.style == .top10, let rank = item.rank { return .rank(rank, platform: platformName(plan.list)) }
-        switch item.reason {
-        case .recommended: return .recommendedByTrakt
-        case .trending: return .trending
-        default: return .other(item.reason)
-        }
-    }
-
     private static func platformName(_ list: ForYouList) -> String {
         guard let brand = list.brand else { return list.title }
         // «Prime Video», no «Prime»: el nombre de JustWatch si TMDB no la tiene (la píldora la reconoce por ese nombre).
@@ -263,7 +143,7 @@ public final class ParaTiModel: ObservableModel {
         // al mosaico (antes sí, y el destacado tardaba lo que tardara el mosaico).
         guard let newLists = await fetchedLists else { return false }
         async let fetchedKeys = try? remote.watchlistKeys()
-        async let fetchedBecause = forYou.becauseYouWatched(seed: chosenSeed)
+        async let fetchedBecause = forYou.becauseYouWatched()
         async let fetchedAirings = try? forYou.calendar()   // el calendario sale de tu Trakt (la consola trae la lista «estrenos», que aquí no se pinta como estante)
         if source != .console { railItems = [:] }   // venía del iPhone: los estantes de la otra fuente no se mezclan
         source = .console
@@ -281,10 +161,10 @@ public final class ParaTiModel: ObservableModel {
         error = mosaic.isEmpty && lists.isEmpty ? "Tu Orbital no tiene sugerencias todavía." : nil
         watchlistKeys = await fetchedKeys ?? []
         if let fetched = await fetchedAirings, !Task.isCancelled {
-            airings = fetched; airingDays = ForYou.calendarDays
+            airings = fetched
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno» también con la consola
         }
-        settleBecause(await fetchedBecause, seeds: await forYou.recentSeeds())
+        because = await fetchedBecause
         await shelvesLoaded
         await platformsLoaded
         rebuildBadges()
@@ -343,15 +223,12 @@ public final class ParaTiModel: ObservableModel {
         traktLinked = await linked
         watchlistKeys = await keys
         if let fetched = await newAirings, !Task.isCancelled {   // sin respuesta (o cancelado), el widget conserva lo que tenía
-            airings = fetched; airingDays = ForYou.calendarDays
+            airings = fetched
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
         }
     }
 
-    private func phoneBecause(_ forYou: ForYou) async {
-        let found = await forYou.becauseYouWatched(seed: chosenSeed)
-        settleBecause(found, seeds: await forYou.recentSeeds())
-    }
+    private func phoneBecause(_ forYou: ForYou) async { because = await forYou.becauseYouWatched() }
 
     /// Con pocas sugerencias el mosaico repetía la misma portada en toda la pantalla: se completa con lo que ya
     /// trajeron los estantes (alternados, sin repetir) y, si aún faltan, con lo que está en tendencia en Trakt.
@@ -361,18 +238,6 @@ public final class ParaTiModel: ObservableModel {
         var filled = MosaicPool.toppedUp(mosaic, with: fromShelves)
         if filled.count < MosaicPool.minimumVariety { filled = MosaicPool.toppedUp(filled, with: [await popular()]) }
         mosaic = filled
-    }
-
-    /// Las dos semanas siguientes del calendario (al llegar al final de la tira de días). Sin Trakt o sin red, nada cambia.
-    public func loadMoreAirings() async {
-        guard !loadingMoreAirings, airingDays < Self.maxAiringDays else { return }
-        loadingMoreAirings = true
-        defer { loadingMoreAirings = false }
-        let more = ForYou.calendarDays
-        guard let fetched = try? await services.forYou.calendar(skip: airingDays, days: more), !Task.isCancelled else { return }
-        let known = Set(airings.map(\.id))
-        airings += fetched.filter { !known.contains($0.id) }
-        airingDays += more
     }
 
     /// Una etiqueta por título: que sale pronto (calendario) gana a su puesto en una plataforma (Top 10 de Netflix, JustWatch).
@@ -576,7 +441,6 @@ public final class ParaTiModel: ObservableModel {
         railItems = railItems.mapValues { $0.filter { $0.imdb != s.imdb } }
         airings.removeAll { $0.series.imdb == s.imdb }
         if let current = because { because = (current.seed, current.items.filter { $0.imdb != s.imdb }) }
-        becausePreloaded = becausePreloaded.mapValues { $0.filter { $0.imdb != s.imdb } }
     }
 
     /// El botón «Actualizar»: limpia la caché (de la consola o local, según de dónde viniera) y vuelve a cargar.
@@ -585,9 +449,7 @@ public final class ParaTiModel: ObservableModel {
         case .console: await services.forYouRemote.clearCache()
         case .phone: await services.forYou.clearCache()
         }
-        // Lo de antes se queda a la vista hasta que llega lo nuevo (antes se vaciaba y el destacado brincaba al mosaico y de
-        // regreso, con su toque y su color).
-        featuredRotation += 1
+        // Lo de antes se queda a la vista hasta que llega lo nuevo.
         // Todo lo que hay se marca viejo: se vuelve a pedir (aquí, al cambiar de tipo o al abrir una plataforma) y mientras
         // tanto se queda a la vista.
         staleKeys = Set(railItems.keys)

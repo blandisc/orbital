@@ -49,15 +49,17 @@ final class HomeNewUITests: XCTestCase {
         shot("hoja")
         search.tap()
         search.typeText("malcolm\n")   // buscar y bajar el teclado
-        XCTAssertTrue(app.buttons["channel-add"].firstMatch.waitForExistence(timeout: 20), "encuentra la serie y ofrece Añadir")
+        let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'channel-tt'"))
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 20), "encuentra la serie y ofrece Añadir")
         shot("resultados")
-        // El primero que se ve (no uno escondido detrás del teclado).
-        let add = try XCTUnwrap(app.buttons.matching(identifier: "channel-add").allElementsBoundByIndex.first { $0.isHittable })
+        // El primero que se ve y que todavía no es canal (no uno escondido detrás del teclado).
+        let add = try XCTUnwrap(rows.allElementsBoundByIndex.first { $0.isHittable && !$0.isSelected })
+        let row = app.buttons[add.identifier]
         add.tap()
         // Con el buscador activo, iOS usa el primer toque para cerrarlo: si no cambió, un segundo toque.
         sleep(1); shot("tras-toque")
-        if !app.buttons["channel-added"].firstMatch.waitForExistence(timeout: 2) { add.tap(); sleep(1); shot("tras-segundo-toque") }
-        XCTAssertTrue(app.buttons["channel-added"].firstMatch.waitForExistence(timeout: 5), "ya es canal")
+        if !row.isSelected { row.tap(); sleep(1); shot("tras-segundo-toque") }
+        XCTAssertTrue(row.isSelected, "ya es canal")
         shot("anadido")
     }
 

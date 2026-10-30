@@ -19,7 +19,7 @@ final class ParaTiBUITests: XCTestCase {
     }
 
     func testLaTarjetaAbreElMazo() {
-        let card = app.buttons["paraTi-decide"]
+        let card = app.buttons["paraTi-match"]
         XCTAssertTrue(card.waitForExistence(timeout: 20), "la tarjeta «¿Qué vemos hoy?» está")
         shot("para-ti-arriba")
         card.tap()

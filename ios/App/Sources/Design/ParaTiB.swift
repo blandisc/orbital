@@ -1,22 +1,7 @@
 import SwiftUI
 
-// Las piezas de Para ti B (docs/producto/inicio-benchmark/para-ti/): el título de cada grupo, los círculos para saltar a
-// cada parte, la portada del mosaico y la tarjeta de «¿Qué vemos hoy?».
-
-/// El título de un grupo de Para ti («Ahora», «Plataformas», «Premios»…): grande, con una frase gris a la derecha.
-struct DSGroupTitle: View {
-    let title: Text
-    var meta: Text?
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-            title.recipe(.title).accessibilityAddTraits(.isHeader)
-            Spacer(minLength: DS.Space.s2)
-            if let meta { meta.recipe(.footnote, color: DS.textMuted).lineLimit(1) }
-        }
-        .padding(.horizontal, DS.Space.gutter)
-    }
-}
+// Las piezas de Para ti B (docs/producto/inicio-benchmark/para-ti/): los círculos para saltar a cada parte, la portada del mosaico y la
+// tarjeta de «¿Qué vemos hoy?».
 
 /// Un círculo por cada parte de Para ti: tocarlo baja hasta ella.
 struct SectionCircles<ID: Hashable>: View {
@@ -86,7 +71,7 @@ struct MosaicCover: View {
 }
 
 /// «¿Qué vemos hoy?»: la entrada a encontrar tu match (tres pósters en abanico, el porqué y cómo se usa).
-struct DecideCard: View {
+struct MatchTeaser: View {
     let posters: [String]
     let onOpen: () -> Void
 
@@ -94,7 +79,7 @@ struct DecideCard: View {
         Button(action: onOpen) {
             HStack(spacing: DS.Space.s4) {
                 ZStack(alignment: .topLeading) {
-                    ForEach(Array(posters.prefix(3).enumerated().reversed()), id: \.offset) { i, url in
+                    ForEach(Array(posters.prefix(DS.ParaTiB.matchFan).enumerated().reversed()), id: \.offset) { i, url in
                         PosterView(url: url, title: "")
                             .frame(width: DS.ParaTiB.deckPoster)
                             .rotationEffect(.degrees(Double(i) * DS.ParaTiB.deckTurn))
@@ -117,6 +102,6 @@ struct DecideCard: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, DS.Space.gutter)
-        .accessibilityIdentifier("paraTi-decide")
+        .accessibilityIdentifier("paraTi-match")
     }
 }

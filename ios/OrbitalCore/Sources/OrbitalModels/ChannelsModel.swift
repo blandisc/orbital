@@ -12,9 +12,11 @@ public final class ChannelsModel: ObservableModel {
         public init(id: String, title: String, poster: String) { self.id = id; self.title = title; self.poster = poster }
     }
 
-    /// Un canal listo para pintar: la serie, su logo, sus episodios y cuánto dura cada uno.
+    /// Un canal listo para pintar: la serie, su nombre original (el de Cinemeta, en inglés: con ese se buscan las fuentes),
+    /// su logo, sus episodios y cuánto dura cada uno.
     public struct Channel: Sendable, Equatable, Identifiable {
         public var pick: Pick
+        public var originalTitle: String
         public var logo: String?
         public var background: String
         public var episodes: [ChannelSchedule.Episode]
@@ -55,6 +57,10 @@ public final class ChannelsModel: ObservableModel {
     public private(set) var results: [Pick] = [] { didSet { if results != oldValue { changed() } } }
     private var loaded: [String: Channel] = [:]
     private var loading = false
+    /// Se pidió cargar mientras otra carga seguía (cerraste la hoja con una serie nueva): al terminar, otra vuelta.
+    private var loadAgain = false
+    /// Cuántas letras hacen falta para buscar.
+    public nonisolated static let minQuery = 2
     private let services: Services
 
     public init(_ services: Services) {
@@ -69,9 +75,17 @@ public final class ChannelsModel: ObservableModel {
 
     /// Trae los episodios de cada canal que falte (a la par); los que ya están no se vuelven a pedir.
     public func load() async {
-        guard !loading else { return }   // una a la vez (la del inicio y la de cerrar la hoja)
+        // Una a la vez (la del inicio y la de cerrar la hoja); la que llega durante otra no se pierde: se repite al final.
+        guard !loading else { loadAgain = true; return }
         loading = true
         defer { loading = false }
+        repeat {
+            loadAgain = false
+            await loadMissing()
+        } while loadAgain
+    }
+
+    private func loadMissing() async {
         let missing = picks.filter { loaded[$0.id] == nil }
         let cinemeta = services.cinemeta
         let now = Date()
@@ -101,7 +115,7 @@ public final class ChannelsModel: ObservableModel {
         guard !episodes.isEmpty else { return nil }
         let info = CinemetaParsing.describe(meta)
         let minutes = Int(info.runtime.filter(\.isNumber)).flatMap { $0 >= 5 ? $0 : nil } ?? defaultMinutes
-        return Channel(pick: pick, logo: info.logo, background: meta["background"]?.nonEmptyString ?? String(format: ForYou.metahubBackground, pick.id),
+        return Channel(pick: pick, originalTitle: meta["name"]?.nonEmptyString ?? pick.title, logo: info.logo, background: meta["background"]?.nonEmptyString ?? String(format: ForYou.metahubBackground, pick.id),
                        episodes: episodes, length: TimeInterval(minutes * 60))
     }
 
@@ -115,7 +129,7 @@ public final class ChannelsModel: ObservableModel {
     /// Busca series por nombre («mal» encuentra Malcolm).
     public func search(_ text: String) async {
         let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard query.count >= 2 else { results = []; return }
+        guard query.count >= Self.minQuery else { results = []; return }
         let found = (try? await services.cinemeta.search("series", query: query)) ?? []
         guard !Task.isCancelled else { return }
         results = found.compactMap { m in

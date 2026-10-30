@@ -1,9 +1,10 @@
 import SwiftUI
 import OrbitalCore
+import OrbitalModels
 
 /// «Lo nuevo de lo tuyo» (Inicio, docs/producto/inicio-benchmark/): lo que ya salió de tus series en los últimos días y lo
-/// que viene, en una sola línea de tiempo con la marca HOY entre los dos. Lo que ya salió va con su punto verde (ya se puede
-/// ver); lo que viene, más apagado y con cuánto falta. Abre en HOY (lo de antes a la izquierda). El calendario del mes
+/// que viene, en una sola línea de tiempo con la marca HOY entre los dos (por hora: lo de hoy más tarde va después). Lo que ya
+/// salió va con su punto verde (ya se puede ver; lo de hoy, «Nuevo»); lo que viene, más apagado y con cuánto falta. Abre en HOY (lo de antes a la izquierda). El calendario del mes
 /// completo, en el botón del encabezado.
 struct ReleaseTimeline: View {
     let airings: [Airing]
@@ -11,12 +12,14 @@ struct ReleaseTimeline: View {
     let onCalendar: () -> Void
     @Environment(AppEnvironment.self) private var env
 
-    private enum Moment { case out, today, soon }
-
     var body: some View {
-        let start = Calendar.current.startOfDay(for: Date())
-        let firstSoon = airings.firstIndex { $0.day > start }
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        // Cada minuto: lo que sale hoy a las 21:00 pasa a «Nuevo» a esa hora, y a medianoche «Hoy» se vuelve «Ayer».
+        TimelineView(.everyMinute) { context in line(now: context.date) }
+    }
+
+    private func line(now: Date) -> some View {
+        let nowIndex = HomeModel.nowIndex(in: airings, now: now)
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(alignment: .sectionTitle) {
                 DSSectionHead(title: Text("Lo nuevo de lo tuyo"), source: .trakt, eyebrow: Text("Ya salió y lo que viene"))
                 Spacer(minLength: DS.Space.s2)
@@ -32,16 +35,16 @@ struct ReleaseTimeline: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                         ForEach(Array(airings.enumerated()), id: \.element.id) { i, a in
-                            if i == firstSoon { todayMark.id(Self.today) }
-                            card(a, moment: a.day < start ? .out : a.day == start ? .today : .soon, start: start)
+                            if i == nowIndex { todayMark.id(Self.today) }
+                            card(a, moment: a.moment(now: now))
                         }
-                        if firstSoon == nil { todayMark.id(Self.today) }
+                        if nowIndex == airings.count { todayMark.id(Self.today) }
                     }
                     .scrollTargetLayout()
                 }
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                 .scrollTargetBehavior(.viewAligned)
-                .onAppear { proxy.scrollTo(Self.today, anchor: UnitPoint(x: DS.HomeTimeline.todayAnchor, y: 0.5)) }
+                .onAppear { proxy.scrollTo(Self.today, anchor: UnitPoint(x: DS.HomeTimeline.todayAnchor, y: UnitPoint.center.y)) }
             }
         }
     }
@@ -51,9 +54,7 @@ struct ReleaseTimeline: View {
     /// La marca de hoy: una línea delgada con «HOY» arriba.
     private var todayMark: some View {
         VStack(spacing: DS.Space.s1) {
-            Text("HOY").recipe(.caption, color: DS.onPrimary).fontWeight(.heavy)
-                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.HomeTimeline.markPad)
-                .background(DS.success, in: Capsule())
+            DSBadge(text: "HOY", tone: .fresh)
             Capsule().fill(DS.success).frame(width: DS.HomeTimeline.markLine)
                 .frame(maxHeight: .infinity)
         }
@@ -61,33 +62,29 @@ struct ReleaseTimeline: View {
         .accessibilityHidden(true)
     }
 
-    private func card(_ a: Airing, moment: Moment, start: Date) -> some View {
-        let days = Calendar.current.dateComponents([.day], from: start, to: a.day).day ?? 0
+    private func card(_ a: Airing, moment: ReleaseMoment) -> some View {
+        let soon = moment.isSoon
         let episode = a.episodeLabel(env.services.episodeLabel)
         return Button { onOpen(a.series.route) } label: {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s1) {
-                    Circle().fill(moment == .soon ? DS.ink500 : DS.success).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
-                    when(a.day, moment: moment).recipe(.caption, color: moment == .soon ? DS.textMuted : DS.text).fontWeight(.bold).lineLimit(1)
+                    Circle().fill(soon ? DS.ink500 : DS.success).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
+                    when(a.day).recipe(.caption, color: soon ? DS.textMuted : DS.text).fontWeight(.bold).lineLimit(1)
                 }
                 .frame(height: DS.HomeTimeline.labelRow, alignment: .leading)
                 PosterView(url: a.series.poster, title: a.series.title)
                     .overlay(alignment: .topLeading) {
-                        if moment == .today {
-                            Text("Nuevo").recipe(.caption, color: DS.onPrimary).fontWeight(.heavy)
-                                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.HomeTimeline.markPad)
-                                .background(DS.success, in: Capsule()).padding(DS.Space.s2)
-                        }
+                        if moment == .new { DSBadge(text: "Nuevo", tone: .fresh).padding(DS.Space.s2) }
                     }
                     .overlay(alignment: .bottomLeading) {
-                        if moment == .soon, days >= 2 {
+                        if case .soon(let days) = moment, days >= 2 {
                             Text("en \(days) días").recipe(.caption, color: DS.onArtSecondary).fontWeight(.semibold)
                                 .padding(DS.Space.s2).onArt()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .top, endPoint: .bottom))
                         }
                     }
-                    .opacity(moment == .soon ? DS.HomeTimeline.soonOpacity : 1)
+                    .opacity(soon ? DS.HomeTimeline.soonOpacity : 1)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(verbatim: a.series.title).recipe(.footnote).fontWeight(.semibold).lineLimit(1)
                     Text(verbatim: episode).recipe(.caption, color: DS.textMuted).lineLimit(1)
@@ -101,7 +98,14 @@ struct ReleaseTimeline: View {
     }
 
     /// «Ayer», «Hoy», «Mañana» o el día de la semana.
-    private func when(_ day: Date, moment: Moment) -> Text {
+    private func when(_ day: Date) -> Text {
         Calendar.current.isDateInYesterday(day) ? Text("Ayer") : dayName(day, locale: env.uiLocale)
     }
+}
+
+/// «Hoy», «Mañana» o el día de la semana («Jueves»).
+func dayName(_ day: Date, locale: Locale, calendar: Calendar = .current) -> Text {
+    if calendar.isDateInToday(day) { return Text("Hoy") }
+    if calendar.isDateInTomorrow(day) { return Text("Mañana") }
+    return Text(verbatim: day.formatted(.dateTime.weekday(.wide).locale(locale)).capitalized(with: locale))
 }
