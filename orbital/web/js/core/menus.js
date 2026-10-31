@@ -267,6 +267,8 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
   const options = [
     { icon: "bolt", label: "Panel rápido", hint: "Volumen, brillo y energía", command: { type: "quick" } },
   ];
+  // Lo que hace Home en el mando, con su camino visible: el pie ya no siempre lo enseña (tres pistas como mucho).
+  if (running?.title) options.unshift({ icon: "play", label: `Volver a ${running.title}`, hint: "Home en el mando", command: { type: "resume" } });
   if (running?.managed) {
     options.push({ icon: "stop", label: `Cerrar ${running.title}`, danger: true,
       command: { type: "confirm-stop", title: running.title, runner: running.runner } });

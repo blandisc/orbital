@@ -1,7 +1,8 @@
 /**
  * Qué controles mostrar en el pie (lógica pura, con pruebas en tests/web).
  *
- * Una sola gramática: como mucho cinco pistas a la vista, B siempre «Atrás» y Menú al final. Lo que la barra de arriba
+ * Una sola gramática: como mucho tres pistas a la vista y Menú al final (como el iPhone, 31 oct 2026; `capHints`), B siempre
+ * «Atrás». Lo que la barra de arriba
  * ya enseña con su botón (Buscar, LB/RB · Sección) y lo obvio (↑↓) va con `offscreen`: la tele no lo dibuja, pero el
  * control del iPhone sí lo recibe (legendOf) para rotular sus botones.
  *
@@ -17,7 +18,7 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
     return [adjustable ? { glyph: glyphs.rows === "↑↓" ? "← →" : "◀ ▶", label: "Cambiar" } : { glyph: glyphs.select, label: "Elegir" },
       { glyph: glyphs.back, label: "Atrás" }];
   }
-  return [
+  return capHints([
     // Lo que hace A con la tarjeta enfocada («Continuar», «Ver»…) y X (su ficha): como en Inicio y Juegos.
     // Con el héroe a la vista, sus botones ya dicen A y X («Ver la serie», «Episodios»): el pie no los repite.
     primary && { glyph: glyphs.select, label: primary, offscreen: heroButtons },
@@ -34,7 +35,24 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
     // Con un juego abierto, recuerda cómo volver a él (Home solo existe en el mando).
     running && glyphs.home && { glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` },
     { glyph: glyphs.menu, label: "Menú", end: true },
-  ].filter(Boolean);
+  ].filter(Boolean), glyphs);
+}
+
+/** Cuántas pistas se ven, sin contar Menú. */
+export const MAX_HINTS = 3;
+
+/**
+ * Lo principal a la vista y lo demás en el menú: si hay más de MAX_HINTS, primero se deja de dibujar «Atrás» (B siempre
+ * regresa, y con el dedo está el botón «Atrás» de la esquina) y luego «Volver a …» (Home, que también está en ☰ con su
+ * botón). Quedan en la lista con `offscreen`: el control del iPhone los sigue rotulando. Nada más se esconde.
+ */
+export function capHints(list, glyphs = {}) {
+  const shown = () => list.filter((i) => !i.offscreen && !i.end).length;
+  for (const drop of [(i) => i.glyph === glyphs.back, (i) => glyphs.home && i.glyph === glyphs.home]) {
+    if (shown() <= MAX_HINTS) break;
+    list = list.map((i) => (!i.offscreen && !i.end && drop(i) ? { ...i, offscreen: true } : i));
+  }
+  return list;
 }
 
 /**
@@ -92,7 +110,7 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
   if (jump && glyphs.page) list.push({ glyph: glyphs.page, label: jump, secondary: true });
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
-  return list;
+  return capHints(list, glyphs);
 }
 
 /** Pie de Juegos (lógica pura): jugar lo enfocado, filtrar, o cambiar de consola en el riel. */
@@ -107,7 +125,7 @@ export function gamesHints(glyphs, target) {
   // B: primero al primer juego; desde ahí, a Inicio. Siempre dice «Atrás», como en el resto de Orbital.
   list.push({ glyph: glyphs.back, label: "Atrás", secondary: true });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
-  return list;
+  return capHints(list, glyphs);
 }
 
 /**
@@ -126,7 +144,7 @@ export function tvHints(glyphs, target, { empty = false, categories = 1, atStart
   // Con un canal al aire, recuerda cómo volver a él (Home solo existe en el mando).
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
-  return list;
+  return capHints(list, glyphs);
 }
 
 /**

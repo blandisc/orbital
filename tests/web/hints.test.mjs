@@ -56,16 +56,16 @@ test("la leyenda del pie, como {acción: texto}, para el control del iPhone", as
   assert.deepEqual(legendOf(list, glyphs), { select: "Ver", alt: "Mi lista", section: "Sección" });
 });
 
-test("la leyenda: como mucho cinco pistas a la vista, B siempre «Atrás»; lo de la barra de arriba solo va al iPhone", async () => {
+test("la leyenda: como mucho tres pistas a la vista y Menú, B siempre «Atrás»; lo de la barra de arriba solo va al iPhone", async () => {
   const { gamesHints, homeHints, tvHints, legendOf } = await import("../../orbital/web/js/core/hints.js");
   const g = { select: "A", alt: "X", back: "B", options: "Y", rows: "↑↓", search: "S", section: "LB RB", page: "LT RT", menu: "☰", home: "Home" };
-  const seen = (list) => list.filter((i) => !i.offscreen);
+  const seen = (list) => list.filter((i) => !i.offscreen && !i.end);
   const media = footerHints(g, { atHome: false, groups: true, rows: 3, primary: "Ver la serie", alt: "Episodios" });
-  assert.ok(seen(media).length <= 5, seen(media).map((i) => i.label).join(", "));
+  assert.ok(seen(media).length <= 3, seen(media).map((i) => i.label).join(", "));
   assert.equal(legendOf(media, g).section, "Sección"); // el iPhone sigue sabiendo qué hace LB/RB
   for (const list of [media, gamesHints(g, { kind: "game" }), tvHints(g, { kind: "channel" }, { categories: 2, atStart: false }),
     homeHints(g, { kind: "console", console: { last: null } })]) {
-    assert.ok(seen(list).length <= 5);
+    assert.ok(seen(list).length <= 3, seen(list).map((i) => i.label).join(", "));
     const back = list.find((i) => i.glyph === "B");
     if (back) assert.equal(back.label, "Atrás");
   }
@@ -78,7 +78,7 @@ test("Inicio: LT/RT dicen a dónde saltan (Tus consolas desde arriba, Arriba des
   assert.deepEqual(top.find((i) => i.glyph === "LT RT"), { glyph: "LT RT", label: "Tus consolas", secondary: true });
   const consoles = homeHints(g, { kind: "console", console: { last: null } }, { jump: "Arriba" });
   assert.equal(consoles.find((i) => i.glyph === "LT RT").label, "Arriba");
-  assert.ok(consoles.filter((i) => !i.offscreen).length <= 5);
+  assert.ok(consoles.filter((i) => !i.offscreen && !i.end).length <= 3);
   assert.equal(homeHints(g, { kind: "console", console: { last: null } }).some((i) => i.glyph === "LT RT"), false); // sin consolas, no hay a dónde saltar
 });
 

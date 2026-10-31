@@ -129,10 +129,12 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   // El canal que ya está al aire: A vuelve a él; con uno al aire, Home lo recuerda en el pie.
   const air = tvHints(g, { kind: "channel" }, { categories: 3, onAir: true, running: { title: "Azteca 7" } });
   assert.equal(air[0].label, "Volver al canal");
-  assert.deepEqual(air.find((x) => x.glyph === "Home"), { glyph: "Home", label: "Volver a Azteca 7" });
+  // Con cuatro, el pie deja de dibujar «Atrás» y «Volver a…» (siguen para el control del iPhone; Volver a… también está en ☰).
+  assert.deepEqual(air.find((x) => x.glyph === "Home"), { glyph: "Home", label: "Volver a Azteca 7", offscreen: true });
+  assert.deepEqual(air.filter((x) => !x.offscreen && !x.end).map((x) => x.label), ["Volver al canal", "Categoría", "Actualizar"]);
   assert.ok(!tvHints(g, { kind: "channel" }, { categories: 3 }).some((x) => x.glyph === "Home")); // sin canal al aire, sin Home
   // Con teclado, Home es Ctrl + Inicio (atajo global de la consola): el pie lo dice, para saber qué tecla picar.
-  assert.deepEqual(tvHints(GLYPHS.keyboard, { kind: "channel" }, { categories: 3, running: { title: "X" } }).find((x) => x.label === "Volver a X"),
+  assert.deepEqual(tvHints(GLYPHS.keyboard, { kind: "channel" }, { categories: 1, running: { title: "X" } }).find((x) => x.label === "Volver a X"),
     { glyph: "Ctrl Inicio", label: "Volver a X" });
   // Sin canales no hay nada que ver: solo actualizar y volver.
   const empty = labels(tvHints(g, null, { empty: true, categories: 1 }));
