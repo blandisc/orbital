@@ -164,7 +164,6 @@ struct HomeView: View {
                     Button(action: openRemote) { Image(systemName: "av.remote") }
                         .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
                 }
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
             // Un Simpson al azar (T5–T15): un toque, la ruleta, y empieza en el iPhone (las temporadas, en Ajustes).
             ToolbarItem(placement: .topBarTrailing) {
@@ -173,7 +172,8 @@ struct HomeView: View {
                     .accessibilityLabel(Text("Un Simpson al azar"))
                     .accessibilityIdentifier("home-random-simpsons")
             }
-            ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            // Sin separadores: el control, la dona y tu foto en una sola cápsula, como la barra de Para ti (Fernando, 30 oct
+            // 2026: tres círculos sueltos se veían llenos).
             ToolbarItem(placement: .topBarTrailing) { ProfileButton(avatar: look.avatar) }
         }
         .titleDestinations()
