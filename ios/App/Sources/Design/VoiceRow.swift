@@ -73,7 +73,7 @@ struct VoiceRow: View {
         } else if heardNothing {
             Text("No te escuché. Toca y vuelve a intentar").recipe(.caption, color: DS.textMuted).lineLimit(2)
         } else if let lastAnswer {
-            Text("✓ \(lastAnswer)").recipe(.caption, color: DS.live).lineLimit(1)
+            Text("✓ \(lastAnswer)").recipe(.caption, color: DS.success).lineLimit(1)
         } else if let hint {
             // La pista: una frase del momento; tocarla la manda tal cual (atajo y lección a la vez).
             Button { tap { actions.say(hint) } } label: {
@@ -113,7 +113,7 @@ struct VoiceRow: View {
     private var listening: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack {
-                Text(phase == .asking ? "PREGUNTÁNDOLE A TU ORBITAL" : "TE ESCUCHO").recipe(.eyebrow, color: DS.live)
+                Text(phase == .asking ? "Preguntándole a tu Orbital" : "Te escucho").recipe(.eyebrow).textCase(.uppercase)
                 Spacer(minLength: DS.Space.s2)
                 closeButton
             }
@@ -124,8 +124,8 @@ struct VoiceRow: View {
             Spacer(minLength: 0)
             HStack(spacing: DS.Space.s3) {
                 micButton(listening: true)
-                if phase == .asking { ProgressView().controlSize(.small) }
-                Text(phase == .asking ? "Un momento" : "Se detiene sola al callarte").recipe(.caption, color: DS.textMuted)
+                if phase == .asking { DSInlineProgress(text: Text("Un momento")) }
+                else { Text("Se detiene sola al callarte").recipe(.caption, color: DS.textMuted) }
             }
         }
     }
@@ -142,7 +142,7 @@ struct VoiceRow: View {
                     statusTile(ok: ok)
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    if ok { Text("✓ EN LA TV").recipe(.eyebrow, color: DS.live) }
+                    if ok { Text("✓ En la TV").recipe(.eyebrow, color: DS.success).textCase(.uppercase) }
                     Text(verbatim: reply?.speech.isEmpty == false ? reply!.speech : "Listo").recipe(.cardTitle).lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                     if let heard = reply?.heard, !heard.isEmpty { Text("Entendí: «\(heard)»").recipe(.caption, color: DS.textMuted).lineLimit(2) }
@@ -162,10 +162,10 @@ struct VoiceRow: View {
 
     /// El ícono de la respuesta sin póster: la tele en verde si llegó, un aviso en ámbar si no.
     private func statusTile(ok: Bool) -> some View {
-        let tint = ok ? DS.live : DS.warning
+        let tint = ok ? DS.success : DS.warning
         return Image(systemName: ok ? "tv" : "exclamationmark.bubble").font(DS.TextRecipe.section.font).foregroundStyle(tint)
             .frame(width: DS.Remote.voiceMic, height: DS.Remote.voiceMic)
-            .background(tint.opacity(DesignTokens.Opacity.fill), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .background(tint.opacity(DS.Opacity.selectedFill), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .accessibilityHidden(true)
     }
 
@@ -175,7 +175,7 @@ struct VoiceRow: View {
         Button { tap(actions.mic) } label: {
             ZStack {
                 // El chico (volver a hablar, junto a una respuesta) es secundario: relleno tenue, no la bola del principal.
-                Circle().fill(listening ? DS.live : small ? DS.fillStrong : DS.primary)
+                Circle().fill(listening ? DS.brandMoon : small ? DS.fillStrong : DS.primary)
                 if listening {
                     RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill(DS.onPrimary)
                         .frame(width: DS.Space.s4, height: DS.Space.s4)
@@ -192,35 +192,19 @@ struct VoiceRow: View {
     }
 
     private var guideButton: some View {
-        Button { tap(actions.guide) } label: {
-            Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
-                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-                .background(DS.fill, in: Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("Lo que puedes decir"))
-        .accessibilityIdentifier("remote-voice-guide")
+        DSIconButton(symbol: "questionmark", label: "Lo que puedes decir") { tap(actions.guide) }
+            .accessibilityIdentifier("remote-voice-guide")
     }
 
     private var closeButton: some View {
-        Button { tap(actions.close) } label: {
-            Image(systemName: "xmark").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
-                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("Cerrar"))
-        .accessibilityIdentifier("voice-close")
+        DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular) { tap(actions.close) }
+            .accessibilityIdentifier("voice-close")
     }
 
     private func pill(_ title: LocalizedStringKey, id: String, action: @escaping () -> Void) -> some View {
-        Button { tap(action) } label: {
-            Text(title).font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
-                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                .background(DS.fill, in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier(id)
+        Button { tap(action) } label: { Text(title).font(DS.TextRecipe.label.font).frame(maxWidth: .infinity) }
+            .dsSecondaryButton().controlSize(.large)
+            .accessibilityIdentifier(id)
     }
 
     private func tap(_ action: () -> Void) { taps += 1; action() }
@@ -240,16 +224,12 @@ struct VoiceChoicesCarousel: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 0) {
-                    if reply.picked != nil { Text("✓ EN LA TV").recipe(.eyebrow, color: DS.live) }
+                    if reply.picked != nil { Text("✓ En la TV").recipe(.eyebrow, color: DS.success).textCase(.uppercase) }
                     else { Text("¿Cuál?").recipe(.cardTitle) }
                     if !reply.heard.isEmpty { Text("Entendí: «\(reply.heard)» · desliza para ver más").recipe(.caption, color: DS.textMuted).lineLimit(1) }
                 }
                 Spacer(minLength: DS.Space.s2)
-                Button { actions.close() } label: {
-                    Image(systemName: "xmark").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
-                        .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain).accessibilityLabel(Text("Cerrar"))
+                DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular) { actions.close() }
             }
             ScrollView(.horizontal) {
                 LazyHStack(spacing: DS.Space.s3) {
@@ -279,17 +259,14 @@ struct VoiceChoicesCarousel: View {
                 if !choice.subtitle.isEmpty { Text(verbatim: choice.subtitle).recipe(.footnote, color: DS.textMuted).lineLimit(1) }
                 Spacer(minLength: DS.Space.s2)
                 if playing == choice.id {
-                    Text("Poniéndose").font(DS.TextRecipe.label.font).foregroundStyle(DS.live)
+                    Text("Poniéndose").font(DS.TextRecipe.label.font).foregroundStyle(DS.brandMoon)
                         .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
-                        .background(DS.live.opacity(DesignTokens.Opacity.fill), in: Capsule())
+                        .background(DS.brandMoon.opacity(DS.Opacity.selectedFill), in: Capsule())
                 } else {
                     Button { playing = choice.id; actions.choose(choice) } label: {
-                        Label(reply.picked == nil ? "Poner" : "Poner esta", systemImage: "play.fill")
-                            .font(DS.TextRecipe.label.font).foregroundStyle(DS.onPrimary)
-                            .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
-                            .background(DS.primary, in: Capsule())
+                        Label(reply.picked == nil ? "Poner" : "Poner esta", systemImage: "play.fill").font(DS.TextRecipe.label.font)
                     }
-                    .buttonStyle(.plain)
+                    .dsPrimaryButton(size: .large)
                     .accessibilityIdentifier("voice-choice-play")
                 }
             }
@@ -318,11 +295,7 @@ struct ConnectionTrail: View {
                     if !heard.isEmpty { Text("Entendí: «\(heard)» · no se mandó").recipe(.caption, color: DS.textMuted).lineLimit(1) }
                 }
                 Spacer(minLength: DS.Space.s2)
-                Button(action: close) {
-                    Image(systemName: "xmark").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
-                        .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain).accessibilityLabel(Text("Cerrar"))
+                DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular, action: close)
             }
             HStack(spacing: DS.Space.s2) {
                 node("iphone", Text("Tu iPhone"), ok: issue != .noInternet)
@@ -335,16 +308,10 @@ struct ConnectionTrail: View {
             .accessibilityLabel(message)
             message.recipe(.footnote, color: DS.text).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: DS.Space.s2) {
-                Button(action: retry) {
-                    Text("Probar otra vez").font(DS.TextRecipe.label.font).foregroundStyle(DS.onPrimary)
-                        .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget).background(DS.primary, in: Capsule())
-                }
-                .buttonStyle(.plain).accessibilityIdentifier("voice-retry")
-                Button(action: check) {
-                    Text("Probar la conexión").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
-                        .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget).background(DS.fill, in: Capsule())
-                }
-                .buttonStyle(.plain).accessibilityIdentifier("voice-check-connection")
+                Button(action: retry) { Text("Probar otra vez").font(DS.TextRecipe.label.font).frame(maxWidth: .infinity) }
+                    .dsPrimaryButton(size: .large).accessibilityIdentifier("voice-retry")
+                Button(action: check) { Text("Probar la conexión").font(DS.TextRecipe.label.font).frame(maxWidth: .infinity) }
+                    .dsSecondaryButton().controlSize(.large).accessibilityIdentifier("voice-check-connection")
             }
         }
     }
@@ -360,17 +327,17 @@ struct ConnectionTrail: View {
 
     private func node(_ symbol: String, _ title: Text, ok: Bool) -> some View {
         VStack(spacing: DS.Space.s1) {
-            Image(systemName: symbol).font(DS.TextRecipe.footnote.font).foregroundStyle(ok ? DS.live : DS.textMuted)
+            Image(systemName: symbol).font(DS.TextRecipe.footnote.font).foregroundStyle(ok ? DS.success : DS.textMuted)
                 .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-                .background((ok ? DS.live.opacity(DesignTokens.Opacity.fill) : DS.fill), in: Circle())
+                .background((ok ? DS.success.opacity(DS.Opacity.selectedFill) : DS.fill), in: Circle())
             title.recipe(.caption, color: DS.textMuted).lineLimit(1)
         }
     }
 
     private func link(failed: Bool) -> some View {
         VStack(spacing: DS.Space.s1) {
-            Rectangle().fill(failed ? DS.danger : DS.live).frame(height: DS.Size.hairline * 2)
-            if failed { Image(systemName: "xmark").font(DS.TextRecipe.badge.font).foregroundStyle(DS.danger) }
+            Rectangle().fill(failed ? DS.danger : DS.success).frame(height: DS.Stroke.regular)
+            if failed { Image(systemName: "xmark").font(DS.TextRecipe.badge.font).foregroundStyle(DS.danger) }   // ds-exception: la ✕ marca el tramo que falló (no es cerrar)
         }
         .frame(maxWidth: .infinity)
     }
