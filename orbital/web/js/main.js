@@ -233,6 +233,7 @@ const ui = {
   calendar: createCalendar({
     load: (month) => api.forYouCalendar(month),
     onPick: (item) => openTitle(item),
+    onEdge: () => { sound.play("error"); rumble("edge"); ui.toast.show("El calendario llega hasta dos años"); },
     onChange: () => renderHints(),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },

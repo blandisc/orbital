@@ -24,6 +24,20 @@ PROBLEM = re.compile(r"\b(WARNING|ERROR|CRITICAL)\b")
 URL = re.compile(r"(https?://[^\s\"']+|stremio:///player/\S+)")
 TAIL_BYTES = 200_000
 MAX_PROBLEMS = 15
+GAMES = {"emulators", "steam", "geforcenow"}  # las categorías del catálogo que son juegos (lo demás: videos, apps, Buscar)
+
+
+def library_counts(items) -> dict[str, int]:
+    """Cuántos juegos por sistema («Nintendo Switch 13», «Steam 116», «GeForce NOW 71»). Solo juegos: los videos (subtítulo
+    «T1 E1 · quedan 48 min») salían como una consola más, y el subtítulo de Steam («Sin instalar · En GeForce NOW»)
+    partía un sistema en varios renglones."""
+    def system(i) -> str:
+        if i.category == "steam":
+            return "Steam"
+        if i.category == "geforcenow":
+            return "GeForce NOW"
+        return (i.subtitle or i.system or i.source).split(" · ")[0]
+    return dict(Counter(system(i) for i in items if i.category in GAMES))
 
 
 def recent_problems(log_path: Path | None, limit: int = MAX_PROBLEMS) -> list[str]:
@@ -61,8 +75,7 @@ def collect(d: Deps) -> dict:
             "alexa": d.alexa_ready,
             "alexa_last": d.alexa_last,
         },
-        # Por consola y en palabras («Nintendo GameCube 2»), sin las entradas fijas (Buscar, apps).
-        "library": dict(Counter((i.subtitle or i.source) for i in items if i.category not in ("media", "apps"))),
+        "library": library_counts(items),  # por sistema y en palabras («Nintendo GameCube 5»), solo juegos
         "running": d.status()["running"],
         "memory": {"free_mb": health.free_ram_mb(), "dwm_shared_mb": dwm[0] if dwm else None,
                    "dwm_dedicated_mb": dwm[1] if dwm else None},

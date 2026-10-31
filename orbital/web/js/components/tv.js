@@ -282,6 +282,9 @@ export function createTv({ onFocus, onPick }) {
     if (!id || id === category || !list.some((c) => c.id === id)) return false;
     category = id;
     grid.dataset.shift = "0";
+    // Y de verdad arriba: con el foco en las categorías keepInView no corre, y la cuadrícula se quedaba corrida lo que
+    // bajaste en la anterior («Orbital 24/7», con 2 canales, se veía vacía).
+    grid.style.transform = "";
     if (!focusId.startsWith("cat:")) focusId = "channel:0";
     replay(main);
     render();

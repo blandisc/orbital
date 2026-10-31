@@ -637,6 +637,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     index = 0;
     states = new Map();
     mount(backdrop); // el arte de la ficha anterior no se funde con este
+    mount(ratings); // ni sus calificaciones (Fargo salía con las de Insidious mientras cargaba)
     shownArt = null;
     fillInfo({ title: info.title, ...(info.extra || {}), art: artOf(null) }); // el fondo elegido aquí gana a lo de `extra`
     mount(tabs);

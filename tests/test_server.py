@@ -168,6 +168,24 @@ def test_diagnostics(make_client, tmp_path):
         assert data["problems"] == ["WARNING no pude abrir https://torrentio.example/…"]  # sin la clave
 
 
+def test_diagnostics_counts_only_games(make_client, monkeypatch):
+    """Diagnóstico › Biblioteca: los videos de Seguir viendo y Películas y series no salen como «consolas» (su subtítulo,
+    «T1 E1 · quedan 48 min», hacía un bloque ilegible en la tele)."""
+    from types import SimpleNamespace as NS
+
+    with make_client() as c:
+        catalog = c.app.state.deps.catalog
+        games = list(catalog.items())
+        videos = [NS(category="continue", subtitle="T1 E1 · quedan 48 min", source="stremio"),
+                  NS(category="movies", subtitle="Película · 2026", source="cinemeta"),
+                  NS(category="series", subtitle="Serie · 2025", source="cinemeta"),
+                  NS(category="stremio", subtitle="Película", source="stremio")]
+        monkeypatch.setattr(catalog, "items", lambda: games + videos)
+        data = c.get("/api/diagnostics").json()
+        assert data["library"]["Steam"] >= 2
+        assert not {v.subtitle for v in videos} & set(data["library"])
+
+
 def test_ui_reload(make_client):
     with make_client() as c:
         assert c.post("/api/ui/reload").json() == {"ok": True}
@@ -319,3 +337,17 @@ def test_a_controller_the_server_cannot_read_keeps_the_ui_reading_and_wakes_it(m
         assert watcher.watch_others is True
         c.post("/api/ui/pad", json={"listening": True})
         assert watcher.watch_others is False
+def test_diagnostics_groups_games_by_system_not_by_subtitle():
+    """Steam partido en «Steam · Sin instalar» y «… · En GeForce NOW»; una app o la tarjeta de Buscar no son juegos."""
+    from types import SimpleNamespace as NS
+
+    from orbital.api.diagnostics import library_counts
+
+    items = [NS(category="steam", subtitle="Steam", system=None, source="steam"),
+             NS(category="steam", subtitle="Steam · Sin instalar · En GeForce NOW", system=None, source="steam"),
+             NS(category="geforcenow", subtitle="GeForce NOW · Epic", system=None, source="geforcenow"),
+             NS(category="emulators", subtitle="Nintendo Switch", system="switch", source="switch"),
+             NS(category="emulators", subtitle="", system="gba", source="gba"),
+             NS(category="apps", subtitle="Steam", system=None, source="steam"),
+             NS(category="media", subtitle="Buscar", system=None, source="search")]
+    assert library_counts(items) == {"Steam": 2, "GeForce NOW": 1, "Nintendo Switch": 1, "gba": 1}

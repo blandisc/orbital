@@ -153,3 +153,11 @@ test("un canal de Orbital dice qué episodio va y a qué hora termina", async ()
   assert.equal(nextLine(next, clock), "A continuación · 9:42 p. m. · T7 E17 · Homero Smithers");
   assert.equal(nextLine(channel, clock), "");
 });
+
+test("cambiar de categoría regresa la cuadrícula arriba aunque el foco esté en las categorías", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../../orbital/web/js/components/tv.js", import.meta.url), "utf8");
+  const body = src.slice(src.indexOf("function setCategory(id)"), src.indexOf("function stepCategory(delta)"));
+  assert.match(body, /grid\.dataset\.shift = "0"/);
+  assert.match(body, /grid\.style\.transform = ""/); // antes solo el dato: la cuadrícula seguía corrida y una categoría corta se veía vacía
+});

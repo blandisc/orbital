@@ -915,6 +915,50 @@ def test_the_small_video_glides_to_the_corner_and_back_with_only_three_buttons(m
     assert not p.pip and placed[-1] == (0, 0, 1920, 1080) and ("set_property", "fullscreen", True) in mpv.sent[-3:]
 
 
+def test_the_small_video_buttons_say_pause_while_it_plays(monkeypatch):
+    """Al llegar a la esquina el video sigue corriendo, pero mpv tarda un instante en confirmar que se quitó la pausa del
+    deslizamiento: los botones salían con ▶ (como en pausa) y no se iban solos. Ahora cuentan con lo que se pidió."""
+    p, mpv = make_player()
+    p.current.process = type("Proc", (), {"poll": lambda self: None, "pid": 1})()
+
+    class SlowMpv(FakeMpv):  # mpv real: la propiedad cambia después, no al pedirla
+        def command(self, *args):
+            self.sent.append(args)
+
+    slow = SlowMpv()
+    slow.props["pause"] = False
+    p.mpv = slow
+
+    class Win:
+        screen_size = staticmethod(lambda: (1920, 1080))
+        place_window = staticmethod(lambda hwnd, x, y, w, h, topmost=True: None)
+        glide_window = staticmethod(lambda hwnd, x, y, w, h: slow.props.__setitem__("pause", True))  # pausado al moverse
+        focus = staticmethod(lambda hwnd: True)
+
+    timers = []
+
+    class Timer:
+        def __init__(self, *a, **kw):
+            self.daemon = True
+            timers.append(self)
+
+        def start(self):
+            pass
+
+        def cancel(self):
+            pass
+
+    monkeypatch.setattr(p, "_window", lambda current: (Win, 7))
+    monkeypatch.setattr(player.time, "sleep", lambda s: None)
+    monkeypatch.setattr(player.threading, "Timer", Timer)
+    monkeypatch.setattr(player.threading, "Thread", lambda target, args=(), **kw: type("T", (), {"start": lambda self: target(*args)})())
+    assert p.enter_pip()
+    assert ("set_property", "pause", False) in slow.sent  # siguió al llegar
+    expected = player.player_ui.pip_ass(False)
+    assert slow.overlays[1] == expected  # ‖ (pausa), no ▶
+    assert timers  # y se van solos a los pocos segundos
+
+
 def test_a_new_file_is_not_mistaken_for_the_end_of_the_previous_one():
     """Recién cargado otro episodio en la misma ventana, mpv tarda un instante en soltar lo del anterior (posición al
     final y «llegó al final»): el nuevo no se da por terminado (antes se cargaba otro encima)."""
@@ -1032,6 +1076,8 @@ def test_mpv_loads_the_mouse_script_next_to_the_bindings(tmp_path):
     cmd = player.build_command("mpv.exe", "http://a", "T", bindings=str(conf))
     assert f"--script={tmp_path / player.MOUSE_SCRIPT_NAME}" in cmd
     assert 'mp.add_forced_key_binding("MBTN_LEFT"' in player.MOUSE_SCRIPT and "orbital-drop" in player.MOUSE_SCRIPT
+    # Con «window-dragging» (el de fábrica de mpv) el botón se suelta al primer movimiento: no se podía arrastrar la bolita.
+    assert "--window-dragging=no" in cmd
 
 
 def test_watching_the_same_video_again_does_not_reload_it():

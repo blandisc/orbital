@@ -151,3 +151,20 @@ def test_not_today_survives_a_restart_and_expires(tmp_path):
     assert State(path).skipped(24 * 3600, now=1000 + 3600) == {"tt0903747"}
     assert State(path).skipped(24 * 3600, now=1000 + 25 * 3600) == set()
     assert State(path).skipped(24 * 3600, now=1000) == set()  # ya se olvidó y se guardó así
+
+
+def test_the_iphone_in_accounts_survives_a_restart(tmp_path):
+    """companion_devices es un diccionario: al cargar se tiraba (solo se aceptaban valores simples) y cada reinicio de
+    Orbital borraba el iPhone de Ajustes › Cuentas."""
+    path = tmp_path / "state.json"
+    phone = {"D8D5A365": {"name": "iPhone", "kind": "iphone", "seen": 1793383409.75}}
+    State(path).set_setting("companion_devices", phone)
+    assert State(path).settings().get("companion_devices") == phone
+
+
+def test_a_broken_device_list_is_dropped_on_load(tmp_path):
+    import json
+    path = tmp_path / "state.json"
+    for bad in ({"x": {"name": "iPhone", "kind": "iphone", "seen": "ayer"}}, {"x": "iPhone"}, ["iPhone"]):
+        path.write_text(json.dumps({"settings": {"companion_devices": bad}}), encoding="utf-8")
+        assert "companion_devices" not in State(path).settings()

@@ -1,5 +1,5 @@
 import { h, hideAfterExit, mount } from "../core/dom.js";
-import { genres as genreNames, runtime } from "../core/format.js";
+import { duration, genres as genreNames } from "../core/format.js";
 import { Card } from "./card.js";
 import { Pill, ScreenHead } from "./ui.js";
 
@@ -17,6 +17,14 @@ const QUESTIONS = [
   { id: "kind", label: "Qué", options: [["", "Todo"], ["series", "Series"], ["movie", "Películas"]] },
 ];
 const TIME_LEAD = { short: "media hora", hour: "una hora", long: "dos horas o más" };
+
+/** La línea de datos de una propuesta: por qué · cuánto dura · IMDb · géneros · en qué episodio vas. */
+export function pickFacts(p) {
+  const minutes = p.minutes ? duration(p.minutes * 60) : ""; // «42 min» (runtime() espera el texto «42 min»: daba «2520»)
+  return [p.why, p.kind === "series" ? (minutes ? `${minutes} por episodio` : "Serie") : minutes,
+    p.imdb_rating ? `IMDb ${p.imdb_rating}` : "", genreNames(p.genres || []).slice(0, 2).join(", "),
+    p.episode ? `Sigue ${p.episode}` : ""].filter(Boolean).join(" · ");
+}
 
 export function createDecide({ load, skip, onPick, onMove, onClose, onChange = () => {} }) {
   const lead = h("p", { class: "decide__lead" });
@@ -50,10 +58,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
   function paintAbout() {
     const p = picks[index];
     name.textContent = p?.title || "";
-    const minutes = p?.minutes ? runtime(p.minutes * 60) : "";
-    why.textContent = p ? [p.why, p.kind === "series" ? (minutes ? `${minutes} por episodio` : "Serie") : minutes,
-      p.imdb_rating ? `IMDb ${p.imdb_rating}` : "", genreNames(p.genres || []).slice(0, 2).join(", "),
-      p.episode ? `Sigue ${p.episode}` : ""].filter(Boolean).join(" · ") : "";
+    why.textContent = p ? pickFacts(p) : "";
     overview.textContent = p?.overview || "";
   }
 

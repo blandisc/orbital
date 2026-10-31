@@ -27,6 +27,14 @@ export const SORTS = [
 const KIND_LABEL = { series: "Series", movie: "Películas" };
 const sortKey = (id) => `orbital.list.sort.${id}`;
 
+/** Elegir un orden: el que ya estaba puesto se quita (vuelve a «default»). Se recuerda lo que QUEDA puesto: antes se
+ * guardaba el que se pidió, y al quitarlo y reabrir la lista volvía el que quitaste. */
+export function chooseSort(listId, current, id) {
+  const next = current === id ? "default" : id;
+  storage.set(sortKey(listId), next);
+  return next;
+}
+
 export function createListScreen({ onPick, onMore, onSort, onMove, onClose, ratings, watched }) {
   const media = h("span", { class: "list-screen__media", "aria-hidden": "true" });
   const title = h("h2", { class: "list-screen__title" });
@@ -250,8 +258,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     /** Sus pestañas ya son Series · Películas (entonces el filtro de tipo sobra). */
     get kindTabs() { return !!list?.tabs.some((t) => t.id === "series" || t.id === "movie"); },
     async setSort(id) {
-      settings.sort = settings.sort === id ? "default" : id; // el que ya estaba puesto se quita
-      storage.set(sortKey(list.id), id);
+      settings.sort = chooseSort(list.id, settings.sort, id);
       if (id === "imdb") {
         const ids = (loaded.get(tab) || []).filter((i) => imdb[i.meta_id] == null).map((i) => ({ kind: i.kind, meta_id: i.meta_id }));
         if (ids.length) Object.assign(imdb, await ratings?.(ids).catch(() => ({})) ?? {});

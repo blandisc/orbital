@@ -678,6 +678,7 @@ class OrbitalPlayer(PlayerScreen):
         was_paused = bool(self._value("pause"))
         if not was_paused:
             self.mpv.command("set_property", "pause", True)
+            self._ask("pause", True)
         started = time.monotonic()
         try:
             while still():
@@ -692,6 +693,9 @@ class OrbitalPlayer(PlayerScreen):
         finally:
             if not was_paused:
                 self.mpv.command("set_property", "pause", False)
+                # Lo que se acaba de pedir: mpv lo confirma un instante después y los botones de la esquina (que se
+                # dibujan justo al llegar) salían con ▶ y sin irse solos, con el video ya corriendo.
+                self._ask("pause", False)
 
     def _to_corner(self, current) -> None:
         windows, hwnd = self._window(current)
