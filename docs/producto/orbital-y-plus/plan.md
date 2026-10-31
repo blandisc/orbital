@@ -8,6 +8,7 @@ Pedido de Fernando (30 oct 2026): dos objetivos grandes.
 Y con eso, el plan de **Orbital** (la de la App Store) y **Orbital Plus** (la tuya y de tu gente).
 
 Página para el celular, con maquetas animadas de la guía: `plan.html` · https://claude.ai/artifact/2MpFUywvBVqD4ZuGNSQ34G
+Maquetas finales e interactivas de la guía (30 oct, noche): `guia-maquetas.html` · https://claude.ai/artifact/B1S8D8r5aRBTxTan6FGbd3
 Antecedentes: `docs/producto/desacoplar-stremio/avance.md` (cortes A a E ya en `main`) y la sección 6 «Distribuir Orbital»
 de `docs/producto/muvy-busqueda-premios/propuesta.html` (dos apps del mismo código, nunca una app con algo escondido).
 
