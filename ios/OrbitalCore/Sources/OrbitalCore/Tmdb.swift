@@ -26,7 +26,7 @@ public struct Translation: Sendable, Equatable {
 
 public struct PlatformInfo: Sendable, Equatable { public var id: Int; public var logo: String? }
 
-public struct TmdbDetails: Sendable, Equatable {
+public struct TmdbDetails: Sendable, Equatable, Codable {
     public var kind: String, tmdbID: Int?, imdb: String?, title: String, year: Int?, overview: String
     public var runtime: Int?, seasons: Int?, episodes: Int?, poster: String?, backdrop: String?
 }
@@ -129,7 +129,19 @@ public struct Tmdb: Sendable {
         (3172, "Blumhouse"), (521, "DreamWorks Animation"), (90733, "NEON"),
     ]
 
+    /// Lo que ya se pidió (14 días, en disco): cada título de Temporadas, Plataformas y Estudios pide sus detalles para saber
+    /// su IMDb, y eran ~260 peticiones en cada arranque (Fernando, 31 oct 2026: «está muy lenta»). nil (pruebas): sin memoria.
+    nonisolated(unsafe) public static var detailsMemo: TmdbDetailsMemo?
+
     public func details(kind: String, tmdbID: Int) async throws -> TmdbDetails {
+        let memoKey = "\(language):\(kind):\(tmdbID)"
+        if let memo = Self.detailsMemo, let hit = await memo.get(memoKey) { return hit }
+        let fresh = try await fetchDetails(kind: kind, tmdbID: tmdbID)
+        if let memo = Self.detailsMemo, fresh.imdb != nil { await memo.set(memoKey, fresh) }
+        return fresh
+    }
+
+    private func fetchDetails(kind: String, tmdbID: Int) async throws -> TmdbDetails {
         let raw = try await get("/\(Tmdb.kinds[kind] ?? "movie")/\(tmdbID)", [("append_to_response", "external_ids")])
         let imdb = raw["imdb_id"]?.nonEmptyString ?? raw["external_ids"]?["imdb_id"]?.nonEmptyString
         func year(_ s: String?) -> Int? { s.flatMap { $0.count >= 4 ? Int($0.prefix(4)) : nil } }
@@ -405,5 +417,50 @@ public actor Localizer {
             })
         }
         return .object(out)
+    }
+}
+
+
+/// La memoria en disco de `Tmdb.details`: un archivo JSON con lo pedido y cuándo; lo de más de `ttl` se vuelve a pedir.
+public actor TmdbDetailsMemo {
+    private struct Entry: Codable { var at: Date; var value: TmdbDetails }
+    private let file: URL
+    private let ttl: TimeInterval
+    private var entries: [String: Entry]?
+    private var dirty = 0
+    private var saving = false
+
+    public init(file: URL, ttl: TimeInterval = 14 * 86400) { self.file = file; self.ttl = ttl }
+
+    private func load() -> [String: Entry] {
+        if let entries { return entries }
+        let read = (try? Data(contentsOf: file)).flatMap { try? JSONDecoder().decode([String: Entry].self, from: $0) } ?? [:]
+        let now = Date()
+        let alive = read.filter { now.timeIntervalSince($0.value.at) < ttl }
+        entries = alive
+        return alive
+    }
+
+    public func get(_ key: String) -> TmdbDetails? {
+        guard let e = load()[key], Date().timeIntervalSince(e.at) < ttl else { return nil }
+        return e.value
+    }
+
+    public func set(_ key: String, _ value: TmdbDetails) {
+        var all = load()
+        all[key] = Entry(at: Date(), value: value)
+        entries = all
+        dirty += 1
+        // Se escribe de a poco (no en cada título): un segundo después del último cambio.
+        guard !saving else { return }
+        saving = true
+        Task { try? await Task.sleep(nanoseconds: 1_000_000_000); self.flush() }
+    }
+
+    private func flush() {
+        saving = false
+        guard dirty > 0, let entries, let data = try? JSONEncoder().encode(entries) else { return }
+        dirty = 0
+        try? data.write(to: file, options: .atomic)
     }
 }

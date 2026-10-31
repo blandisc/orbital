@@ -43,6 +43,13 @@ public final class RepisaModel: ObservableModel {
                     case .trakt:
                         guard let trakt else { return (list.id, nil) }
                         return (list.id, try? await Canon.list(trakt: trakt, user: list.user, slug: list.slug))
+                    case .mine:
+                        // Una de tus listas, por su nombre: se copia en orden y ya no se vuelve a pedir (ver `cached`).
+                        guard let trakt, let own = try? await trakt.ownLists().first(where: { Canon.matches($0.name, list.source) }),
+                              let entries = try? await trakt.listItems(own.id) else { return (list.id, nil) }
+                        var seen = Set<String>()
+                        return (list.id, entries.filter { $0.imdb.hasPrefix("tt") && seen.insert($0.imdb).inserted }.enumerated()
+                            .map { i, e in .init(imdb: e.imdb, kind: e.kind, title: e.title, year: e.year, rank: i + 1) })
                     }
                 }
             }
@@ -77,7 +84,9 @@ public final class RepisaModel: ObservableModel {
 
     private func cached(_ id: String, fresh: Bool) -> [CanonCollection.Item]? {
         guard let data = services.kv.data(Self.cacheKey(id)), let saved = try? JSONDecoder().decode(Cached.self, from: data) else { return nil }
-        if fresh, clock().timeIntervalSince(saved.at) > Self.listTTL { return nil }
+        // Las que vienen de tus listas se quedan fijas: no caducan.
+        let fixed = Canon.lists.first { $0.id == id }.map { if case .mine = $0.source { true } else { false } } ?? false
+        if fresh, !fixed, clock().timeIntervalSince(saved.at) > Self.listTTL { return nil }
         return saved.rows.compactMap { r in
             guard r.count == 5 else { return nil }
             return .init(imdb: r[0], kind: r[1], title: r[2], year: Int(r[3]), rank: Int(r[4]))

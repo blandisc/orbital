@@ -61,6 +61,35 @@ final class MosaicUITests: XCTestCase {
         }
     }
 
+    /// Fernando, 31 oct 2026: «entras y sales y se queda negro». Con la animación de reposo (como en su iPhone): entrar,
+    /// esperar a que se ponga en reposo, salir (a las listas, a otra pestaña, a una ficha) y volver.
+    func testMosaicComesBackAfterLeaving() {
+        app.launchArguments = ["-demo", "-demo-tab", "1", "-demo-mode", "lists", "-demo-appearance", "dark"]
+        app.launch()
+        let walk = app.buttons["paraTi-walk-mosaic"]
+        func snap(_ name: String) { let a = XCTAttachment(screenshot: app.screenshot()); a.name = name; a.lifetime = .keepAlways; add(a) }
+        XCTAssertTrue(walk.waitForExistence(timeout: 20)); walk.tap()
+        XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 20)); sleep(9); snap("1-reposo")
+        app.buttons["paraTi-back"].tap(); sleep(1)
+        XCTAssertTrue(walk.waitForExistence(timeout: 10)); walk.tap(); sleep(2); snap("2-vuelta-listas")
+        app.tabBars.buttons.element(boundBy: 0).tap(); sleep(2)
+        app.tabBars.buttons.element(boundBy: 1).tap(); sleep(2); snap("3-vuelta-pestana")
+        if let tile = tiles.allElementsBoundByIndex.first(where: \.isHittable) { tile.tap(); sleep(1); tile.tap(); sleep(3)
+            app.navigationBars.buttons.element(boundBy: 0).tap(); sleep(2); snap("4-vuelta-ficha") }
+    }
+
+    /// El muro de pósters detrás de «Para ti» sigue ahí después de pasear por el mosaico (se quedaba negro).
+    func testCoverWallAfterWalking() {
+        app.launchArguments = ["-demo", "-demo-trakt", "-demo-tmdb", "-demo-tab", "1", "-demo-mode", "lists", "-demo-appearance", "dark"]
+        app.launch()
+        let walk = app.buttons["paraTi-walk-mosaic"]
+        func snap(_ name: String) { let a = XCTAttachment(screenshot: app.screenshot()); a.name = name; a.lifetime = .keepAlways; add(a) }
+        XCTAssertTrue(walk.waitForExistence(timeout: 30)); sleep(3); snap("a-listas")
+        walk.tap(); XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 20)); sleep(3)
+        app.buttons["paraTi-back"].tap(); sleep(3); snap("b-de-vuelta")
+        sleep(5); snap("c-despues")
+    }
+
     func testDraggingUpScrollsTheMosaicDown() {
         launch()
         let p = probe()

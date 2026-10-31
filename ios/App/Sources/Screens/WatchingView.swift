@@ -43,6 +43,8 @@ struct WatchingView: View {
     let onOpenTitle: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
     @State private var wrapped: WatchingStats.Period?
+    /// Lo que calificaste: todo (0) o con un número de estrellas (1…5).
+    @State private var rated: RatedRoute?
 
     var body: some View {
         let model = env.watching
@@ -77,6 +79,7 @@ struct WatchingView: View {
         .task { await model.load(full: true) }   // aquí sí, los diez años (la tarjeta solo pidió la semana)
         .refreshable { await model.load(full: true, force: true) }
         .onChange(of: env.watchedSomething) { Task { await model.load(full: true, force: true) } }   // terminaste de ver algo: al día
+        .navigationDestination(item: $rated) { r in WatchingRatedView(stars: r.stars, items: ratedItems(), onOpenTitle: onOpenTitle) }
         .fullScreenCover(item: $wrapped) { p in WrappedView(stats: model.stats(p), language: language) { wrapped = nil } }
     }
 
@@ -90,8 +93,8 @@ struct WatchingView: View {
             }
             ArtVeil(at: DS.Watching.veilFrom, strength: .deep)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                // El periodo y tus horas en azul (Fernando, 31 oct 2026), el mismo azul del calendario.
-                periodPhrase(s.period).recipe(.footnote, color: DS.orbitalBlue).fontWeight(.semibold).lineLimit(1)   // un dato, no un porqué
+                // Solo tus horas en azul (Fernando, 31 oct 2026); el periodo, en el gris del arte.
+                periodPhrase(s.period).recipe(.footnote, color: DS.onArtSecondary).fontWeight(.semibold).lineLimit(1)
                 Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.orbitalBlue)
                     .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
                 heroFacts(s).recipe(.footnote, color: DS.onArtSecondary).lineLimit(2)
@@ -155,7 +158,9 @@ struct WatchingView: View {
         let mine = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil }
         let all = Array(mine.values)
         if !all.isEmpty {
-            section(Text("Cómo calificas")) {
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                // A la derecha, todo lo que calificaste (Fernando, 31 oct 2026); tocar una barra, los de ese número.
+                DSSectionHead(title: Text("Cómo calificas"), action: { rated = RatedRoute(stars: 0) }, chevron: true, level: .section)
                 let five = fiveStars(mine)
                 if !five.isEmpty {
                     DSSectionHead(title: Text("Tus 5 estrellas"), count: five.count, eyebrow: Text("Lo que más te gustó"))
@@ -163,11 +168,23 @@ struct WatchingView: View {
                         .accessibilityIdentifier("watching-five-stars")
                 }
                 let counts = (1...5).map { star in all.filter { Int((RatingScale.stars(trakt: $0)).rounded(.up)) == star }.count }
-                WatchingBars(values: counts, labels: (1...5).map { "\($0)★" })
+                WatchingBars(values: counts, labels: (1...5).map { "\($0)★" }) { i in rated = RatedRoute(stars: i + 1) }
+                    .accessibilityIdentifier("watching-rating-bars")
                 Text("Tu promedio: \(String(format: "%.1f", all.map { RatingScale.stars(trakt: $0) }.reduce(0, +) / Double(all.count))) estrellas")
                     .recipe(.footnote, color: DS.textMuted)
             }
         }
+    }
+
+    /// Todo lo que calificaste y está en tu historial (de ahí salen su nombre y si es serie), con sus estrellas.
+    private func ratedItems() -> [WatchingRatedView.Item] {
+        let mine = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil }
+        var seen = Set<String>(), out: [WatchingRatedView.Item] = []
+        for play in env.watching.plays.sorted(by: { $0.at > $1.at }) where seen.insert(play.imdb).inserted {
+            guard let trakt = mine[play.imdb] else { continue }
+            out.append(.init(id: play.imdb, title: play.title, kind: play.kind, stars: Int(RatingScale.stars(trakt: trakt).rounded(.up))))
+        }
+        return out
     }
 
     /// Lo que calificaste con 5 y está en tu historial (de ahí salen su nombre y si es serie), de lo más reciente a lo más viejo.
@@ -187,6 +204,48 @@ struct WatchingView: View {
     private func label(_ d: Date, _ p: WatchingStats.Period) -> String {
         let style: Strings.DateStyle = switch p { case .week: .weekdayInitial; case .month: .dayNumber; case .year: .monthInitial; case .all: .yearShort }
         return Strings.date(d, style, language: env.services.appSettings.uiLanguage)
+    }
+}
+
+/// Abrir lo que calificaste: `stars` 0 es todo; 1…5, solo con ese número.
+struct RatedRoute: Hashable, Identifiable { let stars: Int; var id: Int { stars } }
+
+/// Lo que calificaste, en pósters, del 5 al 1 (o solo un número de estrellas). Tocar uno abre su ficha.
+struct WatchingRatedView: View {
+    struct Item: Identifiable { let id: String; let title: String; let kind: String; let stars: Int }
+    let stars: Int
+    let items: [Item]
+    let onOpenTitle: (TitleRoute) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+                ForEach((stars == 0 ? Array((1...5).reversed()) : [stars]), id: \.self) { star in
+                    let group = items.filter { $0.stars == star }
+                    if !group.isEmpty {
+                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                            DSSectionHead(title: Text(verbatim: String(repeating: "★", count: star)), count: group.count, level: .section)
+                            DSPosterGrid(items: group) { item, width in
+                                Button {
+                                    onOpenTitle(TitleRoute(kind: item.kind, metaID: item.id, title: item.title, poster: String(format: ForYou.metahubPoster, item.id)))
+                                } label: {
+                                    PosterView(url: String(format: ForYou.metahubPoster, item.id), title: item.title).frame(width: width)
+                                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(Text(verbatim: item.title))
+                            }
+                        }
+                    }
+                }
+                if items.filter({ stars == 0 || $0.stars == stars }).isEmpty {
+                    DSEmptyState(symbol: "star", title: Text("Nada con esa calificación"), message: Text("Lo que califiques en Trakt aparece aquí."))
+                }
+            }
+            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
+        }
+        .background(Backdrop())
+        .navigationTitle(stars == 0 ? Text("Lo que calificaste") : Text("Con \(stars) estrellas"))
     }
 }
 

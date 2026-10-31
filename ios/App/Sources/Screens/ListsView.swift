@@ -106,12 +106,6 @@ struct ListsView: View {
                     let walls = (model.mosaic.isEmpty ? generalShelves.flatMap { model.items(for: $0) } : model.mosaic).map(\.poster)
                     if !walls.isEmpty { MosaicCover(posters: walls) { model.mode = .mosaic }.perfTag("paraTi.hero") }
                     // Sin los círculos de íconos (Fernando, 31 oct 2026): el menú de arriba a la derecha lleva a cada sección.
-                    // La puerta de «Lo que ves», arriba y a la vista (antes al final de todo): tu semana en grande.
-                    if collections.model.traktLinked {
-                        WatchingCardLoader().accessibilityIdentifier("paraTi-your-year")
-                            .padding(.horizontal, DS.Space.gutter)
-                            .modifier(SectionSpy(section: .yourYear, active: $activeSection))
-                    }
                     // Sin pósters (sin TMDB ni Trakt) la tarjeta quedaría vacía: el dado de la barra sigue abriendo «Decide por mí».
                     let fan = Array(walls.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.matchFan))
                     if !fan.isEmpty { MatchTeaser(posters: fan, onOpen: onMatch) }
@@ -167,6 +161,13 @@ struct ListsView: View {
                         }
                     }
                     if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
+                    // La puerta de «Lo que ves», al final, justo antes de tus listas (Fernando, 31 oct 2026).
+                    if collections.model.traktLinked {
+                        WatchingCardLoader().accessibilityIdentifier("paraTi-your-year")
+                            .padding(.horizontal, DS.Space.gutter)
+                            .padding(.vertical, DS.Space.s5)
+                            .modifier(SectionSpy(section: .yourYear, active: $activeSection))
+                    }
                     // Las listas: las tuyas de Trakt y las de tus complementos, con el mismo rótulo.
                     if !traktLists.isEmpty {
                         listRows(label: CollectionSection.trakt.title, symbol: CollectionSection.trakt.symbol, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection))
@@ -308,7 +309,7 @@ struct ListsView: View {
                 .accessibilityIdentifier("season-now")
                 .task { await collections.model.loadSeason(now.season.slug) }
             }
-            DSSectionHead(title: Text("Próximas temporadas"), eyebrow: Text("De la más cercana a la más lejana")).padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: Text("Próximas temporadas")).padding(.horizontal, DS.Space.gutter)   // ds-exception: sin porqué, Fernando lo pidió (31 oct 2026)
                 .padding(.top, DS.Space.s3)
             CenteredCarousel(items: countdown.dropFirst().map(\.season), id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { season in
                 let name = Strings.tr(season.title, language: language)

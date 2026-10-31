@@ -4,7 +4,7 @@ import OrbitalModels
 
 /// Los grupos de Para ti › Listas, en orden (el menú «Ir a una sección» los lista así).
 enum CollectionSection: CaseIterable, Hashable {
-    case forYou, platforms, studios, seasons, genres, awards, years, trakt, addons, yourYear
+    case forYou, platforms, studios, seasons, genres, awards, years, yourYear, trakt, addons
     var title: Text {
         switch self {
         case .forYou: Text("Lo que se ve hoy"); case .trakt: Text("Tus listas"); case .addons: Text("Complementos")

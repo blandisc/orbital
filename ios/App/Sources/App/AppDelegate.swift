@@ -8,6 +8,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Se registra antes de que termine de arrancar la app (lo exige iOS).
         ImagePipeline.shared.preconnect()   // lo primero: la conexión con las imágenes, mientras arranca lo demás
+        // Los detalles de TMDB que ya se pidieron, en disco: no se piden otra vez en cada arranque.
+        if let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            Tmdb.detailsMemo = TmdbDetailsMemo(file: caches.appendingPathComponent("tmdb-details.json"))
+        }
         InboxBackgroundTask.register()
         ReleaseNotifier.register()
         OrbitalShortcuts.updateAppShortcutParameters()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)

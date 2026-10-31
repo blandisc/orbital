@@ -45,4 +45,13 @@ final class CanonTests: XCTestCase {
         XCTAssertEqual(items.map(\.kind), ["movie", "series"])
         XCTAssertEqual(items.first?.year, 1994)
     }
+
+    /// Las películas del NYT salen de tu lista de Trakt, la encuentra por su nombre (y no confunde la de series).
+    func testFindsYourNYTMoviesListByName() {
+        guard let source = Canon.lists.first(where: { $0.id == "nyt-movies" })?.source else { return XCTFail("falta la lista") }
+        XCTAssertTrue(Canon.matches("New York Times' 100 Best Movies of the 21st Century", source))
+        XCTAssertTrue(Canon.matches("NYT · Películas del siglo", source))
+        XCTAssertFalse(Canon.matches("The 100 Best TV Shows of the 21st Century (According to The New York Times)", source))
+        XCTAssertFalse(Canon.matches("Mi lista", source))
+    }
 }

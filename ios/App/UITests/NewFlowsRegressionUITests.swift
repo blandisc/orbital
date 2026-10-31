@@ -169,6 +169,7 @@ final class NewFlowsRegressionUITests: XCTestCase {
         shot("colecciones")
         shelf.tap()
         XCTAssertTrue(app.navigationBars.element(boundBy: 0).waitForExistence(timeout: 10), "abre una colección")
+        sleep(4)   // los pósters ya cargaron (Fernando, 31 oct 2026: en el Óscar no salía ninguno)
         shot("coleccion")
     }
 

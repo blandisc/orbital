@@ -12,6 +12,8 @@ struct MosaicCover: View {
     let onWalk: () -> Void
     @State private var order: [String] = []
     @State private var onScreen = true
+    /// El muro de la última vez (de qué pósters salió y su orden): sobrevive a que la pantalla se vuelva a armar.
+    @MainActor private static var remembered: (source: [String], order: [String]) = ([], [])
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -27,20 +29,30 @@ struct MosaicCover: View {
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
-            .overlay(alignment: .bottomLeading) {
-                // Solo el botón (Fernando, 31 oct 2026: fuera «Todas las formas de encontrar qué ver»), pegado al pie de la
-                // portada para que quede más cerca de los círculos.
-                Button(action: onWalk) { Label("Pasear por el mosaico", systemImage: "square.grid.3x3.fill") }
-                    .dsPrimaryButton()
-                    .accessibilityIdentifier("paraTi-walk-mosaic")
-                    .padding(.horizontal, DS.Space.gutter)
+            .overlay(alignment: .bottomTrailing) {
+                // El ícono del mosaico abajo a la derecha, negro sobre blanco (Fernando, 31 oct 2026: en vez de «Pasear por
+                // el mosaico»).
+                Button(action: onWalk) {
+                    Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.cardTitle.font.weight(.semibold))
+                        .foregroundStyle(DS.backdropDeep)
+                        .frame(width: DS.ParaTiB.walkButton, height: DS.ParaTiB.walkButton)
+                        .background(DS.paper, in: Circle())
+                        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Pasear por el mosaico"))
+                .accessibilityIdentifier("paraTi-walk-mosaic")
+                .padding(.horizontal, DS.Space.gutter)
             }
             .onScrollVisibilityChange(threshold: DS.ParaTiB.coverVisibleFrom) { onScreen = $0 }
-            // Otro muro cada vez que se arma la pantalla (y cuando llegan más pósters), no siempre los mismos 36.
-            .onChange(of: posters.count, initial: true) {
+            // Otro muro cuando llegan otros pósters; al volver del mosaico, el mismo de antes (Fernando, 31 oct 2026: revolverlo
+            // otra vez pedía pósters nuevos y el muro se quedaba negro unos segundos).
+            .onChange(of: posters, initial: true) {
+                if Self.remembered.source == posters, !Self.remembered.order.isEmpty { order = Self.remembered.order; return }
                 // Revueltos y, si son pocos, repetidos hasta llenar el muro (al jalar para actualizar no queda hueco arriba).
                 let pool = posters.shuffled()
                 order = pool.isEmpty ? [] : (0..<DS.ParaTiB.coverPosters).map { pool[$0 % pool.count] }
+                Self.remembered = (posters, order)
             }
     }
 
@@ -55,9 +67,17 @@ struct MosaicCover: View {
         }
     }
 
+    /// Un muro fijo (no perezoso): girado y más alto que su marco dentro del desplazamiento de la página, una rejilla perezosa
+    /// no sabía qué piezas se veían y las armaba tarde (al volver del mosaico se quedaba negro unos segundos).
     private var wall: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DS.ParaTiB.coverColumns), spacing: DS.Space.s2) {
-            ForEach(Array(order.enumerated()), id: \.offset) { _, url in PosterView(url: url, title: "") }
+        let columns = DS.ParaTiB.coverColumns
+        let rows = stride(from: 0, to: order.count, by: columns).map { Array(order[$0..<min($0 + columns, order.count)]) }
+        return VStack(spacing: DS.Space.s2) {
+            ForEach(rows.indices, id: \.self) { r in
+                HStack(spacing: DS.Space.s2) {
+                    ForEach(rows[r].indices, id: \.self) { c in PosterView(url: rows[r][c], title: "", maxPoints: DS.Image.mosaic) }
+                }
+            }
         }
         .frame(width: DS.ParaTiB.coverWall)
         .rotationEffect(.degrees(DS.ParaTiB.coverTilt))

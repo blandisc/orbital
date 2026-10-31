@@ -126,6 +126,9 @@ final class DesignTests: XCTestCase {
                     while depth > 0, end < chars.count { if chars[end] == "(" { depth += 1 } else if chars[end] == ")" { depth -= 1 }; end += 1 }
                     let call = String(chars[start..<end])
                     let line = chars[..<start].filter { $0 == "\n" }.count + 1
+                    // Una excepción marcada en su renglón (`ds-exception: motivo`) se respeta.
+                    let lineEnd = chars[end...].firstIndex(of: "\n") ?? chars.count
+                    if String(chars[end..<lineEnd]).contains("ds-exception:") { continue }
                     let section = call.contains("level: .section"), reason = call.contains("eyebrow:") || call.contains("meta:")
                     if section && reason { problems.append("\(file.lastPathComponent):\(line): una sección no lleva porqué (lo que explica va en el cuerpo)") }
                     if !section && !reason { problems.append("\(file.lastPathComponent):\(line): una subsección lleva su porqué en turquesa (eyebrow:)") }

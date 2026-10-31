@@ -302,6 +302,7 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 |---|---|---|
 | logotipo en mayúsculas | `collection-card.js` (`AwardWordmark`, `SourceBadge`), `hero.js` y `list-screen.js` (el nombre de un premio) | Un premio (ÓSCAR, EMMY) y el sello de origen (TRAKT, STREMIO, ORBITAL) son **logotipos**, como en el iPhone: el JS los pone en mayúsculas (con `--tracking-award` / `--tracking-label`). No es una etiqueta de la interfaz. |
 | iniciales de un canal sin logo | `core/tv.js` | Las iniciales dentro del círculo de un canal sin logo (como el avatar de una persona) van en mayúsculas. |
+| sin porqué, Fernando lo pidió | iPhone, `ListsView.swift` («Próximas temporadas») | Fernando pidió el título solo, sin la línea turquesa (31 oct 2026). `DesignTests` respeta la marca en el renglón del encabezado. Se revisa con la propuesta de secciones y subsecciones. |
 
 (Antes de agregar una, intenta un token o una pieza nueva.)
 

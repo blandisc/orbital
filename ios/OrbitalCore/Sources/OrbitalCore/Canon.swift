@@ -62,15 +62,25 @@ public struct CanonCollection: Sendable, Equatable, Identifiable {
 }
 
 public enum Canon {
-    /// De dónde sale una lista famosa: MDBList (su JSON público) o una lista pública de Trakt (con la llave de la app).
-    public enum ListSource: Sendable { case mdblist, trakt }
+    /// De dónde sale una lista famosa: MDBList (su JSON público), una lista pública de Trakt (con la llave de la app) o una de
+    /// tus listas de Trakt, elegida por su nombre (cada grupo de palabras debe tener al menos una en el nombre; `none`, ninguna).
+    /// Una tuya se copia una vez y se queda fija: ya no depende de que la cambies o la borres.
+    public enum ListSource: Sendable, Equatable { case mdblist, trakt, mine(all: [[String]], none: [String]) }
+
+    /// ¿Este nombre de lista es el que busca `source`? (sin importar mayúsculas ni acentos)
+    public static func matches(_ name: String, _ source: ListSource) -> Bool {
+        guard case .mine(let all, let none) = source else { return false }
+        let n = name.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+        return all.allSatisfy { group in group.contains { n.contains($0) } } && !none.contains { n.contains($0) }
+    }
     /// Las listas famosas (públicas): usuario, lista, cuántos títulos tiene, cómo se agrupa y de dónde sale.
     /// Las del New York Times (Fernando, 31 oct 2026): las 100 mejores películas y las 100 mejores series del siglo XXI. Las
-    /// series, en MDBList; las películas, en una copia pública de Trakt (MDBList no la tiene).
+    /// series, en MDBList; las películas, de tu lista de Trakt (MDBList no la tiene).
     public static let lists: [(id: String, user: String, slug: String, total: Int, grouping: CanonCollection.Grouping, source: ListSource)] = [
         ("criterion", "pizzadeath", "the-criterion-collection", 1000, .releaseDecade, .mdblist),
         ("top250", "georgenilas", "imdb-top-250", 250, .rank, .mdblist),
-        ("nyt-movies", "tojocass", "new-york-times-100-best-movies-of-the-21st-century-copy", 100, .rank, .trakt),
+        // Las películas, de tu lista de Trakt (Fernando, 31 oct 2026), copiadas una vez y fijas.
+        ("nyt-movies", "", "", 100, .rank, .mine(all: [["york", "nyt"], ["movie", "pelicula", "film"]], none: ["tv", "serie", "show"])),
         ("nyt-series", "amything", "the-100-best-tv-shows-of-the-21st-century-according-to-the-new-york-times", 100, .rank, .mdblist),
     ]
 

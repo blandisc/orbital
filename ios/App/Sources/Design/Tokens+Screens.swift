@@ -191,6 +191,8 @@ extension DS {
         /// La dona de géneros: su tamaño, el hueco (proporción), la separación entre rebanadas, el ancho del texto del centro
         /// (parte del hueco), el punto de la leyenda y un color por género (los de las listas, de brillo parecido).
         static let donut: CGFloat = 132, donutHole = 0.62, donutGap: CGFloat = 1.5, donutLabel: CGFloat = 0.9, genreDot: CGFloat = 8
+        /// Lo apagado de las rebanadas que no tocaste y el alto de cada renglón de la leyenda (se tocan).
+        static let genreDim = 0.35, genreRow: CGFloat = 28
         static let genreColors = [DS.ListTint.series, DS.ListTint.trend, DS.ListTint.calendar, DS.ListTint.watching, DS.ListTint.spark]
         /// «Tus 5 estrellas»: el ancho de cada póster y lo que cuenta como 5 (en Trakt, 9 y 10).
         static let starPoster: CGFloat = 92, fiveStars = 9
@@ -212,6 +214,8 @@ extension DS {
         /// El negro de un objeto (el estuche, la placa): un poco más claro arriba, como con luz de vitrina.
         static let objectFill = LinearGradient(colors: [DS.surfaceRaised, DS.backdropDeep], startPoint: .top, endPoint: .bottom)
         static let seal: CGFloat = 0.2, plaqueNumber: CGFloat = 0.3, frame: CGFloat = 2, sheen = 0.35
+        /// La claqueta de las películas del NYT: un poco más ancha y baja que el periódico, su barra, sus rayas y qué tan abierta.
+        static let clapperWide: CGFloat = 1.2, clapperTall: CGFloat = 0.8, clapperBar: CGFloat = 0.14, clapperStripes = 6, clapperOpen: Double = -12
         static let paperWidth: CGFloat = 0.66, paperHeight: CGFloat = 0.86, paperLines = 6, lineGap: CGFloat = 3, paperFold = 0.82, paperTilt: Double = -6
         static let lamp = DS.paper.opacity(0.07)   // ds-exception: la luz de la vitrina, apenas visible
         static let lampWidth: CGFloat = 1.6, lampHeight: CGFloat = 1.0

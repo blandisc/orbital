@@ -43,6 +43,8 @@ struct WatchingCard: View {
 struct WatchingBars: View {
     let values: [Int]
     let labels: [String]
+    /// Tocar una barra (en «Cómo calificas»: abre lo que calificaste con ese número); nil: solo se ve.
+    var onTap: ((Int) -> Void)?
 
     var body: some View {
         let top = max(values.max() ?? 0, 1)
@@ -58,10 +60,12 @@ struct WatchingBars: View {
                     Text(verbatim: labels.indices.contains(i) ? labels[i] : "").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
                         .minimumScaleFactor(DS.Size.statScale)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { if values[i] > 0 { onTap?(i) } }
             }
         }
         .frame(height: DS.Watching.barsHeight)
-        .accessibilityElement(children: .ignore)
+        .accessibilityElement(children: onTap == nil ? .ignore : .contain)
         .accessibilityLabel(Text("Minutos por periodo"))
     }
 }
@@ -362,11 +366,14 @@ enum WatchingDay {
     }
 }
 
-/// Los géneros como una dona (Fernando, 31 oct 2026): cada uno de su color (los de las listas, `DS.Watching.genreColors`),
-/// el principal en el centro y al lado su nombre y su parte del total. Lo que no cabe en cinco va junto en «Otros».
+/// Los géneros como una dona (Fernando, 31 oct 2026): cada uno de su color (los de las listas, `DS.Watching.genreColors`) y
+/// al lado su nombre y su parte del total. En el centro, el que tocas (en la dona o en la lista); sin tocar, el principal.
+/// Lo que no cabe en cinco va junto en «Otros».
 struct WatchingGenres: View {
     let genres: [(name: String, count: Int)]
     let name: (String) -> String
+    @State private var picked: String?
+    @State private var angle: Int?
 
     private struct Slice: Identifiable { let id: String; let label: Text; let count: Int; let color: Color }
 
@@ -376,35 +383,57 @@ struct WatchingGenres: View {
         let rest = genres.dropFirst(shown.count).reduce(0) { $0 + $1.count }
         let slices = shown.enumerated().map { i, g in Slice(id: g.name, label: Text(verbatim: name(g.name)), count: g.count, color: DS.Watching.genreColors[i]) }
             + (rest > 0 ? [Slice(id: "_rest", label: Text("Otros"), count: rest, color: DS.fillStrong)] : [])
+        let current = slices.first { $0.id == picked } ?? slices.first
         HStack(spacing: DS.Space.s5) {
             Chart(slices) { s in
                 SectorMark(angle: .value("count", s.count), innerRadius: .ratio(DS.Watching.donutHole), angularInset: DS.Watching.donutGap)
                     .foregroundStyle(s.color).cornerRadius(DS.Radius.xs)
+                    .opacity(current == nil || current?.id == s.id ? 1 : DS.Watching.genreDim)
             }
             .chartLegend(.hidden)
-            .frame(width: DS.Watching.donut, height: DS.Watching.donut)
-            .overlay {
-                if let first = slices.first {
-                    VStack(spacing: 0) {
-                        Text(verbatim: "\(first.count * 100 / total) %").font(DS.TextRecipe.title.font.weight(.heavy)).foregroundStyle(first.color)
-                            .monospacedDigit()
-                        first.label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            .chartAngleSelection(value: $angle)
+            .onChange(of: angle) { _, value in
+                // El ángulo tocado → la rebanada (se suman las cuentas hasta pasarlo).
+                guard let value else { return }
+                var sum = 0
+                picked = slices.first { sum += $0.count; return value < sum }?.id ?? picked
+            }
+            .chartBackground { proxy in
+                GeometryReader { geo in
+                    if let current, let plot = proxy.plotFrame {
+                        let frame = geo[plot]
+                        // Al centro exacto de la dona: el porcentaje pegado a su número y el nombre debajo.
+                        VStack(spacing: 0) {
+                            Text(verbatim: "\(current.count * 100 / total)%").font(DS.TextRecipe.title.font.weight(.heavy)).foregroundStyle(current.color)
+                                .monospacedDigit().contentTransition(.numericText())
+                            current.label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                        }
+                        .frame(width: frame.width * DS.Watching.donutHole * DS.Watching.donutLabel)
+                        .position(x: frame.midX, y: frame.midY)
                     }
-                    .frame(width: DS.Watching.donut * DS.Watching.donutHole * DS.Watching.donutLabel)
                 }
             }
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
+            .frame(width: DS.Watching.donut, height: DS.Watching.donut)
+            .sensoryFeedback(.selection, trigger: picked)
+            .animation(DS.Motion.tint(false), value: picked)
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
                 ForEach(slices) { s in
-                    HStack(spacing: DS.Space.s2) {
-                        Circle().fill(s.color).frame(width: DS.Watching.genreDot, height: DS.Watching.genreDot)
-                        s.label.recipe(.footnote).lineLimit(1)
-                        Spacer(minLength: DS.Space.s1)
-                        Text(verbatim: "\(s.count * 100 / total) %").recipe(.caption, color: DS.textMuted).monospacedDigit()
+                    Button { picked = s.id } label: {
+                        HStack(spacing: DS.Space.s2) {
+                            Circle().fill(s.color).frame(width: DS.Watching.genreDot, height: DS.Watching.genreDot)
+                            s.label.recipe(.footnote, color: current?.id == s.id ? DS.text : DS.textMuted).lineLimit(1)
+                            Spacer(minLength: DS.Space.s1)
+                            Text(verbatim: "\(s.count * 100 / total)%").recipe(.caption, color: DS.textMuted).monospacedDigit()
+                        }
+                        .frame(minHeight: DS.Watching.genreRow)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(current?.id == s.id ? .isSelected : [])
                 }
             }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 }
 

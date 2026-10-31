@@ -15,7 +15,8 @@ struct ShelfEmblem: View {
             switch id {
             case "criterion": CriterionEmblem(height: height)
             case "top250": IMDbEmblem(height: height)
-            case "nyt-movies", "nyt-series": NewspaperEmblem(height: height, series: id == "nyt-series")
+            case "nyt-movies": ClapperEmblem(height: height)
+            case "nyt-series": NewspaperEmblem(height: height, series: true)
             default:
                 Image("Awards/" + id).resizable().scaledToFit()
                     .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
@@ -108,6 +109,35 @@ private struct NewspaperEmblem: View {
         .background(LinearGradient(colors: [DS.paper, DS.paper.opacity(DS.Repisa.paperFold)], startPoint: .leading, endPoint: .trailing),
                     in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
         .rotationEffect(.degrees(DS.Repisa.paperTilt))
+        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+    }
+}
+
+/// Las 100 películas del NYT: una claqueta de papel periódico, con la «T» del Times y su barra a rayas.
+private struct ClapperEmblem: View {
+    let height: CGFloat
+    var body: some View {
+        let w = height * DS.Repisa.paperWidth * DS.Repisa.clapperWide
+        VStack(spacing: DS.Repisa.lineGap) {
+            // La barra de arriba, abierta, con sus rayas.
+            HStack(spacing: 0) {
+                ForEach(0..<DS.Repisa.clapperStripes, id: \.self) { i in (i.isMultiple(of: 2) ? DS.backdropDeep : DS.paper).frame(maxWidth: .infinity) }
+            }
+            .frame(height: height * DS.Repisa.clapperBar)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
+            .rotationEffect(.degrees(DS.Repisa.clapperOpen), anchor: .bottomLeading)
+            // El cuerpo: papel, la «T» y dos renglones.
+            VStack(spacing: DS.Space.s1) {
+                Text(verbatim: "T").font(.system(size: height * DS.Repisa.seal, weight: .black, design: .serif))   // ds-exception: la letra crece con la claqueta
+                    .foregroundStyle(DS.backdropDeep)
+                ForEach(0..<2, id: \.self) { _ in DS.textFaint.frame(height: DS.Size.hairline * 2) }
+            }
+            .padding(DS.Space.s1)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(LinearGradient(colors: [DS.paper, DS.paper.opacity(DS.Repisa.paperFold)], startPoint: .leading, endPoint: .trailing),
+                        in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
+        }
+        .frame(width: w, height: height * DS.Repisa.paperHeight * DS.Repisa.clapperTall)
         .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
     }
 }
