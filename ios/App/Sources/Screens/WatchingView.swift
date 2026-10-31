@@ -55,23 +55,27 @@ struct WatchingView: View {
         let s = model.stats()
         let language = env.services.appSettings.uiLanguage
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                // La portada: el arte de lo que más viste en el periodo, de orilla a orilla, con tus horas encima (como la
-                // portada de Inicio). Fernando, 30 oct 2026: que no se viera genérica.
-                // Las pestañas arriba de lo que cambian (antes quedaban debajo de la portada y lo que cambiaba se veía arriba).
-                DSTextTabs(options: WatchingStats.Period.allCases.map { .init(id: $0, title: WatchingText.period($0)) },
-                           selection: Binding(get: { model.period }, set: { model.period = $0 }))
-                .accessibilityIdentifier("watching-period")
-                if model.loaded, !model.failed, !s.isEmpty { hero(s) }
-
-                if !model.loaded { DSLoadingState() }
-                // No llegó el historial y no hay nada guardado: es un error, no «nada en este periodo».
-                else if model.failed { DSErrorState(offline: !env.isOnline) { Task { await model.load(full: true, force: true) } } }
-                else if s.isEmpty { DSEmptyState(symbol: "popcorn", title: Text("Nada en este periodo"), message: Text("Lo que veas aquí o en Trakt aparece solo.")) }
-                else { content(s, model, language) }
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+                // Las pestañas y la portada son un solo bloque: 12 entre ellas y 24 hasta la primera sección (Fernando, 31 oct
+                // 2026: con 40 arriba y abajo de la portada quedaba espacio muerto).
+                VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+                    // La portada: el arte de lo que más viste en el periodo, de orilla a orilla, con tus horas encima (como la
+                    // portada de Inicio). Las pestañas arriba de lo que cambian.
+                    DSTextTabs(options: WatchingStats.Period.allCases.map { .init(id: $0, title: WatchingText.period($0)) },
+                               selection: Binding(get: { model.period }, set: { model.period = $0 }))
+                    .accessibilityIdentifier("watching-period")
+                    if model.loaded, !model.failed, !s.isEmpty { hero(s) }
+                }
+                VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+                    if !model.loaded { DSLoadingState() }
+                    // No llegó el historial y no hay nada guardado: es un error, no «nada en este periodo».
+                    else if model.failed { DSErrorState(offline: !env.isOnline) { Task { await model.load(full: true, force: true) } } }
+                    else if s.isEmpty { DSEmptyState(symbol: "popcorn", title: Text("Nada en este periodo"), message: Text("Lo que veas aquí o en Trakt aparece solo.")) }
+                    else { content(s, model, language) }
+                }
             }
             .padding(.horizontal, DS.Space.gutter)
-            .padding(.bottom, DS.Space.s8)
+            .padding(.bottom, DS.Layout.screenBottom)
         }
         #if DEBUG
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazado (capturas)
