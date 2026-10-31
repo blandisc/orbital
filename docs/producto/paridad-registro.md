@@ -32,6 +32,7 @@ Cómo se mantiene:
 | «Por género»: 20 géneros con el mismo arte (Grok Imagine) en Buscar, la TV y el filtro avanzado (31 oct, tarde) | Ya (20) | Ya (19: «Musical» no está en el catálogo de Stremio, distinto a propósito) |
 | «No recomendar por esta»: dejar picado el mazo de «Por lo que viste» | Ya | Pendiente · ola 2 (con Películas y series como el Inicio) |
 | El país de lo popular (Top 10 de Netflix y JustWatch) es el del teléfono hasta que elijas otro | Ya | Distinto a propósito: la TV usa el país de su `config.yaml` |
+| El arcoíris del azul de Orbital (misma luz e intensidad, `design/tokens.json` › rainbow) como acento: categorías de TV en vivo y filtros | Pendiente: los colores de sus filtros con esta familia (sesión del iPhone) | Ya en las categorías de TV en vivo; los filtros llegan con la ola 3 |
 
 ## Textos pendientes (`design/vocabulario.json`)
 

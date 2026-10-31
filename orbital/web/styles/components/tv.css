@@ -72,3 +72,14 @@
 .tv__notice:empty { display: none; }
 /* Sin canales: el estado vacío (EmptyState), al centro de la vista. */
 .tv__message { justify-items: center; padding-inline: var(--space-6); text-align: center; animation: fade-in var(--duration-enter) var(--ease-out); }
+
+/* Cada categoría con su tono del arcoíris (core/tv.js · categoryHue): solo el ícono; enfocada (fondo claro), se invierte. */
+.tv__cat[data-hue="orbital"] .icon { color: var(--color-orbital); }
+.tv__cat[data-hue="coral"] .icon { color: var(--rainbow-coral); }
+.tv__cat[data-hue="ambar"] .icon { color: var(--rainbow-ambar); }
+.tv__cat[data-hue="lima"] .icon { color: var(--rainbow-lima); }
+.tv__cat[data-hue="verde"] .icon { color: var(--rainbow-verde); }
+.tv__cat[data-hue="cielo"] .icon { color: var(--rainbow-cielo); }
+.tv__cat[data-hue="lavanda"] .icon { color: var(--rainbow-lavanda); }
+.tv__cat[data-hue="rosa"] .icon { color: var(--rainbow-rosa); }
+.tv__cat.is-focused .icon { color: currentColor; }

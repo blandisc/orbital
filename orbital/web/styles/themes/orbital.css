@@ -40,6 +40,16 @@
   --color-warning: var(--palette-amber-300);
   --color-live: var(--palette-teal-300);
   --color-ok: var(--palette-teal-300); /* un estado que ya está bien: «✓ Conectada», «✓ Guardada» */
+  /* El arcoíris del azul de Orbital (Fernando, 31 oct 2026): el turquesa de la luna (oklch .804 .110 183) girado por el círculo
+     con la misma luz y la misma intensidad. Acento para cosas que se distinguen por su color (las categorías de TV en vivo; los
+     filtros, con el iPhone). Las secciones se quedan con un solo azul. design/tokens.json › rainbow. */
+  --rainbow-coral: oklch(.804 .110 25);
+  --rainbow-ambar: oklch(.804 .110 65);
+  --rainbow-lima: oklch(.804 .110 110);
+  --rainbow-verde: oklch(.804 .110 150);
+  --rainbow-cielo: oklch(.804 .110 225);
+  --rainbow-lavanda: oklch(.804 .110 270);
+  --rainbow-rosa: oklch(.804 .110 320);
   --color-new: var(--palette-pad-green); /* lo que ya se puede ver: el listón «Nuevo» (en el iPhone, DS.success, el verde del sistema) */
   --color-brand-moon: var(--palette-teal-300); /* la luna de «orbital»: el único color fijo de la marca (la luna del logotipo) */
   --color-orbital: var(--color-brand-moon); /* «el azul de Orbital» (el de la luna): el ícono del rótulo de una sección, lo que es de Orbital (como DS.orbitalBlue) */
