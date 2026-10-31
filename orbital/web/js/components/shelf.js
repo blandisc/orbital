@@ -7,7 +7,10 @@ import { tokenPx } from "../core/tokens.js";
 import { ArtFit } from "./art-fit.js";
 import { Card, RankedCard } from "./card.js";
 import { CollectionCard, SourceBadge } from "./collection-card.js";
+import { SectionHead } from "./ui.js";
 
+/** El ícono del rótulo de cada sección de tarjetas (en el azul de Orbital). */
+const SECTION_ICONS = { platforms: "tv", awards: "trophy", studios: "movie", "genre-top": "star", seasons: "sun", years: "calendar", lists: "list" };
 const STAGE_PX = 640; // «Porque viste»: el panel mide --because-stage-width (30rem, más con el texto grande)
 
 /**
@@ -117,8 +120,14 @@ export function createShelf({ onPick, onSwipe }) {
     logo?.addEventListener("error", () => logo.replaceWith(row.label || ""), { once: true });
     // De dónde viene (Trakt, Stremio, tu Orbital): el sello junto al título, como en el iPhone.
     const seal = row.seal ? SourceBadge(row.seal) : null;
+    // Una fila de tarjetas de colección (Tus plataformas, Premios, Estudios, Temporadas…) es una sección: su rótulo con
+    // ícono y línea, y cuántas a la derecha. Las demás son subsecciones: el título blanco con su sello.
+    const heading = row.cards
+      ? h("div", { class: "shelf__heading shelf__heading--section" },
+        SectionHead(row.title, { level: "section", icon: SECTION_ICONS[row.group] || "grid", meta: count }))
+      : h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count);
     const rowEl = h("div", { class: ["shelf__row", row.centered && "shelf__row--centered"] },
-      h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count), stage ? h("div", { class: "shelf__stage-row" }, stage.el, rest) : track);
+      heading, stage ? h("div", { class: "shelf__stage-row" }, stage.el, rest) : track);
     return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered, seeds, rest, stage };
   }
 

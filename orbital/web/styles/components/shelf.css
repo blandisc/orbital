@@ -82,3 +82,6 @@
 /* Lo relacionado se recorta solo a los lados (arriba crece la enfocada). */
 .shelf__stage-rest { flex: 1; min-width: 0; clip-path: inset(-4rem 0 -2rem 0); }
 .shelf__stage-rest--first { clip-path: inset(-4rem 0 -2rem -1.6rem); } /* la enfocada crece y lleva su anillo: a la izquierda cabe en el hueco */
+/* Una sección de tarjetas: el rótulo ocupa el renglón del título, a su altura, y llega hasta la orilla. */
+.shelf__heading--section { display: flex; align-items: center; }
+.shelf__heading--section .section-head { flex: 1; }

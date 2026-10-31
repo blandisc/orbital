@@ -94,6 +94,7 @@
   --tracking-display: -.035em;
   --tracking-tight: -.015em;
   --tracking-label: .025em; /* letras chicas y en negrita: glifos, «Abierto» */
+  --tracking-caps: .1em; /* el rótulo de una sección: su nombre en mayúsculas chicas, con aire entre letras (DSChapterLabel) */
   --tracking-digits: .12em; /* cifras y puntos que se leen uno a uno: los de una contraseña, el número tecleado de un canal */
   --tracking-rank: -.08em; /* la cifra grande del Top 10: el «10» no se abre de más */
   --blur-case: 32px; /* el fondo del estuche: la portada de una caja, tan desenfocada que solo queda su color */
