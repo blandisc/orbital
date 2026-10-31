@@ -452,18 +452,45 @@ public actor Trakt {
         }
     }
 
-    /// Sube lo visto sin conexión con su fecha real, sin repetir lo que ya está en el historial de Trakt.
+    /// Sube lo visto sin conexión con su fecha real, sin repetir lo que ya está en el historial de Trakt. La fecha
+    /// `Trakt.unknownDate` es «No sé cuándo»: va como `unknown` (si Trakt no la acepta, con la fecha de estreno).
     @discardableResult
     public func addToHistory(_ target: TraktTarget, watchedAt: Date) async throws -> Bool {
         guard Self.isIMDb(target.imdb) else { throw TraktError.invalid("Título inválido") }
-        if try await alreadyWatched(target, near: watchedAt) { return false }
-        let stamp = StremioLibrary.iso(watchedAt.timeIntervalSince1970)
-        let body: JSON = target.isEpisode
-            ? ["shows": [["ids": ["imdb": .string(target.imdb)], "seasons": [["number": .int(target.season!), "episodes": [["number": .int(target.episode!), "watched_at": .string(stamp)]]]]]]]
-            : ["movies": [["ids": ["imdb": .string(target.imdb)], "watched_at": .string(stamp)]]]
-        let (status, _) = try await write("/sync/history", body)
-        guard status == 200 || status == 201 else { throw TraktError.http(status) }
+        if watchedAt != Self.unknownDate, try await alreadyWatched(target, near: watchedAt) { return false }
+        try await addToHistory([(target, watchedAt)])
         return true
+    }
+
+    /// «No sé cuándo» (como Trakt): la fecha con la que se guarda aquí y que viaja a Trakt como `unknown`.
+    public static let unknownDate = Date(timeIntervalSince1970: 0)
+
+    /// Varios vistos en una sola petición (una temporada o una serie completa): películas sueltas y, por serie, sus
+    /// temporadas y episodios, cada uno con su fecha. Sin revisar duplicados: lo pediste tú, ahora.
+    public func addToHistory(_ items: [(target: TraktTarget, at: Date)]) async throws {
+        let valid = items.filter { Self.isIMDb($0.target.imdb) }
+        guard !valid.isEmpty else { return }
+        func body(_ stampFor: (Date) -> String) -> JSON {
+            let movies: [JSON] = valid.filter { !$0.target.isEpisode }.map { ["ids": ["imdb": .string($0.target.imdb)], "watched_at": .string(stampFor($0.at))] }
+            var shows: [String: [Int: [JSON]]] = [:]
+            for item in valid where item.target.isEpisode {
+                shows[item.target.imdb, default: [:]][item.target.season!, default: []].append(["number": .int(item.target.episode!), "watched_at": .string(stampFor(item.at))])
+            }
+            let showRows: [JSON] = shows.keys.sorted().map { imdb in
+                ["ids": ["imdb": .string(imdb)], "seasons": .array(shows[imdb]!.keys.sorted().map { s in ["number": .int(s), "episodes": .array(shows[imdb]![s]!)] })]
+            }
+            var out: [String: JSON] = [:]
+            if !movies.isEmpty { out["movies"] = .array(movies) }
+            if !showRows.isEmpty { out["shows"] = .array(showRows) }
+            return .object(out)
+        }
+        let iso = { (d: Date) in StremioLibrary.iso(d.timeIntervalSince1970) }
+        var (status, _) = try await write("/sync/history", body { $0 == Self.unknownDate ? "unknown" : iso($0) })
+        // Si Trakt no conoce «unknown», «No sé cuándo» cae en la fecha de estreno («released») antes que perderse.
+        if status == 400 || status == 422, valid.contains(where: { $0.at == Self.unknownDate }) {
+            (status, _) = try await write("/sync/history", body { $0 == Self.unknownDate ? "released" : iso($0) })
+        }
+        guard status == 200 || status == 201 else { throw TraktError.http(status) }
     }
 
     /// ¿Ya hay un visionado de este título cerca de esa hora? (Trakt no comprueba duplicados en `/sync/history`.)

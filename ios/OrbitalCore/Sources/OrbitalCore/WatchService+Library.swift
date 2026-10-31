@@ -85,6 +85,39 @@ extension WatchService {
         await flushPending()
     }
 
+    /// Varios a la vez (una temporada, la serie completa, «también los anteriores»), cada uno con su fecha: aquí en una sola
+    /// escritura y a Trakt juntos. Lo de «Seguir viendo» lo mueve solo el más nuevo de la serie.
+    public func markWatched(kind: String, metaID: String, videos: [(id: String, at: Date)], name: String = "") async {
+        guard let latest = videos.max(by: { $0.at < $1.at }) else { return }
+        if videos.count == 1 { return await markWatched(kind: kind, metaID: metaID, videoID: latest.id, name: name, at: latest.at) }
+        let info = try? await cinemeta.meta(kind: kind, id: metaID)
+        // En orden de temporada y episodio («tt…:2:5»): el último marca dónde vas.
+        let rank = { (id: String) -> Int in let p = id.split(separator: ":").compactMap { Int($0) }; return p.count >= 2 ? p[p.count - 2] * 10_000 + p[p.count - 1] : 0 }
+        let order = videos.map(\.id).sorted { rank($0) < rank($1) }
+        let last = order.last ?? latest.id
+        let now = clock().timeIntervalSince1970
+        let next = info.flatMap { CinemetaParsing.nextEpisode($0, after: last, now: now) }
+        let title = info?["name"]?.nonEmptyString ?? name
+        store.update(metaID, make: { LibraryMerge.make(metaID, kind: kind, name: title) }) { e in
+            if e.name.isEmpty { e.name = title }
+            e.seen.formUnion(videos.map(\.id))
+            if e.videoID == nil || order.contains(e.videoID ?? "") { e.finish(videoID: last, next: next, at: max(latest.at.timeIntervalSince1970, 1)) }
+        }
+        announceChange()
+        var work = pending.load()
+        let targets = videos.compactMap { v in TraktTarget(videoID: v.id, kind: kind).map { ($0, v.at) } }
+        work.traktUnwatched.removeAll { t in targets.contains { $0.0 == t } }
+        pending.save(work)
+        for (target, at) in targets { enqueue(trakt: .init(target: target, at: at.timeIntervalSince1970)) }
+        if copiesToStremio { for v in videos { try? await copyWatched(kind: kind, metaID: metaID, videoID: v.id) } }
+        await flushPending()
+    }
+
+    /// Varios fuera de lo visto a la vez (quitar una temporada o la serie).
+    public func unmarkWatched(kind: String, metaID: String, videoIDs: [String]) async {
+        for id in videoIDs { await unmarkWatched(kind: kind, metaID: metaID, videoID: id) }
+    }
+
     /// «Marcar como no visto»: sale de lo visto aquí y viaja a Trakt (`/sync/history/remove`). Una sincronización no lo regresa
     /// mientras no llegue.
     public func unmarkWatched(kind: String, metaID: String, videoID: String) async {

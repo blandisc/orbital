@@ -225,6 +225,11 @@ extension DS {
 
     /// El filtro avanzado (`FilterTile`, `FilterChoice`, `FameQuadrant`): el alto de un filtro en el cajón y de una opción
     /// grande, el velo turquesa de lo elegido (la selección, como los ánimos de «¿Qué vemos hoy?») y el póster de resultados.
+    /// «¿Cuándo la viste?» (`WatchedWhenSheet`): el póster de arriba, el ancho del ícono de cada opción y su alto.
+    enum Watched {
+        static let poster: CGFloat = 64, icon: CGFloat = 28, row: CGFloat = 60
+    }
+
     enum Filter {
         static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64, eraTile: CGFloat = 72
         /// La puerta A de Buscar (Fernando, 31 oct 2026): los mismos mosaicos del cajón en chiquito, tres por renglón.

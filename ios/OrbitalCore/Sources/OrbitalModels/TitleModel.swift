@@ -72,12 +72,12 @@ public final class TitleModel: ObservableModel {
     /// La calificación de Trakt (0–10), si alguien votó.
     public private(set) var traktRating: Double? { didSet { changed() } }
 
-    private let services: Services
+    let services: Services
     private var meta: JSON?                // la ficha ORIGINAL
     private var localized: JSON?
     /// Lo tuyo de este título en el teléfono (dónde ibas, lo visto, Mi lista).
     private var entry: LibraryEntry?
-    private var watched = Set<String>()
+    private(set) var watched = Set<String>()   // lo visto (ids de video); lo lee «¿Cuándo la viste?» (TitleModel+Watched)
     private var downloadStates: [String: DownloadState] = [:]
     private var downloadProgress: [String: Double] = [:]
     /// Cómo va la descarga de un video de este título (nil: no se ha pedido).

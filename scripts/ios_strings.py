@@ -19,6 +19,19 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # «¿Cuándo la viste?» (`WatchedWhenSheet`, `TitleWatchedWhen`): marcar como vista película, episodio, temporada o serie.
+    "Ahora mismo": "Right now", "Con la misma fecha": "With the same date", "Cuando salió cada episodio": "When each episode aired",
+    "El día que la viste": "The day you watched it", "El día que salió": "The day it aired", "El día que se estrenó": "The day it came out",
+    "El episodio anterior tampoco lo has visto.": "You haven't watched the previous episode either.", "Elige en el calendario": "Pick it on the calendar",
+    "Hoy, %@": "Today, %@", "La vi otra vez": "I watched it again", "Listo · %@": "Done · %@",
+    "Los %@ episodios anteriores tampoco los has visto.": "You haven't watched the %@ previous episodes either.",
+    "Los %lld episodios anteriores tampoco los has visto.": "You haven't watched the %lld previous episodes either.",
+    "Marcar la temporada como vista": "Mark season as watched", "Me salté los otros": "I skipped the others", "No sé cuándo": "I don't know when",
+    "Otra vista en tu historial, ahora mismo": "Another play in your history, right now", "Otro día…": "Another day…",
+    "Quitar de vistas": "Remove from watched", "Se guarda en tu historial de Trakt": "Saved to your Trakt history", "Solo este": "Just this one",
+    "Sí, márcalos también": "Yes, mark them too", "Vista, sin fecha": "Watched, no date", "Ya la vi toda": "I've watched it all",
+    "Ya la viste": "You've watched it", "¿Cuándo la viste?": "When did you watch it?", "¿También los anteriores?": "The earlier ones too?",
+    "Ya la vi": "Watched it", "Vista": "Watched", "1 episodio": "1 episode", "%lld episodios": "%lld episodes",
     # Filtro avanzado, entrada A (`FilterDoor`, `AdvancedFilterSheet`, `FilterEditor`, `YearRuler`, `FilterResultsView`).
     "Antes de 1990": "Before 1990", "Antes de las %@": "Ends by %@", "Arrastra la ventana o toca una década": "Drag the window or tap a decade",
     "Arriba lo mejor calificado; a la derecha, lo más famoso": "Best rated at the top; most famous to the right",

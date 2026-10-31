@@ -161,11 +161,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if path.hasPrefix("/shows/"), path.hasSuffix("/related"), let found = becauseShows.first(where: { path.contains($0.0) }) {
             return .array(found.2.map { show($0.0, $0.1) })
         }
-        // «Sugerencias para ti» de Inicio: unas cuantas recomendaciones para ver la fila (y probar que se desliza y se toca).
-        if path == "/recommendations/shows" { return .array(becauseShows.flatMap { $0.2 }.prefix(8).map { show($0.0, $0.1) }) }
-        if path == "/recommendations/movies" {
-            return .array([("tt1375666", "Inception"), ("tt0816692", "Interstellar"), ("tt0468569", "The Dark Knight"), ("tt6751668", "Parasite")].map { show($0.0, $0.1) })
-        }
+        if path == "/recommendations/shows" { return .array(becauseShows.flatMap { $0.2 }.prefix(8).map { show($0.0, $0.1) }) }   // «Sugerencias para ti»
+        if path == "/recommendations/movies" { return .array([("tt1375666", "Inception"), ("tt0816692", "Interstellar"), ("tt6751668", "Parasite")].map { show($0.0, $0.1) }) }
         return nil
     }
 

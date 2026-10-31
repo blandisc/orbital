@@ -184,9 +184,9 @@ final class NewFlowsRegressionUITests: XCTestCase {
         let seen = app.buttons["repisa-seen"]
         XCTAssertTrue(seen.waitForExistence(timeout: 10), "«Ya la vi»")
         seen.tap()
-        let other = app.buttons["Otro día…"]
+        let other = app.buttons["watched-other"]
         XCTAssertTrue(other.waitForExistence(timeout: 10), "pregunta «¿Cuándo la viste?»")
-        XCTAssertTrue(app.buttons["Ahora mismo"].exists && app.buttons["El día que se estrenó"].exists)
+        XCTAssertTrue(app.buttons["watched-now"].exists && app.buttons["watched-release"].exists && app.buttons["watched-unknown"].exists)
         shot("cuando-la-viste")
         other.tap()
         let done = app.buttons["watched-when-done"]
@@ -194,6 +194,33 @@ final class NewFlowsRegressionUITests: XCTestCase {
         shot("otro-dia")
         done.tap()
         XCTAssertTrue(app.otherElements["repisa-moment"].waitForExistence(timeout: 10) || app.buttons["repisa-moment"].exists, "a la repisa")
+    }
+
+    /// En la ficha de una serie, marcar un episodio abre «¿Cuándo la viste?»; si faltan los anteriores, pregunta si también
+    /// los marca. Luego la temporada completa con «Cuando salió cada episodio».
+    func testMarcarEpisodioYTemporada() {
+        launch(tab: 2, ["-demo-title", "series:tt0386676"])
+        let more = app.buttons.matching(identifier: "episode-more").element(boundBy: 3)
+        for _ in 0..<10 where !(more.exists && more.isHittable) { app.swipeUp(velocity: .slow) }
+        XCTAssertTrue(more.waitForExistence(timeout: 20), "el ··· de un episodio")
+        more.tap()
+        let mark = app.buttons["Marcar como visto"]
+        XCTAssertTrue(mark.waitForExistence(timeout: 5))
+        mark.tap()
+        XCTAssertTrue(app.buttons["watched-now"].waitForExistence(timeout: 10), "«¿Cuándo la viste?»")
+        shot("episodio-cuando")
+        app.buttons["watched-release"].tap()
+        let yes = app.buttons["watched-earlier-yes"]
+        XCTAssertTrue(yes.waitForExistence(timeout: 5), "pregunta por los anteriores")
+        shot("episodio-anteriores")
+        yes.tap()
+        let season = app.buttons["season-mark-watched"]
+        for _ in 0..<6 where !(season.exists && season.isHittable) { app.swipeDown(velocity: .slow) }
+        XCTAssertTrue(season.waitForExistence(timeout: 10))
+        season.tap()
+        app.buttons["Marcar la temporada como vista"].tap()
+        XCTAssertTrue(app.buttons["watched-release"].waitForExistence(timeout: 10), "la temporada con «Cuando salió cada episodio»")
+        shot("temporada-cuando")
     }
 
     /// Buscar con el cielo detrás se usa normal: se abre el campo y se escribe.

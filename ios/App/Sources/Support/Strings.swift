@@ -153,6 +153,11 @@ enum Strings {
         return f.string(from: NSNumber(value: n)) ?? String(n)
     }
 
+    /// Un día con su año: «18 oct 2005» (para «El día que salió»).
+    static func longDay(_ d: Date, language: String) -> String {
+        "\(date(d, .dayMonthShort, language: language)) \(Calendar.current.component(.year, from: d))"
+    }
+
     /// Cómo se escribe una fecha: «12 de agosto», «jueves 12 de agosto», «jueves», «agosto de 2026».
     /// Y para los ejes de una gráfica: la inicial del día («L»), el número del día, la inicial del mes, el año en dos cifras.
     enum DateStyle { case dayMonth, dayMonthShort, weekdayDayMonth, weekday, monthYear, weekdayInitial, dayNumber, monthInitial, yearShort }

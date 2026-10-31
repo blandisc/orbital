@@ -1,0 +1,273 @@
+<title>Marcar como vista</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: explicación a la izquierda, un iPhone que se toca a la derecha; abajo, los cuatro casos lado a lado. Oscuro como la app. */
+:root{color-scheme:dark;--bg:#0c0c0e;--surface:#18181c;--raised:#1e1e23;--line:#2a2a30;--text:#f5f4f0;--muted:#a3a3ab;--faint:#55555d;--blue:#5fd6c6;--trakt:#ed1c24;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:15px/1.5 var(--ui);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+h1{font-size:clamp(28px,6vw,42px);line-height:1.08;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:clamp(22px,4vw,28px);margin:0;text-wrap:balance}
+h3{font-size:16px;margin:0}
+p{margin:0;max-width:66ch;color:var(--muted)} p b{color:var(--text);font-weight:600}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+section{display:flex;flex-direction:column;gap:16px}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:36px;align-items:start}
+@media (max-width:820px){.lab{grid-template-columns:minmax(0,1fr)}}
+.notes{display:flex;flex-direction:column;gap:16px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{height:40px;padding:0 14px;border-radius:12px;border:0;background:var(--surface);color:var(--muted);font:inherit;font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.tabs button.on{background:var(--text);color:var(--bg)}
+.tabs svg{width:16px;height:16px}
+.phone{position:relative;width:100%;max-width:380px;aspect-ratio:380/780;border-radius:46px;background:var(--bg);box-shadow:0 0 0 8px #1b1b20,0 0 0 9px #34343c,0 30px 80px rgba(0,0,0,.6);overflow:hidden;margin:0 auto;font-size:14px}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column}
+.hero{height:240px;position:relative;flex:none;background:linear-gradient(160deg,#5a3a1c,#1c120a 70%)}
+.hero.office{background:linear-gradient(160deg,#4f5b66,#15191d 70%)}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,var(--bg))}
+.hero .ttl{position:absolute;left:0;right:0;bottom:12px;text-align:center;z-index:1;font-size:30px;font-weight:300;letter-spacing:.3em}
+.hero.office .ttl{letter-spacing:0;font-weight:500;font-size:34px}
+.body{padding:8px 16px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.meta{text-align:center;color:var(--muted);font-size:12.5px}
+.play{height:50px;border-radius:14px;background:var(--text);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;gap:8px}
+.acts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.act{height:64px;border-radius:14px;border:0;background:var(--surface);color:var(--text);font:inherit;font-size:11.5px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer}
+.act svg{width:22px;height:22px}
+.act.seen{background:rgba(95,214,198,.16);box-shadow:inset 0 0 0 1.5px var(--blue)}
+.act.seen svg{color:var(--blue)}
+.pulse{animation:pulse 1.6s ease-in-out 2}
+@keyframes pulse{50%{box-shadow:inset 0 0 0 2px var(--blue),0 0 0 6px rgba(95,214,198,.25)}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}.sheet{transition:none!important}}
+.season{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.season b{font-size:17px}
+.season small{color:var(--muted);font-size:12px;display:block}
+.dots{width:40px;height:40px;border-radius:50%;border:0;background:var(--surface);color:var(--text);display:grid;place-items:center;cursor:pointer}
+.dots svg{width:18px;height:18px}
+.ep{display:grid;grid-template-columns:72px minmax(0,1fr) 40px;gap:10px;align-items:center}
+.ep i{height:44px;border-radius:8px;background:linear-gradient(135deg,#3b4650,#1e2328);display:block}
+.ep b{font-size:13px;display:block}
+.ep small{color:var(--muted);font-size:11.5px}
+.chk{width:40px;height:40px;border-radius:50%;border:0;background:none;color:var(--faint);cursor:pointer;display:grid;place-items:center}
+.chk svg{width:26px;height:26px}
+.chk.on{color:var(--blue)}
+.menu{position:absolute;right:16px;top:300px;width:250px;background:rgba(40,40,46,.97);backdrop-filter:blur(20px);border-radius:16px;overflow:hidden;z-index:5;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.menu button{width:100%;min-height:46px;border:0;background:none;color:var(--text);font:inherit;font-size:14.5px;text-align:left;padding:0 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.07)}
+.menu svg{width:18px;height:18px;color:var(--blue)}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:6;opacity:0;pointer-events:none;transition:opacity .25s}
+.dim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:7;background:rgba(30,30,35,.97);backdrop-filter:blur(20px);border-radius:30px 30px 0 0;padding:8px 16px 26px;transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;gap:12px}
+.sheet.on{transform:none}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--faint);margin:0 auto 2px}
+.what{display:flex;gap:12px;align-items:center}
+.what i{width:44px;height:64px;border-radius:8px;flex:none;background:linear-gradient(160deg,#5a3a1c,#1c120a)}
+.what i.office{background:linear-gradient(160deg,#4f5b66,#15191d)}
+.what b{font-size:17px;display:block;line-height:1.2}
+.what small{color:var(--muted);font-size:12.5px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;align-items:center;gap:12px;min-height:56px;border-radius:14px;border:0;background:var(--surface);color:var(--text);font:inherit;text-align:left;padding:8px 12px;cursor:pointer;width:100%}
+.opt svg{width:22px;height:22px;color:var(--blue);flex:none}
+.opt .t{display:flex;flex-direction:column;flex:1;min-width:0}
+.opt .t b{font-size:14.5px;font-weight:600}
+.opt .t small{font-size:12px;color:var(--muted)}
+.opt:focus-visible,.act:focus-visible,.chk:focus-visible,.tabs button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.cal{display:none;background:var(--surface);border-radius:14px;padding:10px;flex-direction:column;gap:8px}
+.cal.on{display:flex}
+.cal .row{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600}
+.cal .days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:12px}
+.cal .days span{height:28px;display:grid;place-items:center;border-radius:50%;color:var(--muted)}
+.cal .days span.on{background:var(--blue);color:var(--bg);font-weight:700}
+.cal .days span.no{color:var(--faint)}
+.done{height:44px;border-radius:12px;border:0;background:var(--text);color:var(--bg);font:inherit;font-weight:700;cursor:pointer}
+.trakt{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);justify-content:center}
+.trakt i{width:14px;height:14px;border-radius:50%;background:var(--trakt);display:inline-block}
+.ask{display:none;flex-direction:column;gap:6px}
+.ask.on{display:flex}
+.ask p{font-size:13.5px;color:var(--text)}
+.toast{position:absolute;left:16px;right:16px;bottom:92px;z-index:8;background:rgba(40,40,46,.97);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:13.5px;transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none}
+.toast.on{transform:none;opacity:1;pointer-events:auto}
+.toast svg{width:20px;height:20px;color:var(--blue);flex:none}
+.toast span{flex:1}
+.toast button{border:0;background:none;color:var(--blue);font:inherit;font-weight:700;cursor:pointer}
+.tab{position:absolute;left:16px;right:16px;bottom:16px;height:56px;border-radius:28px;background:rgba(40,40,46,.85);display:flex;align-items:center;justify-content:space-around;color:var(--muted);font-size:10.5px}
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.case{background:var(--surface);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.case h3{display:flex;align-items:center;gap:8px}
+.case h3 svg{width:18px;height:18px;color:var(--blue)}
+.case ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:3px}
+.case ul b{color:var(--text);font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td b{font-weight:600}
+.scroll{overflow-x:auto}
+.decide{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.q{background:var(--surface);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.q p{font-size:14px} .q .rec{color:var(--text);border-top:1px solid var(--line);padding-top:8px;font-size:13.5px}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.6 2.6L16.2 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-checkf" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M8 12.3l2.6 2.6L16.2 9" fill="none" stroke="#0c0c0e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-now" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-release" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 12.5l1 2 2.2.3-1.6 1.5.4 2.2-2-1.1-2 1.1.4-2.2-1.6-1.5 2.2-.3z" fill="currentColor"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="14.5" r="1.2" fill="currentColor"/><circle cx="15" cy="14.5" r="1.2" fill="currentColor"/></symbol>
+<symbol id="i-unknown" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.5a2.5 2.5 0 114 2c-.9.6-1.6 1.1-1.6 2.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.1" fill="currentColor"/></symbol>
+<symbol id="i-again" viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.1-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 4v4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-remove" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 4v16M16 4v16M3.5 9h4.5M3.5 15h4.5M16 9h4.5M16 15h4.5" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-ep" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10.5 9.5v5l4-2.5z" fill="currentColor"/></symbol>
+<symbol id="i-season" viewBox="0 0 24 24"><rect x="3" y="8" width="14" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 5h12a2 2 0 012 2v9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-series" viewBox="0 0 24 24"><rect x="2.5" y="10" width="12" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M6 7h11a2 2 0 012 2v7M9.5 4h10a2 2 0 012 2v7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="i-dots" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="18" cy="12" r="1.8" fill="currentColor"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 19s-7-4.4-7-9.5A4 4 0 0112 7a4 4 0 017 2.5C19 14.6 12 19 12 19z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+<header style="display:flex;flex-direction:column;gap:12px">
+  <span class="eyebrow">Orbital · iPhone · propuesta · 31 oct 2026</span>
+  <h1>Marcar como vista, en cualquier parte</h1>
+  <p>Una sola hoja «¿Cuándo la viste?» para película, episodio, temporada y serie completa, con las opciones de Trakt: <b>ahora mismo</b>, <b>el día que salió</b>, <b>otro día</b> y <b>no sé cuándo</b>. La fecha va a tu historial de Trakt. Hoy esto existe solo en Colecciones y Premios, como un menú de texto del sistema.</p>
+</header>
+
+<section>
+  <span class="eyebrow">1 · Pruébalo</span>
+  <h2>Toca la palomita</h2>
+  <div class="lab">
+    <div class="notes">
+      <div class="tabs" role="tablist">
+        <button type="button" class="on" data-case="movie" role="tab"><svg><use href="#i-film"/></svg>Película</button>
+        <button type="button" data-case="episode" role="tab"><svg><use href="#i-ep"/></svg>Episodio</button>
+        <button type="button" data-case="season" role="tab"><svg><use href="#i-season"/></svg>Temporada</button>
+        <button type="button" data-case="series" role="tab"><svg><use href="#i-series"/></svg>Serie completa</button>
+      </div>
+      <p id="howto"></p>
+      <div class="cases">
+        <div class="case"><h3><svg><use href="#i-check"/></svg>La misma hoja siempre</h3><ul><li>Arriba dice <b>qué</b> marcas: el póster y «Temporada 2 · 22 episodios».</li><li>Cada opción con su ícono azul y su fecha ya escrita («12 may 2009»).</li><li>«Otro día» abre el calendario ahí mismo, sin otra hoja.</li></ul></div>
+        <div class="case"><h3><svg><use href="#i-again"/></svg>Si ya la viste</h3><ul><li>La palomita queda llena en azul.</li><li>Tocarla otra vez ofrece <b>«Vista el 12 oct»</b>, <b>«La vi otra vez»</b> (otra vista en Trakt) y <b>«Quitar de vistas»</b>.</li></ul></div>
+      </div>
+    </div>
+    <div class="phone" id="phone" aria-label="Prototipo en un iPhone">
+      <div class="screen" id="screen"></div>
+      <div class="dim" id="dim"></div>
+      <div class="sheet" id="sheet" role="dialog" aria-label="¿Cuándo la viste?"></div>
+      <div class="toast" id="toast" role="status"><svg><use href="#i-checkf"/></svg><span id="toastText"></span><button type="button" id="undo">Deshacer</button></div>
+      <div class="tab"><span>Inicio</span><span>Para ti</span><span>Descargas</span><span>Buscar</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">2 · Las opciones de cada caso</span>
+  <h2>Lo que dice «el día que salió» cambia según lo que marcas</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Qué marcas</th><th>Dónde se toca</th><th>Opciones</th><th>Lo que hace aparte</th></tr></thead>
+    <tbody>
+      <tr><td><b>Película</b></td><td>Botón «Ya la vi» en la fila de la ficha (junto a Guardada y Descargar) y mantener el dedo en un póster.</td><td>Ahora mismo · El día que se estrenó · Otro día… · No sé cuándo</td><td>Si ya la viste: La vi otra vez · Quitar de vistas.</td></tr>
+      <tr><td><b>Episodio</b></td><td>La palomita al final de cada episodio, en la lista de la serie.</td><td>Ahora mismo · El día que salió (su fecha) · Otro día… · No sé cuándo</td><td>Si hay episodios anteriores sin ver: «¿Marcar también los 4 anteriores?», como Trakt.</td></tr>
+      <tr><td><b>Temporada</b></td><td>El ··· junto al nombre de la temporada › «Marcar la temporada como vista».</td><td>Ahora mismo · Cuando salió cada episodio · Otro día… · No sé cuándo</td><td>Solo los episodios que ya salieron. Dice cuántos son.</td></tr>
+      <tr><td><b>Serie completa</b></td><td>El ··· de la ficha › «Ya la vi toda».</td><td>Ahora mismo · Cuando salió cada episodio · Otro día… · No sé cuándo</td><td>Si sigue en emisión, solo lo que ya salió; lo nuevo te sigue llegando.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <span class="eyebrow">3 · Para decidir</span>
+  <h2>Tres preguntas</h2>
+  <div class="decide">
+    <div class="q"><h3>¿Hoja propia o el menú del sistema?</h3><p>Hoy es un menú de texto que sale desde abajo. La hoja propia enseña qué marcas, trae las fechas escritas, íconos y el calendario adentro.</p><p class="rec"><b>Recomiendo la hoja propia</b>, y reemplazar con ella también la de Colecciones.</p></div>
+    <div class="q"><h3>¿«No sé cuándo»?</h3><p>Trakt la tiene: la marca como vista sin fecha y no cuenta en tu año ni en Lo que ves por día. Sirve para lo que viste hace mucho.</p><p class="rec"><b>Recomiendo incluirla</b>, en último lugar.</p></div>
+    <div class="q"><h3>¿Preguntar por los episodios anteriores?</h3><p>Trakt lo pregunta al marcar el episodio 5 si no viste del 1 al 4. Ahorra muchos toques al ponerte al día; puede estorbar si de verdad saltaste episodios.</p><p class="rec"><b>Recomiendo preguntar</b>, con «Solo este» como opción igual de visible.</p></div>
+  </div>
+</section>
+</div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const ic = id => `<svg aria-hidden="true"><use href="#i-${id}"/></svg>`;
+const CASES = {
+  movie: {howto:"Toca «Ya la vi» en la ficha. Elige cuándo; después vuelve a tocarla para ver las opciones de algo ya visto.",
+    what:["Dune: Parte dos","Película · 2024",""], release:"El día que se estrenó", releaseDate:"1 mar 2024", toast:"Dune: Parte dos, vista"},
+  episode: {howto:"Toca la palomita del episodio 5. Como del 1 al 4 no los has visto, la hoja pregunta si también los marcas.",
+    what:["The Office · T2 E5","«Halloween» · 22 min","office"], release:"El día que salió", releaseDate:"18 oct 2005", toast:"T2 E5, visto", ask:true},
+  season: {howto:"Toca el ··· junto a «Temporada 2» y elige «Marcar la temporada como vista».",
+    what:["The Office · Temporada 2","22 episodios","office"], release:"Cuando salió cada episodio", releaseDate:"20 sep 2005 – 11 may 2006", toast:"Temporada 2 vista · 22 episodios"},
+  series: {howto:"Toca el ··· de la ficha y elige «Ya la vi toda».",
+    what:["The Office","9 temporadas · 201 episodios","office"], release:"Cuando salió cada episodio", releaseDate:"2005 – 2013", toast:"The Office vista · 201 episodios"},
+};
+let cur = "movie", seen = {movie:false, episode:false, season:false, series:false}, menu = false;
+
+function screen(){
+  const c = CASES[cur];
+  if (cur === "movie") return `<div class="hero"><div class="ttl">DUNE</div></div><div class="body">
+    <div class="meta">2024 · Película · Acción, Aventura · 2 h 47 min</div>
+    <div class="play">▶ Ver</div>
+    <div class="acts">
+      <button type="button" class="act ${seen.movie?"seen":"pulse"}" data-open="1">${ic(seen.movie?"checkf":"check")}${seen.movie?"Vista":"Ya la vi"}</button>
+      <button type="button" class="act">${ic("list")}Guardada</button>
+      <button type="button" class="act">${ic("down")}Descargar</button>
+      <button type="button" class="act">${ic("heart")}Favorita</button>
+    </div><p style="font-size:13px">Paul Atreides se une a los Fremen…</p></div>`;
+  const eps = [["E3","«Office Olympics»","4 oct 2005"],["E4","«The Fire»","11 oct 2005"],["E5","«Halloween»","18 oct 2005"],["E6","«The Fight»","1 nov 2005"]];
+  const on = i => seen.season || seen.series || (seen.episode && i <= 2) || (seen.episodeOnly && i === 2);
+  return `<div class="hero office"><div class="ttl">the office</div></div><div class="body">
+    <div class="season"><div><b>Temporada 2</b><small>${seen.season||seen.series?"22 de 22 vistos":seen.episode?"5 de 22 vistos":"2 de 22 vistos"}</small></div>
+      <button type="button" class="dots" data-menu="1" aria-label="Más opciones">${ic("dots")}</button></div>
+    ${eps.map((e,i) => `<div class="ep"><i></i><div><b>${e[0]} · ${e[1]}</b><small>${e[2]}</small></div>
+      <button type="button" class="chk ${on(i)?"on":""} ${cur==="episode"&&i===2&&!on(i)?"pulse":""}" ${i===2?'data-open="1"':""} aria-label="Marcar ${e[0]} como visto">${ic(on(i)?"checkf":"check")}</button></div>`).join("")}
+    ${menu ? `<div class="menu">${cur==="series" ? `<button type="button" data-open="1">Ya la vi toda ${ic("series")}</button>` : `<button type="button" data-open="1">Marcar la temporada como vista ${ic("season")}</button>`}<button type="button" data-menu="0">Cancelar</button></div>` : ""}
+  </div>`;
+}
+
+function sheet(){
+  const c = CASES[cur], was = seen[cur] || (cur==="episode" && seen.episodeOnly);
+  const head = `<div class="grab"></div><div class="what"><i class="${c.what[2]}"></i><div><b>${was?"Ya la viste":"¿Cuándo la viste?"}</b><small>${c.what[0]} · ${c.what[1]}</small></div></div>`;
+  if (was) return head + `<div class="opts">
+    <button type="button" class="opt" data-pick="again">${ic("again")}<span class="t"><b>La vi otra vez</b><small>Otra vista en tu historial (ahora mismo)</small></span></button>
+    <button type="button" class="opt" data-pick="remove">${ic("remove")}<span class="t"><b>Quitar de vistas</b><small>Vista el 31 oct 2026</small></span></button></div>
+    <div class="trakt"><i></i>Se guarda en tu historial de Trakt</div>`;
+  return head + `<div class="opts">
+    <button type="button" class="opt" data-pick="now">${ic("now")}<span class="t"><b>Ahora mismo</b><small>Hoy, ${new Date().toLocaleTimeString("es-MX",{hour:"numeric",minute:"2-digit"})}</small></span></button>
+    <button type="button" class="opt" data-pick="release">${ic("release")}<span class="t"><b>${c.release}</b><small>${c.releaseDate}</small></span></button>
+    <button type="button" class="opt" data-pick="other">${ic("cal")}<span class="t"><b>Otro día…</b><small>Elige en el calendario</small></span></button>
+    <button type="button" class="opt" data-pick="unknown">${ic("unknown")}<span class="t"><b>No sé cuándo</b><small>Vista, sin fecha</small></span></button></div>
+    <div class="cal" id="cal"><div class="row"><span>Octubre 2026</span><span style="color:var(--blue)">‹ ›</span></div>
+      <div class="days">${["L","M","M","J","V","S","D"].map(d=>`<span class="no">${d}</span>`).join("")}${Array.from({length:31},(_,i)=>`<span class="${i===23?"on":""}">${i+1}</span>`).join("")}</div>
+      <button type="button" class="done" data-pick="date">Listo · 24 oct</button></div>
+    <div class="ask" id="ask"><p>Del episodio 1 al 4 tampoco los has visto. ¿Los marco también?</p>
+      <button type="button" class="opt" data-pick="all">${ic("checkf")}<span class="t"><b>Sí, hasta el 5</b><small>5 episodios con la misma fecha</small></span></button>
+      <button type="button" class="opt" data-pick="one">${ic("check")}<span class="t"><b>Solo este</b><small>Me salté los otros</small></span></button></div>
+    <div class="trakt"><i></i>Se guarda en tu historial de Trakt</div>`;
+}
+
+function render(){ $("#screen").innerHTML = screen(); $("#howto").textContent = CASES[cur].howto; }
+function open(){ menu = false; render(); $("#sheet").innerHTML = sheet(); $("#sheet").classList.add("on"); $("#dim").classList.add("on"); }
+function close(){ $("#sheet").classList.remove("on"); $("#dim").classList.remove("on"); }
+let toastTimer;
+function toast(text){ $("#toastText").textContent = text; $("#toast").classList.add("on"); clearTimeout(toastTimer); toastTimer = setTimeout(() => $("#toast").classList.remove("on"), 3500); }
+let pendingAsk = false, last = null;
+
+$("#phone").addEventListener("click", e => {
+  const b = e.target.closest("[data-open],[data-menu],[data-pick]"); if (!b) return;
+  if (b.dataset.menu !== undefined) { menu = b.dataset.menu === "1"; render(); return; }
+  if (b.dataset.open) { open(); return; }
+  const p = b.dataset.pick, c = CASES[cur];
+  if (p === "other") { $("#cal").classList.add("on"); return; }
+  if (p === "again") { close(); toast(`${c.what[0]}: otra vista`); return; }
+  if (p === "remove") { last = {...seen}; seen[cur] = false; seen.episodeOnly = false; close(); render(); toast("Quitada de vistas"); return; }
+  if (cur === "episode" && ["now","release","date","unknown"].includes(p)) { $("#ask").classList.add("on"); b.closest(".opts") && (b.closest(".opts").style.display = "none"); $("#cal").classList.remove("on"); return; }
+  last = {...seen};
+  if (p === "one") seen.episodeOnly = true; else seen[cur] = true;
+  close(); render(); toast(p === "one" ? "T2 E5, visto" : p === "all" ? "Del E1 al E5, vistos" : c.toast);
+});
+$("#dim").addEventListener("click", close);
+$("#undo").addEventListener("click", () => { if (last) { seen = last; last = null; render(); } $("#toast").classList.remove("on"); });
+document.querySelectorAll(".tabs button").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === t));
+  cur = t.dataset.case; menu = false; close(); render();
+}));
+render();
+})();
+</script>

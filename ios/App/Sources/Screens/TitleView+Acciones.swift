@@ -103,4 +103,40 @@ extension TitleView {
         let ratings = env.ratings
         return { (stars: Double?) -> Void in Task { await ratings.rate(imdb: videoID, kind: "series", stars: stars) } }
     }
+
+    /// «▶ Ver» o «▶ Continuar T2 E6»; si ibas a medias, la barrita con cuánto falta y «Desde el principio» (como la TV,
+    /// `core/watch.js`); y la versión que va a sonar («🇲🇽 Latino · 1080p · Dolby Vision»; «Latino» o «Castellano» solo si se
+    /// sabe, si no «Español» a secas). Mientras carga, «Cargando» y la versión «Buscando…»: su lugar apartado, nada brinca.
+    func continueAction(_ model: TitleModel) -> ContinueAction {
+        let label = model.continueLabel
+        let go = { play(model) }
+        if model.continueVideoID == nil && !model.isLoading {
+            // Ya cargó y no hay qué ver: sin red, o una serie que aún no tiene episodios.
+            // Con internet no es «Sin conexión»: es que no se pudo cargar (Cinemeta caído, un id raro).
+            let failed = model.error == nil ? nil : env.isOnline ? Text("No se pudo cargar") : Text("Sin conexión")
+            return ContinueAction(title: failed ?? Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
+        }
+        if model.continueVideoID == nil {
+            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, version: Text("Buscando versión…"), play: go)
+        }
+        if let airs = model.continueAirs {
+            // Todavía no sale: la fecha en lugar de «Ver» (antes abría un reproductor que fallaba).
+            return ContinueAction(title: Text("Sale el \(Strings.date(airs, .dayMonth, language: env.services.appSettings.uiLanguage))"), symbol: "calendar", enabled: false, play: go)
+        }
+        let language = model.recommendedLanguage.map { LanguageFlags.flagged($0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
+                                                                  : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage), $0) }
+        let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
+        let version: Text = model.sourceCheck == .none ? Text("Sin versiones por ahora") : model.sourceCheck == .offline ? (env.isOnline ? Text("Tus complementos no contestan") : Text("Sin conexión"))
+            : quality.isEmpty ? Text("Buscando versión…") : Text(verbatim: quality.joined(separator: " · "))
+        let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
+        return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, version: version,
+                              versionLabel: quality.isEmpty ? nil : Text("Se va a ver en: \(LanguageFlags.withoutFlags(quality.joined(separator: ", ")))"),
+                              play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil, tint: artAccent)
+    }
+
+    func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {
+        if let s = label.season, let e = label.episode { return label.isResume ? Text("Continuar T\(s) E\(e)") : Text("Ver T\(s) E\(e)") }
+        return label.isResume ? Text("Continuar") : Text("Ver")   // los nombres de la TV (`core/watch.js`)
+    }
+
 }

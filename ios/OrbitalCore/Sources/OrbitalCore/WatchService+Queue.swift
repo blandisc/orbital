@@ -86,7 +86,13 @@ extension WatchService {
         }
         if let trakt, trakt.linked {
             retry.traktUnwatched = await attempt(snapshot.traktUnwatched) { try await trakt.removeFromHistory($0) }
-            retry.traktWatched = await attempt(snapshot.traktWatched) { try await trakt.addToHistory($0.target, watchedAt: Date(timeIntervalSince1970: $0.at)) }
+            // Pocos, uno por uno (sin duplicar lo que ya está en Trakt); muchos (una temporada, una serie), de 100 en 100.
+            if snapshot.traktWatched.count < Self.batchFrom {
+                retry.traktWatched = await attempt(snapshot.traktWatched) { try await trakt.addToHistory($0.target, watchedAt: Date(timeIntervalSince1970: $0.at)) }
+            } else {
+                let chunks = stride(from: 0, to: snapshot.traktWatched.count, by: 100).map { Array(snapshot.traktWatched[$0..<min($0 + 100, snapshot.traktWatched.count)]) }
+                retry.traktWatched = await attempt(chunks) { chunk in try await trakt.addToHistory(chunk.map { ($0.target, Date(timeIntervalSince1970: $0.at)) }) }.flatMap { $0 }
+            }
             retry.playbackRemovals = await attempt(snapshot.playbackRemovals) { removal in
                 let stale = try await trakt.playback(fresh: true).filter { $0.target.imdb == removal.target.imdb && $0.pausedAt.timeIntervalSince1970 <= removal.at + 1 }
                 for item in stale { try await trakt.removePlayback(id: item.id) }
@@ -114,6 +120,9 @@ extension WatchService {
     }
 
     /// Manda cada cosa; devuelve lo que vale la pena reintentar (sin red, Trakt caído). Lo que Trakt rechaza (inválido) se descarta.
+    /// Desde cuántos vistos pendientes se suben juntos.
+    static let batchFrom = 4
+
     private func attempt<T: Sendable>(_ items: [T], _ send: (T) async throws -> Void) async -> [T] {
         var again: [T] = []
         for item in items {

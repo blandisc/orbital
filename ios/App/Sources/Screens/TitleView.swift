@@ -21,6 +21,8 @@ struct TitleView: View {
 
     struct Replacement { var source: Source; var videoID: String; var existing: DownloadItem }
     @State private var saving = false
+    /// «¿Cuándo la viste?»: qué se está marcando (la película, un episodio, la temporada o la serie).
+    @State var marking: WatchedScope?
     /// Lo que mide la pantalla visible (sin la barra de pestañas) y lo que hay bajo el arte hasta las acciones: el arte
     /// se ajusta para que «Ver», Guardar, Descargar y Fuente queden a la vista al abrir, en un SE y en un Pro.
     @State private var viewport: CGSize = .zero
@@ -109,6 +111,7 @@ struct TitleView: View {
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
+        .modifier(TitleWatchedWhen(model: model, scope: $marking))
         .sheet(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
             if let r = replacing {
                 DownloadVersionSheet(current: describe(r.existing), new: describe(r.source),
@@ -223,7 +226,7 @@ struct TitleView: View {
                    actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { Task { await model.toggleFavorite() } }
     }
 
-    private var artAccent: Color { tint.colors?.accent ?? DS.accent }
+    var artAccent: Color { tint.colors?.accent ?? DS.accent }
 
     /// El botón principal (`ContinueAction`: el botón dice una sola cosa; el avance, la versión y «Desde el principio» van
     /// debajo) y cuatro acciones del mismo tamaño: Guardar, Descargar, Tráiler y Fuente. Cada una cambia en su lugar (Guardada,
@@ -232,8 +235,9 @@ struct TitleView: View {
         VStack(spacing: DS.Space.s4) {
             continueAction(model)
             // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize ? 2 : (model.extras?.trailer?.url == nil ? 3 : 4)),
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize ? 2 : (model.extras?.trailer?.url == nil ? 3 : 4) + (model.kind == "movie" ? 1 : 0)),
                       spacing: DS.Space.s2) {
+                if model.kind == "movie" { watchedAction(model).frame(maxWidth: .infinity) }
                 saveAction(model).frame(maxWidth: .infinity)
                 downloadAction(model).frame(maxWidth: .infinity)
                 if let url = model.extras?.trailer?.url {
@@ -247,36 +251,6 @@ struct TitleView: View {
             }
             .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
         }
-    }
-
-    /// «▶ Ver» o «▶ Continuar T2 E6»; si ibas a medias, la barrita con cuánto falta y «Desde el principio» (como la TV,
-    /// `core/watch.js`); y la versión que va a sonar («🇲🇽 Latino · 1080p · Dolby Vision»; «Latino» o «Castellano» solo si se
-    /// sabe, si no «Español» a secas). Mientras carga, «Cargando» y la versión «Buscando…»: su lugar apartado, nada brinca.
-    private func continueAction(_ model: TitleModel) -> ContinueAction {
-        let label = model.continueLabel
-        let go = { play(model) }
-        if model.continueVideoID == nil && !model.isLoading {
-            // Ya cargó y no hay qué ver: sin red, o una serie que aún no tiene episodios.
-            // Con internet no es «Sin conexión»: es que no se pudo cargar (Cinemeta caído, un id raro).
-            let failed = model.error == nil ? nil : env.isOnline ? Text("No se pudo cargar") : Text("Sin conexión")
-            return ContinueAction(title: failed ?? Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
-        }
-        if model.continueVideoID == nil {
-            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, version: Text("Buscando versión…"), play: go)
-        }
-        if let airs = model.continueAirs {
-            // Todavía no sale: la fecha en lugar de «Ver» (antes abría un reproductor que fallaba).
-            return ContinueAction(title: Text("Sale el \(Strings.date(airs, .dayMonth, language: env.services.appSettings.uiLanguage))"), symbol: "calendar", enabled: false, play: go)
-        }
-        let language = model.recommendedLanguage.map { LanguageFlags.flagged($0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
-                                                                  : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage), $0) }
-        let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
-        let version: Text = model.sourceCheck == .none ? Text("Sin versiones por ahora") : model.sourceCheck == .offline ? (env.isOnline ? Text("Tus complementos no contestan") : Text("Sin conexión"))
-            : quality.isEmpty ? Text("Buscando versión…") : Text(verbatim: quality.joined(separator: " · "))
-        let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
-        return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, version: version,
-                              versionLabel: quality.isEmpty ? nil : Text("Se va a ver en: \(LanguageFlags.withoutFlags(quality.joined(separator: ", ")))"),
-                              play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil, tint: artAccent)
     }
 
     /// Guardar: un toque la guarda en la lista por omisión (tu watchlist con Trakt, si no Mi lista; `SaveDestination`), con un
@@ -382,11 +356,6 @@ struct TitleView: View {
         }
     }
 
-    private func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {
-        if let s = label.season, let e = label.episode { return label.isResume ? Text("Continuar T\(s) E\(e)") : Text("Ver T\(s) E\(e)") }
-        return label.isResume ? Text("Continuar") : Text("Ver")   // los nombres de la TV (`core/watch.js`)
-    }
-
     @ViewBuilder private func episodes(_ model: TitleModel) -> some View {
         // Un solo bloque de controles, simétrico: la temporada a la izquierda y la versión de la serie a la derecha, las dos
         // cápsulas iguales (antes temporada, versión y avance eran tres renglones con alineaciones y tamaños distintos); abajo,
@@ -424,10 +393,11 @@ struct TitleView: View {
                 HStack {
                     Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote)
                     Spacer()
-                    if progress.watched < progress.total {
-                        Button("Marcar como vista", systemImage: "checkmark.circle") { Task { await model.markSeasonWatched() } }
-                            .font(DS.TextRecipe.footnote.font).buttonStyle(.borderless)
-                    }
+                    Menu {
+                        Button("Marcar la temporada como vista", systemImage: "checkmark.circle") { marking = .season(model.selectedSeason) }
+                        Button("Ya la vi toda", systemImage: "checkmark.circle.badge.questionmark") { marking = .series }
+                    } label: { Label("Marcar como vista", systemImage: "checkmark.circle").font(DS.TextRecipe.footnote.font) }
+                    .accessibilityIdentifier("season-mark-watched")
                 }
                 ProgressView(value: Double(progress.watched), total: Double(progress.total)).tint(DS.brandMoon)
             }
@@ -436,7 +406,7 @@ struct TitleView: View {
         LazyVStack(spacing: 0) {   // perezosa: una serie larga no arma (ni pide imágenes de) todos sus episodios a la vez
             ForEach(model.rows) { row in
                 EpisodeRowView(row: row, play: { if row.airs == nil { start(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
-                               markWatched: { Task { if row.watched { await model.unmarkWatched(row.id); env.watching.forget(metaID: model.metaID, videoID: row.id) } else { await model.markWatched(row.id) } } }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
+                               markWatched: { marking = .episode(row.id) }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
                                resumeDownload: { Task { await model.resumeDownload(row.id) } },
                                downloadFraction: model.downloadFraction(row.id),
                                playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil,
