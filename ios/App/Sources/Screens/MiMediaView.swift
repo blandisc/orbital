@@ -353,7 +353,7 @@ struct MiMediaTitleView: View {
             }
         }
         .padding(.vertical, DS.Space.s2)
-        .opacity(row.missing ? DesignTokens.Opacity.disabled : 1)
+        .opacity(row.missing ? DS.Opacity.disabled : 1)
     }
 
     private func fixRow(_ t: OneDriveLibrary.Title) -> some View {

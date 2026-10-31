@@ -33,7 +33,7 @@ struct NowPlayingCard: View {
             controls
         }
         .padding(framed ? DS.Space.s3 : 0)
-        .background(framed ? DS.fill : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .background { if framed { Color.clear.dsCard(.row, translucent: true) } }
         .accessibilityElement(children: .contain)
     }
 
@@ -171,7 +171,7 @@ struct FromTVCard: View {
                 .onArt()
             }
             .frame(minHeight: DS.Poster.fromTVHeight)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DSCardLevel.card.radius, style: .continuous))   // la esquina de la tarjeta grande (D4)
         }
         .accessibilityElement(children: .contain)
     }

@@ -456,7 +456,7 @@ extension View {
     /// Cada renglón que se desliza para borrar es su propia tarjeta redondeada (con aire entre una y otra): al deslizar se
     /// mueve completa, con sus esquinas (con el fondo de la sección, la orilla quedaba recta, como tapada).
     func downloadCard() -> some View {
-        listRowBackground(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).fill(DS.surface))
+        listRowBackground(Color.clear.dsCard(.card))
             .listRowSeparator(.hidden)
             .listSectionSpacing(DS.Layout.betweenSections)
     }

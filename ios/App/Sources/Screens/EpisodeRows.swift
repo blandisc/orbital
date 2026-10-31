@@ -60,7 +60,7 @@ struct EpisodeRowView: View {
                     .accessibilityIdentifier("episode-rating")
             }
         }
-        .opacity(row.airs == nil ? 1 : DesignTokens.Opacity.faint)
+        .opacity(row.airs == nil ? 1 : DS.Opacity.dimmed)
         .contextMenu { if row.airs == nil { actions(download: true) } }
     }
 

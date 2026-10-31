@@ -166,8 +166,8 @@ struct WrappedView: View {
                 ForEach(options, id: \.imdb) { t in
                     Button { if answer == nil { answer = t.imdb } } label: {
                         PosterView(url: t.poster, title: t.title)
-                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(answer == nil ? .clear : t.imdb == right ? DS.brandMoon : .clear, lineWidth: DS.Space.s1))
-                            .opacity(answer == nil || t.imdb == right ? 1 : DS.Watching.wrongOpacity)
+                            .dsSelectionRing(answer != nil && t.imdb == right, radius: DS.Radius.sm, width: DS.Stroke.focus)
+                            .opacity(answer == nil || t.imdb == right ? 1 : DS.Opacity.faint)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(Text(verbatim: t.title))

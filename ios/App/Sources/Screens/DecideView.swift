@@ -115,7 +115,7 @@ struct DecideView: View {
                             .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                                 .strokeBorder(chosen ? DS.accent : .clear, lineWidth: DS.Decide.chosenStroke))
                             .scaleEffect(chosen ? 1 : DS.Decide.otherScale)
-                            .opacity(chosen ? 1 : DS.Decide.otherOpacity)
+                            .opacity(chosen ? 1 : DS.Opacity.dimmed)
                     }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)

@@ -67,7 +67,7 @@ struct HomeView: View {
                                   onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
                                   onContinueHere: { openTitle = now.metaID.map { TitleRoute(kind: now.kind, metaID: $0, title: now.title, poster: now.poster) } })
                         .padding(.horizontal, DS.Space.gutter)
-                        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
+                        .transition(DS.Motion.appear(reduceMotion))
                 }
                 // Lo que la TV mandó con «Enviar al iPhone»: una tarjeta pequeña, bajo «Viendo en la TV».
                 ForEach(inbox.model.fromTV) { item in
@@ -76,7 +76,7 @@ struct HomeView: View {
                                onDownload: { Task { await inbox.model.downloadFromCard(item) } },
                                onDismiss: { inbox.model.dismiss(item) })
                         .padding(.horizontal, DS.Space.gutter)
-                        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
+                        .transition(DS.Motion.appear(reduceMotion))
                 }
                 // Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo.
                 if !model.spotlight.isEmpty {
@@ -465,7 +465,7 @@ struct HomeView: View {
                             .accessibilityIdentifier("top-\(s.brand)")
                         }
                     }
-                    .padding(.vertical, DS.PlatformFan.pillStroke)   // el borde de la elegida no se recorta
+                    .padding(.vertical, DS.Stroke.selected)   // el anillo de la elegida no se recorta
                     .scrollTargetLayout()
                 }
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)

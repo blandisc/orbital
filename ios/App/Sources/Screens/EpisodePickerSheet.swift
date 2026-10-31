@@ -68,7 +68,7 @@ struct EpisodePickerSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .listRowBackground(current ? DS.live.opacity(DesignTokens.Opacity.fill) : Color.clear)
+        .listRowBackground(current ? DS.live.opacity(DS.Opacity.selectedFill) : Color.clear)
         .accessibilityHint(Text("Ponerlo en la TV"))
         .accessibilityIdentifier("episode-\(episode.id)")
     }
