@@ -49,6 +49,20 @@
 }
 .pill--tab.pill--focused::after, .pill--tab.is-focused::after { content: none; }
 .pill--focused, .pill.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
+/* GlassSwitch: el selector de vidrio del segundo piso (las consolas de Juegos). La cápsula es vidrio; la elegida, blanco tenue;
+   la enfocada, el foco invertido de toda píldora. Si no caben con su nombre, las que no están elegidas ni enfocadas quedan en su
+   foto (glass-switch--compact, lo pone quien la usa al medir). */
+.glass-switch {
+  display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; padding: var(--space-1); border-radius: var(--radius-pill);
+  background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
+}
+.glass-switch__item { padding: 0 var(--space-4) 0 var(--space-3); color: var(--color-text-muted); }
+.glass-switch__item.pill--on { background: var(--color-fill-hover); color: var(--color-text); }
+.glass-switch__item.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); }
+.glass-switch__img { flex: none; height: var(--icon-xl); width: calc(var(--icon-xl) * 1.5); object-fit: contain; filter: var(--shadow-drop-sm); }
+.glass-switch--compact .glass-switch__item:not(.pill--on):not(.is-focused) .glass-switch__label { display: none; }
+.glass-switch--compact .glass-switch__item:not(.pill--on):not(.is-focused) { padding-inline: var(--space-3); }
+[data-input="touch"] .glass-switch__item { min-height: var(--touch-target); }
 /* Valores segmentados (Segmented): las opciones de un ajuste juntas en una cápsula; la elegida en papel. Dentro de una fila
    enfocada (foco invertido, fondo claro) se invierte con ella. Con el dedo, cada una del alto de un dedo. */
 .segmented { flex: none; display: inline-flex; gap: var(--space-1); margin-left: auto; padding: var(--space-1); border-radius: var(--radius-pill); background: var(--color-fill); }
@@ -68,7 +82,7 @@
   background: var(--color-scrim); animation: fade-in var(--duration-base) var(--ease-out);
 }
 .side-panel__panel {
-  height: calc(100% - 2 * (var(--space-5) + var(--safe-y))); margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0 0;
+  align-self: flex-start; max-height: calc(100% - 2 * (var(--space-5) + var(--safe-y))); margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0 0;
   border-radius: var(--radius-2xl); background: var(--color-glass-strong); backdrop-filter: var(--filter-glass);
   box-shadow: var(--edge-glass), var(--shadow-overlay);
   animation: slide-in-right var(--duration-slow) var(--ease-out);

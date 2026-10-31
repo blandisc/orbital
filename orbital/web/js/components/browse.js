@@ -1,30 +1,10 @@
-import { h, mount, svg } from "../core/dom.js";
-import { ICONS } from "../core/icons.js";
+import { mount } from "../core/dom.js";
 import { Pill } from "./ui.js";
 
 /**
- * Acomodo de una vista con secciones (Juegos, las Listas de Para ti): riel (rail.js) | encabezado,
- * filtros y portadas | ficha (detail-panel.js). Aquí, las piezas del centro, iguales en las dos.
- * Estilos en browse.css; el contenedor lleva la clase `browse` (y su inset con --browse-inset).
+ * Las piezas de una vista con portadas y filtros (Juegos, TV en vivo, ¿Qué vemos?): los filtros como pestañas de texto, que
+ * siempre caben en un renglón, y la cuadrícula que se recorre lo justo para que lo enfocado se vea. Estilos en browse.css.
  */
-
-/** Encabezado: la sección en su casilla (foto, logo de marca o ícono), el nombre grande y lo esencial. */
-export function BrowseHead({ title, meta, glow = null, media = {} }) {
-  const box = h("span", {
-    class: ["browse__media", media.brand && "browse__media--brand", !media.brand && !media.photo && !media.cover && "browse__media--icon"],
-    style: glow ? { "--glow": glow } : null,
-  });
-  const icon = () => h("span", { class: "browse__media-icon" }, svg(ICONS[media.icon] || ICONS.list));
-  if (media.brand) {
-    const img = h("img", { class: "browse__media-img browse__media-img--brand", src: media.brand, alt: "" });
-    img.addEventListener("error", () => { box.classList.remove("browse__media--brand"); img.replaceWith(icon()); }, { once: true });
-    box.append(img);
-  } else if (media.photo) box.append(h("img", { class: ["browse__media-img", media.logo && "browse__media-img--logo"], src: media.photo, alt: "" }));
-  else if (media.cover) box.append(h("img", { class: "browse__media-img browse__media-img--cover", src: media.cover, alt: "" }));
-  else box.append(icon());
-  return h("div", { class: "browse__heading" }, box,
-    h("span", { class: "browse__heading-text" }, h("h2", { class: ["browse__title", String(title).length > 24 && "browse__title--long"] }, title), meta && h("span", { class: "browse__meta" }, meta)));
-}
 
 /**
  * Filtros como pestañas de texto (Jugados · Añadidos… / Series · Películas), como DSTextTabs del iPhone. `options` = [{ id, label }]; cada uno

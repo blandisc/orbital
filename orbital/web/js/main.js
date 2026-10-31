@@ -92,6 +92,8 @@ const ui = {
   games: createGames({
     onAction: (action, item) => gamesActivate({ kind: "game", item }, action),
     onFocus: (target) => gamesFocused(target),
+    // Al bajar de la primera fila, la barra de arriba se va con el juego (como el Apple TV); al subir, vuelve.
+    onChrome: (away) => { document.body.dataset.chrome = away ? "away" : ""; },
     onPick: (target, id) => (ui.games.focusId === id && !justTouched() ? gamesActivate(target) : ui.games.focus(id)),
   }),
   shelf: createShelf({ onPick: (r, c) => pick(r, c), onSwipe: (swipe) => onSwipe(swipe) }),
@@ -687,7 +689,8 @@ function gamesFocused(target) {
 function gamesActivate(target, action = "select") {
   if (!target) return;
   if (target.kind === "filter") { sound.play("select"); return ui.games.setFilter(target.value); }
-  if (target.kind === "rail") return handleGames("right"); // A en el riel: a las portadas de esa consola
+  // A en una consola: la elige y baja a sus juegos (si ya era la elegida, solo baja).
+  if (target.kind === "rail") { if (!ui.games.switchTo(target.console.id)) handleGames("down"); sound.play("open"); return renderHints(); }
   const item = target.item;
   if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
   if (action === "alt") {

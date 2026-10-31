@@ -49,13 +49,14 @@
 
 /* --- Fondo vivo (Inicio, Juegos, Para ti y TV en vivo) ------------------------------------------------- */
 .backdrop__space { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity var(--duration-tint) var(--ease-out); }
-/* Las vistas con fondo de ambiente (Inicio, Juegos, Para ti, TV en vivo): sin arte a pantalla completa (el arte vive en su ficha);
-   el espacio vivo y una luz del color de lo enfocado, que cambia suave. Una sola regla para las cuatro. */
-body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop__layer,
-body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop__scrim { opacity: 0; }
-body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop {
+/* Las vistas con fondo de ambiente (Inicio, Para ti, TV en vivo): sin arte a pantalla completa (el arte vive en su ficha);
+   el espacio vivo y una luz del color de lo enfocado, que cambia suave. Una sola regla para las tres. */
+body:is([data-view="home"], [data-view="foryou"], [data-view="tv"]) .backdrop__layer,
+body:is([data-view="home"], [data-view="foryou"], [data-view="tv"]) .backdrop__scrim { opacity: 0; }
+body:is([data-view="home"], [data-view="foryou"], [data-view="tv"]) .backdrop {
   transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep);
 }
+/* Juegos (como el Apple TV): el arte del juego enfocado a pantalla y, debajo, la misma luz de su color que sigue al foco. */
 body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-view="tv"]) .backdrop__space { opacity: 1; }
 
 /* Luz del color de lo enfocado: una sigue al foco (suave) y otra queda quieta abajo a la derecha. Gradientes ya

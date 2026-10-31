@@ -192,6 +192,7 @@
   --row-peek: 2.6rem; /* cuánto asoma la fila siguiente */
   --hints-room: calc(3.4rem + var(--space-4) + var(--safe-y)); /* lo que deja libre el pie de controles abajo */
   --control-height: 3rem; /* un botón, un aviso, la barra de arriba */
+  --status-room: calc(var(--space-5) + var(--safe-y) + var(--control-height)); /* lo que ocupa la barra de arriba con su margen */
   --control-sm: 2.75rem; /* una pestaña de la barra de arriba, una tecla del riel */
   --menu-row-height: 3.6rem; /* una fila de un menú y el pie de controles */
   --touch-target: 2.9rem; /* con el dedo: al menos ~44 px */

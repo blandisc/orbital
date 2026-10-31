@@ -2,6 +2,7 @@
  * Pantalla Juegos (lógica pura, con pruebas en tests/web): tus consolas, los juegos de cada una
  * y los filtros. Entras directo a tu última consola; LT/RT (o el riel) cambian de consola.
  */
+import { duration, shortAgo } from "./format.js";
 import { consoleList } from "./home.js";
 
 export const FILTERS = [
@@ -59,4 +60,18 @@ export function stepConsole(list, id, delta) {
 export function pickConsole(list, wanted, previous) {
   for (const id of [wanted, previous]) if (id && list.some((c) => c.id === id)) return id;
   return list[0]?.id ?? null;
+}
+
+/**
+ * El porqué de un juego, arriba de su logo en turquesa (como el porqué de una película): por qué está aquí para ti. Abierto,
+ * cuándo lo jugaste y cuánto, lo nuevo o «Sin estrenar». Nunca un dato suelto (su año o su consola van en la línea de datos).
+ */
+export function gameReason(item, now = Date.now()) {
+  if (item.live) return "Abierto ahora";
+  const ago = shortAgo(item.last_played, now);
+  const when = ago && (ago === "ahora" || ago === "ayer" ? ago : /^\d/.test(ago) ? `hace ${ago}` : `el ${ago}`);
+  if (when) return item.playtime >= 60 ? `Lo jugaste ${when} · ${duration(item.playtime)}` : `Lo jugaste ${when}`;
+  if (item.playtime >= 60) return `Llevas ${duration(item.playtime)}`;
+  if (item.new) return "Nuevo en tu consola";
+  return "Sin estrenar";
 }

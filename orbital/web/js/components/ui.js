@@ -87,6 +87,19 @@ export const Segmented = (choices, { onPick = null } = {}) =>
   h("span", { class: "segmented", role: "radiogroup" }, choices.map((c) => Pill(c.label, { on: c.on, className: "segmented__item", role: "radio",
     "aria-checked": c.on ? "true" : "false", onClick: (event) => { event.stopPropagation(); onPick?.(c); } })));
 
+/**
+ * El selector de vidrio (el segundo piso, debajo de la barra de secciones, como el Apple TV): una cápsula de vidrio con las
+ * opciones de una sección —las consolas de Juegos—, cada una con su foto o ícono y su nombre. La elegida, en blanco tenue; la
+ * enfocada se invierte y crece, como toda píldora. items: [{ id, label, img, on, focusId }]; tocar una llama onPick(item).
+ */
+export const GlassSwitch = (items, { label, onPick = null, className = null } = {}) =>
+  h("nav", { class: ["glass-switch", className], role: "tablist", "aria-label": label }, items.map((item) => Pill(
+    h("span", { class: "glass-switch__label" }, item.label), {
+      on: item.on, className: "glass-switch__item", role: "tab", tabindex: "-1", "data-focus-id": item.focusId,
+      icon: item.img ? h("img", { class: "glass-switch__img", src: item.img, alt: "", "aria-hidden": "true" }) : null,
+      onClick: () => onPick?.(item),
+    })));
+
 /** Cuánto llevas (0..1). Sin avance no se dibuja nada. */
 export function Progress(fraction, { className = null, label = "Avance" } = {}) {
   if (!(fraction > 0)) return null;
