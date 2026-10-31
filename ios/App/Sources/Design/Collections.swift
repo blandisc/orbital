@@ -98,8 +98,12 @@ enum ListSource: Hashable {
         case .trakt: Text(verbatim: "Trakt"); case .addon: Text("Complemento"); case .critics: Text(verbatim: "Rotten Tomatoes"); case .orbital: Text(verbatim: "Orbital")
         }
     }
-    /// Rotten Tomatoes se dice con su ícono, no con su nombre: cabe junto a cualquier título.
-    var isIcon: Bool { self == .critics }
+    /// Rotten Tomatoes y Trakt se dicen con su ícono, no con su nombre: caben junto a cualquier título (Fernando, 30 oct
+    /// 2026: el cuadro rojo «TRAKT» se leía como un botón).
+    var icon: String? {
+        switch self { case .critics: "rating-rotten-tomatoes"; case .trakt: "rating-trakt"; default: nil }
+    }
+    var isIcon: Bool { icon != nil }
     var color: Color {
         switch self {
         case .trakt: DS.RatingBrand.trakt; case .addon: DS.Collections.addon; case .critics: DS.Collections.critics; case .orbital: DS.Collections.orbital
@@ -107,14 +111,14 @@ enum ListSource: Hashable {
     }
 }
 
-/// El sello de origen: el nombre del servicio en mayúsculas sobre su color. Rotten Tomatoes, con su jitomate (como los
-/// logos de calificación), aunque las series vengan de una lista de Trakt.
+/// El sello de origen: el nombre del servicio en mayúsculas sobre su color. Rotten Tomatoes y Trakt, con su ícono (como los
+/// logos de calificación).
 struct SourceBadge: View {
     let source: ListSource
     var body: some View {
-        if source.isIcon {
-            // El jitomate, a la altura de las mayúsculas del título de sección (`DS.Size.markSmall`, como la marca de Orbital).
-            Image("rating-rotten-tomatoes").resizable().scaledToFit().frame(height: DS.Size.markSmall)
+        if let icon = source.icon {
+            // El jitomate o el círculo de Trakt, a la altura de las mayúsculas del título (`DS.Size.markSmall`, como la marca de Orbital).
+            Image(icon).resizable().scaledToFit().frame(height: DS.Size.markSmall)
                 .accessibilityLabel(Text("De \(source.name)"))
         } else { label }
     }
