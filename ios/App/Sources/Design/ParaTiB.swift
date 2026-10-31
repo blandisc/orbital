@@ -17,7 +17,7 @@ struct SectionCircles<ID: Hashable>: View {
                     Button { jump(item.id) } label: {
                         VStack(spacing: DS.Space.s2) {
                             Image(systemName: item.symbol).font(DS.TextRecipe.section.font)
-                                .foregroundStyle(DS.accentBlue)   // azul (Fernando, 31 oct 2026)
+                                .foregroundStyle(DS.orbitalBlue)   // azul (Fernando, 31 oct 2026)
                                 .frame(width: DS.ParaTiB.circle, height: DS.ParaTiB.circle)
                                 .background(DS.fill, in: Circle())
                             item.title.recipe(.caption, color: DS.textMuted).lineLimit(1)
@@ -66,7 +66,11 @@ struct MosaicCover: View {
             }
             .onScrollVisibilityChange(threshold: DS.ParaTiB.coverVisibleFrom) { onScreen = $0 }
             // Otro muro cada vez que se arma la pantalla (y cuando llegan más pósters), no siempre los mismos 36.
-            .onChange(of: posters.count, initial: true) { order = Array(posters.shuffled().prefix(DS.ParaTiB.coverPosters)) }
+            .onChange(of: posters.count, initial: true) {
+                // Revueltos y, si son pocos, repetidos hasta llenar el muro (al jalar para actualizar no queda hueco arriba).
+                let pool = posters.shuffled()
+                order = pool.isEmpty ? [] : (0..<DS.ParaTiB.coverPosters).map { pool[$0 % pool.count] }
+            }
     }
 
     /// El vaivén: el muro baja y sube un renglón sobre su diagonal, sin prisa (quieto con «Reducir movimiento» o fuera de pantalla).
@@ -89,12 +93,14 @@ struct MosaicCover: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Las orillas: arriba llega hasta la orilla de la pantalla (detrás del título y la barra, sin corte); abajo se apaga
+    /// Las orillas: arriba sube mucho más que la pantalla (al jalar para actualizar siguen los pósters, Fernando, 31 oct
+    /// 2026) y pasa detrás del título y la barra sin corte; abajo se apaga
     /// hasta perderse bajo los círculos.
     private var fade: some View {
         let up = DS.ParaTiB.coverBleedUp, total = up + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown
         return LinearGradient(stops: [
             .init(color: .black.opacity(DS.ParaTiB.coverUnderBar), location: 0),
+            .init(color: .black.opacity(DS.ParaTiB.coverUnderBar), location: (up - DS.ParaTiB.coverTitleZone) / total),
             .init(color: .black, location: up / total),
             .init(color: .black, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverBaseAt) / total),
             .init(color: .clear, location: 1),
@@ -106,6 +112,7 @@ struct MosaicCover: View {
         let up = DS.ParaTiB.coverBleedUp, total = up + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown
         return LinearGradient(stops: [
             .init(color: DS.bg.opacity(DS.ParaTiB.coverTitleVeil), location: 0),   // el título grande se lee encima
+            .init(color: DS.bg.opacity(DS.ParaTiB.coverTitleVeil), location: (up - DS.ParaTiB.coverTitleZone) / total),
             .init(color: .clear, location: up / total),
             .init(color: .clear, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverClearAt) / total),
             .init(color: DS.bg.opacity(DS.ParaTiB.coverBaseVeil), location: (up + DS.ParaTiB.coverHeight) / total),

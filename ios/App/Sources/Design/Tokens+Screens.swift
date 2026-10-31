@@ -182,7 +182,7 @@ extension DS {
         /// La portada (el arte de lo que más viste): dónde empieza su velo y su alto; cuántos van en «Lo que más viste».
         static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
-        /// La racha que se dice en la portada (desde 3 días); el piso del azul del calendario (`DS.accentBlue`); el
+        /// La racha que se dice en la portada (desde 3 días); el piso del azul del calendario (`DS.orbitalBlue`); el
         /// relleno de las barras de géneros y la columna fija de sus porcentajes.
         static let streakShown = 3, dayFloor = 0.35, genreFill = 0.8, percentColumn: CGFloat = 40
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
@@ -369,7 +369,7 @@ extension DS {
         static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
         static let emblem: CGFloat = 70, glow: CGFloat = 16
         /// El sello de dónde viene una lista (Trakt, tus complementos, Rotten Tomatoes, tu Orbital).
-        static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), critics = Color(red: 0.78, green: 0.16, blue: 0.07), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)
+        static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), critics = Color(red: 0.78, green: 0.16, blue: 0.07), orbital = DS.orbitalBlue
         static let badgeRadius: CGFloat = 5
         /// Un renglón de lista (`ListRow`, «Tuyo»): el ancho de sus pósters.
         static let stackPoster: CGFloat = 40

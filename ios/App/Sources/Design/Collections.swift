@@ -92,12 +92,15 @@ enum AwardNames {
 /// comedia»). Sin colores ni íconos: el aire y la línea separan. Pone su propio margen a los lados.
 struct DSChapterHead: View {
     let label: Text
+    /// El ícono de la sección (el mismo del índice de arriba), en el azul de Orbital, a la izquierda del rótulo.
+    var symbol: String? = nil
     /// Sin título, solo el rótulo con su línea (Fernando, 31 oct 2026: en Para ti basta el rótulo).
     var title: Text? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            HStack(spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
+                if let symbol { Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.orbitalBlue).accessibilityHidden(true) }
                 label.textCase(.uppercase).font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Chapter.tracking)
                     .accessibilityAddTraits(.isHeader)
                     .foregroundStyle(DS.textMuted).lineLimit(1).fixedSize()

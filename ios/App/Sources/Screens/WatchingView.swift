@@ -91,8 +91,8 @@ struct WatchingView: View {
             ArtVeil(at: DS.Watching.veilFrom, strength: .deep)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 // El periodo y tus horas en azul (Fernando, 31 oct 2026), el mismo azul del calendario.
-                periodPhrase(s.period).recipe(.footnote, color: DS.accentBlue).fontWeight(.semibold).lineLimit(1)   // un dato, no un porqué
-                Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.accentBlue)
+                periodPhrase(s.period).recipe(.footnote, color: DS.orbitalBlue).fontWeight(.semibold).lineLimit(1)   // un dato, no un porqué
+                Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.orbitalBlue)
                     .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
                 heroFacts(s).recipe(.footnote, color: DS.onArtSecondary).lineLimit(2)
             }
