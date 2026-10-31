@@ -72,105 +72,12 @@ struct WatchingBars: View {
     }
 }
 
-/// «Día por día»: en una semana o un mes, un calendario de verdad (L M X J V S D arriba, el número de cada día) con un solo
-/// color, azul (Fernando, 31 oct 2026), más intenso según cuánto viste ese día; en un año o siempre, el mapa de cuadritos
-/// con el mismo azul.
-struct WatchingDayGrid: View {
-    let start: Date
-    let end: Date
-    let minutes: [Date: Int]
-    /// Tocar un día (en el mapa de «Día por día» abre lo que viste ese día); nil: solo se ve.
-    var onDay: ((Date) -> Void)?
-    var calendar: Calendar = {
-        var c = Calendar.current
-        c.firstWeekday = 2   // la semana empieza en lunes, como en los calendarios en español
-        return c
-    }()
-
-    var body: some View {
-        let first = calendar.dateInterval(of: .weekOfYear, for: start)?.start ?? start
-        let count = max(1, (calendar.dateComponents([.day], from: first, to: end).day ?? 0) + 1)
-        let weeks = Int((Double(count) / 7).rounded(.up))
-        let most = max(minutes.values.max() ?? 0, 1)
-        if weeks <= 6 {
-            VStack(spacing: DS.YearMap.gap) {
-                HStack(spacing: DS.YearMap.gap) {
-                    ForEach(0..<7, id: \.self) { d in
-                        Text(verbatim: Self.letter(calendar.date(byAdding: .day, value: d, to: first) ?? first, calendar: calendar))
-                            .recipe(.caption, color: DS.textMuted).frame(maxWidth: .infinity)
-                    }
-                }
-                ForEach(0..<weeks, id: \.self) { w in
-                    HStack(spacing: DS.YearMap.gap) {
-                        ForEach(0..<7, id: \.self) { d in
-                            let day = calendar.date(byAdding: .day, value: w * 7 + d, to: first) ?? first
-                            let inside = !(day > end || day < calendar.startOfDay(for: start))
-                            let watched = minutes[calendar.startOfDay(for: day)] ?? 0
-                            ZStack {
-                                RoundedRectangle(cornerRadius: DS.Radius.xs).fill(inside ? fill(watched, most) : .clear)
-                                if inside {
-                                    Text(verbatim: "\(calendar.component(.day, from: day))")
-                                        .recipe(.caption, color: watched > 0 ? DS.paper : DS.textMuted).monospacedDigit()
-                                }
-                            }
-                            .aspectRatio(1, contentMode: .fit)   // ds-exception: cuadros cuadrados (un día)
-                            .contentShape(Rectangle())
-                            .onTapGesture { if inside, let onDay { onDay(calendar.startOfDay(for: day)) } }
-                            .accessibilityHidden(!inside || onDay == nil)
-                            .accessibilityLabel(Text(day, format: .dateTime.day().month(.wide)))
-                            .accessibilityAddTraits(.isButton)
-                        }
-                    }
-                }
-            }
-            .accessibilityElement(children: onDay == nil ? .ignore : .contain)
-            .accessibilityHidden(onDay == nil)
-        } else {
-            longGrid(first: first, weeks: weeks, most: most)
-        }
-    }
-
-    private func longGrid(first: Date, weeks: Int, most: Int) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: DS.YearMap.gap) {
-                ForEach(0..<weeks, id: \.self) { w in
-                    VStack(spacing: DS.YearMap.gap) {
-                        ForEach(0..<7, id: \.self) { d in
-                            let day = calendar.date(byAdding: .day, value: w * 7 + d, to: first) ?? first
-                            RoundedRectangle(cornerRadius: DS.YearMap.radius)
-                                .fill(day > end || day < calendar.startOfDay(for: start) ? .clear : fill(minutes[calendar.startOfDay(for: day)] ?? 0, most))
-                                .frame(width: DS.Watching.cell, height: DS.Watching.cell)
-                        }
-                    }
-                }
-            }
-        }
-        .defaultScrollAnchor(.trailing)
-        .accessibilityHidden(true)
-    }
-
-    /// L M X J V S D (miércoles es X, como en los calendarios en español).
-    static func letter(_ day: Date, calendar: Calendar) -> String {
-        ["D", "L", "M", "X", "J", "V", "S"][calendar.component(.weekday, from: day) - 1]
-    }
-
-    /// Azul más intenso según los minutos de ese día; sin nada, el relleno de siempre.
-    private func fill(_ watched: Int, _ most: Int) -> Color {
-        guard watched > 0 else { return DS.fill }
-        return DS.orbitalBlue.opacity(DS.Watching.dayFloor + (1 - DS.Watching.dayFloor) * Double(watched) / Double(most))
-    }
-}
-
-/// «Día por día» (Fernando, 31 oct 2026, decisión 3A): arriba siempre el año como en GitHub (una columna por semana, del
-/// azul del logo según cuánto viste); tocarlo acerca ese mes, que se abre debajo como calendario; tocar un día abre debajo lo
-/// que viste, sin esconder lo de arriba. Las flechas cambian de año. «Tu año» vive aquí adentro.
+/// «Día por día» (Fernando, 31 oct 2026, opción B): solo el mapa de calor como GitHub, en grande (una columna por semana,
+/// de lunes a domingo, del azul del logo según cuánto viste). Se desliza de lado hacia atrás en el tiempo y abre en lo de
+/// hoy; arriba, la letra de cada mes (y el año en enero). Tocar un día abre debajo lo que viste; tocarlo otra vez lo cierra.
 struct WatchingZoomMap: View {
     let plays: [TraktPlay]
-    /// Al abrir: el mes de hoy abierto (semana, mes) o solo el año (año, siempre).
-    let opensMonth: Bool
     let locale: Locale
-    @State private var year = Calendar.current.component(.year, from: Date())
-    @State private var month: Date?
     @State private var day: Date?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let calendar: Calendar = {
@@ -183,127 +90,69 @@ struct WatchingZoomMap: View {
         let byDay = Dictionary(grouping: plays) { calendar.startOfDay(for: $0.at) }
         let minutes = byDay.mapValues { $0.reduce(0) { $0 + $1.minutes } }
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-            header(byDay)
-            yearMap(minutes)
-            if let month {
-                monthCalendar(month, minutes)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+            map(minutes)
             if let day {
                 dayDetail(day, byDay)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .animation(DS.Motion.base(reduceMotion), value: month)
         .animation(DS.Motion.base(reduceMotion), value: day)
-        .sensoryFeedback(.selection, trigger: month)
         .sensoryFeedback(.selection, trigger: day)
         .onAppear {
-            year = calendar.component(.year, from: Date())
-            month = opensMonth ? calendar.dateInterval(of: .month, for: Date())?.start : nil
-            day = nil
             #if DEBUG
-            if Demo.isOn, Demo.zoom == "year" { month = nil }
-            if Demo.isOn, Demo.zoom == "day", let last = plays.map(\.at).max() {
-                day = calendar.startOfDay(for: last); month = calendar.dateInterval(of: .month, for: last)?.start
-            }
+            if Demo.isOn, Demo.zoom == "day", let last = plays.map(\.at).max() { day = calendar.startOfDay(for: last) }
             #endif
         }
-        .onChange(of: opensMonth) { _, opens in month = opens ? calendar.dateInterval(of: .month, for: Date())?.start : nil; day = nil }
     }
 
-    /// El año con sus flechas y, si hay un mes abierto, su nombre con una ✕ para cerrarlo.
-    private func header(_ byDay: [Date: [TraktPlay]]) -> some View {
-        let now = calendar.component(.year, from: Date())
-        let first = byDay.keys.map { calendar.component(.year, from: $0) }.min() ?? now
-        return HStack(spacing: DS.Space.s2) {
-            Text(verbatim: "\(year)").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text).monospacedDigit()
-            if let month {
-                Button { self.month = nil; day = nil } label: {
-                    HStack(spacing: DS.Space.s1) {
-                        Text(verbatim: monthName(month))
-                        Image(systemName: "xmark").font(DS.TextRecipe.caption.font.weight(.bold))
-                    }
-                    .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.backdropDeep)
-                    .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget * DS.Watching.chipHeight)
-                    .background(DS.orbitalBlue, in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Cerrar \(monthName(month))"))
-            }
-            Spacer(minLength: DS.Space.s2)
-            Button { year -= 1; month = nil; day = nil } label: { Image(systemName: "chevron.left") }
-                .accessibilityLabel(Text("Año anterior")).disabled(year <= first)
-            Button { year += 1; month = nil; day = nil } label: { Image(systemName: "chevron.right") }
-                .accessibilityLabel(Text("Año siguiente")).disabled(year >= now)
-        }
-        .buttonStyle(.glass).buttonBorderShape(.circle)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("watching-crumbs")
-    }
-
-    /// El año como GitHub: 53 columnas (semanas) de lunes a domingo, las letras de los meses arriba; tocar acerca ese mes.
-    private func yearMap(_ minutes: [Date: Int]) -> some View {
-        let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date()
-        let firstMonday = calendar.dateInterval(of: .weekOfYear, for: start)?.start ?? start
-        let weeks = DS.Watching.yearWeeks
-        let inYear = minutes.filter { calendar.component(.year, from: $0.key) == year }
-        let most = max(inYear.values.max() ?? 0, 1)
+    /// Desde el lunes de la semana de lo primero que viste (al menos un año) hasta esta semana.
+    private func map(_ minutes: [Date: Int]) -> some View {
         let today = calendar.startOfDay(for: Date())
-        return GeometryReader { geo in
-            let pitch = geo.size.width / CGFloat(weeks)
-            let cell = max(1, pitch - DS.Watching.yearGap)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                // Las letras de los meses, sobre la semana en que empiezan.
-                ZStack(alignment: .topLeading) {
-                    ForEach(1...12, id: \.self) { m in
-                        if let first = calendar.date(from: DateComponents(year: year, month: m, day: 1)) {
-                            let w = (calendar.dateComponents([.day], from: firstMonday, to: first).day ?? 0) / 7
-                            Text(verbatim: String(first.formatted(.dateTime.month(.narrow).locale(locale))))
-                                .font(DS.TextRecipe.caption.font)
-                                .foregroundStyle(month.map { calendar.isDate($0, equalTo: first, toGranularity: .month) } == true ? DS.text : DS.textMuted)
-                                .offset(x: CGFloat(w) * pitch)
+        let thisWeek = calendar.dateInterval(of: .weekOfYear, for: today)?.start ?? today
+        let earliest = min(minutes.keys.min() ?? today, calendar.date(byAdding: .weekOfYear, value: -(DS.Watching.yearWeeks - 1), to: thisWeek) ?? today)
+        let firstWeek = calendar.dateInterval(of: .weekOfYear, for: earliest)?.start ?? earliest
+        let weeks = (calendar.dateComponents([.weekOfYear], from: firstWeek, to: thisWeek).weekOfYear ?? 0) + 1
+        let most = max(minutes.values.max() ?? 0, 1)
+        let pitch = DS.Watching.heatCell + DS.Watching.heatGap
+        return ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(alignment: .top, spacing: DS.Watching.heatGap) {
+                ForEach(0..<weeks, id: \.self) { w in
+                    let monday = calendar.date(byAdding: .weekOfYear, value: w, to: firstWeek) ?? firstWeek
+                    VStack(spacing: DS.Watching.heatGap) {
+                        // La letra del mes en la semana en que empieza (y el año en enero).
+                        Text(verbatim: label(monday)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted)
+                            .lineLimit(1).fixedSize().frame(width: DS.Watching.heatCell, height: DS.Watching.yearLabel, alignment: .leading)
+                        ForEach(0..<7, id: \.self) { d in
+                            let date = calendar.date(byAdding: .day, value: d, to: monday) ?? monday
+                            let inside = date <= today
+                            let chosen = day.map { calendar.isDate($0, inSameDayAs: date) } ?? false
+                            RoundedRectangle(cornerRadius: DS.Radius.xs)
+                                .fill(inside ? fill(minutes[date] ?? 0, most) : .clear)
+                                .overlay { if chosen { RoundedRectangle(cornerRadius: DS.Radius.xs).strokeBorder(DS.text, lineWidth: DS.YearMap.ring) } }
+                                .frame(width: DS.Watching.heatCell, height: DS.Watching.heatCell)
+                                .contentShape(Rectangle())
+                                .onTapGesture { if inside { day = chosen ? nil : date } }
+                                .accessibilityHidden(!inside || (minutes[date] ?? 0) == 0)
+                                .accessibilityLabel(Text(date, format: .dateTime.weekday(.wide).day().month(.wide)))
+                                .accessibilityValue(Text("\((minutes[date] ?? 0) / 60) h"))
+                                .accessibilityAddTraits(.isButton)
                         }
                     }
-                }
-                .frame(height: DS.Watching.yearLabel, alignment: .topLeading)
-                HStack(alignment: .top, spacing: pitch - cell) {
-                    ForEach(0..<weeks, id: \.self) { w in
-                        VStack(spacing: pitch - cell) {
-                            ForEach(0..<7, id: \.self) { d in
-                                let date = calendar.date(byAdding: .day, value: w * 7 + d, to: firstMonday) ?? firstMonday
-                                let inside = calendar.component(.year, from: date) == year && date <= today
-                                let chosen = month.map { calendar.isDate($0, equalTo: date, toGranularity: .month) } ?? false
-                                RoundedRectangle(cornerRadius: DS.YearMap.radius)
-                                    .fill(inside ? fill(minutes[date] ?? 0, most) : .clear)
-                                    .opacity(month == nil || chosen ? 1 : DS.Watching.otherMonths)
-                                    .frame(width: cell, height: cell)
-                            }
-                        }
-                    }
-                }
-                .contentShape(Rectangle())
-                .onTapGesture { point in
-                    let w = min(weeks - 1, max(0, Int(point.x / pitch))), d = min(6, max(0, Int(point.y / pitch)))
-                    guard let date = calendar.date(byAdding: .day, value: w * 7 + d, to: firstMonday),
-                          calendar.component(.year, from: date) == year, date <= today else { return }
-                    month = calendar.dateInterval(of: .month, for: date)?.start
-                    day = nil
+                    .frame(width: DS.Watching.heatCell)
                 }
             }
         }
-        .frame(height: DS.Watching.yearLabel + DS.Space.s1 + 7 * (DS.Watching.yearCell + DS.Watching.yearGap))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(inYear.count) días con algo visto en \(String(year))"))
-        .accessibilityHint(Text("Toca para abrir un mes"))
-        .accessibilityAddTraits(.isButton)
+        .defaultScrollAnchor(.trailing)   // abre en lo de hoy
+        .frame(height: DS.Watching.yearLabel + 8 * pitch)
+        .accessibilityIdentifier("watching-heatmap")
     }
 
-    /// El mes abierto: su calendario; tocar un día abre lo que viste debajo.
-    private func monthCalendar(_ month: Date, _ minutes: [Date: Int]) -> some View {
-        let interval = calendar.dateInterval(of: .month, for: month) ?? DateInterval(start: month, duration: 0)
-        let end = min(calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end, Date())
-        return WatchingDayGrid(start: interval.start, end: end, minutes: minutes, onDay: { d in day = day == d ? nil : d }, calendar: calendar)
+    /// «O» al empezar octubre; «2026» en la semana de enero.
+    private func label(_ monday: Date) -> String {
+        guard let sunday = calendar.date(byAdding: .day, value: 6, to: monday),
+              let first = calendar.dateInterval(of: .month, for: sunday)?.start, first >= monday else { return "" }
+        if calendar.component(.month, from: first) == 1 { return String(calendar.component(.year, from: first)) }
+        return String(first.formatted(.dateTime.month(.narrow).locale(locale)))
     }
 
     /// El día: cada título una vez, con sus episodios.
@@ -341,11 +190,6 @@ struct WatchingZoomMap: View {
         .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("watching-day")
-    }
-
-    private func monthName(_ d: Date) -> String {
-        let text = d.formatted(.dateTime.month(.wide).locale(locale))
-        return text.prefix(1).uppercased(with: locale) + text.dropFirst()
     }
 
     private func fill(_ watched: Int, _ most: Int) -> Color {

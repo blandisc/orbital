@@ -185,13 +185,12 @@ extension DS {
     enum Watching {
         /// La portada (el arte de lo que más viste): dónde empieza su velo y su alto; cuántos van en «Lo que más viste».
         static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
-        static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
+        static let barsHeight: CGFloat = 120, barMin: CGFloat = 3
         /// La racha que se dice en la portada (desde 3 días) y el piso del azul del calendario (`DS.orbitalBlue`).
         static let streakShown = 3, dayFloor = 0.35
-        /// El año como GitHub: 53 semanas, la separación entre cuadritos, el alto de un cuadrito para medir su renglón (en un
-        /// iPhone ~5 pt), el renglón de las letras de los meses, lo apagado de los otros meses al abrir uno y el alto de la
-        /// cápsula del mes (parte del área de toque).
-        static let yearWeeks = 53, yearGap: CGFloat = 1.5, yearCell: CGFloat = 5.3, yearLabel: CGFloat = 16, otherMonths = 0.35, chipHeight: CGFloat = 0.7
+        /// El mapa de calor (`WatchingZoomMap`, opción B): al menos 53 semanas, cada cuadro y su separación, y el renglón de las
+        /// letras de los meses.
+        static let yearWeeks = 53, heatCell: CGFloat = 16, heatGap: CGFloat = 3, yearLabel: CGFloat = 16
         /// La dona de géneros: su tamaño, el hueco (proporción), la separación entre rebanadas, el ancho del texto del centro
         /// (parte del hueco), el punto de la leyenda y un color por género (los de las listas, de brillo parecido).
         static let donut: CGFloat = 132, donutHole = 0.62, donutGap: CGFloat = 1.5, donutLabel: CGFloat = 0.9, genreDot: CGFloat = 8

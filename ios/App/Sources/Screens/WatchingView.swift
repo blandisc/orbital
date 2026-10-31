@@ -149,7 +149,7 @@ struct WatchingView: View {
         }
         // Un solo mapa con zoom: año → mes → día (Fernando, 31 oct 2026, Z1). «Tu año» vive aquí adentro.
         section(Text("Día por día"), symbol: "calendar") {
-            WatchingZoomMap(plays: model.plays, opensMonth: model.period == .week || model.period == .month, locale: env.uiLocale)
+            WatchingZoomMap(plays: model.plays, locale: env.uiLocale)
         }
         // «Cuándo ves», fuera (Fernando, 31 oct 2026): repetía lo del calendario.
         if !s.genres.isEmpty { section(Text("Tus géneros"), symbol: "theatermasks") { WatchingGenres(genres: s.genres) { WatchingText.genre($0, language: language) } } }
