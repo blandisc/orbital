@@ -23,6 +23,10 @@ enum DS {
     static func role(_ role: DesignTokens.Role) -> Color {
         adaptive(dark: role.hex.dark, light: role.hex.light, highDark: role.highContrastHex.dark, highLight: role.highContrastHex.light)
     }
+    /// Un papel solo del iPhone (`DesignTokens.PhoneRole`), con la misma regla.
+    static func role(_ role: DesignTokens.PhoneRole) -> Color {
+        adaptive(dark: role.hex.dark, light: role.hex.light, highDark: role.highContrastHex.dark, highLight: role.highContrastHex.light)
+    }
 
     /// Una capa translúcida sobre el color de texto de cada modo (blanco en oscuro, negro en claro).
     static func overlay(_ opacity: Double) -> Color {
@@ -68,8 +72,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     static let good = role(.accent)
     /// Un interruptor prendido que tiene que leerse de lejos (los avisos de estrenos): el verde del sistema.
     static let switchOn = Color.green
-    /// Lo que confirmas que va bien («Este va bien» de los subtítulos): el mismo verde.
-    static let success = switchOn
+    /// Lo que ya está o ya salió («Hoy», el listón «Nuevo», «conectado», «Este va bien» de los subtítulos) y la letra sobre
+    /// él: cambian con el modo para leerse en los dos (≥ 4.5:1, `DesignTests`).
+    static let success = role(.success)
+    static let onSuccess = role(.onSuccess)
     static let warning = role(.warning)
     /// El azul de Orbital: el del puntito del logo (Fernando, 31 oct 2026). Los íconos de los rótulos de Para ti, el
     /// calendario y las horas de «Lo que ves».

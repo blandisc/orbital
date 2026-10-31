@@ -76,6 +76,16 @@ final class DesignTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.danger), hex(background)), 4.5, "\(mode): el error se lee sobre \(background)")
             }
             XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.onPrimary), hex(.primary)), 7, "\(mode): texto del botón principal")
+            // Los papeles solo del iPhone (`PhoneRole`, fuera de tokens.json): el verde de «listo» se lee sobre el fondo y la
+            // superficie, y «Hoy» y el listón «Nuevo» (texto chico) sobre el verde (antes ≈ 2:1 en claro). Con «Aumentar
+            // contraste», más.
+            typealias P = DesignTokens.PhoneRole
+            func phone(_ role: P) -> String { mode == "dark" ? role.hex.dark : role.hex.light }
+            func phoneHigh(_ role: P) -> String { mode == "dark" ? role.highContrastHex.dark : role.highContrastHex.light }
+            for background in [R.background, .surface] {
+                XCTAssertGreaterThanOrEqual(DesignTokens.contrast(phone(.success), hex(background)), 4.5, "\(mode): el verde de «listo» se lee sobre \(background)")
+            }
+            XCTAssertGreaterThanOrEqual(DesignTokens.contrast(phone(.onSuccess), phone(.success)), 4.5, "\(mode): texto sobre el verde de «listo»")
             // «Aumentar contraste»: cada texto contrasta más que en el modo normal y el fondo se separa más de la superficie.
             func high(_ role: R) -> String { mode == "dark" ? role.highContrastHex.dark : role.highContrastHex.light }
             for background in [R.background, .surface] {
@@ -88,6 +98,12 @@ final class DesignTests: XCTestCase {
             XCTAssertGreaterThan(DesignTokens.contrast(high(.background), high(.surface)), DesignTokens.contrast(hex(.background), hex(.surface)),
                                  "\(mode) con alto contraste: el fondo se separa más de la superficie")
             XCTAssertGreaterThanOrEqual(DesignTokens.contrast(high(.onPrimary), high(.primary)), 7, "\(mode) con alto contraste: texto del botón principal")
+            XCTAssertGreaterThan(DesignTokens.contrast(phoneHigh(.onSuccess), phoneHigh(.success)), DesignTokens.contrast(phone(.onSuccess), phone(.success)),
+                                 "\(mode) con alto contraste: texto sobre el verde de «listo»")
+            for background in [R.background, .surface] {
+                XCTAssertGreaterThan(DesignTokens.contrast(phoneHigh(.success), high(background)), DesignTokens.contrast(phone(.success), hex(background)),
+                                     "\(mode) con alto contraste: el verde de «listo» sobre \(background)")
+            }
             // Los íconos de las listas (no son texto: 3:1).
             for (name, tint) in DesignTokens.ListTint.hex {
                 for background in [R.background, .surface] {

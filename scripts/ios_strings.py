@@ -162,7 +162,6 @@ TRANSLATIONS = {
     "No encontré «%@». Prueba con otro nombre.": "I couldn't find “%@”. Try another name.",
     "Cambia lo que viste y cambian las sugerencias": "Change what you watched and the suggestions change",
     "Ya salió y lo que viene": "Out now and coming up",
-    "HOY": "TODAY",
     "Ayer": "Yesterday",
     "en %lld días": "in %lld days",
     "%@ del canon en tus colecciones": "%@ of the canon in your collections", "%lld del canon en tus colecciones": "%lld of the canon in your collections",

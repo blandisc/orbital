@@ -361,7 +361,7 @@ struct SubtitleDock: View {
                     HStack(spacing: DS.Space.s1) {
                         if let badge = version.badge {
                             Text(verbatim: badge).font(DS.TextRecipe.caption.font.weight(.bold)).lineLimit(1)
-                                .foregroundStyle(version.strong ? DS.onPrimary : DS.text)
+                                .foregroundStyle(version.strong ? DS.onSuccess : DS.text)
                                 .padding(.horizontal, DS.Space.s1)
                                 .background(version.strong ? DS.success : DS.fillStrong, in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
                         }

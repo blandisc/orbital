@@ -76,6 +76,30 @@ public enum DesignTokens {
         }
     }
 
+    /// Papeles solo del iPhone: no están en `design/tokens.json` (la TV no los usa y ese archivo es de la paridad TV ↔ iPhone,
+    /// que vigila tests/web/design-parity.test.mjs sobre `Role`). Mismo contrato que `Role`: oscuro y claro, y con «Aumentar
+    /// contraste»; `DesignTests` revisa su contraste en los dos modos.
+    public enum PhoneRole: String, CaseIterable, Sendable {
+        /// Lo que ya está o ya salió («Hoy» en «Lo nuevo de lo tuyo», el listón «Nuevo», una palomita de «conectado») y el
+        /// texto sobre él. En oscuro, el verde de la tecla A del mando; en claro, el mismo verde más oscuro y la letra en
+        /// papel, para que se lea sobre el papel (antes era el verde del sistema con letra clara: ≈ 2:1).
+        case success, onSuccess
+
+        public var hex: (dark: String, light: String) {
+            switch self {
+            case .success: (palette["pad-green"]!, "#1f7a3a")
+            case .onSuccess: (palette["ink-1000"]!, palette["paper"]!)
+            }
+        }
+
+        public var highContrastHex: (dark: String, light: String) {
+            switch self {
+            case .success: ("#86efac", "#14532d")
+            case .onSuccess: ("#000000", "#ffffff")
+            }
+        }
+    }
+
     /// Las capas translúcidas (líneas, rellenos, velos) se calculan sobre el color de texto de cada modo: blanco en oscuro y
     /// negro en claro, con las opacidades de `Opacity`. Los velos sobre el arte son siempre negros (el arte es la sala oscura).
     public enum Ink { public static let darkOverlay = "#ffffff", lightOverlay = "#000000", scrim = "#000000" }

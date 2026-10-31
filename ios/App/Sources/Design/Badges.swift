@@ -37,7 +37,7 @@ struct DSChipText: View {
 }
 
 /// Etiqueta que llama la atención sobre el arte: «Recomendada», «En tu lista» (sin mayúsculas). `.fresh`: lo que ya se
-/// puede ver hoy (la marca «HOY» de «Lo nuevo de lo tuyo»), una cápsula verde. «Nuevo» sobre un póster es `DSCornerRibbon`.
+/// puede ver hoy (la marca «Hoy» de «Lo nuevo de lo tuyo»), una cápsula verde (`DS.success`, se lee en los dos modos). «Nuevo» sobre un póster es `DSCornerRibbon`.
 struct DSBadge: View {
     enum Tone { case onArt, fresh }
     let text: LocalizedStringKey
@@ -49,7 +49,7 @@ struct DSBadge: View {
                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
                 .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
         case .fresh:
-            Text(text).font(DS.TextRecipe.caption.font.weight(.heavy)).lineLimit(1).foregroundStyle(DS.onPrimary)
+            Text(text).font(DS.TextRecipe.caption.font.weight(.heavy)).lineLimit(1).foregroundStyle(DS.onSuccess)
                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
                 .background(DS.success, in: Capsule())
         }
@@ -64,7 +64,7 @@ struct DSCornerRibbon: View {
 
     var body: some View {
         Text(text).textCase(.uppercase).font(DS.TextRecipe.caption.font.weight(.heavy)).tracking(DS.Ribbon.tracking)
-            .foregroundStyle(DS.onPrimary).lineLimit(1)
+            .foregroundStyle(DS.onSuccess).lineLimit(1)
             .padding(.vertical, DS.Space.s1 / 2)
             .frame(width: DS.Ribbon.length)
             .background {
