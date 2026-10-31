@@ -27,7 +27,7 @@ struct VoiceGuideView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if query.isEmpty {
                     if !nowPhrases.isEmpty { now }
                     essentials
@@ -40,7 +40,7 @@ struct VoiceGuideView: View {
             }
             .frame(maxWidth: DS.TitleAction.readableWidth, alignment: .leading)   // en el iPad, a un ancho de lectura
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Space.s14)
+            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Layout.screenBottom)
         }
         .tint(DS.accent)
         .background(Backdrop())
@@ -144,7 +144,7 @@ private struct VoiceTopicsView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+                VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                     if query.isEmpty {
                         // Los temas, para saltar sin bajar todo.
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -180,7 +180,7 @@ private struct VoiceTopicsView: View {
                 }
                 .frame(maxWidth: DS.TitleAction.readableWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
-                .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Space.s14)
+                .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Layout.screenBottom)
             }
         }
         .tint(DS.accent)

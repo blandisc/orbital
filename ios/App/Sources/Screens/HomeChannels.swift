@@ -136,7 +136,7 @@ struct ChannelsSheet: View {
         let _ = model.track()
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+                VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                     if query.trimmingCharacters(in: .whitespaces).count >= ChannelsModel.minQuery {
                         results
                     } else {

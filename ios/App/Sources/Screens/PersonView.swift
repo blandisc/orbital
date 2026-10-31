@@ -41,7 +41,7 @@ struct PersonView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 VStack(alignment: .leading, spacing: DS.Space.s5) {
                     HStack(alignment: .top, spacing: DS.Space.s4) {
                         PersonPhoto(name: route.name, photo: person?.photo, size: DS.Rich.personPhoto)
@@ -62,7 +62,7 @@ struct PersonView: View {
                 if person == nil && !failed { DSLoadingState() }
                 if failed { DSNotice(text: "No pude traer a esta persona de TMDB.").padding(.horizontal, DS.Space.gutter) }
             }
-            .padding(.bottom, DS.Space.s14)
+            .padding(.bottom, DS.Layout.screenBottom)
         }
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > DS.Size.titleCollapse } action: { _, down in scrolledDown = down }
         .background(Backdrop())

@@ -19,7 +19,7 @@ struct MiMediaView<Top: View>: View {
     var body: some View {
         let model = observer.model
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            LazyVStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 top()
                 if model.needsFolder {
                     DSEmptyState(symbol: "folder", title: Text("Elige la carpeta de tus películas"),
@@ -184,7 +184,7 @@ struct MiMediaTitleView: View {
         Group {
             if let t = model.all.first(where: { $0.id == id }) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: DS.Space.s5) {
+                    VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                         hero(t, name: model.name(t))
                         actions(t, model)
                         if t.kind == "series" { episodes(t, model) } else { versions(t, model) }

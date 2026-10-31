@@ -512,7 +512,7 @@ struct TitleView: View {
     /// Lo de TMDB, como Infuse: tráiler y extras, reparto con cara (toca para ver su trabajo), la saga y
     /// «Más como esto». Cada sección con el encabezado de toda la app; las tiras van de borde a borde.
     @ViewBuilder private func rich(_ x: TitleExtras) -> some View {
-        VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+        VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
             if let trailer = x.trailer {
                 section(title: "Tráiler y extras", meta: Text("Para verla antes de verla")) {
                     VideoClipCard(clip: trailer)

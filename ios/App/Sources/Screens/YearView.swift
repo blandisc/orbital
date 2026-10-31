@@ -18,7 +18,7 @@ struct YearView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if let r = review {
                     HStack(spacing: DS.Space.s3) {
                         stat(Text(verbatim: "\(r.hours) h"), Text("vistas"))
@@ -56,7 +56,7 @@ struct YearView: View {
                     DSEmptyState(symbol: "calendar", title: Text("Conecta Trakt"), message: Text("Conecta Trakt (en tu Orbital o en Ajustes) para ver tu año."))
                 }
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Space.s14)
+            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
         .navigationTitle(Text("Tu \(String(review?.year ?? Calendar.current.component(.year, from: Date())))")).navigationBarTitleDisplayMode(.inline)

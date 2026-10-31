@@ -223,7 +223,7 @@ struct WatchingRatedView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 ForEach((stars == 0 ? Array((1...5).reversed()) : [stars]), id: \.self) { star in
                     let group = items.filter { $0.stars == star }
                     if !group.isEmpty {
@@ -246,7 +246,7 @@ struct WatchingRatedView: View {
                     DSEmptyState(symbol: "star", title: Text("Nada con esa calificación"), message: Text("Lo que califiques en Trakt aparece aquí."))
                 }
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
+            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
         .navigationTitle(stars == 0 ? Text("Lo que calificaste") : Text("Con \(stars) estrellas"))

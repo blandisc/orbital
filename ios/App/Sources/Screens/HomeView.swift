@@ -54,7 +54,7 @@ struct HomeView: View {
         let picks = model.forYouPicks.filter { fits($0.kind) && !dismissedPicks.contains($0.imdb) }
         let pending = model.traktPending.filter { fits($0.kind) }
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if model.offline {
                     // Sin internet: lo del teléfono sigue a la vista, y la salida es Descargas (más reintentar).
                     DegradedNotice(state: .offline) { Task { await model.refresh() } }
@@ -99,7 +99,7 @@ struct HomeView: View {
                     continueRail(model, items: continuing).perfTag("home.rail")
                         // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
                         // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
-                        .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Editorial.sectionGap + heroOverlap) : DS.Layout.betweenSubsections - DS.Editorial.sectionGap))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
+                        .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
                 } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                     DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
                 }
@@ -212,7 +212,7 @@ struct HomeView: View {
                     TitleLink(route: s.route, width: width)
                 }
             }
-                .padding(.bottom, DS.Space.s14)
+                .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop(tint: tint.colors))
         .navigationTitle(route.id == "watchlist" ? Text("Mi lista") : Text("Sugerencias para ti"))
@@ -521,7 +521,7 @@ struct HomeView: View {
                     .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } } }
                 }
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
+            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop(tint: tint.colors))
         .navigationTitle(Text("Seguir viendo")).navigationBarTitleDisplayMode(.inline)

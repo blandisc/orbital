@@ -64,7 +64,7 @@ struct DecideView: View {
     // MARK: la hoja corta
     private func root(_ m: DecideModel) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 header(m)
                 proposal(m)
                 filterRow(m)
@@ -385,7 +385,7 @@ struct DecideMoreFilters: View {
         let count = m.count()
         let unknown = count == 0 ? m.unknownCount() : 0
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 PanelGroupTitle(title: "Géneros")
                 Text("Elige uno o varios · el número es cuántas hay").recipe(.caption, color: DS.textFaint)
                 // Mosaicos con el arte de tus sugerencias de cada género (el `id` con lo elegido: ver `FlowChips`).

@@ -12,7 +12,7 @@ struct ReleaseCalendarView: View {
     var body: some View {
         let model = observer.model
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 header(model)
                 weekdays
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s1), count: 7), spacing: DS.Space.s1) {
