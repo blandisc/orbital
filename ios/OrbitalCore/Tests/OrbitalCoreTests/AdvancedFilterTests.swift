@@ -11,7 +11,7 @@ final class AdvancedFilterTests: XCTestCase {
         XCTAssertEqual(f.kinds, ["movie", "series"])
         let p = dict(f.params(kind: "movie"))
         XCTAssertEqual(p["sort_by"], "popularity.desc")
-        XCTAssertEqual(p["vote_count.gte"], "100")
+        XCTAssertEqual(p["vote_count.gte"], "25", "bajo: lo de México y las series chicas tienen pocos votos")
         XCTAssertNil(p["with_genres"])
     }
 
@@ -22,7 +22,7 @@ final class AdvancedFilterTests: XCTestCase {
         let m = dict(f.params(kind: "movie"))
         XCTAssertEqual(m["with_watch_providers"], "8|337")
         XCTAssertEqual(m["watch_region"], "MX")
-        XCTAssertEqual(m["with_watch_monetization_types"], "flatrate")
+        XCTAssertEqual(m["with_watch_monetization_types"], "flatrate|free|ads")
         XCTAssertEqual(m["sort_by"], "primary_release_date.desc")
         XCTAssertEqual(m["primary_release_date.lte"], "2026-10-30", "lo más nuevo, sin lo que aún no se estrena")
         f.sort = .rating
@@ -70,7 +70,7 @@ final class AdvancedFilterTests: XCTestCase {
         f.fame = .gems
         let g = dict(f.params(kind: "movie"))
         XCTAssertEqual(g["vote_count.lte"], "2500")
-        XCTAssertEqual(g["vote_average.gte"], "7.2")
+        XCTAssertEqual(g["vote_average.gte"], "7.0")
         XCTAssertEqual(g["sort_by"], "vote_average.desc")
         f.fame = .blockbusters
         XCTAssertEqual(f.kinds, ["movie"], "las taquilleras son películas")
