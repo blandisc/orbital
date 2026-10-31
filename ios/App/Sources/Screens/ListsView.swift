@@ -22,6 +22,10 @@ struct ListsView: View {
     @State private var jumps = 0
     /// Modo demostración (`-demo-collection`): la lista que se abre sola para las capturas.
     @State private var demoCollection: CollectionRoute?
+    /// Lo de abajo (plataformas, colecciones, premios, años, tus listas) se arma cuando ya se ve lo de arriba, al deslizar o
+    /// al saltar a una sección: armarlo todo de golpe con la primera pantalla ocupaba el hilo principal (y pedía sus
+    /// estantes y pósters) justo cuando Para ti debía aparecer (Fernando, 31 oct 2026: tardaba ~5 s en verse).
+    @State private var restReady = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var model: ParaTiModel { observer.model }
 
@@ -103,7 +107,9 @@ struct ListsView: View {
                 // Para ti B (docs/producto/inicio-benchmark/para-ti/): el mosaico como portada, un círculo por cada parte y
                 // «¿Qué vemos hoy?». El destacado, «Porque viste» y los estrenos viven en Inicio.
                 VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                    let walls = (model.mosaic.isEmpty ? generalShelves.flatMap { model.items(for: $0) } : model.mosaic).map(\.poster)
+                    // Los del mosaico primero y luego los de los estantes, sin repetir: la lista solo crece mientras carga (antes
+                    // pasaba de los estantes a 3 del mosaico y luego a 48, y el muro se revolvía dos veces al abrir).
+                    let walls = Self.distinct((model.mosaic + generalShelves.flatMap { model.items(for: $0) }).map(\.poster))
                     if !walls.isEmpty { MosaicCover(posters: walls) { model.mode = .mosaic }.perfTag("paraTi.hero") }
                     // Sin los círculos de íconos (Fernando, 31 oct 2026): el menú de arriba a la derecha lleva a cada sección.
                     // Sin pósters (sin TMDB ni Trakt) la tarjeta quedaría vacía: el dado de la barra sigue abriendo «Decide por mí».
@@ -149,6 +155,45 @@ struct ListsView: View {
                 // Las colecciones (con su carácter: en carrusel, con peso y reflejo), justo después de lo general.
                 // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas (el reflejo ya separa).
                 // Cada colección es una sección: 40 entre rótulos, medido desde el reflejo (decisión 2, 31 oct 2026).
+                if restReady { rest }
+            }
+            .padding(.top, DS.Layout.screenTop)   // el aire bajo el título (antes `ParaTiView` lo ponía afuera)
+            .padding(.bottom, DS.Layout.screenBottom)   // aire bajo la última fila: la barra de pestañas no la tapa
+        }
+        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top < DS.Size.barScrollHide } action: { _, top in
+            atTop = top
+            if !top { restReady = true }   // deslizaste: lo de abajo ya hace falta
+        }
+        // Lo de arriba ya se ve (o ya no va a llegar): entonces lo de abajo. Al volver del mosaico, de una vez.
+        .onChange(of: !generalShelves.isEmpty || (!model.isLoading && !model.lists.isEmpty), initial: true) { _, ready in
+            if ready { restReady = true }
+        }
+        .scrollEdgeEffectHidden(atTop, for: .top)
+        // Brincar a una sección: un menú en la barra (marca en cuál estás).
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { sectionMenu(proxy) }
+            ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
+        }
+
+        .navigationDestination(for: PlatformRoute.self) { route in
+            if let hub = model.platformHubs.first(where: { $0.brand == route.brand }) { PlatformRankingsView(observer: observer, hub: hub) }
+        }
+        .navigationDestination(for: CollectionRoute.self) { route in CollectionGridView(collections: collections, route: route) }
+        .navigationDestination(item: $demoCollection) { route in CollectionGridView(collections: collections, route: route) }
+        .task { await collections.model.loadMyList() }
+        .navigationDestination(for: ShelfRoute.self) { route in
+            ListGridView(observer: observer, collections: collections, shelfID: route.id)
+        }
+    }
+
+    /// Sin repetir, en el mismo orden.
+    private static func distinct(_ items: [String]) -> [String] {
+        var seen = Set<String>()
+        return items.filter { seen.insert($0).inserted }
+    }
+
+    /// Plataformas, colecciones, premios, años, «Lo que ves» y tus listas: lo de abajo de la portada y lo general.
+    private var rest: some View {
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                     if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
                     if collections.model.tmdbReady {
@@ -180,27 +225,6 @@ struct ListsView: View {
                             .modifier(SectionSpy(section: .addons, active: $activeSection))
                     }
                 }
-            }
-            .padding(.top, DS.Layout.screenTop)   // el aire bajo el título (antes `ParaTiView` lo ponía afuera)
-            .padding(.bottom, DS.Layout.screenBottom)   // aire bajo la última fila: la barra de pestañas no la tapa
-        }
-        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top < DS.Size.barScrollHide } action: { _, top in atTop = top }
-        .scrollEdgeEffectHidden(atTop, for: .top)
-        // Brincar a una sección: un menú en la barra (marca en cuál estás).
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) { sectionMenu(proxy) }
-            ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
-        }
-
-        .navigationDestination(for: PlatformRoute.self) { route in
-            if let hub = model.platformHubs.first(where: { $0.brand == route.brand }) { PlatformRankingsView(observer: observer, hub: hub) }
-        }
-        .navigationDestination(for: CollectionRoute.self) { route in CollectionGridView(collections: collections, route: route) }
-        .navigationDestination(item: $demoCollection) { route in CollectionGridView(collections: collections, route: route) }
-        .task { await collections.model.loadMyList() }
-        .navigationDestination(for: ShelfRoute.self) { route in
-            ListGridView(observer: observer, collections: collections, shelfID: route.id)
-        }
     }
 
     // MARK: tus plataformas
@@ -235,7 +259,12 @@ struct ListsView: View {
                 Button {
                     activeSection = section
                     jumps += 1
-                    withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) }
+                    if restReady { withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) } }
+                    else {
+                        // Lo de abajo aún no estaba armado: primero se arma y en el siguiente cuadro se salta.
+                        restReady = true
+                        Task { @MainActor in withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) } }
+                    }
                 } label: {
                     // Cada sección con su ícono; la que ves, con ✓ al lado.
                     Label { activeSection == section ? Text("\(section.title)\(Text(verbatim: "  ✓"))") : section.title } icon: { Image(systemName: section.symbol) }

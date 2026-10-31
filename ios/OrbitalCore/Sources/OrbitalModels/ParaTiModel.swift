@@ -140,6 +140,7 @@ public final class ParaTiModel: ObservableModel {
     public func load() async {
         isLoading = true
         defer { isLoading = false }
+        triedThisLoad = []
         // Lo que ya se ve se queda mientras se refresca (antes los estantes se vaciaban cada vez que volvías a la pestaña);
         // `loadShelves` solo pide lo que falta y «Actualizar» sí limpia.
         if services.forYouFromConsole, services.orbital.isConfigured {
@@ -227,8 +228,30 @@ public final class ParaTiModel: ObservableModel {
     }
 
     private func phoneShelves(_ forYou: ForYou) async {
-        lists = await forYou.lists()
-        shelves = ShelfPlanner.plan(lists)
+        async let all = forYou.lists()
+        // La primera vez, lo general sin esperar tus listas de Trakt (tardan una petición más y van al final, en «Tuyo»):
+        // los estantes de arriba empiezan a pedirse ya (Fernando, 31 oct 2026: Para ti tardaba ~5 s en verse). Con estantes
+        // ya en pantalla no se arma a medias (tus listas desaparecerían un momento).
+        if lists.isEmpty {
+            let general = await forYou.lists(includeOwn: false)
+            if lists.isEmpty, !general.isEmpty {
+                lists = general
+                shelves = ShelfPlanner.plan(general)
+                async let first: Void = loadShelves()
+                await plan(await all)
+                await first
+                return
+            }
+        }
+        await plan(await all)
+    }
+
+    /// Pone estas listas (si cambiaron) y pide lo que falte de sus estantes.
+    private func plan(_ found: [ForYouList]) async {
+        if found != lists {
+            lists = found
+            shelves = ShelfPlanner.plan(found)
+        }
         await loadShelves()
     }
 
@@ -279,6 +302,7 @@ public final class ParaTiModel: ObservableModel {
     /// «Series · Películas»: solo cambia los estantes con `split`; el resto sigue igual.
     public func setKind(_ kind: String) async {
         self.kind = ["movie", "series"].contains(kind) ? kind : "all"
+        triedThisLoad = []
         await loadShelves()
         await loadNewOnPlatforms()
         rebuildBadges()
@@ -306,6 +330,9 @@ public final class ParaTiModel: ObservableModel {
 
     /// Lo que «Actualizar» marcó como viejo: se vuelve a pedir la próxima vez que haga falta (lo de antes se queda a la vista).
     private var staleKeys: Set<String> = [], staleRankings: Set<String> = []
+    /// Los estantes ya pedidos en esta carga: uno que falló no se vuelve a pedir cuando llegan tus listas de Trakt y se
+    /// arma otra vez el plan (se reintenta en la siguiente carga, como siempre).
+    private var triedThisLoad: Set<String> = []
 
     public func key(_ list: ForYouList) -> String { key(listID: list.id, splits: list.splitsKinds) }
     func key(listID: String, splits: Bool) -> String { "\(listID):\(splits ? kind : "-")" }
@@ -316,11 +343,14 @@ public final class ParaTiModel: ObservableModel {
         for shelf in shelves {
             for id in shelf.listIDs {
                 let k = key(listID: id, splits: shelf.splitsKinds)
-                if id != "estrenos", railItems[k] == nil || staleKeys.contains(k), !wanted.contains(where: { $0.key == k }) { wanted.append((k, id)) }
+                // Lo que ya se está pidiendo (la primera vuelta, sin tus listas de Trakt) no se pide dos veces.
+                if id != "estrenos", (railItems[k] == nil && !loadingKeys.contains(k) && !triedThisLoad.contains(k)) || staleKeys.contains(k),
+                   !wanted.contains(where: { $0.key == k }) { wanted.append((k, id)) }
             }
         }
         guard !wanted.isEmpty else { return }
         loadingKeys.formUnion(wanted.map(\.key))
+        triedThisLoad.formUnion(wanted.map(\.key))
         let remote = services.forYouRemote, local = services.forYou, source = source, kind = kind
         await withTaskGroup(of: (String, [Suggestion]?).self) { group in
             for entry in wanted {

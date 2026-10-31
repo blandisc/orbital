@@ -86,10 +86,12 @@ public actor ForYou {
         return (try? await remember("trakt:lists", ttl: Self.mineTTL) { try await trakt.lists() }) ?? []
     }
 
-    public func lists() async -> [ForYouList] {
+    /// Los estantes posibles. `includeOwn: false` deja fuera tus listas de Trakt (una petición más, que tarda): Para ti
+    /// arma primero lo general con eso y agrega tus listas cuando llegan (van al final, en «Tuyo»).
+    public func lists(includeOwn: Bool = true) async -> [ForYouList] {
         // Las tres consultas a la vez (antes en fila: tus listas de Trakt, luego los catálogos, luego las plataformas).
         let linked = trakt?.linked == true
-        async let ownLists = traktListsRemembered(linked)
+        async let ownLists = traktListsRemembered(linked && includeOwn)
         async let catalogs = addonCatalogs()
         async let platformsFound = platforms()
         var out: [ForYouList] = []

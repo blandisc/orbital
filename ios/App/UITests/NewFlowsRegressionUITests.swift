@@ -138,14 +138,16 @@ final class NewFlowsRegressionUITests: XCTestCase {
         shot("decide")
     }
 
-    /// Un círculo del índice baja a su grupo.
-    func testUnCirculoBajaASuGrupo() {
+    /// El menú de secciones baja a su grupo, también recién abierto (los círculos se quitaron el 31 oct; lo de abajo de
+    /// Para ti se arma al saltar si aún no estaba).
+    func testElMenuBajaASuGrupo() {
         launch(tab: 1)
-        let circle = app.buttons["Temporadas"].firstMatch
-        XCTAssertTrue(circle.waitForExistence(timeout: 20))
-        circle.tap()
+        let menu = app.buttons["paraTi-sections"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 20))
+        menu.tap()
+        app.buttons["Temporadas"].firstMatch.tap()
         XCTAssertTrue(app.buttons["season-now"].waitForExistence(timeout: 10), "llega a Temporadas")
-        shot("circulo-temporadas")
+        shot("menu-temporadas")
     }
 
     /// Lo que ves (con el cielo detrás) abre el Wrapped y se cierra.

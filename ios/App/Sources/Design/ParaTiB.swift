@@ -76,16 +76,21 @@ struct MosaicCover: View {
         #endif
     }
 
-    /// El orden del muro para estos pósters: el de la última vez si sale de los mismos (o si los nuevos solo agregan y el
-    /// muro ya no tenía repetidos que cambiar); si no, revueltos y, si son pocos, repetidos hasta llenarlo (al jalar para
-    /// actualizar no queda hueco arriba).
+    /// El orden del muro para estos pósters (los primeros pesan más: los del mosaico). Si solo llegaron más, el mismo muro:
+    /// los que ya se veían no se mueven y los repetidos dejan su lugar a los nuevos. Si cambiaron (actualizaste, quitaste
+    /// uno), otro muro revuelto y, si son pocos, repetidos hasta llenarlo (al jalar para actualizar no queda hueco arriba).
     @MainActor private static func wall(for posters: [String]) -> [String] {
-        let before = remembered, shown = Set(before.order), now = Set(posters)
-        if !before.order.isEmpty, Set(before.source) == now || (shown.isSubset(of: now) && shown.count >= min(now.count, DS.ParaTiB.coverPosters)) {
-            return before.order
+        let before = remembered, shown = Set(before.order), now = Set(posters), size = DS.ParaTiB.coverPosters
+        if !before.order.isEmpty, Set(before.source) == now || shown.isSubset(of: now) {
+            guard shown.count < min(now.count, size) else { return before.order }
+            var fresh = posters.filter { !shown.contains($0) }.prefix(size - shown.count).shuffled()
+            var seen = Set<String>()
+            let order = before.order.map { poster in seen.insert(poster).inserted || fresh.isEmpty ? poster : fresh.removeLast() }
+            remembered = (posters, order)
+            return order
         }
-        let pool = posters.shuffled()
-        let order = pool.isEmpty ? [] : (0..<DS.ParaTiB.coverPosters).map { pool[$0 % pool.count] }
+        let pool = Array(posters.prefix(size)).shuffled()
+        let order = pool.isEmpty ? [] : (0..<size).map { pool[$0 % pool.count] }
         remembered = (posters, order)
         return order
     }

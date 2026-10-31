@@ -137,7 +137,7 @@ public struct Tmdb: Sendable {
     public func details(kind: String, tmdbID: Int) async throws -> TmdbDetails {
         let memoKey = "\(language):\(kind):\(tmdbID)"
         if let memo = Self.detailsMemo, let hit = await memo.get(memoKey) { return hit }
-        let fresh = try await fetchDetails(kind: kind, tmdbID: tmdbID)
+        let fresh = try await TmdbDetailsGate.shared.details(memoKey) { try await fetchDetails(kind: kind, tmdbID: tmdbID) }
         if let memo = Self.detailsMemo, fresh.imdb != nil { await memo.set(memoKey, fresh) }
         return fresh
     }
@@ -463,5 +463,35 @@ public actor TmdbDetailsMemo {
         guard dirty > 0, let entries, let data = try? JSONEncoder().encode(entries) else { return }
         dirty = 0
         try? data.write(to: file, options: .atomic)
+    }
+}
+
+/// Los detalles de TMDB que salen a la red: unos cuantos a la vez entre todas las secciones (Para ti, Plataformas,
+/// Temporadas, Estudios…) y uno solo por título aunque lo pidan dos secciones a la vez. Antes cada lista los pedía todos
+/// de golpe (decenas al abrir Para ti) y competían con lo que se ve primero (Fernando, 31 oct 2026: tardaba ~5 s).
+actor TmdbDetailsGate {
+    static let shared = TmdbDetailsGate(limit: 6)
+    private let limit: Int
+    private var running = 0
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+    private var inflight: [String: Task<TmdbDetails, any Error>] = [:]
+
+    init(limit: Int) { self.limit = limit }
+
+    func details(_ key: String, _ fetch: @escaping @Sendable () async throws -> TmdbDetails) async throws -> TmdbDetails {
+        if let running = inflight[key] { return try await running.value }
+        let task = Task { try await self.limited(fetch) }
+        inflight[key] = task
+        defer { inflight[key] = nil }
+        return try await task.value
+    }
+
+    private func limited(_ fetch: @Sendable () async throws -> TmdbDetails) async throws -> TmdbDetails {
+        if running < limit { running += 1 } else { await withCheckedContinuation { waiting.append($0) } }   // el lugar lo pasa quien termina
+        do { let value = try await fetch(); release(); return value } catch { release(); throw error }
+    }
+
+    private func release() {
+        if waiting.isEmpty { running -= 1 } else { waiting.removeFirst().resume() }
     }
 }
