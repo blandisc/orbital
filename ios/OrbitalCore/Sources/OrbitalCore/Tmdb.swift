@@ -214,8 +214,19 @@ public struct Tmdb: Sendable {
     public func textlessPoster(kind: String, tmdbID: Int) async throws -> String? {
         let data = try await get("/\(Tmdb.kinds[kind] ?? "movie")/\(tmdbID)/images", [("include_image_language", "null")])
         let rows = (data["posters"]?.array ?? []).filter { $0["iso_639_1"]?.string == nil && $0["file_path"]?.string != nil }
-        let best = rows.max { ($0["vote_average"]?.doubleValue ?? 0, $0["vote_count"]?.doubleValue ?? 0) < ($1["vote_average"]?.doubleValue ?? 0, $1["vote_count"]?.doubleValue ?? 0) }
+        let best = rows.max { (a: JSON, b: JSON) -> Bool in Tmdb.posterRanksBelow(a, b) }
         return Tmdb.image(best?["file_path"], size: "w780")
+    }
+
+    /// Orden de los pósters sin texto: primero la calificación y, si empatan, los votos. Separado y con tipos explícitos
+    /// porque la comparación de tuplas en línea hacía que el compilador de la CI se rindiera (31 oct 2026).
+    static func posterRanksBelow(_ a: JSON, _ b: JSON) -> Bool {
+        let averageA: Double = a["vote_average"]?.doubleValue ?? 0
+        let averageB: Double = b["vote_average"]?.doubleValue ?? 0
+        if averageA != averageB { return averageA < averageB }
+        let countA: Double = a["vote_count"]?.doubleValue ?? 0
+        let countB: Double = b["vote_count"]?.doubleValue ?? 0
+        return countA < countB
     }
 
     /// La ficha de un título de IMDb (lo de Trakt llega con sinopsis en inglés).

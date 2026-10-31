@@ -41,6 +41,16 @@ final class TallArtTests: XCTestCase {
         XCTAssertEqual(http.calls, calls, "la segunda vez, sin preguntar")
     }
 
+    func testATieInRatingIsBrokenByVotes() {
+        let few: JSON = ["vote_average": .double(5.6), "vote_count": .int(3)]
+        let many: JSON = ["vote_average": .double(5.6), "vote_count": .int(40)]
+        let better: JSON = ["vote_average": .double(6), "vote_count": .int(1)]
+        XCTAssertTrue(Tmdb.posterRanksBelow(few, many), "mismo promedio: gana el de más votos")
+        XCTAssertTrue(Tmdb.posterRanksBelow(many, better), "primero manda la calificación")
+        XCTAssertFalse(Tmdb.posterRanksBelow(many, few))
+        XCTAssertFalse(Tmdb.posterRanksBelow([:], [:]), "sin datos no hay orden")
+    }
+
     func testATitleWithoutPosterIsRememberedAsNone() async {
         let http = ArtTMDB()
         let art = TallArt(tmdb: { Tmdb(http: http, key: "clave") })
