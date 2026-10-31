@@ -36,7 +36,7 @@ extension PlayerScreen {
                             DSTextTabs(options: [.init(id: false, title: Text("Audio y subtítulos")), .init(id: true, title: Text("Versión"))],
                                        selection: Binding(get: { dockState.dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = v ? .version : .media } }))
                             Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.label.font) }
-                                .dsPrimaryButton().controlSize(.small)
+                                .dsPrimaryButton(size: .small)
                         } }
                         dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
                     }

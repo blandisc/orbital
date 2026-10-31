@@ -135,19 +135,19 @@ struct TitleView: View {
     /// iPad y la Mac la ficha se abre en el panel de la derecha (`TitlePanel`), a la medida del iPhone.
     private func oneColumnLayout(_ model: TitleModel) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {   // ds-exception: el arte va a sangre pegado a lo de abajo; el ritmo lo lleva el stack de adentro
                 // Al deslizar, el arte se recoge (`BleedArt(collapse:)`): ver `hero`.
                 hero(model)
                     .perfTag("title.hero").onAppear { Perf.mark("title.shown") }
-                VStack(alignment: .leading, spacing: DS.Space.s6) {
-                    VStack(alignment: .leading, spacing: DS.Space.s6) {
+                VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+                    VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                         facts(model)
                         actions(model)
                     }
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
                     readingSections(model)
                 }
-                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
+                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)
                 .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: los datos no se le pegan
                 // Siempre se puede recoger el arte hasta que el nombre suba a la barra, aunque haya poco abajo (una película sin
                 // reparto ni saga): si no, en unas fichas se recogía y en otras no.
@@ -209,7 +209,7 @@ struct TitleView: View {
             if env.services.orbital.isConfigured {
                 // Mientras va en camino, la ruedita en su lugar (y el aviso abajo): antes el toque no enseñaba nada.
                 Button { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.continueVideoID, title: model.title) } } label: {
-                    if env.isSendingToTV(model.metaID) { ProgressView() } else { Image(systemName: "tv") }
+                    if env.isSendingToTV(model.metaID) { ProgressView() } else { Image(systemName: "tv") }   // ds-exception: la ruedita va dentro del botón que la pidió
                 }
                     .disabled(model.continueVideoID == nil || env.isSendingToTV(model.metaID))
                     .sensoryFeedback(.impact(flexibility: .soft), trigger: env.isSendingToTV(model.metaID)) { _, sending in sending }
@@ -365,33 +365,37 @@ struct TitleView: View {
     }
 
     @ViewBuilder private func episodes(_ model: TitleModel) -> some View {
-        // Un solo bloque de controles, simétrico: la temporada a la izquierda y la versión de la serie a la derecha, las dos
-        // cápsulas iguales (antes temporada, versión y avance eran tres renglones con alineaciones y tamaños distintos); abajo,
-        // el avance de la temporada de orilla a orilla.
+        // Un solo bloque de controles: las temporadas en cápsulas «T1, T2…» de orilla a orilla (la misma pieza que Mi media y la
+        // hoja de episodios) y, debajo a la derecha, la versión de la serie; abajo, el avance de la temporada.
         let wanted = env.services.titlePrefs.languages(for: model.metaID, settings: env.services.appSettings).prefs.wanted
-        HStack(spacing: DS.Space.s2) {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
             if model.seasons.count > 1 {
-                let chips = model.seasons.map { SeasonChip(season: $0.season, isSpecials: $0.isSpecials) }
-                let selection = Binding(get: { SeasonChip(season: model.selectedSeason, isSpecials: model.selectedSeason == 0) }, set: { model.select(season: $0.season) })
-                DSOptionMenu(items: chips, label: { $0.isSpecials ? Text("Especiales") : Text("Temporada \($0.season)") }, selection: selection, compact: true)
-            } else if let only = model.seasons.first {
-                Text(only.isSpecials ? "Especiales" : "Temporada \(only.season)").recipe(.labelLarge, color: DS.text)
+                DSSeasonPicker(seasons: model.seasons.map(\.season),
+                               selection: Binding(get: { model.selectedSeason }, set: { model.select(season: $0) }), inset: DS.Space.gutter)
+                    .padding(.horizontal, -DS.Space.gutter)
             }
-            Spacer(minLength: DS.Space.s2)
-            // La versión de la serie (lo que recuerda: latino, castellano, inglés…); tocarla elige otra «desde aquí».
-            if let next = model.continueVideoID {
-                Button { sourcesFor = SourcesTarget(videoID: next, purpose: .watch, fromHere: true) } label: {
-                    HStack(spacing: DS.Space.s2) {
-                        Image(systemName: "list.bullet.rectangle").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
-                        // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
-                        Text("\(Text.flag(wanted))\(Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage) : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage)))")
-                            .recipe(.labelLarge, color: DS.text).lineLimit(1)
-                        Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+            if model.seasons.count == 1 || model.continueVideoID != nil {
+                HStack(spacing: DS.Space.s2) {
+                    if model.seasons.count == 1, let only = model.seasons.first {
+                        Text(only.isSpecials ? "Especiales" : "Temporada \(only.season)").recipe(.labelLarge, color: DS.text)
+                    }
+                    Spacer(minLength: DS.Space.s2)
+                    // La versión de la serie (lo que recuerda: latino, castellano, inglés…); tocarla elige otra «desde aquí».
+                    if let next = model.continueVideoID {
+                        Button { sourcesFor = SourcesTarget(videoID: next, purpose: .watch, fromHere: true) } label: {
+                            HStack(spacing: DS.Space.s2) {
+                                Image(systemName: "list.bullet.rectangle").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+                                // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
+                                Text("\(Text.flag(wanted))\(Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage) : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage)))")
+                                    .recipe(.labelLarge, color: DS.text).lineLimit(1)
+                                Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+                            }
+                        }
+                        .dsSecondaryButton()
+                        .accessibilityLabel(Text("Versión de la serie"))
+                        .accessibilityIdentifier("series-version")
                     }
                 }
-                .dsSecondaryButton()
-                .accessibilityLabel(Text("Versión de la serie"))
-                .accessibilityIdentifier("series-version")
             }
         }
         // Cuántos llevas de esta temporada y marcarla completa (como en Infuse y Trakt), con su barra.
