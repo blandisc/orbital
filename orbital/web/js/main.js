@@ -981,7 +981,7 @@ function chooseBecause(imdb) {
 
 /** Solo la fila de «Porque viste»: rehacer toda la biblioteca por cada título que recorrías era lo que volvía lento el carrusel. */
 function refreshBecauseRow() {
-  const next = mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), miMedia })
+  const next = mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice() })
     .find((row) => row.id === "curated:because");
   const at = state.rows?.findIndex((row) => row.id === "curated:because") ?? -1;
   if (!next || at < 0 || state.section !== "media") return buildCuration();
@@ -1024,8 +1024,6 @@ async function loadCuration() {
     try {
       mediaLists = ((await api.forYou()).lists || []).filter((l) => l.group !== "games");
       const wanted = fetchPlan(mediaLists);
-      // Mi media: tu carpeta de OneDrive como biblioteca (no es una lista de Para ti).
-      if (state.settings?.onedrive?.titles || state.settings?.onedrive?.videos) miMedia = await api.onedriveLibrary().catch(() => miMedia);
       const chosen = becauseSeed(mediaLists.find((l) => l.id === "because"), becauseChoice()).listId;
       if (chosen !== "because") wanted.push({ id: chosen, kind: null }); // el que elegiste hoy con X
       await fetchMany(wanted.filter((w) => !LATER(w)));
@@ -1050,7 +1048,7 @@ function buildCuration() {
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), miMedia }),
+  applyCuration([...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice() }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 
