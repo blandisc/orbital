@@ -13,9 +13,11 @@ export function Button({ label, glyph, variant = "ghost", ariaLabel, onPress, yi
   // nombre debajo (la leyenda de qué hace sigue a la vista). Uno sólido y los demás redondos.
   const round = icon && ICONS[icon] && variant !== "primary";
   if (round) {
+    // El círculo y, debajo, su nombre: el botón mide lo que su nombre, así dos redondos seguidos nunca se enciman.
     return h("button", { class: "button button--round", type: "button", tabindex: "-1", "aria-label": ariaLabel || label, onClick: onPress },
-      h("span", { class: "button__icon", "aria-hidden": "true" }, svg(ICONS[icon])),
-      glyph && h("span", { class: "button__glyph" }, Glyph(glyph, { small: true })),
+      h("span", { class: "button__disc" },
+        h("span", { class: "button__icon", "aria-hidden": "true" }, svg(ICONS[icon])),
+        glyph && h("span", { class: "button__glyph" }, Glyph(glyph, { small: true }))),
       h("span", { class: "button__name" }, label));
   }
   return h("button", {

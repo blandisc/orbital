@@ -47,6 +47,8 @@ function caseArt(item) {
 }
 
 // El destacado mide ~1000 px de ancho en la TV (core/images.js · sized lo pide de ese tamaño, no el original de 8 MB).
+/** «Episodios» y «Ficha» del destacado van redondos (su ícono); otra alternativa («Con Ryujinx») sigue con su nombre. */
+const ALT_ICONS = { Episodios: "list", Ficha: "info" };
 const FEATURE_PX = 1040;
 
 /** Arte del destacado. Un video sin fondo ancho trae solo su póster: va con el tratamiento de póster (ArtFit), no
@@ -115,7 +117,8 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
       Progress(item.progress, { className: "tile--feature__progress" }),
       h("span", { class: "button-row tile--feature__actions" },
         Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", art: true, onPress: press("select") }),
-        alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, onPress: press("alt") }),
+        // «Episodios» o «Ficha» (un video) son redondos, como en Películas y series; «Con Ryujinx» sigue con su nombre.
+        alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, icon: ALT_ICONS[alt], onPress: press("alt") }),
         Button({ label: "Opciones", glyph: glyphs.options, icon: "more", onPress: press("options") }))));
 }
 
