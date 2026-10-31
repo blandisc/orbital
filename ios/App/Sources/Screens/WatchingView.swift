@@ -54,19 +54,11 @@ struct WatchingView: View {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 // La portada: el arte de lo que más viste en el periodo, de orilla a orilla, con tus horas encima (como la
                 // portada de Inicio). Fernando, 30 oct 2026: que no se viera genérica.
-                if model.loaded, !model.failed, !s.isEmpty { hero(s) }
+                // Las pestañas arriba de lo que cambian (antes quedaban debajo de la portada y lo que cambiaba se veía arriba).
                 DSTextTabs(options: WatchingStats.Period.allCases.map { .init(id: $0, title: WatchingText.period($0)) },
                            selection: Binding(get: { model.period }, set: { model.period = $0 }))
                 .accessibilityIdentifier("watching-period")
-
-                if model.period != .all {
-                    Button { wrapped = model.period } label: {
-                        Label { Text("Ver tu Wrapped") } icon: { Image(systemName: "sparkles.rectangle.stack") }.frame(maxWidth: .infinity)
-                    }
-                    .dsSolidPrimaryButton().controlSize(.large)
-                    .disabled(s.isEmpty)
-                    .accessibilityIdentifier("watching-wrapped")
-                }
+                if model.loaded, !model.failed, !s.isEmpty { hero(s) }
 
                 if !model.loaded { DSLoadingState() }
                 // No llegó el historial y no hay nada guardado: es un error, no «nada en este periodo».
@@ -115,11 +107,11 @@ struct WatchingView: View {
 
     /// «6 títulos · 5 películas · 25 capítulos · 2 días seguidos» (lo que sea cero no se dice).
     private func heroFacts(_ s: WatchingStats) -> Text {
-        var parts: [Text] = [s.titles == 1 ? Text("1 título") : Text("\(s.titles) títulos")]
+        var parts: [Text] = []
         if s.movies > 0 { parts.append(s.movies == 1 ? Text("1 película") : Text("\(s.movies) películas")) }
         if s.episodes > 0 { parts.append(s.episodes == 1 ? Text("1 capítulo") : Text("\(s.episodes) capítulos")) }
-        if s.currentStreak > 1 { parts.append(Text("\(s.currentStreak) días seguidos")) }
-        else if s.longestStreak > 1 { parts.append(Text("tu mejor racha: \(s.longestStreak) días")) }
+        if parts.isEmpty { parts.append(s.titles == 1 ? Text("1 título") : Text("\(s.titles) títulos")) }
+        if s.currentStreak >= DS.Watching.streakShown { parts.append(Text("\(s.currentStreak) días seguidos")) }   // una racha de 2 no presume nada
         return parts.dropFirst().reduce(parts[0]) { Text("\($0) · \($1)") }
     }
 
@@ -145,31 +137,28 @@ struct WatchingView: View {
             .scrollClipDisabled()
         }
         section(Text("Día por día")) {
-            WatchingDayGrid(start: s.start, end: s.end, days: s.days)
-            HStack(spacing: DS.Space.s4) {
-                legend(DS.YearMap.movies, Text("Películas")); legend(DS.YearMap.series, Text("Series")); legend(DS.YearMap.both, Text("Las dos"))
+            WatchingDayGrid(start: s.start, end: s.end, minutes: s.minutesByDay)
+            // «Tu año» vive aquí adentro: un enlace, no una tarjeta con ícono.
+            NavigationLink { YearView() } label: {
+                HStack(spacing: DS.Space.s1) { Text("Todo el año"); Image(systemName: "chevron.forward") }
+                    .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                    .frame(minHeight: DS.Size.touchTarget)
             }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("watching-year")
         }
-        // «Tu año» vive aquí adentro: el mapa del año completo con lo que viste cada día.
-        NavigationLink { YearView() } label: {
-            HStack(spacing: DS.Space.s3) {
-                Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.title.font).foregroundStyle(DS.eyebrow)
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text("Tu año, día por día").recipe(.cardTitle)
-                    Text("El mapa de todo el año y lo que viste cada día").recipe(.footnote, color: DS.textMuted)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right").foregroundStyle(DS.textMuted)
-            }
-            .padding(DS.Space.s3)
-            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("watching-year")
         section(Text("Cuándo ves")) { WatchingBars(values: s.buckets.map(\.minutes), labels: s.buckets.map { label($0.start, s.period) }) }
         if !s.genres.isEmpty { section(Text("Tus géneros")) { WatchingGenres(genres: s.genres) { WatchingText.genre($0, language: language) } } }
         ratings
+        // El Wrapped al final, como cierre (antes una losa blanca arriba que gritaba más que todo).
+        if model.period != .all {
+            Button { wrapped = model.period } label: { Label("Ver tu Wrapped", systemImage: "sparkles.rectangle.stack") }
+                .dsSecondaryButton().controlSize(.large)
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("watching-wrapped")
+        }
     }
+
 
     /// Cómo calificas: cuántas de cada número de estrellas (tus calificaciones de Trakt).
     @ViewBuilder private var ratings: some View {
@@ -188,9 +177,6 @@ struct WatchingView: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) { DSSectionHead(title: title, level: .section); content() }
     }
 
-    private func legend(_ color: Color, _ text: Text) -> some View {
-        HStack(spacing: DS.Space.s1) { RoundedRectangle(cornerRadius: DS.YearMap.radius).fill(color).frame(width: DS.Watching.cell, height: DS.Watching.cell); text.recipe(.caption, color: DS.textMuted) }
-    }
 
     private func label(_ d: Date, _ p: WatchingStats.Period) -> String {
         let style: Strings.DateStyle = switch p { case .week: .weekdayInitial; case .month: .dayNumber; case .year: .monthInitial; case .all: .yearShort }

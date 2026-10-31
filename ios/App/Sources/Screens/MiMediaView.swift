@@ -45,8 +45,8 @@ struct MiMediaView<Top: View>: View {
                         }
                         .padding(.horizontal, DS.Space.gutter)
                     }
-                    DSSegmented(options: [(MiMediaModel.Filter.all, LocalizedStringKey("Todo")), (.movies, "Películas"), (.series, "Series"), (.unwatched, "Sin ver")],
-                                selection: Binding(get: { model.filter }, set: { model.filter = $0 }))
+                    DSTextTabs(options: [.init(id: MiMediaModel.Filter.all, title: Text("Todo")), .init(id: .movies, title: Text("Películas")), .init(id: .series, title: Text("Series")), .init(id: .unwatched, title: Text("Sin ver"))],
+                               selection: Binding(get: { model.filter }, set: { model.filter = $0 }))
                         .padding(.horizontal, DS.Space.gutter)
                     if model.all.isEmpty {
                         DSEmptyState(symbol: "film.stack", title: model.scanning ? Text("Revisando tu carpeta…") : Text("Nada reconocido todavía"),

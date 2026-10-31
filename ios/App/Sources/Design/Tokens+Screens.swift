@@ -159,13 +159,13 @@ extension DS {
         static let symbol = "heart", symbolFilled = "heart.fill"
     }
 
-    /// El mazo de «¿Qué vemos hoy?» (`MatchCard`, `MatchDeck`, `MoodTile`): el ícono que asoma al arrastrar (desde qué parte
+    /// El mazo de «¿Qué vemos hoy?» (`MatchCard`, `MatchDeck`): el ícono que asoma al arrastrar (desde qué parte
     /// del arrastre y qué tan rápido aparece), cómo se ven las de atrás, el giro, cuánto hay que arrastrar para que vuele y el
     /// alto de un ánimo.
     enum Match {
         static let hintFrom = 0.15, hintRamp = 3.0
         static let behindShrink: CGFloat = 0.05, behindDrop: CGFloat = 14, tiltDivisor = 22.0
-        static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220), mood: CGFloat = 64
+        static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220)
         /// La carta es un póster: alto entre ancho.
         static let cardAspect: CGFloat = 1.5
         /// La carta: cuántos géneros, su relleno, el logo de Trakt y el sello («MI LISTA», «PASO»): su giro, orilla e interletrado.
@@ -182,6 +182,10 @@ extension DS {
         /// La portada (el arte de lo que más viste): dónde empieza su velo y su alto; cuántos van en «Lo que más viste».
         static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
+        /// La racha que se dice en la portada (desde 3 días); el azul del calendario (Fernando, 31 oct 2026) y su piso; el
+        /// relleno de las barras de géneros y la columna fija de sus porcentajes.
+        static let streakShown = 3, dayFloor = 0.35, genreFill = 0.8, percentColumn: CGFloat = 40
+        static let calendar = Color(red: 0.27, green: 0.52, blue: 0.96)
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
         static let holdToPause = 0.2, barTrack = 0.3, backdropOpacity = 0.45, wrongOpacity = 0.35
@@ -209,7 +213,8 @@ extension DS {
     /// grande, el velo turquesa de lo elegido (la selección, como los ánimos de «¿Qué vemos hoy?») y el póster de resultados.
     enum Filter {
         static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64, eraTile: CGFloat = 72
-        static let selectedFill = DS.brandMoon.opacity(0.18)   // ds-exception: el velo de la selección (turquesa al 18 %)
+        /// Lo elegido, en el color del texto (Fernando, 30 oct 2026: lo elegido siempre en blanco, nunca turquesa ni azul).
+        static let selectedFill = DS.text.opacity(0.12)   // ds-exception: el velo de la selección (el texto al 12 %)
         static let resultWidth: CGFloat = 104
         /// Las pestañas de texto de `DSKindFilter(tabs:)`: la marca turquesa bajo la elegida.
         static let tabMark: CGFloat = 18, tabMarkHeight: CGFloat = 3

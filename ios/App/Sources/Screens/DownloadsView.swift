@@ -58,7 +58,7 @@ struct DownloadsView: View {
 
     /// «En el iPhone | Mi media» (con OneDrive conectado).
     private var switcher: some View {
-        DSSegmented(options: [(Part.phone, "En el iPhone"), (.media, "Mi media")], selection: $part)
+        DSTextTabs(options: [.init(id: Part.phone, title: Text("En el iPhone"), symbol: "iphone"), .init(id: .media, title: Text("Mi media"), symbol: "cloud")], selection: $part)
     }
 
     /// En el iPhone: lo que se baja y lo listo para ver sin conexión.

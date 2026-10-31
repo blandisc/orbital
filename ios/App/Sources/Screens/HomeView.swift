@@ -427,7 +427,8 @@ struct HomeView: View {
                               eyebrow: service.weekly ? Text("Esta semana en tu país") : Text("Lo más visto hoy · JustWatch"))
                     .lineLimit(1).minimumScaleFactor(DS.Size.titleShrink)
                 Spacer(minLength: DS.Space.s2)
-                // Siempre ocupa su lugar (oculto si el servicio solo tiene uno de los dos): al cambiar de servicio nada brinca.
+                // La pastilla junto al título, con ícono (Fernando, 31 oct 2026). Siempre ocupa su lugar (oculta si el servicio
+                // solo tiene uno de los dos): al cambiar de servicio nada brinca.
                 DSKindFilter(kind: Binding(get: { movies ? "movie" : "series" }, set: { topMovies = $0 == "movie" }), includeAll: false, compact: true)
                     .opacity(pageKind == nil && !series.isEmpty && !films.isEmpty ? 1 : 0).disabled(pageKind != nil || series.isEmpty || films.isEmpty)
             }

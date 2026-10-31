@@ -15,7 +15,7 @@ struct HomeKindBar: View {
         DSKindFilter(kind: Binding(get: { kind }, set: { new in
             kind = new
             onPicked(new)
-        }), tabs: true)   // pestañas de texto: los íconos solos no se entendían y la cápsula gris no gustaba
+        }), mark: DS.eyebrow)   // las pestañas de toda la app; Inicio, con su rayita turquesa como estaba (Fernando, 31 oct 2026)
         .accessibilityIdentifier("home-kind-filter")
         .frame(maxWidth: .infinity)
         .padding(.horizontal, DS.Space.gutter)

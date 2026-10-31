@@ -39,11 +39,6 @@ struct MatchDeckScreen: View {
             }
             if let model {
                 let _ = model.track()
-                HStack(spacing: DS.Space.s2) {
-                    ForEach(DecideModel.Mood.allCases, id: \.self) { mood in
-                        MoodTile(symbol: Self.symbol(mood), title: Self.name(mood), selected: model.mood == mood) { model.mood = model.mood == mood ? nil : mood }
-                    }
-                }
                 if !model.loaded {
                     skeleton   // mientras llega lo visto: la forma de la carta, no una pantalla en blanco
                 } else if model.cards.isEmpty {
@@ -130,10 +125,4 @@ struct MatchDeckScreen: View {
         }
     }
 
-    static func symbol(_ m: DecideModel.Mood) -> String {
-        switch m { case .light: "sun.max"; case .intense: "bolt"; case .think: "lightbulb"; case .together: "heart" }
-    }
-    static func name(_ m: DecideModel.Mood) -> Text {
-        switch m { case .light: Text("Ligero"); case .intense: Text("Intenso"); case .think: Text("Para pensar"); case .together: Text("En pareja") }
-    }
 }

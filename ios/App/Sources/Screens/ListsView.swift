@@ -126,7 +126,7 @@ struct ListsView: View {
                             DSChapterHead(label: Text("Hoy"), title: CollectionSection.forYou.title)
                             if model.hasKindSplit {
                                 DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
-                                                           set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), tabs: true)
+                                                           set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }))
                                     .padding(.horizontal, DS.Space.gutter)
                             }
                         }

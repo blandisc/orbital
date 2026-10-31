@@ -162,9 +162,9 @@ struct PanelChip: View {
                 } else if selected { Image(systemName: "checkmark").font(DS.TextRecipe.caption.font.weight(.bold)) }
                 title.font(font).fontWeight(selected ? .semibold : .regular).lineLimit(1)
             }
-            .foregroundStyle(selected ? DS.onPrimary : DS.text)   // elegido: el color principal del modo (en claro el papel se perdía en el fondo)
+            .foregroundStyle(selected ? DS.bg : DS.text)   // elegida: en el color del texto, con letra del fondo (blanca en oscuro), como toda selección
             .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-            .background(selected ? DS.primary : DS.fill, in: Capsule())
+            .background(selected ? DS.text : DS.fill, in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])

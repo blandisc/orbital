@@ -151,25 +151,3 @@ struct MatchDeck: View {
     }
 }
 
-/// Un ánimo como mosaico: ícono y nombre; el elegido con fondo turquesa al 18 % y borde turquesa.
-struct MoodTile: View {
-    let symbol: String
-    let title: Text
-    let selected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: DS.Space.s1) {
-                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(selected ? DS.brandMoon : DS.text)
-                title.recipe(.caption, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-            }
-            .frame(maxWidth: .infinity, minHeight: DS.Match.mood)
-            .background(selected ? DS.Filter.selectedFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(selected ? DS.brandMoon : .clear, lineWidth: DS.Size.hairline * 2))
-        }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: selected)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}

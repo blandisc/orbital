@@ -78,15 +78,15 @@ struct DecideView: View {
     /// «¿Qué vemos?» con cuántas opciones quedan y, a la derecha, «Todo ⌄» (películas o series), el mismo de Para ti.
     private func header(_ m: DecideModel) -> some View {
         let count = m.count()
-        return HStack(alignment: .center) {
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("Decide por mí").recipe(.title)
                 Text(verbatim: optionsLine(m, count))
                     .recipe(.footnote).monospacedDigit().contentTransition(.numericText())
                     .accessibilityIdentifier("decide-count")
             }
-            Spacer()
-            DSKindFilter(kind: Binding(get: { m.kind ?? "" }, set: { m.kind = $0.isEmpty ? nil : $0; Task { await m.apply() } }), menu: true)
+            // Las mismas pestañas de toda la app, debajo del título (antes un menú junto a él).
+            DSKindFilter(kind: Binding(get: { m.kind ?? "" }, set: { m.kind = $0.isEmpty ? nil : $0; Task { await m.apply() } }))
                 .accessibilityIdentifier("decide-kind")
         }
     }

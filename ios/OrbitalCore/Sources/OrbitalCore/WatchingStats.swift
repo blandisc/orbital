@@ -27,6 +27,8 @@ public struct WatchingStats: Sendable, Equatable {
     public var genres: [(name: String, count: Int)]
     public var top: [Title]
     public var busiestDay: (day: Date, minutes: Int)?
+    /// Los minutos de cada día (el calendario de «Día por día» se enciende según cuánto viste).
+    public var minutesByDay: [Date: Int] = [:]
 
     public var hours: Int { minutes / 60 }
     public var isEmpty: Bool { movies + episodes == 0 }
@@ -86,10 +88,12 @@ public struct WatchingStats: Sendable, Equatable {
             bucketStart = next
         }
         let busiest = perDay.max { $0.value < $1.value || ($0.value == $1.value && $0.key > $1.key) }
-        return WatchingStats(period: period, start: start, end: now, minutes: minutes, movies: movies, episodes: episodes,
+        var stats = WatchingStats(period: period, start: start, end: now, minutes: minutes, movies: movies, episodes: episodes,
                              titles: titles.count, days: days, longestStreak: longest, currentStreak: current, buckets: buckets,
                              genres: genres.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.map { ($0.key, $0.value) },
                              top: titles.values.sorted { $0.minutes != $1.minutes ? $0.minutes > $1.minutes : $0.title < $1.title },
                              busiestDay: busiest.map { ($0.key, $0.value) })
+        stats.minutesByDay = perDay
+        return stats
     }
 }

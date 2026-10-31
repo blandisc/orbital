@@ -72,7 +72,7 @@ struct SourcesSheet: View {
                     .accessibilityIdentifier("sources-info")
             }
             .padding(.horizontal, DS.Space.s4)
-            DSSegmented(options: [(false, "Por idioma"), (true, "Todas las fuentes")], selection: $showsAll)
+            DSTextTabs(options: [.init(id: false, title: Text("Por idioma")), .init(id: true, title: Text("Todas las fuentes"))], selection: $showsAll)
             .padding(.horizontal, DS.Space.s4)
             .accessibilityIdentifier("sources-mode")
             if episode {

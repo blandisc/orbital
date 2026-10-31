@@ -65,38 +65,57 @@ struct WatchingBars: View {
     }
 }
 
-/// El mapa día por día: un cuadrito por día, en el color de lo que viste (película, serie o las dos).
+/// «Día por día»: en una semana o un mes, un calendario de verdad (L M X J V S D arriba, el número de cada día) con un solo
+/// color, azul (Fernando, 31 oct 2026), más intenso según cuánto viste ese día; en un año o siempre, el mapa de cuadritos
+/// con el mismo azul.
 struct WatchingDayGrid: View {
     let start: Date
     let end: Date
-    let days: [Date: YearInReview.Day]
-    var calendar = Calendar.current
+    let minutes: [Date: Int]
+    var calendar: Calendar = {
+        var c = Calendar.current
+        c.firstWeekday = 2   // la semana empieza en lunes, como en los calendarios en español
+        return c
+    }()
 
     var body: some View {
         let first = calendar.dateInterval(of: .weekOfYear, for: start)?.start ?? start
         let count = max(1, (calendar.dateComponents([.day], from: first, to: end).day ?? 0) + 1)
         let weeks = Int((Double(count) / 7).rounded(.up))
+        let most = max(minutes.values.max() ?? 0, 1)
         if weeks <= 6 {
-            // Una semana o un mes: como calendario, un renglón por semana y cuadros grandes.
-            VStack(alignment: .leading, spacing: DS.YearMap.gap) {
+            VStack(spacing: DS.YearMap.gap) {
+                HStack(spacing: DS.YearMap.gap) {
+                    ForEach(0..<7, id: \.self) { d in
+                        Text(verbatim: Self.letter(calendar.date(byAdding: .day, value: d, to: first) ?? first, calendar: calendar))
+                            .recipe(.caption, color: DS.textMuted).frame(maxWidth: .infinity)
+                    }
+                }
                 ForEach(0..<weeks, id: \.self) { w in
                     HStack(spacing: DS.YearMap.gap) {
                         ForEach(0..<7, id: \.self) { d in
                             let day = calendar.date(byAdding: .day, value: w * 7 + d, to: first) ?? first
-                            RoundedRectangle(cornerRadius: DS.Radius.xs)
-                                .fill(day > end || day < calendar.startOfDay(for: start) ? .clear : color(days[calendar.startOfDay(for: day)]))
-                                .aspectRatio(1, contentMode: .fit)   // ds-exception: cuadros cuadrados (un día)
+                            let inside = !(day > end || day < calendar.startOfDay(for: start))
+                            let watched = minutes[calendar.startOfDay(for: day)] ?? 0
+                            ZStack {
+                                RoundedRectangle(cornerRadius: DS.Radius.xs).fill(inside ? fill(watched, most) : .clear)
+                                if inside {
+                                    Text(verbatim: "\(calendar.component(.day, from: day))")
+                                        .recipe(.caption, color: watched > 0 ? DS.paper : DS.textMuted).monospacedDigit()
+                                }
+                            }
+                            .aspectRatio(1, contentMode: .fit)   // ds-exception: cuadros cuadrados (un día)
                         }
                     }
                 }
             }
             .accessibilityHidden(true)
         } else {
-            longGrid(first: first, weeks: weeks)
+            longGrid(first: first, weeks: weeks, most: most)
         }
     }
 
-    private func longGrid(first: Date, weeks: Int) -> some View {
+    private func longGrid(first: Date, weeks: Int, most: Int) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .top, spacing: DS.YearMap.gap) {
                 ForEach(0..<weeks, id: \.self) { w in
@@ -104,7 +123,7 @@ struct WatchingDayGrid: View {
                         ForEach(0..<7, id: \.self) { d in
                             let day = calendar.date(byAdding: .day, value: w * 7 + d, to: first) ?? first
                             RoundedRectangle(cornerRadius: DS.YearMap.radius)
-                                .fill(day > end || day < calendar.startOfDay(for: start) ? .clear : color(days[calendar.startOfDay(for: day)]))
+                                .fill(day > end || day < calendar.startOfDay(for: start) ? .clear : fill(minutes[calendar.startOfDay(for: day)] ?? 0, most))
                                 .frame(width: DS.Watching.cell, height: DS.Watching.cell)
                         }
                     }
@@ -115,8 +134,15 @@ struct WatchingDayGrid: View {
         .accessibilityHidden(true)
     }
 
-    private func color(_ day: YearInReview.Day?) -> Color {
-        switch day { case .movies?: DS.YearMap.movies; case .series?: DS.YearMap.series; case .both?: DS.YearMap.both; case nil: DS.fill }
+    /// L M X J V S D (miércoles es X, como en los calendarios en español).
+    static func letter(_ day: Date, calendar: Calendar) -> String {
+        ["D", "L", "M", "X", "J", "V", "S"][calendar.component(.weekday, from: day) - 1]
+    }
+
+    /// Azul más intenso según los minutos de ese día; sin nada, el relleno de siempre.
+    private func fill(_ watched: Int, _ most: Int) -> Color {
+        guard watched > 0 else { return DS.fill }
+        return DS.Watching.calendar.opacity(DS.Watching.dayFloor + (1 - DS.Watching.dayFloor) * Double(watched) / Double(most))
     }
 }
 
@@ -133,11 +159,12 @@ struct WatchingGenres: View {
                     Text(verbatim: name(g.name)).recipe(.footnote).frame(width: DS.Watching.genreLabel, alignment: .leading).lineLimit(1)
                     GeometryReader { geo in
                         Capsule().fill(DS.fillStrong).overlay(alignment: .leading) {
-                            Capsule().fill(DS.eyebrow).frame(width: geo.size.width * CGFloat(g.count) / CGFloat(total))
+                            Capsule().fill(DS.text.opacity(DS.Watching.genreFill)).frame(width: geo.size.width * CGFloat(g.count) / CGFloat(total))
                         }
                     }
                     .frame(height: DS.Watching.genreBar)
                     Text(verbatim: "\(g.count * 100 / total) %").recipe(.caption, color: DS.textMuted).monospacedDigit()
+                        .frame(width: DS.Watching.percentColumn, alignment: .trailing)   // columna fija: las barras terminan parejas
                 }
             }
         }

@@ -33,8 +33,8 @@ extension PlayerScreen {
                     Spacer()
                     VStack(spacing: DS.Space.s2) {
                         if dockState.dockPage != .episodes { HStack(spacing: DS.Space.s2) {
-                            DSSegmented(options: [(false, "Audio y subtítulos"), (true, "Versión")],
-                                        selection: Binding(get: { dockState.dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = v ? .version : .media } }))
+                            DSTextTabs(options: [.init(id: false, title: Text("Audio y subtítulos")), .init(id: true, title: Text("Versión"))],
+                                       selection: Binding(get: { dockState.dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = v ? .version : .media } }))
                             Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
                                 .dsPrimaryButton().controlSize(.small)
                         } }
@@ -304,7 +304,7 @@ extension PlayerScreen {
                     Spacer()
                 }
             }
-            DSSegmented(options: [(false, "Por idioma"), (true, "Todas las fuentes")], selection: $dockState.versionShowsAll)
+            DSTextTabs(options: [.init(id: false, title: Text("Por idioma")), .init(id: true, title: Text("Todas las fuentes"))], selection: $dockState.versionShowsAll)
             ScrollView {
                 if dockState.versionShowsAll {
                     AllSourcesList(sources: model.sourceChoices, current: model.source?.index, currentIsPlaying: true,

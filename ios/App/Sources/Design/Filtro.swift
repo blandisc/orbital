@@ -16,7 +16,7 @@ struct FilterTile: View {
         let on = value != nil
         Button(action: action) {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
-                Image(systemName: symbol).font(DS.TextRecipe.title.font).foregroundStyle(on ? DS.brandMoon : DS.textMuted)
+                Image(systemName: symbol).font(DS.TextRecipe.title.font).foregroundStyle(on ? DS.text : DS.textMuted)
                 Spacer(minLength: 0)
                 title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
                 (value ?? Text("Cualquiera")).recipe(.caption, color: on ? DS.text : DS.textMuted).lineLimit(1)
@@ -24,7 +24,7 @@ struct FilterTile: View {
             .padding(DS.Space.s3)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.tileHeight, alignment: .leading)
             .background(on ? DS.Filter.selectedFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(on ? DS.brandMoon : .clear, lineWidth: DS.Size.hairline * 2))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(on ? DS.text : .clear, lineWidth: DS.Size.hairline * 2))
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -55,8 +55,8 @@ struct FilterDoor: View {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         Text("Búsqueda avanzada").recipe(.cardTitle)
                         if active > 0, let summary {
-                            // Lo elegido, en el color de la selección del filtro (el turquesa es solo para los porqués).
-                            Text("\(active) \(active == 1 ? "filtro" : "filtros") · \(summary)").recipe(.footnote, color: DS.brandMoon).lineLimit(1)
+                            // Lo elegido, en blanco (lo elegido siempre en blanco; el turquesa es solo para los porqués).
+                            Text("\(active) \(active == 1 ? "filtro" : "filtros") · \(summary)").recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
                         }
                     }
                     Spacer(minLength: 0)
@@ -95,12 +95,11 @@ struct ActiveFilterChip: View {
     var body: some View {
         Button(action: remove) {
             HStack(spacing: DS.Space.s1) {
-                title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
-                Image(systemName: "xmark").font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.textMuted)
+                title.recipe(.footnote, color: DS.bg).fontWeight(.semibold).lineLimit(1)
+                Image(systemName: "xmark").font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.bg)
             }
             .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
-            .background(DS.Filter.selectedFill, in: Capsule())
-            .overlay(Capsule().strokeBorder(DS.brandMoon, lineWidth: DS.Size.hairline * 2))
+            .background(DS.text, in: Capsule())   // puesto: como una cápsula elegida (blanca, letra oscura)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Quitar \(title)"))
@@ -118,13 +117,13 @@ struct FilterChoice: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: DS.Space.s2) {
-                Image(systemName: symbol).font(DS.TextRecipe.title.font).foregroundStyle(selected ? DS.brandMoon : DS.text)
+                Image(systemName: symbol).font(DS.TextRecipe.title.font).foregroundStyle(DS.text)
                 title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
                 if let detail { detail.recipe(.caption, color: DS.textMuted).lineLimit(1) }
             }
             .frame(maxWidth: .infinity, minHeight: DS.Filter.choiceHeight)
             .background(selected ? DS.Filter.selectedFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(selected ? DS.brandMoon : .clear, lineWidth: DS.Size.hairline * 2))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(selected ? DS.text : .clear, lineWidth: DS.Size.hairline * 2))
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         }
         .buttonStyle(.plain)

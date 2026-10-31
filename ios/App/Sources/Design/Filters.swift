@@ -20,53 +20,52 @@ enum KindGlyph {
 }
 
 /// El filtro de tipo de toda la app: Todo · Películas · Series (o solo Películas · Series), siempre el mismo control y en
-/// ese orden (antes había cinco: cápsulas, un menú, pestañas grandes, un segmentado y un botón en la barra).
-/// `kind`: "" es todo, «movie» o «series». `counts`: cuántas hay de cada uno (Buscar).
+/// ese orden: las pestañas de texto con su ícono (`DSTextTabs`). Antes había cinco (cápsulas, un menú, solo íconos, un
+/// segmentado y pestañas); Fernando, 30 oct 2026: un solo selector en toda la app. Va debajo del título de su sección, no
+/// junto. `kind`: "" es todo, «movie» o «series». `counts`: cuántas hay de cada uno (Buscar).
 struct DSKindFilter: View {
     @Binding var kind: String
     var includeAll = true
     var counts: (movies: Int, series: Int)?
-    /// Chico, a la derecha del título de su sección: el switch en cápsula (dos opciones, como el Top 10).
+    /// La pastilla chica junto al título (el Top 10, Fernando, 31 oct 2026): el segmentado con su ícono en cada opción.
     var compact = false
-    /// Una lista que se despliega (tres opciones no caben junto al título): la cápsula con lo elegido y ⌄, como «Ver todo».
-    var menu = false
-    /// En la barra de arriba (Inicio): solo los tres íconos, sin texto; cada uno dice su nombre a VoiceOver.
-    var icons = false
-    /// Pestañas con ícono y nombre (Inicio y «Lo que se ve hoy», iguales): la elegida en blanco con una marca turquesa
-    /// debajo, las otras en gris; sin cápsula (Fernando, 30 oct 2026). Se lee sobre el arte con su sombra.
-    var tabs = false
+    /// La rayita de la elegida: blanca (lo elegido) o turquesa en Inicio (Fernando, 31 oct 2026: Inicio se queda como estaba).
+    var mark: Color = DS.text
 
     var body: some View {
-        Group {
-            if tabs {
-                DSTextTabs(options: options.map { DSTextTabs.Option(id: $0.0, title: Text($0.1), symbol: KindGlyph.symbol($0.0)) }, selection: $kind)
-            } else if icons {
-                Picker(selection: $kind) {
-                    ForEach(options, id: \.0) { Image(systemName: KindGlyph.symbol($0.0)).accessibilityLabel(Text($0.1)).tag($0.0) }
-                } label: { EmptyView() }
-                .pickerStyle(.segmented)
-                .fixedSize()
-                .sensoryFeedback(.selection, trigger: kind)
-            } else if menu {
-                Menu {
-                    Picker(selection: $kind) { ForEach(options, id: \.0) { Label($0.1, systemImage: KindGlyph.symbol($0.0)).tag($0.0) } } label: { EmptyView() }
-                } label: {
-                    DSCapsuleLabel(title: Text(options.first { $0.0 == kind }?.1 ?? "Todo"), symbol: KindGlyph.symbol(kind), trailing: "chevron.down")
+        if compact {
+            // La pastilla propia: la nativa de iOS no pone ícono junto al texto.
+            HStack(spacing: 0) {
+                ForEach(options, id: \.0) { option in
+                    let on = kind == option.0
+                    Button { kind = option.0 } label: {
+                        HStack(spacing: DS.Space.s1) {
+                            Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(on ? .fill : .none)
+                            Text(option.1).lineLimit(1)
+                        }
+                        .font(DS.TextRecipe.caption.font.weight(.semibold))   // chica: el título de al lado cabe en un renglón
+                        .foregroundStyle(on ? DS.text : DS.textMuted)
+                        .padding(.horizontal, DS.Space.s2)
+                        .frame(maxHeight: .infinity)
+                        .background(on ? DS.fillStrong : .clear, in: Capsule())
+                        .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(on ? .isSelected : [])
                 }
-                .fixedSize()
-                .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
-                .sensoryFeedback(.selection, trigger: kind)
-            } else if compact {
-                // El switch chico del Top 10 (cápsula con lo elegido resaltado), a la derecha del título de su sección.
-                DSSegmented(options: options, selection: $kind).fixedSize()
-                    .frame(minHeight: DS.Size.touchTarget)   // el mismo renglón que las cápsulas («Ver todo», «Todo ⌄»)
-                    .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
-            } else {
-                DSSegmented(options: options, selection: $kind)
             }
+            .padding(DS.Space.s1 / 2)
+            .frame(height: DS.Size.touchTarget)
+            .background(DS.fill, in: Capsule())
+            .fixedSize()
+            .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
+            .sensoryFeedback(.selection, trigger: kind)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(Text("Series o películas"))
+        } else {
+            DSTextTabs(options: options.map { DSTextTabs.Option(id: $0.0, title: Text($0.1), symbol: KindGlyph.symbol($0.0)) }, selection: $kind, mark: mark)
+                .accessibilityLabel(Text("Series o películas"))
         }
-        .accessibilityLabel(Text("Series o películas"))
-        .accessibilityIdentifier("kind-filter")
     }
 
     private var options: [(String, LocalizedStringKey)] {
@@ -112,12 +111,14 @@ struct DSChipRow<Item: Hashable & Identifiable, Label: View>: View {
 }
 
 /// Pestañas de texto, la misma pieza en toda la app (Todo · Películas · Series, Semana · Mes · Año · Siempre): la elegida en
-/// blanco y negrita con una marca turquesa debajo, las otras en gris; con ícono si lo traen. Sin cápsula (Fernando, 30 oct
+/// blanco y negrita con una rayita blanca debajo, las otras en gris; con ícono si lo traen. Sin cápsula (Fernando, 30 oct
 /// 2026). Se lee sobre el arte con su sombra.
 struct DSTextTabs<ID: Hashable>: View {
     struct Option { let id: ID; let title: Text; var symbol: String? = nil }
     let options: [Option]
     @Binding var selection: ID
+    /// La rayita de la elegida (blanca; turquesa solo en Inicio).
+    var mark: Color = DS.text
 
     var body: some View {
         HStack(spacing: DS.Space.s5) {
@@ -131,7 +132,7 @@ struct DSTextTabs<ID: Hashable>: View {
                         }
                         .font(DS.TextRecipe.cardTitle.font.weight(on ? .bold : .medium))
                         .foregroundStyle(on ? DS.text : DS.textMuted)
-                        Capsule().fill(on ? DS.eyebrow : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
+                        Capsule().fill(on ? mark : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
                     }
                     .padding(.vertical, DS.Space.s1)
                     .contentShape(Rectangle())
