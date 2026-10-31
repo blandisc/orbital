@@ -181,22 +181,28 @@ struct VolumeControl: View {
     let down: () -> Void
     let up: () -> Void
     let mute: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: DS.Space.s3) {
             Button(action: mute) { Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle()) }
                 .accessibilityLabel(muted ? Text("Quitar silencio") : Text("Silencio"))
+            // Mantener presionado repite (como los botones del iPhone).
             Button(action: down) { Image(systemName: "minus").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle()) }
+                .buttonRepeatBehavior(.enabled)
                 .accessibilityLabel(Text("Bajar volumen"))
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(DS.fill)
                     Capsule().fill(muted ? DS.textFaint : DS.text).frame(width: geo.size.width * CGFloat(level ?? 0) / 100)
                 }
+                // La barra se desliza al nuevo nivel en vez de brincar.
+                .animation(reduceMotion ? nil : .snappy(duration: DS.Remote.volumeGlide), value: level)
             }
             .frame(height: DS.Remote.volumeBar)
             .accessibilityHidden(true)
             Button(action: up) { Image(systemName: "plus").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle()) }
+                .buttonRepeatBehavior(.enabled)
                 .accessibilityLabel(Text("Subir volumen"))
         }
         .font(DS.TextRecipe.cardTitle.font.weight(.semibold))

@@ -154,7 +154,7 @@ public final class TVNowModel: ObservableModel {
             legend = snapshot.legend
             section = snapshot.section
             screen = snapshot.screen
-            if let v = snapshot.volume { volume = v }
+            if let v = snapshot.volume, !sendingVolume, Date() >= volumeHeldUntil { volume = v }
             failures = 0
             fetchedAt = Date()
             answered = true
@@ -314,22 +314,40 @@ public final class TVNowModel: ObservableModel {
         }
     }
 
-    /// Sube o baja el volumen de la TV (de 5 en 5): la barra se mueve al momento y el siguiente sondeo trae el de verdad.
+    /// Sube o baja el volumen de la TV (de 5 en 5): la barra se mueve al momento y la TV lo recibe sin hacer fila. Si tocas
+    /// varias veces (o mantienes el botón) mientras va una orden, se juntan en la siguiente («+15» en vez de tres «+5»
+    /// esperando su turno). Mientras cambias, y un momento después, el sondeo no regresa la barra al volumen de antes (la TV
+    /// todavía no se enteraba y la barra brincaba hacia atrás y adelante).
     public func changeVolume(by delta: Int) async {
         if let v = volume { volume = .init(level: max(0, min(100, v.level + delta)), muted: false) }
-        let ticket = nextTicket()
-        do {
-            let playing = try await services.orbital.control(action: "volume", delta: Double(delta))
-            if accept(ticket) { setNow(playing); fetchedAt = Date() }   // con su hora: la barra de avance no brinca
-            volumeOutdated = false
-        } catch OrbitalRemote.Failure.badToken {
-            tokenProblem = true
-        } catch OrbitalRemote.Failure.outdated {
-            volumeOutdated = true   // una consola sin la acción «volume»: se avisa que hay que actualizarla
-        } catch OrbitalRemote.Failure.refused {
-            volumeOutdated = true   // las de antes contestan «Esa acción no existe»
-        } catch {}
+        volumeHeldUntil = Date().addingTimeInterval(Self.volumeHold)
+        pendingVolume += delta
+        guard !sendingVolume else { return }   // ya va una: esta se suma a la siguiente
+        sendingVolume = true
+        defer { sendingVolume = false; volumeHeldUntil = Date().addingTimeInterval(Self.volumeHold) }
+        while pendingVolume != 0 {
+            let step = pendingVolume
+            pendingVolume = 0
+            let ticket = nextTicket()
+            do {
+                let playing = try await services.orbital.control(action: "volume", delta: Double(step))
+                if accept(ticket) { setNow(playing); fetchedAt = Date() }   // con su hora: la barra de avance no brinca
+                volumeOutdated = false
+            } catch OrbitalRemote.Failure.badToken {
+                tokenProblem = true; pendingVolume = 0
+            } catch OrbitalRemote.Failure.outdated {
+                volumeOutdated = true; pendingVolume = 0   // una consola sin la acción «volume»: se avisa que hay que actualizarla
+            } catch OrbitalRemote.Failure.refused {
+                volumeOutdated = true; pendingVolume = 0   // las de antes contestan «Esa acción no existe»
+            } catch { pendingVolume = 0 }
+        }
     }
+
+    /// Lo que falta mandar del volumen, si ya va una orden, y hasta cuándo el sondeo no toca la barra.
+    private var pendingVolume = 0, sendingVolume = false
+    private var volumeHeldUntil = Date.distantPast
+    /// Cuánto se respeta la barra tras el último cambio antes de volver a creerle al sondeo.
+    static let volumeHold: TimeInterval = 1.5
 
     /// Silencio sí / no (el de Windows, igual que en la TV).
     public func toggleMute() async {
