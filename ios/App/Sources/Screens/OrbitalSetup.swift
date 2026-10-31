@@ -68,11 +68,11 @@ struct OrbitalSetupView: View {
                             .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).textContentType(.URL)
                         SecureField("Token (el mismo de Alexa)", text: $token).textInputAutocapitalization(.never).autocorrectionDisabled()
                         Button("Conectar") { Task { await model.connectByHand(address: address, token: token) } }
-                            .buttonStyle(.glass).disabled(model.connecting)
+                            .dsGlassButton().disabled(model.connecting)
                     }
                     .textFieldStyle(.roundedBorder)
                     .padding(DS.Space.s4)
-                    .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .dsCard()
                 }
             }
         }
@@ -91,7 +91,7 @@ struct OrbitalSetupView: View {
                         Label("Ver", systemImage: "play.fill").frame(maxWidth: .infinity).padding(DS.Space.s2).background(DS.fill, in: Capsule())
                         Label("Ver en la TV", systemImage: "tv").frame(maxWidth: .infinity).padding(DS.Space.s2).background(DS.fillStrong, in: Capsule())
                     }
-                    .font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+                    .font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
                 }
             }
         case 2:

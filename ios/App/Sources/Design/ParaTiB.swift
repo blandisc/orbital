@@ -47,7 +47,7 @@ struct MosaicCover: View {
                 // El ícono del mosaico abajo a la derecha, negro sobre blanco (Fernando, 31 oct 2026: en vez de «Pasear por
                 // el mosaico»).
                 Button(action: onWalk) {
-                    Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.cardTitle.font.weight(.semibold))
+                    Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.cardTitle.font)
                         .foregroundStyle(DS.backdropDeep)
                         .frame(width: DS.ParaTiB.walkButton, height: DS.ParaTiB.walkButton)
                         .background(DS.paper, in: Circle())
@@ -172,7 +172,7 @@ struct MatchTeaser: View {
                 Spacer(minLength: 0)
             }
             .padding(DS.Space.s4)
-            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+            .dsCard(.card)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -264,11 +264,11 @@ struct ListRow: View {
                 detail.recipe(.footnote, color: DS.textMuted).lineLimit(1)
             }
             Spacer(minLength: DS.Space.s2)
-            Image(systemName: "chevron.right").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textFaint)
+            Image(systemName: "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textFaint)
         }
         .padding(DS.Space.s2)
         .padding(.trailing, DS.Space.s2)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard()
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }

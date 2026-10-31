@@ -91,7 +91,7 @@ struct RepisaView: View {
                             NavigationLink(value: c.id) {
                                 VStack(spacing: DS.Space.s2) {
                                     ShelfEmblem(id: c.id, height: c.family == .list ? DS.Repisa.listEmblem : DS.Repisa.emblem)
-                                    CanonNames.title(c.id).recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                                    CanonNames.title(c.id).recipe(.label, color: DS.text).lineLimit(1)
                                     Text(verbatim: "\(c.seen(model.watched)) / \(Strings.count(c.total, language: env.services.appSettings.uiLanguage))").recipe(.caption, color: DS.textMuted).monospacedDigit()
                                 }
                                 .frame(maxWidth: .infinity)
@@ -182,7 +182,7 @@ struct RepisaCollectionView: View {
                 Spacer()
                 if c.grouping != .rank {
                     Button { newestFirst.toggle() } label: {
-                        Label(newestFirst ? "Más recientes" : "Más antiguas", systemImage: "arrow.up.arrow.down").recipe(.footnote).fontWeight(.semibold)
+                        Label(newestFirst ? "Más recientes" : "Más antiguas", systemImage: "arrow.up.arrow.down").recipe(.label)
                             .lineLimit(1).fixedSize()
                     }
                     .dsSecondaryButton()
@@ -230,7 +230,7 @@ struct RepisaCollectionView: View {
         HStack(spacing: DS.Space.s3) {
             PosterView(url: item.poster, title: item.title).frame(width: DS.Repisa.nextPoster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                why(c, item).recipe(.caption, color: DS.eyebrow).fontWeight(.semibold)
+                why(c, item).recipe(.badge, color: DS.eyebrow)
                 Text(verbatim: item.title).recipe(.cardTitle).lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -263,7 +263,7 @@ struct RepisaCollectionView: View {
                     }
                     if seen, let stars = env.ratings.stars(item.imdb) { RatingStars(value: stars, size: DS.Rating.starInline) { _ in } .allowsHitTesting(false) }
                     HStack(spacing: DS.Space.s1) { Text("Ver la ficha"); Image(systemName: "chevron.forward") }
-                        .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                        .font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
                 }
                 Spacer(minLength: 0)
             }
@@ -276,7 +276,7 @@ struct RepisaCollectionView: View {
                     .dsSolidPrimaryButton().controlSize(.large)
                 if !seen {
                     Button { askNext = suggestion(item); picked = nil } label: { Text("Ya la vi").frame(maxWidth: .infinity) }
-                        .buttonStyle(.glass).buttonBorderShape(.capsule).controlSize(.large)
+                        .dsGlassButton().buttonBorderShape(.capsule).controlSize(.large)
                         .accessibilityIdentifier("repisa-seen")
                 }
             }

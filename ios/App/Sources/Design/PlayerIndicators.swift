@@ -77,7 +77,7 @@ struct DSSeekBubble: View {
 
     var body: some View {
         VStack(spacing: DS.Space.s1) {
-            Text(time).font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.text).monospacedDigit()
+            Text(time).font(DS.TextRecipe.section.font).foregroundStyle(DS.text).monospacedDigit()
             Text(delta).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).monospacedDigit()
         }
         .padding(.horizontal, DS.Space.s5).padding(.vertical, DS.Space.s3)
@@ -96,7 +96,7 @@ struct DSSeekBubble: View {
         return VStack(spacing: DS.Space.s1) {
             HStack(spacing: DS.Space.s2) {
                 Circle().fill(tone).frame(width: DS.PlayerPanel.scareDot, height: DS.PlayerPanel.scareDot)
-                (scare.major ? Text("Susto fuerte") : Text("Susto leve")).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(tone)
+                (scare.major ? Text("Susto fuerte") : Text("Susto leve")).font(DS.TextRecipe.label.font).foregroundStyle(tone)
             }
             if !scare.text.isEmpty {
                 Text(verbatim: scare.text).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text)
@@ -123,7 +123,7 @@ struct DSSpeedPill: View {
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             if locked && !holding {
-                Image(systemName: "lock.fill").font(DS.TextRecipe.footnote.font.weight(.bold)).transition(.scale.combined(with: .opacity))
+                Image(systemName: "lock.fill").font(DS.TextRecipe.label.font).transition(.scale.combined(with: .opacity))
             } else {
                 ZStack {
                     Circle().stroke(DS.track, lineWidth: DS.PlayerPanel.ringWidth)
@@ -132,7 +132,7 @@ struct DSSpeedPill: View {
                 }
                 .frame(width: DS.PlayerPanel.ring * 0.75, height: DS.PlayerPanel.ring * 0.75)
             }
-            Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold))
+            Text(verbatim: "2×").font(DS.TextRecipe.labelLarge.font)
             if holding {
                 Text("\(Text(Image(systemName: unlocks ? "arrow.up" : "arrow.down")))\(Text(" "))\(unlocks ? Text("Desliza para quitar") : Text("Desliza para fijar"))")
                     .font(DS.TextRecipe.footnote.font)
@@ -155,7 +155,7 @@ struct DSToastPill: View {
     var detail: Text? = nil
     var body: some View {
         VStack(spacing: 0) {
-            Text(text).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).contentTransition(.numericText())
+            Text(text).font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text).contentTransition(.numericText())
             if let detail { detail.recipe(.caption).lineLimit(1) }
         }
             .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
@@ -213,7 +213,7 @@ struct DSSkipControl: View {
                 }
                 .font(DS.TextRecipe.caption.font)
                 .symbolEffect(.bounce, value: seconds)
-                Text(verbatim: "\(forward ? "+" : "−")\(seconds) s").font(DS.TextRecipe.cardTitle.font.weight(.bold)).monospacedDigit()
+                Text(verbatim: "\(forward ? "+" : "−")\(seconds) s").font(DS.TextRecipe.cardTitle.font).monospacedDigit()
                     .contentTransition(.numericText())
             }
         } else {

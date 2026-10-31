@@ -370,7 +370,7 @@ struct SettingsView: View {
             } else {
                 // Lo fácil primero: un código en la TV, la cámara del iPhone y listo.
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Label("En la TV: Ajustes › Cuentas › iPhone", systemImage: "qrcode").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+                    Label("En la TV: Ajustes › Cuentas › iPhone", systemImage: "qrcode").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
                     Text("Aparece un código. Apúntale con la cámara del iPhone y toca «Abrir en Orbital»: queda conectada, sin escribir nada.")
                         .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                 }
@@ -402,7 +402,7 @@ struct SettingsView: View {
             case .linking(let code, let url):
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     Text("Escribe este código en \(url):").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-                    Text(code).font(DS.TextRecipe.display.font.weight(.bold)).foregroundStyle(DS.text).textSelection(.enabled).monospaced()
+                    Text(code).font(DS.TextRecipe.display.font).foregroundStyle(DS.text).textSelection(.enabled).monospaced()
                     HStack { ProgressView(); Text("Esperando…").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
                 }
                 Button("Cancelar", role: .cancel) { model.cancelLinking() }

@@ -131,7 +131,7 @@ struct DecideView: View {
             .sensoryFeedback(.selection, trigger: s.imdb)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: s.title).recipe(.cardTitle).lineLimit(1)
-                if !facts.isEmpty { Text(verbatim: facts).recipe(.footnote, color: DS.accent).fontWeight(.semibold).lineLimit(1) }
+                if !facts.isEmpty { Text(verbatim: facts).recipe(.label, color: DS.accent).lineLimit(1) }
                 if let pitch = pitch(s) { Text(verbatim: pitch).recipe(.footnote, color: DS.textMuted).lineLimit(2) }
             }
             .contentShape(Rectangle())
@@ -169,7 +169,7 @@ struct DecideView: View {
                     }
                     .foregroundStyle(DS.text).frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.glass).controlSize(.large).disabled(m.isLoading)
+                .dsGlassButton().controlSize(.large).disabled(m.isLoading)
                 .accessibilityIdentifier("decide-shuffle")
                 DSMoreMenu {
                     Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { Task { await m.notInterested() } }
@@ -202,7 +202,7 @@ struct DecideView: View {
                     if index == 0 {
                         Button { Task { await m.relax(item.relax) } } label: { title.lineLimit(1) }.dsPrimaryButton()
                     } else {
-                        Button { Task { await m.relax(item.relax) } } label: { title.lineLimit(1) }.buttonStyle(.glass)
+                        Button { Task { await m.relax(item.relax) } } label: { title.lineLimit(1) }.dsGlassButton()
                     }
                 }
             }
@@ -441,12 +441,12 @@ struct DecideMoreFilters: View {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(chosen.isEmpty ? Strings.tr("Todo lo sugerido", language: language)
                          : String(format: Strings.tr(chosen.count == 1 ? "%lld lista" : "%lld listas", language: language), chosen.count))
-                        .recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                        .recipe(.labelLarge, color: DS.text)
                     if !chosen.isEmpty { Text(verbatim: chosen.map(\.name).joined(separator: " · ")).recipe(.caption).lineLimit(1) }
                 }
                 Spacer(minLength: DS.Space.s2)
                 Text(verbatim: String(format: Strings.tr("de %lld", language: language), m.sources.count)).recipe(.caption)
-                Image(systemName: "chevron.right").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                Image(systemName: "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
             }
             .padding(DS.Space.s3)
             .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
@@ -544,7 +544,7 @@ struct DecideListPicker: View {
                     }
                     .listRowBackground(Color.clear)
                 }
-            } header: { Text(title).recipe(.caption, color: DS.textMuted).fontWeight(.semibold) }
+            } header: { Text(title).recipe(.badge, color: DS.textMuted) }
         }
     }
 

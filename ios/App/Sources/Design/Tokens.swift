@@ -117,8 +117,32 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Lo mismo, más marcado.
         static let high = Elevation(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
         /// La misma sombra con otro color (o `.clear` para quitarla sin mover nada) o con otra caída.
+        /// Lo que flota encima de todo (la carta del mazo, el momento de la repisa): la más honda.
+        static let floating = Elevation(color: DS.scrimStrong, radius: DS.Space.s4, y: DS.Space.s2)
         func color(_ color: Color) -> Elevation { Elevation(color: color, radius: radius, y: y) }
         func drop(_ y: CGFloat) -> Elevation { Elevation(color: color, radius: radius, y: y) }
+    }
+
+    /// Un brillo de color alrededor de una pieza (la cifra de un Top 10, un sello, lo elegido): no es sombra, no baja.
+    /// Se usan con `.glow(color, .soft)`. Dos fuerzas, nada en medio.
+    enum Glow {
+        case soft, strong
+        var radius: CGFloat { self == .soft ? DS.Space.s2 : DS.Space.s4 }
+    }
+
+    // MARK: Línea y opacidad
+    /// Los grosores de toda línea (D5, 31 oct 2026): la fina de un separador, un contorno, lo elegido y el foco. Lo elegido
+    /// va siempre en el color del texto (blanco en oscuro), nunca turquesa: `.dsSelectionRing(_:)`.
+    enum Stroke {
+        static let hairline: CGFloat = 0.5, regular: CGFloat = 1, selected: CGFloat = 2, focus: CGFloat = 3
+    }
+
+    /// Las opacidades con papel (D16): no se escribe otra. `disabled` lo que no se puede tocar; `dimmed` lo que aún no
+    /// llega o ya pasó (un estreno próximo, un día pasado, las otras opciones); `faint` lo que casi no se ve (un fantasma,
+    /// lo descartado); `pressed` al tocar; `selectedFill` el relleno de lo elegido.
+    enum Opacity {
+        static let disabled = DesignTokens.Opacity.disabled, dimmed = 0.6, faint = 0.35, pressed = DesignTokens.Opacity.pressed
+        static let selectedFill = 0.12
     }
 
     // MARK: Espacio y forma
@@ -145,6 +169,11 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let xs = CGFloat(DesignTokens.Radius.xs), sm = CGFloat(DesignTokens.Radius.sm), md = CGFloat(DesignTokens.Radius.md)
         static let lg = CGFloat(DesignTokens.Radius.lg), xl = CGFloat(DesignTokens.Radius.xl), xxl = CGFloat(DesignTokens.Radius.xxl)
         static let pill = CGFloat(DesignTokens.Radius.pill)
+        /// Las placas chicas de texto o ícono (calidad, fuente, «4K»): una sola esquina (antes 4, 5 y 7).
+        static let tag = xs
+        /// El logo de una app o plataforma: la esquina del ícono de iOS, en proporción a su lado (antes 4, 8 y 10 fijos).
+        static func logo(_ side: CGFloat) -> CGFloat { side * logoShare }
+        static let logoShare: CGFloat = 0.225
     }
 
     // MARK: Tipografía (con Dynamic Type: hace de «Tamaño del texto»)
@@ -160,12 +189,13 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     static func font(_ face: Typeface, weight: Font.Weight = .regular) -> Font { .system(face.style, design: .default).weight(weight) }
 
     /// Recetas de texto de Proyección: cada pantalla usa estas, no tamaños sueltos. SF Pro con Dynamic Type; los datos
-    /// (tiempos, temporadas, tamaños) en SF Mono, la única marca tipográfica de la app.
+    /// (tiempos, temporadas, tamaños) con cifras tabulares (todas del mismo ancho), como `tabular-nums` en la TV.
     /// La escala de la app, una por papel (no se escriben tamaños sueltos):
     /// | Papel        | Receta       | Tamaño (Dynamic Type)  | Dónde                                              |
     /// |--------------|--------------|------------------------|----------------------------------------------------|
     /// | Pantalla     | (barra nativa) / `display` | largeTitle, negrita | «Para ti», «Buscar»; las cifras héroe         |
-    /// | Sección      | `title`      | title, negrita         | `DSSectionHead(level: .section)`: agrupa varias cosas |
+    /// | Título de hoja | `title`    | title, negrita         | `DSSheetHeader`                                    |
+    /// | Sección      | `groupLabel` | caption, negrita, MAYÚSCULAS | `DSSectionHead(level: .section)` (pinta `DSChapterLabel`): agrupa varias cosas |
     /// | Subsección   | `section`    | title2, negrita        | `DSSectionHead` de una fila o estante, con su porqué |
     /// | Porqué       | `eyebrow`    | footnote, seminegrita, turquesa | solo arriba de una subsección o de una portada |
     /// | Pieza        | `cardTitle`  | headline               | el nombre en una tarjeta o renglón                 |
@@ -174,8 +204,17 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// | Pie          | `footnote`   | footnote               | notas, ayuda                                       |
     /// | Etiqueta     | `caption`    | caption                | placas, «T2 E5», leyendas                          |
     /// | Dato         | `data`       | footnote tabular       | números que se comparan                            |
+    /// | Rótulo       | `label`      | footnote, seminegrita  | botones chicos, datos que resaltan                 |
+    /// | Rótulo grande| `labelLarge` | subheadline, seminegrita | el valor de un control, un nombre en un renglón  |
+    /// | Placa        | `badge`      | caption, negrita       | «4K», «Nuevo», cifras en una placa                 |
+    /// | Grupo        | `groupLabel` | caption, negrita       | el rótulo de un grupo (`DSGroupLabel`, en mayúsculas) |
+    /// | Cifra        | `stat`       | largeTitle, gruesa, tabular | las cifras grandes de Lo que ves, el mazo     |
     enum TextRecipe {
         case display, title, section, cardTitle, body, secondary, footnote, caption, eyebrow, data
+        /// Las que antes se armaban torciendo otra con `.weight` (D12): un rótulo o botón chico (`label`), uno mediano
+        /// (`labelLarge`), una placa (`badge`), el rótulo de un grupo (`groupLabel`, en mayúsculas con `DSGroupLabel`) y una
+        /// cifra grande (`stat`, tabular).
+        case label, labelLarge, badge, groupLabel, stat
         var font: Font {
             switch self {
             case .display: .system(.largeTitle, design: .default).weight(.bold)
@@ -188,6 +227,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
             case .caption: .system(.caption, design: .default)
             case .eyebrow: .system(.footnote, design: .default).weight(.semibold)
             case .data: .system(.footnote, design: .default).monospacedDigit()   // números tabulares, como `tabular-nums` en la TV
+            case .label: .system(.footnote, design: .default).weight(.semibold)
+            case .labelLarge: .system(.subheadline, design: .default).weight(.semibold)
+            case .badge, .groupLabel: .system(.caption, design: .default).weight(.bold)
+            case .stat: .system(.largeTitle, design: .default).weight(.heavy).monospacedDigit()
             }
         }
     }
@@ -205,6 +248,18 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static func smooth(_ reduce: Bool) -> Animation? { reduce ? nil : .smooth(duration: DesignTokens.Motion.slow) }
         /// Un rebote más marcado y corto: elegir un mosaico («¿Qué vemos?» › Más filtros).
         static func pop(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.base, bounce: 0.45) }
+        /// Solo un fundido de opacidad: se vale también con «Reducir movimiento» (no mueve nada). Lo que antes se animaba
+        /// con `DS.Motion.…(false)` (cambiar de pestaña de texto, de periodo, de filtro) va con esto.
+        static let fade: Animation = .easeInOut(duration: DesignTokens.Motion.base)
+        /// Un salto corto y firme, sin rebote: algo que se acomoda en su lugar (una carta que vuelve, un riel que se reordena).
+        static func snap(_ reduce: Bool) -> Animation? { reduce ? nil : .snappy(duration: DesignTokens.Motion.base) }
+        /// Lo que se descubre despacio (el momento de la repisa, un número que aparece): sale y frena.
+        static func reveal(_ reduce: Bool) -> Animation? { reduce ? nil : .easeOut(duration: DesignTokens.Motion.slow) }
+        /// Una tarjeta que entra a una lista (Viendo en la TV, Desde la TV): baja un poco con un fundido y se va solo con el
+        /// fundido. Con «Reducir movimiento», solo el fundido.
+        static func appear(_ reduce: Bool) -> AnyTransition {
+            reduce ? .opacity : .asymmetric(insertion: .opacity.combined(with: .offset(y: noticeDrop)), removal: .opacity)
+        }
         /// El aviso de pantalla bloqueada entra con un fundido (también con «Reducir movimiento»).
         static func lockNoticeIn() -> Animation { .easeOut(duration: DesignTokens.Motion.base) }
         /// Se encoge al círculo del candado. Con «Reducir movimiento» no hay movimiento: solo el fundido de salida.
@@ -225,7 +280,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32
     /// (el planeta y el anillo) o en em de la palabra (la luna, el interletrado, el tamaño de la marca junto a la palabra).
     /// La píldora de una plataforma (`PlatformBadge`): el logo de la app a la izquierda, con sus esquinas.
-    enum PlatformBadge { static let logo: CGFloat = 16, logoRadius: CGFloat = 4 }
+    enum PlatformBadge { static let logo: CGFloat = 16, logoRadius = Radius.logo(16) }
     /// El listón de la esquina (`DSCornerRibbon`): la caja que recorta la esquina, el largo de la banda, dónde cruza su
     /// centro (en cada eje, desde la esquina), su giro y el interletrado del texto en mayúsculas.
     enum Ribbon {
@@ -292,7 +347,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let rankTwoDigitsOverlap = rankNumber * 0.42
         static let logoHero = CGFloat(DesignTokens.Size.logoHero)
         /// El anillo de la pieza enfocada del mosaico y la línea fina de las demás.
-        static let focusRing: CGFloat = 2.5, hairline: CGFloat = 0.5
+        static let focusRing: CGFloat = 2.5, hairline = Stroke.hairline
         /// El alto del logo en la franja del mosaico.
         static let captionLogo: CGFloat = 34
         /// El arte redondo del accesorio «En la TV».
@@ -322,7 +377,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let fallbackRefresh = DesignTokens.Widget.fallbackRefreshHours * 3600
         /// La actividad en vivo de descargas: el póster (pixeles con que se guarda, ancho en la pantalla bloqueada y en la isla).
         static let activityPosterPixels: CGFloat = 240, activityPoster: CGFloat = 52, islandPoster: CGFloat = 44
-        static let posterRadius: CGFloat = 8
+        static let posterRadius = Radius.md
         /// La cuenta regresiva («1:12:24») tiene ancho fijo: un `Text(timerInterval:)` sin él se estira a todo lo que puede (en
         /// la isla compacta salía enorme y en medio). En la compacta, en vez de texto, un anillo chico que se llena solo.
         static let timerWidth: CGFloat = 64, compactRing: CGFloat = 18

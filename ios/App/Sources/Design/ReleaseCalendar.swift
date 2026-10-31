@@ -24,14 +24,14 @@ struct CalendarDayCell: View {
             }
             .clipShape(shape)
             Text(verbatim: "\(number)")
-                .font(DS.TextRecipe.caption.font.weight(.heavy)).monospacedDigit()
+                .font(DS.TextRecipe.badge.font).monospacedDigit()
                 .foregroundStyle(isToday ? DS.onPrimary : DS.text)
                 .padding(.horizontal, DS.Space.s1)
                 .background(isToday ? DS.accent : (art.isEmpty ? .clear : DS.scrim), in: Capsule())
                 .padding(DS.ReleaseDays.inset)
             if art.count > DS.ReleaseDays.maxColors {
                 Text(verbatim: "+\(art.count - DS.ReleaseDays.maxColors)")
-                    .font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.text)
+                    .font(DS.TextRecipe.badge.font).foregroundStyle(DS.text)
                     .padding(.horizontal, DS.Space.s1)
                     .background(DS.scrim, in: Capsule())
                     .padding(DS.ReleaseDays.inset)

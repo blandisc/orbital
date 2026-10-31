@@ -331,13 +331,13 @@ private struct MosaicTileCell: View {
                 .padding(DS.Space.s5)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-        .overlay { if focused { RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.hairline) } }
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        .overlay { if focused { RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).stroke(DS.hairline) } }
         .onArt()   // la pieza es arte: su texto, como en la sala oscura, en los dos modos
     }
 
     private var kindIcon: some View {
-        Image(systemName: KindGlyph.symbol(tile.item.kind)).font(DS.TextRecipe.caption.font.weight(.semibold))
+        Image(systemName: KindGlyph.symbol(tile.item.kind)).font(DS.TextRecipe.badge.font)
             .foregroundStyle(focused ? DS.onPrimary : DS.text)
             .padding(DS.Space.s1)
             // Sin enfoque, solo el glifo con una sombra suave (con 20 piezas a la vista una caja en cada una domina).

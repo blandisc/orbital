@@ -22,7 +22,7 @@ struct SubtitleSyncView: View {
         VStack(alignment: .leading, spacing: compact ? DS.Space.s2 : DS.Space.s3) {
             HStack(spacing: DS.Space.s2) {
                 Button(action: back) {
-                    Image(systemName: "chevron.left").font(DS.TextRecipe.secondary.font.weight(.bold)).foregroundStyle(DS.text)
+                    Image(systemName: "chevron.left").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
                         .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                         .background(DS.fill, in: Circle())
                 }
@@ -33,7 +33,7 @@ struct SubtitleSyncView: View {
                 Text("Esta versión no trae frases de texto para sincronizar. Usa Antes y Después.").recipe(.footnote)
             } else if let result {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Text(resultTitle(result)).recipe(.secondary, color: DS.onSolidPrimary).fontWeight(.bold)
+                    Text(resultTitle(result)).recipe(.labelLarge, color: DS.onSolidPrimary)
                     Text("¿Ya van bien? Se recuerda para esta versión.").recipe(.caption, color: DS.onSolidPrimary)
                     HStack(spacing: DS.Space.s2) {
                         answer(Text("Sí"), primary: true, action: confirm).accessibilityIdentifier("subtitle-sync-yes")
@@ -69,7 +69,7 @@ struct SubtitleSyncView: View {
 
     private func answer(_ title: Text, primary: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            title.font(DS.TextRecipe.footnote.font.weight(.semibold)).lineLimit(1)
+            title.font(DS.TextRecipe.label.font).lineLimit(1)
                 .foregroundStyle(primary ? DS.solidPrimary : DS.onSolidPrimary)
                 .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
                 .background(primary ? DS.onSolidPrimary : .clear, in: Capsule())

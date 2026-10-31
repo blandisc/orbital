@@ -35,7 +35,7 @@ struct DSCapsuleLabel: View {
     var body: some View {
         HStack(spacing: DS.HeaderControl.iconGap) {
             if symbolFirst { icon(symbol) }
-            title.font(DS.TextRecipe.secondary.font.weight(.semibold)).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            title.font(DS.TextRecipe.labelLarge.font).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             if !symbolFirst { icon(symbol) }
             if let trailing { icon(trailing) }
         }
@@ -49,7 +49,7 @@ struct DSCapsuleLabel: View {
         .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
     }
 
-    private func icon(_ name: String) -> some View { Image(systemName: name).font(DS.TextRecipe.footnote.font.weight(.bold)).imageScale(.small) }
+    private func icon(_ name: String) -> some View { Image(systemName: name).font(DS.TextRecipe.label.font).imageScale(.small) }
 }
 
 extension Text {

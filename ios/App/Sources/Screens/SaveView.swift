@@ -59,7 +59,7 @@ struct SaveView: View {
             Text(verbatim: m.title).recipe(.footnote).lineLimit(1)
         }
         let newList = Button { naming = true } label: { Label("Nueva lista…", systemImage: "plus").frame(minHeight: DS.Size.touchTarget) }
-            .buttonStyle(.glass).accessibilityIdentifier("save-new-list")
+            .dsGlassButton().accessibilityIdentifier("save-new-list")
         return Group {
             if typeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: DS.Space.s2) { title; if m.traktAvailable { newList } }

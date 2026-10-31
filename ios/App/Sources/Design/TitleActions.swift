@@ -49,7 +49,7 @@ struct ActionTileLabel: View {
                     .contentTransition(.symbolEffect(.replace))
             }
             .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
-            title.font(DS.TextRecipe.caption.font.weight(.medium)).foregroundStyle(active ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            title.font(DS.TextRecipe.badge.font).foregroundStyle(active ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity, minHeight: DS.TitleAction.tile)
@@ -81,7 +81,7 @@ struct DownloadVersionSheet: View {
             }
             HStack(spacing: DS.Space.s2) {
                 version(Text("La que tienes"), current)
-                Image(systemName: "arrow.right").font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(DS.textFaint)
+                Image(systemName: "arrow.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textFaint)
                 version(Text("La que elegiste"), new)
             }
             .fixedSize(horizontal: false, vertical: true)   // las dos tarjetas del mismo alto, aunque una diga más
@@ -94,7 +94,7 @@ struct DownloadVersionSheet: View {
                 Button(action: cancel) { Text("Dejar la que tengo").frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget) }
                     .buttonStyle(.plain).foregroundStyle(DS.textMuted)
             }
-            .font(DS.TextRecipe.secondary.font.weight(.semibold))
+            .font(DS.TextRecipe.labelLarge.font)
         }
         .dsSheetContent()
     }
@@ -115,6 +115,6 @@ struct DownloadVersionSheet: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(DS.Space.s3)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard(translucent: true)
     }
 }

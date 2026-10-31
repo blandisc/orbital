@@ -92,7 +92,7 @@ struct TouchPad: View {
     }
 
     private func chevron(_ name: String) -> some View {
-        Image(systemName: name).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.textFaint)
+        Image(systemName: name).font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.textFaint)
     }
 }
 
@@ -126,7 +126,7 @@ struct RemoteKey: View {
                 title.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
             .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted)
-            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .dsCard(translucent: true)
             .overlay(alignment: .topTrailing) {
                 if let glyph, !typeSize.isAccessibilitySize {   // con letra grande la letra del mando tapaba el ícono
                     Text(verbatim: glyph).recipe(.caption, color: DS.textFaint).padding(.top, DS.Space.s1).padding(.trailing, DS.Space.s2)
@@ -169,7 +169,7 @@ struct RemoteTextField: View {
         .font(DS.TextRecipe.body.font)
         .padding(.horizontal, DS.Space.s4)
         .frame(minHeight: DS.Remote.keyHeightFitted)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard(translucent: true)
     }
 }
 
@@ -205,12 +205,12 @@ struct VolumeControl: View {
                 .buttonRepeatBehavior(.enabled)
                 .accessibilityLabel(Text("Subir volumen"))
         }
-        .font(DS.TextRecipe.cardTitle.font.weight(.semibold))
+        .font(DS.TextRecipe.cardTitle.font)
         .foregroundStyle(DS.text)
         .buttonStyle(.plain)
         // Como las teclas y «Dile a Orbital»: el mismo relleno, esquinas y alto (antes era una cápsula de vidrio, distinta).
         .padding(.horizontal, DS.Space.s2).frame(minHeight: DS.Remote.keyHeightFitted)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard(translucent: true)
         .sensoryFeedback(.selection, trigger: level)
         .accessibilityElement(children: .contain)
         .accessibilityValue(level.map { Text("\($0) %") } ?? Text(""))
@@ -298,7 +298,7 @@ private struct ScareStatus: View {
             Text("Tiempos de Where's The Jump").recipe(.caption, color: DS.textFaint)
         }
         .padding(DS.Space.s4)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard(translucent: true)
 
     }
 

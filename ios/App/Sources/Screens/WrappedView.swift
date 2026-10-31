@@ -131,7 +131,7 @@ struct WrappedView: View {
                 VStack(alignment: .leading, spacing: DS.Space.s3) {
                     Text("Lo que más viste").recipe(.eyebrow, color: DS.warning)   // ds-exception: rótulo de historia del Wrapped (ámbar), no un porqué
                     PosterView(url: t.poster, title: t.title).frame(width: DS.Watching.storyPoster)
-                    Text(verbatim: t.title).font(DS.TextRecipe.title.font.weight(.bold))
+                    Text(verbatim: t.title).font(DS.TextRecipe.title.font)
                     Text(t.kind == "movie" ? "\(t.minutes / 60) h" : "\(t.plays) capítulos, \(t.minutes / 60) h").recipe(.body, color: DS.onArtSecondary)
                 }
             }
@@ -161,12 +161,12 @@ struct WrappedView: View {
         let right = stats.top.first?.imdb
         return VStack(alignment: .leading, spacing: DS.Space.s4) {
             Text("Adivina").recipe(.eyebrow, color: DS.warning)   // ds-exception: rótulo de historia del Wrapped (ámbar), no un porqué
-            Text("¿Qué viste más?").font(DS.TextRecipe.title.font.weight(.bold))
+            Text("¿Qué viste más?").font(DS.TextRecipe.title.font)
             HStack(spacing: DS.Space.s3) {
                 ForEach(options, id: \.imdb) { t in
                     Button { if answer == nil { answer = t.imdb } } label: {
                         PosterView(url: t.poster, title: t.title)
-                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm).strokeBorder(answer == nil ? .clear : t.imdb == right ? DS.brandMoon : .clear, lineWidth: DS.Space.s1))
+                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(answer == nil ? .clear : t.imdb == right ? DS.brandMoon : .clear, lineWidth: DS.Space.s1))
                             .opacity(answer == nil || t.imdb == right ? 1 : DS.Watching.wrongOpacity)
                     }
                     .buttonStyle(.plain)
@@ -183,7 +183,7 @@ struct WrappedView: View {
     private func big(_ value: Text, _ label: Text, _ detail: Text) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             value.font(.system(size: DS.Watching.storyNumber, weight: .black)).lineLimit(1).minimumScaleFactor(DS.Size.statScale)   // ds-exception: el número enorme de una historia
-            label.font(DS.TextRecipe.title.font.weight(.semibold))
+            label.font(DS.TextRecipe.title.font)
             detail.recipe(.body, color: DS.onArtSecondary)
         }
     }

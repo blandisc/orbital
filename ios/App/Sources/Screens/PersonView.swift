@@ -87,7 +87,7 @@ struct PersonView: View {
             if bioCut || expanded { Button { withAnimation(DS.Motion.base(reduceMotion)) { expanded.toggle() } } label: {
                 // «Más ⌄»: el nombre primero y el ícono después.
                 HStack(spacing: DS.Space.s1) { Text(expanded ? "Menos" : "Más"); Image(systemName: expanded ? "chevron.up" : "chevron.down") }
-                    .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.accent)
+                    .font(DS.TextRecipe.label.font).foregroundStyle(DS.accent)
             }
             .buttonStyle(.plain)
             .frame(minHeight: DS.Size.touchTarget)

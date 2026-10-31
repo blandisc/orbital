@@ -91,7 +91,7 @@ struct HomeView: View {
                         }
                 }
                 if model.spotlight.isEmpty, model.continueWatching.isEmpty, model.isLoading {
-                    FeedSkeleton()   // la primera vez: el lugar ya reservado mientras llega
+                    HeroSkeleton()   // la primera vez: el lugar ya reservado mientras llega
                 }
                 // El orden del Inicio nuevo (docs/producto/inicio-benchmark/): lo tuyo primero, luego lo que sale de tus series,
                 // tus sugerencias, el Top 10 y Mi lista.
@@ -277,11 +277,7 @@ struct HomeView: View {
     }
 
     /// Ancho entre alto de la portada: casi un póster en el iPhone, más baja en pantallas cortas y apaisada en ventana ancha.
-    private var heroAspect: CGFloat {
-        let size = WindowMetrics.size
-        if size.width >= DS.Size.compactWidth * 2 { return DS.HomeHero.aspectWide }
-        return size.height < DS.HomeHero.shortScreen ? DS.HomeHero.aspectShort : DS.HomeHero.aspect
-    }
+    private var heroAspect: CGFloat { DS.HomeHero.current }
 
     /// La portada (docs/producto/inicio-benchmark/): el arte de borde a borde, detrás de la barra, que se desliza entre lo
     /// que todos están viendo. Cada título con su porqué en turquesa, su logo, sus datos y «Ver». Abajo, los puntos; encima de

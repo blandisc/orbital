@@ -82,7 +82,7 @@ struct HomeChannels: View {
                         } animation: { _ in DS.HomeChannels.driftAnimation }
                     ArtVeil(at: DS.HomeChannels.veilStart)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(verbatim: label(air.episode)).recipe(.caption, color: DS.onArtSecondary).fontWeight(.bold)
+                        Text(verbatim: label(air.episode)).recipe(.badge, color: DS.onArtSecondary)
                         Text(verbatim: air.episode.name.isEmpty ? name(channel.pick) : air.episode.name).recipe(.cardTitle).lineLimit(1)
                     }
                     .onArt()
@@ -96,7 +96,7 @@ struct HomeChannels: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
                 HStack(alignment: .firstTextBaseline) {
-                    Text(verbatim: name(channel.pick)).recipe(.footnote).fontWeight(.semibold).lineLimit(1)
+                    Text(verbatim: name(channel.pick)).recipe(.label).lineLimit(1)
                     Spacer(minLength: DS.Space.s2)
                     Text("quedan \(air.minutesLeft) min").recipe(.caption, color: DS.textMuted).monospacedDigit()
                 }
@@ -113,10 +113,10 @@ struct HomeChannels: View {
         Button { choosing = true } label: {
             VStack(spacing: DS.Space.s2) {
                 Image(systemName: "plus").font(DS.TextRecipe.cardTitle.font)
-                Text("Añadir canal").recipe(.footnote).fontWeight(.semibold)
+                Text("Añadir canal").recipe(.label)
             }
             .frame(width: DS.HomeChannels.addWidth, height: DS.HomeChannels.width / DS.Poster.stillAspect)
-            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .dsCard(translucent: true)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("home-channels-add")
@@ -202,7 +202,7 @@ struct ChannelsSheet: View {
                     Button { model.toggle(pick) } label: {
                         HStack(spacing: DS.Space.s3) {
                             PosterView(url: pick.poster, title: pick.title).frame(width: DS.HomeChannels.resultPoster)
-                            Text(verbatim: name(pick)).recipe(.body).fontWeight(.semibold).lineLimit(2).multilineTextAlignment(.leading)
+                            Text(verbatim: name(pick)).recipe(.cardTitle).lineLimit(2).multilineTextAlignment(.leading)
                             Spacer(minLength: DS.Space.s2)
                             Image(systemName: on ? "checkmark.circle.fill" : "plus.circle")
                                 .font(DS.TextRecipe.section.font)

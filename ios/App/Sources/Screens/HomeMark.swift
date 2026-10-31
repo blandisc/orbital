@@ -23,7 +23,7 @@ struct AppMark: View {
 struct ScreenMark: View {
     let title: Text
     var body: some View {
-        title.font(DS.TextRecipe.title.font.weight(.heavy)).foregroundStyle(DS.text).lineLimit(1).fixedSize()
+        title.font(DS.TextRecipe.title.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
             .accessibilityAddTraits(.isHeader)
     }
 }
@@ -76,7 +76,7 @@ struct CollectionIconEmblem: View {
                 .background { Circle().fill(DS.bg).opacity(DS.Collections.iconBackdrop).blur(radius: DS.Collections.glow).scaleEffect(DS.Collections.iconBackdropScale) }
                 .shadow(color: glow ?? .clear, radius: DS.Collections.glow)
             if glow == nil {
-                Text(verbatim: name).recipe(.caption, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                Text(verbatim: name).recipe(.badge, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
         }
         .shadow(DS.Elevation.high.drop(0))

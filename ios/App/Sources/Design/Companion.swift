@@ -58,7 +58,7 @@ struct CompanionPanel<Content: View>: View {
         // Casi todo el ancho (`width` ya descuenta los márgenes del carrusel): la siguiente solo asoma su orilla, `peek`
         // (antes asomaba media tarjeta con el texto cortado a media palabra).
         .containerRelativeFrame(.horizontal) { width, _ in width + DS.Space.gutter - DS.Space.s3 - DS.Companion.peek }
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .dsCard(.card)
     }
 }
 
@@ -100,7 +100,7 @@ struct ConsoleStatePanel: View {
                         Spacer()
                         if let app = s.apps.first(where: \.closable) {
                             Button { closeApp(app.name) } label: { Text("Cerrar \(app.name)") }
-                                .font(DS.TextRecipe.caption.font.weight(.semibold)).buttonStyle(.bordered).controlSize(.mini)
+                                .font(DS.TextRecipe.badge.font).buttonStyle(.bordered).controlSize(.mini)
                         }
                     }
                 }

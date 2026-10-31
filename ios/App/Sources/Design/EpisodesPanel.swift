@@ -24,7 +24,7 @@ struct EpisodesPanel: View {
             HStack {
                 Text("Episodios").recipe(.cardTitle, color: DS.text)
                 Spacer()
-                Button(action: done) { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
+                Button(action: done) { Text("Listo").font(DS.TextRecipe.label.font) }
                     .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
                     .accessibilityIdentifier("episodes-done")
             }
@@ -73,9 +73,9 @@ struct EpisodesPanel: View {
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(verbatim: "E" + String(ep.episode)).recipe(.caption)
-                    Text(verbatim: ep.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
-                    if now { Text("Viendo").recipe(.caption, color: DS.brandMoon).fontWeight(.semibold) }
-                    else if upcoming { Text("Siguiente").recipe(.caption, color: DS.warning).fontWeight(.semibold) }
+                    Text(verbatim: ep.title).recipe(.labelLarge, color: DS.text).lineLimit(2)
+                    if now { Text("Viendo").recipe(.badge, color: DS.brandMoon) }
+                    else if upcoming { Text("Siguiente").recipe(.badge, color: DS.warning) }
                     else if !available { Text("No descargado").recipe(.caption) }
                 }
                 Spacer(minLength: 0)

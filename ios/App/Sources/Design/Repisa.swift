@@ -122,13 +122,13 @@ struct CanonPoster: View {
                 .overlay(alignment: .bottom) { if favorite, seen { DS.warning.frame(height: DS.Repisa.favoriteLine) } }
                 .overlay(alignment: .topLeading) {
                     if let rank {
-                        Text(verbatim: "\(rank)").font(DS.TextRecipe.caption.font.weight(.heavy)).foregroundStyle(DS.paper)
+                        Text(verbatim: "\(rank)").font(DS.TextRecipe.badge.font).foregroundStyle(DS.paper)
                             .shadow(color: DS.scrimStrong, radius: DS.Space.s1).padding(DS.Space.s1)
                     }
                 }
                 .shadow(color: seen ? DS.scrimStrong : .clear, radius: DS.Space.s2, y: DS.Space.s1)
-                .animation(DS.Motion.tint(false), value: seen)
-            Text(verbatim: label).font(DS.TextRecipe.caption.font.weight(.semibold)).monospacedDigit()
+                .animation(DS.Motion.fade, value: seen)
+            Text(verbatim: label).font(DS.TextRecipe.badge.font).monospacedDigit()
                 .foregroundStyle(seen ? DS.textMuted : DS.textFaint).lineLimit(1)
         }
         .accessibilityElement(children: .ignore)
@@ -169,7 +169,7 @@ struct CollectionsShowcase<Route: Hashable, AllRoute: Hashable>: View {
     private func item(_ e: Entry) -> some View {
         VStack(spacing: DS.Space.s1) {
             ShelfEmblem(id: e.id, height: DS.Repisa.showcaseEmblem)
-            e.name.font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
+            e.name.font(DS.TextRecipe.badge.font).foregroundStyle(DS.text).lineLimit(1)
             Capsule().fill(DS.fillStrong)
                 .overlay(alignment: .leading) {
                     GeometryReader { geo in Capsule().fill(DS.warning).frame(width: geo.size.width * CGFloat(e.seen) / CGFloat(max(e.total, 1))) }
@@ -186,10 +186,10 @@ struct CollectionsShowcase<Route: Hashable, AllRoute: Hashable>: View {
 
     private var seeAll: some View {
         VStack(spacing: DS.Space.s1) {
-            Image(systemName: "chevron.forward").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text)
+            Image(systemName: "chevron.forward").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
                 .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                 .background(DS.surfaceRaised, in: Circle())
-            Text("Ver todas").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+            Text("Ver todas").font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
         }
         .frame(width: DS.Repisa.showcaseWidth, height: DS.Repisa.showcaseEmblem + DS.Space.s14)
         .contentShape(Rectangle())
@@ -224,7 +224,7 @@ struct ShelfMoment: View {
                 .ignoresSafeArea().accessibilityHidden(true)
             DS.bg.opacity(DS.Repisa.momentVeil).ignoresSafeArea()
             VStack(spacing: DS.Space.s4) {
-                Text(completed ? "¡Década completa!" : "A tu repisa").recipe(.footnote, color: completed ? DS.warning : DS.textMuted).fontWeight(.semibold)
+                Text(completed ? "¡Década completa!" : "A tu repisa").recipe(.label, color: completed ? DS.warning : DS.textMuted)
                 ShelfLedge {
                     PosterView(url: poster, title: title).frame(width: DS.Repisa.momentPoster)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))

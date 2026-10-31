@@ -26,7 +26,7 @@ struct MatchDeckScreen: View {
                 // Cuántas llevas guardadas en esta vuelta (en «Tu match perfecto» de Trakt, o en Mi lista).
                 if let model, !model.saved.isEmpty {
                     Label { Text(verbatim: "\(model.saved.count)").monospacedDigit() } icon: { Image(systemName: "bookmark.fill") }
-                        .recipe(.footnote, color: DS.text).fontWeight(.bold).tint(DS.brandMoon)
+                        .recipe(.label, color: DS.text).tint(DS.brandMoon)
                         .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
                         .background(DS.fill, in: Capsule())
                         .contentTransition(.numericText())
@@ -126,7 +126,7 @@ struct MatchDeckScreen: View {
         VStack(spacing: DS.Match.actionLabelGap) {
             button().accessibilityLabel(name).accessibilityIdentifier(id)
                 .frame(height: DS.Match.actionRow)   // el mismo renglón para los tres: los nombres quedan parejos
-            name.recipe(.caption, color: DS.textMuted).fontWeight(.semibold).accessibilityHidden(true)
+            name.recipe(.badge, color: DS.textMuted).accessibilityHidden(true)
         }
     }
 

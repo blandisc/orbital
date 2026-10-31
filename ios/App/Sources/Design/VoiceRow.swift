@@ -46,7 +46,7 @@ struct VoiceRow: View {
         }
         .padding(DS.Space.s3)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard(translucent: true)
         .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
         // Lo de adentro se funde en el mismo alto (escuchar → responder); el alto cambia solo al abrir y al plegar.
         .animation(DS.Motion.base(reduceMotion), value: phase)
@@ -193,7 +193,7 @@ struct VoiceRow: View {
 
     private var guideButton: some View {
         Button { tap(actions.guide) } label: {
-            Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text)
+            Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
                 .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                 .background(DS.fill, in: Circle())
         }
@@ -204,7 +204,7 @@ struct VoiceRow: View {
 
     private var closeButton: some View {
         Button { tap(actions.close) } label: {
-            Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+            Image(systemName: "xmark").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
                 .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                 .contentShape(Rectangle())
         }
@@ -215,7 +215,7 @@ struct VoiceRow: View {
 
     private func pill(_ title: LocalizedStringKey, id: String, action: @escaping () -> Void) -> some View {
         Button { tap(action) } label: {
-            Text(title).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+            Text(title).font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
                 .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
                 .background(DS.fill, in: Capsule())
         }
@@ -246,7 +246,7 @@ struct VoiceChoicesCarousel: View {
                 }
                 Spacer(minLength: DS.Space.s2)
                 Button { actions.close() } label: {
-                    Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                    Image(systemName: "xmark").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
                         .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).accessibilityLabel(Text("Cerrar"))
@@ -279,13 +279,13 @@ struct VoiceChoicesCarousel: View {
                 if !choice.subtitle.isEmpty { Text(verbatim: choice.subtitle).recipe(.footnote, color: DS.textMuted).lineLimit(1) }
                 Spacer(minLength: DS.Space.s2)
                 if playing == choice.id {
-                    Text("Poniéndose").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.live)
+                    Text("Poniéndose").font(DS.TextRecipe.label.font).foregroundStyle(DS.live)
                         .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
                         .background(DS.live.opacity(DesignTokens.Opacity.fill), in: Capsule())
                 } else {
                     Button { playing = choice.id; actions.choose(choice) } label: {
                         Label(reply.picked == nil ? "Poner" : "Poner esta", systemImage: "play.fill")
-                            .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.onPrimary)
+                            .font(DS.TextRecipe.label.font).foregroundStyle(DS.onPrimary)
                             .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
                             .background(DS.primary, in: Capsule())
                     }
@@ -319,7 +319,7 @@ struct ConnectionTrail: View {
                 }
                 Spacer(minLength: DS.Space.s2)
                 Button(action: close) {
-                    Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                    Image(systemName: "xmark").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
                         .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).accessibilityLabel(Text("Cerrar"))
@@ -336,12 +336,12 @@ struct ConnectionTrail: View {
             message.recipe(.footnote, color: DS.text).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: DS.Space.s2) {
                 Button(action: retry) {
-                    Text("Probar otra vez").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.onPrimary)
+                    Text("Probar otra vez").font(DS.TextRecipe.label.font).foregroundStyle(DS.onPrimary)
                         .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget).background(DS.primary, in: Capsule())
                 }
                 .buttonStyle(.plain).accessibilityIdentifier("voice-retry")
                 Button(action: check) {
-                    Text("Probar la conexión").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                    Text("Probar la conexión").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
                         .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget).background(DS.fill, in: Capsule())
                 }
                 .buttonStyle(.plain).accessibilityIdentifier("voice-check-connection")
@@ -370,7 +370,7 @@ struct ConnectionTrail: View {
     private func link(failed: Bool) -> some View {
         VStack(spacing: DS.Space.s1) {
             Rectangle().fill(failed ? DS.danger : DS.live).frame(height: DS.Size.hairline * 2)
-            if failed { Image(systemName: "xmark").font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.danger) }
+            if failed { Image(systemName: "xmark").font(DS.TextRecipe.badge.font).foregroundStyle(DS.danger) }
         }
         .frame(maxWidth: .infinity)
     }

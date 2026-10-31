@@ -23,7 +23,7 @@ struct CoverCard: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 TitleLogo(url: logo, title: title, size: .tile)
                     .frame(maxWidth: DS.Editorial.coverLogo.width, maxHeight: DS.Editorial.coverLogo.height, alignment: .bottomLeading)
-                Text("\(why)\(detail.map { Text("\(Text(verbatim: " · "))\($0)") } ?? Text(verbatim: ""))").recipe(.footnote, color: DS.accent).fontWeight(.semibold).lineLimit(1)
+                Text("\(why)\(detail.map { Text("\(Text(verbatim: " · "))\($0)") } ?? Text(verbatim: ""))").recipe(.label, color: DS.accent).lineLimit(1)
             }
             .padding(DS.Space.s4)
             .onArt()
@@ -57,7 +57,7 @@ struct WideCard: View {
             .overlay(alignment: .topTrailing) {
                 if let platform { PlatformBadge(name: platform).padding(DS.Space.s2) }
                 else {
-                    badge.recipe(.caption, color: DS.text).fontWeight(.semibold)
+                    badge.recipe(.badge, color: DS.text)
                         .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
                         .glassEffect(.regular, in: Capsule()).padding(DS.Space.s2).onArt()
                 }
@@ -83,7 +83,7 @@ struct WatchlistCard: View {
         HStack(alignment: .top, spacing: DS.Space.s3) {
             PosterView(url: poster, title: title).frame(width: DS.Editorial.watchlistPoster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                if !facts.isEmpty { Text(verbatim: facts).recipe(.caption, color: DS.warning).fontWeight(.semibold).lineLimit(1) }
+                if !facts.isEmpty { Text(verbatim: facts).recipe(.badge, color: DS.warning).lineLimit(1) }
                 Text(verbatim: title).recipe(.cardTitle).lineLimit(2)
                 if !overview.isEmpty { Text(verbatim: overview).recipe(.caption, color: DS.textMuted).lineLimit(3) }
             }
@@ -92,7 +92,7 @@ struct WatchlistCard: View {
         .padding(DS.Space.s2)
         .frame(width: DS.Editorial.watchlistWidth, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard(translucent: true)
         .accessibilityElement(children: .combine)
     }
 }
@@ -129,5 +129,5 @@ struct PlatformBadge: View {
     /// «N.º 1» o «En Netflix».
     private var short: Text { if let n = rank { Text("N.º \(n)") } else { Text("En \(name)") } }
     private var spoken: Text { if let n = rank { Text("Número \(n) en \(name)") } else { Text("En \(name)") } }
-    private func styled(_ text: Text) -> some View { text.recipe(.caption, color: DS.paper).fontWeight(.semibold).lineLimit(1) }
+    private func styled(_ text: Text) -> some View { text.recipe(.badge, color: DS.paper).lineLimit(1) }
 }

@@ -274,7 +274,7 @@ struct RemoteSheet: View {
                     if showsScares { ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares).transition(Self.reveal) }
                     Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares.toggle() } } label: {
                         Label(showsScares ? "Ocultar los sustos" : "Mapa de sustos · \(scares.count)", systemImage: showsScares ? "chevron.up" : "bolt.heart")
-                            .recipe(.footnote, color: DS.text).fontWeight(.semibold)
+                            .recipe(.label, color: DS.text)
                             .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
                             .background(DS.fill, in: Capsule())
                     }
@@ -485,7 +485,7 @@ struct RemoteSheet: View {
                 }
                 .foregroundStyle(DS.text)
                 .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted)
-                .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                .dsCard(translucent: true)
             }
             .accessibilityLabel(title)
             .accessibilityValue(tracks.first(where: \.selected).map { Text(verbatim: $0.label) } ?? Text("Sin subtítulos"))

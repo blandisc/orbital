@@ -53,7 +53,7 @@ struct GuidePage<Content: View>: View {
                     .dsPrimaryButton().controlSize(.large).disabled(!primaryEnabled)
                     .accessibilityIdentifier("guide-next")
                 if let skip, let secondary {
-                    Button(action: skip) { secondary.frame(maxWidth: .infinity) }.buttonStyle(.glass).controlSize(.large)
+                    Button(action: skip) { secondary.frame(maxWidth: .infinity) }.dsGlassButton().controlSize(.large)
                         .accessibilityIdentifier("guide-skip")
                 }
             }
@@ -86,7 +86,7 @@ struct GuidePiece: View {
             if let tag { tag.font(DS.TextRecipe.eyebrow.font).foregroundStyle(DS.textMuted) }
         }
         .padding(DS.Space.s4)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .dsCard()
         .accessibilityElement(children: .combine)
     }
 }
@@ -118,7 +118,7 @@ struct GuideCode: View {
         Text(verbatim: code).font(DS.TextRecipe.display.font.monospaced()).tracking(DS.Guide.codeTracking)
             .foregroundStyle(DS.text).textSelection(.enabled)
             .frame(maxWidth: .infinity).padding(DS.Space.s5)
-            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .dsCard()
             .accessibilityLabel(Text(verbatim: code.map(String.init).joined(separator: " ")))
     }
 }
@@ -157,7 +157,7 @@ struct GuideArt<Detail: View>: View {
         }
         .frame(maxWidth: .infinity, minHeight: DS.Guide.artHeight)
         .padding(DS.Space.s4)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .dsCard()
         .accessibilityHidden(true)   // es adorno: el título y la frase de la página ya lo dicen
     }
 }

@@ -47,7 +47,7 @@ struct DSKindFilter: View {
                             if !typeSize.isAccessibilitySize { Text(option.1).lineLimit(1) }
                         }
                         .accessibilityLabel(Text(option.1))
-                        .font(DS.TextRecipe.caption.font.weight(.semibold))   // chica: el título de al lado cabe en un renglón
+                        .font(DS.TextRecipe.badge.font)   // chica: el título de al lado cabe en un renglón
                         .foregroundStyle(on ? DS.text : DS.textMuted)
                         .padding(.horizontal, DS.Space.s2)
                         .frame(maxHeight: .infinity)
@@ -135,7 +135,7 @@ struct DSTextTabs<ID: Hashable>: View {
             tabs(titles: options.allSatisfy { $0.symbol == nil })
         }
         .shadow(DS.Elevation.low)
-        .animation(DS.Motion.base(false), value: selection)
+        .animation(DS.Motion.fade, value: selection)
         .sensoryFeedback(.selection, trigger: selection)
     }
 
@@ -150,7 +150,7 @@ struct DSTextTabs<ID: Hashable>: View {
                             if titles { option.title.lineLimit(1) }
                         }
                         .accessibilityLabel(option.title)
-                        .font(DS.TextRecipe.cardTitle.font.weight(on ? .bold : .medium))
+                        .font(DS.TextRecipe.cardTitle.font.weight(on ? .bold : .medium))   // ds-exception: la pestaña elegida se distingue por el peso
                         .foregroundStyle(on ? DS.text : DS.textMuted)
                         Capsule().fill(on ? mark : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
                     }

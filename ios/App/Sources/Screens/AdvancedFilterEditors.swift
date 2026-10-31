@@ -17,10 +17,10 @@ struct FilterEditor: View {
 
     var body: some View {
         HStack {
-            prompt.recipe(.footnote, color: DS.textMuted).fontWeight(.semibold)
+            prompt.recipe(.label, color: DS.textMuted)
             Spacer()
             if FilterText.value(page, context) != nil {
-                Button { clear() } label: { Text("Quitar").recipe(.footnote, color: page.hue).fontWeight(.semibold) }.buttonStyle(.borderless)
+                Button { clear() } label: { Text("Quitar").recipe(.label, color: page.hue) }.buttonStyle(.borderless)
                     .accessibilityIdentifier("filter-clear-\(page.rawValue)")
             }
         }
@@ -112,12 +112,12 @@ struct FilterEditor: View {
             }
             Toggle(isOn: Binding(get: { filter.spread }, set: { on in edit { $0.spread = on } })) {
                 Label { VStack(alignment: .leading, spacing: 0) {
-                    Text("Repartido por décadas").recipe(.footnote, color: DS.text).fontWeight(.semibold)
+                    Text("Repartido por décadas").recipe(.label, color: DS.text)
                     Text("Una de cada época, no solo lo reciente").recipe(.caption, color: DS.textMuted)
                 } } icon: { Image(systemName: "dice").foregroundStyle(DS.Filter.gold) }
             }
             .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Filter.choiceHeight * 0.75)
-            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .dsCard()
             .tint(DS.Filter.gold)
             .accessibilityIdentifier("filter-spread")
         }
@@ -171,12 +171,12 @@ struct FilterEditor: View {
                 if filter.minRating != nil { Text("o más").recipe(.footnote, color: DS.textMuted) }
             }
             .frame(maxWidth: .infinity)
-            .animation(DS.Motion.base(false), value: filter.minRating)
+            .animation(DS.Motion.fade, value: filter.minRating)
             HStack(spacing: DS.Space.s2) {
                 ForEach(DS.Filter.ratingPresets, id: \.self) { v in
                     let on = filter.minRating == v
                     Button { edit { $0.minRating = $0.minRating == v ? nil : v } } label: {
-                        Text(verbatim: "\(v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : FilterText.number(v))+").recipe(.footnote, color: on ? DS.text : DS.textMuted).fontWeight(.semibold).monospacedDigit()
+                        Text(verbatim: "\(v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : FilterText.number(v))+").recipe(.label, color: on ? DS.text : DS.textMuted).monospacedDigit()
                             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
                             .background(on ? DS.Filter.mintFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                             .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Size.hairline * 2))

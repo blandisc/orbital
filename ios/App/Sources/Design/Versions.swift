@@ -45,7 +45,7 @@ struct VersionLanguageRow: View {
             }
         }
         .padding(DS.Space.s3)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard(translucent: true)
     }
 }
 
@@ -123,7 +123,7 @@ struct VersionEvidence: View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             HStack(spacing: DS.Space.s2) {
                 Circle().fill(color).frame(width: DS.Version.dot, height: DS.Version.dot)
-                title.recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                title.recipe(.labelLarge, color: DS.text)
             }
             detail.recipe(.footnote)
             if !release.isEmpty, evidence == .name || evidence == .maybe {

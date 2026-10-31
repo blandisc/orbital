@@ -39,12 +39,12 @@ struct ProfileCard: View {
             HStack(spacing: DS.Space.s4) {
                 AvatarImage(id: avatar, size: DS.SettingsLook.profileAvatar)
                     .overlay(alignment: .bottomTrailing) {
-                        Image(systemName: "pencil").font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.onPrimary)
+                        Image(systemName: "pencil").font(DS.TextRecipe.badge.font).foregroundStyle(DS.onPrimary)
                             .frame(width: DS.SettingsLook.editBadge, height: DS.SettingsLook.editBadge)
                             .background(DS.primary, in: Circle())
                     }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    title.recipe(.cardTitle).fontWeight(.semibold)
+                    title.recipe(.cardTitle)
                     detail.recipe(.footnote, color: DS.textMuted).lineLimit(2)
                 }
                 Spacer(minLength: 0)
@@ -70,10 +70,10 @@ struct CheckRow: View {
         Button(action: action) {
             HStack(spacing: DS.Space.s3) {
                 PanelIcon(symbol: symbol, color: color)
-                title.recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(typeSize.isAccessibilitySize ? 3 : 1)   // con letra grande no se corta
+                title.recipe(.labelLarge, color: DS.text).lineLimit(typeSize.isAccessibilitySize ? 3 : 1)   // con letra grande no se corta
                 Spacer(minLength: DS.Space.s2)
                 Image(systemName: checked ? "checkmark.circle.fill" : "circle")
-                    .font(DS.TextRecipe.title.font.weight(.regular))
+                    .font(DS.TextRecipe.title.font.weight(.regular))   // ds-exception: la casilla del sistema va en peso regular, como en Ajustes de iOS
                     .foregroundStyle(checked ? DS.accent : DS.textFaint)
                     .contentTransition(.symbolEffect(.replace))
             }

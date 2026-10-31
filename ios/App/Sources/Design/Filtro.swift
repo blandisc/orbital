@@ -235,7 +235,7 @@ struct FilterTile: View {
             VStack(spacing: mini ? DS.Space.s1 / 2 : DS.Space.s1) {
                 if art.isEmpty { FilterArt(page: page, context: context, mini: mini) } else { Spacer(minLength: 0) }
                 // Sobre el arte de los géneros el texto va en papel (se lee igual en claro y en oscuro).
-                page.title.recipe(mini ? .caption : .footnote, color: art.isEmpty ? DS.text : DS.paper).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                page.title.recipe(mini ? .badge : .label, color: art.isEmpty ? DS.text : DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 if page == .rating, value != nil {
                     // «o más» y el logo de TMDB (de dónde sale la calificación), en vez de la palabra.
                     HStack(spacing: DS.Space.s1) {
@@ -258,7 +258,7 @@ struct FilterTile: View {
                         ArtVeil(strength: .deep)
                     }
                 }
-                .animation(DS.Motion.base(false), value: art)
+                .animation(DS.Motion.fade, value: art)
             }
             .clipShape(shape)
             .overlay(shape.strokeBorder(on || open ? DS.text : .clear, lineWidth: open ? DS.Size.hairline * 4 : DS.Size.hairline * 2))
@@ -350,7 +350,7 @@ struct StudioLogo: View {
                     .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
                     .background(DS.paper, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             } else {
-                Text(verbatim: name).recipe(.caption, color: DS.text).fontWeight(.bold).lineLimit(1)
+                Text(verbatim: name).recipe(.badge, color: DS.text).lineLimit(1)
             }
         }
         .frame(maxHeight: DS.Filter.studioLogoHeight)
@@ -403,13 +403,13 @@ struct FilterDoor: View {
                 Button { open(nil) } label: {
                     HStack(spacing: DS.Space.s3) {
                         // Su propio ícono en un círculo azul: se distingue de un vistazo del campo de arriba, que busca por nombre.
-                        Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.onPrimary)
+                        Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.onPrimary)
                             .frame(width: DS.Filter.doorIcon, height: DS.Filter.doorIcon)
                             .background(DS.orbitalBlue, in: Circle())
                         VStack(alignment: .leading, spacing: DS.Space.s1) {
                             HStack(spacing: DS.Space.s1) {
                                 Text("Búsqueda avanzada").recipe(.cardTitle)
-                                Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                                Image(systemName: "chevron.forward").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
                             }
                             subtitle.recipe(.footnote, color: context.filter.isEmpty ? DS.textMuted : DS.text).lineLimit(2)
                         }
@@ -420,7 +420,7 @@ struct FilterDoor: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("browse-filters")
                 if !context.filter.isEmpty {
-                    Button(action: clear) { Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.bold)) }
+                    Button(action: clear) { Image(systemName: "xmark").font(DS.TextRecipe.label.font) }
                         .buttonStyle(.glass).buttonBorderShape(.circle)
                         .accessibilityLabel(Text("Limpiar la búsqueda avanzada"))
                         .accessibilityIdentifier("browse-filters-clear")
@@ -465,7 +465,7 @@ struct FilterSummarySquare: View {
         Button(action: edit) {
             VStack(spacing: DS.Space.s1) {
                 Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(remove == nil ? DS.textMuted : hue)
-                title.recipe(.caption, color: remove == nil ? DS.textMuted : DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                title.recipe(.badge, color: remove == nil ? DS.textMuted : DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
             .padding(.horizontal, DS.Space.s1)
             .frame(width: DS.Filter.summarySquare, height: DS.Filter.summarySquare)
@@ -498,7 +498,7 @@ struct FilterChoice: View {
         Button(action: action) {
             VStack(spacing: DS.Space.s2) {
                 Image(systemName: symbol).font(DS.TextRecipe.title.font).foregroundStyle(hue)
-                title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                title.recipe(.label, color: DS.text).lineLimit(1)
                 if let detail { detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }
             }
             .padding(.horizontal, DS.Space.s2)
@@ -526,7 +526,7 @@ struct FilterLogoChoice<Logo: View>: View {
         Button(action: action) {
             VStack(spacing: DS.Space.s1) {
                 logo().frame(height: DS.Filter.awardIcon)
-                title.recipe(.caption, color: selected ? DS.text : DS.textMuted).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                title.recipe(.badge, color: selected ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
             .padding(.horizontal, DS.Space.s2)
             .padding(.vertical, DS.Space.s3)

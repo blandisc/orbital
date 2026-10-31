@@ -86,7 +86,7 @@ struct WatchedWhenSheet: View {
                             .accessibilityIdentifier("watched-when-done")
                         }
                         .padding(DS.Space.s3)
-                        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                        .dsCard()
                         .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                     WatchedOption(symbol: "questionmark.circle", title: Text("No sé cuándo"), detail: Text("Vista, sin fecha")) { choose(.unknown) }
@@ -125,11 +125,11 @@ struct WatchedOption: View {
             HStack(spacing: DS.Space.s3) {
                 Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(DS.orbitalBlue).frame(width: DS.Watched.icon)
                 VStack(alignment: .leading, spacing: 0) {
-                    title.recipe(.body, color: DS.text).fontWeight(.semibold)
+                    title.recipe(.cardTitle, color: DS.text)
                     if let detail { detail.recipe(.footnote, color: DS.textMuted) }
                 }
                 Spacer(minLength: 0)
-                if open { Image(systemName: "chevron.up").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted) }
+                if open { Image(systemName: "chevron.up").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted) }
             }
             .padding(.horizontal, DS.Space.s3)
             .frame(maxWidth: .infinity, minHeight: DS.Watched.row, alignment: .leading)

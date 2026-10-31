@@ -55,7 +55,7 @@ struct WatchingBars: View {
                 VStack(spacing: DS.Space.s1) {
                     GeometryReader { geo in
                         VStack { Spacer(minLength: 0)
-                            RoundedRectangle(cornerRadius: DS.Radius.xs).fill((highlighted.map { $0 == i } ?? (values[i] == top)) && values[i] > 0 ? DS.brandMoon : DS.fillStrong)
+                            RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill((highlighted.map { $0 == i } ?? (values[i] == top)) && values[i] > 0 ? DS.brandMoon : DS.fillStrong)
                                 .frame(height: max(DS.Watching.barMin, geo.size.height * CGFloat(values[i]) / CGFloat(top)))
                         }
                     }
@@ -131,9 +131,9 @@ struct WatchingZoomMap: View {
                             let date = calendar.date(byAdding: .day, value: d, to: monday) ?? monday
                             let inside = date <= today
                             let chosen = day.map { calendar.isDate($0, inSameDayAs: date) } ?? false
-                            RoundedRectangle(cornerRadius: DS.Radius.xs)
+                            RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
                                 .fill(inside ? fill(minutes[date] ?? 0, most) : .clear)
-                                .overlay { if chosen { RoundedRectangle(cornerRadius: DS.Radius.xs).strokeBorder(DS.text, lineWidth: DS.YearMap.ring) } }
+                                .overlay { if chosen { RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).strokeBorder(DS.text, lineWidth: DS.YearMap.ring) } }
                                 .frame(width: DS.Watching.heatCell, height: DS.Watching.heatCell)
                                 .contentShape(Rectangle())
                                 .onTapGesture { if inside { day = chosen ? nil : date } }
@@ -192,7 +192,7 @@ struct WatchingZoomMap: View {
             }
         }
         .padding(DS.Space.s3)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("watching-day")
     }
@@ -263,7 +263,7 @@ struct WatchingGenres: View {
                         let frame = geo[plot]
                         // Al centro exacto de la dona: el porcentaje pegado a su número y el nombre debajo.
                         VStack(spacing: 0) {
-                            Text(verbatim: "\(current.count * 100 / total)%").font(DS.TextRecipe.title.font.weight(.heavy)).foregroundStyle(current.color)
+                            Text(verbatim: "\(current.count * 100 / total)%").font(DS.TextRecipe.stat.font).foregroundStyle(current.color)
                                 .monospacedDigit().contentTransition(.numericText())
                             current.label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                         }
@@ -274,7 +274,7 @@ struct WatchingGenres: View {
             }
             .frame(width: DS.Watching.donut, height: DS.Watching.donut)
             .sensoryFeedback(.selection, trigger: picked)
-            .animation(DS.Motion.tint(false), value: picked)
+            .animation(DS.Motion.fade, value: picked)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 ForEach(slices) { s in
                     Button { picked = s.id } label: {

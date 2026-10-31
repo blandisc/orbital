@@ -8,6 +8,12 @@ extension DS {
         /// Ancho entre alto del arte: casi un póster en el iPhone; más bajo en pantallas cortas (el SE) y apaisado en ventana
         /// ancha (iPad, Mac), donde un póster quedaría altísimo.
         static let aspect: CGFloat = 0.78, aspectShort: CGFloat = 1.25, shortScreen: CGFloat = 700, aspectWide: CGFloat = 1.9
+        /// La de esta ventana (la portada y su esqueleto, `HeroSkeleton`, miden lo mismo).
+        static var current: CGFloat {
+            let size = WindowMetrics.size
+            if size.width >= DS.Size.compactWidth * 2 { return aspectWide }
+            return size.height < shortScreen ? aspectShort : aspect
+        }
         /// Cuánto se enciman «Seguir viendo» sobre el borde de abajo de la portada (se ve sin bajar).
         static let overlap: CGFloat = 44
     }

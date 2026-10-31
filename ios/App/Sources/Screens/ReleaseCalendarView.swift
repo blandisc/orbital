@@ -52,7 +52,7 @@ struct ReleaseCalendarView: View {
         let ordered = Array(symbols[first...] + symbols[..<first])
         return HStack(spacing: DS.Space.s1) {
             ForEach(Array(ordered.enumerated()), id: \.offset) { _, s in
-                Text(verbatim: s).recipe(.caption, color: DS.textFaint).fontWeight(.bold).frame(maxWidth: .infinity)
+                Text(verbatim: s).recipe(.badge, color: DS.textFaint).frame(maxWidth: .infinity)
             }
         }
         .accessibilityHidden(true)
@@ -93,12 +93,12 @@ struct ReleaseCalendarView: View {
                         Text(verbatim: a.aired.formatted(Date.FormatStyle(locale: env.uiLocale).hour().minute())).recipe(.data, color: DS.textMuted)
                     }
                     .padding(DS.Space.s2)
-                    .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                    .dsCard()
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
         }
-        .animation(DS.Motion.base(false), value: model.selected)
+        .animation(DS.Motion.fade, value: model.selected)
     }
 }

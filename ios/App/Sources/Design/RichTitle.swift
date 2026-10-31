@@ -10,10 +10,10 @@ struct QualityBadges: View {
     var body: some View {
         HStack(spacing: DS.Space.s1) {
             ForEach(items, id: \.self) { item in
-                Text(verbatim: item.uppercased()).font(DS.TextRecipe.caption.font.weight(.bold)).monospaced()
+                Text(verbatim: item.uppercased()).font(DS.TextRecipe.badge.font).monospaced()
                     .foregroundStyle(DS.text).lineLimit(1)
                     .padding(.horizontal, DS.Space.s1)
-                    .overlay(RoundedRectangle(cornerRadius: DS.Rich.badgeRadius).stroke(DS.textMuted, lineWidth: DS.Rich.badgeStroke))
+                    .overlay(RoundedRectangle(cornerRadius: DS.Rich.badgeRadius, style: .continuous).stroke(DS.textMuted, lineWidth: DS.Rich.badgeStroke))
             }
         }
         .accessibilityElement(children: .combine)
@@ -62,7 +62,7 @@ struct RatingsRow: View {
         HStack(spacing: DS.Space.s2) {
             RatingMark(service: service)
             // Entero y en un renglón (con letra grande «86 %» se partía y el % caía abajo).
-            value.font(DS.TextRecipe.footnote.font.weight(.medium)).monospacedDigit().foregroundStyle(DS.textMuted)
+            value.font(DS.TextRecipe.label.font).monospacedDigit().foregroundStyle(DS.textMuted)
                 .lineLimit(1).fixedSize()
         }
     }
@@ -140,7 +140,7 @@ struct VideoClipCard: View {
                         Image(systemName: "play.fill").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.paper)
                             .frame(width: DS.Rich.trailerPlay, height: DS.Rich.trailerPlay).glassEffect(.regular, in: Circle())
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                 Text(verbatim: clip.name).recipe(.footnote, color: DS.text).lineLimit(1)
             }
             .frame(width: width)

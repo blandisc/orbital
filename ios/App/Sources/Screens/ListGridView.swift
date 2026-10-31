@@ -95,7 +95,7 @@ struct PlatformRankingsView: View {
                         ForEach(sources, id: \.rawValue) { src in
                             Button { withAnimation(DS.Motion.base(reduceMotion)) { source = src } } label: {
                                 VStack(spacing: DS.Space.s2) {
-                                    sourceName(src).recipe(.secondary, color: src == current.source ? DS.text : DS.textMuted).fontWeight(.semibold)
+                                    sourceName(src).recipe(.labelLarge, color: src == current.source ? DS.text : DS.textMuted)
                                     Capsule().fill(src == current.source ? tint : .clear).frame(height: DS.PlatformFan.tabUnderline)
                                 }
                                 .fixedSize()

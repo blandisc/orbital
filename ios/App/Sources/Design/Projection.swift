@@ -14,8 +14,8 @@ extension Text {
 extension DS.TextRecipe {
     var defaultColor: Color {
         switch self {
-        case .display, .title, .section, .cardTitle, .body: DS.text
-        case .secondary, .footnote, .caption, .eyebrow, .data: DS.textMuted
+        case .display, .title, .section, .cardTitle, .body, .stat: DS.text
+        case .secondary, .footnote, .caption, .eyebrow, .data, .label, .labelLarge, .badge, .groupLabel: DS.textMuted
         }
     }
 }
@@ -120,8 +120,8 @@ struct DSOptionMenu<Item: Hashable & Identifiable>: View {
             Picker(selection: $selection) { ForEach(items) { label($0).tag($0) } } label: { EmptyView() }
         } label: {
             HStack(spacing: DS.Space.s2) {
-                if compact { label(selection).recipe(.secondary, color: DS.text).fontWeight(.semibold) } else { label(selection).recipe(.cardTitle) }
-                Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                if compact { label(selection).recipe(.labelLarge, color: DS.text) } else { label(selection).recipe(.cardTitle) }
+                Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
             }
             .frame(minHeight: compact ? nil : DS.Size.touchTarget)
         }

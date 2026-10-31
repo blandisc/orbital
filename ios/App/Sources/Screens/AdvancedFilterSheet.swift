@@ -94,14 +94,14 @@ struct AdvancedFilterSheet: View {
         DSKindFilter(kind: kind, mark: DS.orbitalBlue)
         // «Ocultar lo que ya viste», dicho con palabras (el ojo tachado solo no se entendía; Fernando, 31 oct 2026).
         Toggle(isOn: Binding(get: { model.filter.hideWatched }, set: { model.filter.hideWatched = $0 })) {
-            Label { Text("Ocultar lo que ya viste").recipe(.footnote, color: DS.text).fontWeight(.semibold) } icon: {
+            Label { Text("Ocultar lo que ya viste").recipe(.label, color: DS.text) } icon: {
                 Image(systemName: "eye.slash").foregroundStyle(DS.orbitalBlue)
             }
         }
         .tint(DS.orbitalBlue)
         .padding(.horizontal, DS.Space.s3)
         .frame(minHeight: DS.Size.touchTarget)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard()
         .accessibilityIdentifier("filter-hide-watched")
         if model.filter.format == .series {
             let statuses: [(AdvancedFilter.SeriesStatus, LocalizedStringKey)] = [(.any, "Todas"), (.airing, "En emisión"), (.ended, "Terminadas")]
@@ -159,7 +159,7 @@ struct AdvancedFilterSheet: View {
         HStack(spacing: DS.Space.s3) {
             if !model.filter.isEmpty {
                 Button("Limpiar") { withAnimation(DS.Motion.base(reduceMotion)) { model.clear() } }
-                    .buttonStyle(.glass).buttonBorderShape(.capsule).controlSize(.large)
+                    .dsGlassButton().buttonBorderShape(.capsule).controlSize(.large)
                     .accessibilityIdentifier("filter-clear")
             }
             Button(action: onResults) {

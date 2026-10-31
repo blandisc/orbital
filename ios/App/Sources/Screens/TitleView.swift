@@ -167,7 +167,7 @@ struct TitleView: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 DSNotice(verbatim: env.message(error), tone: .warn)
                 Button("Reintentar", systemImage: "arrow.clockwise") { Task { await model.load() } }
-                    .buttonStyle(.glass).accessibilityIdentifier("title-retry")
+                    .dsGlassButton().accessibilityIdentifier("title-retry")
             }
         }
         synopsis(model)
@@ -375,18 +375,18 @@ struct TitleView: View {
                 let selection = Binding(get: { SeasonChip(season: model.selectedSeason, isSpecials: model.selectedSeason == 0) }, set: { model.select(season: $0.season) })
                 DSOptionMenu(items: chips, label: { $0.isSpecials ? Text("Especiales") : Text("Temporada \($0.season)") }, selection: selection, compact: true)
             } else if let only = model.seasons.first {
-                Text(only.isSpecials ? "Especiales" : "Temporada \(only.season)").recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                Text(only.isSpecials ? "Especiales" : "Temporada \(only.season)").recipe(.labelLarge, color: DS.text)
             }
             Spacer(minLength: DS.Space.s2)
             // La versión de la serie (lo que recuerda: latino, castellano, inglés…); tocarla elige otra «desde aquí».
             if let next = model.continueVideoID {
                 Button { sourcesFor = SourcesTarget(videoID: next, purpose: .watch, fromHere: true) } label: {
                     HStack(spacing: DS.Space.s2) {
-                        Image(systemName: "list.bullet.rectangle").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                        Image(systemName: "list.bullet.rectangle").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
                         // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
                         Text("\(Text.flag(wanted))\(Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage) : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage)))")
-                            .recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
-                        Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                            .recipe(.labelLarge, color: DS.text).lineLimit(1)
+                        Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
                     }
                 }
                 .dsSecondaryButton()
@@ -435,7 +435,7 @@ struct TitleView: View {
                 Text(model.overview).recipe(.secondary, color: DS.text).lineLimit(fullSynopsis ? nil : DS.TitleAction.synopsisLines)
                 if model.overview.count > DS.Size.synopsisFold {
                     Button(fullSynopsis ? "menos" : "más") { withAnimation(DS.Motion.base(reduceMotion)) { fullSynopsis.toggle() } }
-                        .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(artAccent).buttonStyle(.plain)
+                        .font(DS.TextRecipe.label.font).foregroundStyle(artAccent).buttonStyle(.plain)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -592,5 +592,5 @@ private struct BarLogo: View {
         .frame(height: DS.TitleAction.barLogo, alignment: .leading)
         .accessibilityLabel(Text(verbatim: title))
     }
-    private var name: some View { Text(verbatim: title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }
+    private var name: some View { Text(verbatim: title).recipe(.labelLarge, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }
 }

@@ -44,7 +44,7 @@ struct OnboardingDebridKey: View {
                   primaryEnabled: model.ready, next: next) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 GuideNumberedStep(number: 1, text: Text(verbatim: "real-debrid.com/apitoken")) {
-                    Button("Abrir") { openURL(model.tokenURL) }.buttonStyle(.glass)
+                    Button("Abrir") { openURL(model.tokenURL) }.dsGlassButton()
                 }
                 GuideNumberedStep(number: 2, text: Text("Copia el texto largo que aparece")) { EmptyView() }
                 GuideNumberedStep(number: 3, text: Text("Vuelve aquí y pégalo")) { EmptyView() }
@@ -68,22 +68,22 @@ struct DebridKeyField: View {
                 TextField("Pega tu clave", text: Binding(get: { debrid.token }, set: { debrid.token = $0 }))
                     .textInputAutocapitalization(.never).autocorrectionDisabled().font(DS.TextRecipe.data.font)
                     .onSubmit { Task { await debrid.verify() } }
-                    .padding(DS.Space.s3).background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .padding(DS.Space.s3).dsCard(translucent: true)
                     .accessibilityIdentifier("debrid-token")
                 Button("Pegar", systemImage: "doc.on.clipboard") {
                     if let text = UIPasteboard.general.string { debrid.token = text; Task { await debrid.verify() } }
                 }
-                .buttonStyle(.glass)
+                .dsGlassButton()
             }
             switch debrid.check {
-            case .idle: if !debrid.token.isEmpty { Button("Comprobar") { Task { await debrid.verify() } }.buttonStyle(.glass) }
+            case .idle: if !debrid.token.isEmpty { Button("Comprobar") { Task { await debrid.verify() } }.dsGlassButton() }
             case .checking: ProgressView()
             case .ok(let status):
                 GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text(verbatim: "\(status.username) · Premium"),
                            detail: DebridWords.text(status))
             case .free:
                 DSNotice(text: "Tu cuenta es gratuita: necesitas Premium para ver.", tone: .warn)
-                Button("Hacerla Premium") { openURL(debrid.renewURL) }.buttonStyle(.glass)
+                Button("Hacerla Premium") { openURL(debrid.renewURL) }.dsGlassButton()
             case .failed(let message):
                 DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .error)
             }
@@ -142,7 +142,7 @@ struct OnboardingAddons: View {
                         let what = AddonsModel.summary(addon)
                         AddonLabel(name: addon.name, usesDebrid: what.usesDebrid, subtitles: what.subtitles, imported: what.imported)
                     }
-                    .padding(DS.Space.s3).background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .padding(DS.Space.s3).dsCard()
                 }
                 Text("Puedes cambiarlos cuando quieras en Ajustes › Complementos.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             }

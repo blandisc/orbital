@@ -28,7 +28,7 @@ struct DSNotice: View {
         }
         .foregroundStyle(color)
         .padding(DS.Space.s3)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .dsCard(translucent: true)
     }
 
     private var symbol: String {
@@ -54,7 +54,7 @@ struct DSDegradedNotice: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            Label { Text(verbatim: text(state.title)).font(DS.TextRecipe.footnote.font.weight(.semibold)) } icon: { Image(systemName: state.symbol) }
+            Label { Text(verbatim: text(state.title)).font(DS.TextRecipe.label.font) } icon: { Image(systemName: state.symbol) }
                 .foregroundStyle(color)
             Text(verbatim: text(state.detail)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -65,11 +65,11 @@ struct DSDegradedNotice: View {
                     Button(text("Reintentar"), systemImage: "arrow.clockwise", action: retry).accessibilityIdentifier("degraded-retry")
                 }
             }
-            .buttonStyle(.glass).controlSize(.small).padding(.top, DS.Space.s1)
+            .dsGlassButton().controlSize(.small).padding(.top, DS.Space.s1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Space.s3)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .dsCard(translucent: true)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("degraded-notice")
     }
@@ -127,7 +127,7 @@ struct DSEmptyState<Actions: View>: View {
         } description: {
             if let message { message }
         } actions: {
-            actions().buttonStyle(.glass).controlSize(.large)
+            actions().dsGlassButton().controlSize(.large)
         }
     }
 }

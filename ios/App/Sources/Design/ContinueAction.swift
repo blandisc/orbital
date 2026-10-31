@@ -57,7 +57,7 @@ struct ContinueAction: View {
                 Label { title } icon: { Image(systemName: symbol) }
             } else { title }
         }
-        .font(DS.TextRecipe.body.font.weight(.semibold)).lineLimit(2).multilineTextAlignment(.center)
+        .font(DS.TextRecipe.cardTitle.font).lineLimit(2).multilineTextAlignment(.center)
         .frame(maxWidth: .infinity, minHeight: DS.TitleAction.primaryHeight - DS.Space.s3 * 2)
     }
 
@@ -88,7 +88,7 @@ struct ContinueAction: View {
     @ViewBuilder private var restartButton: some View {
         if let restart {
             Button("Desde el principio", systemImage: "arrow.counterclockwise", action: restart)
-                .font(DS.TextRecipe.footnote.font.weight(.medium)).buttonStyle(.borderless).tint(ink).lineLimit(1)
+                .font(DS.TextRecipe.label.font).buttonStyle(.borderless).tint(ink).lineLimit(1)
                 .accessibilityIdentifier("title-restart")
         }
     }

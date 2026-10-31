@@ -73,7 +73,7 @@ struct ReleaseTimeline: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s1) {
                     Circle().fill(soon ? DS.ink500 : DS.success).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
-                    when(a.day).recipe(.caption, color: soon ? DS.textMuted : DS.text).fontWeight(.bold).lineLimit(1)
+                    when(a.day).recipe(.badge, color: soon ? DS.textMuted : DS.text).lineLimit(1)
                 }
                 .frame(height: DS.HomeTimeline.labelRow, alignment: .leading)
                 PosterView(url: a.series.poster, title: a.series.title)
@@ -82,7 +82,7 @@ struct ReleaseTimeline: View {
                     }
                     .overlay(alignment: .bottomLeading) {
                         if case .soon(let days) = moment, days >= 2 {
-                            Text("en \(days) días").recipe(.caption, color: DS.onArtSecondary).fontWeight(.semibold)
+                            Text("en \(days) días").recipe(.badge, color: DS.onArtSecondary)
                                 .padding(DS.Space.s2).onArt()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(ArtVeil(at: 0))
@@ -90,7 +90,7 @@ struct ReleaseTimeline: View {
                     }
                     .opacity(soon ? DS.HomeTimeline.soonOpacity : 1)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: a.series.title).recipe(.footnote).fontWeight(.semibold).lineLimit(1)
+                    Text(verbatim: a.series.title).recipe(.label).lineLimit(1)
                     Text(verbatim: episode).recipe(.caption, color: DS.textMuted).lineLimit(1)
                 }
             }
