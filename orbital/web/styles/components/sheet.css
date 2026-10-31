@@ -9,6 +9,9 @@
 }
 /* Nada de la hoja se aplasta: si no cabe, el panel se desplaza (y la opción enfocada se mantiene a la vista). */
 .sheet__panel > * { flex-shrink: 0; }
+/* Con un video en pequeño (abajo a la derecha, encima de todo) las opciones de abajo no quedan detrás: el panel termina
+   arriba del video y, si no cabe, se desplaza ahí. */
+[data-pip="true"] .sheet__panel { height: calc(100% - var(--pip-room)); }
 
 /* Título: el nombre del menú (o del juego), grande y en minúsculas; nada de mayúsculas espaciadas. */
 .sheet__title {

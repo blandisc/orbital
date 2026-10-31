@@ -116,7 +116,7 @@ y qué se midió).
 | Canales que ya no sirven | Se revisan al arrancar y cada ~6 h (manifiesto, calidad y un trozo de video real). Un canal se oculta tras **dos** fallos seguidos y vuelve solo cuando abre otra vez. Los que nunca se han revisado se muestran; los que ya fallaron una vez, atenuados | ✅ (nuevo) |
 | Sin Internet | Se usa la última lista guardada; ningún canal se oculta por una caída del Wi-Fi. Sin lista guardada, la sección lo dice («Aún no hay canales») | ✅ (nuevo) |
 | Volver a buscar canales | **X**: baja la lista otra vez y revisa cuáles abren (avisa al terminar) | ✅ (nuevo) |
-| Volver al Inicio | **B**: primero al primer canal; otra vez, a Inicio | ✅ |
+| Volver al Inicio | **B**: primero a la lista de categorías (en la que estabas); otra vez, a Inicio | ✅ |
 
 ## Con el dedo (Legion Go sin dock)
 

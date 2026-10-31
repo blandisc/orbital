@@ -50,6 +50,13 @@
 /* …salvo el logo: si no cabe todo (una serie, con su fila de episodios abajo, y la letra grande), el logo se hace más chico
    en vez de empujar lo demás por arriba de la pantalla (se «comía» el logo). */
 .title__info > .title__logo { flex-shrink: 1; min-height: 3rem; }
+/* Una serie trae además la fila de episodios: con un poco menos de aire entre renglones todo cabe y el logo ya no se sale por
+   arriba de la pantalla (visto a 2560×1440 con letra Grande, regresión S2). */
+.title--series .title__info { gap: var(--space-3); }
+/* Con el dedo los botones redondos llevan su nombre debajo (renglón y medio más): un poco menos de aire todavía. */
+[data-input="touch"] .title--series .title__info { gap: var(--space-2); }
+/* …y el lugar guardado de «Ver más» sobra: con el dedo el foco no llega ahí (se toca la sinopsis), así que no hay brinco. */
+[data-input="touch"] .title__read--idle { display: none; }
 
 .title__logo { max-width: min(100%, 32rem); max-height: 10rem; width: auto; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); margin-bottom: var(--space-2); }
 .title--series .title__logo { max-height: 7.5rem; }

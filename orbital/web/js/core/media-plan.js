@@ -33,6 +33,8 @@ export function fetchPlan(lists = []) {
   return wanted;
 }
 export const keyOf = (id, kind) => `${id}:${kind ?? ""}`;
+/** Al revés: «chart:netflix:movie» → { id: "chart:netflix", kind: "movie" } (el tipo va después del último «:»). */
+export const unkeyOf = (key) => { const at = key.lastIndexOf(":"); return { id: key.slice(0, at), kind: key.slice(at + 1) || null }; };
 
 /** Las plataformas con sus rankings (como PlatformPlanner del iPhone): el Top 10 o la tendencia; TMDB solo si no hay. */
 export function platformHubs(lists = []) {

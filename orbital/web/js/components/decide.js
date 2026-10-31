@@ -18,6 +18,16 @@ const QUESTIONS = [
 ];
 const TIME_LEAD = { short: "media hora", hour: "una hora", long: "dos horas o más" };
 
+/** Lo que dice arriba: si no caben todas en el tiempo que tienes, lo dice (antes «caben en media hora» con películas de casi
+ * dos horas). `fits` llega del servidor; sin él (un Orbital anterior), se da por bueno. */
+export function decideLead(picks, time) {
+  if (!picks.length) return `Tres de tus sugerencias que caben en ${time}.`;
+  const fit = picks.filter((p) => p.fits !== false).length;
+  if (fit === picks.length) return `${picks.length === 3 ? "Tres" : picks.length === 2 ? "Dos" : "Una"} de tus sugerencias que caben en ${time}.`;
+  if (!fit) return `Nada de lo tuyo cabe en ${time}: estas son las más cortas.`;
+  return `${fit === 1 ? "Una cabe" : "Dos caben"} en ${time}; ${picks.length - fit === 1 ? "la otra es la más corta" : "las otras, las más cortas"}.`;
+}
+
 /** La línea de datos de una propuesta: por qué · cuánto dura · IMDb · géneros · en qué episodio vas. */
 export function pickFacts(p) {
   const minutes = p.minutes ? duration(p.minutes * 60) : ""; // «42 min» (runtime() espera el texto «42 min»: daba «2520»)
@@ -88,7 +98,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
       if (!choice.time) choice = { ...choice, time: res.time };
       picks = res.picks || [];
       index = 0;
-      lead.textContent = `Tres de tus sugerencias que caben en ${TIME_LEAD[choice.time] || "tu tiempo"}.`;
+      lead.textContent = decideLead(picks, TIME_LEAD[choice.time] || "tu tiempo");
       status.hidden = !!picks.length;
       status.textContent = picks.length ? "" : "No encontré nada con eso. Cambia el tiempo o el ánimo.";
     } catch (err) {

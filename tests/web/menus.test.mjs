@@ -568,3 +568,17 @@ test("Ajustes › Tele y voz: la tele, dónde hablarle con su última orden, la 
   assert.match(bare.options.find((o) => o.label === "La tele no se prende sola").help, /orbital tv setup/);
   assert.equal(bare.options.find((o) => o.label === "Alexa").value, "Sin configurar");
 });
+
+test("cada paso de la guía dice en cuál vas, aunque se abra desde «Cómo se usa»", () => {
+  assert.equal(tourMenu(0).progress, "Guía 1 de 5");
+  assert.equal(tourMenu(4).progress, "Guía 5 de 5");
+});
+
+test("«Otra portada» pide confirmar antes de descartar la de ahora (Cancelar primero)", async () => {
+  const { artMenu, artConfirmMenu } = await import("../../orbital/web/js/core/menus.js");
+  const other = artMenu({ id: "emu:psp:1", title: "Battlefront" }).options.find((o) => o.label === "Otra portada");
+  assert.equal(other.command.type, "art-confirm");
+  const confirm = artConfirmMenu(other.command);
+  assert.equal(confirm.options[0].label, "Cancelar");
+  assert.deepEqual(confirm.options[1].command, { type: "art", id: "emu:psp:1", kind: "cover", title: "Battlefront" });
+});

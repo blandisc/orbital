@@ -467,6 +467,9 @@ class ConsoleShell:
         if hwnd not in {w["id"] for w in self.open_windows()}:
             return False
         self.remember(hwnd)
+        if self.player and getattr(self.player, "pip", False) and self.win.exe_name(self.win.pid_of(hwnd)) == PLAYER_EXE:
+            # El video en pequeño: elegirlo en «Ventanas abiertas» es querer verlo, como Home (antes quedaba en la esquina).
+            self.player.exit_pip()
         return self.win.focus(hwnd)
 
     # --------------------------------------------------------------- Legion L

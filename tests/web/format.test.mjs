@@ -101,3 +101,13 @@ test("¿Qué vemos? dice cuánto dura: «42 min por episodio», no «2520 por ep
   assert.equal(pickFacts({ kind: "movie", minutes: 107, imdb_rating: "7.1" }), "1 h 47 min · IMDb 7.1");
   assert.equal(pickFacts({ kind: "series" }), "Serie");
 });
+
+test("¿Qué vemos? no dice que caben si no caben", async () => {
+  const { decideLead } = await import("../../orbital/web/js/components/decide.js");
+  const fit = { fits: true }, long = { fits: false };
+  assert.equal(decideLead([fit, fit, fit], "media hora"), "Tres de tus sugerencias que caben en media hora.");
+  assert.equal(decideLead([long, long, long], "media hora"), "Nada de lo tuyo cabe en media hora: estas son las más cortas.");
+  assert.equal(decideLead([fit, long, long], "media hora"), "Una cabe en media hora; las otras, las más cortas.");
+  assert.equal(decideLead([fit, fit, long], "una hora"), "Dos caben en una hora; la otra es la más corta.");
+  assert.equal(decideLead([{}, {}], "media hora"), "Dos de tus sugerencias que caben en media hora."); // un Orbital sin «fits»
+});

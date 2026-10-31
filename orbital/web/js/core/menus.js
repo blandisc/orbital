@@ -88,8 +88,23 @@ export function artMenu(item) {
     options: [
       { icon: "grid", label: "Elegir portada o fondo", hint: "Todas las que encontré, con el control",
         command: { type: "game-art-picker", id: item.id, title: item.title } },
-      { icon: "cover", label: "Otra portada", command: { type: "art", id: item.id, kind: "cover", title: item.title } },
-      { icon: "wide", label: "Otro fondo", command: { type: "art", id: item.id, kind: "hero", title: item.title } },
+      // Descartan la de ahora para siempre: piden confirmar (un toque que cayó aquí al redibujarse la hoja la tiró).
+      { icon: "cover", label: "Otra portada", hint: "Descarta la de ahora", command: { type: "art-confirm", id: item.id, kind: "cover", title: item.title } },
+      { icon: "wide", label: "Otro fondo", hint: "Descarta el de ahora", command: { type: "art-confirm", id: item.id, kind: "hero", title: item.title } },
+    ],
+  };
+}
+
+/** ¿Descartar la imagen de ahora? Cancelar primero: buscar otra la tira para siempre. */
+export function artConfirmMenu(command) {
+  const cover = command.kind === "cover";
+  return {
+    title: cover ? "¿Buscar otra portada?" : "¿Buscar otro fondo?",
+    subtitle: `${cover ? "La portada" : "El fondo"} de ahora se descarta y no vuelve. Para escoger entre todas: «Elegir portada o fondo».`,
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: cover ? "cover" : "wide", label: cover ? "Buscar otra portada" : "Buscar otro fondo", danger: true,
+        command: { type: "art", id: command.id, kind: command.kind, title: command.title } },
     ],
   };
 }
@@ -1250,7 +1265,8 @@ export function tourMenu(step, { legion = false, gamesir = false } = {}) {
   const current = steps[step];
   const last = step === steps.length - 1;
   return {
-    title: current.title, crumb: `Guía ${step + 1} de ${steps.length}`, subtitle: current.text,
+    title: current.title, crumb: `Guía ${step + 1} de ${steps.length}`, progress: `Guía ${step + 1} de ${steps.length}`,
+    subtitle: current.text,
     options: [
       last ? { icon: "check", label: "¡Listo!", command: { type: "close" } }
         : { icon: "play", label: "Siguiente", command: { type: "tour", step: step + 1 } },

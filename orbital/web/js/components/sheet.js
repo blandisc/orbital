@@ -49,8 +49,11 @@ export function createSheet({ onCommand, onMove, onClose }) {
   const below = (option) => !!option.hint && (longHint(option.hint) || option.value !== undefined);
 
   function render() {
-    back.textContent = stack.length ? stack.map((s) => s.menu.crumb || s.menu.title).join(" › ") : "";
-    back.hidden = !stack.length;
+    // La ruta (Orbital › Ajustes) y, si la hoja es un paso de varios, en cuál vas («Guía 2 de 5»): antes ese dato solo salía
+    // si abrías algo desde ahí, así que la guía abierta desde «Cómo se usa» no decía en qué paso ibas.
+    const trail = [...stack.map((s) => s.menu.crumb || s.menu.title), menu.progress].filter(Boolean);
+    back.textContent = trail.join(" › ");
+    back.hidden = !trail.length;
     title.textContent = menu.title;
     title.classList.toggle("sheet__title--question", !!menu.subtitle);
     subtitle.textContent = menu.subtitle || "";
@@ -62,7 +65,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
         option.command?.type === "close" && "sheet__item--dismiss"],
       type: "button",
       role: "menuitem",
-      onClick: (event) => tapReady(event) && !busy() && choose(i),
+      onClick: (event) => tapReady(event) && !busy() && press(i),
     }, // Una cuenta o servicio lleva su logotipo real (Stremio, Trakt, TMDB); lo demás, su ícono.
     h("span", { class: ["sheet__icon", option.mark && "sheet__icon--mark"] },
       option.mark ? h("img", { class: "sheet__mark", src: option.mark, alt: "" }) : ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
@@ -153,6 +156,18 @@ export function createSheet({ onCommand, onMove, onClose }) {
     const command = menu?.cancel;
     close();
     if (command) onCommand(command);
+  }
+
+  /** Un clic o un toque: primero el foco va ahí (y se ve entero); luego hace lo suyo. Una fila de solo lectura («stay»: las
+   * frases de «Lo que puedes decir») no hace nada más, y antes ni el foco se movía: a medio ver, parecía que el clic no servía. */
+  function press(i) {
+    if (i !== index) {
+      index = i;
+      [...list.children].forEach((item, n) => item.classList.toggle("sheet__item--focused", n === index));
+      reveal();
+      onMove?.();
+    }
+    choose(i);
   }
 
   function choose(i = index, command = menu?.options[i]?.command) {

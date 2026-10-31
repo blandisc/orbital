@@ -206,6 +206,16 @@ def test_open_windows_hides_orbital_and_only_focuses_listed():
     assert not shell.focus_window(12345)  # un identificador que no está en la lista: nunca
 
 
+def test_picking_the_small_video_in_open_windows_brings_it_back_full_screen():
+    """«Ventanas abiertas › Reproductor» traía mpv al frente pero lo dejaba en la esquina."""
+    shell, win, _ = make(None)
+    win.windows[DESKTOP_APP] = ("VisionQuest · T1 E1", 30, "mpv.exe")
+    shell.player.pip = True
+    shell.player.exit_pip = lambda: setattr(shell.player, "pip", False)
+    assert shell.focus_window(DESKTOP_APP) and win.fg == DESKTOP_APP
+    assert shell.player.pip is False
+
+
 def test_hold_closes_steam_game_in_front(monkeypatch):
     shell, win, overlay = make(None)
     win.windows[DESKTOP_APP] = ("Hades II", 30, "hades2.exe")

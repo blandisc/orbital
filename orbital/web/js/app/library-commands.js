@@ -1,6 +1,6 @@
 /** Comandos de tu biblioteca: preferencias, arte, ordenar y filtrar una lista, Mi lista, descargas y tu carpeta.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function libraryCommands({ api, fixTitle, folderMenu, genreNames, launch, loadDownloads, loadLibrary, nested, offerUndoHide, openListItem, openMenu, openTitle, renderHints, sendToPhone, sound, state, toggleSave, ui, watch }) {
+export function libraryCommands({ api, artConfirmMenu, fixTitle, folderMenu, genreNames, launch, loadDownloads, loadLibrary, nested, offerUndoHide, openListItem, openMenu, openTitle, renderHints, sendToPhone, sound, state, toggleSave, ui, watch }) {
   return {
     "prefs": async (command, context) => {
       if (command.prefs.hidden) ui.toast.show(`Ocultando ${command.title || ""}…`.replace(" …", "…")); // si tarda, se nota
@@ -16,6 +16,9 @@ export function libraryCommands({ api, fixTitle, folderMenu, genreNames, launch,
     },
     "refresh": async (command, context) => {
       return loadLibrary({ refresh: true });
+    },
+    "art-confirm": async (command, context) => {
+      return openMenu(artConfirmMenu(command), nested(context));
     },
     "art": async (command, context) => {
       ui.toast.show(`Buscando otra imagen para ${command.title}…`);

@@ -1558,8 +1558,9 @@ class ForYou:
         out = []
         for p in picks:
             d = details.get(p["meta_id"], {})
-            out.append({**p, "minutes": p.get("runtime") or d.get("minutes"), "imdb_rating": d.get("rating"),
-                        "genres": p.get("genres") or d.get("genres") or []})
+            minutes = p.get("runtime") or d.get("minutes")
+            out.append({**p, "minutes": minutes, "imdb_rating": d.get("rating"), "genres": p.get("genres") or d.get("genres") or [],
+                        "fits": decide_api.fits(minutes, time_choice)})  # ¿cabe en el tiempo? (si no, es de las más cortas)
         return {"time": time_choice, "mood": mood, "kind": kind, "picks": out}
 
     def skip_today(self, imdb: str) -> None:

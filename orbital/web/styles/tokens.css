@@ -209,6 +209,7 @@
   --stroke-heavy: 3.2;
   --progress-height: .25rem;
   --sheet-width: 29rem;
+  --pip-room: 20vw; /* el video en pequeño: 30 % del ancho en 16:9 más su margen (player.PIP_WIDTH y PIP_MARGIN) */
   --keyboard-width: 54rem;
   /* Tiles (pantallas nuevas: Inicio): radio grande, foco que crece poco, vecinos atenuados. */
   --tile-radius: var(--radius-xl);
@@ -248,7 +249,7 @@
   --decide-poster-height: 16rem;
   --console-name-fit: 15cqi; /* el nombre de una consola en su tarjeta, como mucho este tanto de su ancho (8 letras caben) */
   --because-stage-width: 30rem; /* «Porque viste»: el escenario fijo de la izquierda */
-  --year-top-height: 8.6rem; /* Tu año: los pósters de «Lo que más viste» (caben bajo el mapa) */
+  --year-top-height: 7.4rem; /* Tu año: los pósters de «Lo que más viste» (con 8.6 se metían bajo el pie con letra Grande) */
   --key-height: 3.2rem;
   --tv-rail-width: 15rem; /* TV en vivo: la lista de categorías */
   --tv-preview-width: 30rem; /* TV en vivo: la miniatura en vivo del canal enfocado */

@@ -10,7 +10,7 @@ import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLa
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
+import { alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -46,8 +46,8 @@ import { libraryCommands } from "./app/library-commands.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
-import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
-import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows, miMediaItem, stageJump, stageSide } from "./core/media-plan.js";
+import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, pickArt, spotlightRow } from "./core/curation.js";
+import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, unkeyOf, mediaRows, miMediaItem, stageJump, stageSide } from "./core/media-plan.js";
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 import { sized } from "./core/images.js";
@@ -190,6 +190,11 @@ const ui = {
       ui.toast.show(`Arte nuevo para ${target.title}`, { tone: "success" });
       loadLibrary();
       if (target.metaId) ui.title.artPicked(target.metaId, which, url); // la ficha abierta debajo toma tu elección ya
+      // Y los estantes de Películas y series (Recomendadas, En tendencia…): ya cargados, no se vuelven a pedir y seguían con
+      // el póster de siempre (regresión S2). El servidor ya lo aplica a lo que pidan después (foryou._with_art).
+      const touched = target.metaId ? pickArt(mediaItems, target.metaId, which, url) : [];
+      if (touched.length && url) buildCuration();
+      else if (touched.length) fetchMany(touched.map(unkeyOf)).then(buildCuration); // «El de siempre»: se vuelven a pedir
     },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
@@ -368,6 +373,9 @@ function renderHints() {
   if (state.undoHide && !canUndoHide()) { state.undoHide = null; ui.toast.dismiss(); }
   const overlay = topOverlay();
   document.body.dataset.overlay = ui.sheet.isOpen || overlay ? "true" : "false";
+  // Con el dedo, «Menú» también sobre las vistas que lo usan (una lista: Ordenar y filtrar; la ficha y Fuentes: ☰): antes solo
+  // salía «Atrás» y «Filtrar» no tenía camino táctil (regla de las cuatro superficies).
+  document.body.dataset.overlayMenu = !ui.sheet.isOpen && [ui.listScreen, ui.title, ui.sources].includes(overlay) ? "true" : "false";
   if (!ui.sheet.isOpen && overlay) return ui.hints.render(overlay.hints(g));
   if (inForYou() && !ui.sheet.isOpen) return ui.hints.render(ui.foryou.hints(g));
   if (inTv() && !ui.sheet.isOpen) {
@@ -1461,6 +1469,12 @@ function cancelLaunch() {
 }
 
 /** Lo que está abierto: llega solo por SSE ("status") al cambiar; se pregunta tras abrir o cerrar algo. */
+/** Un video en pequeño ocupa la esquina de abajo a la derecha, encima de todo: el menú lateral le deja ese lugar abajo
+ * (antes Ajustes, Apagar y Salir al escritorio quedaban detrás del video y se elegían sin verlos). */
+function markPip() {
+  document.body.dataset.pip = state.running?.pip ? "true" : "false";
+}
+
 function applyStatus(running) {
   if (running && state.cancelled && running.id === state.cancelled.id && Date.now() < state.cancelled.until) {
     state.cancelled = null; // lo que cancelaste terminó de arrancar: se cierra
@@ -1468,6 +1482,7 @@ function applyStatus(running) {
   }
   const changed = running?.id !== state.running?.id;
   state.running = running;
+  markPip();
   ui.status.setRunning(running);
   ui.tv.setPlaying(running?.live ?? null); // qué canal de TV está al aire (o ninguno)
   if (inTv()) renderHints();
@@ -1608,7 +1623,7 @@ const nested = (context) => (context ? { stack: [...context.stack, { menu: conte
 let commandTable = null;
 function commands() {
   if (commandTable) return commandTable;
-  const deps = { alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  const deps = { alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps) };
   return commandTable;
 }
@@ -2082,7 +2097,8 @@ const EVENTS = {
   },
   // Home con un video: se fue a la esquina; cómo regresarlo
   pip: (event) => {
-    if (state.running?.front) state.running = { ...state.running, front: false };
+    if (state.running) state.running = { ...state.running, front: false, pip: true };
+    markPip();
     return ui.toast.show(`${event.title} sigue en pequeño · Home lo regresa a pantalla completa`);
   },
   // llegaron los logos de los estudios: la fila de Estudios los enseña
