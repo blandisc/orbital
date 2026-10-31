@@ -97,7 +97,7 @@ struct WatchingView: View {
             }
             ArtVeil(at: DS.Watching.veilFrom, strength: .deep)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Eyebrow(text: periodPhrase(s.period), reason: true)
+                Eyebrow(text: periodPhrase(s.period), onArt: true)   // un dato, no un porqué: el turquesa es solo para los porqués
                 Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.paper)
                     .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
                 heroFacts(s).recipe(.footnote, color: DS.onArtSecondary).lineLimit(2)

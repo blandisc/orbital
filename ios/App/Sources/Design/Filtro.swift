@@ -55,7 +55,8 @@ struct FilterDoor: View {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         Text("Búsqueda avanzada").recipe(.cardTitle)
                         if active > 0, let summary {
-                            Text("\(active) \(active == 1 ? "filtro" : "filtros") · \(summary)").recipe(.footnote, color: DS.eyebrow).lineLimit(1)
+                            // Lo elegido, en el color de la selección del filtro (el turquesa es solo para los porqués).
+                            Text("\(active) \(active == 1 ? "filtro" : "filtros") · \(summary)").recipe(.footnote, color: DS.brandMoon).lineLimit(1)
                         }
                     }
                     Spacer(minLength: 0)

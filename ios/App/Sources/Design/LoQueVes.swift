@@ -38,22 +38,6 @@ struct WatchingCard: View {
     }
 }
 
-/// Un dato grande con su nombre abajo («42 h» · «frente a la pantalla»).
-struct WatchingStat: View {
-    let value: Text
-    let label: Text
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s1) {
-            value.font(DS.TextRecipe.title.font.weight(.bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-            label.recipe(.caption, color: DS.textMuted).lineLimit(2)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)   // todas las del renglón, del mismo alto
-        .padding(DS.Space.s3)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-        .accessibilityElement(children: .combine)
-    }
-}
-
 /// Las barras del periodo (días, semanas, meses o años), la más alta resaltada.
 struct WatchingBars: View {
     let values: [Int]

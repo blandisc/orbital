@@ -163,7 +163,7 @@ extension DS {
     /// del arrastre y qué tan rápido aparece), cómo se ven las de atrás, el giro, cuánto hay que arrastrar para que vuele y el
     /// alto de un ánimo.
     enum Match {
-        static let hint: CGFloat = 56, hintFrom = 0.15, hintRamp = 3.0
+        static let hintFrom = 0.15, hintRamp = 3.0
         static let behindShrink: CGFloat = 0.05, behindDrop: CGFloat = 14, tiltDivisor = 22.0
         static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220), mood: CGFloat = 64
         /// La carta es un póster: alto entre ancho.
@@ -175,15 +175,12 @@ extension DS {
         static let actionLabelGap: CGFloat = 6, actionRow: CGFloat = 72, veilFrom = 0.35
     }
 
-    /// Lo que ves y el Wrapped (`WatchingCard`, `WatchingBars`, `WatchingDayGrid`, `WatchingGenres`, `WrappedView`): el alto de
-    /// la tarjeta de Para ti, sus esqueletos, lo apagado del collage, las barras, el cuadrito del mapa, los géneros y las
-    /// historias (cuánto dura cada una, el alto de sus barritas de avance y el póster grande).
+    /// Lo que ves y el Wrapped (`WatchingView`, `WatchingBars`, `WatchingDayGrid`, `WatchingGenres`, `WrappedView`): la portada
+    /// de la pantalla, las barras, el cuadrito del mapa, los géneros y las historias (cuánto dura cada una, el alto de sus
+    /// barritas de avance y el póster grande).
     enum Watching {
-        /// «Tu semana en su póster»: dónde empieza el velo, cuántos géneros y su relleno.
-        static let veilFrom = 0.2
-        /// La portada de la pantalla (el arte de lo que más viste) y cuántos van en «Lo que más viste».
-        static let heroHeight: CGFloat = 300, topCount = 10
-        static let cardHeight: CGFloat = 200, skeleton: CGFloat = 160, skeletonHeight: CGFloat = 34
+        /// La portada (el arte de lo que más viste): dónde empieza su velo y su alto; cuántos van en «Lo que más viste».
+        static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
