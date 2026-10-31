@@ -62,13 +62,15 @@ struct TitleView: View {
             }
             .ignoresSafeArea()
         }
-        // Recogido el arte, el nombre al centro de la barra, entre ‹ y los botones (como Apple TV): sigues sabiendo qué es. Se
+        // Recogido el arte, el logo (o el nombre) en la barra, entre ‹ y los botones: sigues sabiendo qué es. Se
         // dibuja aquí y no como elemento de la barra (en la barra transparente de la ficha el sistema no lo enseñaba).
         .overlay(alignment: .top) {
             let shown = Double(min(1, max(0, (scrolled - heroHeight * DS.TitleAction.titleFrom) / max(heroHeight * DS.TitleAction.titleSpan, 1))))
             // Entre ‹ y la cápsula de botones (que es más ancha que ‹): el nombre a la izquierda, sin meterse debajo.
             let buttons = (env.services.orbital.isConfigured ? 1 : 0) + (model.canFavorite ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)
-            Text(verbatim: model.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            // El logo de la serie o película (si no hay, su nombre), del alto de la barra.
+            BarLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, DS.TitleAction.barTitleLeading)
                 .padding(.trailing, DS.TitleAction.barGroupPadding + DS.TitleAction.barButton * CGFloat(buttons))
                 .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
@@ -570,4 +572,22 @@ struct TitleView: View {
 
     // MARK: acciones
 
+}
+
+/// El logo chico de la barra de la ficha (de alto fijo, sin pasarse de su espacio); sin logo, el nombre.
+private struct BarLogo: View {
+    let url: String?
+    let title: String
+    var body: some View {
+        Group {
+            if let u = url.flatMap(URL.init(string:)) {
+                RemoteImage(url: u, maxPoints: DS.TitleAction.barLogo * 8) { phase in
+                    if case .success(let image) = phase { image.resizable().scaledToFit() } else { name }
+                }
+            } else { name }
+        }
+        .frame(height: DS.TitleAction.barLogo, alignment: .leading)
+        .accessibilityLabel(Text(verbatim: title))
+    }
+    private var name: some View { Text(verbatim: title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }
 }

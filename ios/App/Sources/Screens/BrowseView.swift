@@ -231,8 +231,11 @@ struct BrowseView: View {
     // MARK: sin escribir
     @ViewBuilder private var suggestions: some View {
         let model = catalog.model
-        filterDoor
-        if !search.model.recent.isEmpty { recent }
+        // La puerta del filtro y lo que buscaste van juntas (antes las separaba el aire entre secciones).
+        VStack(alignment: .leading, spacing: DS.Space.s4) {
+            filterDoor
+            if !search.model.recent.isEmpty { recent }
+        }
         if let degraded = model.degraded {
             DegradedNotice(state: degraded) { Task { await model.load() } }.padding(.horizontal, DS.Space.gutter)
         }

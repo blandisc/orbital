@@ -31,10 +31,17 @@ extension DS {
         /// El velo y el brillo dorados de la ventana de Época.
         static let goldFill = gold.opacity(0.16), goldGlow = gold.opacity(0.35)   // ds-exception: velo y brillo del dorado de la regla
         static let dot: CGFloat = 7
+        /// «Qué tan conocida»: el alto de cada cuadrante y el velo rosa del elegido. Género: cuántos géneros caben en su mosaico.
+        static let quadrantCell: CGFloat = 96, genreMosaicMax = 6
+        static let roseFill = rose.opacity(0.2)   // ds-exception: el velo del cuadrante elegido, en el rosa de este filtro
         /// El logo de TMDB en el mosaico de Calificación (chico: el número manda).
         static let tmdbMark: CGFloat = 11
         /// El panel que se abre crece desde este tamaño (desde su mosaico), y al abrirse se deja un poco de aire arriba.
-        static let panelFrom: CGFloat = 0.92, scrollAnchor: CGFloat = 0.04
+        static let panelFrom: CGFloat = 0.92
+        /// El cajón cerrado mide lo que trae; si pasa de esta parte de la pantalla, abre grande.
+        static let fitMax: CGFloat = 0.92
+        /// La barra del cajón (el asa y «Filtros · Listo»).
+        static let sheetBar: CGFloat = 58
         /// La fila «Más filtros»: su alto y el círculo de cada ícono.
         static let moreRow: CGFloat = 60, moreIcon: CGFloat = 30
         static let tickFaint = DS.text.opacity(0.22), tickMid = DS.text.opacity(0.36), tickStrong = DS.text.opacity(0.62)   // ds-exception: las rayitas de la regla, de tenue a firme

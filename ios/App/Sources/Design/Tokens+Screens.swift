@@ -100,6 +100,8 @@ extension DS {
         /// El nombre en la barra, entre ‹ y los botones de la derecha: lo que ocupa ‹ y lo que ocupa cada botón de la cápsula
         /// (el nombre ya no se mete debajo de ellos; 31 oct 2026).
         static let barTitleLeading: CGFloat = 72, barButton: CGFloat = 50, barGroupPadding: CGFloat = 28
+        /// Recogido el arte, en la barra va el logo de la serie o película (31 oct 2026): su alto (el ancho lo dan ‹ y los botones).
+        static let barLogo: CGFloat = 36   // los logos traen ~25 % de margen vacío arriba y abajo: se ve de unos 20 pt
         /// El ancho máximo de la ficha en ventanas anchas (iPad, Mac): a todo lo ancho, en horizontal el arte llenaba la
         /// pantalla y las acciones quedaban abajo, fuera de la vista. El iPhone (440 pt como mucho) no lo alcanza.
         static let readableWidth: CGFloat = 720

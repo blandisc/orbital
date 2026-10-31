@@ -206,8 +206,8 @@ struct FilterArt: View {
                 Image(systemName: page.symbol).font(symbolFont).foregroundStyle(page.hue)
             }
         }
-        .frame(height: height, alignment: .leading)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: height)
+        .frame(maxWidth: .infinity)
         .accessibilityHidden(true)
     }
 }
@@ -227,29 +227,28 @@ struct FilterTile: View {
         let value = FilterText.value(page, context)
         let on = value != nil
         let shape = RoundedRectangle(cornerRadius: mini ? DS.Radius.md : DS.Radius.lg, style: .continuous)
-        let art = page == .genre ? Tmdb.genres.filter { context.filter.genres.contains($0.slug) }.prefix(3).map { FilterCatalog.genreImage($0.slug) } : []
+        let art = page == .genre ? Tmdb.genres.filter { context.filter.genres.contains($0.slug) }.prefix(DS.Filter.genreMosaicMax).map { FilterCatalog.genreImage($0.slug) } : []
         Button(action: action) {
-            VStack(alignment: .leading, spacing: mini ? 0 : DS.Space.s1) {
-                if art.isEmpty { FilterArt(page: page, context: context, mini: mini) }
-                Spacer(minLength: 0)
+            // Centrado (Fernando, 31 oct 2026): el dibujo, el nombre y lo elegido al centro del mosaico.
+            VStack(spacing: mini ? DS.Space.s1 / 2 : DS.Space.s1) {
+                if art.isEmpty { FilterArt(page: page, context: context, mini: mini) } else { Spacer(minLength: 0) }
                 // Sobre el arte de los géneros el texto va en papel (se lee igual en claro y en oscuro).
                 page.title.recipe(mini ? .caption : .footnote, color: art.isEmpty ? DS.text : DS.paper).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 (value ?? Text("Cualquiera")).recipe(.caption, color: !art.isEmpty ? DS.paper : on ? DS.text : DS.textMuted).lineLimit(1)
             }
-            .padding(mini ? DS.Space.s2 : DS.Space.s3)
-            .frame(maxWidth: .infinity, minHeight: mini ? DS.Filter.miniTileHeight : DS.Filter.tileHeight, alignment: .leading)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, mini ? DS.Space.s2 : DS.Space.s3)
+            .padding(.vertical, mini ? DS.Space.s2 : DS.Space.s3)
+            .frame(maxWidth: .infinity, minHeight: mini ? DS.Filter.miniTileHeight : DS.Filter.tileHeight)
             .background {
                 ZStack {
                     open || mini ? DS.surfaceRaised : DS.surface
                     if !art.isEmpty {
-                        HStack(spacing: 0) {
-                            ForEach(art, id: \.self) { name in
-                                Color.clear.overlay { Image(name).resizable().scaledToFill() }.clipped()
-                            }
-                        }
+                        GenreMosaic(images: art)
                         ArtVeil(strength: .deep)
                     }
                 }
+                .animation(DS.Motion.base(false), value: art)
             }
             .clipShape(shape)
             .overlay(shape.strokeBorder(on || open ? DS.text : .clear, lineWidth: open ? DS.Size.hairline * 4 : DS.Size.hairline * 2))
@@ -261,6 +260,25 @@ struct FilterTile: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(on ? .isSelected : [])
+    }
+}
+
+/// Los géneros elegidos como mosaico de fondo (hasta seis): uno solo llena el mosaico; dos o tres, en columnas; de cuatro a
+/// seis, en dos renglones (el de arriba con uno menos si son impares, como un mosaico y no una fila apilada).
+struct GenreMosaic: View {
+    let images: [String]
+    var body: some View {
+        let rows: [[String]] = images.count <= 3 ? [images] : [Array(images.prefix(images.count / 2)), Array(images.dropFirst(images.count / 2))]
+        VStack(spacing: DS.Size.hairline * 2) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: DS.Size.hairline * 2) {
+                    ForEach(row, id: \.self) { name in
+                        Color.clear.overlay { Image(name).resizable().scaledToFill() }.clipped()
+                    }
+                }
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -304,8 +322,8 @@ struct MiniQuadrant: View {
     }
 }
 
-/// El logo real de un estudio (viene con la app, `Assets/Studios`, sacado de TMDB): de un solo color, el del texto (blanco en
-/// oscuro, negro en claro). Sin logo, su nombre.
+/// El logo real de un estudio, a color (viene con la app, `Assets/Studios`, sacado de TMDB), sobre una plaquita de papel para
+/// que se lea igual el negro de A24 que el rojo de Marvel. Sin logo, su nombre.
 struct StudioLogo: View {
     let id: Int
     let name: String
@@ -313,7 +331,9 @@ struct StudioLogo: View {
     var body: some View {
         Group {
             if UIImage(named: "studio-\(id)") != nil {
-                Image("studio-\(id)").renderingMode(.template).resizable().scaledToFit().foregroundStyle(DS.text)
+                Image("studio-\(id)").renderingMode(.original).resizable().scaledToFit()
+                    .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
+                    .background(DS.paper, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             } else {
                 Text(verbatim: name).recipe(.caption, color: DS.text).fontWeight(.bold).lineLimit(1)
             }
@@ -485,7 +505,8 @@ struct FilterChoice: View {
                 title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
                 if let detail { detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }
             }
-            .padding(.horizontal, DS.Space.s1)
+            .padding(.horizontal, DS.Space.s2)
+            .padding(.vertical, DS.Space.s3)   // aire parejo arriba y abajo (el detalle ya no toca la orilla)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.choiceHeight)
             .background(selected ? DS.Filter.selectedFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(selected ? DS.text : .clear, lineWidth: DS.Size.hairline * 2))
@@ -511,7 +532,8 @@ struct FilterLogoChoice<Logo: View>: View {
                 logo().frame(height: DS.Filter.awardIcon)
                 title.recipe(.caption, color: selected ? DS.text : DS.textMuted).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
-            .padding(DS.Space.s2)
+            .padding(.horizontal, DS.Space.s2)
+            .padding(.vertical, DS.Space.s3)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.logoTile)
             .background(selected ? DS.Filter.selectedFill : DS.surface, in: shape)
             .overlay(shape.strokeBorder(selected ? DS.text : .clear, lineWidth: DS.Size.hairline * 2))
@@ -523,32 +545,56 @@ struct FilterLogoChoice<Logo: View>: View {
     }
 }
 
-/// «Qué tan conocida»: el cuadro fama × calificación. Arriba lo bien calificado, a la derecha lo famoso; cada esquina es
-/// una forma de buscar (Joyas ocultas, Las de siempre, Para pocos, Taquilleras). Tocar la elegida la quita.
+/// «Qué tan conocida»: el cuadro fama × calificación, como cuadrantes (Fernando, 31 oct 2026: «más que cuatro botones,
+/// cuadrantes»). Arriba lo bien calificado, a la derecha lo famoso; las cuatro esquinas van pegadas, con una rayita entre
+/// ellas como ejes. La elegida se pinta en el rosa de este filtro; tocarla otra vez la quita.
 struct FameQuadrant: View {
     let selected: AdvancedFilter.Fame
     let pick: (AdvancedFilter.Fame) -> Void
 
     var body: some View {
-        VStack(spacing: DS.Space.s2) {
-            HStack(spacing: DS.Space.s2) {
-                cell(.gems, "sparkles", Text("Joyas ocultas"), Text("Muy buenas, poco vistas"))
-                cell(.classics, "crown", Text("Las de siempre"), Text("Muy buenas y famosas"))
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Label("Mejor calificada", systemImage: "arrow.up").recipe(.caption, color: DS.textMuted)
+            Grid(horizontalSpacing: DS.Size.hairline * 2, verticalSpacing: DS.Size.hairline * 2) {
+                GridRow {
+                    cell(.gems, "sparkles", Text("Joyas ocultas"), Text("Muy buenas, poco vistas"))
+                    cell(.classics, "crown", Text("Las de siempre"), Text("Muy buenas y famosas"))
+                }
+                GridRow {
+                    cell(.niche, "eye.slash", Text("Para pocos"), Text("Rarezas y culto"))
+                    cell(.blockbusters, "ticket", Text("Taquilleras"), Text("Las que llenaron salas"))
+                }
             }
-            HStack(spacing: DS.Space.s2) {
-                cell(.niche, "eye.slash", Text("Para pocos"), Text("Rarezas y culto"))
-                cell(.blockbusters, "ticket", Text("Taquilleras"), Text("Las que llenaron salas"))
-            }
+            .background(DS.hairline)   // la rayita entre cuadrantes: los ejes
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             HStack {
                 Text("Menos conocida").recipe(.caption, color: DS.textMuted)
                 Spacer()
-                Image(systemName: "arrow.right").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
-                Text("Más famosa").recipe(.caption, color: DS.textMuted)
+                HStack(spacing: DS.Space.s1) {
+                    Text("Más famosa").recipe(.caption, color: DS.textMuted)
+                    Image(systemName: "arrow.right").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
+                }
             }
         }
     }
 
     private func cell(_ fame: AdvancedFilter.Fame, _ symbol: String, _ title: Text, _ detail: Text) -> some View {
-        FilterChoice(symbol: symbol, title: title, detail: detail, hue: DS.Filter.rose, selected: selected == fame) { pick(selected == fame ? .any : fame) }
+        let on = selected == fame
+        return Button { pick(on ? .any : fame) } label: {
+            VStack(spacing: DS.Space.s1) {
+                Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(on ? DS.Filter.rose : DS.textMuted)
+                title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            }
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s3)
+            .frame(maxWidth: .infinity, minHeight: DS.Filter.quadrantCell)
+            .background(on ? DS.Filter.roseFill : DS.surface)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: on)
+        .accessibilityAddTraits(on ? .isSelected : [])
+        .accessibilityIdentifier("filter-fame-\(fame.rawValue)")
     }
 }

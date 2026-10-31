@@ -194,7 +194,7 @@ final class NewFlowsRegressionUITests: XCTestCase {
         XCTAssertTrue(done.waitForExistence(timeout: 10), "el calendario para elegir el día")
         shot("otro-dia")
         done.tap()
-        XCTAssertTrue(app.otherElements["repisa-moment"].waitForExistence(timeout: 10) || app.buttons["repisa-moment"].exists, "a la repisa")
+        XCTAssertTrue(any("repisa-moment").waitForExistence(timeout: 10), "a la repisa")
     }
 
     /// En la ficha de una serie, marcar un episodio abre «¿Cuándo la viste?»; si faltan los anteriores, pregunta si también

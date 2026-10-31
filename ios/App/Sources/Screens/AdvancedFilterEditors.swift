@@ -30,7 +30,7 @@ struct FilterEditor: View {
     private var prompt: Text {
         switch page {
         case .genre: Text("Toca para elegir"); case .era: Text("Arrastra la ventana o toca una década"); case .length: Text("¿Cuánto tiempo tienes?")
-        case .rating: Text("La calificación de TMDB, de 0 a 10"); case .fame: Text("Arriba lo mejor calificado; a la derecha, lo más famoso")
+        case .rating: Text("La calificación de TMDB, de 0 a 10"); case .fame: Text("Toca una esquina del cuadro")
         case .place: Text("Tus plataformas en tu país"); case .origin: Text("Primero la región, luego el país")
         case .awards: Text("Sus ganadores"); case .studio: Text("Toca los que quieras")
         }

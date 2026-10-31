@@ -32,8 +32,16 @@ struct WatchedWhenSheet: View {
     @State private var asking: WatchedWhen?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+        // Sin calendario, a la medida exacta (sin aire muerto abajo); con el calendario abierto no cabe: hoja grande que se desliza.
+        if calendar {
+            ScrollView { content }.presentationDetents([.large]).presentationDragIndicator(.visible)
+        } else {
+            content.fittedSheet()
+        }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
                 HStack(spacing: DS.Space.s3) {
                     if let poster {
                         PosterView(url: poster, title: "", maxPoints: DS.Watched.poster)
@@ -87,11 +95,9 @@ struct WatchedWhenSheet: View {
                 Label("Se guarda en tu historial de Trakt", systemImage: "arrow.triangle.2.circlepath")
                     .recipe(.caption, color: DS.textMuted).frame(maxWidth: .infinity)
             }
-            .dsSheetContent()
-            .animation(DS.Motion.base(reduceMotion), value: calendar)
-            .animation(DS.Motion.base(reduceMotion), value: asking)
-        }
-        .fittedScrollSheet()   // a la medida de lo que trae, sin aire muerto abajo (crece al abrir el calendario)
+        .dsSheetContent()
+        .animation(DS.Motion.base(reduceMotion), value: calendar)
+        .animation(DS.Motion.base(reduceMotion), value: asking)
         .accessibilityElement(children: .contain)   // cada opción conserva su identificador
         .accessibilityIdentifier("watched-when")
     }

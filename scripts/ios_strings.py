@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Mejor calificada": "Better rated", "Ocultar lo que ya viste": "Hide what you've watched", "Toca una esquina del cuadro": "Tap a corner of the grid",
     # Pulido del 31 oct: el cajón del filtro, el mazo con «Tu match perfecto» y el menú de la temporada.
     "%@ con algo puesto": "%@ in use", "%lld con algo puesto": "%lld in use", "Menos filtros": "Fewer filters", "Más filtros": "More filters",
     "Más filtros: origen, premios y estudios": "More filters: origin, awards and studios", "Origen, premios y estudios": "Origin, awards and studios",
