@@ -106,7 +106,9 @@ struct DSChapterLabel: View {
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             if let symbol { Image(systemName: symbol).font(DS.TextRecipe.label.font).foregroundStyle(DS.orbitalBlue).accessibilityHidden(true) }
-            DSGroupLabel(title: label).lineLimit(1).fixedSize()
+            // Sin `fixedSize`: con letra de accesibilidad el rótulo en mayúsculas era más ancho que la pantalla y ensanchaba toda
+            // la página (Explorar). Gana el lugar a la línea y, si no cabe, baja a un segundo renglón.
+            DSGroupLabel(title: label).lineLimit(2).fixedSize(horizontal: false, vertical: true).layoutPriority(1)
             Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)
         }
     }

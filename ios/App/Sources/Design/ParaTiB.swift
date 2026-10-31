@@ -162,18 +162,25 @@ struct MosaicCover: View {
 struct MatchTeaser: View {
     let posters: [String]
     let onOpen: () -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
+        // Con letra de accesibilidad, el abanico arriba y el texto debajo: al lado, «¿Qué vemos» no cabía y ensanchaba toda
+        // la página de Explorar (el botón del mosaico quedaba fuera de la orilla; ChaosRegressionUITests, letra máxima).
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s4))
+                                                  : AnyLayout(HStackLayout(spacing: DS.Space.s4))
         Button(action: onOpen) {
-            HStack(spacing: DS.Space.s4) {
+            layout {
                 PosterFan(posters: posters, width: DS.ParaTiB.deckPoster)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Eyebrow(text: Text("Encuentra tu match perfecto"), reason: true)
                     Text("¿Qué vemos hoy?").recipe(.section)
                     Text("A la derecha la guardas, a la izquierda no.").recipe(.footnote, color: DS.textMuted)
                 }
+                .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(DS.Space.s4)
             .dsCard(.card)
             .contentShape(Rectangle())
