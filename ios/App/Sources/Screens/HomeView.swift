@@ -13,6 +13,8 @@ struct HomeView: View {
     @State private var channels = ModelObserver(ChannelsModel(AppEnvironment.shared.services))
     @State private var tint = ArtTint()
     @State private var openTitle: TitleRoute?
+    /// Las sugerencias que marcaste «No me interesa» (se van ya; Trakt y tu Orbital lo saben al momento).
+    @State private var dismissedPicks: Set<String> = []
     /// La tarjeta al frente de la portada (su lugar en la fila).
     @State private var heroSlot: Int?
     /// El Top 10 de Netflix: series (por omisión) o películas.
@@ -29,6 +31,7 @@ struct HomeView: View {
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.openRemote) private var openRemote
     @Environment(\.scenePhase) private var scenePhase
 
@@ -48,7 +51,7 @@ struct HomeView: View {
         let kind = model.spotlightKind
         let fits: (String) -> Bool = { kind == nil || $0 == kind }
         let continuing = model.continueWatching.filter { fits($0.kind) }
-        let picks = model.forYouPicks.filter { fits($0.kind) }
+        let picks = model.forYouPicks.filter { fits($0.kind) && !dismissedPicks.contains($0.imdb) }
         let pending = model.traktPending.filter { fits($0.kind) }
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
@@ -107,7 +110,8 @@ struct HomeView: View {
                 // Tus recomendaciones de Trakt.
                 if !picks.isEmpty {
                     Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt con lo que ves"), source: .trakt, reflected: true) {
-                        ForEach(picks) { s in TitleLink(route: s.route) }
+                        // Mantener el dedo abre el menú, como en Explorar (antes no había menú: al soltar se abría la ficha).
+                        ForEach(picks) { s in TitleLink(route: s.route).contextMenu { SuggestionActions(suggestion: s, onDismiss: dismissPick) } }
                     }
                 }
                 HomeBecause(model: because.model, kind: kind)
@@ -233,6 +237,16 @@ struct HomeView: View {
         let model = home.model
         SuggestionActions(suggestion: s, list: list, onWatched: { model.setShown($0.imdb, in: list, shown: false) }) { s in
             Task { await env.remove(s, from: list) { shown in model.setShown(s.imdb, in: list, shown: shown) } }
+        }
+    }
+
+    /// «No me interesa» en una sugerencia: se quita ya y deja de sugerirse en el iPhone y en tu Orbital.
+    private func dismissPick(_ s: Suggestion) {
+        dismissedPicks.insert(s.imdb)
+        let services = env.services
+        Task {
+            await services.forYou.dismiss(s.imdb)
+            if services.orbital.isConfigured { await services.forYouRemote.dismiss(s.imdb) }
         }
     }
 
@@ -428,11 +442,14 @@ struct HomeView: View {
         let movies = pageKind == "movie" ? true : pageKind == "series" ? false : (topMovies && !films.isEmpty || series.isEmpty)
         let items = movies ? films : series
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .sectionTitle) {
+            // Con letra de accesibilidad la pastilla baja bajo el título (al lado lo empujaba fuera de la pantalla).
+            let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
+                                                      : AnyLayout(HStackLayout(alignment: .sectionTitle))
+            layout {
                 DSSectionHead(title: Text("Top 10 en \(service.name)"),
                               eyebrow: service.weekly ? Text("Esta semana en tu país") : Text("Lo más visto hoy · JustWatch"))
-                    .lineLimit(1).minimumScaleFactor(DS.Size.titleShrink)
-                Spacer(minLength: DS.Space.s2)
+                    .lineLimit(typeSize.isAccessibilitySize ? nil : 1).minimumScaleFactor(DS.Size.titleShrink)
+                if !typeSize.isAccessibilitySize { Spacer(minLength: DS.Space.s2) }
                 // La pastilla junto al título, con ícono (Fernando, 31 oct 2026). Siempre ocupa su lugar (oculta si el servicio
                 // solo tiene uno de los dos): al cambiar de servicio nada brinca.
                 DSKindFilter(kind: Binding(get: { movies ? "movie" : "series" }, set: { topMovies = $0 == "movie" }), includeAll: false, compact: true)

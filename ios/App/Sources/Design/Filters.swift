@@ -31,6 +31,7 @@ struct DSKindFilter: View {
     var compact = false
     /// La rayita de la elegida: blanca (lo elegido) o turquesa en Inicio (Fernando, 31 oct 2026: Inicio se queda como estaba).
     var mark: Color = DS.text
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         if compact {
@@ -41,8 +42,11 @@ struct DSKindFilter: View {
                     Button { kind = option.0 } label: {
                         HStack(spacing: DS.Space.s1) {
                             Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(on ? .fill : .none)
-                            Text(option.1).lineLimit(1)
+                            // Con letra de accesibilidad solo el ícono (el nombre va para VoiceOver): con el texto la
+                            // pastilla medía más que la pantalla y empujaba todo Inicio fuera de la orilla.
+                            if !typeSize.isAccessibilitySize { Text(option.1).lineLimit(1) }
                         }
+                        .accessibilityLabel(Text(option.1))
                         .font(DS.TextRecipe.caption.font.weight(.semibold))   // chica: el título de al lado cabe en un renglón
                         .foregroundStyle(on ? DS.text : DS.textMuted)
                         .padding(.horizontal, DS.Space.s2)
@@ -63,7 +67,10 @@ struct DSKindFilter: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel(Text("Series o películas"))
         } else {
+            // Un grupo con su nombre; cada pestaña conserva el suyo (sin `.contain`, VoiceOver leía las tres como «Series o
+            // películas»).
             DSTextTabs(options: options.map { DSTextTabs.Option(id: $0.0, title: Text($0.1), symbol: KindGlyph.symbol($0.0)) }, selection: $kind, mark: mark)
+                .accessibilityElement(children: .contain)
                 .accessibilityLabel(Text("Series o películas"))
         }
     }
@@ -121,6 +128,18 @@ struct DSTextTabs<ID: Hashable>: View {
     var mark: Color = DS.text
 
     var body: some View {
+        // Si con la letra grande no caben los nombres, solo los íconos (cada uno con su nombre para VoiceOver): nunca se sale
+        // de la pantalla (antes «T… Pe…» quedaba cortado por la orilla izquierda).
+        ViewThatFits(in: .horizontal) {
+            tabs(titles: true)
+            tabs(titles: options.allSatisfy { $0.symbol == nil })
+        }
+        .shadow(DS.Elevation.low)
+        .animation(DS.Motion.base(false), value: selection)
+        .sensoryFeedback(.selection, trigger: selection)
+    }
+
+    private func tabs(titles: Bool) -> some View {
         HStack(spacing: DS.Space.s5) {
             ForEach(Array(options.enumerated()), id: \.offset) { _, option in
                 let on = selection == option.id
@@ -128,8 +147,9 @@ struct DSTextTabs<ID: Hashable>: View {
                     VStack(spacing: DS.Space.s1) {
                         HStack(spacing: DS.Space.s1) {
                             if let symbol = option.symbol { Image(systemName: symbol).symbolVariant(on ? .fill : .none) }
-                            option.title.lineLimit(1)
+                            if titles { option.title.lineLimit(1) }
                         }
+                        .accessibilityLabel(option.title)
                         .font(DS.TextRecipe.cardTitle.font.weight(on ? .bold : .medium))
                         .foregroundStyle(on ? DS.text : DS.textMuted)
                         Capsule().fill(on ? mark : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
@@ -141,8 +161,5 @@ struct DSTextTabs<ID: Hashable>: View {
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
-        .shadow(DS.Elevation.low)
-        .animation(DS.Motion.base(false), value: selection)
-        .sensoryFeedback(.selection, trigger: selection)
     }
 }

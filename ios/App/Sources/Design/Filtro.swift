@@ -432,6 +432,7 @@ struct FilterDoor: View {
     let open: (FilterPage?) -> Void
     /// «Limpiar»: quita todos los filtros desde aquí, sin abrir el cajón.
     var clear: () -> Void = {}
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
@@ -460,7 +461,8 @@ struct FilterDoor: View {
                         .accessibilityIdentifier("browse-filters-clear")
                 }
             }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
+            // Dos columnas con letra de accesibilidad: en tres el dibujo se encimaba con el nombre («Cu…»).
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: typeSize.isAccessibilitySize ? 2 : 3), spacing: DS.Space.s2) {
                 ForEach(FilterPage.main) { page in
                     FilterTile(page: page, context: context, mini: true) { open(page) }
                         .accessibilityIdentifier("browse-filter-\(page.rawValue)")
