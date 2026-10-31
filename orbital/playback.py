@@ -73,7 +73,9 @@ OSD_STYLE = [
     "--osd-font=Segoe UI Variable Display Semibold", "--osd-font-size=38", "--osd-color=#F5F4F0",
     "--osd-border-size=0", "--osd-shadow-offset=2", "--osd-shadow-color=#99000000",
     "--sub-font=Segoe UI Variable Text Semibold", "--sub-font-size=44", "--sub-border-size=2.5",
-    "--sub-color=#F5F4F0", "--sub-border-color=#CC000000", "--sub-margin-y=56",
+    # Más abajo que antes (56; Fernando, 31 oct 2026): tapan menos la imagen y siguen dentro del margen de la tele (34 de 720,
+    # ~4,7 % del alto, contra el 4 % de «Márgenes de la TV»).
+    "--sub-color=#F5F4F0", "--sub-border-color=#CC000000", "--sub-margin-y=34",
 ]
 
 
