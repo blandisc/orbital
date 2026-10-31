@@ -18,6 +18,17 @@
 .home__hero--swap > * { animation: fade-in var(--duration-enter) var(--ease-out); }
 .home__empty { align-self: flex-start; display: flex; flex-direction: column; gap: var(--space-2); max-width: 40rem; padding: var(--inset-feature); background: var(--color-glass); box-shadow: var(--edge-glass); }
 
+/* El próximo estreno, a la derecha de «A continuación»: discreto, de vidrio y en una línea (la fecha siempre se ve). */
+.home__upnext-head { justify-content: space-between; }
+.home__next {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-1) var(--space-4) var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
+  color: var(--color-text-muted); font-size: var(--type-secondary);
+}
+.home__next .icon { flex: none; width: var(--icon-sm); height: var(--icon-sm); fill: none; stroke: currentColor; stroke-width: var(--stroke-fine); stroke-linecap: round; stroke-linejoin: round; }
+.home__next-text { min-width: 0; max-width: 28rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text); }
+.home__next-when { flex: none; white-space: nowrap; }
+
 /* Una fila del Inicio: su título y la pista que se desliza de lado (aire para lo que crece la enfocada). */
 .home__row { flex: none; display: flex; flex-direction: column; gap: var(--layout-title-to-content); }
 .home__row[hidden] { display: none; }

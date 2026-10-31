@@ -1,4 +1,5 @@
-import { h, mount } from "../core/dom.js";
+import { h, mount, svg } from "../core/dom.js";
+import { ICONS } from "../core/icons.js";
 import { dragArea, dragScroll } from "../core/swipe.js";
 import { buildHome } from "../core/home.js";
 import { settler } from "../core/motion.js";
@@ -90,7 +91,10 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     if (!queue.length) {
       targets.set("feature", { kind: "empty", setup: !model.consoles.length && !hidden, unhide: !model.consoles.length && hidden > 0 });
     }
-    mount(upnextHead, queue.length > 0 && SectionHead("A continuación", { meta: nextUp ? [nextUp.title, nextUp.episode, nextUp.when].filter(Boolean).join(" · ") : null }));
+    // A la derecha del título, el próximo estreno de tus series (como el widget del iPhone): «Severance T2 E7 · Hoy · 8:00 p. m.».
+    const upcoming = nextUp && h("span", { class: "home__next" }, svg(ICONS.calendar),
+      h("span", { class: "home__next-text" }, [nextUp.title, nextUp.episode].filter(Boolean).join(" ")), h("span", { class: "home__next-when" }, `· ${nextUp.when}`));
+    mount(upnextHead, queue.length > 0 && SectionHead("A continuación", { end: upcoming, className: "home__upnext-head" }));
     mount(upnextTrack, queue.map((item, i) => {
       targets.set(`card:${i}`, { kind: "item", item });
       // Solo la enfocada dice su nombre (debajo); el logo del título va sobre el arte.
