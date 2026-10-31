@@ -166,6 +166,7 @@ struct BrowseView: View {
             if Demo.isOn, let sample = Demo.value(after: "-demo-filter") {
                 var f = AdvancedFilter()
                 if sample == "awards" { f.awards = ["oscar", "palm"]; f.years = 1990...1999; f.format = .movie }
+                else if sample == "recent" { f.years = f.releases; f.format = .movie }
                 else { f.format = .series; f.seriesStatus = .airing; f.genres = ["crimen", "drama"]; f.years = 2010...2019; f.minRating = 7.5; f.fame = .gems; f.countries = ["KR", "JP"]; f.length = .before }
                 env.advancedFilter.filter = f
             }

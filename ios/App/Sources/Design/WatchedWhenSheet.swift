@@ -52,8 +52,6 @@ struct WatchedWhenSheet: View {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         (alreadyWatched ? Text("Ya la viste") : asking != nil ? Text("¿También los anteriores?") : Text("¿Cuándo la viste?")).recipe(.cardTitle)
                         Text("\(title) · \(detail)").recipe(.footnote, color: DS.textMuted).lineLimit(1)
-                        // De dónde y a dónde: arriba, junto al título (abajo dejaba un renglón de aire; 31 oct 2026).
-                        Label("Se guarda en tu historial de Trakt", systemImage: "arrow.triangle.2.circlepath").recipe(.caption, color: DS.textMuted)
                     }
                 }
                 if alreadyWatched {
@@ -94,8 +92,11 @@ struct WatchedWhenSheet: View {
                     WatchedOption(symbol: "questionmark.circle", title: Text("No sé cuándo"), detail: Text("Vista, sin fecha")) { choose(.unknown) }
                         .accessibilityIdentifier("watched-unknown")
                 }
-            }
-        .dsSheetContent(bottom: false)   // abajo ya está el margen del iPhone: sin aire extra (Fernando, 31 oct 2026)
+                Label("Se guarda en tu historial de Trakt", systemImage: "arrow.triangle.2.circlepath")
+                .recipe(.caption, color: DS.textMuted).frame(maxWidth: .infinity)
+        }
+        // La leyenda de Trakt al pie y, debajo, solo el margen del iPhone (sin el aire extra de las hojas; Fernando, 31 oct 2026).
+        .dsSheetContent(bottom: false)
         .animation(DS.Motion.base(reduceMotion), value: calendar)
         .animation(DS.Motion.base(reduceMotion), value: asking)
         .accessibilityElement(children: .contain)   // cada opción conserva su identificador

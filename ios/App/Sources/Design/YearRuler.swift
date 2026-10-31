@@ -56,8 +56,9 @@ struct YearRuler: View {
             .overlay(shape.strokeBorder(DS.Filter.gold, lineWidth: DS.Size.hairline * 4))
             .overlay(alignment: .leading) { handle.offset(x: -DS.Filter.handleWidth / 2) }
             .overlay(alignment: .trailing) { handle.offset(x: DS.Filter.handleWidth / 2) }
-            .frame(width: max(right - left, DS.Filter.handleWidth), height: DS.Filter.rulerWindow)
-            .offset(x: left, y: -DS.Space.s1)
+            // Con uno o dos años la ventana tiene un ancho mínimo (las orillas no se enciman) y no se sale de la regla.
+            .frame(width: max(right - left, DS.Filter.windowMin), height: DS.Filter.rulerWindow)
+            .offset(x: min(left, width - max(right - left, DS.Filter.windowMin)), y: -DS.Space.s1)
             .shadow(color: DS.Filter.goldGlow, radius: DS.Filter.glowRadius)
             .animation(drag == nil ? DS.Motion.base(reduceMotion) : nil, value: r)
     }

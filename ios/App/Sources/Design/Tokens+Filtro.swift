@@ -31,6 +31,8 @@ extension DS {
         /// El velo y el brillo dorados de la ventana de Época.
         static let goldFill = gold.opacity(0.16), goldGlow = gold.opacity(0.35)   // ds-exception: velo y brillo del dorado de la regla
         static let dot: CGFloat = 7
+        /// Lo más angosto de la ventana de la regla chiquita (un año o dos se leen igual).
+        static let miniWindow: CGFloat = 12, windowMin: CGFloat = 32
         /// «Qué tan conocida»: el alto de cada cuadrante y el velo rosa del elegido. Género: cuántos géneros caben en su mosaico.
         static let quadrantCell: CGFloat = 96, genreMosaicMax = 6
         static let roseFill = rose.opacity(0.2)   // ds-exception: el velo del cuadrante elegido, en el rosa de este filtro

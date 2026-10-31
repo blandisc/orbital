@@ -177,7 +177,7 @@ struct AdvancedFilterSheet: View {
                     .accessibilityIdentifier("filter-clear")
             }
             Button(action: onResults) {
-                Text(model.filter.isEmpty ? "Ver resultados" : "Ver resultados · \(model.filter.activeCount)").frame(maxWidth: .infinity)
+                Text("Ver resultados").frame(maxWidth: .infinity)   // sin número: no se sabe cuántos van a salir
             }
             .dsSolidPrimaryButton().controlSize(.large)   // el principal sólido de la app: se lee siempre
             .accessibilityIdentifier("filter-results")

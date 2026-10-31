@@ -300,6 +300,7 @@ struct MiniRuler: View {
             let first = AdvancedFilter.firstYear
             let span = CGFloat(max(last - first, 1))
             let x = { (y: Int) in CGFloat(min(max(y, first), last) - first) / span * geo.size.width }
+            let windowWidth = max(x(years.upperBound + 1) - x(years.lowerBound), DS.Filter.miniWindow)
             ZStack(alignment: .leading) {
                 ForEach(Array(stride(from: first, through: last, by: 10)), id: \.self) { d in
                     Rectangle().fill(DS.Filter.tickMid).frame(width: DS.Size.hairline * 2, height: geo.size.height / 2).offset(x: x(d))
@@ -307,8 +308,9 @@ struct MiniRuler: View {
                 RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                     .fill(DS.Filter.goldFill)
                     .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(DS.Filter.gold, lineWidth: DS.Size.hairline * 3))
-                    .frame(width: max(x(years.upperBound + 1) - x(years.lowerBound), DS.Filter.handleWidth), height: geo.size.height)
-                    .offset(x: x(years.lowerBound))
+                    // Siempre visible y dentro de la regla (los años muy recientes, como Estrenos, quedaban fuera de la orilla).
+                    .frame(width: windowWidth, height: geo.size.height)
+                    .offset(x: min(x(years.lowerBound), geo.size.width - windowWidth))
             }
             .frame(maxHeight: .infinity)
         }
