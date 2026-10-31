@@ -131,7 +131,7 @@ extension PlayerScreen {
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
                         drag.verticalKind = kind
                         if kind == .brightness { drag.brightnessAtDragStart = ScreenBrightness.value }
-                        else { drag.volumeAtDragStart = Double(AVAudioSession.sharedInstance().outputVolume) }
+                        else { drag.volumeAtDragStart = Double(AVAudioSession.sharedInstance().outputVolume); systemVolume.reset() }
                     // Buscar arrastrando sobre el video ya no existe (29 oct: se buscaba sin querer al tocar cualquier lado, en los dos
                     // sentidos): adelante y atrás solo desde la barra de avance (o ±10). Únicamente el iPod, que no tiene barra, lo conserva.
                     case .horizontal where ipod != nil:
@@ -151,7 +151,7 @@ extension PlayerScreen {
                     let travel = PlayerGestures.verticalTravel(videoHeight: Double(videoRect(in: size).height), screenHeight: Double(size.height),
                                                                share: DS.Gesture.verticalTravelShare, minimum: DS.Gesture.verticalTravelMin)
                     let value2 = PlayerGestures.verticalValue(start: start, dragHeight: dy, travel: travel)
-                    if kind == .brightness { ScreenBrightness.value = value2 } else { requestedVolume = Float(value2) }
+                    if kind == .brightness { ScreenBrightness.value = value2 } else { systemVolume.set(Float(value2)) }
                     drag.indicator = (kind, kind == .brightness ? "sun.max.fill" : "speaker.wave.2.fill", value2)
                     if !drag.indicatorVisible { drag.indicatorHideTask?.cancel(); withAnimation(DS.Motion.base(reduceMotion)) { drag.indicatorVisible = true } }
                 case .horizontal:

@@ -122,7 +122,7 @@ struct PlayerScreen: View {
 
     // MARK: gestos como Infuse (brillo, volumen, buscar arrastrando, 2×)
     @GestureState var dragging = false
-    @State var requestedVolume: Float?
+    @State var systemVolume = SystemVolume()
     /// El estado del arrastre (brillo, volumen, buscar, 2×), aparte de la pantalla: `PlayerDragState`.
     @State var drag = PlayerDragState()
     @State var padlock = PlayerLockState()
@@ -203,7 +203,7 @@ struct PlayerScreen: View {
             .ignoresSafeArea(edges: landscape ? .all : [])   // en vertical el video respeta la isla y el indicador de inicio
             .onGeometryChange(for: CGSize.self) { $0.size } action: { layoutSize = $0 }
             if padlock.locked { lockLayer } else { gestureLayer(model) }
-            SystemVolumeControl(volume: $requestedVolume) { showHardwareVolume($0) }
+            SystemVolumeControl(volume: systemVolume) { showHardwareVolume($0) }
                 .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
                 .allowsHitTesting(false).accessibilityHidden(true)
             // Cargando o reconectando: al centro del video, no de la pantalla (en vertical los controles van bajo el video

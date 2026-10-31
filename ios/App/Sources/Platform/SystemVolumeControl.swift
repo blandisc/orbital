@@ -4,12 +4,12 @@ import AVFoundation
 
 /// Pone el volumen del sistema sin que aparezca el HUD nativo encima del video: la única vía documentada es un
 /// `MPVolumeView` (minúsculo, fuera de la vista) cuyo control interno se mueve a mano. Es la misma vía que usan
-/// Infuse y VLC. `volume` se pone a un valor para pedir el cambio; en cuanto se aplica, vuelve a `nil`.
+/// Infuse y VLC. El volumen se pide con `SystemVolume.set` (fuera del estado de SwiftUI).
 ///
 /// Como el HUD de iOS no sale, los botones de volumen del iPhone avisan por `onChange` (con el nivel nuevo, 0…1) para que el
 /// reproductor enseñe su propio indicador.
 struct SystemVolumeControl: UIViewRepresentable {
-    @Binding var volume: Float?
+    let volume: SystemVolume
     var onChange: (Float) -> Void = { _ in }
     /// Lo mínimo para seguir «visible» para iOS.
     private static let nearlyInvisible: CGFloat = 0.0001
@@ -22,6 +22,7 @@ struct SystemVolumeControl: UIViewRepresentable {
         view.alpha = Self.nearlyInvisible
         view.isUserInteractionEnabled = false
         context.coordinator.observe()
+        DispatchQueue.main.async { volume.slider = view.subviews.compactMap { $0 as? UISlider }.first }   // el control interno llega después
         return view
     }
 
@@ -49,8 +50,26 @@ struct SystemVolumeControl: UIViewRepresentable {
 
     func updateUIView(_ view: MPVolumeView, context: Context) {
         context.coordinator.onChange = onChange
-        guard let volume, let slider = view.subviews.compactMap({ $0 as? UISlider }).first else { return }
-        slider.value = volume
-        DispatchQueue.main.async { self.volume = nil }   // ya se aplicó: no se repite en el siguiente refresco
+        if volume.slider == nil { volume.slider = view.subviews.compactMap { $0 as? UISlider }.first }
     }
+}
+
+/// Mover el volumen del sistema al deslizar. Antes cada punto del dedo (unas 60 veces por segundo) era un cambio de volumen del
+/// sistema y dos repintados del reproductor entero, y el audio se oía entrecortado (31 oct). Ahora va en pasos de 1/32 (más fino
+/// que los 16 de los botones), solo cuando cambia de paso y sin pasar por el estado de SwiftUI.
+@MainActor
+final class SystemVolume {
+    weak var slider: UISlider?
+    private var applied: Float?
+    static let steps: Float = 32
+
+    func set(_ value: Float) {
+        let step = (min(max(value, 0), 1) * Self.steps).rounded() / Self.steps
+        guard step != applied, let slider else { return }
+        applied = step
+        slider.value = step
+    }
+
+    /// Al empezar a deslizar: el paso de partida es el volumen de ahora (lo pudieron cambiar los botones).
+    func reset() { applied = nil }
 }
