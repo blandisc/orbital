@@ -63,7 +63,15 @@ public final class BecauseModel: ObservableModel {
         guard let current = because?.seed.imdb ?? selected else { return }
         if let items = because?.items, !items.isEmpty { preloaded[current] = items }
         guard let at = seeds.firstIndex(where: { $0.imdb == current }) else { return }
-        let order = (1..<max(1, seeds.count)).flatMap { d in [seeds[(at + d) % seeds.count], seeds[(at - d + seeds.count) % seeds.count]] }
+        // Alternando a cada lado del que se ve (siguiente, anterior, el que sigue…). En un ciclo con tipos explícitos: la
+        // misma expresión en una línea hacía que el compilador de la CI se rindiera (31 oct 2026).
+        let count: Int = seeds.count
+        var order: [TraktEntry] = []
+        for d in 1..<max(1, count) {
+            let after: Int = (at + d) % count
+            let before: Int = (at - d + count) % count
+            order.append(seeds[after]); order.append(seeds[before])
+        }
         var seen = Set([current])
         let queue = order.filter { seen.insert($0.imdb).inserted }
         let forYou = services.forYou

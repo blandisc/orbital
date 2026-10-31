@@ -104,8 +104,10 @@ public final class OneDriveModel: ObservableModel {
     public func choose(_ raw: String) async {
         // Sin «..» ni «.»: solo una ruta dentro de tu OneDrive.
         // «/» es todo tu OneDrive.
-        let cleaned = raw.split(separator: "/").map(String.init).filter { !$0.isEmpty && $0 != "." && $0 != ".." }.joined(separator: "/")
-        let path = cleaned.isEmpty ? "/" : cleaned
+        let parts: [String] = raw.split(separator: "/").map { String($0) }
+        let kept: [String] = parts.filter { (part: String) -> Bool in !part.isEmpty && part != "." && part != ".." }
+        let cleaned: String = kept.joined(separator: "/")
+        let path: String = cleaned.isEmpty ? "/" : cleaned
         services.settings.update { $0.oneDriveFolder = path }
         folder = path
         services.oneDriveLibrary.forget()
