@@ -284,6 +284,9 @@ private struct BecauseBackdrop: ViewModifier {
                         ArtVeil(kind: .full)
                     }
                     .clipShape(shape)
+                    // El arte va agrandado (sin orillas claras por el desenfoque) y `clipShape` solo recorta el dibujo: sin esto
+                    // se subía encima de la fila de arriba y se comía sus toques («Sugerencias para ti» no se deslizaba).
+                    .allowsHitTesting(false)
                     .accessibilityHidden(true)
                 }
         } else {
