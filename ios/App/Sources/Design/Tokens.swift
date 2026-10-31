@@ -71,6 +71,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// Lo que confirmas que va bien («Este va bien» de los subtítulos): el mismo verde.
     static let success = switchOn
     static let warning = role(.warning)
+    /// El azul de Orbital (Fernando, 31 oct 2026): el calendario de «Lo que ves» y los íconos del índice de Para ti.
+    static let accentBlue = Color(red: 0.27, green: 0.52, blue: 0.96)
     static let danger = role(.danger)
     static let hairline = overlay(DesignTokens.Opacity.hairline)
     static let fill = overlay(DesignTokens.Opacity.fill)

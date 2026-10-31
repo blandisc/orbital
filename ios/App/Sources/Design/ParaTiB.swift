@@ -17,7 +17,7 @@ struct SectionCircles<ID: Hashable>: View {
                     Button { jump(item.id) } label: {
                         VStack(spacing: DS.Space.s2) {
                             Image(systemName: item.symbol).font(DS.TextRecipe.section.font)
-                                .foregroundStyle(DS.text)
+                                .foregroundStyle(DS.accentBlue)   // azul (Fernando, 31 oct 2026)
                                 .frame(width: DS.ParaTiB.circle, height: DS.ParaTiB.circle)
                                 .background(DS.fill, in: Circle())
                             item.title.recipe(.caption, color: DS.textMuted).lineLimit(1)
@@ -57,13 +57,12 @@ struct MosaicCover: View {
                     .accessibilityHidden(true)
             }
             .overlay(alignment: .bottomLeading) {
-                VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Eyebrow(text: Text("Todas las formas de encontrar qué ver"), reason: true)
-                    Button(action: onWalk) { Label("Pasear por el mosaico", systemImage: "square.grid.3x3.fill") }
-                        .dsPrimaryButton()
-                        .accessibilityIdentifier("paraTi-walk-mosaic")
-                }
-                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s3)
+                // Solo el botón (Fernando, 31 oct 2026: fuera «Todas las formas de encontrar qué ver»), pegado al pie de la
+                // portada para que quede más cerca de los círculos.
+                Button(action: onWalk) { Label("Pasear por el mosaico", systemImage: "square.grid.3x3.fill") }
+                    .dsPrimaryButton()
+                    .accessibilityIdentifier("paraTi-walk-mosaic")
+                    .padding(.horizontal, DS.Space.gutter)
             }
             .onScrollVisibilityChange(threshold: DS.ParaTiB.coverVisibleFrom) { onScreen = $0 }
             // Otro muro cada vez que se arma la pantalla (y cuando llegan más pósters), no siempre los mismos 36.

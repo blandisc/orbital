@@ -142,7 +142,7 @@ struct WatchingDayGrid: View {
     /// Azul más intenso según los minutos de ese día; sin nada, el relleno de siempre.
     private func fill(_ watched: Int, _ most: Int) -> Color {
         guard watched > 0 else { return DS.fill }
-        return DS.Watching.calendar.opacity(DS.Watching.dayFloor + (1 - DS.Watching.dayFloor) * Double(watched) / Double(most))
+        return DS.accentBlue.opacity(DS.Watching.dayFloor + (1 - DS.Watching.dayFloor) * Double(watched) / Double(most))
     }
 }
 

@@ -182,10 +182,9 @@ extension DS {
         /// La portada (el arte de lo que más viste): dónde empieza su velo y su alto; cuántos van en «Lo que más viste».
         static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
-        /// La racha que se dice en la portada (desde 3 días); el azul del calendario (Fernando, 31 oct 2026) y su piso; el
+        /// La racha que se dice en la portada (desde 3 días); el piso del azul del calendario (`DS.accentBlue`); el
         /// relleno de las barras de géneros y la columna fija de sus porcentajes.
         static let streakShown = 3, dayFloor = 0.35, genreFill = 0.8, percentColumn: CGFloat = 40
-        static let calendar = Color(red: 0.27, green: 0.52, blue: 0.96)
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
         static let holdToPause = 0.2, barTrack = 0.3, backdropOpacity = 0.45, wrongOpacity = 0.35
