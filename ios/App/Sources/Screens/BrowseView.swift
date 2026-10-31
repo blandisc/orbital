@@ -234,12 +234,12 @@ struct BrowseView: View {
                      FilterText.fame(f), FilterText.countries(f), FilterText.studios(f)].compactMap { $0 }.prefix(2)
         let summary = parts.dropFirst().reduce(parts.first) { sum, next in sum.map { Text("\($0), \(next)") } }
         let options: [FilterDoor.Option] = [
-            .init(id: "genre", symbol: "theatermasks.fill", title: Text("Género"), tint: DS.Chapter.genres),
-            .init(id: "rating", symbol: "star.fill", title: Text("Calificación"), tint: DS.Chapter.awards),
-            .init(id: "era", symbol: "calendar", title: Text("Época"), tint: DS.Chapter.years),
-            .init(id: "length", symbol: "clock.fill", title: Text("Duración"), tint: DS.Chapter.now),
-            .init(id: "where", symbol: "play.tv.fill", title: Text("Dónde verla"), tint: DS.Chapter.platforms),
-            .init(id: "fame", symbol: "sparkles", title: Text("Qué tan conocida"), tint: DS.Chapter.seasons),
+            .init(id: "genre", symbol: "theatermasks", title: Text("Género")),
+            .init(id: "rating", symbol: "star", title: Text("Calificación")),
+            .init(id: "era", symbol: "calendar", title: Text("Época")),
+            .init(id: "length", symbol: "clock", title: Text("Duración")),
+            .init(id: "where", symbol: "play.tv", title: Text("Dónde verla")),
+            .init(id: "fame", symbol: "sparkles", title: Text("Qué tan conocida")),
         ]
         return FilterDoor(options: options, active: f.activeCount, summary: summary) { id in
             filterStart = FilterPage(door: id)

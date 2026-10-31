@@ -33,15 +33,14 @@ struct FilterTile: View {
     }
 }
 
-/// La puerta del filtro avanzado arriba de Buscar (Fernando, 30 oct 2026: que se vea todo lo que puedes elegir): arriba el
-/// nombre y lo que ya elegiste; abajo cada filtro con su ícono a color (Género, Calificación, Época…). Tocar uno abre el
+/// La puerta del filtro avanzado arriba de Buscar (Fernando, 30 oct 2026, opción B1): la tarjeta de siempre con su nombre
+/// (y lo que ya elegiste, en turquesa) y una fila de filtros con íconos de línea en blanco que se desliza. Tocar uno abre el
 /// cajón justo en ese filtro; tocar arriba, el cajón completo.
 struct FilterDoor: View {
     struct Option: Identifiable {
         let id: String
         let symbol: String
         let title: Text
-        let tint: Color
     }
     let options: [Option]
     let active: Int
@@ -52,16 +51,11 @@ struct FilterDoor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Button { open(nil) } label: {
-                HStack(spacing: DS.Space.s3) {
-                    Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.section.font).foregroundStyle(DS.backdropDeep)
-                        .frame(width: DS.Filter.doorIcon, height: DS.Filter.doorIcon)
-                        .background(DS.brandMoon, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                HStack(spacing: DS.Space.s2) {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        Text("Búsqueda avanzada").recipe(.section)
+                        Text("Búsqueda avanzada").recipe(.cardTitle)
                         if active > 0, let summary {
-                            Text("\(active) \(active == 1 ? "filtro" : "filtros") · \(summary)").recipe(.footnote, color: DS.brandMoon).lineLimit(1)
-                        } else {
-                            Text("Encuentra qué ver sin saber el nombre").recipe(.footnote, color: DS.textMuted).lineLimit(1)
+                            Text("\(active) \(active == 1 ? "filtro" : "filtros") · \(summary)").recipe(.footnote, color: DS.eyebrow).lineLimit(1)
                         }
                     }
                     Spacer(minLength: 0)
@@ -71,29 +65,25 @@ struct FilterDoor: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("browse-filters")
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DS.Filter.doorColumns), spacing: DS.Space.s2) {
-                ForEach(options) { option in
-                    Button { open(option.id) } label: {
-                        VStack(spacing: DS.Space.s2) {
-                            Image(systemName: option.symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.paper)
-                                .frame(width: DS.Filter.doorChip, height: DS.Filter.doorChip)
-                                .background(LinearGradient(colors: [option.tint.mix(with: DS.paper, by: DS.Chapter.lighten), option.tint],
-                                                           startPoint: .topLeading, endPoint: .bottomTrailing),
-                                            in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-                            option.title.recipe(.caption, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Space.s2) {
+                    ForEach(options) { option in
+                        Button { open(option.id) } label: {
+                            Label { option.title } icon: { Image(systemName: option.symbol) }
+                                .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                                .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
+                                .background(DS.fill, in: Capsule())
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Space.s3)
-                        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("browse-filter-\(option.id)")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("browse-filter-\(option.id)")
                 }
             }
+            .scrollClipDisabled()
         }
         .padding(DS.Space.s4)
         .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 }
 

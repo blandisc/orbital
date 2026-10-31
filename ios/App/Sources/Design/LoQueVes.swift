@@ -5,15 +5,16 @@ import OrbitalCore
 // grande, las barras del periodo, el mapa día por día y los géneros. Los colores de película, serie y las dos son los del
 // mapa de «Tu año» (`DS.YearMap`).
 
-/// La puerta de «Lo que ves» arriba de Para ti, «Tu semana en grande» (Fernando, 30 oct 2026), en el lenguaje de la app: la
-/// tarjeta de siempre (`DS.surface`), el porqué en turquesa, tus horas en blanco grande, qué viste y tu racha en gris, y a
-/// la derecha las barras de lunes a domingo en turquesa (hoy encendido, lo que falta de la semana como hueco).
+/// La puerta de «Lo que ves» arriba de Para ti, «Tu semana en su póster» (Fernando, 30 oct 2026, opción L1): de fondo el
+/// arte de lo que más viste esta semana, con su velo; encima el porqué en turquesa, tus horas en grande, «Sobre todo …» con
+/// tu racha y tus géneros de la semana. El día por día está adentro.
 struct WatchingCard: View {
     /// nil: aún cargando (esqueleto).
     let stats: WatchingStats?
+    /// Los géneros de la semana ya en el idioma de la app (los pone quien la usa).
+    var genres: [String] = []
     /// nil: solo la tarjeta (dentro de un `NavigationLink`, que recibe el toque; ver `CollectionsCard`).
     var action: (() -> Void)?
-    @Environment(\.calendar) private var calendar
 
     var body: some View {
         if let action { Button(action: action) { card }.buttonStyle(.plain).accessibilityIdentifier("watching-card") }
@@ -21,30 +22,46 @@ struct WatchingCard: View {
     }
 
     private var card: some View {
-            HStack(alignment: .bottom, spacing: DS.Space.s4) {
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Eyebrow(text: Text("Lo que ves · Esta semana"), reason: true)
-                    Spacer(minLength: DS.Space.s2)
-                    if let stats {
-                        duration(stats).font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.text)
-                            .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
-                        facts(stats).recipe(.footnote, color: DS.textMuted).lineLimit(2)
-                    } else {
-                        RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.fill)
-                            .frame(width: DS.Watching.skeleton, height: DS.Watching.skeletonHeight)
+        ZStack(alignment: .bottomLeading) {
+            if let top = stats?.top.first {
+                PosterView(url: String(format: ForYou.metahubBackground, top.imdb), title: top.title, aspect: nil, bleed: true, maxPoints: DS.Image.wide)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
+                    .accessibilityHidden(true)
+                ArtVeil(at: DS.Watching.veilFrom)
+            } else {
+                DS.surface
+            }
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Eyebrow(text: Text("Lo que ves · Esta semana"), reason: true)
+                if let stats {
+                    duration(stats).font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.paper)
+                        .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
+                    facts(stats).recipe(.footnote, color: DS.onArtSecondary).lineLimit(2)
+                    if !genres.isEmpty {
+                        HStack(spacing: DS.Space.s1) {
+                            ForEach(genres.prefix(DS.Watching.genres), id: \.self) { g in
+                                Text(verbatim: g).recipe(.caption, color: DS.paper).fontWeight(.semibold).lineLimit(1)
+                                    .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1 / 2)
+                                    .background(DS.paper.opacity(DS.Watching.chipFill), in: Capsule())
+                            }
+                        }
+                        .padding(.top, DS.Space.s1)
                     }
+                } else {
+                    RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.fill)
+                        .frame(width: DS.Watching.skeleton, height: DS.Watching.skeletonHeight)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                bars
             }
             .padding(DS.Space.s4)
-            .frame(maxWidth: .infinity, minHeight: DS.Watching.cardHeight, alignment: .leading)
-            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(alignment: .topTrailing) {
-                Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(DS.textMuted)
-                    .padding(DS.Space.s4).accessibilityHidden(true)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+            .onArt()
+        }
+        .frame(maxWidth: .infinity, minHeight: DS.Watching.cardHeight, alignment: .leading)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .overlay(alignment: .topTrailing) {
+            Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(DS.onArtSecondary)
+                .padding(DS.Space.s4).accessibilityHidden(true)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 
     /// «4 h 12 min», o solo minutos si no llega a una hora.
@@ -53,48 +70,17 @@ struct WatchingCard: View {
         return h == 0 ? Text("\(m) min") : m == 0 ? Text("\(h) h") : Text("\(h) h \(m) min")
     }
 
-    /// «6 episodios · 1 película · 5 días seguidos» (lo que sea cero no se dice).
+    /// «Sobre todo The Bear · 5 días seguidos» (o qué viste, si no hay racha).
     private func facts(_ s: WatchingStats) -> Text {
         var parts: [Text] = []
-        if s.episodes > 0 { parts.append(s.episodes == 1 ? Text("1 episodio") : Text("\(s.episodes) episodios")) }
-        if s.movies > 0 { parts.append(s.movies == 1 ? Text("1 película") : Text("\(s.movies) películas")) }
+        if let top = s.top.first { parts.append(Text("Sobre todo \(Text(verbatim: top.title).fontWeight(.bold).foregroundStyle(DS.paper))")) }
         if s.currentStreak > 1 { parts.append(Text("\(s.currentStreak) días seguidos")) }
+        else {
+            if s.episodes > 0 { parts.append(s.episodes == 1 ? Text("1 episodio") : Text("\(s.episodes) episodios")) }
+            if s.movies > 0 { parts.append(s.movies == 1 ? Text("1 película") : Text("\(s.movies) películas")) }
+        }
         if parts.isEmpty { return Text("Aún nada esta semana") }
         return parts.dropFirst().reduce(parts[0]) { Text("\($0) · \($1)") }
-    }
-
-    /// Lunes a domingo: cada barra del alto de lo que viste ese día; hoy en blanco, los demás tenues y lo que viene, hueco.
-    private var bars: some View {
-        var calendar = calendar
-        calendar.firstWeekday = 2   // la semana empieza en lunes, como en los calendarios en español
-        let monday = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? calendar.startOfDay(for: Date())
-        let days = (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: monday) }
-        let byDay = Dictionary((stats?.buckets ?? []).map { (calendar.startOfDay(for: $0.start), $0.minutes) }, uniquingKeysWith: +)
-        let most = max(byDay.values.max() ?? 0, 1)
-        let today = calendar.startOfDay(for: Date())
-        return HStack(alignment: .bottom, spacing: DS.Watching.weekBarGap) {
-            ForEach(days, id: \.self) { day in
-                let minutes = byDay[day] ?? 0
-                let isToday = day == today, future = day > today
-                VStack(spacing: DS.Space.s1) {
-                    ZStack(alignment: .bottom) {
-                        Capsule().fill(DS.fill)
-                        if !future {
-                            Capsule().fill(DS.eyebrow.opacity(isToday ? 1 : DS.Watching.dayDim))
-                                .frame(height: max(DS.Watching.barMin, DS.Watching.weekBars * CGFloat(minutes) / CGFloat(most)))
-                        }
-                    }
-                    .frame(width: DS.Watching.weekBar, height: DS.Watching.weekBars)
-                    Text(verbatim: Self.letter(day, calendar: calendar)).recipe(.caption, color: isToday ? DS.text : DS.textMuted)
-                }
-            }
-        }
-        .accessibilityHidden(true)
-    }
-
-    /// L M X J V S D (miércoles es X, como en los calendarios en español).
-    static func letter(_ day: Date, calendar: Calendar) -> String {   // por el día de la semana, no por su lugar
-        ["D", "L", "M", "X", "J", "V", "S"][calendar.component(.weekday, from: day) - 1]
     }
 }
 

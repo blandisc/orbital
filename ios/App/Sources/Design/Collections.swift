@@ -87,29 +87,21 @@ enum AwardNames {
     }
 }
 
-/// El arranque de una parte grande de Para ti, en el lenguaje de la app (Fernando, 30 oct 2026: las franjas de color y los
-/// íconos de app chocaban): una línea fina que separa, el ícono en el mismo círculo del índice de arriba (así se reconoce a
-/// dónde brincaste) y el título blanco grande. `meta`, una línea gris debajo, solo si hace falta decir qué es. Pone su
-/// propio margen a los lados.
+/// El arranque de una parte grande de Para ti, como en una revista (Fernando, 30 oct 2026, opción S2): un rótulo chico en
+/// mayúsculas con su línea fina hasta la orilla («GÉNEROS ———») y debajo un título que dice algo («Del terror a la
+/// comedia»). Sin colores ni íconos: el aire y la línea separan. Pone su propio margen a los lados.
 struct DSChapterHead: View {
-    let symbol: String
+    let label: Text
     let title: Text
-    var meta: Text?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s4) {
-            Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline).accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s3) {
-                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
-                    .frame(width: DS.Chapter.icon, height: DS.Chapter.icon)
-                    .background(DS.fill, in: Circle())
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 0) {
-                    title.recipe(.title).lineLimit(2).accessibilityAddTraits(.isHeader)
-                    if let meta { meta.recipe(.footnote, color: DS.textMuted).lineLimit(1) }
-                }
-                Spacer(minLength: 0)
+                label.textCase(.uppercase).font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Chapter.tracking)
+                    .foregroundStyle(DS.textMuted).lineLimit(1).fixedSize()
+                Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)
             }
+            title.recipe(.title).lineLimit(2).accessibilityAddTraits(.isHeader)
         }
         .padding(.horizontal, DS.Space.gutter)
         .accessibilityElement(children: .combine)

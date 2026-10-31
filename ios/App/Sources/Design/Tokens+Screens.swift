@@ -179,9 +179,9 @@ extension DS {
     /// la tarjeta de Para ti, sus esqueletos, lo apagado del collage, las barras, el cuadrito del mapa, los géneros y las
     /// historias (cuánto dura cada una, el alto de sus barritas de avance y el póster grande).
     enum Watching {
-        /// «Tu semana en grande»: las barras de lunes a domingo y lo tenue de los otros días.
-        static let weekBars: CGFloat = 72, weekBar: CGFloat = 10, weekBarGap: CGFloat = 6, dayDim = 0.5
-        static let cardHeight: CGFloat = 170, skeleton: CGFloat = 160, skeletonHeight: CGFloat = 34
+        /// «Tu semana en su póster»: dónde empieza el velo, cuántos géneros y su relleno.
+        static let veilFrom = 0.2, genres = 3, chipFill = 0.18
+        static let cardHeight: CGFloat = 200, skeleton: CGFloat = 160, skeletonHeight: CGFloat = 34
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
@@ -212,8 +212,6 @@ extension DS {
         static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64, eraTile: CGFloat = 72
         static let selectedFill = DS.brandMoon.opacity(0.18)   // ds-exception: el velo de la selección (turquesa al 18 %)
         static let resultWidth: CGFloat = 104
-        /// La puerta «Búsqueda avanzada» en Buscar: su ícono, el de cada filtro y cuántos por renglón.
-        static let doorIcon: CGFloat = 44, doorChip: CGFloat = 40, doorColumns = 3
         /// Las pestañas de texto de `DSKindFilter(tabs:)`: la marca turquesa bajo la elegida.
         static let tabMark: CGFloat = 18, tabMarkHeight: CGFloat = 3
         /// La altura corta del cajón (parte de la pantalla) y desde qué alto de pantalla abre de una vez en grande.
@@ -361,15 +359,8 @@ extension DS {
         static let closeWarning: TimeInterval = 600
     }
 
-    /// El arranque de una sección (`DSChapterHead`): el ícono (en línea y en franja), cuánto se aclara arriba su degradado, su
-    /// brillo y la franja; y el color de cada parte de Para ti (Fernando, 30 oct 2026: «Lo que se ve hoy» y las colecciones).
-    enum Chapter {
-        static let icon: CGFloat = 40, lighten: Double = 0.35
-        static let now = Color(red: 1.0, green: 0.42, blue: 0.18), platforms = Color(red: 0.86, green: 0.30, blue: 0.62)
-        static let studios = Color(red: 0.86, green: 0.30, blue: 0.30), seasons = Color(red: 0.20, green: 0.66, blue: 0.40)
-        static let genres = Color(red: 0.44, green: 0.30, blue: 0.88), awards = Color(red: 0.86, green: 0.64, blue: 0.20)
-        static let years = Color(red: 0.24, green: 0.52, blue: 0.86)
-    }
+    /// El arranque de una sección (`DSChapterHead`): el interletrado del rótulo en mayúsculas.
+    enum Chapter { static let tracking: CGFloat = 1.6 }
 
     enum Collections {
         /// «Por lo que viste» en Inicio (`BecauseCard(artBackdrop:)`): cuánto se desenfoca el póster de fondo y cuánto se ve.
