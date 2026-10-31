@@ -312,7 +312,7 @@ async function keysSaved(form, status, { removed = false } = {}) {
     applySettings({ ...state.settings, onedrive: status }); // Ajustes › Cuentas se repinta en su lugar
     return renderHints();
   }
-  ui.toast.show(removed ? `Quité la clave de ${form.label}` : `${form.label} guardada · Para ti se actualiza`, { tone: "success" });
+  ui.toast.show(removed ? `Quité la clave de ${form.label}` : `${form.label} guardada · Explorar se actualiza`, { tone: "success" });
   applySettings({ ...state.settings, trakt: status.trakt, para_ti: status }); // Ajustes › Cuentas se repinta en su lugar
   ui.foryou.load({ force: true });
   renderHints();

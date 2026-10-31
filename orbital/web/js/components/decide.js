@@ -45,7 +45,7 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
   const status = h("p", { class: "decide__status", role: "status" });
   const questions = h("div", { class: "decide__questions" });
   const el = h("section", { class: "decide screen", hidden: true, "aria-label": "¿Qué vemos?" },
-    ScreenHead({ eyebrow: "Para ti", title: "¿Qué vemos?" }), lead,
+    ScreenHead({ eyebrow: "Explorar", title: "¿Qué vemos?" }), lead,
     h("div", { class: "decide__stage" }, picksEl, h("div", { class: "decide__about" }, name, why, overview)), status, questions);
 
   let choice = { time: "", mood: "", kind: "" };
