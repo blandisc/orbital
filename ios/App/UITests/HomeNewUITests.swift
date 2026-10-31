@@ -63,11 +63,8 @@ final class HomeNewUITests: XCTestCase {
         shot("anadido")
     }
 
-    func testElFiltroSeAbreDesdeInicio() {
-        let door = app.buttons["home-filters"]
-        XCTAssertTrue(door.waitForExistence(timeout: 20), "la puerta del filtro está en la franja")
-        door.tap()
-        XCTAssertTrue(app.descendants(matching: .any)["advanced-filter"].waitForExistence(timeout: 10), "se abre el cajón del filtro")
-        shot("filtro")
+    func testInicioYaNoTieneFiltro() {
+        XCTAssertTrue(app.descendants(matching: .any)["home-kind-filter"].waitForExistence(timeout: 20), "la franja del tipo")
+        XCTAssertFalse(app.buttons["home-filters"].exists, "el filtro vive en Buscar, no en Inicio")
     }
 }

@@ -34,7 +34,7 @@ final class NewFlowsRegressionUITests: XCTestCase {
     func testInicioDeArribaAbajo() {
         launch(tab: 0)
         XCTAssertTrue(any("home-kind-filter").waitForExistence(timeout: 20), "la franja del tipo")
-        XCTAssertTrue(app.buttons["home-filters"].exists, "la puerta del filtro")
+        XCTAssertFalse(app.buttons["home-filters"].exists, "Inicio ya no lleva el filtro (vive en Buscar)")
         shot("inicio-arriba")
         let calendar = app.buttons["release-calendar"]
         scrollTo(calendar)
@@ -53,10 +53,10 @@ final class NewFlowsRegressionUITests: XCTestCase {
         shot("inicio-canales")
     }
 
-    /// El filtro avanzado desde Inicio hasta abrir una ficha.
+    /// El filtro avanzado desde Buscar hasta abrir una ficha.
     func testFiltroAvanzadoHastaUnaFicha() {
-        launch(tab: 0)
-        let door = app.buttons["home-filters"]
+        launch(tab: 2)
+        let door = app.buttons["browse-filters"]
         XCTAssertTrue(door.waitForExistence(timeout: 20))
         door.tap()
         XCTAssertTrue(any("advanced-filter").waitForExistence(timeout: 10), "se abre el cajón")

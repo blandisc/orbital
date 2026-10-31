@@ -258,6 +258,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let logo = CGFloat(DesignTokens.Size.logo)
         /// La letra de «orbital» en la marca grande (la bienvenida) y el planeta solo, junto a un título o en el widget.
         static let wordmark: CGFloat = 40, markSmall: CGFloat = 22
+        /// Lo que una marca redonda (el jitomate) baja de la línea del título: como la «o», que cae un poco abajo de la línea,
+        /// así su cuerpo queda centrado con las mayúsculas en vez de verse flotando.
+        static let markOvershoot: CGFloat = 1.5
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).

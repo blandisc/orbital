@@ -198,7 +198,7 @@ struct DSSectionHead: View {
                 if let source, source.isIcon {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
                         sectionTitle.lineLimit(2)
-                        SourceBadge(source: source).alignmentGuide(.firstTextBaseline) { $0[.bottom] }   // el jitomate se para en la línea del título
+                        SourceBadge(source: source).alignmentGuide(.firstTextBaseline) { $0[.bottom] - DS.Size.markOvershoot }   // el jitomate, centrado con las mayúsculas
                     }
                 } else { ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {

@@ -22,7 +22,6 @@ struct HomeView: View {
     /// Sale hoy › el mes completo.
     @State private var showingCalendar = false
     /// El filtro avanzado (el cajón de la sesión de componentes), desde la franja de arriba.
-    @State private var showingFilter = false
     @Namespace private var simpsonsZoom
     @State private var continueSort: ListSort = .added
     @State private var continueKind = ""
@@ -146,10 +145,9 @@ struct HomeView: View {
             try? await Task.sleep(for: .seconds(DS.Simpsons.prefetchDelay))
             await env.simpsons.prefetch()
         }
-        // Todo · Películas · Series para toda la página y la puerta del filtro avanzado, bajo la barra.
+        // Todo · Películas · Series para toda la página, bajo la barra.
         .safeAreaBar(edge: .top) {
             HomeKindBar(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }),
-                        onFilters: { showingFilter = true },
                         onPicked: { kind in
                             // Abajo, como todos los avisos (bajo la franja tapaba el botón de la portada).
                             let name = switch kind { case "movie": "Películas"; case "series": "Series"; default: "Todo" }
@@ -182,7 +180,6 @@ struct HomeView: View {
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: HomeListRoute.self) { route in homeList(route) }
         .openingTitles(item: $openTitle)   // en el iPad y la Mac, en el panel de la derecha
-        .advancedFilter(isPresented: $showingFilter) { openTitle = $0 }   // un resultado abre su ficha
         .task { await reload(ifStale: true) }   // volver de otra pestaña o de una ficha no lo vuelve a pedir todo
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
