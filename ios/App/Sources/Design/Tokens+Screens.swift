@@ -238,6 +238,9 @@ extension DS {
         static let decadeButton: CGFloat = 40
         /// La ventana elegida: el blanco de lo elegido, tenue por dentro.
         static let windowFill = DS.text.opacity(0.12)   // ds-exception: el velo de la selección (el texto al 12 %)
+        /// El azul de Orbital en el cajón (31 oct 2026): el velo de lo elegido, su brillo y qué tan lejos llega.
+        static let blueFill = DS.orbitalBlue.opacity(0.16), blueGlow = DS.orbitalBlue.opacity(0.35)   // ds-exception: velo y brillo del azul de lo elegido
+        static let glowRadius: CGFloat = 10
         static let tickFaint = DS.text.opacity(0.22), tickMid = DS.text.opacity(0.36), tickStrong = DS.text.opacity(0.62)   // ds-exception: las rayitas de la regla, de tenue a firme
         /// Un premio (su estatuilla), un estudio (su logo) y una bandera en el cajón.
         static let awardIcon: CGFloat = 40, miniAwardIcon: CGFloat = 18, studioLogoHeight: CGFloat = 24, logoTile: CGFloat = 64

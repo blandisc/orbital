@@ -6,6 +6,7 @@ import OrbitalModels
 // docs/producto/muvy-busqueda-premios/filtro-a.html): el mosaico de cada filtro con su dibujo (el mismo en la puerta de
 // Buscar y en el cajón), el panel que se abre bajo su mosaico, el cuadro «Qué tan conocida», la opción grande con ícono y
 // el cuadrito de lo filtrado sobre los resultados. La regla de años vive en `YearRuler.swift`. Sin cápsulas: íconos.
+// Lo elegido y los íconos van en el azul de Orbital (`DS.orbitalBlue`, Fernando, 31 oct 2026: «darle más vida al cajón»).
 
 /// Los filtros con mosaico. El formato (Todo · Películas · Series) no: va arriba del cajón, de un toque.
 enum FilterPage: String, Hashable, CaseIterable, Identifiable {
@@ -187,9 +188,9 @@ struct FilterArt: View {
                 }
             case .length where f.length != .any:
                 Image(systemName: f.length == .short ? "hare" : f.length == .long ? "tortoise" : f.length == .before ? "moon.zzz" : "clock")
-                    .font(symbolFont).foregroundStyle(DS.text)
+                    .font(symbolFont).foregroundStyle(DS.orbitalBlue)
             default:
-                Image(systemName: page.symbol).font(symbolFont).foregroundStyle(DS.textMuted)
+                Image(systemName: page.symbol).font(symbolFont).foregroundStyle(DS.orbitalBlue)   // el azul de Orbital da vida al cajón (Fernando, 31 oct 2026)
             }
         }
         .frame(height: height, alignment: .leading)
@@ -237,7 +238,8 @@ struct FilterTile: View {
                 }
             }
             .clipShape(shape)
-            .overlay(shape.strokeBorder(on || open ? DS.text : .clear, lineWidth: open ? DS.Size.hairline * 4 : DS.Size.hairline * 2))
+            .overlay(shape.strokeBorder(on || open ? DS.orbitalBlue : .clear, lineWidth: open ? DS.Size.hairline * 4 : DS.Size.hairline * 2))
+            .shadow(color: open ? DS.Filter.blueGlow : .clear, radius: DS.Filter.glowRadius)
             .contentShape(shape)
         }
         .buttonStyle(.plain)
@@ -261,8 +263,8 @@ struct MiniRuler: View {
                     Rectangle().fill(DS.Filter.tickMid).frame(width: DS.Size.hairline * 2, height: geo.size.height / 2).offset(x: x(d))
                 }
                 RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
-                    .fill(DS.Filter.windowFill)
-                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(DS.text, lineWidth: DS.Size.hairline * 3))
+                    .fill(DS.Filter.blueFill)
+                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(DS.orbitalBlue, lineWidth: DS.Size.hairline * 3))
                     .frame(width: max(x(years.upperBound + 1) - x(years.lowerBound), DS.Filter.handleWidth), height: geo.size.height)
                     .offset(x: x(years.lowerBound))
             }
@@ -282,7 +284,7 @@ struct MiniQuadrant: View {
         .aspectRatio(DS.Poster.aspect * 2, contentMode: .fit)
     }
     private func cell(_ fame: AdvancedFilter.Fame) -> some View {
-        RoundedRectangle(cornerRadius: DS.Size.hairline * 6, style: .continuous).fill(selected == fame ? DS.text : DS.fillStrong)
+        RoundedRectangle(cornerRadius: DS.Size.hairline * 6, style: .continuous).fill(selected == fame ? DS.orbitalBlue : DS.fillStrong)
     }
 }
 
@@ -356,7 +358,9 @@ struct FilterDoor: View {
             Button { open(nil) } label: {
                 HStack(spacing: DS.Space.s2) {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        Text("Búsqueda avanzada").recipe(.cardTitle)
+                        Label { Text("Búsqueda avanzada").recipe(.cardTitle) } icon: {
+                            Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.orbitalBlue)
+                        }
                         subtitle.recipe(.footnote, color: context.filter.isEmpty ? DS.textMuted : DS.text).lineLimit(1)
                     }
                     Spacer(minLength: 0)
@@ -399,7 +403,7 @@ struct FilterSummarySquare: View {
         let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
         Button(action: edit) {
             VStack(spacing: DS.Space.s1) {
-                Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(remove == nil ? DS.textMuted : DS.text)
+                Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(remove == nil ? DS.textMuted : DS.orbitalBlue)
                 title.recipe(.caption, color: remove == nil ? DS.textMuted : DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
             .padding(.horizontal, DS.Space.s1)
@@ -430,14 +434,14 @@ struct FilterChoice: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: DS.Space.s2) {
-                Image(systemName: symbol).font(DS.TextRecipe.title.font).foregroundStyle(DS.text)
+                Image(systemName: symbol).font(DS.TextRecipe.title.font).foregroundStyle(DS.orbitalBlue)
                 title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
                 if let detail { detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }
             }
             .padding(.horizontal, DS.Space.s1)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.choiceHeight)
-            .background(selected ? DS.Filter.selectedFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(selected ? DS.text : .clear, lineWidth: DS.Size.hairline * 2))
+            .background(selected ? DS.Filter.blueFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(selected ? DS.orbitalBlue : .clear, lineWidth: DS.Size.hairline * 3))
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -462,8 +466,8 @@ struct FilterLogoChoice<Logo: View>: View {
             }
             .padding(DS.Space.s2)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.logoTile)
-            .background(selected ? DS.Filter.selectedFill : DS.surface, in: shape)
-            .overlay(shape.strokeBorder(selected ? DS.text : .clear, lineWidth: DS.Size.hairline * 2))
+            .background(selected ? DS.Filter.blueFill : DS.surface, in: shape)
+            .overlay(shape.strokeBorder(selected ? DS.orbitalBlue : .clear, lineWidth: DS.Size.hairline * 3))
             .contentShape(shape)
         }
         .buttonStyle(.plain)

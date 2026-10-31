@@ -52,18 +52,18 @@ struct YearRuler: View {
     private func window(_ r: ClosedRange<Int>, _ width: CGFloat) -> some View {
         let left = x(max(r.lowerBound, first), width), right = x(min(r.upperBound, last), width)   // «Clásicos» empieza antes de la regla
         let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-        return shape.fill(DS.Filter.windowFill)
-            .overlay(shape.strokeBorder(DS.text, lineWidth: DS.Size.hairline * 4))
+        return shape.fill(DS.Filter.blueFill)
+            .overlay(shape.strokeBorder(DS.orbitalBlue, lineWidth: DS.Size.hairline * 4))
             .overlay(alignment: .leading) { handle.offset(x: -DS.Filter.handleWidth / 2) }
             .overlay(alignment: .trailing) { handle.offset(x: DS.Filter.handleWidth / 2) }
             .frame(width: max(right - left, DS.Filter.handleWidth), height: DS.Filter.rulerWindow)
             .offset(x: left, y: -DS.Space.s1)
-            .shadow(DS.Elevation.low.drop(0))
+            .shadow(color: DS.Filter.blueGlow, radius: DS.Filter.glowRadius)
             .animation(drag == nil ? DS.Motion.base(reduceMotion) : nil, value: r)
     }
 
     private var handle: some View {
-        Capsule().fill(DS.text).frame(width: DS.Filter.handleWidth, height: DS.Filter.handleHeight).shadow(DS.Elevation.medium.drop(0))
+        Capsule().fill(DS.orbitalBlue).frame(width: DS.Filter.handleWidth, height: DS.Filter.handleHeight).shadow(DS.Elevation.medium.drop(0))
     }
 
     /// Las décadas debajo, cada una centrada en su tramo: tocar una la elige entera.
@@ -77,7 +77,7 @@ struct YearRuler: View {
                     Text(verbatim: "’\(String(format: "%02d", d % 100))")
                         .recipe(.footnote, color: on ? DS.bg : DS.textMuted).fontWeight(.bold).monospacedDigit()
                         .frame(width: DS.Filter.decadeButton, height: DS.Size.touchTarget)
-                        .background(on ? DS.text : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                        .background(on ? DS.orbitalBlue : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

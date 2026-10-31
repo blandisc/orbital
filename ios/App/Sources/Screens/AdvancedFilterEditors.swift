@@ -20,7 +20,7 @@ struct FilterEditor: View {
             prompt.recipe(.footnote, color: DS.textMuted).fontWeight(.semibold)
             Spacer()
             if FilterText.value(page, context) != nil {
-                Button { clear() } label: { Text("Quitar").recipe(.footnote, color: DS.text).fontWeight(.semibold) }.buttonStyle(.borderless)
+                Button { clear() } label: { Text("Quitar").recipe(.footnote, color: DS.orbitalBlue).fontWeight(.semibold) }.buttonStyle(.borderless)
                     .accessibilityIdentifier("filter-clear-\(page.rawValue)")
             }
         }
@@ -111,10 +111,11 @@ struct FilterEditor: View {
                 Label { VStack(alignment: .leading, spacing: 0) {
                     Text("Repartido por décadas").recipe(.footnote, color: DS.text).fontWeight(.semibold)
                     Text("Una de cada época, no solo lo reciente").recipe(.caption, color: DS.textMuted)
-                } } icon: { Image(systemName: "dice") }
+                } } icon: { Image(systemName: "dice").foregroundStyle(DS.orbitalBlue) }
             }
             .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Filter.choiceHeight * 0.75)
             .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .tint(DS.orbitalBlue)
             .accessibilityIdentifier("filter-spread")
         }
     }
@@ -142,7 +143,7 @@ struct FilterEditor: View {
                 Slider(value: Binding(get: { filter.endsBy < 12 ? filter.endsBy + 24 : filter.endsBy },
                                       set: { h in edit { $0.endsBy = h >= 24 ? h - 24 : h } }),
                        in: DS.Filter.endsByRange, step: DS.Filter.endsByStep) { Text("Hora a la que quieres terminar") }
-                    .tint(DS.text)
+                    .tint(DS.orbitalBlue)
                     .accessibilityValue(Text(verbatim: FilterText.clock(filter.endsBy, language: context.language)))
                     .accessibilityIdentifier("filter-ends-by-slider")
             }
@@ -164,7 +165,7 @@ struct FilterEditor: View {
                 (filter.minRating.map { Text("\(FilterText.number($0)) o más") } ?? Text("Cualquiera")).recipe(.title).monospacedDigit()
             }
             Slider(value: value, in: 0...9, step: 0.5) { Text("Calificación mínima") }
-                .tint(DS.text)
+                .tint(DS.orbitalBlue)
                 .accessibilityIdentifier("filter-rating")
         }
     }

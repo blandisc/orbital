@@ -53,7 +53,7 @@ struct AdvancedFilterSheet: View {
                                 if !more, let o = open, FilterPage.more.contains(o) { open = nil }
                             }
                         } label: {
-                            Label(more ? "Ver menos" : "Ver más filtros", systemImage: more ? "chevron.up" : "chevron.down").recipe(.footnote).fontWeight(.semibold)
+                            Label(more ? "Ver menos" : "Ver más filtros", systemImage: more ? "chevron.up" : "chevron.down").recipe(.footnote, color: DS.orbitalBlue).fontWeight(.semibold)
                         }
                         .buttonStyle(.borderless)
                         .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
@@ -107,12 +107,12 @@ struct AdvancedFilterSheet: View {
             })
         let hide = model.filter.hideWatched
         HStack(spacing: DS.Space.s2) {
-            DSKindFilter(kind: kind)
+            DSKindFilter(kind: kind, mark: DS.orbitalBlue)
             Button { model.filter.hideWatched.toggle() } label: {
                 Image(systemName: "eye.slash").font(DS.TextRecipe.secondary.font.weight(.semibold))
                     .foregroundStyle(hide ? DS.bg : DS.textMuted)
                     .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-                    .background(hide ? DS.text : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                    .background(hide ? DS.orbitalBlue : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             }
             .buttonStyle(.plain)
             .sensoryFeedback(.selection, trigger: hide)
