@@ -112,8 +112,9 @@ extension DS {
         static let tile: CGFloat = 64, ring: CGFloat = 3, ringSmall: CGFloat = 26, ringSmallLine: CGFloat = 2.5
         /// Cuántos renglones de sinopsis antes de «más».
         static let synopsisLines = 3
-        /// El alto del arte de la ficha (proporción ancho / alto) y el ancho máximo del logo centrado.
-        static let heroAspect: CGFloat = 0.9, logoWidth: CGFloat = 0.66
+        /// El alto del arte de la ficha (proporción ancho / alto) y el ancho máximo del logo centrado. 1.1: un poco más
+        /// ancho que alto (Fernando, 31 oct 2026, opción B): «Ver», sus botones y la sinopsis se ven sin deslizar.
+        static let heroAspect: CGFloat = 1.1, logoWidth: CGFloat = 0.66
         /// En un teléfono bajito (SE) el arte es más ancho que alto: «Ver» y sus botones quedan a la vista sin deslizar.
         static let heroAspectShort: CGFloat = 1.3, shortScreen: CGFloat = 700
         /// Lo más ancho (bajito) que se vuelve el arte para que las acciones queden sobre la barra de pestañas.
