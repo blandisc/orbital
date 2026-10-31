@@ -116,7 +116,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
       h("span", { class: "button-row tile--feature__actions" },
         Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", art: true, onPress: press("select") }),
         alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, onPress: press("alt") }),
-        Button({ label: "Opciones", glyph: glyphs.options, onPress: press("options") }))));
+        Button({ label: "Opciones", glyph: glyphs.options, icon: "more", onPress: press("options") }))));
 }
 
 /** Lo corto de una tarjeta ancha: «hace 11 h» (juegos) o «T8 E23 · quedan 10 min» (videos). */
