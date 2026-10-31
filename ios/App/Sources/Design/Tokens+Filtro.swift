@@ -4,7 +4,7 @@ import SwiftUI
 extension DS {
     /// «¿Cuándo la viste?» (`WatchedWhenSheet`): el póster de arriba, el ancho del ícono de cada opción y su alto.
     enum Watched {
-        static let poster: CGFloat = 64, icon: CGFloat = 28, row: CGFloat = 60
+        static let poster: CGFloat = 56, icon: CGFloat = 26, row: CGFloat = 52
     }
 
     /// El filtro avanzado (`FilterTile`, `FilterChoice`, `FameQuadrant`, `YearRuler`): el alto de un filtro en el cajón y de
@@ -36,6 +36,9 @@ extension DS {
         static let roseFill = rose.opacity(0.2)   // ds-exception: el velo del cuadrante elegido, en el rosa de este filtro
         /// El logo de TMDB en el mosaico de Calificación (chico: el número manda).
         static let tmdbMark: CGFloat = 11
+        /// Calificación: los atajos de un toque y el velo verde del elegido.
+        static let ratingPresets: [Double] = [6, 7, 7.5, 8]
+        static let mintFill = mint.opacity(0.18)   // ds-exception: el velo del atajo elegido, en el verde de Calificación
         /// El panel que se abre crece desde este tamaño (desde su mosaico), y al abrirse se deja un poco de aire arriba.
         static let panelFrom: CGFloat = 0.92
         /// El cajón cerrado mide lo que trae; si pasa de esta parte de la pantalla, abre grande.

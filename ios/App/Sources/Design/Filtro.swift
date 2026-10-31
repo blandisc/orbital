@@ -171,13 +171,10 @@ struct FilterArt: View {
                 MiniRuler(years: f.years ?? AdvancedFilter.firstYear...f.currentYear, last: f.currentYear)
             case .rating where f.minRating != nil:
                 // El número manda (en el verde de Calificación); el logo de TMDB, chico, dice de dónde sale.
+                // Centrado, como los demás: la estrella y el número; de dónde sale lo dice el renglón de abajo («o más · TMDB»).
                 HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
                     Image(systemName: "star.fill").font(mini ? DS.TextRecipe.caption.font : DS.TextRecipe.footnote.font).foregroundStyle(page.hue)
                     Text(verbatim: FilterText.number(f.minRating ?? 0)).font((mini ? DS.TextRecipe.secondary : DS.TextRecipe.title).font.weight(.bold)).monospacedDigit().foregroundStyle(page.hue)
-                    if !mini {
-                        Spacer(minLength: 0)
-                        Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityHidden(true)
-                    }
                 }
             case .fame:
                 MiniQuadrant(selected: f.fame)
@@ -234,7 +231,7 @@ struct FilterTile: View {
                 if art.isEmpty { FilterArt(page: page, context: context, mini: mini) } else { Spacer(minLength: 0) }
                 // Sobre el arte de los géneros el texto va en papel (se lee igual en claro y en oscuro).
                 page.title.recipe(mini ? .caption : .footnote, color: art.isEmpty ? DS.text : DS.paper).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                (value ?? Text("Cualquiera")).recipe(.caption, color: !art.isEmpty ? DS.paper : on ? DS.text : DS.textMuted).lineLimit(1)
+                tileValue(value).recipe(.caption, color: !art.isEmpty ? DS.paper : on ? DS.text : DS.textMuted).lineLimit(1)
             }
             .multilineTextAlignment(.center)
             .padding(.horizontal, mini ? DS.Space.s2 : DS.Space.s3)
@@ -260,6 +257,12 @@ struct FilterTile: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    /// Lo que dice el renglón de abajo; Calificación, con el número ya arriba, dice de dónde sale.
+    private func tileValue(_ value: Text?) -> Text {
+        guard let value else { return Text("Cualquiera") }
+        return page == .rating ? Text("o más · TMDB") : value
     }
 }
 
@@ -542,59 +545,5 @@ struct FilterLogoChoice<Logo: View>: View {
         .buttonStyle(.plain)
         .sensoryFeedback(.selection, trigger: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-/// «Qué tan conocida»: el cuadro fama × calificación, como cuadrantes (Fernando, 31 oct 2026: «más que cuatro botones,
-/// cuadrantes»). Arriba lo bien calificado, a la derecha lo famoso; las cuatro esquinas van pegadas, con una rayita entre
-/// ellas como ejes. La elegida se pinta en el rosa de este filtro; tocarla otra vez la quita.
-struct FameQuadrant: View {
-    let selected: AdvancedFilter.Fame
-    let pick: (AdvancedFilter.Fame) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            Label("Mejor calificada", systemImage: "arrow.up").recipe(.caption, color: DS.textMuted)
-            Grid(horizontalSpacing: DS.Size.hairline * 2, verticalSpacing: DS.Size.hairline * 2) {
-                GridRow {
-                    cell(.gems, "sparkles", Text("Joyas ocultas"), Text("Muy buenas, poco vistas"))
-                    cell(.classics, "crown", Text("Las de siempre"), Text("Muy buenas y famosas"))
-                }
-                GridRow {
-                    cell(.niche, "eye.slash", Text("Para pocos"), Text("Rarezas y culto"))
-                    cell(.blockbusters, "ticket", Text("Taquilleras"), Text("Las que llenaron salas"))
-                }
-            }
-            .background(DS.hairline)   // la rayita entre cuadrantes: los ejes
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            HStack {
-                Text("Menos conocida").recipe(.caption, color: DS.textMuted)
-                Spacer()
-                HStack(spacing: DS.Space.s1) {
-                    Text("Más famosa").recipe(.caption, color: DS.textMuted)
-                    Image(systemName: "arrow.right").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
-                }
-            }
-        }
-    }
-
-    private func cell(_ fame: AdvancedFilter.Fame, _ symbol: String, _ title: Text, _ detail: Text) -> some View {
-        let on = selected == fame
-        return Button { pick(on ? .any : fame) } label: {
-            VStack(spacing: DS.Space.s1) {
-                Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(on ? DS.Filter.rose : DS.textMuted)
-                title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-            }
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s3)
-            .frame(maxWidth: .infinity, minHeight: DS.Filter.quadrantCell)
-            .background(on ? DS.Filter.roseFill : DS.surface)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: on)
-        .accessibilityAddTraits(on ? .isSelected : [])
-        .accessibilityIdentifier("filter-fame-\(fame.rawValue)")
     }
 }

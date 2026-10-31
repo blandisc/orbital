@@ -76,7 +76,8 @@ public actor ForYou {
 
     public func platforms() async -> [String: PlatformInfo] {
         guard let tmdb, tmdb.configured else { return [:] }
-        return (try? await remember("tmdb:platforms", ttl: Self.slowTTL) { try await tmdb.platforms(region: self.region()) }) ?? [:]
+        // v2: con Paramount+ (31 oct 2026); lo guardado antes no lo traía.
+        return (try? await remember("tmdb:platforms.v2", ttl: Self.slowTTL) { try await tmdb.platforms(region: self.region()) }) ?? [:]
     }
 
     /// Tus listas de Trakt (recordadas un rato); vacío sin Trakt.

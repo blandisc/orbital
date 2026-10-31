@@ -41,7 +41,7 @@ struct WatchedWhenSheet: View {
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s3) {
                     if let poster {
                         PosterView(url: poster, title: "", maxPoints: DS.Watched.poster)
@@ -51,7 +51,9 @@ struct WatchedWhenSheet: View {
                     }
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         (alreadyWatched ? Text("Ya la viste") : asking != nil ? Text("¿También los anteriores?") : Text("¿Cuándo la viste?")).recipe(.cardTitle)
-                        Text("\(title) · \(detail)").recipe(.footnote, color: DS.textMuted).lineLimit(2)
+                        Text("\(title) · \(detail)").recipe(.footnote, color: DS.textMuted).lineLimit(1)
+                        // De dónde y a dónde: arriba, junto al título (abajo dejaba un renglón de aire; 31 oct 2026).
+                        Label("Se guarda en tu historial de Trakt", systemImage: "arrow.triangle.2.circlepath").recipe(.caption, color: DS.textMuted)
                     }
                 }
                 if alreadyWatched {
@@ -92,8 +94,6 @@ struct WatchedWhenSheet: View {
                     WatchedOption(symbol: "questionmark.circle", title: Text("No sé cuándo"), detail: Text("Vista, sin fecha")) { choose(.unknown) }
                         .accessibilityIdentifier("watched-unknown")
                 }
-                Label("Se guarda en tu historial de Trakt", systemImage: "arrow.triangle.2.circlepath")
-                    .recipe(.caption, color: DS.textMuted).frame(maxWidth: .infinity)
             }
         .dsSheetContent()
         .animation(DS.Motion.base(reduceMotion), value: calendar)

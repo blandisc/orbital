@@ -18,23 +18,8 @@ struct CollectionsCardLoader: View {
         let entries = model.collections.map { c in
             CollectionsShowcase<RepisaCollectionRoute, RepisaRoute>.Entry(id: c.id, name: CanonNames.title(c.id), seen: c.seen(model.watched), total: max(c.total, c.items.count))
         }
-        CollectionsShowcase(entries: entries, hint: hint(model), route: { RepisaCollectionRoute(id: $0) }, all: RepisaRoute())
+        CollectionsShowcase(entries: entries, hint: nil, route: { RepisaCollectionRoute(id: $0) }, all: RepisaRoute())
         .task { if !model.loaded { await model.load() } }
-    }
-
-    /// «Te faltan 2 para completar Palma de Oro · Los 2010»: el grupo (década) más cerca de llenarse entre los que ya empezaste.
-    private func hint(_ model: RepisaModel) -> Text? {
-        var best: (missing: Int, name: String, group: String)?
-        for c in model.collections {
-            for g in c.groups() {
-                let seen = g.items.filter { model.watched.contains($0.imdb) }.count
-                let missing = g.items.count - seen
-                guard seen > 0, missing > 0, missing < (best?.missing ?? .max) else { continue }
-                best = (missing, RepisaCollectionView.plainName(c.id), g.title)
-            }
-        }
-        guard let best else { return nil }
-        return best.missing == 1 ? Text("Te falta 1 para completar \(best.name) · \(best.group)") : Text("Te faltan \(best.missing) para completar \(best.name) · \(best.group)")
     }
 }
 
@@ -316,10 +301,8 @@ struct RepisaCollectionView: View {
     private func moment(_ item: CanonCollection.Item, _ c: CanonCollection, _ model: RepisaModel) -> some View {
         let group = c.groups().first { g in g.items.contains { $0.imdb == item.imdb } }
         let missing = group.map { g in g.items.filter { !model.watched.contains($0.imdb) }.count } ?? 0
-        let next: Text? = group.map { g in
-            if missing == 0 { return Text("Completaste \(g.title)") }
-            return missing == 1 ? Text("Te falta 1 para completar \(g.title)") : Text("Te faltan \(missing) para completar \(g.title)")
-        }
+        // Solo el logro («Completaste Los 2010»); lo que falta ya no se dice (Fernando, 31 oct 2026).
+        let next: Text? = group.flatMap { g in missing == 0 ? Text("Completaste \(g.title)") : nil }
         return ShelfMoment(poster: item.poster, backdrop: String(format: ForYou.metahubBackground, item.imdb), title: item.title, emblem: c.id,
                            seen: c.seen(model.watched), total: max(c.total, c.items.count), next: next, completed: group != nil && missing == 0) {
             if placed?.id == item.id { placed = nil }

@@ -40,6 +40,7 @@ public struct Tmdb: Sendable {
     /// Cómo se llama cada plataforma en TMDB (cambian de nombre: «HBO Max» → «Max» → «HBO Max»).
     public static let platforms: [(brand: String, name: String, aliases: [String])] = [
         ("netflix", "Netflix", ["netflix"]), ("disney", "Disney+", ["disney plus", "disney+"]), ("hbo", "HBO Max", ["hbo max", "max"]),
+        ("paramount", "Paramount+", ["paramount plus", "paramount+"]),   // Fernando, 31 oct 2026
     ]
 
     let http: HTTPClient

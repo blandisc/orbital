@@ -15,8 +15,10 @@ struct ShelfEmblem: View {
             switch id {
             case "criterion": CriterionEmblem(height: height)
             case "top250": IMDbEmblem(height: height)
-            case "nyt-movies": ClapperEmblem(height: height)
-            case "nyt-series": NewspaperEmblem(height: height, series: true)
+            // Las 100 mejores del NYT: una claqueta y una tele de oro (Grok Imagine, 31 oct 2026; `Assets/Shelf`).
+            case "nyt-movies", "nyt-series":
+                Image("shelf-" + id).resizable().scaledToFit()
+                    .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
             default:
                 Image("Awards/" + id).resizable().scaledToFit()
                     .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
@@ -84,63 +86,6 @@ private struct IMDbEmblem: View {
     }
 }
 
-/// Las listas del New York Times: un periódico doblado, con su «T» gótica y sus columnas.
-private struct NewspaperEmblem: View {
-    let height: CGFloat
-    let series: Bool
-    var body: some View {
-        let w = height * DS.Repisa.paperWidth
-        VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text(verbatim: "T").font(.system(size: height * DS.Repisa.seal, weight: .black, design: .serif))   // ds-exception: la letra crece con el periódico
-                .foregroundStyle(DS.backdropDeep).frame(maxWidth: .infinity)
-            DS.backdropDeep.frame(height: DS.Size.hairline)
-            HStack(alignment: .top, spacing: DS.Space.s1) {
-                ForEach(0..<3, id: \.self) { column in
-                    VStack(spacing: DS.Repisa.lineGap) {
-                        ForEach(0..<DS.Repisa.paperLines, id: \.self) { _ in DS.textFaint.frame(height: DS.Size.hairline * 2) }
-                    }
-                }
-            }
-            Image(systemName: series ? "tv" : "film").font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.backdropDeep)
-                .frame(maxWidth: .infinity)
-        }
-        .padding(DS.Space.s1)
-        .frame(width: w, height: height * DS.Repisa.paperHeight, alignment: .top)
-        .background(LinearGradient(colors: [DS.paper, DS.paper.opacity(DS.Repisa.paperFold)], startPoint: .leading, endPoint: .trailing),
-                    in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
-        .rotationEffect(.degrees(DS.Repisa.paperTilt))
-        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
-    }
-}
-
-/// Las 100 películas del NYT: una claqueta de papel periódico, con la «T» del Times y su barra a rayas.
-private struct ClapperEmblem: View {
-    let height: CGFloat
-    var body: some View {
-        let w = height * DS.Repisa.paperWidth * DS.Repisa.clapperWide
-        VStack(spacing: DS.Repisa.lineGap) {
-            // La barra de arriba, abierta, con sus rayas.
-            HStack(spacing: 0) {
-                ForEach(0..<DS.Repisa.clapperStripes, id: \.self) { i in (i.isMultiple(of: 2) ? DS.backdropDeep : DS.paper).frame(maxWidth: .infinity) }
-            }
-            .frame(height: height * DS.Repisa.clapperBar)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
-            .rotationEffect(.degrees(DS.Repisa.clapperOpen), anchor: .bottomLeading)
-            // El cuerpo: papel, la «T» y dos renglones.
-            VStack(spacing: DS.Space.s1) {
-                Text(verbatim: "T").font(.system(size: height * DS.Repisa.seal, weight: .black, design: .serif))   // ds-exception: la letra crece con la claqueta
-                    .foregroundStyle(DS.backdropDeep)
-                ForEach(0..<2, id: \.self) { _ in DS.textFaint.frame(height: DS.Size.hairline * 2) }
-            }
-            .padding(DS.Space.s1)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(LinearGradient(colors: [DS.paper, DS.paper.opacity(DS.Repisa.paperFold)], startPoint: .leading, endPoint: .trailing),
-                        in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
-        }
-        .frame(width: w, height: height * DS.Repisa.paperHeight * DS.Repisa.clapperTall)
-        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
-    }
-}
 
 /// La repisa: lo que va encima y, abajo, una línea fina que se desvanece en las orillas con su sombra.
 struct ShelfLedge<Content: View>: View {
@@ -255,7 +200,7 @@ struct CollectionsShowcase<Route: Hashable, AllRoute: Hashable>: View {
 /// El momento de «Ya la vi» en una colección (Fernando, 31 oct 2026: «que sea un momento más bonito, memorable»). Como un
 /// ritual corto, no un aviso: sobre su fondo desenfocado, el póster aparece en gris (como los que te faltan en la repisa),
 /// se revela a color con un destello que lo cruza, baja a su repisa con un rebote y un golpecito en la mano, la estatuilla se
-/// enciende y el número sube con su barra. Debajo, lo que sigue: cuántas faltan para completar su década (o «Completaste…»).
+/// enciende y el número sube con su barra. Debajo, si completaste su década, «Completaste…».
 /// Sin confeti. Con «Reducir movimiento», todo aparece de una vez. Tocar cierra; se va solo.
 struct ShelfMoment: View {
     let poster: String
@@ -265,7 +210,7 @@ struct ShelfMoment: View {
     /// Cuántas llevas ya con esta y de cuántas.
     let seen: Int
     let total: Int
-    /// Lo que sigue: «Te faltan 3 para completar Los 2010» o «Completaste Los 2010».
+    /// «Completaste Los 2010» (nil si aún no).
     let next: Text?
     let completed: Bool
     let onClose: () -> Void

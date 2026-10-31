@@ -30,7 +30,7 @@ struct FilterEditor: View {
     private var prompt: Text {
         switch page {
         case .genre: Text("Toca para elegir"); case .era: Text("Arrastra la ventana o toca una década"); case .length: Text("¿Cuánto tiempo tienes?")
-        case .rating: Text("La calificación de TMDB, de 0 a 10"); case .fame: Text("Toca una esquina del cuadro")
+        case .rating: Text("Lo mínimo que quieres"); case .fame: Text("Toca una esquina del cuadro")
         case .place: Text("Tus plataformas en tu país"); case .origin: Text("Primero la región, luego el país")
         case .awards: Text("Sus ganadores"); case .studio: Text("Toca los que quieras")
         }
@@ -156,21 +156,45 @@ struct FilterEditor: View {
         }
     }
 
-    /// Una sola calificación (Fernando, 31 oct 2026): la de TMDB, que es de donde salen los resultados.
+    /// Una sola calificación (Fernando, 31 oct 2026): la de TMDB, que es de donde salen los resultados. El número grande al
+    /// centro, atajos de un toque (6+, 7+, 7.5+, 8+) y el deslizador para lo fino; abajo, de dónde sale.
     private var rating: some View {
         let value = Binding(get: { filter.minRating ?? 0 }, set: { v in edit { $0.minRating = v < 1 ? nil : v } })
-        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+        return VStack(spacing: DS.Space.s3) {
             HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
                 Image(systemName: "star.fill").font(DS.TextRecipe.section.font).foregroundStyle(page.hue).accessibilityHidden(true)
-                (filter.minRating.map { Text(verbatim: FilterText.number($0)) } ?? Text("Cualquiera")).recipe(.title, color: filter.minRating == nil ? DS.textMuted : DS.text).monospacedDigit()
-                    .contentTransition(.numericText())
+                (filter.minRating.map { Text(verbatim: FilterText.number($0)) } ?? Text("Cualquiera")).recipe(.title, color: filter.minRating == nil ? DS.textMuted : DS.text)
+                    .monospacedDigit().contentTransition(.numericText())
                 if filter.minRating != nil { Text("o más").recipe(.footnote, color: DS.textMuted) }
-                Spacer(minLength: 0)
-                Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityHidden(true)
+            }
+            .frame(maxWidth: .infinity)
+            .animation(DS.Motion.base(false), value: filter.minRating)
+            HStack(spacing: DS.Space.s2) {
+                ForEach(DS.Filter.ratingPresets, id: \.self) { v in
+                    let on = filter.minRating == v
+                    Button { edit { $0.minRating = $0.minRating == v ? nil : v } } label: {
+                        Text(verbatim: "\(v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : FilterText.number(v))+").recipe(.footnote, color: on ? DS.text : DS.textMuted).fontWeight(.semibold).monospacedDigit()
+                            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                            .background(on ? DS.Filter.mintFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Size.hairline * 2))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .sensoryFeedback(.selection, trigger: on)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                    .accessibilityIdentifier("filter-rating-\(FilterText.number(v))")
+                }
             }
             Slider(value: value, in: 0...9, step: 0.5) { Text("Calificación mínima") }
-                .tint(DS.Filter.mint)
+                .tint(page.hue)
                 .accessibilityIdentifier("filter-rating")
+            HStack {
+                Text("Cualquiera").recipe(.caption, color: DS.textMuted)
+                Spacer()
+                Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityLabel(Text(verbatim: "TMDB"))
+                Spacer()
+                Text(verbatim: "9").recipe(.caption, color: DS.textMuted)
+            }
         }
     }
 
