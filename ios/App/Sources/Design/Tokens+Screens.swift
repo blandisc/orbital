@@ -204,7 +204,14 @@ extension DS {
     /// la vitrina, la línea de la repisa, lo apagado de un póster que te falta y la línea de las de 5 estrellas.
     enum Repisa {
         static let emblem: CGFloat = 84, cardPoster: CGFloat = 54, cardFan: CGFloat = 96, cardShelves = 3, header: CGFloat = 64, columns = 5, listEmblem: CGFloat = 64
-        static let discRatio: CGFloat = 0.62, plaqueWidth: CGFloat = 0.52, plaqueHeight: CGFloat = 0.74
+        static let discRatio: CGFloat = 0.92, plaqueWidth: CGFloat = 0.62, plaqueHeight: CGFloat = 0.8
+        /// Los objetos dibujados (Criterion, IMDb, el periódico del NYT): el estuche y su disco, el sello y el número de la placa,
+        /// su marco, el brillo y el periódico (ancho, alto, renglones, el doblez y su inclinación).
+        static let caseSize: CGFloat = 0.72, caseWidth: CGFloat = 0.78, caseLetter: CGFloat = 0.5, discOut: CGFloat = 0.42, discHole: CGFloat = 0.4
+        /// El negro de un objeto (el estuche, la placa): un poco más claro arriba, como con luz de vitrina.
+        static let objectFill = LinearGradient(colors: [DS.surfaceRaised, DS.backdropDeep], startPoint: .top, endPoint: .bottom)
+        static let seal: CGFloat = 0.2, plaqueNumber: CGFloat = 0.3, frame: CGFloat = 2, sheen = 0.35
+        static let paperWidth: CGFloat = 0.66, paperHeight: CGFloat = 0.86, paperLines = 6, lineGap: CGFloat = 3, paperFold = 0.82, paperTilt: Double = -6
         static let lamp = DS.paper.opacity(0.07)   // ds-exception: la luz de la vitrina, apenas visible
         static let lampWidth: CGFloat = 1.6, lampHeight: CGFloat = 1.0
         static let line = DS.overlay(0.22)   // ds-exception: la repisa, una línea fina que se lee en los dos modos

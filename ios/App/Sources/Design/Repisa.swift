@@ -13,21 +13,9 @@ struct ShelfEmblem: View {
     var body: some View {
         Group {
             switch id {
-            case "criterion":
-                Text(verbatim: "C").font(DS.TextRecipe.title.font.weight(.heavy)).foregroundStyle(DS.backdropDeep)
-                    .frame(width: height * DS.Repisa.discRatio, height: height * DS.Repisa.discRatio)
-                    .background(DS.paper, in: Circle())
-                    .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
-            case "top250":
-                VStack(spacing: 0) {
-                    Text(verbatim: "IMDb").font(DS.TextRecipe.caption.font.weight(.heavy))
-                    Text(verbatim: "250").font(DS.TextRecipe.cardTitle.font.weight(.black)).monospacedDigit()
-                }
-                .foregroundStyle(DS.backdropDeep).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                .padding(.horizontal, DS.Space.s1)
-                .frame(width: height * DS.Repisa.plaqueWidth, height: height * DS.Repisa.plaqueHeight)
-                .background(DS.warning, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
-                .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+            case "criterion": CriterionEmblem(height: height)
+            case "top250": IMDbEmblem(height: height)
+            case "nyt-movies", "nyt-series": NewspaperEmblem(height: height, series: id == "nyt-series")
             default:
                 Image("Awards/" + id).resizable().scaledToFit()
                     .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
@@ -40,6 +28,87 @@ struct ShelfEmblem: View {
                 .blur(radius: DS.Space.s6).offset(y: -DS.Space.s4)
         }
         .accessibilityHidden(true)
+    }
+}
+
+/// Criterion: un disco plateado que sale de su estuche negro de coleccionista, con su brillo.
+private struct CriterionEmblem: View {
+    let height: CGFloat
+    var body: some View {
+        let box = height * DS.Repisa.caseSize
+        ZStack(alignment: .leading) {
+            // El disco, asomando a la derecha del estuche.
+            Circle()
+                .fill(AngularGradient(colors: [DS.paper, DS.textMuted, DS.paper, DS.textFaint, DS.paper], center: .center))
+                .overlay(Circle().fill(DS.backdropDeep).padding(box * DS.Repisa.discHole))
+                .overlay(Circle().strokeBorder(DS.paper.opacity(DS.Repisa.sheen), lineWidth: DS.Size.hairline))
+                .frame(width: box * DS.Repisa.discRatio, height: box * DS.Repisa.discRatio)
+                .offset(x: box * DS.Repisa.discOut)
+            // El estuche, negro mate, con su «C» y el canto claro.
+            RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
+                .fill(DS.Repisa.objectFill)
+                .overlay(alignment: .leading) { DS.paper.opacity(DS.Repisa.sheen).frame(width: DS.Size.hairline * 2) }
+                .overlay {
+                    Text(verbatim: "C").font(.system(size: box * DS.Repisa.caseLetter, weight: .black, design: .serif))   // ds-exception: la letra crece con el estuche
+                        .foregroundStyle(DS.paper)
+                }
+                .frame(width: box * DS.Repisa.caseWidth, height: box)
+        }
+        .frame(width: box * (DS.Repisa.caseWidth + DS.Repisa.discOut), alignment: .leading)
+        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+    }
+}
+
+/// El Top 250 de IMDb: una placa de oro con «IMDb» en su sello amarillo y «250» grabado.
+private struct IMDbEmblem: View {
+    let height: CGFloat
+    var body: some View {
+        VStack(spacing: DS.Space.s1) {
+            Text(verbatim: "IMDb").font(.system(size: height * DS.Repisa.seal, weight: .black))   // ds-exception: el sello crece con la placa
+                .foregroundStyle(DS.backdropDeep)
+                .padding(.horizontal, DS.Space.s1)
+                .background(DS.warning, in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
+            Text(verbatim: "250").font(.system(size: height * DS.Repisa.plaqueNumber, weight: .black, design: .serif)).monospacedDigit()   // ds-exception: el número crece con la placa
+                .foregroundStyle(LinearGradient(colors: [DS.paper, DS.warning], startPoint: .top, endPoint: .bottom))
+        }
+        .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+        .frame(width: height * DS.Repisa.plaqueWidth, height: height * DS.Repisa.plaqueHeight)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                .fill(DS.Repisa.objectFill)
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                    .strokeBorder(LinearGradient(colors: [DS.warning, DS.warning.opacity(DS.Repisa.sheen)], startPoint: .top, endPoint: .bottom), lineWidth: DS.Repisa.frame))
+        )
+        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+    }
+}
+
+/// Las listas del New York Times: un periódico doblado, con su «T» gótica y sus columnas.
+private struct NewspaperEmblem: View {
+    let height: CGFloat
+    let series: Bool
+    var body: some View {
+        let w = height * DS.Repisa.paperWidth
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            Text(verbatim: "T").font(.system(size: height * DS.Repisa.seal, weight: .black, design: .serif))   // ds-exception: la letra crece con el periódico
+                .foregroundStyle(DS.backdropDeep).frame(maxWidth: .infinity)
+            DS.backdropDeep.frame(height: DS.Size.hairline)
+            HStack(alignment: .top, spacing: DS.Space.s1) {
+                ForEach(0..<3, id: \.self) { column in
+                    VStack(spacing: DS.Repisa.lineGap) {
+                        ForEach(0..<DS.Repisa.paperLines, id: \.self) { _ in DS.textFaint.frame(height: DS.Size.hairline * 2) }
+                    }
+                }
+            }
+            Image(systemName: series ? "tv" : "film").font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.backdropDeep)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(DS.Space.s1)
+        .frame(width: w, height: height * DS.Repisa.paperHeight, alignment: .top)
+        .background(LinearGradient(colors: [DS.paper, DS.paper.opacity(DS.Repisa.paperFold)], startPoint: .leading, endPoint: .trailing),
+                    in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
+        .rotationEffect(.degrees(DS.Repisa.paperTilt))
+        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
     }
 }
 

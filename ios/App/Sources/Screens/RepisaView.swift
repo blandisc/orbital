@@ -25,12 +25,16 @@ enum CanonNames {
     static func title(_ id: String) -> Text {
         switch id {
         case "palm": Text("Palma de Oro"); case "criterion": Text(verbatim: "Criterion"); case "top250": Text("Top 250")
+        case "nyt-movies": Text("NYT · Películas"); case "nyt-series": Text("NYT · Series")
         default: AwardNames.title(id)
         }
     }
     static func category(_ id: String) -> Text {
         switch id {
-        case "criterion": Text("Colección Criterion"); case "top250": Text("Top 250 de IMDb"); default: AwardNames.category(id)
+        case "criterion": Text("Colección Criterion"); case "top250": Text("Top 250 de IMDb")
+        case "nyt-movies": Text("Las 100 mejores películas del siglo, según The New York Times")
+        case "nyt-series": Text("Las 100 mejores series del siglo, según The New York Times")
+        default: AwardNames.category(id)
         }
     }
 }
@@ -278,7 +282,8 @@ struct RepisaCollectionView: View {
     static func plainName(_ id: String) -> String {
         switch id {
         case "oscar": "Óscar"; case "palm": "Palma de Oro"; case "globe": "Globos de Oro"; case "bafta": "BAFTA"; case "emmy": "Emmy"
-        case "ariel": "Ariel"; case "criterion": "Criterion"; case "top250": "Top 250"; default: id
+        case "ariel": "Ariel"; case "criterion": "Criterion"; case "top250": "Top 250"
+        case "nyt-movies": "NYT · Películas"; case "nyt-series": "NYT · Series"; default: id
         }
     }
 }

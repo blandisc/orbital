@@ -37,7 +37,14 @@ public final class RepisaModel: ObservableModel {
     public func load() async {
         await withTaskGroup(of: (String, [CanonCollection.Item]?).self) { group in
             for list in Canon.lists where cached(list.id, fresh: true) == nil {
-                group.addTask { [http = services.http] in (list.id, try? await Canon.list(http: http, user: list.user, slug: list.slug)) }
+                group.addTask { [http = services.http, trakt = services.trakt] in
+                    switch list.source {
+                    case .mdblist: return (list.id, try? await Canon.list(http: http, user: list.user, slug: list.slug))
+                    case .trakt:
+                        guard let trakt else { return (list.id, nil) }
+                        return (list.id, try? await Canon.list(trakt: trakt, user: list.user, slug: list.slug))
+                    }
+                }
             }
             for await (id, items) in group {
                 guard let items, !items.isEmpty else {

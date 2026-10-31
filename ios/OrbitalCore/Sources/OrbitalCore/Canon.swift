@@ -62,10 +62,16 @@ public struct CanonCollection: Sendable, Equatable, Identifiable {
 }
 
 public enum Canon {
-    /// Las dos listas famosas (MDBList, públicas): usuario, lista y cuántos títulos tiene.
-    public static let lists: [(id: String, user: String, slug: String, total: Int, grouping: CanonCollection.Grouping)] = [
-        ("criterion", "pizzadeath", "the-criterion-collection", 1000, .releaseDecade),
-        ("top250", "georgenilas", "imdb-top-250", 250, .rank),
+    /// De dónde sale una lista famosa: MDBList (su JSON público) o una lista pública de Trakt (con la llave de la app).
+    public enum ListSource: Sendable { case mdblist, trakt }
+    /// Las listas famosas (públicas): usuario, lista, cuántos títulos tiene, cómo se agrupa y de dónde sale.
+    /// Las del New York Times (Fernando, 31 oct 2026): las 100 mejores películas y las 100 mejores series del siglo XXI. Las
+    /// series, en MDBList; las películas, en una copia pública de Trakt (MDBList no la tiene).
+    public static let lists: [(id: String, user: String, slug: String, total: Int, grouping: CanonCollection.Grouping, source: ListSource)] = [
+        ("criterion", "pizzadeath", "the-criterion-collection", 1000, .releaseDecade, .mdblist),
+        ("top250", "georgenilas", "imdb-top-250", 250, .rank, .mdblist),
+        ("nyt-movies", "tojocass", "new-york-times-100-best-movies-of-the-21st-century-copy", 100, .rank, .trakt),
+        ("nyt-series", "amything", "the-100-best-tv-shows-of-the-21st-century-according-to-the-new-york-times", 100, .rank, .mdblist),
     ]
 
     /// El orden de los premios en la repisa (y en Para ti, para que no se contradigan).
@@ -95,6 +101,13 @@ public enum Canon {
             }
             return CanonCollection(id: award.id, family: .award, grouping: .awardDecade, items: order.compactMap { byID[$0] })
         }
+    }
+
+    /// Una lista pública de Trakt → sus títulos, en su orden (su lugar).
+    public static func list(trakt: Trakt, user: String, slug: String) async throws -> [CanonCollection.Item] {
+        var seen = Set<String>()
+        return try await trakt.publicListItems(user: user, slug: slug).filter { $0.imdb.hasPrefix("tt") && seen.insert($0.imdb).inserted }
+            .enumerated().map { i, e in .init(imdb: e.imdb, kind: e.kind, title: e.title, year: e.year, rank: i + 1) }
     }
 
     /// Una lista pública de MDBList → sus títulos con IMDb (y su lugar, si lo trae).
