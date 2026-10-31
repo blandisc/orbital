@@ -202,6 +202,9 @@
   --icon-sm: 1rem;
   --icon-md: 1.25rem;
   --icon-lg: 1.4rem;
+  --ribbon-corner: 4.6rem; /* el listón «Nuevo»: el cuadro de la esquina del póster que lo recorta (DS.Ribbon.corner del iPhone, a escala de TV) */
+  --ribbon-length: 8rem; /* su largo, de orilla a orilla en diagonal */
+  --ribbon-center: 1.7rem; /* qué tan adentro de la esquina pasa su centro */
   --icon-xl: 1.8rem;
   /* Grosor del trazo de un ícono (viewBox 24): fino por omisión; más grueso en lo chico (una palomita, la marca de una plataforma). */
   --stroke-fine: 1.75;

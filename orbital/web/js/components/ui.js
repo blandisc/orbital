@@ -19,6 +19,11 @@ export const PlatformMark = (src, fallback = null) => (src ? h("img", { class: "
 export const Badge = (text, { className = null, large = false, plate = false } = {}) =>
   h("span", { class: ["badge", large && "badge--lg", plate && "badge--plate", className] }, text);
 
+/** «Nuevo» sobre un póster: el listón en diagonal de la esquina (como DSCornerRibbon del iPhone). Va dentro de la pieza
+ *  que lo lleva (posición relativa); «HOY» sigue siendo una insignia. */
+export const CornerRibbon = (text = "Nuevo", { className = null } = {}) =>
+  h("span", { class: ["corner-ribbon", className], "aria-label": text }, h("span", { class: "corner-ribbon__band", "aria-hidden": "true" }, text));
+
 /** Las plataformas con píldora a color (sus colores de `--platform-*`, los de design/tokens.json › platforms que usa el
  *  iPhone) y su logo de JustWatch (los mismos de orbital/library/charts.py › JUSTWATCH_PACKAGES). */
 const JUSTWATCH = "https://images.justwatch.com";

@@ -152,7 +152,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | Tarjeta | `--color-surface` (ink-900) y `--radius-*` | Distinto a propósito: la superficie es ink-900 en la TV (lo explica `design/tokens.json`) | — |
 | Hoja con encabezado propio | `sheet`, `side-panel` | Igual | — |
 | Aviso | `toast` | Distinto a propósito: arriba a la derecha, porque abajo va el pie de pistas y se lee desde el sillón | Mismos tonos, textos y duración (`--duration-notice`). |
-| Etiqueta | `Badge` y `Chip` | Pendiente · ola 1 | «Nuevo» como listón en la esquina del póster; «HOY» se queda en placa. |
+| Etiqueta | `Badge`, `Chip` y `CornerRibbon` | Igual | «Nuevo» es el listón de la esquina del póster (Mi media, sus listas); «HOY» y el ▲▼ del Top 10 se quedan en placa. |
 | Texto sobre arte | Velos sueltos por pieza (`--color-scrim`, degradados) | Pendiente · ola 1 | Una pieza de velo con sus variantes. |
 | Cargando | Cada vista con su propio «Cargando…» | Pendiente · ola 1 | El esqueleto de su forma. |
 | Sin conexión o error | Mensajes en palabras con «Reintentar» | Igual | — |
@@ -341,6 +341,7 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 | logotipo en mayúsculas | `collection-card.js` (`AwardWordmark`, `SourceBadge`), `hero.js` y `list-screen.js` (el nombre de un premio) | Un premio (ÓSCAR, EMMY) y el sello de origen (TRAKT, STREMIO, ORBITAL) son **logotipos**, como en el iPhone: el JS los pone en mayúsculas (con `--tracking-award` / `--tracking-label`). No es una etiqueta de la interfaz. |
 | iniciales de un canal sin logo | `core/tv.js` | Las iniciales dentro del círculo de un canal sin logo (como el avatar de una persona) van en mayúsculas. |
 | rótulo de sección | `ui.css` (`.section-head__label`) | El rótulo de una sección (ícono, nombre y línea) va en mayúsculas chicas, igual que `DSChapterLabel` del iPhone (Fernando, 31 oct 2026): es lo que separa una sección de sus filas. Solo el rótulo; nada más lleva mayúsculas espaciadas. |
+| listón «Nuevo» | `ui.css` (`.corner-ribbon__band`) | El listón en diagonal de la esquina de un póster dice NUEVO en mayúsculas, como `DSCornerRibbon` del iPhone. |
 
 (Antes de agregar una, intenta un token o una pieza nueva.)
 

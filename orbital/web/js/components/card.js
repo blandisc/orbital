@@ -6,7 +6,7 @@ import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { clampRatio, coverRatio, needsInternet } from "../core/library.js";
 import { ArtFit } from "./art-fit.js";
-import { Badge, Progress } from "./ui.js";
+import { Badge, CornerRibbon, Progress } from "./ui.js";
 
 /** Portada de un juego/app. Si no hay imagen (o falla), muestra el ícono de su tipo y el título. */
 /**
@@ -112,7 +112,9 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   }
   if (needsInternet(item)) card.classList.add("needs-internet"); // sin internet se atenúa (base.css)
   if (item.chosen) card.classList.add("card--chosen"); // «Porque viste»: el título del que salen las sugerencias
-  card.append(...[badge, rank, trend, live, chip, label, logo, meta, progress].filter(Boolean));
+  // Recién llegado a tu carpeta (Mi media): el listón «Nuevo» en la esquina, como «Lo nuevo de lo tuyo» del iPhone.
+  const fresh = item.day_label === "Nuevo" && !badge ? CornerRibbon() : null;
+  card.append(...[badge, rank, trend, live, chip, label, logo, meta, progress, fresh].filter(Boolean));
   return card;
 }
 

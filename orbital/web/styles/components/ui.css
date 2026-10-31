@@ -163,3 +163,16 @@
 .brand-name--paramount { color: var(--brand-paramount); }
 .brand-name--crunchyroll { color: var(--brand-crunchyroll); }
 [data-input="touch"] .pill { min-height: var(--touch-target); }
+/* CornerRibbon: «Nuevo» en la esquina de un póster, como DSCornerRibbon del iPhone. El cuadro de la esquina recorta la banda
+   (la tarjeta no lleva overflow: su pie va por fuera); la banda va en diagonal, verde con un brillo arriba. */
+.corner-ribbon {
+  position: absolute; top: 0; right: 0; z-index: var(--z-above); width: var(--ribbon-corner); height: var(--ribbon-corner);
+  overflow: hidden; border-top-right-radius: inherit; pointer-events: none;
+}
+.corner-ribbon__band {
+  position: absolute; top: var(--ribbon-center); right: calc(var(--ribbon-length) / -2 + var(--ribbon-center));
+  width: var(--ribbon-length); transform: translateY(-50%) rotate(45deg); text-align: center;
+  padding-block: var(--space-1); background: linear-gradient(var(--color-shine), transparent 60%), var(--color-new);
+  color: var(--color-on-primary); font-size: var(--type-caption); font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-caps); text-transform: uppercase; box-shadow: var(--shadow-badge); /* ds-exception: listón «Nuevo» */
+}
