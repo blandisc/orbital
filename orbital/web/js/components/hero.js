@@ -117,10 +117,10 @@ export function createHero({ onAction }) {
       ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha") : null;
     mount(actions,
       Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", art: true, onPress: () => onAction("select") }),
-      sheet && Button({ label: sheet, glyph: glyphs.alt, onPress: () => onAction("alt") }),
+      sheet && Button({ label: sheet, glyph: glyphs.alt, icon: sheet === "Episodios" ? "list" : "info", onPress: () => onAction("alt") }),
       !sheet && alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, yields: true, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
-      item.source !== "genre" && item.source !== "collection" && Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
+      item.source !== "genre" && item.source !== "collection" && Button({ label: "Opciones", glyph: glyphs.options, icon: "more", onPress: () => onAction("options") }));
     const tip = alexa && tips ? alexaTip(item, { runningId }) : null;
     voice.hidden = !tip;
     if (tip) mount(voice, svg(ICONS.assistant), h("span", {}, tip));

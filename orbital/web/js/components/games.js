@@ -143,7 +143,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       actions: [
         { id: "select", label: primaryLabel(item, options.runningId), glyph: g.select, primary: true },
         alt && item.id !== options.runningId && { id: "alt", label: alt.name, ariaLabel: `Abrir con ${alt.name}`, glyph: g.alt, yields: true },
-        { id: "options", label: "Opciones", glyph: g.options },
+        { id: "options", label: "Opciones", glyph: g.options, icon: "more" },
       ].filter(Boolean),
     };
   }

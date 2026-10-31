@@ -13,7 +13,7 @@ import { Button } from "./button.js";
  *   key, title, art?, artKind?: "wide" | "poster" | "pixel", standIn?: { photo, glow } (sin arte: la foto de su consola),
  *   logo?, logoDark?, facts?: [texto] (año · géneros · quién lo hizo), favorite?,
  *   platform: { icon, mark?, text } (mark: la marca real, platformMark), stats: [[etiqueta, valor]], description?,
- *   actions: [{ id, label, glyph, primary?, yields?, ariaLabel? }] | note: «No lo tienes» }
+ *   actions: [{ id, label, glyph, primary?, yields?, ariaLabel?, icon? }] (con icon, un secundario redondo) | note: «No lo tienes» }
  * onAction(id, ficha): un botón de la ficha (lo mismo que A, X o Y).
  */
 export function createDetailPanel({ onAction }) {
@@ -49,7 +49,7 @@ export function createDetailPanel({ onAction }) {
       h("p", { class: "detail-panel__description" }, d.description || ""),
       d.actions?.length
         ? h("div", { class: "button-row detail-panel__actions" }, d.actions.map((a) => Button({
-          label: a.label, ariaLabel: a.ariaLabel, glyph: a.glyph, variant: a.primary ? "primary" : undefined, art: !!a.primary, yields: !!a.yields,
+          label: a.label, ariaLabel: a.ariaLabel, glyph: a.glyph, variant: a.primary ? "primary" : undefined, art: !!a.primary, yields: !!a.yields, icon: a.icon,
           onPress: () => onAction?.(a.id, d),
         })))
         : d.note && h("span", { class: "detail-panel__note" }, d.note));

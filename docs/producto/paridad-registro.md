@@ -23,8 +23,9 @@ Cómo se mantiene:
 | Mazo «¿Qué vemos hoy?», opción A (Paso · Ver ya · Mi lista) | Ya | Pendiente · ola 2 |
 | «Mi lista» es tu watchlist de Trakt | Ya (quedan textos) | Pendiente · ola 2 («Guardar en…» todavía separa las dos) |
 | Los canales de tus series: una lista guardada en Trakt, para Ultra, Plus y Orbital | En el teléfono | Pendiente · ola 2 (categoría en TV en vivo). Nombre propuesto: «Tus canales» (en el glosario, «Tus series» son las que estás viendo) |
-| Porqué en turquesa, solo si ayuda; sección = rótulo con ícono y línea | Ya | Pendiente · ola 1 |
-| Un botón sólido y redondos con su nombre bajo el enfocado; pie de tres pistas y ☰ | — | Pendiente · ola 1 |
+| Porqué en turquesa, solo si ayuda; sección = rótulo con ícono y línea | Ya | Ya (ola 1: `SectionHead` en dos niveles, `--color-reason`, `--color-orbital`) |
+| Un botón sólido y redondos con su nombre debajo | — | Ya (ola 1: `Button({ icon })`) |
+| Pie de tres pistas y ☰ | — | Pendiente · ola 1 |
 | Calificar: estrellas en la ficha y aviso al terminar | Ya | Pendiente · ola 3 |
 | «Lo que ves» reemplaza a «Tu año» | Ya | Pendiente · ola 3 |
 | Entrega: una rama por ola, con capturas de antes y después de las cuatro superficies | — | — |

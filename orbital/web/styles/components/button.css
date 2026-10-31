@@ -29,4 +29,15 @@
 /* Con el dedo no hay glifo (A, B…): el espacio que le dejaban los botones (más angosto a la izquierda) descentraba el texto
    («Jugar», «Ver la serie»). Mismo margen a los dos lados y el texto al centro; objetivos de ~44 px. */
 [data-input="touch"] .button { min-height: var(--touch-target); justify-content: center; padding-inline: var(--space-5); }
-[data-input="touch"] .button--primary { padding-inline: 1.6rem; }
+[data-input="touch"] .button--primary { padding-inline: 1.6rem; }/* Redondo (como DSIconButton del iPhone): un solo ícono en un círculo del alto de los demás; el glifo del mando en su
+   orilla y su nombre debajo, chico, para que la leyenda siga diciendo qué hace. La fila le aparta ese renglón. */
+.button--round { position: relative; justify-content: center; width: var(--control-height); padding: 0; border-radius: 50%; }
+.button__icon { display: grid; place-items: center; width: var(--icon-lg); height: var(--icon-lg); }
+.button__icon svg { width: 100%; height: 100%; }
+.button__glyph { position: absolute; right: calc(var(--space-1) * -1); bottom: calc(var(--space-1) * -1); }
+.button__name {
+  position: absolute; top: calc(100% + var(--space-1)); left: 50%; transform: translateX(-50%);
+  color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--weight-medium); white-space: nowrap; pointer-events: none;
+}
+.button-row:has(.button--round) { padding-bottom: calc(var(--type-caption) * var(--leading-tight) + var(--space-1)); }
+[data-input="touch"] .button--round { width: var(--touch-target); min-height: var(--touch-target); padding: 0; }

@@ -138,13 +138,13 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 
 | Papel | Pieza de la TV | Estado | Nota |
 |---|---|---|---|
-| Encabezado | `.shelf__heading` y los títulos de Inicio y Juegos, con el dato gris a la derecha | Pendiente · ola 1 | Pieza `section-head`: sección = rótulo con ícono en el azul de Orbital, mayúsculas chicas y línea; subsección = título blanco. |
+| Encabezado | `SectionHead(title, { level })` (`ui.js`) y el rótulo de las filas de tarjetas (`shelf__heading--section`) | Igual | Sección = rótulo con ícono en `--color-orbital`, mayúsculas chicas y línea, el dato a la derecha (Tus consolas, Día por día, Premios, Estudios…); subsección = título blanco. |
 | Arranque de una parte grande | — | Pendiente · ola 1 | Los grupos de Películas y series (Plataformas, Estudios, Premios, Años…). |
 | Renglón de lista | `sheet__item` | Pendiente · ola 3 | Las listas de lo tuyo y la entrada de «Lo que ves». |
-| Porqué | receta `--type-eyebrow`, sin color propio | Pendiente · ola 1 | `--color-reason` (el turquesa), solo cuando el porqué dice algo que el título no. |
+| Porqué | `SectionHead(title, { reason })` y `--color-reason` | Igual | Solo cuando el porqué dice algo que el título no; un dato nunca va en turquesa. |
 | Botón principal | `Button({ art: true })` | Igual | Sólido en el color del arte, texto oscuro. |
 | Botón secundario | `Button` (ghost, relleno tenue) | Distinto a propósito: con el mando el foco invierte el botón y un borde fino no se ve a tres metros | — |
-| Botón de ícono | Los redondos de la ficha (`title__action`), con su nombre bajo el enfocado | Pendiente · ola 1 | Llevarlos al destacado de Inicio y de Películas y series. |
+| Botón de ícono | `Button({ icon })` (`button--round`) y los redondos de la ficha (`title__action--icon`) | Igual | Uno sólido y los demás redondos: Opciones, Ficha y Episodios en el destacado de Inicio, el de Películas y series y la ficha de Juegos, con el glifo en su orilla y su nombre debajo. |
 | Selector | `Pill` (para todo) y `Segmented` (Ajustes) | Pendiente · ola 1 | Por lo que hace: pestañas de texto, segmentado, cápsulas y mosaicos; lo elegido en blanco. |
 | Búsqueda avanzada | «Ordenar y filtrar» de `list-screen` | Pendiente · ola 3 | En la TV vive en Películas y series y en ☰ (Fernando, 31 oct 2026). |
 | Marcar como vista | «Marcar como vista», sin fecha | Pendiente · ola 3 | La hoja «¿Cuándo la viste?». |
@@ -327,7 +327,7 @@ letras que bajan: g, p, j, y).
 ## 6. Texto
 
 - **Fuentes**: todo el texto es Segoe UI Variable, la del sistema (`--font-sans` para títulos, `--font-text` para cuerpo); no se carga ninguna con `@font-face` porque Orbital corre en Windows. Solo el nombre de un premio (`--font-award`) pide una con remate: Didot (que Windows no trae), luego Bodoni MT y Palatino Linotype; en esta máquina sale Bodoni MT.
-- Español, frases normales. **Sin mayúsculas espaciadas** (se ven «de IA»): ni en etiquetas, ni pestañas,
+- Español, frases normales. **Sin mayúsculas espaciadas** (se ven «de IA»; la única es el rótulo de sección, ver Excepciones): ni en etiquetas, ni pestañas,
   ni insignias.
 - Tamaños solo con `--text-*` o, mejor, una receta `--type-*` (escalan con Ajustes → Tamaño del texto).
 - Títulos con `line-clamp` o «…»: `-webkit-line-clamp` corta en el borde del último renglón, así que un `padding-bottom` no salva la cola de g, p, j, y. **Chicos** (tarjetas, riel, hojas): interlineado `--leading-title` (1,3). **Grandes** (héroe, ficha, destacado, mosaico): su interlineado de siempre y `overflow: clip; overflow-clip-margin: var(--clip-tail)`, que deja asomar la cola sin inflar el interlineado ni mover el diseño (con `clip` el elemento flex pide `min-width: 0` y `min-height: 0`).
@@ -340,6 +340,7 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 |---|---|---|
 | logotipo en mayúsculas | `collection-card.js` (`AwardWordmark`, `SourceBadge`), `hero.js` y `list-screen.js` (el nombre de un premio) | Un premio (ÓSCAR, EMMY) y el sello de origen (TRAKT, STREMIO, ORBITAL) son **logotipos**, como en el iPhone: el JS los pone en mayúsculas (con `--tracking-award` / `--tracking-label`). No es una etiqueta de la interfaz. |
 | iniciales de un canal sin logo | `core/tv.js` | Las iniciales dentro del círculo de un canal sin logo (como el avatar de una persona) van en mayúsculas. |
+| rótulo de sección | `ui.css` (`.section-head__label`) | El rótulo de una sección (ícono, nombre y línea) va en mayúsculas chicas, igual que `DSChapterLabel` del iPhone (Fernando, 31 oct 2026): es lo que separa una sección de sus filas. Solo el rótulo; nada más lleva mayúsculas espaciadas. |
 
 (Antes de agregar una, intenta un token o una pieza nueva.)
 
