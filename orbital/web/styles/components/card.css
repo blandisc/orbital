@@ -15,9 +15,11 @@
 }
 /* Borde interior fino: separa portadas oscuras del fondo sin cambiar de tamaño al enfocar. */
 .card::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  box-shadow: var(--edge-hairline);
+  content: ""; position: absolute; inset: 0; z-index: var(--z-raised); border-radius: inherit; pointer-events: none;
+  box-shadow: var(--edge-hairline); background: var(--focus-shine); opacity: 0; transition: opacity var(--duration-base) var(--ease-out);
 }
+/* Enfocada, le cruza el brillo en diagonal (Apple TV): con el levantón, dice cuál es sin anillo. */
+.card--focused::after { opacity: 1; }
 .card__image { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; opacity: 0; transition: opacity var(--duration-base) var(--ease-out); }
 .card__image--loaded { opacity: 1; }
 .card__image--instant { transition: none; }
@@ -109,12 +111,12 @@
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   font-size: var(--type-secondary); font-weight: var(--weight-medium); line-height: var(--leading-title); overflow-wrap: break-word; hyphens: auto; }
 .card__subtitle { color: var(--color-text-muted); font-size: var(--type-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
-/* Foco: el juego salta (resorte con rebote), se eleva un poco y proyecta un brillo de su propio
-   color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
+/* Foco: el juego salta (resorte con rebote), se eleva y flota con su sombra, sin anillo (Apple TV), y proyecta un brillo de
+   su propio color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
 .card--focused {
   transform: translateY(-.35rem) scale(var(--card-focus-scale));
   margin-right: calc(var(--card-height) * var(--ratio, .667) * (var(--card-focus-scale) - 1));
-  box-shadow: var(--ring-focus), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--art-accent) 38%, transparent);
+  box-shadow: var(--focus-lift), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--art-accent) 38%, transparent);
   transition:
     transform var(--duration-snap) var(--ease-pop), margin var(--duration-base) var(--ease-out),
     box-shadow var(--duration-slow) var(--ease-out);

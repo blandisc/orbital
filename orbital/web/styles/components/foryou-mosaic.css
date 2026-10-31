@@ -38,9 +38,9 @@
 
 /* Con foco: lo demás se apaga un poco; la enfocada lleva el anillo. */
 .foryou-mosaic--focusing .foryou-mosaic__tile:not(.foryou-mosaic__tile--focused) { opacity: var(--opacity-away); filter: saturate(.6); }
-.foryou-mosaic__tile--focused { z-index: var(--z-raised); box-shadow: var(--ring-focus); }
+.foryou-mosaic__tile--focused { z-index: var(--z-raised); box-shadow: var(--focus-lift); }
 /* Recorriendo rápido: el marco va adelante y la columna se abre al detenerte (foryou-mosaic.js · paintSoon). */
-.foryou-mosaic__tile--next { z-index: var(--z-raised); box-shadow: var(--ring-focus); opacity: 1 !important; filter: none !important; }
+.foryou-mosaic__tile--next { z-index: var(--z-raised); box-shadow: var(--focus-lift); opacity: 1 !important; filter: none !important; }
 .foryou-mosaic__tile--focused::after { opacity: 1; }
 
 /* Qué es: su ícono en un círculo de vidrio (la consola de un juego, o serie / película). */

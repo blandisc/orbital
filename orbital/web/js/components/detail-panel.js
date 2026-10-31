@@ -49,7 +49,7 @@ export function createDetailPanel({ onAction }) {
       h("p", { class: "detail-panel__description" }, d.description || ""),
       d.actions?.length
         ? h("div", { class: "button-row detail-panel__actions" }, d.actions.map((a) => Button({
-          label: a.label, ariaLabel: a.ariaLabel, glyph: a.glyph, variant: a.primary ? "primary" : undefined, art: !!a.primary, yields: !!a.yields, icon: a.icon,
+          label: a.label, ariaLabel: a.ariaLabel, glyph: a.glyph, variant: a.primary ? "primary" : undefined, yields: !!a.yields, icon: a.icon,
           onPress: () => onAction?.(a.id, d),
         })))
         : d.note && h("span", { class: "detail-panel__note" }, d.note));

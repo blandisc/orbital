@@ -61,13 +61,16 @@
 [data-input="touch"] .segmented__item { min-height: var(--touch-target); }
 
 /* SidePanel: un panel a la derecha sobre un velo (los menús —sheet— y las fuentes —sources—). Comparten el velo que se funde, el
-   marco (relieve, borde, sombra) y cómo entra y sale; cada uno pone su ancho, su relleno y su contenido. */
+   marco y cómo entra y sale; cada uno pone su ancho, su relleno y su contenido. El marco es vidrio que flota separado de las
+   orillas, con sus esquinas (Apple TV, 31 oct 2026): detrás se sigue viendo, borroso, lo que había. */
 .side-panel {
   position: fixed; inset: 0; z-index: var(--z-overlay); display: flex; justify-content: flex-end;
   background: var(--color-scrim); animation: fade-in var(--duration-base) var(--ease-out);
 }
 .side-panel__panel {
-  height: 100%; background: var(--gradient-sheet); border-left: 1px solid var(--color-hairline); box-shadow: var(--shadow-overlay);
+  height: calc(100% - 2 * (var(--space-5) + var(--safe-y))); margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0 0;
+  border-radius: var(--radius-2xl); background: var(--color-glass-strong); backdrop-filter: var(--filter-glass);
+  box-shadow: var(--edge-glass), var(--shadow-overlay);
   animation: slide-in-right var(--duration-slow) var(--ease-out);
 }
 .side-panel--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
@@ -76,8 +79,8 @@
    se sigue viendo el arte. Lo usa «Elegir versión» (antes a la derecha y a todo lo alto: con dos idiomas, media pantalla vacía). */
 .side-panel--bottom { align-items: flex-end; justify-content: stretch; }
 .side-panel--bottom .side-panel__panel {
-  width: 100%; height: auto; max-height: calc(100vh - var(--space-14) - var(--safe-y));
-  border-left: 0; border-top: 1px solid var(--color-hairline); border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  width: auto; flex: 1; height: auto; max-height: calc(100vh - var(--space-14) - var(--safe-y));
+  margin: 0 var(--page-gutter) calc(var(--space-5) + var(--safe-y));
   animation-name: slide-in-up;
 }
 .side-panel--bottom.side-panel--leaving .side-panel__panel { animation-name: slide-out-down; }
@@ -110,7 +113,7 @@
 .key-hint { display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap; }
 
 /* Tile: superficie enfocable de las pantallas nuevas (tarjetas anchas, consolas, destacado).
-   El foco es el mismo anillo que las portadas (--ring-focus) y crece un poco; lo demás se atenúa. */
+   El foco es el mismo anillo que las portadas (--focus-lift) y crece un poco; lo demás se atenúa. */
 .tile {
   position: relative; overflow: hidden; border-radius: var(--tile-radius);
   background: var(--gradient-card); box-shadow: var(--edge-hairline), var(--shadow-card);
@@ -118,7 +121,7 @@
   transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out),
     opacity var(--duration-base) var(--ease-out), filter var(--duration-base) var(--ease-out);
 }
-.tile--focused { transform: scale(var(--tile-focus-scale)); box-shadow: var(--ring-focus); z-index: var(--z-raised); }
+.tile--focused { transform: scale(var(--tile-focus-scale)); box-shadow: var(--focus-lift); z-index: var(--z-raised); }
 .tile--dimmed { opacity: var(--tile-dim-opacity); }
 /* Arte a sangre dentro de un tile, con degradado abajo para que el texto se lea siempre. */
 .tile__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }

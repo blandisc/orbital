@@ -11,7 +11,7 @@
 }
 .card--focused .collection__glow { opacity: var(--opacity-solid); }
 /* El foco de .card (anillo y brillo), con el halo de su color si tiene; sin esto la sombra de arriba le ganaba. */
-.card--collection.card--focused { box-shadow: var(--ring-focus), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--halo, var(--art-accent)) 55%, transparent); }
+.card--collection.card--focused { box-shadow: var(--focus-lift), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--halo, var(--art-accent)) 55%, transparent); }
 
 /* El abanico (FanCard): tres pósters, el del medio al frente y los de los lados inclinados detrás. */
 .collection__fan { position: absolute; left: 50%; top: 10%; width: 0; height: 64%; }

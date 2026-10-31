@@ -98,7 +98,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     if (pool.length) paint();
   }).observe(el);
   const gap = () => parseFloat(getComputedStyle(document.documentElement).fontSize) * .85;
-  // Aire para el anillo de foco (--ring-focus sobresale ~.34rem): sin esto se corta a la izquierda y arriba.
+  // Aire para el anillo de foco (--focus-lift sobresale ~.34rem): sin esto se corta a la izquierda y arriba.
   const ring = () => gap() * .5;
   const size = () => ({ W: el.clientWidth, H: el.clientHeight });
 

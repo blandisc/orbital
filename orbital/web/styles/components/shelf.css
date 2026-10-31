@@ -58,7 +58,7 @@
   transition: box-shadow var(--duration-slow) var(--ease-out), opacity var(--duration-base) var(--ease-out);
 }
 /* El foco en tus títulos: el escenario entero es la pieza enfocada (con el anillo de cualquier póster). */
-.shelf__stage--focused { opacity: 1; box-shadow: var(--ring-focus), var(--shadow-card); }
+.shelf__stage--focused { opacity: 1; box-shadow: var(--focus-lift), var(--shadow-card); }
 .shelf__row:not(.shelf__row--current) .shelf__stage { opacity: var(--opacity-off); }
 .shelf__stage-art {
   position: absolute; inset: 0; z-index: var(--z-behind); border-radius: inherit; overflow: hidden;

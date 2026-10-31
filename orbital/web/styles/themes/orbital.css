@@ -29,9 +29,14 @@
   --color-focus: var(--palette-paper);
   --color-primary: var(--palette-paper);
   --color-on-primary: var(--palette-ink-1000);
-  /* El botón principal de un juego o un título (Jugar, Ver) toma el color de su arte, como Game Glance:
-     el acento ya es claro, así que el texto oscuro se sigue leyendo. Sin color: casi blanco. */
-  --color-primary-art: var(--art-accent);
+  /* Vidrio (lenguaje Apple TV, Fernando, 31 oct 2026): lo que flota sobre el arte —la barra de secciones, el selector de
+     consolas, los botones secundarios, los menús— es vidrio oscuro con un filo claro por dentro. El color lo pone la luz de
+     atrás; «Jugar» y los demás principales van siempre en blanco (--color-primary), nunca del color del arte. */
+  --color-glass: rgba(60, 60, 67, .42);
+  --color-glass-hover: rgba(90, 90, 98, .5);
+  --color-glass-strong: rgba(36, 36, 42, .78); /* un menú o una hoja: más tapado, para leer encima de cualquier cosa */
+  --edge-glass: inset 0 0 0 1px rgba(255, 255, 255, .16);
+  --filter-glass: blur(var(--blur-glass)) saturate(1.6);
   /* Foco invertido (teclas, chips, pestañas, opciones de menú): fondo claro, texto oscuro. */
   --inverse-bg: var(--color-primary);
   --inverse-fg: var(--color-on-primary);
@@ -123,7 +128,6 @@
   /* La sombra sobre el arte: degradados que dejan leer el texto encima, contorno de un ícono sobre luz. */
   --color-art-shade: var(--palette-ink-1000);
   /* Superficies con relieve: la hoja lateral y la casilla de una consola, un poco más claras arriba. */
-  --gradient-sheet: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--color-surface) 40%);
   --gradient-console-tile: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--palette-ink-900) 100%);
   /* El planeta de la pantalla de carga cuando lo que abres no tiene portada (una app). */
   --gradient-launch-planet: radial-gradient(circle at 35% 30%, var(--color-star), var(--palette-ink-200) 45%, var(--palette-ink-700));
@@ -172,6 +176,8 @@
   --shadow-card: 0 .5rem 1.4rem rgba(0, 0, 0, .35);
   --shadow-lifted: 0 1.1rem 2.4rem rgba(0, 0, 0, .55);
   --shadow-overlay: 0 1.5rem 4rem rgba(0, 0, 0, .55);
-  /* Foco: anillo blanco separado de la portada por un hueco del color del fondo. */
-  --ring-focus: 0 0 0 .16rem var(--color-tinted-bg), 0 0 0 .34rem var(--color-focus), var(--shadow-lifted);
+  /* Foco (Apple TV, 31 oct 2026): lo enfocado se levanta —crece, flota con su sombra y le cruza un brillo en diagonal—; sin
+     anillo. El brillo (--focus-shine) va encima del arte, en el ::after de la pieza. */
+  --focus-lift: 0 1.2rem 2.6rem rgba(0, 0, 0, .6);
+  --focus-shine: linear-gradient(120deg, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, .06) 30%, rgba(255, 255, 255, 0) 52%);
 }

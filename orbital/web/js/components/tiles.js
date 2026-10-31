@@ -116,7 +116,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
       detailOf(item) && h("span", { class: "tile--feature__detail" }, detailOf(item)),
       Progress(item.progress, { className: "tile--feature__progress" }),
       h("span", { class: "button-row tile--feature__actions" },
-        Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", art: true, onPress: press("select") }),
+        Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: press("select") }),
         // «Episodios» o «Ficha» (un video) son redondos, como en Películas y series; «Con Ryujinx» sigue con su nombre.
         alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, icon: ALT_ICONS[alt], onPress: press("alt") }),
         Button({ label: "Opciones", glyph: glyphs.options, icon: "more", onPress: press("options") }))));

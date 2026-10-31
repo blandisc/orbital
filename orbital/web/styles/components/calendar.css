@@ -30,7 +30,7 @@
   position: absolute; right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); padding: .05em .45em;
   border-radius: var(--radius-pill); background: var(--color-badge-bg); box-shadow: var(--shadow-badge); font-size: var(--type-footnote); font-weight: var(--weight-bold);
 }
-.calendar__cell--focused { opacity: 1; transform: scale(var(--tile-focus-scale)); box-shadow: var(--ring-focus); z-index: var(--z-raised); }
+.calendar__cell--focused { opacity: 1; transform: scale(var(--tile-focus-scale)); box-shadow: var(--focus-lift); z-index: var(--z-raised); }
 .calendar__status { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); }
 
 .calendar__side { display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; padding: var(--inset-card); border-radius: var(--tile-radius); background: var(--color-surface); }

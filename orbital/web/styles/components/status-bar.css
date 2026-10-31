@@ -1,5 +1,6 @@
 /* StatusBar: la marca, Buscar, las secciones como íconos (la activa se expande con su nombre) entre LB y RB y, a la
-   derecha, lo abierto, Alexa, Wi-Fi, la pila y la hora. Sin cápsulas ni vidrio. */
+   derecha, lo abierto, Alexa, Wi-Fi, la pila y la hora. Como Apple TV (31 oct 2026): las secciones y Buscar van en vidrio;
+   la activa, en blanco con su nombre. */
 .status-bar {
   position: relative; display: flex; align-items: center; gap: var(--space-8); min-width: 0;
   height: var(--control-height); margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0;
@@ -46,7 +47,10 @@
    con position:absolute, se encimaban con Buscar y la hora en pantallas angostas). */
 /* Las pestañas nunca se encogen (se recortaban: la «E» de junto a Apps desaparecía bajo lo que está
    abierto); cuando falta sitio, cede el nombre de lo abierto, con «…». */
-.status-bar__tabs { position: relative; flex: none; display: flex; align-items: center; gap: var(--space-1); margin: 0 auto; }
+.status-bar__tabs {
+  position: relative; flex: none; display: flex; align-items: center; gap: var(--space-1); margin: 0 auto; padding: var(--space-1);
+  border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
+}
 /* La píldora de la sección activa: una sola, que se desliza de una pestaña a otra (status-bar.js). */
 /* Se mueve con Web Animations (status-bar.js · placePill): el borde de adelante corre y el de atrás lo alcanza. */
 .status-bar__pill {
@@ -84,11 +88,12 @@
 .status-bar__search {
   display: inline-flex; align-items: center; gap: var(--space-2); margin-left: calc(-1 * var(--space-3));
   padding: .4rem var(--space-2) .4rem .85rem; border-radius: var(--radius-pill);
-  background: var(--color-fill); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium);
+  background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
+  color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium);
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
 }
 .status-bar__search svg { width: var(--icon-sm); height: var(--icon-sm); }
-.status-bar__search:hover { background: var(--color-fill-hover); color: var(--color-text); }
+.status-bar__search:hover { background: var(--color-glass-hover); color: var(--color-text); }
 .status-bar__search-glyph:empty { display: none; }
 /* Enfocado desde el Inicio (↑): el mismo foco invertido que las teclas y opciones. */
 .status-bar__search.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }

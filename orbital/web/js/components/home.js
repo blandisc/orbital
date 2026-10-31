@@ -190,17 +190,6 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     for (let n = rows.length - 1; n > 0 && list.scrollHeight > list.clientHeight + 1; n--) rows[n].hidden = true;
   }
 
-  /** El botón del destacado conserva el color del destacado: al bajar a la lista, el fondo toma el color de lo enfocado
-   * pero el destacado sigue enseñando lo suyo (antes su «Jugar» se pintaba del color de otro juego). */
-  function keepFeatureColor(leaving) {
-    const feature = top.querySelector(".tile--feature");
-    if (!feature) return;
-    if (!leaving) return feature.style.removeProperty("--color-primary-art");
-    if (!feature.style.getPropertyValue("--color-primary-art")) {
-      feature.style.setProperty("--color-primary-art", getComputedStyle(document.documentElement).getPropertyValue("--art-accent"));
-    }
-  }
-
   /** En Tus consolas el Inicio se desliza lo justo para enseñarlas enteras; arriba, vuelve. */
   const pageMax = () => Math.max(0, consoles.offsetTop + consoles.offsetHeight - room());
   function scrollToFocus() {
@@ -239,7 +228,6 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     queueStage();
     markFocused();
     el.dataset.zone = inConsoles ? "consoles" : "top";
-    keepFeatureColor(focusId.startsWith("card:"));
     keepConsoleVisible();
     scrollToFocus();
     onFocus?.(targets.get(focusId));
