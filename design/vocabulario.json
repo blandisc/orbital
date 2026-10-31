@@ -1,5 +1,5 @@
 {
-  "_": "Lo que las dos apps dicen igual. `texto` tiene que salir tal cual en el código de los lados que marca `en` (tv, ios); nada de `evitar` puede salir en ninguno. tests/web/design-parity.test.mjs lo revisa en los textos entre comillas de orbital/ (JS y Python) y de ios/ (Swift y Localizable.xcstrings).",
+  "_": "Lo que las dos apps dicen igual. `texto` tiene que salir tal cual en el código de los lados que marca `en` (tv, ios); nada de `evitar` puede salir en ninguno. tests/web/design-parity.test.mjs lo revisa en los textos entre comillas de orbital/ (JS y Python) y de ios/ (Swift y Localizable.xcstrings). Un término con `pendiente` (por lado: qué falta y en qué ola) se salta en ese lado hasta que se arregle; la prueba falla si el lado ya cumple (quita la marca) y si el pendiente no está en docs/producto/paridad-registro.md.",
   "verbos": [
     { "texto": "Ver", "en": ["tv", "ios"] },
     { "texto": "Continuar", "en": ["tv", "ios"], "nota": "Un video a medias, y el encabezado de lo que dejaste en Inicio cuando hay juegos (decidido el 2026-10-29). El botón de un juego abierto: «Volver al juego»." },
@@ -7,14 +7,20 @@
     { "texto": "Guardada", "en": ["tv"], "nota": "El botón cuando ya está guardada (la película, la serie)." },
     { "texto": "Versión", "en": ["tv", "ios"], "evitar": ["Elegir fuente", "Elegir Fuente", "Escoger fuente", "Buscar fuente", "Otra fuente"], "nota": "Lo que ves (latino 1080p). «Todas las fuentes» es solo la lista con los nombres técnicos." },
     { "texto": "Ver en la TV", "en": ["ios"], "evitar": ["Ver en TV", "Ver en la tele", "Mandar a la TV"] },
-    { "texto": "Guardar", "en": ["tv", "ios"], "nota": "La acción de un título (botón «Guardar» / «Guardado»: Mi lista, tu watchlist o tus listas). «Mi lista» es el lugar, no el botón." }
+    { "texto": "Guardar", "en": ["tv", "ios"], "nota": "La acción de un título (botón «Guardar» / «Guardado»: Mi lista, tu watchlist o tus listas). «Mi lista» es el lugar, no el botón." },
+    { "texto": "Reintentar", "en": ["tv", "ios"], "evitar": ["Intentar de nuevo"], "nota": "El botón tras un error.", "pendiente": { "ios": "Quedan dos textos con «Intentar de nuevo»." } }
   ],
   "nombres": [
-    { "texto": "Mi lista", "en": ["tv", "ios"], "evitar": ["mi lista", "Mi Lista"], "nota": "Nombre propio de tu biblioteca de Stremio: siempre con M." },
+    { "texto": "Mi lista", "en": ["tv", "ios"], "evitar": ["mi lista", "Mi Lista", "Tu watchlist", "tu watchlist", "Tu Watchlist", "tu Watchlist"], "nota": "Lo que dejaste pendiente: tu watchlist de Trakt (sin Trakt, tu biblioteca de Stremio). Un solo nombre, siempre con M (glosario del iPhone, 31 oct 2026).", "pendiente": { "tv": "Ola 2: «Guardar en…» todavía separa Mi lista (Stremio) y tu watchlist (Trakt).", "ios": "Quedan textos con «tu watchlist» (avisos y Ajustes)." } },
     { "texto": "En Mi lista", "en": ["tv", "ios"] },
-    { "texto": "Tu watchlist", "en": ["tv", "ios"], "evitar": ["Tu Watchlist", "tu Watchlist"] },
     { "texto": "Seguir viendo", "en": ["tv", "ios"], "evitar": ["Continuar viendo", "Seguir mirando", "Donde te quedaste"] },
-    { "texto": "Para ti", "en": ["tv", "ios"], "evitar": ["Para Ti", "Para tí"] },
+    { "texto": "Para ti", "en": [], "evitar": ["Para Ti", "Para tí"], "nota": "Ya no es el nombre de una sección (es «Explorar», 31 oct 2026). Se vale en frases («Sugerencias para ti») y como lo que dices a la voz." },
+    { "texto": "Explorar", "en": ["tv", "ios"], "nota": "La sección de descubrir (antes «Para ti») en los dos (Fernando, 31 oct 2026).", "pendiente": { "tv": "Ola 1: la pestaña, su encabezado, los menús y la voz dicen «Para ti»." } },
+    { "texto": "Colecciones", "en": ["tv", "ios"], "evitar": ["tu repisa", "Tu repisa"], "nota": "Los premios y las listas del canon (Criterion, IMDb Top 250, New York Times).", "pendiente": { "tv": "Ola 3: la vitrina de Colecciones.", "ios": "Un texto dice «… del canon en tu repisa»." } },
+    { "texto": "Lo que ves", "en": ["tv", "ios"], "nota": "Tus números (horas, rachas, día por día, cómo calificas). «Tu año, día por día» es una vista adentro, no la entrada.", "pendiente": { "tv": "Ola 3: reemplaza la entrada «Tu año»." } },
+    { "texto": "Decide por mí", "en": ["tv", "ios"], "evitar": ["¿Qué vemos?"], "nota": "El sorteo de una propuesta.", "pendiente": { "tv": "Ola 2: la TV le dice «¿Qué vemos?».", "ios": "Quedan dos textos con «¿Qué vemos?»." } },
+    { "texto": "¿Qué vemos hoy?", "en": ["tv", "ios"], "evitar": ["Tinder"], "nota": "El mazo «Encuentra tu match perfecto» (opción A: Paso · Ver ya · Mi lista).", "pendiente": { "tv": "Ola 2: el mazo." } },
+    { "texto": "¿Cuándo la viste?", "en": ["tv", "ios"], "nota": "La hoja de marcar como vista con su fecha para Trakt.", "pendiente": { "tv": "Ola 3: la hoja." } },
     { "texto": "Top 10 en", "en": ["tv", "ios"] },
     { "texto": "En vivo", "en": ["tv", "ios"], "evitar": ["En Vivo", "EN VIVO"] },
     { "texto": "Nuevo", "en": ["tv", "ios"] }

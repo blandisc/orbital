@@ -10,6 +10,9 @@ Interfaz de consola para la TV (Windows, Legion Go), en español, que se usa con
   `ds-exception: <motivo>` y se documentan en la sección «Excepciones».
 - `tests/web/design-system.test.mjs` lo verifica: colores, duraciones, capas y tamaños de letra a mano,
   tokens inexistentes o sin uso, componentes fuera del catálogo, CSS muerto y colores fijos en JS.
+- **Una sola Orbital**: la TV y el iPhone se ven, se llaman y funcionan igual salvo lo que es distinto a propósito. Lee
+  `docs/producto/paridad-registro.md` antes de empezar; al decidir algo de una app, el commit dice qué pasa en la otra y lo
+  pendiente entra al registro. `tests/web/design-parity.test.mjs` cuida el vocabulario, los tokens y la tabla espejo.
 
 ## Las cuatro superficies
 
