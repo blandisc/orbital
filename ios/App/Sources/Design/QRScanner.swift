@@ -14,7 +14,7 @@ struct QRScanner: View {
         ZStack {
             if DataScannerViewController.isSupported && DataScannerViewController.isAvailable {
                 ScannerView(found: found).ignoresSafeArea()
-                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(DS.paper, lineWidth: DS.Version.pickedStroke)
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(DS.paper, lineWidth: DS.Stroke.selected)
                     .frame(width: DS.Guide.scanFrame, height: DS.Guide.scanFrame)
                     .accessibilityHidden(true)
             } else {
