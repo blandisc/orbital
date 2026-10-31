@@ -12,6 +12,8 @@ struct GameCompanionView: View {
     let game: OrbitalRemote.Game
     @Environment(AppEnvironment.self) private var env
     @State private var notes = ""
+    /// Las notas se guardan al dejar de teclear (no en cada tecla) y, al cerrar, lo que faltaba.
+    @State private var notesWriter = DebouncedWrite<String>()
     @State private var timerEnds: Date?
 
     var body: some View {
@@ -38,11 +40,16 @@ struct GameCompanionView: View {
             .scrollTargetBehavior(.viewAligned)
         }
         .task(id: game.id) {
+            notesWriter.flush()   // lo del juego anterior, antes de leer el nuevo
             notes = env.services.kv.data(notesKey).flatMap { String(data: $0, encoding: .utf8) } ?? ""
             timerEnds = env.services.kv.data(timerKey).flatMap { try? JSONDecoder().decode(Date.self, from: $0) }
             await m.refreshConsole()
         }
-        .onChange(of: notes) { _, text in env.services.kv.set(notesKey, data: text.data(using: .utf8)) }
+        .onChange(of: notes) { _, text in
+            let kv = env.services.kv, key = notesKey
+            notesWriter.schedule(text) { kv.set(key, data: $0.data(using: .utf8)) }
+        }
+        .onDisappear { notesWriter.flush() }
     }
 
     private var notesKey: String { "game-notes.\(game.id)" }
