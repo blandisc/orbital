@@ -214,15 +214,24 @@ final class MosaicRuntime {
         commit()
     }
 
-    /// Con el dedo: todo el mosaico sube o baja con el arrastre; abajo llegan piezas nuevas.
+    /// Con el dedo: el mosaico sube o baja con el arrastre, cada columna a su ritmo (unas un poco más rápido que el dedo y
+    /// otras un poco más lento, el mismo ritmo de la deriva): parece que pasan muchas películas, no una sola hoja que se
+    /// corre (Fernando, 31 oct 2026). Abajo llegan piezas nuevas.
     func scrollBy(_ delta: Double) {
         guard mode == .focus else { return }
         for c in columns.indices {
             let minOffset = (columns[c].tiles.first?.top ?? 0) - geometry.ring
-            columns[c].offset = max(minOffset, columns[c].offset + delta)
+            columns[c].offset = max(minOffset, columns[c].offset + delta * Self.dragRate(c))
         }
         fillAll()
         commit()
+    }
+
+    /// Qué tanto sigue al dedo cada columna: su ritmo de deriva entre el promedio (≈ 0,8 a 1,25).
+    static func dragRate(_ c: Int) -> Double {
+        let pattern = DesignTokens.Mosaic.driftPattern
+        guard !pattern.isEmpty else { return 1 }
+        return pattern[c % pattern.count] / (pattern.reduce(0, +) / Double(pattern.count))
     }
 
     func endScroll() { pruneAll(); refocusIfOffscreen(); commit() }

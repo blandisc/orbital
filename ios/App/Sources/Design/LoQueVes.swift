@@ -92,11 +92,16 @@ struct WatchingZoomMap: View {
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
             map(minutes)
             if let day {
+                // Se asoma desde debajo del mapa (apenas baja y crece un poco, fundiéndose), sin brincar desde arriba; otro
+                // día se funde sobre el anterior (Fernando, 31 oct 2026).
                 dayDetail(day, byDay)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .id(day)
+                    .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: DS.Watching.dayFrom, anchor: .top))
+                                                .combined(with: .offset(y: -DS.Space.s2)),
+                                            removal: .opacity))
             }
         }
-        .animation(DS.Motion.base(reduceMotion), value: day)
+        .animation(DS.Motion.smooth(reduceMotion), value: day)
         .sensoryFeedback(.selection, trigger: day)
         .onAppear {
             #if DEBUG

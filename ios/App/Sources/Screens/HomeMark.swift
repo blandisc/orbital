@@ -93,6 +93,9 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
     /// Con el reflejo de cada tarjeta debajo: el carrusel se lo pide a sus tarjetas (`rowReflection`) y ajusta el aire con lo que
     /// sigue (`reflectionTail`). La pantalla no ajusta nada a mano.
     var reflected = false
+    /// Lo que va arriba de cada tarjeta sin encogerse con ella (la línea de tiempo de «Próximas temporadas»: si se encogía, el
+    /// punto y la línea de las de los lados quedaban más abajo y adentro que los de la primera).
+    var header: ((Item) -> AnyView)? = nil
     @ViewBuilder var card: (Item) -> Card
 
     var body: some View {
@@ -103,11 +106,14 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                 ForEach(items, id: id) { item in
-                    card(item)
-                        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                            content.scaleEffect(1 - abs(phase.value) * DS.Collections.sideShrink)
-                                .brightness(-abs(phase.value) * DS.Collections.sideFade)   // más oscuras, como en el carrusel de Inicio
-                        }
+                    VStack(alignment: .leading, spacing: DS.Space.s2) {
+                        header?(item)
+                        card(item)
+                            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                                content.scaleEffect(1 - abs(phase.value) * DS.Collections.sideShrink)
+                                    .brightness(-abs(phase.value) * DS.Collections.sideFade)   // más oscuras, como en el carrusel de Inicio
+                            }
+                    }
                 }
             }
             .scrollTargetLayout()

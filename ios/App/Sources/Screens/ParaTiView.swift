@@ -33,6 +33,11 @@ struct ParaTiView: View {
                            focused = new
                            if let new { focusedArt = new.wide }
                        }, onOpen: { openTitle = $0.route }, loading: m.isLoading, retry: { Task { await m.refresh() } })
+                // Deslizar de lado (a cualquier lado: el mosaico solo sube y baja) regresa a Explorar, como la flecha.
+                .simultaneousGesture(DragGesture(minimumDistance: DS.Gesture.axisThreshold).onEnded { value in
+                    let dx = value.translation.width, dy = value.translation.height
+                    if abs(dx) > DS.Mosaic.swipeBack, abs(dx) > abs(dy) * 2 { m.mode = .lists }
+                })
                 // La pieza elegida, contada sobre el pie del mosaico (flota: el mosaico no cambia de alto al elegir o soltar).
                 .overlay(alignment: .bottom) {
                     if DS.Mosaic.uniform, let item = focused {
@@ -70,7 +75,7 @@ struct ParaTiView: View {
             if m.mode == .mosaic {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { m.mode = .lists } label: { Image(systemName: "chevron.backward") }
-                        .accessibilityLabel(Text("Regresar"))
+                        .accessibilityLabel(Text("Regresar a Explorar"))
                         .accessibilityIdentifier("paraTi-back")
                 }
             } else {
@@ -85,15 +90,8 @@ struct ParaTiView: View {
                     Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
                 }
             }
-            // Un solo selector en la pantalla (Todo · Series · Películas, en Listas): mosaico ↔ listas es este botón.
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { m.mode = m.mode == .mosaic ? .lists : .mosaic } label: {
-                    Image(systemName: m.mode == .mosaic ? "list.bullet.rectangle" : "square.grid.2x2")
-                }
-                .accessibilityLabel(m.mode == .mosaic ? Text("Ver las listas") : Text("Ver el mosaico"))
-                .accessibilityIdentifier("paraTi-mode")
-                .sensoryFeedback(.selection, trigger: m.mode)
-            }
+            // Sin botón de mosaico ↔ listas (Fernando, 31 oct 2026): al mosaico se entra con «Pasear por el mosaico» de la
+            // portada y se sale con la flecha de la izquierda o deslizando de lado.
             // «Actualizar»: en Listas, deslizando hacia abajo; el mosaico no se desliza, así que ahí es un botón.
             if m.mode == .mosaic {
                 ToolbarItem(placement: .topBarTrailing) {

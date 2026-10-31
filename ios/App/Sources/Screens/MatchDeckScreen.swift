@@ -66,6 +66,11 @@ struct MatchDeckScreen: View {
                 await m.load()
             }
         }
+        // Las cartas que siguen, pedidas de antemano: al aventar una, la de abajo ya trae su póster (antes llegaba en blanco).
+        .task(id: model?.cards.prefix(DS.Match.prefetch).map(\.imdb)) {
+            guard let model else { return }
+            ImagePipeline.shared.prefetchPosters(model.cards.prefix(DS.Match.prefetch).map(\.poster))
+        }
         .accessibilityElement(children: .contain)   // cada botón conserva su identificador
         .accessibilityIdentifier("match-deck")
     }

@@ -345,11 +345,10 @@ struct ListsView: View {
                 .padding(.top, DS.Space.s3)
             // Una línea de tiempo (Fernando, 31 oct 2026, decisión 7A): un punto por temporada con cuánto falta, la línea las une.
             CenteredCarousel(items: countdown.dropFirst().map { SeasonStop(season: $0.season, days: $0.days) }, id: \.season.slug,
-                             cardWidth: DS.PlatformFan.width, reflected: true) { stop in
+                             cardWidth: DS.PlatformFan.width, reflected: true,
+                             header: { AnyView(SeasonTimelineStop(days: $0.days)) }) { stop in
                 let season = stop.season
                 let name = Strings.tr(season.title, language: language)
-                VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    SeasonTimelineStop(days: stop.days)
                 NavigationLink(value: CollectionRoute(kind: .season, id: season.slug)) {
                     CollectionCard(title: Text(verbatim: name), detail: Text(verbatim: Strings.tr(season.blurb, language: language)), name: name,
                                    posters: (collections.model.seasonItems[season.slug] ?? []).prefix(3).map { Optional($0.poster) },
@@ -360,7 +359,6 @@ struct ListsView: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("season-\(season.slug)")
                 .task { await collections.model.loadSeason(season.slug) }
-                }
             }
         }
     }

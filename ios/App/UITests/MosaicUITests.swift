@@ -57,7 +57,7 @@ final class MosaicUITests: XCTestCase {
             walk.tap()
             XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 20), "el mosaico tiene piezas (vuelta \(round))")
             let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "mosaico-\(round)"; shot.lifetime = .keepAlways; add(shot)
-            app.buttons["paraTi-mode"].tap()
+            app.buttons["paraTi-back"].tap()
         }
     }
 
