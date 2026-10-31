@@ -129,7 +129,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
     setGlyphs: () => paint(),
     wake: () => mosaic.wake(),
     /** Protector de pantalla: el mosaico (ya es lo único que hay). */
-    screensaver: () => { mosaic.relayout(); paint(); }, // con o sin protector de pantalla cambian los márgenes del mosaico
+    screensaver: (on) => { mosaic.saver(on); mosaic.relayout(); paint(); }, // con o sin protector cambian los márgenes y la deriva
     get current() { return mosaic.current; },
     get loaded() { return !!data; },
   };

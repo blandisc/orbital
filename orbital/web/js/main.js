@@ -2194,8 +2194,11 @@ const saver = (() => {
   let last = Date.now();
   let back = null; // la sección donde estabas
   const minutes = () => Number(state.settings?.screensaver_minutes ?? 10);
+  // Un juego o un video al frente (también un video EN PAUSA: antes, con la película pausada diez minutos, el protector se
+  // ponía detrás del video y al volver ya estaba ahí, sin avanzar y con pósters sin cargar).
+  const playing = () => !!state.running && (!state.running.paused || state.running.front === true);
   const busy = () => document.hidden || !state.libraryLoaded || boot.blocking || ui.sheet.isOpen || topOverlay() || ui.launch.visible
-    || (state.running && !state.running.paused);
+    || playing();
   function start() {
     if (!visibleSections(state.allRows).some((s) => s.id === "foryou")) return; // sin Para ti, no hay mosaico
     back = state.section;
@@ -2216,6 +2219,9 @@ const saver = (() => {
       return true;
     },
     check() {
+      // Mientras ves o juegas, los botones van al video o al juego y Orbital no se entera: el rato sin tocar nada empieza a
+      // contar cuando vuelves (si no, el protector salía a los 15 s de regresar de una película).
+      if (playing()) last = Date.now();
       if (back !== null || !minutes() || busy() || Date.now() - last < minutes() * 60_000) return;
       start();
     },

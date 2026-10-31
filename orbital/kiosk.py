@@ -204,7 +204,7 @@ class KioskWindow:
                                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             log.info("Interfaz abierta (pid %s)", self._process.pid)
             # La barra de Windows se ve como siempre (la pantalla completa de Orbital la tapa); solo se esconde mientras
-            # abre un juego o un video (sessions.taskbar_hidden). Al abrir, de regreso por si un Orbital anterior la
+            # hay un juego o un video abierto (sessions.hide_taskbar). Al abrir, de regreso por si un Orbital anterior la
             # dejó escondida (lo cerraron a la fuerza a media apertura).
             self._console_taskbar(hidden=False)
             if sys.platform == "win32":
