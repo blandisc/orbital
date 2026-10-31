@@ -1,18 +1,20 @@
 import SwiftUI
 import OrbitalCore
+import OrbitalModels
 
 /// La regla de años de Época (el diseño que Fernando eligió el 29 oct 2026 y regresó el 31): una rayita por año, más larga
 /// cada cinco y cada diez, y una ventana blanca con lo elegido. Se arrastra la ventana entera o sus orillas; tocar fuera de
 /// ella acerca la orilla más cercana; tocar una década abajo la elige entera (otra vez, la quita). Con VoiceOver se mueve
-/// la ventana de año en año. La ventana es dorada, el color de Época (31 oct 2026).
+/// la ventana de año en año. La ventana es dorada, el color de Época (31 oct 2026). Qué años quedan elegidos lo decide
+/// `YearRulerLogic` (OrbitalModels, con pruebas); aquí solo se dibuja y se mide.
 struct YearRuler: View {
     @Binding var years: ClosedRange<Int>?
     let first: Int
     let last: Int
-    @State private var drag: Mode?
+    @State private var drag: YearRulerLogic.Drag?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private enum Mode: Equatable { case lower, upper, move(offset: Int, length: Int) }
+    private var logic: YearRulerLogic { YearRulerLogic(first: first, last: last) }
 
     var body: some View {
         VStack(spacing: DS.Space.s1) {
@@ -38,10 +40,8 @@ struct YearRuler: View {
             .accessibilityLabel(Text("Años"))
             .accessibilityValue(years.map { Text(verbatim: "\($0.lowerBound)–\($0.upperBound)") } ?? Text("Cualquier año"))
             .accessibilityAdjustableAction { direction in
-                let r = years ?? (last - 9)...last
-                let step = direction == .increment ? 1 : -1
-                guard r.lowerBound + step >= first, r.upperBound + step <= last else { return }
-                years = (r.lowerBound + step)...(r.upperBound + step)
+                let moved = logic.step(years, by: direction == .increment ? 1 : -1)
+                if moved != years { years = moved }
             }
             .accessibilityIdentifier("filter-year-ruler")
             decades
@@ -71,10 +71,10 @@ struct YearRuler: View {
     private var decades: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            ForEach(Array(stride(from: first, through: last, by: 10)), id: \.self) { d in
-                let range = d...min(d + 9, last)
+            ForEach(logic.decades, id: \.lowerBound) { range in
+                let d = range.lowerBound
                 let on = years == range
-                Button { years = on ? nil : range } label: {
+                Button { years = logic.toggle(range, in: years) } label: {
                     Text(verbatim: "’\(String(format: "%02d", d % 100))")
                         .recipe(.footnote, color: on ? DS.bg : DS.textMuted).fontWeight(.bold).monospacedDigit()
                         .frame(width: DS.Filter.decadeButton, height: DS.Size.touchTarget)
@@ -93,33 +93,15 @@ struct YearRuler: View {
         .sensoryFeedback(.selection, trigger: years)
     }
 
-    private func x(_ year: Int, _ width: CGFloat) -> CGFloat { CGFloat(year - first) / CGFloat(max(last - first, 1)) * width }
-    private func year(_ x: CGFloat, _ width: CGFloat) -> Int { min(last, max(first, first + Int((x / max(width, 1) * CGFloat(last - first)).rounded()))) }
+    private func x(_ year: Int, _ width: CGFloat) -> CGFloat { CGFloat(logic.fraction(of: year)) * width }
 
+    /// Mide el dedo (en puntos) y deja que `YearRulerLogic` decida los años.
     private func change(_ value: DragGesture.Value, _ width: CGFloat) {
-        let y = year(value.location.x, width)
-        if drag == nil {
-            guard let r = years else {
-                // Sin nada elegido, el primer toque pone una década alrededor del dedo.
-                let lower = max(first, min(y - 4, last - 9))
-                years = lower...min(lower + 9, last)
-                drag = .move(offset: y - lower, length: min(9, last - lower))
-                return
-            }
-            let grab = DS.Filter.handleWidth * 1.5
-            let start = value.startLocation.x
-            if abs(start - x(r.lowerBound, width)) <= grab { drag = .lower }
-            else if abs(start - x(r.upperBound, width)) <= grab { drag = .upper }
-            else if r.contains(y) { drag = .move(offset: y - r.lowerBound, length: r.upperBound - r.lowerBound) }
-            else { drag = abs(y - r.lowerBound) <= abs(y - r.upperBound) ? .lower : .upper }
-        }
-        guard let r = years, let drag else { return }
-        switch drag {
-        case .lower: years = min(y, r.upperBound)...r.upperBound
-        case .upper: years = r.lowerBound...max(y, r.lowerBound)
-        case .move(let offset, let length):
-            let lower = max(first, min(last - length, y - offset))
-            years = lower...(lower + length)
-        }
+        let y = logic.year(atFraction: Double(value.location.x / max(width, 1)))
+        let grab = DS.Filter.handleWidth * 1.5, start = value.startLocation.x
+        let near = { (edge: Int?) in edge.map { abs(start - x($0, width)) <= grab } ?? false }
+        let next = logic.change(years, drag: drag, at: y, nearLower: near(years?.lowerBound), nearUpper: near(years?.upperBound))
+        if next.years != years { years = next.years }
+        drag = next.drag
     }
 }
