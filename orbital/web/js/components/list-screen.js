@@ -4,7 +4,7 @@ import { keepInView } from "./browse.js";
 import { Card, RankedCard } from "./card.js";
 import { SourceBadge } from "./collection-card.js";
 import { PersonHead } from "./people.js";
-import { Chip, Pill } from "./ui.js";
+import { Chip, CornerRibbon, Pill } from "./ui.js";
 
 /**
  * Una lista abierta de Películas y series (como SortableGrid del iPhone): arriba la lista en grande (estatuilla o logo,
@@ -136,7 +136,8 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
       const options = { caption: true, onPress: () => { zone = "grid"; index = i; paintFocus(); onPick?.(item); } };
       const built = ranked() ? RankedCard(item, { ...options, brand: current()?.brand }) : { card: Card(item, options) };
       built.card.dataset.focusId = `item:${i}`;
-      if (item.award_year || item.day_label) built.card.append(Chip(String(item.award_year || item.day_label), { plate: true, className: "list-screen__note" }));
+      if (item.day_label === "Nuevo") built.card.append(CornerRibbon()); // como en la fila: el listón, no una placa
+      else if (item.award_year || item.day_label) built.card.append(Chip(String(item.award_year || item.day_label), { plate: true, className: "list-screen__note" }));
       return built.el ?? built.card;
     }));
     grid.dataset.shift = "0";
