@@ -68,15 +68,8 @@ struct SubtitleSyncView: View {
     }
 
     private func answer(_ title: Text, primary: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            title.font(DS.TextRecipe.label.font).lineLimit(1)
-                .foregroundStyle(primary ? DS.solidPrimary : DS.onSolidPrimary)
-                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                .background(primary ? DS.onSolidPrimary : .clear, in: Capsule())
-                .overlay(Capsule().strokeBorder(primary ? .clear : DS.onSolidPrimary.opacity(DesignTokens.Opacity.disabled)))
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
+        Button(action: action) { title.font(DS.TextRecipe.label.font).lineLimit(1).frame(maxWidth: .infinity) }
+            .dsOnSolidButton(primary: primary)
     }
 }
 

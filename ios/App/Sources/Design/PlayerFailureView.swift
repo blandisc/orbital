@@ -107,12 +107,11 @@ struct PlayerFailureView: View {
     }
 
     private func option(_ label: Text, primary: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            label.font(DS.TextRecipe.labelLarge.font).foregroundStyle(primary ? DS.onPrimary : DS.text)
-                .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeight)
-                .background(primary ? DS.primary : DS.fillStrong, in: Capsule())
-                .contentShape(Capsule())
+        // El principal y el secundario de siempre, a tamaño de dedo (antes cápsulas pintadas a mano con el alto de una tecla
+        // del control, D9 y D18).
+        let button = Button(action: action) { label.font(DS.TextRecipe.labelLarge.font).frame(maxWidth: .infinity) }
+        return Group {
+            if primary { button.dsPrimaryButton(size: .large) } else { button.dsSecondaryButton().controlSize(.large) }
         }
-        .buttonStyle(.plain)
     }
 }

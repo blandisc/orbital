@@ -56,7 +56,7 @@ struct DSLoader: View {
                     .rotationEffect(.radians(angle) - .degrees(360 * Double(trail)))   // la punta de la estela, justo en la luna
                 Circle().fill(DS.brandMoon)
                     .frame(width: DS.Loader.moon, height: DS.Loader.moon)
-                    .shadow(color: DS.brandMoon, radius: DS.Loader.moonGlow)
+                    .glow(DS.brandMoon)
                     .opacity(reduceMotion ? DS.Loader.pulseMin + (1 - DS.Loader.pulseMin) * abs(sin(t * .pi / DS.Loader.seconds)) : 1)
                     .offset(x: radius * cos(angle), y: radius * sin(angle))
             }
