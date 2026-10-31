@@ -103,7 +103,7 @@ struct SortableGrid<Cell: View>: View {
             if filter.isActive { activeChips }
             if items.isEmpty {
                 // Mientras llega, la ruedita al centro; ya llegada y sin nada, el vacío de la app (no una pantalla en blanco).
-                if loading { ProgressView().frame(maxWidth: .infinity).padding(.vertical, DS.Space.s14) }
+                if loading { DSLoadingState() }
                 else { DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"), message: Text("Esta lista todavía no tiene títulos.")) }
             } else if shown.isEmpty {
                 DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Cambia el orden o lo que ocultas."))
@@ -193,7 +193,7 @@ struct SortableGrid<Cell: View>: View {
             if hideWatchedAvailable { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
         } label: {
             // Mientras llegan las calificaciones de IMDb, la ruedita va en el botón (la cuadrícula no se mueve).
-            if rating { ProgressView() }
+            if rating { ProgressView() }   // ds-exception: la ruedita ocupa el lugar del ícono del menú (la cuadrícula no se mueve)
             else { Image(systemName: filter.isActive || sort != .added ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle") }
         }
         .accessibilityLabel(Text("Ordenar y filtrar"))
@@ -214,14 +214,17 @@ struct SortableGrid<Cell: View>: View {
     }
 
     private func chip(_ title: Text, remove: @escaping () -> Void) -> some View {
+        // El principal chico de siempre, en el papel de la acción principal (no `DS.paper`, que en claro es el mismo papel del
+        // fondo y se perdía); antes una cápsula pintada a mano (D9).
         Button(action: remove) {
-            HStack(spacing: DS.Space.s1) { title; Image(systemName: "xmark").font(DS.TextRecipe.badge.font) }
-                // El papel de la acción principal (no `DS.paper`, que en claro es el mismo papel del fondo y se perdía).
-                .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.onPrimary)
-                .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-                .background(DS.primary, in: Capsule())
+            HStack(spacing: DS.Space.s1) {
+                title
+                Image(systemName: "xmark").font(DS.TextRecipe.badge.font)   // ds-exception: la ✕ dice que tocar la ficha quita el filtro (no es cerrar)
+            }
+            .font(DS.TextRecipe.footnote.font)
         }
-        .buttonStyle(.plain)
+        .dsPrimaryButton(size: .small)
+        .buttonBorderShape(.capsule)
     }
 }
 

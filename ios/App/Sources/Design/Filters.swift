@@ -54,7 +54,7 @@ struct DSKindFilter: View {
                         .background(on ? DS.fillStrong : .clear, in: Capsule())
                         .contentShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.plain)   // ds-exception: un segmento del control (no un botón suelto); el fondo marca el elegido
                     .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }

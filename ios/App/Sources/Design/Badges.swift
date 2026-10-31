@@ -23,7 +23,7 @@ struct DSChip: View {
         label.font(DS.TextRecipe.caption.font).lineLimit(1).fixedSize()
             .foregroundStyle(color)
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
-            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.tag, style: .continuous))   // ds-exception: una placa chica (DS.Radius.tag), no una caja
     }
 
     private var color: Color { switch tone { case .normal: DS.textMuted; case .good: DS.good; case .warn: DS.warning } }

@@ -99,8 +99,7 @@ struct RatingReminder: View {
                 Button(action: onOpenQueue) { Text("y \(more) más").recipe(.caption, color: DS.textMuted) }
                     .accessibilityIdentifier("rating-reminder-more")
             }
-            Button(action: onDismiss) { Image(systemName: "xmark").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
-                .accessibilityLabel(Text("No calificar esta"))
+            DSIconButton(symbol: "xmark", label: "No calificar esta", size: .small, action: onDismiss)
                 .accessibilityIdentifier("rating-reminder-dismiss")
         }
         .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
@@ -141,7 +140,7 @@ struct RatingQueue: View {
             }
             .swipeActions { Button("No calificar", role: .destructive) { onDismiss(row.id) } }
         }
-        .overlay { if rows.isEmpty { ContentUnavailableView("Nada por calificar", systemImage: "star") } }
+        .overlay { if rows.isEmpty { DSEmptyState(symbol: "star", title: Text("Nada por calificar")) } }
         .navigationTitle("Por calificar")
         .navigationBarTitleDisplayMode(.inline)
     }

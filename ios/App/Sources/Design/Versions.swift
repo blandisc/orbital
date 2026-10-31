@@ -76,7 +76,8 @@ struct VersionChip: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(DS.Space.s2)
             .background(option.recommended ? DS.fillStrong : DS.fill, in: shape)
-            .overlay(shape.strokeBorder(option.recommended ? DS.brandMoon : DS.hairline, lineWidth: option.recommended ? DS.Version.pickedStroke : DS.Size.hairline))
+            .overlay(shape.strokeBorder(option.recommended ? .clear : DS.hairline, lineWidth: DS.Stroke.hairline))
+            .dsSelectionRing(option.recommended, in: shape)   // la recomendada, con el anillo de lo elegido (D5; antes turquesa)
             .contentShape(shape)
         }
         .buttonStyle(.plain)
@@ -132,7 +133,7 @@ struct VersionEvidence: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Space.s3)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        .dsCard(.row, translucent: true)
         .accessibilityElement(children: .combine)
     }
 

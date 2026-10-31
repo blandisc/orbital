@@ -114,9 +114,7 @@ struct AllSourcesList: View {
         let rows = open ? group.shown : Array(group.shown.prefix(limit))
         let more = group.total - rows.count
         return VStack(alignment: .leading, spacing: DS.Space.s2) {
-            (Text("\(qualityName(group.quality))\(Text(verbatim: " · \(group.total)"))"))
-                .recipe(.eyebrow, color: DS.textMuted)
-                .accessibilityAddTraits(.isHeader)
+            DSGroupLabel(title: Text("\(qualityName(group.quality))\(Text(verbatim: " · \(group.total)"))"))
             VStack(spacing: 0) {
                 ForEach(Array(rows.enumerated()), id: \.element.index) { i, source in
                     if i > 0 { Divider().overlay(DS.hairline).padding(.leading, DS.Space.s3) }
@@ -173,7 +171,7 @@ struct AllSourcesList: View {
             if isOpen { details(source) }
         }
         .padding(DS.Space.s3)
-        .opacity(hidden ? DS.AllSourcesList.hiddenOpacity : 1)
+        .opacity(hidden ? DS.Opacity.faint : 1)
     }
 
     /// Las dos líneas: «● 1080p · DV · 12.3 GB … La que ves» y los idiomas.
