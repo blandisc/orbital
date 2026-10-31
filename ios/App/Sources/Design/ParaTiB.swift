@@ -76,21 +76,24 @@ struct MosaicCover: View {
         #endif
     }
 
-    /// El orden del muro para estos pósters (los primeros pesan más: los del mosaico). Si solo llegaron más, el mismo muro:
-    /// los que ya se veían no se mueven y los repetidos dejan su lugar a los nuevos. Si cambiaron (actualizaste, quitaste
-    /// uno), otro muro revuelto y, si son pocos, repetidos hasta llenarlo (al jalar para actualizar no queda hueco arriba).
+    /// El orden del muro para estos pósters (los primeros pesan más: los del mosaico). Con los mismos pósters (al volver del
+    /// mosaico o de otra pestaña), el mismo muro. Si llegaron más distintos, se arma otro con todos (antes solo se cambiaban
+    /// los repetidos de arriba, escondidos tras el título, y abajo se quedaban franjas de los mismos pósters: auditoría del
+    /// 31 oct 2026). Si son pocos, se repiten en tandas revueltas cada una (sin franjas en diagonal).
     @MainActor private static func wall(for posters: [String]) -> [String] {
-        let before = remembered, shown = Set(before.order), now = Set(posters), size = DS.ParaTiB.coverPosters
-        if !before.order.isEmpty, Set(before.source) == now || shown.isSubset(of: now) {
-            guard shown.count < min(now.count, size) else { return before.order }
-            var fresh = posters.filter { !shown.contains($0) }.prefix(size - shown.count).shuffled()
-            var seen = Set<String>()
-            let order = before.order.map { poster in seen.insert(poster).inserted || fresh.isEmpty ? poster : fresh.removeLast() }
-            remembered = (posters, order)
-            return order
+        let before = remembered, now = Set(posters), size = DS.ParaTiB.coverPosters
+        if !before.order.isEmpty, now.isSubset(of: Set(before.source)) || Set(before.order).count >= min(now.count, size) {
+            return before.order
         }
-        let pool = Array(posters.prefix(size)).shuffled()
-        let order = pool.isEmpty ? [] : (0..<size).map { pool[$0 % pool.count] }
+        let distinct = Array(NSOrderedSet(array: posters).array.compactMap { $0 as? String }.prefix(size))
+        var order: [String] = []
+        while !distinct.isEmpty, order.count < size {
+            var batch = distinct.shuffled()
+            // Que una tanda no empiece con el último de la anterior (dos iguales juntos).
+            if let last = order.last, batch.first == last, batch.count > 1 { batch.swapAt(0, batch.count - 1) }
+            order += batch
+        }
+        order = Array(order.prefix(size))
         remembered = (posters, order)
         return order
     }

@@ -134,10 +134,12 @@ public struct Tmdb: Sendable {
     /// su IMDb, y eran ~260 peticiones en cada arranque (Fernando, 31 oct 2026: «está muy lenta»). nil (pruebas): sin memoria.
     nonisolated(unsafe) public static var detailsMemo: TmdbDetailsMemo?
 
-    public func details(kind: String, tmdbID: Int) async throws -> TmdbDetails {
+    /// `urgent`: lo pediste tú (abrir una ficha): no hace fila detrás de lo que se carga de fondo (auditoría, 31 oct 2026).
+    public func details(kind: String, tmdbID: Int, urgent: Bool = false) async throws -> TmdbDetails {
         let memoKey = "\(language):\(kind):\(tmdbID)"
         if let memo = Self.detailsMemo, let hit = await memo.get(memoKey) { return hit }
-        let fresh = try await TmdbDetailsGate.shared.details(memoKey) { try await fetchDetails(kind: kind, tmdbID: tmdbID) }
+        let fresh = urgent ? try await fetchDetails(kind: kind, tmdbID: tmdbID)
+            : try await TmdbDetailsGate.shared.details(memoKey) { try await fetchDetails(kind: kind, tmdbID: tmdbID) }
         if let memo = Self.detailsMemo, fresh.imdb != nil { await memo.set(memoKey, fresh) }
         return fresh
     }
@@ -478,16 +480,34 @@ actor TmdbDetailsGate {
 
     init(limit: Int) { self.limit = limit }
 
+    /// Cuántos esperan cada título: si todos se van (saliste de Para ti), la petición se cancela; si aún no empezaba, ni sale.
+    private var waiters: [String: Int] = [:]
+
     func details(_ key: String, _ fetch: @escaping @Sendable () async throws -> TmdbDetails) async throws -> TmdbDetails {
-        if let running = inflight[key] { return try await running.value }
-        let task = Task { try await self.limited(fetch) }
-        inflight[key] = task
-        defer { inflight[key] = nil }
-        return try await task.value
+        let task: Task<TmdbDetails, any Error>
+        if let running = inflight[key] { task = running } else {
+            task = Task { try await self.limited(fetch) }
+            inflight[key] = task
+        }
+        waiters[key, default: 0] += 1
+        defer {
+            waiters[key, default: 1] -= 1
+            if waiters[key] == 0 { waiters[key] = nil; if inflight[key] == task { inflight[key] = nil } }
+        }
+        return try await withTaskCancellationHandler { try await task.value } onCancel: {
+            Task { await self.leave(key, task) }
+        }
+    }
+
+    /// Quien esperaba se fue: si era el último, se cancela la petición.
+    private func leave(_ key: String, _ task: Task<TmdbDetails, any Error>) {
+        if (waiters[key] ?? 0) <= 1 { task.cancel() }
     }
 
     private func limited(_ fetch: @Sendable () async throws -> TmdbDetails) async throws -> TmdbDetails {
         if running < limit { running += 1 } else { await withCheckedContinuation { waiting.append($0) } }   // el lugar lo pasa quien termina
+        // Si mientras esperaba lugar ya nadie la quiere, no sale a la red.
+        if Task.isCancelled { release(); throw CancellationError() }
         do { let value = try await fetch(); release(); return value } catch { release(); throw error }
     }
 

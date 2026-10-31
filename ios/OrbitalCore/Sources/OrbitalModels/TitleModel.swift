@@ -224,7 +224,7 @@ public final class TitleModel: ObservableModel {
 
     /// Un título de TMDB (recomendación, saga, filmografía) → su id de IMDb, para abrir su ficha.
     public static func imdbID(of title: TmdbTitle, services: Services) async -> String? {
-        try? await services.tmdb.details(kind: title.kind, tmdbID: title.tmdbID).imdb
+        try? await services.tmdb.details(kind: title.kind, tmdbID: title.tmdbID, urgent: true).imdb
     }
 
     /// Marca como vistos los episodios de la temporada elegida que te faltan (como «Marcar como visto» en cada uno).
