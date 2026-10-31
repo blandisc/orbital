@@ -25,7 +25,7 @@ Cómo se mantiene:
 | Los canales de tus series: una lista guardada en Trakt, para Ultra, Plus y Orbital | En el teléfono | Pendiente · ola 2 (categoría en TV en vivo). Nombre propuesto: «Tus canales» (en el glosario, «Tus series» son las que estás viendo) |
 | Porqué en turquesa, solo si ayuda; sección = rótulo con ícono y línea | Ya | Ya (ola 1: `SectionHead` en dos niveles, `--color-reason`, `--color-orbital`) |
 | Un botón sólido y redondos con su nombre debajo | — | Ya (ola 1: `Button({ icon })`) |
-| Pie de tres pistas y ☰ | — | Pendiente · ola 1 |
+| Pie de tres pistas y ☰ | — | Ya (ola 1: `capHints`; «Atrás» y «Volver a…» se dejan de dibujar primero, y «Volver a…» está en ☰ con «Home en el mando») |
 | Calificar: estrellas en la ficha y aviso al terminar | Ya | Pendiente · ola 3 |
 | «Lo que ves» reemplaza a «Tu año» | Ya | Pendiente · ola 3 |
 | Entrega: una rama por ola, con capturas de antes y después de las cuatro superficies | — | — |

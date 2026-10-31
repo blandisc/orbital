@@ -8,7 +8,7 @@ import { closedSummary, crashMessage } from "./core/format.js";
 import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
-import { footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
+import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
@@ -376,8 +376,9 @@ function renderHints() {
   // Con el dedo, «Menú» también sobre las vistas que lo usan (una lista: Ordenar y filtrar; la ficha y Fuentes: ☰): antes solo
   // salía «Atrás» y «Filtrar» no tenía camino táctil (regla de las cuatro superficies).
   document.body.dataset.overlayMenu = !ui.sheet.isOpen && [ui.listScreen, ui.title, ui.sources].includes(overlay) ? "true" : "false";
-  if (!ui.sheet.isOpen && overlay) return ui.hints.render(overlay.hints(g));
-  if (inForYou() && !ui.sheet.isOpen) return ui.hints.render(ui.foryou.hints(g));
+  // Lo que va encima también lleva tres pistas como mucho (capHints: deja de dibujar «Atrás» y «Volver a…» primero).
+  if (!ui.sheet.isOpen && overlay) return ui.hints.render(capHints(overlay.hints(g), g));
+  if (inForYou() && !ui.sheet.isOpen) return ui.hints.render(capHints(ui.foryou.hints(g), g));
   if (inTv() && !ui.sheet.isOpen) {
     return ui.hints.render(tvHints(g, ui.tv.current, {
       empty: ui.tv.empty, categories: ui.tv.categories, atStart: ui.tv.atStart, onAir: ui.tv.onAir,

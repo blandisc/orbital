@@ -34,7 +34,9 @@ test("menú ☰: lo de todos los días; lo técnico en Ajustes → Mantenimiento
   assert.deepEqual(basic.options.map((o) => o.label), ["Panel rápido", "Jugadores", "¿Qué vemos?", "Tu año", "Cómo se usa", "Ajustes", "Apagar"]);
   const full = mainMenu({ running: { title: "Zelda", managed: true }, hiddenCount: 3 });
   assert.deepEqual(full.options.map((o) => o.label),
-    ["Panel rápido", "Cerrar Zelda", "Mostrar juegos ocultos", "Jugadores", "¿Qué vemos?", "Tu año", "Cómo se usa", "Ajustes", "Apagar"]);
+    ["Volver a Zelda", "Panel rápido", "Cerrar Zelda", "Mostrar juegos ocultos", "Jugadores", "¿Qué vemos?", "Tu año", "Cómo se usa", "Ajustes", "Apagar"]);
+  // Volver a lo abierto (Home en el mando) siempre tiene su camino en ☰: el pie no siempre lo enseña (tres pistas).
+  assert.deepEqual(full.options[0], { icon: "play", label: "Volver a Zelda", hint: "Home en el mando", command: { type: "resume" } });
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
   // Ajustes: siete categorías en el riel; lo técnico en Sistema, lo de tus juegos en Jugar.
