@@ -74,6 +74,9 @@ struct WatchingView: View {
             .padding(.horizontal, DS.Space.gutter)
             .padding(.bottom, DS.Space.s8)
         }
+        #if DEBUG
+        .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazado (capturas)
+        #endif
         .background(Backdrop())
         .navigationTitle(Text("Lo que ves"))
         .task { await model.load(full: true) }   // aquí sí, los diez años (la tarjeta solo pidió la semana)
