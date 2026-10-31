@@ -164,7 +164,17 @@ struct RootView: View {
 
 extension EnvironmentValues {
     /// Abre el control de tu Orbital (el botón de la barra de Inicio); nil sin tu Orbital conectada.
-    @Entry var openRemote: (() -> Void)? = nil
+    @Entry var openRemote: RemoteOpener? = nil
+}
+
+/// El botón del control: siempre igual a otro (como `TitlePanelOpener`), para que Inicio no se vuelva a pintar entera cada
+/// vez que la raíz cambia de pestaña o regresa de una ficha.
+struct RemoteOpener: Equatable {
+    /// Lo único que cambia lo que hace: si el control abre como panel o como hoja.
+    let wide: Bool
+    let open: () -> Void
+    func callAsFunction() { open() }
+    static func == (a: Self, b: Self) -> Bool { a.wide == b.wide }
 }
 
 extension PlayRequest: @retroactive Identifiable { public var id: String { "\(metaID)|\(videoID)" } }
@@ -204,9 +214,9 @@ struct MainTabs: View {
 
     /// Abrir el control (si hay TV configurada); aparte para que el compilador no se ahogue con el cuerpo. Como panel, el
     /// mismo botón lo cierra.
-    private var openRemoteAction: (() -> Void)? {
+    private var openRemoteAction: RemoteOpener? {
         guard tvNow.model.isConfigured else { return nil }
-        return {
+        return RemoteOpener(wide: remoteAsPanel || sizeClass == .regular) {
             if remoteAsPanel && showRemote { showRemote = false; return }
             if remoteAsPanel { panelTitle = nil }   // un solo panel a la derecha: el control reemplaza a la ficha
             remoteLarge = tvNow.model.now == nil || sizeClass == .regular; showRemote = true

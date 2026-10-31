@@ -48,7 +48,7 @@ struct RemoteImage<Content: View>: View {
 
     private func load() async {
         let pixels = maxPoints * ImagePipeline.screenScale
-        if let hit = ImagePipeline.shared.cached(url, maxPixel: pixels) { loaded = hit; if let perfTag { Perf.mark(perfTag + ".image") }; return }
+        if let hit = ImagePipeline.shared.cached(url, maxPixel: pixels) { if loaded !== hit { loaded = hit }; if let perfTag { Perf.mark(perfTag + ".image") }; return }   // al volver a aparecer, la misma: no se repinta
         loaded = nil   // otra URL en la misma vista: no se queda la imagen de antes mientras llega (o si falla) la nueva
         if ImagePipeline.shared.recentlyFailed(url, maxPixel: pixels) { didFail = true; return }
         didFail = false

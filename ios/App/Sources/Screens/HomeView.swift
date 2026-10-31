@@ -163,7 +163,7 @@ struct HomeView: View {
             // Sin accesorio (iOS 26.0) el botón se queda siempre: era la única entrada al control con algo sonando.
             if let openRemote, tvNow.model.now == nil || !Self.hasTabAccessory {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: openRemote) { Image(systemName: "av.remote") }
+                    Button { openRemote() } label: { Image(systemName: "av.remote") }
                         .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
                 }
             }
@@ -222,6 +222,9 @@ struct HomeView: View {
     /// Lo tuyo y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo). Lo pendiente por subir
     /// se sube solo y ya no se anuncia bajo el título («N cambios por subir»: no se quería ahí).
     private func reload(ifStale: Bool = false) async {
+        // De vuelta de una ficha o de otra pestaña, con lo de hace menos de un minuto: nada que pedir (antes «Por lo que
+        // viste» y el tono se volvían a pedir siempre y repintaban Inicio entera justo al regresar).
+        if ifStale, !home.model.isStale() { return }
         async let related: Void = because.model.load()   // a la par (Trakt lo guarda: volver a pedirlo es barato)
         if ifStale { await home.model.refreshIfStale() } else { await home.model.refresh() }
         Perf.mark("home.done")

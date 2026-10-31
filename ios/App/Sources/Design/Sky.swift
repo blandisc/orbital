@@ -22,8 +22,10 @@ struct SkyField: View {
         #endif
         return systemReduceMotion
     }
-    /// Solo se mueve con la app al frente (fuera de ella no gasta batería).
-    private var moving: Bool { !still && scenePhase == .active }
+    /// Solo se mueve con la app al frente y en pantalla: las otras pestañas y la pantalla debajo de una ficha también tienen
+    /// su cielo, y seguían pintando estrellas (y leyendo el giroscopio) sin que se vieran.
+    private var moving: Bool { !still && scenePhase == .active && onScreen }
+    @State private var onScreen = false
 
     var body: some View {
         let dark = scheme == .dark
@@ -44,7 +46,8 @@ struct SkyField: View {
         .allowsHitTesting(false)
         .accessibilityHidden(true)
         .onChange(of: moving, initial: true) { _, on in on ? tilt.start() : tilt.stop() }
-        .onDisappear { tilt.stop() }
+        .onAppear { onScreen = true }
+        .onDisappear { onScreen = false; tilt.stop() }
     }
 }
 

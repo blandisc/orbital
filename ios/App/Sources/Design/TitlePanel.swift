@@ -5,7 +5,10 @@ import OrbitalCore
 
 /// Abrir una ficha en el panel de la derecha, sobre lo que estabas viendo (como el iPhone, que la empuja a pantalla completa).
 /// Solo existe con ancho regular (iPad, Mac): lo pone `MainTabs`. En el iPhone es `nil` y todo navega como siempre.
-struct TitlePanelOpener {
+/// Siempre igual a otro: la raíz lo arma en cada pasada (cambiar de pestaña, regresar de una ficha) y, como el cierre solo
+/// toca su estado guardado, cambiarlo por uno nuevo no cambia nada; sin esto, todo lo que lo lee se volvía a pintar.
+struct TitlePanelOpener: Equatable {
+    static func == (_: Self, _: Self) -> Bool { true }
     /// La ficha y, si se sabe, el marco del póster que se tocó (en la ventana): de ahí sale el zoom hacia el panel.
     let open: (TitleRoute, CGRect?) -> Void
     func callAsFunction(_ route: TitleRoute, from frame: CGRect? = nil) { open(route, frame) }

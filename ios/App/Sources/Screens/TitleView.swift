@@ -31,7 +31,6 @@ struct TitleView: View {
     @State private var viewport: CGSize = .zero
     @State private var belowHero: CGFloat = 0
     /// Cuánto has deslizado (0 arriba) y el alto de la barra de arriba: el arte se recoge y lo que sube se desvanece.
-    @State private var scrolled: CGFloat = 0
     @State var topInset: CGFloat = 0
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var fromHere = false; var id: String { "\(videoID)-\(purpose)" } }
@@ -49,39 +48,11 @@ struct TitleView: View {
         #endif
         .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
-        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in scrolled = y }
-        // Lo que sube por debajo de la barra de arriba se desvanece (deja ver el fondo del color del arte) en vez de chocar con
-        // el reloj y los botones. Arriba del todo no hay desvanecido: el arte llega hasta la orilla.
-        .mask {
-            VStack(spacing: 0) {
-                // Toda la barra de arriba desvanecida (nada se trasluce detrás del nombre ni de los botones) y, debajo, la
-                // transición suave hacia el contenido.
-                let total = max(topInset + DS.TitleAction.topFade, 1), kept = 1 - fade
-                LinearGradient(stops: [.init(color: .black.opacity(kept), location: 0),
-                                       .init(color: .black.opacity(kept), location: topInset / total),
-                                       .init(color: .black, location: 1)], startPoint: .top, endPoint: .bottom)
-                    .frame(height: total)
-                Color.black   // ds-exception: es una máscara, solo cuenta qué tan opaca es (no se ve el color)
-            }
-            .ignoresSafeArea()
-        }
-        // Recogido el arte, el logo (o el nombre) en la barra, entre ‹ y los botones: sigues sabiendo qué es. Se
-        // dibuja aquí y no como elemento de la barra (en la barra transparente de la ficha el sistema no lo enseñaba).
-        .overlay(alignment: .top) {
-            let shown = Double(min(1, max(0, (scrolled - heroHeight * DS.TitleAction.titleFrom) / max(heroHeight * DS.TitleAction.titleSpan, 1))))
-            // Entre ‹ y la cápsula de botones (que es más ancha que ‹): el nombre a la izquierda, sin meterse debajo.
-            let buttons = (env.services.orbital.isConfigured ? 1 : 0) + (model.canFavorite ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)
-            // El logo de la serie o película (si no hay, su nombre), del alto de la barra.
-            BarLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, DS.TitleAction.barTitleLeading)
-                .padding(.trailing, DS.TitleAction.barGroupPadding + DS.TitleAction.barButton * CGFloat(buttons))
-                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
-                .offset(y: -DS.Size.touchTarget - DS.Space.s2)
-                .opacity(shown)
-                .allowsHitTesting(false)
-                .accessibilityHidden(shown < 1)
-        }
+        // Lo de arriba que sigue al desplazamiento va aparte (`TitleScrollChrome`): antes cada cuadro del desplazamiento
+        // volvía a pintar toda la ficha (capítulos, detalles), y regresar con el gesto se trababa.
+        .modifier(TitleScrollChrome(topInset: topInset, heroHeight: heroHeight, logo: model.info.logo ?? Artwork.logoURL(metaID: model.metaID),
+                                    title: model.title,
+                                    buttons: (env.services.orbital.isConfigured ? 1 : 0) + (model.canFavorite ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)))
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
         .background(Backdrop(tint: tint.colors))
         .navigationBarTitleDisplayMode(.inline)
@@ -197,8 +168,6 @@ struct TitleView: View {
         return min(cap, max(DS.TitleAction.heroAspect, width / room))
     }
 
-    /// Qué tan desvanecido va lo de arriba (0 con el arte a la vista, 1 ya recogido).
-    private var fade: Double { Double(min(1, max(0, scrolled / max(heroHeight * DS.TitleAction.fadeAt, 1)))) }
     private var heroHeight: CGFloat { contentWidth > 0 ? contentWidth / heroAspect : 0 }
     /// El ancho de la ficha: el de la ventana, hasta el ancho de lectura (`DS.TitleAction.readableWidth`).
     var contentWidth: CGFloat { min(viewport.width, DS.TitleAction.readableWidth) }
@@ -579,22 +548,4 @@ struct TitleView: View {
 
     // MARK: acciones
 
-}
-
-/// El logo chico de la barra de la ficha (de alto fijo, sin pasarse de su espacio); sin logo, el nombre.
-private struct BarLogo: View {
-    let url: String?
-    let title: String
-    var body: some View {
-        Group {
-            if let u = url.flatMap(URL.init(string:)) {
-                RemoteImage(url: u, maxPoints: DS.TitleAction.barLogo * 8) { phase in
-                    if case .success(let image) = phase { image.resizable().scaledToFit() } else { name }
-                }
-            } else { name }
-        }
-        .frame(height: DS.TitleAction.barLogo, alignment: .leading)
-        .accessibilityLabel(Text(verbatim: title))
-    }
-    private var name: some View { Text(verbatim: title).recipe(.labelLarge, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }
 }

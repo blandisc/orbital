@@ -106,7 +106,7 @@ final class ArtTint {
     func load(_ url: String?) async {
         requested = url
         guard let url, let u = URL(string: url) else { colors = nil; return }
-        if let hit = Self.known(url) { colors = hit; return }
+        if let hit = Self.known(url) { if colors != hit { colors = hit }; return }   // igual: sin repintar el fondo al volver
         // Basta una miniatura para sacar el tono dominante: nunca se decodifica el fondo completo.
         let palette: (tint: ArtPalette.RGB, accent: ArtPalette.RGB)?
         if let thumb = await ImagePipeline.shared.image(u, maxPixel: DS.Image.tintPixels) {
