@@ -7,7 +7,7 @@ enum CollectionSection: CaseIterable, Hashable {
     case forYou, platforms, studios, seasons, genres, awards, years, trakt, addons, yourYear
     var title: Text {
         switch self {
-        case .forYou: Text("Lo que se ve hoy"); case .trakt: Text("Tuyo"); case .addons: Text("De tus complementos")
+        case .forYou: Text("Lo que se ve hoy"); case .trakt: Text("Tus listas"); case .addons: Text("Complementos")
         case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .studios: Text("Estudios"); case .years: Text("Años")
         case .seasons: Text("Temporadas"); case .genres: Text("Géneros")
         case .yourYear: Text("Lo que ves")

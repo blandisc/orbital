@@ -403,7 +403,7 @@ extension DS {
         static let reflectionTail: CGFloat = 30
         static let weight: CGFloat = 18, weightY: CGFloat = 12, weightTint: Double = 0.35
         /// El aire entre Plataformas, Estudios, Premios y Por año (menos que entre secciones: el reflejo ya separa).
-        static let groupGap: CGFloat = 20
+        static let groupGap: CGFloat = 4   // poco: el reflejo de las tarjetas ya separa (Fernando, 31 oct 2026)
         /// El halo de los estudios (neutro: cada estudio es de muchos colores).
         static let studio = Color(red: 0.55, green: 0.56, blue: 0.62)
         /// El logo del estudio en su cápsula.

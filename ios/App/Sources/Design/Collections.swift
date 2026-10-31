@@ -92,16 +92,18 @@ enum AwardNames {
 /// comedia»). Sin colores ni íconos: el aire y la línea separan. Pone su propio margen a los lados.
 struct DSChapterHead: View {
     let label: Text
-    let title: Text
+    /// Sin título, solo el rótulo con su línea (Fernando, 31 oct 2026: en Para ti basta el rótulo).
+    var title: Text? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s3) {
                 label.textCase(.uppercase).font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Chapter.tracking)
+                    .accessibilityAddTraits(.isHeader)
                     .foregroundStyle(DS.textMuted).lineLimit(1).fixedSize()
                 Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)
             }
-            title.recipe(.title).lineLimit(2).accessibilityAddTraits(.isHeader)
+            if let title { title.recipe(.title).lineLimit(2).accessibilityAddTraits(.isHeader) }
         }
         .padding(.horizontal, DS.Space.gutter)
         .accessibilityElement(children: .combine)

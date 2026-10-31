@@ -44,6 +44,18 @@ public final class WatchingModel: ObservableModel {
         WatchingStats.make(plays, period: period ?? self.period, now: clock(), calendar: calendar)
     }
 
+    /// Quitaste algo de vistos (la ficha): sale ya de «Lo que ves» (lo guardado solo pregunta por lo nuevo y nunca se
+    /// enteraba de lo que quitabas). `videoID` «tt123:1:5» es un episodio; si no, toda la película.
+    public func forget(metaID: String, videoID: String) {
+        let parts = videoID.split(separator: ":")
+        if parts.count == 3, let season = Int(parts[1]), let episode = Int(parts[2]) {
+            plays.removeAll { $0.imdb == metaID && $0.season == season && $0.episode == episode }
+        } else {
+            plays.removeAll { $0.imdb == metaID }
+        }
+        save()
+    }
+
     /// Un historial ya armado (modo demostración, vistas previas): cuenta como recién traído.
     public func preload(_ plays: [TraktPlay]) {
         self.plays = plays; since = .distantPast; fetchedAt = clock(); loaded = true

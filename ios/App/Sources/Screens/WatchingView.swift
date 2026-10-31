@@ -38,7 +38,7 @@ enum WatchingText {
 }
 
 /// «Lo que ves»: tus números del periodo (semana, mes, año o siempre), el mapa día por día, las barras, tus géneros, cómo
-/// calificas y lo que más viste. Arriba, el botón grande de tu Wrapped.
+/// calificas y lo que más viste. (El Wrapped, apagado por ahora.)
 struct WatchingView: View {
     let onOpenTitle: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
@@ -76,6 +76,7 @@ struct WatchingView: View {
         .navigationTitle(Text("Lo que ves"))
         .task { await model.load(full: true) }   // aquí sí, los diez años (la tarjeta solo pidió la semana)
         .refreshable { await model.load(full: true, force: true) }
+        .onChange(of: env.watchedSomething) { Task { await model.load(full: true, force: true) } }   // terminaste de ver algo: al día
         .fullScreenCover(item: $wrapped) { p in WrappedView(stats: model.stats(p), language: language) { wrapped = nil } }
     }
 
@@ -89,8 +90,9 @@ struct WatchingView: View {
             }
             ArtVeil(at: DS.Watching.veilFrom, strength: .deep)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Eyebrow(text: periodPhrase(s.period), onArt: true)   // un dato, no un porqué: el turquesa es solo para los porqués
-                Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.paper)
+                // El periodo y tus horas en azul (Fernando, 31 oct 2026), el mismo azul del calendario.
+                periodPhrase(s.period).recipe(.footnote, color: DS.accentBlue).fontWeight(.semibold).lineLimit(1)   // un dato, no un porqué
+                Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.accentBlue)
                     .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
                 heroFacts(s).recipe(.footnote, color: DS.onArtSecondary).lineLimit(2)
             }
@@ -150,13 +152,7 @@ struct WatchingView: View {
         section(Text("Cuándo ves")) { WatchingBars(values: s.buckets.map(\.minutes), labels: s.buckets.map { label($0.start, s.period) }) }
         if !s.genres.isEmpty { section(Text("Tus géneros")) { WatchingGenres(genres: s.genres) { WatchingText.genre($0, language: language) } } }
         ratings
-        // El Wrapped al final, como cierre (antes una losa blanca arriba que gritaba más que todo).
-        if model.period != .all {
-            Button { wrapped = model.period } label: { Label("Ver tu Wrapped", systemImage: "sparkles.rectangle.stack") }
-                .dsSecondaryButton().controlSize(.large)
-                .frame(maxWidth: .infinity)
-                .accessibilityIdentifier("watching-wrapped")
-        }
+        // El Wrapped, apagado por ahora (Fernando, 31 oct 2026): `WrappedView` sigue lista para volver.
     }
 
 

@@ -123,7 +123,7 @@ struct ListsView: View {
                         // «Lo que se ve hoy» (antes «Ahora», que no decía qué era): su flama, qué trae, y el tipo con palabras debajo
                         // (los tres íconos solos no se entendían). Fernando, 30 oct 2026.
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
-                            DSChapterHead(label: Text("Hoy"), title: CollectionSection.forYou.title)
+                            DSChapterHead(label: CollectionSection.forYou.title)
                             if model.hasKindSplit {
                                 DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
                                                            set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }))
@@ -162,23 +162,22 @@ struct ListsView: View {
                         genresSection.modifier(SectionSpy(section: .genres, active: $activeSection))
                     }
                     awards.modifier(SectionSpy(section: .awards, active: $activeSection))
-                    if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
-                }
-                // Al final, las listas: las de Trakt y las de tus complementos, aparte.
-                if !traktLists.isEmpty {
-                    listRows(title: Text("Tuyo"), cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection))
-                }
-                if !addonCards.isEmpty {
-                    listRows(title: Text("De tus complementos"), cards: addonCards)
-                        .modifier(SectionSpy(section: .addons, active: $activeSection))
-                }
-                // Colecciones (la repisa del canon), al final. «Lo que ves» ya va arriba, bajo los círculos.
-                if collections.model.traktLinked {
-                    VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        DSSectionHead(title: Text("Colecciones"), source: .trakt, level: .section)
-                        CollectionsCardLoader()
+                    // Colecciones (la repisa del canon), entre Premios y Años (Fernando, 31 oct 2026), con el mismo rótulo.
+                    if collections.model.traktLinked {
+                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                            DSChapterHead(label: Text("Colecciones"))
+                            CollectionsCardLoader().padding(.horizontal, DS.Space.gutter)
+                        }
                     }
-                    .padding(.horizontal, DS.Space.gutter)
+                    if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
+                    // Las listas: las tuyas de Trakt y las de tus complementos, con el mismo rótulo.
+                    if !traktLists.isEmpty {
+                        listRows(label: CollectionSection.trakt.title, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection))
+                    }
+                    if !addonCards.isEmpty {
+                        listRows(label: CollectionSection.addons.title, cards: addonCards)
+                            .modifier(SectionSpy(section: .addons, active: $activeSection))
+                    }
                 }
             }
             .padding(.top, DS.Space.s2 + DS.Space.s3)   // el aire bajo el título (antes `ParaTiView` lo ponía afuera)
@@ -207,7 +206,7 @@ struct ListsView: View {
     /// Cada plataforma, una tarjeta con su top 3 en abanico; tocarla abre sus rankings.
     private var platforms: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSChapterHead(label: Text("Plataformas"), title: Text("Lo de cada servicio que tienes"))
+            DSChapterHead(label: Text("Plataformas"))
             CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { hub in
                 NavigationLink(value: PlatformRoute(brand: hub.brand)) {
                     PlatformFanCard(name: hub.name, logo: hub.logo, posters: model.cover(of: hub).map { Optional($0.poster) },
@@ -268,7 +267,7 @@ struct ListsView: View {
         let all = collections.model.awards.sorted { (order.firstIndex(of: $0.id) ?? order.count) < (order.firstIndex(of: $1.id) ?? order.count) }
         if !all.isEmpty {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSChapterHead(label: Text("Premios"), title: Text("Los ganadores de cada año"))
+                DSChapterHead(label: Text("Premios"))
                 CenteredCarousel(items: all, id: \.id, cardWidth: DS.PlatformFan.width) { award in
                     NavigationLink(value: CollectionRoute(kind: .award, id: award.id)) { AwardCard(award: award) }
                         .buttonStyle(.plain)
@@ -281,7 +280,7 @@ struct ListsView: View {
     /// Estudios: A24, Pixar, Ghibli… cada uno con sus tres películas más vistas y su nombre al frente.
     private var studiosSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSChapterHead(label: Text("Estudios"), title: Text("De A24 a Pixar"))
+            DSChapterHead(label: Text("Estudios"))
             CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { studio in
                 NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
                     CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
@@ -301,7 +300,7 @@ struct ListsView: View {
         let language = env.services.appSettings.uiLanguage
         let countdown = collections.model.seasonCountdown
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSChapterHead(label: Text("Temporadas"), title: Text("Halloween, Día de Muertos, Navidad…"))
+            DSChapterHead(label: Text("Temporadas"))
             if let now = countdown.first {
                 NavigationLink(value: CollectionRoute(kind: .season, id: now.season.slug)) {
                     SeasonFeature(name: Strings.tr(now.season.title, language: language), blurb: Strings.tr(now.season.blurb, language: language),
@@ -333,9 +332,9 @@ struct ListsView: View {
 
     /// Un grupo de listas en renglones que abren la lista completa: «Tuyo» (Mi lista, Favoritos, Tus series y tus listas de
     /// Trakt) y «De tus complementos».
-    private func listRows(title: Text, cards: [ListCardItem]) -> some View {
+    private func listRows(label: Text, cards: [ListCardItem]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title, level: .section).padding(.horizontal, DS.Space.gutter)
+            DSChapterHead(label: label)
             VStack(spacing: DS.Space.s2) {
                 ForEach(cards) { c in
                     if let shelf = c.shelf {
@@ -366,7 +365,7 @@ struct ListsView: View {
     private var genresSection: some View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSChapterHead(label: Text("Géneros"), title: Text("Del terror a la comedia"))
+            DSChapterHead(label: Text("Géneros"))
             CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { genre in
                 let name = Strings.tr(genre.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .genre, id: genre.slug)) {
@@ -386,7 +385,7 @@ struct ListsView: View {
     /// Por año: cada año con cuatro de sus películas (las premiadas, y si faltan, lo más popular).
     private var yearsSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSChapterHead(label: Text("Años"), title: Text("Lo mejor de cada año"))
+            DSChapterHead(label: Text("Años"))
             CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth, reflected: true) { year in
                 NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {
                     YearCard(year: year, posters: collections.model.yearPosters[year] ?? []).rowReflection()
