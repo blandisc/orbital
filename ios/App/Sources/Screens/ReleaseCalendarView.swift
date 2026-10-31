@@ -20,7 +20,7 @@ struct ReleaseCalendarView: View {
                         if let day { cell(day, model) } else { Color.clear.frame(height: DS.ReleaseDays.cell) }
                     }
                 }
-                .overlay { if model.loading && model.days.isEmpty { ProgressView() } }
+                .overlay { if model.loading && model.days.isEmpty { DSLoadingState() } }
                 dayList(model)
             }
             .dsSheetContent()

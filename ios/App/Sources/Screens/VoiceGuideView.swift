@@ -234,7 +234,7 @@ private struct VoiceGuideResults: View {
         let how = guide.how.filter(matches)
         let phone = Self.phoneOnly.filter { VoiceGuideText.contains($0.say, query) }
         if groups.isEmpty, how.isEmpty, phone.isEmpty {
-            ContentUnavailableView.search(text: query)
+            DSEmptyState(symbol: "magnifyingglass", title: Text("Nada con \(query)"))
         }
         ForEach(groups) { group in
             VoiceTopic(title: Text(verbatim: group.title)) {

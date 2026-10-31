@@ -47,7 +47,7 @@ struct RemoteStatusCard: View {
                     .frame(width: DS.Size.thumbSmall, height: DS.Size.thumbSmall / DS.Poster.aspect)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Conectando con tu Orbital…").recipe(.cardTitle)
-                    ProgressView().controlSize(.small)
+                    ProgressView().controlSize(.small)   // ds-exception: la tarjeta de la TV en espera; la ruedita ocupa el lugar de lo que suena
                 }
                 Spacer(minLength: 0)
             }
