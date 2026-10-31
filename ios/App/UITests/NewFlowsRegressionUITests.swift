@@ -151,6 +151,30 @@ final class NewFlowsRegressionUITests: XCTestCase {
         shot("coleccion")
     }
 
+    /// «Ya la vi» en Colecciones pregunta cuándo (como Trakt) y, con «Otro día…», deja elegir la fecha.
+    func testYaLaViPreguntaCuando() {
+        launch(tab: 1, ["-demo-open", "repisa"])
+        let shelf = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'repisa-'")).firstMatch
+        XCTAssertTrue(shelf.waitForExistence(timeout: 20))
+        shelf.tap()
+        let item = app.buttons["repisa-item"].firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 10), "una que aún no ves")
+        item.tap()
+        let seen = app.buttons["repisa-seen"]
+        XCTAssertTrue(seen.waitForExistence(timeout: 10), "«Ya la vi»")
+        seen.tap()
+        let other = app.buttons["Otro día…"]
+        XCTAssertTrue(other.waitForExistence(timeout: 10), "pregunta «¿Cuándo la viste?»")
+        XCTAssertTrue(app.buttons["Ahora mismo"].exists && app.buttons["El día que se estrenó"].exists)
+        shot("cuando-la-viste")
+        other.tap()
+        let done = app.buttons["watched-when-done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 10), "el calendario para elegir el día")
+        shot("otro-dia")
+        done.tap()
+        XCTAssertTrue(app.otherElements["repisa-moment"].waitForExistence(timeout: 10) || app.buttons["repisa-moment"].exists, "a la repisa")
+    }
+
     /// Buscar con el cielo detrás se usa normal: se abre el campo y se escribe.
     func testBuscarConCielo() {
         launch(tab: 2)

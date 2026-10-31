@@ -75,13 +75,20 @@ extension AppEnvironment {
     }
 
     /// «Marcar como vista» (una película) desde el menú de un póster: en el teléfono y en Trakt, como en la ficha.
-    func markWatched(_ s: Suggestion) async -> Bool {
-        do { try await titles.markWatched(s) } catch {
+    func markWatched(_ s: Suggestion, at date: Date = Date()) async -> Bool {
+        do { try await titles.markWatched(s, at: date) } catch {
             notify(format: "No pude marcar «%@» como vista", s.title, detail: "\(error)", tone: .warn)
             return false
         }
         notify(format: "«%@» quedó como vista", s.title, tone: .success)
         return true
+    }
+
+    /// El día que se estrenó (Cinemeta), para «¿Cuándo la viste?» › «El día que se estrenó».
+    func releaseDate(_ s: Suggestion) async -> Date? {
+        guard let meta = try? await services.cinemeta.meta(kind: s.kind, id: s.imdb),
+              let text = meta["released"]?.nonEmptyString else { return nil }
+        return try? Date(String(text.prefix(10)), strategy: .iso8601.year().month().day())
     }
 
     /// El aviso de «Guardar» (la ficha y los pósters): dónde quedó y, a la mano, cambiarlo (o deshacerlo).

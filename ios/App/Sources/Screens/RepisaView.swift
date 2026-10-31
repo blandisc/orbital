@@ -100,6 +100,10 @@ struct RepisaCollectionView: View {
     @State private var newestFirst = true
     @State private var picked: CanonCollection.Item?
     @State private var placed: CanonCollection.Item?
+    /// «Ya la vi» pregunta cuándo (como Trakt) antes de ponerla en la repisa.
+    @State private var asking: Suggestion?
+    /// La que espera a que la ficha rápida termine de cerrarse (dos hojas a la vez, iOS no muestra la segunda).
+    @State private var askNext: Suggestion?
 
     var body: some View {
         let model = env.repisa
@@ -134,7 +138,8 @@ struct RepisaCollectionView: View {
             .navigationTitle(CanonNames.title(c.id))
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) { if let next = c.next(model.watched) { nextBar(next, c) } }
-            .sheet(item: $picked) { item in quick(item, c, model).presentationDetents([.height(DS.Repisa.quickHeight)]) }
+            .sheet(item: $picked, onDismiss: { asking = askNext; askNext = nil }) { item in quick(item, c, model).presentationDetents([.height(DS.Repisa.quickHeight)]) }
+            .askingWhenWatched($asking) { s, date in place(s, at: date, model) }
             .overlay { if let placed { moment(placed, c, model) } }
             .task { if !model.loaded { await model.load() } }   // entrando directo a una colección (sin pasar por la repisa)
             .animation(DS.Motion.enter(reduceMotion), value: placed?.id)
@@ -168,6 +173,7 @@ struct RepisaCollectionView: View {
                                 favorite: (env.ratings.stars(item.imdb) ?? 0) >= 5, rank: c.grouping == .rank ? item.rank : nil)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier(model.watched.contains(item.imdb) ? "repisa-item-seen" : "repisa-item")
             }
             ForEach(0..<(DS.Repisa.columns - items.count), id: \.self) { _ in Color.clear.frame(maxWidth: .infinity) }
         }
@@ -224,7 +230,7 @@ struct RepisaCollectionView: View {
                 Button { picked = nil; onOpenTitle(route(item)) } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold).frame(maxWidth: .infinity) }
                     .dsSolidPrimaryButton().controlSize(.large)
                 if !seen {
-                    Button { place(item, model) } label: { Text("Ya la vi").frame(maxWidth: .infinity) }
+                    Button { askNext = suggestion(item); picked = nil } label: { Text("Ya la vi").frame(maxWidth: .infinity) }
                         .buttonStyle(.glass).buttonBorderShape(.capsule).controlSize(.large)
                         .accessibilityIdentifier("repisa-seen")
                 }
@@ -233,14 +239,17 @@ struct RepisaCollectionView: View {
         .padding(DS.Space.gutter)
     }
 
-    /// «Ya la vi»: se marca en Trakt, se pinta al momento y sale el momento de ponerla en la repisa.
-    private func place(_ item: CanonCollection.Item, _ model: RepisaModel) {
-        picked = nil
+    private func suggestion(_ item: CanonCollection.Item) -> Suggestion {
+        Suggestion(kind: item.kind, imdb: item.imdb, title: item.title, year: item.year, poster: item.poster,
+                   wide: String(format: ForYou.metahubBackground, item.imdb), reason: .popular)
+    }
+
+    /// «Ya la vi», ya con su fecha: se marca en Trakt (ese día), se pinta al momento y sale el momento de ponerla en la repisa.
+    private func place(_ s: Suggestion, at date: Date, _ model: RepisaModel) {
+        guard let c = model.collection(id), let item = c.items.first(where: { $0.imdb == s.imdb }) else { return }
         model.markSeen(item.imdb)
         placed = item
-        let s = Suggestion(kind: item.kind, imdb: item.imdb, title: item.title, year: item.year, poster: item.poster,
-                           wide: String(format: ForYou.metahubBackground, item.imdb), reason: .popular)
-        Task { try? await env.titles.markWatched(s); env.collections.forgetWatched() }
+        Task { try? await env.titles.markWatched(s, at: date); env.collections.forgetWatched() }
     }
 
     /// El momento: la película baja a su lugar en la repisa y el número sube. Sin chispas ni confeti. Tocar cierra.

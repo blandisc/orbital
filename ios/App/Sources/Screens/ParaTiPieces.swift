@@ -155,3 +155,49 @@ struct PlanPoster: View {
         }
     }
 }
+
+/// «¿Cuándo la viste?» (Fernando, 31 oct 2026), como en Trakt: al marcar una película como vista en Colecciones o en
+/// Premios, «Ahora mismo», «El día que se estrenó» u «Otro día…» (un calendario). La fecha viaja a tu historial de Trakt.
+struct WatchedWhen: ViewModifier {
+    @Environment(AppEnvironment.self) private var env
+    @Binding var item: Suggestion?
+    let onPick: (Suggestion, Date) -> Void
+    @State private var choosing: Suggestion?
+    @State private var day = Date()
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog(Text("¿Cuándo la viste?"), isPresented: Binding(get: { item != nil }, set: { if !$0 { item = nil } }),
+                                titleVisibility: .visible, presenting: item) { s in
+                Button("Ahora mismo") { onPick(s, Date()) }
+                Button("El día que se estrenó") {
+                    Task { onPick(s, min(await env.releaseDate(s) ?? Date(), Date())) }
+                }
+                Button("Otro día…") { day = Date(); choosing = s }
+                Button("Cancelar", role: .cancel) {}
+            }
+            .sheet(item: $choosing) { s in
+                NavigationStack {
+                    DatePicker(selection: $day, in: ...Date(), displayedComponents: .date) { Text("El día que la viste") }
+                        .datePickerStyle(.graphical)
+                        .padding(.horizontal, DS.Space.gutter)
+                        .dsSheetContent()
+                        .navigationTitle(Text(verbatim: s.title)).navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { choosing = nil } }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Listo") { choosing = nil; onPick(s, day) }.accessibilityIdentifier("watched-when-done")
+                            }
+                        }
+                }
+                .presentationDetents([.medium, .large])
+            }
+    }
+}
+
+extension View {
+    /// «¿Cuándo la viste?» sobre `item`; al elegir, `onPick` con la fecha.
+    func askingWhenWatched(_ item: Binding<Suggestion?>, onPick: @escaping (Suggestion, Date) -> Void) -> some View {
+        modifier(WatchedWhen(item: item, onPick: onPick))
+    }
+}

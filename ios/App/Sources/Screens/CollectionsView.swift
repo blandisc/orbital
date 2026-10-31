@@ -53,11 +53,14 @@ struct CollectionRoute: Hashable {
 struct CollectionGridView: View {
     var collections: ModelObserver<CollectionsModel>
     let route: CollectionRoute
+    @Environment(AppEnvironment.self) private var env
     @State private var kind = "movie"
     @State private var yearItems: [Suggestion] = []
     @State private var loading = false
     @State private var loadedOnce = false
     @State private var settled = false
+    /// «Marcar como vista» (mantener el dedo): pregunta cuándo, como Trakt.
+    @State private var asking: Suggestion?
 
     var body: some View {
         ScrollView {
@@ -74,6 +77,9 @@ struct CollectionGridView: View {
                                  imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) },
                                  showsKindFilter: route.kind != .year, loading: isLoading) { s, width in
                         TitleLink(route: s.route, width: width, detail: detail(s))
+                            .contextMenu {
+                                Button("Marcar como vista", systemImage: "checkmark.circle") { asking = s }
+                            }
                     }
                 }
             }
@@ -81,6 +87,7 @@ struct CollectionGridView: View {
         }
         .background(Backdrop())
         .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+        .askingWhenWatched($asking) { s, date in Task { _ = await env.markWatched(s, at: date) } }
         .task {
             // Un estudio se pide aquí; un premio llega con las colecciones. Si al final no hay nada (falló o tardó
             // demasiado), el vacío en lugar de la ruedita para siempre.
