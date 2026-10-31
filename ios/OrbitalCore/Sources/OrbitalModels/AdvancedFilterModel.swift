@@ -79,7 +79,8 @@ public final class AdvancedFilterModel: ObservableModel {
     }
 
     private func nextPage() async {
-        guard !isLoading, !exhausted, available else { return }
+        // Los premios vienen con la app: no necesitan la clave de TMDB (sin ella, «Óscar» daba cero resultados).
+        guard !isLoading, !exhausted, available || !filter.awards.isEmpty else { return }
         let asked = filter
         isLoading = true
         defer { isLoading = false }

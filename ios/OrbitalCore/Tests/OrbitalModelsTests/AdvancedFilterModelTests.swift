@@ -1,0 +1,130 @@
+import XCTest
+@testable import OrbitalCore
+@testable import OrbitalModels
+
+/// El cajón del filtro avanzado: «Ver resultados» busca en TMDB sin lo que ya viste, lo elegido y el número de resultados se
+/// recuerdan al cerrar la app, «Limpiar» deja tus preferencias, sin red o sin clave de TMDB se dice (sin pedir nada), y los
+/// premios salen de los ganadores que trae la app.
+@MainActor
+final class AdvancedFilterModelTests: XCTestCase {
+    let tmdb = "https://api.themoviedb.org/3"
+
+    /// Tres películas en TMDB (la 2 ya la viste) y sus fichas con IMDb.
+    func stockTMDB(_ rig: ServicesRig) {
+        rig.http.prefix["\(tmdb)/discover/movie"] = ["results": [["id": 1, "vote_average": .double(8.1)], ["id": 2], ["id": 3]], "total_results": 3]
+        for id in 1...3 {
+            rig.http.prefix["\(tmdb)/movie/\(id)?"] = ["id": .int(id), "title": .string("Película \(id)"), "imdb_id": .string("tt000000\(id)"), "release_date": "2020-05-01"]
+        }
+    }
+
+    func movies() -> AdvancedFilter { var f = AdvancedFilter(); f.format = .movie; return f }
+
+    func testVerResultadosBuscaSinLoQueYaViste() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        stockTMDB(rig)
+        let model = AdvancedFilterModel(rig.services, watched: { ["tt0000002"] })
+        model.filter = movies()
+        XCTAssertTrue(model.available)
+        XCTAssertNil(model.total, "sin buscar aún no hay número")
+        await model.search()
+        XCTAssertFalse(model.isLoading)
+        XCTAssertFalse(model.failed)
+        XCTAssertEqual(model.results.map(\.imdb), ["tt0000001", "tt0000003"], "lo que ya viste no sale")
+        XCTAssertEqual(model.results.first?.tmdbRating, 8.1)
+        XCTAssertEqual(model.total, 3, "el número que dice la puerta de Buscar")
+        let asked = rig.http.calls.count
+        await model.search()
+        XCTAssertEqual(rig.http.calls.count, asked, "el mismo filtro no vuelve a pedir")
+    }
+
+    func testLoElegidoYElNumeroSeRecuerdanAlVolverAAbrir() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        stockTMDB(rig)
+        let model = AdvancedFilterModel(rig.services)
+        var f = movies(); f.minRating = 7; f.genres = ["comedia"]
+        model.filter = f
+        await model.search()
+        let again = AdvancedFilterModel(rig.services)
+        XCTAssertEqual(again.filter.format, .movie)
+        XCTAssertEqual(again.filter.minRating, 7)
+        XCTAssertEqual(again.filter.genres, ["comedia"])
+        XCTAssertEqual(again.total, 3)
+        // Otro filtro: el número viejo ya no aplica (tampoco al volver a abrir).
+        again.filter.minRating = 8
+        XCTAssertNil(again.total)
+        XCTAssertNil(AdvancedFilterModel(rig.services).total)
+    }
+
+    func testLimpiarQuitaTodoMenosTusPreferencias() throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        let model = AdvancedFilterModel(rig.services)
+        var f = movies()
+        f.region = "ES"; f.hideWatched = false; f.sort = .rating
+        f.genres = ["drama"]; f.minRating = 6; f.awards = ["oscar"]; f.years = 1990...1999
+        model.filter = f
+        model.clear()
+        XCTAssertEqual(model.filter.format, .all)
+        XCTAssertTrue(model.filter.genres.isEmpty)
+        XCTAssertNil(model.filter.minRating)
+        XCTAssertNil(model.filter.years)
+        XCTAssertTrue(model.filter.awards.isEmpty)
+        XCTAssertEqual(model.filter.region, "ES", "tu país se queda")
+        XCTAssertFalse(model.filter.hideWatched, "y si ocultas lo visto")
+        XCTAssertEqual(model.filter.sort, .rating, "y el orden")
+        XCTAssertTrue(model.results.isEmpty)
+        XCTAssertNil(model.total)
+    }
+
+    func testSinRedLaBusquedaFallaSinQuedarseCargando() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        rig.http.offline = true
+        let model = AdvancedFilterModel(rig.services)
+        model.filter = movies()
+        await model.search()
+        XCTAssertTrue(model.failed, "la pantalla dice que no se pudo")
+        XCTAssertFalse(model.isLoading)
+        XCTAssertTrue(model.results.isEmpty)
+        // Vuelve la red: «Reintentar» (el mismo filtro) sí busca.
+        rig.http.offline = false
+        stockTMDB(rig)
+        await model.search()
+        XCTAssertFalse(model.failed)
+        XCTAssertEqual(model.results.count, 3)
+    }
+
+    func testSinClaveDeTMDBNoSePideNada() async throws {
+        let rig = try ServicesRig()
+        let model = AdvancedFilterModel(rig.services)
+        XCTAssertFalse(model.available, "la pantalla lleva a Ajustes")
+        await model.search()
+        XCTAssertTrue(model.results.isEmpty)
+        XCTAssertFalse(model.failed)
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("themoviedb") })
+    }
+
+    func testLosPremiosSalenDeLosGanadoresSinPedirATMDB() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        let model = AdvancedFilterModel(rig.services)
+        var f = movies(); f.awards = ["oscar"]; f.hideWatched = false
+        model.filter = f
+        await model.search()
+        XCTAssertFalse(model.results.isEmpty)
+        XCTAssertEqual(model.results.map(\.imdb), f.awardWinners().map(\.imdb))
+        XCTAssertEqual(model.total, model.results.count)
+        XCTAssertTrue(model.exhausted, "una sola página")
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("themoviedb") })
+    }
+
+    /// Los premios vienen con la app: sin clave de TMDB, «Óscar» también da sus ganadores (antes, cero resultados).
+    func testLosPremiosSalenAunqueNoHayaClaveDeTMDB() async throws {
+        let rig = try ServicesRig()
+        let model = AdvancedFilterModel(rig.services)
+        XCTAssertFalse(model.available)
+        var f = movies(); f.awards = ["oscar"]; f.hideWatched = false
+        model.filter = f
+        await model.search()
+        XCTAssertEqual(model.results.map(\.imdb), f.awardWinners().map(\.imdb))
+        XCTAssertFalse(model.results.isEmpty)
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("themoviedb") })
+    }
+}
