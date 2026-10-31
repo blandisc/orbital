@@ -21,6 +21,12 @@ class PlayRequest(BaseModel):
     keep: bool = False  # abrir sin cerrar lo que estaba abierto
 
 
+class MineRequest(BaseModel):
+    id: str = Field(max_length=20)  # IMDb de la serie
+    title: str = Field(default="", max_length=120)
+    add: bool = True
+
+
 def router(d: Deps) -> APIRouter:
     r = APIRouter(prefix="/api/tv")
     tv = d.catalog.tv
@@ -42,6 +48,22 @@ def router(d: Deps) -> APIRouter:
         except OSError as exc:  # mpv no abrió (falta, sin permiso…)
             log.warning("No pude abrir el canal %s: %s", body.id, exc)
             raise HTTPException(500, f"No pude abrir el reproductor: {exc.strerror or exc}")
+
+    @r.post("/mine")
+    def mine(body: MineRequest) -> dict:
+        """Agrega o quita una serie de «Tus canales» (tu lista de Trakt, la misma del iPhone)."""
+        from ..foryou import SERVICE_ERRORS
+        from ..library.trakt import TraktAuthError
+
+        if not body.id.startswith("tt"):
+            raise HTTPException(400, "Serie inválida")
+        try:
+            tv.set_mine(body.id, body.title, body.add)
+        except TraktAuthError as exc:
+            raise HTTPException(409, str(exc))
+        except SERVICE_ERRORS:
+            raise HTTPException(502, "No pude cambiar tu lista de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True}
 
     previews = iptv_preview.Previews()
 

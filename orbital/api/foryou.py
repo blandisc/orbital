@@ -41,6 +41,25 @@ class SaveRequest(BaseModel):
     add: bool
 
 
+class MatchRequest(BaseModel):
+    kind: str
+    id: str
+    add: bool = True
+
+
+class RateRequest(BaseModel):
+    kind: str
+    id: str
+    stars: int | None = None  # 1–5; None quita la calificación
+
+
+class WatchedRequest(BaseModel):
+    kind: str
+    id: str
+    video_id: str | None = None  # un episodio; sin él, la película o la serie completa
+    when: str = "now"  # «now», «released», «unknown» o un momento (segundos, como texto)
+
+
 def router(d: Deps) -> APIRouter:
     r = APIRouter(prefix="/api/foryou")
     foryou = d.catalog.foryou
@@ -116,6 +135,58 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(409, str(exc))
         except SERVICE_ERRORS:
             raise HTTPException(502, "No pude cambiar tu lista de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True}
+
+    def _trakt_call(fn, failed: str):
+        """Lo que cambia tu cuenta de Trakt: reconectar dicho tal cual (409); sin red, en palabras (502)."""
+        try:
+            return fn()
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        except trakt.TraktAuthError as exc:
+            raise HTTPException(409, str(exc))
+        except SERVICE_ERRORS:
+            raise HTTPException(502, failed)
+
+    @r.post("/match")
+    def match(body: MatchRequest) -> dict:
+        """«Guardar» en «¿Qué vemos hoy?»: a «Tu match perfecto» de Trakt; «none» sin Trakt (la interfaz usa Mi lista)."""
+        if body.kind not in ("movie", "series"):
+            raise HTTPException(400, "Tipo inválido")
+        where = _trakt_call(lambda: foryou.save_match(body.kind, body.id[:20], body.add),
+                            "No pude guardarla en Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"where": where}
+
+    @r.get("/rating")
+    def rating(kind: str, id: str) -> dict:
+        """Tus estrellas (1–5) de un título, o null."""
+        if kind not in ("movie", "series"):
+            raise HTTPException(400, "Tipo inválido")
+        try:
+            return {"stars": foryou.my_rating(kind, id[:20])}
+        except SERVICE_ERRORS:
+            return {"stars": None}
+
+    @r.post("/rating")
+    def rate(body: RateRequest) -> dict:
+        """Calificar con estrellas (como el iPhone), o quitarlas."""
+        if body.kind not in ("movie", "series") or (body.stars is not None and not 1 <= body.stars <= 5):
+            raise HTTPException(400, "Calificación inválida")
+        _trakt_call(lambda: foryou.rate(body.kind, body.id[:20], body.stars),
+                    "No pude guardar tu calificación en Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True}
+
+    @r.post("/watched")
+    def mark_watched(body: WatchedRequest) -> dict:
+        """«¿Cuándo la viste?»: marca vista una película, un episodio o la serie completa, con su fecha."""
+        if body.kind not in ("movie", "series"):
+            raise HTTPException(400, "Tipo inválido")
+        try:
+            when: str | float = body.when if body.when in ("now", "released", "unknown") else float(body.when)
+        except ValueError:
+            raise HTTPException(400, "Fecha inválida")
+        _trakt_call(lambda: foryou.mark_watched(body.kind, body.id[:20], (body.video_id or "")[:40] or None, when),
+                    "No pude marcarla como vista en Trakt. Revisa tu conexión e inténtalo de nuevo.")
         return {"ok": True}
 
     @r.get("/title-extras")

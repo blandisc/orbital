@@ -124,9 +124,12 @@ def latest_resume(stremio_seconds: float, stremio_when: float | None, duration: 
     return trakt["percent"] / 100 * length
 
 
-def history_body(target: dict, watched_at: float | None = None) -> dict:
-    """Lo que POST /sync/history(/remove) pide para una película o un episodio (`target` de scrobble_target)."""
-    when = {} if watched_at is None else {"watched_at": _iso(watched_at)}
+def history_body(target: dict, watched_at: float | str | None = None) -> dict:
+    """Lo que POST /sync/history(/remove) pide para una película o un episodio (`target` de scrobble_target). `watched_at`:
+    un momento, «released» (el día que salió) o «unknown» (no sabes cuándo), como «¿Cuándo la viste?» del iPhone."""
+    when = {} if watched_at is None else {"watched_at": watched_at if watched_at in ("released", "unknown") else _iso(float(watched_at))}
+    if "show" in target and "episode" not in target:  # la serie completa (todos sus episodios)
+        return {"shows": [{**target["show"], **when}]}
     if "episode" in target:
         ep = target["episode"]
         return {"shows": [{**target["show"], "seasons": [{"number": ep["season"],
@@ -531,6 +534,45 @@ class Trakt:
                 found.append({"id": str(trakt_id), "name": name.strip()})
         return found
 
+    def create_list(self, name: str) -> str:
+        """Una lista privada nueva en tu cuenta; su id."""
+        data = self._send("POST", "/users/me/lists", {"name": name, "privacy": "private"})
+        trakt_id = (data or {}).get("ids", {}).get("trakt") if isinstance(data, dict) else None
+        if not trakt_id:
+            raise TraktError("Trakt no creó la lista")
+        return str(trakt_id)
+
+    def named_list(self, name: str, create: bool = False) -> str | None:
+        """El id de tu lista con ese nombre (sin importar mayúsculas ni acentos), como el iPhone la busca: «Tu match
+        perfecto», «Tus canales». `create`: si no existe, se crea."""
+        import unicodedata
+
+        def fold(text: str) -> str:
+            return "".join(c for c in unicodedata.normalize("NFD", text.casefold()) if unicodedata.category(c) != "Mn")
+
+        found = next((row["id"] for row in self.lists() if fold(row["name"]) == fold(name)), None)
+        return found or (self.create_list(name) if create else None)
+
+    def set_rating(self, kind: str, imdb: str, rating: int | None) -> None:
+        """Tu calificación (1–10, como la guarda Trakt; las estrellas del iPhone van de 1 a 5 y cuentan doble). None la quita."""
+        body = self._one(kind, imdb)
+        if rating is None:
+            self._send("POST", "/sync/ratings/remove", body)
+            return
+        if not 1 <= int(rating) <= 10:
+            raise TraktError("Calificación inválida")
+        body[KINDS[kind]][0]["rating"] = int(rating)
+        self._send("POST", "/sync/ratings", body)
+
+    def my_rating(self, kind: str, imdb: str) -> int | None:
+        """Tu calificación de un título (1–10) o None si no lo has calificado."""
+        rows = self._get(f"/sync/ratings/{KINDS[kind]}")
+        for row in rows if isinstance(rows, list) else []:
+            item = row.get(KINDS[kind][:-1]) if isinstance(row, dict) else None
+            if isinstance(item, dict) and (item.get("ids") or {}).get("imdb") == imdb:
+                return row.get("rating")
+        return None
+
     def list_items(self, list_id: str) -> list[dict]:
         if not str(list_id).isdigit():
             raise TraktError("Lista inválida")
@@ -718,7 +760,7 @@ class Trakt:
                 found[imdb] = when
         return found
 
-    def add_history(self, target: dict, watched_at: float | None = None) -> None:
+    def add_history(self, target: dict, watched_at: float | str | None = None) -> None:
         """Marca visto (una película o un episodio)."""
         self._send("POST", "/sync/history", history_body(target, watched_at))
 

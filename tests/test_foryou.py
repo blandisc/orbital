@@ -1104,3 +1104,47 @@ def test_the_platform_pill_logos_are_the_justwatch_ones():
     block = ui[ui.index("PLATFORM_PILLS = {"):ui.index("};", ui.index("PLATFORM_PILLS = {"))]
     pills = dict(re.findall(r'(\w+): "(/icon/[^"]+)"', block))
     assert pills and all(charts.JUSTWATCH_PACKAGES[brand][2] == path for brand, path in pills.items())
+
+
+def test_match_deck_saves_to_your_trakt_list_and_creates_it_once(make_foryou, net):
+    """«¿Qué vemos hoy?» guarda en «Tu match perfecto» de Trakt (como el iPhone): la busca sin importar acentos y, si no
+    está, la crea; sin Trakt dice «none» (la interfaz usa Mi lista)."""
+    lists = []
+    net.on("GET", r"/users/me/lists$", lambda url, body: (200, list(lists)))
+    net.on("POST", r"/users/me/lists$", lambda url, body: lists.append({"name": body["name"], "ids": {"trakt": 77}}) or (201, {"ids": {"trakt": 77}}))
+    net.on("POST", r"/users/me/lists/77/items", (201, {}))
+    fy = make_foryou(linked=True)
+    assert fy.save_match("movie", "tt1", True) == "match"
+    assert fy.save_match("series", "tt2", True) == "match"
+    created = [c for c in net.calls if c[0] == "POST" and c[1].endswith("/users/me/lists")]
+    assert len(created) == 1 and created[0][2]["name"] == "Tu match perfecto"  # una sola vez
+    added = [c for c in net.calls if "/lists/77/items" in c[1]]
+    assert added[-1][2] == {"shows": [{"ids": {"imdb": "tt2"}}]}
+    assert make_foryou().save_match("movie", "tt1", True) == "none"
+
+
+def test_rating_with_stars_counts_double_in_trakt(make_foryou, net):
+    net.on("POST", r"/sync/ratings$", (201, {}))
+    net.on("POST", r"/sync/ratings/remove", (200, {}))
+    net.on("GET", r"/sync/ratings/movies", (200, [{"rating": 8, "movie": {"ids": {"imdb": "tt1"}}}]))
+    fy = make_foryou(linked=True)
+    fy.rate("movie", "tt1", 4)
+    assert next(c for c in net.calls if c[1].endswith("/sync/ratings"))[2] == {"movies": [{"ids": {"imdb": "tt1"}, "rating": 8}]}
+    assert fy.my_rating("movie", "tt1") == 4 and fy.my_rating("movie", "tt9") is None
+    fy.rate("movie", "tt1", None)
+    assert any(c[1].endswith("/sync/ratings/remove") for c in net.calls)
+
+
+def test_when_did_you_watch_it(make_foryou, net):
+    """«¿Cuándo la viste?»: ahora, el día que salió («released»), no sé cuándo («unknown»), un episodio o la serie entera."""
+    net.on("POST", r"/sync/history$", (201, {}))
+    fy = make_foryou(linked=True)
+    fy.mark_watched("movie", "tt1", None, "released")
+    fy.mark_watched("series", "tt2", "tt2:3:5", "unknown")
+    fy.mark_watched("series", "tt2", None, 1_767_225_600)
+    bodies = [c[2] for c in net.calls if c[1].endswith("/sync/history")]
+    assert bodies[0] == {"movies": [{"ids": {"imdb": "tt1"}, "watched_at": "released"}]}
+    assert bodies[1] == {"shows": [{"ids": {"imdb": "tt2"}, "seasons": [{"number": 3, "episodes": [{"number": 5, "watched_at": "unknown"}]}]}]}
+    assert bodies[2] == {"shows": [{"ids": {"imdb": "tt2"}, "watched_at": "2026-01-01T00:00:00.000Z"}]}  # la serie completa
+    with pytest.raises(trakt.TraktAuthError):
+        make_foryou().mark_watched("movie", "tt1", None, "now")

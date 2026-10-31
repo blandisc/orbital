@@ -722,6 +722,45 @@ class ForYou:
         else:
             raise ValueError("¿Guardar dónde?")
 
+    # --- lo tuyo con un título (olas 2 y 3 de «Una sola Orbital», como el iPhone) --------------------------------------
+    MATCH_LIST = "Tu match perfecto"  # donde caen las que guardas en «¿Qué vemos hoy?» (MatchDeckModel.matchListName)
+
+    def save_match(self, kind: str, imdb: str, add: bool) -> str:
+        """«Guardar» en «¿Qué vemos hoy?»: con Trakt, en tu lista «Tu match perfecto» (se crea la primera vez); devuelve
+        «match». Sin Trakt, «none»: la interfaz lo guarda en Mi lista (tu biblioteca de Stremio)."""
+        if not self.trakt.linked:
+            return "none"
+        list_id = self.trakt.named_list(self.MATCH_LIST, create=True)
+        self.trakt.set_list_item(list_id, kind, imdb, add)
+        self.cache.clear(f"trakt:list:{list_id}")
+        self.cache.clear("trakt:lists")
+        return "match"
+
+    def my_rating(self, kind: str, imdb: str) -> int | None:
+        """Tus estrellas (1–5) de un título en Trakt, o None."""
+        if not self.trakt.linked:
+            return None
+        rating = self.trakt.my_rating(kind, imdb)
+        return max(1, min(5, round(rating / 2))) if isinstance(rating, (int, float)) and rating else None
+
+    def rate(self, kind: str, imdb: str, stars: int | None) -> None:
+        """Califica con estrellas (1–5, como el iPhone; en Trakt cuentan doble). None quita la calificación."""
+        if not self.trakt.linked:
+            raise trakt_api.TraktAuthError("Conecta Trakt en Ajustes › Cuentas para calificar.")
+        self.trakt.set_rating(kind, imdb, None if stars is None else max(1, min(5, int(stars))) * 2)
+
+    def mark_watched(self, kind: str, imdb: str, video_id: str | None, when: str | float) -> None:
+        """«¿Cuándo la viste?»: marca vista una película, un episodio o, sin episodio, la serie completa. `when`: «now»,
+        «released» (el día que salió), «unknown» (no sabes cuándo) o un momento (segundos)."""
+        if not self.trakt.linked:
+            raise trakt_api.TraktAuthError("Conecta Trakt en Ajustes › Cuentas para marcar lo que viste.")
+        target = trakt_api.scrobble_target(kind, imdb, video_id) or ({"show": {"ids": {"imdb": imdb}}} if kind == "series" else None)
+        if target is None:
+            raise ValueError("Título inválido")
+        moment: str | float = time.time() if when == "now" else when if when in ("released", "unknown") else float(when)
+        self.trakt.add_history(target, moment)  # sin episodio: la serie completa
+        self.cache.clear("trakt:watched")
+
     def title_extras(self, kind: str, imdb: str) -> dict:
         """La ficha como el iPhone: frase, clasificación, quién la hizo (TMDB) y «Más como esto» (lo que Trakt relaciona, ya
         con IMDb para abrirlo). Lo que no se pueda (sin clave, sin red) queda vacío; se recuerda (también sin internet)."""

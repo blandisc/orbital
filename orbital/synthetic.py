@@ -36,6 +36,12 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 CATEGORY = "Orbital 24/7"
+# «Tus canales» (ola 2 de «Una sola Orbital»): las series que eliges, cada una un canal al aire todo el día. Se guardan en tu
+# lista de Trakt «Tus canales» (la misma que lee el iPhone); sin Trakt o sin esa lista, las de arranque del iPhone
+# (ChannelsModel.starters).
+MINE = "Tus canales"
+MINE_STARTERS = (("tt0096697", "Los Simpson"), ("tt0386676", "The Office"), ("tt0108778", "Friends"),
+                 ("tt0098904", "Seinfeld"), ("tt0149460", "Futurama"))
 EPOCH = 1_767_225_600  # 1 ene 2026: desde aquí corre el horario (todas las teles ven el mismo episodio a la misma hora)
 MAX_SOURCES = 3  # fuentes por episodio antes de pasar al siguiente
 MAX_SKIPS = 5  # episodios seguidos sin doblaje antes de rendirse (algo más pasa: Internet, los complementos)
@@ -61,10 +67,17 @@ class SyntheticChannel:
     slot: int = 1380  # s del espacio de cada episodio en el horario (fijo: un poco más que el más largo)
     logo: str | None = None  # dirección de internet (Orbital la baja y la empareja) o un archivo de la interfaz («/img/…»)
     aliases: tuple[str, ...] = ()  # cómo lo pides por voz: «pon el canal de los Simpson» (voice._find_own)
+    category: str = CATEGORY  # «Orbital 24/7» o «Tus canales»
 
     def public(self) -> dict:
-        return {"id": self.id, "name": self.name, "categories": [CATEGORY], "quality": "", "synthetic": True,
+        return {"id": self.id, "name": self.name, "categories": [self.category], "quality": "", "synthetic": True,
                 "tagline": self.tagline}
+
+
+def mine_channel(imdb: str, title: str) -> SyntheticChannel:
+    """Una serie que elegiste, como canal (en «Tus canales»): su logo de metahub y el espacio de un episodio de media hora."""
+    return SyntheticChannel(f"mine:{imdb}", title, (Show(imdb),), category=MINE,
+                            logo=f"https://images.metahub.space/logo/medium/{imdb}/img")
 
 
 CHANNELS = [
@@ -177,7 +190,8 @@ class SyntheticTV:
     def __init__(self, catalog: Catalog, channels: list[SyntheticChannel] | None = None, clock=time.time,
                  directory: Path | None = None) -> None:
         self.catalog = catalog
-        self.channels = list(CHANNELS if channels is None else channels)
+        self._base = list(CHANNELS if channels is None else channels)
+        self.channels = list(self._base)
         self.clock = clock
         self.coverage = Coverage(directory / "tv-orbital.json" if directory else None)
         self._stop = threading.Event()
@@ -185,6 +199,15 @@ class SyntheticTV:
 
     def channel(self, channel_id: str) -> SyntheticChannel | None:
         return next((c for c in self.channels if c.id == channel_id), None)
+
+    def set_mine(self, picks: list[tuple[str, str]]) -> None:
+        """«Tus canales»: las series elegidas (IMDb, nombre), en su orden, después de los de Orbital."""
+        mine = [mine_channel(imdb, title) for imdb, title in picks if str(imdb).startswith("tt")]
+        self.channels = self._base + mine
+
+    @property
+    def mine(self) -> list[SyntheticChannel]:
+        return [c for c in self.channels if c.category == MINE]
 
     def all_episodes(self, channel: SyntheticChannel) -> list[dict]:
         """Todos los episodios de sus series (una serie que Cinemeta no da se queda fuera; si ninguna, CinemetaError)."""

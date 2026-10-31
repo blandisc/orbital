@@ -433,10 +433,12 @@ def client(library, monkeypatch):
 def test_api_lista_los_canales(client):
     c, _ = client
     data = c.get("/api/tv").json()
-    assert [x["title"] for x in data["categories"]] == ["Todos", "Orbital 24/7", "General", "Otros"]
+    # «Tus canales» (sin Trakt: las de arranque del iPhone) y luego los de Orbital.
+    assert [x["title"] for x in data["categories"]] == ["Todos", "Tus canales", "Orbital 24/7", "General", "Otros"]
     assert data["channels"][0]["synthetic"] is True and data["channels"][0]["name"] == "Los Simpson 24/7"  # los de Orbital, primero
     assert data["channels"][1]["name"] == "Caricaturas de siempre" and data["channels"][1]["logo"].startswith("/img/")
-    assert len(data["channels"]) == 10 and data["checking"] is False and data["offline"] is False
+    assert [c["name"] for c in data["channels"] if c["categories"] == ["Tus canales"]] == ["Los Simpson", "The Office", "Friends", "Seinfeld", "Futurama"]
+    assert len(data["channels"]) == 15 and data["checking"] is False and data["offline"] is False
     assert "tv.example.mx" not in c.get("/api/tv").text
 
 
@@ -524,3 +526,45 @@ def test_tus_canales_son_los_ultimos_que_diste_imagen_y_se_guardan(tmp_path):
     assert live.overview()["recent"] == ["Cine.mx@SD", "Azteca7.mx@SD"]
     again = make_tv(directory=tmp_path)  # se recuerdan al reabrir Orbital
     assert again.overview()["recent"] == ["Cine.mx@SD", "Azteca7.mx@SD"]
+
+
+class FakeTrakt:
+    """Tu cuenta de Trakt de mentiras: tus listas y lo que tienen."""
+
+    linked = True
+
+    def __init__(self, lists=None):
+        self.lists = lists or {}  # nombre -> [imdb]
+        self.created = []
+
+    def named_list(self, name, create=False):
+        return name if name in self.lists else None
+
+    def create_list(self, name):
+        self.lists[name] = []
+        self.created.append(name)
+        return name
+
+    def list_items(self, list_id):
+        return [{"imdb": i, "title": i.upper(), "kind": "series"} for i in self.lists[list_id]]
+
+    def set_list_item(self, list_id, kind, imdb, add):
+        items = self.lists[list_id]
+        if add and imdb not in items:
+            items.append(imdb)
+        elif not add and imdb in items:
+            items.remove(imdb)
+
+
+def test_tus_canales_vienen_de_tu_lista_de_trakt(client):
+    """«Tus canales» es tu lista de Trakt «Tus canales» (la misma del iPhone); agregar la primera vez la crea con las de
+    arranque, para no perderlas."""
+    c, tv = client
+    fake = FakeTrakt()
+    tv.catalog.foryou = type("F", (), {"trakt": fake})()
+    assert c.post("/api/tv/mine", json={"id": "x1"}).status_code == 400
+    assert c.post("/api/tv/mine", json={"id": "tt2467372", "title": "Brooklyn Nine-Nine"}).status_code == 200
+    assert fake.created == ["Tus canales"] and fake.lists["Tus canales"][-1] == "tt2467372"
+    assert len(fake.lists["Tus canales"]) == 6  # las cinco de arranque y la nueva
+    tv.set_mine("tt0096697", "Los Simpson", False)
+    assert [ch.id for ch in tv.synthetic.mine][0] == "mine:tt0386676"

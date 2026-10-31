@@ -129,8 +129,13 @@ class LiveTV:
         visible = self.visible()
         mapped = self._categories(visible)
         count = Counter(cat for cats in mapped.values() for cat in cats)
+        if own:
+            self.load_mine()
         ours = [self.synthetic.describe(c) for c in self.synthetic.channels] if self.synthetic and own else []
-        categories = [{"id": ALL, "title": "Todos", "count": len(visible) + len(ours)}] +             ([{"id": iptv.slug(synthetic.CATEGORY), "title": synthetic.CATEGORY, "count": len(ours)}] if ours else []) + [
+        mine = sum(c["categories"] == [synthetic.MINE] for c in ours)
+        categories = [{"id": ALL, "title": "Todos", "count": len(visible) + len(ours)}] + \
+            ([{"id": iptv.slug(synthetic.MINE), "title": synthetic.MINE, "count": mine}] if mine else []) + \
+            ([{"id": iptv.slug(synthetic.CATEGORY), "title": synthetic.CATEGORY, "count": len(ours) - mine}] if len(ours) > mine else []) + [
             {"id": iptv.slug(title), "title": title, "count": count[title]}
             for title in sorted(count, key=iptv.category_sort_key)]
         if not self._channels and self._thread is not None and not self.checking and time.monotonic() - self._asked > 60:
@@ -143,6 +148,59 @@ class LiveTV:
                 # «Tus canales»: los últimos que viste (solo los que siguen en la lista).
                 "recent": [cid for cid in self.store.recent() if cid in {c.id for c in visible}],
                 "total": len(self._channels), "hidden": len(self._channels) - len(visible)}
+
+    # --- «Tus canales» (tu lista de Trakt «Tus canales», la misma del iPhone) -------------------------------------------
+    MINE_TTL = 600  # s: la lista se vuelve a leer a lo más cada 10 minutos (o al cambiarla desde aquí)
+
+    def _trakt(self):
+        foryou = getattr(self.catalog, "foryou", None) if self.catalog is not None else None
+        client = getattr(foryou, "trakt", None)
+        return client if client is not None and client.linked else None
+
+    def mine_picks(self) -> list[tuple[str, str]]:
+        """Las series de tu lista «Tus canales» de Trakt; sin Trakt o sin esa lista, las de arranque."""
+        client = self._trakt()
+        list_id = client.named_list(synthetic.MINE) if client else None
+        if not list_id:
+            return list(synthetic.MINE_STARTERS)
+        return [(e["imdb"], e.get("title") or e["imdb"]) for e in client.list_items(list_id) if e.get("kind") == "series"]
+
+    def load_mine(self, wait: bool = False) -> None:
+        """Pone al día «Tus canales» si pasó su rato: en segundo plano (la sección no espera a Trakt), o ya, si `wait`."""
+        if self.synthetic is None:
+            return
+        if not getattr(self, "_mine_at", 0.0):
+            self.synthetic.set_mine(list(synthetic.MINE_STARTERS))  # mientras llega la tuya, las de arranque
+        if time.monotonic() - getattr(self, "_mine_at", -self.MINE_TTL * 2) < self.MINE_TTL and not wait:
+            return
+        self._mine_at = time.monotonic()
+
+        def load() -> None:
+            try:
+                self.synthetic.set_mine(self.mine_picks())
+            except Exception:  # noqa: BLE001 - sin Trakt a la mano se quedan las que había
+                log.info("Tus canales: no pude leer tu lista de Trakt")
+
+        if wait:
+            load()
+        else:
+            threading.Thread(target=load, daemon=True, name="tus-canales").start()
+
+    def set_mine(self, imdb: str, title: str, add: bool) -> None:
+        """Agrega o quita una serie de «Tus canales» (tu lista de Trakt; la primera vez se crea con las de arranque)."""
+        client = self._trakt()
+        if client is None:
+            from .library.trakt import TraktAuthError
+
+            raise TraktAuthError("Conecta Trakt en Ajustes › Cuentas para elegir tus canales.")
+        list_id = client.named_list(synthetic.MINE)
+        if not list_id:
+            list_id = client.create_list(synthetic.MINE)
+            for starter, _ in synthetic.MINE_STARTERS:
+                if starter != imdb:
+                    client.set_list_item(list_id, "series", starter, True)
+        client.set_list_item(list_id, "series", imdb, add)
+        self.load_mine(wait=True)
 
     def zap_list(self, category: str | None) -> tuple[str, list[Channel]]:
         """(id de la categoría, sus canales): la lista por la que se salta con ▲▼. Una categoría que ya no existe: todos."""
