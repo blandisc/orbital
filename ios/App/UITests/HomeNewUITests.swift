@@ -30,9 +30,13 @@ final class HomeNewUITests: XCTestCase {
         shot("canales")
         // Volver arriba y elegir Películas en la franja.
         for _ in 0..<8 { app.swipeDown(velocity: .fast) }
-        let filter = app.segmentedControls["home-kind-filter"]
-        XCTAssertTrue(filter.waitForExistence(timeout: 10))
-        filter.buttons["Películas"].tap()
+        // Todo · Películas · Series son pestañas de texto (`DSKindFilter`), ya no un control segmentado.
+        // La de la barra de arriba (la pastilla del Top 10 también dice «Películas», más abajo).
+        let named = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Películas"))
+        XCTAssertTrue(named.firstMatch.waitForExistence(timeout: 10), "la pestaña Películas de la barra de Inicio")
+        let movies = named.allElementsBoundByIndex.min { $0.frame.minY < $1.frame.minY }
+        XCTAssertNotNil(movies)
+        movies?.tap()
         sleep(1)
         shot("peliculas")
         for _ in 0..<8 { app.swipeUp(velocity: .slow) }
