@@ -108,6 +108,12 @@ struct ListsView: View {
                         jumps += 1
                         withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) }
                     }
+                    // La puerta de «Lo que ves», arriba y a la vista (antes al final de todo): tu semana en grande.
+                    if collections.model.traktLinked {
+                        WatchingCardLoader().accessibilityIdentifier("paraTi-your-year")
+                            .padding(.horizontal, DS.Space.gutter)
+                            .modifier(SectionSpy(section: .yourYear, active: $activeSection))
+                    }
                     // Sin pósters (sin TMDB ni Trakt) la tarjeta quedaría vacía: el dado de la barra sigue abriendo «Decide por mí».
                     let fan = Array(walls.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.matchFan))
                     if !fan.isEmpty { MatchTeaser(posters: fan, onOpen: onMatch) }
@@ -165,15 +171,13 @@ struct ListsView: View {
                     listRows(title: Text("De tus complementos"), cards: addonCards)
                         .modifier(SectionSpy(section: .addons, active: $activeSection))
                 }
-                // Lo que ves (reemplaza «Tu año», que vive adentro) y, debajo, Colecciones (la repisa del canon).
+                // Colecciones (la repisa del canon), al final. «Lo que ves» ya va arriba, bajo los círculos.
                 if collections.model.traktLinked {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        DSSectionHead(title: Text("Lo que ves"), source: .trakt, level: .section)
-                        WatchingCardLoader().accessibilityIdentifier("paraTi-your-year")
+                        DSSectionHead(title: Text("Colecciones"), source: .trakt, level: .section)
                         CollectionsCardLoader()
                     }
                     .padding(.horizontal, DS.Space.gutter)
-                    .modifier(SectionSpy(section: .yourYear, active: $activeSection))
                 }
             }
             .padding(.top, DS.Space.s2)

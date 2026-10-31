@@ -174,7 +174,11 @@ extension DS {
     /// la tarjeta de Para ti, sus esqueletos, lo apagado del collage, las barras, el cuadrito del mapa, los géneros y las
     /// historias (cuánto dura cada una, el alto de sus barritas de avance y el póster grande).
     enum Watching {
-        static let cardHeight: CGFloat = 190, skeleton: CGFloat = 160, skeletonHeight: CGFloat = 34, collageSaturation = 0.85, veilFrom = 0.35
+        /// «Tu semana en grande»: su degradado (rosa, naranja y ámbar), las barras de lunes a domingo, lo tenue de los otros
+        /// días y el hueco de lo que falta de la semana.
+        static let weekGradient = [Color(red: 0.84, green: 0.20, blue: 0.40), Color(red: 0.92, green: 0.42, blue: 0.18), Color(red: 0.94, green: 0.60, blue: 0.18)]
+        static let weekBars: CGFloat = 72, weekBar: CGFloat = 10, weekBarGap: CGFloat = 6, dayDim = 0.6, track = 0.14
+        static let cardHeight: CGFloat = 170, skeleton: CGFloat = 160, skeletonHeight: CGFloat = 34
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
