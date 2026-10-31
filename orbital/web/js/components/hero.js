@@ -6,11 +6,14 @@ import { alexaTip } from "../core/hints.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { Button } from "./button.js";
 import { appIcon } from "./card.js";
-import { PlatformMark } from "./ui.js";
+import { Pill, PlatformMark } from "./ui.js";
 
 /** Información grande del juego seleccionado: sistema, título, datos y acciones. */
 
-export function createHero({ onAction }) {
+export function createHero({ onAction, onKind = null }) {
+  // Todo · Películas · Series a la vista (como la franja del Inicio del iPhone): pestañas de texto que filtran toda la
+  // sección. Con el mando, ☰ › Mostrar; con el dedo o el mouse, aquí mismo. Solo en Películas y series (setKinds).
+  const kinds = h("div", { class: "hero__kinds", role: "tablist", "aria-label": "Mostrar", hidden: true });
   const eyebrow = h("div", { class: "hero__eyebrow" });
   const title = h("h1", { class: "hero__title" });
   // Logotipo del título (Stremio): más rico que el texto; si no carga, vuelve el texto.
@@ -24,7 +27,7 @@ export function createHero({ onAction }) {
   const voice = h("p", { class: "hero__voice", hidden: true });
   // La frase va al lado de los botones, no debajo: debajo se salía del destacado y se cortaba.
   const row = h("div", { class: "hero__row" }, actions, voice);
-  const content = h("div", { class: "hero__content" }, eyebrow, logo, title, facts, description, row);
+  const content = h("div", { class: "hero__content" }, kinds, eyebrow, logo, title, facts, description, row);
   let alexa = false;
   let tips = true; // Ajustes → Pantalla → Frases para Alexa
   const el = h("main", { class: "hero" }, content);
@@ -64,6 +67,9 @@ export function createHero({ onAction }) {
     const above = `${extra.eyebrow || item.subtitle || item.category}${runner}`;
     // Una colección: su propio ícono (un premio, la estatuilla; las demás, una lista), no el de Apps.
     const collectionIcon = item.source === "collection" ? (item.collection?.type === "award" ? "trophy" : "list") : null;
+    // El porqué de un título (N.º 1 en Netflix, Nuevo en tus plataformas, Porque viste…) va en turquesa, como el iPhone; lo que
+    // solo dice qué es (un premio, una plataforma, «Serie · T8 E23») se queda tenue.
+    eyebrow.classList.toggle("hero__eyebrow--reason", !!extra.eyebrow && item.source !== "collection");
     mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" })
       : collectionIcon ? svg(ICONS[collectionIcon]) : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)])),
       h("span", {}, above));
@@ -142,5 +148,13 @@ export function createHero({ onAction }) {
     }, 110);
   }
 
-  return { el, update, set alexa(on) { alexa = !!on; }, set tips(on) { tips = !!on; } };
+  /** Las pestañas Todo · Películas · Series: [[valor, nombre]] y el elegido; sin `choices`, se esconden. */
+  function setKinds(choices = null, current = "all") {
+    kinds.hidden = !choices;
+    if (!choices) return mount(kinds);
+    mount(kinds, choices.map(([value, label]) => Pill(label, { on: value === current, tone: "tab", role: "tab", tabindex: "-1",
+      onClick: (event) => { event.stopPropagation(); onKind?.(value); } })));
+  }
+
+  return { el, update, setKinds, set alexa(on) { alexa = !!on; }, set tips(on) { tips = !!on; } };
 }

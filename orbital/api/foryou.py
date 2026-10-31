@@ -76,6 +76,9 @@ def router(d: Deps) -> APIRouter:
                 return one(ref.id, ref.kind)
             except HTTPException as exc:
                 return {"items": [], "error": exc.detail, "status": exc.status_code}
+            except Exception:  # noqa: BLE001 - un error inesperado en una lista no deja a Películas y series sin las demás
+                log.exception("Para ti: la lista %s falló", ref.id)
+                return {"items": [], "error": "No pude cargar esta lista.", "status": 500}
 
         wanted = body.lists[:120]
         with ThreadPoolExecutor(max_workers=4, thread_name_prefix="listas") as pool:  # como las 4 colas que tenía la interfaz

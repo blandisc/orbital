@@ -91,6 +91,9 @@ class DemoTrakt:
     def watchlist(self):
         return [M["dune2"], M["oppen"], M["past"], S["tlou"], M["batman"], M["parasite"], M["prestige"], S["breaking"]]
 
+    def favorites(self):  # el corazón de Trakt («Series y películas favoritas»)
+        return [S["severance"], M["inter"], S["bear"]]
+
     def lists(self):
         # Un nombre largo de verdad (como las listas que la gente copia en Trakt): no debe cortarse feo.
         return [{"id": "1", "name": "The 25 Best Sci-Fi Movies of the 21st Century (So Far)"}]
@@ -138,7 +141,9 @@ class DemoTrakt:
         rows = [(S["severance"], 2, 7, "Chikhai Bardo", at(0, 20), "Apple TV"), (S["silo"], 2, 4, "", at(1, 1), "Apple TV"),
                 (S["andor"], 2, 4, "", at(1, 1), "Disney+"), (S["andor"], 2, 5, "", at(1, 1), "Disney+"), (S["andor"], 2, 6, "", at(1, 1), "Disney+"),
                 (S["futurama"], 13, 1, "The One Amigo", at(3, 19), "Hulu"), (S["bear"], 4, 1, "Next", at(3, 21), "FX"),
-                (S["severance"], 2, 8, "Sweet Vitriol", at(7, 20), "Apple TV"), (S["tlou"], 2, 3, "", at(5, 20), "HBO")]
+                (S["severance"], 2, 8, "Sweet Vitriol", at(7, 20), "Apple TV"), (S["tlou"], 2, 3, "", at(5, 20), "HBO"),
+                # la semana que pasó (para «Lo nuevo de lo tuyo»)
+                (S["bear"], 3, 10, "Forever", at(-1, 21), "FX"), (S["shogun"], 2, 1, "", at(-4, 20), "FX"), (S["dark"], 3, 8, "", at(-6, 20), "Netflix")]
         return [{**show, "season": s, "episode": e, "episode_title": t, "aired": when, "network": net, "runtime": 50}
                 for show, s, e, t, when, net in rows]
 

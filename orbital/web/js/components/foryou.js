@@ -98,7 +98,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
     mosaic.wake();
     if (action === "select") return activate(mosaic.current);
     if (action === "options") { if (mosaic.current) onMore?.(mosaic.current); return mosaic.current ? true : "edge"; }
-    if (action === "alt" && onDecide) { onDecide(); return true; } // X: «¿Qué vemos?» (el 🎲 del iPhone)
+    if (action === "alt" && onDecide) { onDecide(); return true; } // X: «Decide por mí» (el 🎲 del iPhone)
     return mosaic.handle(action);
   }
 
@@ -109,7 +109,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
     if (mosaic.ambient) return [{ glyph: g.select, label: "Elegir" }, end];
     const item = mosaic.current;
     return [item?.action && { glyph: g.select, label: item.action }, item && { glyph: g.options, label: "Opciones" },
-      onDecide && { glyph: g.alt, label: "¿Qué vemos?" }, end].filter(Boolean);
+      onDecide && { glyph: g.alt, label: "Decide por mí" }, end].filter(Boolean);
   }
 
   /** «No me interesa»: se quita de todos lados y no vuelve. */

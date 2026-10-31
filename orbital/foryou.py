@@ -62,6 +62,7 @@ POPULAR_TTL = 6 * 3600
 SLOW_TTL = 24 * 3600
 
 CALENDAR_DAYS = 14  # lo que enseña «Próximos estrenos»: dos semanas
+LATEST_PAST_DAYS = 7  # «Lo nuevo de lo tuyo» también enseña lo que salió la semana pasada (como el iPhone)
 DAWN_HOUR = 6  # lo que sale antes de las 6:00 (streaming) se lee «desde la madrugada»
 WEEKDAYS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
@@ -303,13 +304,15 @@ def library_entry(item) -> dict | None:
 
 
 def day_label(day: date, today: date) -> tuple[str, str]:
-    """(«Hoy», «jueves 15») · («Mañana», «viernes 16») · («Domingo 18», «octubre»)."""
+    """(«Hoy», «jueves 15») · («Mañana», «viernes 16») · («Ayer», «martes 13») · («Domingo 18», «octubre»)."""
     name = f"{WEEKDAYS[day.weekday()]} {day.day}"
     delta = (day - today).days
     if delta == 0:
         return "Hoy", name
     if delta == 1:
         return "Mañana", name
+    if delta == -1:
+        return "Ayer", name
     months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
     return name[:1].upper() + name[1:], months[day.month - 1]
 
@@ -326,9 +329,11 @@ def calendar_item(g: dict, today: date) -> dict:
         episode_long = f"{episode} · {g['episode_title']}" if g.get("episode_title") else episode
     day, sub = day_label(when.date(), today)
     when_text = f"{day} · madrugada" if when.hour < DAWN_HOUR else f"{day} · {time_text}"
-    item = video_item({**g, "kind": "series", "next": None}, "Sale hoy" if day == "Hoy" else day)
+    released = when.date() < today  # ya salió (en «Lo nuevo de lo tuyo», la semana que pasó)
+    item = video_item({**g, "kind": "series", "next": None}, "Sale hoy" if day == "Hoy" else "Ya salió" if released else day)
     return {**item, "key": f"video:{g['imdb']}", "day": when.date().isoformat(), "day_label": day, "day_sub": sub,
-            "time": time_text, "today": day == "Hoy", "episode": None, "episode_label": episode, "network": g.get("network") or "",
+            "time": time_text, "today": day == "Hoy", "released": released, "episode": None, "episode_label": episode,
+            "network": g.get("network") or "",
             "detail": " · ".join(p for p in (time_text, g.get("network")) if p),
             # Datos cortos (la ficha los pinta en una fila); el nombre del episodio va en la descripción.
             "facts": [[k, v] for k, v in (("Cuándo", when_text), ("Episodio", episode), ("Dónde", g.get("network") or "")) if v],
@@ -526,7 +531,7 @@ class ForYou:
         except (*NET_ERRORS, ValueError) as exc:  # sin red, o algo que no es JSON
             raise stremio_api.StremioError(f"{entry['addon']} no respondió: {exc}") from exc
         metas = data.get("metas") if isinstance(data, dict) else None
-        why = {"Watchlist": "En tu watchlist", "Recommendations": "Recomendada"}.get(entry["title"], f"En {entry['title']}")
+        why = {"Watchlist": "En Mi lista", "Recommendations": "Recomendada"}.get(entry["title"], f"En {entry['title']}")
         named = entry["title"] not in ("Watchlist", "Recommendations")  # «En RT: Certified Fresh»: el nombre de una lista
         items = []
         for m in metas if isinstance(metas, list) else []:
@@ -542,7 +547,7 @@ class ForYou:
         """El riel: una entrada por lista (solo las de los servicios que tienes)."""
         video: list[dict] = []
         # Seguir viendo y Mi lista ya traen lo de Trakt (trakt_sync.py); sin Trakt, lo de tu Stremio, que no pide clave: así
-        # «Para ti» no se queda solo con juegos. Con Trakt, Mi lista es «Tu watchlist» (abajo): no se repite.
+        # «Para ti» no se queda solo con juegos. Con Trakt, Mi lista es tu watchlist de Trakt (abajo, como el iPhone): no se repite.
         mine = "Trakt" if self.trakt.linked else "Stremio"
         if self._stremio("continue"):
             video.append({"id": "continue", "title": "Seguir viendo", "icon": "watching", "source": mine, "meta": "Lo que dejaste a medias"})
@@ -552,10 +557,13 @@ class ForYou:
             video += [
                 {"id": "recs", "title": "Recomendadas", "icon": "spark", "source": "Trakt", "meta": "Por lo que has visto", "split": True},
                 {"id": "mine", "title": "Tus series", "icon": "series", "source": "Trakt", "meta": "Las que estás viendo"},
-                {"id": "watchlist", "title": "Tu watchlist", "icon": "bookmark", "source": "Trakt", "meta": "Lo que dejaste pendiente"},
+                # Mi lista = tu watchlist de Trakt (el glosario del iPhone, 31 oct 2026).
+                {"id": "watchlist", "title": "Mi lista", "icon": "bookmark", "source": "Trakt", "meta": "Lo que dejaste pendiente"},
                 # Tus favoritos de Trakt (el corazón). En pantalla no se llama solo «Favoritos»: así se llaman los de tus juegos.
                 {"id": TRAKT_FAVORITES, "title": "Series y películas favoritas", "icon": "heart", "source": "Trakt",
                  "meta": "Las que marcaste con el corazón"},
+                # «Lo nuevo de lo tuyo» (el Inicio del iPhone): la semana que pasó y lo que viene, de las series que sigues.
+                {"id": "nuevo", "title": "Lo nuevo de lo tuyo", "icon": "calendar", "source": "Trakt", "meta": "De las series que sigues"},
                 # Dos formas de verlo (las píldoras de arriba): por día, o la semana como una guía de TV.
                 {"id": "estrenos", "title": "Próximos estrenos", "icon": "calendar", "source": "Trakt", "meta": "Las series que sigues",
                  "views": [{"id": "day", "label": "Por día"}, {"id": "week", "label": "Semana"}]},
@@ -924,6 +932,8 @@ class ForYou:
             return self.cache.get(f"{list_id}:{kind}", POPULAR_TTL, lambda: self._addon_list(entry, kind))
         if list_id == "estrenos":
             return self.calendar()
+        if list_id == "nuevo":
+            return self.latest()
         if list_id == "critics":
             return self._critics(kind)
         if list_id == "recs":
@@ -931,7 +941,7 @@ class ForYou:
         if list_id == "mine":
             return [video_item(e, "Sigues viéndola") for e in self.cache.get("trakt:watching", MINE_TTL, t.watching)]
         if list_id == "watchlist":
-            return [video_item(e, "En tu watchlist") for e in self.cache.get("trakt:watchlist", MINE_TTL, t.watchlist)]
+            return [video_item(e, "En Mi lista") for e in self.cache.get("trakt:watchlist", MINE_TTL, t.watchlist)]
         if list_id == TRAKT_FAVORITES:  # ya se guardan un rato en Trakt (y se preguntan con last_activities)
             return [video_item(e, "En tus favoritos") for e in t.favorites()]
         if list_id.startswith("list:"):
@@ -1186,6 +1196,17 @@ class ForYou:
         rows = self.cache.get(f"trakt:calendar:{start}", RECS_TTL, lambda: self.trakt.calendar(start, CALENDAR_DAYS + 2))
         today = now.date()
         return self._airings(rows, today, today + timedelta(days=CALENDAR_DAYS), today)
+
+    def latest(self, now: datetime | None = None) -> list[dict]:
+        """«Lo nuevo de lo tuyo» (como el Inicio del iPhone): lo que salió de tus series la semana pasada y lo que viene en
+        las próximas dos, en orden de día. Trakt da hasta 31 días por pedido: alcanza en uno."""
+        now = now or datetime.now().astimezone()
+        today = now.date()
+        first = today - timedelta(days=LATEST_PAST_DAYS)
+        start = (first - timedelta(days=1)).isoformat()  # hora universal: un día antes
+        days = LATEST_PAST_DAYS + CALENDAR_DAYS + 2
+        rows = self.cache.get(f"trakt:calendar:{start}:{days}", RECS_TTL, lambda: self.trakt.calendar(start, days))
+        return self._airings(rows, first, today + timedelta(days=CALENDAR_DAYS), today)
 
     def calendar_month(self, year: int, month: int, now: datetime | None = None) -> dict:
         """El mes completo (como «Sale hoy › el mes» del iPhone): lo que sale cada día de las series que sigues, también

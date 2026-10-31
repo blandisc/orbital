@@ -82,7 +82,7 @@ const searchGlyphs = () => ({ ...glyphs(), search: GLYPHS[state.modality === "to
 const ui = {
   backdrop: createBackdrop(),
   status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => runCommand({ type: "alexa-menu" }) }),
-  hero: createHero({ onAction: (action) => handleAction(action) }),
+  hero: createHero({ onAction: (action) => handleAction(action), onKind: (value) => runCommand({ type: "media-filter", value }) }),
   home: createHome({
     outside: () => [ui.status.searchButton, ui.status.alexaButton], // Buscar y Alexa (arriba) también se alcanzan con ↑
     onFocus: (target) => homeFocused(target),
@@ -550,6 +550,7 @@ function renderView() {
   const rows = document.body.dataset.view === "rows";
   ui.hero.el.classList.toggle("is-parked", !rows);
   ui.shelf.el.classList.toggle("is-parked", !rows);
+  if (rows) paintMediaKinds();
   if (inForYou()) ui.foryou.show();
   else ui.foryou.hide();
   if (inTv()) ui.tv.show();
@@ -957,6 +958,8 @@ let mediaGenres = {};
 let yearsLoaded = 0;
 let mediaFilter = storage.get("orbital.media.filter", "all"); // ☰ › Mostrar: Todo · Series · Películas
 const MEDIA_FILTERS = [["all", "Todo"], ["series", "Series"], ["movie", "Películas"]];
+/** Todo · Películas · Series a la vista sobre el destacado, solo en Películas y series (el Inicio del iPhone lo lleva arriba). */
+const paintMediaKinds = () => ui.hero.setKinds(state.section === "media" ? [["all", "Todo"], ["movie", "Películas"], ["series", "Series"]] : null, mediaFilter);
 
 // «Porque viste»: el que elegiste con X se queda hasta mañana (luego vuelve el del día, que ya es otro).
 const today = () => new Date().toLocaleDateString("sv");
@@ -1126,16 +1129,20 @@ let saving = null; // { kind, id, title, library, trakt: null (buscando) | { tra
 function saveMenu(s) {
   const row = (label, hint, on, where) => ({ icon: on ? "check" : "plus", label, hint, value: on ? "✓" : "", ok: on,
     command: { type: "save-toggle", where } });
-  const options = [row("Mi lista", "Stremio", s.library, "library")];
-  if (s.error) options.push({ icon: "info", label: s.error, command: { type: "stay" } });
-  else if (!s.trakt) options.push({ icon: "refresh", label: "Buscando tus listas de Trakt…", command: { type: "stay" } });
+  // Como el iPhone (31 oct 2026): con Trakt, «Mi lista» es tu watchlist de Trakt y va primero; tu biblioteca de Stremio queda
+  // al final, de respaldo y con su nombre. Sin Trakt, «Mi lista» es la de Stremio.
+  const stremio = (label) => row(label, "Stremio", s.library, "library");
+  const options = [];
+  if (s.error) options.push(stremio("Mi lista"), { icon: "info", label: s.error, command: { type: "stay" } });
+  else if (!s.trakt) options.push(stremio("Mi lista"), { icon: "refresh", label: "Buscando tus listas de Trakt…", command: { type: "stay" } });
   else if (s.trakt.trakt) {
-    // Tus favoritos de Trakt (el corazón del iPhone), aparte de la watchlist; Trakt guarda hasta 100.
-    options.push(row("Tu watchlist", "Trakt", s.trakt.watchlist, "watchlist"), row("Favoritos", "Trakt", !!s.trakt.favorite, "favorites"),
+    // Tus favoritos de Trakt (el corazón del iPhone); Trakt guarda hasta 100.
+    options.push(row("Mi lista", "Trakt", s.trakt.watchlist, "watchlist"), row("Favoritos", "Trakt", !!s.trakt.favorite, "favorites"),
       { heading: true, label: "Tus listas de Trakt" });
     if (!s.trakt.lists.length) options.push({ icon: "info", label: "Aún no tienes listas en Trakt", command: { type: "stay" } });
     for (const l of s.trakt.lists) options.push(row(l.name, "", l.contains, `list:${l.id}`));
-  }
+    options.push({ heading: true, label: "Stremio" }, stremio("Biblioteca de Stremio"));
+  } else options.push(stremio("Mi lista"));
   return { title: "Guardar en…", subtitle: s.title, options, save: true };
 }
 
@@ -1674,6 +1681,7 @@ async function runCommand(command, context = null) {
         mediaFilter = command.value;
         storage.set("orbital.media.filter", mediaFilter);
         sound.play("select");
+        paintMediaKinds();
         return buildCuration();
       case "decide":
         ui.sheet.close();

@@ -113,8 +113,10 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   if (needsInternet(item)) card.classList.add("needs-internet"); // sin internet se atenúa (base.css)
   if (item.chosen) card.classList.add("card--chosen"); // «Porque viste»: el título del que salen las sugerencias
   // Recién llegado a tu carpeta (Mi media): el listón «Nuevo» en la esquina, como «Lo nuevo de lo tuyo» del iPhone.
-  const fresh = item.day_label === "Nuevo" && !badge ? CornerRibbon() : null;
-  card.append(...[badge, rank, trend, live, chip, label, logo, meta, progress, fresh].filter(Boolean));
+  const fresh = (item.day_label === "Nuevo" || item.fresh) && !badge ? CornerRibbon() : null;
+  // Lo que sale hoy (Lo nuevo de lo tuyo): «Hoy» en la otra esquina, como el HOY del iPhone.
+  const today = item.today && !rank ? Badge("Hoy", { className: "card__rank card__today", plate: true }) : null;
+  card.append(...[badge, rank, today, trend, live, chip, label, logo, meta, progress, fresh].filter(Boolean));
   return card;
 }
 

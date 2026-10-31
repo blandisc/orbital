@@ -28,6 +28,7 @@
   color: var(--color-text-muted); font-weight: var(--weight-medium); font-size: var(--type-secondary);
   transition: color var(--duration-tint) var(--ease-out);
 }
+.hero__eyebrow--reason { color: var(--color-reason); }
 .hero__eyebrow > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hero__eyebrow-icon { flex: none; width: var(--icon-md); height: var(--icon-md); object-fit: contain; }
 .hero__eyebrow svg { flex: none; width: var(--icon-md); height: var(--icon-md); stroke: currentColor; fill: none; stroke-width: var(--stroke-regular); }
@@ -98,3 +99,5 @@
   .hero__content { max-width: 100%; }
   .hero__title { font-size: var(--type-title); }
 }
+/* Todo · Películas · Series (pestañas de texto) arriba del porqué, como la franja del Inicio del iPhone. */
+.hero__kinds { display: flex; gap: var(--space-1); margin: 0 0 var(--space-3) calc(var(--space-3) * -1); }
