@@ -1,4 +1,4 @@
-# Orbital y Orbital Plus · plan (30 oct 2026)
+# Orbital, Orbital Plus y Orbital Ultra · plan (30 oct 2026)
 
 Pedido de Fernando (30 oct 2026): dos objetivos grandes.
 
@@ -15,9 +15,11 @@ de `docs/producto/muvy-busqueda-premios/propuesta.html` (dos apps del mismo cód
 
 Fernando: «Primero hay que tener la Orbital Plus perfecta: que la pueda tomar cualquier persona y usarla. Plus no se
 conecta con la computadora. Van a ser tres versiones: una para mí, que se conecta con la computadora, Orbital Plus y
-Orbital normal.» Esto reemplaza la tabla de «Las dos apps» de más abajo.
+Orbital normal.» Y luego: «La mía tiene todo. Orbital Plus no tiene control de la consola, no se conecta al escritorio.
+Y Orbital no tiene nada de conexión a Real-Debrid. Para distinguirlas: Orbital, Orbital Plus y Orbital Ultra.»
+Esto reemplaza la tabla de «Las dos apps» de más abajo.
 
-| | **La tuya** | **Orbital Plus** | **Orbital** (App Store) |
+| | **Orbital Ultra** (la de Fernando) | **Orbital Plus** | **Orbital** (App Store) |
 |---|---|---|---|
 | Para quién | Fernando | Cualquier persona que le pases | Cualquiera, desde la tienda |
 | Ver al instante (Real-Debrid y complementos) | Sí | Sí | No (ni el código) |
@@ -26,13 +28,13 @@ Orbital normal.» Esto reemplaza la tabla de «Las dos apps» de más abajo.
 | Descubrir, Trakt, «Dónde verla», tus videos | Sí | Sí | Sí |
 | Cuenta | `mx.iracheta.orbital` (la de hoy) | `mx.iracheta.orbital.plus` | `mx.iracheta.orbital.app` (por decidir) |
 
-Cómo: dos banderas de compilación. `ORBITAL_PLUS` (Real-Debrid, complementos) y `ORBITAL_HOME` (consola y lo tuyo).
-La tuya = las dos; Plus = solo `ORBITAL_PLUS`; Orbital = ninguna. Tres destinos en `project.yml` con el mismo código.
+Cómo: dos banderas de compilación. `ORBITAL_PLUS` (Real-Debrid, complementos) y `ORBITAL_ULTRA` (consola y lo de Fernando).
+Ultra = las dos; Plus = solo `ORBITAL_PLUS`; Orbital = ninguna. Tres destinos en `project.yml` con el mismo código.
 
 ### Qué le falta a Plus para que la use cualquiera
 
 **A · Separarla de la computadora (bloquea).**
-1. El destino `OrbitalPlus` sin `ORBITAL_HOME`: fuera Ajustes › «Orbital en la TV», los atajos de Siri de la TV, el
+1. El destino `OrbitalPlus` sin `ORBITAL_ULTRA`: fuera Ajustes › «Orbital en la TV», los atajos de Siri de la TV, el
    control del Centro de control, la tarea que revisa «Desde la TV», los textos de permisos de Alexa y de la TV, el
    Simpson al azar, el acompañante de juegos y la copia en Stremio (con su `LoginView`).
 2. Prueba de que el binario de Plus no trae la consola (ni «/api/companion» ni los intents de la TV).
@@ -56,7 +58,7 @@ La tuya = las dos; Plus = solo `ORBITAL_PLUS`; Orbital = ninguna. Tres destinos 
 12. Cuando no hay versiones de un título, decirlo en palabras («Aún no hay versiones de este título; prueba mañana») y no
     dejar al usuario en una lista vacía.
 13. **Cada persona, su propia cuenta de Real-Debrid.** Real-Debrid corta si dos lugares usan la misma cuenta a la vez:
-    no se puede repartir la tuya. La guía lo dice.
+    no se puede repartir la de Ultra. La guía lo dice.
 
 **D · Ajustes para cualquiera.**
 14. Sin claves a la vista: clave de TMDB y Client ID de Trakt solo en «Avanzado», y Avanzado al final y cerrado.
@@ -72,7 +74,7 @@ La tuya = las dos; Plus = solo `ORBITAL_PLUS`; Orbital = ninguna. Tres destinos 
     hasta 100 personas. Cada versión dura 90 días: un script que suba una nueva cada mes. El TestFlight externo (liga
     pública) pasa por revisión de Apple y una app con Real-Debrid puede no pasar.
 19. La clave de TMDB incluida viaja en cada versión que subas (hoy vive solo en la Mac, `Secrets.xcconfig`).
-20. Ícono propio de Plus para que se distinga de la tuya en tu iPhone.
+20. Ícono propio de Plus para que se distinga de Ultra en tu iPhone.
 
 **F · Comprobarlo.**
 21. Una persona que nunca usó Stremio instala Plus desde TestFlight, crea su Real-Debrid y ve algo, sin ayuda. Se graba
