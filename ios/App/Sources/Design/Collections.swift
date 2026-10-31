@@ -47,17 +47,6 @@ struct AwardEmblem: View {
     }
 }
 
-/// El sello de Trakt (el emblema de tus listas).
-struct TraktEmblem: View {
-    var body: some View {
-        Image(systemName: "checkmark").font(DS.TextRecipe.section.font.weight(.heavy)).foregroundStyle(DS.paper)
-            .frame(width: DS.PlatformFan.logo, height: DS.PlatformFan.logo)
-            .background(DS.RatingBrand.trakt, in: Circle())
-            .shadow(color: DS.RatingBrand.trakt, radius: DS.PlatformFan.glow)
-            .accessibilityHidden(true)
-    }
-}
-
 /// Un premio en Colecciones: su estatuilla al frente, sobre sus tres ganadores más recientes, y su nombre debajo.
 struct AwardCard: View {
     let award: AwardCollection

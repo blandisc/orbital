@@ -150,30 +150,6 @@ struct VideoClipCard: View {
     }
 }
 
-/// Logos con su nombre (dónde verlo, la cadena o el estudio).
-struct BrandLogos: View {
-    let brands: [Brand]
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Space.s3) {
-                ForEach(brands) { brand in
-                    HStack(spacing: DS.Space.s2) {
-                        if let logo = brand.logo, let url = URL(string: logo) {
-                            RemoteImage(url: url, maxPoints: DS.Rich.logo) { phase in
-                                if case .success(let image) = phase { image.resizable().scaledToFit() } else { Color.clear }
-                            }
-                            .frame(width: DS.Rich.logo, height: DS.Rich.logo)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Rich.logoRadius))
-                        }
-                        Text(verbatim: brand.name).recipe(.footnote, color: DS.text).lineLimit(1)
-                    }
-                    .padding(.trailing, DS.Space.s2)
-                }
-            }
-        }
-    }
-}
-
 /// A dónde lleva un título de TMDB (se resuelve su IMDb al abrirlo) y una persona.
 struct TmdbRoute: Hashable { var title: TmdbTitle }
 struct PersonRoute: Hashable { var id: Int; var name: String }
