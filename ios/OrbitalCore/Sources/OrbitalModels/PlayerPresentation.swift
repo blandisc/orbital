@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalCore
 
 /// Lo que enseña el botón grande del reproductor: la carga o el play/pausa. Antes vivía suelto en la pantalla, con relojes sin
 /// pruebas, y cada arreglo rompía otra cosa (carga que parpadeaba, play que brincaba, carga al pausar). Aquí, una sola regla y
@@ -31,7 +32,7 @@ public final class PlayerPresentation: ObservableModel {
     private var playedAt = Date.distantPast
 
     public init(clock: @escaping () -> Date = Date.init,
-                sleep: @escaping @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1e9)) }) {
+                sleep: @escaping @Sendable (TimeInterval) async -> Void = AsyncDefaults.sleep) {
         self.clock = clock
         self.sleep = sleep
     }

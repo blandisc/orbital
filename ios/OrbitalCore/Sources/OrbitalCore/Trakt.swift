@@ -17,7 +17,7 @@ public actor Trakt {
     private let clientID: String
     private let clientSecret: String
     private let clock: @Sendable () -> Date
-    private let pause: @Sendable (TimeInterval) async -> Void
+    private let pause: (@Sendable (TimeInterval) async -> Void)?
     private var lastWrite = Date.distantPast
     /// Lo que dejaste a medias (`/sync/playback`), guardado un momento: abrir varios títulos seguidos no pregunta cada vez.
     var playbackCache: (at: Date, items: [TraktPlayback])?
@@ -32,8 +32,16 @@ public actor Trakt {
 
     public init(http: HTTPClient, secrets: SecretsStore, clientID: String, clientSecret: String = "",
                 clock: @escaping @Sendable () -> Date = { Date() },
-                pause: @escaping @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
+                pause: (@Sendable (TimeInterval) async -> Void)? = nil) {
         self.http = http; self.secrets = secrets; self.clientID = clientID; self.clientSecret = clientSecret; self.clock = clock; self.pause = pause
+    }
+
+    /// La espera de verdad entre escrituras. Una función con nombre, no un cierre por omisión: con el compilador de la CI,
+    /// volver de ese cierre desbalanceaba el asignador de tareas y la app se cerraba en la segunda escritura seguida a Trakt
+    /// («freed pointer was not the last allocation», 31 oct 2026).
+    static func sleep(_ seconds: TimeInterval) async {
+        let nanoseconds = UInt64(max(0, seconds) * 1_000_000_000)
+        do { try await Task.sleep(nanoseconds: nanoseconds) } catch { return }
     }
 
     static func isIMDb(_ id: String) -> Bool { id.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil }
@@ -173,7 +181,9 @@ public actor Trakt {
         let slot = max(now, lastWrite.addingTimeInterval(1))
         lastWrite = slot
         let wait = slot.timeIntervalSince(now)
-        if wait > 0 { await pause(wait) }
+        if wait > 0 {
+            if let pause { await pause(wait) } else { await Trakt.sleep(wait) }
+        }
         var result = try await call(method, path, body: body)
         if result.0 == 401 {
             // Un 401 no siempre es el final: se renueva la sesión UNA vez y se reintenta.
@@ -232,8 +242,13 @@ public actor Trakt {
         async let stamp = try? favoritesStamp()
         async let movies = get("/sync/favorites/movies", [("extended", "full")])
         async let shows = get("/sync/favorites/shows", [("extended", "full")])
-        let items = TraktParsing.favorites((try await movies?.array ?? []) + (try await shows?.array ?? []))
-        favoritesCache = (clock(), await stamp ?? nil, items)
+        // Cada `async let` se espera en su propia línea: esperarlo a media expresión (con `??`, `+` o un arreglo) rompía el
+        // asignador de tareas con el compilador de la CI («freed pointer was not the last allocation», 31 oct 2026).
+        let movieRows: JSON? = try await movies
+        let showRows: JSON? = try await shows
+        let marked: String?? = await stamp
+        let items = TraktParsing.favorites((movieRows?.array ?? []) + (showRows?.array ?? []))
+        favoritesCache = (clock(), marked ?? nil, items)
         return items
     }
 
@@ -274,7 +289,9 @@ public actor Trakt {
     public func watchedIDs() async throws -> Set<String> {
         async let movies = get("/sync/watched/movies")
         async let shows = get("/sync/watched/shows", [("extended", "noseasons")])
-        let rows = (try await movies?.array ?? []) + (try await shows?.array ?? [])
+        let movieRows: JSON? = try await movies   // cada espera en su línea (compilador de la CI, 31 oct 2026)
+        let showRows: JSON? = try await shows
+        let rows: [JSON] = (movieRows?.array ?? []) + (showRows?.array ?? [])
         return Set(rows.compactMap { ($0["movie"] ?? $0["show"])?["ids"]?["imdb"]?.string })
     }
 

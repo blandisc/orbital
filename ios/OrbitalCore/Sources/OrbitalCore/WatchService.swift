@@ -23,7 +23,7 @@ public actor WatchService {
     public init(library: LocalLibrary = LocalLibrary(), stremio: StremioAPI, authKey: @escaping @Sendable () -> String?, cinemeta: Cinemeta,
                 trakt: Trakt? = nil, pending: PendingStore, clock: @escaping @Sendable () -> Date = { Date() }, gate: FlushGate = FlushGate(),
                 scrobbleLog: ScrobbleLog? = nil,
-                sleep: @escaping @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
+                sleep: @escaping @Sendable (TimeInterval) async -> Void = AsyncDefaults.sleep) {
         self.store = library; self.stremio = stremio; self.authKey = authKey; self.cinemeta = cinemeta; self.trakt = trakt
         self.pending = pending; self.clock = clock; self.gate = gate; self.scrobbleLog = scrobbleLog; self.sleep = sleep
     }
