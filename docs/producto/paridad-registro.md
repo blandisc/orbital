@@ -29,6 +29,7 @@ Cómo se mantiene:
 | Calificar: estrellas en la ficha y aviso al terminar | Ya | Pendiente · ola 3 |
 | «Lo que ves» reemplaza a «Tu año» | Ya | Pendiente · ola 3 |
 | Entrega: una rama por ola, con capturas de antes y después de las cuatro superficies | — | — |
+| El arcoíris del azul de Orbital (misma luz e intensidad, `design/tokens.json` › rainbow) como acento: categorías de TV en vivo y filtros | Pendiente: los colores de sus filtros con esta familia (sesión del iPhone) | Ya en las categorías de TV en vivo; los filtros llegan con la ola 3 |
 
 ## Textos pendientes (`design/vocabulario.json`)
 

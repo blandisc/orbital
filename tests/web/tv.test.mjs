@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ALL, categoriesOf, channelLabel, channelsIn, columnsOf, emptyState, headMeta, initials, isShaky, pickCategory, startIndex, stepCategory } from "../../orbital/web/js/core/tv.js";
+import { ALL, categoriesOf, categoryHue, channelLabel, channelsIn, columnsOf, emptyState, headMeta, initials, isShaky, pickCategory, startIndex, stepCategory } from "../../orbital/web/js/core/tv.js";
 import { tvHints } from "../../orbital/web/js/core/hints.js";
 import { GLYPHS } from "../../orbital/web/js/core/input.js";
 import { SECTIONS, sectionRows, visibleSections } from "../../orbital/web/js/core/library.js";
@@ -162,4 +162,15 @@ test("cambiar de categoría regresa la cuadrícula arriba aunque el foco esté e
   const body = src.slice(src.indexOf("function setCategory(id)"), src.indexOf("function stepCategory(delta)"));
   assert.match(body, /grid\.dataset\.shift = "0"/);
   assert.match(body, /grid\.style\.transform = ""/); // antes solo el dato: la cuadrícula seguía corrida y una categoría corta se veía vacía
+});
+
+test("cada categoría de TV en vivo lleva su tono del arcoíris; lo tuyo y lo de Orbital, el turquesa; Todos y Otros, sin color", () => {
+  assert.equal(categoryHue("Noticias"), "ambar");
+  assert.equal(categoryHue("Deportes"), "verde");
+  assert.equal(categoryHue("Tus canales"), "orbital");
+  assert.equal(categoryHue("Orbital 24/7"), "orbital");
+  assert.equal(categoryHue("Familia"), categoryHue("Infantil")); // mismo dibujo, mismo color
+  assert.equal(categoryHue("Todos"), null);
+  assert.equal(categoryHue("Otros"), null);
+  assert.equal(categoryHue("Una categoría nueva"), null);
 });

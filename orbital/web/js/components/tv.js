@@ -6,7 +6,7 @@ import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { swipeArea } from "../core/swipe.js";
 import { clock } from "../core/format.js";
 import { sized } from "../core/images.js";
-import { airingLine, ALL, nextLine, categoriesOf, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
+import { airingLine, ALL, nextLine, categoriesOf, categoryHue, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
 import { keepInView, replay } from "./browse.js";
 import { Badge, Chip, EmptyState } from "./ui.js";
 
@@ -97,7 +97,7 @@ export function createTv({ onFocus, onPick }) {
     mount(cats, list.map((c, i) => {
       const id = `cat:${i}`;
       targets.set(id, { kind: "filter", value: c.id });
-      return h("button", { class: ["tv__cat", c.id === category && "tv__cat--on"], type: "button", tabindex: "-1", "data-focus-id": id,
+      return h("button", { class: ["tv__cat", c.id === category && "tv__cat--on"], type: "button", tabindex: "-1", "data-focus-id": id, "data-hue": categoryHue(c.title),
         onClick: () => onPick?.(targets.get(id), id) },
       svg(ICONS[categoryIcon(c.title)] || ICONS.tv), h("span", { class: "tv__cat-name" }, c.title), h("span", { class: "tv__cat-count" }, String(c.count)));
     }));

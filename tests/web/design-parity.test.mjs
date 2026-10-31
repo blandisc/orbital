@@ -122,6 +122,16 @@ test("los espacios de una pantalla valen lo mismo (DS.Layout), o la TV dice por 
   }
 });
 
+test("el arcoíris es el azul de Orbital girado: misma luz y misma intensidad en cada tono", () => {
+  const { l, c, hues } = TOKENS.rainbow;
+  for (const [name, h] of entries(hues)) {
+    const value = tvValue(`--rainbow-${name}`).replace(/\s+/g, " ");
+    const m = value.match(/^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/);
+    assert.ok(m, `TV --rainbow-${name}: ${value}`);
+    assert.deepEqual(m.slice(1).map(Number), [l, c, h], `TV --rainbow-${name}`);
+  }
+});
+
 test("un aviso dura lo mismo en la TV y en el iPhone", () => {
   // El iPhone lo llama Timing.banner (segundos); la TV, --duration-notice (los errores duran más solo en la TV: se leen
   // desde el sillón).
