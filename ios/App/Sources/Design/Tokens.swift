@@ -116,6 +116,14 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     }
 
     // MARK: Espacio y forma
+    /// Los cuatro espacios de toda pantalla (Fernando, 31 oct 2026, decisión 2), medidos desde donde termina lo que se ve
+    /// (el pie de un póster y su reflejo cuentan): del título a lo suyo, entre subsecciones, entre secciones y al pie.
+    /// Arriba de cada pantalla, `titleToContent`. `DesignTests` revisa que los contenedores usen estos.
+    enum Layout {
+        static let titleToContent = Space.s3, betweenSubsections = Space.s6, betweenSections = Space.s10, screenBottom = Space.s14
+        static let screenTop = Space.s3
+    }
+
     enum Space {
         static let s1 = CGFloat(DesignTokens.Space.s1), s2 = CGFloat(DesignTokens.Space.s2), s3 = CGFloat(DesignTokens.Space.s3)
         static let s4 = CGFloat(DesignTokens.Space.s4), s5 = CGFloat(DesignTokens.Space.s5), s6 = CGFloat(DesignTokens.Space.s6)

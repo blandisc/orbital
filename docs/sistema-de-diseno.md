@@ -39,13 +39,20 @@ e ink-850 en el iPhone) van en el JSON con su `porque`.
 (lg, negrita), `card-title` (md, medium), `body` (md), `secondary` (sm), `footnote` (xs), `caption` (2xs), `eyebrow` (sm,
 medium) y `data` (xs, números tabulares); solo en la TV, `heading` (xl: un encabezado de zona) y `hero` (el título del héroe). **Un componente usa la receta, nunca el tamaño de la escala** (`--text-*` es del CSS de tokens; la prueba lo vigila).
 
-**Jerarquía de encabezados (iPhone, 30 oct 2026):** dos niveles y nada más, una sola pieza (`DSSectionHead`).
+**Jerarquía de encabezados (iPhone, 30 oct 2026; regla A del 31 oct):** dos niveles y nada más, una sola pieza (`DSSectionHead`).
+Una sección es el **rótulo**: ícono en el azul de Orbital, el nombre en mayúsculas chicas y una línea fina hasta la orilla
+(`DSChapterLabel`, el mismo de `DSChapterHead`). Lo de adentro son subsecciones con título blanco.
 
 | Nivel | Receta | Lleva | Ejemplos |
 |---|---|---|---|
 | Pantalla | barra nativa / `display` | — | «Para ti», «Buscar» |
-| Sección (`level: .section`) | `title` | solo el título (y a la derecha un dato: cuántos, cuánto pesa) | Plataformas, Premios, Tuyo, Temporadas, Día por día, Descargando |
-| Subsección (por omisión) | `section` | su porqué arriba en `eyebrow` turquesa (`--color-eyebrow`), siempre | En tendencia, Seguir viendo, Próximas temporadas, Reparto y equipo |
+| Sección (`level: .section`) | rótulo (`caption` en mayúsculas) + ícono (`symbol:`) + línea | solo el rótulo (y a la derecha un dato o «Ver todo») | Plataformas, Premios, Temporadas, Día por día, Descargando |
+| Subsección (por omisión) | `section` | título blanco; su porqué arriba en `eyebrow` turquesa solo si ayuda | En tendencia, Seguir viendo, Próximas temporadas, Tus 5 estrellas |
+
+**Espacios (iPhone, decisión 2 del 31 oct 2026):** cuatro medidas, en `DS.Layout`, medidas desde donde termina lo que se ve
+(el pie de un póster y lo visible de su reflejo cuentan): del título a lo suyo **12** (`titleToContent`), entre
+subsecciones **24** (`betweenSubsections`), entre secciones **40** (`betweenSections`, también `DS.Editorial.sectionGap`) y
+al pie de la pantalla **56** (`screenBottom`). Arriba de cada pantalla, 12 (`screenTop`).
 | Pieza | `card-title` | — | el nombre en una tarjeta o renglón |
 | Cuerpo · secundario · pie · etiqueta · dato | `body` · `secondary` · `footnote` · `caption` · `data` | — | lo que explica, datos, notas, placas, números |
 
@@ -60,7 +67,7 @@ agrega al catálogo (`ios/App/Sources/Design/`) y a esta tabla. `DesignTests` re
 
 | Papel | La pieza | Regla | Prueba |
 |---|---|---|---|
-| Encabezado | `DSSectionHead(level:)` | Sección sola; subsección con su porqué (ver arriba). | sí |
+| Encabezado | `DSSectionHead(level:)` | Sección = rótulo con ícono y línea; subsección = título blanco (ver arriba). | sí |
 | Arranque de una parte grande | `DSChapterHead(label:title:)` | Las partes de Para ti (HOY, PLATAFORMAS, ESTUDIOS, TEMPORADAS, GÉNEROS, PREMIOS, AÑOS): rótulo chico en mayúsculas gris con su línea fina hasta la orilla y un título blanco que dice algo («Del terror a la comedia»). Sin colores ni íconos de app: el aire y la línea separan. | — |
 | Renglón de lista | `ListRow` | Pósters en pila, nombre y una línea gris, con flecha: las listas de «Tuyo» y la entrada de «Lo que ves». | — |
 | Porqué | `Eyebrow(reason: true)` · `DS.eyebrow` | Siempre turquesa, arriba de su título; solo para porqués: un dato (el periodo «Este mes», lo elegido en un filtro) no va en turquesa. Las excepciones dicen por qué (`ds-exception:`): los rótulos de historia del Wrapped (ámbar), la ruleta de Los Simpson (su amarillo), «En la tele» sobre el arte. | sí |
@@ -302,7 +309,6 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 |---|---|---|
 | logotipo en mayúsculas | `collection-card.js` (`AwardWordmark`, `SourceBadge`), `hero.js` y `list-screen.js` (el nombre de un premio) | Un premio (ÓSCAR, EMMY) y el sello de origen (TRAKT, STREMIO, ORBITAL) son **logotipos**, como en el iPhone: el JS los pone en mayúsculas (con `--tracking-award` / `--tracking-label`). No es una etiqueta de la interfaz. |
 | iniciales de un canal sin logo | `core/tv.js` | Las iniciales dentro del círculo de un canal sin logo (como el avatar de una persona) van en mayúsculas. |
-| sin porqué, Fernando lo pidió | iPhone, `ListsView.swift` («Próximas temporadas») | Fernando pidió el título solo, sin la línea turquesa (31 oct 2026). `DesignTests` respeta la marca en el renglón del encabezado. Se revisa con la propuesta de secciones y subsecciones. |
 
 (Antes de agregar una, intenta un token o una pieza nueva.)
 

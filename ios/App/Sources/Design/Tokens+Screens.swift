@@ -185,9 +185,10 @@ extension DS {
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
         /// La racha que se dice en la portada (desde 3 días) y el piso del azul del calendario (`DS.orbitalBlue`).
         static let streakShown = 3, dayFloor = 0.35
-        /// El mapa con zoom (`WatchingZoomMap`): de qué tamaño entra lo que se abre, los meses por renglón, el alto de un mes
-        /// y lo apagado de un mes que aún no llega.
-        static let zoomScale: CGFloat = 0.92, monthColumns = 4, monthTile: CGFloat = 64, futureMonth = 0.4
+        /// El año como GitHub: 53 semanas, la separación entre cuadritos, el alto de un cuadrito para medir su renglón (en un
+        /// iPhone ~5 pt), el renglón de las letras de los meses, lo apagado de los otros meses al abrir uno y el alto de la
+        /// cápsula del mes (parte del área de toque).
+        static let yearWeeks = 53, yearGap: CGFloat = 1.5, yearCell: CGFloat = 5.3, yearLabel: CGFloat = 16, otherMonths = 0.35, chipHeight: CGFloat = 0.7
         /// La dona de géneros: su tamaño, el hueco (proporción), la separación entre rebanadas, el ancho del texto del centro
         /// (parte del hueco), el punto de la leyenda y un color por género (los de las listas, de brillo parecido).
         static let donut: CGFloat = 132, donutHole = 0.62, donutGap: CGFloat = 1.5, donutLabel: CGFloat = 0.9, genreDot: CGFloat = 8
@@ -202,11 +203,13 @@ extension DS {
         static let backZone: CGFloat = 0.3
     }
 
-    /// Colecciones, la repisa (`ShelfEmblem`, `ShelfLedge`, `ShelfPoster`, `CollectionsCard`): el alto de una estatuilla (en
+    /// Colecciones, la repisa (`ShelfEmblem`, `ShelfLedge`, `ShelfPoster`, `CollectionsShowcase`): el alto de una estatuilla (en
     /// la repisa, en la tarjeta de Para ti y en el encabezado), las proporciones del disco y la placa de las listas, la luz de
     /// la vitrina, la línea de la repisa, lo apagado de un póster que te falta y la línea de las de 5 estrellas.
     enum Repisa {
-        static let emblem: CGFloat = 84, cardPoster: CGFloat = 54, cardFan: CGFloat = 96, cardShelves = 3, header: CGFloat = 64, columns = 5, listEmblem: CGFloat = 64
+        /// La vitrina de Para ti (`CollectionsShowcase`): el alto del objeto, el ancho de cada uno y su barra de avance.
+        static let showcaseEmblem: CGFloat = 60, showcaseWidth: CGFloat = 84, showcaseBar: CGFloat = 4
+        static let emblem: CGFloat = 84, header: CGFloat = 64, columns = 5, listEmblem: CGFloat = 64
         static let discRatio: CGFloat = 0.92, plaqueWidth: CGFloat = 0.62, plaqueHeight: CGFloat = 0.8
         /// Los objetos dibujados (Criterion, IMDb, el periódico del NYT): el estuche y su disco, el sello y el número de la placa,
         /// su marco, el brillo y el periódico (ancho, alto, renglones, el doblez y su inclinación).
@@ -314,7 +317,7 @@ extension DS {
     enum Editorial {
         /// La tarjeta de un pendiente de tu watchlist (dos renglones que se deslizan juntos).
         static let watchlistWidth: CGFloat = 300, watchlistPoster: CGFloat = 64, watchlistRow: CGFloat = 112, watchlistInRow = 20
-        static let sectionGap: CGFloat = 36, coverHeight: CGFloat = 200, wideWidth: CGFloat = 250, veilStart: CGFloat = 0.35
+        static let sectionGap = DS.Layout.betweenSections, coverHeight: CGFloat = 200, wideWidth: CGFloat = 250, veilStart: CGFloat = 0.35
 
         /// Hasta dónde crece el logo en la portada y en la pieza panorámica.
         static let coverLogo = CGSize(width: 200, height: 60), wideLogo = CGSize(width: 130, height: 34)
@@ -451,12 +454,13 @@ extension DS {
         static let reflection: CGFloat = 44, reflectionGap: CGFloat = 4, reflectionOpacity: Double = 0.3, reflectionBlur: CGFloat = 1.5
         /// Lo que la sección siguiente puede montarse sobre el reflejo de la última fila (su parte ya desvanecida): sin esto,
         /// entre una fila con reflejo y la siguiente quedaba el reflejo entero más el aire entre secciones (un hueco vacío).
-        static let reflectionTail: CGFloat = 30
+        static let reflectionTail: CGFloat = 24
         static let weight: CGFloat = 18, weightY: CGFloat = 12, weightTint: Double = 0.35
-        /// El aire entre Plataformas, Estudios, Premios y Por año (menos que entre secciones: el reflejo ya separa).
         /// El nombre de un premio sube sobre la cola del reflejo; y el aire después de Premios.
-        static let captionLift: CGFloat = 36, afterAwards: CGFloat = 24
-        static let groupGap: CGFloat = 4   // poco: el reflejo de las tarjetas ya separa (Fernando, 31 oct 2026)
+        static let captionLift: CGFloat = 36
+        /// La línea de tiempo de «Próximas temporadas»: el punto, el grueso y lo tenue de la línea, y desde cuántos días se
+        /// dice en meses.
+        static let timelineDot: CGFloat = 8, timelineStroke: CGFloat = 2, timelineLine = 0.5, timelineMonths = 45
         /// El halo de los estudios (neutro: cada estudio es de muchos colores).
         static let studio = Color(red: 0.55, green: 0.56, blue: 0.62)
         /// El logo del estudio en su cápsula.

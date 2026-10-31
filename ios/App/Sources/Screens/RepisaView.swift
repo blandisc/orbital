@@ -5,18 +5,36 @@ import OrbitalModels
 /// Abrir Colecciones (la repisa) desde Para ti: `.navigationDestination(for: RepisaRoute.self) { RepisaView(onOpenTitle:) }`.
 struct RepisaRoute: Hashable {}
 
-/// La tarjeta de Colecciones para Para ti, ya conectada: al tocarla empuja `RepisaRoute`.
+/// Abrir una colección (su repisa de películas) directo desde la vitrina de Para ti.
+struct RepisaCollectionRoute: Hashable { let id: String }
+
+/// La vitrina de Colecciones para Para ti, ya conectada (Fernando, 31 oct 2026, decisión 5A): cada objeto con cuánto llevas;
+/// tocar uno abre su colección y «Ver todas», la repisa completa. Debajo, la que estás más cerca de completar.
 struct CollectionsCardLoader: View {
     @Environment(AppEnvironment.self) private var env
     var body: some View {
         let model = env.repisa
         let _ = model.track()
-        let shelves = model.collections.filter { $0.family == .list }.map { c in
-            CollectionsCard.Entry(id: c.id, name: CanonNames.title(c.id), posters: c.items.prefix(DS.ParaTiB.matchFan).map(\.poster))
+        let entries = model.collections.map { c in
+            CollectionsShowcase<RepisaCollectionRoute, RepisaRoute>.Entry(id: c.id, name: CanonNames.title(c.id), seen: c.seen(model.watched), total: max(c.total, c.items.count))
         }
-        NavigationLink(value: RepisaRoute()) { CollectionsCard(shelves: shelves) }
-            .buttonStyle(.plain)
-            .task { if !model.loaded { await model.load() } }
+        CollectionsShowcase(entries: entries, hint: hint(model), route: { RepisaCollectionRoute(id: $0) }, all: RepisaRoute())
+        .task { if !model.loaded { await model.load() } }
+    }
+
+    /// «Te faltan 2 para completar Palma de Oro · Los 2010»: el grupo (década) más cerca de llenarse entre los que ya empezaste.
+    private func hint(_ model: RepisaModel) -> Text? {
+        var best: (missing: Int, name: String, group: String)?
+        for c in model.collections {
+            for g in c.groups() {
+                let seen = g.items.filter { model.watched.contains($0.imdb) }.count
+                let missing = g.items.count - seen
+                guard seen > 0, missing > 0, missing < (best?.missing ?? .max) else { continue }
+                best = (missing, RepisaCollectionView.plainName(c.id), g.title)
+            }
+        }
+        guard let best else { return nil }
+        return best.missing == 1 ? Text("Te falta 1 para completar \(best.name) · \(best.group)") : Text("Te faltan \(best.missing) para completar \(best.name) · \(best.group)")
     }
 }
 
@@ -29,12 +47,23 @@ enum CanonNames {
         default: AwardNames.title(id)
         }
     }
-    static func category(_ id: String) -> Text {
+    /// El nombre completo de una colección: el premio con su categoría o la lista con su autor.
+    static func fullTitle(_ id: String) -> Text {
         switch id {
-        case "criterion": Text("Colección Criterion"); case "top250": Text("Top 250 de IMDb")
-        case "nyt-movies": Text("Las 100 mejores películas del siglo, según The New York Times")
-        case "nyt-series": Text("Las 100 mejores series del siglo, según The New York Times")
-        default: AwardNames.category(id)
+        case "oscar": Text("Óscar a Mejor película"); case "globe": Text("Globo de Oro a Mejor película dramática")
+        case "bafta": Text("BAFTA a Mejor película"); case "emmy": Text("Emmy a Mejor serie de drama"); case "palm": Text("Palma de Oro de Cannes")
+        case "ariel": Text("Ariel a Mejor película"); case "criterion": Text("Colección Criterion"); case "top250": Text("Top 250 de IMDb")
+        case "nyt-movies": Text("Las 100 mejores películas del siglo"); case "nyt-series": Text("Las 100 mejores series del siglo")
+        default: title(id)
+        }
+    }
+    /// Qué trae: «Todas las ganadoras desde 2000» (premios) o de dónde sale la lista.
+    static func explain(_ id: String, since year: Int?) -> Text {
+        switch id {
+        case "criterion": Text("Clásicos y cine de autor restaurados por Criterion")
+        case "top250": Text("Las mejor calificadas por el público de IMDb")
+        case "nyt-movies", "nyt-series": Text("Según The New York Times, votadas por más de 500 creadores")
+        default: year.map { Text("Todas las ganadoras desde \(String($0))") } ?? Text("Todas las ganadoras")
         }
     }
 }
@@ -52,8 +81,8 @@ struct RepisaView: View {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 (model.seenTotal == 0 ? Text("Empieza tus colecciones: lo que veas del canon se pinta aquí") : Text("\(model.seenTotal) del canon en tus colecciones"))
                     .recipe(.secondary, color: DS.textMuted)
-                shelf(Text("Premios"), model.collections.filter { $0.family == .award }, model)
-                shelf(Text("Listas famosas"), model.collections.filter { $0.family == .list }, model)
+                shelf(Text("Premios"), symbol: "trophy", model.collections.filter { $0.family == .award }, model)
+                shelf(Text("Listas famosas"), symbol: "list.star", model.collections.filter { $0.family == .list }, model)
             }
             .padding(.horizontal, DS.Space.gutter)
             .padding(.bottom, DS.Space.s8)
@@ -65,9 +94,9 @@ struct RepisaView: View {
         .refreshable { await model.load() }
     }
 
-    private func shelf(_ title: Text, _ items: [CanonCollection], _ model: RepisaModel) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s4) {
-            DSSectionHead(title: title, level: .section)
+    private func shelf(_ title: Text, symbol: String, _ items: [CanonCollection], _ model: RepisaModel) -> some View {
+        VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+            DSSectionHead(title: title, level: .section, symbol: symbol)
             // Tres por repisa; si son dos (las listas), dos centrados.
             let perRow = min(3, max(1, items.count))
             ForEach(Array(stride(from: 0, to: items.count, by: perRow)), id: \.self) { i in
@@ -150,22 +179,37 @@ struct RepisaCollectionView: View {
         }
     }
 
+    /// Qué es, de dónde y cuánto llevas (Fernando, 31 oct 2026, decisión 6A): «Óscar a Mejor película», «Todas las
+    /// ganadoras desde 2000» y «5 de 26 vistas» con su barra.
     private func header(_ c: CanonCollection, _ model: RepisaModel) -> some View {
-        HStack(alignment: .bottom, spacing: DS.Space.s4) {
-            ShelfEmblem(id: c.id, height: DS.Repisa.header)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                CanonNames.category(c.id).recipe(.footnote, color: DS.textMuted)
-                Text("\(c.seen(model.watched)) de \(Strings.count(c.total, language: env.services.appSettings.uiLanguage))").recipe(.title).monospacedDigit()
-            }
-            Spacer()
-            if c.grouping != .rank {
-                Button { newestFirst.toggle() } label: {
-                    Label(newestFirst ? "Más recientes" : "Más antiguas", systemImage: "arrow.up.arrow.down").recipe(.footnote).fontWeight(.semibold)
-                        .lineLimit(1).fixedSize()
+        let seen = c.seen(model.watched), total = max(c.total, c.items.count)
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+            HStack(alignment: .center, spacing: DS.Space.s4) {
+                ShelfEmblem(id: c.id, height: DS.Repisa.header)
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    CanonNames.fullTitle(c.id).recipe(.section).lineLimit(2)
+                    CanonNames.explain(c.id, since: c.items.compactMap(\.year).min()).recipe(.footnote, color: DS.textMuted).lineLimit(2)
                 }
-                .dsSecondaryButton()
-                .accessibilityIdentifier("repisa-order")
             }
+            HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                Text(verbatim: "\(seen)").recipe(.title).monospacedDigit().contentTransition(.numericText())
+                Text("de \(Strings.count(total, language: env.services.appSettings.uiLanguage)) vistas").recipe(.footnote, color: DS.textMuted)
+                Spacer()
+                if c.grouping != .rank {
+                    Button { newestFirst.toggle() } label: {
+                        Label(newestFirst ? "Más recientes" : "Más antiguas", systemImage: "arrow.up.arrow.down").recipe(.footnote).fontWeight(.semibold)
+                            .lineLimit(1).fixedSize()
+                    }
+                    .dsSecondaryButton()
+                    .accessibilityIdentifier("repisa-order")
+                }
+            }
+            Capsule().fill(DS.fillStrong)
+                .overlay(alignment: .leading) {
+                    GeometryReader { geo in Capsule().fill(DS.warning).frame(width: geo.size.width * CGFloat(seen) / CGFloat(max(total, 1))) }
+                }
+                .frame(height: DS.Repisa.showcaseBar)
+                .accessibilityHidden(true)
         }
     }
 

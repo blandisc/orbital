@@ -194,41 +194,60 @@ struct CanonPoster: View {
 
 /// La entrada a Colecciones en Para ti (Fernando, 31 oct 2026): las listas famosas (Criterion, IMDb Top 250…), cada una
 /// con sus primeros pósters en abanico y su nombre; sin las estatuillas, que ya salen arriba en Premios.
-struct CollectionsCard: View {
-    struct Entry: Identifiable { let id: String; let name: Text; let posters: [String] }
-    let shelves: [Entry]
-    /// nil: solo la tarjeta (va dentro de un `NavigationLink`, que es quien recibe el toque). Con botón adentro y los toques
-    /// apagados para no chocar, el enlace se quedaba sin dónde tocar y no se podía entrar (Fernando, 30 oct 2026).
-    var action: (() -> Void)?
+/// La vitrina de Colecciones en Para ti (decisión 5A, 31 oct 2026): los objetos de cada colección sobre su repisa, cada uno
+/// con su nombre y una barra de cuánto llevas («5/26»); al final «Ver todas». Debajo, la frase de la más cercana a completarse.
+/// A dónde lleva cada uno lo dice quien la usa (`route` por colección, `all` para la repisa completa).
+struct CollectionsShowcase<Route: Hashable, AllRoute: Hashable>: View {
+    struct Entry: Identifiable { let id: String; let name: Text; let seen: Int; let total: Int }
+    let entries: [Entry]
+    var hint: Text?
+    let route: (String) -> Route
+    let all: AllRoute
 
     var body: some View {
-        if let action { Button(action: action) { card }.buttonStyle(.plain).accessibilityIdentifier("collections-card") }
-        else { card.accessibilityIdentifier("collections-card") }
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .bottom, spacing: DS.Space.s4) {
+                    ForEach(entries) { e in
+                        NavigationLink(value: route(e.id)) { item(e) }.buttonStyle(.plain).accessibilityIdentifier("showcase-\(e.id)")
+                    }
+                    NavigationLink(value: all) { seeAll }.buttonStyle(.plain).accessibilityIdentifier("showcase-all")
+                }
+                .padding(.horizontal, DS.Space.gutter)
+                .padding(.top, DS.Space.s2)
+            }
+            .scrollClipDisabled()
+            if let hint { hint.recipe(.footnote, color: DS.textMuted).padding(.horizontal, DS.Space.gutter) }
+        }
     }
 
-    private var card: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .bottom, spacing: DS.Space.s4) {
-                ForEach(shelves.prefix(DS.Repisa.cardShelves)) { shelf in
-                    VStack(spacing: DS.Space.s2) {
-                        PosterFan(posters: shelf.posters, width: DS.Repisa.cardPoster)
-                        shelf.name.recipe(.caption, color: DS.textMuted).fontWeight(.semibold).lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity)
+    private func item(_ e: Entry) -> some View {
+        VStack(spacing: DS.Space.s1) {
+            ShelfEmblem(id: e.id, height: DS.Repisa.showcaseEmblem)
+            e.name.font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
+            Capsule().fill(DS.fillStrong)
+                .overlay(alignment: .leading) {
+                    GeometryReader { geo in Capsule().fill(DS.warning).frame(width: geo.size.width * CGFloat(e.seen) / CGFloat(max(e.total, 1))) }
                 }
-            }
-            .frame(minHeight: DS.Repisa.cardFan)
-            HStack {
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text("Colecciones").recipe(.cardTitle, color: DS.text)
-                    Text("Las listas que hay que ver").recipe(.footnote, color: DS.textMuted)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
-            }
+                .frame(height: DS.Repisa.showcaseBar)
+            Text(verbatim: "\(e.seen)/\(e.total)").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).monospacedDigit()
         }
-        .padding(DS.Space.s4)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .frame(width: DS.Repisa.showcaseWidth)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(e.name)
+        .accessibilityValue(Text("\(e.seen) de \(e.total)"))
+    }
+
+    private var seeAll: some View {
+        VStack(spacing: DS.Space.s1) {
+            Image(systemName: "chevron.forward").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text)
+                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                .background(DS.surfaceRaised, in: Circle())
+            Text("Ver todas").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+        }
+        .frame(width: DS.Repisa.showcaseWidth, height: DS.Repisa.showcaseEmblem + DS.Space.s14)
+        .contentShape(Rectangle())
     }
 }
+

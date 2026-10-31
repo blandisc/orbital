@@ -261,6 +261,7 @@ struct MainTabs: View {
                     // Colecciones (la repisa): la tarjeta de Para ti empuja `RepisaRoute`; un título abre su ficha en la misma pila.
                     ParaTiView()
                         .navigationDestination(for: RepisaRoute.self) { _ in RepisaView { paths[1].append($0) } }
+                        .navigationDestination(for: RepisaCollectionRoute.self) { r in RepisaCollectionView(id: r.id) { paths[1].append($0) } }
                         .navigationDestination(for: WatchingRoute.self) { _ in WatchingView { paths[1].append($0) } }   // Lo que ves
                 }.tint(DS.primary)
             }

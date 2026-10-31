@@ -105,8 +105,8 @@ final class DesignTests: XCTestCase {
         for (_, hex) in DesignTokens.palette { XCTAssertNotNil(rgb(hex: hex)) }
     }
 
-    /// Los encabezados en dos niveles (30 oct 2026): una sección (`level: .section`) va sola, sin porqué; una subsección (toda
-    /// fila o estante: `DSSectionHead`, `Shelf`, `Rail`) lleva siempre su porqué en turquesa (`eyebrow:` o `meta:`).
+    /// Los encabezados en dos niveles (30 oct 2026; regla A del 31 oct): una sección (`level: .section`, el rótulo) va sola,
+    /// sin porqué; una subsección (toda fila o estante: `DSSectionHead`, `Shelf`, `Rail`) lleva su porqué solo si ayuda.
     func testSectionsHaveNoReasonAndSubsectionsAlwaysDo() throws {
         let screens = repo.appendingPathComponent("ios/App/Sources/Screens")
         let files = try FileManager.default.contentsOfDirectory(at: screens, includingPropertiesForKeys: nil).filter { $0.pathExtension == "swift" }
@@ -131,7 +131,6 @@ final class DesignTests: XCTestCase {
                     if String(chars[end..<lineEnd]).contains("ds-exception:") { continue }
                     let section = call.contains("level: .section"), reason = call.contains("eyebrow:") || call.contains("meta:")
                     if section && reason { problems.append("\(file.lastPathComponent):\(line): una sección no lleva porqué (lo que explica va en el cuerpo)") }
-                    if !section && !reason { problems.append("\(file.lastPathComponent):\(line): una subsección lleva su porqué en turquesa (eyebrow:)") }
                 }
             }
         }

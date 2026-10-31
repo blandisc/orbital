@@ -109,10 +109,11 @@ struct ListsView: View {
                     // Sin pósters (sin TMDB ni Trakt) la tarjeta quedaría vacía: el dado de la barra sigue abriendo «Decide por mí».
                     let fan = Array(walls.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.matchFan))
                     if !fan.isEmpty { MatchTeaser(posters: fan, onOpen: onMatch) }
+                    // «Lo que se ve hoy» (antes «Ahora», que no decía qué era): su flama, qué trae, y el tipo con palabras debajo
+                    // (los tres íconos solos no se entendían). Fernando, 30 oct 2026. Sus estantes son subsecciones: a 24 entre sí.
+                    VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                     if !generalShelves.isEmpty || model.isLoading {
-                        // «Lo que se ve hoy» (antes «Ahora», que no decía qué era): su flama, qué trae, y el tipo con palabras debajo
-                        // (los tres íconos solos no se entendían). Fernando, 30 oct 2026.
-                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                        VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                             DSChapterHead(label: CollectionSection.forYou.title, symbol: CollectionSection.forYou.symbol)
                             if model.hasKindSplit {
                                 DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
@@ -123,6 +124,7 @@ struct ListsView: View {
                         .id("ahora")   // `-demo-shelf ahora` baja hasta aquí
                     }
                     if walls.isEmpty, model.shelves.isEmpty, model.isLoading { FeedSkeleton() }   // la primera vez, mientras llega
+                    VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                     ForEach(generalShelves) { plan in shelf(plan).id(plan.id).perfTag("paraTi.shelf") }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.
                     if !model.newOnPlatforms.isEmpty {
@@ -139,12 +141,15 @@ struct ListsView: View {
                         }
                         .id("new-on-platforms")   // `-demo-shelf new-on-platforms` baja hasta aquí
                     }
+                    }
+                    }
                     if model.needsSources { sourcesFallback }
                 }
                 .modifier(SectionSpy(section: .forYou, active: $activeSection))
                 // Las colecciones (con su carácter: en carrusel, con peso y reflejo), justo después de lo general.
                 // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas (el reflejo ya separa).
-                VStack(alignment: .leading, spacing: DS.Collections.groupGap) {
+                // Cada colección es una sección: 40 entre rótulos, medido desde el reflejo (decisión 2, 31 oct 2026).
+                VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                     if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
                     if collections.model.tmdbReady {
                         studiosSection.modifier(SectionSpy(section: .studios, active: $activeSection))
@@ -152,7 +157,6 @@ struct ListsView: View {
                         genresSection.modifier(SectionSpy(section: .genres, active: $activeSection))
                     }
                     awards.modifier(SectionSpy(section: .awards, active: $activeSection))
-                        .padding(.bottom, DS.Collections.afterAwards)   // aire antes de Colecciones
                     // Colecciones (la repisa del canon), entre Premios y Años (Fernando, 31 oct 2026), con el mismo rótulo.
                     if collections.model.traktLinked {
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
@@ -165,7 +169,6 @@ struct ListsView: View {
                     if collections.model.traktLinked {
                         WatchingCardLoader().accessibilityIdentifier("paraTi-your-year")
                             .padding(.horizontal, DS.Space.gutter)
-                            .padding(.vertical, DS.Space.s5)
                             .modifier(SectionSpy(section: .yourYear, active: $activeSection))
                     }
                     // Las listas: las tuyas de Trakt y las de tus complementos, con el mismo rótulo.
@@ -178,8 +181,8 @@ struct ListsView: View {
                     }
                 }
             }
-            .padding(.top, DS.Space.s2 + DS.Space.s3)   // el aire bajo el título (antes `ParaTiView` lo ponía afuera)
-            .padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
+            .padding(.top, DS.Layout.screenTop)   // el aire bajo el título (antes `ParaTiView` lo ponía afuera)
+            .padding(.bottom, DS.Layout.screenBottom)   // aire bajo la última fila: la barra de pestañas no la tapa
         }
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top < DS.Size.barScrollHide } action: { _, top in atTop = top }
         .scrollEdgeEffectHidden(atTop, for: .top)
@@ -309,10 +312,15 @@ struct ListsView: View {
                 .accessibilityIdentifier("season-now")
                 .task { await collections.model.loadSeason(now.season.slug) }
             }
-            DSSectionHead(title: Text("Próximas temporadas")).padding(.horizontal, DS.Space.gutter)   // ds-exception: sin porqué, Fernando lo pidió (31 oct 2026)
+            DSSectionHead(title: Text("Próximas temporadas")).padding(.horizontal, DS.Space.gutter)
                 .padding(.top, DS.Space.s3)
-            CenteredCarousel(items: countdown.dropFirst().map(\.season), id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { season in
+            // Una línea de tiempo (Fernando, 31 oct 2026, decisión 7A): un punto por temporada con cuánto falta, la línea las une.
+            CenteredCarousel(items: countdown.dropFirst().map { SeasonStop(season: $0.season, days: $0.days) }, id: \.season.slug,
+                             cardWidth: DS.PlatformFan.width, reflected: true) { stop in
+                let season = stop.season
                 let name = Strings.tr(season.title, language: language)
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    SeasonTimelineStop(days: stop.days)
                 NavigationLink(value: CollectionRoute(kind: .season, id: season.slug)) {
                     CollectionCard(title: Text(verbatim: name), detail: Text(verbatim: Strings.tr(season.blurb, language: language)), name: name,
                                    posters: (collections.model.seasonItems[season.slug] ?? []).prefix(3).map { Optional($0.poster) },
@@ -323,9 +331,13 @@ struct ListsView: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("season-\(season.slug)")
                 .task { await collections.model.loadSeason(season.slug) }
+                }
             }
         }
     }
+
+    /// Una temporada de la línea de tiempo y cuántos días faltan.
+    private struct SeasonStop { let season: TmdbSeason; let days: Int }
 
     /// Un grupo de listas en renglones que abren la lista completa: «Tuyo» (Mi lista, Favoritos, Tus series y tus listas de
     /// Trakt) y «De tus complementos».

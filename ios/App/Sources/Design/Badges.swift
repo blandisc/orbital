@@ -138,10 +138,12 @@ struct DSProgress: View {
     }
 }
 
-/// El encabezado de toda sección de la app (dirección «Editorial»), en dos niveles y nada más:
-/// - `.section`: agrupa varias cosas («Plataformas», «Premios», «Tuyo», «Día por día»). Título grande y solo: sin porqué.
-/// - `.subsection`: una fila o un estante («En tendencia», «Seguir viendo», «Próximas temporadas»). Título mediano con su
-///   porqué arriba en turquesa (`eyebrow`, o `meta` si no hay).
+/// El encabezado de toda sección de la app (dirección «Editorial»), en dos niveles y nada más (Fernando, 31 oct 2026,
+/// opción A: la misma regla en toda la app):
+/// - `.section`: agrupa varias cosas («Plataformas», «Premios», «Día por día»). El rótulo: ícono azul (si lo trae), el
+///   nombre en mayúsculas chicas y una línea fina hasta la orilla (`DSChapterLabel`, el mismo de `DSChapterHead`). Sin porqué.
+/// - `.subsection`: una fila o un estante («En tendencia», «Seguir viendo», «Tus 5 estrellas»). Título blanco mediano; su
+///   porqué arriba en turquesa (`eyebrow`, o `meta`) solo cuando ayuda.
 /// A la derecha, «Ver todo» si abre la lista completa o un dato (cuántos, cuánto pesa), nunca una frase; lo que explica va
 /// en el cuerpo, no bajo el título. Sin íconos: el color lo pone el arte de abajo. `DesignTests` revisa las dos reglas.
 struct DSSectionHead: View {
@@ -160,23 +162,46 @@ struct DSSectionHead: View {
     /// El porqué, en una línea turquesa arriba del título («Lo que dejaste pendiente»), como en una revista (solo subsecciones).
     var eyebrow: Text?
     var level: Level = .subsection
+    /// El ícono del rótulo de una sección (en el azul de Orbital).
+    var symbol: String?
 
     init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil,
-         level: Level = .subsection) {
+         level: Level = .subsection, symbol: String? = nil) {
         self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta; self.source = source
-        self.eyebrow = eyebrow; self.level = level
+        self.eyebrow = eyebrow; self.level = level; self.symbol = symbol
     }
 
     init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil,
-         level: Level = .subsection) {
+         level: Level = .subsection, symbol: String? = nil) {
         self.init(title: Text(title), trailing: trailing.map { Text($0) }, action: action, count: count, chevron: chevron, meta: meta, source: source, eyebrow: eyebrow,
-                  level: level)
+                  level: level, symbol: symbol)
     }
 
     var body: some View {
         // Sin texto a la derecha, la acción es de todo el encabezado (el «Ver todo» de Buscar): antes solo se conectaba
         // con `trailing` y la cápsula «Ver todo» no hacía nada al tocarla.
-        if trailing == nil, let action { Button(action: action) { head }.buttonStyle(.plain) } else { head }
+        if trailing == nil, let action { Button(action: action) { content }.buttonStyle(.plain) } else { content }
+    }
+
+    @ViewBuilder private var content: some View {
+        if level == .section { chapter } else { head }
+    }
+
+    /// Una sección: el rótulo con su línea y, a la derecha, el dato o «Ver todo».
+    private var chapter: some View {
+        HStack(spacing: DS.Space.s2) {
+            DSChapterLabel(label: title, symbol: symbol)
+            if let trailing {
+                if let action { Button(action: action) { trailing }.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
+                else { trailing.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1) }
+            }
+            if chevron { SeeAllLabel() }
+            else if let count { Text(verbatim: "\(count)").recipe(.footnote, color: DS.textMuted) }
+        }
+        .textCase(nil)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
     }
 
     private var sectionTitle: some View {

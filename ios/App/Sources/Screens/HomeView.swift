@@ -93,7 +93,7 @@ struct HomeView: View {
                     continueRail(model, items: continuing).perfTag("home.rail")
                         // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
                         // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
-                        .padding(.top, model.spotlight.isEmpty ? 0 : -(DS.Editorial.sectionGap + heroOverlap))
+                        .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Editorial.sectionGap + heroOverlap) : DS.Layout.betweenSubsections - DS.Editorial.sectionGap))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
                 } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                     DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
                 }

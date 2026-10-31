@@ -45,6 +45,8 @@ struct WatchingView: View {
     @State private var wrapped: WatchingStats.Period?
     /// Lo que calificaste: todo (0) o con un número de estrellas (1…5).
     @State private var rated: RatedRoute?
+    /// La barra de «Cómo calificas» que tocaste (1…5): debajo, el carrusel de lo que calificaste con ese número.
+    @State private var pickedStars: Int?
 
     var body: some View {
         let model = env.watching
@@ -123,7 +125,7 @@ struct WatchingView: View {
     @ViewBuilder private func content(_ s: WatchingStats, _ model: WatchingModel, _ language: String) -> some View {
         // Lo que más viste, como el Top 10 de la app: su número grande detrás del póster.
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: Text("Lo que más viste"), level: .section)
+            DSSectionHead(title: Text("Lo que más viste"), level: .section, symbol: "flame")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .bottom, spacing: DS.Space.s3) {
                     ForEach(Array(s.top.prefix(DS.Watching.topCount).enumerated()), id: \.element.imdb) { i, t in
@@ -142,11 +144,11 @@ struct WatchingView: View {
             .scrollClipDisabled()
         }
         // Un solo mapa con zoom: año → mes → día (Fernando, 31 oct 2026, Z1). «Tu año» vive aquí adentro.
-        section(Text("Día por día")) {
-            WatchingZoomMap(plays: model.plays, startLevel: model.period == .week || model.period == .month ? .month : .year, locale: env.uiLocale)
+        section(Text("Día por día"), symbol: "calendar") {
+            WatchingZoomMap(plays: model.plays, opensMonth: model.period == .week || model.period == .month, locale: env.uiLocale)
         }
         // «Cuándo ves», fuera (Fernando, 31 oct 2026): repetía lo del calendario.
-        if !s.genres.isEmpty { section(Text("Tus géneros")) { WatchingGenres(genres: s.genres) { WatchingText.genre($0, language: language) } } }
+        if !s.genres.isEmpty { section(Text("Tus géneros"), symbol: "theatermasks") { WatchingGenres(genres: s.genres) { WatchingText.genre($0, language: language) } } }
         ratings
         // El Wrapped, apagado por ahora (Fernando, 31 oct 2026): `WrappedView` sigue lista para volver.
     }
@@ -158,20 +160,43 @@ struct WatchingView: View {
         let mine = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil }
         let all = Array(mine.values)
         if !all.isEmpty {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
-                // A la derecha, todo lo que calificaste (Fernando, 31 oct 2026); tocar una barra, los de ese número.
-                DSSectionHead(title: Text("Cómo calificas"), action: { rated = RatedRoute(stars: 0) }, chevron: true, level: .section)
-                let five = fiveStars(mine)
-                if !five.isEmpty {
-                    DSSectionHead(title: Text("Tus 5 estrellas"), count: five.count, eyebrow: Text("Lo que más te gustó"))
-                    WatchingFiveStars(items: five) { onOpenTitle(TitleRoute(kind: $0.kind, metaID: $0.id, title: $0.title, poster: $0.poster)) }
-                        .accessibilityIdentifier("watching-five-stars")
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+                // A la derecha, todo lo que calificaste (Fernando, 31 oct 2026).
+                DSSectionHead(title: Text("Cómo calificas"), action: { rated = RatedRoute(stars: 0) }, chevron: true, level: .section, symbol: "star")
+                VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+                    let five = fiveStars(mine)
+                    if !five.isEmpty {
+                        VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+                            DSSectionHead(title: Text("Tus 5 estrellas"), count: five.count, eyebrow: Text("Lo que más te gustó"))
+                            WatchingFiveStars(items: five) { onOpenTitle(TitleRoute(kind: $0.kind, metaID: $0.id, title: $0.title, poster: $0.poster)) }
+                                .accessibilityIdentifier("watching-five-stars")
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+                        let counts = (1...5).map { star in all.filter { Int((RatingScale.stars(trakt: $0)).rounded(.up)) == star }.count }
+                        // Tocar una barra abre debajo el carrusel de lo que calificaste con ese número (Fernando, 31 oct 2026);
+                        // tocarla otra vez lo cierra.
+                        WatchingBars(values: counts, labels: (1...5).map { "\($0)★" }, highlighted: pickedStars.map { $0 - 1 }) { i in
+                            withAnimation(DS.Motion.base(false)) { pickedStars = pickedStars == i + 1 ? nil : i + 1 }
+                        }
+                        .accessibilityIdentifier("watching-rating-bars")
+                        if let star = pickedStars {
+                            let items = ratedItems().filter { $0.stars == star }.map {
+                                WatchingFiveStars.Item(id: $0.id, title: $0.title, kind: $0.kind, poster: String(format: ForYou.metahubPoster, $0.id))
+                            }
+                            (items.isEmpty ? Text("Nada con \(star) estrellas en tu historial") : Text("Con \(star) estrellas · \(items.count)"))
+                                .recipe(.footnote, color: DS.textMuted)
+                            if !items.isEmpty {
+                                WatchingFiveStars(items: items) { onOpenTitle(TitleRoute(kind: $0.kind, metaID: $0.id, title: $0.title, poster: $0.poster)) }
+                                    .id(star)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                                    .accessibilityIdentifier("watching-rated-carousel")
+                            }
+                        }
+                        Text("Tu promedio: \(String(format: "%.1f", all.map { RatingScale.stars(trakt: $0) }.reduce(0, +) / Double(all.count))) estrellas")
+                            .recipe(.footnote, color: DS.textMuted)
+                    }
                 }
-                let counts = (1...5).map { star in all.filter { Int((RatingScale.stars(trakt: $0)).rounded(.up)) == star }.count }
-                WatchingBars(values: counts, labels: (1...5).map { "\($0)★" }) { i in rated = RatedRoute(stars: i + 1) }
-                    .accessibilityIdentifier("watching-rating-bars")
-                Text("Tu promedio: \(String(format: "%.1f", all.map { RatingScale.stars(trakt: $0) }.reduce(0, +) / Double(all.count))) estrellas")
-                    .recipe(.footnote, color: DS.textMuted)
             }
         }
     }
@@ -196,8 +221,8 @@ struct WatchingView: View {
         return out
     }
 
-    private func section(_ title: Text, @ViewBuilder _ content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) { DSSectionHead(title: title, level: .section); content() }
+    private func section(_ title: Text, symbol: String, @ViewBuilder _ content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { DSSectionHead(title: title, level: .section, symbol: symbol); content() }
     }
 
 

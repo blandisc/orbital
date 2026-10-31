@@ -100,17 +100,28 @@ struct DSChapterHead: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            HStack(spacing: DS.Space.s2) {
-                if let symbol { Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.orbitalBlue).accessibilityHidden(true) }
-                label.textCase(.uppercase).font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Chapter.tracking)
-                    .accessibilityAddTraits(.isHeader)
-                    .foregroundStyle(DS.textMuted).lineLimit(1).fixedSize()
-                Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)
-            }
+            DSChapterLabel(label: label, symbol: symbol)
             if let title { title.recipe(.title).lineLimit(2).accessibilityAddTraits(.isHeader) }
         }
         .padding(.horizontal, DS.Space.gutter)
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// El rótulo de una sección: el ícono azul (si lo hay), el nombre en mayúsculas chicas y una línea fina hasta la orilla.
+/// Lo usan `DSChapterHead` (con su margen) y `DSSectionHead(level: .section)` (con lo de la derecha).
+struct DSChapterLabel: View {
+    let label: Text
+    var symbol: String?
+
+    var body: some View {
+        HStack(spacing: DS.Space.s2) {
+            if let symbol { Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.orbitalBlue).accessibilityHidden(true) }
+            label.textCase(.uppercase).font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Chapter.tracking)
+                .accessibilityAddTraits(.isHeader)
+                .foregroundStyle(DS.textMuted).lineLimit(1).fixedSize()
+            Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)
+        }
     }
 }
 
@@ -376,5 +387,29 @@ struct YearCard: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: String(year)))
+    }
+}
+
+/// Una parada de la línea de tiempo de «Próximas temporadas»: el punto, cuánto falta («en 24 días», «en 4 meses») y la línea
+/// que sigue hasta la siguiente (sale de la tarjeta para unirlas).
+struct SeasonTimelineStop: View {
+    let days: Int
+
+    var body: some View {
+        HStack(spacing: DS.Space.s2) {
+            Circle().fill(DS.orbitalBlue).frame(width: DS.Collections.timelineDot, height: DS.Collections.timelineDot)
+            when.font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1).fixedSize()
+            Rectangle().fill(DS.orbitalBlue.opacity(DS.Collections.timelineLine)).frame(height: DS.Collections.timelineStroke)
+                .padding(.trailing, -DS.Space.s3)   // hasta la siguiente tarjeta
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(when)
+    }
+
+    private var when: Text {
+        if days <= 1 { return Text("mañana") }
+        if days < DS.Collections.timelineMonths { return Text("en \(days) días") }
+        let months = Int((Double(days) / 30).rounded())
+        return months == 1 ? Text("en 1 mes") : Text("en \(months) meses")
     }
 }
