@@ -10,7 +10,7 @@ extension DS {
     /// El filtro avanzado (`FilterTile`, `FilterChoice`, `FameQuadrant`, `YearRuler`): el alto de un filtro en el cajón y de
     /// una opción grande, el velo de lo elegido, los colores de cada filtro y el póster de resultados.
     enum Filter {
-        static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64, eraTile: CGFloat = 72
+        static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64
         /// La puerta A de Buscar (Fernando, 31 oct 2026): los mismos mosaicos del cajón en chiquito, tres por renglón.
         static let miniTileHeight: CGFloat = 70
         /// El dibujo arriba de cada mosaico (regla, logos, cuadro) en el cajón y en la puerta.
@@ -21,8 +21,6 @@ extension DS {
         static let rulerHeight: CGFloat = 64, rulerWindow: CGFloat = 46, handleWidth: CGFloat = 12, handleHeight: CGFloat = 30
         static let tickYear: CGFloat = 8, tickFive: CGFloat = 14, tickDecade: CGFloat = 24, rulerBase: CGFloat = 16
         static let decadeButton: CGFloat = 40
-        /// Qué tan lejos llega el brillo de la ventana de Época.
-        static let glowRadius = DS.Glow.soft.radius
         /// El color de cada filtro (Fernando, 31 oct 2026, dirección A): solo en detalles (el ícono, un puntito cuando tiene
         /// algo y el control abierto); lo elegido sigue en blanco. Claros sobre oscuro y más intensos sobre el papel.
         static let coral = DS.adaptive(dark: "#ff7a6b", light: "#c9432f"), gold = DS.adaptive(dark: "#f4c24d", light: "#a86f00")
@@ -49,7 +47,7 @@ extension DS {
         static let switchPause: Duration = .milliseconds(180), revealAfter: Duration = .milliseconds(320)
         static let tickFaint = DS.text.opacity(0.22), tickMid = DS.text.opacity(0.36), tickStrong = DS.text.opacity(0.62)   // ds-exception: las rayitas de la regla, de tenue a firme
         /// Un premio (su estatuilla), un estudio (su logo) y una bandera en el cajón.
-        static let awardIcon: CGFloat = 40, miniAwardIcon: CGFloat = 18, studioLogoHeight: CGFloat = 24, logoTile: CGFloat = 64
+        static let awardIcon: CGFloat = 40, studioLogoHeight: CGFloat = 24, logoTile: CGFloat = 64
         /// Los cuadritos de lo filtrado arriba de los resultados.
         static let summarySquare: CGFloat = 64
         /// La hora de «Que acabe antes de las…»: de las 8 pm a las 3 am, en cuartos de hora.

@@ -106,30 +106,6 @@ struct PageDots: View {
     }
 }
 
-/// Elegir una opción de muchas (temporadas): el menú nativo, con la opción actual y su chevron, en un botón con relleno del sistema.
-struct DSOptionMenu<Item: Hashable & Identifiable>: View {
-    let items: [Item]
-    let label: (Item) -> Text
-    @Binding var selection: Item
-    /// Del alto de un control (en una fila con otra cápsula, como en la ficha): sin el mínimo de 44 pt encima del relleno del
-    /// estilo, que la dejaba de ~56 pt con mucho aire arriba y abajo.
-    var compact = false
-
-    var body: some View {
-        Menu {
-            Picker(selection: $selection) { ForEach(items) { label($0).tag($0) } } label: { EmptyView() }
-        } label: {
-            HStack(spacing: DS.Space.s2) {
-                if compact { label(selection).recipe(.labelLarge, color: DS.text) } else { label(selection).recipe(.cardTitle) }
-                Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
-            }
-            .frame(minHeight: compact ? nil : DS.Size.touchTarget)
-        }
-        .buttonStyle(.bordered).buttonBorderShape(.capsule).tint(DS.text)
-        .sensoryFeedback(.selection, trigger: selection)
-    }
-}
-
 /// ▲ 2 · ▼ 1 · Nuevo (sin cambio, nada): cuánto se movió un título en su lista desde la foto anterior (el Top 10 real de la TV).
 struct MovementBadge: View {
     let movement: Int?

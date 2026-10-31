@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Comprobando…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        }
+      }
+    },
     "Te escucho": {
       "extractionState": "manual",
       "localizations": {

@@ -110,13 +110,11 @@ extension DS {
         /// En horizontal, lo más que ocupa el panel de la derecha (parte del ancho), para que en iPhone chicos quede video.
         static let widthShare: CGFloat = 0.55
         /// «Episodios»: el ancho de la imagen de cada episodio y qué tan tenue se ve uno que no se puede poner (sin descargar).
-        static let episodeThumb: CGFloat = 112, unavailableOpacity = 0.4
+        static let episodeThumb: CGFloat = 112
         /// «Siguiente» en los controles aparece al llegar a esta parte del episodio (antes no estorba).
         static let nextAt = 0.9
         /// El ancho del nombre del tamaño de subtítulos («Mediano») entre − y +: no brinca al cambiar.
         static let sizeValue: CGFloat = 72
-        /// Tamaños de letra de muestra («Aa») para chico, mediano y grande.
-        static let sampleSizes: [String: CGFloat] = ["small": 12, "medium": 15, "large": 19]
         /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando) y entre qué límites.
         /// En el iPad de pie (ancho regular) el video abre a media pantalla: arriba dejaba ~600 pt de negro abajo.
         static let regularCenter = 0.5
@@ -198,8 +196,6 @@ extension DS {
 
     /// Los avisos (`Toast`).
     enum Toast {
-        /// El alto de la cápsula de la salida («Deshacer», «Reintentar»).
-        static let actionHeight: CGFloat = 32
         /// El borde del que te necesita (ámbar) o del que avisa que algo se perdió (rojo): su color, tenue.
         static let toneStroke = 0.4, strokeWidth: CGFloat = 1
         /// Lo que hay que deslizar hacia abajo para quitarlo, y lo más ancho que se pone (en iPad u horizontal no cruza la pantalla).

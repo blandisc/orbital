@@ -165,6 +165,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let sheetTop = s6
     }
 
+    /// Las hojas: lo más que crece una hoja alta (por debajo de la altura completa, que iOS vuelve opaca).
+    enum Sheet { static let maxShare: CGFloat = 0.86 }
+
     enum Radius {
         static let xs = CGFloat(DesignTokens.Radius.xs), sm = CGFloat(DesignTokens.Radius.sm), md = CGFloat(DesignTokens.Radius.md)
         static let lg = CGFloat(DesignTokens.Radius.lg), xl = CGFloat(DesignTokens.Radius.xl), xxl = CGFloat(DesignTokens.Radius.xxl)
@@ -309,7 +312,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Cuánto se desvanece la orilla de una tira horizontal que no cabe (`edgeFade`).
         static let edgeFade: CGFloat = 28
         /// La gota de los puntos de un carrusel: cuánto se alarga la activa y su resorte (respuesta y amortiguación).
-        static let pageDotStretch: CGFloat = 2.6, pageDotSpring: Double = 0.38, pageDotDamping: Double = 0.62
+        static let pageDotStretch: CGFloat = 2.6
         /// El logotipo arriba de Inicio (el tamaño de la letra de «orbital»).
         /// La marca de Inicio. Con 32 (a la par del título grande de Para ti, Descargas y Buscar) la barra no cabía en un iPhone de
         /// 375 pt y el perfil se iba al «···»: en un teléfono angosto va sin el planeta y a `headerWordmarkCompact`.
@@ -356,8 +359,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let iconColumn: CGFloat = 24
         /// El alto de un mosaico con arte (géneros de Explora).
         static let artTileHeight: CGFloat = 96
-        /// Hasta cuántas temporadas se enseñan como filtros; con más, un menú.
-        static let seasonChipsMax = 4
         /// Cuántos pósters de lo popular se piden al abrir la app (los del Top 10 de Buscar).
         static let searchPrefetch = 10
         /// El mejor resultado de Buscar, en grande.
@@ -386,7 +387,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.
     enum Backdrop {
         /// Cuánto se mezcla el color del arte con el fondo de cada modo, y hasta dónde llega antes de fundirse con el fondo.
-        static let darkMix = DesignTokens.Projection.darkMix, lightMix = DesignTokens.Projection.lightMix, fadeTo = DesignTokens.Projection.fadeTo
+        static let lightMix = DesignTokens.Projection.lightMix, fadeTo = DesignTokens.Projection.fadeTo
         static let tintFloor = DesignTokens.Backdrop.tintFloor
         /// Dónde empieza el velo sobre el arte, dónde llega a medio y (al pie) a fondo.
         static let scrimStart = DesignTokens.Backdrop.scrimStart, scrimMid = DesignTokens.Backdrop.scrimMid
@@ -418,7 +419,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     enum Poster {
         static let aspect = DesignTokens.Aspect.poster
-        static let heroAspect = DesignTokens.Aspect.hero, stillAspect = DesignTokens.Aspect.still
+        static let stillAspect = DesignTokens.Aspect.still
         /// El póster de una tira: 112 pt en el iPhone; en una ventana ancha (iPad, Mac, desde `gridWideWidth`) más grande: con
         /// el tamaño del teléfono se veían diminutos en una pantalla de 13". Se lee al pintar: cambia solo al cambiar la ventana.
         static var railWidth: CGFloat { WindowMetrics.size.width >= gridWideWidth ? railWidthWide : railWidthCompact }
@@ -451,9 +452,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Una tarjeta de «Próximos estrenos»: dos y un pedazo (`peek`) de la tercera, en cualquier ancho (con un ancho fijo, en un
         /// iPhone de 375 pt las dos llenaban la pantalla y parecía una cuadrícula que terminaba a 5 pt del borde).
         static let peek: CGFloat = 28
-        /// En una ventana ancha no pasa de `airingMax` (ahí caben más de dos y un pedazo).
-        static var airingWidth: CGFloat { min(airingMax, (WindowMetrics.size.width - DS.Space.gutter - DS.Space.s3 - peek) / 2) }
-        static let airingMax: CGFloat = 300
         /// Una pieza ancha (16:9) de un riel: «Todo lo que sigues», episodios nuevos.
         static var stillWidth: CGFloat { WindowMetrics.size.width >= gridWideWidth ? stillWidthWide : stillWidthCompact }
         static let stillWidthCompact: CGFloat = 220, stillWidthWide: CGFloat = 280

@@ -22,7 +22,6 @@ extension DS {
     enum HomeTimeline {
         static let width: CGFloat = 112, labelRow: CGFloat = 18, dot: CGFloat = 7
         static let markLine: CGFloat = 2
-        static let soonOpacity: Double = 0.62
         /// Dónde queda HOY al abrir (de 0 a 1 en el ancho): lo de antes a la izquierda y un poco de lo que viene.
         static let todayAnchor: CGFloat = 0.62
     }

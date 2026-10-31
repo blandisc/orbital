@@ -82,41 +82,6 @@ struct DSKindFilter: View {
     }
 }
 
-/// Filtros deslizables (Todo · Trakt · Netflix…): botones nativos en cápsula; el elegido va resaltado.
-struct DSChipRow<Item: Hashable & Identifiable, Label: View>: View {
-    let items: [Item]
-    let label: (Item) -> Label
-    @Binding var selection: Item
-    /// El valor actual como dato de la vista (ver `DSSegmented`).
-    private let current: Item
-    /// Hasta dónde está deslizada la tira: el elegido queda a la vista (la temporada 7 de 9 no se esconde a la derecha).
-    @State private var scrolled: Item.ID?
-
-    init(items: [Item], @ViewBuilder label: @escaping (Item) -> Label, selection: Binding<Item>) {
-        self.items = items; self.label = label; _selection = selection; current = selection.wrappedValue
-    }
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Space.s2) {
-                ForEach(items) { item in
-                    Group {
-                        if current == item { Button { selection = item } label: { label(item).lineLimit(1) }.buttonStyle(.borderedProminent).foregroundStyle(DS.onPrimary) }
-                        else { Button { selection = item } label: { label(item).lineLimit(1) }.buttonStyle(.bordered) }
-                    }
-                    .buttonBorderShape(.capsule).controlSize(.small)
-                    .accessibilityAddTraits(current == item ? .isSelected : [])
-                }
-            }
-            .scrollTargetLayout()
-            .padding(.horizontal, DS.Space.gutter)
-        }
-        .scrollPosition(id: $scrolled, anchor: .center)
-        .onChange(of: current.id, initial: true) { _, id in scrolled = id }
-        .sensoryFeedback(.selection, trigger: current)
-    }
-}
-
 /// Pestañas de texto, la misma pieza en toda la app (Todo · Películas · Series, Semana · Mes · Año · Siempre): la elegida en
 /// blanco y negrita con una rayita blanca debajo, las otras en gris; con ícono si lo traen. Sin cápsula (Fernando, 30 oct
 /// 2026). Se lee sobre el arte con su sombra.
