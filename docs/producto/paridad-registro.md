@@ -48,7 +48,7 @@ Cómo se mantiene:
 ## Olas de la TV
 
 - **Ola 0 · el mecanismo** (este registro, el vocabulario con pendientes, la tabla espejo y sus pruebas).
-- **Ola 1 · el lenguaje** (rama `claude/tv-ola-1-lenguaje`): hecho Explorar, rótulos de sección y porqué, botones redondos, pie de tres pistas, «Nuevo» como listón y pestañas de texto. **Falta (ola 1b)**: una pieza de velo para texto sobre arte, el estado vacío, la carga con esqueleto y los cuatro espacios con nombre (12 · 24 · 40 · 56). Por decidir: dónde va el acento arcoíris del azul de Orbital.
+- **Ola 1 · el lenguaje** (rama `claude/tv-ola-1-lenguaje`): hecho Explorar, rótulos de sección y porqué, botones redondos, pie de tres pistas, «Nuevo» como listón y pestañas de texto. **Ola 1b** (rama `claude/tv-ola-1b-piezas`): `Veil`, `EmptyState`, el esqueleto de carga y el espacio del título a lo suyo (`--layout-title-to-content`); los otros tres espacios no aplican a la TV (filas de alto fijo; `design/tokens.json` › layout dice por qué). Por decidir: dónde va el acento arcoíris del azul de Orbital.
 - **Ola 2 · los lugares**: Películas y series como el Inicio del iPhone, el mazo, Decide por mí, Mi lista, tus canales.
 - **Ola 3 · lo tuyo**: calificar, «¿Cuándo la viste?», Lo que ves, Colecciones, filtro avanzado.
 

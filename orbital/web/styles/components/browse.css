@@ -72,7 +72,6 @@
 .browse__grid { position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--space-8) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
 /* La cuadrícula de Juegos es un .card-grid (card.css); Juegos pone la forma de las cajas de su consola (--grid-ratio: GBA 1, PSP .57…). */
 .browse__grid .card__image { object-fit: cover; }
-.browse__empty { max-width: 34rem; color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed); padding: var(--space-4) 0; }
 
 /* Cambio de sección: un fundido corto del contenido, sin nada que cruce la pantalla. */
 .browse__main--switch .browse__heading, .browse__main--switch .browse__viewport { animation: fade-in var(--duration-base) var(--ease-out); }

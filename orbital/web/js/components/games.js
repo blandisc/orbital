@@ -10,6 +10,7 @@ import { BrowseHead, fillFilters, fitBar, keepInView, replay, showFilter } from 
 import { Card } from "./card.js";
 import { createDetailPanel } from "./detail-panel.js";
 import { createRail } from "./rail.js";
+import { EmptyState } from "./ui.js";
 
 /**
  * Juegos: el riel de tus consolas a la izquierda (← desde las portadas, o LT/RT), el encabezado de
@@ -102,10 +103,11 @@ export function createGames({ onFocus, onPick, onAction }) {
       const card = Card(item, { onPress: () => onPick?.(targets.get(`game:${i}`), `game:${i}`) });
       card.dataset.focusId = `game:${i}`;
       return card;
-    }) : h("p", { class: "browse__empty" }, filter === "favorites"
-      ? "Aún no tienes favoritos aquí. Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos."
-      : c?.folder !== undefined ? `Ya tienes el emulador. Pon tus juegos en ${c.folder || "su carpeta de ROMs"} y elige ☰ → Buscar juegos nuevos.`
-        : "Nada por aquí."));
+    }) : EmptyState(filter === "favorites"
+      ? { icon: "star", title: "Aún no tienes favoritos aquí", text: "Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos." }
+      : c?.folder !== undefined
+        ? { icon: "folder", title: "Ya tienes el emulador", text: `Pon tus juegos en ${c.folder || "su carpeta de ROMs"} y elige ☰ → Buscar juegos nuevos.` }
+        : { icon: "gamepad", title: "Nada por aquí" }));
     const remembered = games.findIndex((g) => g.id === memory[consoleId]);
     if (focusId.startsWith("game:") && remembered >= 0) {
       focusId = `game:${remembered}`; // el foco sigue al juego, no a la posición (la lista se reordena al jugar)

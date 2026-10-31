@@ -798,7 +798,7 @@ function renderSections() {
 /** Cambia de sección (LB/RB) recordando dónde estabas en la que dejas. */
 /** Qué dice una sección vacía: Películas y series, mientras llega su curaduría, que está cargando. */
 function emptyFor(section, fallback = null) {
-  if (section === "media") return { emptyTitle: "Cargando películas y series…", emptyText: "La primera vez tarda unos segundos." };
+  if (section === "media") return { emptyTitle: "Cargando películas y series…", emptyText: "La primera vez tarda unos segundos.", loading: true };
   return fallback ?? {};
 }
 

@@ -7,7 +7,7 @@ import { tokenPx } from "../core/tokens.js";
 import { ArtFit } from "./art-fit.js";
 import { Card, RankedCard } from "./card.js";
 import { CollectionCard, SourceBadge } from "./collection-card.js";
-import { SectionHead } from "./ui.js";
+import { EmptyState, PosterSkeletons, SectionHead } from "./ui.js";
 
 /** El ícono del rótulo de cada sección de tarjetas (en el azul de Orbital). */
 const SECTION_ICONS = { platforms: "tv", awards: "trophy", studios: "movie", "genre-top": "star", seasons: "sun", years: "calendar", lists: "list" };
@@ -145,16 +145,18 @@ export function createShelf({ onPick, onSwipe }) {
     setTimeout(() => el.classList.remove("shelf--intro"), 1200);
   }
 
-  function setRows(rows, { emptyTitle, emptyText, popId } = {}) {
+  function setRows(rows, { emptyTitle, emptyText, loading = false, popId } = {}) {
     cancelPrepare();
     if (rows.length && !popId && same(shown, rows)) { intro(); return setFocus(focus.r, focus.c); }
     shown = rows.length ? rows : null;
     if (!rows.length) {
       rowEls = [];
       rowsEl.style.transform = ""; // si estabas en la fila 3, el aviso quedaba fuera de pantalla
-      mount(rowsEl, h("div", { class: "shelf__row shelf__row--current" },
-        h("h2", { class: "shelf__heading" }, emptyTitle),
-        h("p", { class: "shelf__empty" }, emptyText)));
+      // Cargando: la forma de las filas que vienen (esqueleto, como ShelfSkeleton del iPhone); vacía: su estado vacío.
+      mount(rowsEl, loading
+        ? [0, 1].map((i) => h("div", { class: ["shelf__row", i === 0 && "shelf__row--current"], role: "status", "aria-label": emptyTitle },
+          h("span", { class: "skeleton skeleton--heading", "aria-hidden": "true" }), h("div", { class: "shelf__track" }, PosterSkeletons(9))))
+        : h("div", { class: "shelf__row shelf__row--current" }, EmptyState({ icon: "movie", title: emptyTitle, text: emptyText })));
       return;
     }
     rowEls = rows.map((row, r) => makeRow(row, r, popId));

@@ -148,13 +148,13 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | Selector | `Pill({ tone: "tab" })` (pestañas de texto), `Segmented`, `Pill` (cápsulas) | Igual | Cambiar lo que ves: pestañas de texto (los filtros de una consola, Series · Películas de una lista, las temporadas de la ficha); ajustar un valor: `Segmented` (Ajustes); elegir: cápsulas (¿Qué vemos?, búsquedas recientes). Lo elegido en blanco; el foco, invertido. Los mosaicos llegan con el mazo (ola 2). |
 | Búsqueda avanzada | «Ordenar y filtrar» de `list-screen` | Pendiente · ola 3 | En la TV vive en Películas y series y en ☰ (Fernando, 31 oct 2026). |
 | Marcar como vista | «Marcar como vista», sin fecha | Pendiente · ola 3 | La hoja «¿Cuándo la viste?». |
-| Vacío | Textos de estado de cada vista (`browse__empty`, `calendar__empty`…) | Pendiente · ola 1 | Una pieza: ícono, título y una línea. |
+| Vacío | `EmptyState({ icon, title, text })` (`ui.js`) | Igual | Juegos sin favoritos o sin juegos, un día sin estrenos, TV en vivo sin canales, Explorar sin sugerencias o sin conexión, una lista vacía o sin nada con sus filtros. |
 | Tarjeta | `--color-surface` (ink-900) y `--radius-*` | Distinto a propósito: la superficie es ink-900 en la TV (lo explica `design/tokens.json`) | — |
 | Hoja con encabezado propio | `sheet`, `side-panel` | Igual | — |
 | Aviso | `toast` | Distinto a propósito: arriba a la derecha, porque abajo va el pie de pistas y se lee desde el sillón | Mismos tonos, textos y duración (`--duration-notice`). |
 | Etiqueta | `Badge`, `Chip` y `CornerRibbon` | Igual | «Nuevo» es el listón de la esquina del póster (Mi media, sus listas); «HOY» y el ▲▼ del Top 10 se quedan en placa. |
-| Texto sobre arte | Velos sueltos por pieza (`--color-scrim`, degradados) | Pendiente · ola 1 | Una pieza de velo con sus variantes. |
-| Cargando | Cada vista con su propio «Cargando…» | Pendiente · ola 1 | El esqueleto de su forma. |
+| Texto sobre arte | `Veil(...lados)` y `--veil-bottom`, `--veil-leading`, `--veil-top`, `--veil-bottom-soft`, `--veil-corner` | Igual | Una receta por lado; los velos de pseudo-elemento (tarjeta de premio, escenario de «Porque viste», mosaico) usan los mismos tokens. |
+| Cargando | `PosterSkeletons(n)` (`skeleton--poster`, `skeleton--heading`) | Igual | Películas y series (dos filas) y una lista abierta, quietos: nada se anima mientras se espera. |
 | Sin conexión o error | Mensajes en palabras con «Reintentar» | Igual | — |
 | Números y fechas | `core/format.js` | Igual | — |
 | Logos de marca | `--platform-*` y los logos de `ui.js` | Igual | — |

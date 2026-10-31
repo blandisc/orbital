@@ -24,7 +24,7 @@
    encima de los pósters, debajo de la estatuilla y del texto. */
 .card--award::after {
   content: ""; position: absolute; inset: 48% 0 0 0; z-index: var(--z-raised); pointer-events: none; border-radius: 0 0 var(--card-radius) var(--card-radius);
-  background: linear-gradient(0deg, var(--color-scrim) 30%, transparent); /* oscurece sin dibujar un recuadro */
+  background: var(--veil-bottom-soft); /* oscurece sin dibujar un recuadro */
 }
 .collection__poster { display: block; border-radius: var(--radius-sm); object-fit: cover; background: var(--gradient-card); }
 .collection__poster--missing { visibility: hidden; }

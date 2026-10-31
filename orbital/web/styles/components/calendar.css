@@ -46,5 +46,4 @@
 .calendar__show-title { font-size: var(--type-body); font-weight: var(--weight-bold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .calendar__show-meta { color: var(--color-text-muted); font-size: var(--type-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .calendar__show--focused .calendar__show-meta { color: inherit; opacity: var(--opacity-near); }
-.calendar__empty { margin: 0; color: var(--color-text-muted); font-size: var(--type-secondary); }
 .calendar[data-zone="list"] .calendar__grid { opacity: var(--opacity-away); }

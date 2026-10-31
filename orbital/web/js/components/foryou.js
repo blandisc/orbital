@@ -2,6 +2,7 @@ import { api } from "../core/api.js";
 import { h, mount } from "../core/dom.js";
 import { playOf, primaryAction, titleOf } from "../core/foryou.js";
 import { createForYouMosaic } from "./foryou-mosaic.js";
+import { EmptyState } from "./ui.js";
 
 /**
  * «Para ti»: la sección a la izquierda del Inicio, el mosaico de lo tuyo mezclado (foryou-mosaic). Las listas (Top 10,
@@ -11,7 +12,7 @@ import { createForYouMosaic } from "./foryou-mosaic.js";
  *
  * onWatch(play) · onTitle(ref) · onLaunch(item) · onMore(sugerencia) · onFocus(sugerencia | null) · onEdge()
  */
-const EMPTY = "Aún no hay nada que sugerirte. Agrega juegos o conecta Trakt (Ajustes › Cuentas).";
+const EMPTY = "Agrega juegos o conecta Trakt (Ajustes › Cuentas).";
 
 export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onFocus, onEdge, covered = () => false }) {
   const notice = h("div", { class: "foryou__notice", role: "status" });
@@ -38,7 +39,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
   function render() {
     if (!data) return;
     mosaic.setPool(data.mosaic || []);
-    mount(notice, !(data.mosaic || []).length && h("p", { class: "foryou__message" }, EMPTY));
+    mount(notice, !(data.mosaic || []).length && EmptyState({ icon: "spark", title: "Aún no hay nada que sugerirte", text: EMPTY, className: "foryou__message" }));
     paint();
   }
 
@@ -53,7 +54,10 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
       mount(notice);
       render();
     }, (err) => {
-      if (mine === loads && !data) mount(notice, h("p", { class: "foryou__message" }, `No pude cargar Explorar (${err.message.replace(/\.$/, "")}). Vuelve a entrar para reintentar.`));
+      if (mine === loads && !data) {
+        mount(notice, EmptyState({ icon: "warning", title: "No pude cargar Explorar",
+          text: `${err.message.replace(/\.$/, "")}. Vuelve a entrar para reintentar.`, className: "foryou__message" }));
+      }
     }).finally(() => { if (mine === loads) loading = null; });
     loading = request;
     return request;
