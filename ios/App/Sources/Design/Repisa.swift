@@ -93,9 +93,11 @@ struct CanonPoster: View {
     }
 }
 
-/// La tarjeta de Colecciones en Para ti: tres estatuillas en su repisa y cuántas del canon llevas.
+/// La entrada a Colecciones en Para ti (Fernando, 31 oct 2026): las listas famosas (Criterion, IMDb Top 250…), cada una
+/// con sus primeros pósters en abanico y su nombre; sin las estatuillas, que ya salen arriba en Premios.
 struct CollectionsCard: View {
-    let seen: Int
+    struct Entry: Identifiable { let id: String; let name: Text; let posters: [String] }
+    let shelves: [Entry]
     /// nil: solo la tarjeta (va dentro de un `NavigationLink`, que es quien recibe el toque). Con botón adentro y los toques
     /// apagados para no chocar, el enlace se quedaba sin dónde tocar y no se podía entrar (Fernando, 30 oct 2026).
     var action: (() -> Void)?
@@ -106,20 +108,28 @@ struct CollectionsCard: View {
     }
 
     private var card: some View {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
-                ShelfLedge {
-                    HStack(alignment: .bottom, spacing: DS.Space.s6) {
-                        ForEach(["oscar", "palm", "ariel"], id: \.self) { ShelfEmblem(id: $0, height: DS.Repisa.cardEmblem) }
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            HStack(alignment: .bottom, spacing: DS.Space.s4) {
+                ForEach(shelves.prefix(DS.Repisa.cardShelves)) { shelf in
+                    VStack(spacing: DS.Space.s2) {
+                        PosterFan(posters: shelf.posters, width: DS.Repisa.cardPoster)
+                        shelf.name.recipe(.caption, color: DS.textMuted).fontWeight(.semibold).lineLimit(1)
                     }
                     .frame(maxWidth: .infinity)
                 }
+            }
+            .frame(minHeight: DS.Repisa.cardFan)
+            HStack {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Colecciones").recipe(.cardTitle, color: DS.text)
-                    (seen == 0 ? Text("Los premios y listas que hay que ver") : Text("\(seen) del canon en tus colecciones")).recipe(.footnote, color: DS.textMuted)
+                    Text("Las listas que hay que ver").recipe(.footnote, color: DS.textMuted)
                 }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
             }
-            .padding(DS.Space.s4)
-            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        }
+        .padding(DS.Space.s4)
+        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 }

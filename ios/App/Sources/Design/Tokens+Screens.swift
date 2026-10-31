@@ -196,7 +196,7 @@ extension DS {
     /// la repisa, en la tarjeta de Para ti y en el encabezado), las proporciones del disco y la placa de las listas, la luz de
     /// la vitrina, la línea de la repisa, lo apagado de un póster que te falta y la línea de las de 5 estrellas.
     enum Repisa {
-        static let emblem: CGFloat = 84, cardEmblem: CGFloat = 48, header: CGFloat = 64, columns = 5, listEmblem: CGFloat = 64
+        static let emblem: CGFloat = 84, cardPoster: CGFloat = 54, cardFan: CGFloat = 96, cardShelves = 3, header: CGFloat = 64, columns = 5, listEmblem: CGFloat = 64
         static let discRatio: CGFloat = 0.62, plaqueWidth: CGFloat = 0.52, plaqueHeight: CGFloat = 0.74
         static let lamp = DS.paper.opacity(0.07)   // ds-exception: la luz de la vitrina, apenas visible
         static let lampWidth: CGFloat = 1.6, lampHeight: CGFloat = 1.0
@@ -369,7 +369,7 @@ extension DS {
         static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
         static let emblem: CGFloat = 70, glow: CGFloat = 16
         /// El sello de dónde viene una lista (Trakt, tus complementos, Rotten Tomatoes, tu Orbital).
-        static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), critics = Color(red: 0.78, green: 0.16, blue: 0.07), orbital = DS.orbitalBlue
+        static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), critics = Color(red: 0.78, green: 0.16, blue: 0.07), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)
         static let badgeRadius: CGFloat = 5
         /// Un renglón de lista (`ListRow`, «Tuyo»): el ancho de sus pósters.
         static let stackPoster: CGFloat = 40
@@ -403,6 +403,8 @@ extension DS {
         static let reflectionTail: CGFloat = 30
         static let weight: CGFloat = 18, weightY: CGFloat = 12, weightTint: Double = 0.35
         /// El aire entre Plataformas, Estudios, Premios y Por año (menos que entre secciones: el reflejo ya separa).
+        /// El nombre de un premio sube sobre la cola del reflejo; y el aire después de Premios.
+        static let captionLift: CGFloat = 36, afterAwards: CGFloat = 24
         static let groupGap: CGFloat = 4   // poco: el reflejo de las tarjetas ya separa (Fernando, 31 oct 2026)
         /// El halo de los estudios (neutro: cada estudio es de muchos colores).
         static let studio = Color(red: 0.55, green: 0.56, blue: 0.62)

@@ -105,11 +105,7 @@ struct ListsView: View {
                 VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                     let walls = (model.mosaic.isEmpty ? generalShelves.flatMap { model.items(for: $0) } : model.mosaic).map(\.poster)
                     if !walls.isEmpty { MosaicCover(posters: walls) { model.mode = .mosaic }.perfTag("paraTi.hero") }
-                    SectionCircles(items: CollectionSection.allCases.filter(isShown).map { .init(id: $0, title: $0.shortTitle, symbol: $0.symbol) }) { section in
-                        activeSection = section
-                        jumps += 1
-                        withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) }
-                    }
+                    // Sin los círculos de íconos (Fernando, 31 oct 2026): el menú de arriba a la derecha lleva a cada sección.
                     // La puerta de «Lo que ves», arriba y a la vista (antes al final de todo): tu semana en grande.
                     if collections.model.traktLinked {
                         WatchingCardLoader().accessibilityIdentifier("paraTi-your-year")
@@ -162,6 +158,7 @@ struct ListsView: View {
                         genresSection.modifier(SectionSpy(section: .genres, active: $activeSection))
                     }
                     awards.modifier(SectionSpy(section: .awards, active: $activeSection))
+                        .padding(.bottom, DS.Collections.afterAwards)   // aire antes de Colecciones
                     // Colecciones (la repisa del canon), entre Premios y Años (Fernando, 31 oct 2026), con el mismo rótulo.
                     if collections.model.traktLinked {
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
@@ -227,10 +224,9 @@ struct ListsView: View {
     /// Ir a una sección (el filtro Todo · Películas · Series va arriba de la lista, el mismo de toda la app).
     private func sectionMenu(_ proxy: ScrollViewProxy) -> some View {
         Menu {
-            if ParaTiView.narrow {
-                Button("Decide por mí", systemImage: "dice", action: onDecide)
-                Divider()
-            }
+            // En Listas el dado no cabe junto al logo: «Decide por mí» vive aquí.
+            Button("Decide por mí", systemImage: "dice", action: onDecide)
+            Divider()
             ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
                 Button {
                     activeSection = section

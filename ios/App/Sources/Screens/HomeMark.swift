@@ -17,6 +17,16 @@ struct AppMark: View {
     }
 }
 
+/// Arriba de las otras pestañas, en el mismo lugar y tamaño que el logo de Inicio, el nombre de la pantalla («Para ti»):
+/// el mismo encabezado en toda la app (Fernando, 31 oct 2026).
+struct ScreenMark: View {
+    let title: Text
+    var body: some View {
+        title.font(DS.TextRecipe.title.font.weight(.heavy)).foregroundStyle(DS.text).lineLimit(1).fixedSize()
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
 /// El logo de un estudio al frente de su tarjeta, sobre una cápsula clara (muchos logos son oscuros); sin logo, su nombre.
 struct StudioEmblem: View {
     let name: String

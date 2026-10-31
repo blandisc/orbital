@@ -14,8 +14,6 @@ enum CollectionSection: CaseIterable, Hashable {
         }
     }
 
-    /// En los círculos de arriba (no cabe el nombre largo): «Hoy» por «Lo que se ve hoy».
-    var shortTitle: Text { self == .forYou ? Text("Hoy") : title }
 
     /// Un ícono por sección en el índice de arriba (más fácil de encontrar de un vistazo).
     var symbol: String {

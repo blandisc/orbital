@@ -71,9 +71,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// Lo que confirmas que va bien («Este va bien» de los subtítulos): el mismo verde.
     static let success = switchOn
     static let warning = role(.warning)
-    /// El azul de Orbital (el del sello «ORBITAL»; Fernando, 31 oct 2026): los íconos del índice y de los rótulos de Para ti,
-    /// el calendario y las horas de «Lo que ves».
-    static let orbitalBlue = Color(red: 0.24, green: 0.48, blue: 0.85)
+    /// El azul de Orbital: el del puntito del logo (Fernando, 31 oct 2026). Los íconos de los rótulos de Para ti, el
+    /// calendario y las horas de «Lo que ves».
+    static let orbitalBlue = brandMoon   // el color del puntito del logo (Fernando, 31 oct 2026)
     static let danger = role(.danger)
     static let hairline = overlay(DesignTokens.Opacity.hairline)
     static let fill = overlay(DesignTokens.Opacity.fill)

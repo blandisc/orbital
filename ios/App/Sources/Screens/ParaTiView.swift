@@ -19,9 +19,6 @@ struct ParaTiView: View {
     @State private var matching = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Un iPhone de 375 pt o menos (SE, mini): la barra de arriba no da para todo junto al título.
-    static var narrow: Bool { WindowMetrics.size.width < DS.Size.compactWidth }
-
     init() { _model = State(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
 
     var body: some View {
@@ -65,13 +62,25 @@ struct ParaTiView: View {
         .padding(.top, m.mode == .lists ? 0 : DS.Space.s3)
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
-        .navigationTitle("Para ti")
-        // El título grande en el renglón de los botones, como Descargas y Buscar (antes iba debajo de los íconos).
-        .toolbarTitleDisplayMode(.inlineLarge)
+        // El mismo encabezado que Inicio (Fernando, 31 oct 2026): «Para ti» a la izquierda, donde va el logo, y los pósters debajo.
+        .navigationTitle(Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .toolbar {
+            // En el mosaico, regresar a las listas a la izquierda (antes solo el botón de la derecha, que no se entendía);
+            // en las listas, el logo.
+            if m.mode == .mosaic {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { m.mode = .lists } label: { Image(systemName: "chevron.backward") }
+                        .accessibilityLabel(Text("Regresar"))
+                        .accessibilityIdentifier("paraTi-back")
+                }
+            } else {
+                ToolbarItem(placement: .topBarLeading) { ScreenMark(title: Text("Para ti")) }
+                    .sharedBackgroundVisibility(.hidden)
+            }
             // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
             // En Listas y en un iPhone angosto no cabían los cuatro botones junto al título («Para…»): «Decide por mí» pasa al índice.
-            if !(m.mode == .lists && Self.narrow) {
+            // Con el logo a la izquierda, en Listas no caben cuatro (iOS mandaba el menú y el perfil a un «…»): ahí el dado no va.
+            if m.mode == .mosaic {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
                 }

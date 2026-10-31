@@ -46,6 +46,21 @@ final class MosaicUITests: XCTestCase {
         start.press(forDuration: hold, thenDragTo: end, withVelocity: velocity, thenHoldForDuration: 0)
     }
 
+    /// «Pasear por el mosaico» desde Listas, volver a Listas y entrar otra vez: el mosaico vuelve a tener piezas (el error
+    /// del 31 oct 2026: la segunda vez ya no cargaba).
+    func testWalkTheMosaicTwice() {
+        app.launchArguments = ["-demo", "-demo-tab", "1", "-demo-mode", "lists", "-demo-appearance", "dark", "-demo-no-idle"]
+        app.launch()
+        let walk = app.buttons["paraTi-walk-mosaic"]
+        for round in 1...2 {
+            XCTAssertTrue(walk.waitForExistence(timeout: 20), "el botón de pasear (vuelta \(round))")
+            walk.tap()
+            XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 20), "el mosaico tiene piezas (vuelta \(round))")
+            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "mosaico-\(round)"; shot.lifetime = .keepAlways; add(shot)
+            app.buttons["paraTi-mode"].tap()
+        }
+    }
+
     func testDraggingUpScrollsTheMosaicDown() {
         launch()
         let p = probe()

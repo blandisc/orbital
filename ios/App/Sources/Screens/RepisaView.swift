@@ -11,7 +11,10 @@ struct CollectionsCardLoader: View {
     var body: some View {
         let model = env.repisa
         let _ = model.track()
-        NavigationLink(value: RepisaRoute()) { CollectionsCard(seen: model.seenTotal) }
+        let shelves = model.collections.filter { $0.family == .list }.map { c in
+            CollectionsCard.Entry(id: c.id, name: CanonNames.title(c.id), posters: c.items.prefix(DS.ParaTiB.matchFan).map(\.poster))
+        }
+        NavigationLink(value: RepisaRoute()) { CollectionsCard(shelves: shelves) }
             .buttonStyle(.plain)
             .task { if !model.loaded { await model.load() } }
     }

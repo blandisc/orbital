@@ -36,7 +36,6 @@ extension DS {
 
     /// Para ti B: los círculos del índice, la portada del mosaico (su muro inclinado y el velo) y la tarjeta de «¿Qué vemos hoy?».
     enum ParaTiB {
-        static let circle: CGFloat = 56, circleLabel: CGFloat = 84
         static let coverHeight: CGFloat = 300, coverWall: CGFloat = 620, coverColumns = 6, coverPosters = 72, coverTilt: Double = -10
         static let coverClearAt: Double = 0.25, coverBaseVeil: Double = 0.8, coverBaseAt: Double = 0.6
         /// Cuánto sube el muro (hasta la orilla de la pantalla, detrás del título y la barra: sin corte) y cuánto baja bajo los

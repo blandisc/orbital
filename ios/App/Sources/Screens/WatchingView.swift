@@ -149,7 +149,7 @@ struct WatchingView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("watching-year")
         }
-        section(Text("Cuándo ves")) { WatchingBars(values: s.buckets.map(\.minutes), labels: s.buckets.map { label($0.start, s.period) }) }
+        // «Cuándo ves», fuera (Fernando, 31 oct 2026): repetía lo del calendario.
         if !s.genres.isEmpty { section(Text("Tus géneros")) { WatchingGenres(genres: s.genres) { WatchingText.genre($0, language: language) } } }
         ratings
         // El Wrapped, apagado por ahora (Fernando, 31 oct 2026): `WrappedView` sigue lista para volver.

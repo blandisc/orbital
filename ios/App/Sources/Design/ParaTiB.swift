@@ -3,35 +3,6 @@ import SwiftUI
 // Las piezas de Para ti B (docs/producto/inicio-benchmark/para-ti/): los círculos para saltar a cada parte, la portada del mosaico y la
 // tarjeta de «¿Qué vemos hoy?».
 
-/// Un círculo por cada parte de Para ti: tocarlo baja hasta ella.
-struct SectionCircles<ID: Hashable>: View {
-    struct Item: Identifiable { let id: ID; let title: Text; let symbol: String }
-    let items: [Item]
-    let jump: (ID) -> Void
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: DS.Space.s3) {
-                // Por posición, no por su id: el id es el de la sección, y saltar a ella movería esta fila en vez de la página.
-                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                    Button { jump(item.id) } label: {
-                        VStack(spacing: DS.Space.s2) {
-                            Image(systemName: item.symbol).font(DS.TextRecipe.section.font)
-                                .foregroundStyle(DS.orbitalBlue)   // azul (Fernando, 31 oct 2026)
-                                .frame(width: DS.ParaTiB.circle, height: DS.ParaTiB.circle)
-                                .background(DS.fill, in: Circle())
-                            item.title.recipe(.caption, color: DS.textMuted).lineLimit(1)
-                        }
-                        .frame(width: DS.ParaTiB.circleLabel)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-    }
-}
-
 /// La portada de Para ti: un muro de pósters inclinado que se funde con el fondo, con su porqué y «Pasear por el mosaico».
 /// El muro sube detrás de la barra y baja un poco bajo los círculos, apagándose poco a poco en las dos orillas (antes se
 /// cortaba en seco); el espacio de la página no cambia. Cada vez que se arma salen otros pósters en otro orden, y el muro

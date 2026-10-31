@@ -26,6 +26,7 @@ struct CollectionCard<Emblem: View>: View {
                     detail.recipe(.caption).lineLimit(1)
                 }
                 .padding(.horizontal, DS.Space.s1)
+                .padding(.top, -DS.Collections.captionLift)   // sobre la cola del reflejo: el nombre pegado a su tarjeta
             }
         }
         .frame(width: DS.PlatformFan.width, alignment: .leading)
