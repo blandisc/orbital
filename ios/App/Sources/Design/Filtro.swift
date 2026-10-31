@@ -171,7 +171,7 @@ struct FilterArt: View {
                 MiniRuler(years: f.years ?? AdvancedFilter.firstYear...f.currentYear, last: f.currentYear)
             case .rating where f.minRating != nil:
                 // El número manda (en el verde de Calificación); el logo de TMDB, chico, dice de dónde sale.
-                // Centrado, como los demás: la estrella y el número; de dónde sale lo dice el renglón de abajo («o más · TMDB»).
+                // Centrado, como los demás: la estrella y el número; de dónde sale lo dice el renglón de abajo («o más» y el logo de TMDB).
                 HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
                     Image(systemName: "star.fill").font(mini ? DS.TextRecipe.caption.font : DS.TextRecipe.footnote.font).foregroundStyle(page.hue)
                     Text(verbatim: FilterText.number(f.minRating ?? 0)).font((mini ? DS.TextRecipe.secondary : DS.TextRecipe.title).font.weight(.bold)).monospacedDigit().foregroundStyle(page.hue)
@@ -231,7 +231,15 @@ struct FilterTile: View {
                 if art.isEmpty { FilterArt(page: page, context: context, mini: mini) } else { Spacer(minLength: 0) }
                 // Sobre el arte de los géneros el texto va en papel (se lee igual en claro y en oscuro).
                 page.title.recipe(mini ? .caption : .footnote, color: art.isEmpty ? DS.text : DS.paper).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                tileValue(value).recipe(.caption, color: !art.isEmpty ? DS.paper : on ? DS.text : DS.textMuted).lineLimit(1)
+                if page == .rating, value != nil {
+                    // «o más» y el logo de TMDB (de dónde sale la calificación), en vez de la palabra.
+                    HStack(spacing: DS.Space.s1) {
+                        Text("o más").recipe(.caption, color: DS.text)
+                        Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityLabel(Text(verbatim: "TMDB"))
+                    }
+                } else {
+                    tileValue(value).recipe(.caption, color: !art.isEmpty ? DS.paper : on ? DS.text : DS.textMuted).lineLimit(1)
+                }
             }
             .multilineTextAlignment(.center)
             .padding(.horizontal, mini ? DS.Space.s2 : DS.Space.s3)
@@ -259,11 +267,8 @@ struct FilterTile: View {
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 
-    /// Lo que dice el renglón de abajo; Calificación, con el número ya arriba, dice de dónde sale.
-    private func tileValue(_ value: Text?) -> Text {
-        guard let value else { return Text("Cualquiera") }
-        return page == .rating ? Text("o más · TMDB") : value
-    }
+    /// Lo que dice el renglón de abajo (nil: cualquiera).
+    private func tileValue(_ value: Text?) -> Text { value ?? Text("Cualquiera") }
 }
 
 /// Los géneros elegidos como mosaico de fondo (hasta seis): uno solo llena el mosaico; dos o tres, en columnas; de cuatro a
