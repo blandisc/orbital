@@ -70,7 +70,7 @@ struct FilterEditor: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSegmented(options: [(false, "Quiero"), (true, "No quiero")], selection: $excluding)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
-                ForEach(Tmdb.genres, id: \.slug) { g in
+                ForEach(Tmdb.filterGenres, id: \.slug) { g in
                     let on = excluding ? filter.excluded.contains(g.slug) : filter.genres.contains(g.slug)
                     let other = excluding ? filter.genres.contains(g.slug) : filter.excluded.contains(g.slug)
                     DecideTile(title: excluding && on ? Text("Sin \(g.title)") : Text(verbatim: g.title), image: FilterCatalog.genreImage(g.slug),
@@ -83,6 +83,9 @@ struct FilterEditor: View {
                     }
                     .accessibilityIdentifier("filter-genre-\(g.slug)")
                 }
+            }
+            if !excluding, filter.genres.count > 1 {
+                Text("Salen las que tengan cualquiera de estos géneros, no solo las que tengan todos.").recipe(.footnote, color: DS.textMuted)
             }
             // TMDB no tiene Terror, Romance, Suspenso ni Aventura para series: lo dice en vez de traer series de otro género.
             let onlyMovies = filter.moviesOnlyGenres

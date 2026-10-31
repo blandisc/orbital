@@ -29,6 +29,9 @@ Cómo se mantiene:
 | Calificar: estrellas en la ficha y aviso al terminar | Ya | Pendiente · ola 3 |
 | «Lo que ves» reemplaza a «Tu año» | Ya | Pendiente · ola 3 |
 | Entrega: una rama por ola, con capturas de antes y después de las cuatro superficies | — | — |
+| «Por género»: 20 géneros con el mismo arte (Grok Imagine) en Buscar, la TV y el filtro avanzado (31 oct, tarde) | Ya (20) | Ya (19: «Musical» no está en el catálogo de Stremio, distinto a propósito) |
+| «No recomendar por esta»: dejar picado el mazo de «Por lo que viste» | Ya | Pendiente · ola 2 (con Películas y series como el Inicio) |
+| El país de lo popular (Top 10 de Netflix y JustWatch) es el del teléfono hasta que elijas otro | Ya | Distinto a propósito: la TV usa el país de su `config.yaml` |
 
 ## Textos pendientes (`design/vocabulario.json`)
 

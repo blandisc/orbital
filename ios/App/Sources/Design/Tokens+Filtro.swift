@@ -41,8 +41,12 @@ extension DS {
         /// Calificación: los atajos de un toque y el velo verde del elegido.
         static let ratingPresets: [Double] = [6, 7, 7.5, 8]
         static let mintFill = mint.opacity(0.18)   // ds-exception: el velo del atajo elegido, en el verde de Calificación
-        /// El panel que se abre crece desde este tamaño (desde su mosaico), y al abrirse se deja un poco de aire arriba.
-        static let panelFrom: CGFloat = 0.92
+        /// La puerta de «Búsqueda avanzada» en Buscar: su círculo, su tinte azul y su orilla (otra cosa que buscar por nombre).
+        static let doorIcon: CGFloat = 36
+        static let doorFill = DS.orbitalBlue.opacity(0.1)   // ds-exception: el tinte de la búsqueda avanzada, apenas azul
+        static let doorStroke = DS.orbitalBlue.opacity(0.35)   // ds-exception: su orilla, en el mismo azul
+        /// Al cambiar de filtro: la pausa entre cerrar el de antes y abrir el nuevo, y cuándo se sube la lista para que se vea.
+        static let switchPause: Duration = .milliseconds(180), revealAfter: Duration = .milliseconds(320)
         /// El cajón cerrado mide lo que trae; si pasa de esta parte de la pantalla, abre grande.
         static let fitMax: CGFloat = 0.92
         /// La barra del cajón (el asa y «Filtros · Listo»).

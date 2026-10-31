@@ -67,10 +67,13 @@ enum FilterCatalog {
         [("latam", "Latinoamérica", ["MX", "AR", "CO", "BR"]), ("europe", "Europa", ["ES", "FR", "IT", "DE", "GB", "SE", "DK"]),
          ("asia", "Asia", ["KR", "JP", "IN", "CN"])]
     }
-    static let genreArt = ["accion": "action", "aventura": "action", "animacion": "animation", "comedia": "comedy", "crimen": "crime",
-                           "documental": "documentary", "drama": "drama", "familia": "animation", "fantasia": "fantasy", "terror": "horror",
-                           "misterio": "mystery", "romance": "romance", "ciencia-ficcion": "scifi", "suspenso": "thriller"]
-    static func genreImage(_ slug: String) -> String { "decide-genre-\(genreArt[slug] ?? "drama")" }
+    /// El arte de cada género: el mismo de «Por género» en Buscar y en la TV (`genre-*`, Grok Imagine), uno distinto por
+    /// género (antes Aventura repetía Acción y Familia repetía Animación).
+    static let genreArt = ["accion": "action", "aventura": "adventure", "animacion": "animation", "comedia": "comedy", "crimen": "crime",
+                           "documental": "documentary", "drama": "drama", "familia": "family", "fantasia": "fantasy", "terror": "horror",
+                           "misterio": "mystery", "romance": "romance", "ciencia-ficcion": "scifi", "suspenso": "thriller",
+                           "historia": "history", "belica": "war", "western": "western", "musical": "musical"]
+    static func genreImage(_ slug: String) -> String { "genre-\(genreArt[slug] ?? "drama")" }
     /// Los premios que trae la app, en el orden de Colecciones (su id es también el nombre de su estatuilla).
     static var awards: [String] { Canon.awardOrder.filter { id in Awards.all.contains { $0.id == id } } }
 
@@ -92,11 +95,13 @@ enum FilterText {
         }
     }
     static func genres(_ f: AdvancedFilter) -> Text? {
-        let yes = Tmdb.genres.filter { f.genres.contains($0.slug) }.map(\.title)
-        let no = Tmdb.genres.filter { f.excluded.contains($0.slug) }.map(\.title)
+        let yes = Tmdb.filterGenres.filter { f.genres.contains($0.slug) }.map(\.title)
+        let no = Tmdb.filterGenres.filter { f.excluded.contains($0.slug) }.map(\.title)
         if yes.isEmpty && no.isEmpty { return nil }
         if yes.isEmpty { return Text("Sin \(no.joined(separator: ", "))") }
-        return Text(verbatim: yes.joined(separator: ", "))
+        // «Fantasía o Romance»: basta con uno de ellos (con una coma parecía que debía tener todos).
+        guard yes.count > 1, let last = yes.last else { return Text(verbatim: yes.joined(separator: ", ")) }
+        return Text("\(yes.dropLast().joined(separator: ", ")) o \(last)")
     }
     static func years(_ f: AdvancedFilter) -> Text? {
         guard let y = f.years else { return f.spread ? Text("Repartido por décadas") : nil }
@@ -224,7 +229,7 @@ struct FilterTile: View {
         let value = FilterText.value(page, context)
         let on = value != nil
         let shape = RoundedRectangle(cornerRadius: mini ? DS.Radius.md : DS.Radius.lg, style: .continuous)
-        let art = page == .genre ? Tmdb.genres.filter { context.filter.genres.contains($0.slug) }.prefix(DS.Filter.genreMosaicMax).map { FilterCatalog.genreImage($0.slug) } : []
+        let art = page == .genre ? Tmdb.filterGenres.filter { context.filter.genres.contains($0.slug) }.prefix(DS.Filter.genreMosaicMax).map { FilterCatalog.genreImage($0.slug) } : []
         Button(action: action) {
             // Centrado (Fernando, 31 oct 2026): el dibujo, el nombre y lo elegido al centro del mosaico.
             VStack(spacing: mini ? DS.Space.s1 / 2 : DS.Space.s1) {
@@ -425,24 +430,36 @@ struct FilterDoor: View {
     let total: Int?
     /// nil: el cajón sin nada abierto; si no, el filtro tocado.
     let open: (FilterPage?) -> Void
+    /// «Limpiar»: quita todos los filtros desde aquí, sin abrir el cajón.
+    var clear: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Button { open(nil) } label: {
-                HStack(spacing: DS.Space.s2) {
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        Label { Text("Búsqueda avanzada").recipe(.cardTitle) } icon: {
-                            Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.orbitalBlue)
+            HStack(alignment: .top, spacing: DS.Space.s2) {
+                Button { open(nil) } label: {
+                    HStack(spacing: DS.Space.s3) {
+                        // Su propio ícono en un círculo azul: se distingue de un vistazo del campo de arriba, que busca por nombre.
+                        Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.onPrimary)
+                            .frame(width: DS.Filter.doorIcon, height: DS.Filter.doorIcon)
+                            .background(DS.orbitalBlue, in: Circle())
+                        VStack(alignment: .leading, spacing: DS.Space.s1) {
+                            Text("Búsqueda avanzada").recipe(.cardTitle)
+                            subtitle.recipe(.footnote, color: context.filter.isEmpty ? DS.textMuted : DS.text).lineLimit(2)
                         }
-                        subtitle.recipe(.footnote, color: context.filter.isEmpty ? DS.textMuted : DS.text).lineLimit(1)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
                     }
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("browse-filters")
+                if !context.filter.isEmpty {
+                    Button(action: clear) { Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.bold)) }
+                        .buttonStyle(.glass).buttonBorderShape(.circle)
+                        .accessibilityLabel(Text("Limpiar la búsqueda avanzada"))
+                        .accessibilityIdentifier("browse-filters-clear")
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("browse-filters")
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
                 ForEach(FilterPage.main) { page in
                     FilterTile(page: page, context: context, mini: true) { open(page) }
@@ -451,12 +468,14 @@ struct FilterDoor: View {
             }
         }
         .padding(DS.Space.s3)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        // Teñida de azul y con orilla: otra cosa que la búsqueda por nombre (Fernando, 31 oct 2026).
+        .background(DS.Filter.doorFill, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).strokeBorder(DS.Filter.doorStroke))
     }
 
     private var subtitle: Text {
         let n = context.filter.activeCount
-        guard n > 0 else { return Text("Género, época, calificación, premios y más") }
+        guard n > 0 else { return Text("Sin escribir nombres: encuentra por género, época, calificación, premios y más") }
         let filters = n == 1 ? Text("1 filtro") : Text("\(n) filtros")
         guard let total else { return filters }
         return Text("\(filters) · \(Strings.count(total, language: context.language)) títulos la última vez")

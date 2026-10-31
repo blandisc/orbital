@@ -153,6 +153,14 @@ test("Por género: tarjetas con arte que llevan a su estante, y el destacado no 
   assert.deepEqual(rows.map((r) => r.id), ["curated:genres", "curated:genre:Comedy", "curated:genre:Horror"]);
   const terror = rows[0].items.find((i) => i.genre === "Horror");
   assert.equal(terror.image, "img/genres/genre-horror.jpg");
+  // Cada género de la tele tiene su arte (el mismo del iPhone, en Assets.xcassets/Genres).
+  const { GENRE_SHELVES, genreArt } = await import("../../orbital/web/js/core/curation.js");
+  const { existsSync } = await import("node:fs");
+  for (const g of GENRE_SHELVES) {
+    const art = genreArt(g.genre);
+    assert.ok(existsSync(new URL(`../../orbital/web/${art}`, import.meta.url)), `falta ${art}`);
+    assert.ok(existsSync(new URL(`../../ios/App/Resources/Assets.xcassets/Genres/${art.split("/").pop().replace(".jpg", "")}.imageset`, import.meta.url)), `el iPhone no tiene ${art}`);
+  }
   assert.equal(primaryLabel(terror), "Ver títulos");
   assert.equal(isGame(terror), false);
   assert.equal(alexaTip(terror), "«Alexa, pídele a mi consola que ponga algo de terror»");

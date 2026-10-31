@@ -65,11 +65,18 @@ public final class CatalogModel: ObservableModel {
 
 
     /// Los géneros de «Explora» (nombres en inglés: la pantalla los traduce con `Vocabulary.genres`).
-    public static let exploreGenres = ["Action", "Comedy", "Drama", "Sci-Fi", "Horror", "Thriller", "Animation", "Romance", "Crime", "Documentary"]
+    /// 20 desde el 31 oct 2026 (antes 10; Fernando pidió el doble): los 19 del catálogo de Stremio (los mismos estantes de la
+    /// TV) más «Musical», que solo trae Trakt.
+    public static let exploreGenres = ["Action", "Adventure", "Comedy", "Drama", "Sci-Fi", "Fantasy", "Horror", "Thriller", "Mystery", "Crime",
+                                       "Romance", "Animation", "Family", "Musical", "Documentary", "Biography", "History", "War", "Western", "Sport"]
 
     /// El nombre de cada género para Trakt (`genres=`).
     static func traktGenre(_ name: String) -> String {
-        name == "Sci-Fi" ? "science-fiction" : name.lowercased()
+        switch name {
+        case "Sci-Fi": return "science-fiction"
+        case "Sport": return "sports"
+        default: return name.lowercased()
+        }
     }
 
     /// Lo más popular hoy, películas y series alternadas (la lista con puesto de Buscar).

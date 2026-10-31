@@ -27,8 +27,9 @@ struct AdvancedFilterSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var open: FilterPage?
-    @State private var more = false
-    @State private var detent: PresentationDetent = AdvancedFilterSheet.short
+    /// Abre con todo a la vista (Fernando, 31 oct 2026): los nueve filtros y el cajón en su altura máxima.
+    @State private var more = true
+    @State private var detent: PresentationDetent = .large
     /// Lo que mide el cajón cerrado (formato, mosaicos, «Más filtros» y «Ver resultados»): la altura corta es esa, sin aire
     /// muerto abajo.
     @State private var fit: CGFloat = 0
@@ -40,6 +41,7 @@ struct AdvancedFilterSheet: View {
         let _ = model.track()
         let context = FilterContext(filter: model.filter, platforms: model.platforms, language: env.services.appSettings.uiLanguage)
         NavigationStack {
+            ScrollViewReader { proxy in
             ScrollView {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
                         formatBar(model)
@@ -68,7 +70,17 @@ struct AdvancedFilterSheet: View {
                     }
                 }
                 // Abrir un filtro no mueve la lista: el panel baja desde su mosaico y lo de abajo se recorre (Fernando, 31 oct 2026).
+                // Solo si el panel queda debajo de la orilla, la lista sube lo justo para que se vea entero.
                 .sensoryFeedback(.selection, trigger: open)
+                .onChange(of: open) { _, page in
+                    guard let page else { return }
+                    Task {
+                        try? await Task.sleep(for: DS.Filter.revealAfter)
+                        guard open == page else { return }
+                        withAnimation(DS.Motion.smooth(reduceMotion)) { proxy.scrollTo(Self.panelID(page), anchor: nil) }
+                    }
+                }
+            }
 
             .safeAreaInset(edge: .bottom) {
                 actions(model).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { actionsHeight = $0 }
@@ -88,7 +100,6 @@ struct AdvancedFilterSheet: View {
         .task { await model.loadPlatforms() }
         .onAppear {
             guard let start, open == nil else { return }
-            more = FilterPage.more.contains(start)
             open = start
             if start == .length { model.refreshClock() }
         }
@@ -153,10 +164,9 @@ struct AdvancedFilterSheet: View {
                     FilterPanel(notch: row.count == 1 ? 0.5 : index == 0 ? 0.25 : 0.75) {
                         FilterEditor(page: o, model: model, context: context)
                     }
-                    .id(o)   // otro filtro: otro panel (el de antes se va, el nuevo baja)
-                    // Baja desde su mosaico: crece desde arriba y aparece; al cerrarse se recoge hacia arriba.
-                    // Al cambiar de filtro, el de antes se apaga rápido y el nuevo baja: sin brincos.
-                    .transition(.asymmetric(insertion: .scale(scale: DS.Filter.panelFrom, anchor: .top).combined(with: .opacity),
+                    .id(Self.panelID(o))   // otro filtro: otro panel (el de antes se va, el nuevo baja)
+                    // Baja desde su mosaico: aparece y se asienta un poco hacia abajo; al cerrarse se apaga.
+                    .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: -DS.Space.s3)),
                                             removal: .opacity.animation(DS.Motion.base(reduceMotion))))
                 }
             }
@@ -164,10 +174,23 @@ struct AdvancedFilterSheet: View {
         .animation(DS.Motion.smooth(reduceMotion), value: open)   // lo de abajo se reacomoda con el mismo resorte
     }
 
+    /// Otro filtro con uno abierto: primero se cierra el de antes y, ya quieto, baja el nuevo. Antes pasaba todo a la vez
+    /// (uno se recogía, el otro crecía y lo de en medio se corría) y se veía desordenado, sobre todo abriendo uno de abajo.
     private func toggle(_ page: FilterPage, _ model: AdvancedFilterModel) {
         if page == .length { model.refreshClock() }
-        withAnimation(DS.Motion.smooth(reduceMotion)) { open = open == page ? nil : page }
+        guard let current = open, current != page, !reduceMotion else {
+            withAnimation(DS.Motion.smooth(reduceMotion)) { open = open == page ? nil : page }
+            return
+        }
+        withAnimation(DS.Motion.base(reduceMotion)) { open = nil }
+        Task {
+            try? await Task.sleep(for: DS.Filter.switchPause)
+            guard open == nil else { return }
+            withAnimation(DS.Motion.smooth(reduceMotion)) { open = page }
+        }
     }
+
+    private static func panelID(_ page: FilterPage) -> String { "panel-" + page.rawValue }
 
     private func actions(_ model: AdvancedFilterModel) -> some View {
         HStack(spacing: DS.Space.s3) {

@@ -28,18 +28,30 @@ export function curatedItem(item, { rowTitle = null } = {}) {
   };
 }
 
-/** Estantes por género (lo más visto de cada uno en el catálogo de Stremio), al final de la curaduría. */
+/**
+ * Estantes por género (lo más visto de cada uno en el catálogo de Stremio), al final de la curaduría. Los mismos 19 del
+ * iPhone en su orden (31 oct 2026: antes 10); «Musical» solo va en el iPhone, porque el catálogo de Stremio no lo tiene.
+ */
 export const GENRE_SHELVES = [
   { genre: "Action", kind: "movie", title: "Acción" },
+  { genre: "Adventure", kind: "movie", title: "Aventura" },
   { genre: "Comedy", kind: "movie", title: "Comedia" },
   { genre: "Drama", kind: "movie", title: "Drama" },
   { genre: "Sci-Fi", kind: "movie", title: "Ciencia ficción" },
+  { genre: "Fantasy", kind: "movie", title: "Fantasía" },
   { genre: "Horror", kind: "movie", title: "Terror" },
   { genre: "Thriller", kind: "movie", title: "Suspenso" },
-  { genre: "Animation", kind: "movie", title: "Animación" },
-  { genre: "Romance", kind: "movie", title: "Romance" },
+  { genre: "Mystery", kind: "movie", title: "Misterio" },
   { genre: "Crime", kind: "movie", title: "Crimen" },
+  { genre: "Romance", kind: "movie", title: "Romance" },
+  { genre: "Animation", kind: "movie", title: "Animación" },
+  { genre: "Family", kind: "movie", title: "Familiar" },
   { genre: "Documentary", kind: "movie", title: "Documental" },
+  { genre: "Biography", kind: "movie", title: "Biografía" },
+  { genre: "History", kind: "movie", title: "Historia" },
+  { genre: "War", kind: "movie", title: "Bélica" },
+  { genre: "Western", kind: "movie", title: "Western" },
+  { genre: "Sport", kind: "movie", title: "Deportes" },
 ];
 
 /** El arte de cada género: el mismo del iPhone (Grok Imagine, dirección cinematográfica; orbital/web/img/genres). */

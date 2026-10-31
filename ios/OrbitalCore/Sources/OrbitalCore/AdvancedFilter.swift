@@ -17,7 +17,7 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
 
     public var format: Format = .all
     public var seriesStatus: SeriesStatus = .any
-    /// Slugs de `Tmdb.genres`: los que quieres (cualquiera de ellos) y los que no.
+    /// Slugs de `Tmdb.filterGenres`: los que quieres (cualquiera de ellos) y los que no.
     public var genres: Set<String> = []
     public var excluded: Set<String> = []
     /// Años de estreno, inclusivos (nil: cualquiera).
@@ -76,7 +76,7 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
     }
 
     /// Los géneros elegidos que TMDB no tiene para series (Terror, Romance, Suspenso, Aventura): solo filtran películas.
-    public var moviesOnlyGenres: [TmdbGenre] { Tmdb.genres.filter { genres.contains($0.slug) && $0.tv == nil } }
+    public var moviesOnlyGenres: [TmdbGenre] { Tmdb.filterGenres.filter { genres.contains($0.slug) && $0.tv == nil } }
 
     /// Cuántos filtros están puestos (el «Ver resultados · 3» y el punto en la puerta).
     public var activeCount: Int {
@@ -131,8 +131,8 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
     public func params(kind: String, years: ClosedRange<Int>?) -> [(String, String)] {
         let series = kind == "series"
         var p: [(String, String)] = []
-        let wanted = Tmdb.genres.filter { genres.contains($0.slug) }.compactMap { series ? $0.tv : $0.movie }
-        let unwanted = Tmdb.genres.filter { excluded.contains($0.slug) }.compactMap { series ? $0.tv : $0.movie }
+        let wanted = Tmdb.filterGenres.filter { genres.contains($0.slug) }.compactMap { series ? $0.tv : $0.movie }
+        let unwanted = Tmdb.filterGenres.filter { excluded.contains($0.slug) }.compactMap { series ? $0.tv : $0.movie }
         if !wanted.isEmpty { p.append(("with_genres", Set(wanted).sorted().map(String.init).joined(separator: "|"))) }
         if !unwanted.isEmpty { p.append(("without_genres", Set(unwanted).sorted().map(String.init).joined(separator: ","))) }
         if let years {

@@ -57,6 +57,12 @@ extension Tmdb {
         TmdbGenre("terror", "Terror", 27, nil), TmdbGenre("misterio", "Misterio", 9648, 9648), TmdbGenre("romance", "Romance", 10749, nil),
         TmdbGenre("ciencia-ficcion", "Ciencia ficción", 878, 10765), TmdbGenre("suspenso", "Suspenso", 53, nil),
     ]
+    /// Los géneros del filtro avanzado: los de Colecciones (`genres`, cada uno con su estatuilla) más cuatro que solo filtran.
+    /// Menos que los 20 de Buscar, a propósito (Fernando, 31 oct 2026).
+    public static let filterGenres: [TmdbGenre] = genres + [
+        TmdbGenre("historia", "Historia", 36, nil), TmdbGenre("belica", "Bélica", 10752, 10768), TmdbGenre("western", "Western", 37, 37),
+        TmdbGenre("musical", "Musical", 10402, nil),
+    ]
     /// Primero con bastantes votos; si no llegan a 10, se baja el piso. Luego popularidad del año y, al final, el año anterior.
     public static let genreVoteFloors = [150, 50]
 

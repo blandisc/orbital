@@ -227,6 +227,11 @@ struct BrowseView: View {
                 .perfTag("search.grid")
                 .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
         }
+        // Los pósters de los primeros resultados, todos a la vez en cuanto llegan (antes cada celda pedía el suyo hasta
+        // aparecer, de a poco).
+        .task(id: shown.prefix(DS.Size.searchPrefetch).map(\.metaID)) {
+            ImagePipeline.shared.prefetchPosters(shown.prefix(DS.Size.searchPrefetch).compactMap(\.poster))
+        }
     }
 
     // MARK: sin escribir
@@ -250,10 +255,10 @@ struct BrowseView: View {
         let model = env.advancedFilter
         let _ = model.track()
         let context = FilterContext(filter: model.filter, platforms: model.platforms, language: env.services.appSettings.uiLanguage)
-        return FilterDoor(context: context, total: model.total) { page in
+        return FilterDoor(context: context, total: model.total, open: { page in
             filterStart = page
             showFilter = true
-        }
+        }, clear: { withAnimation(DS.Motion.base(reduceMotion)) { model.clear() } })
         .padding(.horizontal, DS.Space.gutter)
     }
 
@@ -345,7 +350,10 @@ struct GenreView: View {
         .navigationBarTitleDisplayMode(.inline)   // como toda pantalla de adentro
         .task {
             // Primero lo de Trakt (se ve ya); luego los mismos títulos en tu idioma.
-            await model.genre(genre) { items = $0; loaded = true }
+            await model.genre(genre) { new in
+                items = new; loaded = true
+                ImagePipeline.shared.prefetchPosters(new.prefix(DS.Size.searchPrefetch).compactMap(\.poster))
+            }
             loaded = true
         }
     }
