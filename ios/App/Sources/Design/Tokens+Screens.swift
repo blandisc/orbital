@@ -181,10 +181,7 @@ extension DS {
     enum Watching {
         /// La portada (el arte de lo que más viste): dónde empieza su velo y su alto; cuántos van en «Lo que más viste».
         static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
-        static let barsHeight: CGFloat = 96, barMin: CGFloat = 3, cell: CGFloat = 12
-        /// Las barras delgadas de «Semana a semana» y el lugar de la cifra de la más alta; el piso del ámbar del calendario;
-        /// el relleno de las barras de géneros y la columna fija de sus porcentajes.
-        static let streakShown = 3, barWidth: CGFloat = 14, peakLabel: CGFloat = 18, dayFloor = 0.35, genreFill = 0.8, percentColumn: CGFloat = 40
+        static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
         static let holdToPause = 0.2, barTrack = 0.3, backdropOpacity = 0.45, wrongOpacity = 0.35
