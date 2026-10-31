@@ -87,6 +87,43 @@ enum AwardNames {
     }
 }
 
+/// El arranque de una parte grande de Para ti: su ícono sobre un degradado de su color, el título y una línea. `.inline`
+/// («Lo que se ve hoy»: el ícono junto al título) o `.band` (las colecciones: una franja de su color de lado a lado, como la
+/// portada de un capítulo). Pone su propio margen a los lados.
+struct DSChapterHead: View {
+    enum Style { case inline, band }
+    let symbol: String
+    let title: Text
+    var meta: Text?
+    let tint: Color
+    var style: Style = .inline
+
+    var body: some View {
+        let side = style == .band ? DS.Chapter.bandIcon : DS.Chapter.icon
+        HStack(spacing: DS.Space.s3) {
+            Image(systemName: symbol).font((style == .band ? DS.TextRecipe.title : DS.TextRecipe.section).font).foregroundStyle(DS.paper)
+                .frame(width: side, height: side)
+                .background(LinearGradient(colors: [tint.mix(with: DS.paper, by: DS.Chapter.lighten), tint], startPoint: .topLeading, endPoint: .bottomTrailing),
+                            in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                .shadow(DS.Elevation.low.color(tint.opacity(DS.Chapter.glow)))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                title.recipe(.title).lineLimit(2).accessibilityAddTraits(.isHeader)
+                if let meta { meta.recipe(.footnote, color: DS.textMuted).lineLimit(1) }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, DS.Space.gutter)
+        .padding(.vertical, style == .band ? DS.Space.s4 : 0)
+        .background {
+            if style == .band {
+                LinearGradient(colors: [tint.opacity(DS.Chapter.band), .clear], startPoint: .leading, endPoint: .trailing)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// De dónde viene una lista: su sello junto al título (Trakt, uno de tus complementos, Rotten Tomatoes o tu Orbital).
 enum ListSource: Hashable {
     case trakt, addon, critics, orbital

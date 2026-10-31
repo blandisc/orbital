@@ -7,18 +7,21 @@ enum CollectionSection: CaseIterable, Hashable {
     case forYou, platforms, studios, seasons, genres, awards, years, trakt, addons, yourYear
     var title: Text {
         switch self {
-        case .forYou: Text("Ahora"); case .trakt: Text("Tuyo"); case .addons: Text("De tus complementos")
+        case .forYou: Text("Lo que se ve hoy"); case .trakt: Text("Tuyo"); case .addons: Text("De tus complementos")
         case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .studios: Text("Estudios"); case .years: Text("Años")
         case .seasons: Text("Temporadas"); case .genres: Text("Géneros")
         case .yourYear: Text("Lo que ves")
         }
     }
 
+    /// En los círculos de arriba (no cabe el nombre largo): «Hoy» por «Lo que se ve hoy».
+    var shortTitle: Text { self == .forYou ? Text("Hoy") : title }
+
     /// Un ícono por sección en el índice de arriba (más fácil de encontrar de un vistazo).
     var symbol: String {
         switch self {
-        case .forYou: "sparkles"; case .platforms: "play.tv"; case .studios: "film.stack"; case .awards: "trophy"
-        case .seasons: "leaf"; case .genres: "medal"
+        case .forYou: "flame.fill"; case .platforms: "play.tv"; case .studios: "film.stack"; case .awards: "trophy"
+        case .seasons: "leaf"; case .genres: "theatermasks"
         case .years: "calendar"; case .trakt: "list.bullet.rectangle"; case .addons: "puzzlepiece.extension"
         case .yourYear: "square.grid.3x3.fill"
         }

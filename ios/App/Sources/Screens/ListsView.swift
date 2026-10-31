@@ -103,7 +103,7 @@ struct ListsView: View {
                 VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                     let walls = (model.mosaic.isEmpty ? generalShelves.flatMap { model.items(for: $0) } : model.mosaic).map(\.poster)
                     if !walls.isEmpty { MosaicCover(posters: walls) { model.mode = .mosaic }.perfTag("paraTi.hero") }
-                    SectionCircles(items: CollectionSection.allCases.filter(isShown).map { .init(id: $0, title: $0.title, symbol: $0.symbol) }) { section in
+                    SectionCircles(items: CollectionSection.allCases.filter(isShown).map { .init(id: $0, title: $0.shortTitle, symbol: $0.symbol) }) { section in
                         activeSection = section
                         jumps += 1
                         withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) }
@@ -112,16 +112,17 @@ struct ListsView: View {
                     let fan = Array(walls.dropFirst(DS.ParaTiB.matchFan).prefix(DS.ParaTiB.matchFan))
                     if !fan.isEmpty { MatchTeaser(posters: fan, onOpen: onMatch) }
                     if !generalShelves.isEmpty || model.isLoading {
-                        // El tipo (Todo · Series · Películas) junto al título del grupo que filtra, no suelto entre la tarjeta y «Ahora».
-                        HStack(alignment: .center, spacing: DS.Space.s3) {
-                            DSSectionHead(title: Text("Ahora"), level: .section)
+                        // «Lo que se ve hoy» (antes «Ahora», que no decía qué era): su flama, qué trae, y el tipo con palabras debajo
+                        // (los tres íconos solos no se entendían). Fernando, 30 oct 2026.
+                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                            DSChapterHead(symbol: CollectionSection.forYou.symbol, title: CollectionSection.forYou.title,
+                                          meta: Text("Tendencias, populares y aclamadas"), tint: DS.Chapter.now)
                             if model.hasKindSplit {
                                 DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
-                                                           set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), icons: true)
-                                    .fixedSize()
+                                                           set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }))
+                                    .padding(.horizontal, DS.Space.gutter)
                             }
                         }
-                        .padding(.horizontal, DS.Space.gutter)
                         .id("ahora")   // `-demo-shelf ahora` baja hasta aquí
                     }
                     if walls.isEmpty, model.shelves.isEmpty, model.isLoading { FeedSkeleton() }   // la primera vez, mientras llega
@@ -199,7 +200,7 @@ struct ListsView: View {
     /// Cada plataforma, una tarjeta con su top 3 en abanico; tocarla abre sus rankings.
     private var platforms: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: Text("Plataformas"), level: .section).padding(.horizontal, DS.Space.gutter)
+            DSChapterHead(symbol: CollectionSection.platforms.symbol, title: Text("Plataformas"), meta: Text("Lo de cada servicio que tienes"), tint: DS.Chapter.platforms, style: .band)
             CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { hub in
                 NavigationLink(value: PlatformRoute(brand: hub.brand)) {
                     PlatformFanCard(name: hub.name, logo: hub.logo, posters: model.cover(of: hub).map { Optional($0.poster) },
@@ -260,7 +261,7 @@ struct ListsView: View {
         let all = collections.model.awards.sorted { (order.firstIndex(of: $0.id) ?? order.count) < (order.firstIndex(of: $1.id) ?? order.count) }
         if !all.isEmpty {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSSectionHead(title: Text("Premios"), level: .section).padding(.horizontal, DS.Space.gutter)
+                DSChapterHead(symbol: CollectionSection.awards.symbol, title: Text("Premios"), meta: Text("Los ganadores de cada año"), tint: DS.Chapter.awards, style: .band)
                 CenteredCarousel(items: all, id: \.id, cardWidth: DS.PlatformFan.width) { award in
                     NavigationLink(value: CollectionRoute(kind: .award, id: award.id)) { AwardCard(award: award) }
                         .buttonStyle(.plain)
@@ -273,7 +274,7 @@ struct ListsView: View {
     /// Estudios: A24, Pixar, Ghibli… cada uno con sus tres películas más vistas y su nombre al frente.
     private var studiosSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: Text("Estudios"), level: .section).padding(.horizontal, DS.Space.gutter)
+            DSChapterHead(symbol: CollectionSection.studios.symbol, title: Text("Estudios"), meta: Text("De A24 a Pixar"), tint: DS.Chapter.studios, style: .band)
             CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { studio in
                 NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
                     CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
@@ -293,7 +294,7 @@ struct ListsView: View {
         let language = env.services.appSettings.uiLanguage
         let countdown = collections.model.seasonCountdown
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: Text("Temporadas"), level: .section).padding(.horizontal, DS.Space.gutter)
+            DSChapterHead(symbol: CollectionSection.seasons.symbol, title: Text("Temporadas"), meta: Text("Halloween, Día de Muertos, Navidad…"), tint: DS.Chapter.seasons, style: .band)
             if let now = countdown.first {
                 NavigationLink(value: CollectionRoute(kind: .season, id: now.season.slug)) {
                     SeasonFeature(name: Strings.tr(now.season.title, language: language), blurb: Strings.tr(now.season.blurb, language: language),
@@ -358,7 +359,7 @@ struct ListsView: View {
     private var genresSection: some View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: Text("Géneros"), level: .section).padding(.horizontal, DS.Space.gutter)
+            DSChapterHead(symbol: CollectionSection.genres.symbol, title: Text("Géneros"), meta: Text("Del terror a la comedia"), tint: DS.Chapter.genres, style: .band)
             CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { genre in
                 let name = Strings.tr(genre.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .genre, id: genre.slug)) {
@@ -378,7 +379,7 @@ struct ListsView: View {
     /// Por año: cada año con cuatro de sus películas (las premiadas, y si faltan, lo más popular).
     private var yearsSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: Text("Años"), level: .section).padding(.horizontal, DS.Space.gutter)
+            DSChapterHead(symbol: CollectionSection.years.symbol, title: Text("Años"), meta: Text("Lo mejor de cada año"), tint: DS.Chapter.years, style: .band)
             CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth, reflected: true) { year in
                 NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {
                     YearCard(year: year, posters: collections.model.yearPosters[year] ?? []).rowReflection()

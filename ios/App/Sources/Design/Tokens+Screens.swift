@@ -352,6 +352,16 @@ extension DS {
         static let closeWarning: TimeInterval = 600
     }
 
+    /// El arranque de una sección (`DSChapterHead`): el ícono (en línea y en franja), cuánto se aclara arriba su degradado, su
+    /// brillo y la franja; y el color de cada parte de Para ti (Fernando, 30 oct 2026: «Lo que se ve hoy» y las colecciones).
+    enum Chapter {
+        static let icon: CGFloat = 40, bandIcon: CGFloat = 52, lighten: Double = 0.35, glow: Double = 0.45, band: Double = 0.5
+        static let now = Color(red: 1.0, green: 0.42, blue: 0.18), platforms = Color(red: 0.86, green: 0.30, blue: 0.62)
+        static let studios = Color(red: 0.86, green: 0.30, blue: 0.30), seasons = Color(red: 0.20, green: 0.66, blue: 0.40)
+        static let genres = Color(red: 0.44, green: 0.30, blue: 0.88), awards = Color(red: 0.86, green: 0.64, blue: 0.20)
+        static let years = Color(red: 0.24, green: 0.52, blue: 0.86)
+    }
+
     enum Collections {
         /// «Por lo que viste» en Inicio (`BecauseCard(artBackdrop:)`): cuánto se desenfoca el póster de fondo y cuánto se ve.
         static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
