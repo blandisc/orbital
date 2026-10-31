@@ -268,3 +268,29 @@ def test_the_kiosk_never_asks_for_the_microphone_again(tmp_path):
     from orbital.kiosk import build_command
 
     assert "--use-fake-ui-for-media-stream" in build_command("msedge.exe", "http://127.0.0.1:8710", tmp_path)
+
+
+def test_a_launch_cancelled_on_the_loading_screen_is_not_a_played_session(library):
+    """S3-A5: B en la pantalla de carga y el emulador se cierra a los segundos: la interfaz ya dijo «Cancelé…»; su "closed"
+    no es «De vuelta de…» ni deja una partida en la bandeja del iPhone. Lo siguiente que abras sí cuenta."""
+    library.state.set_setting("companion_seen", 1)
+    events = []
+    library.listeners.append(events.append)
+    game = next(i for i in library.items() if i.source == "snes")
+    library.sessions.launch(game.id)
+    assert library.sessions.forget_launch()
+    library.sessions.session_ended(game.id, game.title, 4)
+    assert [e for e in events if e["type"] == "closed"][-1].get("cancelled") is True
+    assert library.state.inbox() == []
+    library.sessions.launch(game.id)  # lo vuelves a abrir y lo juegas
+    library.sessions.session_ended(game.id, game.title, 60)
+    assert "cancelled" not in [e for e in events if e["type"] == "closed"][-1]
+    assert [i["action"] for i in library.state.inbox()] == ["played"]
+
+
+class _EndedEdge:
+    def __init__(self, code):
+        self.returncode = code
+
+    def wait(self):
+        return self.returncode
