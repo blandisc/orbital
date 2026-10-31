@@ -134,7 +134,7 @@ export const primaryLabel = (item, runningId = null) => {
  */
 export const SECTIONS = [
   // Para ti: recomendaciones (su propia vista, sin filas). A la izquierda del Inicio: LB desde el Inicio.
-  { id: "foryou", title: "Para ti", rows: () => false, always: true },
+  { id: "foryou", title: "Explorar", rows: () => false, always: true },
   // Inicio: una sola fila para retomar (juegos y videos juntos) y tus favoritos.
   { id: "home", title: "Inicio", rows: (id) => ["jump", "favorites"].includes(id), always: true },
   { id: "games", title: "Juegos", rows: (id) => ["recent", "steam", "geforcenow"].includes(id) || id.startsWith("emulators:") },

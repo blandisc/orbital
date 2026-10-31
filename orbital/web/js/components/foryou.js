@@ -23,7 +23,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
     if (item?.key) detailTimer = setTimeout(() => fetchDetails(item), 250);
   };
   const mosaic = createForYouMosaic({ onFocus: (item) => focused(item), onPick: (item) => activate(item), covered });
-  const el = h("section", { class: "foryou is-parked", hidden: true, "aria-label": "Para ti" }, h("div", { class: "foryou__stage" }, mosaic.el), notice);
+  const el = h("section", { class: "foryou is-parked", hidden: true, "aria-label": "Explorar" }, h("div", { class: "foryou__stage" }, mosaic.el), notice);
 
   let data = null;
   let loading = null;
@@ -53,7 +53,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
       mount(notice);
       render();
     }, (err) => {
-      if (mine === loads && !data) mount(notice, h("p", { class: "foryou__message" }, `No pude cargar Para ti (${err.message.replace(/\.$/, "")}). Vuelve a entrar para reintentar.`));
+      if (mine === loads && !data) mount(notice, h("p", { class: "foryou__message" }, `No pude cargar Explorar (${err.message.replace(/\.$/, "")}). Vuelve a entrar para reintentar.`));
     }).finally(() => { if (mine === loads) loading = null; });
     loading = request;
     return request;

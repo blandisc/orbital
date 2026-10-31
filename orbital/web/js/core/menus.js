@@ -666,7 +666,7 @@ const SETTING_TEXT = {
   reduce_motion: ["Reducir movimiento", "Cambios directos, sin deslizar ni acercar."],
   sounds: ["Sonidos", "Los sonidos al moverte y elegir."],
   haptics: ["Vibración del mando", "El mando vibra en los topes y al elegir."],
-  screensaver_minutes: ["Protector de pantalla", "El mosaico de Para ti después de ese rato sin usarla."],
+  screensaver_minutes: ["Protector de pantalla", "El mosaico de Explorar después de ese rato sin usarla."],
   voice_tips: ["Frases en pantalla", "Al pedir algo por voz, el aviso dice qué más puedes decir en ese momento."],
 };
 
@@ -707,7 +707,7 @@ function accountRows(settings) {
         command: { type: "keys", service: "trakt" } },
     ...phoneRows(settings),
     onedriveRow(settings.onedrive),
-    settings.para_ti && { heading: true, label: "Claves de Para ti" },
+    settings.para_ti && { heading: true, label: "Claves de Explorar" },
     ...(settings.para_ti ? Object.keys(KEY_FORMS).filter((s) => s !== "onedrive").map((service) => keyRow(service, settings.para_ti)) : []),
   ].filter(Boolean);
 }
@@ -1044,7 +1044,7 @@ const SCROBBLE_ACTIONS = { start: "viendo", pause: "en pausa", stop: "cerrado" }
 export function scrobbleHint(scrobble, now = Date.now()) {
   if (scrobble?.error) return `Trakt no recibe lo que ves: ${scrobble.error}`;
   const last = scrobble?.last;
-  if (!last?.title) return "Tus listas en Para ti · Último scrobble: aún nada";
+  if (!last?.title) return "Tus listas en Explorar · Último scrobble: aún nada";
   const ago = lastPlayed(last.at, now, "").trim();
   return `Último scrobble: ${last.title} · ${SCROBBLE_ACTIONS[last.action] || last.action}${ago ? ` · ${ago}` : ""}`;
 }
@@ -1206,7 +1206,7 @@ export function stremioAccountMenu() {
 export function traktAccountMenu() {
   return {
     title: "Cuenta de Trakt",
-    subtitle: "Para ti dejará de enseñar tus listas y recomendaciones.",
+    subtitle: "Explorar dejará de enseñar tus listas y recomendaciones.",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "trakt-unlink" } },
@@ -1214,11 +1214,11 @@ export function traktAccountMenu() {
   };
 }
 
-/** Y en «Para ti»: ver la ficha (películas y series) o «No me interesa» (no vuelve a salir). */
+/** Y en «Explorar»: ver la ficha (películas y series) o «No me interesa» (no vuelve a salir). */
 export function forYouMenu(item) {
   const video = item?.kind === "movie" || item?.kind === "series";
   return {
-    title: item?.title || "Para ti",
+    title: item?.title || "Explorar",
     subtitle: item?.why || "",
     options: [
       video && { icon: "info", label: "Ver ficha", command: { type: "title-ref", ref: { ...item, kind: item.kind, meta_id: item.meta_id } } },
@@ -1231,13 +1231,13 @@ export function forYouMenu(item) {
  * "Tu consola" (primer uso, y en Mantenimiento): lo esencial en dos renglones. Lo técnico (ES-DE,
  * el reproductor, Alexa) está en Diagnóstico.
  */
-/** Para ti en «Tu consola» y en Cuentas: conectado; o conectar (si ya está la aplicación de Trakt); o, sin ella, el primer
+/** Explorar en «Tu consola» y en Cuentas: conectado; o conectar (si ya está la aplicación de Trakt); o, sin ella, el primer
  *  paso. Antes el renglón de Trakt no aparecía hasta escribir la aplicación, y nadie sabía que existía. */
 function paraTiRow(trakt) {
   if (!trakt) return null;
-  if (trakt.linked) return { icon: "spark", label: "Para ti", value: "✓ Trakt", command: { type: "section", id: "foryou" } };
-  if (trakt.configured) return { icon: "spark", label: "Para ti", value: "Conectar Trakt", command: { type: "trakt-link" } };
-  return { icon: "spark", label: "Para ti", hint: "Con Trakt", value: "Configurar", command: { type: "keys", service: "trakt" } };
+  if (trakt.linked) return { icon: "spark", label: "Explorar", value: "✓ Trakt", command: { type: "section", id: "foryou" } };
+  if (trakt.configured) return { icon: "spark", label: "Explorar", value: "Conectar Trakt", command: { type: "trakt-link" } };
+  return { icon: "spark", label: "Explorar", hint: "Con Trakt", value: "Configurar", command: { type: "keys", service: "trakt" } };
 }
 
 export function setupMenu(status = {}) {

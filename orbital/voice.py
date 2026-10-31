@@ -27,10 +27,10 @@ DIRECTIONS = {
 
 SECTIONS = {"juegos": "games", "peliculas": "media", "series": "media", "peliculas y series": "media",
             "games": "games", "media": "media",
-            "mis juegos": "games", "para ti": "foryou", "recomendaciones": "foryou", "sugerencias": "foryou", "foryou": "foryou",
+            "mis juegos": "games", "explorar": "foryou", "para ti": "foryou", "recomendaciones": "foryou", "sugerencias": "foryou", "foryou": "foryou",
             "tv en vivo": "tv", "tele en vivo": "tv", "television en vivo": "tv", "la tele": "tv", "tele": "tv", "television": "tv",
             "la television": "tv", "canales": "tv", "los canales": "tv", "tv": "tv"}
-SECTION_NAMES = {"games": "Juegos", "media": "Películas y series", "foryou": "Para ti", "tv": "la TV en vivo"}
+SECTION_NAMES = {"games": "Juegos", "media": "Películas y series", "foryou": "Explorar", "tv": "la TV en vivo"}
 CHANNEL_NEXT = {"next", "siguiente", "sube", "suba", "adelante", "otro"}
 CHANNEL_PREVIOUS = {"previous", "anterior", "baja", "baje", "atras", "el anterior"}
 QUICK_LOOKUP = 3.5  # s: Alexa corta a los ~8 s; si Trakt tarda, se enseña en pantalla y se dice que ahí está
@@ -366,7 +366,7 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     (re.compile(rf"^{_V['search']}\s+(?P<v>.+?)\s+en\s+stremio$"), "SearchMediaIntent", "query"),
     (re.compile(r"^(?:busca|busque|buscar)\s+(?P<v>.+)$"), "SearchMediaIntent", "query"),
     (re.compile(rf"^(?:{_V['go']}|{_V['move']}|{_V['open']})\s+(?:a\s+)?(?:la\s+seccion\s+de\s+|los\s+|las\s+|mis\s+)?"
-                r"(?P<direction>juegos|peliculas y series|peliculas|series|apps|aplicaciones|para ti|recomendaciones|tv en vivo|tele en vivo)$"),
+                r"(?P<direction>juegos|peliculas y series|peliculas|series|apps|aplicaciones|explorar|para ti|recomendaciones|tv en vivo|tele en vivo)$"),
      "NavigateIntent", None),
     (re.compile(rf"^{_V['continue']}(?:\s+viendo)?(?:\s+(?P<v>.+))?$"), "ContinueWatchingIntent", "show"),
     # "quiero ver dune", "reproduce the office": como en Alexa.
@@ -1220,7 +1220,7 @@ class VoiceController:
         if genre:
             return self._recommend_genre(genre, "series" if normalize(slots.get("what") or "") == "serie" else "movie")
         foryou = self.catalog.foryou
-        show = self._show_view({"seccion": "foryou"}, "Para ti")
+        show = self._show_view({"seccion": "foryou"}, "Explorar")
         titles: list[str] = []
         if foryou.trakt.linked:
             try:
@@ -1229,8 +1229,8 @@ class VoiceController:
                 items = None
             titles = [i["title"] for i in items or [] if i.get("title")]
         if not titles:
-            return VoiceResult("Te dejo Para ti abierto: ahí están tus sugerencias.", events=[show])
-        return VoiceResult(f"Te recomiendo {spoken_list(titles)}. Están en Para ti.", events=[show])
+            return VoiceResult("Te dejo Explorar abierto: ahí están tus sugerencias.", events=[show])
+        return VoiceResult(f"Te recomiendo {spoken_list(titles)}. Están en Explorar.", events=[show])
 
     def _recommend_genre(self, genre: str, kind: str) -> VoiceResult:
         name = GENRE_NAMES.get(genre, genre.lower())
@@ -1239,8 +1239,8 @@ class VoiceController:
         except Exception:  # noqa: BLE001 - sin catálogo (o tardó): Para ti
             metas = None
         if not metas:
-            return VoiceResult(f"No pude traer {'series' if kind == 'series' else 'películas'} de {name}. Te dejo Para ti.",
-                               ok=False, events=[self._show_view({"seccion": "foryou"}, "Para ti")])
+            return VoiceResult(f"No pude traer {'series' if kind == 'series' else 'películas'} de {name}. Te dejo Explorar.",
+                               ok=False, events=[self._show_view({"seccion": "foryou"}, "Explorar")])
         options = [{**items[0].public(), "kind": kind, "meta_id": meta["id"]}  # uno por uno: el id va con su ficha
                    for meta in metas[:6] if (items := cinemeta.catalog_items(kind, [meta]))]
         if self.kiosk is not None:

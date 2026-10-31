@@ -16,7 +16,7 @@ Cómo se mantiene:
 
 | Decisión | En el iPhone | En la TV |
 |---|---|---|
-| La sección de descubrir se llama **Explorar** | Ya (31 oct) | Pendiente · ola 1 (pestaña, encabezado, menús; la voz entiende las dos) |
+| La sección de descubrir se llama **Explorar** | Ya (31 oct) | Ya (ola 1; la voz entiende «Explorar» y «Para ti») |
 | Las listas (Plataformas, Premios, Años…) | En Explorar | **Se quedan en Películas y series**: en la TV conviven juegos y video, y Explorar es el mosaico |
 | Películas y series es el Inicio del iPhone (Seguir viendo, Lo nuevo de lo tuyo, Por lo que viste, Top 10, Mi lista) | — | Pendiente · ola 2 (arriba; las listas siguen abajo) |
 | Filtro avanzado | En Buscar | **En Películas y series y en ☰** · Pendiente · ola 3 |
@@ -35,7 +35,6 @@ Cómo se mantiene:
 |---|---|---|---|
 | «Mi lista» | TV | «Guardar en…» dice «tu watchlist» aparte | 2 |
 | «Mi lista» | iPhone | Avisos y Ajustes con «tu watchlist» | sesión del iPhone |
-| «Explorar» | TV | La pestaña, su encabezado y los menús dicen «Para ti» | 1 |
 | «Decide por mí» | TV | La TV le dice «¿Qué vemos?» | 2 |
 | «Decide por mí» | iPhone | Dos textos con «¿Qué vemos?» | sesión del iPhone |
 | «¿Qué vemos hoy?» | TV | El mazo no existe | 2 |

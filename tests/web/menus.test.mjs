@@ -109,7 +109,7 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
   const keys = settingsCategory("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
-  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "✓ Conectada"], ["Trakt", "Configurar"], ["iPhone", "Conectar"], ["Claves de Para ti", undefined],
+  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "✓ Conectada"], ["Trakt", "Configurar"], ["iPhone", "Conectar"], ["Claves de Explorar", undefined],
     ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["MDBList", "Agregar"], ["SteamGridDB", "Agregar"], ["Clave de Trakt", "Agregar"]]);
   assert.deepEqual(keys.options[4].command, { type: "keys-menu", service: "tmdb" });
   assert.deepEqual(keys.options[1].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
@@ -122,7 +122,7 @@ test("ajustes › Cuentas › Trakt: último scrobble en palabras, o el error", 
   const at = now / 1000 - 180;
   assert.equal(scrobbleHint({ last: { title: "The Office T2 · E5", action: "pause", at }, error: null }, now),
     "Último scrobble: The Office T2 · E5 · en pausa · hace 3 min");
-  assert.equal(scrobbleHint({ last: null, error: null }, now), "Tus listas en Para ti · Último scrobble: aún nada");
+  assert.equal(scrobbleHint({ last: null, error: null }, now), "Tus listas en Explorar · Último scrobble: aún nada");
   assert.equal(scrobbleHint({ last: null, error: "Trakt respondió HTTP 500" }, now), "Trakt no recibe lo que ves: Trakt respondió HTTP 500");
   const row = settingsCategory("accounts", { trakt: { configured: true, linked: true, scrobble: { last: null, error: "No pude conectar con Trakt" } } })
     .options.find((o) => o.label === "Trakt");

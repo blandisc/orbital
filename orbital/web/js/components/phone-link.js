@@ -18,7 +18,7 @@ export function createPhoneLink({ onMove, onClose }) {
       h("ol", { class: "phone-link__steps" },
         h("li", {}, "Abre la cámara del iPhone y apunta a este código"),
         h("li", {}, "Toca «Abrir en Orbital»: queda conectado, sin escribir nada"),
-        h("li", {}, "Tu Trakt y tus claves de Para ti pasan solos al iPhone"))));
+        h("li", {}, "Tu Trakt y tus claves de Explorar pasan solos al iPhone"))));
   let attempt = 0;
   let cancelExit = () => {};
 

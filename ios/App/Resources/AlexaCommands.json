@@ -123,12 +123,12 @@
       {"say": "pon el canal de los Simpson", "note": "Los Simpson en latino, todo el día."},
       {"say": "pon el canal de caricaturas", "note": "Caricaturas de siempre, en latino."}
     ]},
-    {"title": "Para ti", "icon": "sparkles", "commands": [
+    {"title": "Explorar", "icon": "sparkles", "commands": [
       {"say": "qué sale hoy", "note": "Los episodios nuevos de las series que sigues (Trakt)."},
       {"say": "qué hay de nuevo", "note": "Los estrenos de las series que sigues."},
-      {"say": "qué me recomiendas", "note": "Tres sugerencias, y Para ti en pantalla."},
+      {"say": "qué me recomiendas", "note": "Tres sugerencias, y Explorar en pantalla."},
       {"say": "recomiéndame algo", "note": "Igual que «qué me recomiendas»."},
-      {"say": "ve a Para ti", "note": "Abre la sección."}
+      {"say": "ve a Para ti", "note": "Abre Explorar (antes se llamaba así y Alexa lo sigue entendiendo)."}
     ]},
     {"title": "Volumen y pantalla", "icon": "speaker.wave.2", "commands": [
       {"say": "sube el volumen", "note": "O bájale, súbele tantito."},
