@@ -278,7 +278,7 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
   }
   // Como el iPhone: «¿Qué vemos?» (Para ti › 🎲) y «Tu año» (bajo tu perfil).
   options.push({ icon: "gamepad", label: "Jugadores", hint: "Quién es el Jugador 1, 2…", command: { type: "players" } });
-  options.push({ icon: "spark", label: "¿Qué vemos?", hint: "Tres que caben en tu tiempo", command: { type: "decide" } });
+  options.push({ icon: "spark", label: "Decide por mí", hint: "Tres que caben en tu tiempo", command: { type: "decide" } });
   options.push({ icon: "chart", label: "Tu año", hint: "Lo que viste según Trakt", command: { type: "year" } });
   options.push({ icon: "info", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
   if (alexa) options.push({ icon: "assistant", label: "Lo que puedes decir", hint: "Alexa, el iPhone y Siri", command: { type: "alexa-menu" } });

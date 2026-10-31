@@ -170,3 +170,5 @@
 /* «Porque viste»: el título del que salen las sugerencias de abajo, con un aro del acento (como el iPhone) mientras
    el foco está en otra parte. */
 .card--chosen:not(.card--focused) { box-shadow: 0 0 0 .16rem var(--color-tinted-bg), 0 0 0 .3rem var(--color-accent); }
+/* «Hoy» (Lo nuevo de lo tuyo): la placa del puesto, en el verde de lo que ya se puede ver. */
+.card__today.badge { background: var(--color-new); color: var(--color-on-primary); }

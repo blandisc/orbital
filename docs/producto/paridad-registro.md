@@ -21,7 +21,7 @@ Cómo se mantiene:
 | Películas y series es el Inicio del iPhone (Seguir viendo, Lo nuevo de lo tuyo, Por lo que viste, Top 10, Mi lista) | — | Pendiente · ola 2 (arriba; las listas siguen abajo) |
 | Filtro avanzado | En Buscar | **En Películas y series y en ☰** · Pendiente · ola 3 |
 | Mazo «¿Qué vemos hoy?», opción A (Paso · Ver ya · Mi lista) | Ya | Pendiente · ola 2 |
-| «Mi lista» es tu watchlist de Trakt | Ya (quedan textos) | Pendiente · ola 2 («Guardar en…» todavía separa las dos) |
+| «Mi lista» es tu watchlist de Trakt | Ya (quedan textos) | Ya (ola 2: «Guardar en…», la fila, la lista y su porqué; la biblioteca de Stremio queda de respaldo) |
 | Los canales de tus series: una lista guardada en Trakt, para Ultra, Plus y Orbital | En el teléfono | Pendiente · ola 2 (categoría en TV en vivo). Nombre propuesto: «Tus canales» (en el glosario, «Tus series» son las que estás viendo) |
 | Porqué en turquesa, solo si ayuda; sección = rótulo con ícono y línea | Ya | Ya (ola 1: `SectionHead` en dos niveles, `--color-reason`, `--color-orbital`) |
 | Un botón sólido y redondos con su nombre debajo | — | Ya (ola 1: `Button({ icon })`) |
@@ -35,9 +35,7 @@ Cómo se mantiene:
 
 | Término | Lado | Qué falta | Ola |
 |---|---|---|---|
-| «Mi lista» | TV | «Guardar en…» dice «tu watchlist» aparte | 2 |
 | «Mi lista» | iPhone | Avisos y Ajustes con «tu watchlist» | sesión del iPhone |
-| «Decide por mí» | TV | La TV le dice «¿Qué vemos?» | 2 |
 | «Decide por mí» | iPhone | Dos textos con «¿Qué vemos?» | sesión del iPhone |
 | «¿Qué vemos hoy?» | TV | El mazo no existe | 2 |
 | «Colecciones» | TV | La vitrina no existe | 3 |

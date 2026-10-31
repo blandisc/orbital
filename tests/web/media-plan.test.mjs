@@ -6,7 +6,7 @@ const v = (id, kind, extra = {}) => ({ meta_id: id, kind, title: id, image: `p/$
 
 const LISTS = [
   { id: "continue", title: "Seguir viendo" }, { id: "mylist", title: "Mi lista" },
-  { id: "recs", title: "Recomendadas", split: true }, { id: "mine", title: "Tus series" }, { id: "watchlist", title: "Tu watchlist" },
+  { id: "recs", title: "Recomendadas", split: true }, { id: "mine", title: "Tus series" }, { id: "watchlist", title: "Mi lista" },
   { id: "estrenos", title: "Próximos estrenos" }, { id: "list:7", title: "Animadas" },
   { id: "trend", title: "En tendencia", split: true }, { id: "popular", title: "Lo más popular", split: true },
   { id: "addon:x", title: "Anime de Kitsu" },
@@ -40,14 +40,18 @@ function items(keyOf) {
   return all;
 }
 
-test("Películas y series lleva el orden del iPhone (Para ti › Listas) y sus nombres", async () => {
+test("Películas y series: arriba lo tuyo como el Inicio del iPhone (Porque viste, Top 10, Mi lista) y abajo las listas", async () => {
   const { mediaRows, keyOf } = await plan();
   const rows = mediaRows(LISTS, items(keyOf), { years: { "year:2025": [v("y1", "movie")] } });
-  assert.deepEqual(rows.map((r) => r.id), ["curated:because", "curated:recs", "curated:trend", "curated:popular", "curated:fresh",
+  assert.deepEqual(rows.map((r) => r.id), ["curated:because", "curated:top10", "curated:mi-lista", "curated:recs", "curated:trend", "curated:popular", "curated:fresh",
     "curated:platforms", "curated:awards", "curated:studios", "curated:years", "curated:estrenos", "curated:lists-trakt", "curated:lists-stremio"]);
   const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
-  // Sin «Seguir viendo» (vive en el Inicio, como en el iPhone); Mi lista va en «Listas de Stremio».
+  // Sin «Seguir viendo» (main.js la pone arriba). Mi lista es tu watchlist de Trakt (sin Trakt, la de Stremio).
   assert.ok(!rows.some((r) => r.id === "curated:continue" || r.id === "curated:mylist"));
+  assert.equal(byId["curated:mi-lista"].title, "Mi lista");
+  // El Top 10 de Netflix: series por omisión, con la cifra grande (ranked).
+  assert.equal(byId["curated:top10"].title, "Top 10 en Netflix · Series");
+  assert.equal(byId["curated:top10"].ranked, true);
   assert.equal(byId["curated:lists-trakt"].title, "Listas de Trakt");
   assert.equal(byId["curated:lists-stremio"].title, "Listas de Stremio");
   // El sello de origen, como el iPhone: Trakt rojo, Stremio morado, Orbital azul.
@@ -94,7 +98,7 @@ test("premios, estudios, años y listas son tarjetas con lo que dice el iPhone",
   assert.equal(rows["curated:studios"].items[0].collection.type, "studio");
   // Un año sin pedir todavía también sale (se piden al acercarte), con sus pósters cuando llegan.
   assert.deepEqual(rows["curated:years"].items.map((c) => [c.title, c.collection.posters.length]), [["2025", 2], ["2024", 0]]);
-  assert.equal(rows["curated:lists-trakt"].items[0].title, "Tu watchlist"); // primero, como el iPhone (aunque llegue después)
+  assert.equal(rows["curated:lists-trakt"].items[0].title, "Mi lista"); // primero, como el iPhone (aunque llegue después)
   const watchlist = rows["curated:lists-trakt"].items[0].collection;
   assert.deepEqual([watchlist.type, watchlist.source, watchlist.count, watchlist.posters.length], ["list", "trakt", 2, 2]);
   assert.equal(rows["curated:lists-stremio"].items[0].collection.name, "Mi lista");
@@ -230,4 +234,17 @@ test("Lo mejor del género y Temporadas van junto a Estudios y Tus plataformas",
   assert.ok(wanted.some((w) => w.id === "season:halloween" && w.kind === "movie"));
   const groups = GROUPS.map((g) => g.id);
   assert.deepEqual(groups.slice(groups.indexOf("studios"), groups.indexOf("years") + 1), ["studios", "genre-top", "seasons", "years"]);
+});
+
+test("Lo nuevo de lo tuyo: hoy primero, luego lo que viene y al final lo que salió (con el listón), cada uno con su día", async () => {
+  const { mediaRows, keyOf } = await plan();
+  const all = {};
+  const ep = (id, day, extra) => ({ meta_id: id, kind: "series", title: id, day, day_label: extra.label, episode_label: "T1 E2", ...extra });
+  all[keyOf("nuevo", null)] = [ep("pasado-lejos", "2026-10-09", { label: "Viernes 9", released: true }), ep("ayer", "2026-10-14", { label: "Ayer", released: true }),
+    ep("hoy", "2026-10-15", { label: "Hoy", today: true }), ep("luego", "2026-10-18", { label: "Domingo 18" })];
+  const row = mediaRows([{ id: "nuevo", title: "Lo nuevo de lo tuyo" }], all).find((r) => r.id === "curated:nuevo");
+  assert.deepEqual(row.items.map((i) => i.meta_id), ["hoy", "luego", "ayer", "pasado-lejos"]);
+  assert.deepEqual(row.items.map((i) => [i.subtitle, !!i.today, !!i.fresh]), [["Hoy · T1 E2", true, false], ["Domingo 18 · T1 E2", false, false],
+    ["Ayer · T1 E2", false, true], ["Viernes 9 · T1 E2", false, true]]);
+  assert.equal(row.group, "nuevo");
 });

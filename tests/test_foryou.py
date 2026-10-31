@@ -197,7 +197,7 @@ def test_only_the_services_you_have_show_up(make_foryou, net):
     assert ids == ["trend", "popular", *CHART_LIST_IDS, "mygames"]  # Trakt sin cuenta: tendencias y popular sí
     net.on("GET", r"/users/me/lists$", (200, [{"name": "Ciencia ficción", "ids": {"trakt": 77}}]))
     linked = core(make_foryou(linked=True, rawg_key="r").lists())
-    assert linked[:6] == ["recs", "mine", "watchlist", "trakt-favorites", "estrenos", "list:77"]
+    assert linked[:7] == ["recs", "mine", "watchlist", "trakt-favorites", "nuevo", "estrenos", "list:77"]
     assert linked[-4:] == ["mygames", "rawg:new", "rawg:popular", "rawg:best"]
 
 
@@ -370,6 +370,14 @@ def test_api_lists_details_dismiss_and_trakt(library, make_foryou):
         assert [(l["id"], l["kind"]) for l in many] == [("mygames", None), ("nada", "movie")]
         assert many[0]["items"] == c.get("/api/foryou/list", params={"id": "mygames"}).json()["items"]
         assert many[1]["items"] == [] and many[1]["status"] == 404
+        # Un error inesperado en una lista (no de red: un error de programa) tampoco tumba a las demás.
+        real = library.foryou.list_payload
+        library.foryou.list_payload = lambda list_id, kind=None: (_ for _ in ()).throw(AttributeError("x")) if list_id == "nada" else real(list_id, kind)
+        try:
+            many = c.post("/api/foryou/lists", json={"lists": [{"id": "mygames"}, {"id": "nada"}]}).json()["lists"]
+        finally:
+            library.foryou.list_payload = real
+        assert many[0]["items"] and many[1]["status"] == 500
         assert c.post("/api/foryou/dismiss", json={"key": "lo que sea"}).status_code == 422
         assert c.post("/api/foryou/dismiss", json={"key": data["mosaic"][0]["key"]}).json() == {"ok": True}
         assert c.post("/api/foryou/trakt/link").status_code == 409  # sin la aplicación de Trakt en config.yaml
@@ -532,7 +540,7 @@ def test_stremio_addon_catalogs_join_para_ti(library, make_foryou, monkeypatch):
     assert [i["title"] for i in items] == ["Breaking Bad"] and items[0]["year"] == 2008 and items[0]["why"] == "En Prime Video"
     assert served[-1] == "https://x.baby-beamup.club/catalog/series/amp.json"
     # Sin Trakt conectado, el mosaico toma la watchlist y las recomendaciones del complemento.
-    assert any(m["why"] in ("En tu watchlist", "Recomendada") for m in fy.mosaic())
+    assert any(m["why"] in ("En Mi lista", "Recomendada") for m in fy.mosaic())
     # Con Trakt conectado, las de «Trakt Integration» ya llegan de Trakt: no se repiten.
     fy2 = make_foryou(linked=True)
     assert {a["title"] for a in fy2.addon_catalogs()} == {"Netflix", "Prime Video"}
@@ -561,6 +569,27 @@ def test_upcoming_episodes_by_day_with_local_time(make_foryou, net):
     assert ["Episodio", "T1 E4–E6"] in items[1]["facts"] and items[1]["overview"].startswith("T1 E4–E6 · 3 episodios")
     lists = {row["id"]: row for row in fy.lists()}
     assert lists["estrenos"]["views"][1]["label"] == "Semana"
+
+
+def test_whats_new_of_yours_has_last_week_and_whats_coming(make_foryou, net):
+    """«Lo nuevo de lo tuyo» (como el Inicio del iPhone): lo que salió la semana pasada («Ya salió», «Ayer») y lo que viene,
+    en un solo pedido a Trakt que empieza ocho días antes (hora universal)."""
+    from datetime import datetime, timedelta
+
+    fy = make_foryou(linked=True)
+    now = datetime(2026, 10, 15, 12, 0).astimezone()
+    utc = lambda local: local.astimezone(tz=__import__("datetime").timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")  # noqa: E731
+    row = lambda title, imdb, s, e, days: {"first_aired": utc(now.replace(hour=20) + timedelta(days=days)),  # noqa: E731
+                                           "episode": {"season": s, "number": e, "title": ""}, "show": {**show(title, imdb), "network": "HBO"}}
+    net.on("GET", r"/calendars/my/shows/", (200, [row("Vieja", "tt0", 1, 1, -9), row("Martes", "tt1", 2, 4, -6), row("Ayer", "tt2", 1, 3, -1),
+                                                  row("Hoy", "tt3", 5, 1, 0), row("Luego", "tt4", 1, 2, 3), row("Lejos", "tt5", 1, 1, 30)]))
+    items = fy.latest(now=now)
+    assert [(i["title"], i["day_label"], i["why"], i["released"]) for i in items] == [
+        ("Martes", "Viernes 9", "Ya salió", True), ("Ayer", "Ayer", "Ya salió", True), ("Hoy", "Hoy", "Sale hoy", False),
+        ("Luego", "Domingo 18", "Domingo 18", False)]
+    asked = [c for c in net.calls if "/calendars/my/shows/" in c[1]]
+    assert len(asked) == 1 and "/2026-10-07/23" in asked[0][1]
+    assert {row["id"]: row for row in fy.lists()}["nuevo"]["title"] == "Lo nuevo de lo tuyo"
 
 
 def test_the_month_calendar_includes_past_days_and_asks_trakt_in_two_halves(make_foryou, net):
@@ -612,13 +641,13 @@ def test_chart_lists_say_what_they_measure_and_carry_movement(make_foryou, monke
     assert jw[0]["rank"] == 1 and jw[0]["movement"] is None and jw[0]["new"] is False  # primera foto: sin flechas
 
 
-def test_my_list_is_stremio_and_watchlist_is_trakt():
-    """Mismo glosario que el iPhone: «En Mi lista» (biblioteca de Stremio) y «En tu watchlist» (Trakt)."""
+def test_my_list_is_the_trakt_watchlist_or_else_stremio():
+    """Mismo glosario que el iPhone (31 oct 2026): «Mi lista» es tu watchlist de Trakt; sin Trakt, tu biblioteca de Stremio."""
     import inspect
 
     from orbital import foryou
     src = inspect.getsource(foryou.ForYou._list)
-    assert '"mylist": "En Mi lista"' in src and 'video_item(e, "En tu watchlist")' in src
+    assert '"mylist": "En Mi lista"' in src and 'video_item(e, "En Mi lista")' in src and "tu watchlist" not in src
 
 
 def test_trakt_qr_opens_the_activation_page_and_setup_knows_about_para_ti(library):
