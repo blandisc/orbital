@@ -19,6 +19,14 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Pulido del 31 oct: el cajón del filtro, el mazo con «Tu match perfecto» y el menú de la temporada.
+    "%@ con algo puesto": "%@ in use", "%lld con algo puesto": "%lld in use", "Menos filtros": "Fewer filters", "Más filtros": "More filters",
+    "Más filtros: origen, premios y estudios": "More filters: origin, awards and studios", "Origen, premios y estudios": "Origin, awards and studios",
+    "o más": "or more", "Solo la temporada %@": "Just season %@", "Solo la temporada %lld": "Just season %lld", "Toda la serie": "The whole series",
+    "Tu match perfecto": "Your perfect match", "Guardada en Tu match perfecto": "Saved to Your perfect match",
+    "%lld guardadas en Tu match perfecto": "%lld saved to Your perfect match", "%lld guardadas en Mi lista": "%lld saved to My List",
+    "Guardaste %lld. Están en tu lista de Trakt «Tu match perfecto».": "You saved %lld. They're in your Trakt list “Your perfect match”.",
+    "Guardar": "Save", "Paso": "Pass", "MI LISTA": "MY LIST", "Calificación en Trakt: %lld por ciento": "Trakt rating: %lld percent",
     # «¿Cuándo la viste?» (`WatchedWhenSheet`, `TitleWatchedWhen`): marcar como vista película, episodio, temporada o serie.
     "Ahora mismo": "Right now", "Con la misma fecha": "With the same date", "Cuando salió cada episodio": "When each episode aired",
     "El día que la viste": "The day you watched it", "El día que salió": "The day it aired", "El día que se estrenó": "The day it came out",

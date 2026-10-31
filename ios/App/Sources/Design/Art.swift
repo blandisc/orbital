@@ -25,6 +25,9 @@ struct BleedArt<Content: View>: View {
     var fallback: String? = nil
     /// El título: si el marco es alto y tiene póster sin texto, va ese en vez de `url` (`TallArtPicker`).
     var tall: TallArtKey? = nil
+    /// El arte se desvanece arriba (el destacado de Inicio). La ficha no: llega sólida hasta arriba, detrás del reloj y de los
+    /// botones, con un velo suave para que se lean (como el Mosaico; Fernando, 31 oct 2026).
+    var fadesTop = true
     @ViewBuilder var content: () -> Content
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -35,7 +38,7 @@ struct BleedArt<Content: View>: View {
         ZStack(alignment: .bottomLeading) {
             Group {
                 if scheme == .dark {
-                    art.mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
+                    art.mask(LinearGradient(stops: [.init(color: fadesTop ? .clear : .black, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
                                                     .init(color: .black, location: DS.Backdrop.artFadeStart),
                                                     .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
                 } else {
@@ -67,6 +70,9 @@ struct BleedArt<Content: View>: View {
         }
             // El velo sube hasta donde empieza el texto: rótulo, logo y datos se leen aunque el arte sea claro.
             .overlay(ArtVeil(at: DS.Backdrop.scrimStart))
+            .overlay(alignment: .top) {
+                if !fadesTop { ArtVeil(kind: .top, at: 1).frame(height: DS.TitleHero.topVeil).allowsHitTesting(false).accessibilityHidden(true) }
+            }
             .overlay { if let collapse { veil(collapse) } }
     }
 

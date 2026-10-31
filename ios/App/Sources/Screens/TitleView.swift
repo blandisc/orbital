@@ -29,7 +29,7 @@ struct TitleView: View {
     @State private var belowHero: CGFloat = 0
     /// Cuánto has deslizado (0 arriba) y el alto de la barra de arriba: el arte se recoge y lo que sube se desvanece.
     @State private var scrolled: CGFloat = 0
-    @State private var topInset: CGFloat = 0
+    @State var topInset: CGFloat = 0
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var fromHere = false; var id: String { "\(videoID)-\(purpose)" } }
 
@@ -66,9 +66,12 @@ struct TitleView: View {
         // dibuja aquí y no como elemento de la barra (en la barra transparente de la ficha el sistema no lo enseñaba).
         .overlay(alignment: .top) {
             let shown = Double(min(1, max(0, (scrolled - heroHeight * DS.TitleAction.titleFrom) / max(heroHeight * DS.TitleAction.titleSpan, 1))))
-            Text(verbatim: model.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
-                .padding(.horizontal, DS.TitleAction.barTitleInset)
-                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+            // Entre ‹ y la cápsula de botones (que es más ancha que ‹): el nombre a la izquierda, sin meterse debajo.
+            let buttons = (env.services.orbital.isConfigured ? 1 : 0) + (model.canFavorite ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)
+            Text(verbatim: model.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                .padding(.leading, DS.TitleAction.barTitleLeading)
+                .padding(.trailing, DS.TitleAction.barGroupPadding + DS.TitleAction.barButton * CGFloat(buttons))
+                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
                 .offset(y: -DS.Size.touchTarget - DS.Space.s2)
                 .opacity(shown)
                 .allowsHitTesting(false)
@@ -193,7 +196,7 @@ struct TitleView: View {
     private var fade: Double { Double(min(1, max(0, scrolled / max(heroHeight * DS.TitleAction.fadeAt, 1)))) }
     private var heroHeight: CGFloat { contentWidth > 0 ? contentWidth / heroAspect : 0 }
     /// El ancho de la ficha: el de la ventana, hasta el ancho de lectura (`DS.TitleAction.readableWidth`).
-    private var contentWidth: CGFloat { min(viewport.width, DS.TitleAction.readableWidth) }
+    var contentWidth: CGFloat { min(viewport.width, DS.TitleAction.readableWidth) }
 
     /// Mi lista y En la TV: botones de ícono en la barra de arriba (con su nombre para VoiceOver).
     @ToolbarContentBuilder private func topBar(_ model: TitleModel) -> some ToolbarContent {
@@ -394,8 +397,8 @@ struct TitleView: View {
                     Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote)
                     Spacer()
                     Menu {
-                        Button("Marcar la temporada como vista", systemImage: "checkmark.circle") { marking = .season(model.selectedSeason) }
-                        Button("Ya la vi toda", systemImage: "checkmark.circle.badge.questionmark") { marking = .series }
+                        Button("Solo la temporada \(model.selectedSeason)", systemImage: "checkmark.circle") { marking = .season(model.selectedSeason) }
+                        Button("Toda la serie", systemImage: "checkmark.rectangle.stack") { marking = .series }
                     } label: { Label("Marcar como vista", systemImage: "checkmark.circle").font(DS.TextRecipe.footnote.font) }
                     .accessibilityIdentifier("season-mark-watched")
                 }

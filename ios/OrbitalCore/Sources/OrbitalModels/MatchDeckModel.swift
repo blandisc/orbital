@@ -2,7 +2,7 @@ import Foundation
 import OrbitalCore
 
 /// «¿Qué vemos hoy?» · Encuentra tu match perfecto: un mazo de cartas con lo que te propone Para ti, sin lo que ya viste
-/// ni lo que descartaste hace poco. Arrastrar a la derecha guarda (en tu destino de siempre: la watchlist de Trakt o Mi lista),
+/// ni lo que descartaste hace poco. Arrastrar a la derecha guarda (con Trakt, en tu lista «Tu match perfecto»; si no, en Mi lista),
 /// a la izquierda descarta (no vuelve en un mes); los cuatro ánimos de «¿Qué vemos?» cambian el mazo.
 @MainActor
 public final class MatchDeckModel: ObservableModel {
@@ -60,16 +60,45 @@ public final class MatchDeckModel: ObservableModel {
     public func save(_ s: Suggestion) async {
         cards.removeAll { $0.imdb == s.imdb }
         saved.append(s)
-        try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: true)
+        await keep(s, add: true)
     }
 
-    /// «Deshacer» del aviso de guardar: sale de Mi lista y la carta vuelve arriba del mazo.
+    /// «Deshacer» del aviso de guardar: sale de donde se guardó y la carta vuelve arriba del mazo.
     public func undo(_ s: Suggestion) async {
         guard saved.contains(where: { $0.imdb == s.imdb }) else { return }
         saved.removeAll { $0.imdb == s.imdb }
         cards.removeAll { $0.imdb == s.imdb }
         cards.insert(s, at: 0)
-        try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: false)
+        await keep(s, add: false)
+    }
+
+    /// El nombre de la lista de Trakt donde caen las de la derecha (Fernando, 31 oct 2026).
+    public static let matchListName = "Tu match perfecto"
+    /// Las de la derecha van a «Tu match perfecto» de Trakt (con Trakt conectado); si no, a Mi lista.
+    public var savesToTrakt: Bool { services.trakt?.linked ?? false }
+    static let matchListKey = "match.trakt-list"
+
+    /// Con Trakt, a tu lista «Tu match perfecto» (se crea la primera vez y se recuerda su id); sin Trakt o si falla, a tu
+    /// destino de siempre (Mi lista).
+    private func keep(_ s: Suggestion, add: Bool) async {
+        if let trakt = services.trakt, trakt.linked, let list = try? await matchList(trakt),
+           (try? await trakt.setListItem(listID: list, imdb: s.imdb, series: s.kind == "series", add: add)) != nil {
+            await services.forYou.clearCache(["trakt:lists"])
+            return
+        }
+        try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: add)
+    }
+
+    /// El id de «Tu match perfecto»: el recordado si sigue en tus listas, una con ese nombre o una nueva.
+    func matchList(_ trakt: Trakt) async throws -> String {
+        let remembered = services.kv.data(Self.matchListKey).map { String(decoding: $0, as: UTF8.self) }
+        let lists = try await trakt.lists()
+        if let remembered, lists.contains(where: { $0.id == remembered }) { return remembered }
+        let found = lists.first { $0.name.compare(Self.matchListName, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }?.id
+        let id: String
+        if let found { id = found } else { id = try await trakt.createList(name: Self.matchListName).id }
+        services.kv.set(Self.matchListKey, data: Data(id.utf8))
+        return id
     }
 
     /// Descartar la de arriba (izquierda o ✕): no vuelve en un mes.

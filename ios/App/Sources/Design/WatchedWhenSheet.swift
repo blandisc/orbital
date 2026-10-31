@@ -87,11 +87,11 @@ struct WatchedWhenSheet: View {
                 Label("Se guarda en tu historial de Trakt", systemImage: "arrow.triangle.2.circlepath")
                     .recipe(.caption, color: DS.textMuted).frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, DS.Space.gutter)
-            .padding(.bottom, DS.Space.s4)
+            .dsSheetContent()
+            .animation(DS.Motion.base(reduceMotion), value: calendar)
+            .animation(DS.Motion.base(reduceMotion), value: asking)
         }
-        .dsSheetContent()
-        .presentationDetents(calendar ? [.large] : [.medium, .large])
+        .fittedScrollSheet()   // a la medida de lo que trae, sin aire muerto abajo (crece al abrir el calendario)
         .accessibilityElement(children: .contain)   // cada opción conserva su identificador
         .accessibilityIdentifier("watched-when")
     }

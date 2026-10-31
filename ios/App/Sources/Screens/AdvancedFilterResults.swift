@@ -108,7 +108,7 @@ struct FilterResultsView: View {
     /// Lo puesto, un cuadrito por filtro, con cómo quitarlo.
     private func squares(_ language: String) -> [Square] {
         let f = model.filter
-        let context = FilterContext(filter: f, platforms: model.platforms, studioLogos: [:], language: language)
+        let context = FilterContext(filter: f, platforms: model.platforms, language: language)
         var out: [Square] = []
         if let t = FilterText.format(f) {
             out.append(Square(id: "format", page: nil, symbol: KindGlyph.symbol(f.format == .movie ? "movie" : "series"), title: t) {

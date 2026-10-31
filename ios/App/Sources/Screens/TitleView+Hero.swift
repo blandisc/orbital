@@ -8,9 +8,13 @@ extension TitleView {
     /// Al deslizar se recoge como en Apple TV: se queda un poco atrás, se oscurece hacia el color del fondo con un degradado que
     /// sube desde abajo, se difumina al final; el logo se va antes. Con «Reducir movimiento», solo se oscurece y se desvanece.
     func hero(_ model: TitleModel) -> some View {
-        BleedArt(url: model.background ?? model.poster, title: model.title,
-                 aspect: heroAspect, collapse: Backdrop.tone(tint.colors, scheme: scheme) ?? DS.bg,
-                 fallback: model.background == nil ? nil : model.poster, tall: TallArtKey(imdb: model.metaID, kind: model.kind)) {
+        // El arte sube detrás del reloj y de la barra (como el Mosaico): mide lo de siempre más ese alto de arriba y se corre
+        // hacia arriba lo mismo, así lo de abajo («Ver», los datos) no se mueve.
+        let extra = scheme == .dark ? topInset : 0
+        let aspect = contentWidth > 0 && extra > 0 ? contentWidth / (contentWidth / heroAspect + extra) : heroAspect
+        return BleedArt(url: model.background ?? model.poster, title: model.title,
+                 aspect: aspect, collapse: Backdrop.tone(tint.colors, scheme: scheme) ?? DS.bg,
+                 fallback: model.background == nil ? nil : model.poster, tall: TallArtKey(imdb: model.metaID, kind: model.kind), fadesTop: false) {
             VStack(spacing: DS.Space.s2) {
                 TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, centered: true)
                     .containerRelativeFrame(.horizontal) { width, _ in width * DS.TitleAction.logoWidth }
@@ -21,7 +25,7 @@ extension TitleView {
             }
             .frame(maxWidth: .infinity)
         }
-        .ignoresSafeArea(edges: .top)
+        .padding(.top, -extra)
     }
 
     /// Bajo el arte, al centro, un bloque chico de datos en gris: un renglón con año · Serie/Película · géneros · duración y la

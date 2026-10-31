@@ -33,39 +33,33 @@ struct AdvancedFilterSheet: View {
     var body: some View {
         let model = env.advancedFilter
         let _ = model.track()
-        let collections = env.collections
-        let _ = collections.track()
-        let context = FilterContext(filter: model.filter, platforms: model.platforms, studioLogos: collections.studioLogos,
-                                    language: env.services.appSettings.uiLanguage)
+        let context = FilterContext(filter: model.filter, platforms: model.platforms, language: env.services.appSettings.uiLanguage)
         NavigationStack {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
                         formatBar(model)
                         grid(FilterPage.main, context, model)
-                        if more {
-                            PanelGroupTitle(title: "Más filtros")
-                            grid(FilterPage.more, context, model)
-                        }
-                        Button {
-                            withAnimation(DS.Motion.base(reduceMotion)) {
+                        FilterMoreRow(expanded: more, active: FilterPage.more.filter { FilterText.value($0, context) != nil }.count) {
+                            withAnimation(DS.Motion.spring(reduceMotion)) {
                                 more.toggle()
                                 if !more, let o = open, FilterPage.more.contains(o) { open = nil }
                             }
-                        } label: {
-                            Label(more ? "Ver menos" : "Ver más filtros", systemImage: more ? "chevron.up" : "chevron.down").recipe(.footnote, color: DS.text).fontWeight(.semibold)
                         }
-                        .buttonStyle(.borderless)
-                        .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
                         .accessibilityIdentifier("filter-more")
+                        if more {
+                            grid(FilterPage.more, context, model)
+                                .transition(.opacity.combined(with: .offset(y: -DS.Space.s3)))
+                        }
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     .padding(.bottom, DS.Space.s4)
                 }
                 .onChange(of: open) { _, page in
                     guard let page else { return }
-                    withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(page, anchor: .top) }
+                    withAnimation(DS.Motion.spring(reduceMotion)) { proxy.scrollTo(page, anchor: UnitPoint(x: 0.5, y: DS.Filter.scrollAnchor)) }
                 }
+                .sensoryFeedback(.selection, trigger: open)
             }
             .safeAreaInset(edge: .bottom) { actions(model) }
             .navigationTitle(model.filter.isEmpty ? Text("Filtros") : Text("Filtros · \(model.filter.activeCount)"))
@@ -74,7 +68,7 @@ struct AdvancedFilterSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     // Con un filtro abierto, lo cierra; si no, cierra el cajón.
                     Button("Listo") {
-                        if open != nil { withAnimation(DS.Motion.base(reduceMotion)) { open = nil } } else { dismiss() }
+                        if open != nil { withAnimation(DS.Motion.spring(reduceMotion)) { open = nil } } else { dismiss() }
                     }
                     .accessibilityIdentifier("filter-done")
                 }
@@ -144,15 +138,19 @@ struct AdvancedFilterSheet: View {
                     FilterPanel(notch: row.count == 1 ? 0.5 : index == 0 ? 0.25 : 0.75) {
                         FilterEditor(page: o, model: model, context: context)
                     }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .id(o)   // otro filtro: otro panel (el de antes se va, el nuevo baja)
+                    // Baja desde su mosaico: crece desde arriba y aparece; al cerrarse se recoge hacia arriba.
+                    .transition(.asymmetric(insertion: .scale(scale: DS.Filter.panelFrom, anchor: .top).combined(with: .opacity),
+                                            removal: .scale(scale: DS.Filter.panelFrom, anchor: .top).combined(with: .opacity)))
                 }
             }
         }
+        .animation(DS.Motion.spring(reduceMotion), value: open)   // lo de abajo se reacomoda con el mismo resorte
     }
 
     private func toggle(_ page: FilterPage, _ model: AdvancedFilterModel) {
         if page == .length { model.refreshClock() }
-        withAnimation(DS.Motion.base(reduceMotion)) { open = open == page ? nil : page }
+        withAnimation(DS.Motion.spring(reduceMotion)) { open = open == page ? nil : page }
     }
 
     private func actions(_ model: AdvancedFilterModel) -> some View {

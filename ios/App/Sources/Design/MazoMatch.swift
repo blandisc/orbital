@@ -111,7 +111,7 @@ struct MatchDeck: View {
                         .allowsHitTesting(top)
                         .gesture(top ? swipe(width: geo.size.width, s) : nil)
                         .onTapGesture { if top { onOpen(s) } }
-                        .accessibilityAction(named: Text("Guardar en Mi lista")) { onSave(s) }
+                        .accessibilityAction(named: Text("Guardar")) { onSave(s) }
                         .accessibilityAction(named: Text("Paso")) { onDiscard(s) }
                 }
             }

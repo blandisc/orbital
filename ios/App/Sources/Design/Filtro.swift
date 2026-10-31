@@ -48,11 +48,10 @@ enum FilterPage: String, Hashable, CaseIterable, Identifiable {
     }
 }
 
-/// Lo que los mosaicos necesitan para dibujarse: el filtro, tus plataformas, los logos de los estudios y el idioma.
+/// Lo que los mosaicos necesitan para dibujarse: el filtro, tus plataformas y el idioma.
 struct FilterContext {
     var filter: AdvancedFilter
     var platforms: [AdvancedFilterModel.Platform] = []
-    var studioLogos: [Int: String] = [:]
     var language = "es"
 }
 
@@ -171,9 +170,14 @@ struct FilterArt: View {
             case .era where f.years != nil || f.spread:
                 MiniRuler(years: f.years ?? AdvancedFilter.firstYear...f.currentYear, last: f.currentYear)
             case .rating where f.minRating != nil:
-                HStack(spacing: DS.Space.s1) {
-                    Image("rating-tmdb").resizable().scaledToFit().frame(height: height * 0.55)
-                    Image(systemName: "star.fill").font(mini ? DS.TextRecipe.caption.font : DS.TextRecipe.secondary.font).foregroundStyle(DS.Rating.filled)
+                // El número manda (en el verde de Calificación); el logo de TMDB, chico, dice de dónde sale.
+                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
+                    Image(systemName: "star.fill").font(mini ? DS.TextRecipe.caption.font : DS.TextRecipe.footnote.font).foregroundStyle(page.hue)
+                    Text(verbatim: FilterText.number(f.minRating ?? 0)).font((mini ? DS.TextRecipe.secondary : DS.TextRecipe.title).font.weight(.bold)).monospacedDigit().foregroundStyle(page.hue)
+                    if !mini {
+                        Spacer(minLength: 0)
+                        Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityHidden(true)
+                    }
                 }
             case .fame:
                 MiniQuadrant(selected: f.fame)
@@ -192,7 +196,7 @@ struct FilterArt: View {
             case .studio where !f.studios.isEmpty:
                 HStack(spacing: DS.Space.s2) {
                     ForEach(Tmdb.studios.filter { f.studios.contains($0.id) }.prefix(2), id: \.id) { s in
-                        StudioLogo(name: s.name, logo: context.studioLogos[s.id])
+                        StudioLogo(id: s.id, name: s.name)
                     }
                 }
             case .length where f.length != .any:
@@ -300,34 +304,22 @@ struct MiniQuadrant: View {
     }
 }
 
-/// El logo de un estudio, en blanco (como Colecciones); sin logo, su nombre.
+/// El logo real de un estudio (viene con la app, `Assets/Studios`, sacado de TMDB): de un solo color, el del texto (blanco en
+/// oscuro, negro en claro). Sin logo, su nombre.
 struct StudioLogo: View {
+    let id: Int
     let name: String
-    let logo: String?
-    /// Sin logo: el ícono de estudio en vez del nombre (cuando el nombre ya va abajo).
-    var symbolFallback = false
-    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         Group {
-            if let url = logo.flatMap(URL.init(string:)) {
-                RemoteImage(url: url, maxPoints: DS.Collections.studioLogoWidth) { phase in
-                    // En blanco sobre oscuro y en negro sobre claro (el logo de TMDB viene a color).
-                    if case .success(let image) = phase {
-                        if scheme == .dark { image.resizable().scaledToFit().brightness(-1).colorInvert() } else { image.resizable().scaledToFit().brightness(-1) }
-                    } else { nameText }
-                }
+            if UIImage(named: "studio-\(id)") != nil {
+                Image("studio-\(id)").renderingMode(.template).resizable().scaledToFit().foregroundStyle(DS.text)
             } else {
-                nameText
+                Text(verbatim: name).recipe(.caption, color: DS.text).fontWeight(.bold).lineLimit(1)
             }
         }
         .frame(maxHeight: DS.Filter.studioLogoHeight)
         .accessibilityLabel(Text(verbatim: name))
-    }
-
-    @ViewBuilder private var nameText: some View {
-        if symbolFallback { Image(systemName: "building.2").font(DS.TextRecipe.title.font).foregroundStyle(DS.textMuted) }
-        else { Text(verbatim: name).recipe(.caption, color: DS.text).fontWeight(.bold).lineLimit(1) }
     }
 }
 
@@ -352,6 +344,45 @@ struct FilterPanel<Content: View>: View {
                 .frame(height: DS.Filter.notch)
                 .accessibilityHidden(true)
             }
+    }
+}
+
+/// «Ver más filtros»: una fila con los íconos de Origen, Premios y Estudios en su color y cuántos tienen algo; al abrirla dice
+/// «Menos filtros». Es parte del cajón, no un enlace suelto.
+struct FilterMoreRow: View {
+    let expanded: Bool
+    /// Cuántos de los de «Ver más» tienen algo puesto.
+    let active: Int
+    let toggle: () -> Void
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+        Button(action: toggle) {
+            HStack(spacing: DS.Space.s3) {
+                HStack(spacing: -DS.Space.s1) {
+                    ForEach(FilterPage.more) { page in
+                        Image(systemName: page.symbol).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(page.hue)
+                            .frame(width: DS.Filter.moreIcon, height: DS.Filter.moreIcon)
+                            .background(DS.surfaceRaised, in: Circle())
+                            .overlay(Circle().strokeBorder(DS.surface, lineWidth: DS.Size.hairline * 3))
+                    }
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    (expanded ? Text("Menos filtros") : Text("Más filtros")).recipe(.footnote, color: DS.text).fontWeight(.semibold)
+                    (active > 0 ? Text("\(active) con algo puesto") : Text("Origen, premios y estudios")).recipe(.caption, color: DS.textMuted)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                    .rotationEffect(.degrees(expanded ? 180 : 0))
+            }
+            .padding(.horizontal, DS.Space.s3)
+            .frame(maxWidth: .infinity, minHeight: DS.Filter.moreRow)
+            .background(DS.surface, in: shape)
+            .contentShape(shape)
+        }
+        .buttonStyle(.plain)
+        .pointerHover(.highlight)
+        .accessibilityLabel(expanded ? Text("Menos filtros") : Text("Más filtros: origen, premios y estudios"))
     }
 }
 

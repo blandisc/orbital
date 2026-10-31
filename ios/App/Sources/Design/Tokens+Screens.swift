@@ -75,6 +75,8 @@ extension DS {
     /// poco atrás, se encoge apenas, se oscurece hacia el color del fondo con un degradado que sube desde abajo, se difumina
     /// al final y se desvanece; el logo y la frase se van antes (no se quedan detrás de los datos).
     enum TitleHero {
+        /// El velo de arriba de la ficha (el arte llega sólido hasta arriba): cubre el reloj y la barra.
+        static let topVeil: CGFloat = 150
         /// Parallax (parte del desplazamiento que se queda atrás), cuánto se encoge y el desenfoque máximo (desde qué progreso).
         static let parallax: Double = 0.4, shrink: Double = 0.05, blur: Double = 10, blurFrom: Double = 0.3
         /// El velo parejo ya recogido, a qué progreso el degradado de abajo cubre todo y desde cuándo se desvanece el arte.
@@ -95,8 +97,9 @@ extension DS {
     }
 
     enum TitleAction {
-        /// El nombre en la barra no pasa por debajo del ‹ ni de los botones de la derecha.
-        static let barTitleInset: CGFloat = 110
+        /// El nombre en la barra, entre ‹ y los botones de la derecha: lo que ocupa ‹ y lo que ocupa cada botón de la cápsula
+        /// (el nombre ya no se mete debajo de ellos; 31 oct 2026).
+        static let barTitleLeading: CGFloat = 72, barButton: CGFloat = 50, barGroupPadding: CGFloat = 28
         /// El ancho máximo de la ficha en ventanas anchas (iPad, Mac): a todo lo ancho, en horizontal el arte llenaba la
         /// pantalla y las acciones quedaban abajo, fuera de la vista. El iPhone (440 pt como mucho) no lo alcanza.
         static let readableWidth: CGFloat = 720
@@ -235,51 +238,6 @@ extension DS {
         static let momentShine = 0.55, momentShineWidth: CGFloat = 0.45, momentShineTilt: Double = 18
         static let momentEmblem: CGFloat = 56, momentEmblemStart: CGFloat = 0.9, momentGlow = 0.6, momentBar: CGFloat = 120
         static let momentBeat: Duration = .milliseconds(350), momentReveal = 0.7, momentSpring = 0.45, momentBounce = 0.6
-    }
-
-    /// El filtro avanzado (`FilterTile`, `FilterChoice`, `FameQuadrant`): el alto de un filtro en el cajón y de una opción
-    /// grande, el velo turquesa de lo elegido (la selección, como los ánimos de «¿Qué vemos hoy?») y el póster de resultados.
-    /// «¿Cuándo la viste?» (`WatchedWhenSheet`): el póster de arriba, el ancho del ícono de cada opción y su alto.
-    enum Watched {
-        static let poster: CGFloat = 64, icon: CGFloat = 28, row: CGFloat = 60
-    }
-
-    enum Filter {
-        static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64, eraTile: CGFloat = 72
-        /// La puerta A de Buscar (Fernando, 31 oct 2026): los mismos mosaicos del cajón en chiquito, tres por renglón.
-        static let miniTileHeight: CGFloat = 70
-        /// El dibujo arriba de cada mosaico (regla, logos, cuadro) en el cajón y en la puerta.
-        static let artHeight: CGFloat = 30, miniArtHeight: CGFloat = 20
-        /// La flechita del panel que se abre bajo su mosaico.
-        static let notch: CGFloat = 14
-        /// La regla de años: su alto, la ventana, las orillas que se arrastran y las rayitas (año, cada 5, cada 10).
-        static let rulerHeight: CGFloat = 64, rulerWindow: CGFloat = 46, handleWidth: CGFloat = 12, handleHeight: CGFloat = 30
-        static let tickYear: CGFloat = 8, tickFive: CGFloat = 14, tickDecade: CGFloat = 24, rulerBase: CGFloat = 16
-        static let decadeButton: CGFloat = 40
-        /// Qué tan lejos llega el brillo de la ventana de Época.
-        static let glowRadius: CGFloat = 10
-        /// El color de cada filtro (Fernando, 31 oct 2026, dirección A): solo en detalles (el ícono, un puntito cuando tiene
-        /// algo y el control abierto); lo elegido sigue en blanco. Claros sobre oscuro y más intensos sobre el papel.
-        static let coral = DS.adaptive(dark: "#ff7a6b", light: "#c9432f"), gold = DS.adaptive(dark: "#f4c24d", light: "#a86f00")
-        static let lilac = DS.adaptive(dark: "#a99cff", light: "#5b4bd6"), mint = DS.adaptive(dark: "#7ee0a1", light: "#1f8a4c")
-        static let rose = DS.adaptive(dark: "#ff8fb1", light: "#c43c6c"), sky = DS.adaptive(dark: "#7cc4ff", light: "#1f6fb8")
-        /// El velo y el brillo dorados de la ventana de Época.
-        static let goldFill = gold.opacity(0.16), goldGlow = gold.opacity(0.35)   // ds-exception: velo y brillo del dorado de la regla
-        static let dot: CGFloat = 7
-        static let tickFaint = DS.text.opacity(0.22), tickMid = DS.text.opacity(0.36), tickStrong = DS.text.opacity(0.62)   // ds-exception: las rayitas de la regla, de tenue a firme
-        /// Un premio (su estatuilla), un estudio (su logo) y una bandera en el cajón.
-        static let awardIcon: CGFloat = 40, miniAwardIcon: CGFloat = 18, studioLogoHeight: CGFloat = 24, logoTile: CGFloat = 64
-        /// Los cuadritos de lo filtrado arriba de los resultados.
-        static let summarySquare: CGFloat = 64
-        /// La hora de «Que acabe antes de las…»: de las 8 pm a las 3 am, en cuartos de hora.
-        static let endsByRange: ClosedRange<Double> = 20...27, endsByStep = 0.25
-        /// Lo elegido, en el color del texto (Fernando, 30 oct 2026: lo elegido siempre en blanco, nunca turquesa ni azul).
-        static let selectedFill = DS.text.opacity(0.12)   // ds-exception: el velo de la selección (el texto al 12 %)
-        static let resultWidth: CGFloat = 104
-        /// Las pestañas de texto de `DSKindFilter(tabs:)`: la marca turquesa bajo la elegida.
-        static let tabMark: CGFloat = 18, tabMarkHeight: CGFloat = 3
-        /// La altura corta del cajón (parte de la pantalla) y desde qué alto de pantalla abre de una vez en grande.
-        static let shortFraction: CGFloat = 0.74, shortScreen: CGFloat = 700
     }
 
     /// Calificar como en Trakt (`RatingStars`, `RatingReminder`): las estrellas en ámbar (el color del porqué de las portadas,

@@ -160,9 +160,13 @@ struct FilterEditor: View {
     private var rating: some View {
         let value = Binding(get: { filter.minRating ?? 0 }, set: { v in edit { $0.minRating = v < 1 ? nil : v } })
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(spacing: DS.Space.s2) {
-                Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.studioLogoHeight).accessibilityHidden(true)
-                (filter.minRating.map { Text("\(FilterText.number($0)) o más") } ?? Text("Cualquiera")).recipe(.title).monospacedDigit()
+            HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                Image(systemName: "star.fill").font(DS.TextRecipe.section.font).foregroundStyle(page.hue).accessibilityHidden(true)
+                (filter.minRating.map { Text(verbatim: FilterText.number($0)) } ?? Text("Cualquiera")).recipe(.title, color: filter.minRating == nil ? DS.textMuted : DS.text).monospacedDigit()
+                    .contentTransition(.numericText())
+                if filter.minRating != nil { Text("o más").recipe(.footnote, color: DS.textMuted) }
+                Spacer(minLength: 0)
+                Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityHidden(true)
             }
             Slider(value: value, in: 0...9, step: 0.5) { Text("Calificación mínima") }
                 .tint(DS.Filter.mint)
@@ -233,10 +237,9 @@ struct FilterEditor: View {
             ForEach(Tmdb.studios, id: \.id) { s in
                 FilterLogoChoice(title: Text(verbatim: s.name), selected: filter.studios.contains(s.id)) {
                     edit { $0.studios.formSymmetricDifference([s.id]) }
-                } logo: { StudioLogo(name: s.name, logo: context.studioLogos[s.id], symbolFallback: true) }
+                } logo: { StudioLogo(id: s.id, name: s.name) }
                 .accessibilityIdentifier("filter-studio-\(s.id)")
             }
         }
-        .task { for s in Tmdb.studios { await env.collections.loadStudioLogo(s.id) } }
     }
 }

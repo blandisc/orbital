@@ -219,7 +219,7 @@ final class NewFlowsRegressionUITests: XCTestCase {
         for _ in 0..<6 where !(season.exists && season.isHittable) { app.swipeDown(velocity: .slow) }
         XCTAssertTrue(season.waitForExistence(timeout: 10))
         season.tap()
-        app.buttons["Marcar la temporada como vista"].tap()
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Solo la temporada")).firstMatch.tap()
         XCTAssertTrue(app.buttons["watched-release"].waitForExistence(timeout: 10), "la temporada con «Cuando salió cada episodio»")
         shot("temporada-cuando")
     }
