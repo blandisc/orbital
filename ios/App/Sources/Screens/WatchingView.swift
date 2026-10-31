@@ -100,8 +100,8 @@ struct WatchingView: View {
             ArtVeil(at: DS.Watching.veilFrom, strength: .deep)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 // Solo tus horas en azul (Fernando, 31 oct 2026); el periodo, en el gris del arte.
-                periodPhrase(s.period).recipe(.footnote, color: DS.onArtSecondary).fontWeight(.semibold).lineLimit(1)
-                Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.orbitalBlue)
+                periodPhrase(s.period).recipe(.label, color: DS.onArtSecondary).lineLimit(1)
+                Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.stat.font).foregroundStyle(DS.orbitalBlue)
                     .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
                 heroFacts(s).recipe(.footnote, color: DS.onArtSecondary).lineLimit(2)
             }
@@ -180,7 +180,7 @@ struct WatchingView: View {
                         .accessibilityIdentifier("watching-rated-carousel")
                 }
                 WatchingBars(values: counts, labels: (1...5).map { "\($0)★" }, highlighted: star - 1) { i in
-                    withAnimation(DS.Motion.base(false)) { pickedStars = i + 1 }
+                    withAnimation(DS.Motion.fade) { pickedStars = i + 1 }
                 }
                 .accessibilityIdentifier("watching-rating-bars")
                 Text("Tu promedio: \(String(format: "%.1f", all.map { RatingScale.stars(trakt: $0) }.reduce(0, +) / Double(all.count))) estrellas")

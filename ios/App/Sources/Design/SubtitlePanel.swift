@@ -26,7 +26,7 @@ struct SubtitleVersionRow: View {
                 Image(systemName: selected ? "largecircle.fill.circle" : "circle")
                     .font(DS.TextRecipe.secondary.font).foregroundStyle(selected ? DS.text : DS.textFaint)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(verbatim: title).recipe(.footnote, color: DS.text).fontWeight(selected ? .semibold : .regular).lineLimit(2)
+                    Text(verbatim: title).recipe(selected ? .label : .footnote, color: DS.text).lineLimit(2)
                     if let detail, !detail.isEmpty { Text(verbatim: detail).recipe(.caption, color: DS.textFaint).lineLimit(1).truncationMode(.middle) }
                     HStack(spacing: DS.Space.s1) {
                         if fromVideo { DSChip(text: "Del video") }
@@ -66,7 +66,7 @@ struct SubtitleButton: View {
             if loading { ProgressView().tint(DS.text) }
             else {
                 // Idioma y subtítulos (el botón cambia los dos): antes «text.bubble», que solo decía subtítulos.
-                Image(systemName: code == nil ? "character.bubble" : "character.bubble.fill").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+                Image(systemName: code == nil ? "character.bubble" : "character.bubble.fill").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
                     .contentTransition(.symbolEffect(.replace))
             }
         }
@@ -243,7 +243,7 @@ struct SubtitleDock: View {
                         ForEach(languages) { l in pill(Text.flagged(l.title), selected: l.selected, unavailable: l.unavailable) { pickLanguage(l.id) } }
                     }
                     Button(action: otherLanguage) {
-                        Image(systemName: "magnifyingglass").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                        Image(systemName: "magnifyingglass").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
                             .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                             .overlay(Circle().strokeBorder(DS.hairline))
                             .contentShape(Circle())
@@ -289,10 +289,10 @@ struct SubtitleDock: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             Button { open = open == id ? nil : id } label: {
                 HStack(spacing: DS.Space.s2) {
-                    Text(title).recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                    Text(title).recipe(.labelLarge, color: DS.text)
                     Spacer(minLength: DS.Space.s2)
                     Text(verbatim: value).recipe(.footnote).lineLimit(1)
-                    Image(systemName: open == id ? "chevron.up" : "chevron.down").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                    Image(systemName: open == id ? "chevron.up" : "chevron.down").font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
                 }
                 .frame(minHeight: DS.Size.touchTarget)
                 .contentShape(Rectangle())
@@ -312,10 +312,10 @@ struct SubtitleDock: View {
         if !videoVersion.isEmpty {
             Button { openVersion?() } label: {
                 HStack(spacing: DS.Space.s2) {
-                    Text("Versión").recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                    Text("Versión").recipe(.labelLarge, color: DS.text)
                     Spacer(minLength: DS.Space.s2)
                     Text(verbatim: videoVersion).recipe(.footnote).lineLimit(1)
-                    if openVersion != nil { Image(systemName: "chevron.right").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted) }
+                    if openVersion != nil { Image(systemName: "chevron.right").font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted) }
                 }
                 .padding(.horizontal, DS.Space.s3)
                 .frame(minHeight: DS.Size.touchTarget)
@@ -333,7 +333,7 @@ struct SubtitleDock: View {
     private func otherPill(_ v: Language) -> some View {
         Button { pickVersion(v.id) } label: {
             VStack(alignment: .leading, spacing: 0) {
-                Text.flagged(v.title).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                Text.flagged(v.title).font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
                 if let detail = v.detail { Text(verbatim: detail).recipe(.caption, color: v.guessed ? DS.warning : DS.primary) }
             }
             .lineLimit(1).fixedSize()
@@ -355,13 +355,13 @@ struct SubtitleDock: View {
             Button(action: allVersions) {
                 VStack(spacing: DS.Space.s1) {
                     HStack(spacing: DS.Space.s1) {
-                        Text.flagged(version.title).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                        Text.flagged(version.title).recipe(.labelLarge, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                         if loading { ProgressView().controlSize(.mini) }
                     }
                     HStack(spacing: DS.Space.s1) {
                         if let badge = version.badge {
-                            Text(verbatim: badge).font(DS.TextRecipe.caption.font.weight(.bold)).lineLimit(1)
-                                .foregroundStyle(version.strong ? DS.onPrimary : DS.text)
+                            Text(verbatim: badge).font(DS.TextRecipe.badge.font).lineLimit(1)
+                                .foregroundStyle(version.strong ? DS.onSuccess : DS.text)
                                 .padding(.horizontal, DS.Space.s1)
                                 .background(version.strong ? DS.success : DS.fillStrong, in: RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
                         }
@@ -387,7 +387,7 @@ struct SubtitleDock: View {
             capsule(Text("− Antes"), label: "Subtítulos antes") { nudge(-PlayerModel.subtitleStep) }
             Button(action: resetDelay) {
                 (value == 0 ? Text("A tiempo") : Text(verbatim: String(format: "%+.1f s", value)))
-                    .recipe(.footnote, color: DS.text).fontWeight(.semibold).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                    .recipe(.label, color: DS.text).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                     .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
             }
             .buttonStyle(.plain)
@@ -400,7 +400,7 @@ struct SubtitleDock: View {
 
     private func syncButton(_ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text("Sincronizar con una línea").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+            Text("Sincronizar con una línea").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
                 .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 .padding(.horizontal, DS.Space.s3)
                 .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
@@ -416,7 +416,7 @@ struct SubtitleDock: View {
             Text("Tamaño").recipe(.footnote).fixedSize()
             if !compact { Spacer(minLength: DS.Space.s2) }
             stepButton("minus", label: "Más chico", enabled: smaller != nil) { smaller?() }
-            Text(verbatim: sizeName).recipe(.footnote, color: DS.text).fontWeight(.semibold).fixedSize()
+            Text(verbatim: sizeName).recipe(.label, color: DS.text).fixedSize()
                 .frame(minWidth: DS.PlayerPanel.sizeValue)
             stepButton("plus", label: "Más grande", enabled: larger != nil) { larger?() }
         }
@@ -429,11 +429,11 @@ struct SubtitleDock: View {
             switch check {
             case .inSync:
                 if !compact {
-                    Text("¿Va a tiempo?").recipe(.secondary, color: DS.onSolidPrimary).fontWeight(.bold)
+                    Text("¿Va a tiempo?").recipe(.labelLarge, color: DS.onSolidPrimary)
                     Text("Mira unas frases. Si las letras no van con la voz, prueba otra.").recipe(.caption, color: DS.onSolidPrimary)
                 }
                 HStack(spacing: DS.Space.s2) {
-                    if compact { Text("¿Va a tiempo?").recipe(.footnote, color: DS.onSolidPrimary).fontWeight(.bold).fixedSize() }
+                    if compact { Text("¿Va a tiempo?").recipe(.label, color: DS.onSolidPrimary).fixedSize() }
                     answer(Text("Sí, va bien"), primary: true, action: confirm).accessibilityIdentifier("subtitle-dock-in-sync")
                     if let tryAnother { answer(Text("Probar otra"), primary: false, action: tryAnother).accessibilityIdentifier("subtitle-dock-try-another") }
                 }
@@ -452,7 +452,7 @@ struct SubtitleDock: View {
 
     private func answer(_ title: Text, primary: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            title.font(DS.TextRecipe.footnote.font.weight(.semibold)).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            title.font(DS.TextRecipe.label.font).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 .foregroundStyle(primary ? DS.solidPrimary : DS.onSolidPrimary)
                 .padding(.horizontal, DS.Space.s3)
                 .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
@@ -474,14 +474,14 @@ struct SubtitleDock: View {
     // MARK: piezas
     private var doneButton: some View {
         // Chico: es una salida, no la acción del panel (antes, del tamaño de un botón principal, pesaba más que lo que cierra).
-        Button(action: done) { Text("Listo").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
+        Button(action: done) { Text("Listo").font(DS.TextRecipe.label.font) }
             .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
             .accessibilityIdentifier("subtitle-dock-done")
     }
 
     private func pill(_ title: Text, selected: Bool, unavailable: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            title.font(DS.TextRecipe.footnote.font.weight(.semibold)).lineLimit(1).fixedSize()
+            title.font(DS.TextRecipe.label.font).lineLimit(1).fixedSize()
                 .strikethrough(unavailable && !selected)
                 .foregroundStyle(selected ? DS.onPrimary : unavailable ? DS.textFaint : DS.text)
                 // Cada cápsula mide lo de su nombre más aire a los lados (antes todas iguales: «Apagados» quedaba justo o se
@@ -498,7 +498,7 @@ struct SubtitleDock: View {
 
     private func capsule(_ title: Text, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            title.font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1).fixedSize()
+            title.font(DS.TextRecipe.label.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
                 .padding(.horizontal, DS.Space.s3)
                 .frame(minHeight: DS.Size.touchTarget)
                 .background(DS.fillStrong, in: Capsule())
@@ -510,7 +510,7 @@ struct SubtitleDock: View {
 
     private func stepButton(_ symbol: String, label: LocalizedStringKey, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font.weight(.bold)).foregroundStyle(DS.text)
+            Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
                 .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                 .background(DS.fillStrong, in: Circle())
         }

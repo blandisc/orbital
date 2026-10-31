@@ -129,7 +129,7 @@ struct ListsView: View {
                         }
                         .id("ahora")   // `-demo-shelf ahora` baja hasta aquí
                     }
-                    if walls.isEmpty, model.shelves.isEmpty, model.isLoading { FeedSkeleton() }   // la primera vez, mientras llega
+                    if walls.isEmpty, model.shelves.isEmpty, model.isLoading { HeroSkeleton() }   // la primera vez, mientras llega
                     VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                     ForEach(generalShelves) { plan in shelf(plan).id(plan.id).perfTag("paraTi.shelf") }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.

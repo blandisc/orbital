@@ -38,9 +38,9 @@ struct MiMediaView<Top: View>: View {
                         VStack(alignment: .leading, spacing: DS.Space.s2) {
                             DSNotice(verbatim: env.message(error), tone: .warn)
                             if error.localizedCaseInsensitiveContains("caduc") || error.localizedCaseInsensitiveContains("sesión") {
-                                NavigationLink { OneDriveSettings() } label: { Label("Volver a conectar", systemImage: "cloud") }.buttonStyle(.glass)
+                                NavigationLink { OneDriveSettings() } label: { Label("Volver a conectar", systemImage: "cloud") }.dsGlassButton()
                             } else {
-                                Button("Reintentar", systemImage: "arrow.clockwise") { Task { await model.rescan() } }.buttonStyle(.glass)
+                                Button("Reintentar", systemImage: "arrow.clockwise") { Task { await model.rescan() } }.dsGlassButton()
                             }
                         }
                         .padding(.horizontal, DS.Space.gutter)
@@ -153,7 +153,7 @@ struct MiMediaView<Top: View>: View {
                     Button("Corregir") { fixing = file }.dsSecondaryButton()
                 }
                 .padding(DS.Space.s3)
-                .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                .dsCard()
             }
         }
         .padding(.horizontal, DS.Space.gutter)
@@ -298,7 +298,7 @@ struct MiMediaTitleView: View {
                     }
                 }
                 .padding(DS.Space.s3)
-                .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                .dsCard()
             }
             if t.entries.count > 1 { Text("«Ver» usa la mejor; «Descargar», la de 1080p.").recipe(.caption) }
         }
@@ -374,7 +374,7 @@ struct MiMediaTitleView: View {
                 Image(systemName: "chevron.right").foregroundStyle(DS.textFaint)
             }
             .padding(DS.Space.s3)
-            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .dsCard()
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

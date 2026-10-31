@@ -20,12 +20,12 @@ struct MatchCard: View {
             ArtVeil(at: DS.Match.veilFrom)   // más arriba que de costumbre: el porqué, el nombre, los datos y los géneros
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text(badgeKey(suggestion.reason)).recipe(.eyebrow, color: DS.eyebrow).lineLimit(1)
-                Text(verbatim: suggestion.title).font(DS.TextRecipe.title.font.weight(.bold)).foregroundStyle(DS.paper).lineLimit(2)
+                Text(verbatim: suggestion.title).font(DS.TextRecipe.title.font).foregroundStyle(DS.paper).lineLimit(2)
                 facts.recipe(.footnote, color: DS.onArtSecondary).lineLimit(1)
                 if !genres.isEmpty {
                     HStack(spacing: DS.Space.s1) {
                         ForEach(genres.prefix(DS.Match.genres), id: \.self) { g in
-                            Text(verbatim: g).recipe(.caption, color: DS.paper).fontWeight(.semibold).lineLimit(1)
+                            Text(verbatim: g).recipe(.badge, color: DS.paper).lineLimit(1)
                                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1 / 2)
                                 .background(DS.paper.opacity(DS.Match.chipFill), in: Capsule())
                         }
@@ -39,7 +39,7 @@ struct MatchCard: View {
             if let rating = suggestion.traktRating, rating > 0 {
                 HStack(spacing: DS.Space.s1) {
                     Image("rating-trakt").resizable().scaledToFit().frame(width: DS.Match.ratingLogo, height: DS.Match.ratingLogo)
-                    Text(verbatim: "\(Int((rating * 10).rounded())) %").recipe(.footnote, color: DS.paper).fontWeight(.heavy)
+                    Text(verbatim: "\(Int((rating * 10).rounded())) %").recipe(.label, color: DS.paper)
                 }
                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
                 .background(DS.badgeBackground, in: Capsule())
@@ -49,7 +49,7 @@ struct MatchCard: View {
         }
         .overlay(alignment: lean > 0 ? .topLeading : .topTrailing) {
             if abs(lean) > DS.Match.hintFrom {
-                Text(lean > 0 ? "MI LISTA" : "PASO").font(DS.TextRecipe.section.font.weight(.black)).tracking(DS.Match.stampTracking)
+                Text(lean > 0 ? "Mi lista" : "Paso").textCase(.uppercase).font(DS.TextRecipe.section.font).tracking(DS.Match.stampTracking)
                     .foregroundStyle(lean > 0 ? DS.brandMoon : DS.paper)
                     .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
                     .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)

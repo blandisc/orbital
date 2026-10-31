@@ -3,17 +3,18 @@ import SwiftUI
 /// Arriba de Inicio: el logotipo de la app como en la TV y la computadora (el planeta, «orbital» y su luna), en lugar del
 /// saludo. Al abrir, el anillo se dibuja y la luna cae en su lugar.
 struct AppMark: View {
-    @Environment(AppEnvironment.self) private var env
+    /// Opcional a propósito: va en la barra de arriba (ver `ToolbarEnvironmentTests`).
+    @Environment(AppEnvironment.self) private var env: AppEnvironment?
 
     var body: some View {
         let compact = WindowMetrics.size.width < DS.Size.compactWidth
-        let ui = env.ui
+        let ui = env?.ui
         OrbitalWordmark(size: compact ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
             .foregroundStyle(DS.text).fixedSize()
             // La entrada de la app termina justo aquí (sin el planeta, en un iPhone angosto, ya no calza: ahí se desvanece).
-            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if !compact { ui.homeLogoFrame = $0 } }
-            .onDisappear { ui.homeLogoFrame = nil }
-            .opacity(ui.splashing ? 0 : 1)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if !compact, let ui { ui.homeLogoFrame = $0 } }
+            .onDisappear { ui?.homeLogoFrame = nil }
+            .opacity(ui?.splashing == true ? 0 : 1)
     }
 }
 
@@ -22,7 +23,7 @@ struct AppMark: View {
 struct ScreenMark: View {
     let title: Text
     var body: some View {
-        title.font(DS.TextRecipe.title.font.weight(.heavy)).foregroundStyle(DS.text).lineLimit(1).fixedSize()
+        title.font(DS.TextRecipe.title.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
             .accessibilityAddTraits(.isHeader)
     }
 }
@@ -75,7 +76,7 @@ struct CollectionIconEmblem: View {
                 .background { Circle().fill(DS.bg).opacity(DS.Collections.iconBackdrop).blur(radius: DS.Collections.glow).scaleEffect(DS.Collections.iconBackdropScale) }
                 .shadow(color: glow ?? .clear, radius: DS.Collections.glow)
             if glow == nil {
-                Text(verbatim: name).recipe(.caption, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                Text(verbatim: name).recipe(.badge, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
         }
         .shadow(DS.Elevation.high.drop(0))

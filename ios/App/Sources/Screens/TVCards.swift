@@ -23,7 +23,7 @@ struct NowPlayingCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv")
-                .font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                .font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect, whole: true).frame(width: DS.Poster.nowPlayingWidth)
                     .remoteMorph("poster", in: morph)
@@ -33,7 +33,7 @@ struct NowPlayingCard: View {
             controls
         }
         .padding(framed ? DS.Space.s3 : 0)
-        .background(framed ? DS.fill : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .background(framed ? DS.fill : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .accessibilityElement(children: .contain)
     }
 
@@ -42,10 +42,10 @@ struct NowPlayingCard: View {
             if now.live {
                 HStack(spacing: DS.Space.s1) {
                     Text("●").font(DS.TextRecipe.caption.font).foregroundStyle(DS.live)
-                    Text("En vivo").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.live)
+                    Text("En vivo").font(DS.TextRecipe.badge.font).foregroundStyle(DS.live)
                 }
             }
-            Text(now.live ? (now.channel ?? now.title) : now.title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
+            Text(now.live ? (now.channel ?? now.title) : now.title).font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text).lineLimit(1)
                 .remoteMorph("title", in: morph)
             if now.live {
                 if let category = now.category, !category.isEmpty {
@@ -115,7 +115,7 @@ struct NowPlayingCard: View {
             if labeled, prominent {
                 Button { tapAndRun(action) } label: { Label(text, systemImage: symbol) }.dsPrimaryButton()
             } else if labeled {
-                Button { tapAndRun(action) } label: { Label(text, systemImage: symbol) }.buttonStyle(.glass)
+                Button { tapAndRun(action) } label: { Label(text, systemImage: symbol) }.dsGlassButton()
             } else {
                 DSIconButton(symbol: symbol, label: text, prominent: prominent) { tapAndRun(action) }.frame(maxWidth: .infinity)
             }
@@ -155,7 +155,7 @@ struct FromTVCard: View {
                     HStack(alignment: .firstTextBaseline) {
                         Label { eyebrow } icon: { Image(systemName: "tv") }.recipe(.eyebrow, color: DS.onArtSecondary).lineLimit(1)   // ds-exception: rótulo de estado sobre el arte («En la tele»), no un porqué
                         Spacer(minLength: DS.Space.s2)
-                        Button(action: onDismiss) { Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
+                        Button(action: onDismiss) { Image(systemName: "xmark").font(DS.TextRecipe.label.font) }
                             .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.small)
                             .accessibilityLabel(Text("Quitar"))
                     }
@@ -164,7 +164,7 @@ struct FromTVCard: View {
                     DataLine(parts: [detail], color: DS.onArtSecondary)
                     HeroActions {
                         Button(action: onWatch) { Label("Ver", systemImage: "play.fill").lineLimit(1) }.dsArtButton(colors).controlSize(.large)
-                        Button(action: onDownload) { Label("Descargar", systemImage: "arrow.down.circle").lineLimit(1) }.buttonStyle(.glass).controlSize(.large)
+                        Button(action: onDownload) { Label("Descargar", systemImage: "arrow.down.circle").lineLimit(1) }.dsGlassButton().controlSize(.large)
                     }
                     .padding(.top, DS.Space.s1)
                 }

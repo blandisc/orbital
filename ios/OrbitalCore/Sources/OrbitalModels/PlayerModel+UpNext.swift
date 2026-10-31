@@ -8,7 +8,7 @@ extension PlayerModel {
         guard let videoID = request?.videoID, segmentsFor != videoID else { return }
         segmentsFor = videoID
         segments = nil
-        let fetch = skipSegments
+        guard let fetch = skipSegments else { return }   // sin quien los dé: no hay tramos que saltar
         Task { [weak self] in
             // Un tropiezo de red (o el límite de 6 s) no deja el video sin «Saltar intro»: se pide otra vez antes de rendirse.
             var found = await fetch(videoID)
@@ -138,7 +138,7 @@ extension PlayerModel {
         userTouched()
         var local: LocalEpisode?
         if base.localFile != nil {
-            guard let found = await localEpisode(base.metaID, videoID) else { return }
+            guard let found = await findLocalEpisode(base.metaID, videoID) else { return }
             local = found
         }
         advancing = true
@@ -164,7 +164,7 @@ extension PlayerModel {
     public func playableEpisodes(_ ids: [String]) async -> Set<String> {
         guard let request, request.localFile != nil else { return Set(ids) }
         var out = Set<String>()
-        for id in ids where await localEpisode(request.metaID, id) != nil { out.insert(id) }
+        for id in ids where await findLocalEpisode(request.metaID, id) != nil { out.insert(id) }
         return out
     }
 

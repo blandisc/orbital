@@ -44,7 +44,9 @@ public actor StreamFinder {
 
     /// De dónde es un título (su idioma original y país), para el audio de lo que no lo dice; y lo comprobado al ver una
     /// versión (sus pistas reales, por su huella `Source.key`).
-    private var origin: @Sendable (_ kind: String, _ metaID: String) async -> TitleOrigin? = { _, _ in nil }
+    private var origin: @Sendable (_ kind: String, _ metaID: String) async -> TitleOrigin? = StreamFinder.noOrigin
+    /// Una función con nombre (no un cierre asíncrono en la línea): ver `AsyncDefaults`.
+    @Sendable static func noOrigin(_ kind: String, _ metaID: String) async -> TitleOrigin? { nil }
     private var checked: @Sendable (_ key: String) -> [AudioLanguage]? = { _ in nil }
     public func configure(origin: @escaping @Sendable (_ kind: String, _ metaID: String) async -> TitleOrigin?,
                           checked: @escaping @Sendable (_ key: String) -> [AudioLanguage]?) {

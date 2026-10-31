@@ -139,7 +139,7 @@ func launchPosterFlight(_ flight: Binding<PosterFlight?>, route: TitleRoute, fro
         await Task.yield()   // un cuadro en el lugar del póster, para que el resorte tenga de dónde salir
         withAnimation(.spring(duration: DesignTokens.Motion.slow, bounce: DS.TitleAction.flightBounce)) { flight.wrappedValue?.landed = true }
         try? await Task.sleep(for: .seconds(DesignTokens.Motion.slow))
-        withAnimation(DS.Motion.base(false)) { flight.wrappedValue?.fading = true }
+        withAnimation(DS.Motion.fade) { flight.wrappedValue?.fading = true }
         try? await Task.sleep(for: .seconds(DesignTokens.Motion.base))
         flight.wrappedValue = nil
     }

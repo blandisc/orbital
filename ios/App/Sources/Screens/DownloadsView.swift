@@ -183,7 +183,7 @@ struct DownloadsView: View {
         Button(action: action) {
             ZStack {
                 DownloadRing(fraction: item.progress ?? 0, tint: item.state == .failed ? DS.warning : DS.accent, lineWidth: DS.TitleAction.ringSmallLine)
-                Image(systemName: symbol).font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.text)
+                Image(systemName: symbol).font(DS.TextRecipe.badge.font).foregroundStyle(DS.text)
             }
             .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
             .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)

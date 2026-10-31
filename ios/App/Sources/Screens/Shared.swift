@@ -4,10 +4,11 @@ import OrbitalModels
 
 /// Arriba a la derecha de cada pestaña: tu avatar, que abre Ajustes (en todas igual: siempre se sabe dónde están).
 struct ProfileButton: View {
-    @Environment(AppEnvironment.self) private var env
+    /// Opcional a propósito: va en la barra de arriba (ver `ToolbarEnvironmentTests`).
+    @Environment(AppEnvironment.self) private var env: AppEnvironment?
     var avatar: String?
     var body: some View {
-        NavigationLink(value: SettingsRoute()) { AvatarImage(id: avatar ?? env.services.appSettings.avatar) }
+        NavigationLink(value: SettingsRoute()) { AvatarImage(id: avatar ?? env?.services.appSettings.avatar ?? AppSettings().avatar) }
             .accessibilityLabel(Text("Ajustes"))
     }
 }

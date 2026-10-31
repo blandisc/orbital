@@ -14,6 +14,11 @@ extension View {
     /// blanca sobre el tinte claro y no se lee.
     func dsPrimaryButton() -> some View { buttonStyle(.glassProminent).foregroundStyle(DS.onPrimary) }
 
+    /// El botón principal chico (Listo, Usar, Cambiar): el mismo vidrio con el tinte de Orbital, en tamaño chico.
+    func dsPrimaryButton(size: ControlSize) -> some View {
+        buttonStyle(.glassProminent).controlSize(size).tint(DS.primary).foregroundStyle(DS.onPrimary)
+    }
+
     /// El botón principal de un título con arte (Ver, Continuar): toma el color claro del arte, con texto oscuro, como
     /// `--color-primary-art` en la TV. Sin colores, el neutro casi papel de la TV.
     func dsArtButton(_ colors: ArtColors?) -> some View { modifier(ArtButton(colors: colors)) }
@@ -31,6 +36,10 @@ extension View {
     func dsSecondaryButton() -> some View {
         buttonStyle(.bordered).buttonBorderShape(.capsule).tint(DS.text)
     }
+
+    /// El botón de vidrio sin tinte (Reintentar, Conectar, una acción junto a un aviso): el secundario sobre arte o sobre una
+    /// superficie de vidrio. Antes cada pantalla escribía `.buttonStyle(.glass)`.
+    func dsGlassButton() -> some View { buttonStyle(.glass) }
 }
 
 /// Botones sólidos (sin vidrio) donde el vidrio no se lleva bien (lo que se gira o se deforma en 3D).
@@ -75,19 +84,30 @@ struct DSMoreMenu<Content: View>: View {
     }
 }
 
-/// Un botón redondo con un ícono (más, descargar, cerrar): el botón nativo con vidrio de iOS 26, ya con su tamaño táctil de 44 pt.
+/// Un botón redondo con un ícono (más, descargar, cerrar): el botón nativo con vidrio de iOS 26. El único círculo de vidrio
+/// de la app (D7): cerrar una hoja, el ✕ y el ♥ del mazo, una flecha. Tres tamaños: `small` (junto a un texto chico),
+/// `regular` (cerrar una hoja) y `large` (lo de siempre, 44 pt táctiles); el ícono crece con él.
 struct DSIconButton: View {
+    enum Size {
+        case small, regular, large
+        var control: ControlSize { switch self { case .small: .small; case .regular: .regular; case .large: .large } }
+    }
     let symbol: String
     let label: LocalizedStringKey
     var prominent = false
+    var size: Size = .large
     let action: () -> Void
+
+    init(symbol: String, label: LocalizedStringKey, prominent: Bool = false, size: Size = .large, action: @escaping () -> Void) {
+        self.symbol = symbol; self.label = label; self.prominent = prominent; self.size = size; self.action = action
+    }
 
     var body: some View {
         Group {
             if prominent { Button(action: action) { Image(systemName: symbol) }.dsPrimaryButton() }
             else { Button(action: action) { Image(systemName: symbol) }.dsIconButtonLook() }
         }
-        .buttonBorderShape(.circle).controlSize(.large)
+        .buttonBorderShape(.circle).controlSize(size.control)
         .accessibilityLabel(Text(label))
     }
 }

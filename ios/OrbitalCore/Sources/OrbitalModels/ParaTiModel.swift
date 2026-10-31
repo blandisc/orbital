@@ -143,9 +143,17 @@ public final class ParaTiModel: ObservableModel {
         return Tmdb.platforms.first { $0.brand == brand }?.name ?? Charts.justWatchPlatforms.first { $0.brand == brand }?.name ?? brand.capitalized
     }
 
+    /// Al volver a la pestaña: solo si la última carga ya tiene un rato (antes se volvía a pedir y a pintar todo cada vez que
+    /// entrabas, justo mientras la barra de abajo animaba el salto, y el cambio de pestaña se sentía lento).
+    public func loadIfStale(maxAge: TimeInterval = 120) async {
+        if let lastLoad, services.now().timeIntervalSince(lastLoad) < maxAge, !lists.isEmpty || !mosaic.isEmpty { return }
+        await load()
+    }
+    private var lastLoad: Date?
+
     public func load() async {
         isLoading = true
-        defer { isLoading = false }
+        defer { isLoading = false; if !Task.isCancelled { lastLoad = services.now() } }
         triedThisLoad = []
         // Lo que ya se ve se queda mientras se refresca (antes los estantes se vaciaban cada vez que volvías a la pestaña);
         // `loadShelves` solo pide lo que falta y «Actualizar» sí limpia.
@@ -190,7 +198,8 @@ public final class ParaTiModel: ObservableModel {
             if !showedSaved || mosaic.isEmpty { mosaic = newMosaic }
         }
         error = mosaic.isEmpty && lists.isEmpty ? "Tu Orbital no tiene sugerencias todavía." : nil
-        watchlistKeys = await fetchedKeys ?? []
+        let keys = await fetchedKeys   // en su línea (compilador de la CI, 31 oct 2026)
+        watchlistKeys = keys ?? []
         if let fetched = await fetchedAirings, !Task.isCancelled {
             airings = fetched
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno» también con la consola
@@ -321,7 +330,8 @@ public final class ParaTiModel: ObservableModel {
         if kind == "all" {
             async let series = forYou.newOnPlatforms(kind: "series")
             async let movies = forYou.newOnPlatforms(kind: "movie")
-            let mixed = Interleave.suggestions([await series, await movies])
+            let a = await series, b = await movies   // cada espera en su línea (compilador de la CI, 31 oct 2026)
+            let mixed = Interleave.suggestions([a, b])
             if kind == asked { newOnPlatforms = mixed }   // cambiaste de tipo mientras llegaba: gana el que pediste al último
         } else {
             let found = await forYou.newOnPlatforms(kind: asked)
@@ -453,7 +463,8 @@ public final class ParaTiModel: ObservableModel {
     private func popular() async -> [Suggestion] {
         async let series = popular("series"), movies = popular("movie")
         let dismissed = await services.forYou.dismissedIDs()
-        return ForYou.interleave([await series, await movies], limit: ForYou.mosaicSize).filter { !dismissed.contains($0.imdb) }
+        let a = await series, b = await movies   // cada espera en su línea (compilador de la CI, 31 oct 2026)
+        return ForYou.interleave([a, b], limit: ForYou.mosaicSize).filter { !dismissed.contains($0.imdb) }
     }
 
     private func popular(_ kind: String) async -> [Suggestion] {

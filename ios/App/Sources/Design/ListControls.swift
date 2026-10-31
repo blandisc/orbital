@@ -215,10 +215,11 @@ struct SortableGrid<Cell: View>: View {
 
     private func chip(_ title: Text, remove: @escaping () -> Void) -> some View {
         Button(action: remove) {
-            HStack(spacing: DS.Space.s1) { title; Image(systemName: "xmark").font(DS.TextRecipe.caption.font.weight(.bold)) }
-                .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.backdropDeep)
+            HStack(spacing: DS.Space.s1) { title; Image(systemName: "xmark").font(DS.TextRecipe.badge.font) }
+                // El papel de la acción principal (no `DS.paper`, que en claro es el mismo papel del fondo y se perdía).
+                .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.onPrimary)
                 .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-                .background(DS.paper, in: Capsule())
+                .background(DS.primary, in: Capsule())
         }
         .buttonStyle(.plain)
     }

@@ -35,7 +35,7 @@ struct YearView: View {
                         dayDetail(r)
                     }
                     .padding(DS.Space.s4)
-                    .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+                    .dsCard(.card)
                     if !r.top.isEmpty {
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
                             DSSectionHead(title: "Lo que más viste", level: .section, symbol: "flame")
@@ -77,12 +77,12 @@ struct YearView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Space.s3)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard()
     }
 
     private func legend(_ color: Color, _ text: Text) -> some View {
         HStack(spacing: DS.Space.s1) {
-            RoundedRectangle(cornerRadius: DS.YearMap.radius).fill(color).frame(width: DS.YearMap.cell, height: DS.YearMap.cell)
+            RoundedRectangle(cornerRadius: DS.YearMap.radius, style: .continuous).fill(color).frame(width: DS.YearMap.cell, height: DS.YearMap.cell)
             text.recipe(.caption)
         }
     }
@@ -101,12 +101,12 @@ struct YearView: View {
                     ForEach(0..<7, id: \.self) { d in
                         let offset = w * 7 + d - firstWeekday
                         let day = cal.date(byAdding: .day, value: offset, to: start) ?? start
-                        RoundedRectangle(cornerRadius: DS.YearMap.radius)
+                        RoundedRectangle(cornerRadius: DS.YearMap.radius, style: .continuous)
                             .fill(offset < 0 || day > today ? Color.clear : color(r.days[day]))
                             .frame(width: DS.YearMap.cell, height: DS.YearMap.cell)
                             .overlay {
                                 if let selectedDay, cal.isDate(day, inSameDayAs: selectedDay), offset >= 0 {
-                                    RoundedRectangle(cornerRadius: DS.YearMap.radius).strokeBorder(DS.text, lineWidth: DS.YearMap.ring)
+                                    RoundedRectangle(cornerRadius: DS.YearMap.radius, style: .continuous).strokeBorder(DS.text, lineWidth: DS.YearMap.ring)
                                         .padding(-DS.YearMap.ring)
                                 }
                             }

@@ -144,7 +144,7 @@ extension PlayerModel {
     public func loadScares() async {
         guard let r = request, r.kind == "movie", r.metaID.hasPrefix("tt") else { scares = nil; return }
         let id = r.metaID
-        let found = await scareMap(id, r.originalTitle)
+        let found = await findScareMap(id, r.originalTitle)
         guard request?.metaID == id else { return }
         scares = found
     }

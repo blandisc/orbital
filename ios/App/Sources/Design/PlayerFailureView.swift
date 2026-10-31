@@ -108,7 +108,7 @@ struct PlayerFailureView: View {
 
     private func option(_ label: Text, primary: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            label.font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(primary ? DS.onPrimary : DS.text)
+            label.font(DS.TextRecipe.labelLarge.font).foregroundStyle(primary ? DS.onPrimary : DS.text)
                 .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeight)
                 .background(primary ? DS.primary : DS.fillStrong, in: Capsule())
                 .contentShape(Capsule())

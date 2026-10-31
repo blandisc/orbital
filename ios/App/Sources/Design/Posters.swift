@@ -38,8 +38,8 @@ struct PosterView: View {
         else if bleed { art.clipped().accessibilityLabel(Text(title)) }
         else {
             art
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.hairline))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).stroke(DS.hairline))
                 .accessibilityLabel(Text(title))
         }
     }
@@ -95,7 +95,7 @@ struct PosterView: View {
     }
 
     private var placeholder: some View {
-        Text(title).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted).multilineTextAlignment(.leading)
+        Text(title).font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted).multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading).padding(DS.Space.s2)
     }
 }

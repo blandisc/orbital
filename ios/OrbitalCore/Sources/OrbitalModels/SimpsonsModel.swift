@@ -29,7 +29,9 @@ public final class SimpsonsModel: ObservableModel {
     /// Cuántos canales enseña la ruleta antes del elegido (un token de la interfaz).
     public let reelLength: Int
     /// Baja a la caché las imágenes de la tira (la app pone `ImagePipeline`).
-    public var warmImages: ([String]) async -> Void = { _ in }
+    public var warmImages: ([String]) async -> Void = SimpsonsModel.noWarm
+    /// Una función con nombre (no un cierre asíncrono en la línea): ver `AsyncDefaults`.
+    nonisolated static func noWarm(_ urls: [String]) async {}
     /// Qué decir cuando Cinemeta no contesta (texto y detalle en español; la app los traduce).
     public var onError: (_ text: String, _ detail: String) -> Void = { _, _ in }
     private var next: Draw?

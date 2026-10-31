@@ -90,7 +90,7 @@ struct RatingReminder: View {
         HStack(spacing: DS.Space.s3) {
             posterThumb
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("¿Qué tal \(title)?").recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                Text("¿Qué tal \(title)?").recipe(.label, color: DS.text).lineLimit(1)
                 RatingStars(value: nil, size: DS.Rating.starInline) { if let v = $0 { onRate(v) } }
             }
             .layoutPriority(1)   // el título gana el espacio: «y 2 más» y la ✕ son chicos
@@ -120,7 +120,7 @@ struct RatingReminder: View {
             } else { DS.fill }
         }
         .frame(width: DS.Rating.poster, height: DS.Rating.poster * DS.Rating.posterAspect)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
         .accessibilityHidden(true)
     }
 }

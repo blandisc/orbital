@@ -123,14 +123,14 @@ struct AllSourcesList: View {
                     row(source)
                 }
             }
-            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .dsCard(translucent: true)
             if more > 0 {
                 Button { withAnimation(DS.Motion.base(reduceMotion)) { _ = expandedGroups.insert(group.quality) } } label: {
                     HStack(spacing: DS.Space.s1) {
                         moreText(more, group.quality)
                         Image(systemName: "chevron.forward").imageScale(.small)
                     }
-                    .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                    .font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
                     .frame(minHeight: DS.Size.touchTarget)
                     .contentShape(Rectangle())
                 }
@@ -182,10 +182,10 @@ struct AllSourcesList: View {
             HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s2) {
                     if let color = speedColor(source) { dot(color) }
-                    Text(verbatim: facts(source)).recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                    Text(verbatim: facts(source)).recipe(.labelLarge, color: DS.text)
                 }
                 Spacer(minLength: DS.Space.s2)
-                if let marker = marker(source) { marker.recipe(.caption, color: DS.brandMoon).fontWeight(.semibold) }
+                if let marker = marker(source) { marker.recipe(.badge, color: DS.brandMoon) }
             }
             languages(source).recipe(.footnote).fixedSize(horizontal: false, vertical: true)
             if let tag = AllSources.hiddenTag(source) {
@@ -232,14 +232,14 @@ struct AllSourcesList: View {
             .dsPrimaryButton().accessibilityIdentifier("all-sources-primary")
         if let secondary, offersSecondary(source) {
             Button { secondary.1(source) } label: { Text(secondary.0).lineLimit(1) }
-                .buttonStyle(.glass).accessibilityIdentifier("all-sources-secondary")
+                .dsGlassButton().accessibilityIdentifier("all-sources-secondary")
         }
         if !AllSources.copyName(source).isEmpty {
             Button { copy(source) } label: {
                 Label { copied == source.index ? Text("Copiado") : Text("Copiar nombre") } icon: { Image(systemName: copied == source.index ? "checkmark" : "doc.on.doc") }
                     .lineLimit(1)
             }
-            .buttonStyle(.glass)
+            .dsGlassButton()
         }
     }
 

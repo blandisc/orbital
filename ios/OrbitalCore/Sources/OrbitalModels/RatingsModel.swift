@@ -58,12 +58,14 @@ public final class RatingsModel: ObservableModel {
         async let rated = try? trakt.myRatings()
         async let plays = try? trakt.plays(since: now.addingTimeInterval(-Self.window), until: now, maxPages: 2)
         async let paused = try? trakt.playback(fresh: true)
-        if let rated = await rated { ratings = rated }
+        // Cada espera en su línea (compilador de la CI, 31 oct 2026).
+        let gotRated = await rated, gotPaused = await paused, gotPlays = await plays
+        if let rated = gotRated { ratings = rated }
         // Una película que Trakt aún tiene a medias después de la vez que cuenta como vista: no la terminaste (la volviste a
         // abrir, o la marcó vista otro aparato o Stremio sin que la vieras completa).
         var unfinished: [String: Date] = [:]
-        for p in await paused ?? [] where !p.target.isEpisode { unfinished[p.target.imdb] = max(unfinished[p.target.imdb] ?? .distantPast, p.pausedAt) }
-        queue = Self.reminders(plays: await plays ?? [], rated: Set(ratings.keys).union(services.traktOutbox.pendingRatings.keys),
+        for p in gotPaused ?? [] where !p.target.isEpisode { unfinished[p.target.imdb] = max(unfinished[p.target.imdb] ?? .distantPast, p.pausedAt) }
+        queue = Self.reminders(plays: gotPlays ?? [], rated: Set(ratings.keys).union(services.traktOutbox.pendingRatings.keys),
                                dismissed: dismissed, unfinished: unfinished, now: now)
     }
 

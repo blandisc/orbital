@@ -23,7 +23,7 @@ struct DSChip: View {
         label.font(DS.TextRecipe.caption.font).lineLimit(1).fixedSize()
             .foregroundStyle(color)
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
-            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
     }
 
     private var color: Color { switch tone { case .normal: DS.textMuted; case .good: DS.good; case .warn: DS.warning } }
@@ -37,7 +37,7 @@ struct DSChipText: View {
 }
 
 /// Etiqueta que llama la atención sobre el arte: «Recomendada», «En tu lista» (sin mayúsculas). `.fresh`: lo que ya se
-/// puede ver hoy (la marca «HOY» de «Lo nuevo de lo tuyo»), una cápsula verde. «Nuevo» sobre un póster es `DSCornerRibbon`.
+/// puede ver hoy (la marca «Hoy» de «Lo nuevo de lo tuyo»), una cápsula verde (`DS.success`, se lee en los dos modos). «Nuevo» sobre un póster es `DSCornerRibbon`.
 struct DSBadge: View {
     enum Tone { case onArt, fresh }
     let text: LocalizedStringKey
@@ -45,11 +45,11 @@ struct DSBadge: View {
     var body: some View {
         switch tone {
         case .onArt:
-            Text(text).font(DS.TextRecipe.caption.font.weight(.semibold)).lineLimit(1).foregroundStyle(DS.paper)   // sobre la placa oscura del arte, en los dos modos
+            Text(text).font(DS.TextRecipe.badge.font).lineLimit(1).foregroundStyle(DS.paper)   // sobre la placa oscura del arte, en los dos modos
                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
-                .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+                .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
         case .fresh:
-            Text(text).font(DS.TextRecipe.caption.font.weight(.heavy)).lineLimit(1).foregroundStyle(DS.onPrimary)
+            Text(text).font(DS.TextRecipe.badge.font).lineLimit(1).foregroundStyle(DS.onSuccess)
                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
                 .background(DS.success, in: Capsule())
         }
@@ -63,8 +63,8 @@ struct DSCornerRibbon: View {
     let text: LocalizedStringKey
 
     var body: some View {
-        Text(text).textCase(.uppercase).font(DS.TextRecipe.caption.font.weight(.heavy)).tracking(DS.Ribbon.tracking)
-            .foregroundStyle(DS.onPrimary).lineLimit(1)
+        Text(text).textCase(.uppercase).font(DS.TextRecipe.badge.font).tracking(DS.Ribbon.tracking)
+            .foregroundStyle(DS.onSuccess).lineLimit(1)
             .padding(.vertical, DS.Space.s1 / 2)
             .frame(width: DS.Ribbon.length)
             .background {
@@ -86,9 +86,9 @@ struct DSIconBadge: View {
     let symbol: String
     let label: LocalizedStringKey
     var body: some View {
-        Image(systemName: symbol).font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.paper)
+        Image(systemName: symbol).font(DS.TextRecipe.badge.font).foregroundStyle(DS.paper)
             .padding(DS.Space.s1 + DS.Space.s1 / 2)
-            .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+            .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             .accessibilityLabel(Text(label))
     }
 }
@@ -98,9 +98,9 @@ struct DSIconBadge: View {
 struct DSRankBadge: View {
     let rank: Int
     var body: some View {
-        Text(verbatim: "\(rank)").font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.paper).lineLimit(1)   // sobre la placa oscura, en los dos modos
+        Text(verbatim: "\(rank)").font(DS.TextRecipe.section.font).foregroundStyle(DS.paper).lineLimit(1)   // sobre la placa oscura, en los dos modos
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
-            .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+            .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .accessibilityLabel(Text("Puesto \(rank)"))
     }
 }

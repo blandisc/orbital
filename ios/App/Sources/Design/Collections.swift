@@ -105,8 +105,8 @@ struct DSChapterLabel: View {
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            if let symbol { Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.orbitalBlue).accessibilityHidden(true) }
-            label.textCase(.uppercase).font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Chapter.tracking)
+            if let symbol { Image(systemName: symbol).font(DS.TextRecipe.label.font).foregroundStyle(DS.orbitalBlue).accessibilityHidden(true) }
+            label.textCase(.uppercase).font(DS.TextRecipe.badge.font).tracking(DS.Chapter.tracking)
                 .accessibilityAddTraits(.isHeader)
                 .foregroundStyle(DS.textMuted).lineLimit(1).fixedSize()
             Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)
@@ -152,7 +152,7 @@ struct SourceBadge: View {
 
     private var label: some View {
         source.name.textCase(.uppercase)
-            .font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Collections.badgeRadius / 10)   // negrita, como `.source-badge` de la TV
+            .font(DS.TextRecipe.badge.font).tracking(DS.Collections.badgeRadius / 10)   // negrita, como `.source-badge` de la TV
             .foregroundStyle(DS.paper)
             .padding(.horizontal, DS.Space.s1 + DS.Size.hairline).padding(.vertical, DS.Size.hairline)
             .lineLimit(1).fixedSize()   // un sello no se parte en dos renglones («COMPLE / MENTO»)
@@ -377,7 +377,7 @@ struct YearCard: View {
             }
             ArtVeil()
             Text(verbatim: String(year))
-                .font(DS.TextRecipe.display.font).fontWeight(.heavy).fontDesign(.rounded).monospacedDigit()
+                .font(DS.TextRecipe.stat.font).fontDesign(.rounded)
                 .foregroundStyle(DS.paper)
                 .padding(.horizontal, DS.Space.s3).padding(.bottom, DS.Space.s1)
         }
@@ -396,7 +396,7 @@ struct SeasonTimelineStop: View {
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             Circle().fill(DS.orbitalBlue).frame(width: DS.Collections.timelineDot, height: DS.Collections.timelineDot)
-            when.font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1).fixedSize()
+            when.font(DS.TextRecipe.badge.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
             Rectangle().fill(DS.orbitalBlue.opacity(DS.Collections.timelineLine)).frame(height: DS.Collections.timelineStroke)
                 .padding(.trailing, -DS.Space.s3)   // hasta la siguiente tarjeta
         }

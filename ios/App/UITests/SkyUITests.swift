@@ -31,7 +31,7 @@ final class SkyUITests: XCTestCase {
     func testCieloEnLoQueVes() {
         for appearance in ["dark", "light"] {
             let app = launch(tab: 1, appearance: appearance, extra: ["-demo-open", "watching"])
-            XCTAssertTrue(app.descendants(matching: .any)["watching-wrapped"].waitForExistence(timeout: 20), "se abre «Lo que ves»")
+            XCTAssertTrue(app.descendants(matching: .any)["watching-period"].waitForExistence(timeout: 20), "se abre «Lo que ves»")
             sleep(3)
             shot(app, "lo-que-ves-\(appearance)")
             app.terminate()

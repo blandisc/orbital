@@ -41,12 +41,20 @@ public actor Downloads {
     /// - refresh: pide un enlace nuevo de ese título (mismo complemento y fuente); nil si no hay.
     /// - otherSource: otra fuente del mismo video que no esté en `skippedReleases` (la de ahora mandó algo que no es el video).
     /// - subtitles: baja los subtítulos de ese título que aún no tiene (contenido e información); nil si no hubo red.
+    // Valores por omisión de los cierres asíncronos: funciones con nombre, no cierres escritos en el argumento. Con el
+    // compilador de la CI, un cierre asíncrono por omisión se compilaba mal y las pruebas se cerraban (31 oct 2026).
+    @Sendable public static func noOtherSource(_ item: DownloadItem) async -> DownloadSource? { nil }
+    @Sendable public static func noSubtitles(_ item: DownloadItem) async -> SubtitleFetch? { SubtitleFetch(files: []) }
+    /// 2, 4, 8… segundos (hasta un minuto) antes de reintentar.
+    @Sendable public static func waitBeforeRetry(_ attempt: Int) async {
+        await AsyncDefaults.sleep(min(60, pow(2, Double(attempt))))
+    }
+
     public init(transport: DownloadTransport, secrets: SecretsStore, root: URL, saved: [DownloadItem] = [],
                 freeSpace: @escaping @Sendable () -> Int64, refresh: @escaping @Sendable (DownloadItem) async -> URL?,
-                otherSource: @escaping @Sendable (DownloadItem) async -> DownloadSource? = { _ in nil },
-                subtitles: @escaping @Sendable (DownloadItem) async -> SubtitleFetch? = { _ in SubtitleFetch(files: []) },
-                clock: @escaping @Sendable () -> Date = { Date() }, backoff: @escaping @Sendable (Int) async -> Void = { attempt in
-                    try? await Task.sleep(nanoseconds: UInt64(min(60, pow(2, Double(attempt)))) * 1_000_000_000) },
+                otherSource: @escaping @Sendable (DownloadItem) async -> DownloadSource? = Downloads.noOtherSource,
+                subtitles: @escaping @Sendable (DownloadItem) async -> SubtitleFetch? = Downloads.noSubtitles,
+                clock: @escaping @Sendable () -> Date = { Date() }, backoff: @escaping @Sendable (Int) async -> Void = Downloads.waitBeforeRetry,
                 onChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in }) {
         self.transport = transport; self.secrets = secrets; self.root = root; self.freeSpace = freeSpace; self.refresh = refresh; self.otherSource = otherSource
         self.subtitles = subtitles; self.clock = clock; self.backoff = backoff; self.onChange = onChange

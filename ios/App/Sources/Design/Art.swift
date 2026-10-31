@@ -214,7 +214,7 @@ struct RowTile: View {
             }
             .frame(width: DS.Poster.episodeThumbWidth)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(2)
+                Text(title).font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text).lineLimit(2)
                 if !detail.isEmpty { Text(detail).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(2) }
             }
             Spacer(minLength: 0)
@@ -224,5 +224,5 @@ struct RowTile: View {
     }
 }
 
-// Botones: los nativos de iOS 26 (Liquid Glass). Principal: `.dsPrimaryButton()` (vidrio con letra oscura); secundario: `.buttonStyle(.glass)`;
+// Botones: los nativos de iOS 26 (Liquid Glass). Principal: `.dsPrimaryButton()` (vidrio con letra oscura); secundario: `.dsGlassButton()`;
 // sobre fondos lisos, `.borderedProminent` / `.bordered`. No hay estilos de botón propios (`DesignTests` lo vigila).

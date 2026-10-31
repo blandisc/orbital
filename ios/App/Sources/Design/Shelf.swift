@@ -56,7 +56,7 @@ struct Shelf<Content: View>: View {
 struct ShelfSkeleton: View {
     var body: some View {
         ForEach(0..<4, id: \.self) { _ in
-            RoundedRectangle(cornerRadius: DS.Radius.md).fill(DS.fill)
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.fill)
                 .aspectRatio(DS.Poster.aspect, contentMode: .fit)
                 .frame(width: DS.Poster.railWidth)
         }
@@ -64,14 +64,14 @@ struct ShelfSkeleton: View {
     }
 }
 
-/// El lugar de un feed (Inicio, Para ti) la primera vez, mientras llega: la tarjeta del destacado y un estante, del mismo
-/// tamaño que lo de verdad (nada salta al llegar).
-struct FeedSkeleton: View {
+/// El lugar de un feed (Inicio, Explorar) la primera vez, mientras llega: la portada a sangre con la medida de la de verdad
+/// (`DS.HomeHero.current`) y un estante debajo (nada salta al llegar). Antes dibujaba la tarjeta del carrusel 3D que ya no existe.
+struct HeroSkeleton: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-            RoundedRectangle(cornerRadius: DS.Deck.radius).fill(DS.fill)
-                .frame(height: DS.Deck.height)
-                .padding(.horizontal, DS.Deck.sideMargin)
+        VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+            Rectangle().fill(DS.fill)
+                .aspectRatio(DS.HomeHero.current, contentMode: .fit)
+                .frame(maxWidth: .infinity)
             HStack(spacing: DS.Space.s3) { ShelfSkeleton() }
                 .padding(.horizontal, DS.Space.gutter)
                 .frame(maxWidth: .infinity, alignment: .leading)

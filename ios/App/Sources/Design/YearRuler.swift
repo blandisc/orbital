@@ -76,7 +76,7 @@ struct YearRuler: View {
                 let on = years == range
                 Button { years = logic.toggle(range, in: years) } label: {
                     Text(verbatim: "’\(String(format: "%02d", d % 100))")
-                        .recipe(.footnote, color: on ? DS.bg : DS.textMuted).fontWeight(.bold).monospacedDigit()
+                        .recipe(.label, color: on ? DS.bg : DS.textMuted).monospacedDigit()
                         .frame(width: DS.Filter.decadeButton, height: DS.Size.touchTarget)
                         .background(on ? DS.Filter.gold : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                         .contentShape(Rectangle())

@@ -42,9 +42,9 @@ struct EpisodeRowView: View {
                                 .frame(maxHeight: .infinity).accessibilityHidden(true)
                         }
                     }
-                    .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                    .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(2)
+                        (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text).lineLimit(2)
                         if hasStatus { status.font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted) }
                         if !row.overview.isEmpty { Text(row.overview).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint).lineLimit(2) }
                     }

@@ -50,7 +50,7 @@ struct EpisodePickerSheet: View {
             HStack(spacing: DS.Space.s2) {
                 ForEach(seasons) { s in
                     Button { season = s.season } label: {
-                        Text("T\(s.season)").font(DS.TextRecipe.footnote.font.weight(.semibold))
+                        Text("T\(s.season)").font(DS.TextRecipe.label.font)
                             .foregroundStyle(s.season == season ? DS.onPrimary : DS.text)
                             .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
                             .background(s.season == season ? DS.primary : DS.fill, in: Capsule())

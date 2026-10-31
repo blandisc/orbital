@@ -35,7 +35,7 @@ struct StorageBar: View {
         let low = total > 0 && Double(free) / Double(total) < DS.Storage.lowFraction
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Espacio").recipe(.cardTitle).fontWeight(.semibold)
+                Text("Espacio").recipe(.cardTitle)
                 Spacer()
                 Text("\(format(free)) libres de \(format(total))").recipe(.footnote, color: low ? DS.warning : DS.textMuted)
             }

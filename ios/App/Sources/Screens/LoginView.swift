@@ -32,10 +32,10 @@ struct LoginView: View {
                     TextField("Correo de Stremio", text: $email)
                         .textContentType(.username).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
                         .focused($focus, equals: .email).submitLabel(.next).onSubmit { focus = .password }
-                        .padding(DS.Space.s3).background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+                        .padding(DS.Space.s3).dsCard(translucent: true)
                     SecureField("Contraseña", text: $password)
                         .textContentType(.password).focused($focus, equals: .password).submitLabel(.go).onSubmit(signIn)
-                        .padding(DS.Space.s3).background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+                        .padding(DS.Space.s3).dsCard(translucent: true)
                 }
                 if case .failed(let message) = observer.model.state { DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .error) }
                 Button(action: signIn) {

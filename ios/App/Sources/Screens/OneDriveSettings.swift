@@ -29,7 +29,7 @@ struct OneDriveSettings: View {
                 case .linking(let code, let url):
                     VStack(alignment: .leading, spacing: DS.Space.s2) {
                         Text("Escribe este código en \(url.replacingOccurrences(of: "https://", with: "")):").recipe(.footnote)
-                        Text(verbatim: code).font(DS.TextRecipe.display.font.weight(.bold)).foregroundStyle(DS.text).textSelection(.enabled).monospaced()
+                        Text(verbatim: code).font(DS.TextRecipe.display.font).foregroundStyle(DS.text).textSelection(.enabled).monospaced()
                         HStack { ProgressView(); Text("Esperando…").recipe(.footnote) }
                     }
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -61,7 +61,7 @@ struct OneDriveSettings: View {
                         HStack(spacing: DS.Space.s2) {
                             SettingsRow(title: "Carpeta", symbol: "folder", tint: DS.ListTint.library,
                                         value: model.folder.isEmpty ? Text("Elige una") : model.folder == "/" ? Text("Todo tu OneDrive") : Text(verbatim: model.folder))
-                            Image(systemName: "chevron.right").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textFaint)
+                            Image(systemName: "chevron.right").font(DS.TextRecipe.badge.font).foregroundStyle(DS.textFaint)
                         }
                         .contentShape(Rectangle())
                     }

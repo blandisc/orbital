@@ -10,7 +10,11 @@ extension Trakt {
         async let shows = get("/sync/ratings/shows")
         async let episodes = get("/sync/ratings/episodes")
         let eps: JSON? = (try? await episodes).flatMap { $0 }   // los capítulos son extra: si fallan, lo demás sigue
-        let rows = (try await movies?.array ?? []) + (try await shows?.array ?? []) + (eps?.array ?? [])
+        // Cada `async let` se espera en su propia línea: esperarlo a media expresión (con `??`, `+` o un arreglo) rompía el
+        // asignador de tareas con el compilador de la CI («freed pointer was not the last allocation», 31 oct 2026).
+        let movieRows: JSON? = try await movies
+        let showRows: JSON? = try await shows
+        let rows: [JSON] = (movieRows?.array ?? []) + (showRows?.array ?? []) + (eps?.array ?? [])
         var out: [String: Int] = [:]
         for row in rows {
             guard let imdb = (row["movie"] ?? row["show"])?["ids"]?["imdb"]?.string, let value = row["rating"]?.intValue,

@@ -25,7 +25,7 @@ struct OnboardingDone: View {
                         Text("¿Usas Stremio?").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
                         Text("Conéctalo para traer tu historial y que siga al día mientras probamos. Es opcional.")
                             .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
-                        Button("Conectar Stremio") { connectingStremio = true }.buttonStyle(.glass)
+                        Button("Conectar Stremio") { connectingStremio = true }.dsGlassButton()
                     }
                     .padding(DS.Space.s4)
                     .padding(.top, DS.Space.s4)

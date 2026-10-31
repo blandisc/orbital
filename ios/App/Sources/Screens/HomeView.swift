@@ -13,6 +13,8 @@ struct HomeView: View {
     @State private var channels = ModelObserver(ChannelsModel(AppEnvironment.shared.services))
     @State private var tint = ArtTint()
     @State private var openTitle: TitleRoute?
+    /// Las sugerencias que marcaste «No me interesa» (se van ya; Trakt y tu Orbital lo saben al momento).
+    @State private var dismissedPicks: Set<String> = []
     /// La tarjeta al frente de la portada (su lugar en la fila).
     @State private var heroSlot: Int?
     /// El Top 10 de Netflix: series (por omisión) o películas.
@@ -29,8 +31,12 @@ struct HomeView: View {
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.openRemote) private var openRemote
     @Environment(\.scenePhase) private var scenePhase
+
+    /// Ya se vio una vez: al volver, la recarga espera a que termine el cambio de pestaña.
+    @State private var appeared = false
 
     init() {
         _home = State(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services)))
@@ -45,7 +51,7 @@ struct HomeView: View {
         let kind = model.spotlightKind
         let fits: (String) -> Bool = { kind == nil || $0 == kind }
         let continuing = model.continueWatching.filter { fits($0.kind) }
-        let picks = model.forYouPicks.filter { fits($0.kind) }
+        let picks = model.forYouPicks.filter { fits($0.kind) && !dismissedPicks.contains($0.imdb) }
         let pending = model.traktPending.filter { fits($0.kind) }
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
@@ -85,7 +91,7 @@ struct HomeView: View {
                         }
                 }
                 if model.spotlight.isEmpty, model.continueWatching.isEmpty, model.isLoading {
-                    FeedSkeleton()   // la primera vez: el lugar ya reservado mientras llega
+                    HeroSkeleton()   // la primera vez: el lugar ya reservado mientras llega
                 }
                 // El orden del Inicio nuevo (docs/producto/inicio-benchmark/): lo tuyo primero, luego lo que sale de tus series,
                 // tus sugerencias, el Top 10 y Mi lista.
@@ -104,7 +110,8 @@ struct HomeView: View {
                 // Tus recomendaciones de Trakt.
                 if !picks.isEmpty {
                     Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt con lo que ves"), source: .trakt, reflected: true) {
-                        ForEach(picks) { s in TitleLink(route: s.route) }
+                        // Mantener el dedo abre el menú, como en Explorar (antes no había menú: al soltar se abría la ficha).
+                        ForEach(picks) { s in TitleLink(route: s.route).contextMenu { SuggestionActions(suggestion: s, onDismiss: dismissPick) } }
                     }
                 }
                 HomeBecause(model: because.model, kind: kind)
@@ -175,7 +182,15 @@ struct HomeView: View {
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: HomeListRoute.self) { route in homeList(route) }
         .openingTitles(item: $openTitle)   // en el iPad y la Mac, en el panel de la derecha
-        .task { await reload(ifStale: true) }   // volver de otra pestaña o de una ficha no lo vuelve a pedir todo
+        .task {
+            // De vuelta a la pestaña: primero termina el salto de la barra (recargar a la par lo trababa) y luego se refresca.
+            if appeared {
+                try? await Task.sleep(for: DS.Motion.tabSettle)
+                guard !Task.isCancelled else { return }
+            }
+            appeared = true
+            await reload(ifStale: true)
+        }   // volver de otra pestaña o de una ficha no lo vuelve a pedir todo
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await reload(ifStale: true) } } }   // al volver a la app
@@ -225,6 +240,16 @@ struct HomeView: View {
         }
     }
 
+    /// «No me interesa» en una sugerencia: se quita ya y deja de sugerirse en el iPhone y en tu Orbital.
+    private func dismissPick(_ s: Suggestion) {
+        dismissedPicks.insert(s.imdb)
+        let services = env.services
+        Task {
+            await services.forYou.dismiss(s.imdb)
+            if services.orbital.isConfigured { await services.forYouRemote.dismiss(s.imdb) }
+        }
+    }
+
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
 
     /// Cómo se ve Inicio (carrusel, avatar), en vivo: al cambiarlo en Ajustes, Inicio se vuelve a pintar.
@@ -252,11 +277,7 @@ struct HomeView: View {
     }
 
     /// Ancho entre alto de la portada: casi un póster en el iPhone, más baja en pantallas cortas y apaisada en ventana ancha.
-    private var heroAspect: CGFloat {
-        let size = WindowMetrics.size
-        if size.width >= DS.Size.compactWidth * 2 { return DS.HomeHero.aspectWide }
-        return size.height < DS.HomeHero.shortScreen ? DS.HomeHero.aspectShort : DS.HomeHero.aspect
-    }
+    private var heroAspect: CGFloat { DS.HomeHero.current }
 
     /// La portada (docs/producto/inicio-benchmark/): el arte de borde a borde, detrás de la barra, que se desliza entre lo
     /// que todos están viendo. Cada título con su porqué en turquesa, su logo, sus datos y «Ver». Abajo, los puntos; encima de
@@ -417,11 +438,14 @@ struct HomeView: View {
         let movies = pageKind == "movie" ? true : pageKind == "series" ? false : (topMovies && !films.isEmpty || series.isEmpty)
         let items = movies ? films : series
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .sectionTitle) {
+            // Con letra de accesibilidad la pastilla baja bajo el título (al lado lo empujaba fuera de la pantalla).
+            let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
+                                                      : AnyLayout(HStackLayout(alignment: .sectionTitle))
+            layout {
                 DSSectionHead(title: Text("Top 10 en \(service.name)"),
                               eyebrow: service.weekly ? Text("Esta semana en tu país") : Text("Lo más visto hoy · JustWatch"))
-                    .lineLimit(1).minimumScaleFactor(DS.Size.titleShrink)
-                Spacer(minLength: DS.Space.s2)
+                    .lineLimit(typeSize.isAccessibilitySize ? nil : 1).minimumScaleFactor(DS.Size.titleShrink)
+                if !typeSize.isAccessibilitySize { Spacer(minLength: DS.Space.s2) }
                 // La pastilla junto al título, con ícono (Fernando, 31 oct 2026). Siempre ocupa su lugar (oculta si el servicio
                 // solo tiene uno de los dos): al cambiar de servicio nada brinca.
                 DSKindFilter(kind: Binding(get: { movies ? "movie" : "series" }, set: { topMovies = $0 == "movie" }), includeAll: false, compact: true)

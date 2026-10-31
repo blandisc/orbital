@@ -11,6 +11,7 @@ struct ReleaseTimeline: View {
     let onOpen: (TitleRoute) -> Void
     let onCalendar: () -> Void
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         // Cada minuto: lo que sale hoy a las 21:00 pasa a «Nuevo» a esa hora, y a medianoche «Hoy» se vuelve «Ayer».
@@ -20,9 +21,12 @@ struct ReleaseTimeline: View {
     private func line(now: Date) -> some View {
         let nowIndex = HomeModel.nowIndex(in: airings, now: now)
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .sectionTitle) {
+            // Con letra de accesibilidad el mes baja bajo el título (al lado no cabía y se salía de la pantalla).
+            let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
+                                                      : AnyLayout(HStackLayout(alignment: .sectionTitle))
+            layout {
                 DSSectionHead(title: Text("Lo nuevo de lo tuyo"), source: .trakt, eyebrow: Text("Ya salió y lo que viene"))
-                Spacer(minLength: DS.Space.s2)
+                if !typeSize.isAccessibilitySize { Spacer(minLength: DS.Space.s2) }
                 Button(action: onCalendar) {
                     DSCapsuleLabel(title: Text(verbatim: Date().formatted(Date.FormatStyle(locale: env.uiLocale).month(.wide)).capitalized(with: env.uiLocale)), symbol: "calendar")
                 }
@@ -51,10 +55,10 @@ struct ReleaseTimeline: View {
 
     private static let today = "hoy"
 
-    /// La marca de hoy: una línea delgada con «HOY» arriba.
+    /// La marca de hoy: una línea delgada con «Hoy» arriba.
     private var todayMark: some View {
         VStack(spacing: DS.Space.s1) {
-            DSBadge(text: "HOY", tone: .fresh)
+            DSBadge(text: "Hoy", tone: .fresh)
             Capsule().fill(DS.success).frame(width: DS.HomeTimeline.markLine)
                 .frame(maxHeight: .infinity)
         }
@@ -69,7 +73,7 @@ struct ReleaseTimeline: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s1) {
                     Circle().fill(soon ? DS.ink500 : DS.success).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
-                    when(a.day).recipe(.caption, color: soon ? DS.textMuted : DS.text).fontWeight(.bold).lineLimit(1)
+                    when(a.day).recipe(.badge, color: soon ? DS.textMuted : DS.text).lineLimit(1)
                 }
                 .frame(height: DS.HomeTimeline.labelRow, alignment: .leading)
                 PosterView(url: a.series.poster, title: a.series.title)
@@ -78,7 +82,7 @@ struct ReleaseTimeline: View {
                     }
                     .overlay(alignment: .bottomLeading) {
                         if case .soon(let days) = moment, days >= 2 {
-                            Text("en \(days) días").recipe(.caption, color: DS.onArtSecondary).fontWeight(.semibold)
+                            Text("en \(days) días").recipe(.badge, color: DS.onArtSecondary)
                                 .padding(DS.Space.s2).onArt()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(ArtVeil(at: 0))
@@ -86,7 +90,7 @@ struct ReleaseTimeline: View {
                     }
                     .opacity(soon ? DS.HomeTimeline.soonOpacity : 1)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: a.series.title).recipe(.footnote).fontWeight(.semibold).lineLimit(1)
+                    Text(verbatim: a.series.title).recipe(.label).lineLimit(1)
                     Text(verbatim: episode).recipe(.caption, color: DS.textMuted).lineLimit(1)
                 }
             }

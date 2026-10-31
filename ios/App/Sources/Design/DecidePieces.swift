@@ -36,8 +36,8 @@ struct DecideTile: View {
                 .clipped()
                 ArtVeil(strength: selected ? .soft : .strong)
                 Group {
-                    if era { title.font(DS.TextRecipe.title.font.weight(.black)).tracking(DS.Decide.eraTracking) }
-                    else { title.font(DS.TextRecipe.footnote.font.weight(.heavy)) }
+                    if era { title.font(DS.TextRecipe.title.font).tracking(DS.Decide.eraTracking) }
+                    else { title.font(DS.TextRecipe.label.font) }
                 }
                 .foregroundStyle(DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 .shadow(color: DS.scrimStrong, radius: DS.Decide.labelShadow)
@@ -47,7 +47,7 @@ struct DecideTile: View {
             .clipShape(shape)
             .overlay(alignment: .topLeading) {
                 if let count, !era || !selected {
-                    Text(verbatim: "\(count)").font(DS.TextRecipe.caption.font.weight(.bold)).monospacedDigit()
+                    Text(verbatim: "\(count)").font(DS.TextRecipe.badge.font).monospacedDigit()
                         .foregroundStyle(DS.paper)
                         .padding(.horizontal, DS.Space.s1)
                         .background(DS.badgeBackground, in: Capsule())
@@ -58,7 +58,7 @@ struct DecideTile: View {
             .overlay(shape.strokeBorder(selected ? DS.brandMoon : DS.hairline, lineWidth: selected ? DS.Decide.chosenStroke : DS.Size.hairline))
             .overlay(alignment: .topTrailing) {
                 if selected {
-                    Image(systemName: "checkmark.circle.fill").font(DS.TextRecipe.secondary.font.weight(.bold))
+                    Image(systemName: "checkmark.circle.fill").font(DS.TextRecipe.labelLarge.font)
                         .foregroundStyle(DS.backdropDeep, DS.brandMoon)
                         .padding(DS.Space.s1)
                         .transition(.scale.combined(with: .opacity))
@@ -102,7 +102,7 @@ struct DecideListRow: View {
                 }
                 .frame(width: DS.Decide.listPoster, height: DS.Decide.listPoster, alignment: .leading)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(verbatim: name).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                    Text(verbatim: name).recipe(.labelLarge, color: DS.text).lineLimit(1)
                     if !detail.isEmpty { Text(verbatim: detail).recipe(.caption).lineLimit(1) }
                 }
                 Spacer(minLength: DS.Space.s2)

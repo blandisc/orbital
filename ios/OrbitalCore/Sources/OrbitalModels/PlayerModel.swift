@@ -122,7 +122,7 @@ public final class PlayerModel: ObservableModel {
     let clock: @Sendable () -> Date
     let onCellular: @Sendable () -> Bool
     let episodeLabel: @Sendable (Int, Int) -> String
-    let localEpisode: @Sendable (_ metaID: String, _ videoID: String) async -> LocalEpisode?
+    let localEpisode: (@Sendable (_ metaID: String, _ videoID: String) async -> LocalEpisode?)?
 
     private var consuming: Task<Void, Never>?
     var transition: Task<Void, Never>?
@@ -197,8 +197,8 @@ public final class PlayerModel: ObservableModel {
     var closing = false
     var choicesAt = Date.distantPast
     var nextLocal: LocalEpisode?
-    let skipSegments: @Sendable (String) async -> SkipSegments?
-    let scareMap: @Sendable (String, String) async -> [JumpScare]?
+    let skipSegments: (@Sendable (String) async -> SkipSegments?)?
+    let scareMap: (@Sendable (String, String) async -> [JumpScare]?)?
     /// Tu copia de un video (Mi media), si la hay: se usa antes que las fuentes cuando `request.ownCopy`.
     public var ownSource: (@Sendable (_ videoID: String, _ preferred: Int?) async -> Source?)?
     /// Cuántas veces se pidió tu copia en este video: dos (su enlace dura ~1 h; si se venció a media película se pide otro), luego Real-Debrid.
@@ -206,12 +206,28 @@ public final class PlayerModel: ObservableModel {
     static let maxOwnAttempts = 2
     static let choicesLifetime: TimeInterval = StreamFinder.cacheSeconds   // los enlaces de Real-Debrid caducan
 
+    // Valores por omisión de los cierres asíncronos: funciones con nombre, no cierres escritos en el argumento. Con el
+    // compilador de la CI, un cierre asíncrono por omisión se compilaba mal y las pruebas se cerraban (31 oct 2026).
+    // Sin cierre (nil): no hay nada (sin episodios en el iPhone, sin tramos para saltar, sin sustos).
+    func findLocalEpisode(_ metaID: String, _ videoID: String) async -> LocalEpisode? {
+        guard let localEpisode else { return nil }
+        return await localEpisode(metaID, videoID)
+    }
+    func findSkipSegments(_ videoID: String) async -> SkipSegments? {
+        guard let skipSegments else { return nil }
+        return await skipSegments(videoID)
+    }
+    func findScareMap(_ imdb: String, _ title: String) async -> [JumpScare]? {
+        guard let scareMap else { return nil }
+        return await scareMap(imdb, title)
+    }
+
     public init(engine: PlayerEngine, finder: StreamFinder, watch: WatchService, titlePrefs: TitlePreferences, settings: SettingsStore,
                 clock: @escaping @Sendable () -> Date = { Date() }, onCellular: @escaping @Sendable () -> Bool = { false },
                 episodeLabel: @escaping @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" },
-                localEpisode: @escaping @Sendable (String, String) async -> LocalEpisode? = { _, _ in nil },
-                skipSegments: @escaping @Sendable (String) async -> SkipSegments? = { _ in nil },
-                scareMap: @escaping @Sendable (_ imdb: String, _ title: String) async -> [JumpScare]? = { _, _ in nil }) {
+                localEpisode: (@Sendable (String, String) async -> LocalEpisode?)? = nil,
+                skipSegments: (@Sendable (String) async -> SkipSegments?)? = nil,
+                scareMap: (@Sendable (_ imdb: String, _ title: String) async -> [JumpScare]?)? = nil) {
         self.engine = engine; self.finder = finder; self.watch = watch; self.titlePrefs = titlePrefs; self.settings = settings
         self.clock = clock; self.onCellular = onCellular; self.episodeLabel = episodeLabel; self.localEpisode = localEpisode; self.skipSegments = skipSegments; self.scareMap = scareMap; self.lastSave = clock()
         super.init()
@@ -256,7 +272,7 @@ public final class PlayerModel: ObservableModel {
         startConsuming()
         loadSegmentsIfNeeded()   // IntroDB solo depende del video: a la vez que las fuentes, no después
         if request.localFile == nil { let finder = finder; Task { await finder.warmAddons() } }   // los complementos, ya: no después de «dónde ibas»
-        if request.localFile != nil, request.kind == "series", let next = nextEpisodeIDIgnoringLocal() { nextLocal = await localEpisode(request.metaID, next) }
+        if request.localFile != nil, request.kind == "series", let next = nextEpisodeIDIgnoringLocal() { nextLocal = await findLocalEpisode(request.metaID, next) }
         nextUp = nextEpisodeID().map { ($0, episodeText($0).0) }   // para «Siguiente» (una vez: leer los episodios cuesta)
         guard mine == generation, !closing else { return }
         await prepare(startAt: nil, generation: mine)

@@ -25,12 +25,12 @@ struct OnboardingTrakt: View {
                     GuideCode(code: code)
                     Text("Entra a trakt.tv/activate y escribe este código.").font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
                     HStack(spacing: DS.Space.s2) { ProgressView(); Text("Esperando a que lo apruebes…").foregroundStyle(DS.textMuted) }
-                    if let link = URL(string: url) { Button("Abrir Trakt", systemImage: "arrow.up.right") { openURL(link) }.buttonStyle(.glass) }
+                    if let link = URL(string: url) { Button("Abrir Trakt", systemImage: "arrow.up.right") { openURL(link) }.dsGlassButton() }
                 case .linked(let name):
                     GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text("Conectado como \(name)"))
                 case .failed(let message):
                     DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .error)
-                    Button("Reintentar") { Task { await settings.model.linkTrakt() } }.buttonStyle(.glass)
+                    Button("Reintentar") { Task { await settings.model.linkTrakt() } }.dsGlassButton()
                 case .unlinked:
                     ProgressView()
                 case .off:

@@ -84,7 +84,7 @@ struct FilterResultsView: View {
                 .overlay(alignment: .bottomLeading) {
                     if let r = s.tmdbRating {
                         Label { Text(verbatim: FilterText.number(r)) } icon: { Image(systemName: "star.fill") }
-                            .recipe(.caption, color: DS.paper).fontWeight(.bold)
+                            .recipe(.badge, color: DS.paper)
                             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1 / 2)
                             .background(DS.badgeBackground, in: Capsule())
                             .padding(DS.Space.s1)

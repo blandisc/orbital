@@ -63,10 +63,10 @@ extension PlayerScreen {
             withAnimation(DS.Motion.lockRise(true)) { padlock.lockNoticeRisen = true }
             try? await Task.sleep(nanoseconds: UInt64(DesignTokens.Motion.base * 1_000_000_000))
         } else {
-            withAnimation(DS.Motion.lockShrink(false)) { padlock.lockNoticeCollapsed = true }
+            withAnimation(DS.Motion.fade) { padlock.lockNoticeCollapsed = true }
             try? await Task.sleep(nanoseconds: DS.Timing.lockNoticeShrink)
             guard !Task.isCancelled, generation == padlock.lockNoticeGeneration else { return }
-            withAnimation(DS.Motion.lockRise(false)) { padlock.lockNoticeRisen = true }
+            withAnimation(DS.Motion.fade) { padlock.lockNoticeRisen = true }
             try? await Task.sleep(nanoseconds: DS.Timing.lockNoticeRise)
         }
         guard !Task.isCancelled, generation == padlock.lockNoticeGeneration else { return }

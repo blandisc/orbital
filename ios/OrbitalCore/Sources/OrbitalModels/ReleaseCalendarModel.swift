@@ -44,7 +44,9 @@ public final class ReleaseCalendarModel: ObservableModel {
         let forYou = services.forYou
         async let first = try? forYou.calendar(skip: skip, days: Self.half, calendar: calendar)
         async let second = try? forYou.calendar(skip: skip + Self.half, days: count - Self.half, calendar: calendar)
-        let all = ((await first) ?? []) + ((await second) ?? [])
+        let firstHalf: [Airing]? = await first   // cada espera en su línea (compilador de la CI, 31 oct 2026)
+        let secondHalf: [Airing]? = await second
+        let all: [Airing] = (firstHalf ?? []) + (secondHalf ?? [])
         var grouped: [Date: [Airing]] = [:]
         for a in all { grouped[a.day, default: []].append(a) }
         days = grouped

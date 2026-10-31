@@ -526,6 +526,8 @@ extension DS {
         static let holdSeconds: Double = 0.6
         /// La barra del volumen de la TV en el control.
         static let volumeBar: CGFloat = 6
+        /// Lo que tarda la barra del volumen en deslizarse al nivel nuevo.
+        static let volumeGlide = 0.18
         /// Alto del pad táctil y de cada tecla.
         static let padHeight: CGFloat = 170, keyHeight: CGFloat = 60
         /// En un teléfono bajito (SE) el pad y las teclas se encogen: «Atrás» y «Escribir en la TV» caben sin deslizar.

@@ -7,7 +7,7 @@ import OrbitalCore
 public final class CollectionsModel: ObservableModel {
     public let awards: [AwardCollection] = Awards.all
     /// Mi lista de Stremio (tu biblioteca), lo más reciente primero.
-    public private(set) var myList: [Suggestion] = [] { didSet { changed() } }
+    public private(set) var myList: [Suggestion] = [] { didSet { if myList != oldValue { changed() } } }   // la misma lista al volver a la pestaña no redibuja
     /// Los pósters de cada año en «Por año» (hasta cuatro): ganadoras de ese año y, si faltan, lo más popular.
     public private(set) var yearPosters: [Int: [String]] = [:] { didSet { changed() } }
     private var watchedCache: Set<String>?

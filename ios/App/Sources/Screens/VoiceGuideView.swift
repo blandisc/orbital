@@ -114,10 +114,10 @@ struct VoiceGuideView: View {
                 Text("\(guide.phraseCount) frases · cómo pedirlo · si no funciona").recipe(.footnote)
             }
             Spacer(minLength: DS.Space.s2)
-            Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textFaint)
+            Image(systemName: "chevron.forward").font(DS.TextRecipe.label.font).foregroundStyle(DS.textFaint)
         }
         .padding(DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .dsCard(.card)
         .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 
@@ -202,7 +202,7 @@ private struct VoiceTopicsView: View {
             Button { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } } label: {
                 Label("Abrir los permisos de Orbital", systemImage: "gear")
             }
-            .buttonStyle(.glass)
+            .dsGlassButton()
         }
     }
 
@@ -297,7 +297,7 @@ private struct VoiceTopic<Content: View>: View {
             if let meta { meta.recipe(.footnote, color: DS.textMuted) }
             VStack(alignment: .leading, spacing: DS.Space.s3) { content }
                 .padding(DS.Space.s4).frame(maxWidth: .infinity, alignment: .leading)
-                .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+                .dsCard(.card)
         }
     }
 }
@@ -332,7 +332,7 @@ private struct PhraseCard: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             Image(systemName: VoiceGuideText.symbol(for: phrase.say)).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint)
                 .accessibilityHidden(true)
-            Text(verbatim: "«\(phrase.say)»").font(DS.TextRecipe.secondary.font.weight(.semibold))
+            Text(verbatim: "«\(phrase.say)»").font(DS.TextRecipe.labelLarge.font)
                 .foregroundStyle(style == .now ? DS.text : DS.accent)
                 .fixedSize(horizontal: false, vertical: true)
             if style == .essential, !phrase.note.isEmpty {
@@ -358,12 +358,12 @@ private struct WhereTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(tint).accessibilityHidden(true)
-            title.recipe(.cardTitle).fontWeight(.semibold)
+            title.recipe(.cardTitle)
             detail.recipe(.footnote).fixedSize(horizontal: false, vertical: true)
         }
         .padding(DS.Space.s3)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard()
         .accessibilityElement(children: .combine)
     }
 }
@@ -379,7 +379,7 @@ private struct HowRow: View {
             Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.accent)
                 .frame(width: DS.Size.iconColumn)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                title.font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+                title.font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
                 detail.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             }
         }
@@ -414,7 +414,7 @@ private struct PhraseRow: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text(verbatim: "«\(say)»").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+            Text(verbatim: "«\(say)»").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
                 .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
                 .background(DS.fill, in: UnevenRoundedRectangle(topLeadingRadius: DS.Radius.lg, bottomLeadingRadius: DS.Space.s1,
                                                                  bottomTrailingRadius: DS.Radius.lg, topTrailingRadius: DS.Radius.lg, style: .continuous))

@@ -134,7 +134,7 @@ struct SourcesSheet: View {
             }
             .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
             .padding(DS.Space.s3)
-            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .dsCard(translucent: true)
             .tint(DS.textMuted)
         }
         if model.hiddenCount > 0 {
@@ -186,7 +186,7 @@ struct VersionCard: View {
                         .dsPrimaryButton().controlSize(.large).accessibilityIdentifier("version-watch")
                     if option.downloadable {
                         Button { act(option.id, .download) } label: { Label("Descargar", systemImage: "arrow.down").frame(maxWidth: .infinity) }
-                            .buttonStyle(.glass).controlSize(.large).accessibilityIdentifier("version-download")
+                            .dsGlassButton().controlSize(.large).accessibilityIdentifier("version-download")
                     }
                 }
                 if let infuse {
@@ -195,11 +195,11 @@ struct VersionCard: View {
                 }
                 if !others.isEmpty {
                     // Un botón y la lista debajo (no un `DisclosureGroup`: cerrado guardaba ~40 pt vacíos al pie de la tarjeta).
-                    Button { withAnimation(DS.Motion.base(false)) { showsOthers.toggle() } } label: {
+                    Button { withAnimation(DS.Motion.fade) { showsOthers.toggle() } } label: {
                         HStack {
                             Text("Otras \(others.count) en \(VersionLanguageRow.inline(language, uiLanguage)) \(option.quality)").recipe(.secondary, color: DS.text)
                             Spacer(minLength: DS.Space.s2)
-                            Image(systemName: showsOthers ? "chevron.down" : "chevron.right").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                            Image(systemName: showsOthers ? "chevron.down" : "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
                         }
                         .frame(minHeight: DS.Size.touchTarget)
                         .contentShape(Rectangle())
@@ -281,7 +281,7 @@ struct SourcesGlossary: View {
                 HStack(alignment: .top, spacing: DS.Space.s3) {
                     Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.accent).frame(width: DS.Size.touchTarget)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(title).recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                        Text(title).recipe(.labelLarge, color: DS.text)
                         Text(detail).recipe(.footnote)
                     }
                 }

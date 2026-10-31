@@ -39,7 +39,7 @@ struct FameQuadrant: View {
         return Button { pick(on ? .any : fame) } label: {
             VStack(spacing: DS.Space.s1) {
                 Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(on ? DS.Filter.rose : DS.textMuted)
-                title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                title.recipe(.label, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
             .multilineTextAlignment(.center)

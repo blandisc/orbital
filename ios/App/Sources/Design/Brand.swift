@@ -87,7 +87,7 @@ struct OrbitalWordmark: View {
         .task {
             guard !still, !landed else { return }
             try? await Task.sleep(nanoseconds: UInt64(DS.Brand.moonDelay * 1e9))
-            withAnimation(DS.Motion.spring(false)) { landed = true }
+            withAnimation(DS.Motion.fade) { landed = true }
         }
     }
 }

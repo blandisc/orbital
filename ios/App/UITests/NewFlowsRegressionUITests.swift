@@ -151,7 +151,8 @@ final class NewFlowsRegressionUITests: XCTestCase {
     }
 
     /// Lo que ves (con el cielo detrás) abre el Wrapped y se cierra.
-    func testLoQueVesYElWrapped() {
+    func testLoQueVesYElWrapped() throws {
+        try XCTSkipIf(true, "El Wrapped está apagado por ahora (Fernando, 31 oct 2026, commit 1a87a4a7): WatchingView ya no tiene «watching-wrapped». Quita el skip cuando vuelva.")
         launch(tab: 1, ["-demo-open", "watching"])
         let wrapped = app.buttons["watching-wrapped"]
         XCTAssertTrue(wrapped.waitForExistence(timeout: 20), "«Lo que ves»")
