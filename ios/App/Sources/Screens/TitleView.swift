@@ -6,7 +6,10 @@ import OrbitalModels
 struct TitleView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let route: TitleRoute
-    @Environment(AppEnvironment.self) var env
+    /// Opcional a propósito: al mantener presionado un póster, iOS arma la ficha (y los botones de su barra) en un árbol
+    /// que todavía no tiene el entorno de la app, y uno obligatorio tiraba la app (R1, 31 oct 2026; `ToolbarEnvironmentTests`).
+    @Environment(AppEnvironment.self) private var appEnv: AppEnvironment?
+    var env: AppEnvironment { appEnv ?? .shared }
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) var typeSize
     @Environment(\.colorScheme) var scheme

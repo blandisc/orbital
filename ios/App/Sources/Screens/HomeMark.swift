@@ -3,17 +3,18 @@ import SwiftUI
 /// Arriba de Inicio: el logotipo de la app como en la TV y la computadora (el planeta, «orbital» y su luna), en lugar del
 /// saludo. Al abrir, el anillo se dibuja y la luna cae en su lugar.
 struct AppMark: View {
-    @Environment(AppEnvironment.self) private var env
+    /// Opcional a propósito: va en la barra de arriba (ver `ToolbarEnvironmentTests`).
+    @Environment(AppEnvironment.self) private var env: AppEnvironment?
 
     var body: some View {
         let compact = WindowMetrics.size.width < DS.Size.compactWidth
-        let ui = env.ui
+        let ui = env?.ui
         OrbitalWordmark(size: compact ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
             .foregroundStyle(DS.text).fixedSize()
             // La entrada de la app termina justo aquí (sin el planeta, en un iPhone angosto, ya no calza: ahí se desvanece).
-            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if !compact { ui.homeLogoFrame = $0 } }
-            .onDisappear { ui.homeLogoFrame = nil }
-            .opacity(ui.splashing ? 0 : 1)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if !compact, let ui { ui.homeLogoFrame = $0 } }
+            .onDisappear { ui?.homeLogoFrame = nil }
+            .opacity(ui?.splashing == true ? 0 : 1)
     }
 }
 
