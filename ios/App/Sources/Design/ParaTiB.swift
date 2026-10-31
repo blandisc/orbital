@@ -32,34 +32,30 @@ struct SectionCircles<ID: Hashable>: View {
     }
 }
 
-/// La portada de Para ti: un muro de pósters inclinado (el mosaico, en quieto) que se funde con el fondo, con su porqué y
-/// «Pasear por el mosaico».
+/// La portada de Para ti: un muro de pósters inclinado que se funde con el fondo, con su porqué y «Pasear por el mosaico».
+/// El muro sube detrás de la barra y baja un poco bajo los círculos, apagándose poco a poco en las dos orillas (antes se
+/// cortaba en seco); el espacio de la página no cambia. Cada vez que se arma salen otros pósters en otro orden, y el muro
+/// se desliza despacio sobre su diagonal (quieto con «Reducir movimiento» o fuera de pantalla).
 struct MosaicCover: View {
     let posters: [String]
     let onWalk: () -> Void
+    @State private var order: [String] = []
+    @State private var onScreen = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        // El muro va como capa sobre un marco fijo: más ancho que la pantalla e inclinado, no ensancha la página.
         Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: DS.ParaTiB.coverHeight)
             .overlay {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DS.ParaTiB.coverColumns), spacing: DS.Space.s2) {
-                    ForEach(Array(posters.prefix(DS.ParaTiB.coverPosters).enumerated()), id: \.offset) { _, url in
-                        PosterView(url: url, title: "")
-                    }
-                }
-                .frame(width: DS.ParaTiB.coverWall)
-                .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
-                .accessibilityHidden(true)
+                // El arte ocupa más que su marco (arriba y abajo) pero no ensancha la página: se recorta a los lados.
+                ZStack { moving; veil }
+                    .padding(.top, -DS.ParaTiB.coverBleedUp).padding(.bottom, -DS.ParaTiB.coverBleedDown)
+                    .mask { fade }
+                    .clipped()
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
-            .overlay {
-                // Arriba se funde con la barra; abajo un velo firme bajo el porqué y el botón, para que se lean sobre cualquier póster.
-                LinearGradient(stops: [.init(color: DS.bg.opacity(DS.ParaTiB.coverTopVeil), location: 0), .init(color: .clear, location: DS.ParaTiB.coverClearAt),
-                                       .init(color: DS.bg.opacity(DS.ParaTiB.coverBaseVeil), location: DS.ParaTiB.coverBaseAt), .init(color: DS.bg, location: 1)],
-                               startPoint: .top, endPoint: .bottom)
-            }
-            .clipped()
             .overlay(alignment: .bottomLeading) {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     Eyebrow(text: Text("Todas las formas de encontrar qué ver"), reason: true)
@@ -69,6 +65,52 @@ struct MosaicCover: View {
                 }
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s3)
             }
+            .onScrollVisibilityChange(threshold: DS.ParaTiB.coverVisibleFrom) { onScreen = $0 }
+            // Otro muro cada vez que se arma la pantalla (y cuando llegan más pósters), no siempre los mismos 36.
+            .onChange(of: posters.count, initial: true) { order = Array(posters.shuffled().prefix(DS.ParaTiB.coverPosters)) }
+    }
+
+    /// El vaivén: el muro baja y sube un renglón sobre su diagonal, sin prisa (quieto con «Reducir movimiento» o fuera de pantalla).
+    @ViewBuilder private var moving: some View {
+        if reduceMotion || !onScreen {
+            wall
+        } else {
+            wall.phaseAnimator([false, true]) { view, drifted in
+                view.offset(x: drifted ? DS.ParaTiB.coverDriftX : 0, y: drifted ? DS.ParaTiB.coverDrift : 0)
+            } animation: { _ in DS.ParaTiB.coverDriftAnimation }
+        }
+    }
+
+    private var wall: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DS.ParaTiB.coverColumns), spacing: DS.Space.s2) {
+            ForEach(Array(order.enumerated()), id: \.offset) { _, url in PosterView(url: url, title: "") }
+        }
+        .frame(width: DS.ParaTiB.coverWall)
+        .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Las orillas: arriba casi nada detrás del título grande y se enciende ya dentro de la portada; abajo se apaga hasta
+    /// perderse bajo los círculos.
+    private var fade: some View {
+        let up = DS.ParaTiB.coverBleedUp, total = up + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown
+        return LinearGradient(stops: [
+            .init(color: .clear, location: 0),
+            .init(color: .black.opacity(DS.ParaTiB.coverUnderBar), location: up / total),
+            .init(color: .black, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverClearAt) / total),
+            .init(color: .black, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverBaseAt) / total),
+            .init(color: .clear, location: 1),
+        ], startPoint: .top, endPoint: .bottom)
+    }
+
+    /// Un velo bajo el porqué y el botón, para que se lean sobre cualquier póster; sigue de largo bajo los círculos.
+    private var veil: some View {
+        let up = DS.ParaTiB.coverBleedUp, total = up + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown
+        return LinearGradient(stops: [
+            .init(color: .clear, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverClearAt) / total),
+            .init(color: DS.bg.opacity(DS.ParaTiB.coverBaseVeil), location: (up + DS.ParaTiB.coverHeight) / total),
+            .init(color: DS.bg.opacity(DS.ParaTiB.coverBaseVeil), location: 1),
+        ], startPoint: .top, endPoint: .bottom)
     }
 }
 
