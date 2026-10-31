@@ -40,7 +40,9 @@ struct VoiceRow: View {
 
     var body: some View {
         Group {
-            if phase == .idle { idle } else { open.frame(minHeight: DS.Remote.voiceOpenHeight, alignment: .top) }
+            // Escuchar, las varias coincidencias y el tramo que falló reservan su alto; una respuesta corta («Prendiendo la
+            // tele») mide lo que mide (antes dejaba medio renglón gris vacío abajo).
+            if phase == .idle { idle } else { open.frame(minHeight: plainAnswer ? nil : DS.Remote.voiceOpenHeight, alignment: .top) }
         }
         .padding(DS.Space.s3)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -92,6 +94,12 @@ struct VoiceRow: View {
 
     // MARK: Abierto
 
+    /// Abierto con una respuesta sencilla (ni escuchando, ni varias coincidencias, ni la conexión que falló).
+    private var plainAnswer: Bool {
+        guard phase == .open, let reply else { return false }
+        return reply.choices.isEmpty && (reply.ok || issue == nil)
+    }
+
     @ViewBuilder private var open: some View {
         switch phase {
         case .listening, .asking: listening
@@ -123,23 +131,27 @@ struct VoiceRow: View {
     }
 
     private var answer: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .top, spacing: DS.Space.s3) {
-                if reply?.ok == true, let now {
+        let ok = reply?.ok == true
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+            HStack(alignment: .center, spacing: DS.Space.s3) {
+                // Lo que quedó en la TV: su póster; sin póster (prender la tele, el volumen), el ícono de la tele.
+                if ok, let now {
                     PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect, whole: true).frame(width: DS.Size.thumbSmall)
                         .transition(.opacity.combined(with: .scale(scale: DS.Remote.revealScale)))
+                } else {
+                    statusTile(ok: ok)
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    if reply?.ok == true { Text("✓ EN LA TV").recipe(.eyebrow, color: DS.live) }
+                    if ok { Text("✓ EN LA TV").recipe(.eyebrow, color: DS.live) }
                     Text(verbatim: reply?.speech.isEmpty == false ? reply!.speech : "Listo").recipe(.cardTitle).lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                     if let heard = reply?.heard, !heard.isEmpty { Text("Entendí: «\(heard)»").recipe(.caption, color: DS.textMuted).lineLimit(2) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 micButton(listening: false, small: true)
             }
-            Spacer(minLength: 0)
             // Las salidas solo cuando aplican: «pausa» no trae ninguna; una película no trae «Elegir episodio».
-            if reply?.ok == true, let now, !now.live {
+            if ok, let now, !now.live {
                 HStack(spacing: DS.Space.s2) {
                     pill("Otro", id: "voice-other", action: actions.other)
                     if now.kind == "series" { pill("Elegir episodio", id: "voice-episodes", action: actions.episodes) }
@@ -148,18 +160,28 @@ struct VoiceRow: View {
         }
     }
 
+    /// El ícono de la respuesta sin póster: la tele en verde si llegó, un aviso en ámbar si no.
+    private func statusTile(ok: Bool) -> some View {
+        let tint = ok ? DS.live : DS.warning
+        return Image(systemName: ok ? "tv" : "exclamationmark.bubble").font(DS.TextRecipe.section.font).foregroundStyle(tint)
+            .frame(width: DS.Remote.voiceMic, height: DS.Remote.voiceMic)
+            .background(tint.opacity(DesignTokens.Opacity.fill), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .accessibilityHidden(true)
+    }
+
     // MARK: Piezas
 
     private func micButton(listening: Bool, small: Bool = false) -> some View {
         Button { tap(actions.mic) } label: {
             ZStack {
-                Circle().fill(listening ? DS.live : DS.primary)
+                // El chico (volver a hablar, junto a una respuesta) es secundario: relleno tenue, no la bola del principal.
+                Circle().fill(listening ? DS.live : small ? DS.fillStrong : DS.primary)
                 if listening {
                     RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill(DS.onPrimary)
                         .frame(width: DS.Space.s4, height: DS.Space.s4)
                 } else {
                     Image(systemName: "mic.fill").font(small ? DS.TextRecipe.footnote.font : DS.TextRecipe.cardTitle.font)
-                        .foregroundStyle(DS.onPrimary)
+                        .foregroundStyle(small ? DS.text : DS.onPrimary)
                 }
             }
             .frame(width: small ? DS.Size.touchTarget : DS.Remote.voiceMic, height: small ? DS.Size.touchTarget : DS.Remote.voiceMic)
