@@ -5,7 +5,13 @@ import OrbitalCore
 /// Cuánto tarda en verse cada cosa (con `-perf`): cada marca se anota una sola vez, en milisegundos desde que arrancó el
 /// proceso (o desde `begin`), como «ORBITAL-PERF home.hero.image 812». Sin `-perf` no hace nada.
 enum Perf {
+    /// Solo en Debug (se mide con la demostración, que tampoco existe en Release): en la app de la tienda no lee argumentos
+    /// ni escribe bitácoras, y el compilador quita las marcas (auditoría, 31 oct 2026, C2).
+    #if DEBUG
     static let isOn = ProcessInfo.processInfo.arguments.contains("-perf")
+    #else
+    static let isOn = false
+    #endif
     @MainActor private static var done = Set<String>()
     @MainActor private static var origins: [String: Double] = [:]
 
