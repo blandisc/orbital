@@ -226,6 +226,25 @@ extension DS {
     /// grande, el velo turquesa de lo elegido (la selección, como los ánimos de «¿Qué vemos hoy?») y el póster de resultados.
     enum Filter {
         static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64, eraTile: CGFloat = 72
+        /// La puerta A de Buscar (Fernando, 31 oct 2026): los mismos mosaicos del cajón en chiquito, tres por renglón.
+        static let miniTileHeight: CGFloat = 70
+        /// El dibujo arriba de cada mosaico (regla, logos, cuadro) en el cajón y en la puerta.
+        static let artHeight: CGFloat = 30, miniArtHeight: CGFloat = 20
+        /// La flechita del panel que se abre bajo su mosaico.
+        static let notch: CGFloat = 14
+        /// La regla de años: su alto, la ventana, las orillas que se arrastran y las rayitas (año, cada 5, cada 10).
+        static let rulerHeight: CGFloat = 64, rulerWindow: CGFloat = 46, handleWidth: CGFloat = 12, handleHeight: CGFloat = 30
+        static let tickYear: CGFloat = 8, tickFive: CGFloat = 14, tickDecade: CGFloat = 24, rulerBase: CGFloat = 16
+        static let decadeButton: CGFloat = 40
+        /// La ventana elegida: el blanco de lo elegido, tenue por dentro.
+        static let windowFill = DS.text.opacity(0.12)   // ds-exception: el velo de la selección (el texto al 12 %)
+        static let tickFaint = DS.text.opacity(0.22), tickMid = DS.text.opacity(0.36), tickStrong = DS.text.opacity(0.62)   // ds-exception: las rayitas de la regla, de tenue a firme
+        /// Un premio (su estatuilla), un estudio (su logo) y una bandera en el cajón.
+        static let awardIcon: CGFloat = 40, miniAwardIcon: CGFloat = 18, studioLogoHeight: CGFloat = 24, logoTile: CGFloat = 64
+        /// Los cuadritos de lo filtrado arriba de los resultados.
+        static let summarySquare: CGFloat = 64
+        /// La hora de «Que acabe antes de las…»: de las 8 pm a las 3 am, en cuartos de hora.
+        static let endsByRange: ClosedRange<Double> = 20...27, endsByStep = 0.25
         /// Lo elegido, en el color del texto (Fernando, 30 oct 2026: lo elegido siempre en blanco, nunca turquesa ni azul).
         static let selectedFill = DS.text.opacity(0.12)   // ds-exception: el velo de la selección (el texto al 12 %)
         static let resultWidth: CGFloat = 104

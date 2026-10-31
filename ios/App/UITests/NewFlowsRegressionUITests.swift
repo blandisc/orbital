@@ -72,6 +72,27 @@ final class NewFlowsRegressionUITests: XCTestCase {
         shot("filtro-ficha")
     }
 
+    /// Entrada A (31 oct 2026): un mosaico de la puerta abre el cajón con ese filtro abierto ahí mismo (sin otra
+    /// pantalla); la regla elige una década, el mosaico lo dice, y «Ver resultados» abre los resultados en Buscar con su
+    /// cuadrito.
+    func testFiltroSeAbreDentroDelCajon() {
+        launch(tab: 2)
+        let era = app.buttons["browse-filter-era"]
+        XCTAssertTrue(era.waitForExistence(timeout: 20))
+        era.tap()
+        XCTAssertTrue(any("filter-year-ruler").waitForExistence(timeout: 10), "la regla se abre dentro del cajón")
+        XCTAssertTrue(app.buttons["filter-era"].exists, "los demás mosaicos siguen a la vista")
+        app.buttons["filter-decade-1990"].tap()
+        XCTAssertTrue(app.buttons["filter-era"].label.contains("90"), "el mosaico dice la década")
+        shot("filtro-epoca")
+        app.buttons["filter-length"].tap()
+        XCTAssertTrue(any("filter-ends-by").waitForExistence(timeout: 5), "otro mosaico cambia el panel")
+        XCTAssertFalse(any("filter-year-ruler").exists, "y cierra el anterior")
+        app.buttons["filter-results"].tap()
+        XCTAssertTrue(any("filter-square-era").waitForExistence(timeout: 15), "los resultados dicen lo filtrado")
+        shot("filtro-resultados-cuadritos")
+    }
+
     /// La pastilla de calificar sale con lo que terminaste hace poco, y la ✕ la quita.
     func testCalificarYQuitarLaPastilla() {
         launch(tab: 0, ["-demo-rate"])

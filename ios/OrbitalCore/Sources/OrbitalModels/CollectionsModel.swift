@@ -89,6 +89,12 @@ public final class CollectionsModel: ObservableModel {
         guard studioItems[id] == nil, let studio = studios.first(where: { $0.id == id }) else { return }
         let found = await services.forYou.studioItems(companyID: id, name: studio.name)
         if !found.isEmpty { studioItems[id] = found }
+        await loadStudioLogo(id)
+    }
+
+    /// Solo el logo de un estudio (el filtro avanzado los enseña sin pedir sus películas); una vez, luego de la caché.
+    public func loadStudioLogo(_ id: Int) async {
+        guard studioLogos[id] == nil else { return }
         let key = "studio-logo.\(id)"
         if let saved = services.kv.data(key).flatMap({ String(data: $0, encoding: .utf8) }) { studioLogos[id] = saved }
         else if services.tmdb.configured, let logo = try? await services.tmdb.companyLogo(id) {

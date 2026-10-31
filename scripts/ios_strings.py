@@ -19,6 +19,22 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Filtro avanzado, entrada A (`FilterDoor`, `AdvancedFilterSheet`, `FilterEditor`, `YearRuler`, `FilterResultsView`).
+    "Antes de 1990": "Before 1990", "Antes de las %@": "Ends by %@", "Arrastra la ventana o toca una década": "Drag the window or tap a decade",
+    "Arriba lo mejor calificado; a la derecha, lo más famoso": "Best rated at the top; most famous to the right",
+    "Aún no llegan tus plataformas.": "Your services haven't loaded yet.", "Búsqueda avanzada": "Advanced search", "Caben %@": "%@ fits",
+    "Clásicos": "Classics", "Con premios cuentan el formato, la época y lo que ya viste.": "With awards, only format, era and what you've watched apply.",
+    "Cortita": "Short", "Cualquier año": "Any year", "De 1950 a hoy": "From 1950 to today", "Dónde verla": "Where to watch",
+    "Este año y el pasado": "This year and last", "Filtro": "Filter", "Filtros · %lld": "Filters · %lld",
+    "Género, época, calificación, premios y más": "Genre, era, rating, awards and more", "Hora a la que quieres terminar": "Time you want to finish by",
+    "La calificación de TMDB, de 0 a 10": "TMDB rating, 0 to 10", "Latinoamérica": "Latin America", "Mejor calificadas": "Top rated",
+    "Más nuevas": "Newest", "Más populares": "Most popular", "No quiero": "Not this", "Para echarse": "Long one",
+    "Primero la región, luego el país": "Region first, then country", "Que acabe antes de las %@": "Ends before %@",
+    "Quita alguno de arriba para ver más opciones.": "Remove one above to see more options.", "Repartido por décadas": "Spread across decades",
+    "Sin vistas": "Unwatched", "Sus ganadores": "Their winners", "Toca los que quieras": "Tap the ones you want", "Toca para elegir": "Tap to choose",
+    "Tus plataformas en tu país": "Your services in your country", "Un año": "One year", "Una de cada década, de 1950 a hoy": "One from each decade, 1950 to today",
+    "Una de cada época, no solo lo reciente": "One from each era, not just recent ones", "Ver más filtros": "More filters",
+    "¿Cuánto tiempo tienes?": "How much time do you have?",
     # «¿Qué vemos hoy?» (`MatchDeckScreen`, `MatchDeck`).
     "Aún no hay propuestas": "No suggestions yet", "Cuando Para ti cargue sus listas, aquí salen.": "Once For You loads its lists, they show up here.",
     "Esta semana": "This week", "Guardaste %lld. Están en Mi lista.": "You saved %lld. They're in My List.",
