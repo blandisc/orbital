@@ -96,7 +96,7 @@ struct DownloadVersionSheet: View {
             }
             .font(DS.TextRecipe.secondary.font.weight(.semibold))
         }
-        .padding(DS.Space.gutter)
+        .dsSheetContent()
     }
 
     /// Una opción: la misma cápsula para las dos (solo cambia el color).

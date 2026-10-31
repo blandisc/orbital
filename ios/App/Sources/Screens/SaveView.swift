@@ -35,7 +35,7 @@ struct SaveView: View {
                 }
                 if let message = m.message { DSNotice(verbatim: env.message(message), tone: .error) }
             }
-            .padding(DS.Space.gutter)
+            .dsSheetContent()
         }
         .scrollBounceBehavior(.basedOnSize)
         .onAppear { if reserved == nil { reserved = reservedRows(m) } }

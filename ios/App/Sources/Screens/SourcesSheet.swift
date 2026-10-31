@@ -102,7 +102,7 @@ struct SourcesSheet: View {
                 Text("Con datos móviles te avisamos antes de usar versiones de más de \(Int(env.services.appSettings.warnCellularOverGB)) GB.").recipe(.caption, color: DS.textFaint).padding(.horizontal, DS.Space.s4)
             }
         }
-        .padding(.vertical, DS.Space.s4)
+        .dsSheetContent(sides: false)   // el carrusel llega a las orillas: cada parte pone su margen
         .task { await model.load(onCellular: env.connectivity.isCellular) }
         .sheet(isPresented: $showsGlossary) { SourcesGlossary().fittedSheet().presentationDragIndicator(.visible) }
         .sheet(item: $picked) { p in

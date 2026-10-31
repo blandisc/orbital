@@ -23,7 +23,7 @@ struct ReleaseCalendarView: View {
                 .overlay { if model.loading && model.days.isEmpty { ProgressView() } }
                 dayList(model)
             }
-            .padding(DS.Space.gutter)
+            .dsSheetContent()
         }
         .scrollContentBackground(.hidden).background(Backdrop())
         .task { await model.load() }

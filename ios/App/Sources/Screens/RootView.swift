@@ -316,7 +316,7 @@ struct MainTabs: View {
         // Tocar el accesorio abre el control remoto completo (−10 · pausa · +10 · siguiente, salir, seguir aquí).
         .sheet(isPresented: $showGame) {
             if let game = tvNow.model.game {
-                GameCompanionView(tvNow: tvNow, game: game).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
+                GameCompanionView(tvNow: tvNow, game: game).dsSheetContent(sides: false)   // su carrusel llega a las orillas
                     .fittedSheet().presentationDragIndicator(.visible)   // del alto de lo que tiene, como el control
             }
         }

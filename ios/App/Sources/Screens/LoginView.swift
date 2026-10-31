@@ -46,7 +46,7 @@ struct LoginView: View {
                 Text("Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPhone.")
                     .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             }
-            .padding(DS.Space.s6)
+            .dsSheetContent()
         }
         .scrollDismissesKeyboard(.interactively)
         .background(Backdrop())

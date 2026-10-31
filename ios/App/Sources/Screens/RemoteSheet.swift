@@ -64,7 +64,7 @@ struct RemoteSheet: View {
                 header(model)
                     // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                        if !large { measuredCompact = min(height + DS.Space.s6 + DS.Space.s10, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() }
+                        if !large { measuredCompact = min(height + DS.Space.sheetTop + DS.Space.s10, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() }
                     }
                 // Lo completo aparece y se va con un fundido y un leve desplazamiento (antes subía entero desde abajo).
                 if large { full(model).transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: DS.Space.s6)), removal: .opacity)) }
@@ -73,7 +73,7 @@ struct RemoteSheet: View {
                         .recipe(.caption, color: DS.textFaint).frame(maxWidth: .infinity)
                 }
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
+            .dsSheetContent()
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { measuredFull = min($0, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() } }
         }
         .scrollDisabled(!large && compactHeight < WindowMetrics.size.height * DS.Remote.maxShareFitted)   // corta y sin caber (letra grande): se desliza

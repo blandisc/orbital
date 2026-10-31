@@ -119,6 +119,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let s8 = CGFloat(DesignTokens.Space.s8), s10 = CGFloat(DesignTokens.Space.s10), s14 = CGFloat(DesignTokens.Space.s14)
         /// Margen lateral de las pantallas.
         static let gutter = s4
+        /// De la orilla de arriba de una hoja (con su asa) al primer título, en toda hoja que arma su propio encabezado
+        /// (`dsSheetContent()`). Antes cada una tenía el suyo: 16 el calendario, 20 «Decide por mí», 24 «Tu Orbital».
+        static let sheetTop = s6
     }
 
     enum Radius {

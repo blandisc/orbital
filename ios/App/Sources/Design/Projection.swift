@@ -378,6 +378,12 @@ extension View {
     func fittedScrollSheet() -> some View { modifier(FittedScrollSheet()) }
     /// Receta: hoja a la medida de su contenido (ver `FittedSheet`).
     func fittedSheet() -> some View { modifier(FittedSheet()) }
+    /// Receta: el aire de una hoja con encabezado propio (sin barra de navegación): `DS.Space.sheetTop` arriba, para que el
+    /// título no se pegue al asa, y el margen de siempre a los lados y abajo. `sides: false` si su contenido llega a las
+    /// orillas (un carrusel) y pone su propio margen. DesignTests lo exige en toda hoja sin barra.
+    func dsSheetContent(sides: Bool = true) -> some View {
+        padding(.horizontal, sides ? DS.Space.gutter : 0).padding(.top, DS.Space.sheetTop).padding(.bottom, DS.Space.s4)
+    }
 }
 
 extension View {

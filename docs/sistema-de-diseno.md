@@ -68,6 +68,7 @@ agrega al catálogo (`ios/App/Sources/Design/`) y a esta tabla. `DesignTests` re
 | Selector | `DSSegmented` · `DSKindFilter` | `DSKindFilter` para Todo · Series · Películas (con íconos en las franjas); `DSSegmented` para todo lo demás (periodos, Quiero/Quitar, Por idioma/Todas). | sí |
 | Vacío | `DSEmptyState` | Ícono, título y una línea; sus botones, de vidrio. | sí |
 | Tarjeta | `DS.surface` · `DS.Radius.lg` | Las tarjetas y renglones van en `surface` con `Radius.lg`; las destacadas (una por pantalla: «¿Qué vemos hoy?», «La temporada», «Por lo que viste») en `Radius.xl`. Los rellenos dentro de una tarjeta, `DS.fill`. | — |
+| Hoja con encabezado propio | `dsSheetContent()` · `DS.Space.sheetTop` | Toda hoja sin barra de navegación (calendario, «Tu Orbital», Decide por mí, Guardar en…, Versión, Stremio) deja 24 pt del asa a su primer título y el margen de siempre a los lados; `sides: false` si un carrusel llega a las orillas. | sí |
 | Etiqueta | íconos antes que texto | Nada de cápsulas de texto para estados; un ícono o el dato tal cual (`DSBadge` solo sobre el arte o «HOY»; «Nuevo» sobre un póster, el listón de la esquina `DSCornerRibbon`). | — |
 
 | Texto sobre arte | `ArtVeil` | Todo texto encima de un póster, fotograma o fondo desenfocado va sobre su velo (`bottom`, `top`, `both`, `full`, `leading`; `soft`, `strong`, `deep`). Nunca un degradado a mano. | sí |

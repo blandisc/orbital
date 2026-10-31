@@ -265,6 +265,35 @@ final class DesignTests: XCTestCase {
         XCTAssertTrue(problems.isEmpty, "Valores sueltos en las pantallas (usa un token o márcalo con «ds-exception: motivo»):\n" + problems.joined(separator: "\n"))
     }
 
+    /// Toda hoja que arma su propio encabezado (sin barra de navegación) arranca a la misma distancia del asa:
+    /// `dsSheetContent()` (`DS.Space.sheetTop`), en su archivo o donde se presenta (Fernando, 30 oct 2026: el calendario
+    /// tenía el título pegado arriba y cada hoja usaba otro aire).
+    func testSheetsWithTheirOwnHeaderUseTheSameTop() throws {
+        let root = repo.appendingPathComponent("ios/App/Sources")
+        let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? [])
+            .filter { $0.pathExtension == "swift" }
+        let texts = try Dictionary(uniqueKeysWithValues: files.map { ($0.lastPathComponent, try String(contentsOf: $0, encoding: .utf8)) })
+        let declared = { (name: String) in texts.first { $0.value.range(of: "struct \(name)\\b", options: .regularExpression) != nil } }
+        var problems: [String] = []
+        var checked = Set<String>()
+        for (file, text) in texts {
+            let lines = text.components(separatedBy: "\n")
+            for (i, line) in lines.enumerated() where line.contains(".sheet(") {
+                // La vista que se presenta: la primera `Nombre(` en ese renglón o los dos de abajo.
+                let window = lines[i..<min(lines.count, i + 3)].joined(separator: "\n")
+                let after = window[window.range(of: ".sheet(")!.upperBound...]
+                guard let match = after.range(of: #"\{[^A-Z]*([A-Z][A-Za-z]+)\("#, options: .regularExpression) else { continue }
+                let name = String(after[match].drop { $0 != "{" }.dropFirst().drop { !$0.isUppercase }.prefix { $0.isLetter })
+                guard let (home, body) = declared(name), !checked.contains(name) else { continue }
+                if body.contains("NavigationStack") || body.contains("navigationTitle") { continue }   // la barra pone su aire
+                if body.contains("dsSheetContent") || window.contains("dsSheetContent") || body.contains("ds-exception: sheet") { checked.insert(name); continue }
+                problems.append("\(name) (\(home), presentada en \(file)): hoja sin barra y sin dsSheetContent()")
+                checked.insert(name)
+            }
+        }
+        XCTAssertTrue(problems.isEmpty, "El aire de arriba de una hoja es uno solo (dsSheetContent / DS.Space.sheetTop):\n" + problems.joined(separator: "\n"))
+    }
+
     /// Los premios del iPhone son los de design/awards.json (los mismos que lee la TV): si cambia uno, se regenera con
     /// scripts/ios_awards.py.
     func testAwardsMatchTheSharedJSON() throws {

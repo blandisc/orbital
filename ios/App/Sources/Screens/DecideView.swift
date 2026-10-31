@@ -69,7 +69,7 @@ struct DecideView: View {
                 proposal(m)
                 filterRow(m)
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s5).padding(.bottom, DS.Space.s4)
+            .dsSheetContent()
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in quickHeight = min(h, WindowMetrics.size.height * DS.Remote.maxShare) }
         }
         .scrollBounceBehavior(.basedOnSize)
