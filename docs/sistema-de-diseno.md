@@ -145,7 +145,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | Botón principal | `Button({ art: true })` | Igual | Sólido en el color del arte, texto oscuro. |
 | Botón secundario | `Button` (ghost, relleno tenue) | Distinto a propósito: con el mando el foco invierte el botón y un borde fino no se ve a tres metros | — |
 | Botón de ícono | `Button({ icon })` (`button--round`) y los redondos de la ficha (`title__action--icon`) | Igual | Uno sólido y los demás redondos: Opciones, Ficha y Episodios en el destacado de Inicio, el de Películas y series y la ficha de Juegos, con el glifo en su orilla y su nombre debajo. |
-| Selector | `Pill` (para todo) y `Segmented` (Ajustes) | Pendiente · ola 1 | Por lo que hace: pestañas de texto, segmentado, cápsulas y mosaicos; lo elegido en blanco. |
+| Selector | `Pill({ tone: "tab" })` (pestañas de texto), `Segmented`, `Pill` (cápsulas) | Igual | Cambiar lo que ves: pestañas de texto (los filtros de una consola, Series · Películas de una lista, las temporadas de la ficha); ajustar un valor: `Segmented` (Ajustes); elegir: cápsulas (¿Qué vemos?, búsquedas recientes). Lo elegido en blanco; el foco, invertido. Los mosaicos llegan con el mazo (ola 2). |
 | Búsqueda avanzada | «Ordenar y filtrar» de `list-screen` | Pendiente · ola 3 | En la TV vive en Películas y series y en ☰ (Fernando, 31 oct 2026). |
 | Marcar como vista | «Marcar como vista», sin fecha | Pendiente · ola 3 | La hoja «¿Cuándo la viste?». |
 | Vacío | Textos de estado de cada vista (`browse__empty`, `calendar__empty`…) | Pendiente · ola 1 | Una pieza: ícono, título y una línea. |
