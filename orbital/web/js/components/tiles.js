@@ -1,68 +1,30 @@
 import { h, svg } from "../core/dom.js";
-import { duration, lastPlayed, shortAgo } from "../core/format.js";
-import { kicker, platformColor, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
+import { duration, lastPlayed } from "../core/format.js";
+import { kicker, platformColor, systemColor } from "../core/home.js";
 import { ICONS, platformMark, systemIconName } from "../core/icons.js";
-import { sized } from "../core/images.js";
-import { alternativeRunner, clampRatio, coverRatio, isGame, isSeries, isWatchable, needsInternet, primaryLabel } from "../core/library.js";
-import { ArtFit } from "./art-fit.js";
+import { alternativeRunner, isGame, isSeries, isWatchable, needsInternet, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
-import { Badge, PlatformMark, Progress, Veil } from "./ui.js";
+import { Badge, PlatformMark, Progress } from "./ui.js";
 
 /**
- * Tiles del sistema de diseño: piezas grandes y enfocables de las pantallas nuevas (Inicio y las
- * que vienen). Todas comparten la base `.tile` (ui.css): mismo radio, mismo anillo de foco, mismo
- * degradado sobre el arte. Se enfocan con `data-focus-id` (navegación espacial, core/spatial.js).
- *
- * Son <div role="button">: el destacado lleva botones dentro y un botón no puede contener otro.
+ * Tiles del sistema de diseño: piezas grandes de las pantallas nuevas (Inicio y las que vienen). La consola es enfocable
+ * (`.tile`, ui.css: mismo radio, mismo foco que se levanta) con `data-focus-id` (navegación espacial, core/spatial.js);
+ * el destacado (`FeatureHero`) no: va sobre el arte a pantalla completa y enseña lo enfocado, como el Apple TV.
  */
-const tile = (focusId, className, onPress, label, ...children) =>
-  h("div", { class: ["tile", className], role: "button", tabindex: "-1", "aria-label": label, "data-focus-id": focusId, onClick: onPress }, ...children);
-
-/** Imagen que, si falla, desaparece (el tile conserva su fondo y su texto). */
-const art = (src, className = "tile__art") => {
+const art = (src, className) => {
   if (!src) return null;
   const img = h("img", { class: className, src, alt: "", decoding: "async" });
   img.addEventListener("error", () => img.remove(), { once: true });
   return img;
 };
 
-/** Imagen con un respaldo: si la primera no carga se prueba la otra, y si tampoco, desaparece. */
-function artOr(src, fallback, className) {
-  if (!src) return null;
-  let tried = !fallback;
-  const img = h("img", { class: className, src, alt: "", decoding: "async" });
-  img.addEventListener("error", () => {
-    if (tried) return img.remove();
-    tried = true;
-    img.src = fallback;
-  });
-  return img;
-}
-
-/** Estuche: una caja que no es ancha (GBA cuadrada, Switch alta) llena un marco ancho con su propia
- *  portada desenfocada de fondo y la caja encima, con su forma, del lado derecho. */
-function caseArt(item) {
-  return h("span", { class: "tile__case", style: { "--case-ratio": String(clampRatio(coverRatio(item))) } },
-    art(item.image, "art-fit__blur"), art(item.image, "tile__case-box"));
-}
-
-// El destacado mide ~1000 px de ancho en la TV (core/images.js · sized lo pide de ese tamaño, no el original de 8 MB).
 /** «Episodios» y «Ficha» del destacado van redondos (su ícono); otra alternativa («Con Ryujinx») sigue con su nombre. */
 const ALT_ICONS = { Episodios: "list", Ficha: "info" };
-const FEATURE_PX = 1040;
-
-/** Arte del destacado. Un video sin fondo ancho trae solo su póster: va con el tratamiento de póster (ArtFit), no
- *  recortado a lo ancho; uno con fondo también pasa por ArtFit, por si su «fondo» resulta ser otro póster. */
-function featureArt(item) {
-  if (!isWatchable(item)) return art(sized(item.hero || item.image, FEATURE_PX));
-  const src = item.hero || item.image;
-  return src ? ArtFit(sized(src, FEATURE_PX), { poster: !item.hero, className: "tile__art" }) : null;
-}
 
 /** Logotipo del destacado; si no carga, su lugar lo toma el título en texto. */
 function featureLogo(src, title) {
-  const img = h("img", { class: "tile--feature__logo", src, alt: title });
-  img.addEventListener("error", () => img.replaceWith(h("h2", { class: "tile--feature__title" }, title)), { once: true });
+  const img = h("img", { class: "feature-hero__logo", src, alt: title, decoding: "async" });
+  img.addEventListener("error", () => img.replaceWith(h("h2", { class: "feature-hero__title" }, title)), { once: true });
   return img;
 }
 
@@ -87,73 +49,33 @@ export function eyebrowOf(item, runningId = null) {
   return isGame(item) && item.last_played ? "Seguir jugando" : null;
 }
 
-/** De dónde es: el ícono de su plataforma y su nombre («Steam», «Switch», «Película»). */
+/** De dónde es: el ícono de su plataforma y su nombre («Steam», «Switch», «Película»), con su color. */
 const mark = (item) => PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)] || ICONS.apps));
-const platform = (item, className) => h("span", { class: ["tile__platform", className], style: tint(item) }, mark(item), kicker(item));
-
-/** El ícono de la plataforma con su color (ver platformColor): `--platform` lo pinta en .tile__platform y .tile--row__detail. */
 const tint = (item) => (platformColor(item) ? { "--platform": platformColor(item) } : undefined);
 
 /**
- * Destacado: lo último que jugaste o viste, a lo grande, con sus acciones (A, X, Y) como leyenda.
+ * El destacado del Inicio, como el Apple TV: sobre el arte a pantalla completa (lo pone el fondo), su porqué en turquesa,
+ * el logo (o el nombre), de dónde es y lo que queda o cuándo jugaste, su avance y sus botones como leyenda (A, X, Y):
+ * «Jugar» o «Continuar» en blanco y los demás redondos de vidrio. `reason`: el porqué (si no, eyebrowOf).
  * `onAction("select" | "alt" | "options")`.
  */
-export function FeatureTile(item, { focusId = "feature", runningId = null, glyphs, onPress, onAction, eyebrow = true }) {
+export function FeatureHero(item, { runningId = null, glyphs = {}, onAction, reason = null }) {
   const open = item.id === runningId;
-  const logo = item.extra?.logo;
   const alt = isWatchable(item) ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha")
     : alternativeRunner(item) && `Con ${alternativeRunner(item).name}`;
   const press = (action) => (event) => { event.stopPropagation(); onAction?.(action); };
-  const boxed = stageKind(item) === "case";
-  return tile(focusId, ["tile--feature", isWatchable(item) && "tile--feature-video", boxed && "tile--feature-case", !boxed && item.extra?.placeholder_hero && "tile--placeholder",
-    !boxed && item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
-    boxed ? caseArt(item) : featureArt(item),
-    Veil("leading", "bottom"),
-    platform(item, ["tile__platform--pill", "tile--feature__store"]),
-    h("div", { class: "tile--feature__body" },
-      eyebrow && eyebrowOf(item, runningId) && h("span", { class: "tile--feature__eyebrow" }, eyebrowOf(item, runningId)),
-      logo ? featureLogo(logo, item.title) : h("h2", { class: "tile--feature__title" }, item.title),
-      detailOf(item) && h("span", { class: "tile--feature__detail" }, detailOf(item)),
-      Progress(item.progress, { className: "tile--feature__progress" }),
-      h("span", { class: "button-row tile--feature__actions" },
-        Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: press("select") }),
-        // «Episodios» o «Ficha» (un video) son redondos, como en Películas y series; «Con Ryujinx» sigue con su nombre.
-        alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, icon: ALT_ICONS[alt], onPress: press("alt") }),
-        Button({ label: "Opciones", glyph: glyphs.options, icon: "more", onPress: press("options") }))));
-}
-
-/** Lo corto de una tarjeta ancha: «hace 11 h» (juegos) o «T8 E23 · quedan 10 min» (videos). */
-export function shortDetail(item, now = Date.now()) {
-  if (isWatchable(item)) return item.subtitle?.replace(/^Película · /, "") || null;
-  const ago = shortAgo(item.last_played, now);
-  return ago ? (ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`) : null;
-}
-
-/**
- * Renglón (Inicio · «También tenías»): una miniatura ancha y, al lado, el nombre grande y su dato
- * siempre a la vista («Steam · hace 4 h · 31 h», o «Serie · T2 E6 · quedan 32 min» con su avance).
- * El texto ya no va encima del arte: se lee desde el sillón.
- */
-export function RowTile(item, { focusId, onPress, airing = null }) {
-  const watch = isWatchable(item);
-  const thumb = thumbOf(item);
-  const system = thumb.kind === "console" ? SYSTEMS[systemOf(item)] : null;
-  const total = !watch && item.playtime >= 600 ? duration(item.playtime) : null;
-  const node = tile(focusId, ["tile--row", needsInternet(item) && "needs-internet"], onPress, item.title,
-    h("span", { class: ["tile--row__thumb", system && "tile--row__thumb--console"] },
-      thumb.src && artOr(sized(thumb.src, 240), sized(thumb.fallback, 240), ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
-      system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"]),
-      watch && Progress(item.progress, { className: "tile--row__progress" })), // sobre la miniatura, como en un póster
-    h("span", { class: "tile--row__text" },
-      h("strong", { class: "tile--row__title" }, item.title),
-      h("span", { class: "tile--row__detail", style: tint(item) },
-        // Sale un episodio nuevo hoy (Próximos estrenos, de Trakt): en el renglón, no encima de la miniatura (ahí no cabía
-        // y se cortaba «Sale hoy · 8:0…»).
-        airing && Badge(airing === "Desde la madrugada" ? "Nuevo hoy" : `Sale hoy · ${airing}`, { className: "tile--row__airing" }),
-        !airing && mark(item),
-        h("span", { class: "tile--row__detail-text" }, [kicker(item), shortDetail(item), total].filter(Boolean).join(" · ")))));
-  if (system) node.style.setProperty("--glow", systemColor(systemOf(item)));
-  return node;
+  const why = reason || eyebrowOf(item, runningId) || (open ? "Abierto ahora" : null);
+  const detail = detailOf(item);
+  return h("div", { class: ["feature-hero", needsInternet(item) && "needs-internet"] },
+    why && h("span", { class: "feature-hero__eyebrow" }, why),
+    item.extra?.logo ? featureLogo(item.extra.logo, item.title) : h("h2", { class: "feature-hero__title" }, item.title),
+    h("span", { class: "feature-hero__detail", style: tint(item) }, mark(item), [kicker(item), detail].filter(Boolean).join(" · ")),
+    Progress(item.progress, { className: "feature-hero__progress" }),
+    h("span", { class: "button-row feature-hero__actions" },
+      Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: press("select") }),
+      // «Episodios» o «Ficha» (un video) son redondos, como en Películas y series; «Con Ryujinx» sigue con su nombre.
+      alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, icon: ALT_ICONS[alt], onPress: press("alt") }),
+      Button({ label: "Opciones", glyph: glyphs.options, icon: "more", onPress: press("options") })));
 }
 
 /** Consola: su foto (o la portada de lo último, si no hay foto) y cuántos juegos. Lo último que jugaste ya no va aquí

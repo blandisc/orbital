@@ -1,107 +1,25 @@
-/* Tiles (js/components/tiles.js): destacado (con su estuche), renglón y consola.
-   Comparten la base .tile de ui.css (radio, anillo de foco, atenuado). Reutilizables en
-   cualquier pantalla; el acomodo de cada pantalla vive en su propio CSS (home.css…). */
+/* Tiles (js/components/tiles.js): el destacado sobre el arte (FeatureHero) y la consola (ConsoleTile).
+   La consola comparte la base .tile de ui.css (radio, foco que se levanta). Reutilizables en cualquier pantalla; el acomodo
+   de cada pantalla vive en su propio CSS (home.css…). */
 
-/* --- Destacado: lo último que jugaste o viste, con sus acciones como leyenda --------------- */
-.tile--feature { min-height: 0; background: var(--color-surface); container-type: size; isolation: isolate; }
-/* Esquinas limpias: el arte (que se acerca al enfocar) y su sombra curvan igual que la tarjeta, y la orilla fina va encima.
-   Antes, en Edge, la capa del arte a veces se salía del recorte redondeado y dejaba una sombra en las esquinas. */
-.tile--feature > .tile__art { border-radius: inherit; }
-.tile--feature-video > .tile__art { --art-fit-y: 25%; --art-fit-pad: var(--inset-feature); } /* película o serie, ancha y bajita: el recorte se toma arriba
-   (donde van las caras), como la ficha; del centro salía la barbilla. Los juegos no: su arte va pensado al centro. */
-.tile--feature::after {
-  content: ""; position: absolute; inset: 0; z-index: var(--z-raised); border-radius: inherit; pointer-events: none;
-  box-shadow: var(--edge-hairline);
+/* --- Destacado (FeatureHero): sobre el arte a pantalla completa, como el Apple TV. Su porqué en turquesa, el logo, el dato,
+   el avance y la fila de botones (blanco el principal; los demás, vidrio). Lo pone abajo a la izquierda quien lo usa. */
+.feature-hero { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); max-width: min(46rem, 52%); }
+.feature-hero__eyebrow { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); text-shadow: var(--shadow-text-strong); }
+.feature-hero__logo { max-width: min(100%, 26rem); max-height: 7rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
+.feature-hero__title {
+  max-width: 100%; font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display); text-shadow: var(--shadow-text); text-wrap: balance;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail);
 }
-/* El detalle («T8 E23 · quedan 9 min») es lo que más importa: con poco alto se va primero «Serie» y
-   el logo se achica; el detalle no se encoge (antes quedaba cortado a la mitad en la Legion Go). */
-.tile--feature__store { position: absolute; z-index: var(--z-raised); left: var(--inset-feature); top: var(--inset-feature); } /* alineada con el texto */
-@container (max-height: 18rem) { .tile--feature__logo { max-height: 3.4rem; } }
-@container (max-height: 13rem) { .tile--feature__detail { display: none; } }
-/* El rótulo («Seguir viendo»), como el Eyebrow del iPhone: pegado al título; con poco alto se va antes que el dato. */
-.tile--feature__eyebrow {
-  flex-shrink: 0; margin-bottom: calc(-1 * var(--space-2)); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  color: var(--color-on-art-secondary); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); text-shadow: var(--shadow-text);
+.feature-hero__detail {
+  display: flex; align-items: center; gap: var(--space-2); max-width: 100%; color: var(--color-on-art-secondary); font-size: var(--type-body);
+  text-shadow: var(--shadow-text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--leading-normal);
 }
-@container (max-height: 16rem) { .tile--feature__eyebrow { display: none; } }
-/* Un título largo sin logo (letra grande, 1280): no se encoge a media línea; con poco alto, un renglón con «…». */
-.tile--feature__title { flex-shrink: 0; }
-@container (max-height: 18rem) { .tile--feature .tile--feature__title { -webkit-line-clamp: 1; } } /* más específica: la general va después */
-.tile--feature.tile--focused { transform: none; }
-/* Realce al enfocar (como la consola de Tus consolas): el logo (o el título) sale un poco y el arte se acerca detrás. */
-.tile--feature__logo, .tile--feature__title { transform-origin: left bottom; transition: transform var(--duration-base) var(--ease-spring); }
-.tile--feature > .tile__art, .tile--feature .tile__case-box { transition: transform var(--duration-slow) var(--ease-out); }
-.tile--feature.tile--focused .tile--feature__logo, .tile--feature.tile--focused .tile--feature__title { transform: var(--pop-transform); }
-.tile--feature.tile--focused > .tile__art { transform: var(--pop-zoom); }
-.tile--feature.tile--focused .tile__case-box { transform: var(--pop-transform); }
-.tile--feature__body {
-  position: absolute; inset: auto 0 0 0; z-index: var(--z-raised); max-height: 100%;
-  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3);
-  padding: var(--inset-feature);
-}
-.tile--feature__title { max-width: min(100%, 40rem);
-  font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); line-height: var(--leading-tight);
-  letter-spacing: var(--tracking-display); text-shadow: var(--shadow-text); text-wrap: balance; /* sin relleno: no asoma la 3.ª línea */
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0; }
-.tile--feature__logo { max-width: min(100%, 22rem); max-height: 5rem; flex-shrink: 1; min-height: 2.5rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
-.tile--feature__detail {
-  max-width: 100%; color: var(--color-text); opacity: var(--opacity-text); font-size: var(--type-body); text-shadow: var(--shadow-text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: var(--leading-normal); padding-block: .1em; /* la j y la g enteras */
-}
-.tile--feature__detail, .tile--feature__progress, .tile--feature__actions { flex-shrink: 0; }
-.tile--feature__progress { --progress-width: 14rem; }
-.tile--feature__actions { margin-top: var(--space-2); } /* .button-row */
-.tile--empty { display: grid; background: var(--gradient-card); }
-
-/* Estuche: solo hay caja (GBA cuadrada, Switch alta). Su portada desenfocada llena el fondo y la caja
-   va encima, con su forma, del lado derecho; el texto queda a la izquierda, sin pisarla. */
-.tile__case { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.tile__case-box {
-  position: absolute; top: 7%; right: 6%; height: 58%; aspect-ratio: var(--case-ratio, .7); object-fit: cover;
-  border-radius: var(--radius-sm); box-shadow: var(--shadow-card), 0 0 0 1px var(--color-hairline-strong); rotate: -2deg;
-}
-.tile--feature-case .tile--feature__title { max-width: 55%; }
-
-/* --- Renglón: miniatura ancha y, al lado, el nombre y su dato (siempre a la vista) -------------------------
-   Caben los cuatro de «También tenías»: el avance va sobre la miniatura (como en un póster), no debajo del texto. */
-.tile--row {
-  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-4);
-  /* Un solo renglón del alto del tile: la miniatura (height: 100%) se mide contra él (si no, tomaba su tope y se salía). */
-  grid-template-rows: minmax(0, 1fr);
-  min-height: 0; padding: var(--inset-row); background: var(--color-fill);
-}
-.tile--row.tile--focused { background: var(--color-fill-hover); transform: none; }
-/* Realce al enfocar: la miniatura sale un poco, con su sombra (como la consola de Tus consolas). */
-.tile--row__thumb { transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out); }
-.tile--row.tile--focused .tile--row__thumb { transform: var(--pop-transform); box-shadow: var(--shadow-card); }
-.tile--row__thumb {
-  position: relative; height: 100%; max-height: 8rem; aspect-ratio: 16 / 9; overflow: hidden;
-  border-radius: var(--radius-inner-row); background: var(--color-surface);
-}
-.tile--row__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-/* Solo hay caja (GBA): recortada llena el marco y se ve su nombre (la parte de arriba). */
-.tile--row__art--crop { object-position: center 38%; }
-/* Sin arte: la foto de su consola sobre el brillo de su color (como Tus consolas). */
-.tile--row__thumb--console { background: radial-gradient(70% 90% at 50% 50%, color-mix(in oklab, var(--glow) 34%, transparent) 0%, var(--color-surface) 75%); }
-.tile--row__console { position: absolute; inset: 12%; width: 76%; height: 76%; object-fit: contain; filter: var(--shadow-drop); }
-.tile--row__console--logo { inset: 24%; width: 52%; height: 52%; }
-.tile--row__airing { flex: none; }
-.tile--row__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
-.tile--row__title {
-  font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); line-height: var(--leading-title); letter-spacing: var(--tracking-tight);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.08em;
-}
-.tile--row__detail { display: flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--type-secondary); white-space: nowrap; }
-.tile--row__detail svg { width: var(--icon-sm); height: var(--icon-sm); flex: none; fill: none; stroke: var(--platform-ink, currentColor); stroke-width: var(--stroke-bold); stroke-linejoin: round; }
-.tile--row__detail-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; line-height: var(--leading-normal); }
-/* Lo de más (solo en la tarjeta crecida del Inicio, home.css): año, géneros y jugadores en un renglón. */
-.tile--row__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); --progress-width: auto; box-shadow: var(--shadow-badge); }
-
-/* Captura chica de un juego retro: nítida, como en la consola (no un borrón estirado). */
-.tile--lowres .tile__art { image-rendering: pixelated; }
-
-/* Arte de respaldo (no tiene propio): un poco más tenue, para que se lea como «genérico». */
-.tile--placeholder .tile__art { opacity: var(--opacity-solid); }
+.feature-hero__detail svg, .feature-hero__detail img { flex: none; width: var(--icon-md); height: var(--icon-md); }
+.feature-hero__detail svg { fill: none; stroke: var(--platform-ink, currentColor); stroke-width: var(--stroke-bold); stroke-linejoin: round; }
+.feature-hero__progress { --progress-width: 14rem; }
+.feature-hero__actions { margin-top: var(--space-2); }
 
 /* --- Consola: su foto (o logotipo) sobre un brillo de su color; nombre, juegos y lo último ---- */
 .tile--console {
@@ -116,19 +34,18 @@
 .tile--console.tile--focused .tile--console__glow {
   background: radial-gradient(95% 75% at 50% 18%, color-mix(in oklab, var(--glow) 38%, transparent) 0%, transparent 75%);
 }
-/* Medidas que el Inicio compacto (home--compact) cambia con variables, sin tocar estas clases desde fuera. */
-.tile--console__media { position: relative; flex: 1 1 auto; min-height: 4rem; display: grid; place-items: center; padding: var(--console-media-top, var(--space-3)) var(--inset-card) 0; }
+.tile--console__media { position: relative; flex: 1 1 auto; min-height: 4rem; display: grid; place-items: center; padding: var(--space-3) var(--inset-card) 0; }
 .tile--console__photo {
-  max-width: 88%; max-height: var(--console-photo-max, 4.4rem); object-fit: contain; /* fotos altas (Xbox 360) no tapan el texto */
+  max-width: 88%; max-height: 4.4rem; object-fit: contain; /* fotos altas (Xbox 360) no tapan el texto */
   filter: var(--shadow-drop-lg);
   transition: transform var(--duration-base) var(--ease-spring);
 }
 .tile--console.tile--focused .tile--console__photo { transform: var(--pop-transform); }
 /* Steam y GeForce NOW: su logotipo en blanco, del tamaño visual de una foto de consola. */
-.tile--console__logo { height: var(--console-logo-height, 3.2rem); width: auto; opacity: var(--opacity-solid); filter: var(--shadow-drop); transition: transform var(--duration-base) var(--ease-spring); }
+.tile--console__logo { height: 3.2rem; width: auto; opacity: var(--opacity-solid); filter: var(--shadow-drop); transition: transform var(--duration-base) var(--ease-spring); }
 .tile--console.tile--focused .tile--console__logo { transform: var(--pop-transform); opacity: 1; }
-.tile--console__cover { max-height: var(--console-cover-max, 4.8rem); width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
-.tile--console__text { position: relative; display: flex; flex-direction: column; gap: .1rem; padding: var(--console-text-top, var(--space-2)) var(--inset-card) var(--console-text-bottom, var(--inset-card)); }
+.tile--console__cover { max-height: 4.8rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
+.tile--console__text { position: relative; display: flex; flex-direction: column; gap: .1rem; padding: var(--space-2) var(--inset-card) var(--inset-card); }
 .tile--console__name {
   /* Con letra grande, «GameCube» quedaba en «GameC…»: el nombre se achica lo justo para caber en la tarjeta. */
   font-family: var(--font-sans); font-size: min(var(--type-section), var(--console-name-fit)); font-weight: var(--weight-bold); line-height: var(--leading-title); letter-spacing: var(--tracking-tight);

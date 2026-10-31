@@ -78,6 +78,9 @@
   position: absolute; left: 0; right: 0; top: calc(100% + .55rem);
   display: flex; flex-direction: column; gap: .1rem; font-size: var(--caption-size, var(--type-footnote)); line-height: var(--leading-normal);
 }
+/* El nombre solo bajo la enfocada (Card · caption "focus", como el Apple TV): las demás son puro arte. */
+.card--name-on-focus .card__caption { opacity: 0; text-align: center; transition: opacity var(--duration-fast) var(--ease-out); }
+.card--name-on-focus.card--focused .card__caption { opacity: 1; }
 .card__caption strong { overflow: hidden; color: var(--color-text); font-weight: var(--weight-medium); text-overflow: ellipsis; white-space: nowrap; }
 .card__caption span { color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* En la enfocada, el héroe ya dice "Jugado hace…" en grande. */

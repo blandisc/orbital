@@ -28,10 +28,8 @@
 .games__facts b { color: var(--color-text); font-weight: var(--weight-medium); }
 .games__actions { margin-top: var(--space-1); }
 
-/* Sus juegos: filtros y la cuadrícula. Solo el enfocado dice su nombre, debajo (los demás son puro arte). */
+/* Sus juegos: filtros y la cuadrícula. Solo el enfocado dice su nombre, debajo (Card · caption "focus"). */
 .games__shelf { display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; --card-height: 10rem; --card-focus-scale: 1.1; }
-.games__grid .card__caption { opacity: 0; transition: opacity var(--duration-fast) var(--ease-out); }
-.games__grid .card--focused .card__caption { opacity: 1; text-align: center; }
 
 /* Al bajar: el juego y las consolas se recogen (y la barra de arriba se va, status-bar.css); quedan los juegos. */
 .games--away .games__main { grid-template-rows: 0fr 0fr minmax(0, 1fr); margin-top: calc(-1 * var(--status-room)); }

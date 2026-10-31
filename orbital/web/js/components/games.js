@@ -100,7 +100,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
     // Solo el enfocado dice su nombre (debajo, como el Apple TV): los demás son puro arte (card.css · .games__grid).
     mount(grid, games.length ? games.map((item, i) => {
       targets.set(`game:${i}`, { kind: "game", item, console: c });
-      const card = Card(item, { caption: true, onPress: () => onPick?.(targets.get(`game:${i}`), `game:${i}`) });
+      const card = Card(item, { caption: "focus", onPress: () => onPick?.(targets.get(`game:${i}`), `game:${i}`) });
       card.dataset.focusId = `game:${i}`;
       return card;
     }) : EmptyState(filter === "favorites"

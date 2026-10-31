@@ -67,7 +67,8 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   const standIn = item.extra?.placeholder_cover && SYSTEMS[systemOf(item)]?.photo && !wide;
   const card = h("button", {
     // Portada de respaldo (sin arte propio): la imagen genérica con el nombre del juego encima.
-    class: ["card", wide && "card--wide", item.image ? "card--has-art" : "card--no-art", item.extra?.placeholder_cover && "card--named",
+    // caption "focus": el nombre solo bajo la enfocada, como el Apple TV (Juegos, «A continuación»).
+    class: ["card", wide && "card--wide", caption === "focus" && "card--name-on-focus", item.image ? "card--has-art" : "card--no-art", item.extra?.placeholder_cover && "card--named",
       standIn && "card--stand-in", progress && "card--has-progress"],
     type: "button",
     "aria-label": item.title,
