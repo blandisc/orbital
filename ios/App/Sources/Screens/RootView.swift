@@ -52,7 +52,7 @@ struct RootView: View {
     private func reminderLift() -> CGFloat {
         guard #available(iOS 26.1, *), let tv = env.tvNow else { return 0 }
         tv.track()
-        return (tv.now != nil || tv.game != nil) && !ui.tvAccessoryInline ? DS.Rating.accessoryLift : 0
+        return (tv.now != nil || tv.game != nil) && !ui.tvAccessoryInline ? DS.Toast.accessoryLift : 0
     }
 
     /// (Un `Text`, no un `String`: así sale en el idioma de la app y no en el del sistema.)
@@ -91,19 +91,17 @@ struct RootView: View {
                     BannerView()
                 }
             }
-            // Encima de «Viendo en la TV» cuando está (antes lo tapaba justo al mandar algo a la TV) y de lo que la pantalla
-            // deje flotando abajo (el pie del mosaico).
-            .padding(.bottom, DS.Size.tabBarClearance + reminderLift() + ui.noticeLift)
+            // A `DS.Toast.gap` de lo que tenga abajo: la barra, «Viendo en la TV» (antes lo tapaba justo al mandar algo a la
+            // TV) o lo que la pantalla deje flotando (el pie del mosaico).
+            .dsNoticePlacement(lift: reminderLift() + ui.noticeLift)
             .animation(DS.Motion.enter(reduceMotion), value: ui.noticeLift)
         }
         // Calificar lo que terminaste: pegada a la barra de pestañas (y encima de «Viendo en la TV» cuando está), solo cuando no
         // hay otro aviso.
         .overlay(alignment: .bottom) {
             if ui.handoff == nil, env.notices.current == nil {
-                // Medida desde la orilla de la pantalla (no desde la zona segura): la barra queda a la misma altura en un iPhone con
-                // indicador de inicio y en el SE, que no lo tiene.
-                RatingReminderHost().padding(.bottom, DS.Rating.clearance + reminderLift())
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).ignoresSafeArea(.container, edges: .bottom)
+                // En el mismo lugar que los avisos (`dsNoticePlacement`).
+                RatingReminderHost().dsNoticePlacement(lift: reminderLift())
             }
         }
         .animation(DS.Motion.enter(reduceMotion), value: ui.handoff)

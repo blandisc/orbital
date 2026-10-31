@@ -219,6 +219,16 @@ struct FlowChips: Layout {
     }
 }
 
+extension View {
+    /// Receta: un aviso de abajo (`Toast`, la pastilla de calificar) en su lugar, a `DS.Toast.gap` de lo que tenga debajo.
+    /// `lift`: lo que hay entre la barra de pestañas y el aviso («Viendo en la TV», el pie del mosaico).
+    func dsNoticePlacement(lift: CGFloat = 0) -> some View {
+        padding(.bottom, DS.Toast.clearance + lift)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .ignoresSafeArea(.container, edges: .bottom)
+    }
+}
+
 /// El aviso de la app (una sola familia): arriba, en vidrio, con su glifo de color, el texto y, si la tiene, una acción
 /// («Deshacer», «Ver»). Se va solo; tocarlo lo cierra.
 struct Toast: View {

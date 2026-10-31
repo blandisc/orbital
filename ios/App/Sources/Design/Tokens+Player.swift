@@ -208,6 +208,14 @@ extension DS {
         static let queueLimit = 3
         /// Antes de esto (segundos), el aviso de pasar a la TV dice «desde el principio» y no «desde 0:12».
         static let fromStartUnder: Double = 30
+        /// Dónde va un aviso de abajo (`Toast`, la pastilla de calificar), regla del sistema de diseño: siempre a `gap` de lo
+        /// que tenga debajo —la barra de pestañas, «Viendo en la TV» o lo que la pantalla deje flotando (`AppUI.noticeLift`)—,
+        /// nunca a ojo. `tabBarTop`: dónde termina la barra, medido desde la orilla de abajo de la pantalla (no desde la zona
+        /// segura: así queda igual en un iPhone con indicador de inicio y en el SE). `accessoryLift`: lo que suma «Viendo en la
+        /// TV» encima de la barra. Se colocan con `dsNoticePlacement(lift:)`; `DesignTests` lo revisa.
+        static let gap = DS.Space.s2
+        static let tabBarTop: CGFloat = 83, accessoryLift: CGFloat = 54
+        static let clearance = tabBarTop + gap
     }
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).

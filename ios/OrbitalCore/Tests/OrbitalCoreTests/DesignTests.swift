@@ -268,6 +268,27 @@ final class DesignTests: XCTestCase {
     /// Toda hoja que arma su propio encabezado (sin barra de navegación) arranca a la misma distancia del asa:
     /// `dsSheetContent()` (`DS.Space.sheetTop`), en su archivo o donde se presenta (Fernando, 30 oct 2026: el calendario
     /// tenía el título pegado arriba y cada hoja usaba otro aire).
+    /// Los avisos de abajo (`Toast`, la pastilla de calificar) se colocan con `dsNoticePlacement(lift:)`: siempre a
+    /// `DS.Toast.gap` de lo que tengan debajo, nunca con un margen a ojo (antes uno quedaba a 28 pt de la barra y otro a 9).
+    /// El reproductor pone los suyos arriba, sobre el video, y no cuenta.
+    func testBottomNoticesKeepTheSameGap() throws {
+        let root = repo.appendingPathComponent("ios/App/Sources")
+        let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? [])
+            .filter { $0.pathExtension == "swift" && !$0.lastPathComponent.hasPrefix("PlayerScreen") }
+        var problems: [String] = []
+        for file in files {
+            let text = try String(contentsOf: file, encoding: .utf8)
+            let places = text.components(separatedBy: "\n").filter {
+                ($0.contains("Toast(tone:") || $0.contains("RatingReminderHost()")) && !$0.contains("struct ")
+            }
+            if !places.isEmpty, !text.contains("dsNoticePlacement(") { problems.append(file.lastPathComponent) }
+            for line in text.components(separatedBy: "\n") where line.contains("RatingReminderHost()") && line.contains(".padding(") {
+                problems.append("\(file.lastPathComponent): \(line.trimmingCharacters(in: .whitespaces))")
+            }
+        }
+        XCTAssertTrue(problems.isEmpty, "Un aviso de abajo va con dsNoticePlacement (DS.Toast.gap de lo que tenga debajo):\n" + problems.joined(separator: "\n"))
+    }
+
     func testSheetsWithTheirOwnHeaderUseTheSameTop() throws {
         let root = repo.appendingPathComponent("ios/App/Sources")
         let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? [])
