@@ -11,6 +11,75 @@ Página para el celular, con maquetas animadas de la guía: `plan.html` · https
 Antecedentes: `docs/producto/desacoplar-stremio/avance.md` (cortes A a E ya en `main`) y la sección 6 «Distribuir Orbital»
 de `docs/producto/muvy-busqueda-premios/propuesta.html` (dos apps del mismo código, nunca una app con algo escondido).
 
+## Cambio del 30 oct (tarde): tres versiones, y Plus primero
+
+Fernando: «Primero hay que tener la Orbital Plus perfecta: que la pueda tomar cualquier persona y usarla. Plus no se
+conecta con la computadora. Van a ser tres versiones: una para mí, que se conecta con la computadora, Orbital Plus y
+Orbital normal.» Esto reemplaza la tabla de «Las dos apps» de más abajo.
+
+| | **La tuya** | **Orbital Plus** | **Orbital** (App Store) |
+|---|---|---|---|
+| Para quién | Fernando | Cualquier persona que le pases | Cualquiera, desde la tienda |
+| Ver al instante (Real-Debrid y complementos) | Sí | Sí | No (ni el código) |
+| La consola: TV, control, voz, Siri de la TV, «Desde la TV» | Sí | No (ni el código) | No |
+| Lo tuyo: Simpson al azar, acompañante de juegos, copia en Stremio | Sí | No | No |
+| Descubrir, Trakt, «Dónde verla», tus videos | Sí | Sí | Sí |
+| Cuenta | `mx.iracheta.orbital` (la de hoy) | `mx.iracheta.orbital.plus` | `mx.iracheta.orbital.app` (por decidir) |
+
+Cómo: dos banderas de compilación. `ORBITAL_PLUS` (Real-Debrid, complementos) y `ORBITAL_HOME` (consola y lo tuyo).
+La tuya = las dos; Plus = solo `ORBITAL_PLUS`; Orbital = ninguna. Tres destinos en `project.yml` con el mismo código.
+
+### Qué le falta a Plus para que la use cualquiera
+
+**A · Separarla de la computadora (bloquea).**
+1. El destino `OrbitalPlus` sin `ORBITAL_HOME`: fuera Ajustes › «Orbital en la TV», los atajos de Siri de la TV, el
+   control del Centro de control, la tarea que revisa «Desde la TV», los textos de permisos de Alexa y de la TV, el
+   Simpson al azar, el acompañante de juegos y la copia en Stremio (con su `LoginView`).
+2. Prueba de que el binario de Plus no trae la consola (ni «/api/companion» ni los intents de la TV).
+
+**B · Entrar sin atorarse (bloquea).**
+3. Sin Real-Debrid de pago hoy no se termina la guía (`OnboardingModel.swift:36`). Que se pueda seguir con «Lo hago
+   después»: la app sirve igual para descubrir y avisa en «Ver» qué falta.
+4. Conectar Real-Debrid con un código, como Trakt, en vez de copiar «el texto largo» de real-debrid.com/apitoken.
+   Real-Debrid tiene inicio de sesión con código para apps; hay que probarlo con una cuenta. Respaldo: pegar la clave.
+5. Explicar Real-Debrid para quien nunca lo oyó: qué es en dos renglones, cuánto cuesta y **cómo se paga** (es lo más
+   difícil para alguien no técnico; una guía con capturas de la página de pago).
+6. Los complementos vienen puestos y no se explican (Torrentio, OpenSubtitles; Comet cuando se pruebe con tu cuenta).
+7. Trakt opcional («Ahora no»).
+8. La guía nueva, animada (maqueta en la página).
+
+**C · Que «Ver» funcione siempre.**
+9. Mensajes que hoy mandan a Stremio («Agrégalos en Stremio…», `Degraded.swift:73,78`; `UserMessages.swift`;
+   `SessionModel.swift:21`) y los 53 textos de Stremio del catálogo: reescribir o borrar.
+10. Quitar el respaldo a la lista de complementos de la cuenta de Stremio (`Addons.swift:109-112`).
+11. Tocar el aviso de «se te acaba Real-Debrid» abre la página de renovar (hoy abre la app).
+12. Cuando no hay versiones de un título, decirlo en palabras («Aún no hay versiones de este título; prueba mañana») y no
+    dejar al usuario en una lista vacía.
+13. **Cada persona, su propia cuenta de Real-Debrid.** Real-Debrid corta si dos lugares usan la misma cuenta a la vez:
+    no se puede repartir la tuya. La guía lo dice.
+
+**D · Ajustes para cualquiera.**
+14. Sin claves a la vista: clave de TMDB y Client ID de Trakt solo en «Avanzado», y Avanzado al final y cerrado.
+15. Mi media (OneDrive) se esconde en Plus hasta que haya una app de Microsoft registrada (hoy pide registrar una en
+    Entra).
+16. Un botón «Mandar un reporte a Fernando» (Ajustes › Ayuda) que comparte la bitácora del iPhone, para ayudar a
+    distancia sin ver su teléfono.
+
+**E · Repartirla.**
+17. Cuenta de desarrollador de Apple (99 USD al año), si no la hay ya: sin ella no hay TestFlight y las apps de Xcode duran 7
+    días.
+18. TestFlight interno: cada persona entra a tu equipo de App Store Connect (correo de invitación) e instala TestFlight;
+    hasta 100 personas. Cada versión dura 90 días: un script que suba una nueva cada mes. El TestFlight externo (liga
+    pública) pasa por revisión de Apple y una app con Real-Debrid puede no pasar.
+19. La clave de TMDB incluida viaja en cada versión que subas (hoy vive solo en la Mac, `Secrets.xcconfig`).
+20. Ícono propio de Plus para que se distinga de la tuya en tu iPhone.
+
+**F · Comprobarlo.**
+21. Una persona que nunca usó Stremio instala Plus desde TestFlight, crea su Real-Debrid y ve algo, sin ayuda. Se graba
+    y se corrige lo que tropiece.
+
+Orden propuesto: A (separar) → B y C (entrar y ver) → D → E → F. Orbital (App Store) queda para después.
+
 ## Dónde estamos (auditoría del 30 oct)
 
 Lo grande ya está hecho: no hace falta cuenta de Stremio, lo tuyo vive en el teléfono y se sincroniza con Trakt, los
