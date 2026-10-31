@@ -80,7 +80,7 @@ struct DecideView: View {
         let count = m.count()
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("Decide por mí").recipe(.title)
+                DSSheetHeader(title: Text("Decide por mí"))
                 Text(verbatim: optionsLine(m, count))
                     .recipe(.footnote).monospacedDigit().contentTransition(.numericText())
                     .accessibilityIdentifier("decide-count")
@@ -164,7 +164,9 @@ struct DecideView: View {
                 // Lo que se espera (rara vez: los siguientes ya están listos) se ve en el botón, no encima de los carteles.
                 Button { Task { await m.next() } } label: {
                     HStack(spacing: DS.Space.s2) {
-                        if m.isLoading { ProgressView().controlSize(.small) } else { Image(systemName: "shuffle") }
+                        if m.isLoading {
+                            ProgressView().controlSize(.small)   // ds-exception: la ruedita va dentro del botón que la pidió
+                        } else { Image(systemName: "shuffle") }
                         Text("Barajar").lineLimit(1)
                     }
                     .foregroundStyle(DS.text).frame(maxWidth: .infinity)
@@ -185,7 +187,7 @@ struct DecideView: View {
                     RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.fill).aspectRatio(DS.Poster.aspect, contentMode: .fit)
                 }
             }
-            .overlay { ProgressView() }
+            .overlay { DSLoadingState() }
         }
     }
 
@@ -449,7 +451,7 @@ struct DecideMoreFilters: View {
                 Image(systemName: "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
             }
             .padding(DS.Space.s3)
-            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+            .dsCard(.row, translucent: true)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -544,7 +546,7 @@ struct DecideListPicker: View {
                     }
                     .listRowBackground(Color.clear)
                 }
-            } header: { Text(title).recipe(.badge, color: DS.textMuted) }
+            } header: { DSGroupLabel(title: Text(title)) }
         }
     }
 

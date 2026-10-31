@@ -17,25 +17,22 @@ struct MatchDeckScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Eyebrow(text: Text("Encuentra tu match perfecto"), reason: true)
-                    Text("¿Qué vemos hoy?").recipe(.title)
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Eyebrow(text: Text("Encuentra tu match perfecto"), reason: true)
+                DSSheetHeader(title: Text("¿Qué vemos hoy?")) {
+                    // Cuántas llevas guardadas en esta vuelta (en «Tu match perfecto» de Trakt, o en Mi lista).
+                    if let model, !model.saved.isEmpty {
+                        Label { Text(verbatim: "\(model.saved.count)").monospacedDigit() } icon: { Image(systemName: "bookmark.fill") }
+                            .recipe(.label, color: DS.text).tint(DS.brandMoon)
+                            .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
+                            .background(DS.fill, in: Capsule())
+                            .contentTransition(.numericText())
+                            .accessibilityLabel(model.savesToTrakt ? Text("\(model.saved.count) guardadas en Tu match perfecto") : Text("\(model.saved.count) guardadas en Mi lista"))
+                            .accessibilityIdentifier("match-saved-count")
+                    }
+                    DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular) { dismiss() }
+                        .accessibilityIdentifier("match-close")
                 }
-                Spacer()
-                // Cuántas llevas guardadas en esta vuelta (en «Tu match perfecto» de Trakt, o en Mi lista).
-                if let model, !model.saved.isEmpty {
-                    Label { Text(verbatim: "\(model.saved.count)").monospacedDigit() } icon: { Image(systemName: "bookmark.fill") }
-                        .recipe(.label, color: DS.text).tint(DS.brandMoon)
-                        .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
-                        .background(DS.fill, in: Capsule())
-                        .contentTransition(.numericText())
-                        .accessibilityLabel(model.savesToTrakt ? Text("\(model.saved.count) guardadas en Tu match perfecto") : Text("\(model.saved.count) guardadas en Mi lista"))
-                        .accessibilityIdentifier("match-saved-count")
-                }
-                Button { dismiss() } label: { Image(systemName: "xmark") }
-                    .buttonStyle(.glass).buttonBorderShape(.circle)
-                    .accessibilityLabel(Text("Cerrar")).accessibilityIdentifier("match-close")
             }
             if let model {
                 let _ = model.track()
@@ -106,16 +103,16 @@ struct MatchDeckScreen: View {
     private func actions(_ model: MatchDeckModel) -> some View {
         HStack(alignment: .top, spacing: DS.Space.s6) {
             action(Text("Paso"), id: "match-discard") {
-                Button { command = .discard } label: { Image(systemName: "xmark").font(DS.TextRecipe.title.font) }
-                    .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+                DSIconButton(symbol: "xmark", label: "Paso", size: .large) { command = .discard }
+                    .font(DS.TextRecipe.title.font)
             }
             action(Text("Ver ya"), id: "match-play") {
                 Button { if let s = model.cards.first { dismiss(); onPlay(s.route) } } label: { Image(systemName: "play.fill").font(DS.TextRecipe.title.font) }
                     .dsSolidPrimaryButton(shape: .circle).controlSize(.large)
             }
             action(Text("Guardar"), id: "match-save") {
-                Button { command = .save } label: { Image(systemName: "bookmark.fill").font(DS.TextRecipe.title.font).foregroundStyle(DS.brandMoon) }
-                    .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+                DSIconButton(symbol: "bookmark.fill", label: "Guardar", size: .large) { command = .save }
+                    .font(DS.TextRecipe.title.font).foregroundStyle(DS.brandMoon)
             }
         }
         .frame(maxWidth: .infinity)

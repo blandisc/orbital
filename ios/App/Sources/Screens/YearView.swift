@@ -147,12 +147,9 @@ struct YearView: View {
                 HStack {
                     Text(verbatim: Self.dayTitle(day, env.uiLocale)).recipe(.cardTitle)   // en el idioma de la app
                     Spacer()
-                    Button { step(r, forward: false) } label: { Image(systemName: "chevron.left") }
-                        .accessibilityLabel(Text("Día anterior con algo visto"))
-                    Button { step(r, forward: true) } label: { Image(systemName: "chevron.right") }
-                        .accessibilityLabel(Text("Día siguiente con algo visto"))
+                    DSIconButton(symbol: "chevron.left", label: "Día anterior con algo visto", size: .regular) { step(r, forward: false) }
+                    DSIconButton(symbol: "chevron.right", label: "Día siguiente con algo visto", size: .regular) { step(r, forward: true) }
                 }
-                .buttonStyle(.glass).buttonBorderShape(.circle)
                 if plays.isEmpty {
                     Text("Ese día no viste nada.").recipe(.footnote)
                 } else {

@@ -35,8 +35,8 @@ struct WrappedView: View {
                 bars
                 HStack {
                     Spacer()
-                    Button(action: close) { Image(systemName: "xmark") }.buttonStyle(.glass).buttonBorderShape(.circle)
-                        .accessibilityLabel(Text("Cerrar")).accessibilityIdentifier("wrapped-close")
+                    DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular, action: close)
+                        .accessibilityIdentifier("wrapped-close")
                 }
                 Spacer(minLength: 0)
                 content(story).id(index).transition(.opacity.combined(with: .move(edge: .trailing)))

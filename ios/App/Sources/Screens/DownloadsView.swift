@@ -388,8 +388,7 @@ struct DownloadSubtitlesSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Text("Subtítulos").recipe(.title)
-            Text(verbatim: item.subtitle.isEmpty ? item.title : "\(item.title) · \(item.subtitle)").recipe(.footnote).lineLimit(1)
+            DSSheetHeader(title: Text("Subtítulos"), subtitle: Text(verbatim: item.subtitle.isEmpty ? item.title : "\(item.title) · \(item.subtitle)"))
             if let found {
                 if found.isEmpty {
                     DSNotice(text: "No encontré subtítulos (o no hay conexión). Vuelve a intentar.", tone: .warn)
@@ -409,7 +408,7 @@ struct DownloadSubtitlesSheet: View {
                     .id("\(saved.sorted { $0.key < $1.key })-\(saving ?? "")")   // que se redibuje al guardar (ver `FlowChips`)
                 }
             } else {
-                HStack(spacing: DS.Space.s2) { ProgressView(); Text("Buscando subtítulos…").recipe(.footnote) }
+                DSInlineProgress(text: Text("Buscando subtítulos…"))
             }
         }
         .padding(DS.Space.s5)

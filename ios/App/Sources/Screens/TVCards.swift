@@ -155,9 +155,8 @@ struct FromTVCard: View {
                     HStack(alignment: .firstTextBaseline) {
                         Label { eyebrow } icon: { Image(systemName: "tv") }.recipe(.eyebrow, color: DS.onArtSecondary).lineLimit(1)   // ds-exception: rótulo de estado sobre el arte («En la tele»), no un porqué
                         Spacer(minLength: DS.Space.s2)
-                        Button(action: onDismiss) { Image(systemName: "xmark").font(DS.TextRecipe.label.font) }
-                            .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.small)
-                            .accessibilityLabel(Text("Quitar"))
+                        DSIconButton(symbol: "xmark", label: "Quitar", size: .small, action: onDismiss)
+                            .font(DS.TextRecipe.label.font)
                     }
                     Spacer(minLength: DS.Space.s2)
                     TitleLogo(url: Artwork.logoURL(metaID: item.metaID), title: item.title)
