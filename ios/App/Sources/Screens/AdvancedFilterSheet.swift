@@ -35,7 +35,7 @@ struct AdvancedFilterSheet: View {
         NavigationStack {
             ScrollViewReader { proxy in
             ScrollView {
-                    VStack(alignment: .leading, spacing: DS.Space.s3) {
+                    VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                         formatBar(model)
                         // Los nueve filtros siempre a la vista, con el cajón en su altura máxima (Fernando, 31 oct 2026): sin
                         // «Más filtros / Menos filtros» ni la altura corta.
