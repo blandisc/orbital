@@ -104,10 +104,12 @@ final class WatchingModelTests: XCTestCase {
         rig.http.offline = true
         let model = RepisaModel(rig.services, watched: { [] })
         await model.load()
-        XCTAssertEqual(model.failedLists, ["criterion", "top250"])
+        XCTAssertEqual(model.failedLists, Set(Canon.lists.map(\.id)), "sin red fallan todas las listas famosas")
         rig.http.offline = false
         rig.http.prefix["https://mdblist.com/lists/"] = [["title": "Uno", "imdb_id": "tt1", "mediatype": "movie", "release_year": 2000]]
         await model.load()
-        XCTAssertTrue(model.failedLists.isEmpty)
+        // Las de MDBList ya llegaron; la de tus listas de Trakt (`.mine`) depende de tu cuenta, que aquí no la tiene.
+        let mdblist = Set(Canon.lists.filter { if case .mdblist = $0.source { true } else { false } }.map(\.id))
+        XCTAssertTrue(model.failedLists.isDisjoint(with: mdblist), "\(model.failedLists)")
     }
 }
